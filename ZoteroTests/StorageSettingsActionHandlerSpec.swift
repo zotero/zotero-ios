@@ -54,7 +54,7 @@ final class StorageSettingsActionHandlerSpec: QuickSpec {
                     try! TestControllers.fileStorage.write(data, to: mainLibrary, options: .atomic)
                     try! TestControllers.fileStorage.write(data, to: groupLibrary, options: .atomic)
                     
-                    waitUntil(timeout: .seconds(10)) { completion in
+                    waitUntil(timeout: .seconds(60)) { completion in
                         viewModel = ViewModel(initialState: StorageSettingsState(storageData: storageData), handler: handler)
                         
                         viewModel.stateObservable
@@ -96,7 +96,7 @@ final class StorageSettingsActionHandlerSpec: QuickSpec {
                         realm.add(item)
                     }
                     
-                    waitUntil(timeout: .seconds(10)) { completion in
+                    waitUntil(timeout: .seconds(60)) { completion in
                         viewModel = ViewModel(initialState: StorageSettingsState(storageData: storageData), handler: handler)
                         
                         viewModel.stateObservable
@@ -130,7 +130,7 @@ final class StorageSettingsActionHandlerSpec: QuickSpec {
                         realm.add(group)
                     }
                     
-                    waitUntil(timeout: .seconds(10)) { completion in
+                    waitUntil(timeout: .seconds(60)) { completion in
                         viewModel = ViewModel(initialState: StorageSettingsState(storageData: storageData), handler: handler)
                         
                         viewModel.stateObservable

@@ -12,7 +12,7 @@ struct CommentIconDrawingController {
     static let iconSize: CGSize = CGSize(width: 12, height: 12)
 
     static func draw(context: CGContext, boundingBox: CGRect, color: UIColor) {
-        guard let colorizedCgImage = Asset.Images.Annotations.commentColor.image.cgImage,
+        guard let colorizedCgImage = Asset.Images.Annotations.commentColored.image.cgImage,
               let outlineCgImage = Asset.Images.Annotations.comment.image.cgImage else { return }
 
         let size = CommentIconDrawingController.iconSize

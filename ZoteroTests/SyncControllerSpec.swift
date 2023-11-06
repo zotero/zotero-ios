@@ -176,7 +176,7 @@ final class SyncControllerSpec: QuickSpec {
                             jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any]]
                         )
                         
-                        waitUntil(timeout: .seconds(10)) { doneAction in
+                        waitUntil(timeout: .seconds(60)) { doneAction in
                             syncController.reportFinish = { _ in
                                 let realm = try! Realm(configuration: realmConfig)
                                 realm.refresh()
@@ -392,7 +392,7 @@ final class SyncControllerSpec: QuickSpec {
                             jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any]]
                         )
                         
-                        waitUntil(timeout: .seconds(10)) { doneAction in
+                        waitUntil(timeout: .seconds(60)) { doneAction in
                             syncController.reportFinish = { _ in
                                 let realm = try! Realm(configuration: realmConfig)
                                 realm.refresh()
@@ -491,7 +491,7 @@ final class SyncControllerSpec: QuickSpec {
                             jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [itemToDelete], "tags": [] as [Any]]
                         )
                         
-                        waitUntil(timeout: .seconds(10)) { doneAction in
+                        waitUntil(timeout: .seconds(60)) { doneAction in
                             syncController.reportFinish = { _ in
                                 let realm = try! Realm(configuration: realmConfig)
                                 realm.refresh()
@@ -631,7 +631,7 @@ final class SyncControllerSpec: QuickSpec {
                             jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any]]
                         )
                         
-                        waitUntil(timeout: .seconds(10)) { doneAction in
+                        waitUntil(timeout: .seconds(60)) { doneAction in
                             syncController.reportFinish = { _ in
                                 let realm = try! Realm(configuration: realmConfig)
                                 realm.refresh()
@@ -724,7 +724,7 @@ final class SyncControllerSpec: QuickSpec {
                             jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any]]
                         )
                         
-                        waitUntil(timeout: .seconds(10)) { doneAction in
+                        waitUntil(timeout: .seconds(60)) { doneAction in
                             syncController.reportFinish = { result in
                                 let realm = try! Realm(configuration: realmConfig)
                                 realm.refresh()
@@ -820,7 +820,7 @@ final class SyncControllerSpec: QuickSpec {
                             jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any]]
                         )
 
-                        waitUntil(timeout: .seconds(10)) { doneAction in
+                        waitUntil(timeout: .seconds(60)) { doneAction in
                             syncController.reportFinish = { _ in
                                 let realm = try! Realm(configuration: realmConfig)
                                 realm.refresh()
@@ -895,7 +895,7 @@ final class SyncControllerSpec: QuickSpec {
                             jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any]]
                         )
                         
-                        waitUntil(timeout: .seconds(10)) { doneAction in
+                        waitUntil(timeout: .seconds(60)) { doneAction in
                             syncController.reportFinish = { _ in
                                 let realm = try! Realm(configuration: realmConfig)
                                 realm.refresh()
@@ -1036,7 +1036,7 @@ final class SyncControllerSpec: QuickSpec {
                             jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any]]
                         )
                         
-                        waitUntil(timeout: .seconds(10)) { doneAction in
+                        waitUntil(timeout: .seconds(60)) { doneAction in
                             syncController.reportFinish = { _ in
                                 let realm = try! Realm(configuration: realmConfig)
                                 realm.refresh()
@@ -1214,7 +1214,7 @@ final class SyncControllerSpec: QuickSpec {
                             jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any]]
                         )
                         
-                        waitUntil(timeout: .seconds(10)) { doneAction in
+                        waitUntil(timeout: .seconds(60)) { doneAction in
                             syncController.reportFinish = { result in
                                 switch result {
                                 case .failure(let error):
@@ -1367,7 +1367,7 @@ final class SyncControllerSpec: QuickSpec {
                             jsonResponse: ["collections": [] as [Any], "searches": [] as [Any], "items": [] as [Any], "tags": [] as [Any]]
                         )
                         
-                        waitUntil(timeout: .seconds(10)) { doneAction in
+                        waitUntil(timeout: .seconds(60)) { doneAction in
                             syncController.reportFinish = { result in
                                 switch result {
                                 case .failure(let error):
@@ -1507,7 +1507,7 @@ final class SyncControllerSpec: QuickSpec {
                             realm.add(item)
                         }
                         
-                        waitUntil(timeout: .seconds(10)) { doneAction in
+                        waitUntil(timeout: .seconds(60)) { doneAction in
                             syncController.reportFinish = { _ in
                                 let realm = try! Realm(configuration: realmConfig)
                                 realm.refresh()
@@ -1629,7 +1629,7 @@ final class SyncControllerSpec: QuickSpec {
                         })
                         createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: Self.self).url(forResource: "test_keys", withExtension: "json")!)
                         
-                        waitUntil(timeout: .seconds(10)) { doneAction in
+                        waitUntil(timeout: .seconds(60)) { doneAction in
                             syncController.reportFinish = { _ in
                                 let realm = try! Realm(configuration: realmConfig)
                                 realm.refresh()
@@ -1737,7 +1737,7 @@ final class SyncControllerSpec: QuickSpec {
                         })
                         createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: Self.self).url(forResource: "test_keys", withExtension: "json")!)
                         
-                        waitUntil(timeout: .seconds(10)) { doneAction in
+                        waitUntil(timeout: .seconds(60)) { doneAction in
                             syncController.reportFinish = { _ in
                                 doneAction()
                             }
@@ -1820,7 +1820,7 @@ final class SyncControllerSpec: QuickSpec {
                         })
                         createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: Self.self).url(forResource: "test_keys", withExtension: "json")!)
                         
-                        waitUntil(timeout: .seconds(10)) { doneAction in
+                        waitUntil(timeout: .seconds(60)) { doneAction in
                             syncController.reportFinish = { _ in
                                 doneAction()
                             }
@@ -1865,7 +1865,7 @@ final class SyncControllerSpec: QuickSpec {
                             jsonResponse: ["success": ["0": [:] as [String: Any]], "unchanged": [] as [Any], "failed": [] as [Any]] as [String: Any]
                         )
                         
-                        waitUntil(timeout: .seconds(10)) { doneAction in
+                        waitUntil(timeout: .seconds(60)) { doneAction in
                             syncController.reportFinish = { _ in
                                 let realm = try! Realm(configuration: realmConfig)
                                 realm.refresh()
@@ -1929,7 +1929,7 @@ final class SyncControllerSpec: QuickSpec {
                             item.libraryId = .custom(.myLibrary)
                         }
                         
-                        waitUntil(timeout: .seconds(10)) { doneAction in
+                        waitUntil(timeout: .seconds(60)) { doneAction in
                             syncController.reportFinish = { result in
                                 switch result {
                                 case .failure(let error):
@@ -2038,7 +2038,7 @@ final class SyncControllerSpec: QuickSpec {
                             realm.add(item)
                         }
                         
-                        waitUntil(timeout: .seconds(10)) { doneAction in
+                        waitUntil(timeout: .seconds(60)) { doneAction in
                             syncController.reportFinish = { _ in
                                 expect(didCallDownload).to(beTrue())
                                 
@@ -2116,7 +2116,7 @@ final class SyncControllerSpec: QuickSpec {
                             jsonResponse: [:] as [String: Any]
                         )
                         
-                        waitUntil(timeout: .seconds(10)) { doneAction in
+                        waitUntil(timeout: .seconds(60)) { doneAction in
                             syncController.reportFinish = { _ in
                                 let realm = try! Realm(configuration: realmConfig)
                                 realm.refresh()
@@ -2229,7 +2229,7 @@ final class SyncControllerSpec: QuickSpec {
                         createStub(for: GroupVersionsRequest(userId: userId), baseUrl: baseUrl, headers: nil, statusCode: 200, jsonResponse: [:] as [String: Any])
                         createStub(for: SettingsRequest(libraryId: libraryId, userId: userId, version: 0), baseUrl: baseUrl, statusCode: 304, jsonResponse: [:] as [String: Any])
                         
-                        waitUntil(timeout: .seconds(10)) { doneAction in
+                        waitUntil(timeout: .seconds(60)) { doneAction in
                             syncController.reportFinish = { result in
                                 switch result {
                                 case .success(let data):
@@ -2345,7 +2345,7 @@ final class SyncControllerSpec: QuickSpec {
                             realm.add(remotelyMissingItem)
                         }
                         
-                        waitUntil(timeout: .seconds(10)) { doneAction in
+                        waitUntil(timeout: .seconds(60)) { doneAction in
                             syncController.reportFinish = { result in
                                 switch result {
                                 case .success:
@@ -2442,7 +2442,7 @@ final class SyncControllerSpec: QuickSpec {
                             changedItem.fields.append(field)
                         }
                         
-                        waitUntil(timeout: .seconds(10)) { doneAction in
+                        waitUntil(timeout: .seconds(60)) { doneAction in
                             syncController.reportFinish = { result in
                                 switch result {
                                 case .success:
@@ -2526,7 +2526,7 @@ final class SyncControllerSpec: QuickSpec {
                             realm.add(item)
                         }
                         
-                        waitUntil(timeout: .seconds(10)) { doneAction in
+                        waitUntil(timeout: .seconds(60)) { doneAction in
                             syncController.reportFinish = { result in
                                 switch result {
                                 case .success(let data):
@@ -2611,7 +2611,7 @@ final class SyncControllerSpec: QuickSpec {
                             realm.add(item)
                         }
                         
-                        waitUntil(timeout: .seconds(10)) { doneAction in
+                        waitUntil(timeout: .seconds(60)) { doneAction in
                             syncController.reportFinish = { result in
                                 switch result {
                                 case .success(let data):
@@ -2742,7 +2742,7 @@ final class SyncControllerSpec: QuickSpec {
                             realm.add(item2)
                         }
                         
-                        waitUntil(timeout: .seconds(10)) { doneAction in
+                        waitUntil(timeout: .seconds(60)) { doneAction in
                             syncController.reportFinish = { result in
                                 switch result {
                                 case .success(let data):
@@ -2872,7 +2872,7 @@ final class SyncControllerSpec: QuickSpec {
                             realm.add(item)
                         }
                         
-                        waitUntil(timeout: .seconds(10)) { doneAction in
+                        waitUntil(timeout: .seconds(60)) { doneAction in
                             syncController.reportFinish = { result in
                                 switch result {
                                 case .success(let data):

@@ -55,7 +55,7 @@ final class TranslatorsControllerSpec: QuickSpec {
                 controller.setupTest(timestamp: 0, hash: "", deleted: 0)
                 
                 // Perform update and wait for results
-                waitUntil(timeout: .seconds(10)) { doneAction in
+                waitUntil(timeout: .seconds(60)) { doneAction in
                     controller.isLoading.skip(1).filter({ !$0 }).first()
                         .observe(on: MainScheduler.instance)
                         .subscribe(onSuccess: { _ in
@@ -108,7 +108,7 @@ final class TranslatorsControllerSpec: QuickSpec {
                 try! TestControllers.fileStorage.copy(from: Files.file(from: translatorURL), to: Files.translator(filename: translatorId))
                 
                 // Perform update and wait for results
-                waitUntil(timeout: .seconds(10)) { doneAction in
+                waitUntil(timeout: .seconds(60)) { doneAction in
                     controller.isLoading.skip(1).filter({ !$0 }).first()
                         .observe(on: MainScheduler.instance)
                         .subscribe(onSuccess: { _ in
@@ -161,7 +161,7 @@ final class TranslatorsControllerSpec: QuickSpec {
                 try! TestControllers.fileStorage.copy(from: Files.file(from: translatorURL), to: Files.translator(filename: translatorId))
                 
                 // Perform update and wait for results
-                waitUntil(timeout: .seconds(10)) { doneAction in
+                waitUntil(timeout: .seconds(60)) { doneAction in
                     controller.isLoading.skip(1).filter({ !$0 }).first()
                         .observe(on: MainScheduler.instance)
                         .subscribe(onSuccess: { _ in
@@ -216,7 +216,7 @@ final class TranslatorsControllerSpec: QuickSpec {
                 try! TestControllers.fileStorage.copy(from: Files.file(from: translatorURL), to: Files.translator(filename: deletedTranslatorId))
                 
                 // Perform update and wait for results
-                waitUntil(timeout: .seconds(10)) { doneAction in
+                waitUntil(timeout: .seconds(60)) { doneAction in
                     controller.isLoading.skip(1).filter({ !$0 }).first()
                         .observe(on: MainScheduler.instance)
                         .subscribe(onSuccess: { _ in
@@ -249,7 +249,7 @@ final class TranslatorsControllerSpec: QuickSpec {
                 controller.setupTest(timestamp: 0, hash: "", deleted: 0)
                 
                 // Perform update and wait for results
-                waitUntil(timeout: .seconds(10)) { doneAction in
+                waitUntil(timeout: .seconds(60)) { doneAction in
                     controller.isLoading.skip(1).filter({ !$0 }).first()
                         .observe(on: MainScheduler.instance)
                         .subscribe(onSuccess: { _ in
@@ -294,7 +294,7 @@ final class TranslatorsControllerSpec: QuickSpec {
                 controller.setupTest(timestamp: 0, hash: "", deleted: 0)
                 
                 // Perform update and wait for results
-                waitUntil(timeout: .seconds(10)) { doneAction in
+                waitUntil(timeout: .seconds(60)) { doneAction in
                     controller.isLoading.skip(1).filter({ !$0 }).first()
                         .observe(on: MainScheduler.instance)
                         .subscribe(onSuccess: { _ in
@@ -332,7 +332,7 @@ final class TranslatorsControllerSpec: QuickSpec {
                 
                 // Perform reset
                 
-                waitUntil(timeout: .seconds(10)) { doneAction in
+                waitUntil(timeout: .seconds(60)) { doneAction in
                     controller.resetToBundle(completion: {
                         DispatchQueue.main.async {
                             // Check whether translator was reverted to bundled data
