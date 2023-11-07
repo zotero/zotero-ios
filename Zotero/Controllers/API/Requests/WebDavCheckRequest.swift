@@ -23,7 +23,7 @@ struct WebDavCheckRequest: ApiRequest {
         self.parameters = nil
         self.encoding = .url
         self.headers = nil
-        self.acceptableStatusCodes = [200, 404]
+        self.acceptableStatusCodes = [200, 204, 404]
         self.logParams = .headers
     }
 }
