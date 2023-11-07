@@ -10,6 +10,12 @@ import UIKit
 
 import CocoaLumberjackSwift
 
+extension UIResponder {
+    @objc var scene: UIScene? {
+        nil
+    }
+}
+
 extension UIViewController {
     func showAlert(for error: Error, cancelled: @escaping () -> Void) {
         let controller = UIAlertController(title: "Error", message: error.localizedDescription, preferredStyle: .alert)
@@ -45,5 +51,19 @@ extension UIViewController {
             return viewController.view.window
         }
         return self.view.window
+    }
+
+    @objc override var scene: UIScene? {
+        // From https://stackoverflow.com/questions/56588843/uiapplication-shared-delegate-equivalent-for-scenedelegate-xcode11/56589151#56589151
+        // Traversing the responder chain to find the scene this view controller belongs to. Trying sibling(s).
+        if let scene = next?.scene {
+            return scene
+        }
+        // Sibling responder(s) didn't return a scene. Trying parent.
+        if let scene = parent?.scene {
+            return scene
+        }
+        // Parent also didn't return a scene. Trying presenting view controller.
+        return presentingViewController?.scene
     }
 }
