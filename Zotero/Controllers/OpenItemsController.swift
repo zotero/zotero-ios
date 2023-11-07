@@ -25,54 +25,53 @@ final class OpenItemsController {
             case pdf(libraryId: LibraryIdentifier, key: String)
             case note(libraryId: LibraryIdentifier, key: String)
 
-            // MARK: Types
-            enum `Type`: String, Codable {
-                case pdf
-                case note
+            // MARK: Properties
+            var libraryId: LibraryIdentifier {
+                switch self {
+                case .pdf(let libraryId, _), .note(let libraryId, _):
+                    return libraryId
+                }
             }
 
-            // MARK: Properties
-            var type: `Type` {
+            var key: String {
                 switch self {
-                case .pdf:
-                    return .pdf
-
-                case .note:
-                    return .note
+                case .pdf(_, let key), .note(_, let key):
+                    return key
                 }
             }
 
             // MARK: Codable
             enum CodingKeys: CodingKey {
-                case type
+                case pdfKind
+                case noteKind
                 case libraryId
                 case key
             }
 
             func encode(to encoder: Encoder) throws {
                 var container = encoder.container(keyedBy: CodingKeys.self)
-                try container.encode(type, forKey: .type)
                 switch self {
-                case .pdf(let libraryId, let key), .note(let libraryId, let key):
-                    try container.encode(libraryId, forKey: .libraryId)
-                    try container.encode(key, forKey: .key)
+                case .pdf:
+                    try container.encode(true, forKey: .pdfKind)
+
+                case .note:
+                    try container.encode(true, forKey: .noteKind)
                 }
+
+                try container.encode(libraryId, forKey: .libraryId)
+                try container.encode(key, forKey: .key)
             }
 
             init(from decoder: Decoder) throws {
                 let container = try decoder.container(keyedBy: CodingKeys.self)
-                let type = try container.decode(`Type`.self, forKey: .type)
-
-                switch type {
-                case .pdf:
-                    let libraryId = try container.decode(LibraryIdentifier.self, forKey: .libraryId)
-                    let key = try container.decode(String.self, forKey: .key)
+                let libraryId = try container.decode(LibraryIdentifier.self, forKey: .libraryId)
+                let key = try container.decode(String.self, forKey: .key)
+                if (try? container.decode(Bool.self, forKey: .pdfKind)) == true {
                     self = .pdf(libraryId: libraryId, key: key)
-
-                case .note:
-                    let libraryId = try container.decode(LibraryIdentifier.self, forKey: .libraryId)
-                    let key = try container.decode(String.self, forKey: .key)
+                } else if (try? container.decode(Bool.self, forKey: .noteKind)) == true {
                     self = .note(libraryId: libraryId, key: key)
+                } else {
+                    throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: [CodingKeys.pdfKind, CodingKeys.noteKind], debugDescription: "Item kind key not found"))
                 }
             }
         }
