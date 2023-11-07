@@ -512,11 +512,18 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                                                           boundingBoxConverter: boundingBoxConverter)
         }
 
-        PdfDocumentExporter.export(annotations: annotations, key: viewModel.state.key, libraryId: viewModel.state.library.identifier, url: url, fileStorage: self.fileStorage, dbStorage: self.dbStorage,
-                                   completed: { [weak viewModel] result in
-                                       guard let viewModel = viewModel else { return }
-                                       self.finishExport(result: result, viewModel: viewModel)
-                                   })
+        PdfDocumentExporter.export(
+            annotations: annotations,
+            key: viewModel.state.key,
+            libraryId: viewModel.state.library.identifier,
+            url: url,
+            fileStorage: self.fileStorage,
+            dbStorage: self.dbStorage,
+            completed: { [weak self, weak viewModel] result in
+                guard let self, let viewModel else { return }
+                self.finishExport(result: result, viewModel: viewModel)
+            }
+        )
     }
 
     private func finishExport(result: Result<File, PdfDocumentExporter.Error>, viewModel: ViewModel<PDFReaderActionHandler>) {
@@ -629,8 +636,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 oldestInkAnnotation.lines = lines
                 oldestInkAnnotation.lineWidth = lineWidth
 
-                NotificationCenter.default.post(name: NSNotification.Name.PSPDFAnnotationChanged, object: oldestInkAnnotation,
-                                                userInfo: [PSPDFAnnotationChangedNotificationKeyPathKey: PdfAnnotationChanges.stringValues(from: [.lineWidth, .paths])])
+                NotificationCenter.default.post(
+                    name: NSNotification.Name.PSPDFAnnotationChanged,
+                    object: oldestInkAnnotation,
+                    userInfo: [PSPDFAnnotationChangedNotificationKeyPathKey: PdfAnnotationChanges.stringValues(from: [.lineWidth, .paths])]
+                )
             }
 
             recorder.record(removing: toDeleteDocumentAnnotations) {
@@ -976,15 +986,15 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     /// - parameter viewModel: ViewModel.
     private func observePreviews(in viewModel: ViewModel<PDFReaderActionHandler>) {
         self.annotationPreviewController.observable
-                                        .observe(on: MainScheduler.instance)
-                                        .subscribe(onNext: { [weak viewModel] annotationKey, parentKey, image in
-                                            guard let viewModel = viewModel, viewModel.state.key == parentKey else { return }
-                                            self.update(viewModel: viewModel) { state in
-                                                state.previewCache.setObject(image, forKey: (annotationKey as NSString))
-                                                state.loadedPreviewImageAnnotationKeys = [annotationKey]
-                                            }
-                                        })
-                                        .disposed(by: self.disposeBag)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self, weak viewModel] annotationKey, parentKey, image in
+                guard let self, let viewModel, viewModel.state.key == parentKey else { return }
+                self.update(viewModel: viewModel) { state in
+                    state.previewCache.setObject(image, forKey: (annotationKey as NSString))
+                    state.loadedPreviewImageAnnotationKeys = [annotationKey]
+                }
+            })
+            .disposed(by: self.disposeBag)
     }
 
     /// Loads previews for given keys and notifies view about them if needed.
@@ -1017,8 +1027,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         guard notify else { return }
 
-        group.notify(queue: .main) { [weak viewModel] in
-            guard !loadedKeys.isEmpty, let viewModel = viewModel else { return }
+        group.notify(queue: .main) { [weak self, weak viewModel] in
+            guard !loadedKeys.isEmpty, let self, let viewModel else { return }
             self.update(viewModel: viewModel) { state in
                 state.loadedPreviewImageAnnotationKeys = loadedKeys
             }
@@ -1206,7 +1216,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         let values = [KeyBaseKeyPair(key: FieldKeys.Item.Annotation.pageLabel, baseKey: nil): pageLabel, KeyBaseKeyPair(key: FieldKeys.Item.Annotation.text, baseKey: nil): highlightText]
         let request = EditItemFieldsDbRequest(key: key, libraryId: viewModel.state.library.identifier, fieldValues: values, dateParser: dateParser)
         self.perform(request: request) { [weak self, weak viewModel] error in
-            guard let error = error, let self = self, let viewModel = viewModel else { return }
+            guard let error, let self, let viewModel else { return }
 
             DDLogError("PDFReaderActionHandler: can't update annotation \(key) - \(error)")
 
@@ -1282,7 +1292,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             boundingBoxConverter: boundingBoxConverter
         )
         self.perform(request: request) { [weak self, weak viewModel] error in
-            guard let error = error, let self = self, let viewModel = viewModel else { return }
+            guard let error, let self, let viewModel else { return }
 
             DDLogError("PDFReaderActionHandler: can't add annotations - \(error)")
 
@@ -1341,7 +1351,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         guard !requests.isEmpty else { return }
 
         self.perform(writeRequests: requests) { [weak self, weak viewModel] error in
-            guard let error = error, let self = self, let viewModel = viewModel else { return }
+            guard let error, let self, let viewModel else { return }
 
             DDLogError("PDFReaderActionHandler: can't update changed annotations - \(error)")
 
@@ -1364,14 +1374,12 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         let request = MarkObjectsAsDeletedDbRequest<RItem>(keys: keys, libraryId: viewModel.state.library.identifier)
         self.perform(request: request) { [weak self, weak viewModel] error in
-            guard let self = self, let viewModel = viewModel else { return }
+            guard let self, let viewModel, let error else { return }
 
-            if let error = error {
-                DDLogError("PDFReaderActionHandler: can't remove annotations \(keys) - \(error)")
+            DDLogError("PDFReaderActionHandler: can't remove annotations \(keys) - \(error)")
 
-                self.update(viewModel: viewModel) { state in
-                    state.error = .cantDeleteAnnotation
-                }
+            self.update(viewModel: viewModel) { state in
+                state.error = .cantDeleteAnnotation
             }
         }
     }
@@ -1494,9 +1502,15 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             let token = self.observe(items: liveAnnotations, viewModel: viewModel)
             let databaseAnnotations = liveAnnotations.freeze()
             let documentAnnotations = self.loadAnnotations(from: viewModel.state.document, library: library, username: viewModel.state.username, displayName: viewModel.state.displayName)
-            let dbToPdfAnnotations = AnnotationConverter.annotations(from: databaseAnnotations, interfaceStyle: viewModel.state.interfaceStyle, currentUserId: viewModel.state.userId,
-                                                                     library: library, displayName: viewModel.state.displayName, username: viewModel.state.username,
-                                                                     boundingBoxConverter: boundingBoxConverter)
+            let dbToPdfAnnotations = AnnotationConverter.annotations(
+                from: databaseAnnotations,
+                interfaceStyle: viewModel.state.interfaceStyle,
+                currentUserId: viewModel.state.userId,
+                library: library,
+                displayName: viewModel.state.displayName,
+                username: viewModel.state.username,
+                boundingBoxConverter: boundingBoxConverter
+            )
             let sortedKeys = self.createSortedKeys(fromDatabaseAnnotations: databaseAnnotations, documentAnnotations: documentAnnotations)
 
             self.update(document: viewModel.state.document, zoteroAnnotations: dbToPdfAnnotations, key: key, libraryId: library.identifier, isDark: isDark)
@@ -1508,7 +1522,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             let (page, selectedData) = self.preselectedData(databaseAnnotations: databaseAnnotations, storedPage: page, boundingBoxConverter: boundingBoxConverter, in: viewModel)
 
             self.update(viewModel: viewModel) { state in
-                state.liveAnnotations = liveAnnotations
                 state.databaseAnnotations = databaseAnnotations
                 state.documentAnnotations = documentAnnotations
                 state.sortedKeys = sortedKeys
@@ -1532,8 +1545,12 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         self.observeDocument(in: viewModel)
     }
 
-    private func preselectedData(databaseAnnotations: Results<RItem>, storedPage: Int, boundingBoxConverter: AnnotationBoundingBoxConverter,
-                                 in viewModel: ViewModel<PDFReaderActionHandler>) -> (Int, (PDFReaderState.AnnotationKey, AnnotationDocumentLocation)?) {
+    private func preselectedData(
+        databaseAnnotations: Results<RItem>,
+        storedPage: Int,
+        boundingBoxConverter: AnnotationBoundingBoxConverter,
+        in viewModel: ViewModel<PDFReaderActionHandler>
+    ) -> (Int, (PDFReaderState.AnnotationKey, AnnotationDocumentLocation)?) {
         if let key = viewModel.state.selectedAnnotationKey, let item = databaseAnnotations.filter(.key(key.key)).first {
             let annotation = DatabaseAnnotation(item: item)
             let page = annotation._page ?? storedPage
@@ -1590,31 +1607,31 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
     private func observeDocument(in viewModel: ViewModel<PDFReaderActionHandler>) {
         NotificationCenter.default.rx
-                                  .notification(.PSPDFAnnotationChanged)
-                                  .observe(on: MainScheduler.instance)
-                                  .subscribe(onNext: { [weak self, weak viewModel] notification in
-                                      guard let self = self, let viewModel = viewModel else { return }
-                                      self.processAnnotationObserving(notification: notification, viewModel: viewModel)
-                                  })
-                                  .disposed(by: self.pdfDisposeBag)
+            .notification(.PSPDFAnnotationChanged)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self, weak viewModel] notification in
+                guard let self, let viewModel else { return }
+                self.processAnnotationObserving(notification: notification, viewModel: viewModel)
+            })
+            .disposed(by: self.pdfDisposeBag)
 
         NotificationCenter.default.rx
-                                  .notification(.PSPDFAnnotationsAdded)
-                                  .observe(on: MainScheduler.instance)
-                                  .subscribe(onNext: { [weak self, weak viewModel] notification in
-                                      guard let self = self, let viewModel = viewModel else { return }
-                                      self.processAnnotationObserving(notification: notification, viewModel: viewModel)
-                                  })
-                                  .disposed(by: self.pdfDisposeBag)
+            .notification(.PSPDFAnnotationsAdded)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self, weak viewModel] notification in
+                guard let self, let viewModel else { return }
+                self.processAnnotationObserving(notification: notification, viewModel: viewModel)
+            })
+            .disposed(by: self.pdfDisposeBag)
 
         NotificationCenter.default.rx
-                                  .notification(.PSPDFAnnotationsRemoved)
-                                  .observe(on: MainScheduler.instance)
-                                  .subscribe(onNext: { [weak self, weak viewModel] notification in
-                                      guard let self = self, let viewModel = viewModel else { return }
-                                      self.processAnnotationObserving(notification: notification, viewModel: viewModel)
-                                  })
-                                  .disposed(by: self.pdfDisposeBag)
+            .notification(.PSPDFAnnotationsRemoved)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self, weak viewModel] notification in
+                guard let self, let viewModel else { return }
+                self.processAnnotationObserving(notification: notification, viewModel: viewModel)
+            })
+            .disposed(by: self.pdfDisposeBag)
     }
 
     private func createSortedKeys(fromDatabaseAnnotations databaseAnnotations: Results<RItem>, documentAnnotations: [String: DocumentAnnotation]) -> [PDFReaderState.AnnotationKey] {
@@ -1688,7 +1705,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
     private func observe(items: Results<RItem>, viewModel: ViewModel<PDFReaderActionHandler>) -> NotificationToken {
         return items.observe { [weak self, weak viewModel] change in
-            guard let self = self, let viewModel = viewModel else { return }
+            guard let self, let viewModel else { return }
             switch change {
             case .update(let objects, let deletions, let insertions, let modifications):
                 self.update(objects: objects, deletions: deletions, insertions: insertions, modifications: modifications, viewModel: viewModel)
@@ -1706,8 +1723,15 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                     continue
                 }
 
-                guard let annotation = AnnotationConverter.annotation(from: pdfAnnotation, color: (pdfAnnotation.color?.hexString ?? "#000000"), library: library, username: username,
-                                                                      displayName: displayName, boundingBoxConverter: self.delegate) else { continue }
+                guard let annotation = AnnotationConverter.annotation(
+                    from: pdfAnnotation,
+                    color: (pdfAnnotation.color?.hexString ?? "#000000"),
+                    library: library,
+                    username: username,
+                    displayName: displayName,
+                    boundingBoxConverter: self.delegate
+                )
+                else { continue }
 
                 annotations[annotation.key] = annotation
             }
@@ -1829,9 +1853,16 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 }
 
             case .sync, .syncResponse:
-                let pdfAnnotation = AnnotationConverter.annotation(from: annotation, type: .zotero, interfaceStyle: viewModel.state.interfaceStyle, currentUserId: viewModel.state.userId,
-                                                                   library: viewModel.state.library, displayName: viewModel.state.displayName, username: viewModel.state.username,
-                                                                   boundingBoxConverter: boundingBoxConverter)
+                let pdfAnnotation = AnnotationConverter.annotation(
+                    from: annotation,
+                    type: .zotero,
+                    interfaceStyle: viewModel.state.interfaceStyle,
+                    currentUserId: viewModel.state.userId,
+                    library: viewModel.state.library,
+                    displayName: viewModel.state.displayName,
+                    username: viewModel.state.username,
+                    boundingBoxConverter: boundingBoxConverter
+                )
                 insertedPdfAnnotations.append(pdfAnnotation)
                 DDLogInfo("PDFReaderActionHandler: insert PDF annotation")
             }
@@ -1883,7 +1914,12 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             viewModel.state.document.add(annotations: insertedPdfAnnotations, options: nil)
 
             for pdfAnnotation in insertedPdfAnnotations {
-                self.annotationPreviewController.store(for: pdfAnnotation, parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, isDark: (viewModel.state.interfaceStyle == .dark))
+                self.annotationPreviewController.store(
+                    for: pdfAnnotation,
+                    parentKey: viewModel.state.key,
+                    libraryId: viewModel.state.library.identifier,
+                    isDark: (viewModel.state.interfaceStyle == .dark)
+                )
             }
         }
         self.observeDocument(in: viewModel)
@@ -2018,8 +2054,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         self.annotationPreviewController.store(for: pdfAnnotation, parentKey: parentKey, libraryId: libraryId, isDark: (interfaceStyle == .dark))
 
-        NotificationCenter.default.post(name: NSNotification.Name.PSPDFAnnotationChanged, object: pdfAnnotation,
-                                        userInfo: [PSPDFAnnotationChangedNotificationKeyPathKey: PdfAnnotationChanges.stringValues(from: changes)])
+        NotificationCenter.default.post(
+            name: NSNotification.Name.PSPDFAnnotationChanged,
+            object: pdfAnnotation,
+            userInfo: [PSPDFAnnotationChangedNotificationKeyPathKey: PdfAnnotationChanges.stringValues(from: changes)]
+        )
     }
 }
 
