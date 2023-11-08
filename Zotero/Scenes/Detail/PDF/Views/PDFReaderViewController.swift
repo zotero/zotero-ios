@@ -104,7 +104,7 @@ class PDFReaderViewController: UIViewController {
         share.tag = NavigationBarButton.share.rawValue
         share.rx.tap
              .subscribe(onNext: { [weak self, weak share] _ in
-                 guard let self = self, let share = share else { return }
+                 guard let self, let share else { return }
                  self.coordinatorDelegate?.showPdfExportSettings(sender: share, userInterfaceStyle: self.viewModel.state.interfaceStyle) { [weak self] settings in
                      self?.viewModel.process(action: .export(settings))
                  }
@@ -118,8 +118,9 @@ class PDFReaderViewController: UIViewController {
         settings.accessibilityLabel = L10n.Accessibility.Pdf.settings
         settings.title = L10n.Accessibility.Pdf.settings
         settings.rx.tap
-                .subscribe(onNext: { [weak self] _ in
-                    self?.showSettings(sender: settings)
+                .subscribe(onNext: { [weak self, weak settings] _ in
+                    guard let self, let settings else { return }
+                    self.showSettings(sender: settings)
                 })
                 .disposed(by: self.disposeBag)
         return settings
@@ -153,7 +154,7 @@ class PDFReaderViewController: UIViewController {
         checkbox.isSelected = !self.viewModel.state.document.isLocked && self.toolbarState.visible
         checkbox.rx.controlEvent(.touchUpInside)
                 .subscribe(onNext: { [weak self, weak checkbox] _ in
-                    guard let self = self, let checkbox = checkbox else { return }
+                    guard let self, let checkbox else { return }
                     checkbox.isSelected = !checkbox.isSelected
 
                     self.toolbarState = ToolbarState(position: self.toolbarState.position, visible: checkbox.isSelected)
@@ -506,7 +507,7 @@ class PDFReaderViewController: UIViewController {
 
     private func showSettings(sender: UIBarButtonItem) {
         self.coordinatorDelegate?.showSettings(with: self.viewModel.state.settings, sender: sender, userInterfaceStyle: self.viewModel.state.interfaceStyle, completion: { [weak self] settings in
-            guard let self = self, let interfaceStyle = self.presentingViewController?.traitCollection.userInterfaceStyle else { return }
+            guard let self, let interfaceStyle = self.presentingViewController?.traitCollection.userInterfaceStyle else { return }
             self.viewModel.process(action: .setSettings(settings: settings, currentUserInterfaceStyle: interfaceStyle))
         })
     }
