@@ -345,8 +345,8 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
         scale: CGFloat,
         title: String
     ) -> UIDeferredMenuElement {
-        UIDeferredMenuElement { [weak self] elementProvider in
-            guard let self else {
+        UIDeferredMenuElement { [weak self, weak boundingBoxConverter] elementProvider in
+            guard let self, let boundingBoxConverter else {
                 elementProvider([])
                 return
             }
