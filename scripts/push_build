@@ -3,6 +3,7 @@ set -euo pipefail
 
 push_tag() {
     TAG=$1
+    TAG=$1-$(date "+%Y%m%d%H%M%S")-$(echo $((RANDOM%10000)))
     git tag $TAG -m "$TAG"
     git push origin $TAG
     git tag -d $TAG

@@ -60,13 +60,13 @@ bump_version() {
 
 # Bump version string according to trigger tag
 case "$CI_TAG" in
-    "trigger-build-bump-patch")
+    "trigger-build-bump-patch-"*)
         newVersionString=$(bump_version "$versionString" "patch")
         ;;
-    "trigger-build-bump-minor")
+    "trigger-build-bump-minor-"*)
         newVersionString=$(bump_version "$versionString" "minor")
         ;;
-    "trigger-build-bump-major")
+    "trigger-build-bump-major-"*)
         newVersionString=$(bump_version "$versionString" "major")
         ;;
     *)
@@ -74,10 +74,6 @@ case "$CI_TAG" in
         exit 1
         ;;
 esac
-
-# Cleanup trigger tag from origin
-echo "Removing trigger tag $CI_TAG from origin"
-git push $github_pat_repo_url --delete $CI_TAG
 
 # Update Info.plist files
 echo "Setting version to $newVersionString"
