@@ -15,7 +15,7 @@ import PSPDFKitUI
 import RxSwift
 
 protocol PdfReaderCoordinatorDelegate: AnyObject {
-    func showToolSettings(tool: PSPDFKit.Annotation.Tool, colorHex: String?, sizeValue: Float?, sender: SourceView, userInterfaceStyle: UIUserInterfaceStyle, valueChanged: @escaping (String?, Float?) -> Void)
+    func showToolSettings(tool: AnnotationTool, colorHex: String?, sizeValue: Float?, sender: SourceView, userInterfaceStyle: UIUserInterfaceStyle, valueChanged: @escaping (String?, Float?) -> Void)
     func showSearch(pdfController: PDFViewController, text: String?, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle, delegate: PDFSearchDelegate)
     func showAnnotationPopover(
         viewModel: ViewModel<PDFReaderActionHandler>,
@@ -38,8 +38,23 @@ protocol PdfAnnotationsCoordinatorDelegate: AnyObject {
     func createShareAnnotationMenu(state: PDFReaderState, annotation: PdfAnnotation, sender: UIButton) -> UIMenu?
     func shareAnnotationImage(state: PDFReaderState, annotation: PdfAnnotation, scale: CGFloat, sender: UIButton )
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, userInterfaceStyle: UIUserInterfaceStyle?, picked: @escaping ([Tag]) -> Void)
-    func showCellOptions(for annotation: PdfAnnotation, userId: Int, library: Library, sender: UIButton, userInterfaceStyle: UIUserInterfaceStyle, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction)
-    func showFilterPopup(from barButton: UIBarButtonItem, filter: AnnotationsFilter?, availableColors: [String], availableTags: [Tag], userInterfaceStyle: UIUserInterfaceStyle, completed: @escaping (AnnotationsFilter?) -> Void)
+    func showCellOptions(
+        for annotation: PdfAnnotation,
+        userId: Int,
+        library: Library,
+        sender: UIButton,
+        userInterfaceStyle: UIUserInterfaceStyle,
+        saveAction: @escaping AnnotationEditSaveAction,
+        deleteAction: @escaping AnnotationEditDeleteAction
+    )
+    func showFilterPopup(
+        from barButton: UIBarButtonItem,
+        filter: AnnotationsFilter?,
+        availableColors: [String],
+        availableTags: [Tag],
+        userInterfaceStyle: UIUserInterfaceStyle,
+        completed: @escaping (AnnotationsFilter?) -> Void
+    )
 }
 
 final class PDFCoordinator: Coordinator {
@@ -120,14 +135,7 @@ final class PDFCoordinator: Coordinator {
 }
 
 extension PDFCoordinator: PdfReaderCoordinatorDelegate {
-    func showToolSettings(
-        tool: PSPDFKit.Annotation.Tool,
-        colorHex: String?,
-        sizeValue: Float?,
-        sender: SourceView,
-        userInterfaceStyle: UIUserInterfaceStyle,
-        valueChanged: @escaping (String?, Float?) -> Void
-    ) {
+    func showToolSettings(tool: AnnotationTool, colorHex: String?, sizeValue: Float?, sender: SourceView, userInterfaceStyle: UIUserInterfaceStyle, valueChanged: @escaping (String?, Float?) -> Void) {
         DDLogInfo("PDFCoordinator: show tool settings for \(tool)")
         let state = AnnotationToolOptionsState(tool: tool, colorHex: colorHex, size: sizeValue)
         let handler = AnnotationToolOptionsActionHandler()

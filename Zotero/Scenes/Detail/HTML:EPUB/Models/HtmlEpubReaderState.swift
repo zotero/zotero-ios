@@ -22,11 +22,18 @@ struct HtmlEpubReaderState: ViewModelState {
         static let activeComment = Changes(rawValue: 1 << 3)
         static let sidebarEditing = Changes(rawValue: 1 << 4)
         static let filter = Changes(rawValue: 1 << 5)
+        static let toolColor = Changes(rawValue: 1 << 6)
     }
 
     struct DocumentData {
+        enum Page {
+            case html(scrollYPercent: Double)
+            case epub(cfi: String)
+        }
+
         let buffer: String
         let annotationsJson: String
+        let page: Page?
     }
 
     struct DocumentUpdate {

@@ -252,9 +252,7 @@ class PDFReaderViewController: UIViewController {
 
         if state.changes.contains(.annotations) {
             // Hide popover if annotation has been deleted
-            if (self.presentedViewController as? UINavigationController)?.viewControllers.first is AnnotationPopover,
-               let key = state.selectedAnnotationKey,
-                !state.sortedKeys.contains(key) {
+            if (self.presentedViewController as? UINavigationController)?.viewControllers.first is AnnotationPopover, let key = state.selectedAnnotationKey, !state.sortedKeys.contains(key) {
                 self.dismiss(animated: true, completion: nil)
             }
         }
@@ -341,7 +339,7 @@ class PDFReaderViewController: UIViewController {
     }
 
     func showToolOptions(sender: SourceView) {
-        guard let tool = self.documentController.pdfController?.annotationStateManager.state else { return }
+        guard let tool = self.documentController.pdfController?.annotationStateManager.state, let toolbarTool = tool.toolbarTool else { return }
 
         let colorHex = self.viewModel.state.toolColors[tool]?.hexString
         let size: Float?
@@ -357,7 +355,7 @@ class PDFReaderViewController: UIViewController {
         }
 
         self.coordinatorDelegate?.showToolSettings(
-            tool: tool,
+            tool: toolbarTool,
             colorHex: colorHex,
             sizeValue: size,
             sender: sender,

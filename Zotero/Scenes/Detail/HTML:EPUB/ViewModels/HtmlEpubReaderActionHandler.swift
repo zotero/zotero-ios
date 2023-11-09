@@ -86,6 +86,42 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
         case .setColor(key: let key, color: let color):
             set(color: color, key: key, viewModel: viewModel)
+
+        case .setViewState(let params):
+            setViewState(params: params, in: viewModel)
+
+        case .setToolOptions(let color, let size, let tool):
+            setTool(color: color, size: size, tool: tool, in: viewModel)
+        }
+    }
+
+    private func setTool(color: String?, size: CGFloat?, tool: AnnotationTool, in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
+        update(viewModel: viewModel) { state in
+            state.toolColors[tool] = color.flatMap({ UIColor(hex: $0) })
+            state.changes = .toolColor
+        }
+    }
+
+    private func setViewState(params: [String: Any], in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
+        guard let state = params["state"] as? [String: Any] else {
+            DDLogError("HtmlEpubReaderActionHandler: invalid params - \(params)")
+            return
+        }
+
+        let page: String
+        if let scrollPercent = state["scrollYPercent"] as? Double {
+            page = "\(Decimal(scrollPercent).rounded(to: 1))"
+        } else if let cfi = state["cfi"] as? String {
+            page = cfi
+        } else {
+            return
+        }
+
+        let request = StorePageForItemDbRequest(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, page: page)
+        self.perform(request: request) { error in
+            guard let error = error else { return }
+            // TODO: - handle error
+            DDLogError("HtmlEpubReaderActionHandler: can't store page - \(error)")
         }
     }
 
@@ -397,8 +433,26 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
                 DDLogError("HtmlEpubReaderActionHandler: can't convert data to string")
                 return
             }
-            let (sortedKeys, annotations, json, token) = loadAnnotationsAndJson(in: viewModel)
-            let documentData = HtmlEpubReaderState.DocumentData(buffer: jsArrayString, annotationsJson: json)
+            let (sortedKeys, annotations, json, token, rawPage) = loadAnnotationsAndJson(in: viewModel)
+            let page: HtmlEpubReaderState.DocumentData.Page?
+
+            switch viewModel.state.url.pathExtension.lowercased() {
+            case "epub":
+                page = .epub(cfi: rawPage)
+
+            case "html", "htm":
+                if let scrollYPercent = Double(rawPage) {
+                    page = .html(scrollYPercent: scrollYPercent)
+                } else {
+                    DDLogError("HtmlEPubReaderActionHandler: incompatible lastIndexPage stored for \(viewModel.state.key) - \(rawPage)")
+                    page = nil
+                }
+
+            default:
+                page = nil
+            }
+
+            let documentData = HtmlEpubReaderState.DocumentData(buffer: jsArrayString, annotationsJson: json, page: page)
             self.update(viewModel: viewModel) { state in
                 state.sortedKeys = sortedKeys
                 state.annotations = annotations
@@ -411,10 +465,12 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         }
     }
 
-    private func loadAnnotationsAndJson(in viewModel: ViewModel<HtmlEpubReaderActionHandler>) -> ([String], [String: HtmlEpubAnnotation], String, NotificationToken?) {
+    private func loadAnnotationsAndJson(in viewModel: ViewModel<HtmlEpubReaderActionHandler>) -> ([String], [String: HtmlEpubAnnotation], String, NotificationToken?, String) {
         do {
-            let request = ReadAnnotationsDbRequest(attachmentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
-            let items = try self.dbStorage.perform(request: request, on: .main)
+            let pageIndexRequest = ReadDocumentDataDbRequest(attachmentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
+            let pageIndex = try self.dbStorage.perform(request: pageIndexRequest, on: .main)
+            let annotationsRequest = ReadAnnotationsDbRequest(attachmentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
+            let items = try self.dbStorage.perform(request: annotationsRequest, on: .main)
             var sortedKeys: [String] = []
             var annotations: [String: HtmlEpubAnnotation] = [:]
             var jsons: [[String: Any]] = []
@@ -430,7 +486,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
             guard let jsonString = String(data: jsonData, encoding: .utf8) else {
                 DDLogError("HtmlEpubReaderActionHandler: can't convert json data to string")
-                return ([], [:], "[]", nil)
+                return ([], [:], "[]", nil, "")
             }
 
             let token = items.observe { [weak self, weak viewModel] change in
@@ -442,10 +498,10 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
                 }
             }
 
-            return (sortedKeys, annotations, jsonString, token)
+            return (sortedKeys, annotations, jsonString, token, pageIndex)
         } catch let error {
             DDLogError("HtmlEpubReaderActionHandler: can't load annotations - \(error)")
-            return ([], [:], "[]", nil)
+            return ([], [:], "[]", nil, "")
         }
     }
 

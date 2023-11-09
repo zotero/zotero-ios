@@ -22,6 +22,8 @@ enum HtmlEpubReaderAction {
     case setComment(key: String, comment: NSAttributedString)
     case setCommentActive(Bool)
     case setTags(key: String, tags: [Tag])
+    case setToolOptions(color: String?, size: CGFloat?, tool: AnnotationTool)
+    case setViewState([String: Any])
     case toggleTool(AnnotationTool)
     case updateAnnotationProperties(key: String, color: String, lineWidth: CGFloat, pageLabel: String, updateSubsequentLabels: Bool, highlightText: String)
 }

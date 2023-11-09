@@ -252,6 +252,10 @@ class HtmlEpubReaderViewController: UIViewController {
             show(error: error)
         }
 
+        if state.changes.contains(.toolColor), let color = state.activeTool.flatMap({ state.toolColors[$0] }) {
+            annotationToolbarController.set(activeColor: color)
+        }
+
         handleAnnotationPopover()
 
         func show(error: HtmlEpubReaderState.Error) {
@@ -464,16 +468,27 @@ extension HtmlEpubReaderViewController: AnnotationToolbarDelegate {
         let oldTool = self.viewModel.state.activeTool
         self.viewModel.process(action: .toggleTool(tool))
 
-        self.documentController?.set(tool: self.viewModel.state.activeTool.flatMap({ ($0, color) }))
-
+        if let oldTool {
+            self.annotationToolbarController.set(selected: false, to: oldTool, color: color)
+        }
         if let tool = self.viewModel.state.activeTool {
             self.annotationToolbarController.set(selected: true, to: tool, color: color)
-        } else if let oldTool {
-            self.annotationToolbarController.set(selected: false, to: oldTool, color: color)
         }
     }
 
     func showToolOptions(sender: SourceView) {
+        guard let tool = self.viewModel.state.activeTool else { return }
+        let colorHex = self.viewModel.state.toolColors[tool]?.hexString
+
+        self.coordinatorDelegate?.showToolSettings(
+            tool: tool,
+            colorHex: colorHex,
+            sizeValue: nil,
+            sender: sender,
+            userInterfaceStyle: .light
+        ) { [weak self] newColor, newSize in
+            self?.viewModel.process(action: .setToolOptions(color: newColor, size: newSize.flatMap(CGFloat.init), tool: tool))
+        }
     }
 
     func closeAnnotationToolbar() {

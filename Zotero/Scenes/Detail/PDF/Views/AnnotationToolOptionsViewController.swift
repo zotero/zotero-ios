@@ -120,12 +120,12 @@ class AnnotationToolOptionsViewController: UIViewController {
                 view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: Self.horizontalInset)
             ])
 
-            func colors(for tool: PSPDFKit.Annotation.Tool) -> [String] {
+            func colors(for tool: AnnotationTool) -> [String] {
                 switch tool {
                 case .ink: return AnnotationsConfig.colors(for: .ink)
                 case .note: return AnnotationsConfig.colors(for: .note)
                 case .highlight: return AnnotationsConfig.colors(for: .highlight)
-                case .square: return AnnotationsConfig.colors(for: .image)
+                case .image: return AnnotationsConfig.colors(for: .image)
                 default: return []
                 }
             }

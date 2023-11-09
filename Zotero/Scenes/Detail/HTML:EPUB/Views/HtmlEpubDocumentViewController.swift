@@ -86,31 +86,6 @@ class HtmlEpubDocumentViewController: UIViewController {
 
     // MARK: - Actions
 
-    func set(tool data: (AnnotationTool, UIColor)?) {
-        guard let (tool, color) = data else {
-            self.webViewHandler.call(javascript: "clearTool();")
-                .subscribe()
-                .disposed(by: self.disposeBag)
-            return
-        }
-
-        let toolName: String
-        switch tool {
-        case .highlight:
-            toolName = "highlight"
-
-        case .note:
-            toolName = "note"
-
-        case .eraser, .image, .ink:
-            return
-        }
-
-        self.webViewHandler.call(javascript: "setTool({ type: '\(toolName)', color: '\(color.hexString)' });")
-            .subscribe()
-            .disposed(by: self.disposeBag)
-    }
-
     private func process(state: HtmlEpubReaderState) {
         if let data = state.documentData {
             load(documentData: data)
@@ -123,6 +98,42 @@ class HtmlEpubDocumentViewController: UIViewController {
 
         if let term = state.documentSearchTerm {
             search(term: term)
+        }
+
+        if state.changes.contains(.activeTool) || state.changes.contains(.toolColor) {
+            let tool = state.activeTool
+            let color = tool.flatMap({ state.toolColors[$0] })
+
+            if let tool, let color {
+                set(tool: (tool, color))
+            } else {
+                set(tool: nil)
+            }
+        }
+
+        func set(tool data: (AnnotationTool, UIColor)?) {
+            guard let (tool, color) = data else {
+                self.webViewHandler.call(javascript: "clearTool();")
+                    .subscribe()
+                    .disposed(by: self.disposeBag)
+                return
+            }
+
+            let toolName: String
+            switch tool {
+            case .highlight:
+                toolName = "highlight"
+
+            case .note:
+                toolName = "note"
+
+            case .eraser, .image, .ink:
+                return
+            }
+
+            self.webViewHandler.call(javascript: "setTool({ type: '\(toolName)', color: '\(color.hexString)' });")
+                .subscribe()
+                .disposed(by: self.disposeBag)
         }
 
         func search(term: String) {
@@ -165,7 +176,20 @@ class HtmlEpubDocumentViewController: UIViewController {
         }
 
         func load(documentData data: HtmlEpubReaderState.DocumentData) {
-            webViewHandler.call(javascript: "createView({ type: 'snapshot', buf: \(data.buffer), annotations: \(data.annotationsJson)});")
+//            "viewState"
+            var javascript = "createView({ type: 'snapshot', buf: \(data.buffer), annotations: \(data.annotationsJson)"
+            if let page = data.page {
+                switch page {
+                case .html(let scrollYPercent):
+                    javascript += ", viewState: {scrollYPercent: \(scrollYPercent), scale: 1}"
+
+                case .epub(let cfi):
+                    javascript += ", viewState: {cfi: \(cfi)}"
+                }
+            }
+            javascript += "});"
+
+            webViewHandler.call(javascript: javascript)
                 .observe(on: MainScheduler.instance)
                 .subscribe(with: self, onFailure: { _, error in
                     DDLogError("HtmlEpubReaderViewController: loading document failed - \(error)")
@@ -207,10 +231,11 @@ class HtmlEpubDocumentViewController: UIViewController {
                 self.viewModel.process(action: params.isEmpty ? .deselectSelectedAnnotation : .selectAnnotationFromDocument(params))
 
             case "onChangeViewState":
-                DDLogInfo("Test")
-
-            case "onChangeViewStats":
-                DDLogInfo("Test2")
+                guard let params = data["params"] as? [String: Any] else {
+                    DDLogWarn("HtmlEpubReaderViewController: event \(event) missing params - \(message)")
+                    return
+                }
+                self.viewModel.process(action: .setViewState(params))
 
             default:
                 break
