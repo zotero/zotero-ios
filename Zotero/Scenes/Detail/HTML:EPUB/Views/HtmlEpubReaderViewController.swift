@@ -12,6 +12,8 @@ import CocoaLumberjackSwift
 import RxSwift
 
 protocol HtmlEpubReaderContainerDelegate: AnyObject {
+    var statusBarHeight: CGFloat { get }
+    var navigationBarHeight: CGFloat { get }
     var isSidebarVisible: Bool { get }
 }
 
@@ -27,7 +29,7 @@ class HtmlEpubReaderViewController: UIViewController {
     private var annotationToolbarHandler: AnnotationToolbarHandler!
     private weak var sidebarController: HtmlEpubSidebarViewController!
     private weak var sidebarLeft: NSLayoutConstraint!
-    internal var navigationBarHeight: CGFloat {
+    var navigationBarHeight: CGFloat {
         return self.navigationController?.navigationBar.frame.height ?? 0.0
     }
     private(set) var isCompactWidth: Bool
@@ -157,6 +159,7 @@ class HtmlEpubReaderViewController: UIViewController {
 
         func setupViews() {
             let documentController = HtmlEpubDocumentViewController(viewModel: self.viewModel)
+            documentController.parentDelegate = self
             documentController.view.translatesAutoresizingMaskIntoConstraints = false
 
             let annotationToolbar = AnnotationToolbarViewController(tools: [.highlight, .note], size: self.navigationBarHeight)

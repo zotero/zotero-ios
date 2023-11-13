@@ -52,13 +52,15 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
                 state.documentSearchTerm = term
             }
 
-        case .selectAnnotation(let key):
+        case .selectAnnotationFromSidebar(let key):
             self.update(viewModel: viewModel) { state in
                 _select(data: (key, CGRect()), didSelectInDocument: false, state: &state)
             }
 
-        case .selectAnnotationFromDocument(let params):
-            selectFromDocument(params: params, in: viewModel)
+        case .selectAnnotationFromDocument(let key, let rect):
+            update(viewModel: viewModel) { state in
+                _select(data: (key, rect), didSelectInDocument: true, state: &state)
+            }
 
         case .setComment(let key, let comment):
             set(comment: comment, key: key, viewModel: viewModel)
@@ -221,18 +223,6 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         }
     }
 
-    private func selectFromDocument(params: [String: Any], in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
-        guard let rectArray = params["rect"] as? [CGFloat], let key = (params["annotation"] as? [String: Any])?["id"] as? String else {
-            DDLogError("HtmlEpubReaderActionHandler: incorrect params for document selection - \(params)")
-            return
-        }
-
-        let rect = CGRect(x: rectArray[0], y: rectArray[1], width: rectArray[2] - rectArray[0], height: rectArray[3] - rectArray[1])
-        update(viewModel: viewModel) { state in
-            _select(data: (key, rect), didSelectInDocument: true, state: &state)
-        }
-    }
-
     private func _select(data: (String, CGRect)?, didSelectInDocument: Bool, state: inout HtmlEpubReaderState) {
         guard data?.0 != state.selectedAnnotationKey else { return }
 
@@ -257,7 +247,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         state.selectedAnnotationRect = rect
 
         if !didSelectInDocument {
-            // TODO: - focus location in document
+            state.focusDocumentLocation = key
         } else {
             state.focusSidebarKey = key
         }

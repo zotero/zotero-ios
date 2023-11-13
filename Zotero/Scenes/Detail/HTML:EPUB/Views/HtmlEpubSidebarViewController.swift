@@ -293,7 +293,7 @@ extension HtmlEpubSidebarViewController: UITableViewDelegate {
 //        if self.viewModel.state.sidebarEditingEnabled {
 //            self.viewModel.process(action: .selectAnnotationDuringEditing(key))
 //        } else {
-        self.viewModel.process(action: .selectAnnotation(key))
+        self.viewModel.process(action: .selectAnnotationFromSidebar(key))
 //        }
     }
 //    func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {

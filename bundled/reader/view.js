@@ -32539,6 +32539,11 @@ window.search = options => {
     entireWord: false
   });
 };
+window.select = options => {
+  log("Select: " + options.key);
+  window._view.selectAnnotations([options.key])
+  window._view.navigate({annotationID: options.key});
+};
 
 // Notify when iframe is loaded
 postMessage('onInitialized');

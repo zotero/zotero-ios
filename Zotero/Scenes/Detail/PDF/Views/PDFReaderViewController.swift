@@ -74,7 +74,7 @@ class PDFReaderViewController: UIViewController {
     var isSidebarVisible: Bool { return self.sidebarControllerLeft?.constant == 0 }
     var key: String { return self.viewModel.state.key }
     var statusBarHeight: CGFloat
-    internal var navigationBarHeight: CGFloat {
+    var navigationBarHeight: CGFloat {
         return self.navigationController?.navigationBar.frame.height ?? 0.0
     }
 

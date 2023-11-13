@@ -23,6 +23,7 @@ class HtmlEpubDocumentViewController: UIViewController {
 
     private weak var webView: WKWebView!
     private var webViewHandler: WebViewHandler!
+    weak var parentDelegate: HtmlEpubReaderContainerDelegate?
 
     init(viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
         self.viewModel = viewModel
@@ -100,6 +101,10 @@ class HtmlEpubDocumentViewController: UIViewController {
             search(term: term)
         }
 
+        if let key = state.focusDocumentLocation {
+            selectInDocument(key: key)
+        }
+
         if state.changes.contains(.activeTool) || state.changes.contains(.toolColor) {
             let tool = state.activeTool
             let color = tool.flatMap({ state.toolColors[$0] })
@@ -145,6 +150,15 @@ class HtmlEpubDocumentViewController: UIViewController {
                 .disposed(by: self.disposeBag)
         }
 
+        func selectInDocument(key: String) {
+            webViewHandler.call(javascript: "select({ key: '\(key)' });")
+                .observe(on: MainScheduler.instance)
+                .subscribe(with: self, onFailure: { _, error in
+                    DDLogError("HtmlEpubReaderViewController: navigating to \(key) failed - \(error)")
+                })
+                .disposed(by: self.disposeBag)
+        }
+
         func updateView(modifications: [[String: Any]], insertions: [[String: Any]], deletions: [String]) {
             do {
                 let insertionsData = try JSONSerialization.data(withJSONObject: insertions)
@@ -176,7 +190,6 @@ class HtmlEpubDocumentViewController: UIViewController {
         }
 
         func load(documentData data: HtmlEpubReaderState.DocumentData) {
-//            "viewState"
             var javascript = "createView({ type: 'snapshot', buf: \(data.buffer), annotations: \(data.annotationsJson)"
             if let page = data.page {
                 switch page {
@@ -224,11 +237,17 @@ class HtmlEpubDocumentViewController: UIViewController {
                 self.viewModel.process(action: .saveAnnotations(params))
 
             case "onSetAnnotationPopup":
-                guard let params = data["params"] as? [String: Any] else {
+                guard self.parentDelegate?.isSidebarVisible == false, let params = data["params"] as? [String: Any] else {
                     DDLogWarn("HtmlEpubReaderViewController: event \(event) missing params - \(message)")
                     return
                 }
-                self.viewModel.process(action: params.isEmpty ? .deselectSelectedAnnotation : .selectAnnotationFromDocument(params))
+                guard let rectArray = params["rect"] as? [CGFloat], let key = (params["annotation"] as? [String: Any])?["id"] as? String else {
+                    DDLogError("HtmlEpubReaderViewController: incorrect params for document selection - \(params)")
+                    return
+                }
+                let navigationBarInset = (self.parentDelegate?.statusBarHeight ?? 0) + (self.parentDelegate?.navigationBarHeight ?? 0)
+                let rect = CGRect(x: rectArray[0], y: rectArray[1] + navigationBarInset, width: rectArray[2] - rectArray[0], height: rectArray[3] - rectArray[1])
+                self.viewModel.process(action: params.isEmpty ? .deselectSelectedAnnotation : .selectAnnotationFromDocument(key: key, rect: rect))
 
             case "onChangeViewState":
                 guard let params = data["params"] as? [String: Any] else {

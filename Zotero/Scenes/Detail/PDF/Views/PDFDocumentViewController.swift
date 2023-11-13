@@ -328,7 +328,8 @@ final class PDFDocumentViewController: UIViewController {
               let pageView = self.pdfController?.pageViewForPage(at: UInt(annotation.page)) else { return }
 
         let key = annotation.readerKey
-        let frame = self.view.convert(annotation.boundingBox(boundingBoxConverter: self), from: pageView.pdfCoordinateSpace)
+        var frame = self.view.convert(annotation.boundingBox(boundingBoxConverter: self), from: pageView.pdfCoordinateSpace)
+        frame.origin.y += (self.parentDelegate?.statusBarHeight ?? 0) + (self.parentDelegate?.navigationBarHeight ?? 0)
         let observable = self.coordinatorDelegate?.showAnnotationPopover(viewModel: self.viewModel, sourceRect: frame, popoverDelegate: self, userInterfaceStyle: self.viewModel.state.interfaceStyle)
 
         guard let observable else { return }

@@ -76,6 +76,8 @@ struct HtmlEpubReaderState: ViewModelState {
     var updatedAnnotationKeys: [String]?
     /// Annotation key to focus in annotation sidebar
     var focusSidebarKey: String?
+    /// Annotation key to focus in document
+    var focusDocumentLocation: String?
     var selectedAnnotationCommentActive: Bool
     var sidebarEditingEnabled: Bool
     var notificationToken: NotificationToken?
@@ -105,6 +107,7 @@ struct HtmlEpubReaderState: ViewModelState {
         changes = []
         error = nil
         focusSidebarKey = nil
+        focusDocumentLocation = nil
         updatedAnnotationKeys = nil
     }
 }
