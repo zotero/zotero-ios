@@ -20,6 +20,7 @@ protocol HtmlEpubSidebarCoordinatorDelegate: AnyObject {
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, userInterfaceStyle: UIUserInterfaceStyle?, picked: @escaping ([Tag]) -> Void)
     func showCellOptions(
         for annotation: HtmlEpubAnnotation,
+        userId: Int,
         library: Library,
         sender: UIButton,
         userInterfaceStyle: UIUserInterfaceStyle,
@@ -84,7 +85,6 @@ final class HtmlEpubCoordinator: Coordinator {
             compactSize: UIDevice.current.isCompactWidth(size: parentNavigationController.view.frame.size)
         )
         controller.coordinatorDelegate = self
-        handler.delegate = controller
 
         self.navigationController?.setViewControllers([controller], animated: false)
     }
@@ -160,6 +160,7 @@ extension HtmlEpubCoordinator: HtmlEpubSidebarCoordinatorDelegate {
     
     func showCellOptions(
         for annotation: HtmlEpubAnnotation,
+        userId: Int,
         library: Library,
         sender: UIButton,
         userInterfaceStyle: UIUserInterfaceStyle,
@@ -172,7 +173,7 @@ extension HtmlEpubCoordinator: HtmlEpubSidebarCoordinatorDelegate {
         let coordinator = AnnotationEditCoordinator(
             data: AnnotationEditState.AnnotationData(
                 type: annotation.type,
-                isEditable: library.metadataEditable,
+                isEditable: annotation.editability(currentUserId: userId, library: library) == .editable,
                 color: annotation.color,
                 lineWidth: 0,
                 pageLabel: annotation.pageLabel,
@@ -215,11 +216,12 @@ extension HtmlEpubCoordinator: HtmlEpubSidebarCoordinatorDelegate {
 
         let author = viewModel.state.library.identifier == .custom(.myLibrary) ? "" : annotation.author
         let comment = viewModel.state.comments[annotation.key] ?? NSAttributedString()
+        let editability = annotation.editability(currentUserId: viewModel.state.userId, library: viewModel.state.library)
 
         let data = AnnotationPopoverState.Data(
             libraryId: viewModel.state.library.identifier,
             type: annotation.type,
-            isEditable: viewModel.state.library.metadataEditable,
+            isEditable: editability == .editable,
             author: author,
             comment: comment,
             color: annotation.color,
@@ -227,7 +229,7 @@ extension HtmlEpubCoordinator: HtmlEpubSidebarCoordinatorDelegate {
             pageLabel: annotation.pageLabel,
             highlightText: annotation.text ?? "",
             tags: annotation.tags,
-            showsDeleteButton: library.metadataEditable
+            showsDeleteButton: editability != .notEditable
         )
         let coordinator = AnnotationPopoverCoordinator(data: data, navigationController: navigationController, controllers: self.controllers)
         coordinator.parentCoordinator = self

@@ -16,6 +16,9 @@ class HtmlEpubSidebarViewController: UIViewController {
     private let disposeBag: DisposeBag
 
     private weak var tableView: UITableView!
+    private weak var toolbarContainer: UIView!
+    private weak var toolbar: UIToolbar!
+    private weak var deleteBarButton: UIBarButtonItem?
     private var dataSource: TableViewDiffableDataSource<Int, String>!
     private var searchController: UISearchController!
     weak var coordinatorDelegate: HtmlEpubSidebarCoordinatorDelegate?
@@ -40,14 +43,20 @@ class HtmlEpubSidebarViewController: UIViewController {
         setupSearchController()
         setupDataSource()
         setupObserving()
+        setupToolbar(
+            filterEnabled: !viewModel.state.annotations.isEmpty,
+            filterOn: (viewModel.state.annotationFilter != nil),
+            editingEnabled: viewModel.state.sidebarEditingEnabled,
+            deletionEnabled: viewModel.state.deletionEnabled
+        )
 
         func setupObserving() {
-            self.viewModel.stateObservable
-                          .observe(on: MainScheduler.instance)
-                          .subscribe(with: self, onNext: { `self`, state in
-                              self.update(state: state)
-                          })
-                          .disposed(by: self.disposeBag)
+            viewModel.stateObservable
+                .observe(on: MainScheduler.instance)
+                .subscribe(with: self, onNext: { `self`, state in
+                    self.update(state: state)
+                })
+                .disposed(by: disposeBag)
         }
 
         func setupSearchController() {
@@ -58,7 +67,7 @@ class HtmlEpubSidebarViewController: UIViewController {
                 right: PDFReaderLayout.annotationLayout.horizontalInset
             )
 
-            var frame = self.tableView.frame
+            var frame = tableView.frame
             frame.size.height = 65
 
             let searchBar = SearchBar(frame: frame, insets: insets, cornerRadius: 10)
@@ -68,8 +77,8 @@ class HtmlEpubSidebarViewController: UIViewController {
                 .subscribe(with: self, onNext: { `self`, text in
                     self.viewModel.process(action: .searchAnnotations(text))
                 })
-                .disposed(by: self.disposeBag)
-            self.tableView.tableHeaderView = searchBar
+                .disposed(by: disposeBag)
+            tableView.tableHeaderView = searchBar
         }
 
         func setupViews() {
@@ -84,16 +93,35 @@ class HtmlEpubSidebarViewController: UIViewController {
             self.view.addSubview(tableView)
             self.tableView = tableView
 
+            let toolbarContainer = UIView()
+            toolbarContainer.isHidden = !viewModel.state.library.metadataEditable
+            toolbarContainer.translatesAutoresizingMaskIntoConstraints = false
+            self.view.addSubview(toolbarContainer)
+            self.toolbarContainer = toolbarContainer
+
+            let toolbar = UIToolbar()
+            toolbarContainer.backgroundColor = toolbar.backgroundColor
+            toolbar.translatesAutoresizingMaskIntoConstraints = false
+            toolbarContainer.addSubview(toolbar)
+            self.toolbar = toolbar
+
             NSLayoutConstraint.activate([
                 self.view.safeAreaLayoutGuide.topAnchor.constraint(equalTo: tableView.topAnchor),
-                self.view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: tableView.bottomAnchor),
+                tableView.bottomAnchor.constraint(equalTo: toolbarContainer.topAnchor),
                 self.view.safeAreaLayoutGuide.leadingAnchor.constraint(equalTo: tableView.leadingAnchor),
-                self.view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: tableView.trailingAnchor)
+                self.view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: tableView.trailingAnchor),
+                toolbarContainer.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
+                toolbarContainer.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
+                toolbarContainer.bottomAnchor.constraint(equalTo: self.view.bottomAnchor),
+                toolbar.topAnchor.constraint(equalTo: toolbarContainer.topAnchor),
+                toolbar.leadingAnchor.constraint(equalTo: toolbarContainer.leadingAnchor),
+                toolbar.trailingAnchor.constraint(equalTo: toolbarContainer.trailingAnchor),
+                toolbar.bottomAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.bottomAnchor)
             ])
         }
 
         func setupDataSource() {
-            self.dataSource = TableViewDiffableDataSource(tableView: self.tableView, cellProvider: { [weak self] tableView, indexPath, key in
+            dataSource = TableViewDiffableDataSource(tableView: self.tableView, cellProvider: { [weak self] tableView, indexPath, key in
                 let cell = tableView.dequeueReusableCell(withIdentifier: Self.cellId, for: indexPath)
 
                 if let self, let cell = cell as? AnnotationCell, let annotation = self.viewModel.state.annotations[key] {
@@ -104,10 +132,10 @@ class HtmlEpubSidebarViewController: UIViewController {
                 return cell
             })
 
-            self.dataSource.canEditRow = { _ in
+            dataSource.canEditRow = { _ in
                 return true
             }
-            self.dataSource.commitEditingStyle = { [weak self] editingStyle, indexPath in
+            dataSource.commitEditingStyle = { [weak self] editingStyle, indexPath in
                 guard let self, editingStyle == .delete, let key = self.dataSource.itemIdentifier(for: indexPath) else { return }
                 self.viewModel.process(action: .removeAnnotation(key))
             }
@@ -142,13 +170,27 @@ class HtmlEpubSidebarViewController: UIViewController {
                 return attributedComment
             }
 
-            self.viewModel.process(action: .parseAndCacheComment(key: annotation.key, comment: comment))
-            return self.viewModel.state.comments[annotation.key]
+            viewModel.process(action: .parseAndCacheComment(key: annotation.key, comment: comment))
+            return viewModel.state.comments[annotation.key]
         }
     }
 
     func update(state: HtmlEpubReaderState) {
-        reloadIfNeeded(for: state) {
+        reloadIfNeeded(for: state) { [weak self] in
+            guard let self else { return }
+
+            if state.changes.contains(.filter) || state.changes.contains(.annotations) || state.changes.contains(.sidebarEditing) {
+                setupToolbar(
+                    filterEnabled: !state.annotations.isEmpty,
+                    filterOn: (state.annotationFilter != nil),
+                    editingEnabled: state.sidebarEditingEnabled,
+                    deletionEnabled: state.deletionEnabled
+                )
+            }
+
+            if state.changes.contains(.sidebarEditingSelection) {
+                deleteBarButton?.isEnabled = state.deletionEnabled
+            }
         }
 
         /// Reloads tableView if needed, based on new state. Calls completion either when reloading finished or when there was no reload.
@@ -163,12 +205,12 @@ class HtmlEpubSidebarViewController: UIViewController {
                     snapshot.reloadItems(keys)
                 }
 
-                let isVisible = self.parentDelegate?.isSidebarVisible ?? false
+                let isVisible = parentDelegate?.isSidebarVisible ?? false
 
                 if state.changes.contains(.sidebarEditing) {
-                    self.tableView.setEditing(state.sidebarEditingEnabled, animated: isVisible)
+                    tableView.setEditing(state.sidebarEditingEnabled, animated: isVisible)
                 }
-                self.dataSource.apply(snapshot, animatingDifferences: isVisible, completion: completion)
+                dataSource.apply(snapshot, animatingDifferences: isVisible, completion: completion)
 
                 return
             }
@@ -182,17 +224,17 @@ class HtmlEpubSidebarViewController: UIViewController {
 
             if state.changes.contains(.selection) || state.changes.contains(.activeComment) {
                 if let keys = state.updatedAnnotationKeys {
-                    var snapshot = self.dataSource.snapshot()
+                    var snapshot = dataSource.snapshot()
                     snapshot.reloadItems(keys)
-                    self.dataSource.apply(snapshot, animatingDifferences: false)
+                    dataSource.apply(snapshot, animatingDifferences: false)
                 }
 
-                self.updateCellHeight()
-                self.focusSelectedCell()
+                updateCellHeight()
+                focusSelectedCell()
 
                 if state.changes.contains(.sidebarEditing) {
-                    let isVisible = self.parentDelegate?.isSidebarVisible ?? false
-                    self.tableView.setEditing(state.sidebarEditingEnabled, animated: isVisible)
+                    let isVisible = parentDelegate?.isSidebarVisible ?? false
+                    tableView.setEditing(state.sidebarEditingEnabled, animated: isVisible)
                 }
 
                 completion()
@@ -201,7 +243,7 @@ class HtmlEpubSidebarViewController: UIViewController {
             }
 
             if state.changes.contains(.sidebarEditing) {
-                self.tableView.setEditing(state.sidebarEditingEnabled, animated: true)
+                tableView.setEditing(state.sidebarEditingEnabled, animated: true)
             }
 
             completion()
@@ -209,7 +251,7 @@ class HtmlEpubSidebarViewController: UIViewController {
     }
 
     func perform(action: AnnotationView.Action, annotation: HtmlEpubAnnotation) {
-        let state = self.viewModel.state
+        let state = viewModel.state
 
         guard state.library.metadataEditable else { return }
 
@@ -217,15 +259,16 @@ class HtmlEpubSidebarViewController: UIViewController {
         case .tags:
             guard annotation.isAuthor else { return }
             let selected = Set(annotation.tags.map({ $0.name }))
-            self.coordinatorDelegate?.showTagPicker(libraryId: state.library.identifier, selected: selected, userInterfaceStyle: .light, picked: { [weak self] tags in
+            coordinatorDelegate?.showTagPicker(libraryId: state.library.identifier, selected: selected, userInterfaceStyle: .light, picked: { [weak self] tags in
                 self?.viewModel.process(action: .setTags(key: annotation.key, tags: tags))
             })
 
         case .options(let sender):
             let key = annotation.key
-            self.coordinatorDelegate?.showCellOptions(
+            coordinatorDelegate?.showCellOptions(
                 for: annotation,
-                library: self.viewModel.state.library,
+                userId: viewModel.state.userId,
+                library: viewModel.state.library,
                 sender: sender,
                 userInterfaceStyle: .light,
                 saveAction: { [weak self] color, lineWidth, pageLabel, updateSubsequentLabels, highlightText in
@@ -246,14 +289,14 @@ class HtmlEpubSidebarViewController: UIViewController {
             )
 
         case .setComment(let comment):
-            self.viewModel.process(action: .setComment(key: annotation.key, comment: comment))
+            viewModel.process(action: .setComment(key: annotation.key, comment: comment))
 
         case .reloadHeight:
-            self.updateCellHeight()
-            self.focusSelectedCell()
+            updateCellHeight()
+            focusSelectedCell()
 
         case .setCommentActive(let isActive):
-            self.viewModel.process(action: .setCommentActive(isActive))
+            viewModel.process(action: .setCommentActive(isActive))
 
         case .done:
             break // Done button doesn't appear here
@@ -263,43 +306,85 @@ class HtmlEpubSidebarViewController: UIViewController {
     /// Updates tableView layout in case any cell changed height.
     private func updateCellHeight() {
         UIView.setAnimationsEnabled(false)
-        self.tableView.beginUpdates()
-        self.tableView.endUpdates()
+        tableView.beginUpdates()
+        tableView.endUpdates()
         UIView.setAnimationsEnabled(true)
     }
 
     /// Scrolls to selected cell if it's not visible.
     private func focusSelectedCell() {
-//            guard !self.viewModel.state.sidebarEditingEnabled, let indexPath = self.tableView.indexPathForSelectedRow else { return }
-        guard let indexPath = self.tableView.indexPathForSelectedRow else { return }
+        guard !viewModel.state.sidebarEditingEnabled, let indexPath = tableView.indexPathForSelectedRow else { return }
 
-        let cellFrame = self.tableView.rectForRow(at: indexPath)
-        let cellBottom = cellFrame.maxY - self.tableView.contentOffset.y
-        let tableViewBottom = self.tableView.superview!.bounds.maxY - self.tableView.contentInset.bottom
-        let safeAreaTop = self.tableView.superview!.safeAreaInsets.top
+        let cellFrame = tableView.rectForRow(at: indexPath)
+        let cellBottom = cellFrame.maxY - tableView.contentOffset.y
+        let tableViewBottom = tableView.superview!.bounds.maxY - tableView.contentInset.bottom
+        let safeAreaTop = tableView.superview!.safeAreaInsets.top
 
         // Scroll either when cell bottom is below keyboard or cell top is not visible on screen
         if cellBottom > tableViewBottom || cellFrame.minY < (safeAreaTop + self.tableView.contentOffset.y) {
             // Scroll to top if cell is smaller than visible screen, so that it's fully visible, otherwise scroll to bottom.
             let position: UITableView.ScrollPosition = cellFrame.height + safeAreaTop < tableViewBottom ? .top : .bottom
-            self.tableView.scrollToRow(at: indexPath, at: position, animated: false)
+            tableView.scrollToRow(at: indexPath, at: position, animated: false)
         }
+    }
+
+    private func setupToolbar(filterEnabled: Bool, filterOn: Bool, editingEnabled: Bool, deletionEnabled: Bool) {
+        guard !toolbarContainer.isHidden else { return }
+
+        var items: [UIBarButtonItem] = []
+        items.append(UIBarButtonItem(systemItem: .flexibleSpace, primaryAction: nil, menu: nil))
+
+        if editingEnabled {
+            let delete = UIBarButtonItem(title: L10n.delete, style: .plain, target: nil, action: nil)
+            delete.isEnabled = deletionEnabled
+            delete.rx.tap
+                .subscribe(with: self, onNext: { `self`, _ in
+                    guard self.viewModel.state.sidebarEditingEnabled else { return }
+                    self.viewModel.process(action: .removeSelectedAnnotations)
+                })
+                .disposed(by: disposeBag)
+            items.append(delete)
+            deleteBarButton = delete
+        } else if filterEnabled {
+            deleteBarButton = nil
+
+            let filterImageName = filterOn ? "line.horizontal.3.decrease.circle.fill" : "line.horizontal.3.decrease.circle"
+            let filter = UIBarButtonItem(image: UIImage(systemName: filterImageName), style: .plain, target: nil, action: nil)
+            filter.rx.tap
+                .subscribe(with: self, onNext: { _, _ in
+//                    self.showFilterPopup(from: filter)
+                })
+                .disposed(by: disposeBag)
+            items.insert(filter, at: 0)
+        }
+
+        let select = UIBarButtonItem(title: (editingEnabled ? L10n.done : L10n.select), style: .plain, target: nil, action: nil)
+        select.rx.tap
+            .subscribe(with: self, onNext: { `self`, _ in
+                self.viewModel.process(action: .setSidebarEditingEnabled(!editingEnabled))
+            })
+            .disposed(by: disposeBag)
+        items.append(select)
+
+        toolbar.items = items
     }
 }
 
 extension HtmlEpubSidebarViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        guard let key = self.dataSource.itemIdentifier(for: indexPath) else { return }
-//        if self.viewModel.state.sidebarEditingEnabled {
-//            self.viewModel.process(action: .selectAnnotationDuringEditing(key))
-//        } else {
-        self.viewModel.process(action: .selectAnnotationFromSidebar(key))
-//        }
+        guard let key = dataSource.itemIdentifier(for: indexPath) else { return }
+        if viewModel.state.sidebarEditingEnabled {
+            viewModel.process(action: .selectAnnotationDuringEditing(key))
+        } else {
+            viewModel.process(action: .selectAnnotationFromSidebar(key))
+        }
     }
-//    func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
-//        guard let annotation = self.dataSource.itemIdentifier(for: indexPath) else { return }
-//        self.viewModel.process(action: .deselectAnnotationDuringEditing(annotation.key))
-//    }
+
+    func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
+        guard let key = dataSource.itemIdentifier(for: indexPath) else { return }
+        viewModel.process(action: .deselectAnnotationDuringEditing(key))
+    }
+    
     func tableView(_ tableView: UITableView, shouldBeginMultipleSelectionInteractionAt indexPath: IndexPath) -> Bool {
         return tableView.isEditing
     }

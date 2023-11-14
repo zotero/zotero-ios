@@ -23,6 +23,7 @@ struct HtmlEpubReaderState: ViewModelState {
         static let sidebarEditing = Changes(rawValue: 1 << 4)
         static let filter = Changes(rawValue: 1 << 5)
         static let toolColor = Changes(rawValue: 1 << 6)
+        static let sidebarEditingSelection = Changes(rawValue: 1 << 7)
     }
 
     struct DocumentData {
@@ -81,6 +82,9 @@ struct HtmlEpubReaderState: ViewModelState {
     var selectedAnnotationCommentActive: Bool
     var sidebarEditingEnabled: Bool
     var notificationToken: NotificationToken?
+    var deletionEnabled: Bool
+    /// Selected annotations when annotations are being edited in sidebar
+    var selectedAnnotationsDuringEditing: Set<String>
 
     init(url: URL, key: String, library: Library, userId: Int, username: String) {
         self.url = url
@@ -99,6 +103,8 @@ struct HtmlEpubReaderState: ViewModelState {
             .note: UIColor(hex: Defaults.shared.noteColorHex)
         ]
         self.changes = []
+        self.deletionEnabled = false
+        self.selectedAnnotationsDuringEditing = []
     }
 
     mutating func cleanup() {

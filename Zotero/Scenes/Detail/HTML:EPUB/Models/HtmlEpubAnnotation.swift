@@ -40,4 +40,17 @@ struct HtmlEpubAnnotation {
             tags: tags
         )
     }
+
+    func editability(currentUserId: Int, library: Library) -> AnnotationEditability {
+        switch library.identifier {
+        case .custom:
+            return library.metadataEditable ? .editable : .notEditable
+
+        case .group:
+            if !library.metadataEditable {
+                return .notEditable
+            }
+            return self.isAuthor ? .editable : .deletable
+        }
+    }
 }

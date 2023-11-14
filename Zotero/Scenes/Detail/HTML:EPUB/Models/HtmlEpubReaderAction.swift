@@ -9,18 +9,22 @@
 import Foundation
 
 enum HtmlEpubReaderAction {
+    case deselectAnnotationDuringEditing(String)
     case deselectSelectedAnnotation
     case loadDocument
     case parseAndCacheComment(key: String, comment: String)
     case removeAnnotation(String)
+    case removeSelectedAnnotations
     case saveAnnotations([String: Any])
     case searchAnnotations(String)
     case searchDocument(String)
+    case selectAnnotationDuringEditing(String)
     case selectAnnotationFromSidebar(String)
     case selectAnnotationFromDocument(key: String, rect: CGRect)
     case setColor(key: String, color: String)
     case setComment(key: String, comment: NSAttributedString)
     case setCommentActive(Bool)
+    case setSidebarEditingEnabled(Bool)
     case setTags(key: String, tags: [Tag])
     case setToolOptions(color: String?, size: CGFloat?, tool: AnnotationTool)
     case setViewState([String: Any])

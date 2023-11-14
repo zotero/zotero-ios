@@ -20,7 +20,6 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
     private unowned let htmlAttributedStringConverter: HtmlAttributedStringConverter
     private unowned let dateParser: DateParser
     let backgroundQueue: DispatchQueue
-    weak var delegate: HtmlEpubReaderContainerDelegate?
 
     init(dbStorage: DbStorage, schemaController: SchemaController, htmlAttributedStringConverter: HtmlAttributedStringConverter, dateParser: DateParser) {
         self.dbStorage = dbStorage
@@ -94,6 +93,91 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
         case .setToolOptions(let color, let size, let tool):
             setTool(color: color, size: size, tool: tool, in: viewModel)
+
+        case .setSidebarEditingEnabled(let isEnabled):
+            setSidebar(editing: isEnabled, in: viewModel)
+
+        case .removeSelectedAnnotations:
+            removeSelectedAnnotations(in: viewModel)
+
+        case .selectAnnotationDuringEditing(let key):
+            selectDuringEditing(key: key, in: viewModel)
+
+        case .deselectAnnotationDuringEditing(let key):
+            deselectDuringEditing(key: key, in: viewModel)
+        }
+    }
+
+    private func removeSelectedAnnotations(in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
+        guard !viewModel.state.selectedAnnotationsDuringEditing.isEmpty else { return }
+        let keys = viewModel.state.selectedAnnotationsDuringEditing
+
+        update(viewModel: viewModel) { state in
+            state.deletionEnabled = false
+            state.selectedAnnotationsDuringEditing = []
+            state.changes = .sidebarEditingSelection
+        }
+
+        remove(keys: Array(keys), in: viewModel)
+    }
+
+    private func setSidebar(editing enabled: Bool, in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
+        update(viewModel: viewModel) { state in
+            state.sidebarEditingEnabled = enabled
+            state.changes = .sidebarEditing
+
+            if enabled {
+                // Deselect selected annotation before editing
+                _select(data: nil, didSelectInDocument: false, state: &state)
+            } else {
+                // Deselect selected annotations during editing
+                state.selectedAnnotationsDuringEditing = []
+                state.deletionEnabled = false
+            }
+        }
+    }
+
+    private func selectDuringEditing(key: String, in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
+        guard let annotation = viewModel.state.annotations[key] else { return }
+
+        let annotationDeletable = annotation.editability(currentUserId: viewModel.state.userId, library: viewModel.state.library) != .notEditable
+
+        self.update(viewModel: viewModel) { state in
+            if state.selectedAnnotationsDuringEditing.isEmpty {
+                state.deletionEnabled = annotationDeletable
+            } else {
+                state.deletionEnabled = state.deletionEnabled && annotationDeletable
+            }
+
+            state.selectedAnnotationsDuringEditing.insert(key)
+            state.changes = .sidebarEditingSelection
+        }
+    }
+
+    private func deselectDuringEditing(key: String, in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
+        self.update(viewModel: viewModel) { state in
+            state.selectedAnnotationsDuringEditing.remove(key)
+
+            if state.selectedAnnotationsDuringEditing.isEmpty {
+                if state.deletionEnabled {
+                    state.deletionEnabled = false
+                    state.changes = .sidebarEditingSelection
+                }
+            } else {
+                // Check whether deletion state changed after removing this annotation
+                let deletionEnabled = selectedAnnotationsDeletable(selected: state.selectedAnnotationsDuringEditing, in: viewModel)
+                if state.deletionEnabled != deletionEnabled {
+                    state.deletionEnabled = deletionEnabled
+                    state.changes = .sidebarEditingSelection
+                }
+            }
+        }
+
+        func selectedAnnotationsDeletable(selected: Set<String>, in viewModel: ViewModel<HtmlEpubReaderActionHandler>) -> Bool {
+            return !selected.contains(where: { key in
+                guard let annotation = viewModel.state.annotations[key] else { return false }
+                return annotation.editability(currentUserId: viewModel.state.userId, library: viewModel.state.library) == .notEditable
+            })
         }
     }
 
@@ -502,7 +586,6 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         var keys = viewModel.state.snapshotKeys ?? viewModel.state.sortedKeys
         var annotations: [String: HtmlEpubAnnotation] = viewModel.state.annotations
         var comments = viewModel.state.comments
-        var selectKey: String?
         var selectionDeleted = false
         // Update database keys based on realm notification
         var updatedKeys: [String] = []
@@ -588,13 +671,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
             switch item.changeType {
             case .user:
-                // Select newly created annotation if needed
-                let sidebarVisible = self.delegate?.isSidebarVisible ?? false
-                let isNote = annotation.type == .note
-                if !viewModel.state.sidebarEditingEnabled && (sidebarVisible || isNote) {
-                    selectKey = item.key
-                    DDLogInfo("HtmlEpubReaderActionHandler: select new annotation")
-                }
+                break
 
             case .sync, .syncResponse:
                 insertedPdfAnnotations.append(json)
@@ -623,9 +700,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             state.changes = .annotations
 
             // Update selection
-            if let key = selectKey {
-                self._select(data: (key, CGRect()), didSelectInDocument: true, state: &state)
-            } else if selectionDeleted {
+            if selectionDeleted {
                 self._select(data: nil, didSelectInDocument: true, state: &state)
             }
 

@@ -32473,6 +32473,11 @@ window.createView = options => {
       postMessage('onSaveAnnotations', {
         annotations
       });
+      if (annotations[0].type == "note") {
+          setTimeout(function() {
+              window._view.selectAnnotations([annotations[0].id]);
+          }, 2000);
+      }
     },
     onSetOutline: outline => {
       postMessage('onSetOutline', {
@@ -32541,8 +32546,10 @@ window.search = options => {
 };
 window.select = options => {
   log("Select: " + options.key);
-  window._view.selectAnnotations([options.key])
-  window._view.navigate({annotationID: options.key});
+  window._view.selectAnnotations([options.key]);
+  window._view.navigate({
+    annotationID: options.key
+  });
 };
 
 // Notify when iframe is loaded
