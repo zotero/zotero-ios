@@ -1,6 +1,6 @@
 #!/bin/sh
 
-#  pre-xcodebuild.sh
+#  ci_pre_xcodebuild.sh
 #  Zotero
 #
 #  Created by Michal Rentka on 01.06.2023.

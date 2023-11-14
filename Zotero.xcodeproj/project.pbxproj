@@ -1197,6 +1197,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		611486502A9CD511002EEBEF /* ci_post_xcodebuild.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ci_post_xcodebuild.sh; sourceTree = "<group>"; };
 		614D65812A79C9AC007CF449 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = en; path = en.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
 		614D65842A7BCC22007CF449 /* ci_post_clone.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ci_post_clone.sh; sourceTree = "<group>"; };
 		61ABA7502A6137D1002A4219 /* ShareableImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareableImage.swift; sourceTree = "<group>"; };
@@ -3966,8 +3967,9 @@
 		B3F6415E2A28B1EF00A78CB0 /* ci_scripts */ = {
 			isa = PBXGroup;
 			children = (
-				B3F6415F2A28B21E00A78CB0 /* ci_pre_xcodebuild.sh */,
 				614D65842A7BCC22007CF449 /* ci_post_clone.sh */,
+				B3F6415F2A28B21E00A78CB0 /* ci_pre_xcodebuild.sh */,
+				611486502A9CD511002EEBEF /* ci_post_xcodebuild.sh */,
 			);
 			path = ci_scripts;
 			sourceTree = "<group>";
