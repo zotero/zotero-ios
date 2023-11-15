@@ -104,9 +104,14 @@ final class PDFAnnotationsViewController: UIViewController {
         case .tags:
             guard annotation.isAuthor(currentUserId: self.viewModel.state.userId) else { return }
             let selected = Set(annotation.tags.map({ $0.name }))
-            self.coordinatorDelegate?.showTagPicker(libraryId: state.library.identifier, selected: selected, userInterfaceStyle: self.viewModel.state.interfaceStyle, picked: { [weak self] tags in
-                self?.viewModel.process(action: .setTags(key: annotation.key, tags: tags))
-            })
+            self.coordinatorDelegate?.showTagPicker(
+                libraryId: state.library.identifier,
+                selected: selected,
+                userInterfaceStyle: self.viewModel.state.settings.appearanceMode.userInterfaceStyle,
+                picked: { [weak self] tags in
+                    self?.viewModel.process(action: .setTags(key: annotation.key, tags: tags))
+                }
+            )
 
         case .options(let sender):
             let key = annotation.readerKey
@@ -115,7 +120,7 @@ final class PDFAnnotationsViewController: UIViewController {
                 userId: self.viewModel.state.userId,
                 library: self.viewModel.state.library,
                 sender: sender,
-                userInterfaceStyle: self.viewModel.state.interfaceStyle,
+                userInterfaceStyle: self.viewModel.state.settings.appearanceMode.userInterfaceStyle,
                 saveAction: { [weak self] color, lineWidth, pageLabel, updateSubsequentLabels, highlightText in
                     self?.viewModel.process(
                         action: .updateAnnotationProperties(
@@ -377,7 +382,7 @@ final class PDFAnnotationsViewController: UIViewController {
             filter: self.viewModel.state.filter,
             availableColors: sortedColors,
             availableTags: sortedTags,
-            userInterfaceStyle: self.viewModel.state.interfaceStyle,
+            userInterfaceStyle: self.viewModel.state.settings.appearanceMode.userInterfaceStyle,
             completed: { [weak self] filter in
                 self?.viewModel.process(action: .changeFilter(filter))
             }

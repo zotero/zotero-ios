@@ -259,7 +259,7 @@ class HtmlEpubSidebarViewController: UIViewController {
         case .tags:
             guard annotation.isAuthor else { return }
             let selected = Set(annotation.tags.map({ $0.name }))
-            coordinatorDelegate?.showTagPicker(libraryId: state.library.identifier, selected: selected, userInterfaceStyle: viewModel.state.settings.interfaceStyle, picked: { [weak self] tags in
+            coordinatorDelegate?.showTagPicker(libraryId: state.library.identifier, selected: selected, userInterfaceStyle: viewModel.state.settings.appearance.userInterfaceStyle, picked: { [weak self] tags in
                 self?.viewModel.process(action: .setTags(key: annotation.key, tags: tags))
             })
 
@@ -270,7 +270,7 @@ class HtmlEpubSidebarViewController: UIViewController {
                 userId: viewModel.state.userId,
                 library: viewModel.state.library,
                 sender: sender,
-                userInterfaceStyle: viewModel.state.settings.interfaceStyle,
+                userInterfaceStyle: viewModel.state.settings.appearance.userInterfaceStyle,
                 saveAction: { [weak self] color, lineWidth, pageLabel, updateSubsequentLabels, highlightText in
                     self?.viewModel.process(
                         action: .updateAnnotationProperties(
@@ -401,7 +401,7 @@ class HtmlEpubSidebarViewController: UIViewController {
                 filter: viewModel.state.annotationFilter,
                 availableColors: sortedColors,
                 availableTags: sortedTags,
-                userInterfaceStyle: viewModel.state.settings.interfaceStyle,
+                userInterfaceStyle: viewModel.state.settings.appearance.userInterfaceStyle,
                 completed: { [weak self] filter in
                     self?.viewModel.process(action: .changeFilter(filter))
                 }

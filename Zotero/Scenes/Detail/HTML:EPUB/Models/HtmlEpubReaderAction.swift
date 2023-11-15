@@ -10,6 +10,7 @@ import Foundation
 
 enum HtmlEpubReaderAction {
     case changeFilter(AnnotationsFilter?)
+    case changeIdleTimerDisabled(Bool)
     case deselectAnnotationDuringEditing(String)
     case deselectSelectedAnnotation
     case loadDocument

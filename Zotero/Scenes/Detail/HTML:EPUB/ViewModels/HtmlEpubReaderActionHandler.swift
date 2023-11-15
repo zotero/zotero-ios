@@ -19,13 +19,15 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
     private unowned let schemaController: SchemaController
     private unowned let htmlAttributedStringConverter: HtmlAttributedStringConverter
     private unowned let dateParser: DateParser
+    private unowned let idleTimerController: IdleTimerController
     let backgroundQueue: DispatchQueue
 
-    init(dbStorage: DbStorage, schemaController: SchemaController, htmlAttributedStringConverter: HtmlAttributedStringConverter, dateParser: DateParser) {
+    init(dbStorage: DbStorage, schemaController: SchemaController, htmlAttributedStringConverter: HtmlAttributedStringConverter, dateParser: DateParser, idleTimerController: IdleTimerController) {
         self.dbStorage = dbStorage
         self.schemaController = schemaController
         self.htmlAttributedStringConverter = htmlAttributedStringConverter
         self.dateParser = dateParser
+        self.idleTimerController = idleTimerController
         self.backgroundQueue = DispatchQueue(label: "org.zotero.Zotero.HtmlEpubReaderActionHandler.queue", qos: .userInteractive)
     }
 
@@ -110,12 +112,45 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             set(filter: filter, in: viewModel)
 
         case .setSettings(let settings):
-            update(viewModel: viewModel) { state in
-                state.settings = settings
-                state.changes = .settings
-            }
-            Defaults.shared.htmlEpubSettings = settings
+            set(settings: settings, in: viewModel)
+
+        case .changeIdleTimerDisabled(let disabled):
+            changeIdleTimer(disabled: disabled, in: viewModel)
         }
+    }
+
+    private func changeIdleTimer(disabled: Bool, in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
+        guard viewModel.state.settings.idleTimerDisabled != disabled else { return }
+        var settings = viewModel.state.settings
+        settings.idleTimerDisabled = disabled
+
+        update(viewModel: viewModel) { state in
+            state.settings = settings
+            // Don't need to assign `changes` or update Defaults.shared.htmlEpubSettings, this setting is not stored and doesn't change anything else
+        }
+
+        if settings.idleTimerDisabled {
+            self.idleTimerController.disable()
+        } else {
+            self.idleTimerController.enable()
+        }
+    }
+
+    private func set(settings: HtmlEpubSettings, in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
+        if viewModel.state.settings.idleTimerDisabled != settings.idleTimerDisabled {
+            if settings.idleTimerDisabled {
+                self.idleTimerController.disable()
+            } else {
+                self.idleTimerController.enable()
+            }
+        }
+
+        update(viewModel: viewModel) { state in
+            state.settings = settings
+            state.changes = .settings
+        }
+
+        Defaults.shared.htmlEpubSettings = settings
     }
 
     private func removeSelectedAnnotations(in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
@@ -453,6 +488,14 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             return
         }
 
+        // Disable annotation tool
+        if annotations.contains(where: { $0.type == .note }) {
+            update(viewModel: viewModel) { state in
+                state.activeTool = nil
+                state.changes = .activeTool
+            }
+        }
+
         let request = CreateHtmlEpubAnnotationsDbRequest(
             attachmentKey: viewModel.state.key,
             libraryId: viewModel.state.library.identifier,
@@ -518,13 +561,16 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
                 return
             }
             let (sortedKeys, annotations, json, token, rawPage) = loadAnnotationsAndJson(in: viewModel)
+            let type: String
             let page: HtmlEpubReaderState.DocumentData.Page?
 
             switch viewModel.state.url.pathExtension.lowercased() {
             case "epub":
+                type = "epub"
                 page = .epub(cfi: rawPage)
 
             case "html", "htm":
+                type = "snapshot"
                 if let scrollYPercent = Double(rawPage) {
                     page = .html(scrollYPercent: scrollYPercent)
                 } else {
@@ -533,10 +579,10 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
                 }
 
             default:
-                page = nil
+                throw HtmlEpubReaderState.Error.incompatibleDocument
             }
 
-            let documentData = HtmlEpubReaderState.DocumentData(buffer: jsArrayString, annotationsJson: json, page: page)
+            let documentData = HtmlEpubReaderState.DocumentData(type: type, buffer: jsArrayString, annotationsJson: json, page: page)
             self.update(viewModel: viewModel) { state in
                 state.sortedKeys = sortedKeys
                 state.annotations = annotations
@@ -566,12 +612,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
                 annotations[item.key] = annotation
             }
 
-            let jsonData = try JSONSerialization.data(withJSONObject: jsons)
-
-            guard let jsonString = String(data: jsonData, encoding: .utf8) else {
-                DDLogError("HtmlEpubReaderActionHandler: can't convert json data to string")
-                return ([], [:], "[]", nil, "")
-            }
+            let jsonString = WebViewEncoder.encodeAsJSONForJavascript(jsons)
 
             let token = items.observe { [weak self, weak viewModel] change in
                 guard let self = self, let viewModel = viewModel else { return }

@@ -330,7 +330,12 @@ final class PDFDocumentViewController: UIViewController {
         let key = annotation.readerKey
         var frame = self.view.convert(annotation.boundingBox(boundingBoxConverter: self), from: pageView.pdfCoordinateSpace)
         frame.origin.y += (self.parentDelegate?.statusBarHeight ?? 0) + (self.parentDelegate?.navigationBarHeight ?? 0)
-        let observable = self.coordinatorDelegate?.showAnnotationPopover(viewModel: self.viewModel, sourceRect: frame, popoverDelegate: self, userInterfaceStyle: self.viewModel.state.interfaceStyle)
+        let observable = self.coordinatorDelegate?.showAnnotationPopover(
+            viewModel: self.viewModel,
+            sourceRect: frame,
+            popoverDelegate: self,
+            userInterfaceStyle: self.viewModel.state.settings.appearanceMode.userInterfaceStyle
+        )
 
         guard let observable else { return }
         observable.subscribe(with: self) { `self`, state in
@@ -671,7 +676,12 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
                     case .PSPDFKit.define:
                         return action.replacing(title: L10n.lookUp, handler: { [weak self] _ in
                             guard let self, let view = self.pdfController?.view else { return }
-                            self.coordinatorDelegate?.lookup(text: glyphs.text, rect: glyphs.boundingBox, view: view, userInterfaceStyle: self.viewModel.state.interfaceStyle)
+                            self.coordinatorDelegate?.lookup(
+                                text: glyphs.text,
+                                rect: glyphs.boundingBox,
+                                view: view,
+                                userInterfaceStyle: self.viewModel.state.settings.appearanceMode.userInterfaceStyle
+                            )
                         })
 
                     case .PSPDFKit.searchDocument:

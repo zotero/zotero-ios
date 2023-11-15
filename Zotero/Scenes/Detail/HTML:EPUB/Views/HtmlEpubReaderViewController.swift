@@ -81,14 +81,7 @@ class HtmlEpubReaderViewController: UIViewController {
         settings.rx.tap
             .subscribe(onNext: { [weak self, weak settings] _ in
                 guard let self, let settings else { return }
-                self.coordinatorDelegate?.showSettings(
-                    with: self.viewModel.state.settings,
-                    sender: settings,
-                    completion: { [weak self] settings in
-                        guard let self else { return }
-                        self.viewModel.process(action: .setSettings(settings))
-                    }
-                )
+                self.showSettings(sender: settings)
             })
             .disposed(by: disposeBag)
         return settings
@@ -131,7 +124,7 @@ class HtmlEpubReaderViewController: UIViewController {
         setupNavigationBar()
         setupSearch()
         setupViews()
-        navigationController?.overrideUserInterfaceStyle = viewModel.state.settings.interfaceStyle
+        navigationController?.overrideUserInterfaceStyle = viewModel.state.settings.appearance.userInterfaceStyle
         navigationItem.rightBarButtonItems = [settingsButton, toolbarButton]
 
         func observeViewModel() {
@@ -147,7 +140,7 @@ class HtmlEpubReaderViewController: UIViewController {
             let closeButton = UIBarButtonItem(image: UIImage(systemName: "chevron.left"), style: .plain, target: nil, action: nil)
             closeButton.title = L10n.close
             closeButton.accessibilityLabel = L10n.close
-            closeButton.rx.tap.subscribe(with: self, onNext: { _, _ in self.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil) }).disposed(by: disposeBag)
+            closeButton.rx.tap.subscribe(with: self, onNext: { _, _ in self.close() }).disposed(by: disposeBag)
 
             let sidebarButton = UIBarButtonItem(image: UIImage(systemName: "sidebar.left"), style: .plain, target: nil, action: nil)
             setupAccessibility(forSidebarButton: sidebarButton)
@@ -168,6 +161,7 @@ class HtmlEpubReaderViewController: UIViewController {
                 .rx
                 .text
                 .observe(on: MainScheduler.instance)
+                .skip(1)
                 .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
                 .subscribe(onNext: { [weak self] text in
                     self?.viewModel.process(action: .searchDocument(text ?? ""))
@@ -191,7 +185,7 @@ class HtmlEpubReaderViewController: UIViewController {
             documentController.parentDelegate = self
             documentController.view.translatesAutoresizingMaskIntoConstraints = false
 
-            let annotationToolbar = AnnotationToolbarViewController(tools: [.highlight, .note], size: navigationBarHeight)
+            let annotationToolbar = AnnotationToolbarViewController(tools: [.highlight, .note], undoRedoEnabled: false, size: navigationBarHeight)
             annotationToolbar.delegate = self
 
             let sidebarController = HtmlEpubSidebarViewController(viewModel: viewModel)
@@ -288,11 +282,22 @@ class HtmlEpubReaderViewController: UIViewController {
             annotationToolbarController.set(activeColor: color)
         }
 
+        if state.changes.contains(.activeTool) {
+            select(activeTool: state.activeTool)
+        }
+
         if state.changes.contains(.settings) {
-            navigationController?.overrideUserInterfaceStyle = state.settings.interfaceStyle
+            navigationController?.overrideUserInterfaceStyle = state.settings.appearance.userInterfaceStyle
         }
 
         handleAnnotationPopover()
+
+        func select(activeTool tool: AnnotationTool?) {
+            annotationToolbarController.deselectActiveTool()
+            if let tool, let color = viewModel.state.toolColors[tool] {
+                annotationToolbarController.set(selected: true, to: tool, color: color)
+            }
+        }
 
         func show(error: HtmlEpubReaderState.Error) {
         }
@@ -304,7 +309,7 @@ class HtmlEpubReaderViewController: UIViewController {
                         viewModel: viewModel,
                         sourceRect: rect,
                         popoverDelegate: self,
-                        userInterfaceStyle: viewModel.state.settings.interfaceStyle
+                        userInterfaceStyle: viewModel.state.settings.appearance.userInterfaceStyle
                     )
                     observe(key: key, popoverObservable: observable)
                 }
@@ -347,6 +352,22 @@ class HtmlEpubReaderViewController: UIViewController {
     }
 
     // MARK: - Actions
+
+    private func showSettings(sender: UIBarButtonItem) {
+        guard let viewModel = coordinatorDelegate?.showSettings(with: viewModel.state.settings, sender: sender) else { return }
+        viewModel.stateObservable
+            .observe(on: MainScheduler.instance)
+            .subscribe(with: self, onNext: { `self`, state in
+                let settings = HtmlEpubSettings(appearance: state.appearance, idleTimerDisabled: state.idleTimerDisabled)
+                self.viewModel.process(action: .setSettings(settings))
+            })
+            .disposed(by: disposeBag)
+    }
+
+    private func close() {
+        viewModel.process(action: .changeIdleTimerDisabled(false))
+        navigationController?.presentingViewController?.dismiss(animated: true)
+    }
 
     private func toggleSidebar(animated: Bool) {
         let shouldShow = !isSidebarVisible
@@ -505,17 +526,7 @@ extension HtmlEpubReaderViewController: AnnotationToolbarDelegate {
     }
 
     func toggle(tool: AnnotationTool, options: AnnotationToolOptions) {
-        guard let color = viewModel.state.toolColors[tool] else { return }
-
-        let oldTool = viewModel.state.activeTool
         viewModel.process(action: .toggleTool(tool))
-
-        if let oldTool {
-            annotationToolbarController.set(selected: false, to: oldTool, color: color)
-        }
-        if let tool = viewModel.state.activeTool {
-            annotationToolbarController.set(selected: true, to: tool, color: color)
-        }
     }
 
     func showToolOptions(sender: SourceView) {
@@ -527,7 +538,7 @@ extension HtmlEpubReaderViewController: AnnotationToolbarDelegate {
             colorHex: colorHex,
             sizeValue: nil,
             sender: sender,
-            userInterfaceStyle: viewModel.state.settings.interfaceStyle
+            userInterfaceStyle: viewModel.state.settings.appearance.userInterfaceStyle
         ) { [weak self] newColor, newSize in
             self?.viewModel.process(action: .setToolOptions(color: newColor, size: newSize.flatMap(CGFloat.init), tool: tool))
         }

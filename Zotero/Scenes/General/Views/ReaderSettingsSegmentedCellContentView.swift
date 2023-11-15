@@ -1,5 +1,5 @@
 //
-//  PDFSettingsSegmentedCellContentView.swift
+//  ReaderSettingsSegmentedCellContentView.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 03.03.2022.
@@ -8,7 +8,7 @@
 
 import UIKit
 
-class PDFSettingsSegmentedCellContentView: UIView {
+class ReaderSettingsSegmentedCellContentView: UIView {
     @IBOutlet private weak var titleLabel: UILabel!
     @IBOutlet private weak var segmentedControl: UISegmentedControl!
 

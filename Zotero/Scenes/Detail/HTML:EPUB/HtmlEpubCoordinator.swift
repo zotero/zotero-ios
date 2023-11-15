@@ -41,7 +41,7 @@ protocol HtmlEpubSidebarCoordinatorDelegate: AnyObject {
         userInterfaceStyle: UIUserInterfaceStyle,
         completed: @escaping (AnnotationsFilter?) -> Void
     )
-    func showSettings(with settings: HtmlEpubSettings, sender: UIBarButtonItem, completion: @escaping (HtmlEpubSettings) -> Void)
+    func showSettings(with settings: HtmlEpubSettings, sender: UIBarButtonItem) -> ViewModel<ReaderSettingsActionHandler>
 }
 
 final class HtmlEpubCoordinator: Coordinator {
@@ -85,7 +85,8 @@ final class HtmlEpubCoordinator: Coordinator {
             dbStorage: dbStorage,
             schemaController: controllers.schemaController,
             htmlAttributedStringConverter: controllers.htmlAttributedStringConverter,
-            dateParser: controllers.dateParser
+            dateParser: controllers.dateParser,
+            idleTimerController: controllers.idleTimerController
         )
         let state = HtmlEpubReaderState(url: url, key: key, settings: Defaults.shared.htmlEpubSettings, library: library, userId: userId, username: username)
         let controller = HtmlEpubReaderViewController(
@@ -113,6 +114,10 @@ extension HtmlEpubCoordinator: HtmlEpubReaderCoordinatorDelegate {
             message = L10n.Errors.Pdf.cantDeleteAnnotations
 
         case .cantUpdateAnnotation:
+            title = L10n.error
+            message = L10n.Errors.Pdf.cantUpdateAnnotation
+
+        case .incompatibleDocument:
             title = L10n.error
             message = L10n.Errors.Pdf.cantUpdateAnnotation
 
@@ -155,9 +160,6 @@ extension HtmlEpubCoordinator: HtmlEpubReaderCoordinatorDelegate {
 }
 
 extension HtmlEpubCoordinator: HtmlEpubSidebarCoordinatorDelegate {
-    func showSettings(with settings: HtmlEpubSettings, sender: UIBarButtonItem, completion: @escaping (HtmlEpubSettings) -> Void) {
-    }
-    
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, userInterfaceStyle: UIUserInterfaceStyle?, picked: @escaping ([Tag]) -> Void) {
         guard let navigationController else { return }
         (self.parentCoordinator as? DetailCoordinator)?.showTagPicker(
@@ -292,5 +294,28 @@ extension HtmlEpubCoordinator: HtmlEpubSidebarCoordinatorDelegate {
         }
 
         self.navigationController?.present(navigationController, animated: true, completion: nil)
+    }
+
+    func showSettings(with settings: HtmlEpubSettings, sender: UIBarButtonItem) -> ViewModel<ReaderSettingsActionHandler> {
+        DDLogInfo("HtmlEpubCoordinator: show settings")
+
+        let state = ReaderSettingsState(settings: settings)
+        let viewModel = ViewModel(initialState: state, handler: ReaderSettingsActionHandler())
+        let baseController = ReaderSettingsViewController(visibleRows: [.appearance, .sleep], viewModel: viewModel)
+
+        let controller: UIViewController
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            controller = baseController
+        } else {
+            controller = UINavigationController(rootViewController: baseController)
+        }
+
+        controller.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
+        controller.popoverPresentationController?.barButtonItem = sender
+        controller.preferredContentSize = CGSize(width: 480, height: 92)
+        controller.overrideUserInterfaceStyle = settings.appearance.userInterfaceStyle
+        self.navigationController?.present(controller, animated: true, completion: nil)
+
+        return viewModel
     }
 }

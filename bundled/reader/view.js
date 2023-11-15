@@ -32460,10 +32460,24 @@ function postMessage(event, params = {}) {
 function log(data) {
   window.webkit.messageHandlers.logHandler.postMessage(data);
 }
+function decodeBase64(base64) {
+  const text = atob(base64);
+  const length = text.length;
+  const bytes = new Uint8Array(length);
+  for (let i = 0; i < length; i++) {
+    bytes[i] = text.charCodeAt(i);
+  }
+  const decoder = new TextDecoder();
+  return decoder.decode(bytes);
+}
 window.createView = options => {
-  log("Annotations: " + JSON.stringify(options.annotations));
+  log("Create " + options.type + " view");
+  const annotations = JSON.parse(decodeBase64(options.annotations));
+  log("Loaded " + annotations.length + " annotations");
   window._view = new view({
-    ...options,
+    type: options.type,
+    annotations: annotations,
+    viewState: options.viewState,
     container: document.getElementById('view'),
     data: {
       // TODO: Implement a more efficient way to transfer large files
@@ -32474,9 +32488,7 @@ window.createView = options => {
         annotations
       });
       if (annotations[0].type == "note") {
-          setTimeout(function() {
-              window._view.selectAnnotations([annotations[0].id]);
-          }, 2000);
+        window._view.selectAnnotations([annotations[0].id]);
       }
     },
     onSetOutline: outline => {
@@ -32515,6 +32527,7 @@ window.createView = options => {
       });
     }
   });
+    log("Loaded view");
 };
 window.setTool = options => {
   log("Set tool: " + options.type + "; color: " + options.color);
@@ -32525,20 +32538,24 @@ window.clearTool = () => {
   window._view.setTool();
 };
 window.updateAnnotations = options => {
-  if (options.deletions.length > 0) {
-    log("Delete: " + JSON.stringify(options.deletions));
-    window._view.unsetAnnotations(options.deletions);
+  const deletions = JSON.parse(decodeBase64(options.deletions));
+  const insertions = JSON.parse(decodeBase64(options.insertions));
+  const modifications = JSON.parse(decodeBase64(options.modifications));
+  if (deletions.length > 0) {
+    log("Delete: " + JSON.stringify(deletions));
+    window._view.unsetAnnotations(deletions);
   }
-  let updates = [...options.insertions, ...options.modifications];
+  let updates = [...insertions, ...modifications];
   if (updates.length > 0) {
     log("Add/Update: " + JSON.stringify(updates));
     window._view.setAnnotations(updates);
   }
 };
 window.search = options => {
-  log("Search document: " + options.term);
+  const term = decodeBase64(options.term);
+  log("Search document: " + term);
   window._view.find({
-    query: options.term,
+    query: term,
     highlightAll: true,
     caseSensitive: false,
     entireWord: false
@@ -32546,10 +32563,10 @@ window.search = options => {
 };
 window.select = options => {
   log("Select: " + options.key);
+  window._view.selectAnnotations([options.key]);
   window._view.navigate({
     annotationID: options.key
   });
-  window._view.selectAnnotations([options.key]);
 };
 
 // Notify when iframe is loaded

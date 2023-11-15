@@ -63,6 +63,7 @@ class AnnotationToolbarViewController: UIViewController {
     private static let toolsToAdditionalFullOffset: CGFloat = 70
     private static let toolsToAdditionalCompactOffset: CGFloat = 20
     private let disposeBag: DisposeBag
+    private let undoRedoEnabled: Bool
 
     private var horizontalHeight: NSLayoutConstraint!
     private weak var stackView: UIStackView!
@@ -91,9 +92,10 @@ class AnnotationToolbarViewController: UIViewController {
     weak var delegate: AnnotationToolbarDelegate?
     private var lastGestureRecognizerTouch: UITouch?
 
-    init(tools: [AnnotationTool], size: CGFloat) {
+    init(tools: [AnnotationTool], undoRedoEnabled: Bool, size: CGFloat) {
         self.size = size
         self.toolButtons = Self.createButtons(from: tools)
+        self.undoRedoEnabled = undoRedoEnabled
         self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
@@ -229,6 +231,16 @@ class AnnotationToolbarViewController: UIViewController {
 
     func set(activeColor: UIColor) {
         self.colorPickerButton.tintColor = activeColor
+    }
+
+    func deselectActiveTool() {
+        for view in self.stackView.arrangedSubviews {
+            guard let checkbox = view as? CheckboxButton, checkbox.isSelected else { continue }
+            checkbox.isSelected = false
+            break
+        }
+        self.colorPickerButton.isHidden = true
+        (self.stackView.arrangedSubviews.last as? UIButton)?.menu = self.createHiddenToolsMenu()
     }
 
     func set(selected: Bool, to tool: AnnotationTool, color: UIColor?) {
@@ -401,39 +413,45 @@ class AnnotationToolbarViewController: UIViewController {
     }
 
     private func createAdditionalItems() -> [UIView] {
-        var undoConfig = UIButton.Configuration.plain()
-        undoConfig.contentInsets = AnnotationToolbarViewController.buttonContentInsets
-        undoConfig.image = UIImage(systemName: "arrow.uturn.left")?.applyingSymbolConfiguration(.init(scale: .large))
-        let undo = UIButton(type: .custom)
-        undo.configuration = undoConfig
-        undo.isEnabled = self.delegate?.canUndo ?? false
-        undo.showsLargeContentViewer = true
-        undo.accessibilityLabel = L10n.Accessibility.Pdf.undo
-        undo.largeContentTitle = L10n.Accessibility.Pdf.undo
-        undo.rx.controlEvent(.touchUpInside)
-            .subscribe(with: self, onNext: { `self`, _ in
-                guard self.delegate?.canUndo == true else { return }
-                self.delegate?.performUndo()
-            })
-            .disposed(by: self.disposeBag)
-        self.undoButton = undo
+        var items: [UIView] = []
 
-        var redoConfig = UIButton.Configuration.plain()
-        redoConfig.contentInsets = AnnotationToolbarViewController.buttonContentInsets
-        redoConfig.image = UIImage(systemName: "arrow.uturn.right")?.applyingSymbolConfiguration(.init(scale: .large))
-        let redo = UIButton(type: .custom)
-        redo.configuration = redoConfig
-        redo.isEnabled = self.delegate?.canRedo ?? false
-        redo.showsLargeContentViewer = true
-        redo.accessibilityLabel = L10n.Accessibility.Pdf.redo
-        redo.largeContentTitle = L10n.Accessibility.Pdf.redo
-        redo.rx.controlEvent(.touchUpInside)
-            .subscribe(with: self, onNext: { `self`, _ in
-                guard self.delegate?.canRedo == true else { return }
-                self.delegate?.performRedo()
-            })
-            .disposed(by: self.disposeBag)
-        self.redoButton = redo
+        if self.undoRedoEnabled {
+            var undoConfig = UIButton.Configuration.plain()
+            undoConfig.contentInsets = AnnotationToolbarViewController.buttonContentInsets
+            undoConfig.image = UIImage(systemName: "arrow.uturn.left")?.applyingSymbolConfiguration(.init(scale: .large))
+            let undo = UIButton(type: .custom)
+            undo.configuration = undoConfig
+            undo.isEnabled = self.delegate?.canUndo ?? false
+            undo.showsLargeContentViewer = true
+            undo.accessibilityLabel = L10n.Accessibility.Pdf.undo
+            undo.largeContentTitle = L10n.Accessibility.Pdf.undo
+            undo.rx.controlEvent(.touchUpInside)
+                .subscribe(with: self, onNext: { `self`, _ in
+                    guard self.delegate?.canUndo == true else { return }
+                    self.delegate?.performUndo()
+                })
+                .disposed(by: self.disposeBag)
+            self.undoButton = undo
+            items.append(undo)
+
+            var redoConfig = UIButton.Configuration.plain()
+            redoConfig.contentInsets = AnnotationToolbarViewController.buttonContentInsets
+            redoConfig.image = UIImage(systemName: "arrow.uturn.right")?.applyingSymbolConfiguration(.init(scale: .large))
+            let redo = UIButton(type: .custom)
+            redo.configuration = redoConfig
+            redo.isEnabled = self.delegate?.canRedo ?? false
+            redo.showsLargeContentViewer = true
+            redo.accessibilityLabel = L10n.Accessibility.Pdf.redo
+            redo.largeContentTitle = L10n.Accessibility.Pdf.redo
+            redo.rx.controlEvent(.touchUpInside)
+                .subscribe(with: self, onNext: { `self`, _ in
+                    guard self.delegate?.canRedo == true else { return }
+                    self.delegate?.performRedo()
+                })
+                .disposed(by: self.disposeBag)
+            self.redoButton = redo
+            items.append(redo)
+        }
 
         var closeConfig = UIButton.Configuration.plain()
         closeConfig.contentInsets = AnnotationToolbarViewController.buttonContentInsets
@@ -448,12 +466,14 @@ class AnnotationToolbarViewController: UIViewController {
                  self.delegate?.closeAnnotationToolbar()
              })
              .disposed(by: self.disposeBag)
+        items.append(close)
 
         let handle = UIImageView(image: UIImage(systemName: "line.3.horizontal")?.applyingSymbolConfiguration(.init(scale: .large)))
         handle.showsLargeContentViewer = false
         handle.contentMode = .center
+        items.append(handle)
 
-        for view in [undo, redo, close, handle] {
+        for view in items {
             view.translatesAutoresizingMaskIntoConstraints = false
             view.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
             view.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -461,7 +481,7 @@ class AnnotationToolbarViewController: UIViewController {
             view.widthAnchor.constraint(equalTo: view.heightAnchor).isActive = true
         }
 
-        return [undo, redo, close, handle]
+        return items
     }
 
     private func createColorPickerButton() -> UIButton {

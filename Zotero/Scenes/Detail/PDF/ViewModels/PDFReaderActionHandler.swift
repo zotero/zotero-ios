@@ -222,13 +222,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             self.pdfThumbnailController.deleteAll(forKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
 
         case .setSettings(let settings, let userInterfaceStyle):
-            self.update(settings: settings, currentInterfaceStyle: userInterfaceStyle, in: viewModel)
+            self.update(settings: settings, parentInterfaceStyle: userInterfaceStyle, in: viewModel)
 
         case .changeIdleTimerDisabled(let disabled):
-            guard viewModel.state.settings.idleTimerDisabled != disabled else { return }
-            var settings = viewModel.state.settings
-            settings.idleTimerDisabled = disabled
-            self.update(settings: settings, currentInterfaceStyle: nil, in: viewModel)
+            changeIdleTimer(disabled: disabled, in: viewModel)
 
         case .setSidebarEditingEnabled(let enabled):
             self.setSidebar(editing: enabled, in: viewModel)
@@ -446,7 +443,24 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
     }
 
-    private func update(settings: PDFSettings, currentInterfaceStyle: UIUserInterfaceStyle?, in viewModel: ViewModel<PDFReaderActionHandler>) {
+    private func changeIdleTimer(disabled: Bool, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        guard viewModel.state.settings.idleTimerDisabled != disabled else { return }
+        var settings = viewModel.state.settings
+        settings.idleTimerDisabled = disabled
+
+        update(viewModel: viewModel) { state in
+            state.settings = settings
+            // Don't need to assign `changes` or update Defaults.shared.pdfSettings, this setting is not stored and doesn't change anything else
+        }
+
+        if settings.idleTimerDisabled {
+            self.idleTimerController.disable()
+        } else {
+            self.idleTimerController.enable()
+        }
+    }
+
+    private func update(settings: PDFSettings, parentInterfaceStyle: UIUserInterfaceStyle, in viewModel: ViewModel<PDFReaderActionHandler>) {
         if viewModel.state.settings.idleTimerDisabled != settings.idleTimerDisabled {
             if settings.idleTimerDisabled {
                 self.idleTimerController.disable()
@@ -464,9 +478,20 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         Defaults.shared.pdfSettings = settings
 
         // Check whether interfaceStyle changed and update if needed
-        guard let newUserInterfaceStyle = currentInterfaceStyle.flatMap({ settings.appearanceMode.userInterfaceStyle(currentUserInterfaceStyle: $0) }),
-              newUserInterfaceStyle != viewModel.state.interfaceStyle else { return }
-        self.userInterfaceChanged(interfaceStyle: newUserInterfaceStyle, in: viewModel)
+        let settingsInterfaceStyle: UIUserInterfaceStyle
+        switch settings.appearanceMode {
+        case .dark:
+            settingsInterfaceStyle = .dark
+
+        case .light:
+            settingsInterfaceStyle = .light
+
+        case .automatic:
+            settingsInterfaceStyle = parentInterfaceStyle
+        }
+
+        guard settingsInterfaceStyle != viewModel.state.interfaceStyle else { return }
+        self.userInterfaceChanged(interfaceStyle: settingsInterfaceStyle, in: viewModel)
     }
 
     private func set(page: Int, userActionFromDocument: Bool, fromThumbnailList: Bool, in viewModel: ViewModel<PDFReaderActionHandler>) {

@@ -33,6 +33,7 @@ struct HtmlEpubReaderState: ViewModelState {
             case epub(cfi: String)
         }
 
+        let type: String
         let buffer: String
         let annotationsJson: String
         let page: Page?
@@ -48,6 +49,7 @@ struct HtmlEpubReaderState: ViewModelState {
         case cantDeleteAnnotation
         case cantAddAnnotations
         case cantUpdateAnnotation
+        case incompatibleDocument
         case unknown
     }
 

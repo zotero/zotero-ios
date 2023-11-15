@@ -50,20 +50,6 @@ struct PDFReaderState: ViewModelState {
         static let visiblePageFromThumbnailList = Changes(rawValue: 1 << 13)
     }
 
-    enum AppearanceMode: UInt {
-        case light
-        case dark
-        case automatic
-
-        func userInterfaceStyle(currentUserInterfaceStyle: UIUserInterfaceStyle) -> UIUserInterfaceStyle {
-            switch self {
-            case .automatic: return currentUserInterfaceStyle
-            case .dark: return .dark
-            case .light: return .light
-            }
-        }
-    }
-
     enum Error: Swift.Error {
         case cantDeleteAnnotation
         case cantAddAnnotations

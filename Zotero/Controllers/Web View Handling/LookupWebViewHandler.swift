@@ -123,7 +123,7 @@ final class LookupWebViewHandler {
 
     private func _lookUp(identifier: String) {
         DDLogInfo("LookupWebViewHandler: call translate js")
-        let encodedIdentifiers = WKWebView.encodeForJavascript(identifier.data(using: .utf8))
+        let encodedIdentifiers = WebViewEncoder.encodeForJavascript(identifier.data(using: .utf8))
         return self.webViewHandler.call(javascript: "lookup(\(encodedIdentifiers));")
                    .subscribe(on: MainScheduler.instance)
                    .observe(on: MainScheduler.instance)
@@ -151,7 +151,7 @@ final class LookupWebViewHandler {
                    }
                    .flatMap { translators -> Single<Any> in
                        DDLogInfo("LookupWebViewHandler: encode translators")
-                       let encodedTranslators = WKWebView.encodeAsJSONForJavascript(translators)
+                       let encodedTranslators = WebViewEncoder.encodeAsJSONForJavascript(translators)
                        return self.webViewHandler.call(javascript: "initTranslators(\(encodedTranslators));")
                    }
     }
@@ -179,8 +179,8 @@ final class LookupWebViewHandler {
                 return Disposables.create()
             }
 
-            let encodedSchema = WKWebView.encodeForJavascript(schemaData)
-            let encodedFormats = WKWebView.encodeForJavascript(dateFormatData)
+            let encodedSchema = WebViewEncoder.encodeForJavascript(schemaData)
+            let encodedFormats = WebViewEncoder.encodeForJavascript(dateFormatData)
 
             DDLogInfo("WebViewHandler: loaded bundled files")
 

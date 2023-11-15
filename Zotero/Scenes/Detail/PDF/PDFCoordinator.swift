@@ -29,7 +29,7 @@ protocol PdfReaderCoordinatorDelegate: AnyObject {
     func share(text: String, rect: CGRect, view: UIView)
     func lookup(text: String, rect: CGRect, view: UIView, userInterfaceStyle: UIUserInterfaceStyle)
     func showDeletedAlertForPdf(completion: @escaping (Bool) -> Void)
-    func showSettings(with settings: PDFSettings, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle, completion: @escaping (PDFSettings) -> Void)
+    func showSettings(with settings: PDFSettings, sender: UIBarButtonItem) -> ViewModel<ReaderSettingsActionHandler>
     func showReader(document: Document, userInterfaceStyle: UIUserInterfaceStyle)
     func showPdfExportSettings(sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle, completed: @escaping (PDFExportSettings) -> Void)
 }
@@ -121,7 +121,7 @@ final class PDFCoordinator: Coordinator {
             userId: userId,
             username: username,
             displayName: Defaults.shared.displayName,
-            interfaceStyle: settings.appearanceMode.userInterfaceStyle(currentUserInterfaceStyle: parentNavigationController.view.traitCollection.userInterfaceStyle)
+            interfaceStyle: settings.appearanceMode.userInterfaceStyle
         )
         let controller = PDFReaderViewController(
             viewModel: ViewModel(initialState: state, handler: handler),
@@ -344,29 +344,27 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         self.navigationController?.present(controller, animated: true, completion: nil)
     }
 
-    func showSettings(with settings: PDFSettings, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle, completion: @escaping (PDFSettings) -> Void) {
+    func showSettings(with settings: PDFSettings, sender: UIBarButtonItem) -> ViewModel<ReaderSettingsActionHandler> {
         DDLogInfo("PDFCoordinator: show settings")
 
-        let state = PDFSettingsState(settings: settings)
-        let viewModel = ViewModel(initialState: state, handler: PDFSettingsActionHandler())
+        let state = ReaderSettingsState(settings: settings)
+        let viewModel = ViewModel(initialState: state, handler: ReaderSettingsActionHandler())
+        let baseController = ReaderSettingsViewController(visibleRows: [.pageTransition, .pageMode, .scrollDirection, .pageFitting, .appearance, .sleep], viewModel: viewModel)
 
         let controller: UIViewController
-
         if UIDevice.current.userInterfaceIdiom == .pad {
-            let _controller = PDFSettingsViewController(viewModel: viewModel)
-            _controller.changeHandler = completion
-            controller = _controller
+            controller = baseController
         } else {
-            let _controller = PDFSettingsViewController(viewModel: viewModel)
-            _controller.changeHandler = completion
-            controller = UINavigationController(rootViewController: _controller)
+            controller = UINavigationController(rootViewController: baseController)
         }
 
         controller.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
         controller.popoverPresentationController?.barButtonItem = sender
         controller.preferredContentSize = CGSize(width: 480, height: 306)
-        controller.overrideUserInterfaceStyle = userInterfaceStyle
+        controller.overrideUserInterfaceStyle = settings.appearanceMode.userInterfaceStyle
         self.navigationController?.present(controller, animated: true, completion: nil)
+
+        return viewModel
     }
 
     func showReader(document: Document, userInterfaceStyle: UIUserInterfaceStyle) {

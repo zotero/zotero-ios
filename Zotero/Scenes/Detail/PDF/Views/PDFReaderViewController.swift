@@ -89,7 +89,10 @@ class PDFReaderViewController: UIViewController {
         share.rx.tap
              .subscribe(onNext: { [weak self, weak share] _ in
                  guard let self, let share else { return }
-                 self.coordinatorDelegate?.showPdfExportSettings(sender: share, userInterfaceStyle: self.viewModel.state.interfaceStyle) { [weak self] settings in
+                 self.coordinatorDelegate?.showPdfExportSettings(
+                    sender: share,
+                    userInterfaceStyle: self.viewModel.state.settings.appearanceMode.userInterfaceStyle
+                 ) { [weak self] settings in
                      self?.viewModel.process(action: .export(settings))
                  }
              })
@@ -359,7 +362,7 @@ class PDFReaderViewController: UIViewController {
             colorHex: colorHex,
             sizeValue: size,
             sender: sender,
-            userInterfaceStyle: self.viewModel.state.interfaceStyle
+            userInterfaceStyle: self.viewModel.state.settings.appearanceMode.userInterfaceStyle
         ) { [weak self] newColor, newSize in
             self?.viewModel.process(action: .setToolOptions(color: newColor, size: newSize.flatMap(CGFloat.init), tool: tool))
         }
@@ -425,14 +428,33 @@ class PDFReaderViewController: UIViewController {
     }
 
     func showSearch(pdfController: PDFViewController, text: String?) {
-        self.coordinatorDelegate?.showSearch(pdfController: pdfController, text: text, sender: self.searchButton, userInterfaceStyle: self.viewModel.state.interfaceStyle, delegate: self)
+        self.coordinatorDelegate?.showSearch(
+            pdfController: pdfController,
+            text: text,
+            sender: self.searchButton,
+            userInterfaceStyle: self.viewModel.state.settings.appearanceMode.userInterfaceStyle,
+            delegate: self
+        )
     }
 
     private func showSettings(sender: UIBarButtonItem) {
-        self.coordinatorDelegate?.showSettings(with: self.viewModel.state.settings, sender: sender, userInterfaceStyle: self.viewModel.state.interfaceStyle, completion: { [weak self] settings in
-            guard let self, let interfaceStyle = self.presentingViewController?.traitCollection.userInterfaceStyle else { return }
-            self.viewModel.process(action: .setSettings(settings: settings, currentUserInterfaceStyle: interfaceStyle))
-        })
+        let viewModel = self.coordinatorDelegate?.showSettings(with: self.viewModel.state.settings, sender: sender)
+        
+        viewModel?.stateObservable
+            .observe(on: MainScheduler.instance)
+            .subscribe(with: self, onNext: { `self`, state in
+                guard let interfaceStyle = self.presentingViewController?.traitCollection.userInterfaceStyle else { return }
+                let settings = PDFSettings(
+                    transition: state.transition,
+                    pageMode: state.pageMode,
+                    direction: state.scrollDirection,
+                    pageFitting: state.pageFitting,
+                    appearanceMode: state.appearance,
+                    idleTimerDisabled: state.idleTimerDisabled
+                )
+                self.viewModel.process(action: .setSettings(settings: settings, parentUserInterfaceStyle: interfaceStyle))
+            })
+            .disposed(by: disposeBag)
     }
 
     private func close() {
@@ -472,7 +494,7 @@ class PDFReaderViewController: UIViewController {
         separator.translatesAutoresizingMaskIntoConstraints = false
         separator.backgroundColor = Asset.Colors.annotationSidebarBorderColor.color
 
-        let annotationToolbar = AnnotationToolbarViewController(tools: [.highlight, .note, .image, .ink, .eraser], size: self.navigationBarHeight)
+        let annotationToolbar = AnnotationToolbarViewController(tools: [.highlight, .note, .image, .ink, .eraser], undoRedoEnabled: true, size: self.navigationBarHeight)
         annotationToolbar.delegate = self
 
         self.add(controller: documentController)
@@ -542,11 +564,11 @@ class PDFReaderViewController: UIViewController {
         readerButton.accessibilityLabel = L10n.Accessibility.Pdf.openReader
         readerButton.title = L10n.Accessibility.Pdf.openReader
         readerButton.rx
-                    .tap
-                    .subscribe(with: self, onNext: { `self`, _ in
-                        self.coordinatorDelegate?.showReader(document: self.viewModel.state.document, userInterfaceStyle: self.viewModel.state.interfaceStyle)
-                    })
-                    .disposed(by: self.disposeBag)
+            .tap
+            .subscribe(with: self, onNext: { `self`, _ in
+                self.coordinatorDelegate?.showReader(document: self.viewModel.state.document, userInterfaceStyle: self.viewModel.state.settings.appearanceMode.userInterfaceStyle)
+            })
+            .disposed(by: self.disposeBag)
 
         self.navigationItem.leftBarButtonItems = [closeButton, sidebarButton, readerButton]
         self.navigationItem.rightBarButtonItems = self.rightBarButtonItems

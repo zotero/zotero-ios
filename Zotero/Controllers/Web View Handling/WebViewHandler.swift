@@ -93,7 +93,7 @@ final class WebViewHandler: NSObject {
     }
 
     func sendMessaging(response payload: [String: Any], for messageId: Int) {
-        let script = "Zotero.Messaging.receiveResponse('\(messageId)', \(WKWebView.encodeAsJSONForJavascript(payload)));"
+        let script = "Zotero.Messaging.receiveResponse('\(messageId)', \(WebViewEncoder.encodeAsJSONForJavascript(payload)));"
         inMainThread { [weak self] in
             self?.webView?.evaluateJavaScript(script, completionHandler: nil)
         }

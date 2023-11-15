@@ -142,7 +142,7 @@ class HtmlEpubDocumentViewController: UIViewController {
         }
 
         func search(term: String) {
-            webViewHandler.call(javascript: "search({ term: '\(term)' });")
+            webViewHandler.call(javascript: "search({ term: \(WebViewEncoder.encodeForJavascript(term.data(using: .utf8))) });")
                 .observe(on: MainScheduler.instance)
                 .subscribe(with: self, onFailure: { _, error in
                     DDLogError("HtmlEpubReaderViewController: searching document failed - \(error)")
@@ -160,44 +160,27 @@ class HtmlEpubDocumentViewController: UIViewController {
         }
 
         func updateView(modifications: [[String: Any]], insertions: [[String: Any]], deletions: [String]) {
-            do {
-                let insertionsData = try JSONSerialization.data(withJSONObject: insertions)
-                let modificationsData = try JSONSerialization.data(withJSONObject: modifications)
-                let deletionsData = try JSONSerialization.data(withJSONObject: deletions)
-
-                guard let insertionsJson = String(data: insertionsData, encoding: .utf8) else {
-                    DDLogError("HtmlEpubReaderViewController: can't create insertions json - \(insertions)")
-                    return
-                }
-                guard let deletionsJson = String(data: deletionsData, encoding: .utf8) else {
-                    DDLogError("HtmlEpubReaderViewController: can't create deletions json - \(insertions)")
-                    return
-                }
-                guard let modificationsJson = String(data: modificationsData, encoding: .utf8) else {
-                    DDLogError("HtmlEpubReaderViewController: can't create modifications json - \(insertions)")
-                    return
-                }
-
-                webViewHandler.call(javascript: "updateAnnotations({ deletions: \(deletionsJson), insertions: \(insertionsJson), modifications: \(modificationsJson)});")
-                    .observe(on: MainScheduler.instance)
-                    .subscribe(with: self, onFailure: { _, error in
-                        DDLogError("HtmlEpubReaderViewController: updating document failed - \(error)")
-                    })
-                    .disposed(by: self.disposeBag)
-            } catch let error {
-                DDLogError("HtmlEpubReaderViewController: can't create update jsons - \(error)")
-            }
+            let encodedDeletions = WebViewEncoder.encodeAsJSONForJavascript(deletions)
+            let encodedInsertions = WebViewEncoder.encodeAsJSONForJavascript(insertions)
+            let encodedModifications = WebViewEncoder.encodeAsJSONForJavascript(modifications)
+            webViewHandler.call(javascript: "updateAnnotations({ deletions: \(encodedDeletions), insertions: \(encodedInsertions), modifications: \(encodedModifications)});")
+                .observe(on: MainScheduler.instance)
+                .subscribe(with: self, onFailure: { _, error in
+                    DDLogError("HtmlEpubReaderViewController: updating document failed - \(error)")
+                })
+                .disposed(by: self.disposeBag)
         }
 
         func load(documentData data: HtmlEpubReaderState.DocumentData) {
-            var javascript = "createView({ type: 'snapshot', buf: \(data.buffer), annotations: \(data.annotationsJson)"
+            DDLogInfo("HtmlEpubDocumentViewController: try creating view for \(data.type); page = \(String(describing: data.page))")
+            var javascript = "createView({ type: '\(data.type)', buf: \(data.buffer), annotations: \(data.annotationsJson)"
             if let page = data.page {
                 switch page {
                 case .html(let scrollYPercent):
                     javascript += ", viewState: {scrollYPercent: \(scrollYPercent), scale: 1}"
 
                 case .epub(let cfi):
-                    javascript += ", viewState: {cfi: \(cfi)}"
+                    javascript += ", viewState: {cfi: '\(cfi)'}"
                 }
             }
             javascript += "});"

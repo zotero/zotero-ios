@@ -508,6 +508,8 @@ internal enum L10n {
       internal static let cantDeleteAnnotations = L10n.tr("Localizable", "errors.pdf.cant_delete_annotations", fallback: "Can't delete annotations.")
       /// Can't update annotation.
       internal static let cantUpdateAnnotation = L10n.tr("Localizable", "errors.pdf.cant_update_annotation", fallback: "Can't update annotation.")
+      /// This document is not supported.
+      internal static let incompatibleDocument = L10n.tr("Localizable", "errors.pdf.incompatible_document", fallback: "This document is not supported.")
       /// The combined annotation would be too large.
       internal static let mergeTooBig = L10n.tr("Localizable", "errors.pdf.merge_too_big", fallback: "The combined annotation would be too large.")
       /// Unable to merge annotations
