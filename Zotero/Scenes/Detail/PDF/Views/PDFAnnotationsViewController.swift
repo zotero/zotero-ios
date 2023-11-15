@@ -581,7 +581,8 @@ final class PDFAnnotationsViewController: UIViewController {
             let filterImageName = filterOn ? "line.horizontal.3.decrease.circle.fill" : "line.horizontal.3.decrease.circle"
             let filter = UIBarButtonItem(image: UIImage(systemName: filterImageName), style: .plain, target: nil, action: nil)
             filter.rx.tap
-                .subscribe(with: self, onNext: { `self`, _ in
+                .subscribe(with: self, onNext: { [weak filter] `self`, _ in
+                    guard let filter else { return }
                     self.showFilterPopup(from: filter)
                 })
                 .disposed(by: self.disposeBag)

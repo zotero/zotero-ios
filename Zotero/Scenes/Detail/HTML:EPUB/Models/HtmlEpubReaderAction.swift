@@ -9,6 +9,7 @@
 import Foundation
 
 enum HtmlEpubReaderAction {
+    case changeFilter(AnnotationsFilter?)
     case deselectAnnotationDuringEditing(String)
     case deselectSelectedAnnotation
     case loadDocument
@@ -24,6 +25,7 @@ enum HtmlEpubReaderAction {
     case setColor(key: String, color: String)
     case setComment(key: String, comment: NSAttributedString)
     case setCommentActive(Bool)
+    case setSettings(HtmlEpubSettings)
     case setSidebarEditingEnabled(Bool)
     case setTags(key: String, tags: [Tag])
     case setToolOptions(color: String?, size: CGFloat?, tool: AnnotationTool)

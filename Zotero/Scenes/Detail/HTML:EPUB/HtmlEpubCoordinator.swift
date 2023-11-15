@@ -33,7 +33,15 @@ protocol HtmlEpubSidebarCoordinatorDelegate: AnyObject {
         popoverDelegate: UIPopoverPresentationControllerDelegate,
         userInterfaceStyle: UIUserInterfaceStyle
     ) -> PublishSubject<AnnotationPopoverState>?
-//    func showFilterPopup(from barButton: UIBarButtonItem, filter: AnnotationsFilter?, availableColors: [String], availableTags: [Tag], userInterfaceStyle: UIUserInterfaceStyle, completed: @escaping (AnnotationsFilter?) -> Void)
+    func showFilterPopup(
+        from barButton: UIBarButtonItem,
+        filter: AnnotationsFilter?,
+        availableColors: [String],
+        availableTags: [Tag],
+        userInterfaceStyle: UIUserInterfaceStyle,
+        completed: @escaping (AnnotationsFilter?) -> Void
+    )
+    func showSettings(with settings: HtmlEpubSettings, sender: UIBarButtonItem, completion: @escaping (HtmlEpubSettings) -> Void)
 }
 
 final class HtmlEpubCoordinator: Coordinator {
@@ -79,7 +87,7 @@ final class HtmlEpubCoordinator: Coordinator {
             htmlAttributedStringConverter: controllers.htmlAttributedStringConverter,
             dateParser: controllers.dateParser
         )
-        let state = HtmlEpubReaderState(url: url, key: key, library: library, userId: userId, username: username)
+        let state = HtmlEpubReaderState(url: url, key: key, settings: Defaults.shared.htmlEpubSettings, library: library, userId: userId, username: username)
         let controller = HtmlEpubReaderViewController(
             viewModel: ViewModel(initialState: state, handler: handler),
             compactSize: UIDevice.current.isCompactWidth(size: parentNavigationController.view.frame.size)
@@ -147,6 +155,9 @@ extension HtmlEpubCoordinator: HtmlEpubReaderCoordinatorDelegate {
 }
 
 extension HtmlEpubCoordinator: HtmlEpubSidebarCoordinatorDelegate {
+    func showSettings(with settings: HtmlEpubSettings, sender: UIBarButtonItem, completion: @escaping (HtmlEpubSettings) -> Void) {
+    }
+    
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, userInterfaceStyle: UIUserInterfaceStyle?, picked: @escaping ([Tag]) -> Void) {
         guard let navigationController else { return }
         (self.parentCoordinator as? DetailCoordinator)?.showTagPicker(
@@ -248,14 +259,38 @@ extension HtmlEpubCoordinator: HtmlEpubSidebarCoordinatorDelegate {
 
         return coordinator.viewModelObservable
     }
-//
-//    func showFilterPopup(
-//        from barButton: UIBarButtonItem,
-//        filter: AnnotationsFilter?,
-//        availableColors: [String],
-//        availableTags: [Tag],
-//        userInterfaceStyle: UIUserInterfaceStyle,
-//        completed: @escaping (AnnotationsFilter?) -> Void
-//    ) {
-//    }
+
+    func showFilterPopup(
+        from barButton: UIBarButtonItem,
+        filter: AnnotationsFilter?,
+        availableColors: [String],
+        availableTags: [Tag],
+        userInterfaceStyle: UIUserInterfaceStyle,
+        completed: @escaping (AnnotationsFilter?) -> Void
+    ) {
+        DDLogInfo("HtmlEpubCoordinator: show annotations filter popup")
+
+        let navigationController = NavigationViewController()
+        navigationController.overrideUserInterfaceStyle = userInterfaceStyle
+
+        let coordinator = AnnotationsFilterPopoverCoordinator(
+            initialFilter: filter,
+            availableColors: availableColors,
+            availableTags: availableTags,
+            navigationController: navigationController,
+            controllers: self.controllers,
+            completionHandler: completed
+        )
+        coordinator.parentCoordinator = self
+        self.childCoordinators.append(coordinator)
+        coordinator.start(animated: false)
+
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            navigationController.modalPresentationStyle = .popover
+            navigationController.popoverPresentationController?.barButtonItem = barButton
+            navigationController.popoverPresentationController?.permittedArrowDirections = .down
+        }
+
+        self.navigationController?.present(navigationController, animated: true, completion: nil)
+    }
 }

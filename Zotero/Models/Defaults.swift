@@ -113,6 +113,11 @@ final class Defaults {
     var pdfSettings: PDFSettings
     #endif
 
+    // MARK: - HTML / Epub Settings
+
+    @CodableUserDefault(key: "HtmlEpubReaderSettings", defaultValue: HtmlEpubSettings.default, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder, defaults: .standard)
+    var htmlEpubSettings: HtmlEpubSettings
+
     // MARK: - Citation / Bibliography Export
 
     @UserDefault(key: "exportStyleId", defaultValue: "http://www.zotero.org/styles/chicago-note-bibliography", defaults: .standard)

@@ -12,9 +12,9 @@ import RealmSwift
 
 struct HtmlEpubReaderState: ViewModelState {
     struct Changes: OptionSet {
-        typealias RawValue = UInt8
+        typealias RawValue = UInt16
 
-        let rawValue: UInt8
+        let rawValue: UInt16
 
         static let activeTool = Changes(rawValue: 1 << 0)
         static let annotations = Changes(rawValue: 1 << 1)
@@ -24,6 +24,7 @@ struct HtmlEpubReaderState: ViewModelState {
         static let filter = Changes(rawValue: 1 << 5)
         static let toolColor = Changes(rawValue: 1 << 6)
         static let sidebarEditingSelection = Changes(rawValue: 1 << 7)
+        static let settings = Changes(rawValue: 1 << 8)
     }
 
     struct DocumentData {
@@ -58,6 +59,7 @@ struct HtmlEpubReaderState: ViewModelState {
     let commentFont: UIFont
 
     var documentData: DocumentData?
+    var settings: HtmlEpubSettings
     var activeTool: AnnotationTool?
     var toolColors: [AnnotationTool: UIColor]
     var sortedKeys: [String]
@@ -78,7 +80,7 @@ struct HtmlEpubReaderState: ViewModelState {
     /// Annotation key to focus in annotation sidebar
     var focusSidebarKey: String?
     /// Annotation key to focus in document
-    var focusDocumentLocation: String?
+    var focusDocumentKey: String?
     var selectedAnnotationCommentActive: Bool
     var sidebarEditingEnabled: Bool
     var notificationToken: NotificationToken?
@@ -86,9 +88,10 @@ struct HtmlEpubReaderState: ViewModelState {
     /// Selected annotations when annotations are being edited in sidebar
     var selectedAnnotationsDuringEditing: Set<String>
 
-    init(url: URL, key: String, library: Library, userId: Int, username: String) {
+    init(url: URL, key: String, settings: HtmlEpubSettings, library: Library, userId: Int, username: String) {
         self.url = url
         self.key = key
+        self.settings = settings
         self.library = library
         self.userId = userId
         self.username = username
@@ -113,7 +116,7 @@ struct HtmlEpubReaderState: ViewModelState {
         changes = []
         error = nil
         focusSidebarKey = nil
-        focusDocumentLocation = nil
+        focusDocumentKey = nil
         updatedAnnotationKeys = nil
     }
 }

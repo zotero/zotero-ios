@@ -259,7 +259,7 @@ class HtmlEpubSidebarViewController: UIViewController {
         case .tags:
             guard annotation.isAuthor else { return }
             let selected = Set(annotation.tags.map({ $0.name }))
-            coordinatorDelegate?.showTagPicker(libraryId: state.library.identifier, selected: selected, userInterfaceStyle: .light, picked: { [weak self] tags in
+            coordinatorDelegate?.showTagPicker(libraryId: state.library.identifier, selected: selected, userInterfaceStyle: viewModel.state.settings.interfaceStyle, picked: { [weak self] tags in
                 self?.viewModel.process(action: .setTags(key: annotation.key, tags: tags))
             })
 
@@ -270,7 +270,7 @@ class HtmlEpubSidebarViewController: UIViewController {
                 userId: viewModel.state.userId,
                 library: viewModel.state.library,
                 sender: sender,
-                userInterfaceStyle: .light,
+                userInterfaceStyle: viewModel.state.settings.interfaceStyle,
                 saveAction: { [weak self] color, lineWidth, pageLabel, updateSubsequentLabels, highlightText in
                     self?.viewModel.process(
                         action: .updateAnnotationProperties(
@@ -351,8 +351,9 @@ class HtmlEpubSidebarViewController: UIViewController {
             let filterImageName = filterOn ? "line.horizontal.3.decrease.circle.fill" : "line.horizontal.3.decrease.circle"
             let filter = UIBarButtonItem(image: UIImage(systemName: filterImageName), style: .plain, target: nil, action: nil)
             filter.rx.tap
-                .subscribe(with: self, onNext: { _, _ in
-//                    self.showFilterPopup(from: filter)
+                .subscribe(with: self, onNext: { [weak filter] `self`, _ in
+                    guard let filter else { return }
+                    showFilterPopup(from: filter, viewModel: self.viewModel, coordinatorDelegate: self.coordinatorDelegate)
                 })
                 .disposed(by: disposeBag)
             items.insert(filter, at: 0)
@@ -367,6 +368,45 @@ class HtmlEpubSidebarViewController: UIViewController {
         items.append(select)
 
         toolbar.items = items
+
+        func showFilterPopup(from barButton: UIBarButtonItem, viewModel: ViewModel<HtmlEpubReaderActionHandler>, coordinatorDelegate: HtmlEpubSidebarCoordinatorDelegate?) {
+            var colors: Set<String> = []
+            var tags: Set<Tag> = []
+
+            for (_, annotation) in viewModel.state.annotations {
+                colors.insert(annotation.color)
+                for tag in annotation.tags {
+                    tags.insert(tag)
+                }
+            }
+
+            let sortedTags = tags.sorted(by: { lTag, rTag -> Bool in
+                if lTag.color.isEmpty == rTag.color.isEmpty {
+                    return lTag.name.localizedCaseInsensitiveCompare(rTag.name) == .orderedAscending
+                }
+                if !lTag.color.isEmpty && rTag.color.isEmpty {
+                    return true
+                }
+                return false
+            })
+            var sortedColors: [String] = []
+            AnnotationsConfig.allColors.forEach { color in
+                if colors.contains(color) {
+                    sortedColors.append(color)
+                }
+            }
+
+            coordinatorDelegate?.showFilterPopup(
+                from: barButton,
+                filter: viewModel.state.annotationFilter,
+                availableColors: sortedColors,
+                availableTags: sortedTags,
+                userInterfaceStyle: viewModel.state.settings.interfaceStyle,
+                completed: { [weak self] filter in
+                    self?.viewModel.process(action: .changeFilter(filter))
+                }
+            )
+        }
     }
 }
 

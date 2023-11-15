@@ -101,7 +101,7 @@ class HtmlEpubDocumentViewController: UIViewController {
             search(term: term)
         }
 
-        if let key = state.focusDocumentLocation {
+        if let key = state.focusDocumentKey {
             selectInDocument(key: key)
         }
 
@@ -237,17 +237,24 @@ class HtmlEpubDocumentViewController: UIViewController {
                 self.viewModel.process(action: .saveAnnotations(params))
 
             case "onSetAnnotationPopup":
-                guard self.parentDelegate?.isSidebarVisible == false, let params = data["params"] as? [String: Any] else {
+                guard let params = data["params"] as? [String: Any] else {
                     DDLogWarn("HtmlEpubReaderViewController: event \(event) missing params - \(message)")
                     return
                 }
+                
+                if params.isEmpty {
+                    self.viewModel.process(action: .deselectSelectedAnnotation)
+                    return
+                }
+
                 guard let rectArray = params["rect"] as? [CGFloat], let key = (params["annotation"] as? [String: Any])?["id"] as? String else {
                     DDLogError("HtmlEpubReaderViewController: incorrect params for document selection - \(params)")
                     return
                 }
+
                 let navigationBarInset = (self.parentDelegate?.statusBarHeight ?? 0) + (self.parentDelegate?.navigationBarHeight ?? 0)
                 let rect = CGRect(x: rectArray[0], y: rectArray[1] + navigationBarInset, width: rectArray[2] - rectArray[0], height: rectArray[3] - rectArray[1])
-                self.viewModel.process(action: params.isEmpty ? .deselectSelectedAnnotation : .selectAnnotationFromDocument(key: key, rect: rect))
+                self.viewModel.process(action: .selectAnnotationFromDocument(key: key, rect: rect))
 
             case "onChangeViewState":
                 guard let params = data["params"] as? [String: Any] else {

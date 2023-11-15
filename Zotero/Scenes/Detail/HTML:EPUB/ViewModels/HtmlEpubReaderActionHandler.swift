@@ -53,7 +53,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
         case .selectAnnotationFromSidebar(let key):
             self.update(viewModel: viewModel) { state in
-                _select(data: (key, CGRect()), didSelectInDocument: false, state: &state)
+                _select(data: (key, nil), didSelectInDocument: false, state: &state)
             }
 
         case .selectAnnotationFromDocument(let key, let rect):
@@ -105,6 +105,16 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
         case .deselectAnnotationDuringEditing(let key):
             deselectDuringEditing(key: key, in: viewModel)
+
+        case .changeFilter(let filter):
+            set(filter: filter, in: viewModel)
+
+        case .setSettings(let settings):
+            update(viewModel: viewModel) { state in
+                state.settings = settings
+                state.changes = .settings
+            }
+            Defaults.shared.htmlEpubSettings = settings
         }
     }
 
@@ -307,7 +317,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         }
     }
 
-    private func _select(data: (String, CGRect)?, didSelectInDocument: Bool, state: inout HtmlEpubReaderState) {
+    private func _select(data: (String, CGRect?)?, didSelectInDocument: Bool, state: inout HtmlEpubReaderState) {
         guard data?.0 != state.selectedAnnotationKey else { return }
 
         if let existing = state.selectedAnnotationKey {
@@ -331,7 +341,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         state.selectedAnnotationRect = rect
 
         if !didSelectInDocument {
-            state.focusDocumentLocation = key
+            state.focusDocumentKey = key
         } else {
             state.focusSidebarKey = key
         }
