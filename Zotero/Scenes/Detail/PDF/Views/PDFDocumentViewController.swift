@@ -620,7 +620,18 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
             forMenu: suggestedMenu,
             predicate: { menuId, action -> UIAction? in
                 switch menuId {
-                case .standardEdit, .PSPDFKit.accessibility:
+                case .standardEdit:
+                    switch action.identifier {
+                    case .PSPDFKit.copy:
+                        return action.replacing(title: L10n.copy, handler: { _ in
+                            UIPasteboard.general.string = TextConverter.convertTextForCopying(from: glyphs.text)
+                        })
+
+                    default:
+                        return action
+                    }
+
+                case .PSPDFKit.accessibility:
                     return action
 
                 case .share:
