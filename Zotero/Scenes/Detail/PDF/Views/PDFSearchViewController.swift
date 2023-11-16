@@ -27,10 +27,9 @@ final class PDFSearchViewController: UIViewController {
     private var results: [SearchResult]
     var text: String? {
         didSet {
-            self.searchBar.text = self.text
-            if let text = self.text {
-                self.search(for: text)
-            }
+            guard let text else { return }
+            searchBar.text = text
+            search(for: text)
         }
     }
 
@@ -57,10 +56,9 @@ final class PDFSearchViewController: UIViewController {
         super.viewWillAppear(animated)
 
         self.searchBar.becomeFirstResponder()
-
-        if let text = self.text {
-            self.searchBar.text = text
-            self.search(for: text)
+        if let text {
+            searchBar.text = text
+            search(for: text)
         }
     }
 
