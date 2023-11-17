@@ -516,6 +516,8 @@
 		B33E8A4D27B6AAE600CBC7DE /* CollectionCellContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34673CE27B14F0D00444C96 /* CollectionCellContentView.swift */; };
 		B33E8A4E27B6AAF000CBC7DE /* CollectionCellContentView.xib in Resources */ = {isa = PBXBuildFile; fileRef = B37D8E6324DC21D300F526C5 /* CollectionCellContentView.xib */; };
 		B3401D572567D8F700BB8D6E /* AnnotationPopoverViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3401D552567D8F700BB8D6E /* AnnotationPopoverViewController.swift */; };
+		B33EB2BA2B076657003255DA /* Localizable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37080512AA72135006F56B9 /* Localizable.swift */; };
+		B3401D572567D8F700BB8D6E /* AnnotationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3401D552567D8F700BB8D6E /* AnnotationViewController.swift */; };
 		B3401D5B2567DAAE00BB8D6E /* AnnotationPopoverCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3401D5A2567DAAE00BB8D6E /* AnnotationPopoverCoordinator.swift */; };
 		B3401D612568047D00BB8D6E /* AnnotationViewTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3401D602568047D00BB8D6E /* AnnotationViewTextView.swift */; };
 		B340692224A60D6A009ECE48 /* Rounding+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340692124A60D6A009ECE48 /* Rounding+Extensions.swift */; };
@@ -5144,7 +5146,7 @@
 				B300B33324291C8D00C1FE1E /* RTranslatorMetadata.swift in Sources */,
 				B310FA4529E5765800FA2F15 /* AddTagsToItemDbRequest.swift in Sources */,
 				B39D42DF29C0CE7D0035CDA9 /* TagsFlowLayout.swift in Sources */,
-				B3DD197B2B0CA7840042C46D /* Localizable.swift in Sources */,
+				B33EB2BA2B076657003255DA /* Localizable.swift in Sources */,
 				B30BDDE628366F1B007034E8 /* CreateTranslatedItemsDbRequest.swift in Sources */,
 				B31A5E51286308960026589F /* LookupIdentifierCell.swift in Sources */,
 				B319D6B8265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift in Sources */,
