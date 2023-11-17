@@ -41,6 +41,8 @@ final class PDFDocumentViewController: UIViewController {
         return self.pdfController?.userInterfaceView.scrubberBar.frame.height ?? 0
     }
 
+    private var searchResults: [SearchResult] = []
+
     weak var parentDelegate: (PDFReaderContainerDelegate & PDFDocumentDelegate)?
     weak var coordinatorDelegate: PdfReaderCoordinatorDelegate?
 
@@ -126,10 +128,19 @@ final class PDFDocumentViewController: UIViewController {
         self.scrollIfNeeded(to: page, animated: true, completion: {})
     }
 
-    func highlight(result: SearchResult) {
-        self.pdfController?.searchHighlightViewManager.clearHighlightedSearchResults(animated: (self.pdfController?.pageIndex == result.pageIndex))
-        self.scrollIfNeeded(to: result.pageIndex, animated: true) {
-            self.pdfController?.searchHighlightViewManager.addHighlight([result], animated: true)
+    func highlightSearchResults(_ results: [SearchResult]) {
+        searchResults = results
+        guard let searchHighlightViewManager = pdfController?.searchHighlightViewManager else { return }
+        searchHighlightViewManager.clearHighlightedSearchResults(animated: true)
+        searchHighlightViewManager.addHighlight(results, animated: true)
+    }
+
+    func highlightSelectedSearchResult(_ result: SearchResult) {
+        let searchHighlightViewManager = pdfController?.searchHighlightViewManager
+        scrollIfNeeded(to: result.pageIndex, animated: true) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500)) {
+                searchHighlightViewManager?.animateSearchHighlight(result)
+            }
         }
     }
 
@@ -568,6 +579,10 @@ final class PDFDocumentViewController: UIViewController {
 
 extension PDFDocumentViewController: PDFViewControllerDelegate {
     func pdfViewController(_ pdfController: PDFViewController, willBeginDisplaying pageView: PDFPageView, forPageAt pageIndex: Int) {
+        if !searchResults.isEmpty {
+            pdfController.searchHighlightViewManager.addHighlight(searchResults, animated: false)
+        }
+
         // This delegate method is called for incorrect page index when sidebar is changing size. So if the sidebar is opened/closed, incorrect page
         // is stored in `pageController` and if the user closes the pdf reader without further scrolling, incorrect page is shown on next opening.
         guard !(self.parentDelegate?.isSidebarTransitioning ?? false) && self.parentDelegate?.isCurrentlyVisible == true else { return }
