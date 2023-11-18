@@ -20,7 +20,7 @@ class AnnotationsFilterViewController: UIViewController {
 
     private var colorPickerHeight: CGFloat = 0
     private weak var container: UIStackView?
-    private weak var colorPicker: UIStackView?
+    private weak var colorPicker: ColorPickerStackView?
     private weak var tagsContainer: UIStackView?
     private weak var tagsLabel: UILabel?
 
@@ -63,58 +63,30 @@ class AnnotationsFilterViewController: UIViewController {
         func setupView() {
             let circleSize: CGFloat = 32
             let circleOffset: CGFloat = 8
-            let circleContentInset = UIEdgeInsets(top: 16, left: 0, bottom: 16, right: 16)
-
-            let columns = idealNumberOfColumns()
-            let colors = viewModel.state.availableColors
-            let rows = Int(ceil(Float(colors.count) / Float(columns)))
-            var colorRows: [UIStackView] = []
-
-            for idx in 0..<rows {
-                let offset = idx * columns
-                var colorViews: [UIView] = []
-
-                for idy in 0..<columns {
-                    let id = offset + idy
-                    if id >= colors.count {
-                        break
-                    }
-
-                    let hexColor = colors[id]
-                    let circleView = ColorPickerCircleView(hexColor: hexColor)
-                    circleView.backgroundColor = .white
-                    circleView.circleSize = CGSize(width: circleSize, height: circleSize)
-                    circleView.selectionLineWidth = 2.5
-                    circleView.contentInsets = circleContentInset
-                    circleView.isAccessibilityElement = true
-                    circleView.tap
-                        .observe(on: MainScheduler.instance)
-                        .subscribe(onNext: { [weak self] _ in
-                            self?.viewModel.process(action: .toggleColor(hexColor))
-                        })
-                        .disposed(by: disposeBag)
-                    colorViews.append(circleView)
+            let circleContentInsets = UIEdgeInsets(top: 16, left: 0, bottom: 16, right: 16)
+            let colorPicker = ColorPickerStackView(
+                hexColors: viewModel.state.availableColors,
+                columnsDistribution: UIDevice.current.userInterfaceIdiom == .pad ? .fixed(numberOfColumns: 4) : .fitInWidth(width: UIScreen.main.bounds.width - (2 * Self.horizontalInset)),
+                allowsMultipleSelection: true,
+                circleBackgroundColor: Asset.Colors.annotationPopoverBackground.color,
+                circleSize: circleSize,
+                circleOffset: circleOffset,
+                circleSelectionLineWidth: 2.5,
+                circleContentInsets: circleContentInsets,
+                trailingSpacerViewProvider: {
+                    let spacerView = UIView()
+                    spacerView.setContentHuggingPriority(.defaultLow, for: .horizontal)
+                    return spacerView
+                },
+                hexColorToggled: { [weak self] hexColor in
+                    self?.viewModel.process(action: .toggleColor(hexColor))
                 }
-
-                let spacerView = UIView()
-                spacerView.setContentHuggingPriority(.defaultLow, for: .horizontal)
-                colorViews.append(spacerView)
-
-                let colorRow = UIStackView(arrangedSubviews: colorViews)
-                colorRow.distribution = .fill
-                colorRow.spacing = circleOffset
-                colorRow.axis = .horizontal
-                colorRows.append(colorRow)
-            }
-
-            let colorRowsCount = CGFloat(colorRows.count)
-            colorPickerHeight = (circleContentInset.top + circleSize + circleContentInset.bottom) * colorRowsCount + circleOffset * (colorRowsCount - 1)
-
-            let colorPicker = UIStackView(arrangedSubviews: colorRows)
+            )
             colorPicker.accessibilityLabel = L10n.Accessibility.Pdf.colorPicker
-            colorPicker.spacing = circleOffset
-            colorPicker.axis = .vertical
             self.colorPicker = colorPicker
+
+            let colorRowsCount = CGFloat(colorPicker.arrangedSubviews.count)
+            colorPickerHeight = (circleContentInsets.top + circleSize + circleContentInsets.bottom) * colorRowsCount + circleOffset * (colorRowsCount - 1)
 
             let tagsLabel = UILabel()
             tagsLabel.font = .preferredFont(forTextStyle: .body)
@@ -157,21 +129,9 @@ class AnnotationsFilterViewController: UIViewController {
 
             NSLayoutConstraint.activate([
                 container.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-                container.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -Self.bottomInset),
                 container.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: Self.horizontalInset),
                 container.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -Self.horizontalInset)
             ])
-
-            func idealNumberOfColumns() -> Int {
-                switch UIDevice.current.userInterfaceIdiom {
-                case .pad:
-                    return 4
-
-                default:
-                    // Calculate number of circles which fit in whole screen width
-                    return Int((UIScreen.main.bounds.width - (2 * Self.horizontalInset)) / (circleSize + circleOffset + circleContentInset.left + circleContentInset.right))
-                }
-            }
         }
 
         func setupNavigationBar() {
@@ -209,14 +169,7 @@ class AnnotationsFilterViewController: UIViewController {
         }
 
         func setSelected(colors: Set<String>) {
-            guard let colorPicker else { return }
-            for view in colorPicker.arrangedSubviews {
-                guard let colorRow = view as? UIStackView else { continue }
-                for view in colorRow.arrangedSubviews {
-                    guard let pickerView = view as? ColorPickerCircleView else { continue }
-                    pickerView.isSelected = colors.contains(pickerView.hexColor)
-                }
-            }
+            colorPicker?.setSelected(hexColors: Array(colors))
         }
 
         func set(tags: Set<String>, availableTags: [Tag]) {

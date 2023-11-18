@@ -22,7 +22,7 @@ class AnnotationToolOptionsViewController: UIViewController {
     private let disposeBag: DisposeBag
 
     private weak var container: UIStackView?
-    private weak var colorPicker: UIStackView?
+    private weak var colorPicker: ColorPickerStackView?
 
     // MARK: - Lifecycle
 
@@ -60,53 +60,27 @@ class AnnotationToolOptionsViewController: UIViewController {
             var subviews: [UIView] = []
 
             if let color = viewModel.state.colorHex {
-                let columns = idealNumberOfColumns()
-                let colors = colors(for: viewModel.state.tool)
-                let rows = Int(ceil(Float(colors.count) / Float(columns)))
-                var colorRows: [UIStackView] = []
-
-                for idx in 0..<rows {
-                    let offset = idx * columns
-                    var colorViews: [UIView] = []
-
-                    for idy in 0..<columns {
-                        let id = offset + idy
-                        if id >= colors.count {
-                            break
-                        }
-
-                        let hexColor = colors[id]
-                        let circleView = ColorPickerCircleView(hexColor: hexColor)
-                        circleView.backgroundColor = .clear
-                        circleView.circleSize = CGSize(width: Self.circleSize, height: Self.circleSize)
-                        circleView.selectionLineWidth = 3
-                        circleView.selectionInset = UIEdgeInsets(top: 4, left: 4, bottom: 4, right: 4)
-                        circleView.isSelected = hexColor == color
-                        circleView.backgroundColor = Asset.Colors.defaultCellBackground.color
-                        circleView.isAccessibilityElement = true
-                        circleView.tap
-                            .subscribe(with: self, onNext: { `self`, hex in
-                                self.viewModel.process(action: .setColorHex(hex))
-                            })
-                            .disposed(by: disposeBag)
-                        colorViews.append(circleView)
+                let colorPicker = ColorPickerStackView(
+                    hexColors: colors(for: viewModel.state.tool),
+                    columnsDistribution: UIDevice.current.userInterfaceIdiom == .pad ? .fixed(numberOfColumns: 4) : .fitInWidth(width: UIScreen.main.bounds.width - (2 * Self.horizontalInset)),
+                    allowsMultipleSelection: false,
+                    circleBackgroundColor: Asset.Colors.annotationPopoverBackground.color,
+                    circleSize: Self.circleSize,
+                    circleOffset: Self.circleOffset,
+                    circleSelectionLineWidth: 3,
+                    circleSelectionInset: UIEdgeInsets(top: 4, left: 4, bottom: 4, right: 4),
+                    trailingSpacerViewProvider: {
+                        guard UIDevice.current.userInterfaceIdiom == .phone  else { return nil }
+                        let spacerView = UIView()
+                        spacerView.setContentHuggingPriority(.defaultLow, for: .horizontal)
+                        return spacerView
+                    },
+                    hexColorToggled: { [weak self] hexColor in
+                        self?.viewModel.process(action: .setColorHex(hexColor))
                     }
-
-                    if UIDevice.current.userInterfaceIdiom == .phone {
-                        // Add spacer
-                        colorViews.append(UIView())
-                    }
-
-                    let stackView = UIStackView(arrangedSubviews: colorViews)
-                    stackView.spacing = Self.circleOffset
-                    stackView.axis = .horizontal
-                    colorRows.append(stackView)
-                }
-
-                let colorPicker = UIStackView(arrangedSubviews: colorRows)
+                )
+                colorPicker.setSelected(hexColor: color)
                 colorPicker.accessibilityLabel = L10n.Accessibility.Pdf.colorPicker
-                colorPicker.spacing = Self.circleOffset
-                colorPicker.axis = .vertical
                 subviews.append(colorPicker)
                 self.colorPicker = colorPicker
             }
@@ -145,17 +119,6 @@ class AnnotationToolOptionsViewController: UIViewController {
                 container.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: Self.horizontalInset),
                 view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: Self.horizontalInset)
             ])
-
-            func idealNumberOfColumns() -> Int {
-                switch UIDevice.current.userInterfaceIdiom {
-                case .pad:
-                    return 4
-
-                default:
-                    // Calculate number of circles which fit in whole screen width
-                    return Int((UIScreen.main.bounds.width - (2 * Self.horizontalInset)) / (Self.circleSize + Self.circleOffset))
-                }
-            }
 
             func colors(for tool: PSPDFKit.Annotation.Tool) -> [String] {
                 switch tool {

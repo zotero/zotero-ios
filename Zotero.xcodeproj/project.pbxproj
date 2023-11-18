@@ -26,6 +26,7 @@
 		61BD13952A5831EF008A0704 /* TextKit1TextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61BD13942A5831EF008A0704 /* TextKit1TextView.swift */; };
 		61C817F22A49B5D30085B1E6 /* CollectionResponseSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EDEE250242E700D8BC1E /* CollectionResponseSpec.swift */; };
 		61FA14CE2B05081D00E7D423 /* TextConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61FA14CD2B05081D00E7D423 /* TextConverter.swift */; };
+		61FA14D02B08E24A00E7D423 /* ColorPickerStackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61FA14CF2B08E24A00E7D423 /* ColorPickerStackView.swift */; };
 		B300B33324291C8D00C1FE1E /* RTranslatorMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300B33224291C8D00C1FE1E /* RTranslatorMetadata.swift */; };
 		B300B3352429222B00C1FE1E /* TranslatorMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300B3342429222B00C1FE1E /* TranslatorMetadata.swift */; };
 		B300B3362429234C00C1FE1E /* TranslatorMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300B3342429222B00C1FE1E /* TranslatorMetadata.swift */; };
@@ -1203,6 +1204,7 @@
 		61ABA7502A6137D1002A4219 /* ShareableImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareableImage.swift; sourceTree = "<group>"; };
 		61BD13942A5831EF008A0704 /* TextKit1TextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextKit1TextView.swift; sourceTree = "<group>"; };
 		61FA14CD2B05081D00E7D423 /* TextConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextConverter.swift; sourceTree = "<group>"; };
+		61FA14CF2B08E24A00E7D423 /* ColorPickerStackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPickerStackView.swift; sourceTree = "<group>"; };
 		B300B33224291C8D00C1FE1E /* RTranslatorMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RTranslatorMetadata.swift; sourceTree = "<group>"; };
 		B300B3342429222B00C1FE1E /* TranslatorMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorMetadata.swift; sourceTree = "<group>"; };
 		B300B3372429254900C1FE1E /* SyncTranslatorsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncTranslatorsDbRequest.swift; sourceTree = "<group>"; };
@@ -2908,6 +2910,7 @@
 				B34DF1BC2576956F0019CCD1 /* SwitchCell.xib */,
 				B34DF1B325768BB70019CCD1 /* TextFieldCell.swift */,
 				B34DF1B425768BB70019CCD1 /* TextFieldCell.xib */,
+				61FA14CF2B08E24A00E7D423 /* ColorPickerStackView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -4790,6 +4793,7 @@
 				B307A2732704A87D005986B3 /* IdleTimerController.swift in Sources */,
 				B3AFB83C2A0CE82C008C2374 /* EmptyDecodable.swift in Sources */,
 				B347F2BA24DC4D5D000D5FF6 /* CapHeightLabel.swift in Sources */,
+				61FA14D02B08E24A00E7D423 /* ColorPickerStackView.swift in Sources */,
 				B30566B023FC051F003304F2 /* AuthorizeUploadResponse.swift in Sources */,
 				B30565E323FC051E003304F2 /* DbStorage.swift in Sources */,
 				B3D32A4D286C77850075C6D7 /* ItemSortingView.swift in Sources */,
