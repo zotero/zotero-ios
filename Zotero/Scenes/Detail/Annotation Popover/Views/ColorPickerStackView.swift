@@ -26,6 +26,7 @@ class ColorPickerStackView: UIStackView {
     let circleSelectionInset: UIEdgeInsets
     let circleContentInsets: UIEdgeInsets
     let trailingSpacerViewProvider: () -> UIView?
+    let accessibilityLabelProvider: (_ hexColor: String, _ isSelected: Bool) -> String?
     let hexColorToggled: (_ hexColor: String) -> Void
     private let disposeBag: DisposeBag
 
@@ -35,11 +36,12 @@ class ColorPickerStackView: UIStackView {
         allowsMultipleSelection: Bool,
         circleBackgroundColor: UIColor,
         circleSize: CGFloat = 22,
-        circleOffset: CGFloat,
+        circleOffset: CGFloat = .zero,
         circleSelectionLineWidth: CGFloat = 1.5,
         circleSelectionInset: UIEdgeInsets = UIEdgeInsets(top: 2, left: 2, bottom: 2, right: 2),
         circleContentInsets: UIEdgeInsets = .zero,
         trailingSpacerViewProvider: @escaping () -> UIView? = { nil },
+        accessibilityLabelProvider: @escaping (_ hexColor: String, _ isSelected: Bool) -> String? = { _, _ in nil },
         hexColorToggled: @escaping (_ hexColor: String) -> Void
     ) {
         self.hexColors = hexColors
@@ -52,6 +54,7 @@ class ColorPickerStackView: UIStackView {
         self.circleSelectionInset = circleSelectionInset
         self.circleContentInsets = circleContentInsets
         self.trailingSpacerViewProvider = trailingSpacerViewProvider
+        self.accessibilityLabelProvider = accessibilityLabelProvider
         self.hexColorToggled = hexColorToggled
         disposeBag = DisposeBag()
         super.init(frame: .zero)
@@ -83,6 +86,7 @@ class ColorPickerStackView: UIStackView {
                     circleView.selectionInset = circleSelectionInset
                     circleView.contentInsets = circleContentInsets
                     circleView.isAccessibilityElement = true
+                    circleView.accessibilityLabel = accessibilityLabelProvider(hexColor, false)
                     circleView.tap
                         .observe(on: MainScheduler.instance)
                         .subscribe(onNext: { [weak self] _ in
@@ -142,17 +146,24 @@ class ColorPickerStackView: UIStackView {
         for view in arrangedSubviews {
             guard let colorRow = view as? UIStackView else { continue }
             for view in colorRow.arrangedSubviews {
-                guard let pickerView = view as? ColorPickerCircleView else { continue }
+                guard let circleView = view as? ColorPickerCircleView else { continue }
+                let isSelected: Bool
                 if allowsMultipleSelection {
-                    pickerView.isSelected = hexColors.contains(pickerView.hexColor)
+                    isSelected = hexColors.contains(circleView.hexColor)
                 } else {
-                    pickerView.isSelected = hexColors.first == pickerView.hexColor
+                    isSelected = hexColors.first == circleView.hexColor
                 }
+                circleView.isSelected = isSelected
+                circleView.accessibilityLabel = accessibilityLabelProvider(circleView.hexColor, isSelected)
             }
         }
     }
 
-    func setSelected(hexColor: String) {
-        setSelected(hexColors: [hexColor])
+    func setSelected(hexColor: String?) {
+        if let hexColor {
+            setSelected(hexColors: [hexColor])
+        } else {
+            setSelected(hexColors: [])
+        }
     }
 }

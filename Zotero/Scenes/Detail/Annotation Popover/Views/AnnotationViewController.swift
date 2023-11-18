@@ -21,7 +21,7 @@ final class AnnotationViewController: UIViewController {
     @IBOutlet private weak var containerStackView: UIStackView!
     private weak var header: AnnotationViewHeader!
     private weak var comment: AnnotationViewTextView?
-    private weak var colorPickerContainer: UIStackView!
+    private weak var colorPicker: ColorPickerStackView!
     private weak var tagsButton: AnnotationViewButton!
     private weak var tags: AnnotationViewText!
     private weak var deleteButton: UIButton!
@@ -107,13 +107,7 @@ final class AnnotationViewController: UIViewController {
         )
 
         // Update selected color
-        if let views = self.colorPickerContainer?.arrangedSubviews {
-            for view in views {
-                guard let circleView = view as? ColorPickerCircleView else { continue }
-                circleView.isSelected = circleView.hexColor == annotation.color
-                circleView.accessibilityLabel = self.name(for: circleView.hexColor, isSelected: circleView.isSelected)
-            }
-        }
+        colorPicker.setSelected(hexColor: annotation.color)
 
         // Update tags
         if !annotation.tags.isEmpty {
@@ -237,32 +231,32 @@ final class AnnotationViewController: UIViewController {
             let colorPickerContainer = UIView()
             colorPickerContainer.backgroundColor = Asset.Colors.defaultCellBackground.color
             colorPickerContainer.accessibilityLabel = L10n.Accessibility.Pdf.colorPicker
-            let colorPickerStackView = UIStackView(arrangedSubviews: [])
-            colorPickerStackView.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
-            colorPickerStackView.translatesAutoresizingMaskIntoConstraints = false
-            for (idx, hexColor) in AnnotationsConfig.colors(for: annotation.type).enumerated() {
-                let circleView = ColorPickerCircleView(hexColor: hexColor)
-                circleView.contentInsets = UIEdgeInsets(top: 11, left: (idx == 0 ? 16 : 11), bottom: 11, right: 11)
-                circleView.backgroundColor = .clear
-                circleView.isSelected = circleView.hexColor == self.viewModel.state.selectedAnnotation?.color
-                circleView.tap
-                          .subscribe(with: self, onNext: { `self`, color in
-                              self.set(color: color)
-                          })
-                          .disposed(by: self.disposeBag)
-                circleView.isAccessibilityElement = true
-                circleView.accessibilityLabel = self.name(for: circleView.hexColor, isSelected: circleView.isSelected)
-                circleView.backgroundColor = Asset.Colors.defaultCellBackground.color
-                colorPickerStackView.addArrangedSubview(circleView)
-            }
-            self.colorPickerContainer = colorPickerStackView
-            colorPickerContainer.addSubview(colorPickerStackView)
+
+            let hexColors = AnnotationsConfig.colors(for: annotation.type)
+            let colorPicker = ColorPickerStackView(
+                hexColors: hexColors,
+                columnsDistribution: .fixed(numberOfColumns: hexColors.count),
+                allowsMultipleSelection: false,
+                circleBackgroundColor: Asset.Colors.defaultCellBackground.color,
+                circleContentInsets: UIEdgeInsets(top: 11, left: 11, bottom: 11, right: 11),
+                accessibilityLabelProvider: { [weak self] hexColor, isSelected in
+                    self?.name(for: hexColor, isSelected: isSelected)
+                },
+                hexColorToggled: { [weak self] hexColor in
+                    self?.set(color: hexColor)
+                }
+            )
+            colorPicker.setSelected(hexColor: viewModel.state.selectedAnnotation?.color)
+            colorPicker.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
+            colorPicker.translatesAutoresizingMaskIntoConstraints = false
+            self.colorPicker = colorPicker
+            colorPickerContainer.addSubview(colorPicker)
 
             NSLayoutConstraint.activate([
-                colorPickerStackView.topAnchor.constraint(equalTo: colorPickerContainer.topAnchor),
-                colorPickerStackView.bottomAnchor.constraint(equalTo: colorPickerContainer.bottomAnchor),
-                colorPickerStackView.leadingAnchor.constraint(equalTo: colorPickerContainer.leadingAnchor),
-                colorPickerStackView.trailingAnchor.constraint(lessThanOrEqualTo: colorPickerContainer.trailingAnchor)
+                colorPicker.topAnchor.constraint(equalTo: colorPickerContainer.topAnchor),
+                colorPicker.bottomAnchor.constraint(equalTo: colorPickerContainer.bottomAnchor),
+                colorPicker.leadingAnchor.constraint(equalTo: colorPickerContainer.leadingAnchor, constant: 5),
+                colorPicker.trailingAnchor.constraint(lessThanOrEqualTo: colorPickerContainer.trailingAnchor)
             ])
 
             self.containerStackView.addArrangedSubview(colorPickerContainer)
