@@ -11,42 +11,66 @@ import UIKit
 import RxSwift
 
 final class ColorPickerCell: UITableViewCell {
-    @IBOutlet private weak var stackView: UIStackView!
+    let colorChange: PublishSubject<String>
+    let disposeBag: DisposeBag
 
-    let colorChange: PublishSubject<String> = PublishSubject()
-    let disposeBag = DisposeBag()
+    private var colorPicker: ColorPickerStackView?
 
-    override func awakeFromNib() {
-        super.awakeFromNib()
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        colorChange = PublishSubject()
+        disposeBag = DisposeBag()
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        setup()
+        selectionStyle = .none
+        accessibilityLabel = L10n.Accessibility.Pdf.colorPicker
 
-        self.accessibilityLabel = L10n.Accessibility.Pdf.colorPicker
+        func setup() {
+            let hexColors = AnnotationsConfig.allColors
+            let colorPicker = ColorPickerStackView(
+                hexColors: hexColors,
+                columnsDistribution: .fixed(numberOfColumns: hexColors.count),
+                allowsMultipleSelection: false,
+                circleBackgroundColor: backgroundColor ?? .secondarySystemBackground,
+                circleContentInsets: UIEdgeInsets(top: 11, left: 11, bottom: 11, right: 11),
+                accessibilityLabelProvider: { hexColor, isSelected in
+                    name(for: hexColor, isSelected: isSelected)
+                },
+                hexColorToggled: { [weak self] hexColor in
+                    self?.colorChange.onNext(hexColor)
+                }
+            )
+            colorPicker.translatesAutoresizingMaskIntoConstraints = false
+            contentView.addSubview(colorPicker)
+            self.colorPicker = colorPicker
 
-        AnnotationsConfig.allColors.forEach { hexColor in
-            let circleView = ColorPickerCircleView(hexColor: hexColor)
-            circleView.contentInsets = UIEdgeInsets(top: 11, left: 11, bottom: 11, right: 11)
-            circleView.tap.bind(to: self.colorChange).disposed(by: self.disposeBag)
-            circleView.isAccessibilityElement = true
-            self.stackView.addArrangedSubview(circleView)
-        }
-    }
+            NSLayoutConstraint.activate([
+                colorPicker.topAnchor.constraint(equalTo: contentView.topAnchor),
+                colorPicker.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+                colorPicker.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 5),
+                colorPicker.trailingAnchor.constraint(lessThanOrEqualTo: contentView.trailingAnchor, constant: -5)
+            ])
 
-    func setup(selectedColor: String, annotationType: AnnotationType) {
-        let colors = AnnotationsConfig.colors(for: annotationType)
-        for (idx, view) in self.stackView.arrangedSubviews.enumerated() {
-            guard let circleView = view as? ColorPickerCircleView else { continue }
-
-            if idx >= colors.count {
-                circleView.isHidden = true
-            } else {
-                circleView.isHidden = false
-                circleView.isSelected = circleView.hexColor == selectedColor
-                circleView.accessibilityLabel = self.name(for: circleView.hexColor, isSelected: circleView.isSelected)
+            func name(for color: String, isSelected: Bool) -> String {
+                let colorName = AnnotationsConfig.colorNames[color] ?? L10n.unknown
+                return !isSelected ? colorName : L10n.Accessibility.Pdf.selected + ": " + colorName
             }
         }
     }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
 
-    private func name(for color: String, isSelected: Bool) -> String {
-        let colorName = AnnotationsConfig.colorNames[color] ?? L10n.unknown
-        return !isSelected ? colorName : L10n.Accessibility.Pdf.selected + ": " + colorName
+    func setup(selectedColor: String, annotationType: AnnotationType) {
+        guard let colorPicker else { return }
+        let colors = AnnotationsConfig.colors(for: annotationType)
+        for view in colorPicker.arrangedSubviews {
+            guard let colorRow = view as? UIStackView else { continue }
+            for view in colorRow.arrangedSubviews {
+                guard let circleView = view as? ColorPickerCircleView else { continue }
+                circleView.isHidden = !colors.contains(circleView.hexColor)
+            }
+        }
+        colorPicker.setSelected(hexColor: selectedColor)
     }
 }

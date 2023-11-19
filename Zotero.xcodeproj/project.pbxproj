@@ -535,7 +535,6 @@
 		B34C40F525710B430057D5F5 /* AnnotationEditViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34C40F325710B430057D5F5 /* AnnotationEditViewController.swift */; };
 		B34C40F625710B430057D5F5 /* AnnotationEditViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B34C40F425710B430057D5F5 /* AnnotationEditViewController.xib */; };
 		B34C40FF25711C990057D5F5 /* ColorPickerCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34C40FD25711C990057D5F5 /* ColorPickerCell.swift */; };
-		B34C410025711C990057D5F5 /* ColorPickerCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B34C40FE25711C990057D5F5 /* ColorPickerCell.xib */; };
 		B34C4108257122BF0057D5F5 /* AnnotationViewLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34C4107257122BF0057D5F5 /* AnnotationViewLayout.swift */; };
 		B34C410C257132730057D5F5 /* AnnotationPopoverLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34C410B257132730057D5F5 /* AnnotationPopoverLayout.swift */; };
 		B34DF1A1257684590019CCD1 /* AnnotationPageLabelViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34DF19F257684590019CCD1 /* AnnotationPageLabelViewController.swift */; };
@@ -1541,7 +1540,6 @@
 		B34C40F325710B430057D5F5 /* AnnotationEditViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationEditViewController.swift; sourceTree = "<group>"; };
 		B34C40F425710B430057D5F5 /* AnnotationEditViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = AnnotationEditViewController.xib; sourceTree = "<group>"; };
 		B34C40FD25711C990057D5F5 /* ColorPickerCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPickerCell.swift; sourceTree = "<group>"; };
-		B34C40FE25711C990057D5F5 /* ColorPickerCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ColorPickerCell.xib; sourceTree = "<group>"; };
 		B34C4107257122BF0057D5F5 /* AnnotationViewLayout.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnnotationViewLayout.swift; sourceTree = "<group>"; };
 		B34C410B257132730057D5F5 /* AnnotationPopoverLayout.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnnotationPopoverLayout.swift; sourceTree = "<group>"; };
 		B34DF19F257684590019CCD1 /* AnnotationPageLabelViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationPageLabelViewController.swift; sourceTree = "<group>"; };
@@ -2900,7 +2898,6 @@
 				B3401D552567D8F700BB8D6E /* AnnotationViewController.swift */,
 				B3E02C0C26848CA900FFB419 /* AnnotationViewController.xib */,
 				B34C40FD25711C990057D5F5 /* ColorPickerCell.swift */,
-				B34C40FE25711C990057D5F5 /* ColorPickerCell.xib */,
 				B3764D9C2574F2DE0024274F /* ColorPickerCircleView.swift */,
 				B398142C257A649D002C755C /* HighlightEditCell.swift */,
 				B398143E257A8EB2002C755C /* HighlightEditCell.xib */,
@@ -4238,7 +4235,6 @@
 				B30B550524B85A6200F94B59 /* Images.xcassets in Resources */,
 				B39D42D429BF85930035CDA9 /* TagFilterContentView.xib in Resources */,
 				B3C9D60624DA921B003EA1EE /* CollectionsSearchViewController.xib in Resources */,
-				B34C410025711C990057D5F5 /* ColorPickerCell.xib in Resources */,
 				B3593AD824B601AB00CA0B57 /* PDFSearchCell.xib in Resources */,
 				B3F0C3FE250A1DB8002D557A /* LibraryCell.xib in Resources */,
 				B37D8E6424DC21D300F526C5 /* CollectionCellContentView.xib in Resources */,

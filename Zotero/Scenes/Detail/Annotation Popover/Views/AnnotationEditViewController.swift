@@ -179,7 +179,7 @@ final class AnnotationEditViewController: UIViewController {
         self.tableView.widthAnchor.constraint(equalToConstant: AnnotationPopoverLayout.width).isActive = true
         self.tableView.delegate = self
         self.tableView.dataSource = self
-        self.tableView.register(UINib(nibName: "ColorPickerCell", bundle: nil), forCellReuseIdentifier: Section.properties.cellId(index: 0))
+        self.tableView.register(ColorPickerCell.self, forCellReuseIdentifier: Section.properties.cellId(index: 0))
         self.tableView.register(LineWidthCell.self, forCellReuseIdentifier: Section.properties.cellId(index: 1))
         self.tableView.register(UINib(nibName: "HighlightEditCell", bundle: nil), forCellReuseIdentifier: Section.highlight.cellId(index: 0))
         self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: Section.actions.cellId(index: 0))
