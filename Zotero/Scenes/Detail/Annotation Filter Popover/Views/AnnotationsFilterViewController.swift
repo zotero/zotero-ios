@@ -50,7 +50,7 @@ class AnnotationsFilterViewController: UIViewController {
 
         setupView()
         setupNavigationBar()
-        setSelected(colors: viewModel.state.colors)
+        colorPicker?.setSelected(hexColors: Array(viewModel.state.colors))
         set(tags: viewModel.state.tags, availableTags: viewModel.state.availableTags)
 
         viewModel.stateObservable
@@ -153,7 +153,7 @@ class AnnotationsFilterViewController: UIViewController {
 
         func update(state: AnnotationsFilterState) {
             if state.changes.contains(.colors) {
-                setSelected(colors: state.colors)
+                colorPicker?.setSelected(hexColors: Array(state.colors))
             }
 
             if state.changes.contains(.tags) {
@@ -166,10 +166,6 @@ class AnnotationsFilterViewController: UIViewController {
 
             updateFilter()
             updatePreferredContentSize()
-        }
-
-        func setSelected(colors: Set<String>) {
-            colorPicker?.setSelected(hexColors: Array(colors))
         }
 
         func set(tags: Set<String>, availableTags: [Tag]) {
