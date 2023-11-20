@@ -70,7 +70,7 @@ class AnnotationToolOptionsViewController: UIViewController {
                     circleSelectionLineWidth: 3,
                     circleSelectionInset: UIEdgeInsets(top: 4, left: 4, bottom: 4, right: 4),
                     trailingSpacerViewProvider: {
-                        guard UIDevice.current.userInterfaceIdiom == .phone  else { return nil }
+                        guard UIDevice.current.userInterfaceIdiom == .phone else { return nil }
                         let spacerView = UIView()
                         spacerView.setContentHuggingPriority(.defaultLow, for: .horizontal)
                         return spacerView

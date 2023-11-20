@@ -28,9 +28,9 @@ final class ColorPickerCell: UITableViewCell {
             let hexColors = AnnotationsConfig.allColors
             let colorPicker = ColorPickerStackView(
                 hexColors: hexColors,
-                columnsDistribution: .fixed(numberOfColumns: hexColors.count),
+                columnsDistribution: UIDevice.current.userInterfaceIdiom == .pad ? .fixed(numberOfColumns: hexColors.count) : .fitInWidth(width: UIScreen.main.bounds.width),
                 allowsMultipleSelection: false,
-                circleBackgroundColor: backgroundColor ?? .secondarySystemBackground,
+                circleBackgroundColor: .secondarySystemGroupedBackground,
                 circleContentInsets: UIEdgeInsets(top: 11, left: 11, bottom: 11, right: 11),
                 accessibilityLabelProvider: { hexColor, isSelected in
                     name(for: hexColor, isSelected: isSelected)
