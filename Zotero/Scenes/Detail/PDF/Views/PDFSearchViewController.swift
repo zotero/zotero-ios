@@ -13,10 +13,16 @@ import PSPDFKit
 import PSPDFKitUI
 import RxSwift
 
+protocol PDFSearchDelegate: AnyObject {
+    func didFinishSearch(with results: [SearchResult], for text: String?)
+    func didSelectSearchResult(_ result: SearchResult)
+}
+
 final class PDFSearchViewController: UIViewController {
+    weak var delegate: PDFSearchDelegate?
+
     private static let cellId = "SearchCell"
     private unowned let pdfController: PDFViewController
-    private let searchSelected: (SearchResult) -> Void
     private let disposeBag: DisposeBag
 
     private weak var tableView: UITableView!
@@ -27,17 +33,19 @@ final class PDFSearchViewController: UIViewController {
     private var results: [SearchResult]
     var text: String? {
         didSet {
-            self.searchBar.text = self.text
-            if let text = self.text {
-                self.search(for: text)
+            guard let text else {
+                text = oldValue
+                return
             }
+            guard text != oldValue else { return }
+            searchBar.text = text
+            search(for: text)
         }
     }
 
-    init(controller: PDFViewController, text: String?, searchSelected: @escaping (SearchResult) -> Void) {
+    init(controller: PDFViewController, text: String?) {
         self.pdfController = controller
         self.results = []
-        self.searchSelected = searchSelected
         self.text = text
         self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
@@ -57,11 +65,6 @@ final class PDFSearchViewController: UIViewController {
         super.viewWillAppear(animated)
 
         self.searchBar.becomeFirstResponder()
-
-        if let text = self.text {
-            self.searchBar.text = text
-            self.search(for: text)
-        }
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -101,6 +104,7 @@ final class PDFSearchViewController: UIViewController {
     private func finishSearch(with results: [SearchResult]) {
         self.searchBar.isLoading = false
         self.results = results
+        delegate?.didFinishSearch(with: results, for: text)
         self.tableView.reloadData()
     }
 
@@ -123,7 +127,7 @@ final class PDFSearchViewController: UIViewController {
                          .skip(1)
                          .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
                          .subscribe(onNext: { [weak self] text in
-                            self?.search(for: text ?? "")
+                             self?.text = text
                          })
                          .disposed(by: self.disposeBag)
         self.view.addSubview(searchBar)
@@ -167,8 +171,11 @@ extension PDFSearchViewController: UITableViewDataSource, UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        self.searchSelected(self.results[indexPath.row])
-        self.dismiss(animated: true, completion: nil)
+        tableView.deselectRow(at: indexPath, animated: true)
+        dismiss(animated: true) { [weak self] in
+            guard let self else { return }
+            delegate?.didSelectSearchResult(results[indexPath.row])
+        }
     }
 }
 

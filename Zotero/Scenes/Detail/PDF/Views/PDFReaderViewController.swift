@@ -494,15 +494,7 @@ class PDFReaderViewController: UIViewController {
     }
 
     func showSearch(pdfController: PDFViewController, text: String?) {
-        self.coordinatorDelegate?.showSearch(
-            pdfController: pdfController,
-            text: text,
-            sender: self.searchButton,
-            userInterfaceStyle: self.viewModel.state.interfaceStyle,
-            result: { [weak self] result in
-                self?.documentController.highlight(result: result)
-            }
-        )
+        self.coordinatorDelegate?.showSearch(pdfController: pdfController, text: text, sender: self.searchButton, userInterfaceStyle: self.viewModel.state.interfaceStyle, delegate: self)
     }
 
     private func showSettings(sender: UIBarButtonItem) {
@@ -1483,5 +1475,15 @@ extension PDFReaderViewController: UIGestureRecognizerDelegate {
 
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
         return true
+    }
+}
+
+extension PDFReaderViewController: PDFSearchDelegate {
+    func didFinishSearch(with results: [SearchResult], for text: String?) {
+        documentController.highlightSearchResults(results)
+    }
+    
+    func didSelectSearchResult(_ result: SearchResult) {
+        documentController.highlightSelectedSearchResult(result)
     }
 }
