@@ -10,15 +10,13 @@ import UIKit
 
 import RxSwift
 
-final class ColorPickerCell: UITableViewCell {
+final class ColorPickerCell: RxTableViewCell {
     let colorChange: PublishSubject<String>
-    private(set) var disposeBag: DisposeBag
 
     private var colorPicker: ColorPickerStackView?
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         colorChange = PublishSubject()
-        disposeBag = DisposeBag()
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         setup()
         selectionStyle = .none
@@ -59,11 +57,6 @@ final class ColorPickerCell: UITableViewCell {
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-
-    override func prepareForReuse() {
-        super.prepareForReuse()
-        disposeBag = DisposeBag()
     }
 
     func setup(selectedColor: String, annotationType: AnnotationType) {

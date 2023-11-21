@@ -214,7 +214,7 @@ extension AnnotationEditViewController: UITableViewDataSource {
                 cell.colorChange.subscribe(onNext: { hex in self.viewModel.process(action: .setColor(hex)) }).disposed(by: cell.disposeBag)
             } else if let cell = cell as? LineWidthCell {
                 cell.set(value: Float(self.viewModel.state.lineWidth))
-                cell.valueObservable.subscribe(onNext: { value in self.viewModel.process(action: .setLineWidth(CGFloat(value))) }).disposed(by: cell.newDisposeBag)
+                cell.valueObservable.subscribe(onNext: { value in self.viewModel.process(action: .setLineWidth(CGFloat(value))) }).disposed(by: cell.disposeBag)
             }
 
         case .highlight:

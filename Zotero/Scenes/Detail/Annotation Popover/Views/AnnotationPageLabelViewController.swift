@@ -109,7 +109,7 @@ extension AnnotationPageLabelViewController: UITableViewDataSource {
                 .subscribe(onNext: { [weak self] isOn in
                     self?.viewModel.process(action: .setUpdateSubsequentLabels(isOn))
                 })
-                .disposed(by: self.disposeBag)
+                .disposed(by: cell.disposeBag)
         }
 
         return cell
