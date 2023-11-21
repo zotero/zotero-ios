@@ -179,7 +179,7 @@ final class AnnotationEditViewController: UIViewController {
         self.tableView.widthAnchor.constraint(equalToConstant: AnnotationPopoverLayout.width).isActive = true
         self.tableView.delegate = self
         self.tableView.dataSource = self
-        self.tableView.register(UINib(nibName: "ColorPickerCell", bundle: nil), forCellReuseIdentifier: Section.properties.cellId(index: 0))
+        self.tableView.register(ColorPickerCell.self, forCellReuseIdentifier: Section.properties.cellId(index: 0))
         self.tableView.register(LineWidthCell.self, forCellReuseIdentifier: Section.properties.cellId(index: 1))
         self.tableView.register(UINib(nibName: "HighlightEditCell", bundle: nil), forCellReuseIdentifier: Section.highlight.cellId(index: 0))
         self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: Section.actions.cellId(index: 0))
@@ -214,7 +214,7 @@ extension AnnotationEditViewController: UITableViewDataSource {
                 cell.colorChange.subscribe(onNext: { hex in self.viewModel.process(action: .setColor(hex)) }).disposed(by: cell.disposeBag)
             } else if let cell = cell as? LineWidthCell {
                 cell.set(value: Float(self.viewModel.state.lineWidth))
-                cell.valueObservable.subscribe(onNext: { value in self.viewModel.process(action: .setLineWidth(CGFloat(value))) }).disposed(by: cell.newDisposeBag)
+                cell.valueObservable.subscribe(onNext: { value in self.viewModel.process(action: .setLineWidth(CGFloat(value))) }).disposed(by: cell.disposeBag)
             }
 
         case .highlight:

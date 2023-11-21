@@ -11,165 +11,215 @@ import UIKit
 import RxSwift
 
 class AnnotationsFilterViewController: UIViewController {
-    @IBOutlet private weak var colorContainer: UIStackView!
-    @IBOutlet private weak var tagsContainer: UIView!
-    @IBOutlet private weak var tagsLabel: UILabel!
-
     private static let width: CGFloat = 300
+    private static let horizontalInset: CGFloat = 20
+    private static let bottomInset: CGFloat = 20
     private let viewModel: ViewModel<AnnotationsFilterActionHandler>
     private let completionAction: (AnnotationsFilter?) -> Void
     private let disposeBag: DisposeBag
+
+    private var colorPickerHeight: CGFloat = 0
+    private weak var container: UIStackView?
+    private weak var colorPicker: ColorPickerStackView?
+    private weak var tagsContainer: UIStackView?
+    private weak var tagsLabel: UILabel?
 
     weak var coordinatorDelegate: AnnotationsFilterPopoverToAnnotationsFilterCoordinatorDelegate?
 
     init(viewModel: ViewModel<AnnotationsFilterActionHandler>, completion: @escaping (AnnotationsFilter?) -> Void) {
         self.viewModel = viewModel
-        self.completionAction = completion
-        self.disposeBag = DisposeBag()
-        super.init(nibName: "AnnotationsFilterViewController", bundle: nil)
+        completionAction = completion
+        disposeBag = DisposeBag()
+        super.init(nibName: nil, bundle: nil)
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
+    override func loadView() {
+        let view = UIView()
+        view.backgroundColor = Asset.Colors.annotationPopoverBackground.color
+        self.view = view
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.navigationItem.title = L10n.Pdf.AnnotationsSidebar.Filter.title
+        navigationItem.title = L10n.Pdf.AnnotationsSidebar.Filter.title
 
-        self.setupNavigationBar()
-        self.setupColorPicker()
-        self.setSelected(colors: self.viewModel.state.colors)
-        self.set(tags: self.viewModel.state.tags, availableTags: self.viewModel.state.availableTags)
+        setupView()
+        setupNavigationBar()
+        colorPicker?.setSelected(hexColors: Array(viewModel.state.colors))
+        set(tags: viewModel.state.tags, availableTags: viewModel.state.availableTags)
 
-        self.viewModel.stateObservable
-                      .observe(on: MainScheduler.instance)
-                      .subscribe(onNext: { [weak self] state in
-                          self?.update(state: state)
-                      })
-                      .disposed(by: self.disposeBag)
+        viewModel.stateObservable
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { state in
+                update(state: state)
+            })
+            .disposed(by: disposeBag)
+
+        func setupView() {
+            let circleSize: CGFloat = 32
+            let circleOffset: CGFloat = 8
+            let circleContentInsets = UIEdgeInsets(top: 16, left: 0, bottom: 16, right: 16)
+            let colorPicker = ColorPickerStackView(
+                hexColors: viewModel.state.availableColors,
+                columnsDistribution: UIDevice.current.userInterfaceIdiom == .pad ? .fixed(numberOfColumns: 4) : .fitInWidth(width: UIScreen.main.bounds.width - (2 * Self.horizontalInset)),
+                allowsMultipleSelection: true,
+                circleBackgroundColor: Asset.Colors.annotationPopoverBackground.color,
+                circleSize: circleSize,
+                circleOffset: circleOffset,
+                circleSelectionLineWidth: 2.5,
+                circleContentInsets: circleContentInsets,
+                trailingSpacerViewProvider: {
+                    let spacerView = UIView()
+                    spacerView.setContentHuggingPriority(.defaultLow, for: .horizontal)
+                    return spacerView
+                },
+                hexColorToggled: { [weak self] hexColor in
+                    self?.viewModel.process(action: .toggleColor(hexColor))
+                }
+            )
+            colorPicker.accessibilityLabel = L10n.Accessibility.Pdf.colorPicker
+            self.colorPicker = colorPicker
+
+            let colorRowsCount = CGFloat(colorPicker.arrangedSubviews.count)
+            colorPickerHeight = (circleContentInsets.top + circleSize + circleContentInsets.bottom) * colorRowsCount + circleOffset * (colorRowsCount - 1)
+
+            let tagsLabel = UILabel()
+            tagsLabel.font = .preferredFont(forTextStyle: .body)
+            tagsLabel.numberOfLines = 0
+            tagsLabel.setContentHuggingPriority(.required, for: .horizontal)
+            self.tagsLabel = tagsLabel
+
+            let tagsView = UIView(frame: CGRect(x: 0, y: 0, width: 280, height: 128))
+            tagsView.backgroundColor = .clear
+
+            let imageView = UIImageView(image: UIImage(systemName: "chevron.right"))
+            imageView.setContentHuggingPriority(.required, for: .horizontal)
+            imageView.tintColor = .systemGray3
+
+            let tagsContainer = UIStackView(arrangedSubviews: [tagsLabel, tagsView, imageView])
+            tagsContainer.alignment = .center
+            tagsContainer.spacing = 20
+            tagsContainer.axis = .horizontal
+            self.tagsContainer = tagsContainer
+
+            let recognizer = UITapGestureRecognizer()
+            recognizer.rx.event
+                .observe(on: MainScheduler.instance)
+                .subscribe(onNext: { [weak self] _ in
+                    guard let self else { return }
+                    coordinatorDelegate?.showTagPicker(with: viewModel.state.availableTags, selected: viewModel.state.tags) { [weak self] picked in
+                        self?.viewModel.process(action: .setTags(picked))
+                    }
+                })
+                .disposed(by: disposeBag)
+            tagsContainer.addGestureRecognizer(recognizer)
+
+            let container = UIStackView(arrangedSubviews: [colorPicker, tagsContainer])
+            container.setContentHuggingPriority(.required, for: .vertical)
+            container.spacing = 0
+            container.axis = .vertical
+            container.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview(container)
+            self.container = container
+
+            NSLayoutConstraint.activate([
+                container.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+                container.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: Self.horizontalInset),
+                container.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -Self.horizontalInset)
+            ])
+        }
+
+        func setupNavigationBar() {
+            let closeBarButtonItem = UIBarButtonItem(title: L10n.close, style: .plain, target: nil, action: nil)
+            closeBarButtonItem.rx.tap
+                .subscribe(onNext: { _ in
+                    close()
+                })
+                .disposed(by: disposeBag)
+            navigationItem.leftBarButtonItem = closeBarButtonItem
+
+            setupClearButton(visible: (!viewModel.state.colors.isEmpty || !viewModel.state.tags.isEmpty))
+
+            func close() {
+                updateFilter()
+                navigationController?.presentingViewController?.dismiss(animated: true)
+            }
+        }
+
+        func update(state: AnnotationsFilterState) {
+            if state.changes.contains(.colors) {
+                colorPicker?.setSelected(hexColors: Array(state.colors))
+            }
+
+            if state.changes.contains(.tags) {
+                set(tags: state.tags, availableTags: state.availableTags)
+            }
+
+            if state.changes.contains(.tags) || state.changes.contains(.colors) {
+                setupClearButton(visible: (!state.colors.isEmpty || !state.tags.isEmpty))
+            }
+
+            updateFilter()
+            updatePreferredContentSize()
+        }
+
+        func set(tags: Set<String>, availableTags: [Tag]) {
+            guard !availableTags.isEmpty else {
+                tagsContainer?.isHidden = true
+                return
+            }
+
+            tagsContainer?.isHidden = false
+            let sorted = availableTags.compactMap({ tags.contains($0.name) ? $0 : nil })
+            let title = sorted.isEmpty ? L10n.Pdf.AnnotationsSidebar.Filter.tagsPlaceholder : sorted.map({ $0.name }).joined(separator: ", ")
+            tagsLabel?.text = title
+        }
+
+        func setupClearButton(visible: Bool) {
+            if !visible {
+                if navigationItem.rightBarButtonItem != nil {
+                    navigationItem.rightBarButtonItem = nil
+                }
+                return
+            }
+
+            guard navigationItem.rightBarButtonItem == nil else { return }
+
+            let clear = UIBarButtonItem(title: L10n.clear, style: .plain, target: nil, action: nil)
+            clear.rx.tap
+                .subscribe(onNext: { [weak self] _ in
+                    self?.viewModel.process(action: .clear)
+                })
+                .disposed(by: disposeBag)
+            navigationItem.rightBarButtonItem = clear
+        }
+
+        func updateFilter() {
+            if viewModel.state.colors.isEmpty && viewModel.state.tags.isEmpty {
+                completionAction(nil)
+            } else {
+                let filter = AnnotationsFilter(colors: viewModel.state.colors, tags: viewModel.state.tags)
+                completionAction(filter)
+            }
+        }
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        self.updatePreferredContentSize()
+        updatePreferredContentSize()
     }
 
-    // MARK: - Actions
-
-    private func update(state: AnnotationsFilterState) {
-        if state.changes.contains(.colors) {
-            self.setSelected(colors: state.colors)
-        }
-
-        if state.changes.contains(.tags) {
-            self.set(tags: state.tags, availableTags: state.availableTags)
-        }
-
-        if state.changes.contains(.tags) || state.changes.contains(.colors) {
-            self.setupClearButton(visible: (!state.colors.isEmpty || !state.tags.isEmpty))
-        }
-
-        self.updateFilter()
-        self.updatePreferredContentSize()
-    }
-
+    // MARK: - Helper Methods
     private func updatePreferredContentSize() {
-        let labelSize = self.tagsLabel.systemLayoutSizeFitting(CGSize(width: AnnotationsFilterViewController.width - 40, height: .greatestFiniteMagnitude))
-        let size = CGSize(width: AnnotationsFilterViewController.width, height: labelSize.height + 88) // 68 for circles, 20 bottom inset
-        self.preferredContentSize = size
-        self.navigationController?.preferredContentSize = size
-    }
-
-    private func setSelected(colors: Set<String>) {
-        for view in self.colorContainer.arrangedSubviews {
-            guard let pickerView = view as? ColorPickerCircleView else { continue }
-            pickerView.isSelected = colors.contains(pickerView.hexColor)
-        }
-    }
-
-    private func set(tags: Set<String>, availableTags: [Tag]) {
-        if availableTags.isEmpty {
-            self.tagsContainer.isHidden = true
-            return
-        }
-
-        self.tagsContainer.isHidden = false
-        let sorted = availableTags.compactMap({ tags.contains($0.name) ? $0 : nil })
-        let title = sorted.isEmpty ? L10n.Pdf.AnnotationsSidebar.Filter.tagsPlaceholder : sorted.map({ $0.name }).joined(separator: ", ")
-        self.tagsLabel.text = title
-    }
-
-    private func close() {
-        self.updateFilter()
-        self.navigationController?.presentingViewController?.dismiss(animated: true)
-    }
-
-    private func updateFilter() {
-        if self.viewModel.state.colors.isEmpty && self.viewModel.state.tags.isEmpty {
-            self.completionAction(nil)
-        } else {
-            let filter = AnnotationsFilter(colors: self.viewModel.state.colors, tags: self.viewModel.state.tags)
-            self.completionAction(filter)
-        }
-    }
-
-    @IBAction private func showTagPicker() {
-        self.coordinatorDelegate?.showTagPicker(with: self.viewModel.state.availableTags, selected: self.viewModel.state.tags, completed: { [weak self] picked in
-            self?.viewModel.process(action: .setTags(picked))
-        })
-    }
-
-    // MARK: - Setups
-
-    private func setupColorPicker() {
-        self.viewModel.state.availableColors.forEach { hexColor in
-            let circleView = ColorPickerCircleView(hexColor: hexColor)
-            circleView.circleSize = CGSize(width: 32, height: 32)
-            circleView.selectionLineWidth = 2.5
-            circleView.contentInsets = UIEdgeInsets(top: 16, left: 0, bottom: 20, right: 16)
-            circleView.backgroundColor = .clear
-            circleView.backgroundColor = .white
-            circleView.isAccessibilityElement = true
-            self.colorContainer.addArrangedSubview(circleView)
-
-            circleView.tap.observe(on: MainScheduler.instance)
-                          .subscribe(onNext: { [weak self] _ in
-                              self?.viewModel.process(action: .toggleColor(hexColor))
-                          })
-                          .disposed(by: self.disposeBag)
-        }
-        // Add spacer
-        self.colorContainer.addArrangedSubview(UIView())
-    }
-
-    private func setupNavigationBar() {
-        let close = UIBarButtonItem(title: L10n.close, style: .plain, target: nil, action: nil)
-        close.rx.tap.subscribe(onNext: { [weak self] _ in
-            self?.close()
-        })
-        .disposed(by: self.disposeBag)
-        self.navigationItem.leftBarButtonItem = close
-
-        self.setupClearButton(visible: (!self.viewModel.state.colors.isEmpty || !self.viewModel.state.tags.isEmpty))
-    }
-
-    private func setupClearButton(visible: Bool) {
-        if !visible {
-            if self.navigationItem.rightBarButtonItem != nil {
-                self.navigationItem.rightBarButtonItem = nil
-            }
-            return
-        }
-
-        guard self.navigationItem.rightBarButtonItem == nil else { return }
-
-        let clear = UIBarButtonItem(title: L10n.clear, style: .plain, target: nil, action: nil)
-        clear.rx.tap.subscribe(onNext: { [weak self] _ in
-            self?.viewModel.process(action: .clear)
-        })
-        .disposed(by: self.disposeBag)
-        self.navigationItem.rightBarButtonItem = clear
+        guard let tagsLabel else { return }
+        let labelSize = tagsLabel.systemLayoutSizeFitting(CGSize(width: Self.width - Self.horizontalInset * 2, height: .greatestFiniteMagnitude))
+        let size = CGSize(width: Self.width, height: colorPickerHeight + labelSize.height + Self.bottomInset)
+        preferredContentSize = size
+        navigationController?.preferredContentSize = size
     }
 }

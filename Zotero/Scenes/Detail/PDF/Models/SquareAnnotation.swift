@@ -18,17 +18,17 @@ final class SquareAnnotation: PSPDFKit.SquareAnnotation {
     override func lockAndRender(in context: CGContext, options: RenderOptions?) {
         super.lockAndRender(in: context, options: options)
 
-        guard let comment = self.contents, !comment.isEmpty else { return }
+        guard let comment = contents, !comment.isEmpty, !flags.contains(.hidden) else { return }
 
-        CommentIconDrawingController.draw(context: context, boundingBox: self.boundingBox, color: (self.color ?? .black))
+        CommentIconDrawingController.draw(context: context, boundingBox: boundingBox, color: (color ?? .black))
     }
 
     override func draw(context: CGContext, options: RenderOptions?) {
         super.draw(context: context, options: options)
 
-        guard let comment = self.contents, !comment.isEmpty else { return }
+        guard let comment = contents, !comment.isEmpty, !flags.contains(.hidden) else { return }
 
-        CommentIconDrawingController.draw(context: context, boundingBox: self.boundingBox, color: (self.color ?? .black))
+        CommentIconDrawingController.draw(context: context, boundingBox: boundingBox, color: (color ?? .black))
     }
 
     override class var supportsSecureCoding: Bool {
