@@ -51,7 +51,7 @@ final class AnnotationToolbarHandler: NSObject {
     static let toolbarCompactInset: CGFloat = 12
     static let toolbarFullInsetInset: CGFloat = 20
     static let minToolbarWidth: CGFloat = 300
-    private static let annotationToolbarDragHandleHeight: CGFloat = 50
+    static let annotationToolbarDragHandleHeight: CGFloat = 50
     private let previewBackgroundColor: UIColor
     private let previewDashColor: UIColor
     private let previewSelectedBackgroundColor: UIColor
