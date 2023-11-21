@@ -404,10 +404,21 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
 
     func showFontSizePicker(sender: UIView, picked: @escaping (UInt) -> Void) {
         let controller = FontSizePickerViewController(pickAction: picked)
-        controller.preferredContentSize = CGSize(width: 200, height: 400)
-        controller.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
-        controller.popoverPresentationController?.sourceView = sender
-        self.navigationController?.present(controller, animated: true)
+        let presentedController: UIViewController
+        switch UIDevice.current.userInterfaceIdiom {
+        case .pad:
+            controller.modalPresentationStyle = .popover
+            controller.popoverPresentationController?.sourceView = sender
+            controller.preferredContentSize = CGSize(width: 200, height: 400)
+            presentedController = controller
+
+        default:
+            let navigationController = UINavigationController(rootViewController: controller)
+            navigationController.modalPresentationStyle = .formSheet
+            presentedController = navigationController
+        }
+
+        self.navigationController?.present(presentedController, animated: true)
     }
 }
 

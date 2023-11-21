@@ -39,6 +39,7 @@ final class CustomFreeTextAnnotationView: FreeTextAnnotationView {
 
 final class FreeTextInputAccessory: UIView {
     private weak var delegate: FreeTextInputDelegate?
+    private weak var sizePicker: FontSizeView?
     private let disposeBag: DisposeBag
 
     init(key: PDFReaderState.AnnotationKey, delegate: FreeTextInputDelegate) {
@@ -55,8 +56,9 @@ final class FreeTextInputAccessory: UIView {
         let separator3 = UIView()
         separator3.backgroundColor = .opaqueSeparator
 
-        let sizePicker = FontSizeView(contentInsets: UIEdgeInsets.zero)
+        let sizePicker = FontSizeView(contentInsets: UIEdgeInsets.zero, stepperEnabled: self.traitCollection.horizontalSizeClass != .compact)
         sizePicker.value = delegate.getFontSize(for: key) ?? 0
+        self.sizePicker = sizePicker
         sizePicker.valueObservable
             .observe(on: MainScheduler.instance)
             .subscribe(with: self, onNext: { `self`, value in
@@ -75,25 +77,16 @@ final class FreeTextInputAccessory: UIView {
             .disposed(by: self.disposeBag)
 
         let colorButton = UIButton()
+        var colorConfiguration = UIButton.Configuration.plain()
+        colorConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20)
+        colorConfiguration.image = UIImage(systemName: "circle.fill", withConfiguration: UIImage.SymbolConfiguration(scale: .large))
+        colorButton.configuration = colorConfiguration
+
         let deleteButton = UIButton()
-
-        if #available(iOS 15.0, *) {
-            var colorConfiguration = UIButton.Configuration.plain()
-            colorConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20)
-            colorConfiguration.image = UIImage(systemName: "circle.fill", withConfiguration: UIImage.SymbolConfiguration(scale: .large))
-            colorButton.configuration = colorConfiguration
-
-            var deleteConfiguration = UIButton.Configuration.plain()
-            deleteConfiguration.image = UIImage(systemName: "trash", withConfiguration: UIImage.SymbolConfiguration(scale: .large))
-            deleteConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20)
-            deleteButton.configuration = deleteConfiguration
-        } else {
-            colorButton.setImage(UIImage(systemName: "circle.fill", withConfiguration: UIImage.SymbolConfiguration(scale: .large)), for: .normal)
-            colorButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20)
-
-            deleteButton.setImage(UIImage(systemName: "trash", withConfiguration: UIImage.SymbolConfiguration(scale: .large)), for: .normal)
-            deleteButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20)
-        }
+        var deleteConfiguration = UIButton.Configuration.plain()
+        deleteConfiguration.image = UIImage(systemName: "trash", withConfiguration: UIImage.SymbolConfiguration(scale: .large))
+        deleteConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20)
+        deleteButton.configuration = deleteConfiguration
 
         colorButton.tintColor = self.delegate?.getColor(for: key) ?? Asset.Colors.zoteroBlueWithDarkMode.color
         colorButton.rx.tap
@@ -168,19 +161,12 @@ final class FreeTextInputAccessory: UIView {
         }
     }
 
-    @available(iOS 15, *)
-    private func attributedString(from tags: [Tag]) -> AttributedString {
-        if tags.isEmpty {
-            var string = AttributedString(L10n.Pdf.AnnotationsSidebar.addTags)
-            string.foregroundColor = Asset.Colors.zoteroBlueWithDarkMode.color
-            return string
-        } else {
-            let nsAttributedString = AttributedTagStringGenerator.attributedString(from: tags, limit: 3)
-            return (try? AttributedString(nsAttributedString, including: \.uiKit)) ?? AttributedString()
-        }
-    }
-
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        self.sizePicker?.stepperEnabled = self.traitCollection.horizontalSizeClass != .compact
     }
 }

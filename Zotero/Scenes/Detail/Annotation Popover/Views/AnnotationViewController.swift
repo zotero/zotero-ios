@@ -309,7 +309,7 @@ final class AnnotationViewController: UIViewController {
 
             case .freeText:
                 // Setup font size picker
-                let lineView = FontSizeView(contentInsets: UIEdgeInsets(top: 8, left: 16, bottom: 8, right: 16))
+                let lineView = FontSizeView(contentInsets: UIEdgeInsets(top: 8, left: 16, bottom: 8, right: 16), stepperEnabled: true)
                 lineView.value = annotation.fontSize ?? 0
                 lineView.tapObservable
                     .subscribe(with: self, onNext: { `self`, _ in

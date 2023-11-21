@@ -8,6 +8,8 @@
 
 import UIKit
 
+import RxSwift
+
 class FontSizePickerViewController: UIViewController {
     private static let sizes: [UInt] = [
         10,
@@ -25,12 +27,14 @@ class FontSizePickerViewController: UIViewController {
     ]
 
     private let pickAction: (UInt) -> Void
+    private let disposeBag: DisposeBag
 
     private weak var tableView: UITableView!
     private var dataSource: UITableViewDiffableDataSource<Int, UInt>!
 
     init(pickAction: @escaping (UInt) -> Void) {
         self.pickAction = pickAction
+        self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -41,52 +45,72 @@ class FontSizePickerViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.setupViews()
-        self.setupSizes()
+        setupNavigationBarIfNeeded()
+        setupViews()
+        setupSizes()
+
+        func setupSizes() {
+            var snapshot = NSDiffableDataSourceSnapshot<Int, UInt>()
+            snapshot.appendSections([0])
+            snapshot.appendItems(FontSizePickerViewController.sizes)
+            dataSource.apply(snapshot, animatingDifferences: false)
+        }
+
+        func setupViews() {
+            let tableView = UITableView()
+            tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
+            dataSource = UITableViewDiffableDataSource(tableView: tableView, cellProvider: { tableView, indexPath, size in
+                let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
+                var configuration = cell.defaultContentConfiguration()
+                configuration.text = "\(size)pt"
+                cell.contentConfiguration = configuration
+                return cell
+            })
+            tableView.dataSource = self.dataSource
+            tableView.delegate = self
+            tableView.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview(tableView)
+
+            NSLayoutConstraint.activate([
+                view.leadingAnchor.constraint(equalTo: tableView.leadingAnchor),
+                view.trailingAnchor.constraint(equalTo: tableView.trailingAnchor),
+                view.topAnchor.constraint(equalTo: tableView.topAnchor),
+                view.bottomAnchor.constraint(equalTo: tableView.bottomAnchor)
+            ])
+        }
+
+        func setupNavigationBarIfNeeded() {
+            // Check whether this controller is used in UINavigationController container which only contains this controller. Otherwise if this controller was pushed into navigation stack we don't
+            // need the cancel button.
+            guard let navigationController, navigationController.viewControllers.count == 1 else { return }
+            let cancel = UIBarButtonItem(systemItem: .cancel)
+            cancel
+                .rx
+                .tap
+                .subscribe(with: self, onNext: { `self`, _ in
+                    self.navigationController?.presentingViewController?.dismiss(animated: true)
+                })
+                .disposed(by: disposeBag)
+            self.navigationItem.leftBarButtonItem = cancel
+        }
     }
 
     override func loadView() {
         self.view = UIView()
-    }
-
-    private func setupSizes() {
-        var snapshot = NSDiffableDataSourceSnapshot<Int, UInt>()
-        snapshot.appendSections([0])
-        snapshot.appendItems(FontSizePickerViewController.sizes)
-        self.dataSource.apply(snapshot, animatingDifferences: false)
-    }
-
-    private func setupViews() {
-        let tableView = UITableView()
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
-        self.dataSource = UITableViewDiffableDataSource(tableView: tableView, cellProvider: { tableView, indexPath, size in
-            let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
-            var configuration = cell.defaultContentConfiguration()
-            configuration.text = "\(size)pt"
-            cell.contentConfiguration = configuration
-            return cell
-        })
-        tableView.dataSource = self.dataSource
-        tableView.delegate = self
-        tableView.translatesAutoresizingMaskIntoConstraints = false
-        self.view.addSubview(tableView)
-
-        NSLayoutConstraint.activate([
-            self.view.leadingAnchor.constraint(equalTo: tableView.leadingAnchor),
-            self.view.trailingAnchor.constraint(equalTo: tableView.trailingAnchor),
-            self.view.topAnchor.constraint(equalTo: tableView.topAnchor),
-            self.view.bottomAnchor.constraint(equalTo: tableView.bottomAnchor)
-        ])
     }
 }
 
 extension FontSizePickerViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        guard let size = self.dataSource.itemIdentifier(for: indexPath) else { return }
+        guard let size = dataSource.itemIdentifier(for: indexPath) else { return }
         self.pickAction(size)
-        if let controller = self.navigationController {
-            controller.popViewController(animated: true)
+        if let controller = navigationController {
+            if controller.viewControllers.count == 1 {
+                controller.presentingViewController?.dismiss(animated: true)
+            } else {
+                controller.popViewController(animated: true)
+            }
         } else {
             self.presentingViewController?.dismiss(animated: true)
         }

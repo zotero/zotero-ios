@@ -17,6 +17,11 @@ final class FontSizeView: UIView {
     let tapObservable: PublishSubject<()>
     let valueObservable: PublishSubject<UInt>
 
+    var stepperEnabled: Bool {
+        didSet {
+            self.stepper.isHidden = !self.stepperEnabled
+        }
+    }
     private(set) weak var button: UIButton!
     private weak var stepper: UIStepper!
 
@@ -31,8 +36,9 @@ final class FontSizeView: UIView {
         }
     }
 
-    init(contentInsets: UIEdgeInsets) {
+    init(contentInsets: UIEdgeInsets, stepperEnabled: Bool) {
         self.contentInsets = contentInsets
+        self.stepperEnabled = stepperEnabled
         self.disposeBag = DisposeBag()
         self.tapObservable = PublishSubject()
         self.valueObservable = PublishSubject()
@@ -42,6 +48,7 @@ final class FontSizeView: UIView {
 
     required init?(coder: NSCoder) {
         self.contentInsets = UIEdgeInsets(top: 8, left: 16, bottom: 8, right: 16)
+        self.stepperEnabled = true
         self.disposeBag = DisposeBag()
         self.tapObservable = PublishSubject()
         self.valueObservable = PublishSubject()
@@ -70,6 +77,7 @@ final class FontSizeView: UIView {
 
     private func setup() {
         let stepper = UIStepper()
+        stepper.isHidden = !self.stepperEnabled
         stepper.stepValue = 1
         stepper.minimumValue = 1
         stepper.maximumValue = 200

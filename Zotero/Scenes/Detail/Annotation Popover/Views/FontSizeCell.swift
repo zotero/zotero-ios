@@ -30,7 +30,7 @@ class FontSizeCell: RxTableViewCell {
     }
 
     private func setup() {
-        let fontSizeView = FontSizeView(contentInsets: UIEdgeInsets(top: 8, left: 16, bottom: 8, right: 16))
+        let fontSizeView = FontSizeView(contentInsets: UIEdgeInsets(top: 8, left: 16, bottom: 8, right: 16), stepperEnabled: true)
         fontSizeView.translatesAutoresizingMaskIntoConstraints = false
         fontSizeView.button.isUserInteractionEnabled = false
         self.fontSizeView = fontSizeView
