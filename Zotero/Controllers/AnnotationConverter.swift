@@ -18,15 +18,6 @@ struct AnnotationConverter {
         case zotero
     }
 
-    private static var newlineExpression: NSRegularExpression? = {
-        do {
-            return try NSRegularExpression(pattern: #"(?<!\.)\s*[\n\r]+\s*"#)
-        } catch let error {
-            DDLogError("AnnotationConverter: can't create newline expression - \(error)")
-            return nil
-        }
-    }()
-
     // MARK: - Helpers
 
     /// Creates sort index from annotation and bounding box.
@@ -103,7 +94,7 @@ struct AnnotationConverter {
         } else if let annotation = annotation as? PSPDFKit.HighlightAnnotation {
             type = .highlight
             rects = self.rects(fromHighlightAnnotation: annotation)
-            text = self.removeNewlines(from: annotation.markedUpString)
+            text = TextConverter.convertTextForAnnotation(from: annotation.markedUpString)
             paths = []
             lineWidth = nil
         } else if let annotation = annotation as? PSPDFKit.SquareAnnotation {
@@ -138,19 +129,6 @@ struct AnnotationConverter {
             sortIndex: sortIndex,
             dateModified: date
         )
-    }
-
-    static func removeNewlines(from string: String) -> String {
-        guard let expression = self.newlineExpression else { return string }
-
-        let matches = expression.matches(in: string, options: [], range: NSRange(string.startIndex..., in: string))
-
-        var newString = string
-        for match in matches.reversed() {
-            guard let range = Range(match.range, in: newString) else { continue }
-            newString = newString.replacingCharacters(in: range, with: " ")
-        }
-        return newString.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     static func paths(from annotation: PSPDFKit.InkAnnotation) -> [[CGPoint]] {
