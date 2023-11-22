@@ -244,7 +244,7 @@ extension AnnotationEditViewController: UITableViewDataSource {
         case .fontSize:
             if let cell = cell as? FontSizeCell {
                 cell.set(value: self.viewModel.state.fontSize)
-                cell.valueObservable.subscribe(onNext: { value in self.viewModel.process(action: .setFontSize(value)) }).disposed(by: cell.newDisposeBag)
+                cell.valueObservable.subscribe(onNext: { value in self.viewModel.process(action: .setFontSize(value)) }).disposed(by: cell.disposeBag)
             }
 
         case .pageLabel:
