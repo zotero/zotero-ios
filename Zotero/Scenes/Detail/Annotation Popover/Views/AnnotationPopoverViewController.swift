@@ -98,13 +98,7 @@ final class AnnotationPopoverViewController: UIViewController {
         )
 
         // Update selected color
-        if let views = colorPickerContainer?.arrangedSubviews {
-            for view in views {
-                guard let circleView = view as? ColorPickerCircleView else { continue }
-                circleView.isSelected = circleView.hexColor == state.color
-                circleView.accessibilityLabel = name(for: circleView.hexColor, isSelected: circleView.isSelected)
-            }
-        }
+        colorPicker.setSelected(hexColor: state.color)
 
         // Update tags
         if !state.tags.isEmpty {
