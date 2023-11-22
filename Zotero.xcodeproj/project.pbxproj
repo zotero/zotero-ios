@@ -945,6 +945,7 @@
 		B3C9D60A24DA9D49003EA1EE /* CollectionsSearchAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C9D60924DA9D49003EA1EE /* CollectionsSearchAction.swift */; };
 		B3C9D60C24DA9DEA003EA1EE /* CollectionsSearchActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C9D60B24DA9DEA003EA1EE /* CollectionsSearchActionHandler.swift */; };
 		B3CAD66228D31EFB007E1905 /* RObjectChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32989D528D1D94F009B61F3 /* RObjectChange.swift */; };
+		B3CAE1182B0E38BA0000F8CA /* EmojiExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CAE1172B0E38BA0000F8CA /* EmojiExtractor.swift */; };
 		B3CBB121248A439A00C4228F /* Notification+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CBB120248A439A00C4228F /* Notification+Extensions.swift */; };
 		B3CBB123248A44D100C4228F /* KeyboardData.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CBB122248A44D100C4228F /* KeyboardData.swift */; };
 		B3CBB125248A46D500C4228F /* NotificationCenter+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CBB124248A46D500C4228F /* NotificationCenter+Extensions.swift */; };
@@ -1872,6 +1873,7 @@
 		B3C9D60724DA9D40003EA1EE /* CollectionsSearchState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionsSearchState.swift; sourceTree = "<group>"; };
 		B3C9D60924DA9D49003EA1EE /* CollectionsSearchAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionsSearchAction.swift; sourceTree = "<group>"; };
 		B3C9D60B24DA9DEA003EA1EE /* CollectionsSearchActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionsSearchActionHandler.swift; sourceTree = "<group>"; };
+		B3CAE1172B0E38BA0000F8CA /* EmojiExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmojiExtractor.swift; sourceTree = "<group>"; };
 		B3CBB120248A439A00C4228F /* Notification+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Notification+Extensions.swift"; sourceTree = "<group>"; };
 		B3CBB122248A44D100C4228F /* KeyboardData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardData.swift; sourceTree = "<group>"; };
 		B3CBB124248A46D500C4228F /* NotificationCenter+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NotificationCenter+Extensions.swift"; sourceTree = "<group>"; };
@@ -2142,6 +2144,7 @@
 				B3DDACE828E6F52E0063407E /* CustomURLController.swift */,
 				B3BC25CC247E6BA000AC27B5 /* DateParser.swift */,
 				B305647F23FC051E003304F2 /* DragDropController.swift */,
+				B3CAE1172B0E38BA0000F8CA /* EmojiExtractor.swift */,
 				B3D3FCA8267762EC008E243A /* ExportLocaleReader.swift */,
 				B305648123FC051E003304F2 /* Formatter.swift */,
 				B367330C24ACB63300E0CDA8 /* HtmlAttributedStringConverter.swift */,
@@ -4877,6 +4880,7 @@
 				B3830CDC255451AB00910FE0 /* TagPickerState.swift in Sources */,
 				B39D336823FFD96C00EF2ACB /* Note.swift in Sources */,
 				B32DE61F26320271000287EC /* PopoverNavigationViewController.swift in Sources */,
+				B3CAE1182B0E38BA0000F8CA /* EmojiExtractor.swift in Sources */,
 				B3DEAAA728AD01CA00F72D90 /* URLSession+Extensions.swift in Sources */,
 				B357A28C285B73BD00E73CA1 /* ScannerState.swift in Sources */,
 				B3E8FE5A2714325200F51458 /* SavingSettingsActionHandler.swift in Sources */,
