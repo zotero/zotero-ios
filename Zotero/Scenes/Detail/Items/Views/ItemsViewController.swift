@@ -492,32 +492,50 @@ final class ItemsViewController: UIViewController {
             })
             .disposed(by: self.disposeBag)
 
-        guard let downloader = self.controllers.userControllers?.fileDownloader else { return }
-
-        downloader.observable
+        let downloader = controllers.userControllers?.fileDownloader
+        downloader?.observable
             .observe(on: MainScheduler.instance)
             .subscribe(with: self, onNext: { [weak downloader] `self`, update in
-                if let downloader = downloader {
-                    let (progress, remainingCount, totalCount) = downloader.batchData
-                    let batchData = progress.flatMap({ ItemsState.DownloadBatchData(progress: $0, remaining: remainingCount, total: totalCount) })
+                if let downloader {
+                    let batchData = ItemsState.DownloadBatchData(batchData: downloader.batchData)
                     self.viewModel.process(action: .updateDownload(update: update, batchData: batchData))
                 }
-
+                
                 if case .progress = update.kind { return }
-
+                
                 guard self.viewModel.state.attachmentToOpen == update.key else { return }
-
+                
                 self.viewModel.process(action: .attachmentOpened(update.key))
-
+                
                 switch update.kind {
                 case .ready:
                     self.coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId)
-
+                    
                 case .failed(let error):
                     self.coordinatorDelegate?.showAttachmentError(error)
-
+                    
                 default: break
                 }
+            })
+            .disposed(by: self.disposeBag)
+
+        let identifierLookupController = self.controllers.userControllers?.identifierLookupController
+        identifierLookupController?.observable
+            .observe(on: MainScheduler.instance)
+            .subscribe(with: self, onNext: { [weak identifierLookupController] `self`, update in
+                guard let identifierLookupController else { return }
+                let batchData = ItemsState.IdentifierLookupBatchData(batchData: identifierLookupController.batchData)
+                self.viewModel.process(action: .updateIdentifierLookup(update: update, batchData: batchData))
+            })
+            .disposed(by: self.disposeBag)
+        
+        let remoteDownloader = self.controllers.userControllers?.remoteFileDownloader
+        remoteDownloader?.observable
+            .observe(on: MainScheduler.instance)
+            .subscribe(with: self, onNext: { [weak remoteDownloader] `self`, update in
+                guard let remoteDownloader else { return }
+                let batchData = ItemsState.DownloadBatchData(batchData: remoteDownloader.batchData)
+                self.viewModel.process(action: .updateRemoteDownload(update: update, batchData: batchData))
             })
             .disposed(by: self.disposeBag)
     }
@@ -695,6 +713,10 @@ extension ItemsViewController: DetailCoordinatorAttachmentProvider {
 extension ItemsViewController: ItemsToolbarControllerDelegate {
     func process(action: ItemAction.Kind, button: UIBarButtonItem) {
         self.process(action: action, for: self.viewModel.state.selectedItems, button: button, completionAction: nil)
+    }
+    
+    func showLookup() {
+        coordinatorDelegate?.showLookup()
     }
 }
 

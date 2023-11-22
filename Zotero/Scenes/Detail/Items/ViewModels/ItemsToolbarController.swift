@@ -13,14 +13,20 @@ import RxSwift
 
 protocol ItemsToolbarControllerDelegate: UITraitEnvironment {
     func process(action: ItemAction.Kind, button: UIBarButtonItem)
+    func showLookup()
 }
 
 final class ItemsToolbarController {
-    private static let barButtonItemEmptyTag = 1
-    private static let barButtonItemSingleTag = 2
-    private static let barButtonItemFilterTag = 3
-    private static let barButtonItemTitleTag = 4
-    private static let finishVisibilityTime: RxTimeInterval = .seconds(2)
+    enum ToolbarItem: Int {
+        case empty = 1
+        case single
+        case filter
+        case title
+        
+        var tag: Int {
+            rawValue
+        }
+    }
 
     private unowned let viewController: UIViewController
     private let editingActions: [ItemAction]
@@ -31,7 +37,7 @@ final class ItemsToolbarController {
     init(viewController: UIViewController, initialState: ItemsState, delegate: ItemsToolbarControllerDelegate) {
         self.viewController = viewController
         self.delegate = delegate
-        self.editingActions = ItemsToolbarController.editingActions(for: initialState)
+        self.editingActions = Self.editingActions(for: initialState)
         self.disposeBag = DisposeBag()
 
         self.createToolbarItems(for: initialState)
@@ -65,7 +71,13 @@ final class ItemsToolbarController {
         } else {
             let filters = self.sizeClassSpecificFilters(from: state.filters)
             self.viewController.toolbarItems = self.createNormalToolbarItems(for: filters)
-            self.updateNormalToolbarItems(for: filters, downloadBatchData: state.downloadBatchData, results: state.results)
+            self.updateNormalToolbarItems(
+                for: filters,
+                downloadBatchData: state.downloadBatchData,
+                remoteDownloadBatchData: state.remoteDownloadBatchData,
+                identifierLookupBatchData: state.identifierLookupBatchData,
+                results: state.results
+            )
         }
     }
 
@@ -73,7 +85,13 @@ final class ItemsToolbarController {
         if state.isEditing {
             self.updateEditingToolbarItems(for: state.selectedItems, results: state.results)
         } else {
-            self.updateNormalToolbarItems(for: self.sizeClassSpecificFilters(from: state.filters), downloadBatchData: state.downloadBatchData, results: state.results)
+            self.updateNormalToolbarItems(
+                for: self.sizeClassSpecificFilters(from: state.filters),
+                downloadBatchData: state.downloadBatchData,
+                remoteDownloadBatchData: state.remoteDownloadBatchData,
+                identifierLookupBatchData: state.identifierLookupBatchData,
+                results: state.results
+            )
         }
     }
 
@@ -99,24 +117,32 @@ final class ItemsToolbarController {
 
     private func updateEditingToolbarItems(for selectedItems: Set<String>, results: Results<RItem>?) {
         self.viewController.toolbarItems?.forEach({ item in
-            switch item.tag {
-            case ItemsToolbarController.barButtonItemEmptyTag:
+            switch ToolbarItem(rawValue: item.tag) {
+            case .empty:
                 item.isEnabled = !selectedItems.isEmpty
 
-            case ItemsToolbarController.barButtonItemSingleTag:
+            case .single:
                 item.isEnabled = selectedItems.count == 1
-            default: break
+                
+            default:
+                break
             }
         })
     }
 
-    private func updateNormalToolbarItems(for filters: [ItemsFilter], downloadBatchData: ItemsState.DownloadBatchData?, results: Results<RItem>?) {
-        if let item = self.viewController.toolbarItems?.first(where: { $0.tag == ItemsToolbarController.barButtonItemFilterTag }) {
+    private func updateNormalToolbarItems(
+        for filters: [ItemsFilter],
+        downloadBatchData: ItemsState.DownloadBatchData?,
+        remoteDownloadBatchData: ItemsState.DownloadBatchData?,
+        identifierLookupBatchData: ItemsState.IdentifierLookupBatchData,
+        results: Results<RItem>?
+    ) {
+        if let item = self.viewController.toolbarItems?.first(where: { $0.tag == ToolbarItem.filter.tag }) {
             let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease.circle" : "line.horizontal.3.decrease.circle.fill"
             item.image = UIImage(systemName: filterImageName)
         }
 
-        if let item = self.viewController.toolbarItems?.first(where: { $0.tag == ItemsToolbarController.barButtonItemTitleTag }),
+        if let item = self.viewController.toolbarItems?.first(where: { $0.tag == ToolbarItem.title.tag }),
            let stackView = item.customView as? UIStackView {
             if let filterLabel = stackView.subviews.first as? UILabel {
                 let itemCount = results?.count ?? 0
@@ -129,10 +155,33 @@ final class ItemsToolbarController {
             }
 
             if let progressView = stackView.subviews.last as? ItemsToolbarDownloadProgressView {
-                progressView.isHidden = !filters.isEmpty || downloadBatchData == nil
+                var isUserInteractionEnabled = false
+                let attributedText = NSMutableAttributedString()
+                var progress: Float?
+                let remoteDownloading = remoteDownloadBatchData != nil
+                let defaultAttributes: [NSAttributedString.Key: Any] = [.foregroundColor: UIColor.label, .font: UIFont.preferredFont(forTextStyle: .footnote)]
+                if identifierLookupBatchData != .zero, !identifierLookupBatchData.isFinished || remoteDownloading {
+                    // Show "Saved x / y" only if lookup hasn't finished, or there are also ongoing remote downloads
+                    isUserInteractionEnabled = true
+                    let identifierLookupText = L10n.Items.toolbarSaved(identifierLookupBatchData.saved, identifierLookupBatchData.total)
+                    let identifierLookupAttributes: [NSAttributedString.Key: Any] = [.foregroundColor: Asset.Colors.zoteroBlueWithDarkMode.color, .font: UIFont.preferredFont(forTextStyle: .footnote)]
+                    attributedText.append(.init(string: identifierLookupText, attributes: identifierLookupAttributes))
+                }
+                if let combinedDownloadBatchData = ItemsState.DownloadBatchData.combineDownloadBatchData([downloadBatchData, remoteDownloadBatchData]) {
+                    if attributedText.length > 0 {
+                        attributedText.append(.init(string: " / ", attributes: defaultAttributes))
+                    }
+                    let downloadText = L10n.Items.toolbarDownloaded(combinedDownloadBatchData.downloaded, combinedDownloadBatchData.total)
+                    attributedText.append(.init(string: downloadText, attributes: defaultAttributes))
+                    progress = Float(combinedDownloadBatchData.fraction)
+                }
+                progressView.isUserInteractionEnabled = isUserInteractionEnabled
 
-                if let data = downloadBatchData {
-                    progressView.set(downloaded: data.downloaded, total: data.total, progress: Float(data.fraction))
+                if !filters.isEmpty || (attributedText.length == 0) {
+                    progressView.isHidden = true
+                } else {
+                    progressView.set(attributedText: attributedText, progress: progress)
+                    progressView.isHidden = false
                     progressView.sizeToFit()
                 }
             }
@@ -148,7 +197,7 @@ final class ItemsToolbarController {
 
         let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease.circle" : "line.horizontal.3.decrease.circle.fill"
         let filterButton = UIBarButtonItem(image: UIImage(systemName: filterImageName), style: .plain, target: nil, action: nil)
-        filterButton.tag = ItemsToolbarController.barButtonItemFilterTag
+        filterButton.tag = ToolbarItem.filter.tag
         filterButton.accessibilityLabel = L10n.Accessibility.Items.filterItems
         filterButton.rx.tap.subscribe(onNext: { [weak self] _ in
             self?.delegate?.process(action: .filter, button: filterButton)
@@ -164,7 +213,7 @@ final class ItemsToolbarController {
         .disposed(by: self.disposeBag)
 
         let titleButton = UIBarButtonItem(customView: self.createTitleView())
-        titleButton.tag = ItemsToolbarController.barButtonItemTitleTag
+        titleButton.tag = ToolbarItem.title.tag
 
         return [fixedSpacer, filterButton, flexibleSpacer, titleButton, flexibleSpacer, sortButton, fixedSpacer]
     }
@@ -175,7 +224,7 @@ final class ItemsToolbarController {
             let item = UIBarButtonItem(image: action.image, style: .plain, target: nil, action: nil)
             switch action.type {
             case .addToCollection, .trash, .delete, .removeFromCollection, .restore:
-                item.tag = ItemsToolbarController.barButtonItemEmptyTag
+                item.tag = ToolbarItem.empty.tag
             case .sort, .filter, .createParent, .copyCitation, .copyBibliography, .share, .removeDownload, .download, .duplicate: break
             }
             switch action.type {
@@ -219,6 +268,15 @@ final class ItemsToolbarController {
 
         // Batch download view
         let progressView = ItemsToolbarDownloadProgressView()
+        let tap = UITapGestureRecognizer()
+        tap.rx
+           .event
+           .observe(on: MainScheduler.instance)
+           .subscribe(onNext: { [weak self] _ in
+               self?.delegate?.showLookup()
+           })
+           .disposed(by: self.disposeBag)
+        progressView.addGestureRecognizer(tap)
         progressView.isHidden = true
 
         let stackView = UIStackView(arrangedSubviews: [filterLabel, progressView])

@@ -38,6 +38,7 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showMissingStyleError()
     func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier)
     func show(error: ItemsError)
+    func showLookup()
 }
 
 protocol DetailItemDetailCoordinatorDelegate: AnyObject {
@@ -121,6 +122,8 @@ final class DetailCoordinator: Coordinator {
             library: self.library,
             dbStorage: userControllers.dbStorage,
             fileDownloader: userControllers.fileDownloader,
+            remoteFileDownloader: userControllers.remoteFileDownloader,
+            identifierLookupController: userControllers.identifierLookupController,
             syncScheduler: userControllers.syncScheduler,
             citationController: userControllers.citationController,
             fileCleanupController: userControllers.fileCleanupController,
@@ -135,6 +138,8 @@ final class DetailCoordinator: Coordinator {
         library: Library,
         dbStorage: DbStorage,
         fileDownloader: AttachmentDownloader,
+        remoteFileDownloader: RemoteAttachmentDownloader,
+        identifierLookupController: IdentifierLookupController,
         syncScheduler: SynchronizationScheduler,
         citationController: CitationController,
         fileCleanupController: AttachmentFileCleanupController,
@@ -144,7 +149,20 @@ final class DetailCoordinator: Coordinator {
         itemsTagFilterDelegate?.clearSelection()
 
         let searchTerm = self.searchItemKeys?.joined(separator: " ")
-        let state = ItemsState(collection: collection, library: library, sortType: .default, searchTerm: searchTerm, filters: [], error: nil)
+        let downloadBatchData = ItemsState.DownloadBatchData(batchData: fileDownloader.batchData)
+        let remoteDownloadBatchData = ItemsState.DownloadBatchData(batchData: remoteFileDownloader.batchData)
+        let identifierLookupBatchData = ItemsState.IdentifierLookupBatchData(batchData: identifierLookupController.batchData)
+        let state = ItemsState(
+            collection: collection,
+            library: library,
+            sortType: .default,
+            searchTerm: searchTerm,
+            filters: [],
+            downloadBatchData: downloadBatchData,
+            remoteDownloadBatchData: remoteDownloadBatchData,
+            identifierLookupBatchData: identifierLookupBatchData,
+            error: nil
+        )
         let handler = ItemsActionHandler(
             dbStorage: dbStorage,
             fileStorage: self.controllers.fileStorage,
@@ -319,7 +337,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         controller.popoverPresentationController?.barButtonItem = button
 
         controller.addAction(UIAlertAction(title: L10n.Items.lookup, style: .default, handler: { [weak self] _ in
-            self?.showLookup(startWith: .manual)
+            self?.showLookup(startWith: .manual(restoreLookupState: false))
         }))
 
         controller.addAction(UIAlertAction(title: L10n.Items.barcode, style: .default, handler: { [weak self] _ in
@@ -641,6 +659,10 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         coordinator.start(animated: false)
 
         self.navigationController?.present(navigationController, animated: true, completion: nil)
+    }
+    
+    func showLookup() {
+        showLookup(startWith: .manual(restoreLookupState: true))
     }
 }
 

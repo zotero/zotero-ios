@@ -31,11 +31,55 @@ struct ItemsState: ViewModelState {
         let downloaded: Int
         let total: Int
 
-        init?(progress: Progress, remaining: Int, total: Int) {
-            guard total > 1 else { return nil }
+        init(fraction: Double, downloaded: Int, total: Int) {
+            self.fraction = fraction
+            self.downloaded = downloaded
+            self.total = total
+        }
+        
+        init?(progress: Progress?, remaining: Int, total: Int) {
+            guard let progress, total > 0 else { return nil }
             self.fraction = progress.fractionCompleted
             self.downloaded = total - remaining
             self.total = total
+        }
+        
+        init?(batchData: (progress: Progress?, remainingCount: Int, totalCount: Int)) {
+            self.init(progress: batchData.progress, remaining: batchData.remainingCount, total: batchData.totalCount)
+        }
+        
+        static func + (lhs: Self, rhs: Self) -> Self {
+            let fraction = (lhs.fraction + rhs.fraction) / 2.0
+            let downloaded = lhs.downloaded + rhs.downloaded
+            let total = lhs.total + rhs.total
+            return .init(fraction: fraction, downloaded: downloaded, total: total)
+        }
+        
+        static func combineDownloadBatchData(_ array: [Self?]) -> Self? {
+            let validArray = array.compactMap { $0 }
+            guard let firstData = validArray.first else { return nil }
+            guard validArray.count > 1 else { return firstData }
+            return validArray[1..<validArray.endIndex].reduce(firstData) { $0 + $1 }
+        }
+    }
+    
+    struct IdentifierLookupBatchData: Equatable {
+        static let zero: Self = .init(saved: 0, total: 0)
+        
+        let saved: Int
+        let total: Int
+        
+        init(saved: Int, total: Int) {
+            self.saved = saved
+            self.total = total
+        }
+        
+        init(batchData: (savedCount: Int, failedCount: Int, totalCount: Int)) {
+            self.init(saved: batchData.savedCount, total: batchData.totalCount - batchData.failedCount)
+        }
+        
+        var isFinished: Bool {
+            saved == total
         }
     }
 
@@ -63,6 +107,8 @@ struct ItemsState: ViewModelState {
     var bibliographyError: Error?
     var attachmentToOpen: String?
     var downloadBatchData: DownloadBatchData?
+    var remoteDownloadBatchData: DownloadBatchData?
+    var identifierLookupBatchData: IdentifierLookupBatchData
     var itemTitleFont: UIFont {
         return UIFont.preferredFont(for: .headline, weight: .regular)
     }
@@ -79,7 +125,17 @@ struct ItemsState: ViewModelState {
         return tags
     }
 
-    init(collection: Collection, library: Library, sortType: ItemsSortType, searchTerm: String?, filters: [ItemsFilter], error: ItemsError?) {
+    init(
+        collection: Collection,
+        library: Library,
+        sortType: ItemsSortType,
+        searchTerm: String?,
+        filters: [ItemsFilter],
+        downloadBatchData: DownloadBatchData?,
+        remoteDownloadBatchData: DownloadBatchData?,
+        identifierLookupBatchData: IdentifierLookupBatchData,
+        error: ItemsError?
+    ) {
         self.collection = collection
         self.library = library
         self.filters = []
@@ -91,6 +147,9 @@ struct ItemsState: ViewModelState {
         self.changes = []
         self.sortType = sortType
         self.filters = filters
+        self.downloadBatchData = downloadBatchData
+        self.remoteDownloadBatchData = remoteDownloadBatchData
+        self.identifierLookupBatchData = identifierLookupBatchData
         self.searchTerm = searchTerm
         self.processingBibliography = false
         self.itemTitles = [:]

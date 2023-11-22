@@ -7,7 +7,6 @@
 //
 
 import UIKit
-import WebKit
 
 import CocoaLumberjackSwift
 import RxSwift
@@ -45,7 +44,6 @@ class LookupViewController: UIViewController {
     @IBOutlet private weak var tableViewHeight: NSLayoutConstraint!
     @IBOutlet private weak var errorLabel: UILabel!
 
-    weak var webView: WKWebView?
     private var dataSource: UITableViewDiffableDataSource<Int, Row>!
     private var contentSizeObserver: NSKeyValueObservation?
     var dataReloaded: (() -> Void)?
@@ -57,7 +55,12 @@ class LookupViewController: UIViewController {
     private unowned let schemaController: SchemaController
     private let disposeBag: DisposeBag
 
-    init(viewModel: ViewModel<LookupActionHandler>, remoteDownloadObserver: PublishSubject<RemoteAttachmentDownloader.Update>, remoteFileDownloader: RemoteAttachmentDownloader, schemaController: SchemaController) {
+    init(
+        viewModel: ViewModel<LookupActionHandler>,
+        remoteDownloadObserver: PublishSubject<RemoteAttachmentDownloader.Update>,
+        remoteFileDownloader: RemoteAttachmentDownloader,
+        schemaController: SchemaController
+    ) {
         self.viewModel = viewModel
         self.remoteFileDownloader = remoteFileDownloader
         self.schemaController = schemaController
@@ -85,9 +88,7 @@ class LookupViewController: UIViewController {
                       })
                       .disposed(by: self.disposeBag)
 
-        if let webView = self.webView {
-            self.viewModel.process(action: .initialize(webView))
-        }
+        self.viewModel.process(action: .initialize)
     }
 
     deinit {
@@ -98,12 +99,18 @@ class LookupViewController: UIViewController {
 
     private func update(state: LookupState) {
         switch state.lookupState {
-        case .failed:
+        case .failed(let error):
             self.tableView.isHidden = true
             self.activityIndicator.stopAnimating()
             self.activityIndicator.isHidden = true
-            self.errorLabel.text = L10n.Errors.lookup
+            self.errorLabel.text = error.localizedDescription
             self.errorLabel.isHidden = false
+
+        case .waitingInput:
+            self.tableView.isHidden = true
+            self.errorLabel.isHidden = true
+            self.activityIndicator.stopAnimating()
+            self.activityIndicator.isHidden = true
 
         case .loadingIdentifiers:
             self.tableView.isHidden = true
@@ -174,7 +181,10 @@ class LookupViewController: UIViewController {
         self.tableView.isHidden = false
         self.dataSource.apply(snapshot, animatingDifferences: false)
 
-        var isFirstCall = true
+        guard self.contentSizeObserver == nil else {
+            completion()
+            return
+        }
         // For some reason, the observer subscription has to be here, doesn't work if it's in `viewDidLoad`.
         self.contentSizeObserver = self.tableView.observe(\.contentSize, options: [.new]) { [weak self] _, change in
             guard let self = self, let value = change.newValue, value.height != self.tableViewHeight.constant else { return }
@@ -183,14 +193,9 @@ class LookupViewController: UIViewController {
 
             if value.height >= self.tableView.frame.height, !self.tableView.isScrollEnabled {
                 self.tableView.isScrollEnabled = true
-                self.contentSizeObserver = nil
             }
 
-            if isFirstCall {
-                completion()
-            } else {
-                isFirstCall = false
-            }
+            completion()
         }
     }
 
@@ -216,7 +221,9 @@ class LookupViewController: UIViewController {
     }
 
     private func closeAfterUpdateIfNeeded() {
-        let activeDownload = self.dataSource.snapshot().itemIdentifiers.first(where: { row in
+        let itemIdentifiers = dataSource.snapshot().itemIdentifiers
+        guard !itemIdentifiers.isEmpty else { return }
+        let hasActiveDownload = itemIdentifiers.contains { row in
             switch row {
             case .attachment(_, let update):
                 switch update {
@@ -233,9 +240,8 @@ class LookupViewController: UIViewController {
             case .item:
                 return false
             }
-        })
-
-        if activeDownload == nil {
+        }
+        if !hasActiveDownload {
             self.activeLookupsFinished?()
         }
     }

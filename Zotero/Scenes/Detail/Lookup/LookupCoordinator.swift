@@ -13,11 +13,11 @@ import RxSwift
 
 enum LookupStartingView {
     case scanner
-    case manual
+    case manual(restoreLookupState: Bool)
 }
 
 protocol LookupCoordinatorDelegate: AnyObject {
-    func lookupController(multiLookupEnabled: Bool, hasDarkBackground: Bool) -> LookupViewController?
+    func lookupController(restoreLookupState: Bool, hasDarkBackground: Bool) -> LookupViewController?
 }
 
 final class LookupCoordinator: NSObject, Coordinator {
@@ -39,6 +39,7 @@ final class LookupCoordinator: NSObject, Coordinator {
         super.init()
 
         navigationController.dismissHandler = {
+            self.controllers.userControllers?.identifierLookupController.presenter = nil
             self.parentCoordinator?.childDidFinish(self)
         }
     }
@@ -46,9 +47,9 @@ final class LookupCoordinator: NSObject, Coordinator {
     func start(animated: Bool) {
         let controller: UIViewController
         switch self.startingView {
-        case .manual:
-            DDLogInfo("LookupCoordinator: show manual lookup")
-            controller = self.manualController
+        case .manual(let restoreLookupState):
+            DDLogInfo("LookupCoordinator: show manual lookup \(restoreLookupState ? " with restored lookup state" : "")")
+            controller = self.manualController(restoreLookupState: restoreLookupState)
 
         case .scanner:
             DDLogInfo("LookupCoordinator: show scanner lookup")
@@ -57,17 +58,10 @@ final class LookupCoordinator: NSObject, Coordinator {
         self.navigationController?.setViewControllers([controller], animated: animated)
     }
 
-    private func lookupController(multiLookupEnabled: Bool, hasDarkBackground: Bool, userControllers: UserControllers) -> LookupViewController {
+    private func lookupController(restoreLookupState: Bool, hasDarkBackground: Bool, userControllers: UserControllers) -> LookupViewController {
         let collectionKeys = Defaults.shared.selectedCollectionId.key.flatMap({ Set([$0]) }) ?? []
-        let state = LookupState(multiLookupEnabled: multiLookupEnabled, hasDarkBackground: hasDarkBackground, collectionKeys: collectionKeys, libraryId: Defaults.shared.selectedLibrary)
-        let handler = LookupActionHandler(
-            dbStorage: userControllers.dbStorage,
-            fileStorage: self.controllers.fileStorage,
-            translatorsController: self.controllers.translatorsAndStylesController,
-            schemaController: self.controllers.schemaController,
-            dateParser: self.controllers.dateParser,
-            remoteFileDownloader: userControllers.remoteFileDownloader
-        )
+        let state = LookupState(restoreLookupState: restoreLookupState, hasDarkBackground: hasDarkBackground, collectionKeys: collectionKeys, libraryId: Defaults.shared.selectedLibrary)
+        let handler = LookupActionHandler(identifierLookupController: userControllers.identifierLookupController)
         let viewModel = ViewModel(initialState: state, handler: handler)
 
         return LookupViewController(
@@ -83,21 +77,23 @@ final class LookupCoordinator: NSObject, Coordinator {
         let handler = ScannerActionHandler()
         let controller = ScannerViewController(viewModel: ViewModel(initialState: state, handler: handler))
         controller.coordinatorDelegate = self
+        controllers.userControllers?.identifierLookupController.presenter = controller
         return controller
     }
 
-    private var manualController: UIViewController {
-        let state = ManualLookupState()
+    private func manualController(restoreLookupState: Bool) -> UIViewController {
+        let state = ManualLookupState(restoreLookupState: restoreLookupState)
         let handler = ManualLookupActionHandler()
         let controller = ManualLookupViewController(viewModel: ViewModel(initialState: state, handler: handler))
         controller.coordinatorDelegate = self
+        controllers.userControllers?.identifierLookupController.presenter = controller
         return controller
     }
 }
 
 extension LookupCoordinator: LookupCoordinatorDelegate {
-    func lookupController(multiLookupEnabled: Bool, hasDarkBackground: Bool) -> LookupViewController? {
+    func lookupController(restoreLookupState: Bool, hasDarkBackground: Bool) -> LookupViewController? {
         guard let userControllers = self.controllers.userControllers else { return nil }
-        return self.lookupController(multiLookupEnabled: multiLookupEnabled, hasDarkBackground: hasDarkBackground, userControllers: userControllers)
+        return self.lookupController(restoreLookupState: restoreLookupState, hasDarkBackground: hasDarkBackground, userControllers: userControllers)
     }
 }

@@ -10,6 +10,7 @@ import Foundation
 import WebKit
 
 enum LookupAction {
-    case initialize(WKWebView)
+    case initialize
     case lookUp(String)
+    case cancelAllLookups
 }

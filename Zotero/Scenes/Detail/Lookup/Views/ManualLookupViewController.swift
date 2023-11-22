@@ -7,13 +7,11 @@
 //
 
 import UIKit
-import WebKit
 
 import CocoaLumberjackSwift
 import RxSwift
 
 class ManualLookupViewController: UIViewController {
-    @IBOutlet private weak var webView: WKWebView!
     @IBOutlet private weak var container: UIStackView!
     @IBOutlet private weak var roundedContainer: UIView!
     @IBOutlet private weak var titleLabel: UILabel!
@@ -98,18 +96,37 @@ class ManualLookupViewController: UIViewController {
     }
 
     private func update(state: LookupState) {
-        self.lookupController?.view.isHidden = false
-
         switch state.lookupState {
         case .failed:
+            // Similar to initial state for user input, but with error message displayed.
+            self.lookupController?.view.isHidden = false
+            
             self.titleLabel.isHidden = false
             self.inputContainer.isHidden = false
 
             self.textView.isUserInteractionEnabled = true
             self.scanButton.isEnabled = true
             self.textView.becomeFirstResponder()
+            
+            self.setupCancelDoneBarButtons()
+
+        case .waitingInput:
+            // Initial state for user input, when no lookup state has been restored.
+            self.lookupController?.view.isHidden = true
+            self.topConstraint.constant = 15
+            
+            self.titleLabel.isHidden = false
+            self.inputContainer.isHidden = false
+
+            self.textView.isUserInteractionEnabled = true
+            self.scanButton.isEnabled = true
+            self.textView.becomeFirstResponder()
+            
+            self.setupCancelDoneBarButtons()
 
         case .loadingIdentifiers, .lookup:
+            self.lookupController?.view.isHidden = false
+            
             self.titleLabel.isHidden = true
             self.inputContainer.isHidden = true
 
@@ -119,34 +136,29 @@ class ManualLookupViewController: UIViewController {
             if self.textView.isFirstResponder {
                 self.textView.resignFirstResponder()
             }
-        }
-
-        switch state.lookupState {
-        case .failed:
-            self.setupCancelDoneBarButtons()
-
-        case .loadingIdentifiers:
-            self.setupCloseBarButton(title: L10n.cancel)
-
-        case .lookup(let data):
-            let didTranslateAll = !data.contains(where: { data in
-                switch data.state {
-                case .enqueued, .inProgress: return true
-                case .failed, .translated: return false
-                }
-            })
-            self.setupCloseBarButton(title: didTranslateAll ? L10n.close : L10n.cancel)
+            
+            self.setupCloseCancelAllBarButtons()
         }
     }
 
-    private func setupCloseBarButton(title: String) {
-        self.navigationItem.rightBarButtonItem = nil
+    private func setupCloseCancelAllBarButtons() {
+        navigationItem.rightBarButtonItem = nil
 
-        let cancelItem = UIBarButtonItem(title: title, style: .plain, target: nil, action: nil)
-        cancelItem.rx.tap.subscribe(onNext: { [weak self] in
+        let fixedSpacer = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
+        fixedSpacer.width = 16
+
+        let closeItem = UIBarButtonItem(title: L10n.close, style: .plain, target: nil, action: nil)
+        closeItem.rx.tap.subscribe(onNext: { [weak self] in
             self?.close()
         }).disposed(by: self.disposeBag)
-        self.navigationItem.leftBarButtonItem = cancelItem
+        
+        let cancelAllItem = UIBarButtonItem(title: L10n.cancelAll, style: .plain, target: nil, action: nil)
+        cancelAllItem.rx.tap.subscribe(onNext: { [weak self] in
+            self?.lookupController?.viewModel.process(action: .cancelAllLookups)
+            self?.close()
+        }).disposed(by: self.disposeBag)
+
+        navigationItem.leftBarButtonItems = [closeItem, fixedSpacer, cancelAllItem]
     }
 
     private func setupCancelDoneBarButtons() {
@@ -160,7 +172,7 @@ class ManualLookupViewController: UIViewController {
         cancelItem.rx.tap.subscribe(onNext: { [weak self] in
             self?.close()
         }).disposed(by: self.disposeBag)
-        self.navigationItem.leftBarButtonItem = cancelItem
+        self.navigationItem.leftBarButtonItems = [cancelItem]
     }
 
     private func updatePreferredContentSize() {
@@ -172,7 +184,7 @@ class ManualLookupViewController: UIViewController {
 
     private func updateKeyboardSize(_ data: KeyboardData) {
         guard UIDevice.current.userInterfaceIdiom == .phone else { return }
-        self.additionalSafeAreaInsets = UIEdgeInsets(top: 0, left: 0, bottom: data.endFrame.height, right: 0)
+        self.additionalSafeAreaInsets = UIEdgeInsets(top: 0, left: 0, bottom: data.visibleHeight, right: 0)
     }
 
     // MARK: - Setups
@@ -208,8 +220,8 @@ class ManualLookupViewController: UIViewController {
     }
 
     private func setupLookupController() {
-        guard let controller = self.coordinatorDelegate?.lookupController(multiLookupEnabled: false, hasDarkBackground: false) else { return }
-        controller.webView = self.webView
+        let restoreLookupState = self.viewModel.state.restoreLookupState
+        guard let controller = self.coordinatorDelegate?.lookupController(restoreLookupState: restoreLookupState, hasDarkBackground: false) else { return }
         controller.view.isHidden = true
         self.lookupController = controller
 
@@ -254,6 +266,12 @@ class ManualLookupViewController: UIViewController {
                               }
                           })
                           .disposed(by: self.disposeBag)
+    }
+}
+
+extension ManualLookupViewController: IdentifierLookupPresenter {
+    func isPresenting() -> Bool {
+        lookupController?.view.isHidden == false
     }
 }
 

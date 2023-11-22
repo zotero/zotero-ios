@@ -56,7 +56,7 @@ final class MasterCoordinator: NSObject, Coordinator {
 
     func start(animated: Bool) {
         guard let userControllers = self.controllers.userControllers else { return }
-        let librariesController = self.createLibrariesViewController(dbStorage: userControllers.dbStorage)
+        let librariesController = self.createLibrariesViewController(dbStorage: userControllers.dbStorage, identifierLookupController: userControllers.identifierLookupController)
         let collectionsController = self.createCollectionsViewController(
             libraryId: self.visibleLibraryId,
             selectedCollectionId: Defaults.shared.selectedCollectionId,
@@ -66,9 +66,9 @@ final class MasterCoordinator: NSObject, Coordinator {
         self.navigationController?.setViewControllers([librariesController, collectionsController], animated: animated)
     }
 
-    private func createLibrariesViewController(dbStorage: DbStorage) -> UIViewController {
+    private func createLibrariesViewController(dbStorage: DbStorage, identifierLookupController: IdentifierLookupController) -> UIViewController {
         let viewModel = ViewModel(initialState: LibrariesState(), handler: LibrariesActionHandler(dbStorage: dbStorage))
-        let controller = LibrariesViewController(viewModel: viewModel)
+        let controller = LibrariesViewController(viewModel: viewModel, identifierLookupController: identifierLookupController)
         controller.coordinatorDelegate = self
         return controller
     }

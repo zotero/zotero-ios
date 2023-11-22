@@ -20,7 +20,7 @@ final class WebViewHandler: NSObject {
 
     private let session: URLSession
 
-    private weak var webView: WKWebView?
+    private(set) weak var webView: WKWebView?
     private var webDidLoad: ((SingleEvent<()>) -> Void)?
     var receivedMessageHandler: ((String, Any) -> Void)?
     // Cookies, User-Agent and Referrer from original website are stored and added to requests in `sendRequest(with:)`.

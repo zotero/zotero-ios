@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import WebKit
 
 import RxSwift
 
@@ -17,16 +18,20 @@ final class LibrariesViewController: UIViewController {
     private static let customLibrariesSection = 0
     private static let groupLibrariesSection = 1
     private let viewModel: ViewModel<LibrariesActionHandler>
+    private unowned let identifierLookupController: IdentifierLookupController
     private let disposeBag: DisposeBag
 
     weak var coordinatorDelegate: MasterLibrariesCoordinatorDelegate?
 
     // MARK: - Lifecycle
 
-    init(viewModel: ViewModel<LibrariesActionHandler>) {
+    init(viewModel: ViewModel<LibrariesActionHandler>, identifierLookupController: IdentifierLookupController) {
         self.viewModel = viewModel
+        self.identifierLookupController = identifierLookupController
         self.disposeBag = DisposeBag()
         super.init(nibName: "LibrariesViewController", bundle: nil)
+        
+        identifierLookupController.webViewProvider = self
     }
 
     required init?(coder: NSCoder) {
@@ -209,3 +214,12 @@ extension LibrariesViewController: UITableViewDataSource, UITableViewDelegate {
 }
 
 extension LibrariesViewController: BottomSheetObserver { }
+
+extension LibrariesViewController: IdentifierLookupWebViewProvider {
+    func addWebView() -> WKWebView {
+        let webView = WKWebView()
+        webView.isHidden = true
+        view.insertSubview(webView, at: 0)
+        return webView
+    }
+}

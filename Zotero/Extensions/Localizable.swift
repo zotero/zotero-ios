@@ -22,6 +22,8 @@ internal enum L10n {
   internal static let betaWipeTitle = L10n.tr("Localizable", "beta_wipe_title", fallback: "Resync Required")
   /// Cancel
   internal static let cancel = L10n.tr("Localizable", "cancel", fallback: "Cancel")
+  /// Cancel All
+  internal static let cancelAll = L10n.tr("Localizable", "cancel_all", fallback: "Cancel All")
   /// Clear
   internal static let clear = L10n.tr("Localizable", "clear", fallback: "Clear")
   /// Localizable.strings
@@ -367,8 +369,6 @@ internal enum L10n {
     internal static let db = L10n.tr("Localizable", "errors.db", fallback: "Could not connect to database. The device storage might be full.")
     /// Error creating database. Please try logging in again.
     internal static let dbFailure = L10n.tr("Localizable", "errors.db_failure", fallback: "Error creating database. Please try logging in again.")
-    /// Zotero could not find any identifiers in your input. Please verify your input and try again.
-    internal static let lookup = L10n.tr("Localizable", "errors.lookup", fallback: "Zotero could not find any identifiers in your input. Please verify your input and try again.")
     /// Could not parse some data. Other data will continue to sync.
     internal static let parsing = L10n.tr("Localizable", "errors.parsing", fallback: "Could not parse some data. Other data will continue to sync.")
     /// Some data in My Library could not be downloaded. It may have been saved with a newer version of Zotero.
@@ -494,6 +494,12 @@ internal enum L10n {
       internal static let invalidPassword = L10n.tr("Localizable", "errors.login.invalid_password", fallback: "Invalid password")
       /// Invalid username
       internal static let invalidUsername = L10n.tr("Localizable", "errors.login.invalid_username", fallback: "Invalid username")
+    }
+    internal enum Lookup {
+      /// Zotero could not find any identifiers in your input. Please verify your input and try again.
+      internal static let noIdentifiersAndNoLookupData = L10n.tr("Localizable", "errors.lookup.no_identifiers_and_no_lookup_data", fallback: "Zotero could not find any identifiers in your input. Please verify your input and try again.")
+      /// Zotero could not find any new identifiers in your input, or they are already being added. Please verify your input and try again.
+      internal static let noIdentifiersWithLookupData = L10n.tr("Localizable", "errors.lookup.no_identifiers_with_lookup_data", fallback: "Zotero could not find any new identifiers in your input, or they are already being added. Please verify your input and try again.")
     }
     internal enum Pdf {
       /// Can't add annotations.
@@ -794,6 +800,10 @@ internal enum L10n {
     /// Plural format key: "%#@toolbar_filter@"
     internal static func toolbarFilter(_ p1: Int) -> String {
       return L10n.tr("Localizable", "items.toolbar_filter", p1, fallback: "Plural format key: \"%#@toolbar_filter@\"")
+    }
+    /// Saved %d / %d
+    internal static func toolbarSaved(_ p1: Int, _ p2: Int) -> String {
+      return L10n.tr("Localizable", "items.toolbar_saved", p1, p2, fallback: "Saved %d / %d")
     }
     internal enum Action {
       /// Add to Collection

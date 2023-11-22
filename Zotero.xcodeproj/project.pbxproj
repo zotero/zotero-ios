@@ -22,6 +22,8 @@
 		6144B5E12A4AE95E00914B3C /* WebDavControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3202C6B271048FF00485BE4 /* WebDavControllerSpec.swift */; };
 		614D65822A79C9AC007CF449 /* Localizable.stringsdict in Resources */ = {isa = PBXBuildFile; fileRef = 614D65802A79C9AC007CF449 /* Localizable.stringsdict */; };
 		614D65832A79C9B0007CF449 /* Localizable.stringsdict in Resources */ = {isa = PBXBuildFile; fileRef = 614D65802A79C9AC007CF449 /* Localizable.stringsdict */; };
+		614D65872A8030C9007CF449 /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 614D65862A8030C9007CF449 /* OrderedCollections */; };
+		618404262A4456A9005AAF22 /* IdentifierLookupController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 618404252A4456A9005AAF22 /* IdentifierLookupController.swift */; };
 		61ABA7512A6137D1002A4219 /* ShareableImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61ABA7502A6137D1002A4219 /* ShareableImage.swift */; };
 		61BD13952A5831EF008A0704 /* TextKit1TextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61BD13942A5831EF008A0704 /* TextKit1TextView.swift */; };
 		61C817F22A49B5D30085B1E6 /* CollectionResponseSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EDEE250242E700D8BC1E /* CollectionResponseSpec.swift */; };
@@ -1200,6 +1202,7 @@
 		611486502A9CD511002EEBEF /* ci_post_xcodebuild.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ci_post_xcodebuild.sh; sourceTree = "<group>"; };
 		614D65812A79C9AC007CF449 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = en; path = en.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
 		614D65842A7BCC22007CF449 /* ci_post_clone.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ci_post_clone.sh; sourceTree = "<group>"; };
+		618404252A4456A9005AAF22 /* IdentifierLookupController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdentifierLookupController.swift; sourceTree = "<group>"; };
 		61ABA7502A6137D1002A4219 /* ShareableImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareableImage.swift; sourceTree = "<group>"; };
 		61BD13942A5831EF008A0704 /* TextKit1TextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextKit1TextView.swift; sourceTree = "<group>"; };
 		61FA14CD2B05081D00E7D423 /* TextConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextConverter.swift; sourceTree = "<group>"; };
@@ -2034,6 +2037,7 @@
 				B356A39E2524A703003F1943 /* CocoaLumberjackSwift in Frameworks */,
 				B356A363252490B3003F1943 /* Alamofire in Frameworks */,
 				B356A369252490DB003F1943 /* KeychainSwift in Frameworks */,
+				614D65872A8030C9007CF449 /* OrderedCollections in Frameworks */,
 				B356A37B2524A63D003F1943 /* SwiftyGif in Frameworks */,
 				B356A3A02524A703003F1943 /* CocoaLumberjack in Frameworks */,
 				B35C9C082642A0BC0004C47E /* RealmSwift in Frameworks */,
@@ -2165,6 +2169,7 @@
 				B36A988C2428E059005D5790 /* TranslatorsAndStylesController.swift */,
 				B3972688247D403200A8B469 /* UrlDetector.swift */,
 				B324276C25C81F2000567504 /* WebSocketController.swift */,
+				618404252A4456A9005AAF22 /* IdentifierLookupController.swift */,
 			);
 			path = Controllers;
 			sourceTree = "<group>";
@@ -4051,6 +4056,7 @@
 				B35C9C072642A0BC0004C47E /* RealmSwift */,
 				B3445F4526EF5EE9007D4009 /* CrashReporter */,
 				B3D84BEF27919FDE005DDD7C /* Starscream */,
+				614D65862A8030C9007CF449 /* OrderedCollections */,
 			);
 			productName = Zotero;
 			productReference = B30D59552206F60400884C4A /* Zotero.app */;
@@ -4192,6 +4198,7 @@
 				B35C9C042642A0BC0004C47E /* XCRemoteSwiftPackageReference "realm-cocoa" */,
 				B3445F4426EF5EE9007D4009 /* XCRemoteSwiftPackageReference "plcrashreporter" */,
 				B3D84BEE27919FDE005DDD7C /* XCRemoteSwiftPackageReference "Starscream" */,
+				614D65852A8030C9007CF449 /* XCRemoteSwiftPackageReference "swift-collections" */,
 			);
 			productRefGroup = B30D59562206F60400884C4A /* Products */;
 			projectDirPath = "";
@@ -5091,6 +5098,7 @@
 				B340ECA6290FDC9F00EE920D /* AnnotationToolbarViewController.swift in Sources */,
 				B3401D572567D8F700BB8D6E /* AnnotationViewController.swift in Sources */,
 				B3830CE2255451C200910FE0 /* TagPickerActionHandler.swift in Sources */,
+				618404262A4456A9005AAF22 /* IdentifierLookupController.swift in Sources */,
 				B305662223FC051F003304F2 /* StoreVersionSyncAction.swift in Sources */,
 				B3BC25CD247E6BA000AC27B5 /* DateParser.swift in Sources */,
 				B305662523FC051F003304F2 /* RevertLibraryUpdatesSyncAction.swift in Sources */,
@@ -5999,6 +6007,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		614D65852A8030C9007CF449 /* XCRemoteSwiftPackageReference "swift-collections" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-collections.git";
+			requirement = {
+				kind = exactVersion;
+				version = 1.0.4;
+			};
+		};
 		B3445F4426EF5EE9007D4009 /* XCRemoteSwiftPackageReference "plcrashreporter" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/microsoft/plcrashreporter";
@@ -6114,6 +6130,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		614D65862A8030C9007CF449 /* OrderedCollections */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 614D65852A8030C9007CF449 /* XCRemoteSwiftPackageReference "swift-collections" */;
+			productName = OrderedCollections;
+		};
 		B3445F4526EF5EE9007D4009 /* CrashReporter */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = B3445F4426EF5EE9007D4009 /* XCRemoteSwiftPackageReference "plcrashreporter" */;

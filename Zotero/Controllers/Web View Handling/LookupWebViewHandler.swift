@@ -14,6 +14,11 @@ import RxCocoa
 import RxSwift
 
 final class LookupWebViewHandler {
+    struct LookupSettings: Hashable {
+        let libraryIdentifier: LibraryIdentifier
+        let collectionKeys: Set<String>
+    }
+
     /// Handlers for communication with JS in `webView`
     enum JSHandlers: String, CaseIterable {
         /// Handler used for reporting new items.
@@ -46,14 +51,16 @@ final class LookupWebViewHandler {
         case failed(Swift.Error)
     }
 
-    private let webViewHandler: WebViewHandler
+    let lookupSettings: LookupSettings
+    let webViewHandler: WebViewHandler
     private let translatorsController: TranslatorsAndStylesController
     private let disposeBag: DisposeBag
     let observable: PublishSubject<Result<LookupData, Swift.Error>>
 
     private var isLoading: BehaviorRelay<InitializationResult>
 
-    init(webView: WKWebView, translatorsController: TranslatorsAndStylesController) {
+    init(lookupSettings: LookupSettings, webView: WKWebView, translatorsController: TranslatorsAndStylesController) {
+        self.lookupSettings = lookupSettings
         self.translatorsController = translatorsController
         self.webViewHandler = WebViewHandler(webView: webView, javascriptHandlers: JSHandlers.allCases.map({ $0.rawValue }))
         self.observable = PublishSubject()
@@ -75,6 +82,11 @@ final class LookupWebViewHandler {
                 self.isLoading.accept(.failed(error))
             })
             .disposed(by: self.disposeBag)
+    }
+    
+    convenience init(libraryIdentifier: LibraryIdentifier, collectionKeys: Set<String>, webView: WKWebView, translatorsController: TranslatorsAndStylesController) {
+        let lookupSettings = LookupSettings(libraryIdentifier: libraryIdentifier, collectionKeys: collectionKeys)
+        self.init(lookupSettings: lookupSettings, webView: webView, translatorsController: translatorsController)
     }
 
     func lookUp(identifier: String) {

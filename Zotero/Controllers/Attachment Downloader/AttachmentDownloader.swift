@@ -123,11 +123,13 @@ final class AttachmentDownloader {
 
                 case .file(let filename, let contentType, let location, let linkType):
                     switch linkType {
-                    case .linkedFile, .embeddedImage: break
+                    case .linkedFile, .embeddedImage:
+                        break
 
                     case .importedFile, .importedUrl:
                         switch location {
-                        case .local: break
+                        case .local:
+                            break
 
                         case .remote, .remoteMissing, .localAndChangedRemotely:
                             DDLogInfo("AttachmentDownloader: batch download remote\(location == .remoteMissing ? "ly missing" : "") file \(attachment.key)")
@@ -269,8 +271,16 @@ final class AttachmentDownloader {
         let observer = progress.observe(\.fractionCompleted) { [weak self] progress, _ in
             self?.observable.on(.next(Update(download: download, parentKey: parentKey, kind: .progress(CGFloat(progress.fractionCompleted)))))
         }
-        let operation = AttachmentDownloadOperation(file: file, download: download, progress: progress, userId: self.userId, apiClient: self.apiClient, webDavController: self.webDavController,
-                                                    fileStorage: self.fileStorage, queue: self.processingQueue)
+        let operation = AttachmentDownloadOperation(
+            file: file,
+            download: download,
+            progress: progress,
+            userId: userId,
+            apiClient: apiClient,
+            webDavController: webDavController,
+            fileStorage: fileStorage,
+            queue: processingQueue
+        )
         operation.finishedDownload = { [weak self] result in
             guard let self = self else { return }
 

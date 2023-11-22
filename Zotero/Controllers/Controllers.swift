@@ -264,6 +264,10 @@ final class Controllers {
         controllers?.disableSync(apiKey: self.apiKey)
         // Cancel all downloads
         controllers?.fileDownloader.stop()
+        // Cancel all identifier lookups
+        controllers?.identifierLookupController.cancelAllLookups()
+        // Cancel all remote downloads
+        controllers?.remoteFileDownloader.stop()
         // Cancel all background uploads
         controllers?.backgroundUploadObserver.cancelAllUploads()
         // Clear user controllers
@@ -296,6 +300,7 @@ final class UserControllers {
     let backgroundUploadObserver: BackgroundUploadObserver
     let fileDownloader: AttachmentDownloader
     let remoteFileDownloader: RemoteAttachmentDownloader
+    let identifierLookupController: IdentifierLookupController
     let webSocketController: WebSocketController
     let fileCleanupController: AttachmentFileCleanupController
     let citationController: CitationController
@@ -362,6 +367,14 @@ final class UserControllers {
         self.backgroundUploadObserver = backgroundUploadObserver
         self.fileDownloader = fileDownloader
         self.remoteFileDownloader = RemoteAttachmentDownloader(apiClient: controllers.apiClient, fileStorage: controllers.fileStorage)
+        self.identifierLookupController = IdentifierLookupController(
+            dbStorage: dbStorage,
+            fileStorage: controllers.fileStorage,
+            translatorsController: controllers.translatorsAndStylesController,
+            schemaController: controllers.schemaController,
+            dateParser: controllers.dateParser,
+            remoteFileDownloader: remoteFileDownloader
+        )
         self.webSocketController = webSocketController
         self.fileCleanupController = fileCleanupController
         self.citationController = CitationController(stylesController: controllers.translatorsAndStylesController, fileStorage: controllers.fileStorage,

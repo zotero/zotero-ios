@@ -30,7 +30,8 @@ final class RemoteAttachmentDownloader {
         let kind: Kind
     }
 
-    private let queue: DispatchQueue
+    private let accessQueue: DispatchQueue
+    private let processingQueue: DispatchQueue
     private let operationQueue: OperationQueue
     private let disposeBag: DisposeBag
     private unowned let apiClient: ApiClient
@@ -41,18 +42,36 @@ final class RemoteAttachmentDownloader {
     private var operations: [Download: RemoteAttachmentDownloadOperation]
     private var errors: [Download: Swift.Error]
     private var progressObservers: [Download: NSKeyValueObservation]
+    private var batchProgress: Progress?
+    private var totalBatchCount: Int = 0
+    
+    var batchData: (Progress?, Int, Int) {
+        var progress: Progress?
+        var totalBatchCount = 0
+        var remainingBatchCount = 0
+
+        self.accessQueue.sync { [weak self] in
+            guard let self else { return }
+            progress = self.batchProgress
+            remainingBatchCount = self.operations.count
+            totalBatchCount = self.totalBatchCount
+        }
+
+        return (progress, remainingBatchCount, totalBatchCount)
+    }
 
     init(apiClient: ApiClient, fileStorage: FileStorage) {
-        let queue = DispatchQueue(label: "org.zotero.RemoteAttachmentDownloader.ProcessingQueue", qos: .userInteractive, attributes: .concurrent)
+        let processingQueue = DispatchQueue(label: "org.zotero.RemoteAttachmentDownloader.ProcessingQueue", qos: .userInteractive, attributes: .concurrent)
         let operationQueue = OperationQueue()
         operationQueue.maxConcurrentOperationCount = 2
         operationQueue.qualityOfService = .userInitiated
-        operationQueue.underlyingQueue = queue
+        operationQueue.underlyingQueue = processingQueue
 
         self.apiClient = apiClient
         self.fileStorage = fileStorage
         self.operationQueue = operationQueue
-        self.queue = queue
+        self.accessQueue = DispatchQueue(label: "org.zotero.RemoteAttachmentDownloader.AccessQueue", qos: .userInteractive, attributes: .concurrent)
+        self.processingQueue = processingQueue
         self.observable = PublishSubject()
         self.operations = [:]
         self.progressObservers = [:]
@@ -65,7 +84,7 @@ final class RemoteAttachmentDownloader {
         var progress: CGFloat?
         var error: Swift.Error?
 
-        self.queue.sync { [weak self] in
+        self.accessQueue.sync { [weak self] in
             if let operation = self?.operations[download] {
                 if let _progress = operation.progress {
                     progress = CGFloat(_progress.fractionCompleted)
@@ -80,77 +99,105 @@ final class RemoteAttachmentDownloader {
     }
 
     func download(data: [(Attachment, URL, String)]) {
-        self.queue.async(flags: .barrier) { [weak self] in
-            guard let self = self else { return }
+        self.accessQueue.async(flags: .barrier) { [weak self] in
+            guard let self else { return }
 
             DDLogInfo("RemoteAttachmentDownloader: enqueue \(data.count) attachments")
 
-            let operations = data.compactMap({ self.createDownload(url: $0.1, attachment: $0.0, parentKey: $0.2) })
-            self.operationQueue.addOperations(operations, waitUntilFinished: false)
-        }
-    }
-
-    private func createDownload(url: URL, attachment: Attachment, parentKey: String) -> RemoteAttachmentDownloadOperation? {
-        let download = Download(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId)
-
-        guard self.operations[download] == nil, let file = self.file(for: attachment) else { return nil }
-
-        let operation = RemoteAttachmentDownloadOperation(url: url, file: file, apiClient: self.apiClient, fileStorage: self.fileStorage, queue: self.queue)
-        operation.finishedDownload = { [weak self] result in
-            self?.queue.async(flags: .barrier) {
-                guard let self = self else { return }
-                self.finish(download: download, file: file, attachment: attachment, parentKey: parentKey, result: result)
+            let downloadAndOperations = data.compactMap({ createDownload(url: $0.1, attachment: $0.0, parentKey: $0.2) })
+            let downloads = downloadAndOperations.map({ $0.0 })
+            let operations = downloadAndOperations.map({ $0.1 })
+            downloads.forEach {
+                // Send first update to immediately reflect new state
+                self.observable.on(.next(Update(download: $0, kind: .progress(0))))
             }
+            operationQueue.addOperations(operations, waitUntilFinished: false)
         }
-        operation.progressHandler = { [weak self] progress in
-            self?.queue.async(flags: .barrier) {
-                guard let self = self else { return }
-                self.observe(progress: progress, attachment: attachment, download: download)
+        
+        func createDownload(url: URL, attachment: Attachment, parentKey: String) -> (Download, RemoteAttachmentDownloadOperation)? {
+            let download = Download(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId)
+
+            guard operations[download] == nil, let file = file(for: attachment) else { return nil }
+
+            let progress = Progress(totalUnitCount: 100)
+            let operation = RemoteAttachmentDownloadOperation(url: url, file: file, progress: progress, apiClient: apiClient, fileStorage: fileStorage, queue: processingQueue)
+            operation.finishedDownload = { [weak self] result in
+                self?.accessQueue.async(flags: .barrier) {
+                    finish(download: download, file: file, attachment: attachment, parentKey: parentKey, result: result)
+                }
             }
-        }
+            operation.progressHandler = { [weak self] progress in
+                self?.accessQueue.async(flags: .barrier) {
+                    observe(progress: progress, attachment: attachment, download: download)
+                }
+            }
 
-        self.operations[download] = operation
-
-        return operation
-    }
-
-    private func observe(progress: Progress, attachment: Attachment, download: Download) {
-        let observer = progress.observe(\.fractionCompleted) { [weak self] progress, _ in
-            self?.observable.on(.next(Update(download: download, kind: .progress(CGFloat(progress.fractionCompleted)))))
-        }
-        self.progressObservers[download] = observer
-    }
-
-    private func file(for attachment: Attachment) -> File? {
-        switch attachment.type {
-        case .file(let filename, let contentType, _, _):
-            return Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
-
-        case .url:
-            return nil
-        }
-    }
-
-    private func finish(download: Download, file: File, attachment: Attachment, parentKey: String, result: Result<(), Swift.Error>) {
-        self.operations[download] = nil
-
-        switch result {
-        case .success:
-            DDLogInfo("RemoteAttachmentDownloader: finished downloading \(download.key)")
-            self.observable.on(.next(Update(download: download, kind: .ready(attachment))))
-            self.errors[download] = nil
-
-        case .failure(let error):
-            DDLogError("RemoteAttachmentDownloader: failed to download attachment \(download.key), \(download.libraryId) - \(error)")
-
-            let isCancelError = (error as? AttachmentDownloadOperation.Error) == .cancelled
-            self.errors[download] = isCancelError ? nil : error
-
-            if isCancelError {
-                self.observable.on(.next(Update(download: download, kind: .cancelled)))
+            operations[download] = operation
+            totalBatchCount += 1
+            
+            if let batchProgress {
+                batchProgress.addChild(progress, withPendingUnitCount: 100)
+                batchProgress.totalUnitCount += 100
             } else {
-                self.observable.on(.next(Update(download: download, kind: .failed)))
+                let batchProgress = Progress(totalUnitCount: 100)
+                batchProgress.addChild(progress, withPendingUnitCount: 100)
+                self.batchProgress = batchProgress
+            }
+
+            return (download, operation)
+            
+            func file(for attachment: Attachment) -> File? {
+                switch attachment.type {
+                case .file(let filename, let contentType, _, _):
+                    return Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
+
+                case .url:
+                    return nil
+                }
+            }
+            
+            func finish(download: Download, file: File, attachment: Attachment, parentKey: String, result: Result<(), Swift.Error>) {
+                operations[download] = nil
+                progressObservers[download] = nil
+                resetBatchDataIfNeeded()
+
+                switch result {
+                case .success:
+                    DDLogInfo("RemoteAttachmentDownloader: finished downloading \(download.key)")
+                    observable.on(.next(Update(download: download, kind: .ready(attachment))))
+                    errors[download] = nil
+
+                case .failure(let error):
+                    DDLogError("RemoteAttachmentDownloader: failed to download attachment \(download.key), \(download.libraryId) - \(error)")
+
+                    let isCancelError = (error as? RemoteAttachmentDownloadOperation.Error) == .cancelled
+                    errors[download] = isCancelError ? nil : error
+
+                    if isCancelError {
+                        observable.on(.next(Update(download: download, kind: .cancelled)))
+                    } else {
+                        observable.on(.next(Update(download: download, kind: .failed)))
+                    }
+                }
+            }
+            
+            func observe(progress: Progress, attachment: Attachment, download: Download) {
+                let observer = progress.observe(\.fractionCompleted) { [weak self] progress, _ in
+                    self?.observable.on(.next(Update(download: download, kind: .progress(CGFloat(progress.fractionCompleted)))))
+                }
+                progressObservers[download] = observer
             }
         }
+    }
+    
+    private func resetBatchDataIfNeeded() {
+        guard operations.isEmpty else { return }
+        totalBatchCount = 0
+        batchProgress = nil
+    }
+
+    func stop() {
+        DDLogInfo("RemoteAttachmentDownloader: stop")
+        self.operationQueue.cancelAllOperations()
     }
 }
