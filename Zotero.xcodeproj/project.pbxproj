@@ -1083,6 +1083,7 @@
 		B3EBC9B1283E392900286A9E /* ReadBaseTagsToDeleteDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3EBC9B0283E392900286A9E /* ReadBaseTagsToDeleteDbRequest.swift */; };
 		B3EBC9B2283E39AD00286A9E /* ReadBaseTagsToDeleteDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3EBC9B0283E392900286A9E /* ReadBaseTagsToDeleteDbRequest.swift */; };
 		B3EC44612718490A001A9150 /* AnnotationPreviewBoundingBoxCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3EC44602718490A001A9150 /* AnnotationPreviewBoundingBoxCalculator.swift */; };
+		B3EFC60B2B0F503E00CB71A0 /* EmojiExtractorSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3EFC60A2B0F503E00CB71A0 /* EmojiExtractorSpec.swift */; };
 		B3F09AE629CAFF860084E4D8 /* TagFilterActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F09AE529CAFF860084E4D8 /* TagFilterActionHandler.swift */; };
 		B3F09AE829CAFF8D0084E4D8 /* TagFilterState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F09AE729CAFF8D0084E4D8 /* TagFilterState.swift */; };
 		B3F09AEA29CAFF9E0084E4D8 /* TagFilterAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F09AE929CAFF9E0084E4D8 /* TagFilterAction.swift */; };
@@ -1987,6 +1988,7 @@
 		B3E9180B25ECE30A002B77AF /* CoreGraphics+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "CoreGraphics+Extensions.swift"; sourceTree = "<group>"; };
 		B3EBC9B0283E392900286A9E /* ReadBaseTagsToDeleteDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadBaseTagsToDeleteDbRequest.swift; sourceTree = "<group>"; };
 		B3EC44602718490A001A9150 /* AnnotationPreviewBoundingBoxCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationPreviewBoundingBoxCalculator.swift; sourceTree = "<group>"; };
+		B3EFC60A2B0F503E00CB71A0 /* EmojiExtractorSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmojiExtractorSpec.swift; sourceTree = "<group>"; };
 		B3F09AE529CAFF860084E4D8 /* TagFilterActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagFilterActionHandler.swift; sourceTree = "<group>"; };
 		B3F09AE729CAFF8D0084E4D8 /* TagFilterState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagFilterState.swift; sourceTree = "<group>"; };
 		B3F09AE929CAFF9E0084E4D8 /* TagFilterAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagFilterAction.swift; sourceTree = "<group>"; };
@@ -2681,6 +2683,7 @@
 				B3B1EDEE250242E700D8BC1E /* CollectionResponseSpec.swift */,
 				B34F9FA223743C36004ED34C /* CreatorSummaryFormatterSpec.swift */,
 				B32A3C79247FFF14009E2C5D /* DateParserSpec.swift */,
+				B3EFC60A2B0F503E00CB71A0 /* EmojiExtractorSpec.swift */,
 				B3243BC72A5EB2740033A7D6 /* HtmlAttributedStringConverterSpec.swift */,
 				B3B1EDEC250242DB00D8BC1E /* ItemResponseSpec.swift */,
 				B34F9FA423743C42004ED34C /* ItemTitleFormatterSpec.swift */,
@@ -5196,6 +5199,7 @@
 			files = (
 				6144B5E02A4AE49800914B3C /* TranslatorsControllerSpec.swift in Sources */,
 				6144B5D92A4ADEB500914B3C /* ReadUpdatedItemUpdateParametersSpec.swift in Sources */,
+				B3EFC60B2B0F503E00CB71A0 /* EmojiExtractorSpec.swift in Sources */,
 				61C817F22A49B5D30085B1E6 /* CollectionResponseSpec.swift in Sources */,
 				6144B5D52A4ADD3C00914B3C /* DateParserSpec.swift in Sources */,
 				B3202C6A2710488200485BE4 /* SyncControllerAction+Equatable.swift in Sources */,
