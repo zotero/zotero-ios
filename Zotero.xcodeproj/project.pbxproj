@@ -1084,6 +1084,7 @@
 		B3EBC9B2283E39AD00286A9E /* ReadBaseTagsToDeleteDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3EBC9B0283E392900286A9E /* ReadBaseTagsToDeleteDbRequest.swift */; };
 		B3EC44612718490A001A9150 /* AnnotationPreviewBoundingBoxCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3EC44602718490A001A9150 /* AnnotationPreviewBoundingBoxCalculator.swift */; };
 		B3EFC60B2B0F503E00CB71A0 /* EmojiExtractorSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3EFC60A2B0F503E00CB71A0 /* EmojiExtractorSpec.swift */; };
+		B3EFC60C2B0F633A00CB71A0 /* EmojiExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CAE1172B0E38BA0000F8CA /* EmojiExtractor.swift */; };
 		B3F09AE629CAFF860084E4D8 /* TagFilterActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F09AE529CAFF860084E4D8 /* TagFilterActionHandler.swift */; };
 		B3F09AE829CAFF8D0084E4D8 /* TagFilterState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F09AE729CAFF8D0084E4D8 /* TagFilterState.swift */; };
 		B3F09AEA29CAFF9E0084E4D8 /* TagFilterAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F09AE929CAFF9E0084E4D8 /* TagFilterAction.swift */; };
@@ -5381,6 +5382,7 @@
 				B36459E3264411F300A0C2C0 /* TagColorGenerator.swift in Sources */,
 				B3DF9AD32747AAD9007933CB /* ApiRequest.swift in Sources */,
 				B305673023FC0921003304F2 /* SubmitDeletionSyncAction.swift in Sources */,
+				B3EFC60C2B0F633A00CB71A0 /* EmojiExtractor.swift in Sources */,
 				B3FC7436272195DE00F55531 /* WebDavDownloadRequest.swift in Sources */,
 				B3FC7437272195E100F55531 /* WebDavNonexistentPropRequest.swift in Sources */,
 				B305676F23FC0A55003304F2 /* ArrayEncoding.swift in Sources */,

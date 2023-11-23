@@ -25,6 +25,7 @@ final class RTag: Object {
     @Persisted(indexed: true) var name: String
     @Persisted var sortName: String
     @Persisted var color: String
+    @Persisted var emojiGroup: String?
     @Persisted var order: Int
     @Persisted var customLibraryKey: RCustomLibraryType?
     @Persisted var groupKey: Int?
