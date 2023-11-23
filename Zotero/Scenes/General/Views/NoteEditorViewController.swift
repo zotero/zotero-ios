@@ -81,7 +81,7 @@ final class NoteEditorViewController: UIViewController {
 
             func rightBarButtonItemTypes(for state: NoteEditorState) -> [RightBarButtonItem] {
                 var items: [RightBarButtonItem] = [.done]
-                if state.openItemsCount > 0 {
+                if state.openItemsCount > 1 {
                     items = [.restoreOpenItems] + items
                 }
                 return items
