@@ -10,24 +10,15 @@ import UIKit
 
 final class TagCirclesView: UIView {
     private static let borderWidth: CGFloat = 1
-    private var aspectRatioConstraint: NSLayoutConstraint?
+    private static let circleSize: CGFloat = 12
+    private static let emojisToCirclesSpacing: CGFloat = 8
+    private static let emojiSpacing: CGFloat = 6
+    private static let emojiLayerName = "emoji"
+    private static let circleLayerName = "circle"
+    private static let borderLayerName = "circleBorder"
 
-    var colors: [UIColor] = [] {
-        didSet {
-            if let sublayers = self.layer.sublayers {
-                sublayers.forEach({ $0.removeFromSuperlayer() })
-            }
-            self.createLayers(for: self.colors).forEach { self.layer.addSublayer($0) }
-            self.updateAspectRatio()
-            self.setNeedsLayout()
-        }
-    }
-
-    private var aspectRatioMultiplier: CGFloat {
-        guard !self.colors.isEmpty else { return 0 }
-        guard self.colors.count > 1 else { return 1 }
-        return 1 / (1 + (CGFloat(self.colors.count - 1) * 0.5))
-    }
+    private var height: CGFloat = 0
+    private var width: CGFloat = 0
 
     var borderColor: CGColor = UIColor.white.cgColor {
         didSet {
@@ -50,79 +41,120 @@ final class TagCirclesView: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
 
-        let mainHeight = self.layer.frame.height
-        let mainHalfHeight = mainHeight / 2.0
-        var mainXPos = self.layer.frame.width - mainHeight
+        guard let layers = layer.sublayers, !layers.isEmpty else { return }
 
-        let borderHeight = mainHeight + (TagCirclesView.borderWidth * 2)
-        let borderHalfHeight = mainHalfHeight + TagCirclesView.borderWidth
+        let firstCircleIndex = layers.firstIndex(where: { $0.name == Self.borderLayerName })
+        var xPos: CGFloat = 0
 
-        self.layer.sublayers?.enumerated().forEach { index, circle in
-            let mainLayer = index % 2 == 1
-            let height = mainLayer ? mainHeight : borderHeight
-            let yPos = mainLayer ? 0 : -TagCirclesView.borderWidth
-            let xPos = mainLayer ? mainXPos : (mainXPos - TagCirclesView.borderWidth)
-            let halfHeight = mainLayer ? mainHalfHeight : borderHalfHeight
+        for idx in 0..<(firstCircleIndex ?? layers.count) {
+            let layer = layers[idx]
+            layer.frame = CGRect(origin: CGPoint(x: xPos, y: (height - layer.frame.height) / 2), size: layer.frame.size)
+            xPos += layer.frame.width + Self.emojiSpacing
+        }
 
-            circle.frame = CGRect(x: xPos, y: yPos, width: height, height: height)
-            circle.cornerRadius = halfHeight
+        guard let firstCircleIndex else { return }
 
-            if !mainLayer {
-                circle.backgroundColor = self.borderColor
-            }
+        if xPos > 0 && firstCircleIndex != layers.count {
+            xPos += Self.emojisToCirclesSpacing - Self.emojiSpacing
+        }
 
-            if mainLayer {
-                mainXPos -= mainHalfHeight
+        for idx in 0..<(layers.count - firstCircleIndex) {
+            let layer = layers[layers.count - idx - 1]
+            let isMain = layer.name == Self.circleLayerName
+            layer.frame = CGRect(origin: CGPoint(x: xPos + (isMain ? Self.borderWidth : 0), y: (height - layer.frame.height) / 2), size: layer.frame.size)
+            if !isMain {
+                xPos += layer.frame.width / 2
             }
         }
     }
 
     private func updateBorderColors() {
-        self.layer.sublayers?.enumerated().forEach { index, circle in
-            if index % 2 == 0 {
-                circle.backgroundColor = self.borderColor
-            }
+        guard let layers = layer.sublayers else { return }
+        for layer in layers {
+            guard layer.name == "circleBorder" else { continue }
+            layer.backgroundColor = borderColor
         }
     }
 
     override var intrinsicContentSize: CGSize {
-        return CGSize(width: UIView.noIntrinsicMetric, height: UIView.noIntrinsicMetric)
+        return CGSize(width: width, height: height)
     }
 
     // MARK: - Actions
 
-    private func createLayers(for colors: [UIColor]) -> [CALayer] {
-        var layers: [CALayer] = []
-        for color in colors {
+    func set(emojis: [String], colors: [UIColor]) {
+        if let sublayers = self.layer.sublayers {
+            sublayers.forEach({ $0.removeFromSuperlayer() })
+        }
+
+        let font = UIFont.preferredFont(forTextStyle: .body)
+        var height: CGFloat = 0
+        var width: CGFloat = 0
+
+        for emoji in emojis {
+            let attributedText = NSAttributedString(string: emoji, attributes: [.font: font])
+            let size = attributedText.boundingRect(
+                with: CGSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude),
+                options: .usesLineFragmentOrigin,
+                context: nil
+            ).integral.size
+
+            if size.height > height {
+                height = size.height
+            }
+            width += size.width + Self.emojiSpacing
+
+            let text = CATextLayer()
+            text.frame = CGRect(origin: .zero, size: size)
+            text.string = emoji
+            text.font = CTFontCreateUIFontForLanguage(.system, font.pointSize, nil)
+            text.fontSize = font.pointSize
+            text.alignmentMode = .center
+            text.shouldRasterize = true
+            text.rasterizationScale = UIScreen.main.scale
+            text.contentsScale = text.rasterizationScale
+            text.masksToBounds = true
+            text.name = Self.emojiLayerName
+            self.layer.addSublayer(text)
+        }
+
+        let borderSize = Self.circleSize + (2 * Self.borderWidth)
+
+        for color in colors.reversed() {
             // Border layer
             let border = CALayer()
+            border.frame = CGRect(origin: .zero, size: CGSize(width: borderSize, height: borderSize))
             border.backgroundColor = self.borderColor
             border.masksToBounds = true
             border.shouldRasterize = true
+            border.cornerRadius = borderSize / 2
             border.rasterizationScale = UIScreen.main.scale
             border.actions = ["backgroundColor": NSNull()]
-            layers.append(border)
+            border.name = Self.borderLayerName
+            self.layer.addSublayer(border)
             // Main circle layer
             let main = CALayer()
+            main.frame = CGRect(origin: .zero, size: CGSize(width: Self.circleSize, height: Self.circleSize))
             main.backgroundColor = color.cgColor
+            main.cornerRadius = Self.circleSize / 2
             main.shouldRasterize = true
             main.rasterizationScale = UIScreen.main.scale
             main.masksToBounds = true
-            layers.append(main)
-        }
-        return layers
-    }
-
-    private func updateAspectRatio() {
-        let newMultiplier = self.aspectRatioMultiplier
-        guard newMultiplier > 0 && self.aspectRatioConstraint?.multiplier != newMultiplier else { return }
-
-        if let constraint = self.aspectRatioConstraint {
-            self.removeConstraint(constraint)
+            main.name = Self.circleLayerName
+            self.layer.addSublayer(main)
         }
 
-        self.aspectRatioConstraint = self.heightAnchor.constraint(equalTo: self.widthAnchor, multiplier: newMultiplier, constant: 0)
-        self.aspectRatioConstraint?.isActive = true
+        if !colors.isEmpty {
+            if width > 0 {
+                width += Self.emojisToCirclesSpacing
+            }
+            width += ((borderSize / 2) * CGFloat(colors.count)) + (borderSize / 2)
+        }
+
+        self.width = width
+        self.height = max(height, borderSize)
+
+        self.invalidateIntrinsicContentSize()
     }
 
     // MARK: - Setups
@@ -130,5 +162,6 @@ final class TagCirclesView: UIView {
     private func setup() {
         self.backgroundColor = .clear
         self.translatesAutoresizingMaskIntoConstraints = false
+        self.layer.masksToBounds = true
     }
 }

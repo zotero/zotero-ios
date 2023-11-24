@@ -112,13 +112,15 @@ final class ItemCell: UITableViewCell {
         self.noteIcon.isHidden = !item.hasNote
         self.noteIcon.isAccessibilityElement = false
 
-        self.tagCircles.isHidden = item.tagColors.isEmpty
+        self.tagCircles.isHidden = item.tagColors.isEmpty && item.tagEmojis.isEmpty
         self.tagCircles.isAccessibilityElement = false
         if !self.tagCircles.isHidden {
-            self.tagCircles.colors = item.tagColors
+            self.tagCircles.set(emojis: item.tagEmojis, colors: item.tagColors)
         }
 
         self.set(accessory: item.accessory)
+
+        self.layoutIfNeeded()
     }
 
     func set(accessory: ItemCellModel.Accessory?) {
