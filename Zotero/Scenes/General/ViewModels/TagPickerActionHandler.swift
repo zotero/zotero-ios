@@ -50,7 +50,7 @@ struct TagPickerActionHandler: ViewModelActionHandler {
     private func add(name: String, in viewModel: ViewModel<TagPickerActionHandler>) {
         guard let snapshot = viewModel.state.snapshot else { return }
         self.update(viewModel: viewModel) { state in
-            let tag = Tag(name: name, color: "")
+            let tag = Tag(name: name, color: "", emojiGroup: EmojiExtractor.extractFirstContiguousGroup(from: name))
             state.tags = snapshot
 
             let index = state.tags.index(of: tag, sortedBy: { $0.name.caseInsensitiveCompare($1.name) == .orderedAscending })
@@ -92,9 +92,10 @@ struct TagPickerActionHandler: ViewModelActionHandler {
         do {
             let request = ReadTagPickerTagsDbRequest(libraryId: viewModel.state.libraryId)
             let results = try self.dbStorage.perform(request: request, on: .main)
-            let colored = results.filter("color != \"\"").sorted(byKeyPath: "name")
-            let others = results.filter("color = \"\"").sorted(byKeyPath: "name")
-            let tags = Array(colored.map(Tag.init)) + Array(others.map(Tag.init))
+            let colored = results.filter("color != \"\"").sorted(byKeyPath: "order")
+            let emoji = results.filter("emojiGroup != nil and color = \"\"").sorted(byKeyPath: "name")
+            let others = results.filter("color = \"\" && emojiGroup = nil").sorted(byKeyPath: "name")
+            let tags = Array(colored.map(Tag.init)) + Array(emoji.map(Tag.init)) + Array(others.map(Tag.init))
             self.update(viewModel: viewModel) { state in
                 state.tags = tags
                 state.changes = [.tags, .selection]

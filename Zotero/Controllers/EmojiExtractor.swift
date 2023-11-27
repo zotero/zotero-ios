@@ -14,7 +14,7 @@ struct EmojiExtractor {
         var endIndex: Int?
 
         for (idx, character) in text.enumerated() {
-            let isEmoji = character.unicodeScalars.first?.properties.isEmojiPresentation ?? false
+            let isEmoji = isEmoji(character: character)
             if startIndex == nil && isEmoji {
                 startIndex = idx
             }
@@ -30,5 +30,15 @@ struct EmojiExtractor {
 
         guard let startIndex, let endIndex else { return nil }
         return String(text[text.index(text.startIndex, offsetBy: startIndex)..<text.index(text.startIndex, offsetBy: endIndex)])
+    }
+
+    private static func isEmoji(character: Character) -> Bool {
+        guard let firstScalar = character.unicodeScalars.first else { return false }
+
+        if character.unicodeScalars.count > 1 {
+            return firstScalar.properties.isEmoji
+        }
+
+        return firstScalar.properties.isEmoji && firstScalar.value > 0x238C
     }
 }

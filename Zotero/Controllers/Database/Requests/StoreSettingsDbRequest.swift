@@ -81,6 +81,7 @@ struct StoreSettingsDbRequest: DbRequest {
             } else {
                 let new = RTag()
                 new.name = tag.name
+                new.emojiGroup = EmojiExtractor.extractFirstContiguousGroup(from: tag.name)
                 new.updateSortName()
                 new.order = idx
                 new.color = tag.color

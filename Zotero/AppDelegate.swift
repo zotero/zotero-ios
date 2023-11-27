@@ -276,6 +276,8 @@ extension AppDelegate: UIApplicationDelegate {
                                                           forProperty: "lineWidth",
                                                           forKey: PSPDFKit.Annotation.ToolVariantID(tool: .square))
 
+        let emoji = EmojiExtractor.extractFirstContiguousGroup(from: "❤️❤️❤️❤️❤️")
+
         self.setupLogs()
         self.controllers = Controllers()
         self.setupAppearance()

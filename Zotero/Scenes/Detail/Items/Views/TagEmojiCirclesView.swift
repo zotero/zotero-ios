@@ -1,5 +1,5 @@
 //
-//  TagCirclesView.swift
+//  TagEmojiCirclesView.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 16/09/2019.
@@ -8,7 +8,7 @@
 
 import UIKit
 
-final class TagCirclesView: UIView {
+final class TagEmojiCirclesView: UIView {
     private static let borderWidth: CGFloat = 1
     private static let circleSize: CGFloat = 12
     private static let emojisToCirclesSpacing: CGFloat = 8

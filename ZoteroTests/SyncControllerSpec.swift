@@ -2316,6 +2316,7 @@ final class SyncControllerSpec: QuickSpec {
                             
                             let tag = RTag()
                             tag.name = tagName
+                            tag.emojiGroup = EmojiExtractor.extractFirstContiguousGroup(from: tagName)
                             tag.color = oldColor
                             tag.libraryId = .custom(.myLibrary)
                             

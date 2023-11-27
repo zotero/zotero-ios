@@ -41,8 +41,8 @@ struct ReadFilteredTagsDbRequest: DbResponseRequest {
         }
 
         if !self.showAutomatic {
-            // Don't apply this filter to colored tags
-            predicates.append(NSPredicate(format: "tag.color != \"\" or type = %d", RTypedTag.Kind.manual.rawValue))
+            // Don't apply this filter to colored or emoji tags
+            predicates.append(NSPredicate(format: "tag.color != \"\" or tag.emojiGroup != nil or type = %d", RTypedTag.Kind.manual.rawValue))
         }
 
         for filter in self.filters {

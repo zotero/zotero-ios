@@ -15,7 +15,7 @@ final class ItemCell: UITableViewCell {
     @IBOutlet private weak var titleLabel: UILabel!
     @IBOutlet private weak var titleLabelsToContainerBottom: NSLayoutConstraint!
     @IBOutlet private weak var subtitleLabel: InsetLabel!
-    @IBOutlet private weak var tagCircles: TagCirclesView!
+    @IBOutlet private weak var tagCircles: TagEmojiCirclesView!
     @IBOutlet private weak var noteIcon: UIImageView!
     @IBOutlet private weak var accessoryContainer: UIView!
     @IBOutlet private weak var fileView: FileAttachmentView!
