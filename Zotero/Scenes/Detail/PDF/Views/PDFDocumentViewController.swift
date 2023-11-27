@@ -36,7 +36,6 @@ final class PDFDocumentViewController: UIViewController {
 
     private static var toolHistory: [PSPDFKit.Annotation.Tool] = []
     private var selectionView: SelectionView?
-    private var didAppear: Bool
     var scrubberBarHeight: CGFloat {
         return self.pdfController?.userInterfaceView.scrubberBar.frame.height ?? 0
     }
@@ -50,7 +49,6 @@ final class PDFDocumentViewController: UIViewController {
 
     init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool, initialUIHidden: Bool) {
         self.viewModel = viewModel
-        self.didAppear = false
         self.initialUIHidden = initialUIHidden
         self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
@@ -66,20 +64,15 @@ final class PDFDocumentViewController: UIViewController {
         self.view.backgroundColor = .systemGray6
         self.setupViews()
         self.setupObserving()
+    }
+
+    override func viewIsAppearing(_ animated: Bool) {
+        super.viewIsAppearing(animated)
+        self.setInterface(hidden: self.initialUIHidden)
         self.updateInterface(to: self.viewModel.state.settings)
-    }
-
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-
-        if !self.didAppear {
-            self.setInterface(hidden: self.initialUIHidden)
+        if let (page, _) = self.viewModel.state.focusDocumentLocation, let annotation = self.viewModel.state.selectedAnnotation {
+            self.select(annotation: annotation, pageIndex: PageIndex(page), document: self.viewModel.state.document)
         }
-    }
-
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        self.didAppear = true
     }
 
     deinit {
@@ -98,16 +91,6 @@ final class PDFDocumentViewController: UIViewController {
                 self.updateSelection(on: pageView, annotation: annotation)
             }
         }, completion: nil)
-    }
-
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-
-        guard !self.didAppear else { return }
-
-        if let (page, _) = self.viewModel.state.focusDocumentLocation, let annotation = self.viewModel.state.selectedAnnotation {
-            self.select(annotation: annotation, pageIndex: PageIndex(page), document: self.viewModel.state.document)
-        }
     }
 
     func didBecomeActive() {
@@ -519,6 +502,7 @@ final class PDFDocumentViewController: UIViewController {
         controller.annotationStateManager.pencilInteraction.isEnabled = true
         self.setup(scrubberBar: controller.userInterfaceView.scrubberBar)
         self.setup(interactions: controller.interactions)
+        controller.appearanceModeManager.delegate = self
 
         return controller
     }
@@ -874,5 +858,36 @@ extension UIAction {
             state: self.state,
             handler: handler
         )
+    }
+}
+
+extension PDFDocumentViewController: AppearanceModeManagerDelegate {
+    func appearanceManager(_ manager: PDFAppearanceModeManager, renderOptionsFor mode: PDFAppearanceMode) -> RenderOptions {
+        // Override render options to avoid reset of appearance mode when view controller is dismissed.
+        let properMode: PDFAppearanceMode
+        switch viewModel.state.settings.appearanceMode {
+        case .automatic:
+            properMode = traitCollection.userInterfaceStyle == .dark ? .night : []
+
+        case .light:
+            properMode = []
+
+        case .dark:
+            properMode = .night
+        }
+
+        let options = RenderOptions()
+        switch properMode {
+        case .all, .night:
+            options.invertRenderColor = true
+            options.filters = [.colorCorrectInverted]
+
+        case .sepia:
+            break
+
+        default:
+            break
+        }
+        return options
     }
 }
