@@ -11,24 +11,19 @@ import Foundation
 struct EmojiExtractor {
     static func extractFirstContiguousGroup(from text: String) -> String? {
         var startIndex: Int?
-        var endIndex: Int?
+        var endIndex: Int = text.count
 
         for (idx, character) in text.enumerated() {
             let isEmoji = isEmoji(character: character)
             if startIndex == nil && isEmoji {
                 startIndex = idx
-            }
-            if startIndex != nil && !isEmoji {
+            } else if startIndex != nil && !isEmoji {
                 endIndex = idx
                 break
             }
         }
 
-        if startIndex != nil && endIndex == nil {
-            endIndex = text.count
-        }
-
-        guard let startIndex, let endIndex else { return nil }
+        guard let startIndex else { return nil }
         return String(text[text.index(text.startIndex, offsetBy: startIndex)..<text.index(text.startIndex, offsetBy: endIndex)])
     }
 
