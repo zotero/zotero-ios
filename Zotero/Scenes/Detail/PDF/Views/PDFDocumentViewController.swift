@@ -502,7 +502,7 @@ final class PDFDocumentViewController: UIViewController {
         controller.annotationStateManager.pencilInteraction.isEnabled = true
         self.setup(scrubberBar: controller.userInterfaceView.scrubberBar)
         self.setup(interactions: controller.interactions)
-        controller.appearanceModeManager.delegate = self
+        controller.shouldResetAppearanceModeWhenViewDisappears = false
 
         return controller
     }
@@ -858,36 +858,5 @@ extension UIAction {
             state: self.state,
             handler: handler
         )
-    }
-}
-
-extension PDFDocumentViewController: AppearanceModeManagerDelegate {
-    func appearanceManager(_ manager: PDFAppearanceModeManager, renderOptionsFor mode: PDFAppearanceMode) -> RenderOptions {
-        // Override render options to avoid reset of appearance mode when view controller is dismissed.
-        let properMode: PDFAppearanceMode
-        switch viewModel.state.settings.appearanceMode {
-        case .automatic:
-            properMode = traitCollection.userInterfaceStyle == .dark ? .night : []
-
-        case .light:
-            properMode = []
-
-        case .dark:
-            properMode = .night
-        }
-
-        let options = RenderOptions()
-        switch properMode {
-        case .all, .night:
-            options.invertRenderColor = true
-            options.filters = [.colorCorrectInverted]
-
-        case .sepia:
-            break
-
-        default:
-            break
-        }
-        return options
     }
 }
