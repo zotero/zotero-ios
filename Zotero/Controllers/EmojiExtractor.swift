@@ -34,6 +34,6 @@ struct EmojiExtractor {
             return firstScalar.properties.isEmoji
         }
 
-        return firstScalar.properties.isEmoji && firstScalar.value > 0x238C
+        return firstScalar.properties.isEmoji && firstScalar.value >= 0x231A
     }
 }
