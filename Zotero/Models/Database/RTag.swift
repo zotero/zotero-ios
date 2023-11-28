@@ -42,6 +42,19 @@ final class RTag: Object {
         return name.trimmingCharacters(in: CharacterSet(charactersIn: "[]'\"")).lowercased()
     }
 
+    static func create(name: String, color: String? = nil, libraryId: LibraryIdentifier, order: Int? = nil) -> RTag {
+        let rTag = RTag()
+        rTag.name = name
+        rTag.emojiGroup = EmojiExtractor.extractFirstContiguousGroup(from: name)
+        rTag.updateSortName()
+        rTag.color = color ?? ""
+        if let order {
+            rTag.order = order
+        }
+        rTag.libraryId = libraryId
+        return rTag
+    }
+
     // MARK: - Sync properties
 
     var libraryId: LibraryIdentifier? {

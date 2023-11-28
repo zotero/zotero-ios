@@ -2314,11 +2314,7 @@ final class SyncControllerSpec: QuickSpec {
                             versions.trash = newVersion
                             library?.versions = versions
                             
-                            let tag = RTag()
-                            tag.name = tagName
-                            tag.emojiGroup = EmojiExtractor.extractFirstContiguousGroup(from: tagName)
-                            tag.color = oldColor
-                            tag.libraryId = .custom(.myLibrary)
+                            let tag = RTag.create(name: tagName, color: oldColor, libraryId: .custom(.myLibrary))
                             
                             let outdatedItem = RItem()
                             outdatedItem.key = outdatedKey
