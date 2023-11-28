@@ -149,7 +149,7 @@ final class AppCoordinator: NSObject {
                 DDLogInfo("AppCoordinator: Preprocessing restored state - \(data)")
                 Defaults.shared.selectedLibrary = data.libraryId
                 Defaults.shared.selectedCollectionId = data.collectionId
-                controllers.userControllers?.openItemsController.setItems(data.openItems)
+                controllers.userControllers?.openItemsController.setItems(data.openItems, validate: true)
             }
             return (urlContext, data)
         }

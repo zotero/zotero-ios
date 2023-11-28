@@ -115,24 +115,30 @@ final class OpenItemsController {
     }
     
     // MARK: Actions
-    func setItems(_ items: [Item]) {
+    func setItems(_ items: [Item], validate: Bool) {
         DDLogInfo("OpenItemsController: setting items \(items)")
-        guard items != self.items else { return }
-        self.items = items
-        observable.on(.next(items))
+        var finalItems = items
+        if validate {
+            finalItems = filterValidItems(items)
+        }
+        guard finalItems != self.items else { return }
+        self.items = finalItems
+        observable.on(.next(finalItems))
     }
-    
+
     func open(_ kind: Item.Kind) {
         DDLogInfo("OpenItemsController: opened item \(kind)")
         if let index = items.firstIndex(where: { $0.kind == kind }) {
             items[index].lastOpened = .now
             DDLogInfo("OpenItemsController: already opened item \(kind) became most recent")
+            observable.on(.next(items))
         } else {
             DDLogInfo("OpenItemsController: newly opened item \(kind) set as most recent")
             let item = Item(kind: kind, userIndex: items.count)
-            items.append(item)
+            let newItems = items + [item]
+            // setItems will produce next observable event
+            setItems(newItems, validate: false)
         }
-        observable.on(.next(items))
     }
     
     @discardableResult
@@ -179,24 +185,7 @@ final class OpenItemsController {
             var actions: [UIAction] = []
             let openItem: Item? = disableOpenItem ? itemsSortedByLastOpen.first : nil
             let itemsSortedByUserOrder = itemsSortedByUserOrder
-            var itemTuples: [(Item, RItem)] = []
-            do {
-                try dbStorage.perform(on: .main) { coordinator in
-                    for item in itemsSortedByUserOrder {
-                        switch item.kind {
-                        case .pdf(let libraryId, let key), .note(let libraryId, let key):
-                            do {
-                                let rItem = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
-                                itemTuples.append((item, rItem))
-                            } catch let itemError {
-                                DDLogError("OpenItemsController: can't load item \(item) - \(itemError)")
-                            }
-                        }
-                    }
-                }
-            } catch let error {
-                DDLogError("OpenItemsController: can't load multiple items - \(error)")
-            }
+            var itemTuples: [(Item, RItem)] = filterValidItemsWithRItem(itemsSortedByUserOrder)
             for (item, rItem) in itemTuples {
                 var attributes: UIMenuElement.Attributes = []
                 var state: UIMenuElement.State = .off
@@ -214,6 +203,32 @@ final class OpenItemsController {
     }
     
     // MARK: Helper Methods
+    private func filterValidItemsWithRItem(_ items: [Item]) -> [(Item, RItem)] {
+        var itemTuples: [(Item, RItem)] = []
+        do {
+            try dbStorage.perform(on: .main) { coordinator in
+                for item in items {
+                    switch item.kind {
+                    case .pdf(let libraryId, let key), .note(let libraryId, let key):
+                        do {
+                            let rItem = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
+                            itemTuples.append((item, rItem))
+                        } catch let itemError {
+                            DDLogError("OpenItemsController: can't load item \(item) - \(itemError)")
+                        }
+                    }
+                }
+            }
+        } catch let error {
+            DDLogError("OpenItemsController: can't load multiple items - \(error)")
+        }
+        return itemTuples
+    }
+
+    private func filterValidItems(_ items: [Item]) -> [Item] {
+        filterValidItemsWithRItem(items).map { $0.0 }
+    }
+
     private func loadPresentation(for item: Item) -> Presentation? {
         switch item.kind {
         case .pdf(let libraryId, let key):
