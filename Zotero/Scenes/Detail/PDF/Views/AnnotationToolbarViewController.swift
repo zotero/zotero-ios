@@ -60,8 +60,8 @@ class AnnotationToolbarViewController: UIViewController {
     static let estimatedVerticalHeight: CGFloat = 500
     private static let buttonSpacing: CGFloat = UIDevice.current.userInterfaceIdiom == .phone ? 12 : 12
     private static let buttonCompactSpacing: CGFloat = 8
-    private static let buttonEdgeInsets: UIEdgeInsets = UIDevice.current.userInterfaceIdiom == .pad ? UIEdgeInsets(top: 4, left: 4, bottom: 4, right: 4) :
-                                                                                                      UIEdgeInsets(top: 2, left: 2, bottom: 2, right: 2)
+    private static let buttonContentInsets: NSDirectionalEdgeInsets = UIDevice.current.userInterfaceIdiom == .pad ? NSDirectionalEdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4) :
+                                                                                                                    NSDirectionalEdgeInsets(top: 2, leading: 2, bottom: 2, trailing: 2)
     private static let toolsToAdditionalFullOffset: CGFloat = 70
     private static let toolsToAdditionalCompactOffset: CGFloat = 20
     private let disposeBag: DisposeBag
@@ -354,29 +354,32 @@ class AnnotationToolbarViewController: UIViewController {
     }
 
     private func createToolButtons(from tools: [Tool]) -> [UIView] {
+        var showMoreConfig = UIButton.Configuration.plain()
+        showMoreConfig.contentInsets = AnnotationToolbarViewController.buttonContentInsets
+        showMoreConfig.image = UIImage(systemName: "ellipsis")?.withRenderingMode(.alwaysTemplate)
         let showMoreButton = UIButton(type: .custom)
-        showMoreButton.contentEdgeInsets = AnnotationToolbarViewController.buttonEdgeInsets
+        showMoreButton.configuration = showMoreConfig
         showMoreButton.translatesAutoresizingMaskIntoConstraints = false
         showMoreButton.showsLargeContentViewer = true
         showMoreButton.accessibilityLabel = L10n.Accessibility.Pdf.showMoreTools
         showMoreButton.largeContentTitle = L10n.Accessibility.Pdf.showMoreTools
         showMoreButton.setContentCompressionResistancePriority(.required, for: .vertical)
         showMoreButton.setContentCompressionResistancePriority(.required, for: .horizontal)
-        showMoreButton.setImage(UIImage(systemName: "ellipsis")?.withRenderingMode(.alwaysTemplate), for: .normal)
         showMoreButton.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
         showMoreButton.showsMenuAsPrimaryAction = true
         showMoreButton.widthAnchor.constraint(equalTo: showMoreButton.heightAnchor).isActive = true
 
         return tools.map { tool in
+            var buttonConfig = UIButton.Configuration.plain()
+            buttonConfig.contentInsets = AnnotationToolbarViewController.buttonContentInsets
+            buttonConfig.image = tool.image.withRenderingMode(.alwaysTemplate)
             let button = CheckboxButton(type: .custom)
-            button.contentEdgeInsets = AnnotationToolbarViewController.buttonEdgeInsets
+            button.configuration = buttonConfig
             button.translatesAutoresizingMaskIntoConstraints = false
             button.showsLargeContentViewer = true
             button.accessibilityLabel = tool.accessibilityLabel
             button.largeContentTitle = tool.title
-            button.setImage(tool.image.withRenderingMode(.alwaysTemplate), for: .normal)
             button.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
-            button.adjustsImageWhenHighlighted = false
             button.selectedBackgroundColor = Asset.Colors.zoteroBlue.color
             button.selectedTintColor = .white
             button.layer.cornerRadius = 4
@@ -396,13 +399,15 @@ class AnnotationToolbarViewController: UIViewController {
     }
 
     private func createAdditionalItems() -> [UIView] {
+        var undoConfig = UIButton.Configuration.plain()
+        undoConfig.contentInsets = AnnotationToolbarViewController.buttonContentInsets
+        undoConfig.image = UIImage(systemName: "arrow.uturn.left", withConfiguration: UIImage.SymbolConfiguration(scale: .large))
         let undo = UIButton(type: .custom)
+        undo.configuration = undoConfig
         undo.isEnabled = self.delegate?.canUndo ?? false
-        undo.contentEdgeInsets = AnnotationToolbarViewController.buttonEdgeInsets
         undo.showsLargeContentViewer = true
         undo.accessibilityLabel = L10n.Accessibility.Pdf.undo
         undo.largeContentTitle = L10n.Accessibility.Pdf.undo
-        undo.setImage(UIImage(systemName: "arrow.uturn.left", withConfiguration: UIImage.SymbolConfiguration(scale: .large)), for: .normal)
         undo.rx.controlEvent(.touchUpInside)
             .subscribe(with: self, onNext: { `self`, _ in
                 guard self.delegate?.canUndo == true else { return }
@@ -411,13 +416,15 @@ class AnnotationToolbarViewController: UIViewController {
             .disposed(by: self.disposeBag)
         self.undoButton = undo
 
+        var redoConfig = UIButton.Configuration.plain()
+        redoConfig.contentInsets = AnnotationToolbarViewController.buttonContentInsets
+        redoConfig.image = UIImage(systemName: "arrow.uturn.right", withConfiguration: UIImage.SymbolConfiguration(scale: .large))
         let redo = UIButton(type: .custom)
+        redo.configuration = redoConfig
         redo.isEnabled = self.delegate?.canRedo ?? false
-        redo.contentEdgeInsets = AnnotationToolbarViewController.buttonEdgeInsets
         redo.showsLargeContentViewer = true
         redo.accessibilityLabel = L10n.Accessibility.Pdf.redo
         redo.largeContentTitle = L10n.Accessibility.Pdf.redo
-        redo.setImage(UIImage(systemName: "arrow.uturn.right", withConfiguration: UIImage.SymbolConfiguration(scale: .large)), for: .normal)
         redo.rx.controlEvent(.touchUpInside)
             .subscribe(with: self, onNext: { `self`, _ in
                 guard self.delegate?.canRedo == true else { return }
@@ -426,12 +433,14 @@ class AnnotationToolbarViewController: UIViewController {
             .disposed(by: self.disposeBag)
         self.redoButton = redo
 
+        var closeConfig = UIButton.Configuration.plain()
+        closeConfig.contentInsets = AnnotationToolbarViewController.buttonContentInsets
+        closeConfig.image = UIImage(systemName: "xmark.circle", withConfiguration: UIImage.SymbolConfiguration(scale: .large))
         let close = UIButton(type: .custom)
-        close.contentEdgeInsets = AnnotationToolbarViewController.buttonEdgeInsets
+        close.configuration = closeConfig
         close.showsLargeContentViewer = true
         close.accessibilityLabel = L10n.close
         close.largeContentTitle = L10n.close
-        close.setImage(UIImage(systemName: "xmark.circle", withConfiguration: UIImage.SymbolConfiguration(scale: .large)), for: .normal)
         close.rx.controlEvent(.touchUpInside)
              .subscribe(with: self, onNext: { `self`, _ in
                  self.delegate?.closeAnnotationToolbar()
@@ -454,8 +463,11 @@ class AnnotationToolbarViewController: UIViewController {
     }
 
     private func createColorPickerButton() -> UIButton {
+        var pickerConfig = UIButton.Configuration.plain()
+        pickerConfig.contentInsets = AnnotationToolbarViewController.buttonContentInsets
+        pickerConfig.image = UIImage(systemName: "circle.fill", withConfiguration: UIImage.SymbolConfiguration(scale: .large))
         let picker = UIButton()
-        picker.contentEdgeInsets = AnnotationToolbarViewController.buttonEdgeInsets
+        picker.configuration = pickerConfig
         picker.showsLargeContentViewer = true
         picker.translatesAutoresizingMaskIntoConstraints = false
         picker.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -464,7 +476,6 @@ class AnnotationToolbarViewController: UIViewController {
         picker.isHidden = true
         picker.accessibilityLabel = L10n.Accessibility.Pdf.colorPicker
         picker.largeContentTitle = L10n.Accessibility.Pdf.colorPicker
-        picker.setImage(UIImage(systemName: "circle.fill", withConfiguration: UIImage.SymbolConfiguration(scale: .large)), for: .normal)
         picker.rx.controlEvent(.touchUpInside)
               .subscribe(with: self, onNext: { `self`, _ in
                   self.delegate?.showToolOptions(sender: .view(self.colorPickerButton, nil))

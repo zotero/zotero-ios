@@ -178,27 +178,32 @@ final class AnnotationViewHeader: UIView {
         authorLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
         authorLabel.translatesAutoresizingMaskIntoConstraints = false
 
+        var shareConfig = UIButton.Configuration.plain()
+        shareConfig.image = UIImage(systemName: "square.and.arrow.up")
+        shareConfig.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: layout.horizontalInset, bottom: 0, trailing: (layout.horizontalInset / 2))
         let shareButton = UIButton()
-        shareButton.setImage(UIImage(systemName: "square.and.arrow.up"), for: .normal)
+        shareButton.configuration = shareConfig
         shareButton.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
-        shareButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: layout.horizontalInset, bottom: 0, right: (layout.horizontalInset / 2))
         shareButton.setContentCompressionResistancePriority(.required, for: .horizontal)
         shareButton.setContentHuggingPriority(.defaultHigh, for: .horizontal)
-        
+
+        var menuConfig = UIButton.Configuration.plain()
+        menuConfig.image = UIImage(systemName: "ellipsis")
+        menuConfig.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: (layout.horizontalInset / 2), bottom: 0, trailing: (layout.horizontalInset / 2))
         let menuButton = UIButton()
-        menuButton.setImage(UIImage(systemName: "ellipsis"), for: .normal)
         menuButton.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
-        menuButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: (layout.horizontalInset / 2), bottom: 0, right: (layout.horizontalInset / 2))
         menuButton.setContentCompressionResistancePriority(.required, for: .horizontal)
         menuButton.setContentHuggingPriority(.defaultHigh, for: .horizontal)
 
         var rightButtons: [UIView] = [shareButton, menuButton]
 
         if layout.showDoneButton {
+            var doneConfig = UIButton.Configuration.plain()
+            doneConfig.title = L10n.done
+            doneConfig.baseForegroundColor = Asset.Colors.zoteroBlueWithDarkMode.color
+            doneConfig.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: (layout.horizontalInset / 2), bottom: 0, trailing: layout.horizontalInset)
             let doneButton = UIButton()
-            doneButton.setTitle(L10n.done, for: .normal)
-            doneButton.setTitleColor(Asset.Colors.zoteroBlueWithDarkMode.color, for: .normal)
-            doneButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: (layout.horizontalInset / 2), bottom: 0, right: layout.horizontalInset)
+            doneButton.configuration = doneConfig
             doneButton.titleLabel?.adjustsFontForContentSizeCategory = true
             doneButton.setContentCompressionResistancePriority(.required, for: .horizontal)
             doneButton.setContentHuggingPriority(.defaultHigh, for: .horizontal)

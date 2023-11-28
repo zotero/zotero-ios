@@ -45,34 +45,56 @@ final class LoginViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.setup()
+        setup()
+        usernameField.becomeFirstResponder()
 
-        self.usernameField.becomeFirstResponder()
+        viewModel.stateObservable
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] state in
+                self?.update(state: state)
+            })
+            .disposed(by: disposeBag)
 
-        self.viewModel.stateObservable
-                      .observe(on: MainScheduler.instance)
-                      .subscribe(onNext: { [weak self] state in
-                          self?.update(state: state)
-                      })
-                      .disposed(by: self.disposeBag)
+        usernameField.rx
+            .text
+            .orEmpty
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] text in
+                self?.viewModel.process(action: .setUsername(text))
+            })
+            .disposed(by: disposeBag)
 
-        self.usernameField.rx
-                          .text
-                          .orEmpty
-                          .observe(on: MainScheduler.instance)
-                          .subscribe(onNext: { [weak self] text in
-                              self?.viewModel.process(action: .setUsername(text))
-                          })
-                          .disposed(by: self.disposeBag)
+        passwordField.rx
+            .text
+            .orEmpty
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] text in
+                self?.viewModel.process(action: .setPassword(text))
+            })
+            .disposed(by: disposeBag)
 
-        self.passwordField.rx
-                          .text
-                          .orEmpty
-                          .observe(on: MainScheduler.instance)
-                          .subscribe(onNext: { [weak self] text in
-                              self?.viewModel.process(action: .setPassword(text))
-                          })
-                          .disposed(by: self.disposeBag)
+        func setup() {
+            // Layout
+            let isIpad = UIDevice.current.userInterfaceIdiom == .pad
+            var closeConfiguration = UIButton.Configuration.plain()
+            closeConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: horizontalPadding, bottom: 0, trailing: horizontalPadding)
+            closeButton.configuration = closeConfiguration
+            navbarHeight.constant = navigationBarHeight
+            containerLeft.constant = horizontalPadding
+            containerRight.constant = horizontalPadding
+            containerTop.constant = spacing
+            container.spacing = spacing
+            topSeparator.isHidden = !isIpad
+            bottomSeparator.isHidden = isIpad
+            // Localization
+            usernameField.placeholder = L10n.Login.username
+            passwordField.placeholder = L10n.Login.password
+            loginButton.setTitle(L10n.Onboarding.signIn, for: .normal)
+            forgotPasswordButton.setTitle(L10n.Login.forgotPassword, for: .normal)
+            // Style
+            loginButton.layer.masksToBounds = true
+            loginButton.layer.cornerRadius = 12
+        }
     }
 
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
@@ -83,56 +105,58 @@ final class LoginViewController: UIViewController {
 
     private func update(state: LoginState) {
         if state.isLoading {
-            self.startLoadingIfNeeded()
+            startLoadingIfNeeded()
         } else {
-            self.stopLoadingIfNeeded()
+            stopLoadingIfNeeded()
         }
 
         if let error = state.error {
             switch error {
             case .invalidUsername, .loginFailed:
-                self.usernameField.becomeFirstResponder()
+                usernameField.becomeFirstResponder()
 
             case .invalidPassword:
-                self.passwordField.becomeFirstResponder()
+                passwordField.becomeFirstResponder()
+
             case .serverError, .unknown: break
             }
-            self.show(error: error)
+
+            show(error: error)
         }
     }
 
     private func show(error: LoginError) {
         let controller = UIAlertController(title: L10n.error, message: error.localizedDescription, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
-        self.present(controller, animated: true, completion: nil)
+        present(controller, animated: true, completion: nil)
     }
 
     private func startLoadingIfNeeded() {
-        guard self.loginActivityView.isHidden else { return }
-        self.loginActivityView.startAnimating()
-        self.loginActivityView.isHidden = false
-        self.loginButton.isHidden = true
+        guard loginActivityView.isHidden else { return }
+        loginActivityView.startAnimating()
+        loginActivityView.isHidden = false
+        loginButton.isHidden = true
     }
 
     private func stopLoadingIfNeeded() {
-        guard !self.loginActivityView.isHidden else { return }
-        self.loginActivityView.isHidden = true
-        self.loginActivityView.stopAnimating()
-        self.loginButton.isHidden = false
+        guard !loginActivityView.isHidden else { return }
+        loginActivityView.isHidden = true
+        loginActivityView.stopAnimating()
+        loginButton.isHidden = false
     }
 
     // MARK: - Actions
 
     @IBAction private func login() {
-        self.viewModel.process(action: .login)
+        viewModel.process(action: .login)
     }
 
     @IBAction private func showForgotPassword() {
-        self.coordinatorDelegate?.showForgotPassword()
+        coordinatorDelegate?.showForgotPassword()
     }
 
     @IBAction private func dismiss() {
-        self.dismiss(animated: true, completion: nil)
+        dismiss(animated: true, completion: nil)
     }
 
     // MARK: - Helpers
@@ -160,43 +184,14 @@ final class LoginViewController: UIViewController {
             return 44
         }
     }
-
-    // MARK: - Setups
-
-    private func setup() {
-        // Layout
-        let horizontalPadding = self.horizontalPadding
-        let spacing = self.spacing
-        let isIpad = UIDevice.current.userInterfaceIdiom == .pad
-
-        self.navbarHeight.constant = self.navigationBarHeight
-        self.closeButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: horizontalPadding, bottom: 0, right: horizontalPadding)
-        self.containerLeft.constant = horizontalPadding
-        self.containerRight.constant = horizontalPadding
-        self.containerTop.constant = spacing
-        self.container.spacing = spacing
-
-        self.topSeparator.isHidden = !isIpad
-        self.bottomSeparator.isHidden = isIpad
-
-        // Localization
-        self.usernameField.placeholder = L10n.Login.username
-        self.passwordField.placeholder = L10n.Login.password
-        self.loginButton.setTitle(L10n.Onboarding.signIn, for: .normal)
-        self.forgotPasswordButton.setTitle(L10n.Login.forgotPassword, for: .normal)
-
-        // Style
-        self.loginButton.layer.masksToBounds = true
-        self.loginButton.layer.cornerRadius = 12
-    }
 }
 
 extension LoginViewController: UITextFieldDelegate {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        if textField == self.usernameField {
-            self.passwordField.becomeFirstResponder()
+        if textField == usernameField {
+            passwordField.becomeFirstResponder()
         } else {
-            self.viewModel.process(action: .login)
+            viewModel.process(action: .login)
         }
         return true
     }
