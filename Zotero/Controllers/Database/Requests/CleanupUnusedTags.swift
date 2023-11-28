@@ -17,7 +17,7 @@ struct CleanupUnusedTags: DbRequest {
         let toRemoveTyped = database.objects(RTypedTag.self).filter("item == nil")
         database.delete(toRemoveTyped)
 
-        let toRemoveBase = database.objects(RTag.self).filter("tags.@count == 0 and color == \"\"")
+        let toRemoveBase = database.objects(RTag.self).filter("tags.@count == 0 and (color == \"\" or emojiGroup == nil)")
         database.delete(toRemoveBase)
     }
 }

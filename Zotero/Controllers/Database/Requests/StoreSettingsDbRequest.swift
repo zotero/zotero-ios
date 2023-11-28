@@ -79,12 +79,7 @@ struct StoreSettingsDbRequest: DbRequest {
                     }
                 }
             } else {
-                let new = RTag()
-                new.name = tag.name
-                new.updateSortName()
-                new.order = idx
-                new.color = tag.color
-                new.libraryId = self.libraryId
+                let new = RTag.create(name: tag.name, color: tag.color, libraryId: libraryId, order: idx)
                 database.add(new)
             }
         }

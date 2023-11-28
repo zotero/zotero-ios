@@ -421,10 +421,7 @@ struct StoreItemDbRequest: DbResponseRequest {
             if let existing = allTags.filter(.name(tag.tag, in: libraryId)).first {
                 rTag = existing
             } else {
-                rTag = RTag()
-                rTag.name = tag.tag
-                rTag.updateSortName()
-                rTag.libraryId = libraryId
+                rTag = .create(name: tag.tag, color: nil, libraryId: libraryId)
                 database.add(rTag)
             }
 

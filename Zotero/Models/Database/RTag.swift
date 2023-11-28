@@ -25,6 +25,7 @@ final class RTag: Object {
     @Persisted(indexed: true) var name: String
     @Persisted var sortName: String
     @Persisted var color: String
+    @Persisted var emojiGroup: String?
     @Persisted var order: Int
     @Persisted var customLibraryKey: RCustomLibraryType?
     @Persisted var groupKey: Int?
@@ -39,6 +40,19 @@ final class RTag: Object {
 
     static func sortName(from name: String) -> String {
         return name.trimmingCharacters(in: CharacterSet(charactersIn: "[]'\"")).lowercased()
+    }
+
+    static func create(name: String, color: String? = nil, libraryId: LibraryIdentifier, order: Int? = nil) -> RTag {
+        let rTag = RTag()
+        rTag.name = name
+        rTag.emojiGroup = EmojiExtractor.extractFirstContiguousGroup(from: name)
+        rTag.updateSortName()
+        rTag.color = color ?? ""
+        if let order {
+            rTag.order = order
+        }
+        rTag.libraryId = libraryId
+        return rTag
     }
 
     // MARK: - Sync properties

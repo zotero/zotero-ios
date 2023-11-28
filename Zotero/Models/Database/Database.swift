@@ -13,7 +13,7 @@ import RealmSwift
 import Network
 
 struct Database {
-    private static let schemaVersion: UInt64 = 41
+    private static let schemaVersion: UInt64 = 42
 
     static func mainConfiguration(url: URL, fileStorage: FileStorage) -> Realm.Configuration {
         var config = Realm.Configuration(
@@ -79,6 +79,16 @@ struct Database {
             if schemaVersion < 41 {
                 migratePageIndexToString(migration: migration)
             }
+            if schemaVersion < 42 {
+                extractEmojisFromTags(migration: migration)
+            }
+        }
+    }
+
+    private static func extractEmojisFromTags(migration: Migration) {
+        migration.enumerateObjects(ofType: RTag.className()) { oldObject, newObject in
+            guard let oldName = oldObject?["name"] as? String else { return }
+            newObject?["emojiGroup"] = EmojiExtractor.extractFirstContiguousGroup(from: oldName)
         }
     }
 

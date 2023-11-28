@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="18122" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="22155" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
-        <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="18093"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22131"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -28,30 +27,30 @@
                         <rect key="frame" x="64" y="12" width="282" height="36"/>
                         <subviews>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="750" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" text=" " textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="1cO-yP-LQQ" customClass="CapHeightLabel" customModule="Zotero" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="0.0" width="4" height="17"/>
+                                <rect key="frame" x="0.0" y="0.0" width="4.5" height="20.5"/>
                                 <fontDescription key="fontDescription" style="UICTFontTextStyleHeadline"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <stackView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" alignment="center" spacing="5" translatesAutoresizingMaskIntoConstraints="NO" id="vd0-bE-ySJ">
-                                <rect key="frame" x="0.0" y="24" width="4" height="15.5"/>
+                                <rect key="frame" x="0.0" y="24" width="4.5" height="16.5"/>
                                 <subviews>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="1000" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" text=" " textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="X2V-4e-fFg" customClass="InsetLabel" customModule="Zotero" customModuleProvider="target">
-                                        <rect key="frame" x="0.0" y="0.0" width="4" height="15.5"/>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="1000" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="1000" text=" " textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="X2V-4e-fFg" customClass="InsetLabel" customModule="Zotero" customModuleProvider="target">
+                                        <rect key="frame" x="0.0" y="0.0" width="4.5" height="16.5"/>
                                         <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                                         <color key="textColor" systemColor="systemGrayColor"/>
                                         <nil key="highlightedColor"/>
                                     </label>
-                                    <view hidden="YES" contentMode="scaleToFill" horizontalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="Z8L-AU-qom" customClass="TagCirclesView" customModule="Zotero" customModuleProvider="target">
-                                        <rect key="frame" x="4" y="2" width="50" height="12"/>
+                                    <view hidden="YES" contentMode="scaleToFill" horizontalHuggingPriority="1000" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="Z8L-AU-qom" customClass="TagEmojiCirclesView" customModule="Zotero" customModuleProvider="target">
+                                        <rect key="frame" x="4.5" y="2.5" width="50" height="12"/>
                                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                         <constraints>
                                             <constraint firstAttribute="width" constant="50" placeholder="YES" id="zGp-4K-An8"/>
-                                            <constraint firstAttribute="height" constant="12" id="zRL-BJ-thT"/>
+                                            <constraint firstAttribute="height" constant="12" placeholder="YES" id="zRL-BJ-thT"/>
                                         </constraints>
                                     </view>
                                     <imageView hidden="YES" opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="1000" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" image="Cells/note" translatesAutoresizingMaskIntoConstraints="NO" id="z75-Uk-CFi">
-                                        <rect key="frame" x="4" y="2" width="12" height="12"/>
+                                        <rect key="frame" x="4.5" y="2.5" width="12" height="12"/>
                                     </imageView>
                                 </subviews>
                             </stackView>
@@ -120,11 +119,6 @@
             <point key="canvasLocation" x="65.217391304347828" y="-90.401785714285708"/>
         </tableViewCell>
     </objects>
-    <designables>
-        <designable name="X2V-4e-fFg">
-            <size key="intrinsicContentSize" width="4" height="17"/>
-        </designable>
-    </designables>
     <resources>
         <image name="Attachments/list-web-page-snapshot" width="16" height="16"/>
         <image name="Cells/note" width="12" height="12"/>

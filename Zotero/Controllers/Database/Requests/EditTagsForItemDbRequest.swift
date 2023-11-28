@@ -44,11 +44,7 @@ struct EditTagsForItemDbRequest: DbRequest {
             if let existing = allTags.filter(.name(tag.name, in: self.libraryId)).first {
                 rTag = existing
             } else {
-                rTag = RTag()
-                rTag.name = tag.name
-                rTag.updateSortName()
-                rTag.color = tag.color
-                rTag.libraryId = self.libraryId
+                rTag = .create(name: tag.name, color: tag.color, libraryId: libraryId)
                 database.add(rTag)
             }
 

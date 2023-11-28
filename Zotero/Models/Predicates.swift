@@ -390,7 +390,7 @@ extension NSPredicate {
 
     static var baseTagsToDelete: NSPredicate {
         let count = NSPredicate(format: "tag.tags.@count == 1")
-        let color = NSPredicate(format: "tag.color == %@", "")
-        return NSCompoundPredicate(andPredicateWithSubpredicates: [color, count])
+        let special = NSPredicate(format: "tag.color == %@ or tag.emojiGroup == nil", "")
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [special, count])
     }
 }

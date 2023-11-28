@@ -24,6 +24,7 @@ struct ItemCellModel {
     let subtitle: String
     let hasNote: Bool
     let tagColors: [UIColor]
+    let tagEmojis: [String]
     let accessory: Accessory?
 
     init(item: RItem, typeName: String, title: NSAttributedString, accessory: Accessory?) {
@@ -34,21 +35,34 @@ struct ItemCellModel {
         self.title = title
         self.subtitle = ItemCellModel.subtitle(for: item)
         self.hasNote = ItemCellModel.hasNote(item: item)
-        self.tagColors = ItemCellModel.tagColors(item: item)
         self.accessory = accessory
+        let (colors, emojis) = ItemCellModel.tagData(item: item)
+        self.tagColors = colors
+        self.tagEmojis = emojis
     }
 
     fileprivate static func hasNote(item: RItem) -> Bool {
-        return !item.children.filter(.items(type: ItemTypes.note, notSyncState: .dirty))
-                             .filter(.isTrash(false))
-                             .isEmpty
+        return !item.children
+            .filter(.items(type: ItemTypes.note, notSyncState: .dirty))
+            .filter(.isTrash(false))
+            .isEmpty
     }
 
-    fileprivate static func tagColors(item: RItem) -> [UIColor] {
-        return item.tags.compactMap({
-            let (color, style) = TagColorGenerator.uiColor(for: ($0.tag?.color ?? ""))
-            return style == .filled ? color : nil
-        })
+    fileprivate static func tagData(item: RItem) -> ([UIColor], [String]) {
+        var colors: [UIColor] = []
+        var emojis: [String] = []
+        for tag in item.tags {
+            if let emoji = tag.tag?.emojiGroup, !emoji.isEmpty {
+                emojis.append(emoji)
+                continue
+            }
+
+            let (color, style) = TagColorGenerator.uiColor(for: (tag.tag?.color ?? ""))
+            if style == .filled {
+                colors.append(color)
+            }
+        }
+        return (colors, emojis)
     }
 
     private static func subtitle(for item: RItem) -> String {
