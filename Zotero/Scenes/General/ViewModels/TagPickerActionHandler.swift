@@ -50,7 +50,7 @@ struct TagPickerActionHandler: ViewModelActionHandler {
     private func add(name: String, in viewModel: ViewModel<TagPickerActionHandler>) {
         guard let snapshot = viewModel.state.snapshot else { return }
         self.update(viewModel: viewModel) { state in
-            let tag = Tag(name: name, color: "", emojiGroup: EmojiExtractor.extractFirstContiguousGroup(from: name))
+            let tag = Tag(name: name, color: "")
             state.tags = snapshot
 
             let index = state.tags.index(of: tag, sortedBy: { $0.name.caseInsensitiveCompare($1.name) == .orderedAscending })

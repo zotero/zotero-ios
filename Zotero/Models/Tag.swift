@@ -16,10 +16,10 @@ struct Tag: Identifiable, Equatable, Hashable {
 
     var id: String { return self.name }
 
-    init(name: String, color: String, emojiGroup: String?) {
+    init(name: String, color: String) {
         self.name = name
         self.color = color
-        self.emojiGroup = emojiGroup
+        self.emojiGroup = EmojiExtractor.extractFirstContiguousGroup(from: name)
         self.type = .manual
     }
 
