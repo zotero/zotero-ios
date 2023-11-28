@@ -370,24 +370,20 @@ class AnnotationToolbarViewController: UIViewController {
         showMoreButton.widthAnchor.constraint(equalTo: showMoreButton.heightAnchor).isActive = true
 
         return tools.map { tool in
-            var buttonConfig = UIButton.Configuration.plain()
-            buttonConfig.contentInsets = AnnotationToolbarViewController.buttonContentInsets
-            buttonConfig.image = tool.image.withRenderingMode(.alwaysTemplate)
-            let button = CheckboxButton(type: .custom)
-            button.configuration = buttonConfig
+            let button = CheckboxButton(image: tool.image.withRenderingMode(.alwaysTemplate), contentInsets: AnnotationToolbarViewController.buttonContentInsets)
             button.translatesAutoresizingMaskIntoConstraints = false
             button.showsLargeContentViewer = true
             button.accessibilityLabel = tool.accessibilityLabel
             button.largeContentTitle = tool.title
-            button.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
+            button.deselectedBackgroundColor = .clear
+            button.deselectedTintColor = Asset.Colors.zoteroBlueWithDarkMode.color
             button.selectedBackgroundColor = Asset.Colors.zoteroBlue.color
             button.selectedTintColor = .white
-            button.layer.cornerRadius = 4
-            button.layer.masksToBounds = true
             button.setContentCompressionResistancePriority(.required, for: .vertical)
             button.setContentCompressionResistancePriority(.required, for: .horizontal)
             button.isHidden = true
             button.widthAnchor.constraint(equalTo: button.heightAnchor).isActive = true
+            button.setNeedsUpdateConfiguration()
 
             let recognizer = UITapGestureRecognizer()
             recognizer.delegate = self
@@ -401,7 +397,7 @@ class AnnotationToolbarViewController: UIViewController {
     private func createAdditionalItems() -> [UIView] {
         var undoConfig = UIButton.Configuration.plain()
         undoConfig.contentInsets = AnnotationToolbarViewController.buttonContentInsets
-        undoConfig.image = UIImage(systemName: "arrow.uturn.left", withConfiguration: UIImage.SymbolConfiguration(scale: .large))
+        undoConfig.image = UIImage(systemName: "arrow.uturn.left")?.applyingSymbolConfiguration(.init(scale: .large))
         let undo = UIButton(type: .custom)
         undo.configuration = undoConfig
         undo.isEnabled = self.delegate?.canUndo ?? false
@@ -418,7 +414,7 @@ class AnnotationToolbarViewController: UIViewController {
 
         var redoConfig = UIButton.Configuration.plain()
         redoConfig.contentInsets = AnnotationToolbarViewController.buttonContentInsets
-        redoConfig.image = UIImage(systemName: "arrow.uturn.right", withConfiguration: UIImage.SymbolConfiguration(scale: .large))
+        redoConfig.image = UIImage(systemName: "arrow.uturn.right")?.applyingSymbolConfiguration(.init(scale: .large))
         let redo = UIButton(type: .custom)
         redo.configuration = redoConfig
         redo.isEnabled = self.delegate?.canRedo ?? false
@@ -435,7 +431,7 @@ class AnnotationToolbarViewController: UIViewController {
 
         var closeConfig = UIButton.Configuration.plain()
         closeConfig.contentInsets = AnnotationToolbarViewController.buttonContentInsets
-        closeConfig.image = UIImage(systemName: "xmark.circle", withConfiguration: UIImage.SymbolConfiguration(scale: .large))
+        closeConfig.image = UIImage(systemName: "xmark.circle")?.applyingSymbolConfiguration(.init(scale: .large))
         let close = UIButton(type: .custom)
         close.configuration = closeConfig
         close.showsLargeContentViewer = true
@@ -447,7 +443,7 @@ class AnnotationToolbarViewController: UIViewController {
              })
              .disposed(by: self.disposeBag)
 
-        let handle = UIImageView(image: UIImage(systemName: "line.3.horizontal", withConfiguration: UIImage.SymbolConfiguration(scale: .large)))
+        let handle = UIImageView(image: UIImage(systemName: "line.3.horizontal")?.applyingSymbolConfiguration(.init(scale: .large)))
         handle.showsLargeContentViewer = false
         handle.contentMode = .center
 
@@ -465,7 +461,7 @@ class AnnotationToolbarViewController: UIViewController {
     private func createColorPickerButton() -> UIButton {
         var pickerConfig = UIButton.Configuration.plain()
         pickerConfig.contentInsets = AnnotationToolbarViewController.buttonContentInsets
-        pickerConfig.image = UIImage(systemName: "circle.fill", withConfiguration: UIImage.SymbolConfiguration(scale: .large))
+        pickerConfig.image = UIImage(systemName: "circle.fill")?.applyingSymbolConfiguration(.init(scale: .large))
         let picker = UIButton()
         picker.configuration = pickerConfig
         picker.showsLargeContentViewer = true
