@@ -45,12 +45,12 @@ final class AppCoordinator: NSObject {
     private var conflictAlertQueueController: ConflictAlertQueueController?
     var presentedRestoredControllerWindow: UIWindow?
     private var downloadDisposeBag: DisposeBag?
-    private var tmpConnectionOptions: UIScene.ConnectionOptions?
-    private var tmpSession: UISceneSession?
+    private weak var connectionOptions: UIScene.ConnectionOptions?
+    private weak var session: UISceneSession?
 
     private var viewController: UIViewController? {
-        guard let viewController = self.window?.rootViewController else { return nil }
-        let topController = viewController.topController
+        guard let rootViewController = window?.rootViewController else { return nil }
+        let topController = rootViewController.topController
         return (topController as? MainViewController)?.viewControllers.last ?? topController
     }
 
@@ -61,43 +61,44 @@ final class AppCoordinator: NSObject {
     }
 
     func start(options connectionOptions: UIScene.ConnectionOptions, session: UISceneSession) {
-        if !self.controllers.sessionController.isInitialized {
+        if !controllers.sessionController.isInitialized {
             DDLogInfo("AppCoordinator: start while waiting for initialization")
-            self.tmpConnectionOptions = connectionOptions
-            self.tmpSession = session
-            self.showLaunchScreen()
+            self.connectionOptions = connectionOptions
+            self.session = session
+            showLaunchScreen()
         } else {
-            DDLogInfo("AppCoordinator: start logged \(self.controllers.sessionController.isLoggedIn ? "in" : "out")")
-            self.showMainScreen(isLogged: self.controllers.sessionController.isLoggedIn, options: connectionOptions, session: session, animated: false)
+            DDLogInfo("AppCoordinator: start logged \(controllers.sessionController.isLoggedIn ? "in" : "out")")
+            showMainScreen(isLogged: controllers.sessionController.isLoggedIn, options: connectionOptions, session: session, animated: false)
         }
 
         // If db needs to be wiped and this is the first start of the app, show beta alert
-        if self.controllers.userControllers?.dbStorage.willPerformBetaWipe == true && self.controllers.sessionController.isLoggedIn {
+        if controllers.userControllers?.dbStorage.willPerformBetaWipe == true && controllers.sessionController.isLoggedIn {
             DDLogInfo("AppCoordinator: show beta alert")
             showBetaAlert()
         }
 
-        if self.controllers.sessionController.isInitialized && self.controllers.debugLogging.isEnabled {
+        if controllers.sessionController.isInitialized && controllers.debugLogging.isEnabled {
             DDLogInfo("AppCoordinator: show debug window")
-            self.setDebugWindow(visible: true)
+            setDebugWindow(visible: true)
         }
 
-        self.controllers.debugLogging.coordinator = self
-        self.controllers.crashReporter.coordinator = self
-        self.controllers.translatorsAndStylesController.coordinator = self
+        controllers.debugLogging.coordinator = self
+        controllers.crashReporter.coordinator = self
+        controllers.translatorsAndStylesController.coordinator = self
 
         func showBetaAlert() {
+            guard let rootViewController = window?.rootViewController else { return }
             let controller = UIAlertController(title: L10n.betaWipeTitle, message: L10n.betaWipeMessage, preferredStyle: .alert)
             controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
-            self.window?.rootViewController?.present(controller, animated: true, completion: nil)
+            rootViewController.present(controller, animated: true, completion: nil)
         }
     }
 
     // MARK: - Navigation
 
     private func showLaunchScreen() {
-        guard let controller = UIStoryboard(name: "LaunchScreen", bundle: nil).instantiateInitialViewController() else { return }
-        self.window?.rootViewController = controller
+        guard let window, let controller = UIStoryboard(name: "LaunchScreen", bundle: nil).instantiateInitialViewController() else { return }
+        window.rootViewController = controller
     }
 
     private func showMainScreen(isLogged: Bool, options connectionOptions: UIScene.ConnectionOptions?, session: UISceneSession?, animated: Bool) {
@@ -107,21 +108,21 @@ final class AppCoordinator: NSObject {
         var urlContext: UIOpenURLContext?
         var data: RestoredStateData?
         if !isLogged {
-            let controller = OnboardingViewController(size: window.frame.size, htmlConverter: self.controllers.htmlAttributedStringConverter)
+            let controller = OnboardingViewController(size: window.frame.size, htmlConverter: controllers.htmlAttributedStringConverter)
             controller.coordinatorDelegate = self
             viewController = controller
 
-            self.conflictReceiverAlertController = nil
-            self.conflictAlertQueueController = nil
-            self.controllers.userControllers?.syncScheduler.syncController.set(coordinator: nil)
+            conflictReceiverAlertController = nil
+            conflictAlertQueueController = nil
+            controllers.userControllers?.syncScheduler.syncController.set(coordinator: nil)
         } else {
             (urlContext, data) = preprocess(connectionOptions: connectionOptions, session: session)
-            let controller = MainViewController(controllers: self.controllers)
+            let controller = MainViewController(controllers: controllers)
             viewController = controller
 
-            self.conflictReceiverAlertController = ConflictReceiverAlertController(viewController: controller)
-            self.conflictAlertQueueController = ConflictAlertQueueController(viewController: controller)
-            self.controllers.userControllers?.syncScheduler.syncController.set(coordinator: self)
+            conflictReceiverAlertController = ConflictReceiverAlertController(viewController: controller)
+            conflictAlertQueueController = ConflictAlertQueueController(viewController: controller)
+            controllers.userControllers?.syncScheduler.syncController.set(coordinator: self)
         }
 
         DDLogInfo("AppCoordinator: show main screen logged \(isLogged ? "in" : "out"); animated=\(animated)")
@@ -155,7 +156,7 @@ final class AppCoordinator: NSObject {
         }
 
         func process(urlContext: UIOpenURLContext?, data: RestoredStateData?) {
-            if let urlContext, let urlController = self.controllers.userControllers?.customUrlController {
+            if let urlContext, let urlController = controllers.userControllers?.customUrlController {
                 // If scene was started from custom URL
                 let sourceApp = urlContext.options.sourceApplication ?? "unknown"
                 DDLogInfo("AppCoordinator: App launched by \(urlContext.url.absoluteString) from \(sourceApp)")
@@ -175,7 +176,7 @@ final class AppCoordinator: NSObject {
             func showRestoredState(for data: RestoredStateData) {
                 guard let openItemsController = controllers.userControllers?.openItemsController else { return }
                 DDLogInfo("AppCoordinator: show restored state")
-                guard let mainController = self.window?.rootViewController as? MainViewController else {
+                guard let mainController = window.rootViewController as? MainViewController else {
                     DDLogWarn("AppCoordinator: show restored state aborted - invalid root view controller")
                     return
                 }
@@ -197,7 +198,7 @@ final class AppCoordinator: NSObject {
                 openItemsController.restoreMostRecentlyOpenedItem(using: self)
 
                 func loadRestoredStateData(libraryId: LibraryIdentifier, collectionId: CollectionIdentifier) -> (Library, Collection?)? {
-                    guard let dbStorage = self.controllers.userControllers?.dbStorage else { return nil }
+                    guard let dbStorage = controllers.userControllers?.dbStorage else { return nil }
 
                     var library: Library?
                     var collection: Collection?
@@ -280,7 +281,7 @@ final class AppCoordinator: NSObject {
         }
 
         func download(attachment: Attachment, parentKey: String?, completion: @escaping () -> Void) {
-            guard let downloader = self.controllers.userControllers?.fileDownloader else {
+            guard let downloader = controllers.userControllers?.fileDownloader else {
                 completion()
                 return
             }
@@ -295,10 +296,10 @@ final class AppCoordinator: NSObject {
                     switch update.kind {
                     case .ready:
                         completion()
-                        self.downloadDisposeBag = nil
+                        downloadDisposeBag = nil
 
                     case .cancelled, .failed:
-                        self.downloadDisposeBag = nil
+                        downloadDisposeBag = nil
 
                     case .progress:
                         break
@@ -306,7 +307,7 @@ final class AppCoordinator: NSObject {
                 })
                 .disposed(by: disposeBag)
 
-            self.downloadDisposeBag = disposeBag
+            downloadDisposeBag = disposeBag
             downloader.downloadIfNeeded(attachment: attachment, parentKey: parentKey)
         }
 
@@ -326,7 +327,7 @@ final class AppCoordinator: NSObject {
                 let file = Files.attachmentFile(in: library.identifier, key: attachment.key, filename: filename, contentType: contentType)
                 let url = file.createUrl()
                 let controller = detailCoordinator.createPDFController(key: attachment.key, library: library, url: url, page: page, preselectedAnnotationKey: annotation)
-                self.show(controller: controller, by: presenter, in: window, animated: animated, completion: completion)
+                show(controller: controller, by: presenter, in: window, animated: animated, completion: completion)
 
             default:
                 completion?()
@@ -335,9 +336,10 @@ final class AppCoordinator: NSObject {
     }
 
     private func showAlert(title: String, message: String, actions: [UIAlertAction]) {
+        guard let viewController else { return }
         let controller = UIAlertController(title: title, message: message, preferredStyle: .alert)
         actions.forEach({ controller.addAction($0) })
-        self.viewController?.present(controller, animated: true, completion: nil)
+        viewController.present(controller, animated: true, completion: nil)
     }
 
     // MARK: - Helpers
@@ -350,15 +352,13 @@ final class AppCoordinator: NSObject {
 
 extension AppCoordinator: AppDelegateCoordinatorDelegate {
     func showMainScreen(isLoggedIn: Bool) {
-        self.showMainScreen(isLogged: isLoggedIn, options: self.tmpConnectionOptions, session: self.tmpSession, animated: false)
-        self.tmpConnectionOptions = nil
-        self.tmpSession = nil
+        showMainScreen(isLogged: isLoggedIn, options: connectionOptions, session: session, animated: false)
     }
 
     func didRotate(to size: CGSize) {
-        guard let window = self.debugWindow else { return }
-        let xPos = window.frame.minX == AppCoordinator.debugButtonOffset ? window.frame.minX : size.width - AppCoordinator.debugButtonSize.width - AppCoordinator.debugButtonOffset
-        window.frame = self.debugWindowFrame(for: size, xPos: xPos)
+        guard let debugWindow else { return }
+        let xPos = debugWindow.frame.minX == AppCoordinator.debugButtonOffset ? debugWindow.frame.minX : size.width - AppCoordinator.debugButtonSize.width - AppCoordinator.debugButtonOffset
+        debugWindow.frame = debugWindowFrame(for: size, xPos: xPos)
     }
 }
 
@@ -378,7 +378,7 @@ extension AppCoordinator: DebugLoggingCoordinator {
 
             if progressAlert == nil {
                 let (controller, progress) = createCircularProgressAlertController(title: L10n.Settings.LogAlert.progressTitle)
-                self.window?.rootViewController?.present(controller, animated: true, completion: nil)
+                window?.rootViewController?.present(controller, animated: true, completion: nil)
                 progressAlert = controller
                 progressView = progress
             }
@@ -420,7 +420,7 @@ extension AppCoordinator: DebugLoggingCoordinator {
                 completion?()
 
             case .failure(let error):
-                self.show(error: error, logs: logs, retry: retry, completed: completion)
+                show(error: error, logs: logs, retry: retry, completed: completion)
             }
 
             func share(debugId: String, customMessage: String?, userId: Int) {
@@ -478,7 +478,7 @@ extension AppCoordinator: DebugLoggingCoordinator {
             }))
         }
 
-        self.showAlert(title: L10n.Errors.Logging.title, message: message, actions: actions)
+        showAlert(title: L10n.Errors.Logging.title, message: message, actions: actions)
 
         func presentActivityViewController(with items: [Any], completed: @escaping () -> Void) {
             guard let viewController else { return }
@@ -517,18 +517,18 @@ extension AppCoordinator: DebugLoggingCoordinator {
             let debugWindow = UIWindow()
             debugWindow.backgroundColor = .clear
             debugWindow.windowScene = window.windowScene
-            debugWindow.frame = self.debugWindowFrame(for: window.frame.size, xPos: AppCoordinator.debugButtonOffset)
+            debugWindow.frame = debugWindowFrame(for: window.frame.size, xPos: AppCoordinator.debugButtonOffset)
             debugWindow.addSubview(view)
             // Show the window
             debugWindow.makeKeyAndVisible()
             self.debugWindow = debugWindow
 
             let panRecognizer = UIPanGestureRecognizer(target: self, action: #selector(AppCoordinator.didPan))
-            self.debugWindow?.addGestureRecognizer(panRecognizer)
+            debugWindow.addGestureRecognizer(panRecognizer)
         }
 
         func hideDebugWindow() {
-            self.debugWindow = nil
+            debugWindow = nil
         }
     }
 
@@ -537,20 +537,20 @@ extension AppCoordinator: DebugLoggingCoordinator {
 
         switch recognizer.state {
         case .began:
-            self.originalDebugWindowFrame = debugWindow.frame
+            originalDebugWindowFrame = debugWindow.frame
 
         case .changed:
-            guard let originalFrame = self.originalDebugWindowFrame else { return }
+            guard let originalDebugWindowFrame else { return }
             let translation = recognizer.translation(in: window)
-            debugWindow.frame = originalFrame.offsetBy(dx: translation.x, dy: translation.y)
+            debugWindow.frame = originalDebugWindowFrame.offsetBy(dx: translation.x, dy: translation.y)
 
         case .cancelled, .ended, .failed:
-            self.originalDebugWindowFrame = nil
+            originalDebugWindowFrame = nil
 
             let velocity = recognizer.velocity(in: window)
             let endPosLeft = velocity.x == 0 ? (debugWindow.center.x <= (window.frame.width / 2)) : (velocity.x < 0)
             let xPos = endPosLeft ? AppCoordinator.debugButtonOffset : window.frame.width - AppCoordinator.debugButtonSize.width - AppCoordinator.debugButtonOffset
-            let frame = self.debugWindowFrame(for: window.frame.size, xPos: xPos)
+            let frame = debugWindowFrame(for: window.frame.size, xPos: xPos)
             let viewVelocity = abs(velocity.x / (xPos - debugWindow.frame.minX))
 
             UIView.animate(
@@ -574,18 +574,20 @@ extension AppCoordinator: DebugLoggingCoordinator {
     }
 
     @objc private func stopLogging() {
-        self.controllers.debugLogging.stop()
+        controllers.debugLogging.stop()
     }
 }
 
 extension AppCoordinator: AppOnboardingCoordinatorDelegate {
     func showAbout() {
+        guard let rootViewController = window?.rootViewController else { return }
         let controller = SFSafariViewController(url: URL(string: "https://www.zotero.org/?app=1")!)
-        self.window?.rootViewController?.present(controller, animated: true, completion: nil)
+        rootViewController.present(controller, animated: true, completion: nil)
     }
 
     func presentLogin() {
-        let handler = LoginActionHandler(apiClient: self.controllers.apiClient, sessionController: self.controllers.sessionController)
+        guard let rootViewController = window?.rootViewController else { return }
+        let handler = LoginActionHandler(apiClient: controllers.apiClient, sessionController: controllers.sessionController)
         let controller = LoginViewController(viewModel: ViewModel(initialState: LoginState(), handler: handler))
         controller.coordinatorDelegate = self
         if UIDevice.current.userInterfaceIdiom == .pad {
@@ -595,12 +597,13 @@ extension AppCoordinator: AppOnboardingCoordinatorDelegate {
             controller.modalPresentationStyle = .fullScreen
         }
         controller.isModalInPresentation = false
-        self.window?.rootViewController?.present(controller, animated: true, completion: nil)
+        rootViewController.present(controller, animated: true, completion: nil)
     }
 
     func presentRegister() {
+        guard let rootViewController = window?.rootViewController else { return }
         let controller = SFSafariViewController(url: URL(string: "https://www.zotero.org/user/register?app=1")!)
-        self.window?.rootViewController?.present(controller, animated: true, completion: nil)
+        rootViewController.present(controller, animated: true, completion: nil)
     }
 }
 
@@ -611,7 +614,7 @@ extension AppCoordinator: AppLoginCoordinatorDelegate {
     }
 
     func dismiss() {
-        self.window?.rootViewController?.dismiss(animated: true, completion: nil)
+        window?.rootViewController?.dismiss(animated: true, completion: nil)
     }
 }
 
@@ -634,27 +637,28 @@ extension AppCoordinator: CrashReporterCoordinator {
             actions.append(action)
         }
 
-        self.showAlert(title: L10n.Settings.CrashAlert.title, message: L10n.Settings.CrashAlert.message(id), actions: actions)
+        showAlert(title: L10n.Settings.CrashAlert.title, message: L10n.Settings.CrashAlert.message(id), actions: actions)
     }
 
     private func exportDb(with userId: Int, completion: (() -> Void)?) {
+        guard let viewController else { return }
         let mainUrl = Files.dbFile(for: userId).createUrl()
         let bundledUrl = Files.bundledDataDbFile.createUrl()
 
         let controller = UIActivityViewController(activityItems: [mainUrl, bundledUrl], applicationActivities: nil)
         controller.modalPresentationStyle = .pageSheet
-        controller.popoverPresentationController?.sourceView = self.viewController?.view
+        controller.popoverPresentationController?.sourceView = viewController.view
         controller.popoverPresentationController?.sourceRect = CGRect(x: 100, y: 100, width: 100, height: 100)
         controller.completionWithItemsHandler = { _, _, _, _ in
             completion?()
         }
-        self.viewController?.present(controller, animated: true, completion: nil)
+        viewController.present(controller, animated: true, completion: nil)
     }
 }
 
 extension AppCoordinator: TranslatorsControllerCoordinatorDelegate {
     func showBundleLoadTranslatorsError(result: @escaping (Bool) -> Void) {
-        self.showAlert(
+        showAlert(
             title: L10n.error,
             message: L10n.Errors.Translators.bundleLoading,
             actions: [UIAlertAction(title: L10n.no, style: .cancel, handler: { _ in result(false) }), UIAlertAction(title: L10n.yes, style: .default, handler: { _ in result(true) })]
@@ -662,7 +666,7 @@ extension AppCoordinator: TranslatorsControllerCoordinatorDelegate {
     }
 
     func showResetToBundleError() {
-        self.showAlert(title: L10n.error, message: L10n.Errors.Translators.bundleReset, actions: [UIAlertAction(title: L10n.ok, style: .cancel, handler: nil)])
+        showAlert(title: L10n.error, message: L10n.Errors.Translators.bundleReset, actions: [UIAlertAction(title: L10n.ok, style: .cancel, handler: nil)])
     }
 }
 
@@ -675,7 +679,7 @@ extension AppCoordinator: ConflictReceiver {
         func _resolve(conflict: Conflict, completed: @escaping (ConflictResolution?) -> Void) {
             switch conflict {
             case .objectsRemovedRemotely(let libraryId, let collections, let items, let searches, let tags):
-                guard let controller = self.conflictReceiverAlertController else {
+                guard let controller = conflictReceiverAlertController else {
                     completed(
                         .remoteDeletionOfActiveObject(
                             libraryId: libraryId,
@@ -710,7 +714,7 @@ extension AppCoordinator: ConflictReceiver {
                 controller.start(with: handler)
 
             case .removedItemsHaveLocalChanges(let items, let libraryId):
-                guard let controller = self.conflictAlertQueueController else {
+                guard let controller = conflictAlertQueueController else {
                     completed(.remoteDeletionOfChangedItem(libraryId: libraryId, toDelete: items.map({ $0.0 }), toRestore: []))
                     return
                 }
@@ -725,13 +729,14 @@ extension AppCoordinator: ConflictReceiver {
             }
 
             func presentAlert(for conflict: Conflict, completed: @escaping (ConflictResolution?) -> Void) {
+                guard let viewController else { return }
                 let (title, message, actions) = createAlert(for: conflict, completed: completed)
 
                 let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
                 actions.forEach { action in
                     alert.addAction(action)
                 }
-                self.viewController?.present(alert, animated: true, completion: nil)
+                viewController.present(alert, animated: true, completion: nil)
 
                 func createAlert(for conflict: Conflict, completed: @escaping (ConflictResolution?) -> Void) -> (title: String, message: String, actions: [UIAlertAction]) {
                     switch conflict {
@@ -754,7 +759,7 @@ extension AppCoordinator: ConflictReceiver {
                         return (L10n.warning, L10n.Errors.Sync.metadataWriteDenied(groupName), actions)
 
                     case .groupFileWriteDenied(let groupId, let groupName):
-                        guard let webDavController = self.controllers.userControllers?.webDavController else { return ("", "", []) }
+                        guard let webDavController = controllers.userControllers?.webDavController else { return ("", "", []) }
 
                         let domainName: String
                         if !webDavController.sessionStorage.isEnabled {
@@ -787,10 +792,11 @@ extension AppCoordinator: ConflictReceiver {
 
 extension AppCoordinator: SyncRequestReceiver {
     func askToCreateZoteroDirectory(url: String, create: @escaping () -> Void, cancel: @escaping () -> Void) {
+        guard let viewController else { return }
         let controller = UIAlertController(title: L10n.Settings.Sync.DirectoryNotFound.title, message: L10n.Settings.Sync.DirectoryNotFound.message(url), preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: { _ in cancel() }))
         controller.addAction(UIAlertAction(title: L10n.create, style: .default, handler: { _ in create() }))
-        self.viewController?.present(controller, animated: true, completion: nil)
+        viewController.present(controller, animated: true, completion: nil)
     }
 
     func askForPermission(message: String, completed: @escaping (DebugPermissionResponse) -> Void) {
@@ -799,6 +805,7 @@ extension AppCoordinator: SyncRequestReceiver {
         }
 
         func _askForPermission(message: String, completed: @escaping (DebugPermissionResponse) -> Void) {
+            guard let viewController else { return }
             let alert = UIAlertController(title: "Confirm action", message: message, preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: "Allow", style: .default, handler: { _ in
                 completed(.allowed)
@@ -809,7 +816,7 @@ extension AppCoordinator: SyncRequestReceiver {
             alert.addAction(UIAlertAction(title: "Cancel sync", style: .destructive, handler: { _ in
                 completed(.cancelSync)
             }))
-            self.viewController?.present(alert, animated: true, completion: nil)
+            viewController.present(alert, animated: true, completion: nil)
         }
     }
 }
