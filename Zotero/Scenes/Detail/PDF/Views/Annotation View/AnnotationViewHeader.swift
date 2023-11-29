@@ -191,6 +191,7 @@ final class AnnotationViewHeader: UIView {
         menuConfig.image = UIImage(systemName: "ellipsis")
         menuConfig.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: (layout.horizontalInset / 2), bottom: 0, trailing: (layout.horizontalInset / 2))
         let menuButton = UIButton()
+        menuButton.configuration = menuConfig
         menuButton.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
         menuButton.setContentCompressionResistancePriority(.required, for: .horizontal)
         menuButton.setContentHuggingPriority(.defaultHigh, for: .horizontal)
