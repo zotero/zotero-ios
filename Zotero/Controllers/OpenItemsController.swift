@@ -8,7 +8,7 @@
 
 import Foundation
 import RxSwift
-
+import RealmSwift
 import CocoaLumberjackSwift
 
 typealias OpenItem = OpenItemsController.Item
@@ -97,6 +97,7 @@ final class OpenItemsController {
     private unowned let fileStorage: FileStorage
     // TODO: Use a better data structure, such as an ordered set
     private(set) var items: [Item] = []
+    private var itemsToken: NotificationToken?
     public var itemsSortedByUserOrder: [Item] {
         items.sorted(by: { $0.userIndex < $1.userIndex })
     }
@@ -122,8 +123,48 @@ final class OpenItemsController {
             finalItems = filterValidItems(items)
         }
         guard finalItems != self.items else { return }
+        // Invalidate previous observer first.
+        itemsToken?.invalidate()
+        itemsToken = nil
         self.items = finalItems
+        // Register observer for newly set items.
+        itemsToken = registerObserver(for: finalItems)
         observable.on(.next(finalItems))
+
+        func registerObserver(for items: [Item]) -> NotificationToken? {
+            var token: NotificationToken?
+            var keysByLibraryIdentifier: [LibraryIdentifier: Set<String>] = [:]
+            for item in items {
+                let libraryId = item.kind.libraryId
+                let key = item.kind.key
+                var keys = keysByLibraryIdentifier[libraryId, default: .init()]
+                keys.insert(key)
+                keysByLibraryIdentifier[libraryId] = keys
+            }
+            do {
+                try dbStorage.perform(on: .main) { coordinator in
+                    let objects = try coordinator.perform(request: ReadItemsWithKeysFromMultipleLibrariesDbRequest(keysByLibraryIdentifier: keysByLibraryIdentifier))
+                    token = objects.observe { [weak self] changes in
+                        switch changes {
+                        case .initial:
+                            break
+
+                        case .update(_, let deletions, _, _):
+                            if !deletions.isEmpty, let self {
+                                // Observed items have been deleted, call setItems to validate and register new observer.
+                                self.setItems(self.items, validate: true)
+                            }
+
+                        case .error(let error):
+                            DDLogError("OpenItemsController: register observer error - \(error)")
+                        }
+                    }
+                }
+            } catch let error {
+                DDLogError("OpenItemsController: can't setup items observer - \(error)")
+            }
+            return token
+        }
     }
 
     func open(_ kind: Item.Kind) {
