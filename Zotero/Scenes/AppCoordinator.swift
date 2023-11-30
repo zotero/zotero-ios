@@ -15,7 +15,7 @@ import CocoaLumberjackSwift
 import RxSwift
 
 protocol AppDelegateCoordinatorDelegate: AnyObject {
-    func showMainScreen(isLoggedIn: Bool)
+    func showMainScreen(isLoggedIn: Bool, options: UIScene.ConnectionOptions, session: UISceneSession, animated: Bool)
     func didRotate(to size: CGSize)
     func show(customUrl: CustomURLController.Kind, animated: Bool)
 }
@@ -45,8 +45,6 @@ final class AppCoordinator: NSObject {
     private var conflictAlertQueueController: ConflictAlertQueueController?
     var presentedRestoredControllerWindow: UIWindow?
     private var downloadDisposeBag: DisposeBag?
-    private weak var connectionOptions: UIScene.ConnectionOptions?
-    private weak var session: UISceneSession?
 
     private var viewController: UIViewController? {
         guard let rootViewController = window?.rootViewController else { return nil }
@@ -63,12 +61,10 @@ final class AppCoordinator: NSObject {
     func start(options connectionOptions: UIScene.ConnectionOptions, session: UISceneSession) {
         if !controllers.sessionController.isInitialized {
             DDLogInfo("AppCoordinator: start while waiting for initialization")
-            self.connectionOptions = connectionOptions
-            self.session = session
             showLaunchScreen()
         } else {
             DDLogInfo("AppCoordinator: start logged \(controllers.sessionController.isLoggedIn ? "in" : "out")")
-            showMainScreen(isLogged: controllers.sessionController.isLoggedIn, options: connectionOptions, session: session, animated: false)
+            showMainScreen(isLoggedIn: controllers.sessionController.isLoggedIn, options: connectionOptions, session: session, animated: false)
         }
 
         // If db needs to be wiped and this is the first start of the app, show beta alert
@@ -86,6 +82,12 @@ final class AppCoordinator: NSObject {
         controllers.crashReporter.coordinator = self
         controllers.translatorsAndStylesController.coordinator = self
 
+        func showLaunchScreen() {
+            guard let window else { return }
+            let controller = UIStoryboard(name: "LaunchScreen", bundle: nil).instantiateInitialViewController()
+            window.rootViewController = controller
+        }
+
         func showBetaAlert() {
             guard let rootViewController = window?.rootViewController else { return }
             let controller = UIAlertController(title: L10n.betaWipeTitle, message: L10n.betaWipeMessage, preferredStyle: .alert)
@@ -95,19 +97,27 @@ final class AppCoordinator: NSObject {
     }
 
     // MARK: - Navigation
-
-    private func showLaunchScreen() {
-        guard let window, let controller = UIStoryboard(name: "LaunchScreen", bundle: nil).instantiateInitialViewController() else { return }
-        window.rootViewController = controller
+    private func showAlert(title: String, message: String, actions: [UIAlertAction]) {
+        guard let viewController else { return }
+        let controller = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        actions.forEach({ controller.addAction($0) })
+        viewController.present(controller, animated: true, completion: nil)
     }
 
-    private func showMainScreen(isLogged: Bool, options connectionOptions: UIScene.ConnectionOptions?, session: UISceneSession?, animated: Bool) {
-        guard let window else { return }
+    // MARK: - Helpers
+    private func debugWindowFrame(for windowSize: CGSize, xPos: CGFloat) -> CGRect {
+        let yPos = windowSize.height - AppCoordinator.debugButtonSize.height - AppCoordinator.debugButtonOffset
+        return CGRect(origin: CGPoint(x: xPos, y: yPos), size: AppCoordinator.debugButtonSize)
+    }
+}
 
+extension AppCoordinator: AppDelegateCoordinatorDelegate {
+    func showMainScreen(isLoggedIn: Bool, options: UIScene.ConnectionOptions, session: UISceneSession, animated: Bool) {
+        guard let window else { return }
         let viewController: UIViewController
         var urlContext: UIOpenURLContext?
         var data: RestoredStateData?
-        if !isLogged {
+        if !isLoggedIn {
             let controller = OnboardingViewController(size: window.frame.size, htmlConverter: controllers.htmlAttributedStringConverter)
             controller.coordinatorDelegate = self
             viewController = controller
@@ -116,8 +126,8 @@ final class AppCoordinator: NSObject {
             conflictAlertQueueController = nil
             controllers.userControllers?.syncScheduler.syncController.set(coordinator: nil)
         } else {
-            (urlContext, data) = preprocess(connectionOptions: connectionOptions, session: session)
             let controller = MainViewController(controllers: controllers)
+            (urlContext, data) = preprocess(connectionOptions: options, session: session)
             viewController = controller
 
             conflictReceiverAlertController = ConflictReceiverAlertController(viewController: controller)
@@ -125,7 +135,7 @@ final class AppCoordinator: NSObject {
             controllers.userControllers?.syncScheduler.syncController.set(coordinator: self)
         }
 
-        DDLogInfo("AppCoordinator: show main screen logged \(isLogged ? "in" : "out"); animated=\(animated)")
+        DDLogInfo("AppCoordinator: show main screen logged \(isLoggedIn ? "in" : "out"); animated=\(animated)")
         show(viewController: viewController, in: window, animated: animated) {
             process(urlContext: urlContext, data: data)
         }
@@ -141,9 +151,9 @@ final class AppCoordinator: NSObject {
             UIView.transition(with: window, duration: 0.2, options: .transitionCrossDissolve, animations: {}, completion: { _ in completion() })
         }
 
-        func preprocess(connectionOptions: UIScene.ConnectionOptions?, session: UISceneSession?) -> (UIOpenURLContext?, RestoredStateData?) {
-            let urlContext = connectionOptions?.urlContexts.first
-            let userActivity = connectionOptions?.userActivities.first ?? session?.stateRestorationActivity
+        func preprocess(connectionOptions: UIScene.ConnectionOptions, session: UISceneSession) -> (UIOpenURLContext?, RestoredStateData?) {
+            let urlContext = connectionOptions.urlContexts.first
+            let userActivity = connectionOptions.userActivities.first ?? session.stateRestorationActivity
             let data = userActivity?.restoredStateData
             if let data {
                 // If scene had state stored, check if defaults need to be updated first
@@ -221,6 +231,12 @@ final class AppCoordinator: NSObject {
                 }
             }
         }
+    }
+
+    func didRotate(to size: CGSize) {
+        guard let debugWindow else { return }
+        let xPos = debugWindow.frame.minX == AppCoordinator.debugButtonOffset ? debugWindow.frame.minX : size.width - AppCoordinator.debugButtonSize.width - AppCoordinator.debugButtonOffset
+        debugWindow.frame = debugWindowFrame(for: size, xPos: xPos)
     }
 
     func show(customUrl: CustomURLController.Kind, animated: Bool) {
@@ -333,32 +349,6 @@ final class AppCoordinator: NSObject {
                 completion?()
             }
         }
-    }
-
-    private func showAlert(title: String, message: String, actions: [UIAlertAction]) {
-        guard let viewController else { return }
-        let controller = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        actions.forEach({ controller.addAction($0) })
-        viewController.present(controller, animated: true, completion: nil)
-    }
-
-    // MARK: - Helpers
-
-    private func debugWindowFrame(for windowSize: CGSize, xPos: CGFloat) -> CGRect {
-        let yPos = windowSize.height - AppCoordinator.debugButtonSize.height - AppCoordinator.debugButtonOffset
-        return CGRect(origin: CGPoint(x: xPos, y: yPos), size: AppCoordinator.debugButtonSize)
-    }
-}
-
-extension AppCoordinator: AppDelegateCoordinatorDelegate {
-    func showMainScreen(isLoggedIn: Bool) {
-        showMainScreen(isLogged: isLoggedIn, options: connectionOptions, session: session, animated: false)
-    }
-
-    func didRotate(to size: CGSize) {
-        guard let debugWindow else { return }
-        let xPos = debugWindow.frame.minX == AppCoordinator.debugButtonOffset ? debugWindow.frame.minX : size.width - AppCoordinator.debugButtonSize.width - AppCoordinator.debugButtonOffset
-        debugWindow.frame = debugWindowFrame(for: size, xPos: xPos)
     }
 }
 

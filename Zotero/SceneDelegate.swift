@@ -34,7 +34,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // Load state if available, setup scene & window
         setup(scene: scene, userActivity: userActivity, window: window, options: connectionOptions, session: session, controllers: controllers)
         // Start observing
-        setupObservers(controllers: controllers)
+        setupObservers(options: connectionOptions, session: session, controllers: controllers)
 
         func setup(scene: UIScene, userActivity: NSUserActivity?, window: UIWindow, options connectionOptions: UIScene.ConnectionOptions, session: UISceneSession, controllers: Controllers) {
             scene.userActivity = userActivity
@@ -46,20 +46,22 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             self.coordinator = coordinator
         }
 
-        func setupObservers(controllers: Controllers) {
+        func setupObservers(options connectionOptions: UIScene.ConnectionOptions, session: UISceneSession, controllers: Controllers) {
             sessionCancellable = controllers.userInitialized
                 .receive(on: DispatchQueue.main)
                 .sink(
                     receiveCompletion: { _ in },
                     receiveValue: { [weak self] result in
                         guard let self else { return }
+                        let _isLoggedIn: Bool
                         switch result {
                         case .success(let isLoggedIn):
-                            coordinator.showMainScreen(isLoggedIn: isLoggedIn)
+                            _isLoggedIn = isLoggedIn
 
                         case .failure:
-                            coordinator.showMainScreen(isLoggedIn: false)
+                            _isLoggedIn = false
                         }
+                        coordinator.showMainScreen(isLoggedIn: _isLoggedIn, options: connectionOptions, session: session, animated: false)
                     }
                 )
         }
