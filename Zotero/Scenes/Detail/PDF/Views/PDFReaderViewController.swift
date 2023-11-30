@@ -141,14 +141,12 @@ class PDFReaderViewController: UIViewController {
     private var undoBarButton: UIBarButtonItem?
     private var redoBarButton: UIBarButtonItem?
     private lazy var toolbarButton: UIBarButtonItem = {
-        let checkbox = CheckboxButton(type: .custom)
-        checkbox.setImage(UIImage(systemName: "pencil.and.outline", withConfiguration: UIImage.SymbolConfiguration(scale: .large)), for: .normal)
-        checkbox.adjustsImageWhenHighlighted = false
+        var configuration = UIButton.Configuration.plain()
+        let image = UIImage(systemName: "pencil.and.outline")?.applyingSymbolConfiguration(.init(scale: .large))
+        let checkbox = CheckboxButton(image: image!, contentInsets: NSDirectionalEdgeInsets(top: 11, leading: 6, bottom: 9, trailing: 6))
         checkbox.scalesLargeContentImage = true
-        checkbox.layer.cornerRadius = 4
-        checkbox.layer.masksToBounds = true
+        checkbox.deselectedBackgroundColor = .clear
         checkbox.deselectedTintColor = self.viewModel.state.document.isLocked ? .gray : Asset.Colors.zoteroBlueWithDarkMode.color
-        checkbox.contentEdgeInsets = UIEdgeInsets(top: 6, left: 6, bottom: 6, right: 6)
         checkbox.selectedBackgroundColor = Asset.Colors.zoteroBlue.color
         checkbox.selectedTintColor = .white
         checkbox.isSelected = !self.viewModel.state.document.isLocked && self.toolbarState.visible

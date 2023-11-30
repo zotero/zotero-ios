@@ -200,10 +200,12 @@ class TagFilterViewController: UIViewController {
                  })
                  .disposed(by: self.disposeBag)
 
+        var optionsConfiguration = UIButton.Configuration.plain()
+        optionsConfiguration.image = UIImage(systemName: "ellipsis")
+        optionsConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 8, bottom: 0, trailing: 8)
+        optionsConfiguration.baseForegroundColor = Asset.Colors.zoteroBlueWithDarkMode.color
         let optionsButton = UIButton()
-        optionsButton.setImage(UIImage(systemName: "ellipsis"), for: .normal)
-        optionsButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 8, bottom: 0, right: 8)
-        optionsButton.setTitleColor(Asset.Colors.zoteroBlueWithDarkMode.color, for: .normal)
+        optionsButton.configuration = optionsConfiguration
         optionsButton.showsMenuAsPrimaryAction = true
         optionsButton.menu = self.createOptionsMenu(with: self.viewModel.state)
         self.optionsButton = optionsButton

@@ -9,47 +9,41 @@
 import UIKit
 
 final class CheckboxButton: UIButton {
-    var selectedBackgroundColor: UIColor = .clear {
-        didSet {
-            if self.isSelected {
-                self.backgroundColor = self.selectedBackgroundColor
-            }
-        }
-    }
-
-    var deselectedBackgroundColor: UIColor = .clear {
-        didSet {
-            if !self.isSelected {
-                self.backgroundColor = self.deselectedBackgroundColor
-            }
-        }
-    }
-
-    var selectedTintColor: UIColor = .black {
-        didSet {
-            if self.isSelected {
-                self.tintColor = self.selectedTintColor
-            }
-        }
-    }
-
-    var deselectedTintColor: UIColor = Asset.Colors.zoteroBlue.color {
-        didSet {
-            if !self.isSelected {
-                self.tintColor = self.deselectedTintColor
-            }
-        }
-    }
+    var selectedBackgroundColor: UIColor = .clear
+    var deselectedBackgroundColor: UIColor = .clear
+    var selectedTintColor: UIColor = .black
+    var deselectedTintColor: UIColor = Asset.Colors.zoteroBlue.color
 
     override var isSelected: Bool {
         didSet {
-            if self.isSelected {
-                self.backgroundColor = self.selectedBackgroundColor
-                self.tintColor = self.selectedTintColor
-            } else {
-                self.backgroundColor = self.deselectedBackgroundColor
-                self.tintColor = self.deselectedTintColor
-            }
+            setNeedsUpdateConfiguration()
         }
+    }
+
+    init(image: UIImage, contentInsets: NSDirectionalEdgeInsets) {
+        super.init(frame: .zero)
+
+        var configuration = UIButton.Configuration.plain()
+        var background = configuration.background
+        background.cornerRadius = 4
+        configuration.image = image
+        configuration.contentInsets = contentInsets
+        self.configuration = configuration
+
+        self.configurationUpdateHandler = { [weak self] button in
+            let isSelected = self?.isSelected ?? false
+            var configuration = button.configuration
+            var background = configuration?.background
+            background?.backgroundColor = isSelected ? self?.selectedBackgroundColor : self?.deselectedBackgroundColor
+            if let background {
+                configuration?.background = background
+            }
+            configuration?.baseForegroundColor = isSelected ? self?.selectedTintColor : self?.deselectedTintColor
+            button.configuration = configuration
+        }
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
 }

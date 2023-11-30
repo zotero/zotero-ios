@@ -85,7 +85,7 @@ final class RedirectWebViewHandler: NSObject {
                          let userAgent = payload["userAgent"] as? String,
                          let referrer = payload["referrer"] as? String else {
                        DDLogError("RedirectWebViewHandler: extracted data missing response")
-                       DDLogError("\(data as? [String: Any])")
+                       DDLogError("\(String(describing: data as? [String: Any]))")
                        completion(nil, nil, nil)
                        return
                    }

@@ -114,12 +114,14 @@ final class SearchBar: UIView {
         clearConfiguration.image = clearImage
         clear.configuration = clearConfiguration
 
+        var cancelConfiguration = UIButton.Configuration.plain()
+        cancelConfiguration.title = L10n.cancel
+        cancelConfiguration.baseForegroundColor = Asset.Colors.zoteroBlueWithDarkMode.color
+        cancelConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: SearchBar.cancelOffset, bottom: 0, trailing: insets.right)
         let cancel = UIButton(type: .custom)
+        cancel.configuration = clearConfiguration
         cancel.translatesAutoresizingMaskIntoConstraints = false
-        cancel.setTitle(L10n.cancel, for: .normal)
         cancel.accessibilityLabel = L10n.Searchbar.accessibilityCancel
-        cancel.setTitleColor(Asset.Colors.zoteroBlueWithDarkMode.color, for: .normal)
-        cancel.contentEdgeInsets = UIEdgeInsets(top: 0, left: SearchBar.cancelOffset, bottom: 0, right: self.insets.right)
         cancel.setContentHuggingPriority(.defaultHigh, for: .horizontal)
         cancel.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
         cancel.isHidden = true

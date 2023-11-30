@@ -92,7 +92,7 @@ final class TranslationWebViewHandler {
                              let userAgent = payload["userAgent"] as? String,
                              let referrer = payload["referrer"] as? String else {
                            DDLogError("WebViewHandler: extracted data missing response")
-                           DDLogError("\(data as? [String: Any])")
+                           DDLogError("\(String(describing: data as? [String: Any]))")
                            return Single.error(Error.webExtractionMissingData)
                        }
 

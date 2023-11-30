@@ -21,74 +21,82 @@ final class CollectionCellContentView: UIView {
     @IBOutlet private var contentToBadgeConstraint: NSLayoutConstraint!
 
     private var toggleCollapsedAction: (() -> Void)?
+    private var chevronCollapsed: Bool = false
 
     override func awakeFromNib() {
         super.awakeFromNib()
 
-        self.badgeContainer.layer.masksToBounds = true
-        self.badgeContainer.backgroundColor = self.badgeBackgroundColor
-        self.contentToRightConstraint.isActive = false
-        self.chevronButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
-        self.separatorHeight.constant = 1 / UIScreen.main.scale
+        badgeContainer.layer.masksToBounds = true
+        badgeContainer.backgroundColor = badgeBackgroundColor
+        contentToRightConstraint.isActive = false
+        separatorHeight.constant = 1 / UIScreen.main.scale
+        var chevronConfig = UIButton.Configuration.plain()
+        chevronConfig.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
+        chevronButton.configuration = chevronConfig
+        chevronButton.configurationUpdateHandler = { [weak self] button in
+            let collapsed = self?.chevronCollapsed ?? false
+            var configuration = button.configuration
+            configuration?.image = UIImage(systemName: collapsed ? "chevron.right" : "chevron.down")?.applyingSymbolConfiguration(.init(scale: .small))
+            button.configuration = configuration
+        }
     }
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        self.badgeContainer.layer.cornerRadius = self.badgeContainer.frame.height / 2.0
+        badgeContainer.layer.cornerRadius = badgeContainer.frame.height / 2.0
     }
 
     @IBAction private func toggleCollapsed() {
-        self.toggleCollapsedAction?()
+        toggleCollapsedAction?()
     }
 
     private func set(collapsed: Bool) {
-        let configuration = UIImage.SymbolConfiguration(scale: .small)
-        let name = collapsed ? "chevron.right" : "chevron.down"
-        self.chevronButton.setImage(UIImage(systemName: name, withConfiguration: configuration), for: .normal)
-        self.chevronButton.accessibilityLabel = collapsed ? L10n.Accessibility.Collections.expand : L10n.Accessibility.Collections.collapse
+        chevronCollapsed = collapsed
+        chevronButton.setNeedsUpdateConfiguration()
+        chevronButton.accessibilityLabel = collapsed ? L10n.Accessibility.Collections.expand : L10n.Accessibility.Collections.collapse
     }
 
     func set(collection: Collection, hasChildren: Bool, isCollapsed: Bool, accessories: CollectionCell.Accessories, toggleCollapsed: (() -> Void)?) {
-        self.toggleCollapsedAction = toggleCollapsed
-        self.leftConstraint.constant = (accessories.contains(.chevron) || accessories.contains(.chevronSpace)) ? 32 : 8
+        toggleCollapsedAction = toggleCollapsed
+        leftConstraint.constant = (accessories.contains(.chevron) || accessories.contains(.chevronSpace)) ? 32 : 8
 
-        self.setup(with: collection)
-        self.updateBadgeView(for: accessories.contains(.badge) ? collection.itemCount : 0)
-        self.setupChevron(visible: (accessories.contains(.chevron) && hasChildren), isCollapsed: isCollapsed)
+        setup(with: collection)
+        updateBadgeView(for: accessories.contains(.badge) ? collection.itemCount : 0)
+        setupChevron(visible: (accessories.contains(.chevron) && hasChildren), isCollapsed: isCollapsed)
     }
 
     func set(libraryName: String, isCollapsed: Bool, accessories: CollectionCell.Accessories, toggleCollapsed: (() -> Void)?) {
-        self.toggleCollapsedAction = toggleCollapsed
-        self.leftConstraint.constant = (accessories.contains(.chevron) || accessories.contains(.chevronSpace)) ? 32 : 8
+        toggleCollapsedAction = toggleCollapsed
+        leftConstraint.constant = (accessories.contains(.chevron) || accessories.contains(.chevronSpace)) ? 32 : 8
 
-        self.iconImage.image = Asset.Images.Cells.library.image.withRenderingMode(.alwaysTemplate)
-        self.titleLabel.text = libraryName
+        iconImage.image = Asset.Images.Cells.library.image.withRenderingMode(.alwaysTemplate)
+        titleLabel.text = libraryName
 
-        self.updateBadgeView(for: 0)
-        self.setupChevron(visible: accessories.contains(.chevron), isCollapsed: isCollapsed)
+        updateBadgeView(for: 0)
+        setupChevron(visible: accessories.contains(.chevron), isCollapsed: isCollapsed)
     }
 
     func updateBadgeView(for itemCount: Int) {
-        self.badgeContainer.isHidden = itemCount == 0
-        if !self.badgeContainer.isHidden {
-            self.badgeLabel.text = "\(itemCount)"
-            self.badgeLabel.accessibilityLabel = "\(itemCount) \(L10n.Accessibility.Collections.items)"
+        badgeContainer.isHidden = itemCount == 0
+        if !badgeContainer.isHidden {
+            badgeLabel.text = "\(itemCount)"
+            badgeLabel.accessibilityLabel = "\(itemCount) \(L10n.Accessibility.Collections.items)"
         }
-        self.contentToBadgeConstraint.isActive = !self.badgeContainer.isHidden || !self.chevronButton.isHidden
-        self.contentToRightConstraint.isActive = !self.contentToBadgeConstraint.isActive
+        contentToBadgeConstraint.isActive = !self.badgeContainer.isHidden || !self.chevronButton.isHidden
+        contentToRightConstraint.isActive = !self.contentToBadgeConstraint.isActive
     }
 
     private func setupChevron(visible: Bool, isCollapsed: Bool) {
-        self.chevronButton.isHidden = !visible
+        chevronButton.isHidden = !visible
         if visible {
-            self.set(collapsed: isCollapsed)
+            set(collapsed: isCollapsed)
         }
     }
 
     private func setup(with collection: Collection) {
-        self.iconImage.image = UIImage(named: collection.iconName)?.withRenderingMode(.alwaysTemplate)
-        self.titleLabel.text = collection.name
-        self.titleLabel.accessibilityLabel = collection.name
+        iconImage.image = UIImage(named: collection.iconName)?.withRenderingMode(.alwaysTemplate)
+        titleLabel.text = collection.name
+        titleLabel.accessibilityLabel = collection.name
     }
 
     private var badgeBackgroundColor: UIColor {

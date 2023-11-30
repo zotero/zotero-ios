@@ -311,13 +311,14 @@ final class AnnotationViewController: UIViewController {
         }
 
         if editability != .notEditable {
+            var configuration = UIButton.Configuration.plain()
+            configuration.attributedTitle = AttributedString(L10n.Pdf.AnnotationPopover.delete, attributes: AttributeContainer([.font: UIFont.preferredFont(forTextStyle: .body)]))
+            configuration.baseForegroundColor = .red
+            configuration.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 0, bottom: 12, trailing: 0)
             let button = UIButton()
+            button.configuration = configuration
             button.addTarget(self, action: #selector(AnnotationViewController.deleteAnnotation), for: .touchUpInside)
-            button.setTitle(L10n.Pdf.AnnotationPopover.delete, for: .normal)
             button.titleLabel?.adjustsFontForContentSizeCategory = true
-            button.titleLabel?.font = .preferredFont(forTextStyle: .body)
-            button.setTitleColor(.red, for: .normal)
-            button.contentEdgeInsets = UIEdgeInsets(top: 11, left: 0, bottom: 12, right: 0)
             self.deleteButton = button
 
             self.containerStackView.addArrangedSubview(button)
