@@ -116,12 +116,14 @@ class PDFReaderViewController: UIViewController {
         openItems.isEnabled = true
         openItems.accessibilityLabel = L10n.Accessibility.Pdf.openItems
         openItems.title = L10n.Accessibility.Pdf.openItems
-        let deferredOpenItemsMenuElement = openItemsController.deferredOpenItemsMenuElement(disableOpenItem: true) { [weak self] item, _ in
-            guard let self, let coordinatorDelegate else { return }
-            openItemsController.restore(item, using: coordinatorDelegate)
+        if let sessionIdentifier = view.scene?.session.persistentIdentifier {
+            let deferredOpenItemsMenuElement = openItemsController.deferredOpenItemsMenuElement(for: sessionIdentifier, disableOpenItem: true) { [weak self] item, _ in
+                guard let self, let coordinatorDelegate else { return }
+                openItemsController.restore(item, using: coordinatorDelegate)
+            }
+            let openItemsMenu = UIMenu(title: "Open Items", options: [.displayInline], children: [deferredOpenItemsMenuElement])
+            openItems.menu = UIMenu(children: [openItemsMenu])
         }
-        let openItemsMenu = UIMenu(title: "Open Items", options: [.displayInline], children: [deferredOpenItemsMenuElement])
-        openItems.menu = UIMenu(children: [openItemsMenu])
         return openItems
     }()
     private lazy var settingsButton: UIBarButtonItem = {
@@ -216,7 +218,9 @@ class PDFReaderViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.set(userActivity: .pdfActivity(with: openItemsController.items, libraryId: self.viewModel.state.library.identifier, collectionId: Defaults.shared.selectedCollectionId))
+        if let sessionIdentifier = view.scene?.session.persistentIdentifier {
+            self.set(userActivity: .pdfActivity(with: openItemsController.getItems(for: sessionIdentifier), libraryId: self.viewModel.state.library.identifier, collectionId: Defaults.shared.selectedCollectionId))
+        }
 
         self.view.backgroundColor = .systemGray6
         self.setupViews()
@@ -1253,9 +1257,9 @@ class PDFReaderViewController: UIViewController {
 
     private var rightBarButtonItems: [UIBarButtonItem] {
         var buttons = [settingsButton, shareButton, searchButton]
-        if openItemsController.items.count > 1 {
+        if let sessionIdentifier = view.scene?.session.persistentIdentifier, openItemsController.getItems(for: sessionIdentifier).count > 1 {
             buttons.insert(openItemsButton, at: 1)
-            openItemsButton.image = .init(systemName: "\(openItemsController.items.count).square")
+            openItemsButton.image = .init(systemName: "\(openItemsController.getItems(for: sessionIdentifier).count).square")
         }
 
         if self.viewModel.state.library.metadataEditable {

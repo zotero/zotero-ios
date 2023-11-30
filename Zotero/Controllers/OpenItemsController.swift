@@ -96,40 +96,44 @@ final class OpenItemsController {
     private unowned let dbStorage: DbStorage
     private unowned let fileStorage: FileStorage
     // TODO: Use a better data structure, such as an ordered set
-    private(set) var items: [Item] = []
-    private var itemsToken: NotificationToken?
-    public var itemsSortedByUserOrder: [Item] {
-        items.sorted(by: { $0.userIndex < $1.userIndex })
-    }
-    public var itemsSortedByLastOpen: [Item] {
-        items.sorted(by: { $0.lastOpened > $1.lastOpened })
-    }
-    let observable: PublishSubject<[Item]>
+    private var itemsBySessionIdentifier: [String: [Item]] = [:]
+    private var itemsTokenBySessionIdentifier: [String: NotificationToken] = [:]
+    private var observableBySessionIdentifier: [String: PublishSubject<[Item]>] = [:]
     private let disposeBag: DisposeBag
 
     // MARK: Object Lifecycle
     init(dbStorage: DbStorage, fileStorage: FileStorage) {
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
-        observable = PublishSubject()
         disposeBag = DisposeBag()
     }
     
     // MARK: Actions
-    func setItems(_ items: [Item], validate: Bool) {
-        DDLogInfo("OpenItemsController: setting items \(items)")
-        var finalItems = items
-        if validate {
-            finalItems = filterValidItems(items)
+    func observable(for sessionIdentifier: String) -> PublishSubject<[Item]> {
+        if let observable = observableBySessionIdentifier[sessionIdentifier] {
+            return observable
         }
-        guard finalItems != self.items else { return }
+        let observable = PublishSubject<[Item]>()
+        observableBySessionIdentifier[sessionIdentifier] = observable
+        return observable
+    }
+
+    func getItems(for sessionIdentifier: String) -> [Item] {
+        itemsBySessionIdentifier[sessionIdentifier, default: []]
+    }
+
+    func setItems(_ items: [Item], for sessionIdentifier: String, validate: Bool) {
+        DDLogInfo("OpenItemsController: setting items \(items) for \(sessionIdentifier)")
+        let existingItems = getItems(for: sessionIdentifier)
+        let newItems = validate ? filterValidItems(items) : items
+        guard newItems != existingItems else { return }
         // Invalidate previous observer first.
-        itemsToken?.invalidate()
-        itemsToken = nil
-        self.items = finalItems
+        itemsTokenBySessionIdentifier[sessionIdentifier]?.invalidate()
+        itemsTokenBySessionIdentifier[sessionIdentifier] = nil
+        itemsBySessionIdentifier[sessionIdentifier] = newItems
         // Register observer for newly set items.
-        itemsToken = registerObserver(for: finalItems)
-        observable.on(.next(finalItems))
+        itemsTokenBySessionIdentifier[sessionIdentifier] = registerObserver(for: newItems)
+        observable(for: sessionIdentifier).on(.next(newItems))
 
         func registerObserver(for items: [Item]) -> NotificationToken? {
             var token: NotificationToken?
@@ -152,7 +156,8 @@ final class OpenItemsController {
                         case .update(_, let deletions, _, _):
                             if !deletions.isEmpty, let self {
                                 // Observed items have been deleted, call setItems to validate and register new observer.
-                                self.setItems(self.items, validate: true)
+                                let existingItems = getItems(for: sessionIdentifier)
+                                setItems(existingItems, for: sessionIdentifier, validate: true)
                             }
 
                         case .error(let error):
@@ -161,24 +166,26 @@ final class OpenItemsController {
                     }
                 }
             } catch let error {
-                DDLogError("OpenItemsController: can't setup items observer - \(error)")
+                DDLogError("OpenItemsController: can't register items observer - \(error)")
             }
             return token
         }
     }
 
-    func open(_ kind: Item.Kind) {
-        DDLogInfo("OpenItemsController: opened item \(kind)")
-        if let index = items.firstIndex(where: { $0.kind == kind }) {
-            items[index].lastOpened = .now
-            DDLogInfo("OpenItemsController: already opened item \(kind) became most recent")
-            observable.on(.next(items))
+    func open(_ kind: Item.Kind, for sessionIdentifier: String) {
+        DDLogInfo("OpenItemsController: opened item \(kind) for \(sessionIdentifier)")
+        var existingItems = getItems(for: sessionIdentifier)
+        if let index = existingItems.firstIndex(where: { $0.kind == kind }) {
+            existingItems[index].lastOpened = .now
+            itemsBySessionIdentifier[sessionIdentifier] = existingItems
+            DDLogInfo("OpenItemsController: already opened item \(kind) became most recent for \(sessionIdentifier)")
+            observable(for: sessionIdentifier).on(.next(existingItems))
         } else {
-            DDLogInfo("OpenItemsController: newly opened item \(kind) set as most recent")
-            let item = Item(kind: kind, userIndex: items.count)
-            let newItems = items + [item]
+            DDLogInfo("OpenItemsController: newly opened item \(kind) set as most recent for \(sessionIdentifier)")
+            let item = Item(kind: kind, userIndex: existingItems.count)
+            let newItems = existingItems + [item]
             // setItems will produce next observable event
-            setItems(newItems, validate: false)
+            setItems(newItems, for: sessionIdentifier, validate: false)
         }
     }
     
@@ -190,26 +197,27 @@ final class OpenItemsController {
     }
     
     @discardableResult
-    func restoreMostRecentlyOpenedItem(using presenter: OpenItemsPresenter) -> Item? {
+    func restoreMostRecentlyOpenedItem(using presenter: OpenItemsPresenter, sessionIdentifier: String) -> Item? {
         // Will restore most recent opened item still present, or none if all fail
-        DDLogInfo("OpenItemsController: restoring most recently opened item using presenter \(presenter)")
+        var existingItems = getItems(for: sessionIdentifier)
+        DDLogInfo("OpenItemsController: restoring most recently opened item using presenter \(presenter) for \(sessionIdentifier)")
         var itemsChanged: Bool = false
         defer {
             if itemsChanged {
-                observable.on(.next(items))
+                observable(for: sessionIdentifier).on(.next(existingItems))
             }
         }
         var item: Item?
         var presentation: Presentation?
-        let itemsSortedByLastOpen = itemsSortedByLastOpen
-        for _item in itemsSortedByLastOpen {
+        let existingItemsSortedByLastOpen = itemsSortedByLastOpen(for: sessionIdentifier)
+        for _item in existingItemsSortedByLastOpen {
             if let _presentation = loadPresentation(for: _item) {
                 item = _item
                 presentation = _presentation
                 break
             }
-            DDLogWarn("OpenItemsController: removing not loaded item \(_item)")
-            items.removeAll(where: { $0 == _item })
+            DDLogWarn("OpenItemsController: removing not loaded item \(_item) for \(sessionIdentifier)")
+            existingItems.removeAll(where: { $0 == _item })
             itemsChanged = true
         }
         guard let item, let presentation else { return nil }
@@ -217,16 +225,16 @@ final class OpenItemsController {
         return item
     }
     
-    func deferredOpenItemsMenuElement(disableOpenItem: Bool, itemActionCallback: @escaping (Item, UIAction) -> Void) -> UIDeferredMenuElement {
+    func deferredOpenItemsMenuElement(for sessionIdentifier: String, disableOpenItem: Bool, itemActionCallback: @escaping (Item, UIAction) -> Void) -> UIDeferredMenuElement {
         UIDeferredMenuElement { [weak self] elementProvider in
             guard let self else {
                 elementProvider([])
                 return
             }
             var actions: [UIAction] = []
-            let openItem: Item? = disableOpenItem ? itemsSortedByLastOpen.first : nil
-            let itemsSortedByUserOrder = itemsSortedByUserOrder
-            var itemTuples: [(Item, RItem)] = filterValidItemsWithRItem(itemsSortedByUserOrder)
+            let openItem: Item? = disableOpenItem ? itemsSortedByLastOpen(for: sessionIdentifier).first : nil
+            let existingItemsSortedByLastOpen = itemsSortedByUserOrder(for: sessionIdentifier)
+            var itemTuples: [(Item, RItem)] = filterValidItemsWithRItem(existingItemsSortedByLastOpen)
             for (item, rItem) in itemTuples {
                 var attributes: UIMenuElement.Attributes = []
                 var state: UIMenuElement.State = .off
@@ -244,6 +252,14 @@ final class OpenItemsController {
     }
     
     // MARK: Helper Methods
+    private func itemsSortedByUserOrder(for sessionIdentifier: String) -> [Item] {
+        getItems(for: sessionIdentifier).sorted(by: { $0.userIndex < $1.userIndex })
+    }
+
+    private func itemsSortedByLastOpen(for sessionIdentifier: String) -> [Item] {
+        getItems(for: sessionIdentifier).sorted(by: { $0.lastOpened > $1.lastOpened })
+    }
+
     private func filterValidItemsWithRItem(_ items: [Item]) -> [(Item, RItem)] {
         var itemTuples: [(Item, RItem)] = []
         do {

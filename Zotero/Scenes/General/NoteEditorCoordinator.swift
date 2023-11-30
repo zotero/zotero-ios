@@ -35,6 +35,7 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
     private let title: NoteEditorState.TitleData?
     private let library: Library
     private let saveCallback: NoteEditorSaveCallback
+    private let sessionIdentifier: String
     private unowned let controllers: Controllers
 
     init(
@@ -45,6 +46,7 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
         title: NoteEditorState.TitleData?,
         saveCallback: @escaping NoteEditorSaveCallback,
         navigationController: NavigationViewController,
+        sessionIdentifier: String,
         controllers: Controllers
     ) {
         self.kind = kind
@@ -54,6 +56,7 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
         self.library = library
         self.saveCallback = saveCallback
         self.navigationController = navigationController
+        self.sessionIdentifier = sessionIdentifier
         self.controllers = controllers
         childCoordinators = []
 
@@ -72,7 +75,7 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
     func start(animated: Bool) {
         guard let dbStorage = controllers.userControllers?.dbStorage, let openItemsController = controllers.userControllers?.openItemsController else { return }
 
-        let state = NoteEditorState(kind: kind, library: library, title: title, text: initialText, tags: initialTags, openItemsCount: openItemsController.items.count)
+        let state = NoteEditorState(kind: kind, library: library, title: title, text: initialText, tags: initialTags, openItemsCount: openItemsController.getItems(for: sessionIdentifier).count)
         let handler = NoteEditorActionHandler(dbStorage: dbStorage, schemaController: controllers.schemaController, saveCallback: saveCallback)
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = NoteEditorViewController(viewModel: viewModel, openItemsController: openItemsController)

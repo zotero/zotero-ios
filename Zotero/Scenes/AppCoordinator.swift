@@ -126,8 +126,8 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
             conflictAlertQueueController = nil
             controllers.userControllers?.syncScheduler.syncController.set(coordinator: nil)
         } else {
-            let controller = MainViewController(controllers: controllers)
             (urlContext, data) = preprocess(connectionOptions: options, session: session)
+            let controller = MainViewController(sessionIdentifier: session.persistentIdentifier, controllers: controllers)
             viewController = controller
 
             conflictReceiverAlertController = ConflictReceiverAlertController(viewController: controller)
@@ -137,7 +137,7 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
 
         DDLogInfo("AppCoordinator: show main screen logged \(isLoggedIn ? "in" : "out"); animated=\(animated)")
         show(viewController: viewController, in: window, animated: animated) {
-            process(urlContext: urlContext, data: data)
+            process(urlContext: urlContext, data: data, sessionIdentifier: session.persistentIdentifier)
         }
 
         func show(viewController: UIViewController?, in window: UIWindow, animated: Bool = false, completion: @escaping () -> Void) {
@@ -160,12 +160,12 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
                 DDLogInfo("AppCoordinator: Preprocessing restored state - \(data)")
                 Defaults.shared.selectedLibrary = data.libraryId
                 Defaults.shared.selectedCollectionId = data.collectionId
-                controllers.userControllers?.openItemsController.setItems(data.openItems, validate: true)
+                controllers.userControllers?.openItemsController.setItems(data.openItems, for: session.persistentIdentifier, validate: true)
             }
             return (urlContext, data)
         }
 
-        func process(urlContext: UIOpenURLContext?, data: RestoredStateData?) {
+        func process(urlContext: UIOpenURLContext?, data: RestoredStateData?, sessionIdentifier: String) {
             if let urlContext, let urlController = controllers.userControllers?.customUrlController {
                 // If scene was started from custom URL
                 let sourceApp = urlContext.options.sourceApplication ?? "unknown"
@@ -180,10 +180,10 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
             if let data, data.restoreMostRecentlyOpenedItem {
                 DDLogInfo("AppCoordinator: Processing restored state - \(data)")
                 // If scene had state stored, restore state
-                showRestoredState(for: data)
+                showRestoredState(for: data, sessionIdentifier: sessionIdentifier)
             }
 
-            func showRestoredState(for data: RestoredStateData) {
+            func showRestoredState(for data: RestoredStateData, sessionIdentifier: String) {
                 guard let openItemsController = controllers.userControllers?.openItemsController else { return }
                 DDLogInfo("AppCoordinator: show restored state")
                 guard let mainController = window.rootViewController as? MainViewController else {
@@ -205,7 +205,7 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
                     collection = Collection(custom: .all)
                 }
                 mainController.showItems(for: collection, in: library)
-                openItemsController.restoreMostRecentlyOpenedItem(using: self)
+                openItemsController.restoreMostRecentlyOpenedItem(using: self, sessionIdentifier: sessionIdentifier)
 
                 func loadRestoredStateData(libraryId: LibraryIdentifier, collectionId: CollectionIdentifier) -> (Library, Collection?)? {
                     guard let dbStorage = controllers.userControllers?.dbStorage else { return nil }

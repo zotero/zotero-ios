@@ -52,7 +52,9 @@ final class NoteEditorViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        set(userActivity: .pdfActivity(with: openItemsController.items, libraryId: viewModel.state.library.identifier, collectionId: Defaults.shared.selectedCollectionId))
+        if let sessionIdentifier = view.scene?.session.persistentIdentifier {
+            set(userActivity: .pdfActivity(with: openItemsController.getItems(for: sessionIdentifier), libraryId: viewModel.state.library.identifier, collectionId: Defaults.shared.selectedCollectionId))
+        }
 
         if let data = viewModel.state.title {
             navigationItem.titleView = NoteEditorTitleView(type: data.type, title: data.title)
@@ -101,16 +103,25 @@ final class NoteEditorViewController: UIViewController {
                     item = done
 
                 case .restoreOpenItems:
-                    let openItems = UIBarButtonItem(image: UIImage(systemName: "\(openItemsController.items.count).square"), style: .plain, target: nil, action: nil)
-                    openItems.isEnabled = true
+                    let openItems: UIBarButtonItem
+                    if let sessionIdentifier = view.scene?.session.persistentIdentifier {
+                        let items = openItemsController.getItems(for: sessionIdentifier)
+                        openItems = UIBarButtonItem(image: UIImage(systemName: "\(items.count).square"), style: .plain, target: nil, action: nil)
+                        openItems.isEnabled = true
+                        if let sessionIdentifier = view.scene?.session.persistentIdentifier {
+                            let deferredOpenItemsMenuElement = openItemsController.deferredOpenItemsMenuElement(for: sessionIdentifier, disableOpenItem: true) { [weak self] item, _ in
+                                guard let self, let coordinatorDelegate else { return }
+                                openItemsController.restore(item, using: coordinatorDelegate)
+                            }
+                            let openItemsMenu = UIMenu(title: "Open Items", options: [.displayInline], children: [deferredOpenItemsMenuElement])
+                            openItems.menu = UIMenu(children: [openItemsMenu])
+                        }
+                    } else {
+                        openItems = UIBarButtonItem(image: UIImage(systemName: "0.square"), style: .plain, target: nil, action: nil)
+                        openItems.isEnabled = false
+                    }
                     openItems.accessibilityLabel = L10n.Accessibility.Pdf.openItems
                     openItems.title = L10n.Accessibility.Pdf.openItems
-                    let deferredOpenItemsMenuElement = openItemsController.deferredOpenItemsMenuElement(disableOpenItem: true) { [weak self] item, _ in
-                        guard let self, let coordinatorDelegate else { return }
-                        openItemsController.restore(item, using: coordinatorDelegate)
-                    }
-                    let openItemsMenu = UIMenu(title: "Open Items", options: [.displayInline], children: [deferredOpenItemsMenuElement])
-                    openItems.menu = UIMenu(children: [openItemsMenu])
                     item = openItems
                 }
 
@@ -140,7 +151,8 @@ final class NoteEditorViewController: UIViewController {
         }
 
         func setupOpenItemsObserving() {
-            openItemsController.observable
+            guard let sessionIdentifier = view.scene?.session.persistentIdentifier else { return }
+            openItemsController.observable(for: sessionIdentifier)
                 .observe(on: MainScheduler.instance)
                 .subscribe(onNext: { [weak self] items in
                     self?.viewModel.process(action: .updateOpenItems(items: items))

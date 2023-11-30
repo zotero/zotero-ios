@@ -653,8 +653,8 @@ final class ItemsViewController: UIViewController {
                 image = UIImage(systemName: "0.square")
                 accessibilityLabel = L10n.Items.restoreOpen
                 action = { [weak self] _ in
-                    guard let self, let presenter, let controller = controllers.userControllers?.openItemsController else { return }
-                    controller.restoreMostRecentlyOpenedItem(using: presenter)
+                    guard let self, let presenter, let controller = controllers.userControllers?.openItemsController, let sessionIdentifier = view.scene?.session.persistentIdentifier else { return }
+                    controller.restoreMostRecentlyOpenedItem(using: presenter, sessionIdentifier: sessionIdentifier)
                 }
             }
             
@@ -718,8 +718,8 @@ final class ItemsViewController: UIViewController {
     }
     
     private func setupOpenItemsObserving() {
-        guard let controller = controllers.userControllers?.openItemsController else { return }
-        controller.observable
+        guard let controller = controllers.userControllers?.openItemsController, let sessionIdentifier = view.scene?.session.persistentIdentifier else { return }
+        controller.observable(for: sessionIdentifier)
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] items in
                 self?.viewModel.process(action: .updateOpenItems(items: items))

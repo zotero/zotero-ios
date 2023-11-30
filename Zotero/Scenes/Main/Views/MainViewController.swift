@@ -24,6 +24,7 @@ protocol MainCoordinatorSyncToolbarDelegate: AnyObject {
 
 final class MainViewController: UISplitViewController {
     // Constants
+    private let sessionIdentifier: String
     private let controllers: Controllers
     private let disposeBag: DisposeBag
     // Variables
@@ -42,7 +43,8 @@ final class MainViewController: UISplitViewController {
 
     // MARK: - Lifecycle
 
-    init(controllers: Controllers) {
+    init(sessionIdentifier: String, controllers: Controllers) {
+        self.sessionIdentifier = sessionIdentifier
         self.controllers = controllers
         self.disposeBag = DisposeBag()
 
@@ -75,7 +77,7 @@ final class MainViewController: UISplitViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        self.set(userActivity: .mainActivity(with: controllers.userControllers?.openItemsController.items ?? []))
+        self.set(userActivity: .mainActivity(with: controllers.userControllers?.openItemsController.getItems(for: sessionIdentifier) ?? []))
         self.didAppear = true
     }
 
@@ -97,6 +99,7 @@ final class MainViewController: UISplitViewController {
             searchItemKeys: searchItemKeys,
             navigationController: navigationController,
             itemsTagFilterDelegate: tagFilterController,
+            sessionIdentifier: sessionIdentifier,
             controllers: self.controllers
         )
         coordinator.start(animated: false)
