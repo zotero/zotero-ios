@@ -74,6 +74,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
     unowned let dbStorage: DbStorage
     private unowned let annotationPreviewController: AnnotationPreviewController
+    private unowned let pdfThumbnailController: PdfThumbnailController
     private unowned let htmlAttributedStringConverter: HtmlAttributedStringConverter
     private unowned let schemaController: SchemaController
     private unowned let fileStorage: FileStorage
@@ -89,6 +90,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     init(
         dbStorage: DbStorage,
         annotationPreviewController: AnnotationPreviewController,
+        pdfThumbnailController: PdfThumbnailController,
         htmlAttributedStringConverter: HtmlAttributedStringConverter,
         schemaController: SchemaController,
         fileStorage: FileStorage,
@@ -97,6 +99,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     ) {
         self.dbStorage = dbStorage
         self.annotationPreviewController = annotationPreviewController
+        self.pdfThumbnailController = pdfThumbnailController
         self.htmlAttributedStringConverter = htmlAttributedStringConverter
         self.schemaController = schemaController
         self.fileStorage = fileStorage
@@ -211,10 +214,12 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         case .export(let settings):
             self.export(settings: settings, viewModel: viewModel)
 
-        case .clearTmpAnnotationPreviews:
+        case .clearTmpData:
             /// Annotations which originate from document and are not synced generate their previews based on annotation UUID, which is in-memory and is not stored in PDF. So these previews are only
             /// temporary and should be cleared when user closes the document.
             self.annotationPreviewController.deleteAll(parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
+            // Clear page thumbnails
+            self.pdfThumbnailController.deleteAll(forKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
 
         case .setSettings(let settings, let userInterfaceStyle):
             self.update(settings: settings, currentInterfaceStyle: userInterfaceStyle, in: viewModel)

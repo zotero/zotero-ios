@@ -507,7 +507,7 @@ class PDFReaderViewController: UIViewController {
             self.viewModel.process(action: .submitPendingPage(Int(page)))
         }
         self.viewModel.process(action: .changeIdleTimerDisabled(false))
-        self.viewModel.process(action: .clearTmpAnnotationPreviews)
+        self.viewModel.process(action: .clearTmpData)
         self.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
     }
 

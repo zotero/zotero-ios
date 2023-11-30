@@ -132,6 +132,8 @@ final class AttachmentFileCleanupController {
             // Annotations are not guaranteed to exist and they can be removed even if the parent PDF was not deleted due to upload state.
             // These are generated on device, so they'll just be recreated.
             try? self.fileStorage.remove(Files.annotationPreviews)
+            // Remove page thumbnails
+            try? self.fileStorage.remove(Files.pageThumbnails)
             // When removing all local files clear cache as well.
             try? self.fileStorage.remove(Files.cache)
 
@@ -169,6 +171,8 @@ final class AttachmentFileCleanupController {
             // Annotations are not guaranteed to exist and they can be removed even if the parent PDF was not deleted due to upload state.
             // These are generated on device, so they'll just be recreated.
             try? self.fileStorage.remove(Files.annotationPreviews(for: libraryId))
+            // Cleanup page thumbnails
+            try? self.fileStorage.remove(Files.pageThumbnails(for: libraryId))
 
             if let keys = deletedIndividually[libraryId], !keys.isEmpty {
                 return .allForItems(keys, libraryId)
@@ -319,5 +323,7 @@ final class AttachmentFileCleanupController {
         try self.fileStorage.remove(Files.attachmentDirectory(in: libraryId, key: key))
         // Annotations are not guaranteed to exist.
         try? self.fileStorage.remove(Files.annotationPreviews(for: key, libraryId: libraryId))
+        // Cleanup page thumbnails
+        try? self.fileStorage.remove(Files.pageThumbnails(for: key, libraryId: libraryId))
     }
 }
