@@ -377,6 +377,11 @@
 		B3100922272C098D003FC743 /* ReadWebDavDeletionsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3100920272C0960003FC743 /* ReadWebDavDeletionsDbRequest.swift */; };
 		B3100927272C2441003FC743 /* DeleteWebDavFilesSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3100926272C2441003FC743 /* DeleteWebDavFilesSyncAction.swift */; };
 		B3100928272C32E9003FC743 /* DeleteWebDavFilesSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3100926272C2441003FC743 /* DeleteWebDavFilesSyncAction.swift */; };
+		B31028052B1E012A00E41554 /* PdfThumbnailsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31028042B1E012A00E41554 /* PdfThumbnailsViewController.swift */; };
+		B31028072B1E070F00E41554 /* PdfThumbnailsCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31028062B1E070F00E41554 /* PdfThumbnailsCell.swift */; };
+		B31028092B1E16E200E41554 /* PdfThumbnailsActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31028082B1E16E200E41554 /* PdfThumbnailsActionHandler.swift */; };
+		B310280B2B1E16EC00E41554 /* PdfThumbnailsState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B310280A2B1E16EC00E41554 /* PdfThumbnailsState.swift */; };
+		B310280D2B1E16F300E41554 /* PdfThumbnailsAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B310280C2B1E16F300E41554 /* PdfThumbnailsAction.swift */; };
 		B310FA4529E5765800FA2F15 /* AddTagsToItemDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B310FA4429E5765800FA2F15 /* AddTagsToItemDbRequest.swift */; };
 		B311B3222386A39800BCF592 /* MainInterface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B311B3202386A39800BCF592 /* MainInterface.storyboard */; };
 		B311B3262386A39800BCF592 /* ZShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B311B31C2386A39800BCF592 /* ZShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -1414,6 +1419,11 @@
 		B310091C272C0126003FC743 /* DeleteWebDavDeletionsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteWebDavDeletionsDbRequest.swift; sourceTree = "<group>"; };
 		B3100920272C0960003FC743 /* ReadWebDavDeletionsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadWebDavDeletionsDbRequest.swift; sourceTree = "<group>"; };
 		B3100926272C2441003FC743 /* DeleteWebDavFilesSyncAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteWebDavFilesSyncAction.swift; sourceTree = "<group>"; };
+		B31028042B1E012A00E41554 /* PdfThumbnailsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PdfThumbnailsViewController.swift; sourceTree = "<group>"; };
+		B31028062B1E070F00E41554 /* PdfThumbnailsCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PdfThumbnailsCell.swift; sourceTree = "<group>"; };
+		B31028082B1E16E200E41554 /* PdfThumbnailsActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PdfThumbnailsActionHandler.swift; sourceTree = "<group>"; };
+		B310280A2B1E16EC00E41554 /* PdfThumbnailsState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PdfThumbnailsState.swift; sourceTree = "<group>"; };
+		B310280C2B1E16F300E41554 /* PdfThumbnailsAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PdfThumbnailsAction.swift; sourceTree = "<group>"; };
 		B310FA4429E5765800FA2F15 /* AddTagsToItemDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTagsToItemDbRequest.swift; sourceTree = "<group>"; };
 		B311B31C2386A39800BCF592 /* ZShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ZShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B311B3212386A39800BCF592 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/MainInterface.storyboard; sourceTree = "<group>"; };
@@ -2779,6 +2789,8 @@
 				B3F5B08027D1001B00AA81C0 /* PDFSettingsSegmentedCellContentView.xib */,
 				B3ADBCB727CFB64B00B7041F /* PDFSettingsViewController.swift */,
 				B373877228FEA0C7004E5031 /* PDFSidebarViewController.swift */,
+				B31028062B1E070F00E41554 /* PdfThumbnailsCell.swift */,
+				B31028042B1E012A00E41554 /* PdfThumbnailsViewController.swift */,
 				B3BD86BB258CBCD600EF6674 /* SearchBar.swift */,
 				B3A47C3329014F8F00E7D90D /* SearchBarCell.swift */,
 				B39AF553290033CD001F400F /* TableOfContentsViewController.swift */,
@@ -3565,6 +3577,8 @@
 				B35B473B25F11BCD0023B6F4 /* PDFSettings.swift */,
 				B3ADBCBB27CFB67A00B7041F /* PDFSettingsAction.swift */,
 				B37381A627CE6EDE005AD721 /* PDFSettingsState.swift */,
+				B310280C2B1E16F300E41554 /* PdfThumbnailsAction.swift */,
+				B310280A2B1E16EC00E41554 /* PdfThumbnailsState.swift */,
 				B37BF0AA25A5E2AD00AE0268 /* SquareAnnotation.swift */,
 				B3A47C3729015FDD00E7D90D /* TableOfContentsAction.swift */,
 				B3A47C3929015FE800E7D90D /* TableOfContentsState.swift */,
@@ -3578,6 +3592,7 @@
 				B30BE126297AAD9E000AED6A /* AnnotationToolOptionsActionHandler.swift */,
 				B3B953CB245981C100FC96DB /* PDFReaderActionHandler.swift */,
 				B3ADBCB927CFB66C00B7041F /* PDFSettingsActionHandler.swift */,
+				B31028082B1E16E200E41554 /* PdfThumbnailsActionHandler.swift */,
 				B3A47C3529015FCE00E7D90D /* TableOfContentsActionHandler.swift */,
 			);
 			path = ViewModels;
@@ -4624,6 +4639,7 @@
 				B367330D24ACB63300E0CDA8 /* HtmlAttributedStringConverter.swift in Sources */,
 				B30565C823FC051E003304F2 /* EditNoteDbRequest.swift in Sources */,
 				B30565D823FC051E003304F2 /* CreateNoteDbRequest.swift in Sources */,
+				B31028092B1E16E200E41554 /* PdfThumbnailsActionHandler.swift in Sources */,
 				B3C6D552261C9F2E0068B9FE /* PlaceholderTextViewDelegate.swift in Sources */,
 				B357A290285B74DF00E73CA1 /* ScannerActionHandler.swift in Sources */,
 				B3E8FE76271434F200F51458 /* GeneralSettingsView.swift in Sources */,
@@ -4666,6 +4682,7 @@
 				B3B78C46266FAF8500E91D02 /* WKWebView+Extensions.swift in Sources */,
 				B3593F182668E6A700FA4BB2 /* StyleParserDelegate.swift in Sources */,
 				B3981427257A5A16002C755C /* AnnotationView.swift in Sources */,
+				B31028072B1E070F00E41554 /* PdfThumbnailsCell.swift in Sources */,
 				B36181FD24C9A7C000B30D56 /* LoginError.swift in Sources */,
 				B3F55A1B29EED4EA00A6716E /* ReadColoredTagsDbRequest.swift in Sources */,
 				B3A47C3629015FCE00E7D90D /* TableOfContentsActionHandler.swift in Sources */,
@@ -4761,6 +4778,7 @@
 				B3E8FE3827142A8B00F51458 /* StylePickerView.swift in Sources */,
 				B30565D123FC051E003304F2 /* MarkAttachmentUploadedDbRequest.swift in Sources */,
 				B310091A272C00BA003FC743 /* CreateWebDavDeletionsDbRequest.swift in Sources */,
+				B310280D2B1E16F300E41554 /* PdfThumbnailsAction.swift in Sources */,
 				B30B40632490F09400FAAF6D /* FileAttachmentView.swift in Sources */,
 				B3D0AC98255C14AB007648F5 /* PDFReaderLayout.swift in Sources */,
 				B353F1FB242E21880062EE24 /* ResetTranslatorsDbRequest.swift in Sources */,
@@ -4933,6 +4951,7 @@
 				B3E8FE30271429C300F51458 /* ExportLocalePickerAction.swift in Sources */,
 				B361820124C9A7C000B30D56 /* OnboardingPageView.swift in Sources */,
 				B3D3FCA9267762EC008E243A /* ExportLocaleReader.swift in Sources */,
+				B31028052B1E012A00E41554 /* PdfThumbnailsViewController.swift in Sources */,
 				B30565CA23FC051E003304F2 /* PerformDeletionsDbRequest.swift in Sources */,
 				B36181FE24C9A7C000B30D56 /* OnboardingLayout.swift in Sources */,
 				B398A915270C6A4300968EE8 /* WebDavController.swift in Sources */,
@@ -5197,6 +5216,7 @@
 				B3242CCD246ABBAF00D8748F /* AnnotationsConfig.swift in Sources */,
 				B305669923FC051F003304F2 /* RCreator.swift in Sources */,
 				B355B12C2850B6C400BAE2C5 /* TableViewDiffableDataSource.swift in Sources */,
+				B310280B2B1E16EC00E41554 /* PdfThumbnailsState.swift in Sources */,
 				B3B953CC245981C100FC96DB /* PDFReaderActionHandler.swift in Sources */,
 				B385B70E25C03E7E0073CA6F /* PDFExportState.swift in Sources */,
 			);

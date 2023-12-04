@@ -45,7 +45,7 @@ extension PdfThumbnailController {
     /// Start rendering process of multiple thumbnails per document.
     /// - parameter pages: Page indices which should be rendered.
     /// - parameter 
-    func cache(pages: Set<UInt>, key: String, libraryId: LibraryIdentifier, document: Document, imageSize: CGSize, imageScale: CGFloat, isDark: Bool) -> Observable<()> {
+    func cache(pages: [UInt], key: String, libraryId: LibraryIdentifier, document: Document, imageSize: CGSize, imageScale: CGFloat, isDark: Bool) -> Observable<()> {
         let observables = pages.map({
             cache(page: $0, key: key, libraryId: libraryId, document: document, imageSize: imageSize, imageScale: imageScale, isDark: isDark).flatMap({ _ in return Single.just(()) }).asObservable()
         })
@@ -81,6 +81,22 @@ extension PdfThumbnailController {
     /// - returns: `true` if thumbnail is available, `false` otherwise.
     func hasThumbnail(page: UInt, key: String, libraryId: LibraryIdentifier, isDark: Bool) -> Bool {
         return fileStorage.has(Files.pageThumbnail(pageIndex: page, key: key, libraryId: libraryId, isDark: isDark))
+    }
+
+    /// Loads thumbnail from cached file
+    /// - parameter page: Page index.
+    /// - parameter key: Key of PDF item.
+    /// - parameter libraryId: Library identifier of item.
+    /// - parameter isDark: `true` if dark mode is on, `false` otherwise.
+    /// - returns: UIImage of given page thumbnail.
+    func thumbnail(page: UInt, key: String, libraryId: LibraryIdentifier, isDark: Bool) -> UIImage? {
+        do {
+            let data = try fileStorage.read(Files.pageThumbnail(pageIndex: page, key: key, libraryId: libraryId, isDark: isDark))
+            return try UIImage(imageData: data)
+        } catch let error {
+            DDLogError("PdfThumbnailController: can't load thumbnail - \(error)")
+            return nil
+        }
     }
 
     /// Creates and enqueues a render request for PSPDFKit rendering engine.

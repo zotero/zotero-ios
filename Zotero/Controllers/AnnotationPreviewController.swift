@@ -103,7 +103,7 @@ extension AnnotationPreviewController {
         // Cache and report original color
         let rect = annotation.previewBoundingBox
         self.enqueue(
-            key: annotation.previewId, 
+            key: annotation.previewId,
             parentKey: parentKey,
             libraryId: libraryId,
             document: document,
@@ -189,7 +189,7 @@ extension AnnotationPreviewController {
     ///                   cached locally and reported through `PublishSubject`.
     private func enqueue(
         key: String,
-        parentKey: String, 
+        parentKey: String,
         libraryId: LibraryIdentifier,
         document: Document,
         pageIndex: PageIndex,

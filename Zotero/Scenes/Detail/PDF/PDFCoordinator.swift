@@ -84,6 +84,7 @@ final class PDFCoordinator: Coordinator {
         let handler = PDFReaderActionHandler(
             dbStorage: dbStorage,
             annotationPreviewController: self.controllers.annotationPreviewController,
+            pdfThumbnailController: self.controllers.pdfThumbnailController,
             htmlAttributedStringConverter: self.controllers.htmlAttributedStringConverter,
             schemaController: self.controllers.schemaController,
             fileStorage: self.controllers.fileStorage,
