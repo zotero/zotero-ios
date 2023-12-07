@@ -17,6 +17,14 @@ struct PdfThumbnailsState: ViewModelState {
         let rawValue: UInt8
 
         static let userInterface = Changes(rawValue: 1 << 0)
+        static let pages = Changes(rawValue: 1 << 1)
+        static let selection = Changes(rawValue: 1 << 2)
+        static let scrollToSelection = Changes(rawValue: 1 << 3)
+    }
+
+    enum SelectionType {
+        case fromDocument
+        case fromSidebar
     }
 
     let thumbnailSize: CGSize
@@ -25,22 +33,25 @@ struct PdfThumbnailsState: ViewModelState {
     let libraryId: LibraryIdentifier
 
     let cache: NSCache<NSNumber, UIImage>
+    var pages: [String]
     var isDark: Bool
-    var loadedThumbnail: UInt?
+    var loadedThumbnail: Int?
+    var selectedPageIndex: Int
     var changes: Changes
 
-    init(key: String, libraryId: LibraryIdentifier, document: Document, isDark: Bool) {
+    init(key: String, libraryId: LibraryIdentifier, document: Document, selectedPageIndex: Int, isDark: Bool) {
         self.cache = NSCache()
-        self.thumbnailSize = CGSize(width: 100, height: 100)
+        self.thumbnailSize = CGSize(width: PdfThumbnailsLayout.cellImageHeight, height: PdfThumbnailsLayout.cellImageHeight)
         self.key = key
         self.libraryId = libraryId
         self.document = document
+        self.selectedPageIndex = selectedPageIndex
         self.isDark = isDark
         self.changes = []
+        self.pages = []
     }
 
     mutating func cleanup() {
         self.changes = []
     }
 }
-

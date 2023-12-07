@@ -212,7 +212,6 @@ class PDFReaderViewController: UIViewController {
         self.setupNavigationBar()
         self.setupGestureRecognizer()
         self.setupObserving()
-
         self.updateInterface(to: self.viewModel.state.settings)
 
         if !self.viewModel.state.document.isLocked {

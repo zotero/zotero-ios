@@ -39,8 +39,8 @@ final class PDFDocumentViewController: UIViewController {
     var scrubberBarHeight: CGFloat {
         return self.pdfController?.userInterfaceView.scrubberBar.frame.height ?? 0
     }
-
     private var searchResults: [SearchResult] = []
+    private var isScrollingToVisiblePage = false
 
     weak var parentDelegate: (PDFReaderContainerDelegate & PDFDocumentDelegate)?
     weak var coordinatorDelegate: PdfReaderCoordinatorDelegate?
@@ -232,6 +232,12 @@ final class PDFDocumentViewController: UIViewController {
             }
 
             self.showPopupAnnotationIfNeeded(state: state)
+        }
+
+        if state.changes.contains(.scrollToVisiblePage) {
+            isScrollingToVisiblePage = true
+            pdfController.setPageIndex(PageIndex(state.visiblePage), animated: false)
+            isScrollingToVisiblePage = false
         }
 
         if let tool = state.changedColorForTool, let color = state.toolColors[tool] {
@@ -569,9 +575,14 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
 
         // This delegate method is called for incorrect page index when sidebar is changing size. So if the sidebar is opened/closed, incorrect page
         // is stored in `pageController` and if the user closes the pdf reader without further scrolling, incorrect page is shown on next opening.
-        guard !(self.parentDelegate?.isSidebarTransitioning ?? false) && self.parentDelegate?.isCurrentlyVisible == true else { return }
+        guard !(self.parentDelegate?.isSidebarTransitioning ?? false) && self.parentDelegate?.isCurrentlyVisible == true && !isScrollingToVisiblePage else { return }
         // Save current page
-        self.viewModel.process(action: .setVisiblePage(Int(pdfController.pageIndex)))
+        self.viewModel.process(action: .setVisiblePage(page: Int(pageIndex), scrollToPage: false))
+    }
+
+    func pdfViewController(_ pdfController: PDFViewController, didEndDisplaying pageView: PDFPageView, forPageAt pageIndex: Int) {
+        guard !(self.parentDelegate?.isSidebarTransitioning ?? false) && self.parentDelegate?.isCurrentlyVisible == true && !isScrollingToVisiblePage else { return }
+        self.viewModel.process(action: .setVisiblePage(page: Int(pdfController.pageIndex), scrollToPage: false))
     }
 
     func pdfViewController(_ pdfController: PDFViewController, shouldShow controller: UIViewController, options: [String: Any]? = nil, animated: Bool) -> Bool {
@@ -582,7 +593,13 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
         return false
     }
 
-    func pdfViewController(_ sender: PDFViewController, menuForAnnotations annotations: [PSPDFKit.Annotation], onPageView pageView: PDFPageView, appearance: EditMenuAppearance, suggestedMenu: UIMenu) -> UIMenu {
+    func pdfViewController(
+        _ sender: PDFViewController,
+        menuForAnnotations annotations: [PSPDFKit.Annotation],
+        onPageView pageView: PDFPageView,
+        appearance: EditMenuAppearance,
+        suggestedMenu: UIMenu
+    ) -> UIMenu {
         return UIMenu(children: [])
     }
 

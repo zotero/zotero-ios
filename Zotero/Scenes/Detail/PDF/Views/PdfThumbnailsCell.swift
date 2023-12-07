@@ -13,12 +13,20 @@ import RxSwift
 final class PdfThumbnailsCell: UICollectionViewListCell {
     private(set) var disposeBag: DisposeBag = DisposeBag()
 
+    override var isSelected: Bool {
+        didSet {
+            (self.contentView as? ContentView)?.selectionBackground.isHidden = !isSelected
+        }
+    }
+
     override func prepareForReuse() {
         super.prepareForReuse()
+        (self.contentView as? ContentView)?.selectionBackground.isHidden = !isSelected
         self.disposeBag = DisposeBag()
     }
 
     struct ContentConfiguration: UIContentConfiguration {
+        let label: String
         let image: UIImage?
 
         func makeContentView() -> UIView & UIContentView {
@@ -34,11 +42,15 @@ final class PdfThumbnailsCell: UICollectionViewListCell {
         var configuration: UIContentConfiguration {
             didSet {
                 guard let configuration = self.configuration as? ContentConfiguration else { return }
-                self.apply(configuration: configuration)
+                apply(configuration: configuration)
             }
         }
 
+        fileprivate weak var selectionBackground: UIView!
         private weak var imageView: UIImageView!
+        private weak var imageViewHeight: NSLayoutConstraint!
+        private weak var imageViewWidth: NSLayoutConstraint!
+        private weak var label: UILabel!
         private weak var activityIndicator: UIActivityIndicatorView!
 
         init(configuration: ContentConfiguration) {
@@ -46,9 +58,9 @@ final class PdfThumbnailsCell: UICollectionViewListCell {
 
             super.init(frame: .zero)
 
-            self.backgroundColor = .systemGray6
-            self.setupView()
-            self.apply(configuration: configuration)
+            backgroundColor = .systemGray6
+            setupView()
+            apply(configuration: configuration)
         }
 
         required init?(coder: NSCoder) {
@@ -57,37 +69,81 @@ final class PdfThumbnailsCell: UICollectionViewListCell {
 
         private func apply(configuration: ContentConfiguration) {
             if let image = configuration.image {
-                imageView.image = configuration.image
+                imageViewWidth.constant = (image.size.width / image.size.height) * imageViewHeight.constant
+                imageView.image = image
+                label.text = configuration.label
                 imageView.isHidden = false
+                label.isHidden = false
                 activityIndicator.stopAnimating()
             } else {
                 imageView.isHidden = true
+                label.isHidden = true
                 activityIndicator.isHidden = false
                 activityIndicator.startAnimating()
             }
         }
 
         private func setupView() {
+            let selectionBackground = UIView()
+            selectionBackground.translatesAutoresizingMaskIntoConstraints = false
+            selectionBackground.backgroundColor = .systemGray3
+            selectionBackground.layer.cornerRadius = 8
+            selectionBackground.layer.masksToBounds = true
+            selectionBackground.isHidden = true
+            addSubview(selectionBackground)
+            self.selectionBackground = selectionBackground
+
             let activityIndicator = UIActivityIndicatorView(style: .medium)
+            activityIndicator.translatesAutoresizingMaskIntoConstraints = false
             activityIndicator.tintColor = .gray
             activityIndicator.hidesWhenStopped = true
             activityIndicator.isHidden = true
             addSubview(activityIndicator)
+            self.activityIndicator = activityIndicator
 
             let imageView = UIImageView()
             imageView.translatesAutoresizingMaskIntoConstraints = false
             imageView.contentMode = .scaleAspectFit
             addSubview(imageView)
+            self.imageView = imageView
+
+            let label = UILabel()
+            label.textAlignment = .center
+            label.font = .preferredFont(forTextStyle: .body)
+            label.translatesAutoresizingMaskIntoConstraints = false
+            label.setContentHuggingPriority(.required, for: .vertical)
+            label.setContentCompressionResistancePriority(.required, for: .vertical)
+            addSubview(label)
+            self.label = label
+
+            let imageViewHeight = imageView.heightAnchor.constraint(equalToConstant: PdfThumbnailsLayout.cellImageHeight)
+            imageViewHeight.priority = .init(999)
+            self.imageViewHeight = imageViewHeight
+            let imageViewWidth = imageView.widthAnchor.constraint(equalToConstant: 0)
+            imageViewWidth.priority = .defaultHigh
+            self.imageViewWidth = imageViewWidth
+            let imageViewLeading = imageView.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: PdfThumbnailsLayout.cellImageHorizontalMinInset)
+            imageViewLeading.priority = .required
+            let imageViewTrailing = trailingAnchor.constraint(greaterThanOrEqualTo: imageView.trailingAnchor, constant: PdfThumbnailsLayout.cellImageHorizontalMinInset)
+            imageViewTrailing.priority = .required
 
             NSLayoutConstraint.activate([
                 activityIndicator.centerXAnchor.constraint(equalTo: centerXAnchor),
                 activityIndicator.centerYAnchor.constraint(equalTo: centerYAnchor),
                 imageView.centerXAnchor.constraint(equalTo: centerXAnchor),
-                imageView.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: 15),
-                trailingAnchor.constraint(greaterThanOrEqualTo: imageView.trailingAnchor, constant: 15),
-                imageView.topAnchor.constraint(greaterThanOrEqualTo: topAnchor, constant: 20),
-                imageView.bottomAnchor.constraint(equalTo: bottomAnchor),
-                heightAnchor.constraint(equalToConstant: 100)
+                imageViewLeading,
+                imageViewTrailing,
+                imageView.topAnchor.constraint(equalTo: topAnchor, constant: PdfThumbnailsLayout.cellImageTopInset),
+                label.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: PdfThumbnailsLayout.cellLabelTopInset),
+                label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: PdfThumbnailsLayout.cellImageHorizontalMinInset),
+                trailingAnchor.constraint(equalTo: label.trailingAnchor, constant: PdfThumbnailsLayout.cellImageHorizontalMinInset),
+                label.bottomAnchor.constraint(equalTo: bottomAnchor),
+                imageView.topAnchor.constraint(equalTo: selectionBackground.topAnchor, constant: 10),
+                selectionBackground.bottomAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 10),
+                imageView.leadingAnchor.constraint(equalTo: selectionBackground.leadingAnchor, constant: 10),
+                selectionBackground.trailingAnchor.constraint(equalTo: imageView.trailingAnchor, constant: 10),
+                imageViewHeight,
+                imageViewWidth
             ])
         }
     }

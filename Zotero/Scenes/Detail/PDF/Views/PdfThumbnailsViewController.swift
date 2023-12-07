@@ -10,29 +10,37 @@ import UIKit
 
 import RxSwift
 
-class PdfThumbnailsViewController: UIViewController {
+class PdfThumbnailsViewController: UICollectionViewController {
     private static var cellId: String = "CellId"
 
-    private unowned let viewModel: ViewModel<PdfThumbnailsActionHandler>
+    private let viewModel: ViewModel<PdfThumbnailsActionHandler>
     private let disposeBag: DisposeBag
 
-    private weak var collectionView: UICollectionView!
-    private var dataSource: UICollectionViewDiffableDataSource<Int, UInt>!
+    private var dataSource: UICollectionViewDiffableDataSource<Int, String>!
 
-    private lazy var cellRegistration: UICollectionView.CellRegistration<PdfThumbnailsCell, UInt> = {
-        return UICollectionView.CellRegistration<PdfThumbnailsCell, UInt> { [weak self] cell, _, pageIndex in
-            let image = self?.viewModel.state.cache.object(forKey: NSNumber(value: pageIndex))
+    private lazy var cellRegistration: UICollectionView.CellRegistration<PdfThumbnailsCell, String> = {
+        return UICollectionView.CellRegistration<PdfThumbnailsCell, String> { [weak self] cell, indexPath, label in
+            let image = self?.viewModel.state.cache.object(forKey: NSNumber(value: indexPath.row))
             if image == nil {
-                self?.viewModel.process(action: .load(pageIndex))
+                self?.viewModel.process(action: .load(UInt(indexPath.row)))
             }
-            cell.contentConfiguration = PdfThumbnailsCell.ContentConfiguration(image: image)
+            cell.contentConfiguration = PdfThumbnailsCell.ContentConfiguration(label: label, image: image)
         }
     }()
 
     init(viewModel: ViewModel<PdfThumbnailsActionHandler>) {
         self.viewModel = viewModel
         self.disposeBag = DisposeBag()
-        super.init(nibName: nil, bundle: nil)
+
+        let layout = UICollectionViewCompositionalLayout { _, environment in
+            var configuration = UICollectionLayoutListConfiguration(appearance: .insetGrouped)
+            configuration.showsSeparators = false
+            let section = NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)
+            section.contentInsets = PdfThumbnailsLayout.contentInsets
+            return section
+        }
+
+        super.init(collectionViewLayout: layout)
     }
     
     required init?(coder: NSCoder) {
@@ -42,7 +50,8 @@ class PdfThumbnailsViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        setupViews()
+        view.backgroundColor = .systemGray6
+        setupCollectionView()
 
         viewModel.stateObservable
             .observe(on: MainScheduler.instance)
@@ -51,9 +60,7 @@ class PdfThumbnailsViewController: UIViewController {
             })
             .disposed(by: disposeBag)
 
-
-        func setupViews() {
-            let collectionView = UICollectionView()
+        func setupCollectionView() {
             let registration = cellRegistration
             dataSource = UICollectionViewDiffableDataSource(collectionView: collectionView, cellProvider: { collectionView, indexPath, itemIdentifier in
                 return collectionView.dequeueConfiguredReusableCell(using: registration, for: indexPath, item: itemIdentifier)
@@ -61,8 +68,13 @@ class PdfThumbnailsViewController: UIViewController {
             collectionView.dataSource = dataSource
             collectionView.delegate = self
             collectionView.prefetchDataSource = self
-            self.collectionView = collectionView
+            collectionView.backgroundColor = .systemGray6
         }
+    }
+
+    override func viewIsAppearing(_ animated: Bool) {
+        super.viewIsAppearing(animated)
+        viewModel.process(action: .loadPages)
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
@@ -71,10 +83,26 @@ class PdfThumbnailsViewController: UIViewController {
         self.viewModel.process(action: .setUserInterface(isDark: traitCollection.userInterfaceStyle == .dark))
     }
 
+    func set(visiblePage: Int) {
+        viewModel.process(action: .setSelectedPage(pageIndex: visiblePage, type: .fromDocument))
+    }
+
     private func update(state: PdfThumbnailsState) {
-        if let index = state.loadedThumbnail {
+        if state.changes.contains(.pages) {
+            var snapshot = NSDiffableDataSourceSnapshot<Int, String>()
+            snapshot.appendSections([0])
+            snapshot.appendItems(state.pages)
+            dataSource.apply(snapshot) { [weak self] in
+                guard let self else { return }
+                let indexPath = IndexPath(row: self.viewModel.state.selectedPageIndex, section: 0)
+                self.collectionView.selectItem(at: indexPath, animated: false, scrollPosition: .centeredVertically)
+            }
+        }
+
+        if let index = state.loadedThumbnail, index < dataSource.snapshot().itemIdentifiers.count {
             var snapshot = dataSource.snapshot()
-            snapshot.reloadItems([index])
+            let label = dataSource.snapshot().itemIdentifiers[index]
+            snapshot.reloadItems([label])
             dataSource.apply(snapshot)
         }
 
@@ -83,18 +111,23 @@ class PdfThumbnailsViewController: UIViewController {
             snapshot.reloadSections([0])
             dataSource.apply(snapshot)
         }
+
+        if state.changes.contains(.scrollToSelection) {
+            let indexPath = IndexPath(row: state.selectedPageIndex, section: 0)
+            collectionView.selectItem(at: indexPath, animated: true, scrollPosition: .centeredVertically)
+        }
     }
 }
 
 extension PdfThumbnailsViewController: UICollectionViewDataSourcePrefetching {
     func collectionView(_ collectionView: UICollectionView, prefetchItemsAt indexPaths: [IndexPath]) {
-        let toFetch = indexPaths.compactMap({ dataSource.itemIdentifier(for: $0) }).map(UInt.init)
+        let toFetch = indexPaths.map({ $0.row }).map(UInt.init)
         viewModel.process(action: .prefetch(toFetch))
     }
 }
 
-extension PdfThumbnailsViewController: UICollectionViewDelegate {
-    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        collectionView.deselectItem(at: indexPath, animated: true)
+extension PdfThumbnailsViewController {
+    override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        viewModel.process(action: .setSelectedPage(pageIndex: indexPath.row, type: .fromSidebar))
     }
 }

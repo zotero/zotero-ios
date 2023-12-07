@@ -74,7 +74,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
     unowned let dbStorage: DbStorage
     private unowned let annotationPreviewController: AnnotationPreviewController
-    private unowned let pdfThumbnailController: PdfThumbnailController
+    unowned let pdfThumbnailController: PdfThumbnailController
     private unowned let htmlAttributedStringConverter: HtmlAttributedStringConverter
     private unowned let schemaController: SchemaController
     private unowned let fileStorage: FileStorage
@@ -203,13 +203,13 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         case .createHighlight(let pageIndex, let rects):
             self.addHighlight(onPage: pageIndex, rects: rects, in: viewModel)
 
-        case .setVisiblePage(let page):
-            self.set(page: page, in: viewModel)
+        case .setVisiblePage(let page, let scrollToPage):
+            self.set(page: page, scrollToPage: scrollToPage, in: viewModel)
 
         case .submitPendingPage(let page):
             guard self.pageDebounceDisposeBag != nil else { return }
             self.pageDebounceDisposeBag = nil
-            self._set(page: page, in: viewModel)
+            self.store(page: page, in: viewModel)
 
         case .export(let settings):
             self.export(settings: settings, viewModel: viewModel)
@@ -469,28 +469,30 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         self.userInterfaceChanged(interfaceStyle: newUserInterfaceStyle, in: viewModel)
     }
 
-    private func set(page: Int, in viewModel: ViewModel<PDFReaderActionHandler>) {
-        self.pageDebounceDisposeBag = nil
-
-        let disposeBag = DisposeBag()
-
-        Single<Int>.timer(.seconds(3), scheduler: MainScheduler.instance)
-                   .subscribe(onSuccess: { [weak self, weak viewModel] _ in
-                       guard let self = self, let viewModel = viewModel else { return }
-                       self._set(page: page, in: viewModel)
-                       self.pageDebounceDisposeBag = nil
-                   })
-                   .disposed(by: disposeBag)
-        self.pageDebounceDisposeBag = disposeBag
-    }
-
-    private func _set(page: Int, in viewModel: ViewModel<PDFReaderActionHandler>) {
+    private func set(page: Int, scrollToPage: Bool, in viewModel: ViewModel<PDFReaderActionHandler>) {
         guard viewModel.state.visiblePage != page else { return }
 
         self.update(viewModel: viewModel) { state in
             state.visiblePage = page
+            state.changes = .visiblePage
+            if scrollToPage {
+                state.changes.insert(.scrollToVisiblePage)
+            }
         }
 
+        let disposeBag = DisposeBag()
+        self.pageDebounceDisposeBag = disposeBag
+
+        Single<Int>.timer(.seconds(3), scheduler: MainScheduler.instance)
+                   .subscribe(onSuccess: { [weak self, weak viewModel] _ in
+                       guard let self = self, let viewModel = viewModel else { return }
+                       self.store(page: page, in: viewModel)
+                       self.pageDebounceDisposeBag = nil
+                   })
+                   .disposed(by: disposeBag)
+    }
+
+    private func store(page: Int, in viewModel: ViewModel<PDFReaderActionHandler>) {
         let request = StorePageForItemDbRequest(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, page: "\(page)")
         self.perform(request: request) { error in
             guard let error = error else { return }

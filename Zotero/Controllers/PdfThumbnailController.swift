@@ -22,7 +22,6 @@ final class PdfThumbnailController: NSObject {
         let libraryId: LibraryIdentifier
         let page: UInt
         let size: CGSize
-        let scale: CGFloat
         let isDark: Bool
     }
 
@@ -45,21 +44,21 @@ extension PdfThumbnailController {
     /// Start rendering process of multiple thumbnails per document.
     /// - parameter pages: Page indices which should be rendered.
     /// - parameter 
-    func cache(pages: [UInt], key: String, libraryId: LibraryIdentifier, document: Document, imageSize: CGSize, imageScale: CGFloat, isDark: Bool) -> Observable<()> {
+    func cache(pages: [UInt], key: String, libraryId: LibraryIdentifier, document: Document, imageSize: CGSize, isDark: Bool) -> Observable<()> {
         let observables = pages.map({
-            cache(page: $0, key: key, libraryId: libraryId, document: document, imageSize: imageSize, imageScale: imageScale, isDark: isDark).flatMap({ _ in return Single.just(()) }).asObservable()
+            cache(page: $0, key: key, libraryId: libraryId, document: document, imageSize: imageSize, isDark: isDark).flatMap({ _ in return Single.just(()) }).asObservable()
         })
         return Observable.merge(observables)
     }
 
-    func cache(page: UInt, key: String, libraryId: LibraryIdentifier, document: Document, imageSize: CGSize, imageScale: CGFloat, isDark: Bool) -> Single<UIImage> {
+    func cache(page: UInt, key: String, libraryId: LibraryIdentifier, document: Document, imageSize: CGSize, isDark: Bool) -> Single<UIImage> {
         return Single.create { [weak self] subscriber -> Disposable in
             guard let self else { return Disposables.create() }
-            let subscriberKey = SubscriberKey(key: key, libraryId: libraryId, page: page, size: imageSize, scale: imageScale, isDark: isDark)
+            let subscriberKey = SubscriberKey(key: key, libraryId: libraryId, page: page, size: imageSize, isDark: isDark)
             self.queue.async(flags: .barrier) { [weak self] in
                 self?.subscribers[subscriberKey] = subscriber
             }
-            self.enqueue(subscriberKey: subscriberKey, document: document, imageSize: imageSize, imageScale: imageScale)
+            self.enqueue(subscriberKey: subscriberKey, document: document, imageSize: imageSize)
             return Disposables.create()
         }
     }
@@ -103,12 +102,10 @@ extension PdfThumbnailController {
     /// - parameter subscriberKey: Subscriber key identifying this request.
     /// - parameter document: Document to render.
     /// - parameter imageSize: Size of rendered image.
-    /// - parameter imageScale: Scale factor of rendering. 0.0 will result to the PSPDFkit default. Unsupported values will also result to default.
-    private func enqueue(subscriberKey: SubscriberKey, document: Document, imageSize: CGSize, imageScale: CGFloat) {
+    private func enqueue(subscriberKey: SubscriberKey, document: Document, imageSize: CGSize) {
         let request = MutableRenderRequest(document: document)
         request.pageIndex = subscriberKey.page
         request.imageSize = imageSize
-        request.imageScale = [1.0, 2.0, 3.0].contains(imageScale) ? imageScale : 0.0
         request.options = RenderOptions()
 
         do {

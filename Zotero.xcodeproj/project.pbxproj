@@ -739,6 +739,7 @@
 		B372CEEA248675A200B423AE /* MarkGroupForResyncSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B372CEE82486748500B423AE /* MarkGroupForResyncSyncAction.swift */; };
 		B37381A727CE6EDE005AD721 /* PDFSettingsState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37381A627CE6EDE005AD721 /* PDFSettingsState.swift */; };
 		B373877328FEA0C7004E5031 /* PDFSidebarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B373877228FEA0C7004E5031 /* PDFSidebarViewController.swift */; };
+		B373C98F2B1F5431007FD56C /* PdfThumbnailsLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = B373C98E2B1F5431007FD56C /* PdfThumbnailsLayout.swift */; };
 		B3748D2026566F4800ED05F8 /* ContainerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3748D1F26566F4800ED05F8 /* ContainerViewController.swift */; };
 		B3748D2226566F6900ED05F8 /* ContainerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3748D2126566F6900ED05F8 /* ContainerViewController.swift */; };
 		B3764D9D2574F2DE0024274F /* ColorPickerCircleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3764D9C2574F2DE0024274F /* ColorPickerCircleView.swift */; };
@@ -1705,6 +1706,7 @@
 		B372CEE82486748500B423AE /* MarkGroupForResyncSyncAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkGroupForResyncSyncAction.swift; sourceTree = "<group>"; };
 		B37381A627CE6EDE005AD721 /* PDFSettingsState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFSettingsState.swift; sourceTree = "<group>"; };
 		B373877228FEA0C7004E5031 /* PDFSidebarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFSidebarViewController.swift; sourceTree = "<group>"; };
+		B373C98E2B1F5431007FD56C /* PdfThumbnailsLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PdfThumbnailsLayout.swift; sourceTree = "<group>"; };
 		B3748D1F26566F4800ED05F8 /* ContainerViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ContainerViewController.swift; sourceTree = "<group>"; };
 		B3748D2126566F6900ED05F8 /* ContainerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContainerViewController.swift; sourceTree = "<group>"; };
 		B3764D9C2574F2DE0024274F /* ColorPickerCircleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPickerCircleView.swift; sourceTree = "<group>"; };
@@ -3578,6 +3580,7 @@
 				B3ADBCBB27CFB67A00B7041F /* PDFSettingsAction.swift */,
 				B37381A627CE6EDE005AD721 /* PDFSettingsState.swift */,
 				B310280C2B1E16F300E41554 /* PdfThumbnailsAction.swift */,
+				B373C98E2B1F5431007FD56C /* PdfThumbnailsLayout.swift */,
 				B310280A2B1E16EC00E41554 /* PdfThumbnailsState.swift */,
 				B37BF0AA25A5E2AD00AE0268 /* SquareAnnotation.swift */,
 				B3A47C3729015FDD00E7D90D /* TableOfContentsAction.swift */,
@@ -5209,6 +5212,7 @@
 				B343419E260A093400093E63 /* CollectionIdentifier.swift in Sources */,
 				B3A351E3271578B1002E597A /* WebDavDeleteRequest.swift in Sources */,
 				B35C529C26383BDD007BD036 /* ReadAllDownloadedItemsDbRequest.swift in Sources */,
+				B373C98F2B1F5431007FD56C /* PdfThumbnailsLayout.swift in Sources */,
 				B305660723FC051E003304F2 /* LoginRequest.swift in Sources */,
 				B30566B323FC051F003304F2 /* CollectionResponse.swift in Sources */,
 				B34341AB260A48A200093E63 /* ReadAllWritableGroupsDbRequest.swift in Sources */,
@@ -6154,7 +6158,7 @@
 			repositoryURL = "https://github.com/PSPDFKit/PSPDFKit-SP";
 			requirement = {
 				kind = exactVersion;
-				version = 13.0.1;
+				version = 13.1.0;
 			};
 		};
 		B3D84BEE27919FDE005DDD7C /* XCRemoteSwiftPackageReference "Starscream" */ = {

@@ -12,4 +12,6 @@ enum PdfThumbnailsAction {
     case prefetch([UInt])
     case load(UInt)
     case setUserInterface(isDark: Bool)
+    case loadPages
+    case setSelectedPage(pageIndex: Int, type: PdfThumbnailsState.SelectionType)
 }

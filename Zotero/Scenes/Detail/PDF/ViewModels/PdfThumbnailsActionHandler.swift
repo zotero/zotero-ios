@@ -8,6 +8,7 @@
 
 import UIKit
 
+import PSPDFKit
 import RxSwift
 
 struct PdfThumbnailsActionHandler: ViewModelActionHandler {
@@ -34,6 +35,34 @@ struct PdfThumbnailsActionHandler: ViewModelActionHandler {
 
         case .setUserInterface(let isDark):
             setUserInteraface(isDark: isDark, in: viewModel)
+
+        case .loadPages:
+            loadPages(viewModel: viewModel)
+
+        case .setSelectedPage(let pageIndex, let type):
+            set(selectedPage: pageIndex, type: type, viewModel: viewModel)
+        }
+    }
+
+    private func set(selectedPage: Int, type: PdfThumbnailsState.SelectionType, viewModel: ViewModel<PdfThumbnailsActionHandler>) {
+        guard selectedPage != viewModel.state.selectedPageIndex else { return }
+        update(viewModel: viewModel) { state in
+            state.selectedPageIndex = selectedPage
+            switch type {
+            case .fromDocument:
+                state.changes = .scrollToSelection
+
+            case .fromSidebar:
+                state.changes = .selection
+            }
+        }
+    }
+
+    private func loadPages(viewModel: ViewModel<PdfThumbnailsActionHandler>) {
+        let labels = (0..<viewModel.state.document.pageCount).map({ viewModel.state.document.pageLabelForPage(at: $0, substituteWithPlainLabel: true) ?? "" })
+        update(viewModel: viewModel) { state in
+            state.pages = labels
+            state.changes = .pages
         }
     }
 
@@ -48,7 +77,6 @@ struct PdfThumbnailsActionHandler: ViewModelActionHandler {
             libraryId: viewModel.state.libraryId,
             document: viewModel.state.document,
             imageSize: viewModel.state.thumbnailSize,
-            imageScale: 1,
             isDark: viewModel.state.isDark
         )
         .subscribe()
@@ -82,7 +110,6 @@ struct PdfThumbnailsActionHandler: ViewModelActionHandler {
                 libraryId: viewModel.state.libraryId,
                 document: viewModel.state.document,
                 imageSize: viewModel.state.thumbnailSize,
-                imageScale: 1,
                 isDark: viewModel.state.isDark
             )
             .observe(on: MainScheduler.instance)
@@ -95,7 +122,7 @@ struct PdfThumbnailsActionHandler: ViewModelActionHandler {
         func cache(image: UIImage, viewModel: ViewModel<PdfThumbnailsActionHandler>) {
             viewModel.state.cache.setObject(image, forKey: NSNumber(value: pageIndex))
             update(viewModel: viewModel) { state in
-                state.loadedThumbnail = pageIndex
+                state.loadedThumbnail = Int(pageIndex)
             }
         }
     }
@@ -108,4 +135,3 @@ struct PdfThumbnailsActionHandler: ViewModelActionHandler {
         }
     }
 }
-
