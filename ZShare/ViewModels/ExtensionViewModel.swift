@@ -121,7 +121,7 @@ final class ExtensionViewModel {
                     if error.isFatal {
                         return false
                     }
-                    
+
                     switch error {
                     case .apiFailure, .quotaLimit:
                         return false
@@ -356,25 +356,48 @@ final class ExtensionViewModel {
     // MARK: - Processing attachments
 
     private func loadAttachment(from extensionItem: NSExtensionItem) -> Single<State.RawAttachment> {
-        let observables = (extensionItem.attachments ?? []).map({ self.loadProviderData(from: $0) })
+        let observables = (extensionItem.attachments ?? [])
+            .sorted(by: { lAttachment, rAttachment in
+                // propertyList > url > plainText/others
+                if lAttachment.hasItemConformingToTypeIdentifier(UTType.propertyList.identifier) {
+                    return true
+                }
+                if rAttachment.hasItemConformingToTypeIdentifier(UTType.propertyList.identifier) {
+                    return false
+                }
+                if lAttachment.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
+                    return true
+                }
+                if rAttachment.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
+                    return false
+                }
+                return true
+            })
+            .map({ self.loadProviderData(from: $0) })
         return Observable.concat(observables)
-                         .filter({ value in
-                             switch value {
-                             case .success: return true
-                             case .failure: return false
-                             }
-                         })
-                        .first()
-                        .flatMap { value in
-                            guard let value = value else {
-                                return Single.error(State.AttachmentState.Error.cantLoadWebData)
-                            }
+            .filter({ value in
+                switch value {
+                case .success:
+                    return true
 
-                            switch value {
-                            case .success(let attachment): return Single.just(attachment)
-                            case .failure(let error): return Single.error(error)
-                            }
-                        }
+                case .failure:
+                    return false
+                }
+            })
+            .first()
+            .flatMap { value in
+                guard let value else {
+                    return Single.error(State.AttachmentState.Error.cantLoadWebData)
+                }
+
+                switch value {
+                case .success(let attachment):
+                    return Single.just(attachment)
+
+                case .failure(let error):
+                    return Single.error(error)
+                }
+            }
     }
 
     private func loadProviderData(from itemProvider: NSItemProvider) -> Observable<Result<State.RawAttachment, State.AttachmentState.Error>> {
@@ -1064,11 +1087,11 @@ final class ExtensionViewModel {
 
         authorize.flatMap { [weak self] response, md5 -> Single<()> in
             guard let self = self else { return Single.error(State.AttachmentState.Error.expired) }
-            
+
             switch response {
             case .exists(let version):
                 DDLogInfo("ExtensionViewModel: file exists remotely")
-                
+
                 do {
                     let request = MarkAttachmentUploadedDbRequest(libraryId: data.libraryId, key: data.attachment.key, version: version)
                     let request2 = UpdateVersionsDbRequest(version: version, libraryId: data.libraryId, type: .object(.item))
@@ -1077,10 +1100,10 @@ final class ExtensionViewModel {
                 } catch let error {
                     return Single.error(error)
                 }
-                
+
             case .new(let response):
                 DDLogInfo("ExtensionViewModel: upload authorized")
-                
+
                 // sessionId and size are set by background uploader.
                 let upload = BackgroundUpload(type: .zotero(uploadKey: response.uploadKey), key: self.state.attachmentKey, libraryId: data.libraryId, userId: data.userId,
                                               remoteUrl: response.url, fileUrl: data.file.createUrl(), md5: md5, date: Date())
@@ -1097,9 +1120,9 @@ final class ExtensionViewModel {
             self?.state.isDone = true
         }, onFailure: { [weak self] error in
             guard let self = self else { return }
-            
+
             DDLogError("ExtensionViewModel: could not submit item or attachment - \(error)")
-            
+
             var state = self.state
             state.attachmentState = .failed(self.attachmentError(from: error, libraryId: data.libraryId))
             state.isSubmitting = false
@@ -1461,7 +1484,7 @@ final class ExtensionViewModel {
                 switch self.state.selectedCollectionId {
                 case .collection:
                     collection = _collection
-                    
+
                 default:
                     break
                 }
