@@ -386,7 +386,7 @@ final class ExtensionViewModel {
             })
             .first()
             .flatMap { value in
-                guard let value = value else {
+                guard let value else {
                     return Single.error(State.AttachmentState.Error.cantLoadWebData)
                 }
 
