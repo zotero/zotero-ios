@@ -173,7 +173,7 @@ class PDFSidebarViewController: UIViewController {
         viewModel
             .stateObservable
             .subscribe(with: thumbnailsViewModel, onNext: { viewModel, state in
-                guard state.changes.contains(.visiblePage) else { return }
+                guard state.changes.contains(.visiblePageFromDocument) else { return }
                 viewModel.process(action: .setSelectedPage(pageIndex: state.visiblePage, type: .fromDocument))
             })
             .disposed(by: disposeBag)
@@ -182,7 +182,7 @@ class PDFSidebarViewController: UIViewController {
             .stateObservable
             .subscribe(with: viewModel, onNext: { viewModel, state in
                 guard state.changes.contains(.selection) else { return }
-                viewModel.process(action: .setVisiblePage(page: state.selectedPageIndex, scrollToPage: true))
+                viewModel.process(action: .setVisiblePage(page: state.selectedPageIndex, userActionFromDocument: false, fromThumbnailList: true))
             })
             .disposed(by: disposeBag)
     }

@@ -39,7 +39,7 @@ enum PDFReaderAction {
     case parseAndCacheComment(key: String, comment: String)
     case setComment(key: String, comment: NSAttributedString)
     case setCommentActive(Bool)
-    case setVisiblePage(page: Int, scrollToPage: Bool)
+    case setVisiblePage(page: Int, userActionFromDocument: Bool, fromThumbnailList: Bool)
     case export(PDFExportSettings)
     case clearTmpData
     case setSidebarEditingEnabled(Bool)

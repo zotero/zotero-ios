@@ -203,8 +203,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         case .createHighlight(let pageIndex, let rects):
             self.addHighlight(onPage: pageIndex, rects: rects, in: viewModel)
 
-        case .setVisiblePage(let page, let scrollToPage):
-            self.set(page: page, scrollToPage: scrollToPage, in: viewModel)
+        case .setVisiblePage(let page, let userActionFromDocument, let fromThumbnailList):
+            self.set(page: page, userActionFromDocument: userActionFromDocument, fromThumbnailList: fromThumbnailList, in: viewModel)
 
         case .submitPendingPage(let page):
             guard self.pageDebounceDisposeBag != nil else { return }
@@ -469,14 +469,16 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         self.userInterfaceChanged(interfaceStyle: newUserInterfaceStyle, in: viewModel)
     }
 
-    private func set(page: Int, scrollToPage: Bool, in viewModel: ViewModel<PDFReaderActionHandler>) {
+    private func set(page: Int, userActionFromDocument: Bool, fromThumbnailList: Bool, in viewModel: ViewModel<PDFReaderActionHandler>) {
         guard viewModel.state.visiblePage != page else { return }
 
         self.update(viewModel: viewModel) { state in
             state.visiblePage = page
-            state.changes = .visiblePage
-            if scrollToPage {
-                state.changes.insert(.scrollToVisiblePage)
+            if userActionFromDocument {
+                state.changes.insert(.visiblePageFromDocument)
+            }
+            if fromThumbnailList {
+                state.changes.insert(.visiblePageFromThumbnailList)
             }
         }
 

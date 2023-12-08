@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import Combine
 
 import CocoaLumberjackSwift
 import PSPDFKit
@@ -40,7 +41,7 @@ final class PDFDocumentViewController: UIViewController {
         return self.pdfController?.userInterfaceView.scrubberBar.frame.height ?? 0
     }
     private var searchResults: [SearchResult] = []
-    private var isScrollingToVisiblePage = false
+    private var pageIndexCancellable: AnyCancellable?
 
     weak var parentDelegate: (PDFReaderContainerDelegate & PDFDocumentDelegate)?
     weak var coordinatorDelegate: PdfReaderCoordinatorDelegate?
@@ -234,10 +235,8 @@ final class PDFDocumentViewController: UIViewController {
             self.showPopupAnnotationIfNeeded(state: state)
         }
 
-        if state.changes.contains(.scrollToVisiblePage) {
-            isScrollingToVisiblePage = true
+        if state.changes.contains(.visiblePageFromThumbnailList) {
             pdfController.setPageIndex(PageIndex(state.visiblePage), animated: false)
-            isScrollingToVisiblePage = false
         }
 
         if let tool = state.changedColorForTool, let color = state.toolColors[tool] {
@@ -506,6 +505,10 @@ final class PDFDocumentViewController: UIViewController {
         controller.annotationStateManager.add(self)
         controller.annotationStateManager.pencilInteraction.delegate = self
         controller.annotationStateManager.pencilInteraction.isEnabled = true
+        pageIndexCancellable = controller.pageIndexPublisher.sink { [weak self] event in
+            guard let self else { return }
+            self.viewModel.process(action: .setVisiblePage(page: Int(event.pageIndex), userActionFromDocument: event.reason == .userInterface, fromThumbnailList: false))
+        }
         self.setup(scrubberBar: controller.userInterfaceView.scrubberBar)
         self.setup(interactions: controller.interactions)
         controller.shouldResetAppearanceModeWhenViewDisappears = false
@@ -572,17 +575,6 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
         if !searchResults.isEmpty {
             pdfController.searchHighlightViewManager.addHighlight(searchResults, animated: false)
         }
-
-        // This delegate method is called for incorrect page index when sidebar is changing size. So if the sidebar is opened/closed, incorrect page
-        // is stored in `pageController` and if the user closes the pdf reader without further scrolling, incorrect page is shown on next opening.
-        guard !(self.parentDelegate?.isSidebarTransitioning ?? false) && self.parentDelegate?.isCurrentlyVisible == true && !isScrollingToVisiblePage else { return }
-        // Save current page
-        self.viewModel.process(action: .setVisiblePage(page: Int(pageIndex), scrollToPage: false))
-    }
-
-    func pdfViewController(_ pdfController: PDFViewController, didEndDisplaying pageView: PDFPageView, forPageAt pageIndex: Int) {
-        guard !(self.parentDelegate?.isSidebarTransitioning ?? false) && self.parentDelegate?.isCurrentlyVisible == true && !isScrollingToVisiblePage else { return }
-        self.viewModel.process(action: .setVisiblePage(page: Int(pdfController.pageIndex), scrollToPage: false))
     }
 
     func pdfViewController(_ pdfController: PDFViewController, shouldShow controller: UIViewController, options: [String: Any]? = nil, animated: Bool) -> Bool {
