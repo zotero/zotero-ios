@@ -48,7 +48,7 @@ class TagFilterCell: UICollectionViewCell {
         self.label.text = text
         self.label.textColor = color
         self.label.alpha = isActive ? 1 : 0.55
-        self.label.font = bolded ? .preferredFont(for: .body, weight: .medium) : .preferredFont(forTextStyle: .body)
+        self.label.font = .preferredFont(for: .body, weight: bolded ? .medium : .regular)
         self.roundBackground.isHidden = !self.isSelected
         self.roundBackground.alpha = isActive ? 1 : 0.55
     }
