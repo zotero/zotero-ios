@@ -15,8 +15,6 @@ import RxSwift
 
 protocol PDFReaderContainerDelegate: AnyObject {
     var isSidebarVisible: Bool { get }
-    var isSidebarTransitioning: Bool { get }
-    var isCurrentlyVisible: Bool { get }
 
     func showSearch(pdfController: PDFViewController, text: String?)
 }
@@ -73,7 +71,6 @@ class PDFReaderViewController: UIViewController {
     private weak var toolbarTopPreview: DashedView!
     private weak var toolbarPinnedPreview: DashedView!
     private weak var toolbarPinnedPreviewHeight: NSLayoutConstraint!
-    private(set) var isSidebarTransitioning: Bool
     private(set) var isCompactWidth: Bool
     @CodableUserDefault(key: "PDFReaderToolbarState", defaultValue: ToolbarState(position: .leading, visible: true), encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
     private var toolbarState: ToolbarState
@@ -85,7 +82,6 @@ class PDFReaderViewController: UIViewController {
         }
     }
     private var didAppear: Bool
-    private(set) var isCurrentlyVisible: Bool
     private var previousTraitCollection: UITraitCollection?
     var isSidebarVisible: Bool { return self.sidebarControllerLeft?.constant == 0 }
     var key: String { return self.viewModel.state.key }
@@ -174,9 +170,7 @@ class PDFReaderViewController: UIViewController {
 
     init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool) {
         self.viewModel = viewModel
-        self.isSidebarTransitioning = false
         self.isCompactWidth = compactSize
-        self.isCurrentlyVisible = false
         self.disposeBag = DisposeBag()
         self.didAppear = false
         self.previewDashColor = Asset.Colors.zoteroBlueWithDarkMode.color.withAlphaComponent(0.5)
@@ -234,7 +228,6 @@ class PDFReaderViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        self.isCurrentlyVisible = true
         self.didAppear = true
     }
 
@@ -468,8 +461,6 @@ class PDFReaderViewController: UIViewController {
             self.view.endEditing(true)
         }
 
-        self.isSidebarTransitioning = true
-
         UIView.animate(withDuration: 0.3, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: 5, options: [.curveEaseOut],
                        animations: {
                            self.annotationToolbarController.prepareForSizeChange()
@@ -481,7 +472,6 @@ class PDFReaderViewController: UIViewController {
                            if !shouldShow {
                                self.sidebarController.view.isHidden = true
                            }
-                           self.isSidebarTransitioning = false
                        })
     }
 
@@ -1261,7 +1251,6 @@ class PDFReaderViewController: UIViewController {
                                   .notification(UIApplication.didBecomeActiveNotification)
                                   .observe(on: MainScheduler.instance)
                                   .subscribe(with: self, onNext: { `self`, _ in
-                                      self.isCurrentlyVisible = true
                                       if let previousTraitCollection = self.previousTraitCollection {
                                           self.updateUserInterfaceStyleIfNeeded(previousTraitCollection: previousTraitCollection)
                                       }
@@ -1274,7 +1263,6 @@ class PDFReaderViewController: UIViewController {
                                   .notification(UIApplication.willResignActiveNotification)
                                   .observe(on: MainScheduler.instance)
                                   .subscribe(with: self, onNext: { `self`, _ in
-                                      self.isCurrentlyVisible = false
                                       self.previousTraitCollection = self.traitCollection
                                       if let page = self.documentController?.pdfController?.pageIndex {
                                           self.viewModel.process(action: .submitPendingPage(Int(page)))
