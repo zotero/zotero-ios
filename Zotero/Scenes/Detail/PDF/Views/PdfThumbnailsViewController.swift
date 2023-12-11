@@ -106,8 +106,11 @@ class PdfThumbnailsViewController: UICollectionViewController {
             dataSource.apply(snapshot)
         }
 
+        // The following updates should be ignored if the collection hasn't loaded yet for the first time.
+        var snapshot = dataSource.snapshot()
+        guard snapshot.numberOfSections > 0 else { return }
+
         if state.changes.contains(.userInterface) {
-            var snapshot = dataSource.snapshot()
             snapshot.reloadSections([0])
             dataSource.apply(snapshot)
         }
