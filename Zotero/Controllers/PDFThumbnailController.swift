@@ -1,5 +1,5 @@
 //
-//  PdfThumbnailController.swift
+//  PDFThumbnailController.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 30.11.2023.
@@ -12,7 +12,7 @@ import CocoaLumberjackSwift
 import PSPDFKit
 import RxSwift
 
-final class PdfThumbnailController: NSObject {
+final class PDFThumbnailController: NSObject {
     enum Error: Swift.Error {
         case imageNotAvailable
     }
@@ -40,7 +40,7 @@ final class PdfThumbnailController: NSObject {
 
 // MARK: - PSPDFKit
 
-extension PdfThumbnailController {
+extension PDFThumbnailController {
     /// Start rendering process of multiple thumbnails per document.
     /// - parameter pages: Page indices which should be rendered.
     /// - parameter 

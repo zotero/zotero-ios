@@ -29,7 +29,7 @@ protocol PDFDocumentDelegate: AnyObject {
 
 final class PDFDocumentViewController: UIViewController {
     private(set) weak var pdfController: PDFViewController?
-    private weak var unlockController: UnlockPdfViewController?
+    private weak var unlockController: UnlockPDFViewController?
 
     private let viewModel: ViewModel<PDFReaderActionHandler>
     private let disposeBag: DisposeBag
@@ -187,7 +187,7 @@ final class PDFDocumentViewController: UIViewController {
         }
     }
 
-    private func update(state: PDFReaderState, unlockController: UnlockPdfViewController) {
+    private func update(state: PDFReaderState, unlockController: UnlockPDFViewController) {
         guard let success = state.unlockSuccessful, success, let controller = self.unlockController else { return }
         // Remove unlock controller
         controller.willMove(toParent: nil)
@@ -436,7 +436,7 @@ final class PDFDocumentViewController: UIViewController {
     }
 
     private func setupLockedView() {
-        let unlockController = UnlockPdfViewController(viewModel: self.viewModel)
+        let unlockController = UnlockPDFViewController(viewModel: self.viewModel)
         unlockController.view.translatesAutoresizingMaskIntoConstraints = false
 
         unlockController.willMove(toParent: self)

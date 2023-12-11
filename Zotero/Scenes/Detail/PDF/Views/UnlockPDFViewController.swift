@@ -1,5 +1,5 @@
 //
-//  UnlockPdfViewController.swift
+//  UnlockPDFViewController.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 07.03.2023.
@@ -10,7 +10,7 @@ import UIKit
 
 import RxSwift
 
-class UnlockPdfViewController: UIViewController {
+class UnlockPDFViewController: UIViewController {
     private let viewModel: ViewModel<PDFReaderActionHandler>
     private let disposeBag: DisposeBag
 

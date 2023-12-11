@@ -19,7 +19,7 @@ protocol PdfReaderCoordinatorDelegate: AnyObject {
     func showSearch(pdfController: PDFViewController, text: String?, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle, delegate: PDFSearchDelegate)
     func showAnnotationPopover(viewModel: ViewModel<PDFReaderActionHandler>, sourceRect: CGRect, popoverDelegate: UIPopoverPresentationControllerDelegate, userInterfaceStyle: UIUserInterfaceStyle)
     func show(error: PDFReaderState.Error)
-    func show(error: PdfDocumentExporter.Error)
+    func show(error: PDFDocumentExporter.Error)
     func share(url: URL, barButton: UIBarButtonItem)
     func share(text: String, rect: CGRect, view: UIView)
     func lookup(text: String, rect: CGRect, view: UIView, userInterfaceStyle: UIUserInterfaceStyle)
@@ -278,7 +278,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         self.navigationController?.present(controller, animated: true)
     }
 
-    func show(error: PdfDocumentExporter.Error) {
+    func show(error: PDFDocumentExporter.Error) {
         let message: String
         switch error {
         case .filenameMissing:

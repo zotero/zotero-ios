@@ -1,5 +1,5 @@
 //
-//  PdfThumbnailsCell.swift
+//  PDFThumbnailsCell.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 04.12.2023.
@@ -10,7 +10,7 @@ import UIKit
 
 import RxSwift
 
-final class PdfThumbnailsCell: UICollectionViewListCell {
+final class PDFThumbnailsCell: UICollectionViewListCell {
     private(set) var disposeBag: DisposeBag = DisposeBag()
 
     override var isSelected: Bool {
@@ -116,15 +116,15 @@ final class PdfThumbnailsCell: UICollectionViewListCell {
             addSubview(label)
             self.label = label
 
-            let imageViewHeight = imageView.heightAnchor.constraint(equalToConstant: PdfThumbnailsLayout.cellImageHeight)
+            let imageViewHeight = imageView.heightAnchor.constraint(equalToConstant: PDFThumbnailsLayout.cellImageHeight)
             imageViewHeight.priority = .init(999)
             self.imageViewHeight = imageViewHeight
             let imageViewWidth = imageView.widthAnchor.constraint(equalToConstant: 0)
             imageViewWidth.priority = .defaultHigh
             self.imageViewWidth = imageViewWidth
-            let imageViewLeading = imageView.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: PdfThumbnailsLayout.cellImageHorizontalMinInset)
+            let imageViewLeading = imageView.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: PDFThumbnailsLayout.cellImageHorizontalMinInset)
             imageViewLeading.priority = .required
-            let imageViewTrailing = trailingAnchor.constraint(greaterThanOrEqualTo: imageView.trailingAnchor, constant: PdfThumbnailsLayout.cellImageHorizontalMinInset)
+            let imageViewTrailing = trailingAnchor.constraint(greaterThanOrEqualTo: imageView.trailingAnchor, constant: PDFThumbnailsLayout.cellImageHorizontalMinInset)
             imageViewTrailing.priority = .required
 
             NSLayoutConstraint.activate([
@@ -133,10 +133,10 @@ final class PdfThumbnailsCell: UICollectionViewListCell {
                 imageView.centerXAnchor.constraint(equalTo: centerXAnchor),
                 imageViewLeading,
                 imageViewTrailing,
-                imageView.topAnchor.constraint(equalTo: topAnchor, constant: PdfThumbnailsLayout.cellImageTopInset),
-                label.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: PdfThumbnailsLayout.cellLabelTopInset),
-                label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: PdfThumbnailsLayout.cellImageHorizontalMinInset),
-                trailingAnchor.constraint(equalTo: label.trailingAnchor, constant: PdfThumbnailsLayout.cellImageHorizontalMinInset),
+                imageView.topAnchor.constraint(equalTo: topAnchor, constant: PDFThumbnailsLayout.cellImageTopInset),
+                label.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: PDFThumbnailsLayout.cellLabelTopInset),
+                label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: PDFThumbnailsLayout.cellImageHorizontalMinInset),
+                trailingAnchor.constraint(equalTo: label.trailingAnchor, constant: PDFThumbnailsLayout.cellImageHorizontalMinInset),
                 label.bottomAnchor.constraint(equalTo: bottomAnchor),
                 imageView.topAnchor.constraint(equalTo: selectionBackground.topAnchor, constant: 10),
                 selectionBackground.bottomAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 10),

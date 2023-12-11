@@ -1,5 +1,5 @@
 //
-//  PdfThumbnailsActionHandler.swift
+//  PDFThumbnailsActionHandler.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 04.12.2023.
@@ -11,21 +11,21 @@ import UIKit
 import PSPDFKit
 import RxSwift
 
-struct PdfThumbnailsActionHandler: ViewModelActionHandler {
-    typealias Action = PdfThumbnailsAction
-    typealias State = PdfThumbnailsState
+struct PDFThumbnailsActionHandler: ViewModelActionHandler {
+    typealias Action = PDFThumbnailsAction
+    typealias State = PDFThumbnailsState
 
-    private unowned let thumbnailController: PdfThumbnailController
+    private unowned let thumbnailController: PDFThumbnailController
     private let queue: DispatchQueue
     private let disposeBag: DisposeBag
 
-    init(thumbnailController: PdfThumbnailController) {
+    init(thumbnailController: PDFThumbnailController) {
         self.thumbnailController = thumbnailController
-        self.queue = DispatchQueue(label: "org.zotero.PdfThumbnailsActionHandler.background", qos: .userInitiated, attributes: .concurrent)
+        self.queue = DispatchQueue(label: "org.zotero.PDFThumbnailsActionHandler.background", qos: .userInitiated, attributes: .concurrent)
         self.disposeBag = DisposeBag()
     }
 
-    func process(action: PdfThumbnailsAction, in viewModel: ViewModel<PdfThumbnailsActionHandler>) {
+    func process(action: PDFThumbnailsAction, in viewModel: ViewModel<PDFThumbnailsActionHandler>) {
         switch action {
         case .load(let pageIndex):
             load(pageIndex: pageIndex, in: viewModel)
@@ -44,7 +44,7 @@ struct PdfThumbnailsActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func set(selectedPage: Int, type: PdfThumbnailsState.SelectionType, viewModel: ViewModel<PdfThumbnailsActionHandler>) {
+    private func set(selectedPage: Int, type: PDFThumbnailsState.SelectionType, viewModel: ViewModel<PDFThumbnailsActionHandler>) {
         guard selectedPage != viewModel.state.selectedPageIndex else { return }
         update(viewModel: viewModel) { state in
             state.selectedPageIndex = selectedPage
@@ -58,7 +58,7 @@ struct PdfThumbnailsActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func loadPages(viewModel: ViewModel<PdfThumbnailsActionHandler>) {
+    private func loadPages(viewModel: ViewModel<PDFThumbnailsActionHandler>) {
         let labels = (0..<viewModel.state.document.pageCount).map({ viewModel.state.document.pageLabelForPage(at: $0, substituteWithPlainLabel: true) ?? "" })
         update(viewModel: viewModel) { state in
             state.pages = labels
@@ -66,7 +66,7 @@ struct PdfThumbnailsActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func prefetch(pageIndices: [UInt], in viewModel: ViewModel<PdfThumbnailsActionHandler>) {
+    private func prefetch(pageIndices: [UInt], in viewModel: ViewModel<PDFThumbnailsActionHandler>) {
         let toFetch = pageIndices.compactMap { pageIndex in
             let hasImage = thumbnailController.hasThumbnail(page: pageIndex, key: viewModel.state.key, libraryId: viewModel.state.libraryId, isDark: viewModel.state.isDark)
             return hasImage ? nil : pageIndex
@@ -83,7 +83,7 @@ struct PdfThumbnailsActionHandler: ViewModelActionHandler {
         .disposed(by: disposeBag)
     }
 
-    private func load(pageIndex: UInt, in viewModel: ViewModel<PdfThumbnailsActionHandler>) {
+    private func load(pageIndex: UInt, in viewModel: ViewModel<PDFThumbnailsActionHandler>) {
         if thumbnailController.hasThumbnail(page: pageIndex, key: viewModel.state.key, libraryId: viewModel.state.libraryId, isDark: viewModel.state.isDark) {
             loadCachedThumbnailAsync()
         } else {
@@ -119,7 +119,7 @@ struct PdfThumbnailsActionHandler: ViewModelActionHandler {
             .disposed(by: disposeBag)
         }
 
-        func cache(image: UIImage, viewModel: ViewModel<PdfThumbnailsActionHandler>) {
+        func cache(image: UIImage, viewModel: ViewModel<PDFThumbnailsActionHandler>) {
             viewModel.state.cache.setObject(image, forKey: NSNumber(value: pageIndex))
             update(viewModel: viewModel) { state in
                 state.loadedThumbnail = Int(pageIndex)
@@ -127,7 +127,7 @@ struct PdfThumbnailsActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func setUserInteraface(isDark: Bool, in viewModel: ViewModel<PdfThumbnailsActionHandler>) {
+    private func setUserInteraface(isDark: Bool, in viewModel: ViewModel<PDFThumbnailsActionHandler>) {
         viewModel.state.cache.removeAllObjects()
         update(viewModel: viewModel) { state in
             state.isDark = isDark

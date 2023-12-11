@@ -26,7 +26,7 @@ final class Controllers {
     let bundledDataStorage: DbStorage
     let translatorsAndStylesController: TranslatorsAndStylesController
     let annotationPreviewController: AnnotationPreviewController
-    let pdfThumbnailController: PdfThumbnailController
+    let pdfThumbnailController: PDFThumbnailController
     let urlDetector: UrlDetector
     let dateParser: DateParser
     let htmlAttributedStringConverter: HtmlAttributedStringConverter
@@ -93,7 +93,7 @@ final class Controllers {
         self.debugLogging = debugLogging
         self.translatorsAndStylesController = translatorsAndStylesController
         self.annotationPreviewController = AnnotationPreviewController(previewSize: previewSize, fileStorage: fileStorage)
-        self.pdfThumbnailController = PdfThumbnailController(fileStorage: fileStorage)
+        self.pdfThumbnailController = PDFThumbnailController(fileStorage: fileStorage)
         self.urlDetector = urlDetector
         self.dateParser = DateParser()
         self.htmlAttributedStringConverter = HtmlAttributedStringConverter()

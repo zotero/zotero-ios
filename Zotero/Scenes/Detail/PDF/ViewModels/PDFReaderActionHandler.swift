@@ -74,7 +74,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
     unowned let dbStorage: DbStorage
     private unowned let annotationPreviewController: AnnotationPreviewController
-    unowned let pdfThumbnailController: PdfThumbnailController
+    unowned let pdfThumbnailController: PDFThumbnailController
     private unowned let htmlAttributedStringConverter: HtmlAttributedStringConverter
     private unowned let schemaController: SchemaController
     private unowned let fileStorage: FileStorage
@@ -90,7 +90,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     init(
         dbStorage: DbStorage,
         annotationPreviewController: AnnotationPreviewController,
-        pdfThumbnailController: PdfThumbnailController,
+        pdfThumbnailController: PDFThumbnailController,
         htmlAttributedStringConverter: HtmlAttributedStringConverter,
         schemaController: SchemaController,
         fileStorage: FileStorage,
@@ -521,7 +521,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                                                           boundingBoxConverter: boundingBoxConverter)
         }
 
-        PdfDocumentExporter.export(
+        PDFDocumentExporter.export(
             annotations: annotations,
             key: viewModel.state.key,
             libraryId: viewModel.state.library.identifier,
@@ -535,7 +535,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         )
     }
 
-    private func finishExport(result: Result<File, PdfDocumentExporter.Error>, viewModel: ViewModel<PDFReaderActionHandler>) {
+    private func finishExport(result: Result<File, PDFDocumentExporter.Error>, viewModel: ViewModel<PDFReaderActionHandler>) {
         self.update(viewModel: viewModel) { state in
             switch result {
             case .success(let file):

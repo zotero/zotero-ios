@@ -1,5 +1,5 @@
 //
-//  PdfThumbnailsAction.swift
+//  PDFThumbnailsAction.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 04.12.2023.
@@ -8,10 +8,10 @@
 
 import Foundation
 
-enum PdfThumbnailsAction {
+enum PDFThumbnailsAction {
     case prefetch([UInt])
     case load(UInt)
     case setUserInterface(isDark: Bool)
     case loadPages
-    case setSelectedPage(pageIndex: Int, type: PdfThumbnailsState.SelectionType)
+    case setSelectedPage(pageIndex: Int, type: PDFThumbnailsState.SelectionType)
 }

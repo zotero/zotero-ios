@@ -1,5 +1,5 @@
 //
-//  PdfThumbnailsLayout.swift
+//  PDFThumbnailsLayout.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 05.12.2023.
@@ -8,7 +8,7 @@
 
 import UIKit
 
-struct PdfThumbnailsLayout {
+struct PDFThumbnailsLayout {
     static let contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 20, trailing: 0)
     static let cellImageTopInset: CGFloat = 20
     static let cellImageHorizontalMinInset: CGFloat = 15

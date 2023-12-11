@@ -1,5 +1,5 @@
 //
-//  PdfDocumentExporter.swift
+//  PDFDocumentExporter.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 25.01.2021.
@@ -10,7 +10,7 @@ import UIKit
 
 import PSPDFKit
 
-struct PdfDocumentExporter {
+struct PDFDocumentExporter {
     enum Error: Swift.Error {
         case filenameMissing
         case fileError(Swift.Error)

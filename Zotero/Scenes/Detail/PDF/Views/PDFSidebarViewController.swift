@@ -44,7 +44,7 @@ class PDFSidebarViewController: UIViewController {
     private let disposeBag: DisposeBag
 
     private weak var picker: UISegmentedControl!
-    private weak var thumbnailsController: PdfThumbnailsViewController!
+    private weak var thumbnailsController: PDFThumbnailsViewController!
     private weak var annotationsController: AnnotationsViewController!
     private weak var outlineController: TableOfContentsViewController!
     weak var parentDelegate: (PDFReaderContainerDelegate & SidebarDelegate)?
@@ -158,15 +158,15 @@ class PDFSidebarViewController: UIViewController {
         add(childController: outlineController)
         self.outlineController = outlineController
 
-        let thumbnailsState = PdfThumbnailsState(
+        let thumbnailsState = PDFThumbnailsState(
             key: viewModel.state.key,
             libraryId: viewModel.state.library.identifier,
             document: viewModel.state.document,
             selectedPageIndex: viewModel.state.visiblePage,
             isDark: viewModel.state.interfaceStyle == .dark
         )
-        let thumbnailsViewModel = ViewModel(initialState: thumbnailsState, handler: PdfThumbnailsActionHandler(thumbnailController: viewModel.handler.pdfThumbnailController))
-        let thumbnailsController = PdfThumbnailsViewController(viewModel: thumbnailsViewModel)
+        let thumbnailsViewModel = ViewModel(initialState: thumbnailsState, handler: PDFThumbnailsActionHandler(thumbnailController: viewModel.handler.pdfThumbnailController))
+        let thumbnailsController = PDFThumbnailsViewController(viewModel: thumbnailsViewModel)
         add(childController: thumbnailsController)
         self.thumbnailsController = thumbnailsController
 

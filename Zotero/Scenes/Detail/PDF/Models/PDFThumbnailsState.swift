@@ -1,5 +1,5 @@
 //
-//  PdfThumbnailsState.swift
+//  PDFThumbnailsState.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 04.12.2023.
@@ -10,7 +10,7 @@ import Foundation
 
 import PSPDFKit
 
-struct PdfThumbnailsState: ViewModelState {
+struct PDFThumbnailsState: ViewModelState {
     struct Changes: OptionSet {
         typealias RawValue = UInt8
 
@@ -41,7 +41,7 @@ struct PdfThumbnailsState: ViewModelState {
 
     init(key: String, libraryId: LibraryIdentifier, document: Document, selectedPageIndex: Int, isDark: Bool) {
         self.cache = NSCache()
-        self.thumbnailSize = CGSize(width: PdfThumbnailsLayout.cellImageHeight, height: PdfThumbnailsLayout.cellImageHeight)
+        self.thumbnailSize = CGSize(width: PDFThumbnailsLayout.cellImageHeight, height: PDFThumbnailsLayout.cellImageHeight)
         self.key = key
         self.libraryId = libraryId
         self.document = document

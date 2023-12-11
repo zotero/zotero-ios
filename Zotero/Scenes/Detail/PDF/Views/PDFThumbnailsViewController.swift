@@ -1,5 +1,5 @@
 //
-//  PdfThumbnailsViewController.swift
+//  PDFThumbnailsViewController.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 04.12.2023.
@@ -10,25 +10,25 @@ import UIKit
 
 import RxSwift
 
-class PdfThumbnailsViewController: UICollectionViewController {
+class PDFThumbnailsViewController: UICollectionViewController {
     private static var cellId: String = "CellId"
 
-    private let viewModel: ViewModel<PdfThumbnailsActionHandler>
+    private let viewModel: ViewModel<PDFThumbnailsActionHandler>
     private let disposeBag: DisposeBag
 
     private var dataSource: UICollectionViewDiffableDataSource<Int, String>!
 
-    private lazy var cellRegistration: UICollectionView.CellRegistration<PdfThumbnailsCell, String> = {
-        return UICollectionView.CellRegistration<PdfThumbnailsCell, String> { [weak self] cell, indexPath, label in
+    private lazy var cellRegistration: UICollectionView.CellRegistration<PDFThumbnailsCell, String> = {
+        return UICollectionView.CellRegistration<PDFThumbnailsCell, String> { [weak self] cell, indexPath, label in
             let image = self?.viewModel.state.cache.object(forKey: NSNumber(value: indexPath.row))
             if image == nil {
                 self?.viewModel.process(action: .load(UInt(indexPath.row)))
             }
-            cell.contentConfiguration = PdfThumbnailsCell.ContentConfiguration(label: label, image: image)
+            cell.contentConfiguration = PDFThumbnailsCell.ContentConfiguration(label: label, image: image)
         }
     }()
 
-    init(viewModel: ViewModel<PdfThumbnailsActionHandler>) {
+    init(viewModel: ViewModel<PDFThumbnailsActionHandler>) {
         self.viewModel = viewModel
         self.disposeBag = DisposeBag()
 
@@ -36,7 +36,7 @@ class PdfThumbnailsViewController: UICollectionViewController {
             var configuration = UICollectionLayoutListConfiguration(appearance: .insetGrouped)
             configuration.showsSeparators = false
             let section = NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)
-            section.contentInsets = PdfThumbnailsLayout.contentInsets
+            section.contentInsets = PDFThumbnailsLayout.contentInsets
             return section
         }
 
@@ -87,7 +87,7 @@ class PdfThumbnailsViewController: UICollectionViewController {
         viewModel.process(action: .setSelectedPage(pageIndex: visiblePage, type: .fromDocument))
     }
 
-    private func update(state: PdfThumbnailsState) {
+    private func update(state: PDFThumbnailsState) {
         if state.changes.contains(.pages) {
             var snapshot = NSDiffableDataSourceSnapshot<Int, String>()
             snapshot.appendSections([0])
@@ -122,14 +122,14 @@ class PdfThumbnailsViewController: UICollectionViewController {
     }
 }
 
-extension PdfThumbnailsViewController: UICollectionViewDataSourcePrefetching {
+extension PDFThumbnailsViewController: UICollectionViewDataSourcePrefetching {
     func collectionView(_ collectionView: UICollectionView, prefetchItemsAt indexPaths: [IndexPath]) {
         let toFetch = indexPaths.map({ $0.row }).map(UInt.init)
         viewModel.process(action: .prefetch(toFetch))
     }
 }
 
-extension PdfThumbnailsViewController {
+extension PDFThumbnailsViewController {
     override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         viewModel.process(action: .setSelectedPage(pageIndex: indexPath.row, type: .fromSidebar))
     }
