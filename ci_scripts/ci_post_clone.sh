@@ -77,5 +77,4 @@ esac
 
 # Update Info.plist files
 echo "Setting version to $newVersionString"
-/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $newVersionString" ../Zotero/Info.plist
-/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $newVersionString" ../ZShare/Info.plist
+sed -i "" -e "s/MARKETING_VERSION \= [^\;]*\;/MARKETING_VERSION = $newVersionString;/" ../Zotero.xcodeproj/project.pbxproj
