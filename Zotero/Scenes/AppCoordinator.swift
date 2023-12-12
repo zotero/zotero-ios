@@ -382,7 +382,6 @@ final class AppCoordinator: NSObject {
 
         presentAction(oldController, {
             // New window is visible with a screenshot, return old view controller and present the new one
-            window.rootViewController = oldController
             self.presentedRestoredControllerWindow = nil
         })
     }
