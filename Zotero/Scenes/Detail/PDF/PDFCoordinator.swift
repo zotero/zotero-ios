@@ -189,7 +189,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
 
             existing.overrideUserInterfaceStyle = userInterfaceStyle
             existing.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
-            existing.popoverPresentationController?.barButtonItem = sender
+            setupPresentation(for: existing, with: sender)
             existing.text = text
 
             self.navigationController?.present(existing, animated: true, completion: nil)
@@ -199,10 +199,31 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         let viewController = PDFSearchViewController(controller: pdfController, text: text)
         viewController.delegate = delegate
         viewController.overrideUserInterfaceStyle = userInterfaceStyle
-        viewController.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
-        viewController.popoverPresentationController?.barButtonItem = sender
+        setupPresentation(for: viewController, with: sender)
         self.pdfSearchController = viewController
         self.navigationController?.present(viewController, animated: true, completion: nil)
+
+        func setupPresentation(for pdfSearchController: PDFSearchViewController, with sender: UIBarButtonItem) {
+            pdfSearchController.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
+            guard let popoverPresentationController = pdfSearchController.popoverPresentationController else { return }
+            if navigationController?.isNavigationBarHidden == false {
+                if #available(iOS 17, *) {
+                    popoverPresentationController.sourceItem = sender
+                } else {
+                    popoverPresentationController.barButtonItem = sender
+                }
+                popoverPresentationController.sourceView = nil
+                popoverPresentationController.sourceRect = .null
+            } else {
+                if #available(iOS 17, *) {
+                    popoverPresentationController.sourceItem = nil
+                } else {
+                    popoverPresentationController.barButtonItem = nil
+                }
+                popoverPresentationController.sourceView = navigationController?.view
+                popoverPresentationController.sourceRect = .zero
+            }
+        }
     }
 
     func share(url: URL, barButton: UIBarButtonItem) {
