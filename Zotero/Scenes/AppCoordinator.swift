@@ -382,12 +382,7 @@ final class AppCoordinator: NSObject {
         imageView.frame = window.bounds
 
         // Create a temporary `UIWindow` which will be shown above current window until it successfully presents the new view controller.
-        let tmpWindow: UIWindow
-        if let windowScene = window.windowScene {
-            tmpWindow = UIWindow(windowScene: windowScene)
-        } else {
-            tmpWindow = UIWindow(frame: window.frame)
-        }
+        let tmpWindow = window.windowScene.flatMap(UIWindow.init) ?? UIWindow(frame: window.frame)
         tmpWindow.addSubview(imageView)
         tmpWindow.makeKeyAndVisible()
         self.presentedRestoredControllerWindow = tmpWindow
