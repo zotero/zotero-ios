@@ -188,7 +188,6 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
             }
 
             existing.overrideUserInterfaceStyle = userInterfaceStyle
-            existing.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
             setupPresentation(for: existing, with: sender)
             existing.text = text
 
@@ -213,7 +212,6 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
                     popoverPresentationController.barButtonItem = sender
                 }
                 popoverPresentationController.sourceView = nil
-                popoverPresentationController.sourceRect = .null
             } else {
                 if #available(iOS 17, *) {
                     popoverPresentationController.sourceItem = nil
@@ -221,8 +219,8 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
                     popoverPresentationController.barButtonItem = nil
                 }
                 popoverPresentationController.sourceView = navigationController?.view
-                popoverPresentationController.sourceRect = .zero
             }
+            popoverPresentationController.sourceRect = .zero
         }
     }
 
