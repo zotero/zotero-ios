@@ -81,10 +81,12 @@ Zotero.HTTP = new function() {
             var status = response.status;
             var responseText = response.responseText;
             var headers = response.headers;
+            var responseURL = response.url;
         } catch (err) {
             status = err["status"];
             headers = {};
             responseText = err["responseText"];
+            responseURL = "";
         }
 
         let invalidDefaultStatus = options.successCodes === null && (status < 200 || status >= 300);
@@ -120,6 +122,7 @@ Zotero.HTTP = new function() {
             status: status,
             responseText: responseText,
             response: response,
+            responseURL: responseURL,
             responseHeaders: headerString,
             getAllResponseHeaders: () => headerString,
             getResponseHeader: name => headers[name.toLowerCase()]

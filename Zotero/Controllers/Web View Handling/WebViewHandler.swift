@@ -98,13 +98,13 @@ final class WebViewHandler: NSObject {
         }
     }
 
-    func sendHttpResponse(data: Data?, statusCode: Int, successCodes: [Int], headers: [AnyHashable: Any], for messageId: Int) {
+    func sendHttpResponse(data: Data?, statusCode: Int, url: URL?, successCodes: [Int], headers: [AnyHashable: Any], for messageId: Int) {
         let isSuccess = successCodes.isEmpty ? 200..<300 ~= statusCode : successCodes.contains(statusCode)
         let responseText = data.flatMap({ String(data: $0, encoding: .utf8) }) ?? ""
 
         var payload: [String: Any]
         if isSuccess {
-            payload = ["status": statusCode, "responseText": responseText, "headers": headers]
+            payload = ["status": statusCode, "responseText": responseText, "headers": headers, "url": url?.absoluteString ?? ""]
         } else {
             payload = ["error": ["status": statusCode, "responseText": responseText] as [String: Any]]
         }
@@ -138,7 +138,7 @@ final class WebViewHandler: NSObject {
             DDLogInfo("\(options)")
 
             let data = "Incorrect URL request from javascript".data(using: .utf8)
-            self.sendHttpResponse(data: data, statusCode: -1, successCodes: [200], headers: [:], for: messageId)
+            self.sendHttpResponse(data: data, statusCode: -1, url: nil, successCodes: [200], headers: [:], for: messageId)
             return
         }
 
@@ -175,11 +175,11 @@ final class WebViewHandler: NSObject {
         let task = self.session.dataTask(with: request) { [weak self] data, response, error in
             guard let self = self else { return }
             if let response = response as? HTTPURLResponse {
-                self.sendHttpResponse(data: data, statusCode: response.statusCode, successCodes: successCodes, headers: response.allHeaderFields, for: messageId)
+                self.sendHttpResponse(data: data, statusCode: response.statusCode, url: response.url, successCodes: successCodes, headers: response.allHeaderFields, for: messageId)
             } else if let error = error {
-                self.sendHttpResponse(data: error.localizedDescription.data(using: .utf8), statusCode: -1, successCodes: successCodes, headers: [:], for: messageId)
+                self.sendHttpResponse(data: error.localizedDescription.data(using: .utf8), statusCode: -1, url: nil, successCodes: successCodes, headers: [:], for: messageId)
             } else {
-                self.sendHttpResponse(data: "unknown error".data(using: .utf8), statusCode: -1, successCodes: successCodes, headers: [:], for: messageId)
+                self.sendHttpResponse(data: "unknown error".data(using: .utf8), statusCode: -1, url: nil, successCodes: successCodes, headers: [:], for: messageId)
             }
         }
         task.resume()
