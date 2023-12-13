@@ -229,8 +229,14 @@ final class AppCoordinator: NSObject {
         case .file(let filename, let contentType, _, _) where contentType == "application/pdf":
             let file = Files.attachmentFile(in: library.identifier, key: attachment.key, filename: filename, contentType: contentType)
             let url = file.createUrl()
-            let controller = self.pdfController(key: attachment.key, library: library, url: url, page: page, preselectedAnnotationKey: annotation, detailCoordinator: detailCoordinator)
-            self.show(pdfController: controller, in: window, animated: animated, completion: completion)
+            self.show(
+                viewControllerProvider: {
+                    self.pdfController(key: attachment.key, library: library, url: url, page: page, preselectedAnnotationKey: annotation, detailCoordinator: detailCoordinator)
+                },
+                in: window,
+                animated: animated,
+                completion: completion
+            )
 
         default:
             completion?()
@@ -252,8 +258,13 @@ final class AppCoordinator: NSObject {
             
         mainController.getDetailCoordinator { [weak self] coordinator in
             guard let self = self, let window = self.window else { return }
-            let controller = self.pdfController(key: data.key, library: library, url: url, page: nil, preselectedAnnotationKey: nil, detailCoordinator: coordinator)
-            self.show(pdfController: controller, in: window, animated: false)
+            self.show(
+                viewControllerProvider: {
+                    self.pdfController(key: data.key, library: library, url: url, page: nil, preselectedAnnotationKey: nil, detailCoordinator: coordinator)
+                },
+                in: window,
+                animated: false
+            )
         }
     }
 
@@ -309,10 +320,11 @@ final class AppCoordinator: NSObject {
         return nil
     }
 
-    private func show(pdfController: UIViewController, in window: UIWindow, animated: Bool, completion: (() -> Void)? = nil) {
+    private func show(viewControllerProvider: () -> UIViewController, in window: UIWindow, animated: Bool, completion: (() -> Void)? = nil) {
         DDLogInfo("AppCoordinator: show pdf controller; animated=\(animated)")
 
         if animated {
+            let pdfController = viewControllerProvider()
             if window.rootViewController?.presentedViewController == nil {
                 DDLogInfo("AppCoordinator: no presented controller, present pdf controller")
                 window.rootViewController?.present(pdfController, animated: true, completion: completion)
@@ -327,7 +339,9 @@ final class AppCoordinator: NSObject {
             return
         }
 
-        self.show(presentedViewController: pdfController, in: window) { viewController, completion in
+        let screenshotController = viewControllerProvider()
+        self.show(presentedViewController: screenshotController, in: window) { viewController, completion in
+            let pdfController = viewControllerProvider()
             // Open PDF reader of given attachment
             if viewController.presentedViewController == nil {
                 DDLogInfo("AppCoordinator: no presented controller, present pdf controller")
@@ -368,8 +382,7 @@ final class AppCoordinator: NSObject {
         imageView.frame = window.bounds
 
         // Create a temporary `UIWindow` which will be shown above current window until it successfully presents the new view controller.
-        let tmpWindow = UIWindow(frame: window.frame)
-        tmpWindow.windowScene = window.windowScene
+        let tmpWindow = window.windowScene.flatMap(UIWindow.init) ?? UIWindow(frame: window.frame)
         tmpWindow.addSubview(imageView)
         tmpWindow.makeKeyAndVisible()
         self.presentedRestoredControllerWindow = tmpWindow
@@ -378,7 +391,6 @@ final class AppCoordinator: NSObject {
 
         presentAction(oldController, {
             // New window is visible with a screenshot, return old view controller and present the new one
-            window.rootViewController = oldController
             self.presentedRestoredControllerWindow = nil
         })
     }
