@@ -325,6 +325,10 @@ final class ExtensionViewModel {
         self.setupWebHandlerObserving()
     }
 
+    deinit {
+        DDLogInfo("ExtensionViewModel: deinitialize")
+    }
+
     // MARK: - Actions
 
     func start(with extensionItem: NSExtensionItem) {

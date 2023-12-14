@@ -12,7 +12,7 @@ import CocoaLumberjackSwift
 import RxSwift
 import ZIPFoundation
 
-final class AttachmentDownloader {
+final class AttachmentDownloader: NSObject {
     enum Error: Swift.Error {
         case incompatibleAttachment
         case zipDidntContainRequestedFile
@@ -58,14 +58,12 @@ final class AttachmentDownloader {
     private unowned let dbStorage: DbStorage
     private unowned let webDavController: WebDavController
     private let accessQueue: DispatchQueue
-    private let processingQueue: DispatchQueue
-    // Database requests have to be performed on serial queue, since `processingQueue` is concurrent to allow multiple downloads, db requests need their separate queue.
     private let dbQueue: DispatchQueue
-    private let operationQueue: OperationQueue
     private let disposeBag: DisposeBag
     let observable: PublishSubject<Update>
 
-    private var operations: [Download: AttachmentDownloadOperation]
+    private var session: URLSession!
+    private var tasks: [Download: URLSessionTask]
     private var progressObservers: [Download: NSKeyValueObservation]
     private var errors: [Download: Swift.Error]
     private var batchProgress: Progress?
@@ -79,7 +77,7 @@ final class AttachmentDownloader {
         self.accessQueue.sync { [weak self] in
             guard let self = self else { return }
             progress = self.batchProgress
-            remainingBatchCount = self.operations.count
+            remainingBatchCount = self.tasks.count
             totalBatchCount = self.totalBatchCount
         }
 
@@ -87,26 +85,22 @@ final class AttachmentDownloader {
     }
 
     init(userId: Int, apiClient: ApiClient, fileStorage: FileStorage, dbStorage: DbStorage, webDavController: WebDavController) {
-        let processingQueue = DispatchQueue(label: "org.zotero.AttachmentDownloader.ProcessingQueue", qos: .userInteractive, attributes: .concurrent)
-        let operationQueue = OperationQueue()
-        operationQueue.maxConcurrentOperationCount = 2
-        operationQueue.qualityOfService = .userInitiated
-        operationQueue.underlyingQueue = processingQueue
-
         self.userId = userId
-        self.apiClient = apiClient
         self.fileStorage = fileStorage
+        self.apiClient = apiClient
         self.dbStorage = dbStorage
         self.webDavController = webDavController
-        self.operations = [:]
+        self.tasks = [:]
         self.progressObservers = [:]
         self.accessQueue = DispatchQueue(label: "org.zotero.AttachmentDownloader.AccessQueue", qos: .userInteractive, attributes: .concurrent)
         self.dbQueue = DispatchQueue(label: "org.zotero.AttachmentDownloader.DbQueue", qos: .userInteractive)
-        self.processingQueue = processingQueue
-        self.operationQueue = operationQueue
         self.errors = [:]
         self.observable = PublishSubject()
         self.disposeBag = DisposeBag()
+
+        super.init()
+
+        self.session = URLSessionCreator.createSession(for: "AttachmentDownloaderBackgroundSession", delegate: self)
     }
 
     // MARK: - Actions
@@ -115,7 +109,7 @@ final class AttachmentDownloader {
         self.accessQueue.async(flags: .barrier) { [weak self] in
             guard let self = self else { return }
 
-            var operations: [(Download, String?, AttachmentDownloadOperation)] = []
+            var tasks: [(Download, String?, URLSessionTask)] = []
 
             for (attachment, parentKey) in attachments {
                 switch attachment.type {
@@ -134,21 +128,19 @@ final class AttachmentDownloader {
                         case .remote, .remoteMissing, .localAndChangedRemotely:
                             DDLogInfo("AttachmentDownloader: batch download remote\(location == .remoteMissing ? "ly missing" : "") file \(attachment.key)")
                             let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
-                            guard let (download, operation) = self.createDownload(file: file, key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, hasLocalCopy: false) else { continue }
-                            operations.append((download, parentKey, operation))
+                            guard let (download, task) = self.createDownload(file: file, key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, hasLocalCopy: false) else { continue }
+                            tasks.append((download, parentKey, task))
                         }
                     }
                 }
             }
 
-            for data in operations {
+            for data in tasks {
                 DDLogInfo("AttachmentDownloader: enqueue \(data.0.key)")
                 // Send first update to immediately reflect new state
                 self.observable.on(.next(Update(download: data.0, parentKey: data.1, kind: .progress(0))))
+                data.2.resume()
             }
-
-            let downloadOperations = operations.map({ $0.2 })
-            self.operationQueue.addOperations(downloadOperations, waitUntilFinished: false)
         }
     }
 
@@ -209,17 +201,14 @@ final class AttachmentDownloader {
         let download = Download(key: key, libraryId: libraryId)
         self.progressObservers[download] = nil
 
-        guard let operation = self.operations[download] else { return }
+        guard let task = self.tasks[download] else { return }
 
-        self.operations[download] = nil
+        self.tasks[download] = nil
         self.batchProgress?.totalUnitCount -= 100
         self.resetBatchDataIfNeeded()
+        task.cancel()
 
         DDLogInfo("AttachmentDownloader: cancelled \(download.key)")
-
-        self.processingQueue.async {
-            operation.cancel()
-        }
     }
 
     func data(for key: String, libraryId: LibraryIdentifier) -> (progress: CGFloat?, error: Swift.Error?) {
@@ -228,7 +217,7 @@ final class AttachmentDownloader {
         var error: Swift.Error?
 
         self.accessQueue.sync { [weak self] in
-            progress = (self?.operations[download]?.progress.fractionCompleted).flatMap({ CGFloat($0) })
+            progress = (self?.tasks[download]?.progress.fractionCompleted).flatMap({ CGFloat($0) })
             error = self?.errors[download]
         }
 
@@ -236,116 +225,134 @@ final class AttachmentDownloader {
     }
 
     private func resetBatchDataIfNeeded() {
-        guard self.operations.isEmpty else { return }
+        guard self.tasks.isEmpty else { return }
         self.totalBatchCount = 0
         self.batchProgress = nil
     }
 
     func stop() {
-        self.operationQueue.cancelAllOperations()
+//        self.operationQueue.cancelAllOperations()
     }
 
     // MARK: - Helpers
 
     private func download(file: File, key: String, parentKey: String?, libraryId: LibraryIdentifier, hasLocalCopy: Bool) {
         self.accessQueue.async(flags: .barrier) { [weak self] in
-            guard let self = self, let (download, operation) = self.createDownload(file: file, key: key, parentKey: parentKey, libraryId: libraryId, hasLocalCopy: hasLocalCopy) else { return }
-            self.enqueue(operation: operation, download: download, parentKey: parentKey)
+            guard let self = self, let (download, task) = self.createDownload(file: file, key: key, parentKey: parentKey, libraryId: libraryId, hasLocalCopy: hasLocalCopy) else { return }
+            DDLogInfo("AttachmentDownloader: enqueue \(download.key)")
+            // Send first update to immediately reflect new state
+            self.observable.on(.next(Update(download: download, parentKey: parentKey, kind: .progress(0))))
+            // Resume task
+            task.resume()
         }
     }
 
-    private func enqueue(operation: AttachmentDownloadOperation, download: Download, parentKey: String?) {
-        DDLogInfo("AttachmentDownloader: enqueue \(download.key)")
-        // Send first update to immediately reflect new state
-        self.observable.on(.next(Update(download: download, parentKey: parentKey, kind: .progress(0))))
-        // Add operation to queue
-        self.operationQueue.addOperation(operation)
-    }
-
-    private func createDownload(file: File, key: String, parentKey: String?, libraryId: LibraryIdentifier, hasLocalCopy: Bool) -> (Download, AttachmentDownloadOperation)? {
+    private func createDownload(file: File, key: String, parentKey: String?, libraryId: LibraryIdentifier, hasLocalCopy: Bool) -> (Download, URLSessionTask)? {
         let download = Download(key: key, libraryId: libraryId)
 
-        guard self.operations[download] == nil else { return nil }
+        guard self.tasks[download] == nil else { return nil }
 
-        let progress = Progress(totalUnitCount: 100)
-        let observer = progress.observe(\.fractionCompleted) { [weak self] progress, _ in
-            self?.observable.on(.next(Update(download: download, parentKey: parentKey, kind: .progress(CGFloat(progress.fractionCompleted)))))
-        }
-        let operation = AttachmentDownloadOperation(
-            file: file,
-            download: download,
-            progress: progress,
-            userId: userId,
-            apiClient: apiClient,
-            webDavController: webDavController,
-            fileStorage: fileStorage,
-            queue: processingQueue
-        )
-        operation.finishedDownload = { [weak self] result in
-            guard let self = self else { return }
-
-            switch result {
-            case .success:
-                self.dbQueue.sync { [weak self] in
-                    guard let self = self else { return }
-                    // Mark file as downloaded in DB
-                    try? self.dbStorage.perform(request: MarkFileAsDownloadedDbRequest(key: download.key, libraryId: download.libraryId, downloaded: true), on: self.dbQueue)
-                }
-                self.finish(download: download, parentKey: parentKey, result: result, hasLocalCopy: hasLocalCopy)
-                
-            case .failure:
-                self.finish(download: download, parentKey: parentKey, result: result, hasLocalCopy: hasLocalCopy)
+        do {
+            let progress = Progress(totalUnitCount: 100)
+            let observer = progress.observe(\.fractionCompleted) { [weak self] progress, _ in
+                self?.observable.on(.next(Update(download: download, parentKey: parentKey, kind: .progress(CGFloat(progress.fractionCompleted)))))
             }
+            let request = try apiClient.urlRequest(from: FileRequest(libraryId: libraryId, userId: userId, key: key, destination: file))
+            let task = createTask(request: request, progress: progress, hasLocalCopy: hasLocalCopy)
+
+            self.errors[download] = nil
+            self.progressObservers[download] = observer
+            self.tasks[download] = task
+            self.totalBatchCount += 1
+
+            if let batchProgress = self.batchProgress {
+                batchProgress.addChild(progress, withPendingUnitCount: 100)
+                batchProgress.totalUnitCount += 100
+            } else {
+                let batchProgress = Progress(totalUnitCount: 100)
+                batchProgress.addChild(progress, withPendingUnitCount: 100)
+                self.batchProgress = batchProgress
+            }
+
+            return (download, task)
+        } catch let error {
+            self.errors[download] = error
+            self.progressObservers[download] = nil
+            self.tasks[download] = nil
+            self.observable.on(.next(.init(download: download, parentKey: parentKey, kind: .failed(error))))
+
+            return nil
         }
+    }
 
-        self.errors[download] = nil
-        self.progressObservers[download] = observer
-        self.operations[download] = operation
-        self.totalBatchCount += 1
-
-        if let batchProgress = self.batchProgress {
-            batchProgress.addChild(progress, withPendingUnitCount: 100)
-            batchProgress.totalUnitCount += 100
-        } else {
-            let batchProgress = Progress(totalUnitCount: 100)
-            batchProgress.addChild(progress, withPendingUnitCount: 100)
-            self.batchProgress = batchProgress
-        }
-
-        return (download, operation)
+    private func createTask(request: URLRequest, progress: Progress, hasLocalCopy: Bool) -> URLSessionTask {
+        // TODO: - Add webdav support
+        let task = session.downloadTask(with: request)
+        progress.addChild(task.progress, withPendingUnitCount: 50)
+        return task
+//        let operation = AttachmentDownloadOperation(
+//            file: file,
+//            download: download,
+//            progress: progress,
+//            userId: userId,
+//            apiClient: apiClient,
+//            webDavController: webDavController,
+//            fileStorage: fileStorage,
+//            queue: processingQueue
+//        )
+//        operation.finishedDownload = { [weak self] result in
+//            guard let self = self else { return }
+//
+//            switch result {
+//            case .success:
+//                self.dbQueue.sync { [weak self] in
+//                    guard let self = self else { return }
+//                    // Mark file as downloaded in DB
+//                    try? self.dbStorage.perform(request: MarkFileAsDownloadedDbRequest(key: download.key, libraryId: download.libraryId, downloaded: true), on: self.dbQueue)
+//                }
+//                self.finish(download: download, parentKey: parentKey, result: result, hasLocalCopy: hasLocalCopy)
+//
+//            case .failure:
+//                self.finish(download: download, parentKey: parentKey, result: result, hasLocalCopy: hasLocalCopy)
+//            }
+//        }
     }
 
     private func finish(download: Download, parentKey: String?, result: Result<(), Swift.Error>, hasLocalCopy: Bool) {
-        self.accessQueue.async(flags: .barrier) { [weak self] in
-            self?._finish(download: download, parentKey: parentKey, result: result, hasLocalCopy: hasLocalCopy)
-        }
+//        self.accessQueue.async(flags: .barrier) { [weak self] in
+//            self?._finish(download: download, parentKey: parentKey, result: result, hasLocalCopy: hasLocalCopy)
+//        }
     }
 
     private func _finish(download: Download, parentKey: String?, result: Result<(), Swift.Error>, hasLocalCopy: Bool) {
-        self.operations[download] = nil
-        self.progressObservers[download] = nil
-        self.resetBatchDataIfNeeded()
-
-        switch result {
-        case .success:
-            DDLogInfo("AttachmentDownloader: finished downloading \(download.key)")
-
-            self.errors[download] = nil
-            self.observable.on(.next(Update(download: download, parentKey: parentKey, kind: .ready)))
-
-        case .failure(let error):
-            DDLogError("AttachmentDownloader: failed to download attachment \(download.key), \(download.libraryId) - \(error)")
-
-            let isCancelError = (error as? AttachmentDownloadOperation.Error) == .cancelled
-            self.errors[download] = (isCancelError || hasLocalCopy) ? nil : error
-
-            if isCancelError {
-                self.observable.on(.next(Update(download: download, parentKey: parentKey, kind: .cancelled)))
-            } else if hasLocalCopy {
-                self.observable.on(.next(Update(download: download, parentKey: parentKey, kind: .ready)))
-            } else {
-                self.observable.on(.next(Update(download: download, parentKey: parentKey, kind: .failed(error))))
-            }
-        }
+//        self.operations[download] = nil
+//        self.progressObservers[download] = nil
+//        self.resetBatchDataIfNeeded()
+//
+//        switch result {
+//        case .success:
+//            DDLogInfo("AttachmentDownloader: finished downloading \(download.key)")
+//
+//            self.errors[download] = nil
+//            self.observable.on(.next(Update(download: download, parentKey: parentKey, kind: .ready)))
+//
+//        case .failure(let error):
+//            DDLogError("AttachmentDownloader: failed to download attachment \(download.key), \(download.libraryId) - \(error)")
+//
+//            let isCancelError = (error as? AttachmentDownloadOperation.Error) == .cancelled
+//            self.errors[download] = (isCancelError || hasLocalCopy) ? nil : error
+//
+//            if isCancelError {
+//                self.observable.on(.next(Update(download: download, parentKey: parentKey, kind: .cancelled)))
+//            } else if hasLocalCopy {
+//                self.observable.on(.next(Update(download: download, parentKey: parentKey, kind: .ready)))
+//            } else {
+//                self.observable.on(.next(Update(download: download, parentKey: parentKey, kind: .failed(error))))
+//            }
+//        }
     }
+}
+
+extension AttachmentDownloader: URLSessionDelegate {
+
 }

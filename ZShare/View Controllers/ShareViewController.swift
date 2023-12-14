@@ -140,6 +140,10 @@ final class ShareViewController: UIViewController {
         self.viewIsVisible = false
     }
 
+    deinit {
+        DDLogInfo("ShareViewController: deinitialize")
+    }
+
     // MARK: - Actions
 
     private func updatePreferredContentSize() {

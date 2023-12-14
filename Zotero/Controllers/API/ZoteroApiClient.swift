@@ -148,6 +148,11 @@ final class ZoteroApiClient: ApiClient {
         return self.createUploadRequest(request: request, queue: queue) { $0.upload(file.createUrl(), to: convertible, method: method, headers: headers) }
     }
 
+    func urlRequest(from request: ApiRequest) throws -> URLRequest {
+        let convertible = Convertible(request: request, baseUrl: url, token: token(for: request.endpoint), additionalHeaders: manager.sessionConfiguration.httpAdditionalHeaders)
+        return try convertible.asURLRequest()
+    }
+
     private func createUploadRequest(request: ApiRequest, queue: DispatchQueue, create: @escaping (Alamofire.Session) -> UploadRequest) -> Single<(Data?, HTTPURLResponse)> {
         return self.createRequestSingle(for: request.endpoint) { create($0).validate(acceptableStatusCodes: request.acceptableStatusCodes) }
                    .flatMap({ uploadRequest -> Single<(Data?, HTTPURLResponse)> in
