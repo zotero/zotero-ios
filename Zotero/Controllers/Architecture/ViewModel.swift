@@ -97,7 +97,7 @@ extension BackgroundDbProcessingActionHandler {
 }
 
 final class ViewModel<Handler: ViewModelActionHandler>: ObservableObject {
-    private let handler: Handler
+    let handler: Handler
     private let disposeBag: DisposeBag
 
     let objectWillChange: ObservableObjectPublisher

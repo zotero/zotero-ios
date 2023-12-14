@@ -38,7 +38,7 @@ final class AnnotationPreviewController: NSObject {
     let observable: PublishSubject<AnnotationPreviewUpdate>
     private let previewSize: CGSize
     private let queue: DispatchQueue
-    private let fileStorage: FileStorage
+    private unowned let fileStorage: FileStorage
 
     private var subscribers: [SubscriberKey: (SingleEvent<UIImage>) -> Void]
 
@@ -76,7 +76,17 @@ extension AnnotationPreviewController {
                 self.subscribers[subscriberKey] = subscriber
             }
 
-            self.enqueue(key: key, parentKey: parentKey, libraryId: libraryId, document: document, pageIndex: page, rect: rect, imageSize: imageSize, imageScale: imageScale, type: .temporary(subscriberKey: subscriberKey))
+            self.enqueue(
+                key: key,
+                parentKey: parentKey,
+                libraryId: libraryId,
+                document: document,
+                pageIndex: page,
+                rect: rect,
+                imageSize: imageSize,
+                imageScale: imageScale,
+                type: .temporary(subscriberKey: subscriberKey)
+            )
 
             return Disposables.create()
         }
@@ -92,13 +102,20 @@ extension AnnotationPreviewController {
 
         // Cache and report original color
         let rect = annotation.previewBoundingBox
-        self.enqueue(key: annotation.previewId, parentKey: parentKey, libraryId: libraryId, document: document, pageIndex: annotation.pageIndex,
-                     rect: rect, imageSize: previewSize, imageScale: 0.0, includeAnnotation: (annotation is PSPDFKit.InkAnnotation), invertColors: false, isDark: isDark, type: .cachedAndReported)
-//        // If in dark mode, only cache light mode version, which is required for backend upload
-//        if isDark {
-//            self.enqueue(key: key, parentKey: parentKey, document: document, pageIndex: annotation.pageIndex, rect: rect,
-//                         invertColors: true, imageSize: previewSize, imageScale: 0.0, isDark: !isDark, type: .cachedOnly)
-//        }
+        self.enqueue(
+            key: annotation.previewId,
+            parentKey: parentKey,
+            libraryId: libraryId,
+            document: document,
+            pageIndex: annotation.pageIndex,
+            rect: rect,
+            imageSize: previewSize,
+            imageScale: 0.0,
+            includeAnnotation: (annotation is PSPDFKit.InkAnnotation),
+            invertColors: false,
+            isDark: isDark,
+            type: .cachedAndReported
+        )
     }
 
     /// Deletes cached preview for given annotation.
@@ -170,21 +187,20 @@ extension AnnotationPreviewController {
     /// - parameter isDark: `true` if rendered image is in dark mode, `false` otherwise.
     /// - parameter type: Type of preview image. If `temporary`, requested image is temporary and is returned as `Single<UIImage>`. Otherwise image is
     ///                   cached locally and reported through `PublishSubject`.
-    private func enqueue(key: String, parentKey: String, libraryId: LibraryIdentifier, document: Document, pageIndex: PageIndex, rect: CGRect, imageSize: CGSize, imageScale: CGFloat, includeAnnotation: Bool = false, invertColors: Bool = false, isDark: Bool = false, type: PreviewType) {
-        /*
-         Workaround for PSPDFKit issue.
-
-         The way these render options work is that they are applied on top of the original document page colors.
-
-         So if the appearance mode of a PDFViewController is set to night mode and enabling invertRenderColor at that point for a render request of a document displayed in that PDFViewController
-         will not result into reverting the rendering back to light mode. You will have to not enable invertRenderColor option when
-         PDFViewController.appearanceModeManager.appearanceMode is set to night.
-
-         However, even while setting invertRenderColor to false with the appearance mode set to night results in the rendering to be inverted. This should not be the case. So create a dummy document
-         just for rendering and invert only when inverting from light to dark mode
-         */
-//        let newDoc = Document(url: document.fileURL!)
-
+    private func enqueue(
+        key: String,
+        parentKey: String,
+        libraryId: LibraryIdentifier,
+        document: Document,
+        pageIndex: PageIndex,
+        rect: CGRect,
+        imageSize: CGSize,
+        imageScale: CGFloat,
+        includeAnnotation: Bool = false,
+        invertColors: Bool = false,
+        isDark: Bool = false,
+        type: PreviewType
+    ) {
         var skipAnnotations = document.annotations(at: pageIndex)
         if includeAnnotation {
             skipAnnotations = skipAnnotations.filter({ $0.previewId != key })
@@ -192,8 +208,6 @@ extension AnnotationPreviewController {
 
         let options = RenderOptions()
         options.skipAnnotationArray = skipAnnotations
-        // Color inversion disabled because of PSPDFKit rendering issues. It's not needed now, but just in case this is needed later let's keep it here.
-//        options.invertRenderColor = !invertColors && isDark
 
         let request = MutableRenderRequest(document: document)
         request.pageIndex = pageIndex

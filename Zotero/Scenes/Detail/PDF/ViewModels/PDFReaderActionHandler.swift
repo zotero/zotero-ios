@@ -74,6 +74,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
     unowned let dbStorage: DbStorage
     private unowned let annotationPreviewController: AnnotationPreviewController
+    unowned let pdfThumbnailController: PDFThumbnailController
     private unowned let htmlAttributedStringConverter: HtmlAttributedStringConverter
     private unowned let schemaController: SchemaController
     private unowned let fileStorage: FileStorage
@@ -89,6 +90,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     init(
         dbStorage: DbStorage,
         annotationPreviewController: AnnotationPreviewController,
+        pdfThumbnailController: PDFThumbnailController,
         htmlAttributedStringConverter: HtmlAttributedStringConverter,
         schemaController: SchemaController,
         fileStorage: FileStorage,
@@ -97,6 +99,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     ) {
         self.dbStorage = dbStorage
         self.annotationPreviewController = annotationPreviewController
+        self.pdfThumbnailController = pdfThumbnailController
         self.htmlAttributedStringConverter = htmlAttributedStringConverter
         self.schemaController = schemaController
         self.fileStorage = fileStorage
@@ -200,21 +203,23 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         case .createHighlight(let pageIndex, let rects):
             self.addHighlight(onPage: pageIndex, rects: rects, in: viewModel)
 
-        case .setVisiblePage(let page):
-            self.set(page: page, in: viewModel)
+        case .setVisiblePage(let page, let userActionFromDocument, let fromThumbnailList):
+            self.set(page: page, userActionFromDocument: userActionFromDocument, fromThumbnailList: fromThumbnailList, in: viewModel)
 
         case .submitPendingPage(let page):
             guard self.pageDebounceDisposeBag != nil else { return }
             self.pageDebounceDisposeBag = nil
-            self._set(page: page, in: viewModel)
+            self.store(page: page, in: viewModel)
 
         case .export(let settings):
             self.export(settings: settings, viewModel: viewModel)
 
-        case .clearTmpAnnotationPreviews:
+        case .clearTmpData:
             /// Annotations which originate from document and are not synced generate their previews based on annotation UUID, which is in-memory and is not stored in PDF. So these previews are only
             /// temporary and should be cleared when user closes the document.
             self.annotationPreviewController.deleteAll(parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
+            // Clear page thumbnails
+            self.pdfThumbnailController.deleteAll(forKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
 
         case .setSettings(let settings, let userInterfaceStyle):
             self.update(settings: settings, currentInterfaceStyle: userInterfaceStyle, in: viewModel)
@@ -464,28 +469,32 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         self.userInterfaceChanged(interfaceStyle: newUserInterfaceStyle, in: viewModel)
     }
 
-    private func set(page: Int, in viewModel: ViewModel<PDFReaderActionHandler>) {
-        self.pageDebounceDisposeBag = nil
-
-        let disposeBag = DisposeBag()
-
-        Single<Int>.timer(.seconds(3), scheduler: MainScheduler.instance)
-                   .subscribe(onSuccess: { [weak self, weak viewModel] _ in
-                       guard let self = self, let viewModel = viewModel else { return }
-                       self._set(page: page, in: viewModel)
-                       self.pageDebounceDisposeBag = nil
-                   })
-                   .disposed(by: disposeBag)
-        self.pageDebounceDisposeBag = disposeBag
-    }
-
-    private func _set(page: Int, in viewModel: ViewModel<PDFReaderActionHandler>) {
+    private func set(page: Int, userActionFromDocument: Bool, fromThumbnailList: Bool, in viewModel: ViewModel<PDFReaderActionHandler>) {
         guard viewModel.state.visiblePage != page else { return }
 
         self.update(viewModel: viewModel) { state in
             state.visiblePage = page
+            if userActionFromDocument {
+                state.changes.insert(.visiblePageFromDocument)
+            }
+            if fromThumbnailList {
+                state.changes.insert(.visiblePageFromThumbnailList)
+            }
         }
 
+        let disposeBag = DisposeBag()
+        self.pageDebounceDisposeBag = disposeBag
+
+        Single<Int>.timer(.seconds(3), scheduler: MainScheduler.instance)
+                   .subscribe(onSuccess: { [weak self, weak viewModel] _ in
+                       guard let self = self, let viewModel = viewModel else { return }
+                       self.store(page: page, in: viewModel)
+                       self.pageDebounceDisposeBag = nil
+                   })
+                   .disposed(by: disposeBag)
+    }
+
+    private func store(page: Int, in viewModel: ViewModel<PDFReaderActionHandler>) {
         let request = StorePageForItemDbRequest(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, page: "\(page)")
         self.perform(request: request) { error in
             guard let error = error else { return }
@@ -512,7 +521,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                                                           boundingBoxConverter: boundingBoxConverter)
         }
 
-        PdfDocumentExporter.export(
+        PDFDocumentExporter.export(
             annotations: annotations,
             key: viewModel.state.key,
             libraryId: viewModel.state.library.identifier,
@@ -526,7 +535,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         )
     }
 
-    private func finishExport(result: Result<File, PdfDocumentExporter.Error>, viewModel: ViewModel<PDFReaderActionHandler>) {
+    private func finishExport(result: Result<File, PDFDocumentExporter.Error>, viewModel: ViewModel<PDFReaderActionHandler>) {
         self.update(viewModel: viewModel) { state in
             switch result {
             case .success(let file):

@@ -114,7 +114,7 @@ extension RItem: Deletable {
             NotificationCenter.default.post(name: .attachmentDeleted, object: Files.attachmentDirectory(in: libraryId, key: self.key))
 
             if contentType == "application/pdf" {
-                // This is a PDF file, remove all annotations.
+                // This is a PDF file, remove all annotations and thumbnails.
                 NotificationCenter.default.post(name: .attachmentDeleted, object: Files.annotationPreviews(for: self.key, libraryId: libraryId))
             }
         }

@@ -26,6 +26,7 @@ final class Controllers {
     let bundledDataStorage: DbStorage
     let translatorsAndStylesController: TranslatorsAndStylesController
     let annotationPreviewController: AnnotationPreviewController
+    let pdfThumbnailController: PDFThumbnailController
     let urlDetector: UrlDetector
     let dateParser: DateParser
     let htmlAttributedStringConverter: HtmlAttributedStringConverter
@@ -92,6 +93,7 @@ final class Controllers {
         self.debugLogging = debugLogging
         self.translatorsAndStylesController = translatorsAndStylesController
         self.annotationPreviewController = AnnotationPreviewController(previewSize: previewSize, fileStorage: fileStorage)
+        self.pdfThumbnailController = PDFThumbnailController(fileStorage: fileStorage)
         self.urlDetector = urlDetector
         self.dateParser = DateParser()
         self.htmlAttributedStringConverter = HtmlAttributedStringConverter()
@@ -280,6 +282,8 @@ final class Controllers {
         try? self.fileStorage.remove(Files.jsonCache)
         // Remove annotation preview cache
         try? self.fileStorage.remove(Files.annotationPreviews)
+        // Remove attachment page thumbnails
+        try? self.fileStorage.remove(Files.pageThumbnails)
         // Remove interrupted upload files
         try? self.fileStorage.remove(Files.uploads)
         // Remove downloaded files

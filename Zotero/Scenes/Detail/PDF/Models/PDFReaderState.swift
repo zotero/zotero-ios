@@ -46,6 +46,8 @@ struct PDFReaderState: ViewModelState {
         static let filter = Changes(rawValue: 1 << 9)
         static let activeEraserSize = Changes(rawValue: 1 << 10)
         static let initialDataLoaded = Changes(rawValue: 1 << 11)
+        static let visiblePageFromDocument = Changes(rawValue: 1 << 12)
+        static let visiblePageFromThumbnailList = Changes(rawValue: 1 << 13)
     }
 
     enum AppearanceMode: UInt {

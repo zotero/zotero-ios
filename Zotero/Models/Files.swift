@@ -122,11 +122,31 @@ struct Files {
         return FileData(rootPath: Files.cachesRootPath, relativeComponents: ["Zotero", "sharing", key], name: name, ext: ext)
     }
 
+    static func pageThumbnail(pageIndex: UInt, key: String, libraryId: LibraryIdentifier, isDark: Bool) -> File {
+        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["thumbnails", libraryId.folderName, key], name: "\(pageIndex)" + (isDark ? "_dark" : ""), contentType: "png")
+    }
+
+    static func pageThumbnails(for key: String, libraryId: LibraryIdentifier) -> File {
+        return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["thumbnails", libraryId.folderName, key])
+    }
+
+    static func pageThumbnails(for libraryId: LibraryIdentifier) -> File {
+        return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["thumbnails", libraryId.folderName])
+    }
+
+    static var pageThumbnails: File {
+        return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["thumbnails"])
+    }
+
     // MARK: - Annotations
 
     static func annotationPreview(annotationKey: String, pdfKey: String, libraryId: LibraryIdentifier, isDark: Bool) -> File {
-        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["annotations", libraryId.folderName, pdfKey],
-                        name: annotationKey + (isDark ? "_dark" : ""), ext: "png")
+        return FileData(
+            rootPath: Files.appGroupPath,
+            relativeComponents: ["annotations", libraryId.folderName, pdfKey],
+            name: annotationKey + (isDark ? "_dark" : ""),
+            ext: "png"
+        )
     }
 
     static func annotationPreviews(for pdfKey: String, libraryId: LibraryIdentifier) -> File {

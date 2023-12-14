@@ -39,9 +39,9 @@ enum PDFReaderAction {
     case parseAndCacheComment(key: String, comment: String)
     case setComment(key: String, comment: NSAttributedString)
     case setCommentActive(Bool)
-    case setVisiblePage(Int)
+    case setVisiblePage(page: Int, userActionFromDocument: Bool, fromThumbnailList: Bool)
     case export(PDFExportSettings)
-    case clearTmpAnnotationPreviews
+    case clearTmpData
     case setSidebarEditingEnabled(Bool)
     case setSettings(settings: PDFSettings, currentUserInterfaceStyle: UIUserInterfaceStyle)
     case changeIdleTimerDisabled(Bool)

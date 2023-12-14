@@ -11,5 +11,5 @@ import Foundation
 enum PDFExportState {
     case preparing
     case exported(File)
-    case failed(PdfDocumentExporter.Error)
+    case failed(PDFDocumentExporter.Error)
 }
