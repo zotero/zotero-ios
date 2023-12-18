@@ -87,6 +87,7 @@ final class SingleCitationViewController: UIViewController {
             navigationItem.leftBarButtonItem = cancel
 
             setupRightButtonItem(isLoading: false)
+            navigationItem.rightBarButtonItem?.isEnabled = false
         }
 
         func setupObserving() {
