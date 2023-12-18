@@ -23,9 +23,9 @@ class ContainerViewController: UIViewController {
 
     init(rootViewController: UIViewController) {
         self.rootViewController = rootViewController
-        self.disposeBag = DisposeBag()
+        disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
-        self.modalPresentationStyle = .pageSheet
+        modalPresentationStyle = .pageSheet
     }
 
     required init?(coder: NSCoder) {
@@ -35,30 +35,120 @@ class ContainerViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.preferredContentSize = UIScreen.main.bounds.size
-        self.view.backgroundColor = .clear
-        self.setupRootViewController()
+        preferredContentSize = UIScreen.main.bounds.size
+        view.backgroundColor = .clear
+        setupRootViewController()
         if UIDevice.current.userInterfaceIdiom == .pad {
-            self.setupForPad()
+            setupForPad()
         } else {
-            self.setupForPhone()
+            setupForPhone()
+        }
+
+        func setupRootViewController() {
+            rootViewController.willMove(toParent: self)
+            addChild(rootViewController)
+            rootViewController.view.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview(rootViewController.view)
+            rootViewController.didMove(toParent: self)
+        }
+
+        func setupForPad() {
+            setupTappableBackground()
+            setupKeyboardObserving()
+
+            rootViewController.view.layer.cornerRadius = 8
+            rootViewController.view.layer.masksToBounds = true
+
+            let height = rootViewController.view.heightAnchor.constraint(equalToConstant: 100)
+            height.priority = UILayoutPriority(rawValue: 700)
+            containerHeight = height
+
+            let width = rootViewController.view.widthAnchor.constraint(equalToConstant: 100)
+            width.priority = UILayoutPriority(rawValue: 700)
+            containerWidth = width
+
+            let centerY = view.centerYAnchor.constraint(equalTo: rootViewController.view.centerYAnchor)
+            centerY.priority = .defaultLow
+            containerCenterY = centerY
+
+            NSLayoutConstraint.activate([
+                view.centerXAnchor.constraint(equalTo: rootViewController.view.centerXAnchor),
+                centerY,
+                rootViewController.view.heightAnchor.constraint(lessThanOrEqualTo: view.heightAnchor),
+                height,
+                width,
+                view.topAnchor.constraint(lessThanOrEqualTo: rootViewController.view.topAnchor),
+                view.leadingAnchor.constraint(lessThanOrEqualTo: rootViewController.view.leadingAnchor),
+                rootViewController.view.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor),
+                rootViewController.view.bottomAnchor.constraint(lessThanOrEqualTo: view.bottomAnchor)
+            ])
+
+            func setupTappableBackground() {
+                let button = UIButton()
+                button.addTarget(self, action: #selector(Self.hide), for: .touchDown)
+
+                button.frame = view.bounds
+                button.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+                view.insertSubview(button, at: 0)
+            }
+
+            func setupKeyboardObserving() {
+                NotificationCenter.default
+                    .keyboardWillShow
+                    .observe(on: MainScheduler.instance)
+                    .subscribe(onNext: { [weak self] notification in
+                        guard let self, let data = notification.keyboardData else { return }
+                        moveToKeyboard(data, willShow: true)
+                    })
+                    .disposed(by: disposeBag)
+
+                NotificationCenter.default
+                    .keyboardWillHide
+                    .observe(on: MainScheduler.instance)
+                    .subscribe(onNext: { [weak self] notification in
+                        guard let self, let data = notification.keyboardData else { return }
+                        moveToKeyboard(data, willShow: false)
+                    })
+                    .disposed(by: disposeBag)
+
+                func moveToKeyboard(_ data: KeyboardData, willShow: Bool) {
+                    guard let containerCenterY else { return }
+
+                    containerCenterY.constant = willShow ? data.endFrame.height / 2 : 0
+
+                    guard isViewLoaded else { return }
+
+                    UIView.animate(withDuration: 0.2) {
+                        self.view.layoutIfNeeded()
+                    }
+                }
+            }
+        }
+
+        func setupForPhone() {
+            NSLayoutConstraint.activate([
+                rootViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                rootViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                rootViewController.view.topAnchor.constraint(equalTo: view.topAnchor),
+                rootViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            ])
         }
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        self.didAppear = true
+        didAppear = true
     }
 
     override func preferredContentSizeDidChange(forChildContentContainer container: UIContentContainer) {
         super.preferredContentSizeDidChange(forChildContentContainer: container)
 
-        guard let height = self.containerHeight, let width = self.containerWidth else { return }
+        guard let containerHeight, let containerWidth else { return }
 
-        height.constant = container.preferredContentSize.height
-        width.constant = container.preferredContentSize.width
+        containerHeight.constant = container.preferredContentSize.height
+        containerWidth.constant = container.preferredContentSize.width
 
-        guard self.didAppear else { return }
+        guard didAppear else { return }
 
         UIView.animate(withDuration: 0.2) {
             self.view.layoutIfNeeded()
@@ -68,100 +158,6 @@ class ContainerViewController: UIViewController {
     // MARK: - Actions
 
     @objc private func hide() {
-        self.presentingViewController?.dismiss(animated: true, completion: nil)
-    }
-
-    private func moveToKeyboard(_ data: KeyboardData, willShow: Bool) {
-        guard let centerY = self.containerCenterY else { return }
-
-        centerY.constant = willShow ? data.endFrame.height / 2 : 0
-
-        guard self.isViewLoaded else { return }
-
-        UIView.animate(withDuration: 0.2) {
-            self.view.layoutIfNeeded()
-        }
-    }
-
-    // MARK: - Setups
-
-    private func setupForPad() {
-        self.setupTappableBackground()
-        self.setupKeyboardObserving()
-
-        self.rootViewController.view.layer.cornerRadius = 8
-        self.rootViewController.view.layer.masksToBounds = true
-
-        let height = self.rootViewController.view.heightAnchor.constraint(equalToConstant: 100)
-        height.priority = UILayoutPriority(rawValue: 700)
-        self.containerHeight = height
-
-        let width = self.rootViewController.view.widthAnchor.constraint(equalToConstant: 100)
-        width.priority = UILayoutPriority(rawValue: 700)
-        self.containerWidth = width
-
-        let centerY = self.view.centerYAnchor.constraint(equalTo: self.rootViewController.view.centerYAnchor)
-        centerY.priority = .defaultLow
-        self.containerCenterY = centerY
-
-        NSLayoutConstraint.activate([
-            self.view.centerXAnchor.constraint(equalTo: self.rootViewController.view.centerXAnchor),
-            centerY,
-            self.rootViewController.view.heightAnchor.constraint(lessThanOrEqualTo: self.view.heightAnchor),
-            height,
-            width,
-            self.view.topAnchor.constraint(lessThanOrEqualTo: self.rootViewController.view.topAnchor),
-            self.view.leadingAnchor.constraint(lessThanOrEqualTo: self.rootViewController.view.leadingAnchor),
-            self.rootViewController.view.trailingAnchor.constraint(lessThanOrEqualTo: self.view.trailingAnchor),
-            self.rootViewController.view.bottomAnchor.constraint(lessThanOrEqualTo: self.view.bottomAnchor)
-        ])
-    }
-
-    private func setupForPhone() {
-        NSLayoutConstraint.activate([
-            self.rootViewController.view.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
-            self.rootViewController.view.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
-            self.rootViewController.view.topAnchor.constraint(equalTo: self.view.topAnchor),
-            self.rootViewController.view.bottomAnchor.constraint(equalTo: self.view.bottomAnchor)
-        ])
-    }
-
-    private func setupRootViewController() {
-        self.rootViewController.willMove(toParent: self)
-        self.addChild(self.rootViewController)
-        self.rootViewController.view.translatesAutoresizingMaskIntoConstraints = false
-        self.view.addSubview(self.rootViewController.view)
-        self.rootViewController.didMove(toParent: self)
-    }
-
-    private func setupTappableBackground() {
-        let button = UIButton()
-        button.addTarget(self, action: #selector(ContainerViewController.hide), for: .touchDown)
-
-        button.frame = self.view.bounds
-        button.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        self.view.insertSubview(button, at: 0)
-    }
-
-    private func setupKeyboardObserving() {
-        NotificationCenter.default
-                          .keyboardWillShow
-                          .observe(on: MainScheduler.instance)
-                          .subscribe(onNext: { [weak self] notification in
-                              if let data = notification.keyboardData {
-                                  self?.moveToKeyboard(data, willShow: true)
-                              }
-                          })
-                          .disposed(by: self.disposeBag)
-
-        NotificationCenter.default
-                          .keyboardWillHide
-                          .observe(on: MainScheduler.instance)
-                          .subscribe(onNext: { [weak self] notification in
-                              if let data = notification.keyboardData {
-                                  self?.moveToKeyboard(data, willShow: false)
-                              }
-                          })
-                          .disposed(by: self.disposeBag)
+        presentingViewController?.dismiss(animated: true, completion: nil)
     }
 }
