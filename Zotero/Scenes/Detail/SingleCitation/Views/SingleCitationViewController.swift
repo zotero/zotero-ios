@@ -120,13 +120,15 @@ final class SingleCitationViewController: UIViewController {
                 setupRightButtonItem(isLoading: state.loadingCopy)
                 navigationItem.rightBarButtonItem?.isEnabled = !state.loadingPreview
 
-                if let error = state.error {
+                if let error = state.error, let coordinatorDelegate {
                     switch error {
                     case .styleMissing:
-                        coordinatorDelegate?.showMissingStyleError()
+                        coordinatorDelegate.showMissingStyleError(using: nil)
 
                     case .cantPreloadWebView:
-                        coordinatorDelegate?.showCitationPreview(errorMessage: L10n.Errors.citationPreview)
+                        if let navigationController {
+                            coordinatorDelegate.showCitationPreviewError(using: navigationController, errorMessage: L10n.Errors.citationPreview)
+                        }
                     }
                 }
 
@@ -179,8 +181,9 @@ final class SingleCitationViewController: UIViewController {
     }
 
     @IBAction private func showLocatorPicker() {
+        guard let coordinatorDelegate, let navigationController else { return }
         let values = SingleCitationState.locators.map({ SinglePickerModel(id: $0, name: localized(locator: $0)) })
-        coordinatorDelegate?.showLocatorPicker(for: values, selected: viewModel.state.locator, picked: { [weak self] locator in
+        coordinatorDelegate.showLocatorPicker(using: navigationController, for: values, selected: viewModel.state.locator, picked: { [weak self] locator in
             self?.viewModel.process(action: .setLocator(locator))
         })
     }

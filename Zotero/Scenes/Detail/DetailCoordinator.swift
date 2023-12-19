@@ -60,9 +60,9 @@ protocol DetailNoteEditorCoordinatorDelegate: AnyObject {
 }
 
 protocol DetailCitationCoordinatorDelegate: AnyObject {
-    func showLocatorPicker(for values: [SinglePickerModel], selected: String, picked: @escaping (String) -> Void)
-    func showCitationPreview(errorMessage: String)
-    func showMissingStyleError()
+    func showLocatorPicker(using presenter: UINavigationController, for values: [SinglePickerModel], selected: String, picked: @escaping (String) -> Void)
+    func showCitationPreviewError(using presenter: UINavigationController, errorMessage: String)
+    func showMissingStyleError(using presenter: UINavigationController?)
 }
 
 protocol ItemsTagFilterDelegate: AnyObject {
@@ -86,8 +86,6 @@ final class DetailCoordinator: Coordinator {
     let searchItemKeys: [String]?
     private unowned let controllers: Controllers
     private let disposeBag: DisposeBag
-
-    private weak var citationNavigationController: UINavigationController?
 
     init(library: Library, collection: Collection, searchItemKeys: [String]?, navigationController: UINavigationController, itemsTagFilterDelegate: ItemsTagFilterDelegate?, controllers: Controllers) {
         self.library = library
@@ -571,35 +569,12 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         let controller = SingleCitationViewController(viewModel: viewModel)
         controller.coordinatorDelegate = self
         let navigationController = UINavigationController(rootViewController: controller)
-        self.citationNavigationController = navigationController
         let containerController = ContainerViewController(rootViewController: navigationController)
         self.navigationController?.present(containerController, animated: true, completion: nil)
     }
 
     func showMissingStyleError() {
-        let controller = UIAlertController(title: L10n.error, message: L10n.Errors.Citation.missingStyle, preferredStyle: .alert)
-        controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
-        controller.addAction(UIAlertAction(title: L10n.Errors.Citation.openSettings, style: .default, handler: { [weak self] _ in
-            self?.openExportSettings()
-        }))
-
-        if self.navigationController?.presentedViewController == nil {
-            self.navigationController?.present(controller, animated: true, completion: nil)
-        } else {
-            self.navigationController?.dismiss(animated: true) {
-                self.navigationController?.present(controller, animated: true, completion: nil)
-            }
-        }
-    }
-
-    private func openExportSettings() {
-        let navigationController = NavigationViewController()
-        let containerController = ContainerViewController(rootViewController: navigationController)
-        let coordinator = SettingsCoordinator(startsWithExport: true, navigationController: navigationController, controllers: self.controllers)
-        coordinator.parentCoordinator = self
-        self.childCoordinators.append(coordinator)
-        coordinator.start(animated: false)
-        self.navigationController?.present(containerController, animated: true, completion: nil)
+        showMissingStyleError(using: nil)
     }
 
     func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier) {
@@ -912,23 +887,50 @@ extension DetailCoordinator: DetailNoteEditorCoordinatorDelegate {
 }
 
 extension DetailCoordinator: DetailCitationCoordinatorDelegate {
-    func showLocatorPicker(for values: [SinglePickerModel], selected: String, picked: @escaping (String) -> Void) {
+    func showLocatorPicker(using presenter: UINavigationController, for values: [SinglePickerModel], selected: String, picked: @escaping (String) -> Void) {
         let state = SinglePickerState(objects: values, selectedRow: selected)
         let viewModel = ViewModel(initialState: state, handler: SinglePickerActionHandler())
 
         let view = SinglePickerView(requiresSaveButton: false, requiresCancelButton: false, saveAction: picked) { completed in
             completed?()
-            self.citationNavigationController?.popViewController(animated: true)
+            presenter.popViewController(animated: true)
         }
         let controller = UIHostingController(rootView: view.environmentObject(viewModel))
         controller.preferredContentSize = CGSize(width: SingleCitationViewController.width, height: CGFloat(values.count * 44))
-        self.citationNavigationController?.preferredContentSize = controller.preferredContentSize
-        self.citationNavigationController?.pushViewController(controller, animated: true)
+        presenter.preferredContentSize = controller.preferredContentSize
+        presenter.pushViewController(controller, animated: true)
     }
 
-    func showCitationPreview(errorMessage: String) {
+    func showCitationPreviewError(using presenter: UINavigationController, errorMessage: String) {
         let controller = UIAlertController(title: L10n.error, message: errorMessage, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
-        self.citationNavigationController?.present(controller, animated: true, completion: nil)
+        presenter.present(controller, animated: true, completion: nil)
+    }
+
+    func showMissingStyleError(using presenter: UINavigationController?) {
+        guard let resolvedPresenter = presenter ?? navigationController else { return }
+        let controller = UIAlertController(title: L10n.error, message: L10n.Errors.Citation.missingStyle, preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
+        controller.addAction(UIAlertAction(title: L10n.Errors.Citation.openSettings, style: .default, handler: { _ in
+            openExportSettings(using: resolvedPresenter)
+        }))
+
+        if resolvedPresenter.presentedViewController == nil {
+            resolvedPresenter.present(controller, animated: true)
+        } else {
+            resolvedPresenter.dismiss(animated: true) {
+                resolvedPresenter.present(controller, animated: true)
+            }
+        }
+
+        func openExportSettings(using presenter: UINavigationController) {
+            let navigationController = NavigationViewController()
+            let containerController = ContainerViewController(rootViewController: navigationController)
+            let coordinator = SettingsCoordinator(startsWithExport: true, navigationController: navigationController, controllers: controllers)
+            coordinator.parentCoordinator = self
+            childCoordinators.append(coordinator)
+            coordinator.start(animated: false)
+            presenter.present(containerController, animated: true)
+        }
     }
 }
