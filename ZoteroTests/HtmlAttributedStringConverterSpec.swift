@@ -180,7 +180,31 @@ final class HtmlAttributedStringConverterSpec: QuickSpec {
                     ([.bold, .italic], NSRange(location: 75, length: 17))
                 ]
                 let attributedString = NSMutableAttributedString(string: attributedStringRaw, attributes: [.font: font])
-                expect(attributedString.length).to(equal(attributedStringRaw.count))
+                expect(attributedString.string.count).to(equal(attributedStringRaw.count))
+                for (attributes, range) in attributesAndRanges {
+                    attributedString.addAttributes(StringAttribute.nsStringAttributes(from: attributes, baseFont: font), range: range)
+                }
+                let string = htmlConverter.convert(attributedString: attributedString)
+                expect(string).to(equal(htmlStringRaw))
+            }
+
+            it("converts attributed string with larger length than string count") {
+                let attributedStrintRawParts = [
+                    #"This is bold\nas is this. "#,
+                    #"Now it is not 😏😂😚👩🏿‍💻 but 2 lines down it is again\n\n"#,
+                    #"    here that is 😏😂😚👩🏼‍💻   . \nThe end."#
+                ]
+                let attributedStringRaw = attributedStrintRawParts.joined()
+                let htmlStringRaw = "<b>" + attributedStrintRawParts[0] + "</b>" + attributedStrintRawParts[1] + "<b>" + attributedStrintRawParts[2] + "</b>"
+                let attributesAndRanges: [([StringAttribute], NSRange)] = [
+                    ([.bold], NSRange(location: 0, length: NSAttributedString(string: attributedStrintRawParts[0]).length)),
+                    ([.bold], NSRange(
+                        location: NSAttributedString(string: attributedStrintRawParts[0] + attributedStrintRawParts[1]).length,
+                        length: NSAttributedString(string: attributedStrintRawParts[2]).length)
+                    )
+                ]
+                let attributedString = NSMutableAttributedString(string: attributedStringRaw, attributes: [.font: font])
+                expect(attributedString.string.count).to(equal(attributedStringRaw.count))
                 for (attributes, range) in attributesAndRanges {
                     attributedString.addAttributes(StringAttribute.nsStringAttributes(from: attributes, baseFont: font), range: range)
                 }
