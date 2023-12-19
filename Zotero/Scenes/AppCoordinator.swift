@@ -188,7 +188,7 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
                         DDLogWarn("AppCoordinator: show restored state aborted - invalid root view controller")
                         return
                     }
-                    guard let (url, library, optionalCollection) = loadRestoredStateData(forKey: data.key, libraryId: data.libraryId, collectionId: data.collectionId) else {
+                    guard let (url, library, optionalCollection, parentKey) = loadRestoredStateData(forKey: data.key, libraryId: data.libraryId, collectionId: data.collectionId) else {
                         DDLogWarn("AppCoordinator: show restored state aborted - invalid restored state data")
                         return
                     }
@@ -208,7 +208,7 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
                         guard let self else { return }
                         self.show(
                             viewControllerProvider: {
-                                coordinator.createPDFController(key: data.key, library: library, url: url)
+                                coordinator.createPDFController(key: data.key, parentKey: parentKey, library: library, url: url)
                             },
                             by: mainController,
                             in: window,
@@ -216,16 +216,18 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
                         )
                     }
 
-                    func loadRestoredStateData(forKey key: String, libraryId: LibraryIdentifier, collectionId: CollectionIdentifier) -> (URL, Library, Collection?)? {
+                    func loadRestoredStateData(forKey key: String, libraryId: LibraryIdentifier, collectionId: CollectionIdentifier) -> (URL, Library, Collection?, String?)? {
                         guard let dbStorage = self.controllers.userControllers?.dbStorage else { return nil }
 
                         var url: URL?
                         var library: Library?
                         var collection: Collection?
+                        var parentKey: String?
 
                         do {
                             try dbStorage.perform(on: .main, with: { coordinator in
                                 let item = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
+                                parentKey = item.parent?.key
 
                                 guard let attachment = AttachmentCreator.attachment(for: item, fileStorage: self.controllers.fileStorage, urlDetector: nil) else { return }
 
@@ -255,7 +257,7 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
                         guard let url, let library  else {
                             return nil
                         }
-                        return (url, library, collection)
+                        return (url, library, collection, parentKey)
                     }
                 }
         }
@@ -288,13 +290,13 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
             mainController.getDetailCoordinator { coordinator in
                 if isAvailable {
                     guard (coordinator.navigationController?.presentedViewController as? PDFReaderViewController)?.key != attachment.key else { return }
-                    open(attachment: attachment, library: library, on: page, annotation: annotation, window: window, detailCoordinator: coordinator, animated: animated) {
+                    open(attachment: attachment, parentKey: parentKey, library: library, on: page, annotation: annotation, window: window, detailCoordinator: coordinator, animated: animated) {
                         showItemDetail(in: mainController, key: (parentKey ?? attachment.key), library: library, selectChildKey: attachment.key, animated: false, dismissIfPresenting: false)
                     }
                 } else {
                     showItemDetail(in: mainController, key: (parentKey ?? attachment.key), library: library, selectChildKey: attachment.key, animated: animated, dismissIfPresenting: true) {
                         download(attachment: attachment, parentKey: parentKey) {
-                            open(attachment: attachment, library: library, on: page, annotation: annotation, window: window, detailCoordinator: coordinator, animated: true)
+                            open(attachment: attachment, parentKey: parentKey, library: library, on: page, annotation: annotation, window: window, detailCoordinator: coordinator, animated: true)
                         }
                     }
                 }
@@ -368,6 +370,7 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
 
         func open(
             attachment: Attachment,
+            parentKey: String?,
             library: Library,
             on page: Int?,
             annotation: String?,
@@ -383,7 +386,7 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
                 let url = file.createUrl()
                 show(
                     viewControllerProvider: {
-                        detailCoordinator.createPDFController(key: attachment.key, library: library, url: url, page: page, preselectedAnnotationKey: annotation)
+                        detailCoordinator.createPDFController(key: attachment.key, parentKey: parentKey, library: library, url: url, page: page, preselectedAnnotationKey: annotation)
                     },
                     by: presenter,
                     in: window,

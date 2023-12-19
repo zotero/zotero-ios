@@ -26,6 +26,7 @@ protocol PdfReaderCoordinatorDelegate: AnyObject {
     func showDeletedAlertForPdf(completion: @escaping (Bool) -> Void)
     func showSettings(with settings: PDFSettings, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle, completion: @escaping (PDFSettings) -> Void)
     func showReader(document: Document, userInterfaceStyle: UIUserInterfaceStyle)
+    func showCitation(for itemId: String, libraryId: LibraryIdentifier)
 }
 
 protocol PdfAnnotationsCoordinatorDelegate: AnyObject {
@@ -43,6 +44,7 @@ final class PDFCoordinator: Coordinator {
     weak var navigationController: UINavigationController?
 
     private let key: String
+    private let parentKey: String?
     private let library: Library
     private let url: URL
     private let page: Int?
@@ -50,8 +52,9 @@ final class PDFCoordinator: Coordinator {
     private unowned let controllers: Controllers
     private let disposeBag: DisposeBag
 
-    init(key: String, library: Library, url: URL, page: Int?, preselectedAnnotationKey: String?, navigationController: NavigationViewController, controllers: Controllers) {
+    init(key: String, parentKey: String?, library: Library, url: URL, page: Int?, preselectedAnnotationKey: String?, navigationController: NavigationViewController, controllers: Controllers) {
         self.key = key
+        self.parentKey = parentKey
         self.library = library
         self.url = url
         self.page = page
@@ -93,6 +96,7 @@ final class PDFCoordinator: Coordinator {
         let state = PDFReaderState(
             url: self.url,
             key: self.key,
+            parentKey: self.parentKey,
             library: self.library,
             initialPage: self.page,
             preselectedAnnotationKey: self.preselectedAnnotationKey,
@@ -339,6 +343,28 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         navigationController.modalPresentationStyle = .fullScreen
         self.navigationController?.present(navigationController, animated: true, completion: nil)
     }
+
+    func showCitation(for itemId: String, libraryId: LibraryIdentifier) {
+        guard let citationController = controllers.userControllers?.citationController else { return }
+
+        DDLogInfo("PDFCoordinator: show citation popup for \(itemId)")
+
+        let state = SingleCitationState(
+            itemIds: Set([itemId]),
+            libraryId: libraryId,
+            styleId: Defaults.shared.quickCopyStyleId,
+            localeId: Defaults.shared.quickCopyLocaleId,
+            exportAsHtml: Defaults.shared.quickCopyAsHtml
+        )
+        let handler = SingleCitationActionHandler(citationController: citationController)
+        let viewModel = ViewModel(initialState: state, handler: handler)
+
+        let controller = SingleCitationViewController(viewModel: viewModel)
+        controller.coordinatorDelegate = self
+        let navigationController = UINavigationController(rootViewController: controller)
+        let containerController = ContainerViewController(rootViewController: navigationController)
+        self.navigationController?.present(containerController, animated: true, completion: nil)
+    }
 }
 
 extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
@@ -524,5 +550,22 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
         }
         
         self.navigationController?.present(navigationController, animated: true, completion: nil)
+    }
+}
+
+extension PDFCoordinator: DetailCitationCoordinatorDelegate {
+    func showLocatorPicker(using presenter: UINavigationController, for values: [SinglePickerModel], selected: String, picked: @escaping (String) -> Void) {
+        guard let coordinator = parentCoordinator as? DetailCoordinator else { return }
+        coordinator.showLocatorPicker(using: presenter, for: values, selected: selected, picked: picked)
+    }
+    
+    func showCitationPreviewError(using presenter: UINavigationController, errorMessage: String) {
+        guard let coordinator = parentCoordinator as? DetailCoordinator else { return }
+        coordinator.showCitationPreviewError(using: presenter, errorMessage: errorMessage)
+    }
+    
+    func showMissingStyleError(using presenter: UINavigationController?) {
+        guard let coordinator = parentCoordinator as? DetailCoordinator else { return }
+        coordinator.showMissingStyleError(using: navigationController)
     }
 }

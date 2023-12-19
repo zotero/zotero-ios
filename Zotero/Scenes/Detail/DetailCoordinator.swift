@@ -172,10 +172,10 @@ final class DetailCoordinator: Coordinator {
         guard let (attachment, library, sourceView, sourceRect) = self.navigationController?.viewControllers.reversed()
                                                                       .compactMap({ ($0 as? DetailCoordinatorAttachmentProvider)?.attachment(for: key, parentKey: parentKey, libraryId: libraryId) })
                                                                       .first else { return }
-        self.show(attachment: attachment, library: library, sourceView: sourceView, sourceRect: sourceRect)
+        self.show(attachment: attachment, parentKey: parentKey, library: library, sourceView: sourceView, sourceRect: sourceRect)
     }
 
-    private func show(attachment: Attachment, library: Library, sourceView: UIView, sourceRect: CGRect?) {
+    private func show(attachment: Attachment, parentKey: String?, library: Library, sourceView: UIView, sourceRect: CGRect?) {
         switch attachment.type {
         case .url(let url):
             self.show(url: url)
@@ -188,7 +188,7 @@ final class DetailCoordinator: Coordinator {
             switch contentType {
             case "application/pdf":
                 DDLogInfo("DetailCoordinator: show PDF \(attachment.key)")
-                self.showPdf(at: url, key: attachment.key, library: library)
+                self.showPdf(at: url, key: attachment.key, parentKey: parentKey, library: library)
 
             case "text/html":
                 DDLogInfo("DetailCoordinator: show HTML \(attachment.key)")
@@ -272,12 +272,13 @@ final class DetailCoordinator: Coordinator {
         navigationController.present(controller, animated: true, completion: nil)
     }
 
-    func createPDFController(key: String, library: Library, url: URL, page: Int? = nil, preselectedAnnotationKey: String? = nil) -> NavigationViewController {
+    func createPDFController(key: String, parentKey: String?, library: Library, url: URL, page: Int? = nil, preselectedAnnotationKey: String? = nil) -> NavigationViewController {
         let navigationController = NavigationViewController()
         navigationController.modalPresentationStyle = .fullScreen
         
         let coordinator = PDFCoordinator(
             key: key,
+            parentKey: parentKey,
             library: library,
             url: url,
             page: page,
@@ -292,8 +293,8 @@ final class DetailCoordinator: Coordinator {
         return navigationController
     }
     
-    private func showPdf(at url: URL, key: String, library: Library) {
-        let controller = createPDFController(key: key, library: library, url: url)
+    private func showPdf(at url: URL, key: String, parentKey: String?, library: Library) {
+        let controller = createPDFController(key: key, parentKey: parentKey, library: library, url: url)
         navigationController?.present(controller, animated: true, completion: nil)
     }
     
