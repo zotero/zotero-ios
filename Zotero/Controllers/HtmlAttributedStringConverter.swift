@@ -21,10 +21,17 @@ final class HtmlAttributedStringConverter {
     func convert(attributedString: NSAttributedString) -> String {
         var attributes: [Attribute] = []
 
+        var previousRange: NSRange?
         attributedString.enumerateAttributes(in: NSRange(location: 0, length: attributedString.length), options: []) { nsAttributes, range, _ in
-            let attributedPrefix = attributedString.attributedSubstring(from: NSRange(location: 0, length: range.location))
-            let prefix = attributedPrefix.string
-            let prefixCount = prefix.count
+            let currentIndex: Int
+            if let previousRange {
+                let previousIndex = attributes.first.flatMap { $0.index } ?? 0
+                let previousAttributedSubstring = attributedString.attributedSubstring(from: previousRange)
+                let previousSubstring = previousAttributedSubstring.string
+                currentIndex = previousIndex + previousSubstring.count
+            } else {
+                currentIndex = 0
+            }
             // Currently active attributes
             let active = StringAttribute.attributes(from: nsAttributes)
             // Opened attributes so far
@@ -32,15 +39,16 @@ final class HtmlAttributedStringConverter {
             // Close opened attributes if they are not active anymore
             for openedAttribute in opened {
                 if !active.contains(openedAttribute) {
-                    attributes.insert(Attribute(type: openedAttribute, index: prefixCount, isClosing: true), at: 0)
+                    attributes.insert(Attribute(type: openedAttribute, index: currentIndex, isClosing: true), at: 0)
                 }
             }
             // Open new attributes
             for activeAttribute in active {
                 if !opened.contains(activeAttribute) {
-                    attributes.insert(Attribute(type: activeAttribute, index: prefixCount, isClosing: false), at: 0)
+                    attributes.insert(Attribute(type: activeAttribute, index: currentIndex, isClosing: false), at: 0)
                 }
             }
+            previousRange = range
         }
 
         // Close remaining attributes
