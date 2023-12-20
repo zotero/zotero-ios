@@ -98,28 +98,37 @@ class PDFReaderViewController: UIViewController {
         share.title = L10n.Accessibility.Pdf.share
         share.tag = NavigationBarButton.share.rawValue
 
-        let exportAttributes: UIMenuElement.Attributes = viewModel.state.document.isLocked ? [.disabled] : []
-        let exportIncludingAnnotationsAction = UIAction(title: L10n.Pdf.Export.includeAnnotations, attributes: exportAttributes) { [weak self] _ in
-            self?.viewModel.process(action: .export(includeAnnotations: true))
-        }
-        exportIncludingAnnotationsAction.accessibilityValue = L10n.Accessibility.Pdf.exportIncludingAnnotations
-        let exportWithoutAnnotationsAction = UIAction(title: L10n.Pdf.Export.withoutAnnotations, attributes: exportAttributes) { [weak self] _ in
-            self?.viewModel.process(action: .export(includeAnnotations: false))
-        }
-        exportWithoutAnnotationsAction.accessibilityValue = L10n.Accessibility.Pdf.exportWithoutAnnotations
-        let exportMenuChildren: [UIMenuElement] = [exportIncludingAnnotationsAction, exportWithoutAnnotationsAction]
-        let exportMenu = UIMenu(title: L10n.Pdf.Export.export, options: [.displayInline], children: exportMenuChildren)
-        menuChildren.append(exportMenu)
-
-        if let parentKey = viewModel.state.parentKey {
-            let copyCitationAction = UIAction(title: L10n.Citation.copyCitation, image: .init(systemName: "doc.on.doc")) { [weak self] _ in
-                guard let self, let coordinatorDelegate else { return }
-                coordinatorDelegate.showCitation(for: parentKey, libraryId: viewModel.state.library.identifier)
+        let deferredMenu = UIDeferredMenuElement.uncached { [weak self] elementProvider in
+            var elements: [UIMenuElement] = []
+            defer {
+                elementProvider(elements)
             }
-            menuChildren.append(copyCitationAction)
-        }
+            guard let self else { return }
 
-        share.menu = UIMenu(children: menuChildren)
+            if let parentKey = viewModel.state.parentKey {
+                let copyCitationAction = UIAction(title: L10n.Citation.copyCitation, image: .init(systemName: "doc.on.doc")) { [weak self] _ in
+                    guard let self, let coordinatorDelegate else { return }
+                    coordinatorDelegate.showCitation(for: parentKey, libraryId: viewModel.state.library.identifier)
+                }
+                elements.append(copyCitationAction)
+            }
+
+            let exportAttributes: UIMenuElement.Attributes = viewModel.state.document.isLocked ? [.disabled] : []
+            let exportOriginalPDFAction = UIAction(title: L10n.Pdf.Export.export, attributes: exportAttributes) { [weak self] _ in
+                self?.viewModel.process(action: .export(includeAnnotations: false))
+            }
+            exportOriginalPDFAction.accessibilityValue = L10n.Accessibility.Pdf.export
+            elements.append(exportOriginalPDFAction)
+
+            if !viewModel.state.databaseAnnotations.isEmpty {
+                let exportAnnotatedPDFAction = UIAction(title: L10n.Pdf.Export.exportAnnotated, attributes: exportAttributes) { [weak self] _ in
+                    self?.viewModel.process(action: .export(includeAnnotations: true))
+                }
+                exportAnnotatedPDFAction.accessibilityValue = L10n.Accessibility.Pdf.exportAnnotated
+                elements.append(exportAnnotatedPDFAction)
+            }
+        }
+        share.menu = UIMenu(children: [deferredMenu])
         return share
     }()
     private lazy var settingsButton: UIBarButtonItem = {

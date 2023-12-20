@@ -261,8 +261,7 @@
 "pdf.settings.page_fitting.fill" = "Fill";
 "pdf.settings.page_fitting.automatic" = "Automatic";
 "pdf.export.export" = "Export PDF";
-"pdf.export.include_annotations" = "Include annotations";
-"pdf.export.without_annotations" = "Without annotations";
+"pdf.export.export_annotated" = "Export Annotated PDF";
 "pdf.sidebar.no_annotations" = "No Annotations";
 "pdf.sidebar.no_outline" = "No Outline";
 
@@ -510,8 +509,7 @@
 "accessibility.pdf.sidebar_close" = "Close sidebar";
 "accessibility.pdf.share" = "Share PDF";
 "accessibility.pdf.export" = "Export PDF";
-"accessibility.pdf.export_including_annotations" = "Export PDF including annotations";
-"accessibility.pdf.export_without_annotations" = "Export PDF without annotations";
+"accessibility.pdf.export_annotated" = "Export annotated PDF";
 "accessibility.pdf.settings" = "Settings";
 "accessibility.pdf.color_picker" = "Color picker";
 "accessibility.pdf.highlight_annotation_tool" = "Create highlight annotation";

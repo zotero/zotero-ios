@@ -196,10 +196,8 @@ internal enum L10n {
       internal static let eraserAnnotationTool = L10n.tr("Localizable", "accessibility.pdf.eraser_annotation_tool", fallback: "Eraser")
       /// Export PDF
       internal static let export = L10n.tr("Localizable", "accessibility.pdf.export", fallback: "Export PDF")
-      /// Export PDF including annotations
-      internal static let exportIncludingAnnotations = L10n.tr("Localizable", "accessibility.pdf.export_including_annotations", fallback: "Export PDF including annotations")
-      /// Export PDF without annotations
-      internal static let exportWithoutAnnotations = L10n.tr("Localizable", "accessibility.pdf.export_without_annotations", fallback: "Export PDF without annotations")
+      /// Export annotated PDF
+      internal static let exportAnnotated = L10n.tr("Localizable", "accessibility.pdf.export_annotated", fallback: "Export annotated PDF")
       /// Highlight annotation
       internal static let highlightAnnotation = L10n.tr("Localizable", "accessibility.pdf.highlight_annotation", fallback: "Highlight annotation")
       /// Create highlight annotation
@@ -952,10 +950,8 @@ internal enum L10n {
     internal enum Export {
       /// Export PDF
       internal static let export = L10n.tr("Localizable", "pdf.export.export", fallback: "Export PDF")
-      /// Include annotations
-      internal static let includeAnnotations = L10n.tr("Localizable", "pdf.export.include_annotations", fallback: "Include annotations")
-      /// Without annotations
-      internal static let withoutAnnotations = L10n.tr("Localizable", "pdf.export.without_annotations", fallback: "Without annotations")
+      /// Export Annotated PDF
+      internal static let exportAnnotated = L10n.tr("Localizable", "pdf.export.export_annotated", fallback: "Export Annotated PDF")
     }
     internal enum Locked {
       /// Please enter the password to open this PDF.
