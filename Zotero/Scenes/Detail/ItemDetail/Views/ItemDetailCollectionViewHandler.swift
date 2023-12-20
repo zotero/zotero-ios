@@ -684,7 +684,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
             return .attachment(attachment: attachment, type: .disabled)
         }
 
-        let (progress, error) = fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
+        let (progress, error) = fileDownloader?.data(for: attachment.key, parentKey: viewModel.state.key, libraryId: attachment.libraryId) ?? (nil, nil)
 
         if let error = error {
             return .attachment(attachment: attachment, type: .failed(error))

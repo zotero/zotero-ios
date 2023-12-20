@@ -560,7 +560,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
     }
 
     private func openAttachment(with key: String, in viewModel: ViewModel<ItemDetailActionHandler>) {
-        let (progress, _) = self.fileDownloader.data(for: key, libraryId: viewModel.state.library.identifier)
+        let (progress, _) = self.fileDownloader.data(for: key, parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
 
         if progress != nil {
             // If download is in progress, cancel download
@@ -570,7 +570,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 }
             }
 
-            self.fileDownloader.cancel(key: key, libraryId: viewModel.state.library.identifier)
+            self.fileDownloader.cancel(key: key, parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
             return
         }
 

@@ -173,8 +173,8 @@ final class ItemsTableViewHandler: NSObject {
     private func cellAccessory(from accessory: ItemAccessory?) -> ItemCellModel.Accessory? {
         return accessory.flatMap({ accessory -> ItemCellModel.Accessory in
             switch accessory {
-            case .attachment(let attachment):
-                let (progress, error) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
+            case .attachment(let attachment, let parentKey):
+                let (progress, error) = self.fileDownloader?.data(for: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId) ?? (nil, nil)
                 return .attachment(.stateFrom(type: attachment.type, progress: progress, error: error))
 
             case .doi:
@@ -269,8 +269,7 @@ final class ItemsTableViewHandler: NSObject {
         }
 
         switch accessory {
-        case .attachment(let attachment):
-            let parentKey = item.key == attachment.key ? nil : item.key
+        case .attachment(let attachment, let parentKey):
             return .attachment(attachment: attachment, parentKey: parentKey)
 
         case .doi(let doi):

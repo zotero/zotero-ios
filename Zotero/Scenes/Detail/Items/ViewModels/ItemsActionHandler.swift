@@ -234,11 +234,13 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
     // MARK: - Attachments
 
     private func downloadAttachments(for keys: Set<String>, in viewModel: ViewModel<ItemsActionHandler>) {
+        var attachments: [(Attachment, String?)] = []
         for key in keys {
-            let (progress, _) = self.fileDownloader.data(for: key, libraryId: viewModel.state.library.identifier)
-            guard progress == nil, let attachment = viewModel.state.itemAccessories[key]?.attachment else { return }
-            self.fileDownloader.downloadIfNeeded(attachment: attachment, parentKey: (attachment.key == key ? nil : key))
+            guard let attachment = viewModel.state.itemAccessories[key]?.attachment else { continue }
+            let parentKey = attachment.key == key ? nil : key
+            attachments.append((attachment, parentKey))
         }
+        fileDownloader.batchDownload(attachments: attachments)
     }
 
     private func updateDeletedAttachments(_ notification: AttachmentFileDeletedNotification, in viewModel: ViewModel<ItemsActionHandler>) {
@@ -294,7 +296,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
     }
 
     private func open(attachment: Attachment, parentKey: String?, in viewModel: ViewModel<ItemsActionHandler>) {
-        let (progress, _) = self.fileDownloader.data(for: attachment.key, libraryId: attachment.libraryId)
+        let (progress, _) = self.fileDownloader.data(for: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId)
         if progress != nil {
             if viewModel.state.attachmentToOpen == attachment.key {
                 self.update(viewModel: viewModel) { state in
@@ -302,7 +304,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
                 }
             }
 
-            self.fileDownloader.cancel(key: attachment.key, libraryId: attachment.libraryId)
+            self.fileDownloader.cancel(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId)
         } else {
             self.update(viewModel: viewModel) { state in
                 state.attachmentToOpen = attachment.key
@@ -320,7 +322,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
         case .ready:
             guard let updatedAttachment = attachment.changed(location: .local) else { return }
             self.update(viewModel: viewModel) { state in
-                state.itemAccessories[updateKey] = .attachment(updatedAttachment)
+                state.itemAccessories[updateKey] = .attachment(attachment: updatedAttachment, parentKey: update.parentKey)
                 state.updateItemKey = updateKey
 
                 if state.downloadBatchData != batchData {
@@ -647,7 +649,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
 
     private func accessory(for item: RItem) -> ItemAccessory? {
         if let attachment = AttachmentCreator.mainAttachment(for: item, fileStorage: self.fileStorage) {
-            return .attachment(attachment)
+            return .attachment(attachment: attachment, parentKey: item.key)
         }
 
         if let urlString = item.urlString, self.urlDetector.isUrl(string: urlString), let url = URL(string: urlString) {

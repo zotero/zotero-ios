@@ -9,13 +9,13 @@
 import Foundation
 
 final class URLSessionCreator {
-    static func createSession(for identifier: String, delegate: URLSessionDelegate?) -> URLSession {
+    static func createSession(for identifier: String, delegate: URLSessionDelegate?, delegateQueue: OperationQueue? = nil) -> URLSession {
         let configuration = URLSessionConfiguration.background(withIdentifier: identifier)
         configuration.sharedContainerIdentifier = AppGroup.identifier
         configuration.timeoutIntervalForRequest = ApiConstants.requestTimeout
         configuration.timeoutIntervalForResource = ApiConstants.resourceTimeout
         configuration.sessionSendsLaunchEvents = true
         configuration.isDiscretionary = false
-        return URLSession(configuration: configuration, delegate: delegate, delegateQueue: nil)
+        return URLSession(configuration: configuration, delegate: delegate, delegateQueue: delegateQueue)
     }
 }

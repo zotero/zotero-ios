@@ -246,7 +246,7 @@ final class ItemsViewController: UIViewController {
             })
 
         case .createParent:
-            guard let key = selectedKeys.first, case .attachment(let attachment) = self.viewModel.state.itemAccessories[key] else { return }
+            guard let key = selectedKeys.first, case .attachment(let attachment, _) = self.viewModel.state.itemAccessories[key] else { return }
             var collectionKey: String?
             switch self.viewModel.state.collection.identifier {
             case .collection(let _key):

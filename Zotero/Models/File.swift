@@ -95,3 +95,5 @@ struct FileData: File {
         return FileData(rootPath: rootPath, relativeComponents: relativeComponents, name: "", type: .directory)
     }
 }
+
+extension FileData: Hashable {}
