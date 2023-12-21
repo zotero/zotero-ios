@@ -289,18 +289,27 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
                 if isAvailable {
                     guard (coordinator.navigationController?.presentedViewController as? PDFReaderViewController)?.key != attachment.key else { return }
                     open(attachment: attachment, library: library, on: page, annotation: annotation, window: window, detailCoordinator: coordinator, animated: animated) {
-                        showItemDetail(in: mainController, key: (parentKey ?? attachment.key), library: library, selectChildKey: attachment.key, animated: animated, dismissIfPresenting: false)
+                        showItemDetail(in: mainController, key: (parentKey ?? attachment.key), library: library, selectChildKey: attachment.key, animated: false, dismissIfPresenting: false)
                     }
                 } else {
-                    showItemDetail(in: mainController, key: (parentKey ?? attachment.key), library: library, selectChildKey: attachment.key, animated: animated, dismissIfPresenting: true)
-                    download(attachment: attachment, parentKey: parentKey) {
-                        open(attachment: attachment, library: library, on: page, annotation: annotation, window: window, detailCoordinator: coordinator, animated: true)
+                    showItemDetail(in: mainController, key: (parentKey ?? attachment.key), library: library, selectChildKey: attachment.key, animated: animated, dismissIfPresenting: true) {
+                        download(attachment: attachment, parentKey: parentKey) {
+                            open(attachment: attachment, library: library, on: page, annotation: annotation, window: window, detailCoordinator: coordinator, animated: true)
+                        }
                     }
                 }
             }
         }
 
-        func showItemDetail(in mainController: MainViewController, key: String, library: Library, selectChildKey childKey: String?, animated: Bool, dismissIfPresenting: Bool) {
+        func showItemDetail(
+            in mainController: MainViewController,
+            key: String,
+            library: Library,
+            selectChildKey childKey: String?,
+            animated: Bool,
+            dismissIfPresenting: Bool,
+            completion: (() -> Void)? = nil
+        ) {
             let dismissPresented = dismissIfPresenting && (mainController.presentedViewController != nil)
             let itemDetailAnimated = dismissPresented ? false : animated
 
@@ -320,7 +329,9 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
 
             if dismissPresented {
                 // Dismiss presented screen if any visible
-                mainController.dismiss(animated: animated)
+                mainController.dismiss(animated: animated, completion: completion)
+            } else {
+                completion?()
             }
         }
 
