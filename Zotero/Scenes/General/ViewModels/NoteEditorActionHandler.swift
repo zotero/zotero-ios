@@ -81,15 +81,7 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 let key = KeyGenerator.newKey
                 let note = Note(key: key, text: text, tags: tags)
                 let type = schemaController.localized(itemType: ItemTypes.note) ?? ItemTypes.note
-                let collectionKey: String?
-
-                switch collection.identifier {
-                case .collection(let key):
-                    collectionKey = key
-
-                default:
-                    collectionKey = nil
-                }
+                let collectionKey = collection.isCollection ? collection.identifier.key : nil
 
                 let request = CreateNoteDbRequest(note: note, localizedType: type, libraryId: library.identifier, collectionKey: collectionKey, parentKey: nil)
                 createNote(note, with: request)
@@ -113,7 +105,6 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
 
             func updateExistingNote(library: Library, key: String, text: String, tags: [Tag]) {
                 let note = Note(key: key, text: text, tags: tags)
-
                 let request = EditNoteDbRequest(note: note, libraryId: library.identifier)
                 perform(request: request) { error in
                     if let error {

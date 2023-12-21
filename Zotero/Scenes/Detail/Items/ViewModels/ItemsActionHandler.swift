@@ -97,7 +97,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
             }
 
         case .processNoteSaveResult(let result):
-            self.processNoteSaveResult(result: result, in: viewModel)
+            processNoteSaveResult(result: result, in: viewModel)
 
         case .search(let text):
             self.search(for: (text.isEmpty ? nil : text), ignoreOriginal: false, in: viewModel)
