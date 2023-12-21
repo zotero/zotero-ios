@@ -229,13 +229,9 @@ extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
         self.navigationController?.present(navigationController, animated: true, completion: nil)
     }
 
-    func showItems(for collection: Collection, in library: Library, saveCollectionToDefaults: Bool) {
+    func showItems(for collection: Collection, in library: Library) {
         self.visibleLibraryId = library.identifier
-        self.mainCoordinatorDelegate.showItems(for: collection, in: library, saveCollectionToDefaults: saveCollectionToDefaults)
-    }
-
-    var isSplit: Bool {
-        return self.mainCoordinatorDelegate.isSplit
+        self.mainCoordinatorDelegate.showItems(for: collection, in: library)
     }
 
     func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier) {
@@ -270,7 +266,7 @@ extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
     func showDefaultCollection() {
         let library = Library(identifier: visibleLibraryId, name: "", metadataEditable: true, filesEditable: true)
         let collection = Collection(custom: .all)
-        showItems(for: collection, in: library, saveCollectionToDefaults: false)
+        showItems(for: collection, in: library)
     }
 }
 

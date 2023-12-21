@@ -19,22 +19,52 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     private var sessionCancellable: AnyCancellable?
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
-        guard let delegate = UIApplication.shared.delegate as? AppDelegate else { return }
+        guard let delegate = UIApplication.shared.delegate as? AppDelegate, let controllers = delegate.controllers else { return }
 
         let windowScene = scene as? UIWindowScene
         let frame = windowScene?.coordinateSpace.bounds ?? UIScreen.main.bounds
 
         // Assign activity counter
-        self.activityCounter = delegate
+        activityCounter = delegate
         // Create window for scene
         let window = UIWindow(frame: frame)
         self.window = window
-        self.window?.windowScene = windowScene
-        self.window?.makeKeyAndVisible()
+        window.windowScene = windowScene
+        window.makeKeyAndVisible()
         // Load state if available, setup scene & window
-        self.setup(scene: scene, window: window, options: connectionOptions, session: session, delegate: delegate)
+        setup(scene: scene, userActivity: userActivity, window: window, options: connectionOptions, session: session, controllers: controllers)
         // Start observing
-        self.setupObservers(controllers: delegate.controllers)
+        setupObservers(options: connectionOptions, session: session, controllers: controllers)
+
+        func setup(scene: UIScene, userActivity: NSUserActivity?, window: UIWindow, options connectionOptions: UIScene.ConnectionOptions, session: UISceneSession, controllers: Controllers) {
+            scene.userActivity = userActivity
+            scene.title = userActivity?.title
+
+            // Setup app coordinator and present initial screen
+            let coordinator = AppCoordinator(window: window, controllers: controllers)
+            coordinator.start(options: connectionOptions, session: session)
+            self.coordinator = coordinator
+        }
+
+        func setupObservers(options connectionOptions: UIScene.ConnectionOptions, session: UISceneSession, controllers: Controllers) {
+            sessionCancellable = controllers.userInitialized
+                .receive(on: DispatchQueue.main)
+                .sink(
+                    receiveCompletion: { _ in },
+                    receiveValue: { [weak self] result in
+                        guard let self else { return }
+                        let _isLoggedIn: Bool
+                        switch result {
+                        case .success(let isLoggedIn):
+                            _isLoggedIn = isLoggedIn
+
+                        case .failure:
+                            _isLoggedIn = false
+                        }
+                        coordinator.showMainScreen(isLoggedIn: _isLoggedIn, options: connectionOptions, session: session, animated: false)
+                    }
+                )
+        }
     }
 
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
@@ -46,58 +76,38 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             DDLogInfo("SceneDelegate: App opened by \(urlContext.url.absoluteString) from \(sourceApp)")
 
             if let kind = urlController.process(url: urlContext.url) {
-                self.coordinator.show(customUrl: kind, animated: (UIApplication.shared.applicationState == .active))
+                coordinator.show(customUrl: kind, animated: (UIApplication.shared.applicationState == .active))
             }
         }
     }
 
-    private func setup(scene: UIScene, window: UIWindow, options connectionOptions: UIScene.ConnectionOptions, session: UISceneSession, delegate: AppDelegate) {
-        scene.userActivity = userActivity
-        scene.title = userActivity?.title
-
-        // Setup app coordinator and present initial screen
-        let coordinator = AppCoordinator(window: self.window, controllers: delegate.controllers)
-        coordinator.start(options: connectionOptions, session: session)
-        self.coordinator = coordinator
-    }
-
-    func windowScene(_ windowScene: UIWindowScene, didUpdate previousCoordinateSpace: UICoordinateSpace, interfaceOrientation previousInterfaceOrientation: UIInterfaceOrientation, traitCollection previousTraitCollection: UITraitCollection) {
+    func windowScene(
+        _ windowScene: UIWindowScene,
+        didUpdate previousCoordinateSpace: UICoordinateSpace,
+        interfaceOrientation previousInterfaceOrientation: UIInterfaceOrientation,
+        traitCollection previousTraitCollection: UITraitCollection
+    ) {
         guard let newSize = windowScene.windows.first?.frame.size else { return }
-        self.coordinator?.didRotate(to: newSize)
+        coordinator?.didRotate(to: newSize)
     }
 
     func sceneDidBecomeActive(_ scene: UIScene) {
-        self.window?.windowScene?.userActivity?.becomeCurrent()
+        window?.windowScene?.userActivity?.becomeCurrent()
     }
 
     func sceneWillResignActive(_ scene: UIScene) {
-        self.window?.windowScene?.userActivity?.resignCurrent()
+        window?.windowScene?.userActivity?.resignCurrent()
     }
 
     func sceneWillEnterForeground(_ scene: UIScene) {
-        self.activityCounter?.sceneWillEnterForeground()
+        activityCounter?.sceneWillEnterForeground()
     }
 
     func sceneDidEnterBackground(_ scene: UIScene) {
-        self.activityCounter?.sceneDidEnterBackground()
+        activityCounter?.sceneDidEnterBackground()
     }
 
     func stateRestorationActivity(for scene: UIScene) -> NSUserActivity? {
         return scene.userActivity
-    }
-
-    private func setupObservers(controllers: Controllers) {
-        self.sessionCancellable = controllers.userInitialized
-                                             .receive(on: DispatchQueue.main)
-                                             .sink(receiveCompletion: { _ in },
-                                                   receiveValue: { [weak self] result in
-                                                 switch result {
-                                                 case .success(let isLoggedIn):
-                                                     self?.coordinator.showMainScreen(isLoggedIn: isLoggedIn)
-
-                                                 case .failure:
-                                                     self?.coordinator.showMainScreen(isLoggedIn: false)
-                                                 }
-                                             })
     }
 }

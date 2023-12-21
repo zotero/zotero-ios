@@ -8,7 +8,26 @@
 
 import Foundation
 
+typealias NoteEditorKind = NoteEditorState.Kind
+
 struct NoteEditorState: ViewModelState {
+    enum Kind {
+        case itemCreation(parentKey: String)
+        case standaloneCreation(collection: Collection)
+        case edit(key: String)
+        case readOnly(key: String)
+
+        var readOnly: Bool {
+            switch self {
+            case .readOnly:
+                return true
+
+            default:
+                return false
+            }
+        }
+    }
+
     struct Changes: OptionSet {
         typealias RawValue = UInt8
 
@@ -23,24 +42,28 @@ struct NoteEditorState: ViewModelState {
         let title: String
     }
 
-    let title: TitleData?
-    let libraryId: LibraryIdentifier
-    let readOnly: Bool
+    enum Error: Swift.Error {
+        case cantSaveReadonlyNote
+    }
 
+    let library: Library
+    let title: TitleData?
+
+    var kind: Kind
     var text: String
     var tags: [Tag]
     var changes: Changes
 
-    init(title: TitleData?, text: String, tags: [Tag], libraryId: LibraryIdentifier, readOnly: Bool) {
+    init(kind: Kind, library: Library, title: TitleData?, text: String, tags: [Tag]) {
+        self.kind = kind
         self.text = text
         self.tags = tags
+        self.library = library
         self.title = title
-        self.libraryId = libraryId
-        self.readOnly = readOnly
-        self.changes = []
+        changes = []
     }
 
     mutating func cleanup() {
-        self.changes = []
+        changes = []
     }
 }

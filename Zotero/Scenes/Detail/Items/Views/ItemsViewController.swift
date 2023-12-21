@@ -47,9 +47,9 @@ final class ItemsViewController: UIViewController {
     private weak var webView: WKWebView?
     weak var tagFilterDelegate: ItemsTagFilterDelegate?
 
-    private weak var coordinatorDelegate: DetailItemsCoordinatorDelegate?
+    private weak var coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)?
 
-    init(viewModel: ViewModel<ItemsActionHandler>, controllers: Controllers, coordinatorDelegate: DetailItemsCoordinatorDelegate) {
+    init(viewModel: ViewModel<ItemsActionHandler>, controllers: Controllers, coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)) {
         self.viewModel = viewModel
         self.controllers = controllers
         self.coordinatorDelegate = coordinatorDelegate
@@ -245,17 +245,9 @@ final class ItemsViewController: UIViewController {
             guard let note = Note(item: item) else { return }
             let tags = Array(item.tags.map({ Tag(tag: $0) }))
             let library = self.viewModel.state.library
-            self.coordinatorDelegate?.showNote(
-                with: note.text,
-                tags: tags,
-                title: nil,
-                key: note.key,
-                libraryId: library.identifier,
-                readOnly: !library.metadataEditable,
-                save: { [weak self] newText, newTags in
-                    self?.viewModel.process(action: .saveNote(note.key, newText, newTags))
-                }
-            )
+            coordinatorDelegate?.showNote(library: library, kind: .edit(key: note.key), text: note.text, tags: tags, title: nil) { [weak self] result in
+                self?.viewModel.process(action: .processNoteSaveResult(result))
+            }
         }
     }
 
@@ -405,7 +397,7 @@ final class ItemsViewController: UIViewController {
 
     private func startObserving(results: Results<RItem>) {
         self.resultsToken = results.observe(keyPaths: RItem.observableKeypathsForItemList, { [weak self] changes in
-            guard let self = self else { return }
+            guard let self else { return }
 
             switch changes {
             case .initial(let results):
@@ -434,7 +426,7 @@ final class ItemsViewController: UIViewController {
         syncController.progressObservable
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] progress in
-                guard let self = self else { return }
+                guard let self else { return }
                 switch progress {
                 case .object(let object, let progress, _, let libraryId):
                     if self.viewModel.state.library.identifier == libraryId && object == .item {
@@ -553,103 +545,105 @@ final class ItemsViewController: UIViewController {
 
     private func setupRightBarButtonItems(for state: ItemsState) {
         let currentItems = (self.navigationItem.rightBarButtonItems ?? []).compactMap({ RightBarButtonItem(rawValue: $0.tag) })
-        let expectedItems = self.rightBarButtonItemTypes(for: state)
+        let expectedItems = rightBarButtonItemTypes(for: state)
         guard currentItems != expectedItems else { return }
-        self.navigationItem.rightBarButtonItems = expectedItems.map({ self.createRightBarButtonItem($0) }).reversed()
+        self.navigationItem.rightBarButtonItems = expectedItems.map({ createRightBarButtonItem($0) }).reversed()
         self.updateEmptyTrashButton(toEnabled: state.results?.isEmpty == false)
-    }
-
-    private func rightBarButtonItemTypes(for state: ItemsState) -> [RightBarButtonItem] {
-        let selectItems = self.rightBarButtonSelectItemTypes(for: state)
-        if state.collection.identifier.isTrash {
-            return selectItems + [.emptyTrash]
-        } else {
-            return [.add] + selectItems
-        }
-    }
-
-    private func rightBarButtonSelectItemTypes(for state: ItemsState) -> [RightBarButtonItem] {
-        if !state.isEditing {
-            return [.select]
-        }
-
-        let allSelected = state.selectedItems.count == (state.results?.count ?? 0)
-        if allSelected {
-            return [.deselectAll, .done]
-        }
-
-        return [.selectAll, .done]
-    }
-
-    private func createRightBarButtonItem(_ type: RightBarButtonItem) -> UIBarButtonItem {
-        var image: UIImage?
-        var title: String?
-        let action: (UIBarButtonItem) -> Void
-        let accessibilityLabel: String
-
-        switch type {
-        case .deselectAll:
-            title = L10n.Items.deselectAll
-            accessibilityLabel = L10n.Accessibility.Items.deselectAllItems
-            action = { [weak self] _ in
-                self?.viewModel.process(action: .toggleSelectionState)
-            }
-
-        case .selectAll:
-            title = L10n.Items.selectAll
-            accessibilityLabel = L10n.Accessibility.Items.selectAllItems
-            action = { [weak self] _ in
-                self?.viewModel.process(action: .toggleSelectionState)
-            }
-
-        case .done:
-            title = L10n.done
-            accessibilityLabel = L10n.done
-            action = { [weak self] _ in
-                self?.viewModel.process(action: .stopEditing)
-            }
-
-        case .select:
-            title = L10n.select
-            accessibilityLabel = L10n.Accessibility.Items.selectItems
-            action = { [weak self] _ in
-                self?.viewModel.process(action: .startEditing)
-            }
-
-        case .add:
-            image = UIImage(systemName: "plus")
-            accessibilityLabel = L10n.Items.new
-            title = L10n.Items.new
-            action = { [weak self] item in
-                guard let self = self else { return }
-                self.coordinatorDelegate?.showAddActions(viewModel: self.viewModel, button: item)
-            }
-
-        case .emptyTrash:
-            title = L10n.Collections.emptyTrash
-            accessibilityLabel = L10n.Collections.emptyTrash
-            action = { [weak self] _ in
-                self?.emptyTrash()
-            }
-        }
-
-        let item: UIBarButtonItem
-        if #available(iOS 16.0, *) {
-            item = UIBarButtonItem(title: title, image: image, target: nil, action: nil)
-        } else {
-            if let title = title {
-                item = UIBarButtonItem(title: title, style: .plain, target: nil, action: nil)
-            } else if let image = image {
-                item = UIBarButtonItem(image: image, style: .plain, target: nil, action: nil)
+        
+        func rightBarButtonItemTypes(for state: ItemsState) -> [RightBarButtonItem] {
+            var items: [RightBarButtonItem]
+            let selectItems = rightBarButtonSelectItemTypes(for: state)
+            if state.collection.identifier.isTrash {
+                items = selectItems + [.emptyTrash]
             } else {
-                fatalError("ItemsViewController: you need a title or image!")
+                items = [.add] + selectItems
+            }
+            return items
+            
+            func rightBarButtonSelectItemTypes(for state: ItemsState) -> [RightBarButtonItem] {
+                if !state.isEditing {
+                    return [.select]
+                }
+                
+                let allSelected = state.selectedItems.count == (state.results?.count ?? 0)
+                if allSelected {
+                    return [.deselectAll, .done]
+                }
+                
+                return [.selectAll, .done]
             }
         }
         
-        item.tag = type.rawValue
-        item.accessibilityLabel = accessibilityLabel
-        item.rx.tap.subscribe(onNext: { _ in action(item) }).disposed(by: self.disposeBag)
-        return item
+        func createRightBarButtonItem(_ type: RightBarButtonItem) -> UIBarButtonItem {
+            var image: UIImage?
+            var title: String?
+            let action: (UIBarButtonItem) -> Void
+            let accessibilityLabel: String
+            
+            switch type {
+            case .deselectAll:
+                title = L10n.Items.deselectAll
+                accessibilityLabel = L10n.Accessibility.Items.deselectAllItems
+                action = { [weak self] _ in
+                    self?.viewModel.process(action: .toggleSelectionState)
+                }
+                
+            case .selectAll:
+                title = L10n.Items.selectAll
+                accessibilityLabel = L10n.Accessibility.Items.selectAllItems
+                action = { [weak self] _ in
+                    self?.viewModel.process(action: .toggleSelectionState)
+                }
+                
+            case .done:
+                title = L10n.done
+                accessibilityLabel = L10n.done
+                action = { [weak self] _ in
+                    self?.viewModel.process(action: .stopEditing)
+                }
+                
+            case .select:
+                title = L10n.select
+                accessibilityLabel = L10n.Accessibility.Items.selectItems
+                action = { [weak self] _ in
+                    self?.viewModel.process(action: .startEditing)
+                }
+                
+            case .add:
+                image = UIImage(systemName: "plus")
+                accessibilityLabel = L10n.Items.new
+                title = L10n.Items.new
+                action = { [weak self] item in
+                    guard let self else { return }
+                    self.coordinatorDelegate?.showAddActions(viewModel: self.viewModel, button: item)
+                }
+                
+            case .emptyTrash:
+                title = L10n.Collections.emptyTrash
+                accessibilityLabel = L10n.Collections.emptyTrash
+                action = { [weak self] _ in
+                    self?.emptyTrash()
+                }
+            }
+            
+            let item: UIBarButtonItem
+            if #available(iOS 16.0, *) {
+                item = UIBarButtonItem(title: title, image: image, target: nil, action: nil)
+            } else {
+                if let title = title {
+                    item = UIBarButtonItem(title: title, style: .plain, target: nil, action: nil)
+                } else if let image = image {
+                    item = UIBarButtonItem(image: image, style: .plain, target: nil, action: nil)
+                } else {
+                    fatalError("ItemsViewController: you need a title or image!")
+                }
+            }
+            
+            item.tag = type.rawValue
+            item.accessibilityLabel = accessibilityLabel
+            item.rx.tap.subscribe(onNext: { _ in action(item) }).disposed(by: self.disposeBag)
+            return item
+        }
     }
 
     private func setupSearchBar() {

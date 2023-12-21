@@ -13,6 +13,10 @@ import SwiftUI
 import RealmSwift
 import RxSwift
 
+protocol SplitControllerDelegate: AnyObject {
+    var isSplit: Bool { get }
+}
+
 final class CollectionsViewController: UICollectionViewController {
     let viewModel: ViewModel<CollectionsActionHandler>
     private unowned let dragDropController: DragDropController
@@ -42,9 +46,9 @@ final class CollectionsViewController: UICollectionViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        if self.coordinatorDelegate?.isSplit == true {
+        if isSplit {
             if let collection = self.viewModel.state.collectionTree.collection(for: self.viewModel.state.selectedCollectionId) {
-                self.coordinatorDelegate?.showItems(for: collection, in: self.viewModel.state.library, saveCollectionToDefaults: false)
+                self.coordinatorDelegate?.showItems(for: collection, in: self.viewModel.state.library)
             } else {
                 self.viewModel.process(action: .select(.custom(.all)))
             }
@@ -55,7 +59,7 @@ final class CollectionsViewController: UICollectionViewController {
             self.setupAddNavbarItem()
         }
 
-        self.collectionViewHandler = ExpandableCollectionsCollectionViewHandler(collectionView: self.collectionView, dragDropController: self.dragDropController, viewModel: self.viewModel, splitDelegate: self.coordinatorDelegate)
+        self.collectionViewHandler = ExpandableCollectionsCollectionViewHandler(collectionView: self.collectionView, dragDropController: self.dragDropController, viewModel: self.viewModel, splitDelegate: self)
         self.collectionViewHandler.update(with: self.viewModel.state.collectionTree, selectedId: self.viewModel.state.selectedCollectionId, animated: false)
 
         self.viewModel.stateObservable
@@ -86,7 +90,8 @@ final class CollectionsViewController: UICollectionViewController {
         }
 
         if state.changes.contains(.selection), let collection = state.collectionTree.collection(for: state.selectedCollectionId) {
-            self.coordinatorDelegate?.showItems(for: collection, in: state.library, saveCollectionToDefaults: true)
+            Defaults.shared.selectedCollectionId = collection.identifier
+            self.coordinatorDelegate?.showItems(for: collection, in: state.library)
 
             if !requiresUpdate {
                 self.selectIfNeeded(collectionId: state.selectedCollectionId, tree: state.collectionTree, scrollToPosition: false)
@@ -122,12 +127,11 @@ final class CollectionsViewController: UICollectionViewController {
 
     private func selectIfNeeded(collectionId: CollectionIdentifier, tree: CollectionTree, scrollToPosition: Bool) {
         // Selection is disabled in compact mode (when UISplitViewController is a single column instead of master + detail).
-        guard self.coordinatorDelegate?.isSplit == true else { return }
+        guard isSplit else { return }
         self.collectionViewHandler.selectIfNeeded(collectionId: collectionId, tree: tree, scrollToPosition: scrollToPosition)
     }
 
     private func select(searchResult: Collection) {
-        let isSplit = self.coordinatorDelegate?.isSplit ?? false
         // We don't need to always show it on iPad, since the currently selected collection is visible. So we show only a new one. On iPhone
         // on the other hand we see only the collection list, so we always need to open the item list for selected collection.
         guard !isSplit ? true : searchResult.identifier != self.viewModel.state.selectedCollectionId else { return }
@@ -195,3 +199,9 @@ extension CollectionsViewController: UIContextMenuInteractionDelegate {
 }
 
 extension CollectionsViewController: BottomSheetObserver { }
+
+extension CollectionsViewController: SplitControllerDelegate {
+    var isSplit: Bool {
+        splitViewController?.isCollapsed == false
+    }
+}

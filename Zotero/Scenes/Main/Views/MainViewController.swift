@@ -14,12 +14,8 @@ import SwiftUI
 import CocoaLumberjackSwift
 import RxSwift
 
-protocol MainCoordinatorDelegate: SplitControllerDelegate {
-    func showItems(for collection: Collection, in library: Library, saveCollectionToDefaults: Bool)
-}
-
-protocol SplitControllerDelegate: AnyObject {
-    var isSplit: Bool { get }
+protocol MainCoordinatorDelegate: AnyObject {
+    func showItems(for collection: Collection, in library: Library)
 }
 
 protocol MainCoordinatorSyncToolbarDelegate: AnyObject {
@@ -130,12 +126,9 @@ extension MainViewController: UISplitViewControllerDelegate {
 }
 
 extension MainViewController: MainCoordinatorDelegate {
-    func showItems(for collection: Collection, in library: Library, saveCollectionToDefaults: Bool) {
-        if saveCollectionToDefaults {
-            Defaults.shared.selectedCollectionId = collection.identifier
-        }
-        guard !self.isSplit || self.detailCoordinator?.library != library || self.detailCoordinator?.collection.identifier != collection.identifier else { return }
-        self.showItems(for: collection, in: library, searchItemKeys: nil)
+    func showItems(for collection: Collection, in library: Library) {
+        guard isCollapsed || detailCoordinator?.library != library || detailCoordinator?.collection.identifier != collection.identifier else { return }
+        showItems(for: collection, in: library, searchItemKeys: nil)
     }
 }
 
@@ -161,11 +154,5 @@ extension MainViewController: MainCoordinatorSyncToolbarDelegate {
         } catch let error {
             DDLogError("MainViewController: can't load searched keys - \(error)")
         }
-    }
-}
-
-extension MainViewController: SplitControllerDelegate {
-    var isSplit: Bool {
-        return !self.isCollapsed
     }
 }
