@@ -1,5 +1,5 @@
 //
-//  CreateDownloadDbRequest.swift
+//  CreateEditDownloadDbRequest.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 20.12.2023.
@@ -10,7 +10,7 @@ import Foundation
 
 import RealmSwift
 
-struct CreateDownloadDbRequest: DbRequest {
+struct CreateEditDownloadDbRequest: DbRequest {
     let taskId: Int
     let key: String
     let parentKey: String?

@@ -108,62 +108,110 @@ final class AttachmentDownloader: NSObject {
         super.init()
 
         session = URLSessionCreator.createSession(for: Self.sessionId, delegate: self)
-        session.getAllTasks { [weak self] tasks in
-            self?.accessQueue.async(flags: .barrier) {
-                resumeDownloads(tasks: tasks)
-            }
+        session.getAllTasks { tasks in
+            resumeDownloads(tasks: tasks)
         }
 
         func resumeDownloads(tasks: [URLSessionTask]) {
-            do {
-                let downloads = try dbStorage.perform(request: ReadAllDownloadsDbRequest(), on: accessQueue)
-
-                guard !downloads.isEmpty else { return }
-
-                let taskIds = tasks.map({ $0.taskIdentifier })
-
-                DDLogInfo("AttachmentDownloader: cache ongoing downloads")
-                let downloadsInProgress = downloads.filter("taskId in %@", taskIds)
-                batchProgress = Progress(totalUnitCount: Int64(downloadsInProgress.count * 100))
-                storeDownloadData(for: downloadsInProgress)
-                let downloadsToRestore = downloads.filter("taskId not in %@", taskIds)
-                restore(downloads: downloadsToRestore)
-            } catch let error {
-                DDLogError("AttachmentDownloader: can't load downloads - \(error)")
+            var taskIds: Set<Int> = []
+            for task in tasks {
+                taskIds.insert(task.taskIdentifier)
             }
-        }
 
-        func storeDownloadData(for downloads: Results<RDownload>) {
-            for rDownload in downloads {
-                guard let libraryId = rDownload.libraryId else { continue }
-                let download = Download(key: rDownload.key, parentKey: rDownload.parentKey, libraryId: libraryId)
-                downloadToTaskId[download] = rDownload.taskId
-                taskIdToDownload[rDownload.taskId] = download
-                let progress = Progress(totalUnitCount: 100)
-                progresses[rDownload.taskId] = progress
-                batchProgress?.addChild(progress, withPendingUnitCount: 100)
+            dbQueue.async { [weak self] in
+                let (cancelledTaskIds, downloadsInProgress, downloadsToRestore) = loadDatabaseDownloads(existingTaskIds: taskIds)
+                DDLogInfo("AttachmentDownloader: cancel stored downloads - \(cancelledTaskIds.count)")
+                for taskId in cancelledTaskIds {
+                    guard let task = tasks.first(where: { $0.taskIdentifier == taskId }) else { continue }
+                    task.cancel()
+                }
 
-                DDLogInfo("AttachmentDownloader: cached \(rDownload.taskId); \(rDownload.key); (\(String(describing: rDownload.parentKey))); \(libraryId)")
+                guard !downloadsInProgress.isEmpty || !downloadsToRestore.isEmpty else { return }
 
-                if let attachmentItem = try? dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: rDownload.key), on: accessQueue),
-                   let attachment = AttachmentCreator.attachment(for: attachmentItem, fileStorage: fileStorage, urlDetector: nil),
-                   case .file(let filename, let contentType, _, _) = attachment.type {
-                    files[rDownload.taskId] = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
+                self?.accessQueue.async(flags: .barrier) {
+                    DDLogInfo("AttachmentDownloader: cache downloads in progress - \(downloadsInProgress.count); restore downloads - \(downloadsToRestore.count)")
+                    self?.batchProgress = Progress(totalUnitCount: Int64(downloadsInProgress.count * 100))
+                    storeDownloadData(for: downloadsInProgress)
+                    let updatedDownloads = restore(downloads: downloadsToRestore)
+
+                    guard !updatedDownloads.isEmpty else { return }
+
+                    self?.dbQueue.async {
+                        guard let self else { return }
+                        let requests = updatedDownloads.map({ CreateEditDownloadDbRequest(taskId: $0.1, key: $0.0.key, parentKey: $0.0.parentKey, libraryId: $0.0.libraryId) })
+                        do {
+                            try dbStorage.perform(writeRequests: requests, on: self.dbQueue)
+                        } catch let error {
+                            DDLogError("AttachmentDownloader: can't update downloads - \(error)")
+                        }
+                    }
                 }
             }
         }
 
-        func restore(downloads: Results<RDownload>) {
-            for rDownload in downloads {
-                guard let libraryId = rDownload.libraryId,
-                      let attachmentItem = try? dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: rDownload.key), on: accessQueue),
-                      let attachment = AttachmentCreator.attachment(for: attachmentItem, fileStorage: fileStorage, urlDetector: nil),
-                      case .file(let filename, let contentType, _, _) = attachment.type else { continue }
-                let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
-                guard let (_, task) = createDownload(file: file, key: rDownload.key, parentKey: rDownload.parentKey, libraryId: libraryId) else { continue }
-                rDownload.taskId = task.taskIdentifier
+        func loadDatabaseDownloads(existingTaskIds: Set<Int>) -> ([Int], [(Int, Download, File)], [(Download, File)]) {
+            var cancelledTaskIds: [Int] = []
+            var downloadsInProgress: [(Int, Download, File)] = []
+            var downloadsToRestore: [(Download, File)] = []
+
+            do {
+                var toDelete: [Download] = []
+                let downloads = try dbStorage.perform(request: ReadAllDownloadsDbRequest(), on: dbQueue)
+                for rDownload in downloads {
+                    guard let libraryId = rDownload.libraryId else { continue }
+
+                    let download = Download(key: rDownload.key, parentKey: rDownload.parentKey, libraryId: libraryId)
+
+                    guard let attachmentItem = try? dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: rDownload.key), on: dbQueue),
+                          let attachment = AttachmentCreator.attachment(for: attachmentItem, fileStorage: fileStorage, urlDetector: nil),
+                          case .file(let filename, let contentType, _, _) = attachment.type else {
+                        // Attachment item doesn't exist anymore, cancel download
+                        toDelete.append(download)
+                        cancelledTaskIds.append(rDownload.taskId)
+                        continue
+                    }
+
+                    let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
+
+                    if existingTaskIds.contains(rDownload.taskId) {
+                        // Download is ongoing, cache data
+                        downloadsInProgress.append((rDownload.taskId, Download(key: rDownload.key, parentKey: rDownload.parentKey, libraryId: libraryId), file))
+                    } else {
+                        // Download was cancelled by OS, restart download
+                        downloadsToRestore.append((download, file))
+                    }
+                }
+
+                let requests = toDelete.map({ DeleteDownloadDbRequest(key: $0.key, libraryId: $0.libraryId) })
+                try dbStorage.perform(writeRequests: requests, on: dbQueue)
+            } catch let error {
+                DDLogError("AttachmentDownloader: can't load downloads - \(error)")
+            }
+
+            return (cancelledTaskIds, downloadsInProgress, downloadsToRestore)
+        }
+
+        func storeDownloadData(for downloads: [(Int, Download, File)]) {
+            for (taskId, download, file) in downloads {
+                DDLogInfo("AttachmentDownloader: cached \(taskId); \(download.key); (\(String(describing: download.parentKey))); \(download.libraryId)")
+                downloadToTaskId[download] = taskId
+                taskIdToDownload[taskId] = download
+                let progress = Progress(totalUnitCount: 100)
+                progresses[taskId] = progress
+                batchProgress?.addChild(progress, withPendingUnitCount: 100)
+                files[taskId] = file
+            }
+        }
+
+        func restore(downloads: [(Download, File)]) -> [(Download, Int)] {
+            var updatedTaskIds: [(Download, Int)] = []
+            for (download, file) in downloads {
+                guard let (_, task) = createDownload(file: file, key: download.key, parentKey: download.parentKey, libraryId: download.libraryId) else { continue }
+                DDLogInfo("AttachmentDownloader: resumed \(task.taskIdentifier); \(download.key); (\(String(describing: download.parentKey))); \(download.libraryId)")
+                updatedTaskIds.append((download, task.taskIdentifier))
                 task.resume()
             }
+            return updatedTaskIds
         }
     }
 
@@ -300,7 +348,7 @@ final class AttachmentDownloader: NSObject {
             guard let self = self, let (download, task) = self.createDownload(file: file, key: key, parentKey: parentKey, libraryId: libraryId) else { return }
             DDLogInfo("AttachmentDownloader: enqueue \(download.key)")
             do {
-                let request = CreateDownloadDbRequest(taskId: task.taskIdentifier, key: download.key, parentKey: download.parentKey, libraryId: download.libraryId)
+                let request = CreateEditDownloadDbRequest(taskId: task.taskIdentifier, key: download.key, parentKey: download.parentKey, libraryId: download.libraryId)
                 try self.dbStorage.perform(request: request, on: self.accessQueue)
             } catch let error {
                 DDLogError("AttachmentDownloader: couldn't store download to db - \(error)")
@@ -356,10 +404,13 @@ final class AttachmentDownloader: NSObject {
 
         DDLogInfo("AttachmentDownloader: finished downloading \(taskId); \(download.key); (\(String(describing: download.parentKey))); \(download.libraryId)")
 
-        do {
-            try dbStorage.perform(request: DeleteDownloadDbRequest(key: download.key, libraryId: download.libraryId), on: accessQueue)
-        } catch let error {
-            DDLogError("AttachmentDownloader: could not remove download from db - \(error)")
+        dbQueue.sync { [weak self] in
+            guard let self = self else { return }
+            do {
+                try dbStorage.perform(request: DeleteDownloadDbRequest(key: download.key, libraryId: download.libraryId), on: self.dbQueue)
+            } catch let error {
+                DDLogError("AttachmentDownloader: could not remove download from db - \(error)")
+            }
         }
 
         switch result {
