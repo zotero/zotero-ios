@@ -27,6 +27,7 @@ protocol PdfReaderCoordinatorDelegate: AnyObject {
     func showSettings(with settings: PDFSettings, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle, completion: @escaping (PDFSettings) -> Void)
     func showReader(document: Document, userInterfaceStyle: UIUserInterfaceStyle)
     func showCitation(for itemId: String, libraryId: LibraryIdentifier)
+    func copyBibliography(for itemId: String, libraryId: LibraryIdentifier, showOverlayOn viewController: UIViewController)
 }
 
 protocol PdfAnnotationsCoordinatorDelegate: AnyObject {
@@ -365,6 +366,36 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         let containerController = ContainerViewController(rootViewController: navigationController)
         self.navigationController?.present(containerController, animated: true, completion: nil)
     }
+
+    func copyBibliography(for itemId: String, libraryId: LibraryIdentifier, showOverlayOn viewController: UIViewController) {
+        guard let citationController = controllers.userControllers?.citationController else { return }
+
+        DDLogInfo("PDFCoordinator: copy bibliography for \(itemId)")
+
+        let state = CopyBibliographyState(
+            itemIds: Set([itemId]),
+            libraryId: libraryId,
+            styleId: Defaults.shared.quickCopyStyleId,
+            localeId: Defaults.shared.quickCopyLocaleId,
+            exportAsHtml: Defaults.shared.quickCopyAsHtml
+        )
+        let handler = CopyBibliographyActionHandler(citationController: citationController)
+        let viewModel = ViewModel(initialState: state, handler: handler)
+        let controller = CopyBibliographyViewController(viewModel: viewModel)
+        controller.coordinatorDelegate = self
+
+        controller.willMove(toParent: viewController)
+        viewController.addChild(controller)
+        controller.view.translatesAutoresizingMaskIntoConstraints = false
+        viewController.view.addSubview(controller.view)
+        controller.didMove(toParent: viewController)
+        NSLayoutConstraint.activate([
+            controller.view.leadingAnchor.constraint(equalTo: viewController.view.safeAreaLayoutGuide.leadingAnchor),
+            controller.view.trailingAnchor.constraint(equalTo: viewController.view.safeAreaLayoutGuide.trailingAnchor),
+            controller.view.topAnchor.constraint(equalTo: viewController.view.topAnchor),
+            controller.view.bottomAnchor.constraint(equalTo: viewController.view.bottomAnchor)
+        ])
+    }
 }
 
 extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
@@ -567,5 +598,15 @@ extension PDFCoordinator: DetailCitationCoordinatorDelegate {
     func showMissingStyleError(using presenter: UINavigationController?) {
         guard let coordinator = parentCoordinator as? DetailCoordinator else { return }
         coordinator.showMissingStyleError(using: navigationController)
+    }
+}
+
+extension PDFCoordinator: DetailCopyBibliographyCoordinatorDelegate {
+    func overlay(for viewController: CopyBibliographyViewController, isHidden: Bool) {
+        guard isHidden else { return }
+        viewController.willMove(toParent: nil)
+        viewController.view.removeFromSuperview()
+        viewController.removeFromParent()
+        viewController.didMove(toParent: nil)
     }
 }
