@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="18122" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="22505" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="18093"/>
-        <capability name="Image references" minToolsVersion="12.0"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22504"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -12,11 +11,6 @@
     <objects>
         <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="ItemsViewController" customModule="Zotero" customModuleProvider="target">
             <connections>
-                <outlet property="overlayActivityIndicator" destination="bfe-iH-wLG" id="53O-4h-zqp"/>
-                <outlet property="overlayBody" destination="MJ4-Gb-Z6l" id="OwQ-bj-JfD"/>
-                <outlet property="overlayContainer" destination="ktE-Hd-CCK" id="IDM-OG-4Cx"/>
-                <outlet property="overlayErrorIcon" destination="R17-kn-8oX" id="LKH-cg-azA"/>
-                <outlet property="overlayText" destination="A0F-Oc-Gwp" id="cvK-qp-svw"/>
                 <outlet property="tableView" destination="XOr-E5-53a" id="irg-8d-4EA"/>
                 <outlet property="view" destination="iN0-l3-epB" id="e70-Wq-Xba"/>
             </connections>
@@ -30,73 +24,21 @@
                     <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                     <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                 </tableView>
-                <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="ktE-Hd-CCK">
-                    <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
-                    <subviews>
-                        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="MJ4-Gb-Z6l">
-                            <rect key="frame" x="109" y="387.5" width="196" height="121"/>
-                            <subviews>
-                                <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="12" translatesAutoresizingMaskIntoConstraints="NO" id="NBB-Rw-aP7">
-                                    <rect key="frame" x="20" y="20" width="156" height="81"/>
-                                    <subviews>
-                                        <activityIndicatorView hidden="YES" opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" hidesWhenStopped="YES" style="medium" translatesAutoresizingMaskIntoConstraints="NO" id="bfe-iH-wLG">
-                                            <rect key="frame" x="0.0" y="0.0" width="156" height="20"/>
-                                            <color key="color" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                        </activityIndicatorView>
-                                        <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="R17-kn-8oX">
-                                            <rect key="frame" x="0.0" y="30" width="156" height="24"/>
-                                            <color key="tintColor" systemColor="systemRedColor"/>
-                                            <imageReference key="image" image="exclamationmark.circle" catalog="system" symbolScale="large"/>
-                                        </imageView>
-                                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" text="Generating Bibliography" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="A0F-Oc-Gwp">
-                                            <rect key="frame" x="0.0" y="64" width="156" height="17"/>
-                                            <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
-                                            <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                            <nil key="highlightedColor"/>
-                                        </label>
-                                    </subviews>
-                                </stackView>
-                            </subviews>
-                            <color key="backgroundColor" white="0.0" alpha="0.79697381882440477" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                            <constraints>
-                                <constraint firstAttribute="bottom" secondItem="NBB-Rw-aP7" secondAttribute="bottom" constant="20" id="7ld-yN-Ait"/>
-                                <constraint firstItem="NBB-Rw-aP7" firstAttribute="top" secondItem="MJ4-Gb-Z6l" secondAttribute="top" constant="20" id="KNc-IB-K55"/>
-                                <constraint firstAttribute="trailing" secondItem="NBB-Rw-aP7" secondAttribute="trailing" constant="20" id="Pae-wS-QPq"/>
-                                <constraint firstItem="NBB-Rw-aP7" firstAttribute="leading" secondItem="MJ4-Gb-Z6l" secondAttribute="leading" constant="20" id="cOA-b8-UNW"/>
-                            </constraints>
-                        </view>
-                    </subviews>
-                    <color key="backgroundColor" white="0.0" alpha="0.097646700281675172" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                    <constraints>
-                        <constraint firstItem="MJ4-Gb-Z6l" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="ktE-Hd-CCK" secondAttribute="leading" constant="60" id="4Bq-Zg-OCj"/>
-                        <constraint firstItem="MJ4-Gb-Z6l" firstAttribute="centerY" secondItem="ktE-Hd-CCK" secondAttribute="centerY" id="79Z-B5-jFz"/>
-                        <constraint firstItem="MJ4-Gb-Z6l" firstAttribute="centerX" secondItem="ktE-Hd-CCK" secondAttribute="centerX" id="Wpg-qH-5fI"/>
-                        <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="MJ4-Gb-Z6l" secondAttribute="trailing" constant="60" id="mGd-by-dbc"/>
-                    </constraints>
-                </view>
             </subviews>
             <viewLayoutGuide key="safeArea" id="vUN-kp-3ea"/>
             <color key="backgroundColor" systemColor="systemBackgroundColor"/>
             <constraints>
                 <constraint firstAttribute="bottom" secondItem="XOr-E5-53a" secondAttribute="bottom" id="1FO-M3-dAT"/>
-                <constraint firstItem="vUN-kp-3ea" firstAttribute="trailing" secondItem="ktE-Hd-CCK" secondAttribute="trailing" id="3MD-K3-Ukr"/>
                 <constraint firstItem="vUN-kp-3ea" firstAttribute="trailing" secondItem="XOr-E5-53a" secondAttribute="trailing" id="8Fx-pE-PeM"/>
                 <constraint firstItem="XOr-E5-53a" firstAttribute="leading" secondItem="vUN-kp-3ea" secondAttribute="leading" id="8fU-S2-0JU"/>
-                <constraint firstAttribute="bottom" secondItem="ktE-Hd-CCK" secondAttribute="bottom" id="AQW-y1-fEg"/>
-                <constraint firstItem="ktE-Hd-CCK" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" id="P92-kD-cP9"/>
-                <constraint firstItem="ktE-Hd-CCK" firstAttribute="leading" secondItem="vUN-kp-3ea" secondAttribute="leading" id="RX7-5b-hf5"/>
                 <constraint firstItem="XOr-E5-53a" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" id="RgH-Rc-Slh"/>
             </constraints>
             <point key="canvasLocation" x="139" y="127"/>
         </view>
     </objects>
     <resources>
-        <image name="exclamationmark.circle" catalog="system" width="128" height="121"/>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-        </systemColor>
-        <systemColor name="systemRedColor">
-            <color red="1" green="0.23137254901960785" blue="0.18823529411764706" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
     </resources>
 </document>

@@ -23,17 +23,7 @@ final class ItemsViewController: UIViewController {
         case emptyTrash
     }
 
-    private enum OverlayState {
-        case processing
-        case error(String)
-    }
-
     @IBOutlet private weak var tableView: UITableView!
-    @IBOutlet private weak var overlayContainer: UIView!
-    @IBOutlet private weak var overlayBody: UIView!
-    @IBOutlet private weak var overlayActivityIndicator: UIActivityIndicatorView!
-    @IBOutlet private weak var overlayErrorIcon: UIImageView!
-    @IBOutlet private weak var overlayText: UILabel!
 
     private static let itemBatchingLimit = 150
 
@@ -44,7 +34,6 @@ final class ItemsViewController: UIViewController {
     private var tableViewHandler: ItemsTableViewHandler!
     private var toolbarController: ItemsToolbarController!
     private var resultsToken: NotificationToken?
-    private weak var webView: WKWebView?
     weak var tagFilterDelegate: ItemsTagFilterDelegate?
 
     private weak var coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)?
@@ -84,7 +73,6 @@ final class ItemsViewController: UIViewController {
         self.setupSearchBar()
         self.setupPullToRefresh()
         self.setupFileObservers()
-        self.setupOverlay()
         self.startObservingSyncProgress()
         self.setupAppStateObserver()
 
@@ -148,11 +136,6 @@ final class ItemsViewController: UIViewController {
     // MARK: - UI state
 
     private func update(state: ItemsState) {
-        if state.changes.contains(.webViewCleanup) {
-            self.webView?.removeFromSuperview()
-            self.webView = nil
-        }
-
         if state.changes.contains(.results), let results = state.results {
             self.startObserving(results: results)
         } else if state.changes.contains(.attachmentsRemoved) {
@@ -191,22 +174,6 @@ final class ItemsViewController: UIViewController {
                 scrolledToKey: nil,
                 animated: true
             )
-        }
-
-        if state.processingBibliography {
-            self.showOverlay(state: .processing)
-        } else if let error = state.bibliographyError {
-            if let error = error as? CitationController.Error, error == .styleOrLocaleMissing {
-                self.hideOverlay()
-                self.coordinatorDelegate?.showMissingStyleError()
-            } else {
-                self.showOverlay(state: .error(L10n.Errors.Items.generatingBib))
-                DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(1500)) { [weak self] in
-                    self?.hideOverlay()
-                }
-            }
-        } else {
-            self.hideOverlay()
         }
 
         if let error = state.error {
@@ -267,43 +234,6 @@ final class ItemsViewController: UIViewController {
 
         // Show appropriate message
         self.coordinatorDelegate?.show(error: error)
-    }
-
-    private func showOverlay(state: OverlayState) {
-        switch state {
-        case .processing:
-            self.overlayText.text = L10n.Items.generatingBib
-            self.overlayActivityIndicator.isHidden = false
-            self.overlayActivityIndicator.startAnimating()
-            self.overlayErrorIcon.isHidden = true
-
-        case .error(let message):
-            self.overlayText.text = message
-            self.overlayActivityIndicator.stopAnimating()
-            self.overlayErrorIcon.isHidden = false
-        }
-
-        self.overlayContainer.layoutIfNeeded()
-
-        guard self.overlayContainer.isHidden else { return }
-
-        self.overlayContainer.alpha = 0
-        self.overlayContainer.isHidden = false
-
-        UIView.animate(withDuration: 0.2) {
-            self.overlayContainer.alpha = 1
-        }
-    }
-
-    private func hideOverlay() {
-        guard !self.overlayContainer.isHidden else { return }
-
-        UIView.animate(withDuration: 0.2) {
-            self.overlayContainer.alpha = 0
-        } completion: { finished in
-            guard finished else { return }
-            self.overlayContainer.isHidden = true
-        }
     }
 
     private func process(action: ItemAction.Kind, for selectedKeys: Set<String>, button: UIBarButtonItem?, completionAction: ((Bool) -> Void)?) {
@@ -372,12 +302,7 @@ final class ItemsViewController: UIViewController {
             self.coordinatorDelegate?.showCiteExport(for: selectedKeys, libraryId: self.viewModel.state.library.identifier)
 
         case .copyBibliography:
-            let webView = WKWebView()
-            webView.isHidden = true
-            self.view.insertSubview(webView, at: 0)
-            self.webView = webView
-
-            self.viewModel.process(action: .quickCopyBibliography(selectedKeys, self.viewModel.state.library.identifier, webView))
+            coordinatorDelegate?.copyBibliography(for: selectedKeys, libraryId: viewModel.state.library.identifier, showOverlayOn: self)
 
         case .copyCitation:
             self.coordinatorDelegate?.showCitation(for: selectedKeys, libraryId: self.viewModel.state.library.identifier)
@@ -679,10 +604,6 @@ final class ItemsViewController: UIViewController {
                 self?.update(progress: progress)
             })
             .disposed(by: self.disposeBag)
-    }
-
-    private func setupOverlay() {
-        self.overlayBody.layer.cornerRadius = 16
     }
 }
 

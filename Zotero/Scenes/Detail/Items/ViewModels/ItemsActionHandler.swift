@@ -176,9 +176,6 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
         case .disableFilter(let filter):
             self.disable(filter: filter, in: viewModel)
 
-        case .quickCopyBibliography(let itemIds, let libraryId, let webView):
-            self.copyBibliography(itemIds: itemIds, libraryId: libraryId, webView: webView, in: viewModel)
-
         case .download(let keys):
             self.downloadAttachments(for: keys, in: viewModel)
 
@@ -221,50 +218,6 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
             // TODO: - show error
             DDLogError("ItemsActionHandler: can't empty trash - \(error)")
         }
-    }
-
-    private func copyBibliography(itemIds: Set<String>, libraryId: LibraryIdentifier, webView: WKWebView, in viewModel: ViewModel<ItemsActionHandler>) {
-        self.update(viewModel: viewModel) { state in
-            state.processingBibliography = true
-        }
-
-        let copyAsHtml = Defaults.shared.quickCopyAsHtml
-
-        self.citationController.prepare(webView: webView, for: itemIds, libraryId: libraryId, styleId: Defaults.shared.quickCopyStyleId, localeId: Defaults.shared.quickCopyLocaleId)
-                               .flatMap { [weak webView] _ -> Single<String> in
-                                   guard let webView = webView else { return Single.error(CitationController.Error.prepareNotCalled) }
-                                   return self.citationController.bibliography(for: itemIds, format: .html, in: webView)
-                               }
-                               .flatMap { [weak webView] html -> Single<(String, String?)> in
-                                   if copyAsHtml { return Single.just((html, nil)) }
-                                   guard let webView = webView else { return Single.error(CitationController.Error.prepareNotCalled) }
-                                   return self.citationController.bibliography(for: itemIds, format: .text, in: webView).flatMap({ return Single.just((html, $0)) })
-                               }
-                               .subscribe(with: viewModel, onSuccess: { viewModel, data in
-                                   if let plaintext = data.1 {
-                                       UIPasteboard.general.copy(html: data.0, plaintext: plaintext)
-                                   } else {
-                                       UIPasteboard.general.string = data.0
-                                   }
-
-                                   self.update(viewModel: viewModel) { state in
-                                       state.changes = .webViewCleanup
-                                       state.processingBibliography = false
-                                   }
-
-                                   self.citationController.finishCitation()
-                               }, onFailure: { viewModel, error in
-                                   DDLogError("ItemsActionHandler: could not load bibliography - \(error)")
-                                
-                                   self.update(viewModel: viewModel) { state in
-                                       state.changes = .webViewCleanup
-                                       state.processingBibliography = false
-                                       state.bibliographyError = error
-                                   }
-
-                                   self.citationController.finishCitation()
-                               })
-                               .disposed(by: self.disposeBag)
     }
 
     private func loadInitialState(in viewModel: ViewModel<ItemsActionHandler>) {

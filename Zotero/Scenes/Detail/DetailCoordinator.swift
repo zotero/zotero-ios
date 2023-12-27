@@ -33,6 +33,7 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showDeletionQuestion(count: Int, confirmAction: @escaping () -> Void, cancelAction: @escaping () -> Void)
     func showRemoveFromCollectionQuestion(count: Int, confirmAction: @escaping () -> Void)
     func showCitation(for itemIds: Set<String>, libraryId: LibraryIdentifier)
+    func copyBibliography(for itemIds: Set<String>, libraryId: LibraryIdentifier, showOverlayOn viewController: UIViewController)
     func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier)
     func showMissingStyleError()
     func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier)
@@ -62,6 +63,11 @@ protocol DetailNoteEditorCoordinatorDelegate: AnyObject {
 protocol DetailCitationCoordinatorDelegate: AnyObject {
     func showLocatorPicker(using presenter: UINavigationController, for values: [SinglePickerModel], selected: String, picked: @escaping (String) -> Void)
     func showCitationPreviewError(using presenter: UINavigationController, errorMessage: String)
+    func showMissingStyleError(using presenter: UINavigationController?)
+}
+
+protocol DetailCopyBibliographyCoordinatorDelegate: AnyObject {
+    func overlay(for viewController: CopyBibliographyViewController, isHidden: Bool)
     func showMissingStyleError(using presenter: UINavigationController?)
 }
 
@@ -574,6 +580,36 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         self.navigationController?.present(containerController, animated: true, completion: nil)
     }
 
+    func copyBibliography(for itemIds: Set<String>, libraryId: LibraryIdentifier, showOverlayOn viewController: UIViewController) {
+        guard let citationController = self.controllers.userControllers?.citationController else { return }
+
+        DDLogInfo("DetailCoordinator: copy bibliography for \(itemIds)")
+
+        let state = CopyBibliographyState(
+            itemIds: itemIds,
+            libraryId: libraryId,
+            styleId: Defaults.shared.quickCopyStyleId,
+            localeId: Defaults.shared.quickCopyLocaleId,
+            exportAsHtml: Defaults.shared.quickCopyAsHtml
+        )
+        let handler = CopyBibliographyActionHandler(citationController: citationController)
+        let viewModel = ViewModel(initialState: state, handler: handler)
+        let controller = CopyBibliographyViewController(viewModel: viewModel)
+        controller.coordinatorDelegate = self
+
+        controller.willMove(toParent: viewController)
+        viewController.addChild(controller)
+        controller.view.translatesAutoresizingMaskIntoConstraints = false
+        viewController.view.addSubview(controller.view)
+        controller.didMove(toParent: viewController)
+        NSLayoutConstraint.activate([
+            controller.view.leadingAnchor.constraint(equalTo: viewController.view.safeAreaLayoutGuide.leadingAnchor),
+            controller.view.trailingAnchor.constraint(equalTo: viewController.view.safeAreaLayoutGuide.trailingAnchor),
+            controller.view.topAnchor.constraint(equalTo: viewController.view.topAnchor),
+            controller.view.bottomAnchor.constraint(equalTo: viewController.view.bottomAnchor)
+        ])
+    }
+
     func showMissingStyleError() {
         showMissingStyleError(using: nil)
     }
@@ -933,5 +969,15 @@ extension DetailCoordinator: DetailCitationCoordinatorDelegate {
             coordinator.start(animated: false)
             presenter.present(containerController, animated: true)
         }
+    }
+}
+
+extension DetailCoordinator: DetailCopyBibliographyCoordinatorDelegate {
+    func overlay(for viewController: CopyBibliographyViewController, isHidden: Bool) {
+        guard isHidden else { return }
+        viewController.willMove(toParent: nil)
+        viewController.view.removeFromSuperview()
+        viewController.removeFromParent()
+        viewController.didMove(toParent: nil)
     }
 }
