@@ -21,3 +21,50 @@ struct DeleteDownloadDbRequest: DbRequest {
         database.delete(download)
     }
 }
+
+struct DeleteDownloadsDbRequest: DbResponseRequest {
+    typealias Response = Set<AttachmentDownloader.Download>
+
+    let keys: Set<String>
+    let libraryId: LibraryIdentifier
+
+    var needsWrite: Bool { return true }
+
+    func process(in database: Realm) throws -> Set<AttachmentDownloader.Download> {
+        var result: Set<AttachmentDownloader.Download> = []
+        let downloads = database.objects(RDownload.self).filter(.keys(keys, in: libraryId))
+        for download in downloads {
+            guard let libraryId = download.libraryId else { continue }
+            result.insert(AttachmentDownloader.Download(key: download.key, parentKey: download.parentKey, libraryId: libraryId))
+        }
+        database.delete(downloads)
+        return result
+    }
+}
+
+struct DeleteLibraryDownloadsDbRequest: DbResponseRequest {
+    typealias Response = Set<AttachmentDownloader.Download>
+
+    let libraryId: LibraryIdentifier
+
+    var needsWrite: Bool { return true }
+
+    func process(in database: Realm) throws -> Set<AttachmentDownloader.Download> {
+        var result: Set<AttachmentDownloader.Download> = []
+        let downloads = database.objects(RDownload.self).filter(.library(with: libraryId))
+        for download in downloads {
+            guard let libraryId = download.libraryId else { continue }
+            result.insert(AttachmentDownloader.Download(key: download.key, parentKey: download.parentKey, libraryId: libraryId))
+        }
+        database.delete(downloads)
+        return result
+    }
+}
+
+struct DeleteAllDownloadsDbRequest: DbRequest {
+    var needsWrite: Bool { return true }
+
+    func process(in database: Realm) throws {
+        database.delete(database.objects(RDownload.self))
+    }
+}

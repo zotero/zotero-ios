@@ -112,6 +112,17 @@ final class AttachmentDownloader: NSObject {
             resumeDownloads(tasks: tasks)
         }
 
+        NotificationCenter.default
+            .rx
+            .notification(.attachmentFileDeleted)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] notification in
+                if let self, let notification = notification.object as? AttachmentFileDeletedNotification {
+                    handleDeletedAttachments(notification: notification, self: self)
+                }
+            })
+            .disposed(by: disposeBag)
+
         func resumeDownloads(tasks: [URLSessionTask]) {
             var taskIds: Set<Int> = []
             for task in tasks {
@@ -213,6 +224,38 @@ final class AttachmentDownloader: NSObject {
             }
             return updatedTaskIds
         }
+
+        func handleDeletedAttachments(notification: AttachmentFileDeletedNotification, self: AttachmentDownloader) {
+            switch notification {
+            case .individual(let key, let parentKey, let libraryId):
+                self.cancel(key: key, parentKey: parentKey, libraryId: libraryId)
+
+            case .allForItems(let keys, let libraryId):
+                self.dbQueue.async { [weak self] in
+                    guard let self else { return }
+                    do {
+                        let downloads = try self.dbStorage.perform(request: DeleteDownloadsDbRequest(keys: keys, libraryId: libraryId), on: self.dbQueue)
+                        self.cancel(downloads: downloads)
+                    } catch let error {
+                        DDLogError("AttachmentDownloader: can't delete downloads for \(keys); \(libraryId) - \(error)")
+                    }
+                }
+
+            case .library(let libraryId):
+                self.dbQueue.async { [weak self] in
+                    guard let self else { return }
+                    do {
+                        let downloads = try self.dbStorage.perform(request: DeleteLibraryDownloadsDbRequest(libraryId: libraryId), on: self.dbQueue)
+                        self.cancel(downloads: downloads)
+                    } catch let error {
+                        DDLogError("AttachmentDownloader: can't delete downloads for \(libraryId) - \(error)")
+                    }
+                }
+
+            case .all:
+                self.cancelAll()
+            }
+        }
     }
 
     // MARK: - Actions
@@ -302,15 +345,77 @@ final class AttachmentDownloader: NSObject {
 
     func cancel(key: String, parentKey: String?, libraryId: LibraryIdentifier) {
         let download = Download(key: key, parentKey: parentKey, libraryId: libraryId)
-        var taskId: Int?
-        accessQueue.sync { [weak self] in
-            taskId = self?.downloadToTaskId[download]
+        cancel(downloads: [download])
+
+        dbQueue.async { [weak self] in
+            guard let self else { return }
+            do {
+                try self.dbStorage.perform(request: DeleteDownloadDbRequest(key: key, libraryId: libraryId), on: self.dbQueue)
+            } catch let error {
+                DDLogError("AttachmentDownloader: can't delete download \(key); \(String(describing: parentKey)); \(libraryId) - \(error)")
+            }
         }
-        guard let taskId else { return }
-        session.getAllTasks { tasks in
-            guard let task = tasks.first(where: { $0.taskIdentifier == taskId }) else { return }
-            DDLogInfo("AttachmentDownloader: cancelled \(taskId)")
-            task.cancel()
+    }
+
+    private func cancel(downloads: Set<Download>) {
+        var taskIds: Set<Int> = []
+
+        self.accessQueue.sync(flags: .barrier) { [weak self] in
+            for download in downloads {
+                guard let taskId = self?.downloadToTaskId[download] else { continue }
+                self?.downloadToTaskId[download] = nil
+                self?.taskIdToDownload[taskId] = nil
+                self?.files[taskId] = nil
+                self?.progresses[taskId] = nil
+                self?.errors[download] = nil
+                self?.batchProgress?.totalUnitCount -= 100
+                taskIds.insert(taskId)
+            }
+            self?.resetBatchDataIfNeeded()
+        }
+
+        self.session.getAllTasks { tasks in
+            for task in tasks.filter({ taskIds.contains($0.taskIdentifier) }) {
+                task.cancel()
+            }
+        }
+
+        for download in downloads {
+            observable.on(.next(Update(download: download, kind: .cancelled)))
+        }
+    }
+
+    func cancelAll() {
+        DDLogInfo("AttachmentDownloader: stop all tasks")
+
+        accessQueue.sync(flags: .barrier) { [weak self] in
+            guard let self else { return }
+
+            for download in self.downloadToTaskId.keys {
+                self.observable.on(.next(Update(download: download, kind: .cancelled)))
+            }
+
+            self.files = [:]
+            self.downloadToTaskId = [:]
+            self.taskIdToDownload = [:]
+            self.errors = [:]
+            self.progresses = [:]
+            self.batchProgress = nil
+        }
+
+        self.session.getAllTasks { tasks in
+            for task in tasks {
+                task.cancel()
+            }
+        }
+
+        self.dbQueue.async { [weak self] in
+            guard let self else { return }
+            do {
+                try self.dbStorage.perform(request: DeleteAllDownloadsDbRequest(), on: self.dbQueue)
+            } catch let error {
+                DDLogError("AttachmentDownloader: can't delete all downloads - \(error)")
+            }
         }
     }
 
@@ -330,15 +435,6 @@ final class AttachmentDownloader: NSObject {
         guard downloadToTaskId.isEmpty else { return }
         batchProgress = nil
         progresses = [:]
-    }
-
-    func stop() {
-        DDLogInfo("AttachmentDownloader: stop all tasks")
-        session.getAllTasks { tasks in
-            for task in tasks {
-                task.cancel()
-            }
-        }
     }
 
     // MARK: - Helpers

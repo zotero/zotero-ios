@@ -265,7 +265,7 @@ final class Controllers {
         // Disable ongoing sync and unsubscribe from websocket
         controllers?.disableSync(apiKey: self.apiKey)
         // Cancel all downloads
-        controllers?.fileDownloader.stop()
+        controllers?.fileDownloader.cancelAll()
         // Cancel all identifier lookups
         controllers?.identifierLookupController.cancelAllLookups()
         // Cancel all remote downloads

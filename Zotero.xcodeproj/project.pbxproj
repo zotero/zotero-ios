@@ -937,6 +937,7 @@
 		B3B953CE245981DA00FC96DB /* PDFDocumentViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B953CD245981DA00FC96DB /* PDFDocumentViewController.swift */; };
 		B3B953D22459B4D800FC96DB /* UITableViewCell+SwiftUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B953D12459B4D800FC96DB /* UITableViewCell+SwiftUI.swift */; };
 		B3B953D42459B62D00FC96DB /* AnnotationCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B953D32459B62D00FC96DB /* AnnotationCell.swift */; };
+		B3B9962D2B3C2E1F005BAEDC /* AttachmentFileDeletedNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = B339459026DE6C2900E59A02 /* AttachmentFileDeletedNotification.swift */; };
 		B3BC1F60254322D200BA3388 /* ItemDetailAbstractEditCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC1F5E254322D200BA3388 /* ItemDetailAbstractEditCell.swift */; };
 		B3BC1F61254322D200BA3388 /* ItemDetailAbstractEditContentView.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3BC1F5F254322D200BA3388 /* ItemDetailAbstractEditContentView.xib */; };
 		B3BC25CD247E6BA000AC27B5 /* DateParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC25CC247E6BA000AC27B5 /* DateParser.swift */; };
@@ -5573,6 +5574,7 @@
 				B36E4F682751242C001FB99D /* WebDavCreateZoteroDirectoryRequest.swift in Sources */,
 				B30566ED23FC082F003304F2 /* SchemaRequest.swift in Sources */,
 				B30566DA23FC07E0003304F2 /* Library.swift in Sources */,
+				B3B9962D2B3C2E1F005BAEDC /* AttachmentFileDeletedNotification.swift in Sources */,
 				B3E7C151278348F200076131 /* BackgroundUploadProcessor.swift in Sources */,
 				B33E8A4627B69FFE00CBC7DE /* AllCollectionPickerState.swift in Sources */,
 				B33E8A4A27B6A1D000CBC7DE /* AllCollectionPickerViewController.swift in Sources */,

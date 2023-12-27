@@ -42,7 +42,8 @@ struct StorageSettingsActionHandler: ViewModelActionHandler {
             var libraries: [Library] = []
 
             try self.dbStorage.perform(on: .main, with: { coordinator in
-                libraries = Array((try coordinator.perform(request: ReadAllCustomLibrariesDbRequest())).map(Library.init)) + (try coordinator.perform(request: ReadAllGroupsDbRequest())).map(Library.init)
+                libraries = Array((try coordinator.perform(request: ReadAllCustomLibrariesDbRequest())).map(Library.init)) +
+                            (try coordinator.perform(request: ReadAllGroupsDbRequest())).map(Library.init)
             })
 
             let (storageData, totalData) = self.storageData(for: libraries)

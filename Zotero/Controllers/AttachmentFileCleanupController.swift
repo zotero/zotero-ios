@@ -44,14 +44,14 @@ final class AttachmentFileCleanupController {
         self.disposeBag = DisposeBag()
 
         NotificationCenter.default.rx
-                                  .notification(.attachmentDeleted)
-                                  .observe(on: self.scheduler)
-                                  .subscribe(onNext: { [weak self] notification in
-                                      if let file = notification.object as? File {
-                                          self?.delete(file: file)
-                                      }
-                                  })
-                                  .disposed(by: self.disposeBag)
+            .notification(.attachmentDeleted)
+            .observe(on: self.scheduler)
+            .subscribe(onNext: { [weak self] notification in
+                if let file = notification.object as? File {
+                    self?.delete(file: file)
+                }
+            })
+            .disposed(by: self.disposeBag)
     }
 
     private func delete(file: File) {
