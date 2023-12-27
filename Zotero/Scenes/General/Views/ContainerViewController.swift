@@ -96,8 +96,8 @@ class ContainerViewController: UIViewController {
                 NotificationCenter.default
                     .keyboardWillShow
                     .observe(on: MainScheduler.instance)
-                    .subscribe(onNext: { [weak self] notification in
-                        guard let self, let data = notification.keyboardData else { return }
+                    .subscribe(onNext: { notification in
+                        guard let data = notification.keyboardData else { return }
                         moveToKeyboard(data, willShow: true)
                     })
                     .disposed(by: disposeBag)
@@ -105,8 +105,8 @@ class ContainerViewController: UIViewController {
                 NotificationCenter.default
                     .keyboardWillHide
                     .observe(on: MainScheduler.instance)
-                    .subscribe(onNext: { [weak self] notification in
-                        guard let self, let data = notification.keyboardData else { return }
+                    .subscribe(onNext: { notification in
+                        guard let data = notification.keyboardData else { return }
                         moveToKeyboard(data, willShow: false)
                     })
                     .disposed(by: disposeBag)
