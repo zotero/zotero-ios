@@ -113,59 +113,60 @@ class CopyBibliographyViewController: UIViewController {
         func setupObserving() {
             viewModel.stateObservable
                 .observe(on: MainScheduler.instance)
-                .subscribe(onNext: { state in
-                    update(state: state)
+                .subscribe(with: self, onNext: { `self`, state in
+                    self.update(state: state)
                 })
                 .disposed(by: disposeBag)
-
-            func update(state: CopyBibliographyState) {
-                if state.processingBibliography {
-                    showOverlay(state: .processing)
-                } else if let error = state.error {
-                    if let error = error as? CitationController.Error, error == .styleOrLocaleMissing {
-                        coordinatorDelegate?.showMissingStyleError(using: nil)
-                        hideOverlay()
-                    } else {
-                        showOverlay(state: .error(L10n.Errors.Items.generatingBib))
-                        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(1500)) { [weak self] in
-                            self?.hideOverlay()
-                        }
-                    }
-                } else {
-                    hideOverlay()
-                }
-            }
         }
     }
 
     // MARK: - Actions
-    private func showOverlay(state: OverlayState) {
-        switch state {
-        case .processing:
-            overlayText.text = L10n.Items.generatingBib
-            overlayActivityIndicator.isHidden = false
-            overlayActivityIndicator.startAnimating()
-            overlayErrorIcon.isHidden = true
-
-        case .error(let message):
-            overlayText.text = message
-            overlayActivityIndicator.stopAnimating()
-            overlayErrorIcon.isHidden = false
+    private func update(state: CopyBibliographyState) {
+        if state.processingBibliography {
+            showOverlay(state: .processing)
+        } else if let error = state.error {
+            if let error = error as? CitationController.Error, error == .styleOrLocaleMissing {
+                coordinatorDelegate?.showMissingStyleError(using: nil)
+                hideOverlay()
+            } else {
+                showOverlay(state: .error(L10n.Errors.Items.generatingBib))
+                DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(1500)) {
+                    hideOverlay()
+                }
+            }
+        } else {
+            hideOverlay()
         }
 
-        view.layoutIfNeeded()
+        func showOverlay(state: OverlayState) {
+            switch state {
+            case .processing:
+                overlayText.text = L10n.Items.generatingBib
+                overlayActivityIndicator.isHidden = false
+                overlayActivityIndicator.startAnimating()
+                overlayErrorIcon.isHidden = true
 
-        UIView.animate(withDuration: 0.2) {
-            self.view.alpha = 1
+            case .error(let message):
+                overlayText.text = message
+                overlayActivityIndicator.stopAnimating()
+                overlayErrorIcon.isHidden = false
+            }
+
+            view.layoutIfNeeded()
+
+            guard view.alpha != 1 else { return }
+            UIView.animate(withDuration: 0.2) {
+                self.view.alpha = 1
+            }
         }
-    }
 
-    private func hideOverlay() {
-        UIView.animate(withDuration: 0.2) {
-            self.view.alpha = 0
-        } completion: { [weak self] _ in
-            guard let self else { return }
-            coordinatorDelegate?.overlay(for: self, isHidden: true)
+        func hideOverlay() {
+            UIView.animate(withDuration: 0.2) {
+                self.view.alpha = 0
+            } completion: { [weak self] _ in
+                guard let self else { return }
+                coordinatorDelegate?.overlay(for: self, isHidden: true)
+            }
         }
     }
 }
