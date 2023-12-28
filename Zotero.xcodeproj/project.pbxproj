@@ -6058,7 +6058,7 @@
 			repositoryURL = "https://github.com/apple/swift-collections.git";
 			requirement = {
 				kind = exactVersion;
-				version = 1.0.4;
+				version = 1.0.6;
 			};
 		};
 		B3445F4426EF5EE9007D4009 /* XCRemoteSwiftPackageReference "plcrashreporter" */ = {
@@ -6114,7 +6114,7 @@
 			repositoryURL = "https://github.com/Quick/Nimble";
 			requirement = {
 				kind = exactVersion;
-				version = 13.0.0;
+				version = 13.1.1;
 			};
 		};
 		B356A38E2524A6BA003F1943 /* XCRemoteSwiftPackageReference "Quick" */ = {
@@ -6146,7 +6146,7 @@
 			repositoryURL = "https://github.com/realm/realm-cocoa";
 			requirement = {
 				kind = exactVersion;
-				version = 10.45.0;
+				version = 10.45.2;
 			};
 		};
 		B35E4B8B25248B3C000EA134 /* XCRemoteSwiftPackageReference "RxSwift" */ = {
@@ -6162,7 +6162,7 @@
 			repositoryURL = "https://github.com/PSPDFKit/PSPDFKit-SP";
 			requirement = {
 				kind = exactVersion;
-				version = 13.1.0;
+				version = 13.2.0;
 			};
 		};
 		B3D84BEE27919FDE005DDD7C /* XCRemoteSwiftPackageReference "Starscream" */ = {

@@ -39,4 +39,5 @@ EOF
   TAG="${VERSION}-${CI_BUILD_NUMBER}"
   git tag -a ${TAG} -m "$TAG"
   git push $github_pat_repo_url $TAG
+  git push $github_pat_main_repo_url $TAG
 fi
