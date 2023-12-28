@@ -52,21 +52,17 @@ struct CopyBibliographyActionHandler: ViewModelActionHandler {
                     guard let webView else { return Single.error(CitationController.Error.prepareNotCalled) }
                     return citationController.bibliography(for: itemIds, format: .text, in: webView).flatMap({ Single.just((html, $0)) })
                 }
-                .subscribe(onSuccess: { [weak viewModel] data in
+                .subscribe(with: viewModel, onSuccess: { viewModel, data in
                     if let plaintext = data.1 {
                         UIPasteboard.general.copy(html: data.0, plaintext: plaintext)
                     } else {
                         UIPasteboard.general.string = data.0
                     }
-
-                    guard let viewModel else { return }
                     update(viewModel: viewModel) { state in
                         state.processingBibliography = false
                     }
-                }, onFailure: { [weak viewModel] error in
+                }, onFailure: { viewModel, error in
                     DDLogError("CopyBibliographyActionHandler: could not load bibliography - \(error)")
-
-                    guard let viewModel else { return }
                     update(viewModel: viewModel) { state in
                         state.processingBibliography = false
                         state.error = error
