@@ -119,14 +119,14 @@ class PDFReaderViewController: UIViewController {
             }
 
             let exportAttributes: UIMenuElement.Attributes = viewModel.state.document.isLocked ? [.disabled] : []
-            let exportOriginalPDFAction = UIAction(title: L10n.Pdf.Export.export, attributes: exportAttributes) { [weak self] _ in
+            let exportOriginalPDFAction = UIAction(title: L10n.Pdf.Export.export, image: .init(systemName: "square.and.arrow.up"), attributes: exportAttributes) { [weak self] _ in
                 self?.viewModel.process(action: .export(includeAnnotations: false))
             }
             exportOriginalPDFAction.accessibilityValue = L10n.Accessibility.Pdf.export
             elements.append(exportOriginalPDFAction)
 
             if !viewModel.state.databaseAnnotations.isEmpty {
-                let exportAnnotatedPDFAction = UIAction(title: L10n.Pdf.Export.exportAnnotated, attributes: exportAttributes) { [weak self] _ in
+                let exportAnnotatedPDFAction = UIAction(title: L10n.Pdf.Export.exportAnnotated, image: .init(systemName: "square.and.arrow.up"), attributes: exportAttributes) { [weak self] _ in
                     self?.viewModel.process(action: .export(includeAnnotations: true))
                 }
                 exportAnnotatedPDFAction.accessibilityValue = L10n.Accessibility.Pdf.exportAnnotated
