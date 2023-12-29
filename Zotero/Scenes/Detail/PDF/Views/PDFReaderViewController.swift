@@ -113,7 +113,7 @@ class PDFReaderViewController: UIViewController {
                 elements.append(copyCitationAction)
                 let copyBibliographyAction = UIAction(title: L10n.Citation.copyBibliography, image: .init(systemName: "doc.on.doc")) { [weak self] _ in
                     guard let self, let coordinatorDelegate else { return }
-                    coordinatorDelegate.copyBibliography(for: parentKey, libraryId: viewModel.state.library.identifier, showOverlayOn: self)
+                    coordinatorDelegate.copyBibliography(using: self, for: parentKey, libraryId: viewModel.state.library.identifier)
                 }
                 elements.append(copyBibliographyAction)
             }

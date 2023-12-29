@@ -302,7 +302,7 @@ final class ItemsViewController: UIViewController {
             self.coordinatorDelegate?.showCiteExport(for: selectedKeys, libraryId: self.viewModel.state.library.identifier)
 
         case .copyBibliography:
-            coordinatorDelegate?.copyBibliography(for: selectedKeys, libraryId: viewModel.state.library.identifier, showOverlayOn: self)
+            coordinatorDelegate?.copyBibliography(using: self, for: selectedKeys, libraryId: viewModel.state.library.identifier, delegate: nil)
 
         case .copyCitation:
             self.coordinatorDelegate?.showCitation(for: selectedKeys, libraryId: self.viewModel.state.library.identifier)

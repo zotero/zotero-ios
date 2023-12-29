@@ -21,6 +21,17 @@ protocol DetailCoordinatorAttachmentProvider {
     func attachment(for key: String, parentKey: String?, libraryId: LibraryIdentifier) -> (Attachment, Library, UIView, CGRect?)?
 }
 
+protocol DetailMissingStyleErrorDelegate: AnyObject {
+    func showMissingStyleError(using presenter: UINavigationController?)
+}
+
+protocol DetailCitationCoordinatorDelegate: DetailMissingStyleErrorDelegate {
+    func showLocatorPicker(using presenter: UINavigationController, for values: [SinglePickerModel], selected: String, picked: @escaping (String) -> Void)
+    func showCitationPreviewError(using presenter: UINavigationController, errorMessage: String)
+}
+
+protocol DetailCopyBibliographyCoordinatorDelegate: DetailMissingStyleErrorDelegate { }
+
 protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showCollectionsPicker(in library: Library, completed: @escaping (Set<String>) -> Void)
     func showItemDetail(for type: ItemDetailState.DetailType, library: Library, scrolledToKey childKey: String?, animated: Bool)
@@ -33,9 +44,8 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showDeletionQuestion(count: Int, confirmAction: @escaping () -> Void, cancelAction: @escaping () -> Void)
     func showRemoveFromCollectionQuestion(count: Int, confirmAction: @escaping () -> Void)
     func showCitation(for itemIds: Set<String>, libraryId: LibraryIdentifier)
-    func copyBibliography(for itemIds: Set<String>, libraryId: LibraryIdentifier, showOverlayOn viewController: UIViewController)
+    func copyBibliography(using presenter: UIViewController, for itemIds: Set<String>, libraryId: LibraryIdentifier, delegate: DetailCopyBibliographyCoordinatorDelegate?)
     func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier)
-    func showMissingStyleError()
     func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier)
     func show(error: ItemsError)
     func showLookup()
@@ -58,17 +68,6 @@ protocol DetailItemDetailCoordinatorDelegate: AnyObject {
 
 protocol DetailNoteEditorCoordinatorDelegate: AnyObject {
     func showNote(library: Library, kind: NoteEditorKind, text: String, tags: [Tag], title: NoteEditorState.TitleData?, saveCallback: @escaping NoteEditorSaveCallback)
-}
-
-protocol DetailCitationCoordinatorDelegate: AnyObject {
-    func showLocatorPicker(using presenter: UINavigationController, for values: [SinglePickerModel], selected: String, picked: @escaping (String) -> Void)
-    func showCitationPreviewError(using presenter: UINavigationController, errorMessage: String)
-    func showMissingStyleError(using presenter: UINavigationController?)
-}
-
-protocol DetailCopyBibliographyCoordinatorDelegate: AnyObject {
-    func overlay(for viewController: CopyBibliographyViewController, isHidden: Bool)
-    func showMissingStyleError(using presenter: UINavigationController?)
 }
 
 protocol ItemsTagFilterDelegate: AnyObject {
@@ -580,8 +579,8 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         self.navigationController?.present(containerController, animated: true, completion: nil)
     }
 
-    func copyBibliography(for itemIds: Set<String>, libraryId: LibraryIdentifier, showOverlayOn viewController: UIViewController) {
-        guard let citationController = self.controllers.userControllers?.citationController else { return }
+    func copyBibliography(using presenter: UIViewController, for itemIds: Set<String>, libraryId: LibraryIdentifier, delegate: DetailCopyBibliographyCoordinatorDelegate?) {
+        guard let citationController = controllers.userControllers?.citationController else { return }
 
         DDLogInfo("DetailCoordinator: copy bibliography for \(itemIds)")
 
@@ -595,23 +594,11 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         let handler = CopyBibliographyActionHandler(citationController: citationController)
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = CopyBibliographyViewController(viewModel: viewModel)
-        controller.coordinatorDelegate = self
+        controller.coordinatorDelegate = delegate ?? self
 
-        controller.willMove(toParent: viewController)
-        viewController.addChild(controller)
-        controller.view.translatesAutoresizingMaskIntoConstraints = false
-        viewController.view.addSubview(controller.view)
-        controller.didMove(toParent: viewController)
-        NSLayoutConstraint.activate([
-            controller.view.leadingAnchor.constraint(equalTo: viewController.view.safeAreaLayoutGuide.leadingAnchor),
-            controller.view.trailingAnchor.constraint(equalTo: viewController.view.safeAreaLayoutGuide.trailingAnchor),
-            controller.view.topAnchor.constraint(equalTo: viewController.view.topAnchor),
-            controller.view.bottomAnchor.constraint(equalTo: viewController.view.bottomAnchor)
-        ])
-    }
-
-    func showMissingStyleError() {
-        showMissingStyleError(using: nil)
+        controller.modalPresentationStyle = .overCurrentContext
+        controller.modalTransitionStyle = .crossDissolve
+        presenter.present(controller, animated: true)
     }
 
     func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier) {
@@ -923,27 +910,7 @@ extension DetailCoordinator: DetailNoteEditorCoordinatorDelegate {
     }
 }
 
-extension DetailCoordinator: DetailCitationCoordinatorDelegate {
-    func showLocatorPicker(using presenter: UINavigationController, for values: [SinglePickerModel], selected: String, picked: @escaping (String) -> Void) {
-        let state = SinglePickerState(objects: values, selectedRow: selected)
-        let viewModel = ViewModel(initialState: state, handler: SinglePickerActionHandler())
-
-        let view = SinglePickerView(requiresSaveButton: false, requiresCancelButton: false, saveAction: picked) { completed in
-            completed?()
-            presenter.popViewController(animated: true)
-        }
-        let controller = UIHostingController(rootView: view.environmentObject(viewModel))
-        controller.preferredContentSize = CGSize(width: SingleCitationViewController.width, height: CGFloat(values.count * 44))
-        presenter.preferredContentSize = controller.preferredContentSize
-        presenter.pushViewController(controller, animated: true)
-    }
-
-    func showCitationPreviewError(using presenter: UINavigationController, errorMessage: String) {
-        let controller = UIAlertController(title: L10n.error, message: errorMessage, preferredStyle: .alert)
-        controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
-        presenter.present(controller, animated: true, completion: nil)
-    }
-
+extension DetailCoordinator: DetailMissingStyleErrorDelegate {
     func showMissingStyleError(using presenter: UINavigationController?) {
         guard let resolvedPresenter = presenter ?? navigationController else { return }
         let controller = UIAlertController(title: L10n.error, message: L10n.Errors.Citation.missingStyle, preferredStyle: .alert)
@@ -972,12 +939,26 @@ extension DetailCoordinator: DetailCitationCoordinatorDelegate {
     }
 }
 
-extension DetailCoordinator: DetailCopyBibliographyCoordinatorDelegate {
-    func overlay(for viewController: CopyBibliographyViewController, isHidden: Bool) {
-        guard isHidden else { return }
-        viewController.willMove(toParent: nil)
-        viewController.view.removeFromSuperview()
-        viewController.removeFromParent()
-        viewController.didMove(toParent: nil)
+extension DetailCoordinator: DetailCitationCoordinatorDelegate {
+    func showLocatorPicker(using presenter: UINavigationController, for values: [SinglePickerModel], selected: String, picked: @escaping (String) -> Void) {
+        let state = SinglePickerState(objects: values, selectedRow: selected)
+        let viewModel = ViewModel(initialState: state, handler: SinglePickerActionHandler())
+
+        let view = SinglePickerView(requiresSaveButton: false, requiresCancelButton: false, saveAction: picked) { completed in
+            completed?()
+            presenter.popViewController(animated: true)
+        }
+        let controller = UIHostingController(rootView: view.environmentObject(viewModel))
+        controller.preferredContentSize = CGSize(width: SingleCitationViewController.width, height: CGFloat(values.count * 44))
+        presenter.preferredContentSize = controller.preferredContentSize
+        presenter.pushViewController(controller, animated: true)
+    }
+
+    func showCitationPreviewError(using presenter: UINavigationController, errorMessage: String) {
+        let controller = UIAlertController(title: L10n.error, message: errorMessage, preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
+        presenter.present(controller, animated: true, completion: nil)
     }
 }
+
+extension DetailCoordinator: DetailCopyBibliographyCoordinatorDelegate { }

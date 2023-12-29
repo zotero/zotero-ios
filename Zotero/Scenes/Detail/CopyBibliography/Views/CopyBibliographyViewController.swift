@@ -125,16 +125,17 @@ class CopyBibliographyViewController: UIViewController {
             showOverlay(state: .processing)
         } else if let error = state.error {
             if let error = error as? CitationController.Error, error == .styleOrLocaleMissing {
-                coordinatorDelegate?.showMissingStyleError(using: nil)
-                hideOverlay()
+                dismiss(animated: true) {
+                    self.coordinatorDelegate?.showMissingStyleError(using: nil)
+                }
             } else {
                 showOverlay(state: .error(L10n.Errors.Items.generatingBib))
                 DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(1500)) {
-                    hideOverlay()
+                    self.dismiss(animated: true)
                 }
             }
         } else {
-            hideOverlay()
+            dismiss(animated: true)
         }
 
         func showOverlay(state: OverlayState) {
@@ -156,15 +157,6 @@ class CopyBibliographyViewController: UIViewController {
             guard view.alpha != 1 else { return }
             UIView.animate(withDuration: 0.2) {
                 self.view.alpha = 1
-            }
-        }
-
-        func hideOverlay() {
-            UIView.animate(withDuration: 0.2) {
-                self.view.alpha = 0
-            } completion: { [weak self] _ in
-                guard let self else { return }
-                coordinatorDelegate?.overlay(for: self, isHidden: true)
             }
         }
     }
