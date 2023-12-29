@@ -47,68 +47,67 @@ class CopyBibliographyViewController: UIViewController {
     }
 
     // MARK: - View Lifecycle
-    override func loadView() {
-        super.loadView()
-
-        let overlayBody = UIView()
-        overlayBody.layer.cornerRadius = 16
-        overlayBody.backgroundColor = UIColor(white: 0, alpha: 0.8)
-        overlayBody.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(overlayBody)
-        self.overlayBody = overlayBody
-
-        let stackView = UIStackView()
-        stackView.axis = .vertical
-        stackView.alignment = .fill
-        stackView.distribution = .fill
-        stackView.spacing = 12
-        stackView.translatesAutoresizingMaskIntoConstraints = false
-        overlayBody.addSubview(stackView)
-
-        let overlayActivityIndicator = UIActivityIndicatorView(style: .medium)
-        overlayActivityIndicator.color = .white
-        overlayActivityIndicator.isHidden = true
-        self.overlayActivityIndicator = overlayActivityIndicator
-        stackView.addArrangedSubview(overlayActivityIndicator)
-
-        let overlayErrorIcon = UIImageView(image: UIImage(systemName: "exclamationmark.circle", withConfiguration: UIImage.SymbolConfiguration(scale: .large)))
-        overlayErrorIcon.tintColor = .systemRed
-        overlayErrorIcon.isHidden = true
-        self.overlayErrorIcon = overlayErrorIcon
-        stackView.addArrangedSubview(overlayErrorIcon)
-
-        let overlayText = UILabel()
-        overlayText.text = "Generating Bibliography"
-        overlayText.textColor = .white
-        overlayText.font = .preferredFont(forTextStyle: .body)
-        overlayText.setContentCompressionResistancePriority(.required, for: .horizontal)
-        overlayText.setContentCompressionResistancePriority(.required, for: .vertical)
-        self.overlayText = overlayText
-        stackView.addArrangedSubview(overlayText)
-
-        let webView = WKWebView()
-        webView.isHidden = true
-        view.insertSubview(webView, at: 0)
-        self.webView = webView
-
-        NSLayoutConstraint.activate([
-            overlayBody.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            overlayBody.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            overlayBody.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 60),
-            view.trailingAnchor.constraint(greaterThanOrEqualTo: overlayBody.trailingAnchor, constant: 60),
-            stackView.topAnchor.constraint(equalTo: overlayBody.topAnchor, constant: 20),
-            stackView.leadingAnchor.constraint(equalTo: overlayBody.leadingAnchor, constant: 20),
-            overlayBody.bottomAnchor.constraint(equalTo: stackView.bottomAnchor, constant: 20),
-            overlayBody.trailingAnchor.constraint(equalTo: stackView.trailingAnchor, constant: 20)
-        ])
-    }
-
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = UIColor(white: 0, alpha: 0.1)
         view.alpha = 0
+        setupView()
         setupObserving()
         viewModel.process(action: .preload(webView))
+
+        func setupView() {
+            let overlayBody = UIView()
+            overlayBody.layer.cornerRadius = 16
+            overlayBody.backgroundColor = UIColor(white: 0, alpha: 0.8)
+            overlayBody.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview(overlayBody)
+            self.overlayBody = overlayBody
+
+            let stackView = UIStackView()
+            stackView.axis = .vertical
+            stackView.alignment = .fill
+            stackView.distribution = .fill
+            stackView.spacing = 12
+            stackView.translatesAutoresizingMaskIntoConstraints = false
+            overlayBody.addSubview(stackView)
+
+            let overlayActivityIndicator = UIActivityIndicatorView(style: .medium)
+            overlayActivityIndicator.color = .white
+            overlayActivityIndicator.isHidden = true
+            self.overlayActivityIndicator = overlayActivityIndicator
+            stackView.addArrangedSubview(overlayActivityIndicator)
+
+            let overlayErrorIcon = UIImageView(image: UIImage(systemName: "exclamationmark.circle", withConfiguration: UIImage.SymbolConfiguration(scale: .large)))
+            overlayErrorIcon.tintColor = .systemRed
+            overlayErrorIcon.isHidden = true
+            self.overlayErrorIcon = overlayErrorIcon
+            stackView.addArrangedSubview(overlayErrorIcon)
+
+            let overlayText = UILabel()
+            overlayText.text = "Generating Bibliography"
+            overlayText.textColor = .white
+            overlayText.font = .preferredFont(forTextStyle: .body)
+            overlayText.setContentCompressionResistancePriority(.required, for: .horizontal)
+            overlayText.setContentCompressionResistancePriority(.required, for: .vertical)
+            self.overlayText = overlayText
+            stackView.addArrangedSubview(overlayText)
+
+            let webView = WKWebView()
+            webView.isHidden = true
+            view.insertSubview(webView, at: 0)
+            self.webView = webView
+
+            NSLayoutConstraint.activate([
+                overlayBody.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+                overlayBody.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+                overlayBody.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 60),
+                view.trailingAnchor.constraint(greaterThanOrEqualTo: overlayBody.trailingAnchor, constant: 60),
+                stackView.topAnchor.constraint(equalTo: overlayBody.topAnchor, constant: 20),
+                stackView.leadingAnchor.constraint(equalTo: overlayBody.leadingAnchor, constant: 20),
+                overlayBody.bottomAnchor.constraint(equalTo: stackView.bottomAnchor, constant: 20),
+                overlayBody.trailingAnchor.constraint(equalTo: stackView.trailingAnchor, constant: 20)
+            ])
+        }
 
         func setupObserving() {
             viewModel.stateObservable
