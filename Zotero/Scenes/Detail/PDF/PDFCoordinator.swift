@@ -346,25 +346,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
     }
 
     func showCitation(for itemId: String, libraryId: LibraryIdentifier) {
-        guard let citationController = controllers.userControllers?.citationController else { return }
-
-        DDLogInfo("PDFCoordinator: show citation popup for \(itemId)")
-
-        let state = SingleCitationState(
-            itemIds: Set([itemId]),
-            libraryId: libraryId,
-            styleId: Defaults.shared.quickCopyStyleId,
-            localeId: Defaults.shared.quickCopyLocaleId,
-            exportAsHtml: Defaults.shared.quickCopyAsHtml
-        )
-        let handler = SingleCitationActionHandler(citationController: citationController)
-        let viewModel = ViewModel(initialState: state, handler: handler)
-
-        let controller = SingleCitationViewController(viewModel: viewModel)
-        controller.coordinatorDelegate = self
-        let navigationController = UINavigationController(rootViewController: controller)
-        let containerController = ContainerViewController(rootViewController: navigationController)
-        self.navigationController?.present(containerController, animated: true, completion: nil)
+        (parentCoordinator as? DetailCoordinator)?.showCitation(using: navigationController, for: Set([itemId]), libraryId: libraryId, delegate: self)
     }
 
     func copyBibliography(using presenter: UIViewController, for itemId: String, libraryId: LibraryIdentifier) {

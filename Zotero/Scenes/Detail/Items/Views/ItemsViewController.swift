@@ -305,7 +305,7 @@ final class ItemsViewController: UIViewController {
             coordinatorDelegate?.copyBibliography(using: self, for: selectedKeys, libraryId: viewModel.state.library.identifier, delegate: nil)
 
         case .copyCitation:
-            self.coordinatorDelegate?.showCitation(for: selectedKeys, libraryId: self.viewModel.state.library.identifier)
+            coordinatorDelegate?.showCitation(using: nil, for: selectedKeys, libraryId: viewModel.state.library.identifier, delegate: nil)
 
         case .download:
             self.viewModel.process(action: .download(selectedKeys))

@@ -43,7 +43,7 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showFilters(viewModel: ViewModel<ItemsActionHandler>, itemsController: ItemsViewController, button: UIBarButtonItem)
     func showDeletionQuestion(count: Int, confirmAction: @escaping () -> Void, cancelAction: @escaping () -> Void)
     func showRemoveFromCollectionQuestion(count: Int, confirmAction: @escaping () -> Void)
-    func showCitation(for itemIds: Set<String>, libraryId: LibraryIdentifier)
+    func showCitation(using presenter: UIViewController?, for itemIds: Set<String>, libraryId: LibraryIdentifier, delegate: DetailCitationCoordinatorDelegate?)
     func copyBibliography(using presenter: UIViewController, for itemIds: Set<String>, libraryId: LibraryIdentifier, delegate: DetailCopyBibliographyCoordinatorDelegate?)
     func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier)
     func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier)
@@ -557,8 +557,9 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         self.navigationController?.present(controller, animated: true, completion: nil)
     }
 
-    func showCitation(for itemIds: Set<String>, libraryId: LibraryIdentifier) {
-        guard let citationController = self.controllers.userControllers?.citationController else { return }
+    func showCitation(using presenter: UIViewController?, for itemIds: Set<String>, libraryId: LibraryIdentifier, delegate: DetailCitationCoordinatorDelegate?) {
+        guard let resolvedPresenter = presenter ?? navigationController else { return }
+        guard let citationController = controllers.userControllers?.citationController else { return }
 
         DDLogInfo("DetailCoordinator: show citation popup for \(itemIds)")
 
@@ -573,10 +574,10 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         let viewModel = ViewModel(initialState: state, handler: handler)
 
         let controller = SingleCitationViewController(viewModel: viewModel)
-        controller.coordinatorDelegate = self
+        controller.coordinatorDelegate = delegate ?? self
         let navigationController = UINavigationController(rootViewController: controller)
         let containerController = ContainerViewController(rootViewController: navigationController)
-        self.navigationController?.present(containerController, animated: true, completion: nil)
+        resolvedPresenter.present(containerController, animated: true, completion: nil)
     }
 
     func copyBibliography(using presenter: UIViewController, for itemIds: Set<String>, libraryId: LibraryIdentifier, delegate: DetailCopyBibliographyCoordinatorDelegate?) {
