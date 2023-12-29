@@ -317,6 +317,8 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
     private func process(downloadUpdate update: AttachmentDownloader.Update, batchData: ItemsState.DownloadBatchData?, in viewModel: ViewModel<ItemsActionHandler>) {
         let updateKey = update.parentKey ?? update.key
         guard let accessory = viewModel.state.itemAccessories[updateKey], let attachment = accessory.attachment else { return }
+        
+        DDLogInfo("ItemsActionHandler: download update \(attachment.key); \(attachment.libraryId); kind \(update.kind)")
 
         switch update.kind {
         case .ready:
