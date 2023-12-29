@@ -92,8 +92,8 @@ final class SingleCitationViewController: UIViewController {
 
         func setupObserving() {
             viewModel.stateObservable
-                .subscribe(onNext: { state in
-                    update(state: state)
+                .subscribe(with: self, onNext: { `self`, state in
+                    self.update(state: state)
                 })
                 .disposed(by: disposeBag)
 
@@ -110,45 +110,6 @@ final class SingleCitationViewController: UIViewController {
                     viewModel.process(action: .setOmitAuthor(omitAuthorSwitch.isOn))
                 })
                 .disposed(by: disposeBag)
-
-            func update(state: SingleCitationState) {
-                if state.changes.contains(.locator) {
-                    locatorButton.setTitle(localized(locator: state.locator), for: .normal)
-                }
-
-                updatePreview(isLoading: state.loadingPreview)
-                setupRightButtonItem(isLoading: state.loadingCopy)
-                navigationItem.rightBarButtonItem?.isEnabled = !state.loadingPreview
-
-                if let error = state.error, let coordinatorDelegate {
-                    switch error {
-                    case .styleMissing:
-                        coordinatorDelegate.showMissingStyleError(using: nil)
-
-                    case .cantPreloadWebView:
-                        if let navigationController {
-                            coordinatorDelegate.showCitationPreviewError(using: navigationController, errorMessage: L10n.Errors.citationPreview)
-                        }
-                    }
-                }
-
-                if state.changes.contains(.preview) {
-                    updatePreferredContentSize()
-                }
-
-                if state.changes.contains(.copied) {
-                    navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
-                }
-
-                func updatePreview(isLoading: Bool) {
-                    guard previewContainer.isHidden != isLoading else { return }
-
-                    activityIndicatorContainer.isHidden = !isLoading
-                    previewContainer.isHidden = isLoading
-                    locatorButton.isEnabled = !isLoading
-                    locatorTextField.isEnabled = !isLoading
-                }
-            }
         }
     }
 
@@ -162,6 +123,44 @@ final class SingleCitationViewController: UIViewController {
     }
 
     // MARK: - Actions
+    private func update(state: SingleCitationState) {
+        if state.changes.contains(.locator) {
+            locatorButton.setTitle(localized(locator: state.locator), for: .normal)
+        }
+
+        updatePreview(isLoading: state.loadingPreview)
+        setupRightButtonItem(isLoading: state.loadingCopy)
+        navigationItem.rightBarButtonItem?.isEnabled = !state.loadingPreview
+
+        if let error = state.error, let coordinatorDelegate {
+            switch error {
+            case .styleMissing:
+                coordinatorDelegate.showMissingStyleError(using: nil)
+
+            case .cantPreloadWebView:
+                if let navigationController {
+                    coordinatorDelegate.showCitationPreviewError(using: navigationController, errorMessage: L10n.Errors.citationPreview)
+                }
+            }
+        }
+
+        if state.changes.contains(.preview) {
+            updatePreferredContentSize()
+        }
+
+        if state.changes.contains(.copied) {
+            navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
+        }
+
+        func updatePreview(isLoading: Bool) {
+            guard previewContainer.isHidden != isLoading else { return }
+
+            activityIndicatorContainer.isHidden = !isLoading
+            previewContainer.isHidden = isLoading
+            locatorButton.isEnabled = !isLoading
+            locatorTextField.isEnabled = !isLoading
+        }
+    }
 
     private func setupRightButtonItem(isLoading: Bool) {
         guard navigationItem.rightBarButtonItem == nil || isLoading == (navigationItem.rightBarButtonItem?.customView == nil) else { return }
