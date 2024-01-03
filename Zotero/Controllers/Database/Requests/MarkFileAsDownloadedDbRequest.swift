@@ -15,16 +15,29 @@ struct MarkFileAsDownloadedDbRequest: DbRequest {
     let key: String
     let libraryId: LibraryIdentifier
     let downloaded: Bool
+    let compressed: Bool?
 
     var needsWrite: Bool { return true }
 
+    init(key: String, libraryId: LibraryIdentifier, downloaded: Bool, compressed: Bool? = nil) {
+        self.key = key
+        self.libraryId = libraryId
+        self.downloaded = downloaded
+        self.compressed = compressed
+    }
+
     func process(in database: Realm) throws {
-        guard let item = database.objects(RItem.self).filter(.key(self.key, in: self.libraryId)).first else {
+        guard let item = database.objects(RItem.self).filter(.key(key, in: libraryId)).first else {
             DDLogError("MarkFileAsDownloadedDbRequest: item not found")
             return
         }
-        guard item.rawType == ItemTypes.attachment && item.fileDownloaded != self.downloaded else { return }
-        item.fileDownloaded = self.downloaded
+        guard item.rawType == ItemTypes.attachment else { return }
+        if item.fileDownloaded != downloaded {
+            item.fileDownloaded = downloaded
+        }
+        if let compressed, item.fileCompressed != compressed {
+            item.fileCompressed = compressed
+        }
     }
 }
 
@@ -35,7 +48,7 @@ struct MarkItemsFilesAsNotDownloadedDbRequest: DbRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
-        let items = database.objects(RItem.self).filter(.keys(self.keys, in: self.libraryId)).filter(.item(type: ItemTypes.attachment)).filter(.file(downloaded: true))
+        let items = database.objects(RItem.self).filter(.keys(keys, in: libraryId)).filter(.item(type: ItemTypes.attachment)).filter(.file(downloaded: true))
         for item in items {
             guard !item.attachmentNeedsSync else { continue }
             item.fileDownloaded = false
@@ -49,7 +62,7 @@ struct MarkLibraryFilesAsNotDownloadedDbRequest: DbRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
-        let items = database.objects(RItem.self).filter(.library(with: self.libraryId)).filter(.item(type: ItemTypes.attachment)).filter(.file(downloaded: true))
+        let items = database.objects(RItem.self).filter(.library(with: libraryId)).filter(.item(type: ItemTypes.attachment)).filter(.file(downloaded: true))
         for item in items {
             guard !item.attachmentNeedsSync else { continue }
             item.fileDownloaded = false

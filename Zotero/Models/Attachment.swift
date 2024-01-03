@@ -20,7 +20,7 @@ struct Attachment: Identifiable, Equatable {
     }
 
     enum Kind: Equatable, Hashable {
-        case file(filename: String, contentType: String, location: FileLocation, linkType: FileLinkType)
+        case file(filename: String, contentType: String, location: FileLocation, linkType: FileLinkType, compressed: Bool)
         case url(URL)
     }
 
@@ -42,7 +42,7 @@ struct Attachment: Identifiable, Equatable {
     var location: FileLocation? {
         switch self.type {
         case .url: return nil
-        case .file(_, _, let location, _): return location
+        case .file(_, _, let location, _, _): return location
         }
     }
 
@@ -71,13 +71,15 @@ struct Attachment: Identifiable, Equatable {
 
     func changed(location: FileLocation, condition: (FileLocation) -> Bool) -> Attachment? {
         switch self.type {
-        case .file(let filename, let contentType, let oldLocation, let linkType) where condition(oldLocation):
-            return Attachment(type: .file(filename: filename, contentType: contentType, location: location, linkType: linkType),
-                              title: self.title,
-                              url: self.url,
-                              dateAdded: self.dateAdded,
-                              key: self.key,
-                              libraryId: self.libraryId)
+        case .file(let filename, let contentType, let oldLocation, let linkType, let compressed) where condition(oldLocation):
+            return Attachment(
+                type: .file(filename: filename, contentType: contentType, location: location, linkType: linkType, compressed: compressed),
+                title: title,
+                url: url,
+                dateAdded: dateAdded,
+                key: key,
+                libraryId: libraryId
+            )
 
         case .url, .file:
             return nil
@@ -86,13 +88,15 @@ struct Attachment: Identifiable, Equatable {
 
     func changed(location: FileLocation) -> Attachment? {
         switch self.type {
-        case .file(let filename, let contentType, let oldLocation, let linkType) where oldLocation != location:
-            return Attachment(type: .file(filename: filename, contentType: contentType, location: location, linkType: linkType),
-                              title: self.title,
-                              url: self.url,
-                              dateAdded: self.dateAdded,
-                              key: self.key,
-                              libraryId: self.libraryId)
+        case .file(let filename, let contentType, let oldLocation, let linkType, let compressed) where oldLocation != location:
+            return Attachment(
+                type: .file(filename: filename, contentType: contentType, location: location, linkType: linkType, compressed: compressed),
+                title: title,
+                url: url,
+                dateAdded: dateAdded,
+                key: key,
+                libraryId: libraryId
+            )
 
         case .url, .file:
             return nil
