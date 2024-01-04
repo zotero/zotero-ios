@@ -53,6 +53,7 @@ final class SingleCitationViewController: UIViewController {
         omitAuthorSwitch.setOn(viewModel.state.omitAuthor, animated: false)
         setupPreview()
         setupNavigationBar()
+        setupButton()
         setupObserving()
 
         viewModel.process(action: .preload(previewWebView))
@@ -88,6 +89,18 @@ final class SingleCitationViewController: UIViewController {
 
             setupRightButtonItem(isLoading: false)
             navigationItem.rightBarButtonItem?.isEnabled = false
+        }
+
+        func setupButton() {
+            let locatorElements: [UIMenuElement] = SingleCitationState.locators.compactMap { [weak self] locator in
+                guard let self else { return nil }
+                return UIAction(title: localized(locator: locator), state: (viewModel.state.locator == locator) ? .on : .off) { [weak self] _ in
+                    self?.viewModel.process(action: .setLocator(locator))
+                }
+            }
+            locatorButton.menu = UIMenu(children: locatorElements)
+            locatorButton.showsMenuAsPrimaryAction = true
+            locatorButton.changesSelectionAsPrimaryAction = true
         }
 
         func setupObserving() {
@@ -177,14 +190,6 @@ final class SingleCitationViewController: UIViewController {
             .disposed(by: disposeBag)
             navigationItem.rightBarButtonItem = copy
         }
-    }
-
-    @IBAction private func showLocatorPicker() {
-        guard let coordinatorDelegate, let navigationController else { return }
-        let values = SingleCitationState.locators.map({ SinglePickerModel(id: $0, name: localized(locator: $0)) })
-        coordinatorDelegate.showLocatorPicker(using: navigationController, for: values, selected: viewModel.state.locator, picked: { [weak self] locator in
-            self?.viewModel.process(action: .setLocator(locator))
-        })
     }
 
     // MARK: - Helpers

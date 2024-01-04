@@ -26,7 +26,6 @@ protocol DetailMissingStyleErrorDelegate: AnyObject {
 }
 
 protocol DetailCitationCoordinatorDelegate: DetailMissingStyleErrorDelegate {
-    func showLocatorPicker(using presenter: UINavigationController, for values: [SinglePickerModel], selected: String, picked: @escaping (String) -> Void)
     func showCitationPreviewError(using presenter: UINavigationController, errorMessage: String)
 }
 
@@ -941,20 +940,6 @@ extension DetailCoordinator: DetailMissingStyleErrorDelegate {
 }
 
 extension DetailCoordinator: DetailCitationCoordinatorDelegate {
-    func showLocatorPicker(using presenter: UINavigationController, for values: [SinglePickerModel], selected: String, picked: @escaping (String) -> Void) {
-        let state = SinglePickerState(objects: values, selectedRow: selected)
-        let viewModel = ViewModel(initialState: state, handler: SinglePickerActionHandler())
-
-        let view = SinglePickerView(requiresSaveButton: false, requiresCancelButton: false, saveAction: picked) { completed in
-            completed?()
-            presenter.popViewController(animated: true)
-        }
-        let controller = UIHostingController(rootView: view.environmentObject(viewModel))
-        controller.preferredContentSize = CGSize(width: SingleCitationViewController.width, height: CGFloat(values.count * 44))
-        presenter.preferredContentSize = controller.preferredContentSize
-        presenter.pushViewController(controller, animated: true)
-    }
-
     func showCitationPreviewError(using presenter: UINavigationController, errorMessage: String) {
         let controller = UIAlertController(title: L10n.error, message: errorMessage, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))

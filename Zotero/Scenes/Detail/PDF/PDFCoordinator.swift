@@ -541,11 +541,6 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
 }
 
 extension PDFCoordinator: DetailCitationCoordinatorDelegate {
-    func showLocatorPicker(using presenter: UINavigationController, for values: [SinglePickerModel], selected: String, picked: @escaping (String) -> Void) {
-        guard let coordinator = parentCoordinator as? DetailCoordinator else { return }
-        coordinator.showLocatorPicker(using: presenter, for: values, selected: selected, picked: picked)
-    }
-    
     func showCitationPreviewError(using presenter: UINavigationController, errorMessage: String) {
         guard let coordinator = parentCoordinator as? DetailCoordinator else { return }
         coordinator.showCitationPreviewError(using: presenter, errorMessage: errorMessage)
