@@ -290,10 +290,10 @@ final class DetailCoordinator: Coordinator {
         navigationController.present(controller, animated: true, completion: nil)
     }
 
-    func createPDFController(key: String, parentKey: String?, library: Library, url: URL, page: Int? = nil, preselectedAnnotationKey: String? = nil) -> NavigationViewController {
-        let navigationController = NavigationViewController()
+    func createPDFController(key: String, parentKey: String?, library: Library, url: URL, page: Int? = nil, preselectedAnnotationKey: String? = nil) -> DetailNavigationViewController {
+        let navigationController = DetailNavigationViewController()
         navigationController.modalPresentationStyle = .fullScreen
-        
+
         let coordinator = PDFCoordinator(
             key: key,
             parentKey: parentKey,
@@ -304,6 +304,7 @@ final class DetailCoordinator: Coordinator {
             navigationController: navigationController,
             controllers: controllers
         )
+        navigationController.coordinator = coordinator
         coordinator.parentCoordinator = self
         childCoordinators.append(coordinator)
         coordinator.start(animated: false)
@@ -315,10 +316,14 @@ final class DetailCoordinator: Coordinator {
         guard let navigationController else { return }
         controllers.userControllers?.openItemsController.open(.pdf(libraryId: library.identifier, key: key), for: sessionIdentifier)
 
-        let viewControllerProvider: () -> UIViewController = {
+        let viewControllerProvider: () -> DetailNavigationViewController = {
             self.createPDFController(key: key, parentKey: parentKey, library: library, url: url)
         }
         if let presentedViewController = navigationController.presentedViewController {
+            if let presentedDetailNavigationController = presentedViewController as? DetailNavigationViewController {
+                presentedDetailNavigationController.replaceContents(with: viewControllerProvider(), animated: false)
+                return
+            }
             guard let window = presentedViewController.view.window else { return }
             show(viewControllerProvider: viewControllerProvider, by: navigationController, in: window, animated: false)
             return
@@ -471,8 +476,8 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         tags: [Tag],
         title: NoteEditorState.TitleData?,
         saveCallback: @escaping NoteEditorSaveCallback
-    ) -> NavigationViewController {
-        let navigationController = NavigationViewController()
+    ) -> DetailNavigationViewController {
+        let navigationController = DetailNavigationViewController()
         navigationController.modalPresentationStyle = .fullScreen
         navigationController.isModalInPresentation = true
 
@@ -487,6 +492,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
             sessionIdentifier: sessionIdentifier,
             controllers: controllers
         )
+        navigationController.coordinator = coordinator
         coordinator.parentCoordinator = self
         childCoordinators.append(coordinator)
         coordinator.start(animated: false)
@@ -947,10 +953,14 @@ extension DetailCoordinator: DetailNoteEditorCoordinatorDelegate {
             controllers.userControllers?.openItemsController.open(.note(libraryId: library.identifier, key: key), for: sessionIdentifier)
         }
 
-        let viewControllerProvider: () -> UIViewController = {
+        let viewControllerProvider: () -> DetailNavigationViewController = {
             self.createNoteController(library: library, kind: kind, text: text, tags: tags, title: title, saveCallback: amendedSaveCallback)
         }
         if let presentedViewController = navigationController.presentedViewController {
+            if let presentedDetailNavigationController = presentedViewController as? DetailNavigationViewController {
+                presentedDetailNavigationController.replaceContents(with: viewControllerProvider(), animated: false)
+                return
+            }
             guard let window = presentedViewController.view.window else { return }
             show(viewControllerProvider: viewControllerProvider, by: navigationController, in: window, animated: false)
             return
