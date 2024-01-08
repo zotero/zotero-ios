@@ -211,3 +211,10 @@ extension SingleCitationViewController: WKScriptMessageHandler {
         webViewHeight.constant = height
     }
 }
+
+extension SingleCitationViewController: UITextFieldDelegate {
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder()
+        return true
+    }
+}
