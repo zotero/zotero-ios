@@ -498,10 +498,14 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
                 continue
             }
 
-            attachments.append(Attachment(type: .file(filename: filename, contentType: original.mimeType, location: .local, linkType: .importedFile),
-                                          title: filename,
-                                          key: key,
-                                          libraryId: libraryId))
+            attachments.append(
+                Attachment(
+                    type: .file(filename: filename, contentType: original.mimeType, location: .local, linkType: .importedFile, compressed: false),
+                    title: filename,
+                    key: key,
+                    libraryId: libraryId
+                )
+            )
         }
 
         if attachments.isEmpty {

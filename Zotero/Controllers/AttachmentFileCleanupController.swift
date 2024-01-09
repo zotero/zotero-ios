@@ -236,7 +236,7 @@ final class AttachmentFileCleanupController {
     private func delete(attachment: Attachment) -> Bool {
         do {
             // Don't delete linked files
-            guard case .file(_, _, _, let linkType) = attachment.type, linkType != .linkedFile else { return false }
+            guard case .file(_, _, _, let linkType, _) = attachment.type, linkType != .linkedFile else { return false }
 
             var canDelete: Bool = false
 

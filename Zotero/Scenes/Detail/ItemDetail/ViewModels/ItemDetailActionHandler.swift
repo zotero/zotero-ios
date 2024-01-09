@@ -545,8 +545,14 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
 
                 do {
                     try self.fileStorage.move(from: url.path, to: file)
-                    attachments.append(Attachment(type: .file(filename: nameWithExtension, contentType: mimeType, location: .local, linkType: .importedFile),
-                                                  title: nameWithExtension, key: key, libraryId: libraryId))
+                    attachments.append(
+                        Attachment(
+                            type: .file(filename: nameWithExtension, contentType: mimeType, location: .local, linkType: .importedFile, compressed: false),
+                            title: nameWithExtension,
+                            key: key,
+                            libraryId: libraryId
+                        )
+                    )
                 } catch let error {
                     DDLogError("ItemDetailActionHandler: can't move attachment from source url \(url.relativePath) - \(error)")
                     failedNames.append(nameWithExtension)

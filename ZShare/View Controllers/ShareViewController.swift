@@ -329,7 +329,8 @@ final class ShareViewController: UIViewController {
 
     private func setAttachment(title: String, file: File, state: ExtensionViewModel.State.AttachmentState) {
         self.attachmentTitleLabel.text = title
-        let iconState = FileAttachmentView.State.stateFrom(type: .file(filename: "", contentType: file.mimeType, location: .local, linkType: .importedFile), progress: nil, error: state.error)
+        let type: Attachment.Kind = .file(filename: "", contentType: file.mimeType, location: .local, linkType: .importedFile, compressed: false)
+        let iconState = FileAttachmentView.State.stateFrom(type: type, progress: nil, error: state.error)
         self.attachmentIcon.set(state: iconState, style: .shareExtension)
 
         switch state {

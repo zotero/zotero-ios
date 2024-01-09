@@ -81,6 +81,7 @@ struct WebDavDeletionResult {
 
 protocol WebDavController: AnyObject {
     var sessionStorage: WebDavSessionStorage { get }
+    var currentUrl: URL? { get }
 
     func checkServer(queue: DispatchQueue) -> Single<URL>
     func createZoteroDirectory(queue: DispatchQueue) -> Single<()>
@@ -550,6 +551,10 @@ final class WebDavControllerImpl: WebDavController {
     /// Creates a propfind request for given url.
     private func propFind(url: URL, queue: DispatchQueue) -> Single<HTTPURLResponse> {
         return self.apiClient.send(request: WebDavPropfindRequest(url: url), queue: queue).flatMap({ Single.just($1) })
+    }
+
+    var currentUrl: URL? {
+        return try? _createUrl(sessionStorage: sessionStorage)
     }
 
     /// Creates and validates WebDAV server URL based on stored session.

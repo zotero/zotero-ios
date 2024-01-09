@@ -176,11 +176,13 @@ final class ExtensionViewModel {
                 let url = attachmentData[FieldKeys.Item.url] as? String
                 let filename = FilenameFormatter.filename(from: item, defaultTitle: defaultTitle, ext: attachmentFile.ext, dateParser: dateParser)
                 let file = Files.attachmentFile(in: libraryId, key: attachmentKey, filename: filename, contentType: attachmentFile.mimeType)
-                let attachment = Attachment(type: .file(filename: filename, contentType: attachmentFile.mimeType, location: .local, linkType: linkType),
-                                            title: filename,
-                                            url: url,
-                                            key: attachmentKey,
-                                            libraryId: libraryId)
+                let attachment = Attachment(
+                    type: .file(filename: filename, contentType: attachmentFile.mimeType, location: .local, linkType: linkType, compressed: false),
+                    title: filename,
+                    url: url,
+                    key: attachmentKey,
+                    libraryId: libraryId
+                )
 
                 self.type = .translated(item: item, location: attachmentFile)
                 self.attachment = attachment
@@ -193,11 +195,13 @@ final class ExtensionViewModel {
             init(file: File, filename: String, attachmentKey: String, linkType: Attachment.FileLinkType, remoteUrl: String?, collections: Set<String>, tags: [TagResponse], libraryId: LibraryIdentifier,
                  userId: Int) {
                 let newFile = Files.attachmentFile(in: libraryId, key: attachmentKey, filename: filename, contentType: file.mimeType)
-                let attachment = Attachment(type: .file(filename: filename, contentType: file.mimeType, location: .local, linkType: linkType),
-                                            title: filename,
-                                            url: remoteUrl,
-                                            key: attachmentKey,
-                                            libraryId: libraryId)
+                let attachment = Attachment(
+                    type: .file(filename: filename, contentType: file.mimeType, location: .local, linkType: linkType, compressed: false),
+                    title: filename,
+                    url: remoteUrl,
+                    key: attachmentKey,
+                    libraryId: libraryId
+                )
 
                 self.type = .file(location: file, collections: collections, tags: tags)
                 self.attachment = attachment

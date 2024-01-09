@@ -51,7 +51,7 @@ struct AttachmentCreator {
         let linkType: Attachment.FileLinkType = linkMode == .importedFile ? .importedFile : .importedUrl
         guard let libraryId = rAttachment.libraryId,
               let type = importedType(
-                for: rAttachment, 
+                for: rAttachment,
                 contentType: contentType,
                 libraryId: libraryId,
                 fileStorage: fileStorage,
@@ -204,7 +204,7 @@ struct AttachmentCreator {
         contentType: String,
         libraryId: LibraryIdentifier,
         fileStorage: FileStorage?,
-        linkType: Attachment.FileLinkType, 
+        linkType: Attachment.FileLinkType,
         compressed: Bool
     ) -> Attachment.Kind? {
         let filename = filename(for: item, ext: contentType.extensionFromMimeType)
@@ -278,13 +278,15 @@ struct AttachmentCreator {
         // If file storage is not specified, we don't care about location anyway. Let's just return `.remote`.
         guard let fileStorage = fileStorage else { return .remote }
 
-        if fileStorage.has(file) {
+        let webDavEnabled = Defaults.shared.webDavEnabled
+
+        if fileStorage.has(file) || (webDavEnabled && fileStorage.has(file.copyWithExt("zip"))) {
             if !item.backendMd5.isEmpty, let md5 = md5(from: file.createUrl()), item.backendMd5 != md5 {
                 return .localAndChangedRemotely
             } else {
                 return .local
             }
-        } else if Defaults.shared.webDavEnabled || item.links.contains(where: { $0.type == LinkType.enclosure.rawValue }) {
+        } else if webDavEnabled || item.links.contains(where: { $0.type == LinkType.enclosure.rawValue }) {
             return .remote
         } else {
             return .remoteMissing

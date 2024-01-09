@@ -73,7 +73,7 @@ final class CustomURLController {
                         return nil
                     }
 
-                    guard case .file(_, let contentType, let location, _) = attachment.type, contentType == "application/pdf" else {
+                    guard case .file(_, let contentType, let location, _, _) = attachment.type, contentType == "application/pdf" else {
                         DDLogInfo("CustomURLConverter: trying to open \(attachment.type) instead of pdf")
                         return nil
                     }

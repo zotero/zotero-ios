@@ -952,7 +952,7 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
         func createContextMenu(for attachment: Attachment) -> UIMenu? {
             var actions: [UIAction] = []
 
-            if case .file(_, _, let location, _) = attachment.type, location == .local {
+            if case .file(_, _, let location, _, _) = attachment.type, location == .local {
                 actions.append(UIAction(title: L10n.ItemDetail.deleteAttachmentFile, image: UIImage(systemName: "trash"), attributes: []) { [weak self] _ in
                     self?.viewModel.process(action: .deleteAttachmentFile(attachment))
                 })
