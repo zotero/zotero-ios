@@ -31,7 +31,6 @@ class LogsViewController: UIViewController {
     }
 
     override func loadView() {
-        super.loadView()
         self.view = UIView()
         self.view.backgroundColor = .white
     }

@@ -260,8 +260,8 @@
 "pdf.settings.page_fitting.fit" = "Fit";
 "pdf.settings.page_fitting.fill" = "Fill";
 "pdf.settings.page_fitting.automatic" = "Automatic";
-"pdf.export.export" = "Export";
-"pdf.export.include_annotations" = "Include annotations";
+"pdf.export.export" = "Export PDF";
+"pdf.export.export_annotated" = "Export Annotated PDF";
 "pdf.sidebar.no_annotations" = "No Annotations";
 "pdf.sidebar.no_outline" = "No Outline";
 
@@ -507,7 +507,9 @@
 "accessibility.item_detail.open" = "Double tap to open";
 "accessibility.pdf.sidebar_open" = "Open sidebar";
 "accessibility.pdf.sidebar_close" = "Close sidebar";
-"accessibility.pdf.export" = "Export pdf";
+"accessibility.pdf.share" = "Share PDF";
+"accessibility.pdf.export" = "Export PDF";
+"accessibility.pdf.export_annotated" = "Export annotated PDF";
 "accessibility.pdf.settings" = "Settings";
 "accessibility.pdf.color_picker" = "Color picker";
 "accessibility.pdf.highlight_annotation_tool" = "Create highlight annotation";

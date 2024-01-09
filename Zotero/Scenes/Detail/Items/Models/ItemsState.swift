@@ -22,8 +22,7 @@ struct ItemsState: ViewModelState {
         static let selectAll = Changes(rawValue: 1 << 3)
         static let attachmentsRemoved = Changes(rawValue: 1 << 4)
         static let filters = Changes(rawValue: 1 << 5)
-        static let webViewCleanup = Changes(rawValue: 1 << 6)
-        static let batchData = Changes(rawValue: 1 << 7)
+        static let batchData = Changes(rawValue: 1 << 6)
     }
 
     struct DownloadBatchData: Equatable {
@@ -103,8 +102,6 @@ struct ItemsState: ViewModelState {
     var itemKeyToDuplicate: String?
     // Used to indicate which row should update it's attachment view. The update is done directly to cell instead of tableView reload.
     var updateItemKey: String?
-    var processingBibliography: Bool
-    var bibliographyError: Error?
     var attachmentToOpen: String?
     var downloadBatchData: DownloadBatchData?
     var remoteDownloadBatchData: DownloadBatchData?
@@ -151,7 +148,6 @@ struct ItemsState: ViewModelState {
         self.remoteDownloadBatchData = remoteDownloadBatchData
         self.identifierLookupBatchData = identifierLookupBatchData
         self.searchTerm = searchTerm
-        self.processingBibliography = false
         self.itemTitles = [:]
     }
 
@@ -160,6 +156,5 @@ struct ItemsState: ViewModelState {
         self.changes = []
         self.itemKeyToDuplicate = nil
         self.updateItemKey = nil
-        self.bibliographyError = nil
     }
 }

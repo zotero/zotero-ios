@@ -74,6 +74,7 @@ struct PDFReaderState: ViewModelState {
     }
 
     let key: String
+    let parentKey: String?
     let library: Library
     let document: PSPDFKit.Document
     let previewCache: NSCache<NSString, UIImage>
@@ -131,8 +132,21 @@ struct PDFReaderState: ViewModelState {
     var initialPage: Int?
     var unlockSuccessful: Bool?
 
-    init(url: URL, key: String, library: Library, initialPage: Int?, preselectedAnnotationKey: String?, settings: PDFSettings, userId: Int, username: String, displayName: String, interfaceStyle: UIUserInterfaceStyle) {
+    init(
+        url: URL,
+        key: String,
+        parentKey: String?,
+        library: Library,
+        initialPage: Int?,
+        preselectedAnnotationKey: String?,
+        settings: PDFSettings,
+        userId: Int,
+        username: String,
+        displayName: String,
+        interfaceStyle: UIUserInterfaceStyle
+    ) {
         self.key = key
+        self.parentKey = parentKey
         self.library = library
         self.document = Document(url: url)
         self.previewCache = NSCache()

@@ -21,6 +21,16 @@ protocol DetailCoordinatorAttachmentProvider {
     func attachment(for key: String, parentKey: String?, libraryId: LibraryIdentifier) -> (Attachment, Library, UIView, CGRect?)?
 }
 
+protocol DetailMissingStyleErrorDelegate: AnyObject {
+    func showMissingStyleError(using presenter: UINavigationController?)
+}
+
+protocol DetailCitationCoordinatorDelegate: DetailMissingStyleErrorDelegate {
+    func showCitationPreviewError(using presenter: UINavigationController, errorMessage: String)
+}
+
+protocol DetailCopyBibliographyCoordinatorDelegate: DetailMissingStyleErrorDelegate { }
+
 protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showCollectionsPicker(in library: Library, completed: @escaping (Set<String>) -> Void)
     func showItemDetail(for type: ItemDetailState.DetailType, library: Library, scrolledToKey childKey: String?, animated: Bool)
@@ -32,9 +42,9 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showFilters(viewModel: ViewModel<ItemsActionHandler>, itemsController: ItemsViewController, button: UIBarButtonItem)
     func showDeletionQuestion(count: Int, confirmAction: @escaping () -> Void, cancelAction: @escaping () -> Void)
     func showRemoveFromCollectionQuestion(count: Int, confirmAction: @escaping () -> Void)
-    func showCitation(for itemIds: Set<String>, libraryId: LibraryIdentifier)
+    func showCitation(using presenter: UIViewController?, for itemIds: Set<String>, libraryId: LibraryIdentifier, delegate: DetailCitationCoordinatorDelegate?)
+    func copyBibliography(using presenter: UIViewController, for itemIds: Set<String>, libraryId: LibraryIdentifier, delegate: DetailCopyBibliographyCoordinatorDelegate?)
     func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier)
-    func showMissingStyleError()
     func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier)
     func show(error: ItemsError)
     func showLookup()
@@ -59,12 +69,6 @@ protocol DetailNoteEditorCoordinatorDelegate: AnyObject {
     func showNote(library: Library, kind: NoteEditorKind, text: String, tags: [Tag], title: NoteEditorState.TitleData?, saveCallback: @escaping NoteEditorSaveCallback)
 }
 
-protocol DetailCitationCoordinatorDelegate: AnyObject {
-    func showLocatorPicker(for values: [SinglePickerModel], selected: String, picked: @escaping (String) -> Void)
-    func showCitationPreview(errorMessage: String)
-    func showMissingStyleError()
-}
-
 protocol ItemsTagFilterDelegate: AnyObject {
     var delegate: TagFilterDelegate? { get set }
 
@@ -86,8 +90,6 @@ final class DetailCoordinator: Coordinator {
     let searchItemKeys: [String]?
     private unowned let controllers: Controllers
     private let disposeBag: DisposeBag
-
-    private weak var citationNavigationController: UINavigationController?
 
     init(library: Library, collection: Collection, searchItemKeys: [String]?, navigationController: UINavigationController, itemsTagFilterDelegate: ItemsTagFilterDelegate?, controllers: Controllers) {
         self.library = library
@@ -174,10 +176,10 @@ final class DetailCoordinator: Coordinator {
         guard let (attachment, library, sourceView, sourceRect) = self.navigationController?.viewControllers.reversed()
                                                                       .compactMap({ ($0 as? DetailCoordinatorAttachmentProvider)?.attachment(for: key, parentKey: parentKey, libraryId: libraryId) })
                                                                       .first else { return }
-        self.show(attachment: attachment, library: library, sourceView: sourceView, sourceRect: sourceRect)
+        self.show(attachment: attachment, parentKey: parentKey, library: library, sourceView: sourceView, sourceRect: sourceRect)
     }
 
-    private func show(attachment: Attachment, library: Library, sourceView: UIView, sourceRect: CGRect?) {
+    private func show(attachment: Attachment, parentKey: String?, library: Library, sourceView: UIView, sourceRect: CGRect?) {
         switch attachment.type {
         case .url(let url):
             self.show(url: url)
@@ -190,7 +192,7 @@ final class DetailCoordinator: Coordinator {
             switch contentType {
             case "application/pdf":
                 DDLogInfo("DetailCoordinator: show PDF \(attachment.key)")
-                self.showPdf(at: url, key: attachment.key, library: library)
+                self.showPdf(at: url, key: attachment.key, parentKey: parentKey, library: library)
 
             case "text/html":
                 DDLogInfo("DetailCoordinator: show HTML \(attachment.key)")
@@ -274,12 +276,13 @@ final class DetailCoordinator: Coordinator {
         navigationController.present(controller, animated: true, completion: nil)
     }
 
-    func createPDFController(key: String, library: Library, url: URL, page: Int? = nil, preselectedAnnotationKey: String? = nil) -> NavigationViewController {
+    func createPDFController(key: String, parentKey: String?, library: Library, url: URL, page: Int? = nil, preselectedAnnotationKey: String? = nil) -> NavigationViewController {
         let navigationController = NavigationViewController()
         navigationController.modalPresentationStyle = .fullScreen
         
         let coordinator = PDFCoordinator(
             key: key,
+            parentKey: parentKey,
             library: library,
             url: url,
             page: page,
@@ -294,8 +297,8 @@ final class DetailCoordinator: Coordinator {
         return navigationController
     }
     
-    private func showPdf(at url: URL, key: String, library: Library) {
-        let controller = createPDFController(key: key, library: library, url: url)
+    private func showPdf(at url: URL, key: String, parentKey: String?, library: Library) {
+        let controller = createPDFController(key: key, parentKey: parentKey, library: library, url: url)
         navigationController?.present(controller, animated: true, completion: nil)
     }
     
@@ -553,8 +556,9 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         self.navigationController?.present(controller, animated: true, completion: nil)
     }
 
-    func showCitation(for itemIds: Set<String>, libraryId: LibraryIdentifier) {
-        guard let citationController = self.controllers.userControllers?.citationController else { return }
+    func showCitation(using presenter: UIViewController?, for itemIds: Set<String>, libraryId: LibraryIdentifier, delegate: DetailCitationCoordinatorDelegate?) {
+        guard let resolvedPresenter = presenter ?? navigationController else { return }
+        guard let citationController = controllers.userControllers?.citationController else { return }
 
         DDLogInfo("DetailCoordinator: show citation popup for \(itemIds)")
 
@@ -569,37 +573,32 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         let viewModel = ViewModel(initialState: state, handler: handler)
 
         let controller = SingleCitationViewController(viewModel: viewModel)
-        controller.coordinatorDelegate = self
+        controller.coordinatorDelegate = delegate ?? self
         let navigationController = UINavigationController(rootViewController: controller)
-        self.citationNavigationController = navigationController
         let containerController = ContainerViewController(rootViewController: navigationController)
-        self.navigationController?.present(containerController, animated: true, completion: nil)
+        resolvedPresenter.present(containerController, animated: true, completion: nil)
     }
 
-    func showMissingStyleError() {
-        let controller = UIAlertController(title: L10n.error, message: L10n.Errors.Citation.missingStyle, preferredStyle: .alert)
-        controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
-        controller.addAction(UIAlertAction(title: L10n.Errors.Citation.openSettings, style: .default, handler: { [weak self] _ in
-            self?.openExportSettings()
-        }))
+    func copyBibliography(using presenter: UIViewController, for itemIds: Set<String>, libraryId: LibraryIdentifier, delegate: DetailCopyBibliographyCoordinatorDelegate?) {
+        guard let citationController = controllers.userControllers?.citationController else { return }
 
-        if self.navigationController?.presentedViewController == nil {
-            self.navigationController?.present(controller, animated: true, completion: nil)
-        } else {
-            self.navigationController?.dismiss(animated: true) {
-                self.navigationController?.present(controller, animated: true, completion: nil)
-            }
-        }
-    }
+        DDLogInfo("DetailCoordinator: copy bibliography for \(itemIds)")
 
-    private func openExportSettings() {
-        let navigationController = NavigationViewController()
-        let containerController = ContainerViewController(rootViewController: navigationController)
-        let coordinator = SettingsCoordinator(startsWithExport: true, navigationController: navigationController, controllers: self.controllers)
-        coordinator.parentCoordinator = self
-        self.childCoordinators.append(coordinator)
-        coordinator.start(animated: false)
-        self.navigationController?.present(containerController, animated: true, completion: nil)
+        let state = CopyBibliographyState(
+            itemIds: itemIds,
+            libraryId: libraryId,
+            styleId: Defaults.shared.quickCopyStyleId,
+            localeId: Defaults.shared.quickCopyLocaleId,
+            exportAsHtml: Defaults.shared.quickCopyAsHtml
+        )
+        let handler = CopyBibliographyActionHandler(citationController: citationController)
+        let viewModel = ViewModel(initialState: state, handler: handler)
+        let controller = CopyBibliographyViewController(viewModel: viewModel)
+        controller.coordinatorDelegate = delegate ?? self
+
+        controller.modalPresentationStyle = .overCurrentContext
+        controller.modalTransitionStyle = .crossDissolve
+        presenter.present(controller, animated: true)
     }
 
     func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier) {
@@ -911,24 +910,41 @@ extension DetailCoordinator: DetailNoteEditorCoordinatorDelegate {
     }
 }
 
-extension DetailCoordinator: DetailCitationCoordinatorDelegate {
-    func showLocatorPicker(for values: [SinglePickerModel], selected: String, picked: @escaping (String) -> Void) {
-        let state = SinglePickerState(objects: values, selectedRow: selected)
-        let viewModel = ViewModel(initialState: state, handler: SinglePickerActionHandler())
+extension DetailCoordinator: DetailMissingStyleErrorDelegate {
+    func showMissingStyleError(using presenter: UINavigationController?) {
+        guard let resolvedPresenter = presenter ?? navigationController else { return }
+        let controller = UIAlertController(title: L10n.error, message: L10n.Errors.Citation.missingStyle, preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
+        controller.addAction(UIAlertAction(title: L10n.Errors.Citation.openSettings, style: .default, handler: { _ in
+            openExportSettings(using: resolvedPresenter)
+        }))
 
-        let view = SinglePickerView(requiresSaveButton: false, requiresCancelButton: false, saveAction: picked) { completed in
-            completed?()
-            self.citationNavigationController?.popViewController(animated: true)
+        if resolvedPresenter.presentedViewController == nil {
+            resolvedPresenter.present(controller, animated: true)
+        } else {
+            resolvedPresenter.dismiss(animated: true) {
+                resolvedPresenter.present(controller, animated: true)
+            }
         }
-        let controller = UIHostingController(rootView: view.environmentObject(viewModel))
-        controller.preferredContentSize = CGSize(width: SingleCitationViewController.width, height: CGFloat(values.count * 44))
-        self.citationNavigationController?.preferredContentSize = controller.preferredContentSize
-        self.citationNavigationController?.pushViewController(controller, animated: true)
-    }
 
-    func showCitationPreview(errorMessage: String) {
-        let controller = UIAlertController(title: L10n.error, message: errorMessage, preferredStyle: .alert)
-        controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
-        self.citationNavigationController?.present(controller, animated: true, completion: nil)
+        func openExportSettings(using presenter: UINavigationController) {
+            let navigationController = NavigationViewController()
+            let containerController = ContainerViewController(rootViewController: navigationController)
+            let coordinator = SettingsCoordinator(startsWithExport: true, navigationController: navigationController, controllers: controllers)
+            coordinator.parentCoordinator = self
+            childCoordinators.append(coordinator)
+            coordinator.start(animated: false)
+            presenter.present(containerController, animated: true)
+        }
     }
 }
+
+extension DetailCoordinator: DetailCitationCoordinatorDelegate {
+    func showCitationPreviewError(using presenter: UINavigationController, errorMessage: String) {
+        let controller = UIAlertController(title: L10n.error, message: errorMessage, preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
+        presenter.present(controller, animated: true, completion: nil)
+    }
+}
+
+extension DetailCoordinator: DetailCopyBibliographyCoordinatorDelegate { }

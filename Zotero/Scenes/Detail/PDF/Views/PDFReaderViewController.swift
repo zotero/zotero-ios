@@ -91,19 +91,49 @@ class PDFReaderViewController: UIViewController {
     weak var coordinatorDelegate: (PdfReaderCoordinatorDelegate & PdfAnnotationsCoordinatorDelegate)?
 
     private lazy var shareButton: UIBarButtonItem = {
+        var menuChildren: [UIMenuElement] = []
+
         let share = UIBarButtonItem(image: UIImage(systemName: "square.and.arrow.up"), style: .plain, target: nil, action: nil)
-        share.isEnabled = !self.viewModel.state.document.isLocked
-        share.accessibilityLabel = L10n.Accessibility.Pdf.export
-        share.title = L10n.Accessibility.Pdf.export
+        share.accessibilityLabel = L10n.Accessibility.Pdf.share
+        share.title = L10n.Accessibility.Pdf.share
         share.tag = NavigationBarButton.share.rawValue
-        share.rx.tap
-             .subscribe(onNext: { [weak self, weak share] _ in
-                 guard let self, let share else { return }
-                 self.coordinatorDelegate?.showPdfExportSettings(sender: share, userInterfaceStyle: self.viewModel.state.interfaceStyle) { [weak self] settings in
-                     self?.viewModel.process(action: .export(settings))
-                 }
-             })
-             .disposed(by: self.disposeBag)
+
+        let deferredMenu = UIDeferredMenuElement.uncached { [weak self] elementProvider in
+            var elements: [UIMenuElement] = []
+            defer {
+                elementProvider(elements)
+            }
+            guard let self else { return }
+
+            if let parentKey = viewModel.state.parentKey {
+                let copyCitationAction = UIAction(title: L10n.Citation.copyCitation, image: .init(systemName: "doc.on.doc")) { [weak self] _ in
+                    guard let self, let coordinatorDelegate else { return }
+                    coordinatorDelegate.showCitation(for: parentKey, libraryId: viewModel.state.library.identifier)
+                }
+                elements.append(copyCitationAction)
+                let copyBibliographyAction = UIAction(title: L10n.Citation.copyBibliography, image: .init(systemName: "doc.on.doc")) { [weak self] _ in
+                    guard let self, let coordinatorDelegate else { return }
+                    coordinatorDelegate.copyBibliography(using: self, for: parentKey, libraryId: viewModel.state.library.identifier)
+                }
+                elements.append(copyBibliographyAction)
+            }
+
+            let exportAttributes: UIMenuElement.Attributes = viewModel.state.document.isLocked ? [.disabled] : []
+            let exportOriginalPDFAction = UIAction(title: L10n.Pdf.Export.export, image: .init(systemName: "square.and.arrow.up"), attributes: exportAttributes) { [weak self] _ in
+                self?.viewModel.process(action: .export(includeAnnotations: false))
+            }
+            exportOriginalPDFAction.accessibilityValue = L10n.Accessibility.Pdf.export
+            elements.append(exportOriginalPDFAction)
+
+            if !viewModel.state.databaseAnnotations.isEmpty {
+                let exportAnnotatedPDFAction = UIAction(title: L10n.Pdf.Export.exportAnnotated, image: .init(systemName: "square.and.arrow.up"), attributes: exportAttributes) { [weak self] _ in
+                    self?.viewModel.process(action: .export(includeAnnotations: true))
+                }
+                exportAnnotatedPDFAction.accessibilityValue = L10n.Accessibility.Pdf.exportAnnotated
+                elements.append(exportAnnotatedPDFAction)
+            }
+        }
+        share.menu = UIMenu(children: [deferredMenu])
         return share
     }()
     private lazy var settingsButton: UIBarButtonItem = {

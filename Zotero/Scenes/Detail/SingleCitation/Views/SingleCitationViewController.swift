@@ -35,7 +35,7 @@ final class SingleCitationViewController: UIViewController {
 
     init(viewModel: ViewModel<SingleCitationActionHandler>) {
         self.viewModel = viewModel
-        self.disposeBag = DisposeBag()
+        disposeBag = DisposeBag()
         super.init(nibName: "SingleCitationViewController", bundle: nil)
     }
 
@@ -46,97 +46,150 @@ final class SingleCitationViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.title = L10n.Citation.title
-        self.previewTitleLabel.text = L10n.Citation.preview
-        self.omitAuthorTitle.text = L10n.Citation.omitAuthor
-        self.locatorButton.setTitle(self.localized(locator: self.viewModel.state.locator), for: .normal)
-        self.omitAuthorSwitch.setOn(self.viewModel.state.omitAuthor, animated: false)
-        self.setupPreview()
-        self.setupNavigationBar()
-        self.setupObserving()
+        title = L10n.Citation.title
+        previewTitleLabel.text = L10n.Citation.preview
+        omitAuthorTitle.text = L10n.Citation.omitAuthor
+        locatorButton.setTitle(localized(locator: viewModel.state.locator), for: .normal)
+        omitAuthorSwitch.setOn(viewModel.state.omitAuthor, animated: false)
+        setupPreview()
+        setupNavigationBar()
+        setupButton()
+        setupObserving()
 
-        self.viewModel.process(action: .preload(self.previewWebView))
+        viewModel.process(action: .preload(previewWebView))
+
+        func setupPreview() {
+            previewContainer.layer.cornerRadius = 4
+            previewContainer.layer.masksToBounds = true
+
+            switch UIDevice.current.userInterfaceIdiom {
+            case .pad:
+                view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: 12).isActive = true
+
+            case .phone:
+                view.safeAreaLayoutGuide.bottomAnchor.constraint(greaterThanOrEqualTo: container.bottomAnchor, constant: 12).isActive = true
+
+            default:
+                break
+            }
+
+            previewWebView.scrollView.isScrollEnabled = false
+            previewWebView.backgroundColor = .clear
+            previewWebView.scrollView.backgroundColor = .clear
+            previewWebView.configuration.userContentController.add(self, name: "heightHandler")
+        }
+
+        func setupNavigationBar() {
+            let cancel = UIBarButtonItem(title: L10n.cancel, style: .plain, target: nil, action: nil)
+            cancel.rx.tap.subscribe(onNext: { [weak self] in
+                self?.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
+            })
+            .disposed(by: disposeBag)
+            navigationItem.leftBarButtonItem = cancel
+
+            setupRightButtonItem(isLoading: false)
+            navigationItem.rightBarButtonItem?.isEnabled = false
+        }
+
+        func setupButton() {
+            let locatorElements: [UIMenuElement] = SingleCitationState.locators.compactMap { [weak self] locator in
+                guard let self else { return nil }
+                return UIAction(title: localized(locator: locator), state: (viewModel.state.locator == locator) ? .on : .off) { [weak self] _ in
+                    self?.viewModel.process(action: .setLocator(locator))
+                }
+            }
+            locatorButton.menu = UIMenu(children: locatorElements)
+            locatorButton.showsMenuAsPrimaryAction = true
+            locatorButton.changesSelectionAsPrimaryAction = true
+        }
+
+        func setupObserving() {
+            viewModel.stateObservable
+                .subscribe(with: self, onNext: { `self`, state in
+                    self.update(state: state)
+                })
+                .disposed(by: disposeBag)
+
+            locatorTextField.rx.controlEvent(.editingChanged).flatMap({ Observable.just(self.locatorTextField.text ?? "") })
+                .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
+                .subscribe(onNext: { [weak self] value in
+                    self?.viewModel.process(action: .setLocatorValue(value))
+                })
+                .disposed(by: disposeBag)
+
+            omitAuthorSwitch.rx.controlEvent(.valueChanged)
+                .subscribe(onNext: { [weak self] _ in
+                    guard let self else { return }
+                    viewModel.process(action: .setOmitAuthor(omitAuthorSwitch.isOn))
+                })
+                .disposed(by: disposeBag)
+        }
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        self.updatePreferredContentSize()
+        updatePreferredContentSize()
     }
 
     deinit {
-        self.viewModel.process(action: .cleanup)
+        viewModel.process(action: .cleanup)
     }
 
     // MARK: - Actions
-
     private func update(state: SingleCitationState) {
         if state.changes.contains(.locator) {
-            self.locatorButton.setTitle(self.localized(locator: state.locator), for: .normal)
+            locatorButton.setTitle(localized(locator: state.locator), for: .normal)
         }
 
-        self.updatePreview(isLoading: state.loadingPreview)
-        self.setupRightButtonItem(isLoading: state.loadingCopy)
-        self.navigationItem.rightBarButtonItem?.isEnabled = !state.loadingPreview
+        updatePreview(isLoading: state.loadingPreview)
+        setupRightButtonItem(isLoading: state.loadingCopy)
+        navigationItem.rightBarButtonItem?.isEnabled = !state.loadingPreview
 
-        if let error = state.error {
+        if let error = state.error, let coordinatorDelegate {
             switch error {
             case .styleMissing:
-                self.coordinatorDelegate?.showMissingStyleError()
+                coordinatorDelegate.showMissingStyleError(using: nil)
 
             case .cantPreloadWebView:
-                self.coordinatorDelegate?.showCitationPreview(errorMessage: L10n.Errors.citationPreview)
+                if let navigationController {
+                    coordinatorDelegate.showCitationPreviewError(using: navigationController, errorMessage: L10n.Errors.citationPreview)
+                }
             }
         }
 
         if state.changes.contains(.preview) {
-//            do {
-//                if let data = state.preview.data(using: .utf8) {
-//                    let attr = try NSAttributedString(data: data, options: [.documentType: NSAttributedString.DocumentType.rtf, .characterEncoding: String.Encoding.utf8], documentAttributes: nil)
-//                    self.previewTitleLabel.numberOfLines = 0
-//                    self.previewTitleLabel.attributedText = attr
-//                }
-//            } catch let error {
-//                NSLog("ERROR: \(error)")
-//            }
-            self.updatePreferredContentSize()
+            updatePreferredContentSize()
         }
 
         if state.changes.contains(.copied) {
-            self.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
+            navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
+        }
+
+        func updatePreview(isLoading: Bool) {
+            guard previewContainer.isHidden != isLoading else { return }
+
+            activityIndicatorContainer.isHidden = !isLoading
+            previewContainer.isHidden = isLoading
+            locatorButton.isEnabled = !isLoading
+            locatorTextField.isEnabled = !isLoading
         }
     }
 
-    private func updatePreview(isLoading: Bool) {
-        guard self.previewContainer.isHidden != isLoading else { return }
-
-        self.activityIndicatorContainer.isHidden = !isLoading
-        self.previewContainer.isHidden = isLoading
-        self.locatorButton.isEnabled = !isLoading
-        self.locatorTextField.isEnabled = !isLoading
-    }
-
     private func setupRightButtonItem(isLoading: Bool) {
-        guard self.navigationItem.rightBarButtonItem == nil || isLoading == (self.navigationItem.rightBarButtonItem?.customView == nil) else { return }
+        guard navigationItem.rightBarButtonItem == nil || isLoading == (navigationItem.rightBarButtonItem?.customView == nil) else { return }
 
         if isLoading {
             let indicator = UIActivityIndicatorView(style: .medium)
             indicator.startAnimating()
-            self.navigationItem.rightBarButtonItem = UIBarButtonItem(customView: indicator)
+            navigationItem.rightBarButtonItem = UIBarButtonItem(customView: indicator)
         } else {
             let copy = UIBarButtonItem(title: L10n.copy, style: .done, target: nil, action: nil)
             copy.rx.tap.subscribe(onNext: { [weak self] in
                 self?.viewModel.process(action: .copy)
             })
-            .disposed(by: self.disposeBag)
-            self.navigationItem.rightBarButtonItem = copy
+            .disposed(by: disposeBag)
+            navigationItem.rightBarButtonItem = copy
         }
-    }
-
-    @IBAction private func showLocatorPicker() {
-        let values = SingleCitationState.locators.map({ SinglePickerModel(id: $0, name: self.localized(locator: $0)) })
-        self.coordinatorDelegate?.showLocatorPicker(for: values, selected: self.viewModel.state.locator, picked: { [weak self] locator in
-            self?.viewModel.process(action: .setLocator(locator))
-        })
     }
 
     // MARK: - Helpers
@@ -146,69 +199,22 @@ final class SingleCitationViewController: UIViewController {
     }
 
     private func updatePreferredContentSize() {
-        let size = self.view.systemLayoutSizeFitting(CGSize(width: SingleCitationViewController.width, height: .greatestFiniteMagnitude))
-        self.preferredContentSize = CGSize(width: SingleCitationViewController.width, height: size.height - self.view.safeAreaInsets.top)
-        self.navigationController?.preferredContentSize = self.preferredContentSize
-    }
-
-    // MARK: - Setups
-
-    private func setupPreview() {
-        self.previewContainer.layer.cornerRadius = 4
-        self.previewContainer.layer.masksToBounds = true
-
-        switch UIDevice.current.userInterfaceIdiom {
-        case .pad:
-            self.view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: self.container.bottomAnchor, constant: 12).isActive = true
-
-        case .phone:
-            self.view.safeAreaLayoutGuide.bottomAnchor.constraint(greaterThanOrEqualTo: self.container.bottomAnchor, constant: 12).isActive = true
-        default: break
-        }
-
-        self.previewWebView.scrollView.isScrollEnabled = false
-        self.previewWebView.backgroundColor = .clear
-        self.previewWebView.scrollView.backgroundColor = .clear
-        self.previewWebView.configuration.userContentController.add(self, name: "heightHandler")
-    }
-
-    private func setupNavigationBar() {
-        let cancel = UIBarButtonItem(title: L10n.cancel, style: .plain, target: nil, action: nil)
-        cancel.rx.tap.subscribe(onNext: { [weak self] in
-            self?.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
-        })
-        .disposed(by: self.disposeBag)
-        self.navigationItem.leftBarButtonItem = cancel
-
-        self.setupRightButtonItem(isLoading: false)
-    }
-
-    private func setupObserving() {
-        self.viewModel.stateObservable
-                      .subscribe(with: self, onNext: { `self`, state in
-                          self.update(state: state)
-                      })
-                      .disposed(by: self.disposeBag)
-
-        self.locatorTextField.rx.controlEvent(.editingChanged).flatMap({ Observable.just(self.locatorTextField.text ?? "") })
-                             .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
-                             .subscribe(onNext: { [weak self] value in
-                                 self?.viewModel.process(action: .setLocatorValue(value))
-                             })
-                             .disposed(by: self.disposeBag)
-
-        self.omitAuthorSwitch.rx.controlEvent(.valueChanged)
-                                .subscribe(onNext: { [weak self] _ in
-                                    guard let self = self else { return }
-                                    self.viewModel.process(action: .setOmitAuthor(self.omitAuthorSwitch.isOn))
-                                })
-                                .disposed(by: self.disposeBag)
+        let size = view.systemLayoutSizeFitting(CGSize(width: SingleCitationViewController.width, height: .greatestFiniteMagnitude))
+        preferredContentSize = CGSize(width: SingleCitationViewController.width, height: size.height - view.safeAreaInsets.top)
+        navigationController?.preferredContentSize = preferredContentSize
     }
 }
 
 extension SingleCitationViewController: WKScriptMessageHandler {
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         guard message.name == "heightHandler", let height = message.body as? CGFloat else { return }
-        self.webViewHeight.constant = height
+        webViewHeight.constant = height
+    }
+}
+
+extension SingleCitationViewController: UITextFieldDelegate {
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder()
+        return true
     }
 }

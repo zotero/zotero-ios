@@ -194,8 +194,10 @@ internal enum L10n {
       internal static let eraserAnnotation = L10n.tr("Localizable", "accessibility.pdf.eraser_annotation", fallback: "Eraser")
       /// Eraser
       internal static let eraserAnnotationTool = L10n.tr("Localizable", "accessibility.pdf.eraser_annotation_tool", fallback: "Eraser")
-      /// Export pdf
-      internal static let export = L10n.tr("Localizable", "accessibility.pdf.export", fallback: "Export pdf")
+      /// Export PDF
+      internal static let export = L10n.tr("Localizable", "accessibility.pdf.export", fallback: "Export PDF")
+      /// Export annotated PDF
+      internal static let exportAnnotated = L10n.tr("Localizable", "accessibility.pdf.export_annotated", fallback: "Export annotated PDF")
       /// Highlight annotation
       internal static let highlightAnnotation = L10n.tr("Localizable", "accessibility.pdf.highlight_annotation", fallback: "Highlight annotation")
       /// Create highlight annotation
@@ -224,6 +226,8 @@ internal enum L10n {
       internal static let selected = L10n.tr("Localizable", "accessibility.pdf.selected", fallback: "Selected")
       /// Settings
       internal static let settings = L10n.tr("Localizable", "accessibility.pdf.settings", fallback: "Settings")
+      /// Share PDF
+      internal static let share = L10n.tr("Localizable", "accessibility.pdf.share", fallback: "Share PDF")
       /// Share annotation
       internal static let shareAnnotation = L10n.tr("Localizable", "accessibility.pdf.share_annotation", fallback: "Share annotation")
       /// Share annotation image
@@ -944,10 +948,10 @@ internal enum L10n {
       }
     }
     internal enum Export {
-      /// Export
-      internal static let export = L10n.tr("Localizable", "pdf.export.export", fallback: "Export")
-      /// Include annotations
-      internal static let includeAnnotations = L10n.tr("Localizable", "pdf.export.include_annotations", fallback: "Include annotations")
+      /// Export PDF
+      internal static let export = L10n.tr("Localizable", "pdf.export.export", fallback: "Export PDF")
+      /// Export Annotated PDF
+      internal static let exportAnnotated = L10n.tr("Localizable", "pdf.export.export_annotated", fallback: "Export Annotated PDF")
     }
     internal enum Locked {
       /// Please enter the password to open this PDF.
