@@ -599,14 +599,15 @@ final class AttachmentDownloader: NSObject {
         guard downloadToTaskId[download] == nil else { return nil }
 
         do {
-            let apiRequest: ApiRequest
+            let request: URLRequest
             if webDavController.sessionStorage.isEnabled {
-                guard let url = webDavController.currentUrl else { return nil }
-                apiRequest = FileRequest(webDavUrl: url, destination: file)
+                guard let url = webDavController.currentUrl?.appendingPathComponent("\(key).zip") else { return nil }
+                let apiRequest = FileRequest(webDavUrl: url, destination: file)
+                request = try webDavController.createURLRequest(from: apiRequest)
             } else {
-                apiRequest = FileRequest(libraryId: libraryId, userId: userId, key: key, destination: file)
+                let apiRequest = FileRequest(libraryId: libraryId, userId: userId, key: key, destination: file)
+                request = try apiClient.urlRequest(from: apiRequest)
             }
-            let request = try apiClient.urlRequest(from: apiRequest)
             let task = session.downloadTask(with: request)
 
             DDLogInfo("AttachmentDownloader: create download of \(key); (\(String(describing: parentKey))); \(libraryId) = \(task.taskIdentifier)")
@@ -700,12 +701,12 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
         var download: Download?
         var file: File?
-//        var zipFile: File?
-//        var shouldExtractAfterDownload = false
+        var zipFile: File?
+        var shouldExtractAfterDownload = false
         accessQueue.sync { [weak self] in
             download = self?.taskIdToDownload[downloadTask.taskIdentifier]
             file = self?.files[downloadTask.taskIdentifier]
-//            shouldExtractAfterDownload = download.flatMap({ self?.downloadsToExtractAfterDownload.contains($0) }) ?? false
+            shouldExtractAfterDownload = download.flatMap({ self?.downloadsToExtractAfterDownload.contains($0) }) ?? false
         }
         
         guard let file, let download else {
@@ -713,42 +714,42 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
             return
         }
 
-//        var isCompressed = webDavController.sessionStorage.isEnabled && !download.libraryId.isGroupLibrary
-//        if let response = downloadTask.response as? HTTPURLResponse {
-//            let _isCompressed = response.value(forHTTPHeaderField: "Zotero-File-Compressed") == "Yes"
-//            isCompressed = isCompressed || _isCompressed
-//        }
-//        if isCompressed {
-//            zipFile = file.copyWithExt("zip")
-//        } else {
-//            shouldExtractAfterDownload = false
-//        }
+        var isCompressed = webDavController.sessionStorage.isEnabled && !download.libraryId.isGroupLibrary
+        if let response = downloadTask.response as? HTTPURLResponse {
+            let _isCompressed = response.value(forHTTPHeaderField: "Zotero-File-Compressed") == "Yes"
+            isCompressed = isCompressed || _isCompressed
+        }
+        if isCompressed {
+            zipFile = file.copyWithExt("zip")
+        } else {
+            shouldExtractAfterDownload = false
+        }
 
         do {
             DDLogInfo("AttachmentDownloader: didFinishDownloadingTo \(downloadTask.taskIdentifier)")
 
             // If there is some older version of given file, remove so that it can be replaced
-//            if let zipFile, fileStorage.has(zipFile) {
-//                try fileStorage.remove(zipFile)
-//            }
+            if let zipFile, fileStorage.has(zipFile) {
+                try fileStorage.remove(zipFile)
+            }
             if fileStorage.has(file) {
                 try fileStorage.remove(file)
             }
-            try fileStorage.move(from: location.path, to: file)
+            try fileStorage.move(from: location.path, to: zipFile ?? file)
 
             dbQueue.sync { [weak self] in
-                guard let self = self else { return }
+                guard let self else { return }
                 // Mark file as downloaded in DB
-                try? self.dbStorage.perform(request: MarkFileAsDownloadedDbRequest(key: download.key, libraryId: download.libraryId, downloaded: true, compressed: nil), on: self.dbQueue)
+                try? dbStorage.perform(request: MarkFileAsDownloadedDbRequest(key: download.key, libraryId: download.libraryId, downloaded: true, compressed: nil), on: dbQueue)
             }
 
             accessQueue.sync(flags: .barrier) { [weak self] in
-                self?.finish(download: download, taskId: downloadTask.taskIdentifier, result: .success(()))
+                self?.finish(download: download, taskId: downloadTask.taskIdentifier, result: .success(()), notifyObserver: !shouldExtractAfterDownload)
             }
 
-//            if let zipFile, shouldExtractAfterDownload {
-//                extract(zipFile: zipFile, toFile: file, download: download)
-//            }
+            if let zipFile, shouldExtractAfterDownload {
+                extract(zipFile: zipFile, toFile: file, download: download)
+            }
         } catch let error {
             accessQueue.sync(flags: .barrier) { [weak self] in
                 self?.finish(download: download, taskId: downloadTask.taskIdentifier, result: .failure(error))

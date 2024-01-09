@@ -30,15 +30,22 @@ private enum ApiAuthType {
 
     var authHeader: String? {
         switch self {
-        case .authHeader(let header): return header
-        case .credentials: return nil
+        case .authHeader(let header):
+            return header
+        
+        case .credentials(let username, let password):
+            guard let base64Encoded = "\(username):\(password)".data(using: .utf8)?.base64EncodedString() else { return nil }
+            return "Basic \(base64Encoded)"
         }
     }
 
     var credentials: (username: String, password: String)? {
         switch self {
-        case .credentials(let username, let password): return (username, password)
-        case .authHeader: return nil
+        case .credentials(let username, let password):
+            return (username, password)
+
+        case .authHeader:
+            return nil
         }
     }
 }
