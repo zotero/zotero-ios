@@ -15,6 +15,8 @@ import RxSwift
 
 protocol PDFReaderContainerDelegate: AnyObject {
     var isSidebarVisible: Bool { get }
+    var statusBarHeight: CGFloat { get }
+    var navigationBarHeight: CGFloat { get }
 
     func showSearch(pdfController: PDFViewController, text: String?)
 }

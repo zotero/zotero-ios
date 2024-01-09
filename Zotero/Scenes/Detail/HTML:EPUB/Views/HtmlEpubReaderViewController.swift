@@ -50,13 +50,14 @@ class HtmlEpubReaderViewController: UIViewController {
     }
     var isSidebarVisible: Bool { return self.sidebarLeft?.constant == 0 }
     private lazy var toolbarButton: UIBarButtonItem = {
-        let checkbox = CheckboxButton(type: .custom)
-        checkbox.setImage(UIImage(systemName: "pencil.and.outline", withConfiguration: UIImage.SymbolConfiguration(scale: .large)), for: .normal)
+        let checkbox = CheckboxButton(
+            image: UIImage(systemName: "pencil.and.outline", withConfiguration: UIImage.SymbolConfiguration(scale: .large))!,
+            contentInsets: NSDirectionalEdgeInsets(top: 6, leading: 6, bottom: 6, trailing: 6)
+        )
         checkbox.adjustsImageWhenHighlighted = false
         checkbox.scalesLargeContentImage = true
         checkbox.layer.cornerRadius = 4
         checkbox.layer.masksToBounds = true
-        checkbox.contentEdgeInsets = UIEdgeInsets(top: 6, left: 6, bottom: 6, right: 6)
         checkbox.selectedBackgroundColor = Asset.Colors.zoteroBlue.color
         checkbox.selectedTintColor = .white
         checkbox.deselectedTintColor = Asset.Colors.zoteroBlueWithDarkMode.color
