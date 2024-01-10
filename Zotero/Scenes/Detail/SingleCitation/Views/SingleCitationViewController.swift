@@ -31,8 +31,7 @@ final class SingleCitationViewController: UIViewController {
 
     weak var coordinatorDelegate: DetailCitationCoordinatorDelegate?
 
-    // MARK: - Lifecycle
-
+    // MARK: - Object Lifecycle
     init(viewModel: ViewModel<SingleCitationActionHandler>) {
         self.viewModel = viewModel
         disposeBag = DisposeBag()
@@ -43,6 +42,11 @@ final class SingleCitationViewController: UIViewController {
         fatalError("init(coder:) has not been implemented")
     }
 
+    deinit {
+        viewModel.process(action: .cleanup)
+    }
+
+    // MARK: - View Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -131,8 +135,9 @@ final class SingleCitationViewController: UIViewController {
         updatePreferredContentSize()
     }
 
-    deinit {
-        viewModel.process(action: .cleanup)
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        previewWebView.configuration.userContentController.removeAllScriptMessageHandlers()
     }
 
     // MARK: - Actions
@@ -193,7 +198,6 @@ final class SingleCitationViewController: UIViewController {
     }
 
     // MARK: - Helpers
-
     private func localized(locator: String) -> String {
         return NSLocalizedString("citation.locator.\(locator)", comment: "")
     }
