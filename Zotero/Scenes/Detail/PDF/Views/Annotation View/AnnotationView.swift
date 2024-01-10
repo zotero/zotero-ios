@@ -17,7 +17,7 @@ final class AnnotationView: UIView {
 
     enum Action {
         case tags
-        case options(UIButton)
+        case options(UIButton?)
         case reloadHeight
         case setComment(NSAttributedString)
         case setCommentActive(Bool)

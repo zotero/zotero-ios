@@ -27,12 +27,8 @@ final class AnnotationViewHeader: UIView {
     private var authorTrailingToContainer: NSLayoutConstraint!
     private var authorTrailingToButton: NSLayoutConstraint!
 
-    var shareTap: Observable<UIButton> {
-        return self.shareButton.rx.tap.flatMap({ Observable.just(self.shareButton) })
-    }
-    
-    var menuTap: Observable<UIButton> {
-        return self.menuButton.rx.tap.flatMap({ Observable.just(self.menuButton) })
+    var menuTap: Observable<UIButton?> {
+        return menuButton.rx.tap.flatMap({ [weak self] in Observable.just(self?.menuButton) })
     }
 
     var doneTap: ControlEvent<Void>? {
