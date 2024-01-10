@@ -314,33 +314,37 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
         }
     }
 
-    private func process(downloadUpdate update: AttachmentDownloader.Update, batchData: ItemsState.DownloadBatchData?, in viewModel: ViewModel<ItemsActionHandler>) {
-        let updateKey = update.parentKey ?? update.key
-        guard let accessory = viewModel.state.itemAccessories[updateKey], let attachment = accessory.attachment else { return }
-        
-        DDLogInfo("ItemsActionHandler: download update \(attachment.key); \(attachment.libraryId); kind \(update.kind)")
+    private func process(downloadUpdate: AttachmentDownloader.Update, batchData: ItemsState.DownloadBatchData?, in viewModel: ViewModel<ItemsActionHandler>) {
+        let updateKey = downloadUpdate.parentKey ?? downloadUpdate.key
+        guard let accessory = viewModel.state.itemAccessories[updateKey], let attachment = accessory.attachment else {
+            updateViewModel()
+            return
+        }
 
-        switch update.kind {
+        DDLogInfo("ItemsActionHandler: download update \(attachment.key); \(attachment.libraryId); kind \(downloadUpdate.kind)")
+
+        switch downloadUpdate.kind {
         case .ready:
-            guard let updatedAttachment = attachment.changed(location: .local) else { return }
-            self.update(viewModel: viewModel) { state in
-                state.itemAccessories[updateKey] = .attachment(attachment: updatedAttachment, parentKey: update.parentKey)
+            updateViewModel { state in
+                guard let updatedAttachment = attachment.changed(location: .local) else { return }
+                state.itemAccessories[updateKey] = .attachment(attachment: updatedAttachment, parentKey: downloadUpdate.parentKey)
                 state.updateItemKey = updateKey
-
-                if state.downloadBatchData != batchData {
-                    state.downloadBatchData = batchData
-                    state.changes = .batchData
-                }
             }
 
         case .cancelled, .failed, .progress:
-            self.update(viewModel: viewModel) { state in
+            updateViewModel { state in
                 state.updateItemKey = updateKey
+            }
+        }
 
+        func updateViewModel(additional: ((inout ItemsState) -> Void)? = nil) {
+            update(viewModel: viewModel) { state in
                 if state.downloadBatchData != batchData {
                     state.downloadBatchData = batchData
                     state.changes = .batchData
                 }
+
+                additional?(&state)
             }
         }
     }

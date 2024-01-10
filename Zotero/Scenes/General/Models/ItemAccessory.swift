@@ -19,7 +19,7 @@ extension ItemAccessory {
         switch self {
         case .attachment(let attachment, let parentKey):
             if let new = update(attachment) {
-                return .attachment(attachment: attachment, parentKey: parentKey)
+                return .attachment(attachment: new, parentKey: parentKey)
             }
             return nil
 

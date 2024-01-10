@@ -8,6 +8,7 @@
 
 import UIKit
 
+import Alamofire
 import CocoaLumberjackSwift
 import RealmSwift
 import RxSwift
@@ -69,6 +70,7 @@ final class AttachmentDownloader: NSObject {
     private var session: URLSession!
     private var taskIdToDownload: [Int: Download]
     private var downloadToTaskId: [Download: Int]
+    private var totalCount: Int
     private var files: [Int: File]
     private var progresses: [Download: Progress]
     private var downloadsToExtractAfterDownload: Set<Download>
@@ -87,7 +89,7 @@ final class AttachmentDownloader: NSObject {
             guard let self = self else { return }
             progress = self.batchProgress
             remainingBatchCount = self.progresses.count
-            totalBatchCount = Int((self.batchProgress?.totalUnitCount ?? 0) / 100)
+            totalBatchCount = self.totalCount
         }
 
         return (progress, remainingBatchCount, totalBatchCount)
@@ -101,6 +103,7 @@ final class AttachmentDownloader: NSObject {
         self.webDavController = webDavController
         taskIdToDownload = [:]
         downloadToTaskId = [:]
+        totalCount = 0
         files = [:]
         progresses = [:]
         extractionProgressObservers = [:]
@@ -152,6 +155,7 @@ final class AttachmentDownloader: NSObject {
                     guard let self else { return }
                     DDLogInfo("AttachmentDownloader: cache downloads in progress - \(downloadsInProgress.count); restore downloads - \(downloadsToRestore.count)")
                     batchProgress = Progress(totalUnitCount: Int64(downloadsInProgress.count * 100))
+                    totalCount = downloadsInProgress.count
                     let failedDownloads = storeDownloadData(for: downloadsInProgress)
                     let updatedDownloads = restore(downloads: downloadsToRestore)
                     initialErrors = [:]
@@ -234,6 +238,7 @@ final class AttachmentDownloader: NSObject {
                 }
                 progresses[download] = progress
                 batchProgress?.addChild(progress, withPendingUnitCount: 100)
+                totalCount += 1
             }
             return failedDownloads
         }
@@ -417,14 +422,14 @@ final class AttachmentDownloader: NSObject {
             do {
                 // Check whether zip file exists
                 if !self.fileStorage.has(zipFile) {
-                    // Check whether file exists for some reason
-                    if self.fileStorage.has(file) {
-                        // Try removing zip file, don't return error if it fails, we've got what we wanted.
-                        try? self.fileStorage.remove(zipFile)
-                        finishExtraction(self: self)
-                    } else {
+                    // Check whether file exists
+                    if !self.fileStorage.has(file) {
                         throw AttachmentDownloader.Error.cantUnzipSnapshot
                     }
+
+                    // Try removing zip file, don't return error if it fails, we've got what we wanted.
+                    try? self.fileStorage.remove(zipFile)
+                    finishExtraction(self: self)
                     return
                 }
 
@@ -519,17 +524,19 @@ final class AttachmentDownloader: NSObject {
         var taskIds: Set<Int> = []
 
         self.accessQueue.sync(flags: .barrier) { [weak self] in
+            guard let self else { return }
             for download in downloads {
-                guard let taskId = self?.downloadToTaskId[download] else { continue }
-                self?.downloadToTaskId[download] = nil
-                self?.taskIdToDownload[taskId] = nil
-                self?.files[taskId] = nil
-                self?.progresses[download] = nil
-                self?.errors[download] = nil
-                self?.batchProgress?.totalUnitCount -= 100
+                guard let taskId = downloadToTaskId[download] else { continue }
+                downloadToTaskId[download] = nil
+                taskIdToDownload[taskId] = nil
+                files[taskId] = nil
+                progresses[download] = nil
+                errors[download] = nil
+                batchProgress?.totalUnitCount -= 100
+                totalCount -= 1
                 taskIds.insert(taskId)
             }
-            self?.resetBatchDataIfNeeded()
+            resetBatchDataIfNeeded()
         }
 
         self.session.getAllTasks { tasks in
@@ -549,16 +556,17 @@ final class AttachmentDownloader: NSObject {
         accessQueue.sync(flags: .barrier) { [weak self] in
             guard let self else { return }
 
-            for download in self.downloadToTaskId.keys {
-                self.observable.on(.next(Update(download: download, kind: .cancelled)))
+            for download in downloadToTaskId.keys {
+                observable.on(.next(Update(download: download, kind: .cancelled)))
             }
 
-            self.files = [:]
-            self.downloadToTaskId = [:]
-            self.taskIdToDownload = [:]
-            self.errors = [:]
-            self.progresses = [:]
-            self.batchProgress = nil
+            files = [:]
+            downloadToTaskId = [:]
+            taskIdToDownload = [:]
+            errors = [:]
+            progresses = [:]
+            batchProgress = nil
+            totalCount = 0
         }
 
         self.session.getAllTasks { tasks in
@@ -589,6 +597,7 @@ final class AttachmentDownloader: NSObject {
     private func resetBatchDataIfNeeded() {
         guard progresses.isEmpty else { return }
         batchProgress = nil
+        totalCount = 0
     }
 
     // MARK: - Helpers
@@ -640,6 +649,7 @@ final class AttachmentDownloader: NSObject {
             batchProgress.addChild(progress, withPendingUnitCount: 100)
             self.batchProgress = batchProgress
         }
+        totalCount += 1
     }
 
     private func finish(download: Download, taskId: Int, result: Result<(), Swift.Error>, notifyObserver: Bool = true) {
@@ -665,7 +675,6 @@ final class AttachmentDownloader: NSObject {
         switch result {
         case .success:
             errors[download] = nil
-            progresses[download]?.completedUnitCount = 100
             if notifyObserver {
                 observable.on(.next(Update(download: download, kind: .ready)))
             }
@@ -673,7 +682,6 @@ final class AttachmentDownloader: NSObject {
         case .failure(let error):
             if (error as NSError).code == NSURLErrorCancelled {
                 errors[download] = nil
-                progresses[download] = nil
                 batchProgress?.totalUnitCount -= 100
                 if notifyObserver {
                     observable.on(.next(Update(download: download, kind: .cancelled)))
@@ -681,14 +689,12 @@ final class AttachmentDownloader: NSObject {
             } else if file.flatMap({ fileStorage.has($0) }) ?? false {
                 DDLogError("AttachmentDownloader: failed to download remotely changed attachment \(taskId) - \(error)")
                 errors[download] = nil
-                progresses[download]?.completedUnitCount = 100
                 if notifyObserver {
                     observable.on(.next(Update(download: download, kind: .ready)))
                 }
             } else {
                 DDLogError("AttachmentDownloader: failed to download attachment \(taskId) - \(error)")
                 errors[download] = error
-                progresses[download]?.completedUnitCount = 100
                 if notifyObserver {
                     observable.on(.next(Update(download: download, kind: .failed(error))))
                 }
@@ -728,6 +734,10 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
         do {
             DDLogInfo("AttachmentDownloader: didFinishDownloadingTo \(downloadTask.taskIdentifier)")
 
+            if let error = checkFileResponse(for: Files.file(from: location)) {
+                throw error
+            }
+
             // If there is some older version of given file, remove so that it can be replaced
             if let zipFile, fileStorage.has(zipFile) {
                 try fileStorage.remove(zipFile)
@@ -740,7 +750,7 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
             dbQueue.sync { [weak self] in
                 guard let self else { return }
                 // Mark file as downloaded in DB
-                try? dbStorage.perform(request: MarkFileAsDownloadedDbRequest(key: download.key, libraryId: download.libraryId, downloaded: true, compressed: nil), on: dbQueue)
+                try? dbStorage.perform(request: MarkFileAsDownloadedDbRequest(key: download.key, libraryId: download.libraryId, downloaded: true, compressed: isCompressed), on: dbQueue)
             }
 
             accessQueue.sync(flags: .barrier) { [weak self] in
@@ -754,6 +764,15 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
             accessQueue.sync(flags: .barrier) { [weak self] in
                 self?.finish(download: download, taskId: downloadTask.taskIdentifier, result: .failure(error))
             }
+        }
+
+        func checkFileResponse(for file: File) -> Swift.Error? {
+            let size = self.fileStorage.size(of: file)
+            if size == 0 || (size == 9 && (try? self.fileStorage.read(file)).flatMap({ String(data: $0, encoding: .utf8) }) == "Not found") {
+                try? self.fileStorage.remove(file)
+                return AFError.responseValidationFailed(reason: .unacceptableStatusCode(code: 404))
+            }
+            return nil
         }
     }
 
