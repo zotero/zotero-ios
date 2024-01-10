@@ -213,8 +213,9 @@ final class AnnotationViewController: UIViewController {
             commentView.textObservable
                        .debounce(.milliseconds(500), scheduler: MainScheduler.instance)
                        .subscribe(with: self, onNext: { `self`, data in
-                           self.viewModel.process(action: .setComment(key: annotation.key, comment: data.0))
-                           if data.1 {
+                           guard let (text, needsHeightReload) = data else { return }
+                           self.viewModel.process(action: .setComment(key: annotation.key, comment: text))
+                           if needsHeightReload {
                                self.updatePreferredContentSize()
                                self.scrollToCursorIfNeeded()
                            }

@@ -232,7 +232,8 @@ final class AnnotationView: UIView {
         })
         self.commentTextView.textObservable
             .debounce(.milliseconds(500), scheduler: MainScheduler.instance)
-            .subscribe(onNext: { [weak self] text, needsHeightReload in
+            .subscribe(onNext: { [weak self] data in
+                guard let (text, needsHeightReload) = data else { return }
                 self?.actionPublisher.on(.next(.setComment(text)))
                 if needsHeightReload {
                     self?.actionPublisher.on(.next(.reloadHeight))
