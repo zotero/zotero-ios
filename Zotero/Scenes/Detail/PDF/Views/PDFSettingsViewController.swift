@@ -121,7 +121,7 @@ final class PDFSettingsViewController: UICollectionViewController {
 
             let toggle = UISwitch()
             toggle.setOn(!self.viewModel.state.settings.idleTimerDisabled, animated: false)
-            toggle.addAction(UIAction(handler: { [weak toggle] _ in self.viewModel.process(action: .setIdleTimerDisabled(!(toggle?.isOn ?? false))) }), for: .valueChanged)
+            toggle.addAction(UIAction(handler: { [weak self, weak toggle] _ in self?.viewModel.process(action: .setIdleTimerDisabled(!(toggle?.isOn ?? false))) }), for: .valueChanged)
 
             let customConfiguration = UICellAccessory.CustomViewConfiguration(customView: toggle, placement: .trailing(displayed: .always))
             cell.accessories = [.customView(configuration: customConfiguration)]
@@ -143,8 +143,8 @@ final class PDFSettingsViewController: UICollectionViewController {
                     guard let self = self else { return 0}
                     return Int(self.viewModel.state.settings.transition.rawValue)
                 }
-                actions = [UIAction(title: L10n.Pdf.Settings.PageTransition.jump, handler: { _ in self.viewModel.process(action: .setTransition(.scrollPerSpread)) }),
-                           UIAction(title: L10n.Pdf.Settings.PageTransition.continuous, handler: { _ in self.viewModel.process(action: .setTransition(.scrollContinuous)) })]
+                actions = [UIAction(title: L10n.Pdf.Settings.PageTransition.jump, handler: { [weak self] _ in self?.viewModel.process(action: .setTransition(.scrollPerSpread)) }),
+                           UIAction(title: L10n.Pdf.Settings.PageTransition.continuous, handler: { [weak self] _ in self?.viewModel.process(action: .setTransition(.scrollContinuous)) })]
 
             case .pageMode:
                 title = L10n.Pdf.Settings.PageMode.title
@@ -152,9 +152,9 @@ final class PDFSettingsViewController: UICollectionViewController {
                     guard let self = self else { return 0}
                     return Int(self.viewModel.state.settings.pageMode.rawValue)
                 }
-                actions = [UIAction(title: L10n.Pdf.Settings.PageMode.single, handler: { _ in self.viewModel.process(action: .setPageMode(.single)) }),
-                           UIAction(title: L10n.Pdf.Settings.PageMode.double, handler: { _ in self.viewModel.process(action: .setPageMode(.double)) }),
-                           UIAction(title: L10n.Pdf.Settings.PageMode.automatic, handler: { _ in self.viewModel.process(action: .setPageMode(.automatic)) })]
+                actions = [UIAction(title: L10n.Pdf.Settings.PageMode.single, handler: { [weak self] _ in self?.viewModel.process(action: .setPageMode(.single)) }),
+                           UIAction(title: L10n.Pdf.Settings.PageMode.double, handler: { [weak self] _ in self?.viewModel.process(action: .setPageMode(.double)) }),
+                           UIAction(title: L10n.Pdf.Settings.PageMode.automatic, handler: { [weak self] _ in self?.viewModel.process(action: .setPageMode(.automatic)) })]
 
             case .scrollDirection:
                 title = L10n.Pdf.Settings.ScrollDirection.title
@@ -162,8 +162,8 @@ final class PDFSettingsViewController: UICollectionViewController {
                     guard let self = self else { return 0}
                     return Int(self.viewModel.state.settings.direction.rawValue)
                 }
-                actions = [UIAction(title: L10n.Pdf.Settings.ScrollDirection.horizontal, handler: { _ in self.viewModel.process(action: .setDirection(.horizontal)) }),
-                           UIAction(title: L10n.Pdf.Settings.ScrollDirection.vertical, handler: { _ in self.viewModel.process(action: .setDirection(.vertical)) })]
+                actions = [UIAction(title: L10n.Pdf.Settings.ScrollDirection.horizontal, handler: { [weak self] _ in self?.viewModel.process(action: .setDirection(.horizontal)) }),
+                           UIAction(title: L10n.Pdf.Settings.ScrollDirection.vertical, handler: { [weak self] _ in self?.viewModel.process(action: .setDirection(.vertical)) })]
 
             case .pageFitting:
                 title = L10n.Pdf.Settings.PageFitting.title
@@ -171,9 +171,9 @@ final class PDFSettingsViewController: UICollectionViewController {
                     guard let self = self else { return 0}
                     return self.viewModel.state.settings.pageFitting.rawValue
                 }
-                actions = [UIAction(title: L10n.Pdf.Settings.PageFitting.fit, handler: { _ in self.viewModel.process(action: .setPageFitting(.fit)) }),
-                           UIAction(title: L10n.Pdf.Settings.PageFitting.fill, handler: { _ in self.viewModel.process(action: .setPageFitting(.fill)) }),
-                           UIAction(title: L10n.Pdf.Settings.PageFitting.automatic, handler: { _ in self.viewModel.process(action: .setPageFitting(.adaptive)) })]
+                actions = [UIAction(title: L10n.Pdf.Settings.PageFitting.fit, handler: { [weak self] _ in self?.viewModel.process(action: .setPageFitting(.fit)) }),
+                           UIAction(title: L10n.Pdf.Settings.PageFitting.fill, handler: { [weak self] _ in self?.viewModel.process(action: .setPageFitting(.fill)) }),
+                           UIAction(title: L10n.Pdf.Settings.PageFitting.automatic, handler: { [weak self] _ in self?.viewModel.process(action: .setPageFitting(.adaptive)) })]
 
             case .appearance:
                 title = L10n.Pdf.Settings.Appearance.title
@@ -181,9 +181,9 @@ final class PDFSettingsViewController: UICollectionViewController {
                     guard let self = self else { return 0}
                     return Int(self.viewModel.state.settings.appearanceMode.rawValue)
                 }
-                actions = [UIAction(title: L10n.Pdf.Settings.Appearance.lightMode, handler: { _ in self.viewModel.process(action: .setAppearanceMode(.light)) }),
-                           UIAction(title: L10n.Pdf.Settings.Appearance.darkMode, handler: { _ in self.viewModel.process(action: .setAppearanceMode(.dark)) }),
-                           UIAction(title: L10n.Pdf.Settings.Appearance.auto, handler: { _ in self.viewModel.process(action: .setAppearanceMode(.automatic)) })]
+                actions = [UIAction(title: L10n.Pdf.Settings.Appearance.lightMode, handler: { [weak self] _ in self?.viewModel.process(action: .setAppearanceMode(.light)) }),
+                           UIAction(title: L10n.Pdf.Settings.Appearance.darkMode, handler: { [weak self] _ in self?.viewModel.process(action: .setAppearanceMode(.dark)) }),
+                           UIAction(title: L10n.Pdf.Settings.Appearance.auto, handler: { [weak self] _ in self?.viewModel.process(action: .setAppearanceMode(.automatic)) })]
             case .sleep: return
             }
 
