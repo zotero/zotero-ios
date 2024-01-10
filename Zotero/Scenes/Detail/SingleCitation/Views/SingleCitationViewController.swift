@@ -114,7 +114,10 @@ final class SingleCitationViewController: UIViewController {
                 })
                 .disposed(by: disposeBag)
 
-            locatorTextField.rx.controlEvent(.editingChanged).flatMap({ Observable.just(self.locatorTextField.text ?? "") })
+            locatorTextField.rx.controlEvent(.editingChanged)
+                .flatMap({ [weak self] in
+                    Observable.just(self?.locatorTextField.text ?? "")
+                })
                 .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
                 .subscribe(onNext: { [weak self] value in
                     self?.viewModel.process(action: .setLocatorValue(value))
