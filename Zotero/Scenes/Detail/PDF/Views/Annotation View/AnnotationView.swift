@@ -232,11 +232,11 @@ final class AnnotationView: UIView {
         })
         self.commentTextView.textObservable
             .debounce(.milliseconds(500), scheduler: MainScheduler.instance)
-            .subscribe(onNext: { text, needsHeightReload in
-                self.actionPublisher.on(.next(.setComment(text)))
+            .subscribe(onNext: { [weak self] text, needsHeightReload in
+                self?.actionPublisher.on(.next(.setComment(text)))
                 if needsHeightReload {
-                    self.actionPublisher.on(.next(.reloadHeight))
-                    self.scrollToBottomIfNeeded()
+                    self?.actionPublisher.on(.next(.reloadHeight))
+                    self?.scrollToBottomIfNeeded()
                 }
             })
         self.tags.tap.flatMap({ _ in Observable.just(Action.tags) }).bind(to: self.actionPublisher)
