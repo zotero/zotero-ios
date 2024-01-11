@@ -87,8 +87,11 @@ struct Attachment: Identifiable, Equatable {
     }
 
     func changed(location: FileLocation) -> Attachment? {
-        switch self.type {
-        case .file(let filename, let contentType, let oldLocation, let linkType, let compressed) where oldLocation != location:
+        switch type {
+        case .file(let filename, let contentType, let oldLocation, let linkType, let compressed):
+            if oldLocation == location {
+                return self
+            }
             return Attachment(
                 type: .file(filename: filename, contentType: contentType, location: location, linkType: linkType, compressed: compressed),
                 title: title,
@@ -98,7 +101,7 @@ struct Attachment: Identifiable, Equatable {
                 libraryId: libraryId
             )
 
-        case .url, .file:
+        case .url:
             return nil
         }
     }

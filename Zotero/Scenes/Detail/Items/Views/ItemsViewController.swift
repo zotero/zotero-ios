@@ -141,7 +141,7 @@ final class ItemsViewController: UIViewController {
         } else if state.changes.contains(.attachmentsRemoved) {
             self.tableViewHandler.reloadAllAttachments()
         } else if let key = state.updateItemKey {
-            self.tableViewHandler.updateCell(with: state.itemAccessories[key], parentKey: key)
+            self.tableViewHandler.updateCell(with: state.itemAccessories[key], key: key)
         }
 
         if state.changes.contains(.editing) {
@@ -415,7 +415,7 @@ final class ItemsViewController: UIViewController {
 
         let downloader = controllers.userControllers?.fileDownloader
         downloader?.observable
-            .observe(on: MainScheduler.instance)
+            .observe(on: MainScheduler.asyncInstance)
             .subscribe(with: self, onNext: { [weak downloader] `self`, update in
                 if let downloader {
                     let batchData = ItemsState.DownloadBatchData(batchData: downloader.batchData)
@@ -442,7 +442,7 @@ final class ItemsViewController: UIViewController {
 
         let identifierLookupController = self.controllers.userControllers?.identifierLookupController
         identifierLookupController?.observable
-            .observe(on: MainScheduler.instance)
+            .observe(on: MainScheduler.asyncInstance)
             .subscribe(with: self, onNext: { [weak identifierLookupController] `self`, update in
                 guard let identifierLookupController else { return }
                 let batchData = ItemsState.IdentifierLookupBatchData(batchData: identifierLookupController.batchData)
@@ -452,7 +452,7 @@ final class ItemsViewController: UIViewController {
         
         let remoteDownloader = self.controllers.userControllers?.remoteFileDownloader
         remoteDownloader?.observable
-            .observe(on: MainScheduler.instance)
+            .observe(on: MainScheduler.asyncInstance)
             .subscribe(with: self, onNext: { [weak remoteDownloader] `self`, update in
                 guard let remoteDownloader else { return }
                 let batchData = ItemsState.DownloadBatchData(batchData: remoteDownloader.batchData)

@@ -202,8 +202,8 @@ final class ItemsTableViewHandler: NSObject {
         self.tableView.setEditing(editing, animated: animated)
     }
 
-    func updateCell(with accessory: ItemAccessory?, parentKey: String) {
-        guard let cell = self.tableView.visibleCells.first(where: { ($0 as? ItemCell)?.key == parentKey }) as? ItemCell else { return }
+    func updateCell(with accessory: ItemAccessory?, key: String) {
+        guard let cell = self.tableView.visibleCells.first(where: { ($0 as? ItemCell)?.key == key }) as? ItemCell else { return }
         cell.set(accessory: self.cellAccessory(from: accessory))
     }
 

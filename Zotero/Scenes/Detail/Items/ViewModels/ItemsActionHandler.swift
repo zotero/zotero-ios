@@ -331,7 +331,16 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
                 state.updateItemKey = updateKey
             }
 
-        case .cancelled, .failed, .progress:
+        case .progress:
+            // If file is being extracted, the extraction is usually very quick and sends multiple quick progress updates, due to switching between queues and small delays those updates are then
+            // received here, but the file downloader is already done and we're unnecessarily reloading the table view with the same progress. So we're filtering out those unnecessary updates
+            guard let currentProgress = fileDownloader.data(for: downloadUpdate.key, parentKey: downloadUpdate.parentKey, libraryId: downloadUpdate.libraryId).progress, currentProgress < 1
+            else { return }
+            updateViewModel { state in
+                state.updateItemKey = updateKey
+            }
+
+        case .cancelled, .failed:
             updateViewModel { state in
                 state.updateItemKey = updateKey
             }

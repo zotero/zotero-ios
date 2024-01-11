@@ -70,6 +70,7 @@ final class AttachmentDownloader: NSObject {
     private var session: URLSession!
     private var taskIdToDownload: [Int: Download]
     private var downloadToTaskId: [Download: Int]
+    private var logData: [Int: ApiLogger.StartData]
     private var totalCount: Int
     private var files: [Int: File]
     private var progresses: [Download: Progress]
@@ -108,6 +109,7 @@ final class AttachmentDownloader: NSObject {
         progresses = [:]
         extractionProgressObservers = [:]
         downloadsToExtractAfterDownload = []
+        logData = [:]
         accessQueue = DispatchQueue(label: "org.zotero.AttachmentDownloader.AccessQueue", qos: .userInteractive, attributes: .concurrent)
         dbQueue = DispatchQueue(label: "org.zotero.AttachmentDownloader.DbQueue", qos: .userInteractive)
         unzipQueue = DispatchQueue(label: "org.zotero.AttachmentDownloader.UnzipQueue", qos: .userInteractive, attributes: .concurrent)
@@ -621,6 +623,9 @@ final class AttachmentDownloader: NSObject {
 
             DDLogInfo("AttachmentDownloader: create download of \(key); (\(String(describing: parentKey))); \(libraryId) = \(task.taskIdentifier)")
 
+            let data = ApiLogger.log(urlRequest: request, encoding: .url, logParams: .headers)
+            logData[task.taskIdentifier] = data
+
             let progress = Progress(totalUnitCount: 100)
             downloadToTaskId[download] = task.taskIdentifier
             taskIdToDownload[task.taskIdentifier] = download
@@ -778,7 +783,21 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Swift.Error?) {
         accessQueue.sync(flags: .barrier) { [weak self] in
-            guard let self, let error else { return }
+            guard let self else { return }
+
+            if let data = logData[task.taskIdentifier] {
+                let statusCode = (task.response as? HTTPURLResponse)?.statusCode ?? -1
+                let headers = (task.response as? HTTPURLResponse)?.headers.dictionary
+                if let error {
+                    ApiLogger.logFailedresponse(error: error, headers: headers, statusCode: statusCode, startData: data)
+                } else {
+                    ApiLogger.logSuccessfulResponse(statusCode: statusCode, data: nil, headers: headers, startData: data)
+                }
+                logData[task.taskIdentifier] = nil
+            }
+
+            guard let error else { return }
+
             if let download = taskIdToDownload[task.taskIdentifier] {
                 // Normally the `download` instance is available in `taskIdToDownload` and we can succesfully finish the download
                 finish(download: download, taskId: task.taskIdentifier, result: .failure(error))
