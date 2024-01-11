@@ -80,7 +80,6 @@ final class SingleCitationViewController: UIViewController {
             previewWebView.scrollView.isScrollEnabled = false
             previewWebView.backgroundColor = .clear
             previewWebView.scrollView.backgroundColor = .clear
-            previewWebView.configuration.userContentController.add(self, name: "heightHandler")
         }
 
         func setupNavigationBar() {
@@ -135,6 +134,7 @@ final class SingleCitationViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        previewWebView.configuration.userContentController.add(self, name: "heightHandler")
         updatePreferredContentSize()
     }
 
