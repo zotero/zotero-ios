@@ -99,7 +99,7 @@ class ContainerViewController: UIViewController {
                     .observe(on: MainScheduler.instance)
                     .subscribe(onNext: { [weak self] notification in
                         guard let self, let data = notification.keyboardData else { return }
-                        moveToKeyboard(data, willShow: true)
+                        moveToKeyboard(self, data, willShow: true)
                     })
                     .disposed(by: disposeBag)
 
@@ -108,9 +108,21 @@ class ContainerViewController: UIViewController {
                     .observe(on: MainScheduler.instance)
                     .subscribe(onNext: { [weak self] notification in
                         guard let self, let data = notification.keyboardData else { return }
-                        moveToKeyboard(data, willShow: false)
+                        moveToKeyboard(self, data, willShow: false)
                     })
                     .disposed(by: disposeBag)
+
+                func moveToKeyboard(_ self: ContainerViewController, _ data: KeyboardData, willShow: Bool) {
+                    guard let containerCenterY = self.containerCenterY else { return }
+                    
+                    containerCenterY.constant = willShow ? data.endFrame.height / 2 : 0
+                    
+                    guard self.isViewLoaded else { return }
+
+                    UIView.animate(withDuration: 0.2) {
+                        self.view.layoutIfNeeded()
+                    }
+                }
             }
         }
 
@@ -147,17 +159,5 @@ class ContainerViewController: UIViewController {
     // MARK: - Actions
     @objc private func hide() {
         presentingViewController?.dismiss(animated: true, completion: nil)
-    }
-
-    private func moveToKeyboard(_ data: KeyboardData, willShow: Bool) {
-        guard let containerCenterY else { return }
-
-        containerCenterY.constant = willShow ? data.endFrame.height / 2 : 0
-
-        guard isViewLoaded else { return }
-
-        UIView.animate(withDuration: 0.2) {
-            self.view.layoutIfNeeded()
-        }
     }
 }
