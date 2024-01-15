@@ -11,6 +11,7 @@ import UIKit
 import RxSwift
 
 class ContainerViewController: UIViewController {
+    // MARK: - Properties
     let rootViewController: UIViewController
     private let disposeBag: DisposeBag
 
@@ -19,8 +20,7 @@ class ContainerViewController: UIViewController {
     private weak var containerCenterY: NSLayoutConstraint?
     private var didAppear = false
 
-    // MARK: - Lifecycle
-
+    // MARK: - Object Lifecycle
     init(rootViewController: UIViewController) {
         self.rootViewController = rootViewController
         disposeBag = DisposeBag()
@@ -32,6 +32,7 @@ class ContainerViewController: UIViewController {
         fatalError("init(coder:) has not been implemented")
     }
 
+    // MARK: - View Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -96,27 +97,27 @@ class ContainerViewController: UIViewController {
                 NotificationCenter.default
                     .keyboardWillShow
                     .observe(on: MainScheduler.instance)
-                    .subscribe(onNext: { notification in
-                        guard let data = notification.keyboardData else { return }
-                        moveToKeyboard(data, willShow: true)
+                    .subscribe(onNext: { [weak self] notification in
+                        guard let self, let data = notification.keyboardData else { return }
+                        moveToKeyboard(self, data, willShow: true)
                     })
                     .disposed(by: disposeBag)
 
                 NotificationCenter.default
                     .keyboardWillHide
                     .observe(on: MainScheduler.instance)
-                    .subscribe(onNext: { notification in
-                        guard let data = notification.keyboardData else { return }
-                        moveToKeyboard(data, willShow: false)
+                    .subscribe(onNext: { [weak self] notification in
+                        guard let self, let data = notification.keyboardData else { return }
+                        moveToKeyboard(self, data, willShow: false)
                     })
                     .disposed(by: disposeBag)
 
-                func moveToKeyboard(_ data: KeyboardData, willShow: Bool) {
-                    guard let containerCenterY else { return }
-
+                func moveToKeyboard(_ self: ContainerViewController, _ data: KeyboardData, willShow: Bool) {
+                    guard let containerCenterY = self.containerCenterY else { return }
+                    
                     containerCenterY.constant = willShow ? data.endFrame.height / 2 : 0
-
-                    guard isViewLoaded else { return }
+                    
+                    guard self.isViewLoaded else { return }
 
                     UIView.animate(withDuration: 0.2) {
                         self.view.layoutIfNeeded()
@@ -156,7 +157,6 @@ class ContainerViewController: UIViewController {
     }
 
     // MARK: - Actions
-
     @objc private func hide() {
         presentingViewController?.dismiss(animated: true, completion: nil)
     }

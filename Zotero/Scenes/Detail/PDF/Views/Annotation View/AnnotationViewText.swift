@@ -17,8 +17,8 @@ final class AnnotationViewText: UIView {
 
     private let layout: AnnotationViewLayout
 
-    var tap: Observable<UIButton> {
-        return self.button.rx.tap.flatMap({ Observable.just(self.button) })
+    var tap: Observable<UIButton?> {
+        return button.rx.tap.flatMap({ [weak self] in Observable.just(self?.button) })
     }
 
     var isEnabled: Bool {

@@ -109,6 +109,7 @@ final class AnnotationsViewController: UIViewController {
             })
 
         case .options(let sender):
+            guard let sender else { return }
             self.coordinatorDelegate?.showCellOptions(
                 for: annotation,
                 userId: self.viewModel.state.userId,

@@ -211,15 +211,16 @@ final class AnnotationViewController: UIViewController {
             commentView.setup(text: comment)
             commentView.isUserInteractionEnabled = editability == .editable
             commentView.textObservable
-                       .debounce(.milliseconds(500), scheduler: MainScheduler.instance)
-                       .subscribe(with: self, onNext: { `self`, data in
-                           self.viewModel.process(action: .setComment(key: annotation.key, comment: data.0))
-                           if data.1 {
-                               self.updatePreferredContentSize()
-                               self.scrollToCursorIfNeeded()
-                           }
-                       })
-                       .disposed(by: self.disposeBag)
+                .debounce(.milliseconds(500), scheduler: MainScheduler.instance)
+                .subscribe(onNext: { [weak self] data in
+                    guard let self, let (text, needsHeightReload) = data else { return }
+                    viewModel.process(action: .setComment(key: annotation.key, comment: text))
+                    if needsHeightReload {
+                        updatePreferredContentSize()
+                        scrollToCursorIfNeeded()
+                    }
+                })
+                .disposed(by: disposeBag)
             self.comment = commentView
 
             self.containerStackView.addArrangedSubview(commentView)

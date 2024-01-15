@@ -31,8 +31,7 @@ final class SingleCitationViewController: UIViewController {
 
     weak var coordinatorDelegate: DetailCitationCoordinatorDelegate?
 
-    // MARK: - Lifecycle
-
+    // MARK: - Object Lifecycle
     init(viewModel: ViewModel<SingleCitationActionHandler>) {
         self.viewModel = viewModel
         disposeBag = DisposeBag()
@@ -43,6 +42,11 @@ final class SingleCitationViewController: UIViewController {
         fatalError("init(coder:) has not been implemented")
     }
 
+    deinit {
+        viewModel.process(action: .cleanup)
+    }
+
+    // MARK: - View Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -76,7 +80,6 @@ final class SingleCitationViewController: UIViewController {
             previewWebView.scrollView.isScrollEnabled = false
             previewWebView.backgroundColor = .clear
             previewWebView.scrollView.backgroundColor = .clear
-            previewWebView.configuration.userContentController.add(self, name: "heightHandler")
         }
 
         func setupNavigationBar() {
@@ -110,7 +113,10 @@ final class SingleCitationViewController: UIViewController {
                 })
                 .disposed(by: disposeBag)
 
-            locatorTextField.rx.controlEvent(.editingChanged).flatMap({ Observable.just(self.locatorTextField.text ?? "") })
+            locatorTextField.rx.controlEvent(.editingChanged)
+                .flatMap({ [weak self] in
+                    Observable.just(self?.locatorTextField.text ?? "")
+                })
                 .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
                 .subscribe(onNext: { [weak self] value in
                     self?.viewModel.process(action: .setLocatorValue(value))
@@ -128,11 +134,13 @@ final class SingleCitationViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        previewWebView.configuration.userContentController.add(self, name: "heightHandler")
         updatePreferredContentSize()
     }
 
-    deinit {
-        viewModel.process(action: .cleanup)
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        previewWebView.configuration.userContentController.removeAllScriptMessageHandlers()
     }
 
     // MARK: - Actions
@@ -193,7 +201,6 @@ final class SingleCitationViewController: UIViewController {
     }
 
     // MARK: - Helpers
-
     private func localized(locator: String) -> String {
         return NSLocalizedString("citation.locator.\(locator)", comment: "")
     }

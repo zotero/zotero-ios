@@ -17,7 +17,7 @@ final class AnnotationView: UIView {
 
     enum Action {
         case tags
-        case options(UIButton)
+        case options(UIButton?)
         case reloadHeight
         case setComment(NSAttributedString)
         case setCommentActive(Bool)
@@ -230,13 +230,14 @@ final class AnnotationView: UIView {
         self.commentTextView.didBecomeActive.subscribe(onNext: { [weak self] _ in
             self?.actionPublisher.on(.next(.setCommentActive(true)))
         })
-        self.commentTextView.textObservable
+        commentTextView.textObservable
             .debounce(.milliseconds(500), scheduler: MainScheduler.instance)
-            .subscribe(onNext: { text, needsHeightReload in
-                self.actionPublisher.on(.next(.setComment(text)))
+            .subscribe(onNext: { [weak self] data in
+                guard let self = self, let (text, needsHeightReload) = data else { return }
+                actionPublisher.on(.next(.setComment(text)))
                 if needsHeightReload {
-                    self.actionPublisher.on(.next(.reloadHeight))
-                    self.scrollToBottomIfNeeded()
+                    actionPublisher.on(.next(.reloadHeight))
+                    scrollToBottomIfNeeded()
                 }
             })
         self.tags.tap.flatMap({ _ in Observable.just(Action.tags) }).bind(to: self.actionPublisher)
