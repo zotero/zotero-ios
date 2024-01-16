@@ -11,7 +11,7 @@ import Foundation
 import RealmSwift
 
 final class RDownload: Object {
-    @Persisted(indexed: true) var taskId: Int
+    @Persisted(indexed: true) var taskId: Int?
     @Persisted(indexed: true) var key: String
     @Persisted var parentKey: String?
     @Persisted var customLibraryKey: RCustomLibraryType?

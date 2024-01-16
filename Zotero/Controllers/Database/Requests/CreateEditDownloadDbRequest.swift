@@ -11,7 +11,7 @@ import Foundation
 import RealmSwift
 
 struct CreateEditDownloadDbRequest: DbRequest {
-    let taskId: Int
+    let taskId: Int?
     let key: String
     let parentKey: String?
     let libraryId: LibraryIdentifier
