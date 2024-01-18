@@ -16,15 +16,15 @@ class PDFThumbnailsViewController: UICollectionViewController {
     private let viewModel: ViewModel<PDFThumbnailsActionHandler>
     private let disposeBag: DisposeBag
 
-    private var dataSource: UICollectionViewDiffableDataSource<Int, String>!
+    private var dataSource: UICollectionViewDiffableDataSource<Int, PDFThumbnailsState.Page>!
 
-    private lazy var cellRegistration: UICollectionView.CellRegistration<PDFThumbnailsCell, String> = {
-        return UICollectionView.CellRegistration<PDFThumbnailsCell, String> { [weak self] cell, indexPath, label in
+    private lazy var cellRegistration: UICollectionView.CellRegistration<PDFThumbnailsCell, PDFThumbnailsState.Page> = {
+        return UICollectionView.CellRegistration<PDFThumbnailsCell, PDFThumbnailsState.Page> { [weak self] cell, indexPath, page in
             let image = self?.viewModel.state.cache.object(forKey: NSNumber(value: indexPath.row))
             if image == nil {
                 self?.viewModel.process(action: .load(UInt(indexPath.row)))
             }
-            cell.contentConfiguration = PDFThumbnailsCell.ContentConfiguration(label: label, image: image)
+            cell.contentConfiguration = PDFThumbnailsCell.ContentConfiguration(label: page.title, image: image)
         }
     }()
 
@@ -42,11 +42,11 @@ class PDFThumbnailsViewController: UICollectionViewController {
 
         super.init(collectionViewLayout: layout)
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -88,8 +88,8 @@ class PDFThumbnailsViewController: UICollectionViewController {
     }
 
     private func update(state: PDFThumbnailsState) {
-        if state.changes.contains(.pages) {
-            var snapshot = NSDiffableDataSourceSnapshot<Int, String>()
+        if state.changes.contains(.pages) && !state.pages.isEmpty {
+            var snapshot = NSDiffableDataSourceSnapshot<Int, PDFThumbnailsState.Page>()
             snapshot.appendSections([0])
             snapshot.appendItems(state.pages)
             dataSource.apply(snapshot) { [weak self] in

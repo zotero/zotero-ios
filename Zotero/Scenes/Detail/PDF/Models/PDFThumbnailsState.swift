@@ -27,13 +27,23 @@ struct PDFThumbnailsState: ViewModelState {
         case fromSidebar
     }
 
+    struct Page: Hashable {
+        let id: UUID
+        let title: String
+
+        init(title: String) {
+            self.id = UUID()
+            self.title = title
+        }
+    }
+
     let thumbnailSize: CGSize
     let document: Document
     let key: String
     let libraryId: LibraryIdentifier
 
     let cache: NSCache<NSNumber, UIImage>
-    var pages: [String]
+    var pages: [Page]
     var isDark: Bool
     var loadedThumbnail: Int?
     var selectedPageIndex: Int
