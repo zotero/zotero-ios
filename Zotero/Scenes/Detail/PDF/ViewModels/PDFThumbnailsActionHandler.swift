@@ -59,7 +59,8 @@ struct PDFThumbnailsActionHandler: ViewModelActionHandler {
     }
 
     private func loadPages(viewModel: ViewModel<PDFThumbnailsActionHandler>) {
-        let labels = (0..<viewModel.state.document.pageCount).map({ viewModel.state.document.pageLabelForPage(at: $0, substituteWithPlainLabel: true) ?? "" })
+        guard viewModel.state.document.pageCount > 0 else { return }
+        let labels = (0..<viewModel.state.document.pageCount).map({ PDFThumbnailsState.Page(title: viewModel.state.document.pageLabelForPage(at: $0, substituteWithPlainLabel: true) ?? "") })
         update(viewModel: viewModel) { state in
             state.pages = labels
             state.changes = .pages
