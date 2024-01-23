@@ -14,6 +14,16 @@ import RealmSwift
 import RxSwift
 import ZIPFoundation
 
+import OSLog
+
+struct TestLogger {
+    static let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "testing")
+
+    static func log(message: String) {
+        TestLogger.logger.info("\(message)")
+    }
+}
+
 final class AttachmentDownloader: NSObject {
     enum Error: Swift.Error {
         case incompatibleAttachment
@@ -126,7 +136,7 @@ final class AttachmentDownloader: NSObject {
 
         super.init()
 
-        session = URLSessionCreator.createSession(for: Self.sessionId, delegate: self, isDiscretionary: true)
+        session = URLSessionCreator.createSession(for: Self.sessionId, delegate: self, isDiscretionary: true, httpMaximumConnectionsPerHost: 1)
         session.getAllTasks { tasks in
             resumeDownloads(tasks: tasks)
         }
@@ -299,11 +309,12 @@ final class AttachmentDownloader: NSObject {
 
     // MARK: - Actions
 
-    func handleEventsForBackgroundURLSession(with identifier: String, completionHandler: @escaping () -> Void) {
-        guard identifier == Self.sessionId else { return }
+    func handleEventsForBackgroundURLSession(with identifier: String, completionHandler: @escaping () -> Void) -> Bool {
+        guard identifier == Self.sessionId else { return false }
         DDLogInfo("AttachmentDownloader: handle events for background url session \(identifier)")
         session = URLSessionCreator.createSession(for: identifier, delegate: self)
         backgroundCompletionHandler = completionHandler
+        return true
     }
 
     func batchDownload(attachments: [(Attachment, String?)]) {
@@ -729,12 +740,14 @@ final class AttachmentDownloader: NSObject {
 
         switch result {
         case .success:
+            TestLogger.log(message: "DOWNLOADER RESULT SUCCESS")
             errors[download.download] = nil
             if notifyObserver {
                 observable.on(.next(Update(download: download.download, kind: .ready)))
             }
 
         case .failure(let error):
+            TestLogger.log(message: "DOWNLOADER RESULT FAILED")
             if (error as NSError).code == NSURLErrorCancelled {
                 errors[download.download] = nil
                 batchProgress?.totalUnitCount -= 100
@@ -848,24 +861,20 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Swift.Error?) {
         accessQueue.sync(flags: .barrier) { [weak self] in
-            guard let self else { return }
+            guard let self, let error else { return }
 
-            if let error {
-                if let currentDownload {
-                    guard currentDownload.taskId == task.taskIdentifier else {
-                        DDLogError("AttachmentDownloader: task finished with error for other than currentDownload")
-                        return
-                    }
-                    logResponse(for: currentDownload, task: task, error: error)
-                    // Normally the `download` instance is available in `taskIdToDownload` and we can succesfully finish the download
-                    finish(download: currentDownload, result: .failure(error))
-                } else {
-                    // Though in some cases the `URLSession` can report errors before `taskIdToDownload` is populated with data (when app was killed manually for example), so let's just store errors
-                    // so that it's apparent that these tasks finished already.
-                    initialErrors[task.taskIdentifier] = error
+            if let currentDownload {
+                guard currentDownload.taskId == task.taskIdentifier else {
+                    DDLogError("AttachmentDownloader: task finished with error for other than currentDownload")
+                    return
                 }
+                logResponse(for: currentDownload, task: task, error: error)
+                // Normally the `download` instance is available in `taskIdToDownload` and we can succesfully finish the download
+                finish(download: currentDownload, result: .failure(error))
             } else {
-                startNextDownloadIfPossible()
+                // Though in some cases the `URLSession` can report errors before `taskIdToDownload` is populated with data (when app was killed manually for example), so let's just store errors
+                // so that it's apparent that these tasks finished already.
+                initialErrors[task.taskIdentifier] = error
             }
         }
     }
@@ -877,7 +886,6 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
         }
         guard let currentDownload else { return }
         currentDownload.progress.completedUnitCount = Int64(Double(totalBytesWritten) / Double(totalBytesExpectedToWrite) * 100)
-        DDLogInfo("AttachmentDownloader: download progress \(currentDownload.progress.fractionCompleted); \(downloadTask.taskIdentifier)")
         observable.on(.next(Update(download: currentDownload.download, kind: .progress(CGFloat(currentDownload.progress.fractionCompleted)))))
     }
 }

@@ -313,6 +313,7 @@ extension AppDelegate: UIApplicationDelegate {
             return
         }
 
+        guard !userControllers.fileDownloader.handleEventsForBackgroundURLSession(with: identifier, completionHandler: completionHandler) else { return }
         userControllers.backgroundUploadObserver.handleEventsForBackgroundURLSession(with: identifier, completionHandler: completionHandler)
     }
 

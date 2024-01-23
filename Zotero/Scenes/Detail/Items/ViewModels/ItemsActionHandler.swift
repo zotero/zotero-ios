@@ -321,10 +321,9 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
             return
         }
 
-        DDLogInfo("ItemsActionHandler: download update \(attachment.key); \(attachment.libraryId); kind \(downloadUpdate.kind)")
-
         switch downloadUpdate.kind {
         case .ready:
+            DDLogInfo("ItemsActionHandler: download update \(attachment.key); \(attachment.libraryId); kind \(downloadUpdate.kind)")
             updateViewModel { state in
                 guard let updatedAttachment = attachment.changed(location: .local) else { return }
                 state.itemAccessories[updateKey] = .attachment(attachment: updatedAttachment, parentKey: downloadUpdate.parentKey)
@@ -341,6 +340,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
             }
 
         case .cancelled, .failed:
+            DDLogInfo("ItemsActionHandler: download update \(attachment.key); \(attachment.libraryId); kind \(downloadUpdate.kind)")
             updateViewModel { state in
                 state.updateItemKey = updateKey
             }
