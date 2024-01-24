@@ -14,7 +14,7 @@ final class AnnotationView: UIView {
     enum Kind {
         case cell, popover
     }
-
+    
     enum Action {
         case tags
         case options(UIButton?)
@@ -23,20 +23,20 @@ final class AnnotationView: UIView {
         case setCommentActive(Bool)
         case done
     }
-
+    
     enum AccessibilityType {
         case cell
         case view
     }
-
+    
     struct Comment {
         let attributedString: NSAttributedString?
         let isActive: Bool
     }
-
+    
     private let layout: AnnotationViewLayout
     let actionPublisher: PublishSubject<AnnotationView.Action>
-
+    
     private var header: AnnotationViewHeader!
     private var topSeparator: UIView!
     private var highlightContent: AnnotationViewHighlightContent?
@@ -52,9 +52,9 @@ final class AnnotationView: UIView {
     var tagString: String? {
         return self.tags.textLabel.text
     }
-
+    
     // MARK: - Lifecycle
-
+    
     init(layout: AnnotationViewLayout, commentPlaceholder: String) {
         self.layout = layout
         actionPublisher = PublishSubject()
@@ -65,30 +65,71 @@ final class AnnotationView: UIView {
         translatesAutoresizingMaskIntoConstraints = false
         setupView(commentPlaceholder: commentPlaceholder)
     }
-
+    
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-
+    
     // MARK: - Actions
-
+    
     @discardableResult
     override func resignFirstResponder() -> Bool {
         commentTextView.resignFirstResponder()
     }
-
+    
     func updatePreview(image: UIImage?) {
         guard let imageContent, !imageContent.isHidden else { return }
         imageContent.setup(with: image)
     }
-
+    
     private func scrollToBottomIfNeeded() {
         guard let scrollView, let scrollViewContent, scrollViewContent.frame.height > scrollView.frame.height else { return }
         let yOffset = scrollView.contentSize.height - scrollView.bounds.height + scrollView.contentInset.bottom
         scrollView.setContentOffset(CGPoint(x: 0, y: yOffset), animated: true)
     }
-
+    
     // MARK: - Setups
+    
+    func setup(with annotation: HtmlEpubAnnotation, comment: Comment?, selected: Bool, availableWidth: CGFloat, library: Library, currentUserId: Int) {
+        let color = UIColor(hex: annotation.color)
+        let canEdit = library.metadataEditable && selected
+        let author = library.identifier == .custom(.myLibrary) ? "" : annotation.author
+
+        self.header.setup(
+            type: annotation.type,
+            authorName: author,
+            pageLabel: annotation.pageLabel,
+            colorHex: annotation.color,
+            shareMenuProvider: { _ in
+                return nil
+            },
+            isEditable: canEdit,
+            showsLock: !library.metadataEditable,
+            accessibilityType: .cell
+        )
+        self.setupContent(
+            type: annotation.type,
+            comment: annotation.comment,
+            text: annotation.text,
+            color: color,
+            canEdit: canEdit,
+            selected: selected,
+            availableWidth: availableWidth,
+            accessibilityType: .cell
+        )
+        self.setup(comment: comment, canEdit: canEdit)
+        self.setup(tags: annotation.tags, canEdit: canEdit, accessibilityEnabled: selected)
+        self.setupObserving()
+
+        let commentButtonIsHidden = self.commentTextView.isHidden
+        let highlightContentIsHidden = self.highlightContent?.isHidden ?? true
+        let imageContentIsHidden = self.imageContent?.isHidden ?? true
+
+        // Top separator is hidden only if there is only header visible and nothing else
+        self.topSeparator.isHidden = self.commentTextView.isHidden && commentButtonIsHidden && highlightContentIsHidden && imageContentIsHidden && self.tags.isHidden && self.tagsButton.isHidden
+        // Bottom separator is visible, when tags are showing (either actual tags or tags button) and there is something visible above them (other than header, either content or comments/comments button)
+        self.bottomSeparator.isHidden = (self.tags.isHidden && self.tagsButton.isHidden) || (self.commentTextView.isHidden && commentButtonIsHidden && highlightContentIsHidden && imageContentIsHidden)
+    }
 
     /// Setups up annotation view with given annotation and additional data.
     /// - parameter annotation: Annotation to show in view.

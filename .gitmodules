@@ -10,3 +10,6 @@
 [submodule "translators"]
 	path = translators
 	url = https://github.com/zotero/translators.git
+[submodule "reader"]
+	path = reader
+	url = https://github.com/zotero/reader.git
