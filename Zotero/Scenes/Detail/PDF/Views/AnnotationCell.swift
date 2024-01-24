@@ -84,6 +84,43 @@ final class AnnotationCell: UITableViewCell {
     }
 
     func setup(
+        with annotation: HtmlEpubAnnotation,
+        comment: AnnotationView.Comment?,
+        selected: Bool,
+        availableWidth: CGFloat,
+        library: Library,
+        isEditing: Bool,
+        currentUserId: Int,
+        state: HtmlEpubReaderState
+    ) {
+        if !selected {
+            annotationView.resignFirstResponder()
+        }
+
+        key = annotation.key
+        selectionView.layer.borderWidth = selected ? PDFReaderLayout.cellSelectionLineWidth : 0
+        let availableWidth = availableWidth - (PDFReaderLayout.annotationLayout.horizontalInset * 2)
+        self.annotationView.setup(
+            with: annotation,
+            comment: comment,
+            selected: selected,
+            availableWidth: availableWidth,
+            library: library,
+            currentUserId: currentUserId
+        )
+
+        self.setupAccessibility(
+            isAuthor: annotation.isAuthor,
+            authorName: annotation.author,
+            type: annotation.type,
+            pageLabel: annotation.pageLabel,
+            text: annotation.text,
+            comment: annotation.comment,
+            selected: selected
+        )
+    }
+
+    func setup(
         with annotation: PDFAnnotation,
         text: NSAttributedString?,
         comment: AnnotationView.Comment?,
@@ -100,14 +137,14 @@ final class AnnotationCell: UITableViewCell {
         state: PDFReaderState
     ) {
         if !selected {
-            annotationView.resignFirstResponder()
+            self.annotationView.resignFirstResponder()
         }
 
         let reconfiguringForSameAnnotation = key == annotation.key
         key = annotation.key
         selectionView.layer.borderWidth = selected ? PDFReaderLayout.cellSelectionLineWidth : 0
         let availableWidth = availableWidth - (PDFReaderLayout.annotationLayout.horizontalInset * 2)
-        annotationView.setup(
+        self.annotationView.setup(
             with: annotation,
             text: text,
             comment: comment,
@@ -127,7 +164,7 @@ final class AnnotationCell: UITableViewCell {
         }
         // Otherwise, reconfigured cells do not have their prepareForReuse method called, so observing is already set up.
 
-        setupAccessibility(
+        self.setupAccessibility(
             isAuthor: annotation.isAuthor(currentUserId: currentUserId),
             authorName: annotation.author(displayName: displayName, username: username),
             type: annotation.type,
@@ -140,7 +177,7 @@ final class AnnotationCell: UITableViewCell {
 
     private func setupAccessibility(isAuthor: Bool, authorName: String, type: AnnotationType, pageLabel: String, text: String?, comment: String, selected: Bool) {
         let author = isAuthor ? nil : authorName
-        var label = accessibilityLabel(for: type, pageLabel: pageLabel, author: author)
+        var label = self.accessibilityLabel(for: type, pageLabel: pageLabel, author: author)
         if let text {
             switch type {
             case .highlight:
