@@ -125,6 +125,11 @@ final class Defaults {
 
     @CodableUserDefault(key: "PDFReaderSettings", defaultValue: PDFSettings.default, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder, defaults: .standard)
     var pdfSettings: PDFSettings
+
+    // MARK: - HTML / Epub Settings
+
+    @CodableUserDefault(key: "HtmlEpubReaderSettings", defaultValue: HtmlEpubSettings.default, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder, defaults: .standard)
+    var htmlEpubSettings: HtmlEpubSettings
     #endif
 
     // MARK: - Citation / Bibliography Export
