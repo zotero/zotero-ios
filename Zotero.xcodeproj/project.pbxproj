@@ -4333,6 +4333,9 @@
 				B34A85AC243CB1E4003D5638 /* Bundle Translators */,
 				6185A1A82D9C266100285385 /* Bundle Utilities */,
 				B3A1D03D2BA321B30040FEE9 /* Bundle Note Editor */,
+				61975C432D3A84F5005BB41A /* Fetch Bundled Fonts */,
+				B3CAE1162B0E0CEF0000F8CA /* ShellScript */,
+				B337A5AD244F229400AFD13D /* SwiftGen */,
 				B30D59512206F60400884C4A /* Sources */,
 				B30D59522206F60400884C4A /* Frameworks */,
 				B30D59532206F60400884C4A /* Resources */,
@@ -4774,6 +4777,24 @@
 				"$(SRCROOT)/scripts/bundle_note_editor.sh",
 			);
 			name = "Bundle Note Editor";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "sh \"$SCRIPT_INPUT_FILE_0\"\n";
+		};
+		B3CAE1162B0E0CEF0000F8CA /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/scripts/build_reader.sh",
+			);
 			outputFileListPaths = (
 			);
 			outputPaths = (
