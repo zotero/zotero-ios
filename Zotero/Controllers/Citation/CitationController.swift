@@ -174,7 +174,7 @@ class CitationController: NSObject {
             }
             itemsData.append(data)
         }
-        return WKWebView.encodeAsJSONForJavascript(itemsData)
+        return WebViewEncoder.encodeAsJSONForJavascript(itemsData)
     }
 
     /// Bibliography happens once for selected item(s). Appropriate style and locale xmls are loaded, webView is initialized and loaded with index.html. When everything is loaded,
@@ -266,7 +266,7 @@ class CitationController: NSObject {
                 let localeData = try Data(contentsOf: localeUrl)
                 let styleData = try self.fileStorage.read(Files.style(filename: styleFilename))
 
-                subscriber(.success((WKWebView.encodeForJavascript(styleData), WKWebView.encodeForJavascript(localeData))))
+                subscriber(.success((WebViewEncoder.encodeForJavascript(styleData), WebViewEncoder.encodeForJavascript(localeData))))
             } catch let error {
                 DDLogError("CitationController: can't read locale or style - \(error)")
                 subscriber(.failure(Error.styleOrLocaleMissing))
@@ -302,7 +302,7 @@ class CitationController: NSObject {
                 return Disposables.create()
             }
 
-            subscriber(.success(WKWebView.encodeForJavascript(schemaData)))
+            subscriber(.success(WebViewEncoder.encodeForJavascript(schemaData)))
 
             return Disposables.create()
         }
@@ -323,7 +323,7 @@ class CitationController: NSObject {
 
                 items.first?.realm?.invalidate()
 
-                subscriber(.success(WKWebView.encodeAsJSONForJavascript(data)))
+                subscriber(.success(WebViewEncoder.encodeAsJSONForJavascript(data)))
             } catch let error {
                 DDLogError("CitationController: can't read items - \(error)")
                 subscriber(.failure(error))
@@ -498,7 +498,7 @@ extension CitationController: WKScriptMessageHandler {
 
         case .csl:
             if let csl = jsResult as? [[String: Any]] {
-                result = .success(WKWebView.encodeAsJSONForJavascript(csl))
+                result = .success(WebViewEncoder.encodeAsJSONForJavascript(csl))
             } else {
                 DDLogError("CitationController: CSL got unknown response - \(jsResult)")
                 result = .failure(Error.missingResponse)

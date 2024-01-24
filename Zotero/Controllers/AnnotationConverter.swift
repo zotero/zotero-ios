@@ -61,7 +61,7 @@ struct AnnotationConverter {
         username: String,
         displayName: String,
         boundingBoxConverter: AnnotationBoundingBoxConverter?
-    ) -> DocumentAnnotation? {
+    ) -> PDFDocumentAnnotation? {
         guard let document = annotation.document, AnnotationsConfig.supported.contains(annotation.type) else { return nil }
 
         let key = annotation.key ?? annotation.uuid
@@ -113,7 +113,7 @@ struct AnnotationConverter {
             return nil
         }
 
-        return DocumentAnnotation(
+        return PDFDocumentAnnotation(
             key: key,
             type: type,
             page: page,
@@ -191,7 +191,7 @@ struct AnnotationConverter {
     ) -> [PSPDFKit.Annotation] {
         return items.map({ item in
             return self.annotation(
-                from: DatabaseAnnotation(item: item),
+                from: PDFDatabaseAnnotation(item: item),
                 type: type,
                 interfaceStyle: interfaceStyle,
                 currentUserId: currentUserId,
@@ -204,7 +204,7 @@ struct AnnotationConverter {
     }
 
     static func annotation(
-        from zoteroAnnotation: DatabaseAnnotation,
+        from zoteroAnnotation: PDFDatabaseAnnotation,
         type: Kind,
         interfaceStyle: UIUserInterfaceStyle,
         currentUserId: Int,
@@ -260,7 +260,7 @@ struct AnnotationConverter {
 
     /// Creates corresponding `SquareAnnotation`.
     /// - parameter annotation: Zotero annotation.
-    private static func areaAnnotation(from annotation: Annotation, type: Kind, color: UIColor, boundingBoxConverter: AnnotationBoundingBoxConverter) -> PSPDFKit.SquareAnnotation {
+    private static func areaAnnotation(from annotation: PDFAnnotation, type: Kind, color: UIColor, boundingBoxConverter: AnnotationBoundingBoxConverter) -> PSPDFKit.SquareAnnotation {
         let square: PSPDFKit.SquareAnnotation
         switch type {
         case .export:
@@ -280,7 +280,7 @@ struct AnnotationConverter {
     /// Creates corresponding `HighlightAnnotation`.
     /// - parameter annotation: Zotero annotation.
     private static func highlightAnnotation(
-        from annotation: Annotation,
+        from annotation: PDFAnnotation,
         type: Kind,
         color: UIColor,
         alpha: CGFloat,
@@ -305,7 +305,7 @@ struct AnnotationConverter {
 
     /// Creates corresponding `NoteAnnotation`.
     /// - parameter annotation: Zotero annotation.
-    private static func noteAnnotation(from annotation: Annotation, type: Kind, color: UIColor, boundingBoxConverter: AnnotationBoundingBoxConverter) -> PSPDFKit.NoteAnnotation {
+    private static func noteAnnotation(from annotation: PDFAnnotation, type: Kind, color: UIColor, boundingBoxConverter: AnnotationBoundingBoxConverter) -> PSPDFKit.NoteAnnotation {
         let note: PSPDFKit.NoteAnnotation
         switch type {
         case .export:
@@ -323,7 +323,7 @@ struct AnnotationConverter {
         return note
     }
 
-    private static func inkAnnotation(from annotation: Annotation, type: Kind, color: UIColor, boundingBoxConverter: AnnotationBoundingBoxConverter) -> PSPDFKit.InkAnnotation {
+    private static func inkAnnotation(from annotation: PDFAnnotation, type: Kind, color: UIColor, boundingBoxConverter: AnnotationBoundingBoxConverter) -> PSPDFKit.InkAnnotation {
         let lines = annotation.paths(boundingBoxConverter: boundingBoxConverter).map({ group in
             return group.map({ DrawingPoint(cgPoint: $0) })
         })

@@ -327,9 +327,46 @@ final class PDFDocumentViewController: UIViewController {
               let annotation = state.selectedAnnotation,
               let pageView = self.pdfController?.pageViewForPage(at: UInt(annotation.page)) else { return }
 
-        let frame = self.view.convert(annotation.boundingBox(boundingBoxConverter: self), from: pageView.pdfCoordinateSpace)
+        let key = annotation.readerKey
+        var frame = self.view.convert(annotation.boundingBox(boundingBoxConverter: self), from: pageView.pdfCoordinateSpace)
+        frame.origin.y += (self.parentDelegate?.statusBarHeight ?? 0) + (self.parentDelegate?.navigationBarHeight ?? 0)
+        let observable = self.coordinatorDelegate?.showAnnotationPopover(
+            viewModel: self.viewModel,
+            sourceRect: frame,
+            popoverDelegate: self,
+            userInterfaceStyle: self.viewModel.state.settings.appearanceMode.userInterfaceStyle
+        )
 
-        self.coordinatorDelegate?.showAnnotationPopover(viewModel: self.viewModel, sourceRect: frame, popoverDelegate: self, userInterfaceStyle: self.viewModel.state.interfaceStyle)
+        guard let observable else { return }
+        observable.subscribe(with: self) { `self`, state in
+            if state.changes.contains(.color) {
+                self.viewModel.process(action: .setColor(key: key.key, color: state.color))
+            }
+            if state.changes.contains(.comment) {
+                self.viewModel.process(action: .setComment(key: key.key, comment: state.comment))
+            }
+            if state.changes.contains(.deletion) {
+                self.viewModel.process(action: .removeAnnotation(key))
+            }
+            if state.changes.contains(.lineWidth) {
+                self.viewModel.process(action: .setLineWidth(key: key.key, width: state.lineWidth))
+            }
+            if state.changes.contains(.tags) {
+                self.viewModel.process(action: .setTags(key: key.key, tags: state.tags))
+            }
+            if state.changes.contains(.pageLabel) || state.changes.contains(.highlight) {
+                self.viewModel.process(action:
+                        .updateAnnotationProperties(
+                            key: key.key,
+                            color: state.color,
+                            lineWidth: state.lineWidth,
+                            pageLabel: state.pageLabel,
+                            updateSubsequentLabels: state.updateSubsequentLabels,
+                            highlightText: state.highlightText)
+                )
+            }
+        }
+        .disposed(by: disposeBag)
     }
 
     private func updatePencilSettingsIfNeeded() {
@@ -383,7 +420,7 @@ final class PDFDocumentViewController: UIViewController {
     /// - parameter annotation: Annotation to select. Existing selection will be deselected if set to `nil`.
     /// - parameter pageIndex: Page index of page where (de)selection should happen.
     /// - parameter document: Active `Document` instance.
-    private func select(annotation: Annotation?, pageIndex: PageIndex, document: PSPDFKit.Document) {
+    private func select(annotation: PDFAnnotation?, pageIndex: PageIndex, document: PSPDFKit.Document) {
         guard let pageView = self.pdfController?.pageViewForPage(at: pageIndex) else { return }
 
         self.updateSelection(on: pageView, annotation: annotation)
@@ -400,7 +437,7 @@ final class PDFDocumentViewController: UIViewController {
     }
 
     /// Focuses given annotation and selects it if it's not selected yet.
-    private func focus(annotation: Annotation, at location: AnnotationDocumentLocation, document: PSPDFKit.Document) {
+    private func focus(annotation: PDFAnnotation, at location: AnnotationDocumentLocation, document: PSPDFKit.Document) {
         let pageIndex = PageIndex(location.page)
         self.scrollIfNeeded(to: pageIndex, animated: true) {
             self.select(annotation: annotation, pageIndex: pageIndex, document: document)
@@ -410,7 +447,7 @@ final class PDFDocumentViewController: UIViewController {
     /// Updates `SelectionView` for `PDFPageView` based on selected annotation.
     /// - parameter pageView: `PDFPageView` instance for given page.
     /// - parameter selectedAnnotation: Selected annotation or `nil` if there is no selection.
-    private func updateSelection(on pageView: PDFPageView, annotation: Annotation?) {
+    private func updateSelection(on pageView: PDFPageView, annotation: PDFAnnotation?) {
         // Delete existing custom highlight selection view
         if let view = self.selectionView {
             view.removeFromSuperview()
@@ -639,7 +676,12 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
                     case .PSPDFKit.define:
                         return action.replacing(title: L10n.lookUp, handler: { [weak self] _ in
                             guard let self, let view = self.pdfController?.view else { return }
-                            self.coordinatorDelegate?.lookup(text: glyphs.text, rect: glyphs.boundingBox, view: view, userInterfaceStyle: self.viewModel.state.interfaceStyle)
+                            self.coordinatorDelegate?.lookup(
+                                text: glyphs.text,
+                                rect: glyphs.boundingBox,
+                                view: view,
+                                userInterfaceStyle: self.viewModel.state.settings.appearanceMode.userInterfaceStyle
+                            )
                         })
 
                     case .PSPDFKit.searchDocument:

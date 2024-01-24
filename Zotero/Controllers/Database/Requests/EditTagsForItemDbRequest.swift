@@ -62,6 +62,7 @@ struct EditTagsForItemDbRequest: DbRequest {
             item.rawType = item.rawType
             item.changeType = .user
             item.changes.append(RObjectChange.create(changes: RItemChanges.tags))
+            item.dateModified = Date()
         }
     }
 }

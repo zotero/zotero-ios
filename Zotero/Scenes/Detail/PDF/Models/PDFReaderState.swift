@@ -50,20 +50,6 @@ struct PDFReaderState: ViewModelState {
         static let visiblePageFromThumbnailList = Changes(rawValue: 1 << 13)
     }
 
-    enum AppearanceMode: UInt {
-        case light
-        case dark
-        case automatic
-
-        func userInterfaceStyle(currentUserInterfaceStyle: UIUserInterfaceStyle) -> UIUserInterfaceStyle {
-            switch self {
-            case .automatic: return currentUserInterfaceStyle
-            case .dark: return .dark
-            case .light: return .light
-            }
-        }
-    }
-
     enum Error: Swift.Error {
         case cantDeleteAnnotation
         case cantAddAnnotations
@@ -87,7 +73,7 @@ struct PDFReaderState: ViewModelState {
     var snapshotKeys: [AnnotationKey]?
     var token: NotificationToken?
     var databaseAnnotations: Results<RItem>!
-    var documentAnnotations: [String: DocumentAnnotation]
+    var documentAnnotations: [String: PDFDocumentAnnotation]
     var comments: [String: NSAttributedString]
     var searchTerm: String?
     var filter: AnnotationsFilter?
@@ -100,7 +86,7 @@ struct PDFReaderState: ViewModelState {
 
     /// Selected annotation when annotations are not being edited in sidebar
     var selectedAnnotationKey: AnnotationKey?
-    var selectedAnnotation: Annotation? {
+    var selectedAnnotation: PDFAnnotation? {
         return self.selectedAnnotationKey.flatMap({ self.annotation(for: $0) })
     }
     var selectedAnnotationCommentActive: Bool
@@ -166,10 +152,12 @@ struct PDFReaderState: ViewModelState {
         self.selectedAnnotationsDuringEditing = []
         self.interfaceStyle = interfaceStyle
         self.sidebarEditingEnabled = false
-        self.toolColors = [.highlight: UIColor(hex: Defaults.shared.highlightColorHex),
-                           .square: UIColor(hex: Defaults.shared.squareColorHex),
-                           .note: UIColor(hex: Defaults.shared.noteColorHex),
-                           .ink: UIColor(hex: Defaults.shared.inkColorHex)]
+        self.toolColors = [
+            .highlight: UIColor(hex: Defaults.shared.highlightColorHex),
+            .square: UIColor(hex: Defaults.shared.squareColorHex),
+            .note: UIColor(hex: Defaults.shared.noteColorHex),
+            .ink: UIColor(hex: Defaults.shared.inkColorHex)
+        ]
         self.activeLineWidth = CGFloat(Defaults.shared.activeLineWidth)
         self.activeEraserSize = CGFloat(Defaults.shared.activeEraserSize)
         self.deletionEnabled = false
@@ -179,10 +167,10 @@ struct PDFReaderState: ViewModelState {
         self.previewCache.totalCostLimit = 1024 * 1024 * 10 // Cache object limit - 10 MB
     }
 
-    func annotation(for key: AnnotationKey) -> Annotation? {
+    func annotation(for key: AnnotationKey) -> PDFAnnotation? {
         switch key.type {
         case .database:
-            return self.databaseAnnotations.filter(.key(key.key)).first.flatMap({ DatabaseAnnotation(item: $0) })
+            return self.databaseAnnotations.filter(.key(key.key)).first.flatMap({ PDFDatabaseAnnotation(item: $0) })
 
         case .document:
             return self.documentAnnotations[key.key]

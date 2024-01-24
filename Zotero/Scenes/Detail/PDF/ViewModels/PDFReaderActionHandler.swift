@@ -222,13 +222,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             self.pdfThumbnailController.deleteAll(forKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
 
         case .setSettings(let settings, let userInterfaceStyle):
-            self.update(settings: settings, currentInterfaceStyle: userInterfaceStyle, in: viewModel)
+            self.update(settings: settings, parentInterfaceStyle: userInterfaceStyle, in: viewModel)
 
         case .changeIdleTimerDisabled(let disabled):
-            guard viewModel.state.settings.idleTimerDisabled != disabled else { return }
-            var settings = viewModel.state.settings
-            settings.idleTimerDisabled = disabled
-            self.update(settings: settings, currentInterfaceStyle: nil, in: viewModel)
+            changeIdleTimer(disabled: disabled, in: viewModel)
 
         case .setSidebarEditingEnabled(let enabled):
             self.setSidebar(editing: enabled, in: viewModel)
@@ -353,7 +350,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         var color: String?
 //        var rects: [CGRect]?
 
-        let hasSameProperties: (Annotation) -> Bool = { annotation in
+        let hasSameProperties: (PDFAnnotation) -> Bool = { annotation in
             // Check whether annotations of one type are selected
             if let type = type {
                 if type != annotation.type {
@@ -446,7 +443,24 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
     }
 
-    private func update(settings: PDFSettings, currentInterfaceStyle: UIUserInterfaceStyle?, in viewModel: ViewModel<PDFReaderActionHandler>) {
+    private func changeIdleTimer(disabled: Bool, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        guard viewModel.state.settings.idleTimerDisabled != disabled else { return }
+        var settings = viewModel.state.settings
+        settings.idleTimerDisabled = disabled
+
+        update(viewModel: viewModel) { state in
+            state.settings = settings
+            // Don't need to assign `changes` or update Defaults.shared.pdfSettings, this setting is not stored and doesn't change anything else
+        }
+
+        if settings.idleTimerDisabled {
+            self.idleTimerController.disable()
+        } else {
+            self.idleTimerController.enable()
+        }
+    }
+
+    private func update(settings: PDFSettings, parentInterfaceStyle: UIUserInterfaceStyle, in viewModel: ViewModel<PDFReaderActionHandler>) {
         if viewModel.state.settings.idleTimerDisabled != settings.idleTimerDisabled {
             if settings.idleTimerDisabled {
                 self.idleTimerController.disable()
@@ -464,9 +478,20 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         Defaults.shared.pdfSettings = settings
 
         // Check whether interfaceStyle changed and update if needed
-        guard let newUserInterfaceStyle = currentInterfaceStyle.flatMap({ settings.appearanceMode.userInterfaceStyle(currentUserInterfaceStyle: $0) }),
-              newUserInterfaceStyle != viewModel.state.interfaceStyle else { return }
-        self.userInterfaceChanged(interfaceStyle: newUserInterfaceStyle, in: viewModel)
+        let settingsInterfaceStyle: UIUserInterfaceStyle
+        switch settings.appearanceMode {
+        case .dark:
+            settingsInterfaceStyle = .dark
+
+        case .light:
+            settingsInterfaceStyle = .light
+
+        case .automatic:
+            settingsInterfaceStyle = parentInterfaceStyle
+        }
+
+        guard settingsInterfaceStyle != viewModel.state.interfaceStyle else { return }
+        self.userInterfaceChanged(interfaceStyle: settingsInterfaceStyle, in: viewModel)
     }
 
     private func set(page: Int, userActionFromDocument: Bool, fromThumbnailList: Bool, in viewModel: ViewModel<PDFReaderActionHandler>) {
@@ -628,9 +653,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
     }
 
-    typealias InkAnnotatationsData = (oldestAnnotation: Annotation, oldestDocumentAnnotation: PSPDFKit.InkAnnotation, lines: [[DrawingPoint]], lineWidth: CGFloat, tags: [Tag])
+    typealias InkAnnotatationsData = (oldestAnnotation: PDFAnnotation, oldestDocumentAnnotation: PSPDFKit.InkAnnotation, lines: [[DrawingPoint]], lineWidth: CGFloat, tags: [Tag])
 
-    private func merge(inkAnnotations annotations: [(Annotation, PSPDFKit.Annotation)], in viewModel: ViewModel<PDFReaderActionHandler>) throws {
+    private func merge(inkAnnotations annotations: [(PDFAnnotation, PSPDFKit.Annotation)], in viewModel: ViewModel<PDFReaderActionHandler>) throws {
         guard let (oldestAnnotation, oldestInkAnnotation, lines, lineWidth, tags) = self.collectInkAnnotationData(from: annotations, in: viewModel) else { return }
 
         if AnnotationSplitter.splitPathsIfNeeded(paths: lines) != nil {
@@ -661,7 +686,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         self.set(tags: tags, key: oldestAnnotation.key, viewModel: viewModel)
     }
 
-    private func collectInkAnnotationData(from annotations: [(Annotation, PSPDFKit.Annotation)], in viewModel: ViewModel<PDFReaderActionHandler>) -> InkAnnotatationsData? {
+    private func collectInkAnnotationData(from annotations: [(PDFAnnotation, PSPDFKit.Annotation)], in viewModel: ViewModel<PDFReaderActionHandler>) -> InkAnnotatationsData? {
         guard let (oldestAnnotation, oldestDocumentAnnotation) = annotations.first, let oldestInkAnnotation = oldestDocumentAnnotation as? PSPDFKit.InkAnnotation else { return nil }
 
         var lines: [[DrawingPoint]] = oldestInkAnnotation.lines ?? []
@@ -807,8 +832,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 //        }
 //    }
 
-    private func groupedAnnotationsByPage(from keys: Set<PDFReaderState.AnnotationKey>, state: PDFReaderState) -> [Int: [Annotation]] {
-        var groupedAnnotations: [Int: [Annotation]] = [:]
+    private func groupedAnnotationsByPage(from keys: Set<PDFReaderState.AnnotationKey>, state: PDFReaderState) -> [Int: [PDFAnnotation]] {
+        var groupedAnnotations: [Int: [PDFAnnotation]] = [:]
         for key in keys {
             guard let annotation = state.annotation(for: key) else { continue }
 
@@ -822,8 +847,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         return groupedAnnotations
     }
 
-    private func sortedSyncableAnnotationsAndDocumentAnnotations(from selected: Set<PDFReaderState.AnnotationKey>, state: PDFReaderState) -> [(Annotation, PSPDFKit.Annotation)] {
-        var tuples: [(Annotation, PSPDFKit.Annotation)] = []
+    private func sortedSyncableAnnotationsAndDocumentAnnotations(from selected: Set<PDFReaderState.AnnotationKey>, state: PDFReaderState) -> [(PDFAnnotation, PSPDFKit.Annotation)] {
+        var tuples: [(PDFAnnotation, PSPDFKit.Annotation)] = []
 
         for (page, annotations) in self.groupedAnnotationsByPage(from: selected, state: state) {
             let documentAnnotations = state.document.annotations(at: UInt(page))
@@ -923,7 +948,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         })
     }
 
-    private func filter(annotation: Annotation, with term: String?, displayName: String, username: String) -> Bool {
+    private func filter(annotation: PDFAnnotation, with term: String?, displayName: String, username: String) -> Bool {
         guard let term = term else { return true }
         return annotation.key.lowercased() == term.lowercased() ||
                annotation.author(displayName: displayName, username: username).localizedCaseInsensitiveContains(term) ||
@@ -932,7 +957,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                annotation.tags.contains(where: { $0.name.localizedCaseInsensitiveContains(term) })
     }
 
-    private func filter(annotation: Annotation, with filter: AnnotationsFilter?) -> Bool {
+    private func filter(annotation: PDFAnnotation, with filter: AnnotationsFilter?) -> Bool {
         guard let filter = filter else { return true }
         let hasTag = filter.tags.isEmpty ? true : annotation.tags.contains(where: { filter.tags.contains($0.name) })
         let hasColor = filter.colors.isEmpty ? true : filter.colors.contains(annotation.color)
@@ -1235,7 +1260,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
     }
 
-    private func update(annotation: Annotation, color: (String, UIUserInterfaceStyle)? = nil, lineWidth: CGFloat? = nil, contents: String? = nil, in document: PSPDFKit.Document) {
+    private func update(annotation: PDFAnnotation, color: (String, UIUserInterfaceStyle)? = nil, lineWidth: CGFloat? = nil, contents: String? = nil, in document: PSPDFKit.Document) {
         guard let pdfAnnotation = document.annotations(at: PageIndex(annotation.page)).first(where: { $0.key == annotation.key }) else { return }
 
         var changes: PdfAnnotationChanges = []
@@ -1292,7 +1317,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         guard !finalAnnotations.isEmpty else { return }
 
-        let request = CreateAnnotationsDbRequest(
+        let request = CreatePDFAnnotationsDbRequest(
             attachmentKey: viewModel.state.key,
             libraryId: viewModel.state.library.identifier,
             annotations: finalAnnotations,
@@ -1393,10 +1418,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
     }
 
-    private func splitIfNeededAndProcess(annotations: [PSPDFKit.Annotation], state: PDFReaderState) -> [DocumentAnnotation] {
+    private func splitIfNeededAndProcess(annotations: [PSPDFKit.Annotation], state: PDFReaderState) -> [PDFDocumentAnnotation] {
         var toRemove: [PSPDFKit.Annotation] = []
         var toAdd: [PSPDFKit.Annotation] = []
-        var documentAnnotations: [DocumentAnnotation] = []
+        var documentAnnotations: [PDFDocumentAnnotation] = []
 
         for annotation in annotations {
             guard let tool = self.tool(from: annotation), let activeColor = state.toolColors[tool] else { continue }
@@ -1561,7 +1586,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         in viewModel: ViewModel<PDFReaderActionHandler>
     ) -> (Int, (PDFReaderState.AnnotationKey, AnnotationDocumentLocation)?) {
         if let key = viewModel.state.selectedAnnotationKey, let item = databaseAnnotations.filter(.key(key.key)).first {
-            let annotation = DatabaseAnnotation(item: item)
+            let annotation = PDFDatabaseAnnotation(item: item)
             let page = annotation._page ?? storedPage
             let boundingBox = annotation.boundingBox(boundingBoxConverter: boundingBoxConverter)
             return (page, (key, (page, boundingBox)))
@@ -1643,10 +1668,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             .disposed(by: self.pdfDisposeBag)
     }
 
-    private func createSortedKeys(fromDatabaseAnnotations databaseAnnotations: Results<RItem>, documentAnnotations: [String: DocumentAnnotation]) -> [PDFReaderState.AnnotationKey] {
+    private func createSortedKeys(fromDatabaseAnnotations databaseAnnotations: Results<RItem>, documentAnnotations: [String: PDFDocumentAnnotation]) -> [PDFReaderState.AnnotationKey] {
         var keys: [(PDFReaderState.AnnotationKey, String)] = []
         for item in databaseAnnotations {
-            guard self.validate(databaseAnnotation: DatabaseAnnotation(item: item)) else { continue }
+            guard self.validate(databaseAnnotation: PDFDatabaseAnnotation(item: item)) else { continue }
             keys.append((PDFReaderState.AnnotationKey(key: item.key, type: .database), item.annotationSortIndex))
         }
         for annotation in documentAnnotations.values {
@@ -1659,7 +1684,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         return keys.map({ $0.0 })
     }
 
-    private func validate(databaseAnnotation: DatabaseAnnotation) -> Bool {
+    private func validate(databaseAnnotation: PDFDatabaseAnnotation) -> Bool {
         if databaseAnnotation._page == nil {
             return false
         }
@@ -1723,8 +1748,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
     }
 
-    private func loadAnnotations(from document: PSPDFKit.Document, library: Library, username: String, displayName: String) -> [String: DocumentAnnotation] {
-        var annotations: [String: DocumentAnnotation] = [:]
+    private func loadAnnotations(from document: PSPDFKit.Document, library: Library, username: String, displayName: String) -> [String: PDFDocumentAnnotation] {
+        var annotations: [String: PDFDocumentAnnotation] = [:]
         for (_, pdfAnnotations) in document.allAnnotations(of: AnnotationsConfig.supported) {
             for pdfAnnotation in pdfAnnotations {
                 // Check whether square annotation was previously created by Zotero. If it's just "normal" square (instead of our image) annotation, don't convert it to Zotero annotation.
@@ -1776,7 +1801,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         // Update database keys based on realm notification
         var updatedKeys: [PDFReaderState.AnnotationKey] = []
         // Collect modified, deleted and inserted annotations to update the `Document`
-        var updatedPdfAnnotations: [(PSPDFKit.Annotation, DatabaseAnnotation)] = []
+        var updatedPdfAnnotations: [(PSPDFKit.Annotation, PDFDatabaseAnnotation)] = []
         var deletedPdfAnnotations: [PSPDFKit.Annotation] = []
         var insertedPdfAnnotations: [PSPDFKit.Annotation] = []
 
@@ -1789,9 +1814,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
             let key = keys[index]
             guard let item = objects.filter(.key(key.key)).first else { continue }
-            let annotation = DatabaseAnnotation(item: item)
+            let annotation = PDFDatabaseAnnotation(item: item)
 
-            if self.canUpdate(key: key, item: item, at: index, viewModel: viewModel) {
+            if canUpdate(key: key, item: item, at: index, viewModel: viewModel) {
                 DDLogInfo("PDFReaderActionHandler: update key \(key)")
                 updatedKeys.append(key)
 
@@ -1827,7 +1852,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 selectionDeleted = true
             }
 
-            let oldAnnotation = DatabaseAnnotation(item: viewModel.state.databaseAnnotations[index])
+            let oldAnnotation = PDFDatabaseAnnotation(item: viewModel.state.databaseAnnotations[index])
             guard let pdfAnnotation = viewModel.state.document.annotations(at: PageIndex(oldAnnotation.page)).first(where: { $0.key == oldAnnotation.key }) else { continue }
             DDLogInfo("PDFReaderActionHandler: delete PDF annotation")
             deletedPdfAnnotations.append(pdfAnnotation)
@@ -1849,7 +1874,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             keys.insert(PDFReaderState.AnnotationKey(key: item.key, type: .database), at: index)
             DDLogInfo("PDFReaderActionHandler: insert key \(item.key)")
 
-            let annotation = DatabaseAnnotation(item: item)
+            let annotation = PDFDatabaseAnnotation(item: item)
 
             switch item.changeType {
             case .user:
@@ -1965,31 +1990,32 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 state.changes.insert(.sidebarEditing)
             }
         }
-    }
 
-    private func canUpdate(key: PDFReaderState.AnnotationKey, item: RItem, at index: Int, viewModel: ViewModel<PDFReaderActionHandler>) -> Bool {
-        // If there was a sync type change, always update item
-        switch item.changeType {
-        case .sync:
-            // If sync happened and this item changed, always update item
-            return true
+        func canUpdate(key: PDFReaderState.AnnotationKey, item: RItem, at index: Int, viewModel: ViewModel<PDFReaderActionHandler>) -> Bool {
+            // If there was a sync type change, always update item
+            switch item.changeType {
+            case .sync:
+                // If sync happened and this item changed, always update item
+                return true
 
-        case .syncResponse:
-            // This is a response to local changes being synced to backend, can be ignored
-            return false
-        case .user: break
+            case .syncResponse:
+                // This is a response to local changes being synced to backend, can be ignored
+                return false
+                
+            case .user: break
+            }
+
+            // Check whether selected annotation's comment is being edited.
+            guard viewModel.state.selectedAnnotationCommentActive && viewModel.state.selectedAnnotationKey == key else { return true }
+
+            // Check whether the comment actually changed.
+            let newComment = item.fields.filter(.key(FieldKeys.Item.Annotation.comment)).first?.value
+            let oldComment = viewModel.state.databaseAnnotations[index].fields.filter(.key(FieldKeys.Item.Annotation.comment)).first?.value
+            return oldComment == newComment
         }
-
-        // Check whether selected annotation's comment is being edited.
-        guard viewModel.state.selectedAnnotationCommentActive && viewModel.state.selectedAnnotationKey == key else { return true }
-
-        // Check whether the comment actually changed.
-        let newComment = item.fields.filter(.key(FieldKeys.Item.Annotation.comment)).first?.value
-        let oldComment = viewModel.state.databaseAnnotations[index].fields.filter(.key(FieldKeys.Item.Annotation.comment)).first?.value
-        return oldComment == newComment
     }
 
-    private func update(pdfAnnotation: PSPDFKit.Annotation, with annotation: DatabaseAnnotation, parentKey: String, libraryId: LibraryIdentifier, interfaceStyle: UIUserInterfaceStyle) {
+    private func update(pdfAnnotation: PSPDFKit.Annotation, with annotation: PDFDatabaseAnnotation, parentKey: String, libraryId: LibraryIdentifier, interfaceStyle: UIUserInterfaceStyle) {
         guard let boundingBoxConverter = self.delegate else { return }
 
         var changes: PdfAnnotationChanges = []

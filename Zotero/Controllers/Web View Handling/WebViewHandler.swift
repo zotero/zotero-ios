@@ -30,7 +30,7 @@ final class WebViewHandler: NSObject {
 
     // MARK: - Lifecycle
 
-    init(webView: WKWebView, javascriptHandlers: [String]?) {
+    init(webView: WKWebView, javascriptHandlers: [String]?, userAgent: String? = nil) {
         let storage = HTTPCookieStorage.sharedCookieStorage(forGroupContainerIdentifier: AppGroup.identifier)
         storage.cookieAcceptPolicy = .always
 
@@ -45,6 +45,7 @@ final class WebViewHandler: NSObject {
         super.init()
 
         webView.navigationDelegate = self
+        webView.customUserAgent = "Zotero_iOS/\(DeviceInfoProvider.versionString ?? "")-\(DeviceInfoProvider.buildString ?? "")"
 
         if let handlers = javascriptHandlers {
             handlers.forEach { handler in
@@ -92,7 +93,7 @@ final class WebViewHandler: NSObject {
     }
 
     func sendMessaging(response payload: [String: Any], for messageId: Int) {
-        let script = "Zotero.Messaging.receiveResponse('\(messageId)', \(WKWebView.encodeAsJSONForJavascript(payload)));"
+        let script = "Zotero.Messaging.receiveResponse('\(messageId)', \(WebViewEncoder.encodeAsJSONForJavascript(payload)));"
         inMainThread { [weak self] in
             self?.webView?.evaluateJavaScript(script, completionHandler: nil)
         }

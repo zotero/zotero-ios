@@ -99,27 +99,49 @@ final class AnnotationView: UIView {
     /// - parameter library: Library of given annotation
     /// - parameter pdfAnnotationsCoordinatorDelegate: Delegate for getting share menu.
     /// - parameter state: State required for setting up share menu.
-    func setup(with annotation: Annotation, comment: Comment?, preview: UIImage?, selected: Bool, availableWidth: CGFloat, library: Library, currentUserId: Int, displayName: String, username: String,
-               boundingBoxConverter: AnnotationBoundingBoxConverter, pdfAnnotationsCoordinatorDelegate: PdfAnnotationsCoordinatorDelegate, state: PDFReaderState) {
+    func setup(
+        with annotation: PDFAnnotation,
+        comment: Comment?,
+        preview: UIImage?,
+        selected: Bool,
+        availableWidth: CGFloat,
+        library: Library,
+        currentUserId: Int,
+        displayName: String,
+        username: String,
+        boundingBoxConverter: AnnotationBoundingBoxConverter,
+        pdfAnnotationsCoordinatorDelegate: PdfAnnotationsCoordinatorDelegate,
+        state: PDFReaderState
+    ) {
         let editability = annotation.editability(currentUserId: currentUserId, library: library)
         let color = UIColor(hex: annotation.color)
         let canEdit = editability == .editable && selected
+        let author = library.identifier == .custom(.myLibrary) ? "" : annotation.author(displayName: displayName, username: username)
 
         self.header.setup(
-            with: annotation,
-            libraryId: library.identifier,
+            type: annotation.type,
+            authorName: author,
+            pageLabel: annotation.pageLabel,
+            colorHex: annotation.color,
             shareMenuProvider: { button in
                 pdfAnnotationsCoordinatorDelegate.createShareAnnotationMenu(state: state, annotation: annotation, sender: button)
             },
             isEditable: (editability != .notEditable && selected),
             showsLock: editability != .editable,
-            accessibilityType: .cell,
-            displayName: displayName,
-            username: username
+            accessibilityType: .cell
         )
-        self.setupContent(for: annotation, preview: preview, color: color, canEdit: canEdit, selected: selected, availableWidth: availableWidth, accessibilityType: .cell, boundingBoxConverter: boundingBoxConverter)
+        self.setupContent(
+            for: annotation,
+            preview: preview,
+            color: color,
+            canEdit: canEdit,
+            selected: selected,
+            availableWidth: availableWidth,
+            accessibilityType: .cell,
+            boundingBoxConverter: boundingBoxConverter
+        )
         self.setup(comment: comment, canEdit: canEdit)
-        self.setupTags(for: annotation, canEdit: canEdit, accessibilityEnabled: selected)
+        self.setup(tags: annotation.tags, canEdit: canEdit, accessibilityEnabled: selected)
         self.setupObserving()
 
         let commentButtonIsHidden = self.commentTextView.isHidden
@@ -132,8 +154,33 @@ final class AnnotationView: UIView {
         self.bottomSeparator.isHidden = (self.tags.isHidden && self.tagsButton.isHidden) || (self.commentTextView.isHidden && commentButtonIsHidden && highlightContentIsHidden && imageContentIsHidden)
     }
 
-    private func setupContent(for annotation: Annotation, preview: UIImage?, color: UIColor, canEdit: Bool, selected: Bool, availableWidth: CGFloat, accessibilityType: AccessibilityType,
-                              boundingBoxConverter: AnnotationBoundingBoxConverter) {
+    private func setupContent(type: AnnotationType, comment: String, text: String?, color: UIColor, canEdit: Bool, selected: Bool, availableWidth: CGFloat, accessibilityType: AccessibilityType) {
+        guard let highlightContent = self.highlightContent else { return }
+
+        highlightContent.isUserInteractionEnabled = false
+        highlightContent.isHidden = type != .highlight
+        self.imageContent?.isHidden = true
+
+        switch type {
+        case .highlight:
+            let bottomInset = self.inset(from: self.layout.highlightLineVerticalInsets, hasComment: !comment.isEmpty, selected: selected, canEdit: canEdit)
+            highlightContent.setup(with: color, text: (text ?? ""), bottomInset: bottomInset, accessibilityType: accessibilityType)
+
+        case .image, .ink, .note:
+            break
+        }
+    }
+
+    private func setupContent(
+        for annotation: PDFAnnotation,
+        preview: UIImage?,
+        color: UIColor,
+        canEdit: Bool,
+        selected: Bool,
+        availableWidth: CGFloat,
+        accessibilityType: AccessibilityType,
+        boundingBoxConverter: AnnotationBoundingBoxConverter
+    ) {
         guard let highlightContent = self.highlightContent, let imageContent = self.imageContent else { return }
 
         highlightContent.isUserInteractionEnabled = false
@@ -198,8 +245,8 @@ final class AnnotationView: UIView {
         }
     }
 
-    private func setupTags(for annotation: Annotation, canEdit: Bool, accessibilityEnabled: Bool) {
-        guard !annotation.tags.isEmpty else {
+    private func setup(tags: [Tag], canEdit: Bool, accessibilityEnabled: Bool) {
+        guard !tags.isEmpty else {
             self.tagsButton.isHidden = !canEdit
             self.tagsButton.accessibilityLabel = L10n.Pdf.AnnotationsSidebar.addTags
             self.tagsButton.isAccessibilityElement = true
@@ -207,7 +254,7 @@ final class AnnotationView: UIView {
             return
         }
 
-        let tagString = AnnotationView.attributedString(from: annotation.tags, layout: self.layout)
+        let tagString = AnnotationView.attributedString(from: tags, layout: self.layout)
         self.tags.setup(with: tagString)
 
         self.tagsButton.isHidden = true

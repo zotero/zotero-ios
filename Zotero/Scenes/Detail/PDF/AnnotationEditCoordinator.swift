@@ -16,19 +16,20 @@ final class AnnotationEditCoordinator: Coordinator {
     var childCoordinators: [Coordinator]
     weak var navigationController: UINavigationController?
 
-    private let annotation: Annotation
-    private let userId: Int
-    private let library: Library
+    private let data: AnnotationEditState.AnnotationData
     private let saveAction: AnnotationEditSaveAction
     private let deleteAction: AnnotationEditDeleteAction
     private unowned let controllers: Controllers
     private let disposeBag: DisposeBag
 
-    init(annotation: Annotation, userId: Int, library: Library, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction,
-         navigationController: NavigationViewController, controllers: Controllers) {
-        self.annotation = annotation
-        self.userId = userId
-        self.library = library
+    init(
+        data: AnnotationEditState.AnnotationData,
+        saveAction: @escaping AnnotationEditSaveAction,
+        deleteAction: @escaping AnnotationEditDeleteAction,
+        navigationController: NavigationViewController,
+        controllers: Controllers
+    ) {
+        self.data = data
         self.saveAction = saveAction
         self.deleteAction = deleteAction
         self.navigationController = navigationController
@@ -46,7 +47,7 @@ final class AnnotationEditCoordinator: Coordinator {
     }
 
     func start(animated: Bool) {
-        let state = AnnotationEditState(annotation: self.annotation, userId: self.userId, library: self.library)
+        let state = AnnotationEditState(data: data)
         let handler = AnnotationEditActionHandler()
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = AnnotationEditViewController(viewModel: viewModel, includeColorPicker: true, saveAction: self.saveAction, deleteAction: self.deleteAction)

@@ -301,7 +301,7 @@ final class DetailCoordinator: Coordinator {
         let controller = createPDFController(key: key, parentKey: parentKey, library: library, url: url)
         navigationController?.present(controller, animated: true, completion: nil)
     }
-    
+
     private func showWebView(for url: URL) {
         guard let currentNavigationController = self.navigationController else { return }
         let controller = WebViewController(url: url)

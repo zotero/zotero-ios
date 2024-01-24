@@ -1,5 +1,5 @@
 //
-//  PDFSettingsActionHandler.swift
+//  ReaderSettingsActionHandler.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 02.03.2022.
@@ -10,40 +10,40 @@ import Foundation
 
 import PSPDFKit
 
-struct PDFSettingsActionHandler: ViewModelActionHandler {
-    typealias Action = PDFSettingsAction
-    typealias State = PDFSettingsState
+struct ReaderSettingsActionHandler: ViewModelActionHandler {
+    typealias Action = ReaderSettingsAction
+    typealias State = ReaderSettingsState
 
-    func process(action: PDFSettingsAction, in viewModel: ViewModel<PDFSettingsActionHandler>) {
+    func process(action: ReaderSettingsAction, in viewModel: ViewModel<ReaderSettingsActionHandler>) {
         switch action {
         case .setTransition(let pageTransition):
             self.update(viewModel: viewModel) { state in
-                state.settings.transition = pageTransition
+                state.transition = pageTransition
             }
 
         case .setPageMode(let pageMode):
             self.update(viewModel: viewModel) { state in
-                state.settings.pageMode = pageMode
+                state.pageMode = pageMode
             }
 
         case .setDirection(let direction):
             self.update(viewModel: viewModel) { state in
-                state.settings.direction = direction
+                state.scrollDirection = direction
             }
 
         case .setPageFitting(let fitting):
             self.update(viewModel: viewModel) { state in
-                state.settings.pageFitting = fitting
+                state.pageFitting = fitting
             }
 
-        case .setAppearanceMode(let appearanceMode):
+        case .setAppearance(let appearance):
             self.update(viewModel: viewModel) { state in
-                state.settings.appearanceMode = appearanceMode
+                state.appearance = appearance
             }
 
         case .setIdleTimerDisabled(let disabled):
             self.update(viewModel: viewModel) { state in
-                state.settings.idleTimerDisabled = disabled
+                state.idleTimerDisabled = disabled
             }
         }
     }

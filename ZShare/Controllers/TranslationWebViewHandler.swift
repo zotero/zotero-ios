@@ -136,14 +136,14 @@ final class TranslationWebViewHandler {
                    }
                    .flatMap { translators -> Single<Any> in
                        DDLogInfo("WebViewHandler: encode translators")
-                       let encodedTranslators = WKWebView.encodeAsJSONForJavascript(translators)
+                       let encodedTranslators = WebViewEncoder.encodeAsJSONForJavascript(translators)
                        return self.webViewHandler.call(javascript: "initTranslators(\(encodedTranslators));")
                    }
                    .flatMap({ _ -> Single<Any> in
                        DDLogInfo("WebViewHandler: call translate js")
-                       let encodedHtml = WKWebView.encodeForJavascript(html.data(using: .utf8))
+                       let encodedHtml = WebViewEncoder.encodeForJavascript(html.data(using: .utf8))
                        let jsonFramesData = try? JSONSerialization.data(withJSONObject: frames, options: .fragmentsAllowed)
-                       let encodedFrames = jsonFramesData.flatMap({ WKWebView.encodeForJavascript($0) }) ?? "''"
+                       let encodedFrames = jsonFramesData.flatMap({ WebViewEncoder.encodeForJavascript($0) }) ?? "''"
                        return self.webViewHandler.call(javascript: "translate('\(url.absoluteString)', \(encodedHtml), \(encodedFrames));")
                    })
                    .subscribe(onFailure: { [weak self] error in
@@ -169,8 +169,8 @@ final class TranslationWebViewHandler {
                 return Disposables.create()
             }
 
-            let encodedSchema = WKWebView.encodeForJavascript(schemaData)
-            let encodedFormats = WKWebView.encodeForJavascript(dateFormatData)
+            let encodedSchema = WebViewEncoder.encodeForJavascript(schemaData)
+            let encodedFormats = WebViewEncoder.encodeForJavascript(dateFormatData)
 
             DDLogInfo("WebViewHandler: loaded bundled files")
 
