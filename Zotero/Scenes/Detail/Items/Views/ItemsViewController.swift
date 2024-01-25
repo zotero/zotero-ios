@@ -302,7 +302,11 @@ final class ItemsViewController: UIViewController {
             self.coordinatorDelegate?.showCiteExport(for: selectedKeys, libraryId: self.viewModel.state.library.identifier)
 
         case .copyBibliography:
-            coordinatorDelegate?.copyBibliography(using: self, for: selectedKeys, libraryId: viewModel.state.library.identifier, delegate: nil)
+            var presenter: UIViewController = self
+            if let searchController = navigationItem.searchController, searchController.isActive {
+                presenter = searchController
+            }
+            coordinatorDelegate?.copyBibliography(using: presenter, for: selectedKeys, libraryId: viewModel.state.library.identifier, delegate: nil)
 
         case .copyCitation:
             coordinatorDelegate?.showCitation(using: nil, for: selectedKeys, libraryId: viewModel.state.library.identifier, delegate: nil)
