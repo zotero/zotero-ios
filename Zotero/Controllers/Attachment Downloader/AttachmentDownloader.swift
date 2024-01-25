@@ -62,12 +62,17 @@ final class AttachmentDownloader: NSObject {
         let extractAfterDownload: Bool
     }
 
-    private struct DownloadInProgress {
+    private struct ActiveDownload {
         let taskId: Int
         let file: File
         let progress: Progress
         let extractAfterDownload: Bool
         let logData: ApiLogger.StartData?
+    }
+
+    private struct Extraction {
+        let progress: Progress
+        let observer: NSKeyValueObservation
     }
 
     private static let maxConcurrentDownloads = 4
@@ -85,8 +90,9 @@ final class AttachmentDownloader: NSObject {
 
     private var session: URLSession!
     private var queue: [EnqueuedDownload]
-    private var activeDownloads: [Download: DownloadInProgress]
-    private var extractionObservers: [Download: NSKeyValueObservation]
+    private var activeDownloads: [Download: ActiveDownload]
+    private var taskIdToDownload: [Int: Download]
+    private var extractions: [Download: Extraction]
     private var totalCount: Int
     private var errors: [Download: Swift.Error]
     private var initialErrors: [Int: Swift.Error]
@@ -115,6 +121,9 @@ final class AttachmentDownloader: NSObject {
         self.dbStorage = dbStorage
         self.webDavController = webDavController
         queue = []
+        activeDownloads = [:]
+        taskIdToDownload = [:]
+        extractions = [:]
         totalCount = 0
         errors = [:]
         initialErrors = [:]
@@ -126,9 +135,10 @@ final class AttachmentDownloader: NSObject {
 
         super.init()
 
-        session = URLSessionCreator.createSession(for: Self.sessionId, delegate: self, httpMaximumConnectionsPerHost: 1)
-        session.getAllTasks { tasks in
-            resumeDownloads(tasks: tasks)
+        session = URLSessionCreator.createSession(for: Self.sessionId, delegate: self, httpMaximumConnectionsPerHost: Self.maxConcurrentDownloads)
+        session.getAllTasks { [weak self] tasks in
+            guard let self else { return }
+            resumeDownloads(tasks: tasks, self: self)
         }
 
         NotificationCenter.default
@@ -136,21 +146,20 @@ final class AttachmentDownloader: NSObject {
             .notification(.attachmentFileDeleted)
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] notification in
-                guard let self, let notification = notification.object as? AttachmentFileDeletedNotification else {
-                    return
-                }
+                guard let self, let notification = notification.object as? AttachmentFileDeletedNotification else { return }
                 handleDeletedAttachments(notification: notification, self: self)
             })
             .disposed(by: disposeBag)
 
-        func resumeDownloads(tasks: [URLSessionTask]) {
+        func resumeDownloads(tasks: [URLSessionTask], self: AttachmentDownloader) {
             var taskIds: Set<Int> = []
             for task in tasks {
                 taskIds.insert(task.taskIdentifier)
             }
 
-            dbQueue.async { [weak self] in
-                let (cancelledTaskIds, activeDownloads, downloadsToRestore) = loadDatabaseDownloads(existingTaskIds: taskIds)
+            self.dbQueue.async { [weak self] in
+                guard let self else { return }
+                let (cancelledTaskIds, activeDownloads, downloadsToRestore) = loadDatabaseDownloads(existingTaskIds: taskIds, self: self)
 
                 DDLogInfo("AttachmentDownloader: cancel stored downloads - \(cancelledTaskIds.count)")
                 for taskId in cancelledTaskIds {
@@ -160,36 +169,36 @@ final class AttachmentDownloader: NSObject {
 
                 guard !activeDownloads.isEmpty || !downloadsToRestore.isEmpty else { return }
 
-                self?.accessQueue.async(flags: .barrier) { [weak self] in
+                self.accessQueue.async(flags: .barrier) { [weak self] in
                     guard let self else { return }
 
                     DDLogInfo("AttachmentDownloader: cache downloads in progress - \(activeDownloads.count); restore downloads - \(downloadsToRestore.count)")
 
-                    batchProgress = Progress()
-                    let failedDownloads = storeDownloadData(for: activeDownloads)
-                    queue = downloadsToRestore
+                    self.batchProgress = Progress()
+                    let failedDownloads = storeDownloadData(for: activeDownloads, self: self)
+                    self.queue = downloadsToRestore
 
                     for download in activeDownloads.filter({ activeDownloadData in !failedDownloads.contains(where: { $0.0 == activeDownloadData.1.download }) }) {
-                        observable.on(.next(Update(download: download.1.download, kind: .progress(0))))
+                        self.observable.on(.next(Update(download: download.1.download, kind: .progress(0))))
                     }
                     for download in downloadsToRestore {
-                        addProgressToBatchProgress(progress: download.progress)
-                        observable.on(.next(Update(download: download.download, kind: .progress(0))))
+                        self.addProgressToBatchProgress(progress: download.progress)
+                        self.observable.on(.next(Update(download: download.download, kind: .progress(0))))
                     }
 
-                    startNextDownloadIfPossible()
+                    self.startNextDownloadIfPossible()
 
                     guard !failedDownloads.isEmpty else { return }
 
                     for failed in failedDownloads {
-                        observable.on(.next(Update(download: failed.0, kind: .failed(failed.1))))
+                        self.observable.on(.next(Update(download: failed.0, kind: .failed(failed.1))))
                     }
 
-                    dbQueue.async { [weak self] in
+                    self.dbQueue.async { [weak self] in
                         guard let self else { return }
                         do {
                             let requests = failedDownloads.map({ DeleteDownloadDbRequest(key: $0.0.key, libraryId: $0.0.libraryId) })
-                            try dbStorage.perform(writeRequests: requests, on: dbQueue)
+                            try self.dbStorage.perform(writeRequests: requests, on: self.dbQueue)
                         } catch let error {
                             DDLogError("AttachmentDownloader: can't update downloads - \(error)")
                         }
@@ -198,21 +207,21 @@ final class AttachmentDownloader: NSObject {
             }
         }
 
-        func loadDatabaseDownloads(existingTaskIds: Set<Int>) -> (Set<Int>, [(Int, EnqueuedDownload)], [EnqueuedDownload]) {
+        func loadDatabaseDownloads(existingTaskIds: Set<Int>, self: AttachmentDownloader) -> (Set<Int>, [(Int, EnqueuedDownload)], [EnqueuedDownload]) {
             var cancelledTaskIds: Set<Int> = []
             var activeDownloads: [(Int, EnqueuedDownload)] = []
             var downloadsToRestore: [EnqueuedDownload] = []
 
             do {
                 var toDelete: [Download] = []
-                let downloads = try dbStorage.perform(request: ReadAllDownloadsDbRequest(), on: dbQueue)
+                let downloads = try self.dbStorage.perform(request: ReadAllDownloadsDbRequest(), on: self.dbQueue)
                 for rDownload in downloads {
                     guard let libraryId = rDownload.libraryId else { continue }
 
                     let download = Download(key: rDownload.key, parentKey: rDownload.parentKey, libraryId: libraryId)
 
-                    guard let attachmentItem = try? dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: rDownload.key), on: dbQueue),
-                          let attachment = AttachmentCreator.attachment(for: attachmentItem, fileStorage: fileStorage, urlDetector: nil),
+                    guard let attachmentItem = try? self.dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: rDownload.key), on: self.dbQueue),
+                          let attachment = AttachmentCreator.attachment(for: attachmentItem, fileStorage: self.fileStorage, urlDetector: nil),
                           case .file(let filename, let contentType, _, _, _) = attachment.type else {
                         // Attachment item doesn't exist anymore, cancel download
                         toDelete.append(download)
@@ -234,7 +243,7 @@ final class AttachmentDownloader: NSObject {
                 }
 
                 let requests = toDelete.map({ DeleteDownloadDbRequest(key: $0.key, libraryId: $0.libraryId) })
-                try dbStorage.perform(writeRequests: requests, on: dbQueue)
+                try self.dbStorage.perform(writeRequests: requests, on: self.dbQueue)
             } catch let error {
                 DDLogError("AttachmentDownloader: can't load downloads - \(error)")
             }
@@ -242,19 +251,26 @@ final class AttachmentDownloader: NSObject {
             return (cancelledTaskIds, activeDownloads, downloadsToRestore)
         }
 
-        func storeDownloadData(for downloads: [(Int, EnqueuedDownload)]) -> [(Download, Swift.Error)] {
+        func storeDownloadData(for downloads: [(Int, EnqueuedDownload)], self: AttachmentDownloader) -> [(Download, Swift.Error)] {
             var failed: [(Download, Swift.Error)] = []
             for (taskId, enqueuedDownload) in downloads {
                 DDLogInfo("AttachmentDownloader: cached \(taskId); \(enqueuedDownload.download.key); (\(enqueuedDownload.download.parentKey ?? "-")); \(enqueuedDownload.download.libraryId)")
                 let progress = Progress(totalUnitCount: 100)
-                batchProgress?.addChild(progress, withPendingUnitCount: 100)
-                totalCount += 1
-                if let error = initialErrors[taskId] {
-                    errors[enqueuedDownload.download] = error
+                self.batchProgress?.addChild(progress, withPendingUnitCount: 100)
+                self.totalCount += 1
+                if let error = self.initialErrors[taskId] {
+                    self.errors[enqueuedDownload.download] = error
                     progress.completedUnitCount = 100
                     failed.append((enqueuedDownload.download, error))
                 }
-                activeDownloads[enqueuedDownload.download] = DownloadInProgress(taskId: taskId, file: enqueuedDownload.file, progress: progress, extractAfterDownload: false, logData: nil)
+                self.activeDownloads[enqueuedDownload.download] = ActiveDownload(
+                    taskId: taskId,
+                    file: enqueuedDownload.file,
+                    progress: progress,
+                    extractAfterDownload: false,
+                    logData: nil
+                )
+                self.taskIdToDownload[taskId] = enqueuedDownload.download
             }
             return failed
         }
@@ -392,20 +408,20 @@ final class AttachmentDownloader: NSObject {
         }
 
         func download(file: File, key: String, parentKey: String?, libraryId: LibraryIdentifier) {
+            dbQueue.async { [weak self] in
+                guard let self else { return }
+                do {
+                    let request = CreateEditDownloadDbRequest(taskId: nil, key: key, parentKey: parentKey, libraryId: libraryId)
+                    try dbStorage.perform(request: request, on: dbQueue)
+                } catch let error {
+                    DDLogError("AttachmentDownloader: couldn't store download to db - \(error)")
+                }
+            }
+
             accessQueue.async(flags: .barrier) { [weak self] in
                 guard let self else { return }
 
                 DDLogInfo("AttachmentDownloader: enqueue \(key)")
-
-                dbQueue.async { [weak self] in
-                    guard let self else { return }
-                    do {
-                        let request = CreateEditDownloadDbRequest(taskId: nil, key: key, parentKey: parentKey, libraryId: libraryId)
-                        try dbStorage.perform(request: request, on: dbQueue)
-                    } catch let error {
-                        DDLogError("AttachmentDownloader: couldn't store download to db - \(error)")
-                    }
-                }
 
                 let progress = Progress(totalUnitCount: 100)
                 addProgressToBatchProgress(progress: progress)
@@ -418,22 +434,13 @@ final class AttachmentDownloader: NSObject {
     }
 
     private func extract(zipFile: File, toFile file: File, download: Download) {
-        accessQueue.async { [weak self] in
-            guard let self, let activeDownload = activeDownloads[download] else { return }
-            // Reset progress for extraction
-            activeDownload.progress.completedUnitCount = 0
-            unzipQueue.async { [weak self] in
-                guard let self else { return }
-                extract(zipFile: zipFile, toFile: file, progress: activeDownload.progress, download: download, self: self)
-            }
-        }
-
-        func extract(zipFile: File, toFile file: File, progress: Progress, download: Download, self: AttachmentDownloader) {
+        unzipQueue.async { [weak self] in
+            guard let self else { return }
             do {
                 // Check whether zip file exists
-                if !self.fileStorage.has(zipFile) {
+                if !fileStorage.has(zipFile) {
                     // Check whether file exists
-                    if !self.fileStorage.has(file) {
+                    if !fileStorage.has(file) {
                         throw AttachmentDownloader.Error.cantUnzipSnapshot
                     }
 
@@ -442,78 +449,73 @@ final class AttachmentDownloader: NSObject {
                     finishExtraction(self: self)
                     return
                 }
-
-                // Send first progress update
-                self.observable.on(.next(Update(download: download, kind: .progress(0))))
                 // Remove other contents of folder so that zip extraction doesn't fail
-                let files: [File] = try self.fileStorage.contentsOfDirectory(at: zipFile.directory)
+                let files: [File] = try fileStorage.contentsOfDirectory(at: zipFile.directory)
                 for file in files {
                     guard file.name != zipFile.name || file.ext != zipFile.ext else { continue }
-                    try? self.fileStorage.remove(file)
+                    try? fileStorage.remove(file)
                 }
+                let progress = Progress(totalUnitCount: 100)
                 let observer = progress.observe(\.fractionCompleted) { [weak self] progress, _ in
-                    self?.observable.on(.next(Update(download: download, kind: .progress(CGFloat(progress.fractionCompleted)))))
+                    guard let self else { return }
+                    let completedCount = progress.completedUnitCount
+                    accessQueue.sync { [weak self] in
+                        self?.extractions[download]?.progress.completedUnitCount = completedCount
+                    }
+                    observable.on(.next(Update(download: download, kind: .progress(CGFloat(progress.fractionCompleted)))))
                 }
-                self.accessQueue.sync(flags: .barrier) { [weak self] in
-                    self?.extractionObservers[download] = observer
+                accessQueue.sync(flags: .barrier) { [weak self] in
+                    self?.extractions[download] = Extraction(progress: progress, observer: observer)
                 }
+                // Send first progress update
+                observable.on(.next(Update(download: download, kind: .progress(0))))
                 // Unzip to same directory
                 try FileManager.default.unzipItem(at: zipFile.createUrl(), to: zipFile.createRelativeUrl(), progress: progress)
                 // Try removing zip file, don't return error if it fails, we've got what we wanted.
-                try? self.fileStorage.remove(zipFile)
+                try? fileStorage.remove(zipFile)
                 // Rename unzipped file if zip contained only 1 file and the names don't match
-                let unzippedFiles: [File] = try self.fileStorage.contentsOfDirectory(at: file.directory)
+                let unzippedFiles: [File] = try fileStorage.contentsOfDirectory(at: file.directory)
                 if unzippedFiles.count == 1, let unzipped = unzippedFiles.first, (unzipped.name != file.name) || (unzipped.ext != file.ext) {
-                    try? self.fileStorage.move(from: unzipped, to: file)
+                    try? fileStorage.move(from: unzipped, to: file)
                 }
                 // Check whether file exists
-                if !self.fileStorage.has(file) {
+                if !fileStorage.has(file) {
                     throw AttachmentDownloader.Error.zipDidntContainRequestedFile
                 }
-
                 finishExtraction(self: self)
             } catch let error {
                 DDLogError("AttachmentDownloader: unzip error - \(error)")
-
                 if let error = error as? AttachmentDownloader.Error {
                     report(error: error, self: self)
                 } else {
                     report(error: AttachmentDownloader.Error.cantUnzipSnapshot, self: self)
                 }
             }
+        }
 
-            func finishExtraction(self: AttachmentDownloader) {
-                self.dbQueue.async { [weak self] in
-                    guard let self else { return }
-
-                    do {
-                        try dbStorage.perform(request: MarkFileAsDownloadedDbRequest(key: download.key, libraryId: download.libraryId, downloaded: true, compressed: false), on: dbQueue)
-
-                        self.accessQueue.async(flags: .barrier) { [weak self] in
-                            guard let self else { return }
-                            extractionObservers[download] = nil
-                            activeDownloads[download] = nil
-                            resetBatchDataIfNeeded()
-                            observable.on(.next(Update(download: download, kind: .ready)))
-                            startNextDownloadIfPossible()
-                        }
-                    } catch let error {
-                        DDLogError("AttachmentDownloader: can't store new compressed value - \(error)")
-                        report(error: AttachmentDownloader.Error.cantUnzipSnapshot, self: self)
+        func finishExtraction(self: AttachmentDownloader) {
+            self.dbQueue.async { [weak self] in
+                guard let self else { return }
+                do {
+                    try self.dbStorage.perform(request: MarkFileAsDownloadedDbRequest(key: download.key, libraryId: download.libraryId, downloaded: true, compressed: false), on: self.dbQueue)
+                    self.accessQueue.async(flags: .barrier) { [weak self] in
+                        guard let self else { return }
+                        self.extractions[download] = nil
+                        self.observable.on(.next(Update(download: download, kind: .ready)))
                     }
+                } catch let error {
+                    DDLogError("AttachmentDownloader: can't store new compressed value - \(error)")
+                    report(error: AttachmentDownloader.Error.cantUnzipSnapshot, self: self)
                 }
             }
+        }
 
-            func report(error: Error, self: AttachmentDownloader) {
-                self.accessQueue.async(flags: .barrier) { [weak self] in
-                    guard let self else { return }
-                    errors[download] = error
-                    extractionObservers[download] = nil
-                    activeDownloads[download] = nil
-                    resetBatchDataIfNeeded()
-                    observable.on(.next(Update(download: download, kind: .failed(error))))
-                    startNextDownloadIfPossible()
-                }
+        func report(error: Error, self: AttachmentDownloader) {
+            self.accessQueue.async(flags: .barrier) { [weak self] in
+                guard let self else { return }
+                self.errors[download] = error
+                self.extractions[download] = nil
+                self.observable.on(.next(Update(download: download, kind: .failed(error))))
             }
         }
     }
@@ -540,7 +542,8 @@ final class AttachmentDownloader: NSObject {
             for download in downloads {
                 if let activeDownload = activeDownloads[download] {
                     activeDownloads[download] = nil
-                    extractionObservers[download] = nil
+                    taskIdToDownload[activeDownload.taskId] = nil
+                    extractions[download] = nil
                     taskId = activeDownload.taskId
                 } else if let index = queue.firstIndex(where: { $0.download == download }) {
                     queue.remove(at: index)
@@ -579,7 +582,8 @@ final class AttachmentDownloader: NSObject {
 
             queue = []
             activeDownloads = [:]
-            extractionObservers = [:]
+            taskIdToDownload = [:]
+            extractions = [:]
             errors = [:]
             batchProgress = nil
             totalCount = 0
@@ -609,6 +613,9 @@ final class AttachmentDownloader: NSObject {
             if let activeDownload = activeDownloads[download] {
                 let progress = CGFloat(activeDownload.progress.fractionCompleted)
                 return (progress, error)
+            } else if let extraction = extractions[download] {
+                let progress = CGFloat(extraction.progress.fractionCompleted)
+                return (progress, nil)
             } else if queue.contains(where: { $0.download.key == key && $0.download.libraryId == libraryId }) {
                 return (0, error)
             } else {
@@ -640,18 +647,18 @@ final class AttachmentDownloader: NSObject {
     private func startNextDownloadIfPossible() {
         guard activeDownloads.count < Self.maxConcurrentDownloads && !queue.isEmpty else { return }
 
-        let download = queue.removeFirst()
+        let enqueuedDownload = queue.removeFirst()
 
-        if let task = createDownloadTask(from: download) {
+        if let (task, download, activeDownload) = createDownloadTask(from: enqueuedDownload) {
             // Update local download with task id
             dbQueue.async { [weak self] in
                 guard let self else { return }
                 do {
                     let request = CreateEditDownloadDbRequest(
-                        taskId: currentDownload.taskId,
-                        key: currentDownload.download.key,
-                        parentKey: currentDownload.download.parentKey,
-                        libraryId: currentDownload.download.libraryId
+                        taskId: activeDownload.taskId,
+                        key: download.key,
+                        parentKey: download.parentKey,
+                        libraryId: download.libraryId
                     )
                     try dbStorage.perform(request: request, on: dbQueue)
                 } catch let error {
@@ -666,14 +673,14 @@ final class AttachmentDownloader: NSObject {
         dbQueue.async { [weak self] in
             guard let self else { return }
             do {
-                try dbStorage.perform(request: DeleteDownloadDbRequest(key: download.download.key, libraryId: download.download.libraryId), on: dbQueue)
+                try dbStorage.perform(request: DeleteDownloadDbRequest(key: enqueuedDownload.download.key, libraryId: enqueuedDownload.download.libraryId), on: dbQueue)
             } catch let error {
                 DDLogError("AttachmentDownloader: could not remove unsuccessful task creation from db - \(error)")
             }
         }
         startNextDownloadIfPossible()
 
-        func createDownloadTask(from enqueuedDownload: EnqueuedDownload) -> (URLSessionTask, Download, DownloadInProgress)? {
+        func createDownloadTask(from enqueuedDownload: EnqueuedDownload) -> (URLSessionTask, Download, ActiveDownload)? {
             do {
                 let request: URLRequest
                 if webDavController.sessionStorage.isEnabled {
@@ -689,15 +696,16 @@ final class AttachmentDownloader: NSObject {
                 let download = enqueuedDownload.download
                 DDLogInfo("AttachmentDownloader: create download of \(download.key); (\(String(describing: download.parentKey))); \(download.libraryId) = \(task.taskIdentifier)")
 
-                currentDownload = DownloadInProgress(
-                    download: enqueuedDownload.download,
+                let activeDownload = ActiveDownload(
                     taskId: task.taskIdentifier,
                     file: enqueuedDownload.file,
                     progress: enqueuedDownload.progress,
                     extractAfterDownload: enqueuedDownload.extractAfterDownload,
                     logData: ApiLogger.log(urlRequest: request, encoding: .url, logParams: .headers)
                 )
-                return task
+                activeDownloads[download] = activeDownload
+                taskIdToDownload[task.taskIdentifier] = download
+                return (task, download, activeDownload)
             } catch let error {
                 errors[enqueuedDownload.download] = error
                 observable.on(.next(.init(download: enqueuedDownload.download, kind: .failed(error))))
@@ -706,91 +714,91 @@ final class AttachmentDownloader: NSObject {
         }
     }
 
-    private func finish(download: DownloadInProgress, result: Result<(), Swift.Error>, notifyObserver: Bool = true) {
-        currentDownload = nil
+    private func finish(activeDownload: ActiveDownload, download: Download, result: Result<(Bool), Swift.Error>) {
+        activeDownloads[download] = nil
+        taskIdToDownload[activeDownload.taskId] = nil
         resetBatchDataIfNeeded()
 
-        DDLogInfo("AttachmentDownloader: finished downloading \(download.taskId); \(download.download.key); (\(String(describing: download.download.parentKey))); \(download.download.libraryId)")
+        DDLogInfo("AttachmentDownloader: finished downloading \(activeDownload.taskId); \(download.key); \(download.parentKey ?? "-"); \(download.libraryId)")
 
         dbQueue.sync { [weak self] in
-            guard let self = self else { return }
+            guard let self else { return }
             do {
-                try dbStorage.perform(request: DeleteDownloadDbRequest(key: download.download.key, libraryId: download.download.libraryId), on: self.dbQueue)
+                try dbStorage.perform(request: DeleteDownloadDbRequest(key: download.key, libraryId: download.libraryId), on: dbQueue)
             } catch let error {
                 DDLogError("AttachmentDownloader: could not remove download from db - \(error)")
             }
         }
 
         switch result {
-        case .success:
-            errors[download.download] = nil
+        case .success(let notifyObserver):
+            errors[download] = nil
             if notifyObserver {
-                observable.on(.next(Update(download: download.download, kind: .ready)))
+                observable.on(.next(Update(download: download, kind: .ready)))
             }
 
         case .failure(let error):
             if (error as NSError).code == NSURLErrorCancelled {
-                errors[download.download] = nil
+                errors[download] = nil
                 batchProgress?.totalUnitCount -= 100
-                if notifyObserver {
-                    observable.on(.next(Update(download: download.download, kind: .cancelled)))
+                if totalCount > 0 {
+                    totalCount -= 1
                 }
-            } else if fileStorage.has(download.file) {
-                DDLogError("AttachmentDownloader: failed to download remotely changed attachment \(download.taskId) - \(error)")
-                errors[download.download] = nil
-                if notifyObserver {
-                    observable.on(.next(Update(download: download.download, kind: .ready)))
-                }
+                observable.on(.next(Update(download: download, kind: .cancelled)))
+            } else if fileStorage.has(activeDownload.file) {
+                DDLogError("AttachmentDownloader: failed to download remotely changed attachment \(activeDownload.taskId) - \(error)")
+                errors[download] = nil
+                observable.on(.next(Update(download: download, kind: .ready)))
             } else {
-                DDLogError("AttachmentDownloader: failed to download attachment \(download.taskId) - \(error)")
-                errors[download.download] = error
-                if notifyObserver {
-                    observable.on(.next(Update(download: download.download, kind: .failed(error))))
-                }
+                DDLogError("AttachmentDownloader: failed to download attachment \(activeDownload.taskId) - \(error)")
+                errors[download] = error
+                observable.on(.next(Update(download: download, kind: .failed(error))))
             }
         }
 
-        if notifyObserver {
-            // If observer notification is enabled, file is not being extracted and we can start downloading next file in queue
-            startNextDownloadIfPossible()
-        }
+        // If observer notification is enabled, file is not being extracted and we can start downloading next file in queue
+        startNextDownloadIfPossible()
     }
 
-    private func logResponse(for download: DownloadInProgress, task: URLSessionTask, error: Swift.Error?) {
-        guard let data = download.logData else { return }
+    private func logResponse(for startData: ApiLogger.StartData, task: URLSessionTask, error: Swift.Error?) {
         let statusCode = (task.response as? HTTPURLResponse)?.statusCode ?? -1
         let headers = (task.response as? HTTPURLResponse)?.headers.dictionary
         if let error {
-            ApiLogger.logFailedresponse(error: error, headers: headers, statusCode: statusCode, startData: data)
+            ApiLogger.logFailedresponse(error: error, headers: headers, statusCode: statusCode, startData: startData)
         } else {
-            ApiLogger.logSuccessfulResponse(statusCode: statusCode, data: nil, headers: headers, startData: data)
+            ApiLogger.logSuccessfulResponse(statusCode: statusCode, data: nil, headers: headers, startData: startData)
         }
     }
 }
 
 extension AttachmentDownloader: URLSessionDownloadDelegate {
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
-        var currentDownload: DownloadInProgress?
+        var download: Download?
+        var activeDownload: ActiveDownload?
         accessQueue.sync { [weak self] in
-            currentDownload = self?.currentDownload
+            guard let self else { return }
+            download = taskIdToDownload[downloadTask.taskIdentifier]
+            activeDownload = download.flatMap({ self.activeDownloads[$0] })
         }
-        guard let currentDownload else {
+        guard let download, let activeDownload else {
             DDLogError("AttachmentDownloader: didFinishDownloadingTo \(downloadTask.taskIdentifier) finished but currentDownload is nil")
             return
         }
 
-        logResponse(for: currentDownload, task: downloadTask, error: nil)
+        if let data = activeDownload.logData {
+            logResponse(for: data, task: downloadTask, error: nil)
+        }
         DDLogInfo("AttachmentDownloader: didFinishDownloadingTo \(downloadTask.taskIdentifier)")
 
         var zipFile: File?
-        var shouldExtractAfterDownload = currentDownload.extractAfterDownload
-        var isCompressed = webDavController.sessionStorage.isEnabled && !currentDownload.download.libraryId.isGroupLibrary
+        var shouldExtractAfterDownload = activeDownload.extractAfterDownload
+        var isCompressed = webDavController.sessionStorage.isEnabled && !download.libraryId.isGroupLibrary
         if let response = downloadTask.response as? HTTPURLResponse {
             let _isCompressed = response.value(forHTTPHeaderField: "Zotero-File-Compressed") == "Yes"
             isCompressed = isCompressed || _isCompressed
         }
         if isCompressed {
-            zipFile = currentDownload.file.copyWithExt("zip")
+            zipFile = activeDownload.file.copyWithExt("zip")
         } else {
             shouldExtractAfterDownload = false
         }
@@ -799,34 +807,33 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
             if let error = checkFileResponse(for: Files.file(from: location)) {
                 throw error
             }
-
             // If there is some older version of given file, remove so that it can be replaced
             if let zipFile, fileStorage.has(zipFile) {
                 try fileStorage.remove(zipFile)
             }
-            if fileStorage.has(currentDownload.file) {
-                try fileStorage.remove(currentDownload.file)
+            if fileStorage.has(activeDownload.file) {
+                try fileStorage.remove(activeDownload.file)
             }
             // Move downloaded file to new location
-            try fileStorage.move(from: location.path, to: zipFile ?? currentDownload.file)
+            try fileStorage.move(from: location.path, to: zipFile ?? activeDownload.file)
 
             dbQueue.sync { [weak self] in
                 guard let self else { return }
                 // Mark file as downloaded in DB
-                let request = MarkFileAsDownloadedDbRequest(key: currentDownload.download.key, libraryId: currentDownload.download.libraryId, downloaded: true, compressed: isCompressed)
+                let request = MarkFileAsDownloadedDbRequest(key: download.key, libraryId: download.libraryId, downloaded: true, compressed: isCompressed)
                 try? dbStorage.perform(request: request, on: dbQueue)
             }
 
             accessQueue.sync(flags: .barrier) { [weak self] in
-                self?.finish(download: currentDownload, result: .success(()), notifyObserver: !shouldExtractAfterDownload)
+                self?.finish(activeDownload: activeDownload, download: download, result: .success(!shouldExtractAfterDownload))
             }
 
             if let zipFile, shouldExtractAfterDownload {
-                extract(zipFile: zipFile, toFile: currentDownload.file, download: currentDownload.download)
+                extract(zipFile: zipFile, toFile: activeDownload.file, download: download)
             }
         } catch let error {
             accessQueue.sync(flags: .barrier) { [weak self] in
-                self?.finish(download: currentDownload, result: .failure(error))
+                self?.finish(activeDownload: activeDownload, download: download, result: .failure(error))
             }
         }
 
@@ -843,17 +850,13 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Swift.Error?) {
         accessQueue.sync(flags: .barrier) { [weak self] in
             guard let self, let error else { return }
-
-            if let currentDownload {
-                guard currentDownload.taskId == task.taskIdentifier else {
-                    DDLogError("AttachmentDownloader: task finished with error for other than currentDownload")
-                    return
+            if let download = taskIdToDownload[task.taskIdentifier], let activeDownload = activeDownloads[download] {
+                if let data = activeDownload.logData {
+                    logResponse(for: data, task: task, error: error)
                 }
-                logResponse(for: currentDownload, task: task, error: error)
-                // Normally the `download` instance is available in `taskIdToDownload` and we can succesfully finish the download
-                finish(download: currentDownload, result: .failure(error))
-            } else {
-                // Though in some cases the `URLSession` can report errors before `taskIdToDownload` is populated with data (when app was killed manually for example), so let's just store errors
+                finish(activeDownload: activeDownload, download: download, result: .failure(error))
+            } else if activeDownloads.isEmpty {
+                // Though in some cases the `URLSession` can report errors before `activeDownloads` is populated with data (when app was killed manually for example), so let's just store errors
                 // so that it's apparent that these tasks finished already.
                 initialErrors[task.taskIdentifier] = error
             }
@@ -861,13 +864,16 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
     }
 
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
-        var currentDownload: DownloadInProgress?
+        var download: Download?
+        var activeDownload: ActiveDownload?
         accessQueue.sync { [weak self] in
-            currentDownload = self?.currentDownload
+            guard let self else { return }
+            download = taskIdToDownload[downloadTask.taskIdentifier]
+            activeDownload = download.flatMap({ self.activeDownloads[$0] })
         }
-        guard let currentDownload else { return }
-        currentDownload.progress.completedUnitCount = Int64(Double(totalBytesWritten) / Double(totalBytesExpectedToWrite) * 100)
-        observable.on(.next(Update(download: currentDownload.download, kind: .progress(CGFloat(currentDownload.progress.fractionCompleted)))))
+        guard let download, let activeDownload else { return }
+        activeDownload.progress.completedUnitCount = Int64(Double(totalBytesWritten) / Double(totalBytesExpectedToWrite) * 100)
+        observable.on(.next(Update(download: download, kind: .progress(CGFloat(activeDownload.progress.fractionCompleted)))))
     }
 }
 
