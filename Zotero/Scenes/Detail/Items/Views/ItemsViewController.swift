@@ -587,6 +587,7 @@ final class ItemsViewController: UIViewController {
             })
             .disposed(by: disposeBag)
         controller.obscuresBackgroundDuringPresentation = false
+        controller.delegate = self
         navigationItem.hidesSearchBarWhenScrolling = false
         navigationItem.searchController = controller
     }
@@ -656,5 +657,11 @@ extension ItemsViewController: TagFilterDelegate {
 
     func tagOptionsDidChange() {
         self.updateTagFilter(with: self.viewModel.state)
+    }
+}
+
+extension ItemsViewController: UISearchControllerDelegate {
+    func didDismissSearchController(_ searchController: UISearchController) {
+        viewModel.process(action: .search(""))
     }
 }
