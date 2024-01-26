@@ -302,7 +302,11 @@ final class ItemsViewController: UIViewController {
             self.coordinatorDelegate?.showCiteExport(for: selectedKeys, libraryId: self.viewModel.state.library.identifier)
 
         case .copyBibliography:
-            coordinatorDelegate?.copyBibliography(using: self, for: selectedKeys, libraryId: viewModel.state.library.identifier, delegate: nil)
+            var presenter: UIViewController = self
+            if let searchController = navigationItem.searchController, searchController.isActive {
+                presenter = searchController
+            }
+            coordinatorDelegate?.copyBibliography(using: presenter, for: selectedKeys, libraryId: viewModel.state.library.identifier, delegate: nil)
 
         case .copyCitation:
             coordinatorDelegate?.showCitation(using: nil, for: selectedKeys, libraryId: viewModel.state.library.identifier, delegate: nil)
@@ -583,6 +587,7 @@ final class ItemsViewController: UIViewController {
             })
             .disposed(by: disposeBag)
         controller.obscuresBackgroundDuringPresentation = false
+        controller.delegate = self
         navigationItem.hidesSearchBarWhenScrolling = false
         navigationItem.searchController = controller
     }
@@ -652,5 +657,11 @@ extension ItemsViewController: TagFilterDelegate {
 
     func tagOptionsDidChange() {
         self.updateTagFilter(with: self.viewModel.state)
+    }
+}
+
+extension ItemsViewController: UISearchControllerDelegate {
+    func didDismissSearchController(_ searchController: UISearchController) {
+        viewModel.process(action: .search(""))
     }
 }
