@@ -23,7 +23,7 @@ final class AttachmentDownloader: NSObject {
 
     struct Update {
         enum Kind {
-            case progress(CGFloat)
+            case progress
             case ready
             case failed(Swift.Error)
             case cancelled
@@ -174,25 +174,24 @@ final class AttachmentDownloader: NSObject {
 
                     DDLogInfo("AttachmentDownloader: cache downloads in progress - \(activeDownloads.count); restore downloads - \(downloadsToRestore.count)")
 
-                    self.batchProgress = Progress()
                     let failedDownloads = storeDownloadData(for: activeDownloads, self: self)
                     self.queue = downloadsToRestore
 
-                    for download in activeDownloads.filter({ activeDownloadData in !failedDownloads.contains(where: { $0.0 == activeDownloadData.1.download }) }) {
-                        self.observable.on(.next(Update(download: download.1.download, kind: .progress(0))))
+                    for download in activeDownloads {
+                        if let (download, error) = failedDownloads.first(where: { $0.0 == download.1.download }) {
+                            self.observable.on(.next(Update(download: download, kind: .failed(error))))
+                        } else {
+                            self.observable.on(.next(Update(download: download.1.download, kind: .progress)))
+                        }
                     }
                     for download in downloadsToRestore {
                         self.addProgressToBatchProgress(progress: download.progress)
-                        self.observable.on(.next(Update(download: download.download, kind: .progress(0))))
+                        self.observable.on(.next(Update(download: download.download, kind: .progress)))
                     }
 
                     self.startNextDownloadIfPossible()
 
                     guard !failedDownloads.isEmpty else { return }
-
-                    for failed in failedDownloads {
-                        self.observable.on(.next(Update(download: failed.0, kind: .failed(failed.1))))
-                    }
 
                     self.dbQueue.async { [weak self] in
                         guard let self else { return }
@@ -256,8 +255,7 @@ final class AttachmentDownloader: NSObject {
             for (taskId, enqueuedDownload) in downloads {
                 DDLogInfo("AttachmentDownloader: cached \(taskId); \(enqueuedDownload.download.key); (\(enqueuedDownload.download.parentKey ?? "-")); \(enqueuedDownload.download.libraryId)")
                 let progress = Progress(totalUnitCount: 100)
-                self.batchProgress?.addChild(progress, withPendingUnitCount: 100)
-                self.totalCount += 1
+                self.addProgressToBatchProgress(progress: progress)
                 if let error = self.initialErrors[taskId] {
                     self.errors[enqueuedDownload.download] = error
                     progress.completedUnitCount = 100
@@ -344,7 +342,6 @@ final class AttachmentDownloader: NSObject {
                             let download = Download(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId)
                             addProgressToBatchProgress(progress: progress)
                             downloads.append(EnqueuedDownload(download: download, file: file, progress: progress, extractAfterDownload: false))
-                            observable.on(.next(Update(download: download, kind: .progress(0))))
                         }
                     }
                 }
@@ -361,6 +358,9 @@ final class AttachmentDownloader: NSObject {
             }
 
             queue.append(contentsOf: downloads)
+            for download in downloads {
+                observable.on(.next(Update(download: download.download, kind: .progress)))
+            }
             startNextDownloadIfPossible()
         }
     }
@@ -427,7 +427,7 @@ final class AttachmentDownloader: NSObject {
                 addProgressToBatchProgress(progress: progress)
                 let download = EnqueuedDownload(download: Download(key: key, parentKey: parentKey, libraryId: libraryId), file: file, progress: progress, extractAfterDownload: true)
                 queue.insert(download, at: 0)
-                observable.on(.next(Update(download: download.download, kind: .progress(0))))
+                observable.on(.next(Update(download: download.download, kind: .progress)))
                 startNextDownloadIfPossible()
             }
         }
@@ -462,13 +462,13 @@ final class AttachmentDownloader: NSObject {
                     accessQueue.sync { [weak self] in
                         self?.extractions[download]?.progress.completedUnitCount = completedCount
                     }
-                    observable.on(.next(Update(download: download, kind: .progress(CGFloat(progress.fractionCompleted)))))
+                    observable.on(.next(Update(download: download, kind: .progress)))
                 }
                 accessQueue.sync(flags: .barrier) { [weak self] in
                     self?.extractions[download] = Extraction(progress: progress, observer: observer)
                 }
                 // Send first progress update
-                observable.on(.next(Update(download: download, kind: .progress(0))))
+                observable.on(.next(Update(download: download, kind: .progress)))
                 // Unzip to same directory
                 try FileManager.default.unzipItem(at: zipFile.createUrl(), to: zipFile.createRelativeUrl(), progress: progress)
                 // Try removing zip file, don't return error if it fails, we've got what we wanted.
@@ -634,11 +634,11 @@ final class AttachmentDownloader: NSObject {
 
     private func addProgressToBatchProgress(progress: Progress) {
         if let batchProgress {
-            batchProgress.addChild(progress, withPendingUnitCount: 100)
-            batchProgress.totalUnitCount += 100
+            batchProgress.addChild(progress, withPendingUnitCount: progress.totalUnitCount)
+            batchProgress.totalUnitCount += progress.totalUnitCount
         } else {
-            let batchProgress = Progress(totalUnitCount: 100)
-            batchProgress.addChild(progress, withPendingUnitCount: 100)
+            let batchProgress = Progress(totalUnitCount: progress.totalUnitCount)
+            batchProgress.addChild(progress, withPendingUnitCount: progress.totalUnitCount)
             self.batchProgress = batchProgress
         }
         totalCount += 1
@@ -794,7 +794,7 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
         var shouldExtractAfterDownload = activeDownload.extractAfterDownload
         var isCompressed = webDavController.sessionStorage.isEnabled && !download.libraryId.isGroupLibrary
         if let response = downloadTask.response as? HTTPURLResponse {
-            let _isCompressed = response.value(forHTTPHeaderField: "Zotero-File-Compressed") == "Yes"
+            let _isCompressed = response.value(forHTTPHeaderField: "Zotero-File-Compressed") == "Yes" || response.value(forHTTPHeaderField: "Content-Type") == "application/zip"
             isCompressed = isCompressed || _isCompressed
         }
         if isCompressed {
@@ -873,7 +873,7 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
         }
         guard let download, let activeDownload else { return }
         activeDownload.progress.completedUnitCount = Int64(Double(totalBytesWritten) / Double(totalBytesExpectedToWrite) * 100)
-        observable.on(.next(Update(download: download, kind: .progress(CGFloat(activeDownload.progress.fractionCompleted)))))
+        observable.on(.next(Update(download: download, kind: .progress)))
     }
 }
 
