@@ -64,7 +64,7 @@ struct Convertible {
 extension Convertible: URLRequestConvertible {
     func asURLRequest() throws -> URLRequest {
         var request = URLRequest(url: self.url)
-        request.timeoutInterval = 1000//self.timeout
+        request.timeoutInterval = self.timeout
         request.httpMethod = self.httpMethod.rawValue
         request.allHTTPHeaderFields = self.headers
         if let token = self.token {
