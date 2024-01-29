@@ -61,11 +61,12 @@ final class HtmlEpubCoordinator: Coordinator {
         self.url = url
         self.navigationController = navigationController
         self.controllers = controllers
-        self.childCoordinators = []
-        self.disposeBag = DisposeBag()
+        childCoordinators = []
+        disposeBag = DisposeBag()
 
-        navigationController.dismissHandler = {
-            self.parentCoordinator?.childDidFinish(self)
+        navigationController.dismissHandler = { [weak self] in
+            guard let self else { return }
+            parentCoordinator?.childDidFinish(self)
         }
     }
 
@@ -75,10 +76,10 @@ final class HtmlEpubCoordinator: Coordinator {
 
     func start(animated: Bool) {
         let username = Defaults.shared.username
-        guard let dbStorage = self.controllers.userControllers?.dbStorage,
-              let userId = self.controllers.sessionController.sessionData?.userId,
+        guard let dbStorage = controllers.userControllers?.dbStorage,
+              let userId = controllers.sessionController.sessionData?.userId,
               !username.isEmpty,
-              let parentNavigationController = self.parentCoordinator?.navigationController
+              let parentNavigationController = parentCoordinator?.navigationController
         else { return }
 
         let handler = HtmlEpubReaderActionHandler(
@@ -94,8 +95,7 @@ final class HtmlEpubCoordinator: Coordinator {
             compactSize: UIDevice.current.isCompactWidth(size: parentNavigationController.view.frame.size)
         )
         controller.coordinatorDelegate = self
-
-        self.navigationController?.setViewControllers([controller], animated: false)
+        navigationController?.setViewControllers([controller], animated: false)
     }
 }
 
@@ -128,7 +128,7 @@ extension HtmlEpubCoordinator: HtmlEpubReaderCoordinatorDelegate {
 
         let controller = UIAlertController(title: title, message: message, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.ok, style: .default))
-        self.navigationController?.present(controller, animated: true)
+        navigationController?.present(controller, animated: true)
     }
 
     func showToolSettings(tool: AnnotationTool, colorHex: String?, sizeValue: Float?, sender: SourceView, userInterfaceStyle: UIUserInterfaceStyle, valueChanged: @escaping (String?, Float?) -> Void) {
@@ -141,6 +141,7 @@ extension HtmlEpubCoordinator: HtmlEpubReaderCoordinatorDelegate {
         case .pad:
             controller.overrideUserInterfaceStyle = userInterfaceStyle
             controller.modalPresentationStyle = .popover
+
             switch sender {
             case .view(let view, _):
                 controller.popoverPresentationController?.sourceView = view
@@ -148,7 +149,7 @@ extension HtmlEpubCoordinator: HtmlEpubReaderCoordinatorDelegate {
             case .item(let item):
                 controller.popoverPresentationController?.barButtonItem = item
             }
-            self.navigationController?.present(controller, animated: true, completion: nil)
+            navigationController?.present(controller, animated: true, completion: nil)
 
         default:
             let navigationController = UINavigationController(rootViewController: controller)
@@ -162,7 +163,7 @@ extension HtmlEpubCoordinator: HtmlEpubReaderCoordinatorDelegate {
 extension HtmlEpubCoordinator: HtmlEpubSidebarCoordinatorDelegate {
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, userInterfaceStyle: UIUserInterfaceStyle?, picked: @escaping ([Tag]) -> Void) {
         guard let navigationController else { return }
-        (self.parentCoordinator as? DetailCoordinator)?.showTagPicker(
+        (parentCoordinator as? DetailCoordinator)?.showTagPicker(
             libraryId: libraryId,
             selected: selected,
             userInterfaceStyle: userInterfaceStyle,
@@ -184,7 +185,7 @@ extension HtmlEpubCoordinator: HtmlEpubSidebarCoordinatorDelegate {
         navigationController.overrideUserInterfaceStyle = userInterfaceStyle
 
         let coordinator = AnnotationEditCoordinator(
-            data: AnnotationEditState.AnnotationData(
+            data: AnnotationEditState.Data(
                 type: annotation.type,
                 isEditable: annotation.editability(currentUserId: userId, library: library) == .editable,
                 color: annotation.color,
@@ -195,10 +196,10 @@ extension HtmlEpubCoordinator: HtmlEpubSidebarCoordinatorDelegate {
             saveAction: saveAction,
             deleteAction: deleteAction,
             navigationController: navigationController,
-            controllers: self.controllers
+            controllers: controllers
         )
         coordinator.parentCoordinator = self
-        self.childCoordinators.append(coordinator)
+        childCoordinators.append(coordinator)
         coordinator.start(animated: false)
 
         if UIDevice.current.userInterfaceIdiom == .pad {
@@ -216,21 +217,19 @@ extension HtmlEpubCoordinator: HtmlEpubSidebarCoordinatorDelegate {
         popoverDelegate: UIPopoverPresentationControllerDelegate,
         userInterfaceStyle: UIUserInterfaceStyle
     ) -> PublishSubject<AnnotationPopoverState>? {
-        guard let currentNavigationController = self.navigationController, let annotation = viewModel.state.selectedAnnotationKey.flatMap({ viewModel.state.annotations[$0] }) else { return nil }
+        guard let currentNavigationController = navigationController, let annotation = viewModel.state.selectedAnnotationKey.flatMap({ viewModel.state.annotations[$0] }) else { return nil }
 
         DDLogInfo("HtmlEpubCoordinator: show annotation popover")
 
-        if let coordinator = self.childCoordinators.last, coordinator is AnnotationPopoverCoordinator {
+        if let coordinator = childCoordinators.last, coordinator is AnnotationPopoverCoordinator {
             return nil
         }
 
         let navigationController = NavigationViewController()
         navigationController.overrideUserInterfaceStyle = userInterfaceStyle
-
         let author = viewModel.state.library.identifier == .custom(.myLibrary) ? "" : annotation.author
         let comment = viewModel.state.comments[annotation.key] ?? NSAttributedString()
         let editability = annotation.editability(currentUserId: viewModel.state.userId, library: viewModel.state.library)
-
         let data = AnnotationPopoverState.Data(
             libraryId: viewModel.state.library.identifier,
             type: annotation.type,
@@ -246,7 +245,7 @@ extension HtmlEpubCoordinator: HtmlEpubSidebarCoordinatorDelegate {
         )
         let coordinator = AnnotationPopoverCoordinator(data: data, navigationController: navigationController, controllers: self.controllers)
         coordinator.parentCoordinator = self
-        self.childCoordinators.append(coordinator)
+        childCoordinators.append(coordinator)
         coordinator.start(animated: false)
 
         if UIDevice.current.userInterfaceIdiom == .pad {
@@ -274,17 +273,16 @@ extension HtmlEpubCoordinator: HtmlEpubSidebarCoordinatorDelegate {
 
         let navigationController = NavigationViewController()
         navigationController.overrideUserInterfaceStyle = userInterfaceStyle
-
         let coordinator = AnnotationsFilterPopoverCoordinator(
             initialFilter: filter,
             availableColors: availableColors,
             availableTags: availableTags,
             navigationController: navigationController,
-            controllers: self.controllers,
+            controllers: controllers,
             completionHandler: completed
         )
         coordinator.parentCoordinator = self
-        self.childCoordinators.append(coordinator)
+        childCoordinators.append(coordinator)
         coordinator.start(animated: false)
 
         if UIDevice.current.userInterfaceIdiom == .pad {
@@ -301,20 +299,18 @@ extension HtmlEpubCoordinator: HtmlEpubSidebarCoordinatorDelegate {
 
         let state = ReaderSettingsState(settings: settings)
         let viewModel = ViewModel(initialState: state, handler: ReaderSettingsActionHandler())
-        let baseController = ReaderSettingsViewController(visibleRows: [.appearance, .sleep], viewModel: viewModel)
-
+        let baseController = ReaderSettingsViewController(rows: [.appearance, .sleep], viewModel: viewModel)
         let controller: UIViewController
         if UIDevice.current.userInterfaceIdiom == .pad {
             controller = baseController
         } else {
             controller = UINavigationController(rootViewController: baseController)
         }
-
         controller.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
         controller.popoverPresentationController?.barButtonItem = sender
         controller.preferredContentSize = CGSize(width: 480, height: 92)
         controller.overrideUserInterfaceStyle = settings.appearance.userInterfaceStyle
-        self.navigationController?.present(controller, animated: true, completion: nil)
+        navigationController?.present(controller, animated: true, completion: nil)
 
         return viewModel
     }

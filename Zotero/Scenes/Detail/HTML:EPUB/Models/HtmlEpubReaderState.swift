@@ -97,19 +97,19 @@ struct HtmlEpubReaderState: ViewModelState {
         self.library = library
         self.userId = userId
         self.username = username
-        self.commentFont = PDFReaderLayout.annotationLayout.font
-        self.sortedKeys = []
-        self.annotations = [:]
-        self.comments = [:]
-        self.sidebarEditingEnabled = false
-        self.selectedAnnotationCommentActive = false
-        self.toolColors = [
+        commentFont = PDFReaderLayout.annotationLayout.font
+        sortedKeys = []
+        annotations = [:]
+        comments = [:]
+        sidebarEditingEnabled = false
+        selectedAnnotationCommentActive = false
+        toolColors = [
             .highlight: UIColor(hex: Defaults.shared.highlightColorHex),
             .note: UIColor(hex: Defaults.shared.noteColorHex)
         ]
-        self.changes = []
-        self.deletionEnabled = false
-        self.selectedAnnotationsDuringEditing = []
+        changes = []
+        deletionEnabled = false
+        selectedAnnotationsDuringEditing = []
     }
 
     mutating func cleanup() {

@@ -95,7 +95,7 @@ final class AnnotationView: UIView {
         let canEdit = library.metadataEditable && selected
         let author = library.identifier == .custom(.myLibrary) ? "" : annotation.author
 
-        self.header.setup(
+        header.setup(
             type: annotation.type,
             authorName: author,
             pageLabel: annotation.pageLabel,
@@ -107,7 +107,7 @@ final class AnnotationView: UIView {
             showsLock: !library.metadataEditable,
             accessibilityType: .cell
         )
-        self.setupContent(
+        setupContent(
             type: annotation.type,
             comment: annotation.comment,
             text: annotation.text,
@@ -117,18 +117,18 @@ final class AnnotationView: UIView {
             availableWidth: availableWidth,
             accessibilityType: .cell
         )
-        self.setup(comment: comment, canEdit: canEdit)
-        self.setup(tags: annotation.tags, canEdit: canEdit, accessibilityEnabled: selected)
-        self.setupObserving()
+        setup(comment: comment, canEdit: canEdit)
+        setup(tags: annotation.tags, canEdit: canEdit, accessibilityEnabled: selected)
+        setupObserving()
 
-        let commentButtonIsHidden = self.commentTextView.isHidden
-        let highlightContentIsHidden = self.highlightContent?.isHidden ?? true
-        let imageContentIsHidden = self.imageContent?.isHidden ?? true
+        let commentButtonIsHidden = commentTextView.isHidden
+        let highlightContentIsHidden = highlightContent?.isHidden ?? true
+        let imageContentIsHidden = imageContent?.isHidden ?? true
 
         // Top separator is hidden only if there is only header visible and nothing else
-        self.topSeparator.isHidden = self.commentTextView.isHidden && commentButtonIsHidden && highlightContentIsHidden && imageContentIsHidden && self.tags.isHidden && self.tagsButton.isHidden
+        topSeparator.isHidden = commentTextView.isHidden && commentButtonIsHidden && highlightContentIsHidden && imageContentIsHidden && tags.isHidden && tagsButton.isHidden
         // Bottom separator is visible, when tags are showing (either actual tags or tags button) and there is something visible above them (other than header, either content or comments/comments button)
-        self.bottomSeparator.isHidden = (self.tags.isHidden && self.tagsButton.isHidden) || (self.commentTextView.isHidden && commentButtonIsHidden && highlightContentIsHidden && imageContentIsHidden)
+        bottomSeparator.isHidden = (tags.isHidden && tagsButton.isHidden) || (commentTextView.isHidden && commentButtonIsHidden && highlightContentIsHidden && imageContentIsHidden)
     }
 
     /// Setups up annotation view with given annotation and additional data.
