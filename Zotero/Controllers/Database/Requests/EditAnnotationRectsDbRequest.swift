@@ -20,7 +20,7 @@ struct EditAnnotationRectsDbRequest: DbRequest {
 
     func process(in database: Realm) throws {
         guard let item = database.objects(RItem.self).filter(.key(self.key, in: self.libraryId)).first else { return }
-        let page = UInt(DatabaseAnnotation(item: item).page)
+        let page = UInt(PDFDatabaseAnnotation(item: item).page)
         let dbRects = self.rects.map({ self.boundingBoxConverter.convertToDb(rect: $0, page: page) ?? $0 })
         guard self.rects(dbRects, differFrom: item.rects) else { return }
         self.sync(rects: dbRects, in: item, database: database)

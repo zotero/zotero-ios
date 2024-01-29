@@ -74,23 +74,19 @@ final class Defaults {
     @CodableUserDefault(key: "SelectedRawCollectionKey", defaultValue: CollectionIdentifier.custom(.all), encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
     var selectedCollectionId: CollectionIdentifier
 
-    // MARK: - Items Settings
-
     #if MAINAPP
+    // MARK: - Items Settings
+    
     @CodableUserDefault(key: "RawItemsSortType", defaultValue: ItemsSortType.default, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder, defaults: .standard)
     var itemsSortType: ItemsSortType
-    #endif
 
     // MARK: - Item Detail
 
-    #if MAINAPP
     @CodableUserDefault(key: "LastUsedCreatorNamePresentation", defaultValue: .separate, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
     var creatorNamePresentation: ItemDetailState.Creator.NamePresentation
-    #endif
 
     // MARK: - PDF Settings
 
-    #if MAINAPP
     @UserDefault(key: "PdfReaderLineWidth", defaultValue: 2)
     var activeLineWidth: Float
 

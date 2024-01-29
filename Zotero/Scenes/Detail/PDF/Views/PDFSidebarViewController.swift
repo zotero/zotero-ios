@@ -45,7 +45,7 @@ class PDFSidebarViewController: UIViewController {
 
     private weak var picker: UISegmentedControl!
     private weak var thumbnailsController: PDFThumbnailsViewController!
-    private weak var annotationsController: AnnotationsViewController!
+    private weak var annotationsController: PDFAnnotationsViewController!
     private weak var outlineController: TableOfContentsViewController!
     weak var parentDelegate: (PDFReaderContainerDelegate & SidebarDelegate)?
     weak var coordinatorDelegate: PdfAnnotationsCoordinatorDelegate?
@@ -144,7 +144,7 @@ class PDFSidebarViewController: UIViewController {
     }
 
     private func setupControllers() {
-        let annotationsController = AnnotationsViewController(viewModel: viewModel)
+        let annotationsController = PDFAnnotationsViewController(viewModel: viewModel)
         annotationsController.parentDelegate = parentDelegate
         annotationsController.coordinatorDelegate = coordinatorDelegate
         annotationsController.boundingBoxConverter = boundingBoxConverter

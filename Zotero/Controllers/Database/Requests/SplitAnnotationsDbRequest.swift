@@ -31,11 +31,9 @@ struct SplitAnnotationsDbRequest: DbRequest {
         }
     }
 
-    /// Splits annotation if it exceedes position limit. If it is within limit, it returs original annotation.
-    /// - parameter annotation: Annotation to split
-    /// - parameter activeColor: Currently active color
-    /// - parameter viewModel: View model
-    /// - returns: Array with original annotation if limit was not exceeded. Otherwise array of new split annotations.
+    /// Splits database annotation if it exceedes position limit.
+    /// - parameter item: Database annotation to split
+    /// - parameter database: Database
     private func split(item: RItem, database: Realm) {
         guard let annotationType = item.fields.filter(.key(FieldKeys.Item.Annotation.type)).first.flatMap({ AnnotationType(rawValue: $0.value) }) else { return }
 

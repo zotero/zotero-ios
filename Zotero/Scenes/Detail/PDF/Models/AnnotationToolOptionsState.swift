@@ -20,13 +20,13 @@ struct AnnotationToolOptionsState: ViewModelState {
         static let size = Changes(rawValue: 1 << 1)
     }
 
-    let tool: PSPDFKit.Annotation.Tool
+    let tool: AnnotationTool
 
     var colorHex: String?
     var size: Float?
     var changes: Changes
 
-    init(tool: PSPDFKit.Annotation.Tool, colorHex: String?, size: Float?) {
+    init(tool: AnnotationTool, colorHex: String?, size: Float?) {
         self.tool = tool
         self.colorHex = colorHex
         self.size = size

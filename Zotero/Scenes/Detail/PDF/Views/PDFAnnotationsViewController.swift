@@ -1,5 +1,5 @@
 //
-//  AnnotationsViewController.swift
+//  PDFAnnotationsViewController.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 24/04/2020.
@@ -15,7 +15,7 @@ import RxSwift
 
 typealias AnnotationsViewControllerAction = (AnnotationView.Action, Annotation, UIButton) -> Void
 
-final class AnnotationsViewController: UIViewController {
+final class PDFAnnotationsViewController: UIViewController {
     private static let cellId = "AnnotationCell"
     private unowned let viewModel: ViewModel<PDFReaderActionHandler>
     private let disposeBag: DisposeBag
@@ -95,7 +95,7 @@ final class AnnotationsViewController: UIViewController {
 
     // MARK: - Actions
 
-    private func perform(action: AnnotationView.Action, annotation: Annotation) {
+    private func perform(action: AnnotationView.Action, annotation: PDFAnnotation) {
         let state = self.viewModel.state
 
         guard state.library.metadataEditable else { return }
@@ -104,19 +104,25 @@ final class AnnotationsViewController: UIViewController {
         case .tags:
             guard annotation.isAuthor(currentUserId: self.viewModel.state.userId) else { return }
             let selected = Set(annotation.tags.map({ $0.name }))
-            self.coordinatorDelegate?.showTagPicker(libraryId: state.library.identifier, selected: selected, userInterfaceStyle: self.viewModel.state.interfaceStyle, picked: { [weak self] tags in
-                self?.viewModel.process(action: .setTags(key: annotation.key, tags: tags))
-            })
+            self.coordinatorDelegate?.showTagPicker(
+                libraryId: state.library.identifier,
+                selected: selected,
+                userInterfaceStyle: self.viewModel.state.settings.appearanceMode.userInterfaceStyle,
+                picked: { [weak self] tags in
+                    self?.viewModel.process(action: .setTags(key: annotation.key, tags: tags))
+                }
+            )
 
         case .options(let sender):
             guard let sender else { return }
+            let key = annotation.readerKey
             self.coordinatorDelegate?.showCellOptions(
                 for: annotation,
                 userId: self.viewModel.state.userId,
                 library: self.viewModel.state.library,
                 sender: sender,
-                userInterfaceStyle: self.viewModel.state.interfaceStyle,
-                saveAction: { [weak self] key, color, lineWidth, pageLabel, updateSubsequentLabels, highlightText in
+                userInterfaceStyle: self.viewModel.state.settings.appearanceMode.userInterfaceStyle,
+                saveAction: { [weak self] color, lineWidth, pageLabel, updateSubsequentLabels, highlightText in
                     self?.viewModel.process(
                         action: .updateAnnotationProperties(
                             key: key.key,
@@ -128,7 +134,7 @@ final class AnnotationsViewController: UIViewController {
                         )
                     )
                 },
-                deleteAction: { [weak self] key in
+                deleteAction: { [weak self] in
                     self?.viewModel.process(action: .removeAnnotation(key))
                 }
             )
@@ -275,7 +281,7 @@ final class AnnotationsViewController: UIViewController {
         }
     }
 
-    private func setup(cell: AnnotationCell, with annotation: Annotation, state: PDFReaderState) {
+    private func setup(cell: AnnotationCell, with annotation: PDFAnnotation, state: PDFReaderState) {
         let selected = annotation.key == state.selectedAnnotationKey?.key
 
         let loadPreview: () -> UIImage? = {
@@ -325,7 +331,7 @@ final class AnnotationsViewController: UIViewController {
         _ = cell.disposeBag?.insert(actionSubscription)
     }
 
-    private func loadAttributedComment(for annotation: Annotation) -> NSAttributedString? {
+    private func loadAttributedComment(for annotation: PDFAnnotation) -> NSAttributedString? {
         let comment = annotation.comment
 
         guard !comment.isEmpty else { return nil }
@@ -342,7 +348,7 @@ final class AnnotationsViewController: UIViewController {
         var colors: Set<String> = []
         var tags: Set<Tag> = []
 
-        let processAnnotation: (Annotation) -> Void = { annotation in
+        let processAnnotation: (PDFAnnotation) -> Void = { annotation in
             colors.insert(annotation.color)
             for tag in annotation.tags {
                 tags.insert(tag)
@@ -350,7 +356,7 @@ final class AnnotationsViewController: UIViewController {
         }
 
         for annotation in self.viewModel.state.databaseAnnotations {
-            processAnnotation(DatabaseAnnotation(item: annotation))
+            processAnnotation(PDFDatabaseAnnotation(item: annotation))
         }
         for annotation in self.viewModel.state.documentAnnotations.values {
             processAnnotation(annotation)
@@ -377,7 +383,7 @@ final class AnnotationsViewController: UIViewController {
             filter: self.viewModel.state.filter,
             availableColors: sortedColors,
             availableTags: sortedTags,
-            userInterfaceStyle: self.viewModel.state.interfaceStyle,
+            userInterfaceStyle: self.viewModel.state.settings.appearanceMode.userInterfaceStyle,
             completed: { [weak self] filter in
                 self?.viewModel.process(action: .changeFilter(filter))
             }
@@ -406,7 +412,7 @@ final class AnnotationsViewController: UIViewController {
         tableView.separatorStyle = .none
         tableView.backgroundColor = .systemGray6
         tableView.backgroundView?.backgroundColor = .systemGray6
-        tableView.register(AnnotationCell.self, forCellReuseIdentifier: AnnotationsViewController.cellId)
+        tableView.register(AnnotationCell.self, forCellReuseIdentifier: Self.cellId)
         tableView.setEditing(self.viewModel.state.sidebarEditingEnabled, animated: false)
         tableView.allowsMultipleSelectionDuringEditing = true
         self.view.addSubview(tableView)
@@ -458,7 +464,7 @@ final class AnnotationsViewController: UIViewController {
 
     private func setupDataSource() {
         self.dataSource = TableViewDiffableDataSource(tableView: self.tableView, cellProvider: { [weak self] tableView, indexPath, key in
-            let cell = tableView.dequeueReusableCell(withIdentifier: AnnotationsViewController.cellId, for: indexPath)
+            let cell = tableView.dequeueReusableCell(withIdentifier: Self.cellId, for: indexPath)
 
             if let self, let cell = cell as? AnnotationCell, let annotation = self.viewModel.state.annotation(for: key) {
                 cell.contentView.backgroundColor = self.view.backgroundColor
@@ -581,7 +587,8 @@ final class AnnotationsViewController: UIViewController {
             let filterImageName = filterOn ? "line.horizontal.3.decrease.circle.fill" : "line.horizontal.3.decrease.circle"
             let filter = UIBarButtonItem(image: UIImage(systemName: filterImageName), style: .plain, target: nil, action: nil)
             filter.rx.tap
-                .subscribe(with: self, onNext: { `self`, _ in
+                .subscribe(with: self, onNext: { [weak filter] `self`, _ in
+                    guard let filter else { return }
                     self.showFilterPopup(from: filter)
                 })
                 .disposed(by: self.disposeBag)
@@ -600,7 +607,7 @@ final class AnnotationsViewController: UIViewController {
     }
 }
 
-extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSourcePrefetching {
+extension PDFAnnotationsViewController: UITableViewDelegate, UITableViewDataSourcePrefetching {
     func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath]) {
         let keys = indexPaths.compactMap({ self.dataSource.itemIdentifier(for: $0) })
             .filter({ key in

@@ -57,13 +57,13 @@ final class AnnotationView: UIView {
 
     init(layout: AnnotationViewLayout, commentPlaceholder: String) {
         self.layout = layout
-        self.actionPublisher = PublishSubject()
+        actionPublisher = PublishSubject()
 
         super.init(frame: CGRect())
 
-        self.backgroundColor = layout.backgroundColor
-        self.translatesAutoresizingMaskIntoConstraints = false
-        self.setupView(commentPlaceholder: commentPlaceholder)
+        backgroundColor = layout.backgroundColor
+        translatesAutoresizingMaskIntoConstraints = false
+        setupView(commentPlaceholder: commentPlaceholder)
     }
 
     required init?(coder: NSCoder) {
@@ -74,16 +74,16 @@ final class AnnotationView: UIView {
 
     @discardableResult
     override func resignFirstResponder() -> Bool {
-        self.commentTextView.resignFirstResponder()
+        commentTextView.resignFirstResponder()
     }
 
     func updatePreview(image: UIImage?) {
-        guard let imageContent = self.imageContent, !imageContent.isHidden else { return }
+        guard let imageContent, !imageContent.isHidden else { return }
         imageContent.setup(with: image)
     }
 
     private func scrollToBottomIfNeeded() {
-        guard let scrollView = self.scrollView, let contentView = self.scrollViewContent, contentView.frame.height > scrollView.frame.height else { return }
+        guard let scrollView, let scrollViewContent, scrollViewContent.frame.height > scrollView.frame.height else { return }
         let yOffset = scrollView.contentSize.height - scrollView.bounds.height + scrollView.contentInset.bottom
         scrollView.setContentOffset(CGPoint(x: 0, y: yOffset), animated: true)
     }
@@ -99,42 +99,89 @@ final class AnnotationView: UIView {
     /// - parameter library: Library of given annotation
     /// - parameter pdfAnnotationsCoordinatorDelegate: Delegate for getting share menu.
     /// - parameter state: State required for setting up share menu.
-    func setup(with annotation: Annotation, comment: Comment?, preview: UIImage?, selected: Bool, availableWidth: CGFloat, library: Library, currentUserId: Int, displayName: String, username: String,
-               boundingBoxConverter: AnnotationBoundingBoxConverter, pdfAnnotationsCoordinatorDelegate: PdfAnnotationsCoordinatorDelegate, state: PDFReaderState) {
+    func setup(
+        with annotation: PDFAnnotation,
+        comment: Comment?,
+        preview: UIImage?,
+        selected: Bool,
+        availableWidth: CGFloat,
+        library: Library,
+        currentUserId: Int,
+        displayName: String,
+        username: String,
+        boundingBoxConverter: AnnotationBoundingBoxConverter,
+        pdfAnnotationsCoordinatorDelegate: PdfAnnotationsCoordinatorDelegate,
+        state: PDFReaderState
+    ) {
         let editability = annotation.editability(currentUserId: currentUserId, library: library)
         let color = UIColor(hex: annotation.color)
         let canEdit = editability == .editable && selected
+        let author = library.identifier == .custom(.myLibrary) ? "" : annotation.author(displayName: displayName, username: username)
 
-        self.header.setup(
-            with: annotation,
-            libraryId: library.identifier,
+        header.setup(
+            type: annotation.type,
+            authorName: author,
+            pageLabel: annotation.pageLabel,
+            colorHex: annotation.color,
             shareMenuProvider: { button in
                 pdfAnnotationsCoordinatorDelegate.createShareAnnotationMenu(state: state, annotation: annotation, sender: button)
             },
             isEditable: (editability != .notEditable && selected),
             showsLock: editability != .editable,
-            accessibilityType: .cell,
-            displayName: displayName,
-            username: username
+            accessibilityType: .cell
         )
-        self.setupContent(for: annotation, preview: preview, color: color, canEdit: canEdit, selected: selected, availableWidth: availableWidth, accessibilityType: .cell, boundingBoxConverter: boundingBoxConverter)
-        self.setup(comment: comment, canEdit: canEdit)
-        self.setupTags(for: annotation, canEdit: canEdit, accessibilityEnabled: selected)
-        self.setupObserving()
+        setupContent(
+            for: annotation,
+            preview: preview,
+            color: color,
+            canEdit: canEdit,
+            selected: selected,
+            availableWidth: availableWidth,
+            accessibilityType: .cell,
+            boundingBoxConverter: boundingBoxConverter
+        )
+        setup(comment: comment, canEdit: canEdit)
+        setup(tags: annotation.tags, canEdit: canEdit, accessibilityEnabled: selected)
+        setupObserving()
 
-        let commentButtonIsHidden = self.commentTextView.isHidden
-        let highlightContentIsHidden = self.highlightContent?.isHidden ?? true
-        let imageContentIsHidden = self.imageContent?.isHidden ?? true
+        let commentButtonIsHidden = commentTextView.isHidden
+        let highlightContentIsHidden = highlightContent?.isHidden ?? true
+        let imageContentIsHidden = imageContent?.isHidden ?? true
 
         // Top separator is hidden only if there is only header visible and nothing else
-        self.topSeparator.isHidden = self.commentTextView.isHidden && commentButtonIsHidden && highlightContentIsHidden && imageContentIsHidden && self.tags.isHidden && self.tagsButton.isHidden
+        topSeparator.isHidden = commentTextView.isHidden && commentButtonIsHidden && highlightContentIsHidden && imageContentIsHidden && tags.isHidden && tagsButton.isHidden
         // Bottom separator is visible, when tags are showing (either actual tags or tags button) and there is something visible above them (other than header, either content or comments/comments button)
-        self.bottomSeparator.isHidden = (self.tags.isHidden && self.tagsButton.isHidden) || (self.commentTextView.isHidden && commentButtonIsHidden && highlightContentIsHidden && imageContentIsHidden)
+        bottomSeparator.isHidden = (tags.isHidden && tagsButton.isHidden) || (commentTextView.isHidden && commentButtonIsHidden && highlightContentIsHidden && imageContentIsHidden)
     }
 
-    private func setupContent(for annotation: Annotation, preview: UIImage?, color: UIColor, canEdit: Bool, selected: Bool, availableWidth: CGFloat, accessibilityType: AccessibilityType,
-                              boundingBoxConverter: AnnotationBoundingBoxConverter) {
-        guard let highlightContent = self.highlightContent, let imageContent = self.imageContent else { return }
+    private func setupContent(type: AnnotationType, comment: String, text: String?, color: UIColor, canEdit: Bool, selected: Bool, availableWidth: CGFloat, accessibilityType: AccessibilityType) {
+        guard let highlightContent else { return }
+
+        highlightContent.isUserInteractionEnabled = false
+        highlightContent.isHidden = type != .highlight
+        imageContent?.isHidden = true
+
+        switch type {
+        case .highlight:
+            let bottomInset = inset(from: layout.highlightLineVerticalInsets, hasComment: !comment.isEmpty, selected: selected, canEdit: canEdit)
+            highlightContent.setup(with: color, text: (text ?? ""), bottomInset: bottomInset, accessibilityType: accessibilityType)
+
+        case .image, .ink, .note:
+            break
+        }
+    }
+
+    private func setupContent(
+        for annotation: PDFAnnotation,
+        preview: UIImage?,
+        color: UIColor,
+        canEdit: Bool,
+        selected: Bool,
+        availableWidth: CGFloat,
+        accessibilityType: AccessibilityType,
+        boundingBoxConverter: AnnotationBoundingBoxConverter
+    ) {
+        guard let highlightContent, let imageContent else { return }
 
         highlightContent.isUserInteractionEnabled = false
         highlightContent.isHidden = annotation.type != .highlight
@@ -144,19 +191,19 @@ final class AnnotationView: UIView {
         case .note: break
 
         case .highlight:
-            let bottomInset = self.inset(from: self.layout.highlightLineVerticalInsets, hasComment: !annotation.comment.isEmpty, selected: selected, canEdit: canEdit)
+            let bottomInset = inset(from: layout.highlightLineVerticalInsets, hasComment: !annotation.comment.isEmpty, selected: selected, canEdit: canEdit)
             highlightContent.setup(with: color, text: (annotation.text ?? ""), bottomInset: bottomInset, accessibilityType: accessibilityType)
 
         case .image, .ink:
             let size = annotation.previewBoundingBox(boundingBoxConverter: boundingBoxConverter).size
-            let maxWidth = availableWidth - (self.layout.horizontalInset * 2)
+            let maxWidth = availableWidth - (layout.horizontalInset * 2)
             var maxHeight = ceil((size.height / size.width) * maxWidth)
             if maxHeight.isNaN || maxHeight.isInfinite {
                 maxHeight = maxWidth * 2
             } else {
                 maxHeight = min((maxWidth * 2), maxHeight)
             }
-            let bottomInset = self.inset(from: self.layout.verticalSpacerHeight, hasComment: !annotation.comment.isEmpty, selected: selected, canEdit: canEdit)
+            let bottomInset = inset(from: layout.verticalSpacerHeight, hasComment: !annotation.comment.isEmpty, selected: selected, canEdit: canEdit)
             imageContent.setup(with: preview, height: maxHeight, bottomInset: bottomInset)
         }
     }
@@ -174,43 +221,43 @@ final class AnnotationView: UIView {
     private func setup(comment: Comment?, canEdit: Bool) {
         let isEmptyComment = (comment?.attributedString?.string ?? "").isEmpty
         guard let comment = comment, !isEmptyComment || canEdit else {
-            self.commentTextView.isHidden = true
+            commentTextView.isHidden = true
             return
         }
 
-        self.commentTextView.isHidden = false
-        self.commentTextView.isUserInteractionEnabled = canEdit
+        commentTextView.isHidden = false
+        commentTextView.isUserInteractionEnabled = canEdit
 
         // If comment is empty and not active, the input acts as a button.
         if isEmptyComment && !comment.isActive {
-            self.commentTextView.set(placeholderColor: Asset.Colors.zoteroBlue.color)
-            self.commentTextView.setup(text: nil)
+            commentTextView.set(placeholderColor: Asset.Colors.zoteroBlue.color)
+            commentTextView.setup(text: nil)
             return
         }
 
         // If there is any comment or the comment is active, the input acts as a text view with a placeholder.
-        let attributedString = comment.attributedString.flatMap({ AnnotationView.attributedString(from: $0, layout: self.layout) })
-        self.commentTextView.set(placeholderColor: .placeholderText)
-        self.commentTextView.setup(text: attributedString)
+        let attributedString = comment.attributedString.flatMap({ AnnotationView.attributedString(from: $0, layout: layout) })
+        commentTextView.set(placeholderColor: .placeholderText)
+        commentTextView.setup(text: attributedString)
 
         if canEdit && comment.isActive {
-            self.commentTextView.becomeFirstResponder()
+            commentTextView.becomeFirstResponder()
         }
     }
 
-    private func setupTags(for annotation: Annotation, canEdit: Bool, accessibilityEnabled: Bool) {
-        guard !annotation.tags.isEmpty else {
-            self.tagsButton.isHidden = !canEdit
-            self.tagsButton.accessibilityLabel = L10n.Pdf.AnnotationsSidebar.addTags
-            self.tagsButton.isAccessibilityElement = true
+    private func setup(tags: [Tag], canEdit: Bool, accessibilityEnabled: Bool) {
+        guard !tags.isEmpty else {
+            tagsButton.isHidden = !canEdit
+            tagsButton.accessibilityLabel = L10n.Pdf.AnnotationsSidebar.addTags
+            tagsButton.isAccessibilityElement = true
             self.tags.isHidden = true
             return
         }
 
-        let tagString = AnnotationView.attributedString(from: annotation.tags, layout: self.layout)
+        let tagString = AnnotationView.attributedString(from: tags, layout: layout)
         self.tags.setup(with: tagString)
 
-        self.tagsButton.isHidden = true
+        tagsButton.isHidden = true
         self.tags.isHidden = false
         self.tags.isUserInteractionEnabled = canEdit
         self.tags.button.isAccessibilityElement = true
@@ -227,7 +274,7 @@ final class AnnotationView: UIView {
 
     @DisposeBag.DisposableBuilder
     private func buildDisposables() -> [Disposable] {
-        self.commentTextView.didBecomeActive.subscribe(onNext: { [weak self] _ in
+        commentTextView.didBecomeActive.subscribe(onNext: { [weak self] _ in
             self?.actionPublisher.on(.next(.setCommentActive(true)))
         })
         commentTextView.textObservable
@@ -240,62 +287,62 @@ final class AnnotationView: UIView {
                     scrollToBottomIfNeeded()
                 }
             })
-        self.tags.tap.flatMap({ _ in Observable.just(Action.tags) }).bind(to: self.actionPublisher)
-        self.tagsButton.rx.tap.flatMap({ Observable.just(Action.tags) }).bind(to: self.actionPublisher)
-        self.header.menuTap.flatMap({ Observable.just(Action.options($0)) }).bind(to: self.actionPublisher)
+        tags.tap.flatMap({ _ in Observable.just(Action.tags) }).bind(to: actionPublisher)
+        tagsButton.rx.tap.flatMap({ Observable.just(Action.tags) }).bind(to: actionPublisher)
+        header.menuTap.flatMap({ Observable.just(Action.options($0)) }).bind(to: actionPublisher)
     }
     
     private func setupObserving() {
         var disposables: [Disposable] = buildDisposables()
-        if let doneTap = self.header.doneTap {
-            disposables.append(doneTap.flatMap({ Observable.just(Action.done) }).bind(to: self.actionPublisher))
+        if let doneTap = header.doneTap {
+            disposables.append(doneTap.flatMap({ Observable.just(Action.done) }).bind(to: actionPublisher))
         }
         disposeBag = CompositeDisposable(disposables: disposables)
     }
 
     private func setupView(commentPlaceholder: String) {
-        self.header = AnnotationViewHeader(layout: self.layout)
-        self.topSeparator = AnnotationViewSeparator()
-        self.commentTextView = AnnotationViewTextView(layout: self.layout, placeholder: commentPlaceholder)
-        self.commentTextView.accessibilityLabelPrefix = L10n.Accessibility.Pdf.comment + ": "
-        self.bottomSeparator = AnnotationViewSeparator()
-        self.tagsButton = AnnotationViewButton(layout: self.layout)
-        self.tagsButton.setTitle(L10n.Pdf.AnnotationsSidebar.addTags, for: .normal)
-        self.tags = AnnotationViewText(layout: self.layout)
+        header = AnnotationViewHeader(layout: layout)
+        topSeparator = AnnotationViewSeparator()
+        commentTextView = AnnotationViewTextView(layout: layout, placeholder: commentPlaceholder)
+        commentTextView.accessibilityLabelPrefix = L10n.Accessibility.Pdf.comment + ": "
+        bottomSeparator = AnnotationViewSeparator()
+        tagsButton = AnnotationViewButton(layout: layout)
+        tagsButton.setTitle(L10n.Pdf.AnnotationsSidebar.addTags, for: .normal)
+        tags = AnnotationViewText(layout: layout)
 
-        if self.layout.showsContent {
-            self.highlightContent = AnnotationViewHighlightContent(layout: self.layout)
-            self.imageContent = AnnotationViewImageContent(layout: self.layout)
+        if layout.showsContent {
+            highlightContent = AnnotationViewHighlightContent(layout: layout)
+            imageContent = AnnotationViewImageContent(layout: layout)
         }
 
-        let view = self.layout.scrollableBody ? self.createScrollableBodyView() : self.createStaticBodyView()
-        self.addSubview(view)
+        let view = layout.scrollableBody ? createScrollableBodyView() : createStaticBodyView()
+        addSubview(view)
 
         NSLayoutConstraint.activate([
-            view.topAnchor.constraint(equalTo: self.topAnchor),
-            view.bottomAnchor.constraint(equalTo: self.bottomAnchor),
-            view.leadingAnchor.constraint(equalTo: self.leadingAnchor),
-            view.trailingAnchor.constraint(equalTo: self.trailingAnchor)
+            view.topAnchor.constraint(equalTo: topAnchor),
+            view.bottomAnchor.constraint(equalTo: bottomAnchor),
+            view.leadingAnchor.constraint(equalTo: leadingAnchor),
+            view.trailingAnchor.constraint(equalTo: trailingAnchor)
         ])
     }
 
     private func createStaticBodyView() -> UIView {
-        var views: [UIView] = [self.header, self.topSeparator]
-        if self.layout.showsContent {
-            if let highlightContent = self.highlightContent {
+        var views: [UIView] = [header, topSeparator]
+        if layout.showsContent {
+            if let highlightContent {
                 views.append(highlightContent)
             }
-            if let imageContent = self.imageContent {
+            if let imageContent {
                 views.append(imageContent)
             }
         }
-        views.append(contentsOf: [self.commentTextView, self.bottomSeparator, self.tagsButton, self.tags])
-        return self.createStackView(with: views)
+        views.append(contentsOf: [commentTextView, bottomSeparator, tagsButton, tags])
+        return createStackView(with: views)
     }
 
     private func createScrollableBodyView() -> UIView {
-        let stackView = self.createStackView(with: [self.commentTextView, self.bottomSeparator, self.tagsButton, self.tags])
-        self.scrollViewContent = stackView
+        let stackView = createStackView(with: [commentTextView, bottomSeparator, tagsButton, tags])
+        scrollViewContent = stackView
 
         let scrollView = UIScrollView()
         scrollView.addSubview(stackView)
@@ -304,8 +351,8 @@ final class AnnotationView: UIView {
 
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(self.header)
-        view.addSubview(self.topSeparator)
+        view.addSubview(header)
+        view.addSubview(topSeparator)
         view.addSubview(scrollView)
 
         let height = stackView.heightAnchor.constraint(equalTo: scrollView.heightAnchor)
@@ -313,18 +360,18 @@ final class AnnotationView: UIView {
 
         NSLayoutConstraint.activate([
             // Vertical
-            self.header.topAnchor.constraint(equalTo: view.topAnchor),
-            self.header.bottomAnchor.constraint(equalTo: self.topSeparator.topAnchor),
-            self.topSeparator.bottomAnchor.constraint(equalTo: scrollView.topAnchor),
+            header.topAnchor.constraint(equalTo: view.topAnchor),
+            header.bottomAnchor.constraint(equalTo: topSeparator.topAnchor),
+            topSeparator.bottomAnchor.constraint(equalTo: scrollView.topAnchor),
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             stackView.topAnchor.constraint(equalTo: scrollView.topAnchor),
             stackView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
             height,
             // Horizontal
-            self.header.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            self.header.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            self.topSeparator.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            self.topSeparator.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            header.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            header.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            topSeparator.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            topSeparator.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             stackView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
@@ -361,7 +408,7 @@ final class AnnotationView: UIView {
 
     static func attributedString(from tags: [Tag], layout: AnnotationViewLayout) -> NSAttributedString {
         let string = AttributedTagStringGenerator.attributedString(from: tags)
-        string.addAttribute(.paragraphStyle, value: self.paragraphStyle(for: layout), range: NSRange(location: 0, length: string.length))
+        string.addAttribute(.paragraphStyle, value: paragraphStyle(for: layout), range: NSRange(location: 0, length: string.length))
         return string
     }
 }

@@ -15,7 +15,7 @@ struct PDFSettings {
     var pageMode: PageMode
     var direction: ScrollDirection
     var pageFitting: PDFConfiguration.SpreadFitting
-    var appearanceMode: PDFReaderState.AppearanceMode
+    var appearanceMode: ReaderSettingsState.Appearance
     var idleTimerDisabled: Bool
 
     static var `default`: PDFSettings {
@@ -38,7 +38,7 @@ extension PDFSettings: Codable {
 
         self.direction = ScrollDirection(rawValue: directionRaw) ?? .horizontal
         self.transition = PageTransition(rawValue: transitionRaw) ?? .scrollPerSpread
-        self.appearanceMode = PDFReaderState.AppearanceMode(rawValue: appearanceRaw) ?? .automatic
+        self.appearanceMode = ReaderSettingsState.Appearance(rawValue: appearanceRaw) ?? .automatic
         self.pageMode = PageMode(rawValue: modeRaw) ?? .automatic
         self.pageFitting = PDFConfiguration.SpreadFitting(rawValue: fittingRaw) ?? .adaptive
         // This setting is not persisted, always defaults to false

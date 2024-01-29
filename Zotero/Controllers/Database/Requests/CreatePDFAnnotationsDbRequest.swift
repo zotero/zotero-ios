@@ -1,5 +1,5 @@
 //
-//  CreateAnnotationsDbRequest.swift
+//  CreatePDFAnnotationsDbRequest.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 31.08.2022.
@@ -10,10 +10,10 @@ import UIKit
 
 import RealmSwift
 
-struct CreateAnnotationsDbRequest: DbRequest {
+struct CreatePDFAnnotationsDbRequest: DbRequest {
     let attachmentKey: String
     let libraryId: LibraryIdentifier
-    let annotations: [DocumentAnnotation]
+    let annotations: [PDFDocumentAnnotation]
     let userId: Int
 
     unowned let schemaController: SchemaController
@@ -29,7 +29,7 @@ struct CreateAnnotationsDbRequest: DbRequest {
         }
     }
 
-    private func create(annotation: DocumentAnnotation, parent: RItem, in database: Realm) {
+    private func create(annotation: PDFDocumentAnnotation, parent: RItem, in database: Realm) {
         let item: RItem
 
         if let _item = database.objects(RItem.self).filter(.key(annotation.key, in: self.libraryId)).first {
@@ -70,8 +70,8 @@ struct CreateAnnotationsDbRequest: DbRequest {
         item.changes.append(RObjectChange.create(changes: changes))
     }
 
-    private func addFields(for annotation: Annotation, to item: RItem, database: Realm) {
-        for field in FieldKeys.Item.Annotation.allFields(for: annotation.type) {
+    private func addFields(for annotation: PDFDocumentAnnotation, to item: RItem, database: Realm) {
+        for field in FieldKeys.Item.Annotation.allPDFFields(for: annotation.type) {
             let rField = RItemField()
             rField.key = field.key
             rField.baseKey = field.baseKey
@@ -110,7 +110,7 @@ struct CreateAnnotationsDbRequest: DbRequest {
     private func add(rects: [CGRect], to item: RItem, changes: inout RItemChanges, database: Realm) {
         guard !rects.isEmpty else { return }
 
-        let page = UInt(DatabaseAnnotation(item: item).page)
+        let page = UInt(PDFDatabaseAnnotation(item: item).page)
 
         for rect in rects {
             let dbRect = self.boundingBoxConverter.convertToDb(rect: rect, page: page) ?? rect
@@ -128,7 +128,7 @@ struct CreateAnnotationsDbRequest: DbRequest {
     private func add(paths: [[CGPoint]], to item: RItem, changes: inout RItemChanges, database: Realm) {
         guard !paths.isEmpty else { return }
 
-        let page = UInt(DatabaseAnnotation(item: item).page)
+        let page = UInt(PDFDatabaseAnnotation(item: item).page)
 
         for (idx, path) in paths.enumerated() {
             let rPath = RPath()

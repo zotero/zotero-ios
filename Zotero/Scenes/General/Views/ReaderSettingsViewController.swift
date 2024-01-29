@@ -1,5 +1,5 @@
 //
-//  PDFSettingsViewController.swift
+//  ReaderSettingsViewController.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 02.03.2022.
@@ -11,8 +11,8 @@ import UIKit
 import PSPDFKitUI
 import RxSwift
 
-final class PDFSettingsViewController: UICollectionViewController {
-    private enum Row {
+final class ReaderSettingsViewController: UICollectionViewController {
+    enum Row {
         case pageTransition
         case pageMode
         case scrollDirection
@@ -21,13 +21,14 @@ final class PDFSettingsViewController: UICollectionViewController {
         case appearance
     }
 
-    private let viewModel: ViewModel<PDFSettingsActionHandler>
+    let viewModel: ViewModel<ReaderSettingsActionHandler>
+    private let rows: [Row]
     private let disposeBag: DisposeBag
 
     private var dataSource: UICollectionViewDiffableDataSource<Int, Row>!
-    var changeHandler: ((PDFSettings) -> Void)?
 
-    init(viewModel: ViewModel<PDFSettingsActionHandler>) {
+    init(rows: [Row], viewModel: ViewModel<ReaderSettingsActionHandler>) {
+        self.rows = rows
         self.viewModel = viewModel
         disposeBag = DisposeBag()
 
@@ -55,31 +56,10 @@ final class PDFSettingsViewController: UICollectionViewController {
             .disposed(by: disposeBag)
     }
 
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-
-        if UIDevice.current.userInterfaceIdiom == .phone {
-            changeHandler?(viewModel.state.settings)
-        }
-    }
-
     // MARK: - Actions
 
-    private func update(state: PDFSettingsState) {
-        switch state.settings.appearanceMode {
-        case .automatic:
-            overrideUserInterfaceStyle = .unspecified
-
-        case .light:
-            overrideUserInterfaceStyle = .light
-
-        case .dark:
-            overrideUserInterfaceStyle = .dark
-        }
-
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            changeHandler?(state.settings)
-        }
+    private func update(state: ReaderSettingsState) {
+        overrideUserInterfaceStyle = state.appearance.userInterfaceStyle
     }
 
     @objc private func done() {
@@ -105,7 +85,7 @@ final class PDFSettingsViewController: UICollectionViewController {
     private func applySnapshot() {
         var snapshot = NSDiffableDataSourceSnapshot<Int, Row>()
         snapshot.appendSections([0])
-        snapshot.appendItems([.pageTransition, .pageMode, .scrollDirection, .pageFitting, .appearance, .sleep], toSection: 0)
+        snapshot.appendItems(rows, toSection: 0)
         dataSource.apply(snapshot, animatingDifferences: false)
     }
 
@@ -120,7 +100,7 @@ final class PDFSettingsViewController: UICollectionViewController {
             cell.contentConfiguration = configuration
 
             let toggle = UISwitch()
-            toggle.setOn(!viewModel.state.settings.idleTimerDisabled, animated: false)
+            toggle.setOn(!viewModel.state.idleTimerDisabled, animated: false)
             toggle.addAction(UIAction(handler: { [weak self, weak toggle] _ in self?.viewModel.process(action: .setIdleTimerDisabled(!(toggle?.isOn ?? false))) }), for: .valueChanged)
 
             let customConfiguration = UICellAccessory.CustomViewConfiguration(customView: toggle, placement: .trailing(displayed: .always))
@@ -128,8 +108,8 @@ final class PDFSettingsViewController: UICollectionViewController {
         }
     }()
 
-    private lazy var segmentedRegistration: UICollectionView.CellRegistration<PDFSettingsSegmentedCell, Row> = {
-        return UICollectionView.CellRegistration<PDFSettingsSegmentedCell, Row> { [weak self] cell, _, row in
+    private lazy var segmentedRegistration: UICollectionView.CellRegistration<ReaderSettingsSegmentedCell, Row> = {
+        return UICollectionView.CellRegistration<ReaderSettingsSegmentedCell, Row> { [weak self] cell, _, row in
             guard let self else { return }
 
             let title: String
@@ -141,7 +121,7 @@ final class PDFSettingsViewController: UICollectionViewController {
                 title = L10n.Pdf.Settings.PageTransition.title
                 getSelectedIndex = { [weak self] in
                     guard let self else { return 0 }
-                    return Int(viewModel.state.settings.transition.rawValue)
+                    return Int(viewModel.state.transition.rawValue)
                 }
                 actions = [UIAction(title: L10n.Pdf.Settings.PageTransition.jump, handler: { [weak self] _ in self?.viewModel.process(action: .setTransition(.scrollPerSpread)) }),
                            UIAction(title: L10n.Pdf.Settings.PageTransition.continuous, handler: { [weak self] _ in self?.viewModel.process(action: .setTransition(.scrollContinuous)) })]
@@ -150,7 +130,7 @@ final class PDFSettingsViewController: UICollectionViewController {
                 title = L10n.Pdf.Settings.PageMode.title
                 getSelectedIndex = { [weak self] in
                     guard let self else { return 0 }
-                    return Int(viewModel.state.settings.pageMode.rawValue)
+                    return Int(viewModel.state.pageMode.rawValue)
                 }
                 actions = [UIAction(title: L10n.Pdf.Settings.PageMode.single, handler: { [weak self] _ in self?.viewModel.process(action: .setPageMode(.single)) }),
                            UIAction(title: L10n.Pdf.Settings.PageMode.double, handler: { [weak self] _ in self?.viewModel.process(action: .setPageMode(.double)) }),
@@ -160,7 +140,7 @@ final class PDFSettingsViewController: UICollectionViewController {
                 title = L10n.Pdf.Settings.ScrollDirection.title
                 getSelectedIndex = { [weak self] in
                     guard let self else { return 0 }
-                    return Int(viewModel.state.settings.direction.rawValue)
+                    return Int(viewModel.state.scrollDirection.rawValue)
                 }
                 actions = [UIAction(title: L10n.Pdf.Settings.ScrollDirection.horizontal, handler: { [weak self] _ in self?.viewModel.process(action: .setDirection(.horizontal)) }),
                            UIAction(title: L10n.Pdf.Settings.ScrollDirection.vertical, handler: { [weak self] _ in self?.viewModel.process(action: .setDirection(.vertical)) })]
@@ -169,7 +149,7 @@ final class PDFSettingsViewController: UICollectionViewController {
                 title = L10n.Pdf.Settings.PageFitting.title
                 getSelectedIndex = { [weak self] in
                     guard let self else { return 0 }
-                    return viewModel.state.settings.pageFitting.rawValue
+                    return viewModel.state.pageFitting.rawValue
                 }
                 actions = [UIAction(title: L10n.Pdf.Settings.PageFitting.fit, handler: { [weak self] _ in self?.viewModel.process(action: .setPageFitting(.fit)) }),
                            UIAction(title: L10n.Pdf.Settings.PageFitting.fill, handler: { [weak self] _ in self?.viewModel.process(action: .setPageFitting(.fill)) }),
@@ -179,17 +159,17 @@ final class PDFSettingsViewController: UICollectionViewController {
                 title = L10n.Pdf.Settings.Appearance.title
                 getSelectedIndex = { [weak self] in
                     guard let self else { return 0 }
-                    return Int(viewModel.state.settings.appearanceMode.rawValue)
+                    return Int(viewModel.state.appearance.rawValue)
                 }
-                actions = [UIAction(title: L10n.Pdf.Settings.Appearance.lightMode, handler: { [weak self] _ in self?.viewModel.process(action: .setAppearanceMode(.light)) }),
-                           UIAction(title: L10n.Pdf.Settings.Appearance.darkMode, handler: { [weak self] _ in self?.viewModel.process(action: .setAppearanceMode(.dark)) }),
-                           UIAction(title: L10n.Pdf.Settings.Appearance.auto, handler: { [weak self] _ in self?.viewModel.process(action: .setAppearanceMode(.automatic)) })]
+                actions = [UIAction(title: L10n.Pdf.Settings.Appearance.lightMode, handler: { [weak self] _ in self?.viewModel.process(action: .setAppearance(.light)) }),
+                           UIAction(title: L10n.Pdf.Settings.Appearance.darkMode, handler: { [weak self] _ in self?.viewModel.process(action: .setAppearance(.dark)) }),
+                           UIAction(title: L10n.Pdf.Settings.Appearance.auto, handler: { [weak self] _ in self?.viewModel.process(action: .setAppearance(.automatic)) })]
 
             case .sleep:
                 return
             }
 
-            let configuration = PDFSettingsSegmentedCell.ContentConfiguration(title: title, actions: actions, getSelectedIndex: getSelectedIndex)
+            let configuration = ReaderSettingsSegmentedCell.ContentConfiguration(title: title, actions: actions, getSelectedIndex: getSelectedIndex)
             cell.contentConfiguration = configuration
         }
     }()
@@ -205,8 +185,7 @@ final class PDFSettingsViewController: UICollectionViewController {
 
     private func setupNavigationBarIfNeeded() {
         guard UIDevice.current.userInterfaceIdiom == .phone else { return }
-
-        let button = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(PDFSettingsViewController.done))
+        let button = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(Self.done))
         navigationItem.rightBarButtonItem = button
     }
 }
