@@ -51,13 +51,14 @@ struct ReaderSettingsState: ViewModelState {
     }
 
     init(settings: HtmlEpubSettings) {
-        self.appearance = settings.appearance
-        self.idleTimerDisabled = settings.idleTimerDisabled
+        appearance = settings.appearance
+        idleTimerDisabled = settings.idleTimerDisabled
         // These don't apply to HTML/Epub, assign random values
-        self.transition = .curl
-        self.pageMode = .automatic
-        self.scrollDirection = .horizontal
-        self.pageFitting = .adaptive
+        transition = .curl
+        pageMode = .automatic
+        scrollDirection = .horizontal
+        pageFitting = .adaptive
+        isFirstPageAlwaysSingle = true
     }
 
     func cleanup() {}
