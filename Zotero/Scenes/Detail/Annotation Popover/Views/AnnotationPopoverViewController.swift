@@ -121,7 +121,7 @@ final class AnnotationPopoverViewController: UIViewController {
     }
 
     private func showSettings() {
-        self.coordinatorDelegate?.showEdit(
+        coordinatorDelegate?.showEdit(
             state: viewModel.state,
             saveAction: { [weak self] _, _, pageLabel, updateSubsequentLabels, highlightText in
                 self?.viewModel.process(action: .setProperties(pageLabel: pageLabel, updateSubsequentLabels: updateSubsequentLabels, highlightText: highlightText))
@@ -141,11 +141,10 @@ final class AnnotationPopoverViewController: UIViewController {
     }
 
     private func scrollToCursorIfNeeded() {
-        guard let commentView = self.comment, commentView.textView.isFirstResponder, let selectedPosition = commentView.textView.selectedTextRange?.start else { return }
-        let caretRect = commentView.textView.caretRect(for: selectedPosition)
-        guard (commentView.frame.origin.y + caretRect.origin.y) > self.scrollView.frame.height else { return }
-
-        let rect = CGRect(x: caretRect.origin.x, y: (commentView.frame.origin.y + caretRect.origin.y) + 10, width: caretRect.size.width, height: caretRect.size.height)
+        guard let comment, comment.textView.isFirstResponder, let selectedPosition = comment.textView.selectedTextRange?.start else { return }
+        let caretRect = comment.textView.caretRect(for: selectedPosition)
+        guard (comment.frame.origin.y + caretRect.origin.y) > scrollView.frame.height else { return }
+        let rect = CGRect(x: caretRect.origin.x, y: (comment.frame.origin.y + caretRect.origin.y) + 10, width: caretRect.size.width, height: caretRect.size.height)
         scrollView.scrollRectToVisible(rect, animated: true)
     }
 
@@ -155,8 +154,8 @@ final class AnnotationPopoverViewController: UIViewController {
         let layout = AnnotationPopoverLayout.annotationLayout
 
         // Setup header
-        let _header = AnnotationViewHeader(layout: layout)
-        _header.setup(
+        let header = AnnotationViewHeader(layout: layout)
+        header.setup(
             type: viewModel.state.type,
             authorName: viewModel.state.author,
             pageLabel: viewModel.state.pageLabel,
@@ -168,20 +167,20 @@ final class AnnotationPopoverViewController: UIViewController {
             showsLock: !viewModel.state.isEditable,
             accessibilityType: .view
         )
-        _header.menuTap
+        header.menuTap
               .subscribe(with: self, onNext: { `self`, _ in
                   self.showSettings()
               })
               .disposed(by: disposeBag)
-        if let tap = _header.doneTap {
+        if let tap = header.doneTap {
             tap.subscribe(with: self, onNext: { `self`, _ in
                 self.presentingViewController?.dismiss(animated: true, completion: nil)
             })
             .disposed(by: disposeBag)
         }
-        self.header = _header
+        self.header = header
 
-        containerStackView.addArrangedSubview(_header)
+        containerStackView.addArrangedSubview(header)
         containerStackView.addArrangedSubview(AnnotationViewSeparator())
 
         // Setup comment

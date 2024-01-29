@@ -9,7 +9,7 @@
 import UIKit
 
 struct AnnotationEditState: ViewModelState {
-    struct AnnotationData {
+    struct Data {
         let type: AnnotationType
         let isEditable: Bool
         let color: String
@@ -37,7 +37,7 @@ struct AnnotationEditState: ViewModelState {
     var updateSubsequentLabels: Bool
     var changes: Changes
 
-    init(data: AnnotationData) {
+    init(data: Data) {
         self.type = data.type
         self.isEditable = data.isEditable
         self.color = data.color

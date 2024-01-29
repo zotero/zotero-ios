@@ -22,13 +22,13 @@ final class ReaderSettingsViewController: UICollectionViewController {
     }
 
     let viewModel: ViewModel<ReaderSettingsActionHandler>
-    private let visibleRows: [Row]
+    private let rows: [Row]
     private let disposeBag: DisposeBag
 
     private var dataSource: UICollectionViewDiffableDataSource<Int, Row>!
 
-    init(visibleRows: [Row], viewModel: ViewModel<ReaderSettingsActionHandler>) {
-        self.visibleRows = visibleRows
+    init(rows: [Row], viewModel: ViewModel<ReaderSettingsActionHandler>) {
+        self.rows = rows
         self.viewModel = viewModel
         disposeBag = DisposeBag()
 
@@ -59,7 +59,7 @@ final class ReaderSettingsViewController: UICollectionViewController {
     // MARK: - Actions
 
     private func update(state: ReaderSettingsState) {
-        self.overrideUserInterfaceStyle = state.appearance.userInterfaceStyle
+        overrideUserInterfaceStyle = state.appearance.userInterfaceStyle
     }
 
     @objc private func done() {
@@ -85,8 +85,8 @@ final class ReaderSettingsViewController: UICollectionViewController {
     private func applySnapshot() {
         var snapshot = NSDiffableDataSourceSnapshot<Int, Row>()
         snapshot.appendSections([0])
-        snapshot.appendItems(visibleRows, toSection: 0)
-        self.dataSource.apply(snapshot, animatingDifferences: false)
+        snapshot.appendItems(rows, toSection: 0)
+        dataSource.apply(snapshot, animatingDifferences: false)
     }
 
     // MARK: - Collection View
@@ -110,7 +110,7 @@ final class ReaderSettingsViewController: UICollectionViewController {
 
     private lazy var segmentedRegistration: UICollectionView.CellRegistration<ReaderSettingsSegmentedCell, Row> = {
         return UICollectionView.CellRegistration<ReaderSettingsSegmentedCell, Row> { [weak self] cell, _, row in
-            guard let self = self else { return }
+            guard let self else { return }
 
             let title: String
             let actions: [UIAction]
@@ -121,7 +121,7 @@ final class ReaderSettingsViewController: UICollectionViewController {
                 title = L10n.Pdf.Settings.PageTransition.title
                 getSelectedIndex = { [weak self] in
                     guard let self else { return 0 }
-                    return Int(self.viewModel.state.transition.rawValue)
+                    return Int(viewModel.state.transition.rawValue)
                 }
                 actions = [UIAction(title: L10n.Pdf.Settings.PageTransition.jump, handler: { [weak self] _ in self?.viewModel.process(action: .setTransition(.scrollPerSpread)) }),
                            UIAction(title: L10n.Pdf.Settings.PageTransition.continuous, handler: { [weak self] _ in self?.viewModel.process(action: .setTransition(.scrollContinuous)) })]

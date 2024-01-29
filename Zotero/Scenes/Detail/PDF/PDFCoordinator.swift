@@ -172,11 +172,11 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         popoverDelegate: UIPopoverPresentationControllerDelegate,
         userInterfaceStyle: UIUserInterfaceStyle
     ) -> PublishSubject<AnnotationPopoverState>? {
-        guard let currentNavigationController = self.navigationController, let annotation = viewModel.state.selectedAnnotation else { return nil }
+        guard let currentNavigationController = navigationController, let annotation = viewModel.state.selectedAnnotation else { return nil }
 
         DDLogInfo("PDFCoordinator: show annotation popover")
 
-        if let coordinator = self.childCoordinators.last, coordinator is AnnotationPopoverCoordinator {
+        if let coordinator = childCoordinators.last, coordinator is AnnotationPopoverCoordinator {
             return nil
         }
 
@@ -200,9 +200,9 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
             tags: annotation.tags,
             showsDeleteButton: editability != .notEditable
         )
-        let coordinator = AnnotationPopoverCoordinator(data: data, navigationController: navigationController, controllers: self.controllers)
+        let coordinator = AnnotationPopoverCoordinator(data: data, navigationController: navigationController, controllers: controllers)
         coordinator.parentCoordinator = self
-        self.childCoordinators.append(coordinator)
+        childCoordinators.append(coordinator)
         coordinator.start(animated: false)
 
         if UIDevice.current.userInterfaceIdiom == .pad {
@@ -353,7 +353,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
 
         let state = ReaderSettingsState(settings: settings)
         let viewModel = ViewModel(initialState: state, handler: ReaderSettingsActionHandler())
-        let baseController = ReaderSettingsViewController(visibleRows: [.pageTransition, .pageMode, .scrollDirection, .pageFitting, .appearance, .sleep], viewModel: viewModel)
+        let baseController = ReaderSettingsViewController(rows: [.pageTransition, .pageMode, .scrollDirection, .pageFitting, .appearance, .sleep], viewModel: viewModel)
 
         let controller: UIViewController
         if UIDevice.current.userInterfaceIdiom == .pad {
@@ -558,7 +558,7 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
         navigationController.overrideUserInterfaceStyle = userInterfaceStyle
 
         let coordinator = AnnotationEditCoordinator(
-            data: AnnotationEditState.AnnotationData(
+            data: AnnotationEditState.Data(
                 type: annotation.type,
                 isEditable: annotation.editability(currentUserId: userId, library: library) == .editable,
                 color: annotation.color,

@@ -16,14 +16,14 @@ final class AnnotationEditCoordinator: Coordinator {
     var childCoordinators: [Coordinator]
     weak var navigationController: UINavigationController?
 
-    private let data: AnnotationEditState.AnnotationData
+    private let data: AnnotationEditState.Data
     private let saveAction: AnnotationEditSaveAction
     private let deleteAction: AnnotationEditDeleteAction
     private unowned let controllers: Controllers
     private let disposeBag: DisposeBag
 
     init(
-        data: AnnotationEditState.AnnotationData,
+        data: AnnotationEditState.Data,
         saveAction: @escaping AnnotationEditSaveAction,
         deleteAction: @escaping AnnotationEditDeleteAction,
         navigationController: NavigationViewController,

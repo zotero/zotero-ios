@@ -78,9 +78,9 @@ final class AnnotationToolbarHandler: NSObject {
     var stateDidChange: ((State) -> Void)?
     var didHide: (() -> Void)?
 
-    init(controller _controller: AnnotationToolbarViewController, delegate _delegate: AnnotationToolbarHandlerDelegate) {
-        controller = _controller
-        delegate = _delegate
+    init(controller: AnnotationToolbarViewController, delegate: AnnotationToolbarHandlerDelegate) {
+        self.controller = controller
+        self.delegate = delegate
         previewDashColor = Asset.Colors.zoteroBlueWithDarkMode.color.withAlphaComponent(0.5)
         previewBackgroundColor = Asset.Colors.zoteroBlueWithDarkMode.color.withAlphaComponent(0.15)
         previewSelectedDashColor = Asset.Colors.zoteroBlueWithDarkMode.color

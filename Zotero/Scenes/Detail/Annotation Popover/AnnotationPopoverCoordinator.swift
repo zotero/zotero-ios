@@ -67,7 +67,7 @@ extension AnnotationPopoverCoordinator: AnnotationPopoverAnnotationCoordinatorDe
     }
     
     func showEdit(state: AnnotationPopoverState, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction) {
-        let data = AnnotationEditState.AnnotationData(
+        let data = AnnotationEditState.Data(
             type: state.type,
             isEditable: state.isEditable,
             color: state.color,
