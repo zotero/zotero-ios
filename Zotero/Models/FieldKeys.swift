@@ -97,7 +97,7 @@ struct FieldKeys {
                 }
             }
 
-            static func allPdfFields(for type: AnnotationType) -> [KeyBaseKeyPair] {
+            static func allPDFFields(for type: AnnotationType) -> [KeyBaseKeyPair] {
                 switch type {
                 case .highlight:
                     return [KeyBaseKeyPair(key: Annotation.type, baseKey: nil),
