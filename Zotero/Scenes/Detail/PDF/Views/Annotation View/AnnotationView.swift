@@ -14,7 +14,7 @@ final class AnnotationView: UIView {
     enum Kind {
         case cell, popover
     }
-    
+
     enum Action {
         case tags
         case options(UIButton?)
@@ -23,20 +23,20 @@ final class AnnotationView: UIView {
         case setCommentActive(Bool)
         case done
     }
-    
+
     enum AccessibilityType {
         case cell
         case view
     }
-    
+
     struct Comment {
         let attributedString: NSAttributedString?
         let isActive: Bool
     }
-    
+
     private let layout: AnnotationViewLayout
     let actionPublisher: PublishSubject<AnnotationView.Action>
-    
+
     private var header: AnnotationViewHeader!
     private var topSeparator: UIView!
     private var highlightContent: AnnotationViewHighlightContent?
@@ -52,9 +52,9 @@ final class AnnotationView: UIView {
     var tagString: String? {
         return self.tags.textLabel.text
     }
-    
+
     // MARK: - Lifecycle
-    
+
     init(layout: AnnotationViewLayout, commentPlaceholder: String) {
         self.layout = layout
         actionPublisher = PublishSubject()
@@ -65,31 +65,31 @@ final class AnnotationView: UIView {
         translatesAutoresizingMaskIntoConstraints = false
         setupView(commentPlaceholder: commentPlaceholder)
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     // MARK: - Actions
-    
+
     @discardableResult
     override func resignFirstResponder() -> Bool {
         commentTextView.resignFirstResponder()
     }
-    
+
     func updatePreview(image: UIImage?) {
         guard let imageContent, !imageContent.isHidden else { return }
         imageContent.setup(with: image)
     }
-    
+
     private func scrollToBottomIfNeeded() {
         guard let scrollView, let scrollViewContent, scrollViewContent.frame.height > scrollView.frame.height else { return }
         let yOffset = scrollView.contentSize.height - scrollView.bounds.height + scrollView.contentInset.bottom
         scrollView.setContentOffset(CGPoint(x: 0, y: yOffset), animated: true)
     }
-    
+
     // MARK: - Setups
-    
+
     func setup(with annotation: HtmlEpubAnnotation, comment: Comment?, selected: Bool, availableWidth: CGFloat, library: Library, currentUserId: Int) {
         let color = UIColor(hex: annotation.color)
         let canEdit = library.metadataEditable && selected
@@ -322,7 +322,7 @@ final class AnnotationView: UIView {
         tagsButton.rx.tap.flatMap({ Observable.just(Action.tags) }).bind(to: actionPublisher)
         header.menuTap.flatMap({ Observable.just(Action.options($0)) }).bind(to: actionPublisher)
     }
-    
+
     func setupObserving() {
         var disposables: [Disposable] = buildDisposables()
         if let doneTap = header.doneTap {
