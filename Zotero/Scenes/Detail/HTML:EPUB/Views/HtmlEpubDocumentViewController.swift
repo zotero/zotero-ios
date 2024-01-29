@@ -27,7 +27,7 @@ class HtmlEpubDocumentViewController: UIViewController {
 
     init(viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
         self.viewModel = viewModel
-        self.disposeBag = DisposeBag()
+        disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -36,8 +36,8 @@ class HtmlEpubDocumentViewController: UIViewController {
     }
 
     override func loadView() {
-        self.view = UIView()
-        self.view.backgroundColor = .systemBackground
+        view = UIView()
+        view.backgroundColor = .systemBackground
     }
 
     override func viewDidLoad() {
@@ -50,8 +50,8 @@ class HtmlEpubDocumentViewController: UIViewController {
         func observeViewModel() {
             viewModel.stateObservable
                 .observe(on: MainScheduler.instance)
-                .subscribe(with: self, onNext: { `self`, state in
-                    self.process(state: state)
+                .subscribe(onNext: { [weak self] state in
+                    self?.process(state: state)
                 })
                 .disposed(by: disposeBag)
         }
@@ -59,17 +59,17 @@ class HtmlEpubDocumentViewController: UIViewController {
         func setupWebView() {
             let webView = WKWebView()
             webView.translatesAutoresizingMaskIntoConstraints = false
-            self.view.addSubview(webView)
+            view.addSubview(webView)
 
             NSLayoutConstraint.activate([
-                self.view.safeAreaLayoutGuide.topAnchor.constraint(equalTo: webView.topAnchor),
-                self.view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: webView.bottomAnchor),
-                self.view.safeAreaLayoutGuide.leadingAnchor.constraint(equalTo: webView.leadingAnchor),
-                self.view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: webView.trailingAnchor)
+                view.safeAreaLayoutGuide.topAnchor.constraint(equalTo: webView.topAnchor),
+                view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: webView.bottomAnchor),
+                view.safeAreaLayoutGuide.leadingAnchor.constraint(equalTo: webView.leadingAnchor),
+                view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: webView.trailingAnchor)
             ])
             self.webView = webView
-            self.webViewHandler = WebViewHandler(webView: webView, javascriptHandlers: JSHandlers.allCases.map({ $0.rawValue }))
-            self.webViewHandler.receivedMessageHandler = { [weak self] handler, message in
+            webViewHandler = WebViewHandler(webView: webView, javascriptHandlers: JSHandlers.allCases.map({ $0.rawValue }))
+            webViewHandler.receivedMessageHandler = { [weak self] handler, message in
                 self?.process(handler: handler, message: message)
             }
         }
@@ -79,9 +79,7 @@ class HtmlEpubDocumentViewController: UIViewController {
                 DDLogError("HtmlEpubReaderViewController: can't load reader view.html")
                 return
             }
-            self.webViewHandler.load(fileUrl: readerUrl)
-                .subscribe()
-                .disposed(by: self.disposeBag)
+            webViewHandler.load(fileUrl: readerUrl).subscribe().disposed(by: disposeBag)
         }
     }
 
@@ -118,9 +116,7 @@ class HtmlEpubDocumentViewController: UIViewController {
 
         func set(tool data: (AnnotationTool, UIColor)?) {
             guard let (tool, color) = data else {
-                self.webViewHandler.call(javascript: "clearTool();")
-                    .subscribe()
-                    .disposed(by: self.disposeBag)
+                webViewHandler.call(javascript: "clearTool();").subscribe().disposed(by: disposeBag)
                 return
             }
 
@@ -135,28 +131,25 @@ class HtmlEpubDocumentViewController: UIViewController {
             case .eraser, .image, .ink:
                 return
             }
-
-            self.webViewHandler.call(javascript: "setTool({ type: '\(toolName)', color: '\(color.hexString)' });")
-                .subscribe()
-                .disposed(by: self.disposeBag)
+            webViewHandler.call(javascript: "setTool({ type: '\(toolName)', color: '\(color.hexString)' });").subscribe().disposed(by: disposeBag)
         }
 
         func search(term: String) {
             webViewHandler.call(javascript: "search({ term: \(WebViewEncoder.encodeForJavascript(term.data(using: .utf8))) });")
                 .observe(on: MainScheduler.instance)
-                .subscribe(with: self, onFailure: { _, error in
+                .subscribe(onFailure: { error in
                     DDLogError("HtmlEpubReaderViewController: searching document failed - \(error)")
                 })
-                .disposed(by: self.disposeBag)
+                .disposed(by: disposeBag)
         }
 
         func selectInDocument(key: String) {
             webViewHandler.call(javascript: "select({ key: '\(key)' });")
                 .observe(on: MainScheduler.instance)
-                .subscribe(with: self, onFailure: { _, error in
+                .subscribe(onFailure: { error in
                     DDLogError("HtmlEpubReaderViewController: navigating to \(key) failed - \(error)")
                 })
-                .disposed(by: self.disposeBag)
+                .disposed(by: disposeBag)
         }
 
         func updateView(modifications: [[String: Any]], insertions: [[String: Any]], deletions: [String]) {
@@ -165,10 +158,10 @@ class HtmlEpubDocumentViewController: UIViewController {
             let encodedModifications = WebViewEncoder.encodeAsJSONForJavascript(modifications)
             webViewHandler.call(javascript: "updateAnnotations({ deletions: \(encodedDeletions), insertions: \(encodedInsertions), modifications: \(encodedModifications)});")
                 .observe(on: MainScheduler.instance)
-                .subscribe(with: self, onFailure: { _, error in
+                .subscribe(onFailure: { error in
                     DDLogError("HtmlEpubReaderViewController: updating document failed - \(error)")
                 })
-                .disposed(by: self.disposeBag)
+                .disposed(by: disposeBag)
         }
 
         func load(documentData data: HtmlEpubReaderState.DocumentData) {
@@ -187,10 +180,10 @@ class HtmlEpubDocumentViewController: UIViewController {
 
             webViewHandler.call(javascript: javascript)
                 .observe(on: MainScheduler.instance)
-                .subscribe(with: self, onFailure: { _, error in
+                .subscribe(onFailure: { error in
                     DDLogError("HtmlEpubReaderViewController: loading document failed - \(error)")
                 })
-                .disposed(by: self.disposeBag)
+                .disposed(by: disposeBag)
         }
     }
 
@@ -209,7 +202,7 @@ class HtmlEpubDocumentViewController: UIViewController {
 
             switch event {
             case "onInitialized":
-                self.viewModel.process(action: .loadDocument)
+                viewModel.process(action: .loadDocument)
 
             case "onSaveAnnotations":
                 guard let params = data["params"] as? [String: Any] else {
@@ -217,7 +210,7 @@ class HtmlEpubDocumentViewController: UIViewController {
                     return
                 }
                 DDLogInfo("HtmlEpubReaderViewController: \(params)")
-                self.viewModel.process(action: .saveAnnotations(params))
+                viewModel.process(action: .saveAnnotations(params))
 
             case "onSetAnnotationPopup":
                 guard let params = data["params"] as? [String: Any] else {
@@ -226,7 +219,7 @@ class HtmlEpubDocumentViewController: UIViewController {
                 }
                 
                 if params.isEmpty {
-                    self.viewModel.process(action: .deselectSelectedAnnotation)
+                    viewModel.process(action: .deselectSelectedAnnotation)
                     return
                 }
 
@@ -235,16 +228,16 @@ class HtmlEpubDocumentViewController: UIViewController {
                     return
                 }
 
-                let navigationBarInset = (self.parentDelegate?.statusBarHeight ?? 0) + (self.parentDelegate?.navigationBarHeight ?? 0)
+                let navigationBarInset = (parentDelegate?.statusBarHeight ?? 0) + (parentDelegate?.navigationBarHeight ?? 0)
                 let rect = CGRect(x: rectArray[0], y: rectArray[1] + navigationBarInset, width: rectArray[2] - rectArray[0], height: rectArray[3] - rectArray[1])
-                self.viewModel.process(action: .selectAnnotationFromDocument(key: key, rect: rect))
+                viewModel.process(action: .selectAnnotationFromDocument(key: key, rect: rect))
 
             case "onChangeViewState":
                 guard let params = data["params"] as? [String: Any] else {
                     DDLogWarn("HtmlEpubReaderViewController: event \(event) missing params - \(message)")
                     return
                 }
-                self.viewModel.process(action: .setViewState(params))
+                viewModel.process(action: .setViewState(params))
 
             default:
                 break

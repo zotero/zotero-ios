@@ -21,17 +21,17 @@ struct CreateHtmlEpubAnnotationsDbRequest: DbRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
-        guard let parent = database.objects(RItem.self).filter(.key(self.attachmentKey, in: self.libraryId)).first else { return }
+        guard let parent = database.objects(RItem.self).filter(.key(attachmentKey, in: libraryId)).first else { return }
 
-        for annotation in self.annotations {
-            self.create(annotation: annotation, parent: parent, in: database)
+        for annotation in annotations {
+            create(annotation: annotation, parent: parent, in: database)
         }
     }
 
     private func create(annotation: HtmlEpubAnnotation, parent: RItem, in database: Realm) {
         let item: RItem
 
-        if let _item = database.objects(RItem.self).filter(.key(annotation.key, in: self.libraryId)).first {
+        if let _item = database.objects(RItem.self).filter(.key(annotation.key, in: libraryId)).first {
             if !_item.deleted {
                 // If item exists and is not deleted locally, we can ignore this request
                 return
@@ -45,8 +45,8 @@ struct CreateHtmlEpubAnnotationsDbRequest: DbRequest {
             item = RItem()
             item.key = annotation.key
             item.rawType = ItemTypes.annotation
-            item.localizedType = self.schemaController.localized(itemType: ItemTypes.annotation) ?? ""
-            item.libraryId = self.libraryId
+            item.localizedType = schemaController.localized(itemType: ItemTypes.annotation) ?? ""
+            item.libraryId = libraryId
             item.dateAdded = annotation.dateCreated
             database.add(item)
         }
@@ -58,11 +58,11 @@ struct CreateHtmlEpubAnnotationsDbRequest: DbRequest {
         item.parent = parent
 
         if annotation.isAuthor {
-            item.createdBy = database.object(ofType: RUser.self, forPrimaryKey: self.userId)
+            item.createdBy = database.object(ofType: RUser.self, forPrimaryKey: userId)
         }
 
         // We need to submit tags on creation even if they are empty, so we need to mark them as changed
-        self.addFields(for: annotation, to: item, database: database)
+        addFields(for: annotation, to: item, database: database)
         let changes: RItemChanges = [.parent, .fields, .type, .tags]
         item.changes.append(RObjectChange.create(changes: changes))
     }

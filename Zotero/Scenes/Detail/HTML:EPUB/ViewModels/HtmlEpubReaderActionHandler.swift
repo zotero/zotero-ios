@@ -28,7 +28,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         self.htmlAttributedStringConverter = htmlAttributedStringConverter
         self.dateParser = dateParser
         self.idleTimerController = idleTimerController
-        self.backgroundQueue = DispatchQueue(label: "org.zotero.Zotero.HtmlEpubReaderActionHandler.queue", qos: .userInteractive)
+        backgroundQueue = DispatchQueue(label: "org.zotero.Zotero.HtmlEpubReaderActionHandler.queue", qos: .userInteractive)
     }
 
     func process(action: HtmlEpubReaderAction, in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
@@ -54,7 +54,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             }
 
         case .selectAnnotationFromSidebar(let key):
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 _select(data: (key, nil), didSelectInDocument: false, state: &state)
             }
 
@@ -75,7 +75,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             set(tags: tags, to: key, in: viewModel)
 
         case .deselectSelectedAnnotation:
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 _select(data: nil, didSelectInDocument: false, state: &state)
             }
 
@@ -130,18 +130,18 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         }
 
         if settings.idleTimerDisabled {
-            self.idleTimerController.disable()
+            idleTimerController.disable()
         } else {
-            self.idleTimerController.enable()
+            idleTimerController.enable()
         }
     }
 
     private func set(settings: HtmlEpubSettings, in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
         if viewModel.state.settings.idleTimerDisabled != settings.idleTimerDisabled {
             if settings.idleTimerDisabled {
-                self.idleTimerController.disable()
+                idleTimerController.disable()
             } else {
-                self.idleTimerController.enable()
+                idleTimerController.enable()
             }
         }
 
@@ -187,7 +187,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
         let annotationDeletable = annotation.editability(currentUserId: viewModel.state.userId, library: viewModel.state.library) != .notEditable
 
-        self.update(viewModel: viewModel) { state in
+        update(viewModel: viewModel) { state in
             if state.selectedAnnotationsDuringEditing.isEmpty {
                 state.deletionEnabled = annotationDeletable
             } else {
@@ -200,7 +200,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
     }
 
     private func deselectDuringEditing(key: String, in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
-        self.update(viewModel: viewModel) { state in
+        update(viewModel: viewModel) { state in
             state.selectedAnnotationsDuringEditing.remove(key)
 
             if state.selectedAnnotationsDuringEditing.isEmpty {
@@ -249,8 +249,8 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         }
 
         let request = StorePageForItemDbRequest(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, page: page)
-        self.perform(request: request) { error in
-            guard let error = error else { return }
+        perform(request: request) { error in
+            guard let error else { return }
             // TODO: - handle error
             DDLogError("HtmlEpubReaderActionHandler: can't store page - \(error)")
         }
@@ -262,15 +262,13 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         guard !keys.isEmpty else { return }
 
         let request = MarkObjectsAsDeletedDbRequest<RItem>(keys: keys, libraryId: viewModel.state.library.identifier)
-        self.perform(request: request) { [weak self, weak viewModel] error in
-            guard let self = self, let viewModel = viewModel else { return }
+        perform(request: request) { [weak self, weak viewModel] error in
+            guard let self, let error, let viewModel else { return }
 
-            if let error = error {
-                DDLogError("HtmlEpubReaderActionHandler: can't remove annotations \(keys) - \(error)")
+            DDLogError("HtmlEpubReaderActionHandler: can't remove annotations \(keys) - \(error)")
 
-                self.update(viewModel: viewModel) { state in
-                    state.error = .cantDeleteAnnotation
-                }
+            update(viewModel: viewModel) { state in
+                state.error = .cantDeleteAnnotation
             }
         }
     }
@@ -283,12 +281,12 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             KeyBaseKeyPair(key: FieldKeys.Item.Annotation.Position.lineWidth, baseKey: FieldKeys.Item.Annotation.position): "\(Decimal(lineWidth).rounded(to: 3))"
         ]
         let request = EditItemFieldsDbRequest(key: key, libraryId: viewModel.state.library.identifier, fieldValues: values, dateParser: dateParser)
-        self.perform(request: request) { [weak self, weak viewModel] error in
-            guard let error = error, let self = self, let viewModel = viewModel else { return }
+        perform(request: request) { [weak self, weak viewModel] error in
+            guard let error, let self, let viewModel else { return }
 
             DDLogError("HtmlEpubReaderActionHandler: can't update annotation \(key) - \(error)")
 
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.error = .cantUpdateAnnotation
             }
         }
@@ -298,11 +296,11 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         let values = [KeyBaseKeyPair(key: FieldKeys.Item.Annotation.color, baseKey: nil): color]
         let request = EditItemFieldsDbRequest(key: key, libraryId: viewModel.state.library.identifier, fieldValues: values, dateParser: dateParser)
         self.perform(request: request) { [weak self, weak viewModel] error in
-            guard let error = error, let self = self, let viewModel = viewModel else { return }
+            guard let error, let self, let viewModel else { return }
 
             DDLogError("HtmlEpubReaderActionHandler: can't set color \(key) - \(error)")
 
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.error = .cantUpdateAnnotation
             }
         }
@@ -317,12 +315,12 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
         let values = [KeyBaseKeyPair(key: FieldKeys.Item.Annotation.comment, baseKey: nil): htmlComment]
         let request = EditItemFieldsDbRequest(key: key, libraryId: viewModel.state.library.identifier, fieldValues: values, dateParser: dateParser)
-        perform(request: request) { error in
-            guard let error else { return }
+        perform(request: request) { [weak self] error in
+            guard let self, let error else { return }
 
             DDLogError("HtmlEpubReaderActionHandler: can't set comment \(key) - \(error)")
 
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.error = .cantUpdateAnnotation
             }
         }
@@ -346,7 +344,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
             DDLogError("HtmlEpubReaderActionHandler: can't set tags \(key) - \(error)")
 
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.error = .cantUpdateAnnotation
             }
         }
@@ -394,14 +392,14 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
     private func set(filter: AnnotationsFilter?, in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
         guard filter != viewModel.state.annotationFilter else { return }
-        self.filterAnnotations(with: viewModel.state.annotationSearchTerm, filter: filter, in: viewModel)
+        filterAnnotations(with: viewModel.state.annotationSearchTerm, filter: filter, in: viewModel)
     }
 
     private func searchAnnotations(for term: String, in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
         let trimmedTerm = term.trimmingCharacters(in: .whitespacesAndNewlines)
         let newTerm = trimmedTerm.isEmpty ? nil : trimmedTerm
         guard newTerm != viewModel.state.annotationSearchTerm else { return }
-        self.filterAnnotations(with: newTerm, filter: viewModel.state.annotationFilter, in: viewModel)
+        filterAnnotations(with: newTerm, filter: viewModel.state.annotationFilter, in: viewModel)
     }
 
     /// Filters annotations based on given term and filer parameters.
@@ -413,7 +411,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
             // TODO: - Unhide document annotations
 
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.snapshotKeys = nil
                 state.sortedKeys = snapshot
                 state.changes = .annotations
@@ -429,11 +427,11 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         }
 
         let snapshot = viewModel.state.snapshotKeys ?? viewModel.state.sortedKeys
-        let filteredKeys = self.filteredKeys(from: snapshot, term: term, filter: filter, state: viewModel.state)
+        let filteredKeys = filteredKeys(from: snapshot, term: term, filter: filter, state: viewModel.state)
 
         // TODO: - Hide document annotations
 
-        self.update(viewModel: viewModel) { state in
+        update(viewModel: viewModel) { state in
             if state.snapshotKeys == nil {
                 state.snapshotKeys = state.sortedKeys
             }
@@ -503,12 +501,12 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             userId: viewModel.state.userId,
             schemaController: schemaController
         )
-        self.perform(request: request) { [weak viewModel] error in
-            guard let error, let viewModel else { return }
+        perform(request: request) { [weak self, weak viewModel] error in
+            guard let self, let error, let viewModel else { return }
 
             DDLogError("HtmlEpubReaderActionHandler: could not store annotations - \(error)")
 
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.error = .cantAddAnnotations
             }
         }
@@ -583,7 +581,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             }
 
             let documentData = HtmlEpubReaderState.DocumentData(type: type, buffer: jsArrayString, annotationsJson: json, page: page)
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.sortedKeys = sortedKeys
                 state.annotations = annotations
                 state.documentData = documentData
@@ -598,9 +596,9 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
     private func loadAnnotationsAndJson(in viewModel: ViewModel<HtmlEpubReaderActionHandler>) -> ([String], [String: HtmlEpubAnnotation], String, NotificationToken?, String) {
         do {
             let pageIndexRequest = ReadDocumentDataDbRequest(attachmentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
-            let pageIndex = try self.dbStorage.perform(request: pageIndexRequest, on: .main)
+            let pageIndex = try dbStorage.perform(request: pageIndexRequest, on: .main)
             let annotationsRequest = ReadAnnotationsDbRequest(attachmentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
-            let items = try self.dbStorage.perform(request: annotationsRequest, on: .main)
+            let items = try dbStorage.perform(request: annotationsRequest, on: .main)
             var sortedKeys: [String] = []
             var annotations: [String: HtmlEpubAnnotation] = [:]
             var jsons: [[String: Any]] = []
@@ -615,10 +613,11 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             let jsonString = WebViewEncoder.encodeAsJSONForJavascript(jsons)
 
             let token = items.observe { [weak self, weak viewModel] change in
-                guard let self = self, let viewModel = viewModel else { return }
+                guard let self, let viewModel else { return }
                 switch change {
                 case .update(let objects, let deletions, let insertions, let modifications):
-                    self.update(objects: objects, deletions: deletions, insertions: insertions, modifications: modifications, viewModel: viewModel)
+                    update(objects: objects, deletions: deletions, insertions: insertions, modifications: modifications, viewModel: viewModel)
+
                 case .error, .initial: break
                 }
             }
@@ -735,12 +734,12 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         }
 
         // Update state
-        self.update(viewModel: viewModel) { state in
+        update(viewModel: viewModel) { state in
             if state.snapshotKeys == nil {
                 state.sortedKeys = keys
             } else {
                 state.snapshotKeys = keys
-                state.sortedKeys = self.filteredKeys(from: keys, term: state.annotationSearchTerm, filter: state.annotationFilter, state: state)
+                state.sortedKeys = filteredKeys(from: keys, term: state.annotationSearchTerm, filter: state.annotationFilter, state: state)
             }
             state.annotations = annotations
             state.documentUpdate = HtmlEpubReaderState.DocumentUpdate(deletions: deletedPdfAnnotations, insertions: insertedPdfAnnotations, modifications: updatedPdfAnnotations)
@@ -752,7 +751,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
             // Update selection
             if selectionDeleted {
-                self._select(data: nil, didSelectInDocument: true, state: &state)
+                _select(data: nil, didSelectInDocument: true, state: &state)
             }
 
             // Disable sidebar editing if there are no results
@@ -789,7 +788,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
 extension RItem {
     fileprivate var htmlEpubAnnotation: (HtmlEpubAnnotation, [String: Any])? {
-        let tags = Array(self.tags.map({ typedTag in
+        let tags = Array(tags.map({ typedTag in
             let color: String? = (typedTag.tag?.color ?? "").isEmpty ? nil : typedTag.tag?.color
             return Tag(name: typedTag.tag?.name ?? "", color: color ?? "")
         }))
@@ -803,7 +802,7 @@ extension RItem {
         var color: String?
         var unknown: [String: String] = [:]
 
-        for field in self.fields {
+        for field in fields {
             switch (field.key, field.baseKey) {
             case (FieldKeys.Item.Annotation.Position.htmlEpubType, FieldKeys.Item.Annotation.position):
                 position[FieldKeys.Item.Annotation.Position.htmlEpubType] = field.value
@@ -843,10 +842,10 @@ extension RItem {
         }
 
         let json: [String: Any] = [
-            "id": self.key,
-            "dateCreated": DateFormatter.iso8601WithFractionalSeconds.string(from: self.dateAdded),
-            "dateModified": DateFormatter.iso8601WithFractionalSeconds.string(from: self.dateModified),
-            "authorName": self.createdBy?.username ?? "",
+            "id": key,
+            "dateCreated": DateFormatter.iso8601WithFractionalSeconds.string(from: dateAdded),
+            "dateModified": DateFormatter.iso8601WithFractionalSeconds.string(from: dateModified),
+            "authorName": createdBy?.username ?? "",
             "type": type.rawValue,
             "text": text ?? "",
             "sortIndex": sortIndex,
@@ -857,18 +856,18 @@ extension RItem {
             "tags": tags.map({ ["name": $0.name, "color": $0.color] })
         ]
         let annotation = HtmlEpubAnnotation(
-            key: self.key,
+            key: key,
             type: type,
             pageLabel: pageLabel ?? "",
             position: position,
-            author: self.createdBy?.username ?? "",
+            author: createdBy?.username ?? "",
             isAuthor: true,
             color: color ?? "",
             comment: comment ?? "",
             text: text,
             sortIndex: sortIndex,
-            dateModified: self.dateModified,
-            dateCreated: self.dateAdded,
+            dateModified: dateModified,
+            dateCreated: dateAdded,
             tags: tags
         )
 

@@ -213,7 +213,7 @@ final class DetailCoordinator: Coordinator {
     private func show(attachment: Attachment, parentKey: String?, libraryId: LibraryIdentifier, sourceView: UIView, sourceRect: CGRect?) {
         switch attachment.type {
         case .url(let url):
-            self.show(url: url)
+            show(url: url)
 
         case .file(let filename, let contentType, _, _, _):
             let file = Files.attachmentFile(in: libraryId, key: attachment.key, filename: filename, contentType: contentType)
@@ -223,39 +223,39 @@ final class DetailCoordinator: Coordinator {
             switch contentType {
             case "application/pdf":
                 DDLogInfo("DetailCoordinator: show PDF \(attachment.key)")
-                self.showPDF(at: url, key: attachment.key, parentKey: parentKey, libraryId: libraryId)
+                showPdf(at: url, key: attachment.key, parentKey: parentKey, libraryId: libraryId)
 
             case "text/html", "application/epub+zip":
                 DDLogInfo("DetailCoordinator: show HTML / EPUB \(attachment.key)")
-                self.showHtmlEpubReader(for: url, key: attachment.key, library: library)
+                showHtmlEpubReader(for: url, key: attachment.key, library: library)
 
             case "text/plain":
                 let text = try? String(contentsOf: url, encoding: .utf8)
                 if let text = text {
                     DDLogInfo("DetailCoordinator: show plain text \(attachment.key)")
-                    self.show(text: text, title: filename)
+                    show(text: text, title: filename)
                 } else {
                     DDLogInfo("DetailCoordinator: share plain text \(attachment.key)")
-                    self.share(item: url, sourceView: .view(sourceView, rect))
+                    share(item: url, sourceView: .view(sourceView, rect))
                 }
 
             case _ where contentType.contains("image"):
                 let image = (contentType == "image/gif") ? (try? Data(contentsOf: url)).flatMap({ try? UIImage(gifData: $0) }) : UIImage(contentsOfFile: url.path)
                 if let image = image {
                     DDLogInfo("DetailCoordinator: show image \(attachment.key)")
-                    self.show(image: image, title: filename)
+                    show(image: image, title: filename)
                 } else {
                     DDLogInfo("DetailCoordinator: share image \(attachment.key)")
-                    self.share(item: url, sourceView: .view(sourceView, rect))
+                    share(item: url, sourceView: .view(sourceView, rect))
                 }
 
             default:
                 if AVURLAsset(url: url).isPlayable {
                     DDLogInfo("DetailCoordinator: show video \(attachment.key)")
-                    self.showVideo(for: url)
+                    showVideo(for: url)
                 } else {
                     DDLogInfo("DetailCoordinator: share attachment \(attachment.key)")
-                    self.share(item: file.createUrl(), sourceView: .view(sourceView, rect))
+                    share(item: file.createUrl(), sourceView: .view(sourceView, rect))
                 }
             }
         }

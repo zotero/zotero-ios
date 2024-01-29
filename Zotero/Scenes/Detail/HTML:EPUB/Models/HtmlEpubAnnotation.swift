@@ -50,7 +50,7 @@ struct HtmlEpubAnnotation {
             if !library.metadataEditable {
                 return .notEditable
             }
-            return self.isAuthor ? .editable : .deletable
+            return isAuthor ? .editable : .deletable
         }
     }
 }
