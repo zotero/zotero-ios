@@ -312,6 +312,7 @@ final class AnnotationView: UIView {
 
         if layout.showsContent {
             highlightContent = AnnotationViewHighlightContent(layout: layout)
+            imageContent = AnnotationViewImageContent(layout: layout)
         }
 
         let view = layout.scrollableBody ? createScrollableBodyView() : createStaticBodyView()
