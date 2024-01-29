@@ -25,13 +25,13 @@ extension HtmlEpubSettings: Codable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: Keys.self)
         let appearanceRaw = try container.decode(UInt.self, forKey: .appearance)
-        self.appearance = ReaderSettingsState.Appearance(rawValue: appearanceRaw) ?? .automatic
+        appearance = ReaderSettingsState.Appearance(rawValue: appearanceRaw) ?? .automatic
         // This setting is not persisted, always defaults to false
-        self.idleTimerDisabled = false
+        idleTimerDisabled = false
     }
 
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: Keys.self)
-        try container.encode(self.appearance.rawValue, forKey: .appearance)
+        try container.encode(appearance.rawValue, forKey: .appearance)
     }
 }
