@@ -126,7 +126,7 @@ final class PDFAnnotationsViewController: UIViewController {
                 library: self.viewModel.state.library,
                 sender: sender,
                 userInterfaceStyle: self.viewModel.state.interfaceStyle,
-                saveAction: { [weak self] key, color, lineWidth, fontSize, pageLabel, updateSubsequentLabels, highlightText in
+                saveAction: { [weak self] color, lineWidth, fontSize, pageLabel, updateSubsequentLabels, highlightText in
                     self?.viewModel.process(
                         action: .updateAnnotationProperties(
                             key: key.key,

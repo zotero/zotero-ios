@@ -12,8 +12,8 @@ import Combine
 import CocoaLumberjackSwift
 import PSPDFKit
 import PSPDFKitUI
-import RxSwift
 import RealmSwift
+import RxSwift
 
 protocol PDFDocumentDelegate: AnyObject {
     func annotationTool(
@@ -330,50 +330,53 @@ final class PDFDocumentViewController: UIViewController {
     }
 
     private func showPopupAnnotationIfNeeded(state: PDFReaderState) {
-        guard !(self.parentDelegate?.isSidebarVisible ?? false),
+        guard !(parentDelegate?.isSidebarVisible ?? false),
               let annotation = state.selectedAnnotation,
               annotation.type != .freeText,
-              let pageView = self.pdfController?.pageViewForPage(at: UInt(annotation.page)) else { return }
+              let pageView = pdfController?.pageViewForPage(at: UInt(annotation.page)) else { return }
 
         let key = annotation.readerKey
-        var frame = self.view.convert(annotation.boundingBox(boundingBoxConverter: self), from: pageView.pdfCoordinateSpace)
+        var frame = view.convert(annotation.boundingBox(boundingBoxConverter: self), from: pageView.pdfCoordinateSpace)
         frame.origin.y += parentDelegate?.documentTopOffset ?? 0
-        let observable = self.coordinatorDelegate?.showAnnotationPopover(
-            viewModel: self.viewModel,
+        let observable = coordinatorDelegate?.showAnnotationPopover(
+            viewModel: viewModel,
             sourceRect: frame,
             popoverDelegate: self,
-            userInterfaceStyle: self.viewModel.state.settings.appearanceMode.userInterfaceStyle
+            userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle
         )
 
         guard let observable else { return }
-        observable.subscribe(with: self) { `self`, state in
+        observable.subscribe(onNext: { [weak self] state in
+            guard let self else { return }
             if state.changes.contains(.color) {
-                self.viewModel.process(action: .setColor(key: key.key, color: state.color))
+                viewModel.process(action: .setColor(key: key.key, color: state.color))
             }
             if state.changes.contains(.comment) {
-                self.viewModel.process(action: .setComment(key: key.key, comment: state.comment))
+                viewModel.process(action: .setComment(key: key.key, comment: state.comment))
             }
             if state.changes.contains(.deletion) {
-                self.viewModel.process(action: .removeAnnotation(key))
+                viewModel.process(action: .removeAnnotation(key))
             }
             if state.changes.contains(.lineWidth) {
-                self.viewModel.process(action: .setLineWidth(key: key.key, width: state.lineWidth))
+                viewModel.process(action: .setLineWidth(key: key.key, width: state.lineWidth))
             }
             if state.changes.contains(.tags) {
-                self.viewModel.process(action: .setTags(key: key.key, tags: state.tags))
+                viewModel.process(action: .setTags(key: key.key, tags: state.tags))
             }
             if state.changes.contains(.pageLabel) || state.changes.contains(.highlight) {
-                self.viewModel.process(action:
+                // TODO: - fix font size
+                viewModel.process(action:
                         .updateAnnotationProperties(
                             key: key.key,
                             color: state.color,
                             lineWidth: state.lineWidth,
+                            fontSize: 0,
                             pageLabel: state.pageLabel,
                             updateSubsequentLabels: state.updateSubsequentLabels,
                             highlightText: state.highlightText)
                 )
             }
-        }
+        })
         .disposed(by: disposeBag)
     }
 

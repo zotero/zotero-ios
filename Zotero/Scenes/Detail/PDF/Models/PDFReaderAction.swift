@@ -41,7 +41,7 @@ enum PDFReaderAction {
     case setCommentActive(Bool)
     case setVisiblePage(page: Int, userActionFromDocument: Bool, fromThumbnailList: Bool)
     case setFontSize(key: String, size: UInt)
-    case export(PDFExportSettings)
+    case export(includeAnnotations: Bool)
     case clearTmpData
     case setSidebarEditingEnabled(Bool)
     case setSettings(settings: PDFSettings, parentUserInterfaceStyle: UIUserInterfaceStyle)

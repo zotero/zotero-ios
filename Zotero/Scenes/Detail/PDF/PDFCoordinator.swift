@@ -33,7 +33,6 @@ protocol PdfReaderCoordinatorDelegate: AnyObject {
     func showReader(document: Document, userInterfaceStyle: UIUserInterfaceStyle)
     func showCitation(for itemId: String, libraryId: LibraryIdentifier)
     func copyBibliography(using presenter: UIViewController, for itemId: String, libraryId: LibraryIdentifier)
-    func showPdfExportSettings(sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle, completed: @escaping (PDFExportSettings) -> Void)
     func showFontSizePicker(sender: UIView, picked: @escaping (UInt) -> Void)
     func showDeleteAlertForAnnotation(sender: UIView, delete: @escaping () -> Void)
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, userInterfaceStyle: UIUserInterfaceStyle?, picked: @escaping ([Tag]) -> Void)
@@ -362,7 +361,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         self.navigationController?.present(controller, animated: true, completion: nil)
     }
 
-    func showSettings(with settings: PDFSettings, sender: UIBarButtonItem) -> ViewModel<ReaderSettingsActionHandler>
+    func showSettings(with settings: PDFSettings, sender: UIBarButtonItem) -> ViewModel<ReaderSettingsActionHandler> {
         DDLogInfo("PDFCoordinator: show settings")
 
         let state = ReaderSettingsState(settings: settings)

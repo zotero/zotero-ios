@@ -952,6 +952,12 @@ extension AnnotationTool {
 
         case .note:
             return .note
+
+        case .freeText:
+            return .freeText
+
+        case .underline:
+            return .underline
         }
     }
 }

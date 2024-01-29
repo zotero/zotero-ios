@@ -53,7 +53,7 @@ final class AnnotationEditCoordinator: Coordinator {
         let controller = AnnotationEditViewController(
             viewModel: viewModel,
             includeColorPicker: true,
-            includeFontPicker: annotation.type == .freeText,
+            includeFontPicker: data.type == .freeText,
             saveAction: self.saveAction,
             deleteAction: self.deleteAction
         )

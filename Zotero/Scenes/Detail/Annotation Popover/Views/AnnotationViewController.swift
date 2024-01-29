@@ -134,41 +134,26 @@ final class AnnotationViewController: UIViewController {
 
     private func showSettings() {
         guard let annotation = self.viewModel.state.selectedAnnotation else { return }
-<<<<<<< HEAD
         let key = annotation.readerKey
-=======
->>>>>>> 74e1d1e3 (Font size picker added, annotation popup updated with font options)
         self.coordinatorDelegate?.showEdit(
             annotation: annotation,
             userId: self.viewModel.state.userId,
             library: self.viewModel.state.library,
-<<<<<<< HEAD
-            saveAction: { [weak self] color, lineWidth, pageLabel, updateSubsequentLabels, highlightText in
-=======
-            saveAction: { [weak self] key, color, lineWidth, fontSize, pageLabel, updateSubsequentLabels, highlightText in
->>>>>>> 74e1d1e3 (Font size picker added, annotation popup updated with font options)
+            saveAction: { [weak self] color, lineWidth, fontSize, pageLabel, updateSubsequentLabels, highlightText in
                 self?.viewModel.process(
                     action: .updateAnnotationProperties(
                         key: key.key,
                         color: color,
                         lineWidth: lineWidth,
-<<<<<<< HEAD
-=======
                         fontSize: fontSize,
->>>>>>> 74e1d1e3 (Font size picker added, annotation popup updated with font options)
                         pageLabel: pageLabel,
                         updateSubsequentLabels: updateSubsequentLabels,
                         highlightText: highlightText
                     )
                 )
             },
-<<<<<<< HEAD
             deleteAction: { [weak self] in
                self?.viewModel.process(action: .removeAnnotation(key))
-=======
-            deleteAction: { [weak self] key in
-                self?.viewModel.process(action: .removeAnnotation(key))
->>>>>>> 74e1d1e3 (Font size picker added, annotation popup updated with font options)
             }
         )
     }

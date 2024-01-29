@@ -360,7 +360,7 @@ struct AnnotationConverter {
         return ink
     }
 
-    private static func underlineAnnotation(from annotation: Annotation, type: Kind, boundingBoxConverter: AnnotationBoundingBoxConverter) -> PSPDFKit.UnderlineAnnotation {
+    private static func underlineAnnotation(from annotation: PDFAnnotation, type: Kind, boundingBoxConverter: AnnotationBoundingBoxConverter) -> PSPDFKit.UnderlineAnnotation {
         let underline: PSPDFKit.UnderlineAnnotation
         switch type {
         case .export:
@@ -376,7 +376,7 @@ struct AnnotationConverter {
         return underline
     }
 
-    private static func freeTextAnnotation(from annotation: Annotation, color: UIColor, boundingBoxConverter: AnnotationBoundingBoxConverter) -> PSPDFKit.FreeTextAnnotation {
+    private static func freeTextAnnotation(from annotation: PDFAnnotation, color: UIColor, boundingBoxConverter: AnnotationBoundingBoxConverter) -> PSPDFKit.FreeTextAnnotation {
         let text = PSPDFKit.FreeTextAnnotation(contents: annotation.comment)
         text.color = color
         text.fontSize = CGFloat(annotation.fontSize ?? 0)

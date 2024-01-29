@@ -11,8 +11,8 @@ import UIKit
 import RxSwift
 
 // key, color, lineWidth, fontSize, pageLabel, updateSubsequentLabels, highlightText
-typealias AnnotationEditSaveAction = (PDFReaderState.AnnotationKey, String, CGFloat, UInt, String, Bool, String) -> Void
-typealias AnnotationEditDeleteAction = (PDFReaderState.AnnotationKey) -> Void
+typealias AnnotationEditSaveAction = (String, CGFloat, UInt, String, Bool, String) -> Void
+typealias AnnotationEditDeleteAction = () -> Void
 
 final class AnnotationEditViewController: UIViewController {
     private enum Section {
@@ -174,8 +174,8 @@ final class AnnotationEditViewController: UIViewController {
                .subscribe(onNext: { [weak self] in
                    guard let self else { return }
                    let state = viewModel.state
-                   saveAction(state.key, state.color, state.lineWidth, state.fontSize, state.pageLabel, state.updateSubsequentLabels, state.highlightText)
-                   cancel()
+                   saveAction(state.color, state.lineWidth, state.fontSize, state.pageLabel, state.updateSubsequentLabels, state.highlightText)
+                   self.cancel()
                })
                .disposed(by: self.disposeBag)
 
