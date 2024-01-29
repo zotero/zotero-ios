@@ -100,7 +100,7 @@ final class AnnotationCell: UITableViewCell {
         key = annotation.key
         selectionView.layer.borderWidth = selected ? PDFReaderLayout.cellSelectionLineWidth : 0
         let availableWidth = availableWidth - (PDFReaderLayout.annotationLayout.horizontalInset * 2)
-        self.annotationView.setup(
+        annotationView.setup(
             with: annotation,
             comment: comment,
             selected: selected,
@@ -109,7 +109,7 @@ final class AnnotationCell: UITableViewCell {
             currentUserId: currentUserId
         )
 
-        self.setupAccessibility(
+        setupAccessibility(
             isAuthor: annotation.isAuthor,
             authorName: annotation.author,
             type: annotation.type,
@@ -137,14 +137,14 @@ final class AnnotationCell: UITableViewCell {
         state: PDFReaderState
     ) {
         if !selected {
-            self.annotationView.resignFirstResponder()
+            annotationView.resignFirstResponder()
         }
 
         let reconfiguringForSameAnnotation = key == annotation.key
         key = annotation.key
         selectionView.layer.borderWidth = selected ? PDFReaderLayout.cellSelectionLineWidth : 0
         let availableWidth = availableWidth - (PDFReaderLayout.annotationLayout.horizontalInset * 2)
-        self.annotationView.setup(
+        annotationView.setup(
             with: annotation,
             text: text,
             comment: comment,
@@ -164,7 +164,7 @@ final class AnnotationCell: UITableViewCell {
         }
         // Otherwise, reconfigured cells do not have their prepareForReuse method called, so observing is already set up.
 
-        self.setupAccessibility(
+        setupAccessibility(
             isAuthor: annotation.isAuthor(currentUserId: currentUserId),
             authorName: annotation.author(displayName: displayName, username: username),
             type: annotation.type,
@@ -177,7 +177,7 @@ final class AnnotationCell: UITableViewCell {
 
     private func setupAccessibility(isAuthor: Bool, authorName: String, type: AnnotationType, pageLabel: String, text: String?, comment: String, selected: Bool) {
         let author = isAuthor ? nil : authorName
-        var label = self.accessibilityLabel(for: type, pageLabel: pageLabel, author: author)
+        var label = accessibilityLabel(for: type, pageLabel: pageLabel, author: author)
         if let text {
             switch type {
             case .highlight:

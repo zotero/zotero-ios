@@ -26,8 +26,7 @@ class HtmlEpubSidebarViewController: UIViewController {
 
     init(viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
         self.viewModel = viewModel
-        self.disposeBag = DisposeBag()
-
+        disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -38,7 +37,7 @@ class HtmlEpubSidebarViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.view.backgroundColor = .systemGray6
+        view.backgroundColor = .systemGray6
         setupViews()
         setupSearchController()
         setupDataSource()
@@ -53,8 +52,8 @@ class HtmlEpubSidebarViewController: UIViewController {
         func setupObserving() {
             viewModel.stateObservable
                 .observe(on: MainScheduler.instance)
-                .subscribe(with: self, onNext: { `self`, state in
-                    self.update(state: state)
+                .subscribe(onNext: { [weak self] state in
+                    self?.update(state: state)
                 })
                 .disposed(by: disposeBag)
         }
@@ -74,8 +73,8 @@ class HtmlEpubSidebarViewController: UIViewController {
             searchBar.text
                 .observe(on: MainScheduler.instance)
                 .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
-                .subscribe(with: self, onNext: { `self`, text in
-                    self.viewModel.process(action: .searchAnnotations(text))
+                .subscribe(onNext: { [weak self] text in
+                    self?.viewModel.process(action: .searchAnnotations(text))
                 })
                 .disposed(by: disposeBag)
             tableView.tableHeaderView = searchBar
@@ -90,13 +89,13 @@ class HtmlEpubSidebarViewController: UIViewController {
             tableView.backgroundView?.backgroundColor = .systemGray6
             tableView.register(AnnotationCell.self, forCellReuseIdentifier: Self.cellId)
             tableView.allowsMultipleSelectionDuringEditing = true
-            self.view.addSubview(tableView)
+            view.addSubview(tableView)
             self.tableView = tableView
 
             let toolbarContainer = UIView()
             toolbarContainer.isHidden = !viewModel.state.library.metadataEditable
             toolbarContainer.translatesAutoresizingMaskIntoConstraints = false
-            self.view.addSubview(toolbarContainer)
+            view.addSubview(toolbarContainer)
             self.toolbarContainer = toolbarContainer
 
             let toolbar = UIToolbar()
@@ -106,27 +105,27 @@ class HtmlEpubSidebarViewController: UIViewController {
             self.toolbar = toolbar
 
             NSLayoutConstraint.activate([
-                self.view.safeAreaLayoutGuide.topAnchor.constraint(equalTo: tableView.topAnchor),
+                view.safeAreaLayoutGuide.topAnchor.constraint(equalTo: tableView.topAnchor),
                 tableView.bottomAnchor.constraint(equalTo: toolbarContainer.topAnchor),
-                self.view.safeAreaLayoutGuide.leadingAnchor.constraint(equalTo: tableView.leadingAnchor),
-                self.view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: tableView.trailingAnchor),
-                toolbarContainer.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
-                toolbarContainer.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
-                toolbarContainer.bottomAnchor.constraint(equalTo: self.view.bottomAnchor),
+                view.safeAreaLayoutGuide.leadingAnchor.constraint(equalTo: tableView.leadingAnchor),
+                view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: tableView.trailingAnchor),
+                toolbarContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                toolbarContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                toolbarContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor),
                 toolbar.topAnchor.constraint(equalTo: toolbarContainer.topAnchor),
                 toolbar.leadingAnchor.constraint(equalTo: toolbarContainer.leadingAnchor),
                 toolbar.trailingAnchor.constraint(equalTo: toolbarContainer.trailingAnchor),
-                toolbar.bottomAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.bottomAnchor)
+                toolbar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
             ])
         }
 
         func setupDataSource() {
-            dataSource = TableViewDiffableDataSource(tableView: self.tableView, cellProvider: { [weak self] tableView, indexPath, key in
+            dataSource = TableViewDiffableDataSource(tableView: tableView, cellProvider: { [weak self] tableView, indexPath, key in
                 let cell = tableView.dequeueReusableCell(withIdentifier: Self.cellId, for: indexPath)
 
-                if let self, let cell = cell as? AnnotationCell, let annotation = self.viewModel.state.annotations[key] {
+                if let self, let cell = cell as? AnnotationCell, let annotation = viewModel.state.annotations[key] {
                     cell.contentView.backgroundColor = self.view.backgroundColor
-                    setup(cell: cell, with: annotation, state: self.viewModel.state)
+                    setup(cell: cell, with: annotation, state: viewModel.state)
                 }
 
                 return cell
@@ -136,8 +135,8 @@ class HtmlEpubSidebarViewController: UIViewController {
                 return true
             }
             dataSource.commitEditingStyle = { [weak self] editingStyle, indexPath in
-                guard let self, editingStyle == .delete, let key = self.dataSource.itemIdentifier(for: indexPath) else { return }
-                self.viewModel.process(action: .removeAnnotation(key))
+                guard let self, editingStyle == .delete, let key = dataSource.itemIdentifier(for: indexPath) else { return }
+                viewModel.process(action: .removeAnnotation(key))
             }
         }
 
@@ -166,7 +165,7 @@ class HtmlEpubSidebarViewController: UIViewController {
 
             guard !comment.isEmpty else { return nil }
 
-            if let attributedComment = self.viewModel.state.comments[annotation.key] {
+            if let attributedComment = viewModel.state.comments[annotation.key] {
                 return attributedComment
             }
 
@@ -204,14 +203,11 @@ class HtmlEpubSidebarViewController: UIViewController {
                 if let keys = state.updatedAnnotationKeys {
                     snapshot.reloadItems(keys)
                 }
-
                 let isVisible = parentDelegate?.isSidebarVisible ?? false
-
                 if state.changes.contains(.sidebarEditing) {
                     tableView.setEditing(state.sidebarEditingEnabled, animated: isVisible)
                 }
                 dataSource.apply(snapshot, animatingDifferences: isVisible, completion: completion)
-
                 return
             }
 
@@ -259,9 +255,14 @@ class HtmlEpubSidebarViewController: UIViewController {
         case .tags:
             guard annotation.isAuthor else { return }
             let selected = Set(annotation.tags.map({ $0.name }))
-            coordinatorDelegate?.showTagPicker(libraryId: state.library.identifier, selected: selected, userInterfaceStyle: viewModel.state.settings.appearance.userInterfaceStyle, picked: { [weak self] tags in
-                self?.viewModel.process(action: .setTags(key: annotation.key, tags: tags))
-            })
+            coordinatorDelegate?.showTagPicker(
+                libraryId: state.library.identifier,
+                selected: selected,
+                userInterfaceStyle: viewModel.state.settings.appearance.userInterfaceStyle,
+                picked: { [weak self] tags in
+                    self?.viewModel.process(action: .setTags(key: annotation.key, tags: tags))
+                }
+            )
 
         case .options(let sender):
             guard let sender else { return }
@@ -322,7 +323,7 @@ class HtmlEpubSidebarViewController: UIViewController {
         let safeAreaTop = tableView.superview!.safeAreaInsets.top
 
         // Scroll either when cell bottom is below keyboard or cell top is not visible on screen
-        if cellBottom > tableViewBottom || cellFrame.minY < (safeAreaTop + self.tableView.contentOffset.y) {
+        if cellBottom > tableViewBottom || cellFrame.minY < (safeAreaTop + tableView.contentOffset.y) {
             // Scroll to top if cell is smaller than visible screen, so that it's fully visible, otherwise scroll to bottom.
             let position: UITableView.ScrollPosition = cellFrame.height + safeAreaTop < tableViewBottom ? .top : .bottom
             tableView.scrollToRow(at: indexPath, at: position, animated: false)
@@ -339,9 +340,9 @@ class HtmlEpubSidebarViewController: UIViewController {
             let delete = UIBarButtonItem(title: L10n.delete, style: .plain, target: nil, action: nil)
             delete.isEnabled = deletionEnabled
             delete.rx.tap
-                .subscribe(with: self, onNext: { `self`, _ in
-                    guard self.viewModel.state.sidebarEditingEnabled else { return }
-                    self.viewModel.process(action: .removeSelectedAnnotations)
+                .subscribe(onNext: { [weak self] _ in
+                    guard let self, viewModel.state.sidebarEditingEnabled else { return }
+                    viewModel.process(action: .removeSelectedAnnotations)
                 })
                 .disposed(by: disposeBag)
             items.append(delete)
@@ -352,9 +353,9 @@ class HtmlEpubSidebarViewController: UIViewController {
             let filterImageName = filterOn ? "line.horizontal.3.decrease.circle.fill" : "line.horizontal.3.decrease.circle"
             let filter = UIBarButtonItem(image: UIImage(systemName: filterImageName), style: .plain, target: nil, action: nil)
             filter.rx.tap
-                .subscribe(with: self, onNext: { [weak filter] `self`, _ in
-                    guard let filter else { return }
-                    showFilterPopup(from: filter, viewModel: self.viewModel, coordinatorDelegate: self.coordinatorDelegate)
+                .subscribe(onNext: { [weak self, weak filter] _ in
+                    guard let self, let filter else { return }
+                    showFilterPopup(from: filter, viewModel: viewModel, coordinatorDelegate: coordinatorDelegate)
                 })
                 .disposed(by: disposeBag)
             items.insert(filter, at: 0)
@@ -362,8 +363,8 @@ class HtmlEpubSidebarViewController: UIViewController {
 
         let select = UIBarButtonItem(title: (editingEnabled ? L10n.done : L10n.select), style: .plain, target: nil, action: nil)
         select.rx.tap
-            .subscribe(with: self, onNext: { `self`, _ in
-                self.viewModel.process(action: .setSidebarEditingEnabled(!editingEnabled))
+            .subscribe(onNext: { [weak self] _ in
+                self?.viewModel.process(action: .setSidebarEditingEnabled(!editingEnabled))
             })
             .disposed(by: disposeBag)
         items.append(select)
