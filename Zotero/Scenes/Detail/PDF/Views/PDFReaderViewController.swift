@@ -75,7 +75,7 @@ class PDFReaderViewController: UIViewController {
     private var previousTraitCollection: UITraitCollection?
     var isSidebarVisible: Bool { return self.sidebarControllerLeft?.constant == 0 }
     var key: String { return self.viewModel.state.key }
-    var statusBarHeight: CGFloat
+    var statusBarHeight: CGFloat = .zero
     var navigationBarHeight: CGFloat {
         return self.navigationController?.navigationBar.frame.height ?? 0.0
     }
@@ -182,18 +182,6 @@ class PDFReaderViewController: UIViewController {
         self.viewModel = viewModel
         self.isCompactWidth = compactSize
         self.disposeBag = DisposeBag()
-        self.statusBarHeight = UIApplication
-            .shared
-            .connectedScenes
-            .filter({ $0.activationState == .foregroundActive })
-            .compactMap({ $0 as? UIWindowScene })
-            .first?
-            .windows
-            .first(where: { $0.isKeyWindow })?
-            .windowScene?
-            .statusBarManager?
-            .statusBarFrame
-            .height ?? 0
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -203,6 +191,8 @@ class PDFReaderViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+
+        statusBarHeight = (view.scene as? UIWindowScene)?.statusBarManager?.statusBarFrame.height ?? .zero
 
         self.set(userActivity: .pdfActivity(for: self.viewModel.state.key, libraryId: self.viewModel.state.library.identifier, collectionId: Defaults.shared.selectedCollectionId))
 
@@ -741,7 +731,7 @@ extension PDFReaderViewController: AnnotationToolbarDelegate {
             return self.isCompactWidth ? documentController.view.frame.size.width : (documentController.view.frame.size.width - (2 * AnnotationToolbarHandler.toolbarFullInsetInset))
 
         case .trailing, .leading:
-            let window = (view.scene as? UIWindowScene)?.windows.first(where: \.isKeyWindow)
+            let window = (view.scene as? UIWindowScene)?.keyWindow
             let topInset = window?.safeAreaInsets.top ?? 0
             let bottomInset = window?.safeAreaInsets.bottom ?? 0
             let interfaceIsHidden = self.navigationController?.isNavigationBarHidden ?? false
@@ -816,8 +806,7 @@ extension PDFReaderViewController: PDFDocumentDelegate {
         self.annotationToolbarHandler.interfaceVisibilityDidChange()
 
         UIView.animate(withDuration: 0.15, animations: {
-            self.navigationController?.setNeedsStatusBarAppearanceUpdate()
-            self.setNeedsStatusBarAppearanceUpdate()
+            self.updateStatusBar()
             self.view.layoutIfNeeded()
             if shouldChangeNavigationBarVisibility {
                 self.navigationController?.navigationBar.alpha = isHidden ? 0 : 1
