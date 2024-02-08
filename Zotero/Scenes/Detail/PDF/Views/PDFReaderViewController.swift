@@ -189,6 +189,151 @@ class PDFReaderViewController: UIViewController {
         if !viewModel.state.document.isLocked {
             viewModel.process(action: .loadDocumentData(boundingBoxConverter: documentController))
         }
+
+        func setupViews() {
+            let topSafeAreaSpacer = UIView()
+            topSafeAreaSpacer.translatesAutoresizingMaskIntoConstraints = false
+            topSafeAreaSpacer.backgroundColor = Asset.Colors.navbarBackground.color
+
+            let documentController = PDFDocumentViewController(viewModel: viewModel, compactSize: isCompactWidth, initialUIHidden: !statusBarVisible)
+            documentController.parentDelegate = self
+            documentController.coordinatorDelegate = coordinatorDelegate
+            documentController.view.translatesAutoresizingMaskIntoConstraints = false
+
+            let sidebarController = PDFSidebarViewController(viewModel: viewModel)
+            sidebarController.parentDelegate = self
+            sidebarController.coordinatorDelegate = coordinatorDelegate
+            sidebarController.boundingBoxConverter = documentController
+            sidebarController.view.translatesAutoresizingMaskIntoConstraints = false
+
+            let separator = UIView()
+            separator.translatesAutoresizingMaskIntoConstraints = false
+            separator.backgroundColor = Asset.Colors.annotationSidebarBorderColor.color
+
+            let annotationToolbar = AnnotationToolbarViewController(tools: [.highlight, .note, .image, .ink, .eraser], undoRedoEnabled: true, size: navigationBarHeight)
+            annotationToolbar.delegate = self
+
+            add(controller: documentController)
+            add(controller: sidebarController)
+            add(controller: annotationToolbar)
+            view.addSubview(topSafeAreaSpacer)
+            view.addSubview(documentController.view)
+            view.addSubview(sidebarController.view)
+            view.addSubview(separator)
+            view.addSubview(annotationToolbar.view)
+
+            let documentLeftConstraint = documentController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor)
+            let sidebarLeftConstraint = sidebarController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: -PDFReaderLayout.sidebarWidth)
+            documentTop = documentController.view.topAnchor.constraint(equalTo: view.topAnchor)
+
+            NSLayoutConstraint.activate([
+                topSafeAreaSpacer.topAnchor.constraint(equalTo: view.topAnchor),
+                topSafeAreaSpacer.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+                topSafeAreaSpacer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                topSafeAreaSpacer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                sidebarController.view.topAnchor.constraint(equalTo: view.topAnchor),
+                sidebarController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+                sidebarController.view.widthAnchor.constraint(equalToConstant: PDFReaderLayout.sidebarWidth),
+                sidebarLeftConstraint,
+                separator.widthAnchor.constraint(equalToConstant: PDFReaderLayout.separatorWidth),
+                separator.leadingAnchor.constraint(equalTo: sidebarController.view.trailingAnchor),
+                separator.topAnchor.constraint(equalTo: view.topAnchor),
+                separator.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+                documentController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                documentTop,
+                documentController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+                documentLeftConstraint
+            ])
+
+            self.documentController = documentController
+            documentControllerLeft = documentLeftConstraint
+            self.sidebarController = sidebarController
+            sidebarControllerLeft = sidebarLeftConstraint
+            annotationToolbarController = annotationToolbar
+
+            annotationToolbarHandler = AnnotationToolbarHandler(controller: annotationToolbar, delegate: self)
+            annotationToolbarHandler.didHide = { [weak self] in
+                self?.documentController.disableAnnotationTools()
+            }
+            annotationToolbarHandler.performInitialLayout()
+
+            func add(controller: UIViewController) {
+                controller.willMove(toParent: self)
+                addChild(controller)
+                controller.didMove(toParent: self)
+            }
+        }
+
+        func setupNavigationBar() {
+            let sidebarButton = UIBarButtonItem(image: UIImage(systemName: "sidebar.left"), style: .plain, target: nil, action: nil)
+            sidebarButton.isEnabled = !viewModel.state.document.isLocked
+            setupAccessibility(forSidebarButton: sidebarButton)
+            sidebarButton.tag = NavigationBarButton.sidebar.rawValue
+            sidebarButton.rx.tap.subscribe(onNext: { [weak self] _ in self?.toggleSidebar(animated: true) }).disposed(by: disposeBag)
+
+            let closeButton = UIBarButtonItem(image: UIImage(systemName: "chevron.left"), style: .plain, target: nil, action: nil)
+            closeButton.title = L10n.close
+            closeButton.accessibilityLabel = L10n.close
+            closeButton.rx.tap.subscribe(onNext: { [weak self] _ in self?.close() }).disposed(by: disposeBag)
+
+            let readerButton = UIBarButtonItem(image: Asset.Images.pdfRawReader.image, style: .plain, target: nil, action: nil)
+            readerButton.isEnabled = !viewModel.state.document.isLocked
+            readerButton.accessibilityLabel = L10n.Accessibility.Pdf.openReader
+            readerButton.title = L10n.Accessibility.Pdf.openReader
+            readerButton.rx.tap
+                .subscribe(onNext: { [weak self] _ in
+                    guard let self else { return }
+                    coordinatorDelegate?.showReader(document: viewModel.state.document, userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle)
+                })
+                .disposed(by: disposeBag)
+
+            navigationItem.leftBarButtonItems = [closeButton, sidebarButton, readerButton]
+            navigationItem.rightBarButtonItems = createRightBarButtonItems()
+
+            func createRightBarButtonItems() -> [UIBarButtonItem] {
+                var buttons = [settingsButton, shareButton, searchButton]
+
+                if viewModel.state.library.metadataEditable {
+                    buttons.append(toolbarButton)
+                }
+
+                return buttons
+            }
+        }
+
+        func setupObserving() {
+            viewModel.stateObservable
+                .observe(on: MainScheduler.instance)
+                .subscribe(onNext: { [weak self] state in
+                    self?.update(state: state)
+                })
+                .disposed(by: disposeBag)
+
+            NotificationCenter.default.rx
+                .notification(UIApplication.didBecomeActiveNotification)
+                .observe(on: MainScheduler.instance)
+                .subscribe(onNext: { [weak self] _ in
+                    guard let self else { return }
+                    if let previousTraitCollection {
+                        updateUserInterfaceStyleIfNeeded(previousTraitCollection: previousTraitCollection)
+                    }
+                    viewModel.process(action: .updateAnnotationPreviews)
+                    documentController.didBecomeActive()
+                })
+                .disposed(by: disposeBag)
+
+            NotificationCenter.default.rx
+                .notification(UIApplication.willResignActiveNotification)
+                .observe(on: MainScheduler.instance)
+                .subscribe(onNext: { [weak self] _ in
+                    guard let self else { return }
+                    previousTraitCollection = traitCollection
+                    if let page = documentController?.pdfController?.pageIndex {
+                        viewModel.process(action: .submitPendingPage(Int(page)))
+                    }
+                })
+                .disposed(by: disposeBag)
+        }
     }
 
     override func viewIsAppearing(_ animated: Bool) {
@@ -284,41 +429,41 @@ class PDFReaderViewController: UIViewController {
         if let error = state.error {
             coordinatorDelegate?.show(error: error)
         }
-    }
 
-    private func update(state: PDFExportState?) {
-        var items = navigationItem.rightBarButtonItems ?? []
+        func update(state: PDFExportState?) {
+            var items = navigationItem.rightBarButtonItems ?? []
 
-        guard let shareId = items.firstIndex(where: { $0.tag == NavigationBarButton.share.rawValue }) else { return }
+            guard let shareId = items.firstIndex(where: { $0.tag == NavigationBarButton.share.rawValue }) else { return }
 
-        guard let state else {
-            if items[shareId].customView != nil { // if activity indicator is visible, replace it with share button
-                items[shareId] = shareButton
-                navigationItem.rightBarButtonItems = items
+            guard let state else {
+                if items[shareId].customView != nil { // if activity indicator is visible, replace it with share button
+                    items[shareId] = shareButton
+                    navigationItem.rightBarButtonItems = items
+                }
+                return
             }
-            return
+
+            switch state {
+            case .preparing:
+                let indicator = UIActivityIndicatorView(style: .medium)
+                indicator.startAnimating()
+                let button = UIBarButtonItem(customView: indicator)
+                button.tag = NavigationBarButton.share.rawValue
+                items[shareId] = button
+
+            case .exported(let file):
+                DDLogInfo("PDFReaderViewController: share pdf file - \(file.createUrl().absoluteString)")
+                items[shareId] = shareButton
+                coordinatorDelegate?.share(url: file.createUrl(), barButton: shareButton)
+
+            case .failed(let error):
+                DDLogError("PDFReaderViewController: could not export pdf - \(error)")
+                coordinatorDelegate?.show(error: error)
+                items[shareId] = shareButton
+            }
+
+            navigationItem.rightBarButtonItems = items
         }
-
-        switch state {
-        case .preparing:
-            let indicator = UIActivityIndicatorView(style: .medium)
-            indicator.startAnimating()
-            let button = UIBarButtonItem(customView: indicator)
-            button.tag = NavigationBarButton.share.rawValue
-            items[shareId] = button
-
-        case .exported(let file):
-            DDLogInfo("PDFReaderViewController: share pdf file - \(file.createUrl().absoluteString)")
-            items[shareId] = shareButton
-            coordinatorDelegate?.share(url: file.createUrl(), barButton: shareButton)
-
-        case .failed(let error):
-            DDLogError("PDFReaderViewController: could not export pdf - \(error)")
-            coordinatorDelegate?.show(error: error)
-            items[shareId] = shareButton
-        }
-
-        navigationItem.rightBarButtonItems = items
     }
 
     private func updateInterface(to settings: PDFSettings) {
@@ -469,154 +614,9 @@ class PDFReaderViewController: UIViewController {
 
     // MARK: - Setups
 
-    private func add(controller: UIViewController) {
-        controller.willMove(toParent: self)
-        addChild(controller)
-        controller.didMove(toParent: self)
-    }
-
-    private func setupViews() {
-        let topSafeAreaSpacer = UIView()
-        topSafeAreaSpacer.translatesAutoresizingMaskIntoConstraints = false
-        topSafeAreaSpacer.backgroundColor = Asset.Colors.navbarBackground.color
-
-        let documentController = PDFDocumentViewController(viewModel: viewModel, compactSize: isCompactWidth, initialUIHidden: !statusBarVisible)
-        documentController.parentDelegate = self
-        documentController.coordinatorDelegate = coordinatorDelegate
-        documentController.view.translatesAutoresizingMaskIntoConstraints = false
-
-        let sidebarController = PDFSidebarViewController(viewModel: viewModel)
-        sidebarController.parentDelegate = self
-        sidebarController.coordinatorDelegate = coordinatorDelegate
-        sidebarController.boundingBoxConverter = documentController
-        sidebarController.view.translatesAutoresizingMaskIntoConstraints = false
-
-        let separator = UIView()
-        separator.translatesAutoresizingMaskIntoConstraints = false
-        separator.backgroundColor = Asset.Colors.annotationSidebarBorderColor.color
-
-        let annotationToolbar = AnnotationToolbarViewController(tools: [.highlight, .note, .image, .ink, .eraser], undoRedoEnabled: true, size: navigationBarHeight)
-        annotationToolbar.delegate = self
-
-        add(controller: documentController)
-        add(controller: sidebarController)
-        add(controller: annotationToolbar)
-        view.addSubview(topSafeAreaSpacer)
-        view.addSubview(documentController.view)
-        view.addSubview(sidebarController.view)
-        view.addSubview(separator)
-        view.addSubview(annotationToolbar.view)
-
-        let documentLeftConstraint = documentController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor)
-        let sidebarLeftConstraint = sidebarController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: -PDFReaderLayout.sidebarWidth)
-        documentTop = documentController.view.topAnchor.constraint(equalTo: view.topAnchor)
-
-        NSLayoutConstraint.activate([
-            topSafeAreaSpacer.topAnchor.constraint(equalTo: view.topAnchor),
-            topSafeAreaSpacer.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            topSafeAreaSpacer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            topSafeAreaSpacer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            sidebarController.view.topAnchor.constraint(equalTo: view.topAnchor),
-            sidebarController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            sidebarController.view.widthAnchor.constraint(equalToConstant: PDFReaderLayout.sidebarWidth),
-            sidebarLeftConstraint,
-            separator.widthAnchor.constraint(equalToConstant: PDFReaderLayout.separatorWidth),
-            separator.leadingAnchor.constraint(equalTo: sidebarController.view.trailingAnchor),
-            separator.topAnchor.constraint(equalTo: view.topAnchor),
-            separator.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            documentController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            documentTop,
-            documentController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            documentLeftConstraint
-        ])
-
-        self.documentController = documentController
-        documentControllerLeft = documentLeftConstraint
-        self.sidebarController = sidebarController
-        sidebarControllerLeft = sidebarLeftConstraint
-        annotationToolbarController = annotationToolbar
-
-        annotationToolbarHandler = AnnotationToolbarHandler(controller: annotationToolbar, delegate: self)
-        annotationToolbarHandler.didHide = { [weak self] in
-            self?.documentController.disableAnnotationTools()
-        }
-        annotationToolbarHandler.performInitialLayout()
-    }
-
     private func setupAccessibility(forSidebarButton button: UIBarButtonItem) {
         button.accessibilityLabel = isSidebarVisible ? L10n.Accessibility.Pdf.sidebarClose : L10n.Accessibility.Pdf.sidebarOpen
         button.title = isSidebarVisible ? L10n.Accessibility.Pdf.sidebarClose : L10n.Accessibility.Pdf.sidebarOpen
-    }
-
-    private func setupNavigationBar() {
-        let sidebarButton = UIBarButtonItem(image: UIImage(systemName: "sidebar.left"), style: .plain, target: nil, action: nil)
-        sidebarButton.isEnabled = !viewModel.state.document.isLocked
-        setupAccessibility(forSidebarButton: sidebarButton)
-        sidebarButton.tag = NavigationBarButton.sidebar.rawValue
-        sidebarButton.rx.tap.subscribe(onNext: { [weak self] _ in self?.toggleSidebar(animated: true) }).disposed(by: disposeBag)
-
-        let closeButton = UIBarButtonItem(image: UIImage(systemName: "chevron.left"), style: .plain, target: nil, action: nil)
-        closeButton.title = L10n.close
-        closeButton.accessibilityLabel = L10n.close
-        closeButton.rx.tap.subscribe(onNext: { [weak self] _ in self?.close() }).disposed(by: disposeBag)
-
-        let readerButton = UIBarButtonItem(image: Asset.Images.pdfRawReader.image, style: .plain, target: nil, action: nil)
-        readerButton.isEnabled = !viewModel.state.document.isLocked
-        readerButton.accessibilityLabel = L10n.Accessibility.Pdf.openReader
-        readerButton.title = L10n.Accessibility.Pdf.openReader
-        readerButton.rx.tap
-            .subscribe(onNext: { [weak self] _ in
-                guard let self else { return }
-                coordinatorDelegate?.showReader(document: viewModel.state.document, userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle)
-            })
-            .disposed(by: disposeBag)
-
-        navigationItem.leftBarButtonItems = [closeButton, sidebarButton, readerButton]
-        navigationItem.rightBarButtonItems = rightBarButtonItems
-    }
-
-    private var rightBarButtonItems: [UIBarButtonItem] {
-        var buttons = [settingsButton, shareButton, searchButton]
-
-        if viewModel.state.library.metadataEditable {
-            buttons.append(toolbarButton)
-        }
-
-        return buttons
-    }
-
-    private func setupObserving() {
-        viewModel.stateObservable
-            .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { [weak self] state in
-                self?.update(state: state)
-            })
-            .disposed(by: disposeBag)
-
-        NotificationCenter.default.rx
-            .notification(UIApplication.didBecomeActiveNotification)
-            .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { [weak self] _ in
-                guard let self else { return }
-                if let previousTraitCollection {
-                    updateUserInterfaceStyleIfNeeded(previousTraitCollection: previousTraitCollection)
-                }
-                viewModel.process(action: .updateAnnotationPreviews)
-                documentController.didBecomeActive()
-            })
-            .disposed(by: disposeBag)
-
-        NotificationCenter.default.rx
-            .notification(UIApplication.willResignActiveNotification)
-            .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { [weak self] _ in
-                guard let self else { return }
-                previousTraitCollection = traitCollection
-                if let page = documentController?.pdfController?.pageIndex {
-                    viewModel.process(action: .submitPendingPage(Int(page)))
-                }
-            })
-            .disposed(by: disposeBag)
     }
 }
 
