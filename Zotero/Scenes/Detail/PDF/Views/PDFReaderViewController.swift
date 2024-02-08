@@ -713,7 +713,7 @@ extension PDFReaderViewController: AnnotationToolbarDelegate {
 
         switch self.toolbarState.position {
         case .top, .pinned:
-            return self.isCompactWidth ? documentController.view.frame.size.width : (documentController.view.frame.size.width - (2 * AnnotationToolbarHandler.toolbarFullInsetInset))
+            return self.isCompactWidth ? documentController.view.frame.size.width : (documentController.view.frame.size.width - (2 * AnnotationToolbarHandler.toolbarFullInset))
 
         case .trailing, .leading:
             let window = (view.scene as? UIWindowScene)?.keyWindow

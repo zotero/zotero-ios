@@ -49,7 +49,7 @@ final class AnnotationToolbarHandler: NSObject {
     private unowned let controller: AnnotationToolbarViewController
     private unowned let delegate: AnnotationToolbarHandlerDelegate
     static let toolbarCompactInset: CGFloat = 12
-    static let toolbarFullInsetInset: CGFloat = 20
+    static let toolbarFullInset: CGFloat = 20
     static let minToolbarWidth: CGFloat = 300
     static let annotationToolbarDragHandleHeight: CGFloat = 50
     private let previewBackgroundColor: UIColor
@@ -142,11 +142,11 @@ final class AnnotationToolbarHandler: NSObject {
             previewsOverlay.addSubview(leadingPreview)
             previewsOverlay.addSubview(trailingPreview)
 
-            toolbarLeading = controller.view.leadingAnchor.constraint(equalTo: delegate.toolbarLeadingAnchor, constant: Self.toolbarFullInsetInset)
+            toolbarLeading = controller.view.leadingAnchor.constraint(equalTo: delegate.toolbarLeadingAnchor, constant: Self.toolbarFullInset)
             toolbarLeading.priority = .init(999)
             toolbarLeadingSafeArea = controller.view.leadingAnchor.constraint(equalTo: delegate.toolbarLeadingSafeAreaAnchor)
-            toolbarTrailing = delegate.containerView.trailingAnchor.constraint(equalTo: controller.view.trailingAnchor, constant: Self.toolbarFullInsetInset)
-            toolbarTrailingSafeArea = delegate.containerView.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: controller.view.trailingAnchor, constant: Self.toolbarFullInsetInset)
+            toolbarTrailing = delegate.containerView.trailingAnchor.constraint(equalTo: controller.view.trailingAnchor, constant: Self.toolbarFullInset)
+            toolbarTrailingSafeArea = delegate.containerView.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: controller.view.trailingAnchor, constant: Self.toolbarFullInset)
             let _toolbarTop = controller.view.topAnchor.constraint(equalTo: delegate.containerView.topAnchor, constant: Self.toolbarCompactInset)
             let leadingPreviewHeight = leadingPreview.heightAnchor.constraint(equalToConstant: 50)
             let trailingPreviewHeight = trailingPreview.heightAnchor.constraint(equalToConstant: 50)
@@ -164,11 +164,11 @@ final class AnnotationToolbarHandler: NSObject {
                 previewsOverlay.trailingAnchor.constraint(equalTo: topPreviewContainer.trailingAnchor),
                 pinnedPreviewHeight,
                 topPreview.heightAnchor.constraint(equalToConstant: controller.size),
-                leadingPreview.leadingAnchor.constraint(equalTo: previewsOverlay.safeAreaLayoutGuide.leadingAnchor, constant: Self.toolbarFullInsetInset),
+                leadingPreview.leadingAnchor.constraint(equalTo: previewsOverlay.safeAreaLayoutGuide.leadingAnchor, constant: Self.toolbarFullInset),
                 leadingPreview.topAnchor.constraint(equalTo: topPreviewContainer.bottomAnchor, constant: Self.toolbarCompactInset),
                 leadingPreviewHeight,
                 leadingPreview.widthAnchor.constraint(equalToConstant: controller.size),
-                previewsOverlay.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: trailingPreview.trailingAnchor, constant: Self.toolbarFullInsetInset),
+                previewsOverlay.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: trailingPreview.trailingAnchor, constant: Self.toolbarFullInset),
                 trailingPreview.topAnchor.constraint(equalTo: topPreviewContainer.bottomAnchor, constant: Self.toolbarCompactInset),
                 trailingPreviewHeight,
                 trailingPreview.widthAnchor.constraint(equalToConstant: controller.size),
@@ -362,13 +362,13 @@ final class AnnotationToolbarHandler: NSObject {
             if !self.delegate.isSidebarHidden {
                 self.toolbarLeadingSafeArea.isActive = false
                 self.toolbarLeading.isActive = true
-                self.toolbarLeading.constant = Self.toolbarFullInsetInset
+                self.toolbarLeading.constant = Self.toolbarFullInset
             } else {
                 self.toolbarLeading.isActive = false
                 self.toolbarLeadingSafeArea.isActive = true
-                self.toolbarLeadingSafeArea.constant = Self.toolbarFullInsetInset
+                self.toolbarLeadingSafeArea.constant = Self.toolbarFullInset
             }
-            self.toolbarTop.constant = Self.toolbarFullInsetInset + self.topOffsets(statusBarVisible: statusBarVisible).total
+            self.toolbarTop.constant = Self.toolbarFullInset + self.topOffsets(statusBarVisible: statusBarVisible).total
             self.controller.set(rotation: .vertical, isCompactSize: false)
 
         case .trailing:
@@ -376,8 +376,8 @@ final class AnnotationToolbarHandler: NSObject {
             self.toolbarLeadingSafeArea.isActive = false
             self.toolbarTrailing.isActive = false
             self.toolbarTrailingSafeArea.isActive = true
-            self.toolbarTrailingSafeArea.constant = Self.toolbarFullInsetInset
-            self.toolbarTop.constant = Self.toolbarFullInsetInset + self.topOffsets(statusBarVisible: statusBarVisible).total
+            self.toolbarTrailingSafeArea.constant = Self.toolbarFullInset
+            self.toolbarTop.constant = Self.toolbarFullInset + self.topOffsets(statusBarVisible: statusBarVisible).total
             self.controller.set(rotation: .vertical, isCompactSize: false)
 
         case .top:
