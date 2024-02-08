@@ -27,21 +27,6 @@ class PDFReaderViewController: UIViewController {
         case sidebar = 7
     }
 
-    private struct ToolbarState: Codable {
-        enum Position: Int, Codable {
-            case leading = 0
-            case trailing = 1
-            case top = 2
-            case pinned = 3
-        }
-
-        let position: Position
-        let visible: Bool
-    }
-
-    private static let toolbarCompactInset: CGFloat = 12
-    private static let toolbarFullInsetInset: CGFloat = 20
-    private static let minToolbarWidth: CGFloat = 300
     private static let sidebarButtonTag = 7
     private let viewModel: ViewModel<PDFReaderActionHandler>
     private let disposeBag: DisposeBag
@@ -856,31 +841,6 @@ extension PDFReaderViewController: AnnotationBoundingBoxConverter {
 
     func textOffset(rect: CGRect, page: PageIndex) -> Int? {
         return self.documentController.textOffset(rect: rect, page: page)
-    }
-}
-
-extension PDFReaderViewController: UIGestureRecognizerDelegate {
-    func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-        guard let longPressRecognizer = gestureRecognizer as? UILongPressGestureRecognizer else { return true }
-
-        let location = longPressRecognizer.location(in: self.annotationToolbarController.view)
-        let currentLocation: CGFloat
-        let border: CGFloat
-
-        switch self.toolbarState.position {
-        case .pinned, .top:
-            currentLocation = location.x
-            border = self.annotationToolbarController.view.frame.width - AnnotationToolbarHandler.annotationToolbarDragHandleHeight
-
-        case .leading, .trailing:
-            currentLocation = location.y
-            border = self.annotationToolbarController.view.frame.height - AnnotationToolbarHandler.annotationToolbarDragHandleHeight
-        }
-        return currentLocation >= border
-    }
-
-    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
-        return true
     }
 }
 
