@@ -96,7 +96,7 @@ final class PDFSearchViewController: UIViewController {
 
         let search = TextSearch(document: document)
         search.delegate = self
-        search.compareOptions = [.caseInsensitive, .diacriticInsensitive]
+        search.comparisonOptions = [.caseInsensitive, .diacriticInsensitive]
         search.search(for: string)
         self.currentSearch = search
     }
