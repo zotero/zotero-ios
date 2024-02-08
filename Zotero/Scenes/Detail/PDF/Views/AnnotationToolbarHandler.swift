@@ -49,7 +49,7 @@ final class AnnotationToolbarHandler: NSObject {
     private unowned let controller: AnnotationToolbarViewController
     private unowned let delegate: AnnotationToolbarHandlerDelegate
     static let toolbarCompactInset: CGFloat = 12
-    static let toolbarFullInsetInset: CGFloat = 20
+    static let toolbarFullInset: CGFloat = 20
     static let minToolbarWidth: CGFloat = 300
     static let annotationToolbarDragHandleHeight: CGFloat = 50
     private let previewBackgroundColor: UIColor
@@ -93,25 +93,10 @@ final class AnnotationToolbarHandler: NSObject {
         createViewsWithConstraints()
         createGestureRecognizers()
 
-        func createGestureRecognizers() {
-            let panRecognizer = UIPanGestureRecognizer()
-            panRecognizer.delegate = self
-            panRecognizer.rx.event
-                .subscribe(with: self, onNext: { `self`, recognizer in
-                    self.toolbarDidPan(recognizer: recognizer)
-                })
-                .disposed(by: disposeBag)
-            controller.view.addGestureRecognizer(panRecognizer)
-
-            let longPressRecognizer = UILongPressGestureRecognizer()
-            longPressRecognizer.delegate = self
-            longPressRecognizer.rx.event
-                .subscribe(with: self, onNext: { `self`, recognizer in
-                    self.didTapToolbar(recognizer: recognizer)
-                })
-                .disposed(by: disposeBag)
-            dragHandleLongPressRecognizer = longPressRecognizer
-            controller.view.addGestureRecognizer(longPressRecognizer)
+        func setupController() {
+            controller.view.translatesAutoresizingMaskIntoConstraints = false
+            controller.view.setContentHuggingPriority(.required, for: .horizontal)
+            controller.view.setContentHuggingPriority(.required, for: .vertical)
         }
 
         func createViewsWithConstraints() {
@@ -142,18 +127,18 @@ final class AnnotationToolbarHandler: NSObject {
             previewsOverlay.addSubview(leadingPreview)
             previewsOverlay.addSubview(trailingPreview)
 
-            toolbarLeading = controller.view.leadingAnchor.constraint(equalTo: delegate.toolbarLeadingAnchor, constant: Self.toolbarFullInsetInset)
+            toolbarLeading = controller.view.leadingAnchor.constraint(equalTo: delegate.toolbarLeadingAnchor, constant: Self.toolbarFullInset)
             toolbarLeading.priority = .init(999)
             toolbarLeadingSafeArea = controller.view.leadingAnchor.constraint(equalTo: delegate.toolbarLeadingSafeAreaAnchor)
-            toolbarTrailing = delegate.containerView.trailingAnchor.constraint(equalTo: controller.view.trailingAnchor, constant: Self.toolbarFullInsetInset)
-            toolbarTrailingSafeArea = delegate.containerView.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: controller.view.trailingAnchor, constant: Self.toolbarFullInsetInset)
-            let _toolbarTop = controller.view.topAnchor.constraint(equalTo: delegate.containerView.topAnchor, constant: Self.toolbarCompactInset)
+            toolbarTrailing = delegate.containerView.trailingAnchor.constraint(equalTo: controller.view.trailingAnchor, constant: Self.toolbarFullInset)
+            toolbarTrailingSafeArea = delegate.containerView.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: controller.view.trailingAnchor, constant: Self.toolbarFullInset)
+            let toolbarTop = controller.view.topAnchor.constraint(equalTo: delegate.containerView.topAnchor, constant: Self.toolbarCompactInset)
             let leadingPreviewHeight = leadingPreview.heightAnchor.constraint(equalToConstant: 50)
             let trailingPreviewHeight = trailingPreview.heightAnchor.constraint(equalToConstant: 50)
             let pinnedPreviewHeight = pinnedPreview.heightAnchor.constraint(equalToConstant: controller.size)
 
             NSLayoutConstraint.activate([
-                _toolbarTop,
+                toolbarTop,
                 toolbarLeadingSafeArea,
                 previewsOverlay.topAnchor.constraint(equalTo: delegate.containerView.topAnchor),
                 previewsOverlay.bottomAnchor.constraint(equalTo: delegate.containerView.safeAreaLayoutGuide.bottomAnchor),
@@ -164,18 +149,18 @@ final class AnnotationToolbarHandler: NSObject {
                 previewsOverlay.trailingAnchor.constraint(equalTo: topPreviewContainer.trailingAnchor),
                 pinnedPreviewHeight,
                 topPreview.heightAnchor.constraint(equalToConstant: controller.size),
-                leadingPreview.leadingAnchor.constraint(equalTo: previewsOverlay.safeAreaLayoutGuide.leadingAnchor, constant: Self.toolbarFullInsetInset),
+                leadingPreview.leadingAnchor.constraint(equalTo: previewsOverlay.safeAreaLayoutGuide.leadingAnchor, constant: Self.toolbarFullInset),
                 leadingPreview.topAnchor.constraint(equalTo: topPreviewContainer.bottomAnchor, constant: Self.toolbarCompactInset),
                 leadingPreviewHeight,
                 leadingPreview.widthAnchor.constraint(equalToConstant: controller.size),
-                previewsOverlay.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: trailingPreview.trailingAnchor, constant: Self.toolbarFullInsetInset),
+                previewsOverlay.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: trailingPreview.trailingAnchor, constant: Self.toolbarFullInset),
                 trailingPreview.topAnchor.constraint(equalTo: topPreviewContainer.bottomAnchor, constant: Self.toolbarCompactInset),
                 trailingPreviewHeight,
                 trailingPreview.widthAnchor.constraint(equalToConstant: controller.size),
                 inbetweenTopDash.heightAnchor.constraint(equalToConstant: 2 / UIScreen.main.scale)
             ])
 
-            toolbarTop = _toolbarTop
+            self.toolbarTop = toolbarTop
             toolbarPreviewsOverlay = previewsOverlay
             toolbarTopPreview = topPreview
             toolbarPinnedPreview = pinnedPreview
@@ -185,18 +170,33 @@ final class AnnotationToolbarHandler: NSObject {
             toolbarTrailingPreviewHeight = trailingPreviewHeight
             toolbarPinnedPreviewHeight = pinnedPreviewHeight
             inbetweenTopDashedView = inbetweenTopDash
+
+            func setup(toolbarPositionView view: DashedView) {
+                view.backgroundColor = previewBackgroundColor
+                view.dashColor = previewDashColor
+                view.layer.masksToBounds = true
+            }
         }
 
-        func setupController() {
-            controller.view.translatesAutoresizingMaskIntoConstraints = false
-            controller.view.setContentHuggingPriority(.required, for: .horizontal)
-            controller.view.setContentHuggingPriority(.required, for: .vertical)
-        }
+        func createGestureRecognizers() {
+            let panRecognizer = UIPanGestureRecognizer()
+            panRecognizer.delegate = self
+            panRecognizer.rx.event
+                .subscribe(onNext: { [weak self] recognizer in
+                    self?.toolbarDidPan(recognizer: recognizer)
+                })
+                .disposed(by: disposeBag)
+            controller.view.addGestureRecognizer(panRecognizer)
 
-        func setup(toolbarPositionView view: DashedView) {
-            view.backgroundColor = previewBackgroundColor
-            view.dashColor = previewDashColor
-            view.layer.masksToBounds = true
+            let longPressRecognizer = UILongPressGestureRecognizer()
+            longPressRecognizer.delegate = self
+            longPressRecognizer.rx.event
+                .subscribe(onNext: { [weak self] recognizer in
+                    self?.didTapToolbar(recognizer: recognizer)
+                })
+                .disposed(by: disposeBag)
+            dragHandleLongPressRecognizer = longPressRecognizer
+            controller.view.addGestureRecognizer(longPressRecognizer)
         }
     }
 
@@ -216,221 +216,200 @@ final class AnnotationToolbarHandler: NSObject {
     }
     
     func viewIsAppearing(documentIsLocked: Bool) {
-        self.setConstraints(for: self.delegate.toolbarState.position, statusBarVisible: self.delegate.statusBarVisible)
-        self.delegate.topDidChange(forToolbarState: self.delegate.toolbarState)
-        self.setAnnotationToolbarHandleMinimumLongPressDuration(forPosition: self.delegate.toolbarState.position)
-        if self.delegate.toolbarState.visible && !documentIsLocked {
-            self.showAnnotationToolbar(state: self.delegate.toolbarState, statusBarVisible: self.delegate.statusBarVisible, animated: false)
+        setConstraints(for: delegate.toolbarState.position, statusBarVisible: delegate.statusBarVisible)
+        delegate.topDidChange(forToolbarState: delegate.toolbarState)
+        setAnnotationToolbarHandleMinimumLongPressDuration(forPosition: delegate.toolbarState.position)
+        if delegate.toolbarState.visible && !documentIsLocked {
+            showAnnotationToolbar(state: delegate.toolbarState, statusBarVisible: delegate.statusBarVisible, animated: false)
         } else {
-            self.hideAnnotationToolbar(newState: self.delegate.toolbarState, statusBarVisible: self.delegate.statusBarVisible, animated: false)
+            hideAnnotationToolbar(newState: delegate.toolbarState, statusBarVisible: delegate.statusBarVisible, animated: false)
         }
     }
 
     func viewWillTransitionToNewSize() {
-        self.controller.prepareForSizeChange()
-        self.controller.updateAdditionalButtons()
-        self.setConstraints(for: self.delegate.toolbarState.position, statusBarVisible: self.delegate.statusBarVisible)
-        self.delegate.topDidChange(forToolbarState: self.delegate.toolbarState)
-        self.delegate.layoutIfNeeded()
-        self.controller.sizeDidChange()
+        controller.prepareForSizeChange()
+        controller.updateAdditionalButtons()
+        setConstraints(for: delegate.toolbarState.position, statusBarVisible: delegate.statusBarVisible)
+        delegate.topDidChange(forToolbarState: delegate.toolbarState)
+        delegate.layoutIfNeeded()
+        controller.sizeDidChange()
     }
 
     func interfaceVisibilityDidChange() {
-        self.delegate.topDidChange(forToolbarState: self.delegate.toolbarState)
-        self.setConstraints(for: self.delegate.toolbarState.position, statusBarVisible: self.delegate.statusBarVisible)
+        delegate.topDidChange(forToolbarState: delegate.toolbarState)
+        setConstraints(for: delegate.toolbarState.position, statusBarVisible: delegate.statusBarVisible)
     }
 
     private func isCompactSize(for rotation: AnnotationToolbarViewController.Rotation) -> Bool {
         switch rotation {
         case .horizontal:
-            return self.delegate.isCompactWidth
+            return delegate.isCompactWidth
 
         case .vertical:
-            return self.delegate.containerView.frame.height <= 400
+            return delegate.containerView.frame.height <= 400
         }
     }
 
     func topOffsets(statusBarVisible: Bool) -> (statusBarHeight: CGFloat, navigationBarHeight: CGFloat, total: CGFloat) {
-        let statusBarOffset = statusBarVisible || UIDevice.current.userInterfaceIdiom != .pad ? self.delegate.statusBarHeight : 0
-        let navigationBarOffset = statusBarVisible ? self.delegate.navigationBarHeight : 0
+        let statusBarOffset = statusBarVisible || UIDevice.current.userInterfaceIdiom != .pad ? delegate.statusBarHeight : 0
+        let navigationBarOffset = statusBarVisible ? delegate.navigationBarHeight : 0
         return (statusBarOffset, navigationBarOffset, statusBarOffset + navigationBarOffset)
     }
 
     // MARK: - Actions
 
     func enableLeadingSafeConstraint() {
-        self.toolbarLeading.isActive = false
-        self.toolbarLeadingSafeArea.isActive = true
+        toolbarLeading.isActive = false
+        toolbarLeadingSafeArea.isActive = true
     }
 
     func disableLeadingSafeConstraint() {
-        self.toolbarLeadingSafeArea.isActive = false
-        self.toolbarLeading.isActive = true
+        toolbarLeadingSafeArea.isActive = false
+        toolbarLeading.isActive = true
     }
 
     func set(hidden: Bool, animated: Bool) {
-        self.delegate.toolbarState = State(position: self.delegate.toolbarState.position, visible: !hidden)
+        delegate.toolbarState = State(position: delegate.toolbarState.position, visible: !hidden)
 
         if hidden {
-            self.hideAnnotationToolbar(newState: self.delegate.toolbarState, statusBarVisible: self.delegate.statusBarVisible, animated: animated)
+            hideAnnotationToolbar(newState: delegate.toolbarState, statusBarVisible: delegate.statusBarVisible, animated: animated)
         } else {
-            self.showAnnotationToolbar(state: self.delegate.toolbarState, statusBarVisible: self.delegate.statusBarVisible, animated: animated)
+            showAnnotationToolbar(state: delegate.toolbarState, statusBarVisible: delegate.statusBarVisible, animated: animated)
         }
     }
 
     private func showAnnotationToolbar(state: State, statusBarVisible: Bool, animated: Bool) {
-        self.controller.prepareForSizeChange()
-        self.setConstraints(for: state.position, statusBarVisible: statusBarVisible)
-        self.controller.view.isHidden = false
-        self.delegate.layoutIfNeeded()
-        self.controller.sizeDidChange()
-        self.delegate.layoutIfNeeded()
-        self.delegate.topDidChange(forToolbarState: state)
+        controller.prepareForSizeChange()
+        setConstraints(for: state.position, statusBarVisible: statusBarVisible)
+        controller.view.isHidden = false
+        delegate.layoutIfNeeded()
+        controller.sizeDidChange()
+        delegate.layoutIfNeeded()
+        delegate.topDidChange(forToolbarState: state)
 
-        self.delegate.hideSidebarIfNeeded(forPosition: state.position, isToolbarSmallerThanMinWidth: self.controller.view.frame.width < Self.minToolbarWidth, animated: animated)
+        delegate.hideSidebarIfNeeded(forPosition: state.position, isToolbarSmallerThanMinWidth: controller.view.frame.width < Self.minToolbarWidth, animated: animated)
 
         let navigationBarHidden = !statusBarVisible || state.position == .pinned
 
         if !animated {
-            self.controller.view.alpha = 1
-            self.delegate.setNavigationBar(hidden: navigationBarHidden, animated: false)
-            self.delegate.setNavigationBar(alpha: navigationBarHidden ? 0 : 1)
-            self.delegate.layoutIfNeeded()
+            controller.view.alpha = 1
+            delegate.setNavigationBar(hidden: navigationBarHidden, animated: false)
+            delegate.setNavigationBar(alpha: navigationBarHidden ? 0 : 1)
+            delegate.layoutIfNeeded()
             return
         }
 
-        if !navigationBarHidden && self.delegate.isNavigationBarHidden {
-            self.delegate.setNavigationBar(hidden: false, animated: false)
-            self.delegate.setNavigationBar(alpha: 0)
+        if !navigationBarHidden, delegate.isNavigationBarHidden {
+            delegate.setNavigationBar(hidden: false, animated: false)
+            delegate.setNavigationBar(alpha: 0)
         }
 
-        UIView.animate(withDuration: 0.2, animations: {
-            self.controller.view.alpha = 1
-            self.delegate.setNavigationBar(alpha: navigationBarHidden ? 0 : 1)
-            self.delegate.layoutIfNeeded()
-        }, completion: { finished in
-            guard finished && navigationBarHidden else { return }
-            self.delegate.setNavigationBar(hidden: true, animated: false)
+        UIView.animate(withDuration: 0.2, animations: { [weak self] in
+            guard let self else { return }
+            controller.view.alpha = 1
+            delegate.setNavigationBar(alpha: navigationBarHidden ? 0 : 1)
+            delegate.layoutIfNeeded()
+        }, completion: { [weak self] finished in
+            guard let self, finished, navigationBarHidden else { return }
+            delegate.setNavigationBar(hidden: true, animated: false)
         })
     }
 
     private func hideAnnotationToolbar(newState: State, statusBarVisible: Bool, animated: Bool) {
-        self.delegate.topDidChange(forToolbarState: newState)
+        delegate.topDidChange(forToolbarState: newState)
 
         if !animated {
-            self.delegate.layoutIfNeeded()
-            self.controller.view.alpha = 0
-            self.controller.view.isHidden = true
-            self.delegate.setNavigationBar(alpha: statusBarVisible ? 1 : 0)
-            self.delegate.setNavigationBar(hidden: !statusBarVisible, animated: false)
+            delegate.layoutIfNeeded()
+            controller.view.alpha = 0
+            controller.view.isHidden = true
+            delegate.setNavigationBar(alpha: statusBarVisible ? 1 : 0)
+            delegate.setNavigationBar(hidden: !statusBarVisible, animated: false)
             return
         }
 
-        if statusBarVisible && self.delegate.isNavigationBarHidden {
-            self.delegate.setNavigationBar(hidden: false, animated: false)
-            self.delegate.setNavigationBar(alpha: 0)
+        if statusBarVisible && delegate.isNavigationBarHidden {
+            delegate.setNavigationBar(hidden: false, animated: false)
+            delegate.setNavigationBar(alpha: 0)
         }
 
-        UIView.animate(withDuration: 0.2, animations: {
-            self.delegate.layoutIfNeeded()
-            self.controller.view.alpha = 0
-            self.delegate.setNavigationBar(alpha: statusBarVisible ? 1 : 0)
-        }, completion: { finished in
-            guard finished else { return }
-            self.controller.view.isHidden = true
-            self.didHide?()
+        UIView.animate(withDuration: 0.2, animations: { [weak self] in
+            guard let self else { return }
+            delegate.layoutIfNeeded()
+            controller.view.alpha = 0
+            delegate.setNavigationBar(alpha: statusBarVisible ? 1 : 0)
+        }, completion: { [weak self] finished in
+            guard let self, finished else { return }
+            controller.view.isHidden = true
+            didHide?()
             if !statusBarVisible {
-                self.delegate.setNavigationBar(hidden: true, animated: false)
+                delegate.setNavigationBar(hidden: true, animated: false)
             }
         })
     }
 
     private func setConstraints(for position: State.Position, statusBarVisible: Bool) {
-        let rotation: AnnotationToolbarViewController.Rotation = (position == .top || position == .pinned) ? .horizontal : .vertical
-        if self.isCompactSize(for: rotation) {
-            self.setCompactConstraints(for: position, statusBarVisible: statusBarVisible)
-        } else {
-            self.setFullConstraints(for: position, statusBarVisible: statusBarVisible)
-        }
-    }
+        let rotation: AnnotationToolbarViewController.Rotation
+        switch position {
+        case .top, .pinned:
+            rotation = .horizontal
 
-    private func setFullConstraints(for position: State.Position, statusBarVisible: Bool) {
+        case .leading, .trailing:
+            rotation = .vertical
+        }
+        let isCompact = isCompactSize(for: rotation)
         switch position {
         case .leading:
-            self.toolbarTrailing.isActive = false
-            self.toolbarTrailingSafeArea.isActive = false
-            if !self.delegate.isSidebarHidden {
-                self.toolbarLeadingSafeArea.isActive = false
-                self.toolbarLeading.isActive = true
-                self.toolbarLeading.constant = Self.toolbarFullInsetInset
-            } else {
-                self.toolbarLeading.isActive = false
-                self.toolbarLeadingSafeArea.isActive = true
-                self.toolbarLeadingSafeArea.constant = Self.toolbarFullInsetInset
-            }
-            self.toolbarTop.constant = Self.toolbarFullInsetInset + self.topOffsets(statusBarVisible: statusBarVisible).total
-            self.controller.set(rotation: .vertical, isCompactSize: false)
+            setupLeadingConstraints(isCompact: isCompact, statusBarVisible: statusBarVisible)
 
         case .trailing:
-            self.toolbarLeading.isActive = false
-            self.toolbarLeadingSafeArea.isActive = false
-            self.toolbarTrailing.isActive = false
-            self.toolbarTrailingSafeArea.isActive = true
-            self.toolbarTrailingSafeArea.constant = Self.toolbarFullInsetInset
-            self.toolbarTop.constant = Self.toolbarFullInsetInset + self.topOffsets(statusBarVisible: statusBarVisible).total
-            self.controller.set(rotation: .vertical, isCompactSize: false)
+            setupTrailingConstraints(isCompact: isCompact, statusBarVisible: statusBarVisible)
 
         case .top:
-            self.setupTopConstraints(isCompact: false, isPinned: false, statusBarVisible: statusBarVisible)
+            setupTopConstraints(isCompact: isCompact, isPinned: false, statusBarVisible: statusBarVisible)
 
         case .pinned:
-            self.setupTopConstraints(isCompact: false, isPinned: true, statusBarVisible: statusBarVisible)
+            setupTopConstraints(isCompact: isCompact, isPinned: true, statusBarVisible: statusBarVisible)
         }
-    }
 
-    private func setCompactConstraints(for position: State.Position, statusBarVisible: Bool) {
-        switch position {
-        case .leading:
-            self.toolbarTrailing.isActive = false
-            self.toolbarTrailingSafeArea.isActive = false
-            if !self.delegate.isSidebarHidden {
-                self.toolbarLeadingSafeArea.isActive = false
-                self.toolbarLeading.isActive = true
-                self.toolbarLeading.constant = Self.toolbarCompactInset
+        func setupLeadingConstraints(isCompact: Bool, statusBarVisible: Bool) {
+            let inset = isCompact ? Self.toolbarCompactInset : Self.toolbarFullInset
+            toolbarTrailing.isActive = false
+            toolbarTrailingSafeArea.isActive = false
+            if !delegate.isSidebarHidden {
+                toolbarLeadingSafeArea.isActive = false
+                toolbarLeading.isActive = true
+                toolbarLeading.constant = inset
             } else {
-                self.toolbarLeading.isActive = false
-                self.toolbarLeadingSafeArea.isActive = true
-                self.toolbarLeadingSafeArea.constant = Self.toolbarCompactInset
+                toolbarLeading.isActive = false
+                toolbarLeadingSafeArea.isActive = true
+                toolbarLeadingSafeArea.constant = inset
             }
-            self.toolbarTop.constant = Self.toolbarCompactInset + self.topOffsets(statusBarVisible: statusBarVisible).total
-            self.controller.set(rotation: .vertical, isCompactSize: true)
-
-        case .trailing:
-            self.toolbarLeading.isActive = false
-            self.toolbarLeadingSafeArea.isActive = false
-            self.toolbarTrailing.isActive = false
-            self.toolbarTrailingSafeArea.isActive = true
-            self.toolbarTrailingSafeArea.constant = Self.toolbarCompactInset
-            self.toolbarTop.constant = Self.toolbarCompactInset + self.topOffsets(statusBarVisible: statusBarVisible).total
-            self.controller.set(rotation: .vertical, isCompactSize: true)
-
-        case .top:
-            self.setupTopConstraints(isCompact: true, isPinned: false, statusBarVisible: statusBarVisible)
-
-        case .pinned:
-            self.setupTopConstraints(isCompact: true, isPinned: true, statusBarVisible: statusBarVisible)
+            toolbarTop.constant = inset + topOffsets(statusBarVisible: statusBarVisible).total
+            controller.set(rotation: .vertical, isCompactSize: isCompact)
         }
-    }
 
-    private func setupTopConstraints(isCompact: Bool, isPinned: Bool, statusBarVisible: Bool) {
-        self.toolbarLeadingSafeArea.isActive = false
-        self.toolbarTrailingSafeArea.isActive = false
-        self.toolbarTrailing.isActive = true
-        self.toolbarTrailing.constant = 0
-        self.toolbarLeading.isActive = true
-        self.toolbarLeading.constant = 0
-        self.toolbarTop.constant = isPinned ? self.topOffsets(statusBarVisible: statusBarVisible).statusBarHeight : self.topOffsets(statusBarVisible: statusBarVisible).total
-        self.controller.set(rotation: .horizontal, isCompactSize: isCompact)
+        func setupTrailingConstraints(isCompact: Bool, statusBarVisible: Bool) {
+            let inset = isCompact ? Self.toolbarCompactInset : Self.toolbarFullInset
+            toolbarLeading.isActive = false
+            toolbarLeadingSafeArea.isActive = false
+            toolbarTrailing.isActive = false
+            toolbarTrailingSafeArea.isActive = true
+            toolbarTrailingSafeArea.constant = inset
+            toolbarTop.constant = inset + topOffsets(statusBarVisible: statusBarVisible).total
+            controller.set(rotation: .vertical, isCompactSize: isCompact)
+        }
+
+        func setupTopConstraints(isCompact: Bool, isPinned: Bool, statusBarVisible: Bool) {
+            toolbarLeadingSafeArea.isActive = false
+            toolbarTrailingSafeArea.isActive = false
+            toolbarTrailing.isActive = true
+            toolbarTrailing.constant = 0
+            toolbarLeading.isActive = true
+            toolbarLeading.constant = 0
+            let topOffsets = topOffsets(statusBarVisible: statusBarVisible)
+            toolbarTop.constant = isPinned ? topOffsets.statusBarHeight : topOffsets.total
+            controller.set(rotation: .horizontal, isCompactSize: isCompact)
+        }
     }
 
     // MARK: - Gesture recognizers
@@ -439,348 +418,350 @@ final class AnnotationToolbarHandler: NSObject {
         return velocity.y <= -1500 || abs(velocity.x) >= 1500
     }
 
-    /// Return new position for given touch point and velocity of toolbar. The user can pan up/left/right to move the toolbar. If velocity > 1500, it's considered a swipe and the toolbar is moved
-    /// in swipe direction. Otherwise the toolbar is pinned to closest point from touch.
-    private func position(fromTouch point: CGPoint, frame: CGRect, containerFrame: CGRect, velocity: CGPoint, statusBarVisible: Bool) -> State.Position {
-        if self.isSwipe(fromVelocity: velocity) {
-            // Move in direction of swipe
-            if abs(velocity.y) > abs(velocity.x) && containerFrame.size.width >= Self.minToolbarWidth {
-                return .top
-            }
-            return velocity.x < 0 ? .leading : .trailing
-        }
-
-        let topViewBottomRightPoint = self.toolbarTopPreview.convert(CGPoint(x: self.toolbarTopPreview.bounds.maxX, y: self.toolbarTopPreview.bounds.maxY), to: self.delegate.containerView)
-
-        if point.y < topViewBottomRightPoint.y {
-            let pinnedViewBottomRightPoint = self.toolbarPinnedPreview.convert(CGPoint(x: self.toolbarPinnedPreview.frame.maxX, y: self.toolbarPinnedPreview.frame.maxY), to: self.delegate.containerView)
-            return point.y < pinnedViewBottomRightPoint.y ? .pinned : .top
-        }
-
-        let xPos = point.x - containerFrame.minX
-
-        if point.y < (topViewBottomRightPoint.y + 150) {
-            if xPos > 150 && xPos < (containerFrame.size.width - 150) {
-                return .top
-            }
-            return xPos <= 150 ? .leading : .trailing
-        }
-
-        return xPos > containerFrame.size.width / 2 ? .trailing : .leading
-    }
-
-    private func velocity(from panVelocity: CGPoint, newPosition: State.Position) -> CGFloat {
-        let currentPosition: CGFloat
-        let endPosition: CGFloat
-        let velocity: CGFloat
-
-        switch newPosition {
-        case .top:
-            velocity = panVelocity.y
-            currentPosition = self.controller.view.frame.minY
-            endPosition = self.delegate.containerView.safeAreaInsets.top
-
-        case .leading:
-            velocity = panVelocity.x
-            currentPosition = self.controller.view.frame.minX
-            endPosition = 0
-
-        case .trailing:
-            velocity = panVelocity.x
-            currentPosition = self.controller.view.frame.maxX
-            endPosition = self.delegate.containerView.frame.width
-
-        case .pinned:
-            velocity = panVelocity.y
-            currentPosition = self.controller.view.frame.minY
-            endPosition = self.delegate.containerView.safeAreaInsets.top
-        }
-
-        return abs(velocity / (endPosition - currentPosition))
-    }
-
-    func didTapToolbar(recognizer: UILongPressGestureRecognizer) {
+    private func didTapToolbar(recognizer: UILongPressGestureRecognizer) {
         switch recognizer.state {
         case .began:
-            self.setHighlightSelected(at: self.delegate.toolbarState.position)
-            self.showPreviews()
+            setHighlightSelected(at: delegate.toolbarState.position)
+            showPreviews()
 
         case .ended, .failed:
-            self.hidePreviewsIfNeeded()
+            hidePreviewsIfNeeded()
 
-        default: break
+        default:
+            break
+        }
+
+        func hidePreviewsIfNeeded() {
+            guard toolbarPreviewsOverlay.alpha == 1 else { return }
+
+            UIView.animate(withDuration: 0.2, animations: { [weak self] in
+                guard let self else { return }
+                delegate.setNavigationBar(alpha: 1)
+                toolbarPreviewsOverlay.alpha = 0
+            }, completion: { [weak self] finished in
+                guard let self, finished else { return }
+                toolbarPreviewsOverlay.isHidden = true
+            })
         }
     }
 
-    func toolbarDidPan(recognizer: UIPanGestureRecognizer) {
+    private func toolbarDidPan(recognizer: UIPanGestureRecognizer) {
         switch recognizer.state {
         case .began:
-            self.toolbarInitialFrame = self.controller.view.frame
+            toolbarInitialFrame = controller.view.frame
 
         case .changed:
-            guard let originalFrame = self.toolbarInitialFrame else { return }
-            let translation = recognizer.translation(in: self.controller.view)
-            let location = recognizer.location(in: self.delegate.containerView)
-            let position = self.position(
+            guard let originalFrame = toolbarInitialFrame else { return }
+            let translation = recognizer.translation(in: controller.view)
+            let location = recognizer.location(in: delegate.containerView)
+            let position = position(
                 fromTouch: location,
-                frame: self.controller.view.frame,
-                containerFrame: self.delegate.documentView.frame,
+                frame: controller.view.frame,
+                containerFrame: delegate.documentView.frame,
                 velocity: CGPoint(),
-                statusBarVisible: self.delegate.statusBarVisible
+                statusBarVisible: delegate.statusBarVisible
             )
 
-            self.controller.view.frame = originalFrame.offsetBy(dx: translation.x, dy: translation.y)
+            controller.view.frame = originalFrame.offsetBy(dx: translation.x, dy: translation.y)
 
-            self.showPreviewsOnDragIfNeeded(translation: translation, velocity: recognizer.velocity(in: self.delegate.containerView), currentPosition: self.delegate.toolbarState.position)
+            showPreviewsOnDragIfNeeded(translation: translation, velocity: recognizer.velocity(in: delegate.containerView), currentPosition: delegate.toolbarState.position)
 
-            if !self.toolbarPreviewsOverlay.isHidden {
-                self.setHighlightSelected(at: position)
+            if !toolbarPreviewsOverlay.isHidden {
+                setHighlightSelected(at: position)
             }
 
         case .ended, .failed:
-            let velocity = recognizer.velocity(in: self.delegate.containerView)
-            let location = recognizer.location(in: self.delegate.containerView)
-            let position = self.position(
+            let velocity = recognizer.velocity(in: delegate.containerView)
+            let location = recognizer.location(in: delegate.containerView)
+            let position = position(
                 fromTouch: location,
-                frame: self.controller.view.frame,
-                containerFrame: self.delegate.documentView.frame,
+                frame: controller.view.frame,
+                containerFrame: delegate.documentView.frame,
                 velocity: velocity,
-                statusBarVisible: self.delegate.statusBarVisible
+                statusBarVisible: delegate.statusBarVisible
             )
             let newState = State(position: position, visible: true)
 
-            if position == .top && self.delegate.toolbarState.position == .pinned {
-                self.delegate.statusBarVisible = true
+            if position == .top && delegate.toolbarState.position == .pinned {
+                delegate.statusBarVisible = true
             }
-            self.set(toolbarPosition: position, oldPosition: self.delegate.toolbarState.position, velocity: velocity, statusBarVisible: self.delegate.statusBarVisible)
-            self.setAnnotationToolbarHandleMinimumLongPressDuration(forPosition: position)
-            self.delegate.toolbarState = newState
-            self.toolbarInitialFrame = nil
+            set(toolbarPosition: position, oldPosition: delegate.toolbarState.position, velocity: velocity, statusBarVisible: delegate.statusBarVisible)
+            setAnnotationToolbarHandleMinimumLongPressDuration(forPosition: position)
+            delegate.toolbarState = newState
+            toolbarInitialFrame = nil
 
-        default: break
+        default:
+            break
+        }
+
+        /// Return new position for given touch point and velocity of toolbar. The user can pan up/left/right to move the toolbar. If velocity > 1500, it's considered a swipe and the toolbar is moved
+        /// in swipe direction. Otherwise the toolbar is pinned to closest point from touch.
+        func position(fromTouch point: CGPoint, frame: CGRect, containerFrame: CGRect, velocity: CGPoint, statusBarVisible: Bool) -> State.Position {
+            if isSwipe(fromVelocity: velocity) {
+                // Move in direction of swipe
+                if abs(velocity.y) > abs(velocity.x) && containerFrame.size.width >= Self.minToolbarWidth {
+                    return .top
+                }
+                return velocity.x < 0 ? .leading : .trailing
+            }
+
+            let topViewBottomRightPoint = toolbarTopPreview.convert(CGPoint(x: toolbarTopPreview.bounds.maxX, y: toolbarTopPreview.bounds.maxY), to: delegate.containerView)
+
+            if point.y < topViewBottomRightPoint.y {
+                let pinnedViewBottomRightPoint = toolbarPinnedPreview.convert(CGPoint(x: toolbarPinnedPreview.frame.maxX, y: toolbarPinnedPreview.frame.maxY), to: delegate.containerView)
+                return point.y < pinnedViewBottomRightPoint.y ? .pinned : .top
+            }
+
+            let xPos = point.x - containerFrame.minX
+
+            if point.y < (topViewBottomRightPoint.y + 150) {
+                if xPos > 150 && xPos < (containerFrame.size.width - 150) {
+                    return .top
+                }
+                return xPos <= 150 ? .leading : .trailing
+            }
+
+            return xPos > containerFrame.size.width / 2 ? .trailing : .leading
+        }
+
+        func showPreviewsOnDragIfNeeded(translation: CGPoint, velocity: CGPoint, currentPosition: State.Position) {
+            guard toolbarPreviewsOverlay.isHidden else { return }
+
+            let distance = sqrt((translation.x * translation.x) + (translation.y * translation.y))
+            let distanceThreshold: CGFloat = (currentPosition == .pinned || currentPosition == .top) ? 0 : 70
+
+            guard distance > distanceThreshold && !isSwipe(fromVelocity: velocity) else { return }
+
+            showPreviews()
+        }
+
+        func set(toolbarPosition newPosition: State.Position, oldPosition: State.Position, velocity velocityPoint: CGPoint, statusBarVisible: Bool) {
+            let navigationBarHidden = newPosition == .pinned || !statusBarVisible
+
+            switch (newPosition, oldPosition) {
+            case (.leading, .leading), (.trailing, .trailing), (.top, .top), (.pinned, .pinned):
+                // Position didn't change, move to initial frame
+                let frame = toolbarInitialFrame ?? CGRect()
+                let velocity = velocity(from: velocityPoint, newPosition: newPosition)
+
+                if !navigationBarHidden && delegate.isNavigationBarHidden {
+                    delegate.setNavigationBar(hidden: false, animated: false)
+                    delegate.setNavigationBar(alpha: 0)
+                }
+
+                UIView.animate(withDuration: 0.5, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: velocity, options: [.curveEaseOut], animations: { [weak self] in
+                    guard let self else { return }
+                    toolbarPreviewsOverlay.alpha = 0
+                    controller.view.frame = frame
+                    delegate.setNavigationBar(alpha: navigationBarHidden ? 0 : 1)
+                    delegate.setDocumentInterface(hidden: !statusBarVisible)
+                }, completion: { [weak self] finished in
+                    guard let self, finished else { return }
+                    toolbarPreviewsOverlay.isHidden = true
+                    if navigationBarHidden {
+                        delegate.setNavigationBar(hidden: true, animated: false)
+                    }
+                })
+
+            case (.leading, .trailing), (.trailing, .leading), (.top, .pinned), (.pinned, .top):
+                // Move from side to side or vertically
+                let velocity = velocity(from: velocityPoint, newPosition: newPosition)
+                setConstraints(for: newPosition, statusBarVisible: statusBarVisible)
+                delegate.topDidChange(forToolbarState: State(position: newPosition, visible: true))
+                delegate.setNeedsLayout()
+
+                delegate.hideSidebarIfNeeded(forPosition: newPosition, isToolbarSmallerThanMinWidth: controller.view.frame.width < Self.minToolbarWidth, animated: true)
+
+                if !navigationBarHidden && delegate.isNavigationBarHidden {
+                    delegate.setNavigationBar(hidden: false, animated: false)
+                    delegate.setNavigationBar(alpha: 0)
+                }
+
+                UIView.animate(withDuration: 0.3, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: velocity, options: [], animations: { [weak self] in
+                    guard let self else { return }
+                    delegate.layoutIfNeeded()
+                    toolbarPreviewsOverlay.alpha = 0
+                    delegate.setNavigationBar(alpha: navigationBarHidden ? 0 : 1)
+                    delegate.setDocumentInterface(hidden: !statusBarVisible)
+                    delegate.updateStatusBar()
+                }, completion: { [weak self] finished in
+                    guard let self, finished else { return }
+                    toolbarPreviewsOverlay.isHidden = true
+                    if navigationBarHidden {
+                        delegate.setNavigationBar(hidden: true, animated: false)
+                    }
+                })
+
+            case (.top, .leading), (.top, .trailing), (.leading, .top), (.leading, .pinned), (.trailing, .top), (.trailing, .pinned), (.pinned, .leading), (.pinned, .trailing):
+                let velocity = velocity(from: velocityPoint, newPosition: newPosition)
+                UIView.animate(withDuration: 0.1, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: velocity, options: [], animations: { [weak self] in
+                    guard let self else { return }
+                    let newFrame = controller.view.frame.offsetBy(dx: velocityPoint.x / 10, dy: velocityPoint.y / 10)
+                    controller.view.frame = newFrame
+                    controller.view.alpha = 0
+                }, completion: { [weak self] finished in
+                    guard let self, finished else { return }
+
+                    if !navigationBarHidden && delegate.isNavigationBarHidden {
+                        delegate.setNavigationBar(hidden: false, animated: false)
+                        delegate.setNavigationBar(alpha: 0)
+                    }
+
+                    controller.prepareForSizeChange()
+                    setConstraints(for: newPosition, statusBarVisible: statusBarVisible)
+                    delegate.layoutIfNeeded()
+                    controller.sizeDidChange()
+                    delegate.layoutIfNeeded()
+                    delegate.topDidChange(forToolbarState: State(position: newPosition, visible: true))
+
+                    delegate.hideSidebarIfNeeded(forPosition: newPosition, isToolbarSmallerThanMinWidth: controller.view.frame.width < Self.minToolbarWidth, animated: true)
+
+                    UIView.animate(withDuration: 0.3, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: velocity, options: [], animations: { [weak self] in
+                        guard let self else { return }
+                        controller.view.alpha = 1
+                        delegate.layoutIfNeeded()
+                        toolbarPreviewsOverlay.alpha = 0
+                        delegate.setNavigationBar(alpha: navigationBarHidden ? 0 : 1)
+                        delegate.setDocumentInterface(hidden: !statusBarVisible)
+                        delegate.updateStatusBar()
+                    }, completion: { [weak self] finished in
+                        guard let self, finished else { return }
+                        toolbarPreviewsOverlay.isHidden = true
+                        if navigationBarHidden {
+                            delegate.setNavigationBar(hidden: true, animated: false)
+                        }
+                    })
+                })
+            }
+
+            func velocity(from panVelocity: CGPoint, newPosition: State.Position) -> CGFloat {
+                let currentPosition: CGFloat
+                let endPosition: CGFloat
+                let velocity: CGFloat
+
+                switch newPosition {
+                case .top:
+                    velocity = panVelocity.y
+                    currentPosition = controller.view.frame.minY
+                    endPosition = delegate.containerView.safeAreaInsets.top
+
+                case .leading:
+                    velocity = panVelocity.x
+                    currentPosition = controller.view.frame.minX
+                    endPosition = 0
+
+                case .trailing:
+                    velocity = panVelocity.x
+                    currentPosition = controller.view.frame.maxX
+                    endPosition = delegate.containerView.frame.width
+
+                case .pinned:
+                    velocity = panVelocity.y
+                    currentPosition = controller.view.frame.minY
+                    endPosition = delegate.containerView.safeAreaInsets.top
+                }
+
+                return abs(velocity / (endPosition - currentPosition))
+            }
         }
     }
 
     private func setAnnotationToolbarHandleMinimumLongPressDuration(forPosition position: State.Position) {
         switch position {
         case .leading, .trailing:
-            self.dragHandleLongPressRecognizer.minimumPressDuration = 0.3
+            dragHandleLongPressRecognizer.minimumPressDuration = 0.3
 
         case .top, .pinned:
-            self.dragHandleLongPressRecognizer.minimumPressDuration = 0
+            dragHandleLongPressRecognizer.minimumPressDuration = 0
         }
     }
 
     // MARK: - Previews
 
-    private func showPreviewsOnDragIfNeeded(translation: CGPoint, velocity: CGPoint, currentPosition: State.Position) {
-        guard self.toolbarPreviewsOverlay.isHidden else { return }
-
-        let distance = sqrt((translation.x * translation.x) + (translation.y * translation.y))
-        let distanceThreshold: CGFloat = (currentPosition == .pinned || currentPosition == .top) ? 0 : 70
-
-        guard distance > distanceThreshold && !self.isSwipe(fromVelocity: velocity) else { return }
-
-        self.showPreviews()
-    }
-
     private func showPreviews() {
-        self.updatePositionOverlayViews(
-            currentHeight: self.controller.view.frame.height,
-            containerSize: self.delegate.documentView.frame.size,
-            position: self.delegate.toolbarState.position,
-            statusBarVisible: self.delegate.statusBarVisible
+        updatePositionOverlayViews(
+            currentHeight: controller.view.frame.height,
+            containerSize: delegate.documentView.frame.size,
+            position: delegate.toolbarState.position,
+            statusBarVisible: delegate.statusBarVisible
         )
-        self.toolbarPreviewsOverlay.alpha = 0
-        self.toolbarPreviewsOverlay.isHidden = false
+        toolbarPreviewsOverlay.alpha = 0
+        toolbarPreviewsOverlay.isHidden = false
 
-        UIView.animate(withDuration: 0.2, animations: {
-            self.toolbarPreviewsOverlay.alpha = 1
-            self.delegate.setNavigationBar(alpha: 0)
+        UIView.animate(withDuration: 0.2, animations: { [weak self] in
+            guard let self else { return }
+            toolbarPreviewsOverlay.alpha = 1
+            delegate.setNavigationBar(alpha: 0)
         })
-    }
 
-    private func hidePreviewsIfNeeded() {
-        guard self.toolbarPreviewsOverlay.alpha == 1 else { return }
+        func updatePositionOverlayViews(currentHeight: CGFloat, containerSize: CGSize, position: State.Position, statusBarVisible: Bool) {
+            let topToolbarsAvailable = containerSize.width >= Self.minToolbarWidth
+            let verticalHeight: CGFloat
+            switch position {
+            case .leading, .trailing:
+                // Position the preview so that the bottom of preview matches actual bottom of toolbar, add offset for dashed border
+                let offset = controller.size + (statusBarVisible ? 0 : controller.size)
+                verticalHeight = currentHeight - offset + (DashedView.dashWidth * 2) + 1
 
-        UIView.animate(withDuration: 0.2, animations: {
-            self.delegate.setNavigationBar(alpha: 1)
-            self.toolbarPreviewsOverlay.alpha = 0
-        }, completion: { finished in
-            guard finished else { return }
-            self.toolbarPreviewsOverlay.isHidden = true
-        })
-    }
-
-    private func updatePositionOverlayViews(currentHeight: CGFloat, containerSize: CGSize, position: State.Position, statusBarVisible: Bool) {
-        let topToolbarsAvailable = containerSize.width >= Self.minToolbarWidth
-        let verticalHeight: CGFloat
-        switch position {
-        case .leading, .trailing:
-            // Position the preview so that the bottom of preview matches actual bottom of toolbar, add offset for dashed border
-            let offset = self.controller.size + (statusBarVisible ? 0 : self.controller.size)
-            verticalHeight = currentHeight - offset + (DashedView.dashWidth * 2) + 1
-
-        case .top, .pinned:
-            verticalHeight = min(containerSize.height - currentHeight - (position == .pinned ? self.delegate.navigationBarHeight : 0), AnnotationToolbarViewController.estimatedVerticalHeight)
-        }
-
-        self.toolbarPinnedPreview.isHidden = !topToolbarsAvailable || (position == .top && !statusBarVisible)
-        self.inbetweenTopDashedView.isHidden = self.toolbarPinnedPreview.isHidden
-        if !self.toolbarPinnedPreview.isHidden {
-            // Change height based on current position so that preview is shown around currently visible toolbar
-            let baseHeight = position == .pinned ? self.controller.size : self.delegate.navigationBarHeight
-            self.toolbarPinnedPreviewHeight.constant = baseHeight + self.topOffsets(statusBarVisible: statusBarVisible).statusBarHeight - (position == .top ? 1 : 0)
-        }
-        self.toolbarTopPreview.isHidden = !topToolbarsAvailable
-        self.toolbarLeadingPreviewHeight.constant = verticalHeight
-        self.toolbarTrailingPreviewHeight.constant = verticalHeight
-        self.toolbarPreviewsOverlay.layoutIfNeeded()
-    }
-
-    private func set(toolbarPosition newPosition: State.Position, oldPosition: State.Position, velocity velocityPoint: CGPoint, statusBarVisible: Bool) {
-        let navigationBarHidden = newPosition == .pinned || !statusBarVisible
-
-        switch (newPosition, oldPosition) {
-        case (.leading, .leading), (.trailing, .trailing), (.top, .top), (.pinned, .pinned):
-            // Position didn't change, move to initial frame
-            let frame = self.toolbarInitialFrame ?? CGRect()
-            let velocity = self.velocity(from: velocityPoint, newPosition: newPosition)
-
-            if !navigationBarHidden && self.delegate.isNavigationBarHidden {
-                self.delegate.setNavigationBar(hidden: false, animated: false)
-                self.delegate.setNavigationBar(alpha: 0)
+            case .top, .pinned:
+                verticalHeight = min(containerSize.height - currentHeight - (position == .pinned ? delegate.navigationBarHeight : 0), AnnotationToolbarViewController.estimatedVerticalHeight)
             }
 
-            UIView.animate(withDuration: 0.5, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: velocity, options: [.curveEaseOut], animations: {
-                self.toolbarPreviewsOverlay.alpha = 0
-                self.controller.view.frame = frame
-                self.delegate.setNavigationBar(alpha: navigationBarHidden ? 0 : 1)
-                self.delegate.setDocumentInterface(hidden: !statusBarVisible)
-            }, completion: { finished in
-                guard finished else { return }
-
-                self.toolbarPreviewsOverlay.isHidden = true
-
-                if navigationBarHidden {
-                    self.delegate.setNavigationBar(hidden: true, animated: false)
-                }
-            })
-
-        case (.leading, .trailing), (.trailing, .leading), (.top, .pinned), (.pinned, .top):
-            // Move from side to side or vertically
-            let velocity = self.velocity(from: velocityPoint, newPosition: newPosition)
-            self.setConstraints(for: newPosition, statusBarVisible: statusBarVisible)
-            self.delegate.topDidChange(forToolbarState: State(position: newPosition, visible: true))
-            self.delegate.setNeedsLayout()
-
-            self.delegate.hideSidebarIfNeeded(forPosition: newPosition, isToolbarSmallerThanMinWidth: self.controller.view.frame.width < Self.minToolbarWidth, animated: true)
-
-            if !navigationBarHidden && self.delegate.isNavigationBarHidden {
-                self.delegate.setNavigationBar(hidden: false, animated: false)
-                self.delegate.setNavigationBar(alpha: 0)
+            toolbarPinnedPreview.isHidden = !topToolbarsAvailable || (position == .top && !statusBarVisible)
+            inbetweenTopDashedView.isHidden = toolbarPinnedPreview.isHidden
+            if !toolbarPinnedPreview.isHidden {
+                // Change height based on current position so that preview is shown around currently visible toolbar
+                let baseHeight = position == .pinned ? controller.size : delegate.navigationBarHeight
+                toolbarPinnedPreviewHeight.constant = baseHeight + topOffsets(statusBarVisible: statusBarVisible).statusBarHeight - (position == .top ? 1 : 0)
             }
-
-            UIView.animate(withDuration: 0.3, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: velocity, options: [], animations: {
-                self.delegate.layoutIfNeeded()
-                self.toolbarPreviewsOverlay.alpha = 0
-                self.delegate.setNavigationBar(alpha: navigationBarHidden ? 0 : 1)
-                self.delegate.setDocumentInterface(hidden: !statusBarVisible)
-                self.delegate.updateStatusBar()
-            }, completion: { finished in
-                guard finished else { return }
-
-                self.toolbarPreviewsOverlay.isHidden = true
-
-                if navigationBarHidden {
-                    self.delegate.setNavigationBar(hidden: true, animated: false)
-                }
-            })
-
-        case (.top, .leading), (.top, .trailing), (.leading, .top), (.leading, .pinned), (.trailing, .top), (.trailing, .pinned), (.pinned, .leading), (.pinned, .trailing):
-            let velocity = self.velocity(from: velocityPoint, newPosition: newPosition)
-            UIView.animate(withDuration: 0.1, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: velocity, options: [], animations: {
-                let newFrame = self.controller.view.frame.offsetBy(dx: velocityPoint.x / 10, dy: velocityPoint.y / 10)
-                self.controller.view.frame = newFrame
-                self.controller.view.alpha = 0
-            }, completion: { finished in
-                guard finished else { return }
-
-                if !navigationBarHidden && self.delegate.isNavigationBarHidden {
-                    self.delegate.setNavigationBar(hidden: false, animated: false)
-                    self.delegate.setNavigationBar(alpha: 0)
-                }
-
-                self.controller.prepareForSizeChange()
-                self.setConstraints(for: newPosition, statusBarVisible: statusBarVisible)
-                self.delegate.layoutIfNeeded()
-                self.controller.sizeDidChange()
-                self.delegate.layoutIfNeeded()
-                self.delegate.topDidChange(forToolbarState: State(position: newPosition, visible: true))
-
-                self.delegate.hideSidebarIfNeeded(forPosition: newPosition, isToolbarSmallerThanMinWidth: self.controller.view.frame.width < Self.minToolbarWidth, animated: true)
-
-                UIView.animate(withDuration: 0.3, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: velocity, options: [], animations: {
-                    self.controller.view.alpha = 1
-                    self.delegate.layoutIfNeeded()
-                    self.toolbarPreviewsOverlay.alpha = 0
-                    self.delegate.setNavigationBar(alpha: navigationBarHidden ? 0 : 1)
-                    self.delegate.setDocumentInterface(hidden: !statusBarVisible)
-                    self.delegate.updateStatusBar()
-                }, completion: { finished in
-                    guard finished else { return }
-
-                    self.toolbarPreviewsOverlay.isHidden = true
-
-                    if navigationBarHidden {
-                        self.delegate.setNavigationBar(hidden: true, animated: false)
-                    }
-                })
-            })
+            toolbarTopPreview.isHidden = !topToolbarsAvailable
+            toolbarLeadingPreviewHeight.constant = verticalHeight
+            toolbarTrailingPreviewHeight.constant = verticalHeight
+            toolbarPreviewsOverlay.layoutIfNeeded()
         }
     }
 
     private func setHighlightSelected(at position: State.Position) {
         switch position {
         case .top:
-            self.toolbarLeadingPreview.backgroundColor = self.previewBackgroundColor
-            self.toolbarLeadingPreview.dashColor = self.previewDashColor
-            self.toolbarTrailingPreview.backgroundColor = self.previewBackgroundColor
-            self.toolbarTrailingPreview.dashColor = self.previewDashColor
-            self.toolbarTopPreview.backgroundColor = self.previewSelectedBackgroundColor
-            self.toolbarTopPreview.dashColor = self.previewSelectedDashColor
-            self.toolbarPinnedPreview.backgroundColor = self.previewBackgroundColor
-            self.toolbarPinnedPreview.dashColor = self.previewDashColor
+            toolbarLeadingPreview.backgroundColor = previewBackgroundColor
+            toolbarLeadingPreview.dashColor = previewDashColor
+            toolbarTrailingPreview.backgroundColor = previewBackgroundColor
+            toolbarTrailingPreview.dashColor = previewDashColor
+            toolbarTopPreview.backgroundColor = previewSelectedBackgroundColor
+            toolbarTopPreview.dashColor = previewSelectedDashColor
+            toolbarPinnedPreview.backgroundColor = previewBackgroundColor
+            toolbarPinnedPreview.dashColor = previewDashColor
 
         case .leading:
-            self.toolbarLeadingPreview.backgroundColor = self.previewSelectedBackgroundColor
-            self.toolbarLeadingPreview.dashColor = self.previewSelectedDashColor
-            self.toolbarTrailingPreview.backgroundColor = self.previewBackgroundColor
-            self.toolbarTrailingPreview.dashColor = self.previewDashColor
-            self.toolbarTopPreview.backgroundColor = self.previewBackgroundColor
-            self.toolbarTopPreview.dashColor = self.previewDashColor
-            self.toolbarPinnedPreview.backgroundColor = self.previewBackgroundColor
-            self.toolbarPinnedPreview.dashColor = self.previewDashColor
+            toolbarLeadingPreview.backgroundColor = previewSelectedBackgroundColor
+            toolbarLeadingPreview.dashColor = previewSelectedDashColor
+            toolbarTrailingPreview.backgroundColor = previewBackgroundColor
+            toolbarTrailingPreview.dashColor = previewDashColor
+            toolbarTopPreview.backgroundColor = previewBackgroundColor
+            toolbarTopPreview.dashColor = previewDashColor
+            toolbarPinnedPreview.backgroundColor = previewBackgroundColor
+            toolbarPinnedPreview.dashColor = previewDashColor
 
         case .trailing:
-            self.toolbarLeadingPreview.backgroundColor = self.previewBackgroundColor
-            self.toolbarLeadingPreview.dashColor = self.previewDashColor
-            self.toolbarTrailingPreview.backgroundColor = self.previewSelectedBackgroundColor
-            self.toolbarTrailingPreview.dashColor = self.previewSelectedDashColor
-            self.toolbarTopPreview.backgroundColor = self.previewBackgroundColor
-            self.toolbarTopPreview.dashColor = self.previewDashColor
-            self.toolbarPinnedPreview.backgroundColor = self.previewBackgroundColor
-            self.toolbarPinnedPreview.dashColor = self.previewDashColor
+            toolbarLeadingPreview.backgroundColor = previewBackgroundColor
+            toolbarLeadingPreview.dashColor = previewDashColor
+            toolbarTrailingPreview.backgroundColor = previewSelectedBackgroundColor
+            toolbarTrailingPreview.dashColor = previewSelectedDashColor
+            toolbarTopPreview.backgroundColor = previewBackgroundColor
+            toolbarTopPreview.dashColor = previewDashColor
+            toolbarPinnedPreview.backgroundColor = previewBackgroundColor
+            toolbarPinnedPreview.dashColor = previewDashColor
 
         case .pinned:
-            self.toolbarLeadingPreview.backgroundColor = self.previewBackgroundColor
-            self.toolbarLeadingPreview.dashColor = self.previewDashColor
-            self.toolbarTrailingPreview.backgroundColor = self.previewBackgroundColor
-            self.toolbarTrailingPreview.dashColor = self.previewDashColor
-            self.toolbarTopPreview.backgroundColor = self.previewBackgroundColor
-            self.toolbarTopPreview.dashColor = self.previewDashColor
-            self.toolbarPinnedPreview.backgroundColor = self.previewSelectedBackgroundColor
-            self.toolbarPinnedPreview.dashColor = self.previewSelectedDashColor
+            toolbarLeadingPreview.backgroundColor = previewBackgroundColor
+            toolbarLeadingPreview.dashColor = previewDashColor
+            toolbarTrailingPreview.backgroundColor = previewBackgroundColor
+            toolbarTrailingPreview.dashColor = previewDashColor
+            toolbarTopPreview.backgroundColor = previewBackgroundColor
+            toolbarTopPreview.dashColor = previewDashColor
+            toolbarPinnedPreview.backgroundColor = previewSelectedBackgroundColor
+            toolbarPinnedPreview.dashColor = previewSelectedDashColor
         }
     }
 }
@@ -789,18 +770,18 @@ extension AnnotationToolbarHandler: UIGestureRecognizerDelegate {
     func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
         guard let longPressRecognizer = gestureRecognizer as? UILongPressGestureRecognizer else { return true }
 
-        let location = longPressRecognizer.location(in: self.controller.view)
+        let location = longPressRecognizer.location(in: controller.view)
         let currentLocation: CGFloat
         let border: CGFloat
 
-        switch self.delegate.toolbarState.position {
+        switch delegate.toolbarState.position {
         case .pinned, .top:
             currentLocation = location.x
-            border = self.controller.view.frame.width - Self.annotationToolbarDragHandleHeight
+            border = controller.view.frame.width - Self.annotationToolbarDragHandleHeight
 
         case .leading, .trailing:
             currentLocation = location.y
-            border = self.controller.view.frame.height - Self.annotationToolbarDragHandleHeight
+            border = controller.view.frame.height - Self.annotationToolbarDragHandleHeight
         }
         return currentLocation >= border
     }
