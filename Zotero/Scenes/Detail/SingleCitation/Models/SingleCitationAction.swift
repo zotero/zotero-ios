@@ -10,10 +10,11 @@ import UIKit
 import WebKit
 
 enum SingleCitationAction {
-    case preload(WKWebView)
-    case setLocator(String)
-    case setLocatorValue(String)
-    case setOmitAuthor(Bool)
+    case preload(webView: WKWebView)
+    case setLocator(locator: String, webView: WKWebView)
+    case setLocatorValue(value: String, webView: WKWebView)
+    case setOmitAuthor(omitAuthor: Bool, webView: WKWebView)
+    case setPreviewHeight(CGFloat)
     case cleanup
-    case copy
+    case copy(webView: WKWebView)
 }

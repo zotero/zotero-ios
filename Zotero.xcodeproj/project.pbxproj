@@ -484,6 +484,10 @@
 		B331F9B12653F59C0099F6A6 /* RStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B331F9B02653F59C0099F6A6 /* RStyle.swift */; };
 		B331F9B5265400D70099F6A6 /* ReadStylesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B331F9B4265400D70099F6A6 /* ReadStylesDbRequest.swift */; };
 		B3325F6F27B41D69007C7137 /* CollectionTree.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3325F6E27B41D69007C7137 /* CollectionTree.swift */; };
+		B3329A552B738C4E00F17636 /* CitationAuthorCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3329A542B738C4E00F17636 /* CitationAuthorCell.swift */; };
+		B3329A572B738C5900F17636 /* CitationAuthorContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3329A562B738C5900F17636 /* CitationAuthorContentView.swift */; };
+		B3329A592B73A68900F17636 /* CitationPreviewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3329A582B73A68900F17636 /* CitationPreviewCell.swift */; };
+		B3329A5D2B73BC8000F17636 /* CitationPreviewContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3329A5C2B73BC8000F17636 /* CitationPreviewContentView.swift */; };
 		B3343079282A563B00FB41BC /* NSUserActivity+Activities.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3343078282A563B00FB41BC /* NSUserActivity+Activities.swift */; };
 		B336FE812A2F6D9E00B52F4A /* UploadFixSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B336FE802A2F6D9E00B52F4A /* UploadFixSyncAction.swift */; };
 		B336FE822A2F6E8800B52F4A /* UploadFixSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B336FE802A2F6D9E00B52F4A /* UploadFixSyncAction.swift */; };
@@ -537,7 +541,6 @@
 		B3486B8926CFAFEA0036A267 /* SingleCitationActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3486B8226CFAFEA0036A267 /* SingleCitationActionHandler.swift */; };
 		B3486B8A26CFAFEA0036A267 /* SingleCitationState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3486B8426CFAFEA0036A267 /* SingleCitationState.swift */; };
 		B3486B8B26CFAFEA0036A267 /* SingleCitationAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3486B8526CFAFEA0036A267 /* SingleCitationAction.swift */; };
-		B3486B8C26CFAFEA0036A267 /* SingleCitationViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3486B8726CFAFEA0036A267 /* SingleCitationViewController.xib */; };
 		B3486B8D26CFAFEA0036A267 /* SingleCitationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3486B8826CFAFEA0036A267 /* SingleCitationViewController.swift */; };
 		B349182B25E00771006C3313 /* ReadVersionDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B349182A25E00771006C3313 /* ReadVersionDbRequest.swift */; };
 		B34A4B7026E63C9900B3E993 /* LineWidthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34A4B6F26E63C9900B3E993 /* LineWidthView.swift */; };
@@ -1094,6 +1097,8 @@
 		B3E8FE8827143BDD00F51458 /* SyncSettingsAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E8FE8327143BDD00F51458 /* SyncSettingsAction.swift */; };
 		B3E8FE8927143BDD00F51458 /* SyncSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E8FE8527143BDD00F51458 /* SyncSettingsView.swift */; };
 		B3E9180C25ECE30A002B77AF /* CoreGraphics+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E9180B25ECE30A002B77AF /* CoreGraphics+Extensions.swift */; };
+		B3EA5A192B724E9400E283D7 /* CitationLocatorCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3EA5A182B724E9400E283D7 /* CitationLocatorCell.swift */; };
+		B3EA5A1B2B7251EE00E283D7 /* CitationLocatorContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3EA5A1A2B7251EE00E283D7 /* CitationLocatorContentView.swift */; };
 		B3EBC9B1283E392900286A9E /* ReadBaseTagsToDeleteDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3EBC9B0283E392900286A9E /* ReadBaseTagsToDeleteDbRequest.swift */; };
 		B3EBC9B2283E39AD00286A9E /* ReadBaseTagsToDeleteDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3EBC9B0283E392900286A9E /* ReadBaseTagsToDeleteDbRequest.swift */; };
 		B3EC44612718490A001A9150 /* AnnotationPreviewBoundingBoxCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3EC44602718490A001A9150 /* AnnotationPreviewBoundingBoxCalculator.swift */; };
@@ -1526,6 +1531,10 @@
 		B331F9B02653F59C0099F6A6 /* RStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RStyle.swift; sourceTree = "<group>"; };
 		B331F9B4265400D70099F6A6 /* ReadStylesDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadStylesDbRequest.swift; sourceTree = "<group>"; };
 		B3325F6E27B41D69007C7137 /* CollectionTree.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionTree.swift; sourceTree = "<group>"; };
+		B3329A542B738C4E00F17636 /* CitationAuthorCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CitationAuthorCell.swift; sourceTree = "<group>"; };
+		B3329A562B738C5900F17636 /* CitationAuthorContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CitationAuthorContentView.swift; sourceTree = "<group>"; };
+		B3329A582B73A68900F17636 /* CitationPreviewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CitationPreviewCell.swift; sourceTree = "<group>"; };
+		B3329A5C2B73BC8000F17636 /* CitationPreviewContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CitationPreviewContentView.swift; sourceTree = "<group>"; };
 		B3343078282A563B00FB41BC /* NSUserActivity+Activities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSUserActivity+Activities.swift"; sourceTree = "<group>"; };
 		B336FE802A2F6D9E00B52F4A /* UploadFixSyncAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadFixSyncAction.swift; sourceTree = "<group>"; };
 		B337283129F15AD4001F02CB /* FixSchemaIssueDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FixSchemaIssueDbRequest.swift; sourceTree = "<group>"; };
@@ -1565,7 +1574,6 @@
 		B3486B8226CFAFEA0036A267 /* SingleCitationActionHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SingleCitationActionHandler.swift; sourceTree = "<group>"; };
 		B3486B8426CFAFEA0036A267 /* SingleCitationState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SingleCitationState.swift; sourceTree = "<group>"; };
 		B3486B8526CFAFEA0036A267 /* SingleCitationAction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SingleCitationAction.swift; sourceTree = "<group>"; };
-		B3486B8726CFAFEA0036A267 /* SingleCitationViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = SingleCitationViewController.xib; sourceTree = "<group>"; };
 		B3486B8826CFAFEA0036A267 /* SingleCitationViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SingleCitationViewController.swift; sourceTree = "<group>"; };
 		B349182A25E00771006C3313 /* ReadVersionDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadVersionDbRequest.swift; sourceTree = "<group>"; };
 		B34A4B6F26E63C9900B3E993 /* LineWidthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LineWidthView.swift; sourceTree = "<group>"; };
@@ -2019,6 +2027,8 @@
 		B3E8FE8327143BDD00F51458 /* SyncSettingsAction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncSettingsAction.swift; sourceTree = "<group>"; };
 		B3E8FE8527143BDD00F51458 /* SyncSettingsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncSettingsView.swift; sourceTree = "<group>"; };
 		B3E9180B25ECE30A002B77AF /* CoreGraphics+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "CoreGraphics+Extensions.swift"; sourceTree = "<group>"; };
+		B3EA5A182B724E9400E283D7 /* CitationLocatorCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CitationLocatorCell.swift; sourceTree = "<group>"; };
+		B3EA5A1A2B7251EE00E283D7 /* CitationLocatorContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CitationLocatorContentView.swift; sourceTree = "<group>"; };
 		B3EBC9B0283E392900286A9E /* ReadBaseTagsToDeleteDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadBaseTagsToDeleteDbRequest.swift; sourceTree = "<group>"; };
 		B3EC44602718490A001A9150 /* AnnotationPreviewBoundingBoxCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationPreviewBoundingBoxCalculator.swift; sourceTree = "<group>"; };
 		B3EFC60A2B0F503E00CB71A0 /* EmojiExtractorSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmojiExtractorSpec.swift; sourceTree = "<group>"; };
@@ -3058,8 +3068,13 @@
 		B3486B8626CFAFEA0036A267 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				B3329A542B738C4E00F17636 /* CitationAuthorCell.swift */,
+				B3329A562B738C5900F17636 /* CitationAuthorContentView.swift */,
+				B3EA5A182B724E9400E283D7 /* CitationLocatorCell.swift */,
+				B3EA5A1A2B7251EE00E283D7 /* CitationLocatorContentView.swift */,
+				B3329A582B73A68900F17636 /* CitationPreviewCell.swift */,
+				B3329A5C2B73BC8000F17636 /* CitationPreviewContentView.swift */,
 				B3486B8826CFAFEA0036A267 /* SingleCitationViewController.swift */,
-				B3486B8726CFAFEA0036A267 /* SingleCitationViewController.xib */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -4363,7 +4378,6 @@
 				614D65822A79C9AC007CF449 /* Localizable.stringsdict in Resources */,
 				B34DF1B625768BB70019CCD1 /* TextFieldCell.xib in Resources */,
 				B31901952629C9CB00209E33 /* ItemsFilterViewController.xib in Resources */,
-				B3486B8C26CFAFEA0036A267 /* SingleCitationViewController.xib in Resources */,
 				B35EDECC263ADD0C003574AC /* TextPreviewViewController.xib in Resources */,
 				B30565B123FC051E003304F2 /* Assets.xcassets in Resources */,
 				B3C9096F2497666900286FCF /* ImagePreviewViewController.xib in Resources */,
@@ -4711,6 +4725,7 @@
 				B3C6D552261C9F2E0068B9FE /* PlaceholderTextViewDelegate.swift in Sources */,
 				B357A290285B74DF00E73CA1 /* ScannerActionHandler.swift in Sources */,
 				B3E8FE76271434F200F51458 /* GeneralSettingsView.swift in Sources */,
+				B3329A572B738C5900F17636 /* CitationAuthorContentView.swift in Sources */,
 				B3D59F132A38A69100F6BB7D /* RevertLibraryFilesSyncAction.swift in Sources */,
 				B30566C323FC051F003304F2 /* SyncObject.swift in Sources */,
 				B325DBAF24375D8D00EFF0F5 /* Conflict.swift in Sources */,
@@ -4723,6 +4738,7 @@
 				B322B4772673A41200BC3D08 /* ReadStyleDbRequest.swift in Sources */,
 				B3E8FE8827143BDD00F51458 /* SyncSettingsAction.swift in Sources */,
 				B37BF0AB25A5E2AD00AE0268 /* SquareAnnotation.swift in Sources */,
+				B3EA5A1B2B7251EE00E283D7 /* CitationLocatorContentView.swift in Sources */,
 				B361820024C9A7C000B30D56 /* LoginAction.swift in Sources */,
 				B37080522AA72135006F56B9 /* Localizable.swift in Sources */,
 				B305660523FC051E003304F2 /* DeletionsRequest.swift in Sources */,
@@ -5032,6 +5048,7 @@
 				B31CC57B286468780055C114 /* ManualLookupViewController.swift in Sources */,
 				B3863FC82AD819AB005082F0 /* EndItemDetailEditingDbRequest.swift in Sources */,
 				B3DDDAAC24CAD6810014DF99 /* InsetLabel.swift in Sources */,
+				B3329A552B738C4E00F17636 /* CitationAuthorCell.swift in Sources */,
 				B3E8FE8927143BDD00F51458 /* SyncSettingsView.swift in Sources */,
 				B3593F7A241A76E600760E20 /* CollectionEditState.swift in Sources */,
 				B3C6AB28248E1B720009AC96 /* SyncBatchProcessor.swift in Sources */,
@@ -5053,6 +5070,7 @@
 				B30566AD23FC051F003304F2 /* ItemResponse.swift in Sources */,
 				B3D0994726DCCEF700B04FAA /* RPathCoordinate.swift in Sources */,
 				B31FACD225DBC7E900DD5F14 /* ActiveObjectDeletedConflictReceiverHandler.swift in Sources */,
+				B3EA5A192B724E9400E283D7 /* CitationLocatorCell.swift in Sources */,
 				B36181FF24C9A7C000B30D56 /* LoginState.swift in Sources */,
 				B3E8FE3627142A0900F51458 /* RemoteStyle.swift in Sources */,
 				B3F55A1729EED04700A6716E /* ReadFilteredTagsDbRequest.swift in Sources */,
@@ -5062,6 +5080,7 @@
 				B30A44A629B8799600332B4E /* MasterContainerViewController.swift in Sources */,
 				B305667823FC051F003304F2 /* Observable+Completable.swift in Sources */,
 				B3D4159E2948B3DA004ABB3E /* FixNotesWithEmptyTitlesDbRequest.swift in Sources */,
+				B3329A5D2B73BC8000F17636 /* CitationPreviewContentView.swift in Sources */,
 				B3DCDF08240912060039ED0D /* ActivityIndicatorView.swift in Sources */,
 				B30565D323FC051E003304F2 /* MoveItemsToParentDbRequest.swift in Sources */,
 				B305669723FC051F003304F2 /* RTag.swift in Sources */,
@@ -5095,6 +5114,7 @@
 				B3C8DD8227B502960084E1AD /* CollectionTreeBuilder.swift in Sources */,
 				B30565FB23FC051E003304F2 /* Formatter.swift in Sources */,
 				B32861E628BFACD4007B5A5C /* EditItemFieldsDbRequest.swift in Sources */,
+				B3329A592B73A68900F17636 /* CitationPreviewCell.swift in Sources */,
 				B36C07DE26FB264800C855A9 /* UITableView+Extensions.swift in Sources */,
 				B3972689247D403200A8B469 /* UrlDetector.swift in Sources */,
 				B32861E428BF89CE007B5A5C /* CreatePDFAnnotationsDbRequest.swift in Sources */,

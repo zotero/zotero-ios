@@ -17,7 +17,8 @@ struct SingleCitationState: ViewModelState {
 
         static let locator = Changes(rawValue: 1 << 0)
         static let preview = Changes(rawValue: 1 << 1)
-        static let copied = Changes(rawValue: 1 << 4)
+        static let copied = Changes(rawValue: 1 << 2)
+        static let height = Changes(rawValue: 1 << 3)
     }
 
     enum Error: Swift.Error {
@@ -33,13 +34,12 @@ struct SingleCitationState: ViewModelState {
     let localeId: String
     let exportAsHtml: Bool
 
-    var loadingPreview: Bool
     var loadingCopy: Bool
     var locator: String
     var locatorValue: String
     var omitAuthor: Bool
-    var preview: String
-    weak var webView: WKWebView?
+    var preview: String?
+    var previewHeight: CGFloat
     var error: Error?
     var changes: Changes
 
@@ -49,17 +49,16 @@ struct SingleCitationState: ViewModelState {
         self.styleId = styleId
         self.localeId = localeId
         self.exportAsHtml = exportAsHtml
-        self.loadingPreview = true
-        self.loadingCopy = false
-        self.locator = SingleCitationState.locators.first!
-        self.changes = []
-        self.locatorValue = ""
-        self.omitAuthor = false
-        self.preview = ""
+        loadingCopy = false
+        locator = SingleCitationState.locators.first!
+        changes = []
+        locatorValue = ""
+        omitAuthor = false
+        previewHeight = 20
     }
 
     mutating func cleanup() {
-        self.error = nil
-        self.changes = []
+        error = nil
+        changes = []
     }
 }
