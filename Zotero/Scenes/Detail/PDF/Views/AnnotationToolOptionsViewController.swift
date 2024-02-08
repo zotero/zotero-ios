@@ -150,6 +150,7 @@ class AnnotationToolOptionsViewController: UIViewController {
         }
 
         func update(state: AnnotationToolOptionsState) {
+            valueChanged(state.colorHex, state.size)
             if state.changes.contains(.color) {
                 presentingViewController?.dismiss(animated: true)
             }
@@ -165,10 +166,5 @@ class AnnotationToolOptionsViewController: UIViewController {
             size.height += 2 * Self.verticalInset
             preferredContentSize = CGSize(width: Self.width, height: size.height)
         }
-    }
-
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        valueChanged(viewModel.state.colorHex, viewModel.state.size)
     }
 }
