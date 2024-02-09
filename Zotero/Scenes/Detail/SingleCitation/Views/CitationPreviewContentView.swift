@@ -10,7 +10,7 @@ import UIKit
 import WebKit
 
 class CitationPreviewContentView: UIView {
-    private static let verticalInset: CGFloat = 10
+    private static let verticalInset: CGFloat = 12
 
     private weak var webView: WKWebView!
     private weak var activityIndicator: UIActivityIndicatorView!
