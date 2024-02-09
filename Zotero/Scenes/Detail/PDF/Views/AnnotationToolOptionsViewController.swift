@@ -51,8 +51,8 @@ class AnnotationToolOptionsViewController: UIViewController {
 
         viewModel.stateObservable
             .observe(on: MainScheduler.instance)
-            .subscribe(with: self, onNext: { _, state in
-                update(state: state)
+            .subscribe(onNext: { [weak self] state in
+                self?.update(state: state)
             })
             .disposed(by: disposeBag)
 
@@ -148,13 +148,6 @@ class AnnotationToolOptionsViewController: UIViewController {
                 .disposed(by: disposeBag)
             navigationItem.rightBarButtonItem = doneButton
         }
-
-        func update(state: AnnotationToolOptionsState) {
-            valueChanged(state.colorHex, state.size)
-            if state.changes.contains(.color) {
-                presentingViewController?.dismiss(animated: true)
-            }
-        }
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -165,6 +158,13 @@ class AnnotationToolOptionsViewController: UIViewController {
             guard UIDevice.current.userInterfaceIdiom == .pad, var size = container?.systemLayoutSizeFitting(CGSize(width: Self.width, height: .greatestFiniteMagnitude)) else { return }
             size.height += 2 * Self.verticalInset
             preferredContentSize = CGSize(width: Self.width, height: size.height)
+        }
+    }
+
+    private func update(state: AnnotationToolOptionsState) {
+        valueChanged(state.colorHex, state.size)
+        if state.changes.contains(.color) {
+            presentingViewController?.dismiss(animated: true)
         }
     }
 }
