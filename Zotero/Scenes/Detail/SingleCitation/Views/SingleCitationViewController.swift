@@ -158,7 +158,7 @@ final class SingleCitationViewController: UIViewController {
                 case .preview:
                     let view = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: "header", for: indexPath)
                     if let view = view as? SingleCitationSectionView {
-                        view.setup(with: L10n.Citation.preview)
+                        view.setup(with: L10n.Citation.preview.uppercased())
                     }
                     return view
 
@@ -279,7 +279,7 @@ final class SingleCitationSectionView: UICollectionReusableView {
 
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .preferredFont(for: .subheadline, weight: .medium)
+        label.font = .preferredFont(for: .subheadline, weight: .bold)
         label.textColor = .systemGray
         addSubview(label)
         titleLabel = label

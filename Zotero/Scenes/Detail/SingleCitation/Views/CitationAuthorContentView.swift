@@ -35,9 +35,9 @@ class CitationAuthorContentView: UIView {
         self.toggle = toggle
 
         NSLayoutConstraint.activate([
-            title.topAnchor.constraint(equalTo: topAnchor, constant: 10),
+            title.topAnchor.constraint(equalTo: topAnchor, constant: 12),
             title.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-            bottomAnchor.constraint(equalTo: title.bottomAnchor, constant: 10),
+            bottomAnchor.constraint(equalTo: title.bottomAnchor, constant: 12),
             trailingAnchor.constraint(equalTo: toggle.trailingAnchor, constant: 16),
             toggle.centerYAnchor.constraint(equalTo: centerYAnchor)
         ])

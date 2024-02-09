@@ -271,8 +271,8 @@ internal enum L10n {
     internal static let outputMethod = L10n.tr("Localizable", "citation.output_method", fallback: "Output Method")
     /// Output Mode
     internal static let outputMode = L10n.tr("Localizable", "citation.output_mode", fallback: "Output Mode")
-    /// Preview:
-    internal static let preview = L10n.tr("Localizable", "citation.preview", fallback: "Preview:")
+    /// Preview
+    internal static let preview = L10n.tr("Localizable", "citation.preview", fallback: "Preview")
     /// Save as HTML
     internal static let saveHtml = L10n.tr("Localizable", "citation.save_html", fallback: "Save as HTML")
     /// Style
