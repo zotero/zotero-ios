@@ -39,16 +39,7 @@ extension PDFDocumentAnnotation: PDFAnnotation {
     }
 
     func editability(currentUserId: Int, library: Library) -> AnnotationEditability {
-        switch library.identifier {
-        case .custom:
-            return .editable
-
-        case .group:
-            if !library.metadataEditable {
-                return .notEditable
-            }
-            return self.isAuthor ? .editable : .deletable
-        }
+        return .notEditable
     }
 
     func rects(boundingBoxConverter: AnnotationBoundingBoxConverter) -> [CGRect] {
