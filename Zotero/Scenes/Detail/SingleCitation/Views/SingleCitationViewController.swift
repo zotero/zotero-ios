@@ -279,13 +279,13 @@ final class SingleCitationSectionView: UICollectionReusableView {
 
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .preferredFont(for: .subheadline, weight: .bold)
+        label.font = .preferredFont(forTextStyle: .footnote)
         label.textColor = .systemGray
         addSubview(label)
         titleLabel = label
 
         NSLayoutConstraint.activate([
-            label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
+            label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
             bottomAnchor.constraint(equalTo: label.bottomAnchor),
             trailingAnchor.constraint(equalTo: label.trailingAnchor)
         ])
