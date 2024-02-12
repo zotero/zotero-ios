@@ -8,6 +8,7 @@
 
 import UIKit
 
+import CocoaLumberjackSwift
 import RxSwift
 
 protocol ItemDetailCollectionViewHandlerDelegate: AnyObject {
@@ -61,7 +62,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
         case dateModified(Date)
         case field(key: String, multiline: Bool)
         case note(note: Note, isProcessing: Bool)
-        case tag(tag: Tag, isProcessing: Bool)
+        case tag(id: UUID, tag: Tag, isProcessing: Bool)
         case title
         case type(String)
 
@@ -246,7 +247,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
         case .creator(let creator):
             self.viewModel.process(action: .deleteCreator(creator.id))
 
-        case .tag(let tag, _):
+        case .tag(_, let tag, _):
             self.viewModel.process(action: .deleteTag(tag))
 
         case .attachment(let attachment, _):
@@ -363,7 +364,10 @@ final class ItemDetailCollectionViewHandler: NSObject {
         case .tags:
             let tags: [Row] = state.tags.map({ tag in
                 let isProcessing = state.backgroundProcessedItems.contains(tag.name)
-                return .tag(tag: tag, isProcessing: isProcessing)
+                if tag.name.isEmpty {
+                    DDLogError("ItemDetailCollectionViewHandler: item \(state.key); \(state.library.identifier); has empty tag")
+                }
+                return .tag(id: UUID(), tag: tag, isProcessing: isProcessing)
             })
             return tags + [.addTag]
 
@@ -643,7 +647,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
             switch row {
             case .attachment(_, let type) where type != .disabled: break
             case .note(_, let isProcessing) where !isProcessing: break
-            case .tag(_, let isProcessing) where !isProcessing: break
+            case .tag(_, _, let isProcessing) where !isProcessing: break
             case .creator where self.viewModel.state.isEditing: break
             default: return nil
             }
@@ -801,7 +805,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
             case .note(let note, let isProcessing):
                 return collectionView.dequeueConfiguredReusableCell(using: noteRegistration, for: indexPath, item: (note, isProcessing))
 
-            case .tag(let tag, let isProcessing):
+            case .tag(_, let tag, let isProcessing):
                 return collectionView.dequeueConfiguredReusableCell(using: tagRegistration, for: indexPath, item: (tag, isProcessing))
 
             case .type(let type):
@@ -970,7 +974,7 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
         case .attachment(let attachment, _):
             menu = self.createContextMenu(for: attachment)
 
-        case .tag(let tag, _):
+        case .tag(_, let tag, _):
             menu = self.createContextMenu(for: tag)
 
         case .note(let note, _):
