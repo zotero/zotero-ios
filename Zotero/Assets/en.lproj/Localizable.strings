@@ -146,7 +146,7 @@
 "citation.title" = "Citation Preview";
 "citation.copy_citation" = "Copy Citation";
 "citation.copy_bibliography" = "Copy Bibliography";
-"citation.preview" = "Preview:";
+"citation.preview" = "Preview";
 "citation.omit_author" = "Omit Author";
 "citation.locator_placeholder" = "Number";
 "citation.locator.page" = "Page";

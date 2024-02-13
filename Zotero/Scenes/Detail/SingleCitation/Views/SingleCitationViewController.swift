@@ -13,29 +13,66 @@ import CocoaLumberjackSwift
 import RxSwift
 
 final class SingleCitationViewController: UIViewController {
-    @IBOutlet private weak var container: UIStackView!
-    @IBOutlet private weak var locatorButton: UIButton!
-    @IBOutlet private weak var locatorTextField: UITextField!
-    @IBOutlet private weak var omitAuthorTitle: UILabel!
-    @IBOutlet private weak var omitAuthorSwitch: UISwitch!
-    @IBOutlet private weak var previewTitleLabel: UILabel!
-    @IBOutlet private weak var previewContainer: UIView!
-    @IBOutlet private weak var previewWebView: WKWebView!
-    @IBOutlet private weak var webViewHeight: NSLayoutConstraint!
-    @IBOutlet private weak var activityIndicatorContainer: UIView!
-    @IBOutlet private weak var activityIndicator: UIActivityIndicatorView!
+    enum Section {
+        case data
+        case preview
+    }
+
+    enum Row {
+        case locator
+        case author
+        case preview
+    }
 
     static let width: CGFloat = 500
     private let viewModel: ViewModel<SingleCitationActionHandler>
     private let disposeBag: DisposeBag
 
+    private weak var collectionView: UICollectionView!
+    private weak var previewWebView: WKWebView!
+    private var dataSource: UICollectionViewDiffableDataSource<Section, Row>!
     weak var coordinatorDelegate: DetailCitationCoordinatorDelegate?
+
+    private lazy var locatorRegistration: UICollectionView.CellRegistration<CitationLocatorCell, (String, String)> = {
+        return UICollectionView.CellRegistration<CitationLocatorCell, (String, String)> { [weak self] cell, _, data in
+            cell.contentConfiguration = CitationLocatorCell.ContentConfiguration(
+                locator: data.0,
+                value: data.1,
+                locatorChanged: { [weak self] newLocator in
+                    guard let self else { return }
+                    viewModel.process(action: .setLocator(locator: newLocator, webView: previewWebView))
+                }
+            )
+            if let valueObservable = cell.valueObservable {
+                valueObservable
+                    .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
+                    .subscribe(onNext: { [weak self] newValue in
+                        guard let self else { return }
+                        viewModel.process(action: .setLocatorValue(value: newValue, webView: previewWebView))
+                    })
+                    .disposed(by: cell.disposeBag)
+            }
+        }
+    }()
+    private lazy var authorRegistration: UICollectionView.CellRegistration<CitationAuthorCell, Bool> = {
+        return UICollectionView.CellRegistration<CitationAuthorCell, Bool> { [weak self] cell, _, omitAuthor in
+            cell.contentConfiguration = CitationAuthorCell.ContentConfiguration(omitAuthor: omitAuthor, omitAuthorChanged: { [weak self] newOmitAuthor in
+                guard let self else { return }
+                viewModel.process(action: .setOmitAuthor(omitAuthor: newOmitAuthor, webView: previewWebView))
+            })
+        }
+    }()
+    private lazy var previewRegistration: UICollectionView.CellRegistration<CitationPreviewCell, (String, CGFloat)> = {
+        return UICollectionView.CellRegistration<CitationPreviewCell, (String, CGFloat)> { cell, _, data in
+            cell.contentConfiguration = CitationPreviewCell.ContentConfiguration(preview: data.0, height: data.1)
+        }
+    }()
 
     // MARK: - Object Lifecycle
     init(viewModel: ViewModel<SingleCitationActionHandler>) {
         self.viewModel = viewModel
         disposeBag = DisposeBag()
-        super.init(nibName: "SingleCitationViewController", bundle: nil)
+        super.init(nibName: nil, bundle: nil)
     }
 
     required init?(coder: NSCoder) {
@@ -51,35 +88,114 @@ final class SingleCitationViewController: UIViewController {
         super.viewDidLoad()
 
         title = L10n.Citation.title
-        previewTitleLabel.text = L10n.Citation.preview
-        omitAuthorTitle.text = L10n.Citation.omitAuthor
-        locatorButton.setTitle(localized(locator: viewModel.state.locator), for: .normal)
-        omitAuthorSwitch.setOn(viewModel.state.omitAuthor, animated: false)
-        setupPreview()
         setupNavigationBar()
-        setupButton()
-        setupObserving()
+        setupCollectionView()
+        setupDataSource()
+        setupWebView()
 
-        viewModel.process(action: .preload(previewWebView))
+        viewModel.stateObservable
+            .subscribe(onNext: { [weak self] state in
+                self?.update(state: state)
+            })
+            .disposed(by: disposeBag)
 
-        func setupPreview() {
-            previewContainer.layer.cornerRadius = 4
-            previewContainer.layer.masksToBounds = true
+        func setupCollectionView() {
+            let layout = UICollectionViewCompositionalLayout { [weak self] index, environment in
+                let snapshot = self?.dataSource.snapshot()
+                let sectionType = snapshot.flatMap({ index < $0.sectionIdentifiers.count ? $0.sectionIdentifiers[index] : nil }) ?? .data
+                let configuration = UICollectionLayoutListConfiguration(appearance: .insetGrouped)
+                let section = NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)
+                switch sectionType {
+                case .data:
+                    section.contentInsets = NSDirectionalEdgeInsets(top: 16, leading: 16, bottom: 32, trailing: 16)
 
-            switch UIDevice.current.userInterfaceIdiom {
-            case .pad:
-                view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: 12).isActive = true
+                case .preview:
+                    section.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 16, bottom: 16, trailing: 16)
+                    let header = NSCollectionLayoutBoundarySupplementaryItem(
+                        layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .absolute(16)),
+                        elementKind: UICollectionView.elementKindSectionHeader,
+                        alignment: .topLeading
+                    )
+                    section.boundarySupplementaryItems = [header]
+                }
+                return section
+            }
+            let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+            collectionView.translatesAutoresizingMaskIntoConstraints = false
+            collectionView.allowsSelection = false
+            collectionView.register(SingleCitationSectionView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: "header")
+            view.addSubview(collectionView)
+            self.collectionView = collectionView
 
-            case .phone:
-                view.safeAreaLayoutGuide.bottomAnchor.constraint(greaterThanOrEqualTo: container.bottomAnchor, constant: 12).isActive = true
+            NSLayoutConstraint.activate([
+                view.topAnchor.constraint(equalTo: collectionView.topAnchor),
+                view.bottomAnchor.constraint(equalTo: collectionView.bottomAnchor),
+                view.leadingAnchor.constraint(equalTo: collectionView.leadingAnchor),
+                view.trailingAnchor.constraint(equalTo: collectionView.trailingAnchor)
+            ])
+        }
 
-            default:
-                break
+        func setupDataSource() {
+            let locatorRegistration = locatorRegistration
+            let authorRegistration = authorRegistration
+            let previewRegistration = previewRegistration
+
+            dataSource = UICollectionViewDiffableDataSource(collectionView: collectionView!, cellProvider: { [weak self] collectionView, indexPath, row in
+                guard let self else {
+                    return collectionView.dequeueConfiguredReusableCell(using: authorRegistration, for: indexPath, item: false)
+                }
+                switch row {
+                case .locator:
+                    return collectionView.dequeueConfiguredReusableCell(using: locatorRegistration, for: indexPath, item: (viewModel.state.locator, viewModel.state.locatorValue))
+
+                case .author:
+                    return collectionView.dequeueConfiguredReusableCell(using: authorRegistration, for: indexPath, item: viewModel.state.omitAuthor)
+
+                case .preview:
+                    return collectionView.dequeueConfiguredReusableCell(using: previewRegistration, for: indexPath, item: (viewModel.state.preview ?? "", viewModel.state.previewHeight))
+                }
+            })
+
+            dataSource.supplementaryViewProvider = { [weak self] collectionView, kind, indexPath in
+                guard let self, indexPath.section < dataSource.snapshot().sectionIdentifiers.count else { return nil }
+                let section = dataSource.snapshot().sectionIdentifiers[indexPath.section]
+                switch section {
+                case .preview:
+                    let view = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: "header", for: indexPath)
+                    if let view = view as? SingleCitationSectionView {
+                        view.setup(with: L10n.Citation.preview.uppercased())
+                    }
+                    return view
+
+                case .data:
+                    return nil
+                }
             }
 
-            previewWebView.scrollView.isScrollEnabled = false
-            previewWebView.backgroundColor = .clear
-            previewWebView.scrollView.backgroundColor = .clear
+            var snapshot = NSDiffableDataSourceSnapshot<Section, Row>()
+            snapshot.appendSections([.data, .preview])
+            snapshot.appendItems([.locator, .author], toSection: .data)
+            snapshot.appendItems([.preview], toSection: .preview)
+            dataSource.apply(snapshot) {
+                self.updatePreferredContentSize()
+            }
+        }
+
+        func setupWebView() {
+            let webView = WKWebView()
+            webView.translatesAutoresizingMaskIntoConstraints = false
+            webView.isHidden = true
+            view.addSubview(webView)
+            previewWebView = webView
+
+            NSLayoutConstraint.activate([
+                webView.topAnchor.constraint(equalTo: view.topAnchor),
+                view.bottomAnchor.constraint(equalTo: webView.bottomAnchor),
+                webView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 32),
+                view.trailingAnchor.constraint(equalTo: webView.trailingAnchor, constant: 32)
+            ])
+
+            viewModel.process(action: .preload(webView: webView))
         }
 
         func setupNavigationBar() {
@@ -93,49 +209,11 @@ final class SingleCitationViewController: UIViewController {
             setupRightButtonItem(isLoading: false)
             navigationItem.rightBarButtonItem?.isEnabled = false
         }
-
-        func setupButton() {
-            let locatorElements: [UIMenuElement] = SingleCitationState.locators.compactMap { [weak self] locator in
-                guard let self else { return nil }
-                return UIAction(title: localized(locator: locator), state: (viewModel.state.locator == locator) ? .on : .off) { [weak self] _ in
-                    self?.viewModel.process(action: .setLocator(locator))
-                }
-            }
-            locatorButton.menu = UIMenu(children: locatorElements)
-            locatorButton.showsMenuAsPrimaryAction = true
-            locatorButton.changesSelectionAsPrimaryAction = true
-        }
-
-        func setupObserving() {
-            viewModel.stateObservable
-                .subscribe(with: self, onNext: { `self`, state in
-                    self.update(state: state)
-                })
-                .disposed(by: disposeBag)
-
-            locatorTextField.rx.controlEvent(.editingChanged)
-                .flatMap({ [weak self] in
-                    Observable.just(self?.locatorTextField.text ?? "")
-                })
-                .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
-                .subscribe(onNext: { [weak self] value in
-                    self?.viewModel.process(action: .setLocatorValue(value))
-                })
-                .disposed(by: disposeBag)
-
-            omitAuthorSwitch.rx.controlEvent(.valueChanged)
-                .subscribe(onNext: { [weak self] _ in
-                    guard let self else { return }
-                    viewModel.process(action: .setOmitAuthor(omitAuthorSwitch.isOn))
-                })
-                .disposed(by: disposeBag)
-        }
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         previewWebView.configuration.userContentController.add(self, name: "heightHandler")
-        updatePreferredContentSize()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -145,13 +223,20 @@ final class SingleCitationViewController: UIViewController {
 
     // MARK: - Actions
     private func update(state: SingleCitationState) {
-        if state.changes.contains(.locator) {
-            locatorButton.setTitle(localized(locator: state.locator), for: .normal)
+        setupRightButtonItem(isLoading: state.loadingCopy)
+        navigationItem.rightBarButtonItem?.isEnabled = state.preview != nil
+
+        if state.changes.contains(.preview) || state.changes.contains(.height) {
+            var snapshot = dataSource.snapshot()
+            snapshot.reloadSections([.preview])
+            dataSource.apply(snapshot) {
+                self.updatePreferredContentSize()
+            }
         }
 
-        updatePreview(isLoading: state.loadingPreview)
-        setupRightButtonItem(isLoading: state.loadingCopy)
-        navigationItem.rightBarButtonItem?.isEnabled = !state.loadingPreview
+        if state.changes.contains(.copied) {
+            navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
+        }
 
         if let error = state.error, let coordinatorDelegate {
             switch error {
@@ -164,28 +249,11 @@ final class SingleCitationViewController: UIViewController {
                 }
             }
         }
-
-        if state.changes.contains(.preview) {
-            updatePreferredContentSize()
-        }
-
-        if state.changes.contains(.copied) {
-            navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
-        }
-
-        func updatePreview(isLoading: Bool) {
-            guard previewContainer.isHidden != isLoading else { return }
-
-            activityIndicatorContainer.isHidden = !isLoading
-            previewContainer.isHidden = isLoading
-            locatorButton.isEnabled = !isLoading
-            locatorTextField.isEnabled = !isLoading
-        }
     }
 
+    // MARK: - Helpers
     private func setupRightButtonItem(isLoading: Bool) {
         guard navigationItem.rightBarButtonItem == nil || isLoading == (navigationItem.rightBarButtonItem?.customView == nil) else { return }
-
         if isLoading {
             let indicator = UIActivityIndicatorView(style: .medium)
             indicator.startAnimating()
@@ -193,21 +261,18 @@ final class SingleCitationViewController: UIViewController {
         } else {
             let copy = UIBarButtonItem(title: L10n.copy, style: .done, target: nil, action: nil)
             copy.rx.tap.subscribe(onNext: { [weak self] in
-                self?.viewModel.process(action: .copy)
+                guard let self else { return }
+                viewModel.process(action: .copy(webView: previewWebView))
             })
             .disposed(by: disposeBag)
             navigationItem.rightBarButtonItem = copy
         }
     }
 
-    // MARK: - Helpers
-    private func localized(locator: String) -> String {
-        return NSLocalizedString("citation.locator.\(locator)", comment: "")
-    }
-
     private func updatePreferredContentSize() {
-        let size = view.systemLayoutSizeFitting(CGSize(width: SingleCitationViewController.width, height: .greatestFiniteMagnitude))
-        preferredContentSize = CGSize(width: SingleCitationViewController.width, height: size.height - view.safeAreaInsets.top)
+        let width = SingleCitationViewController.width
+        let height = collectionView.collectionViewLayout.collectionViewContentSize.height
+        preferredContentSize = CGSize(width: width, height: height)
         navigationController?.preferredContentSize = preferredContentSize
     }
 }
@@ -215,13 +280,35 @@ final class SingleCitationViewController: UIViewController {
 extension SingleCitationViewController: WKScriptMessageHandler {
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         guard message.name == "heightHandler", let height = message.body as? CGFloat else { return }
-        webViewHeight.constant = height
+        viewModel.process(action: .setPreviewHeight(height))
     }
 }
 
-extension SingleCitationViewController: UITextFieldDelegate {
-    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        textField.resignFirstResponder()
-        return true
+final class SingleCitationSectionView: UICollectionReusableView {
+    private weak var titleLabel: UILabel!
+
+    override init(frame: CGRect) {
+        super.init(frame: .zero)
+
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .preferredFont(forTextStyle: .footnote)
+        label.textColor = .systemGray
+        addSubview(label)
+        titleLabel = label
+
+        NSLayoutConstraint.activate([
+            label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            bottomAnchor.constraint(equalTo: label.bottomAnchor),
+            trailingAnchor.constraint(equalTo: label.trailingAnchor)
+        ])
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    func setup(with title: String) {
+        titleLabel.text = title
     }
 }
