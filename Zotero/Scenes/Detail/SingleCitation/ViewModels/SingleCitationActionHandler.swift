@@ -87,7 +87,7 @@ struct SingleCitationActionHandler: ViewModelActionHandler {
         guard let preview = viewModel.state.preview else { return }
 
         if viewModel.state.exportAsHtml {
-            UIPasteboard.general.string = viewModel.state.preview
+            UIPasteboard.general.string = preview
             update(viewModel: viewModel) { state in
                 state.changes = .copied
             }
