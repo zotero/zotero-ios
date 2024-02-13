@@ -52,7 +52,7 @@ class CitationLocatorContentView: UIView {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     func setup(withLocator locator: String, value: String, locatorChanged: @escaping (String) -> Void) {
         valueField.text = value
         setupButton()

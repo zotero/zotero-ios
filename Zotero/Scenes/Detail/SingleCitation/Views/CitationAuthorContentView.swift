@@ -25,8 +25,8 @@ class CitationAuthorContentView: UIView {
         addSubview(title)
         titleLabel = title
 
-        let action = UIAction { [weak self] _ in
-            self?.omitAuthorChanged?(self?.toggle.isOn ?? false)
+        let action = UIAction { [weak self] action in
+            self?.omitAuthorChanged?((action.sender as? UISwitch)?.isOn ?? false)
         }
         let toggle = UISwitch()
         toggle.translatesAutoresizingMaskIntoConstraints = false

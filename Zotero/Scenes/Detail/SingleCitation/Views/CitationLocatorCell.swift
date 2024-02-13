@@ -39,7 +39,7 @@ final class CitationLocatorCell: UICollectionViewListCell {
     final class ContentView: UIView, UIContentView {
         var configuration: UIContentConfiguration {
             didSet {
-                guard let configuration = self.configuration as? ContentConfiguration else { return }
+                guard let configuration = configuration as? ContentConfiguration else { return }
                 apply(configuration: configuration)
             }
         }
