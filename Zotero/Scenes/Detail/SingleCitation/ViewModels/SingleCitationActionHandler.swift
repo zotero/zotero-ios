@@ -164,8 +164,8 @@ struct SingleCitationActionHandler: ViewModelActionHandler {
                         state.changes = .preview
                     }
                 }, onFailure: { [weak viewModel] error in
-                    guard let viewModel else { return }
                     DDLogError("CitationActionHandler: can't preload webView - \(error)")
+                    guard let viewModel else { return }
                     update(viewModel: viewModel) { state in
                         if let error = error as? CitationController.Error, error == .styleOrLocaleMissing {
                             state.error = .styleMissing
