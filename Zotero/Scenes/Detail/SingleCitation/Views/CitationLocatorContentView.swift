@@ -8,11 +8,15 @@
 
 import UIKit
 
+import RxSwift
+
 class CitationLocatorContentView: UIView {
     private weak var locatorButton: UIButton!
     private weak var valueField: UITextField!
 
-    private var valueChanged: ((String) -> Void)?
+    var valueObservable: Observable<String> {
+        return valueField.rx.controlEvent(.editingChanged).flatMap({ Observable.just(self.valueField.text ?? "") })
+    }
 
     init() {
         super.init(frame: .zero)
@@ -49,8 +53,7 @@ class CitationLocatorContentView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
     
-    func setup(withLocator locator: String, value: String, locatorChanged: @escaping (String) -> Void, valueChanged: @escaping (String) -> Void) {
-        self.valueChanged = valueChanged
+    func setup(withLocator locator: String, value: String, locatorChanged: @escaping (String) -> Void) {
         valueField.text = value
         setupButton()
 
@@ -73,13 +76,6 @@ class CitationLocatorContentView: UIView {
 }
 
 extension CitationLocatorContentView: UITextFieldDelegate {
-    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
-        guard let text = textField.text as? NSString else { return true }
-        let newString = text.replacingCharacters(in: range, with: string)
-        valueChanged?(newString)
-        return true
-    }
-
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         textField.resignFirstResponder()
         return true

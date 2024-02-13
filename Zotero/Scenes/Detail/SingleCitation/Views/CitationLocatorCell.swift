@@ -8,12 +8,24 @@
 
 import UIKit
 
+import RxSwift
+
 final class CitationLocatorCell: UICollectionViewListCell {
+    var disposeBag: DisposeBag = DisposeBag()
+
+    var valueObservable: Observable<String>? {
+        return (self.contentView as? ContentView)?.contentView.valueObservable
+    }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        disposeBag = DisposeBag()
+    }
+
     struct ContentConfiguration: UIContentConfiguration {
         let locator: String
         let value: String
         let locatorChanged: (String) -> Void
-        let valueChanged: (String) -> Void
 
         func makeContentView() -> UIView & UIContentView {
             return ContentView(configuration: self)
@@ -50,7 +62,7 @@ final class CitationLocatorCell: UICollectionViewListCell {
         }
 
         private func apply(configuration: ContentConfiguration) {
-            contentView.setup(withLocator: configuration.locator, value: configuration.value, locatorChanged: configuration.locatorChanged, valueChanged: configuration.valueChanged)
+            contentView.setup(withLocator: configuration.locator, value: configuration.value, locatorChanged: configuration.locatorChanged)
         }
     }
 }

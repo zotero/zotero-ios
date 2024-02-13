@@ -41,12 +41,17 @@ final class SingleCitationViewController: UIViewController {
                 locatorChanged: { [weak self] newLocator in
                     guard let self else { return }
                     viewModel.process(action: .setLocator(locator: newLocator, webView: previewWebView))
-                },
-                valueChanged: { [weak self] newValue in
-                    guard let self else { return }
-                    viewModel.process(action: .setLocatorValue(value: newValue, webView: previewWebView))
                 }
             )
+            if let valueObservable = cell.valueObservable {
+                valueObservable
+                    .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
+                    .subscribe(onNext: { [weak self] newValue in
+                        guard let self else { return }
+                        viewModel.process(action: .setLocatorValue(value: newValue, webView: previewWebView))
+                    })
+                    .disposed(by: cell.disposeBag)
+            }
         }
     }()
     private lazy var authorRegistration: UICollectionView.CellRegistration<CitationAuthorCell, Bool> = {
