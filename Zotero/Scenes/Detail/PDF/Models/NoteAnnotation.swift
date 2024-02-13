@@ -22,7 +22,7 @@ final class NoteAnnotation: PSPDFKit.NoteAnnotation {
         guard let colorizedCgImage = colorizedImage.cgImage, let outlineCgImage = outlineImage.cgImage, let color = self.color else { return }
 
         context.clip(to: boundingBox, mask: colorizedCgImage)
-        color.setFill()
+        color.withAlphaComponent(0.5).setFill()
         context.fill(boundingBox)
 
         context.resetClip()

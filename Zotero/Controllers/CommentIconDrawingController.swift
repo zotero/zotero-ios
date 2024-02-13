@@ -24,7 +24,7 @@ struct CommentIconDrawingController {
         let newBoundingBox = CGRect(origin: origin, size: size)
 
         context.clip(to: newBoundingBox, mask: colorizedCgImage)
-        color.setFill()
+        color.withAlphaComponent(0.5).setFill()
         context.fill(newBoundingBox)
 
         context.resetClip()
