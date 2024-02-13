@@ -183,10 +183,18 @@ final class SingleCitationViewController: UIViewController {
 
         func setupWebView() {
             let webView = WKWebView()
+            webView.translatesAutoresizingMaskIntoConstraints = false
             webView.isHidden = true
-            webView.frame = view.bounds
             view.addSubview(webView)
             previewWebView = webView
+
+            NSLayoutConstraint.activate([
+                webView.topAnchor.constraint(equalTo: view.topAnchor),
+                view.bottomAnchor.constraint(equalTo: webView.bottomAnchor),
+                webView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 32),
+                view.trailingAnchor.constraint(equalTo: webView.trailingAnchor, constant: 32)
+            ])
+
             viewModel.process(action: .preload(webView: webView))
         }
 

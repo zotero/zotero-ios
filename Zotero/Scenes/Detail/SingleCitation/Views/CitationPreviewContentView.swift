@@ -69,7 +69,27 @@ class CitationPreviewContentView: UIView {
         }
 
         func injectStyle(toHtml htmlString: String) -> String {
-            let style = "<style>body { padding: 0; margin: 0; font-family: -apple-system; background-color: transparent; }</style>"
+            let style = """
+            <meta name="viewport" content="width=device-width">
+            <style type="text/css">
+                body{
+                    font-size:1em;
+                    font-family: -apple-system;
+                    -webkit-text-size-adjust:100%;
+                    color:black;
+                    padding:0;
+                    margin:0;
+                    background-color: transparent;
+                }
+
+                @media (prefers-color-scheme: dark) {
+                    body {
+                        background-color:transparent;
+                        color: white;
+                    }
+                }
+            </style>
+            """
             if let range = htmlString.range(of: "<head>") {
                 var newString = htmlString
                 newString.insert(contentsOf: style, at: range.upperBound)
