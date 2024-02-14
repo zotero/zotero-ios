@@ -12,24 +12,41 @@ struct CommentIconDrawingController {
     static let iconSize: CGSize = CGSize(width: 12, height: 12)
 
     static func draw(context: CGContext, boundingBox: CGRect, color: UIColor) {
-        guard let colorizedCgImage = Asset.Images.Annotations.commentColored.image.cgImage, let outlineCgImage = Asset.Images.Annotations.comment.image.cgImage else { return }
-
         let size = Self.iconSize
+        let width = size.width
+        let height = size.height
 
-        var origin = boundingBox.origin
-        origin.y += boundingBox.height - (size.height / 2)
-        origin.x -= (size.width / 2)
+        let scale = UIScreen.main.nativeScale
+        let onePixelWidthInPoints = 1.0 / scale
 
-        let alpha: CGFloat = 0.4
-        let newBoundingBox = CGRect(origin: origin, size: size)
+        context.saveGState()
+        context.setAlpha(0.5)
+        context.translateBy(x: boundingBox.minX - (width / 2), y: boundingBox.maxY - (height / 2))
 
-        context.clip(to: newBoundingBox, mask: colorizedCgImage)
-        color.withAlphaComponent(alpha).setFill()
-        context.fill(newBoundingBox)
+        let poly1: [(CGFloat, CGFloat)] = [(width / 2, 0), (width, 0), (width, height), (0, height), (0, height / 2)]
+        let points1 = poly1.map { CGPoint(x: $0, y: $1) }
 
-        context.resetClip()
-        context.clip(to: newBoundingBox, mask: outlineCgImage)
-        UIColor.black.withAlphaComponent(alpha).setFill()
-        context.fill(newBoundingBox)
+        let poly2: [(CGFloat, CGFloat)] = [(width / 2, 0), (width / 2, height / 2), (0, height / 2)]
+        let points2 = poly2.map { CGPoint(x: $0, y: $1) }
+
+        context.beginPath()
+        context.addLines(between: points1)
+        context.closePath()
+        color.setFill()
+        context.fillPath()
+
+        context.beginPath()
+        context.addLines(between: points2)
+        context.closePath()
+        UIColor.white.withAlphaComponent(0.4).setFill()
+        context.fillPath()
+
+        context.beginPath()
+        context.addLines(between: points1 + points2)
+        context.setLineWidth(onePixelWidthInPoints)
+        UIColor.black.setStroke()
+        context.strokePath()
+
+        context.restoreGState()
     }
 }

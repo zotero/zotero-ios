@@ -53,8 +53,6 @@ internal enum Asset {
       internal static let annotationNote = ImageAsset(name: "Annotations/annotation-note")
       internal static let areaLarge = ImageAsset(name: "Annotations/area.large")
       internal static let areaMedium = ImageAsset(name: "Annotations/area.medium")
-      internal static let commentColored = ImageAsset(name: "Annotations/comment-colored")
-      internal static let comment = ImageAsset(name: "Annotations/comment")
       internal static let eraserLarge = ImageAsset(name: "Annotations/eraser.large")
       internal static let highlighterLarge = ImageAsset(name: "Annotations/highlighter.large")
       internal static let highlighterMedium = ImageAsset(name: "Annotations/highlighter.medium")
