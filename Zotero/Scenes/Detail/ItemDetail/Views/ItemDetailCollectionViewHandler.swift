@@ -78,8 +78,11 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
         var isAdd: Bool {
             switch self {
-            case .addTag, .addNote, .addCreator, .addAttachment: return true
-            default: return false
+            case .addTag, .addNote, .addCreator, .addAttachment: 
+                return true
+
+            default:
+                return false
             }
         }
     }
@@ -98,11 +101,11 @@ final class ItemDetailCollectionViewHandler: NSObject {
     weak var delegate: ItemDetailCollectionViewHandlerDelegate?
 
     var attachmentSectionIndex: Int? {
-        return self.dataSource?.snapshot().sectionIdentifiers.firstIndex(where: { $0.section == .attachments })
+        return dataSource?.snapshot().sectionIdentifiers.firstIndex(where: { $0.section == .attachments })
     }
 
     var hasRows: Bool {
-        return !self.dataSource.snapshot().itemIdentifiers.isEmpty
+        return !dataSource.snapshot().itemIdentifiers.isEmpty
     }
 
     // MARK: - Lifecycle
@@ -111,22 +114,337 @@ final class ItemDetailCollectionViewHandler: NSObject {
         self.collectionView = collectionView
         self.viewModel = viewModel
         self.fileDownloader = fileDownloader
-        self.observer = PublishSubject()
-        self.disposeBag = DisposeBag()
+        observer = PublishSubject()
+        disposeBag = DisposeBag()
 
         super.init()
 
-        let (titleWidth, nonEmptyTitleWidth) = self.calculateTitleWidths(for: viewModel.state.data)
-        self.maxTitleWidth = titleWidth
-        self.maxNonemptyTitleWidth = nonEmptyTitleWidth
-        self.setupCollectionView()
-        self.setupKeyboardObserving()
+        let (titleWidth, nonEmptyTitleWidth) = calculateTitleWidths(for: viewModel.state.data)
+        maxTitleWidth = titleWidth
+        maxNonemptyTitleWidth = nonEmptyTitleWidth
+        setupCollectionView()
+        setupKeyboardObserving()
+
+        func setupKeyboardObserving() {
+            NotificationCenter.default
+                .keyboardWillShow
+                .observe(on: MainScheduler.instance)
+                .subscribe(onNext: { [weak self] notification in
+                    guard let self, let data = notification.keyboardData else { return }
+                    setupCollectionView(with: data, self: self)
+                })
+                .disposed(by: disposeBag)
+
+            NotificationCenter.default
+                .keyboardWillHide
+                .observe(on: MainScheduler.instance)
+                .subscribe(onNext: { [weak self] notification in
+                    guard let self, let data = notification.keyboardData else { return }
+                    setupCollectionView(with: data, self: self)
+                })
+                .disposed(by: disposeBag)
+
+            func setupCollectionView(with keyboardData: KeyboardData, self: ItemDetailCollectionViewHandler) {
+                var insets = self.collectionView.contentInset
+                insets.bottom = keyboardData.visibleHeight
+                self.collectionView.contentInset = insets
+            }
+        }
+
+        func setupCollectionView() {
+            collectionView.collectionViewLayout = createCollectionViewLayout()
+            collectionView.delegate = self
+            // keyboardDismissMode is device based, regardless of horizontal size class.
+            collectionView.keyboardDismissMode = UIDevice.current.userInterfaceIdiom == .phone ? .interactive : .none
+            collectionView.register(UINib(nibName: "ItemDetailSectionView", bundle: nil), forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: "Header")
+            collectionView.isEditing = true
+
+            let titleRegistration = self.titleRegistration
+            let fieldRegistration = self.fieldRegistration
+            let fieldEditRegistration = self.fieldEditRegistration
+            let fieldMultilineEditRegistration = self.fieldMultilineEditRegistration
+            let emptyRegistration = self.emptyRegistration
+            let addRegistration = self.addRegistration
+            let abstractRegistration = self.abstractRegistration
+            let abstractEditRegistration = self.abstractEditRegistration
+            let noteRegistration = self.noteRegistration
+            let tagRegistration = self.tagRegistration
+            let attachmentRegistration = self.attachmentRegistration
+
+            dataSource = UICollectionViewDiffableDataSource(collectionView: collectionView, cellProvider: { [weak self] collectionView, indexPath, row in
+                guard let self else { return collectionView.dequeueConfiguredReusableCell(using: emptyRegistration, for: indexPath, item: ()) }
+
+                let isEditing = viewModel.state.isEditing
+                let titleWidth = isEditing ? maxTitleWidth : maxNonemptyTitleWidth
+
+                switch row {
+                case .title:
+                    let title = viewModel.state.data.title
+                    return collectionView.dequeueConfiguredReusableCell(using: titleRegistration, for: indexPath, item: (title, isEditing))
+
+                case .creator(let creator):
+                    return collectionView.dequeueConfiguredReusableCell(using: fieldRegistration, for: indexPath, item: (.creator(creator), titleWidth))
+
+                case .addNote:
+                    return collectionView.dequeueConfiguredReusableCell(using: addRegistration, for: indexPath, item: L10n.ItemDetail.addNote)
+
+                case .addAttachment:
+                    return collectionView.dequeueConfiguredReusableCell(using: addRegistration, for: indexPath, item: L10n.ItemDetail.addAttachment)
+
+                case .addCreator:
+                    return collectionView.dequeueConfiguredReusableCell(using: addRegistration, for: indexPath, item: L10n.ItemDetail.addCreator)
+
+                case .addTag:
+                    return collectionView.dequeueConfiguredReusableCell(using: addRegistration, for: indexPath, item: L10n.ItemDetail.addTag)
+
+                case .abstract:
+                    let value = viewModel.state.data.abstract ?? ""
+                    if isEditing {
+                        return collectionView.dequeueConfiguredReusableCell(using: abstractEditRegistration, for: indexPath, item: value)
+                    }
+                    let isCollapsed = viewModel.state.abstractCollapsed
+                    return collectionView.dequeueConfiguredReusableCell(using: abstractRegistration, for: indexPath, item: (value, isCollapsed))
+
+                case .attachment(let attachment, let type):
+                    return collectionView.dequeueConfiguredReusableCell(using: attachmentRegistration, for: indexPath, item: (attachment, type))
+
+                case .dateAdded(let date):
+                    let date = Formatter.dateAndTime.string(from: date)
+                    return collectionView.dequeueConfiguredReusableCell(using: fieldRegistration, for: indexPath, item: (.value(value: date, title: L10n.dateAdded), titleWidth))
+
+                case .dateModified(let date):
+                    let date = Formatter.dateAndTime.string(from: date)
+                    return collectionView.dequeueConfiguredReusableCell(using: fieldRegistration, for: indexPath, item: (.value(value: date, title: L10n.dateModified), titleWidth))
+
+                case .field(let key, let multiline):
+                    guard let field = viewModel.state.data.fields[key] else { return collectionView.dequeueConfiguredReusableCell(using: emptyRegistration, for: indexPath, item: ()) }
+                    if !isEditing || viewModel.state.data.isAttachment {
+                        return collectionView.dequeueConfiguredReusableCell(using: fieldRegistration, for: indexPath, item: (.field(field), titleWidth))
+                    }
+                    if multiline {
+                        return collectionView.dequeueConfiguredReusableCell(using: fieldMultilineEditRegistration, for: indexPath, item: (field, titleWidth))
+                    }
+                    return collectionView.dequeueConfiguredReusableCell(using: fieldEditRegistration, for: indexPath, item: (field, titleWidth))
+
+                case .note(let note, let isProcessing):
+                    return collectionView.dequeueConfiguredReusableCell(using: noteRegistration, for: indexPath, item: (note, isProcessing))
+
+                case .tag(_, let tag, let isProcessing):
+                    return collectionView.dequeueConfiguredReusableCell(using: tagRegistration, for: indexPath, item: (tag, isProcessing))
+
+                case .type(let type):
+                    return collectionView.dequeueConfiguredReusableCell(using: fieldRegistration, for: indexPath, item: (.value(value: type, title: L10n.itemType), titleWidth))
+                }
+            })
+
+            dataSource.supplementaryViewProvider = { [weak self] collectionView, kind, indexPath in
+                switch kind {
+                case UICollectionView.elementKindSectionHeader:
+                    let view = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: "Header", for: indexPath)
+                    if let self {
+                        setup(headerView: view, indexPath: indexPath, self: self)
+                    }
+                    return view
+
+                default:
+                    return collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: "Header", for: indexPath)
+                }
+            }
+
+            dataSource.reorderingHandlers.canReorderItem = { row -> Bool in
+                switch row {
+                case .creator:
+                    return true
+
+                default:
+                    return false
+                }
+            }
+
+            dataSource.reorderingHandlers.didReorder = { [weak self] transaction in
+                guard let self, let difference = transaction.sectionTransactions.first?.difference else { return }
+
+                let changes = difference.compactMap({ change -> CollectionDifference<String>.Change? in
+                    switch change {
+                    case .insert(let offset, let element, let associatedWith):
+                        switch element {
+                        case .creator(let creator):
+                            return .insert(offset: offset, element: creator.id, associatedWith: associatedWith)
+
+                        default:
+                            return nil
+                        }
+
+                    case .remove(let offset, let element, let associatedWith):
+                        switch element {
+                        case .creator(let creator):
+                            return .remove(offset: offset, element: creator.id, associatedWith: associatedWith)
+
+                        default:
+                            return nil
+                        }
+                    }
+                })
+
+                guard let difference = CollectionDifference(changes) else { return }
+                viewModel.process(action: .moveCreators(difference))
+            }
+
+            func setup(headerView: UIView, indexPath: IndexPath, self: ItemDetailCollectionViewHandler) {
+                guard let view = headerView as? ItemDetailSectionView else { return }
+
+                let section = self.dataSource.snapshot().sectionIdentifiers[indexPath.section].section
+
+                switch section {
+                case .notes:
+                    view.setup(with: L10n.ItemDetail.notes)
+
+                case .attachments:
+                    view.setup(with: L10n.ItemDetail.attachments)
+
+                case .tags:
+                    view.setup(with: L10n.ItemDetail.tags)
+                default: break
+                }
+            }
+
+            func createCollectionViewLayout() -> UICollectionViewLayout {
+                return UICollectionViewCompositionalLayout { [weak self] index, environment in
+                    guard let self else {
+                        return NSCollectionLayoutSection.list(using: UICollectionLayoutListConfiguration(appearance: .plain), layoutEnvironment: environment)
+                    }
+
+                    var configuration = UICollectionLayoutListConfiguration(appearance: .plain)
+                    var supplementaryItems: [NSCollectionLayoutBoundarySupplementaryItem] = []
+
+                    if let section = dataSource.sectionIdentifier(for: index) {
+                        setupSeparators(in: &configuration, section: section, self: self)
+                        setupSwipeActions(in: &configuration, self: self)
+                        if let header = createHeader(for: section.section) {
+                            supplementaryItems.append(header)
+                        }
+                    }
+
+                    let layoutSection = NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)
+                    layoutSection.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
+                    layoutSection.boundarySupplementaryItems = supplementaryItems
+                    return layoutSection
+                }
+
+                func createHeader(for section: Section) -> NSCollectionLayoutBoundarySupplementaryItem? {
+                    switch section {
+                    case .attachments, .tags, .notes:
+                        let height = ItemDetailLayout.sectionHeaderHeight - ItemDetailLayout.separatorHeight
+                        return NSCollectionLayoutBoundarySupplementaryItem(
+                            layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .absolute(height)),
+                            elementKind: UICollectionView.elementKindSectionHeader,
+                            alignment: .top
+                        )
+
+                    default:
+                        return nil
+                    }
+                }
+
+                func setupSwipeActions(in configuration: inout UICollectionLayoutListConfiguration, self: ItemDetailCollectionViewHandler) {
+                    configuration.trailingSwipeActionsConfigurationProvider = { [weak self] indexPath in
+                        guard let self, let row = self.dataSource.itemIdentifier(for: indexPath) else { return nil }
+
+                        switch row {
+                        case .attachment(_, let type) where type != .disabled:
+                            break
+
+                        case .note(_, let isProcessing) where !isProcessing:
+                            break
+
+                        case .tag(_, _, let isProcessing) where !isProcessing:
+                            break
+
+                        case .creator where self.viewModel.state.isEditing:
+                            break
+
+                        default:
+                            return nil
+                        }
+
+                        let delete = UIContextualAction(style: .destructive, title: L10n.delete) { [weak self] _, _, completion in
+                            if let self {
+                                delete(row: row, self: self)
+                            }
+                            completion(true)
+                        }
+                        return UISwipeActionsConfiguration(actions: [delete])
+                    }
+
+                    func delete(row: Row, self: ItemDetailCollectionViewHandler) {
+                        switch row {
+                        case .creator(let creator):
+                            self.viewModel.process(action: .deleteCreator(creator.id))
+
+                        case .tag(_, let tag, _):
+                            self.viewModel.process(action: .deleteTag(tag))
+
+                        case .attachment(let attachment, _):
+                            self.viewModel.process(action: .deleteAttachment(attachment))
+
+                        case .note(let note, _):
+                            self.viewModel.process(action: .deleteNote(note))
+
+                        case .title, .abstract, .addAttachment, .addCreator, .addNote, .addTag, .dateAdded, .dateModified, .type, .field:
+                            break
+                        }
+                    }
+                }
+
+                func setupSeparators(in configuration: inout UICollectionLayoutListConfiguration, section: SectionType, self: ItemDetailCollectionViewHandler) {
+                    configuration.itemSeparatorHandler = { [weak self] indexPath, configuration in
+                        guard let self else { return configuration }
+                        var newConfiguration = configuration
+                        let isLastRow = indexPath.row == self.dataSource.snapshot(for: section).items.count - 1
+                        newConfiguration.bottomSeparatorVisibility = sectionHasSeparator(section.section, isEditing: self.viewModel.state.isEditing, isLastRow: isLastRow) ? .visible : .hidden
+                        if newConfiguration.bottomSeparatorVisibility == .visible {
+                            newConfiguration.bottomSeparatorInsets = NSDirectionalEdgeInsets(top: 0, leading: separatorLeftInset(for: section.section), bottom: 0, trailing: 0)
+                        }
+                        return newConfiguration
+                    }
+                }
+
+                func sectionHasSeparator(_ section: Section, isEditing: Bool, isLastRow: Bool) -> Bool {
+                    switch section {
+                    case .title:
+                        return true
+
+                    case .abstract:
+                        return false
+
+                    case .type, .fields, .creators:
+                        return isEditing
+
+                    case .attachments, .notes, .tags:
+                        return !isLastRow
+
+                    case .dates:
+                        return isEditing || isLastRow
+                    }
+                }
+
+                func separatorLeftInset(for section: Section) -> CGFloat {
+                    switch section {
+                    case .notes, .attachments, .tags:
+                        return ItemDetailLayout.iconWidth + ItemDetailLayout.horizontalInset + 17
+
+                    case .abstract, .creators, .dates, .fields, .title, .type:
+                        return ItemDetailLayout.horizontalInset
+                    }
+                }
+            }
+        }
     }
 
     // MARK: - Actions
 
     func sourceDataForCell(at indexPath: IndexPath) -> (UIView, CGRect?) {
-        return (self.collectionView, self.collectionView.cellForItem(at: indexPath)?.frame)
+        return (collectionView, collectionView.cellForItem(at: indexPath)?.frame)
     }
 
     /// Reloads the whole `collectionView`. Applies new snapshot based on `state` and reloads remaining items which were not changed between snapshots.
@@ -135,22 +453,56 @@ final class ItemDetailCollectionViewHandler: NSObject {
     func reloadAll(to state: ItemDetailState, animated: Bool) {
         // Assign new id to all sections, just reload everything
         let id = UUID().uuidString
-        let sections = self.sections(for: state.data, isEditing: state.isEditing).map({ SectionType(identifier: id, section: $0) })
+        let sections = sections(for: state.data, isEditing: state.isEditing).map({ SectionType(identifier: id, section: $0) })
         var snapshot = NSDiffableDataSourceSnapshot<SectionType, Row>()
         snapshot.appendSections(sections)
         for section in sections {
-            snapshot.appendItems(self.rows(for: section.section, state: state), toSection: section)
+            snapshot.appendItems(rows(for: section.section, state: state), toSection: section)
         }
+        dataSource.apply(snapshot, animatingDifferences: animated, completion: nil)
 
-        self.dataSource.apply(snapshot, animatingDifferences: animated, completion: nil)
+        /// Creates array of visible sections for current state data.
+        /// - parameter data: New data.
+        /// - parameter isEditing: Current editing table view state.
+        /// - returns: Array of visible sections.
+        func sections(for data: ItemDetailState.Data, isEditing: Bool) -> [Section] {
+            if isEditing {
+                // Only "metadata" sections are visible during editing.
+                if data.isAttachment {
+                    return [.title, .type, .fields, .dates]
+                } else {
+                    return [.title, .type, .creators, .fields, .dates, .abstract]
+                }
+            }
+
+            var sections: [Section] = [.title]
+            // Item type is always visible
+            sections.append(.type)
+            if !data.creators.isEmpty {
+                sections.append(.creators)
+            }
+            if !data.fieldIds.isEmpty {
+                sections.append(.fields)
+            }
+            sections.append(.dates)
+            if let abstract = data.abstract, !abstract.isEmpty {
+                sections.append(.abstract)
+            }
+            if !data.isAttachment {
+                sections.append(.notes)
+            }
+            sections.append(contentsOf: [.tags, .attachments])
+
+            return sections
+        }
     }
 
     /// Recalculates title width for current data.
     /// - parameter data: New data that change the title width.
     func recalculateTitleWidth(from data: ItemDetailState.Data) {
-        let (titleWidth, nonEmptyTitleWidth) = self.calculateTitleWidths(for: data)
-        self.maxTitleWidth = titleWidth
-        self.maxNonemptyTitleWidth = nonEmptyTitleWidth
+        let (titleWidth, nonEmptyTitleWidth) = calculateTitleWidths(for: data)
+        maxTitleWidth = titleWidth
+        maxNonemptyTitleWidth = nonEmptyTitleWidth
     }
 
     /// Reloads specific section based on snapshot diff. In case of special sections (`title`, `abstract` and `fields`) which don't hold their respective values, their item(s) are always reloaded.
@@ -158,76 +510,76 @@ final class ItemDetailCollectionViewHandler: NSObject {
     /// - parameter state: Current item detail state.
     /// - parameter animated: `true` if change is animated, `false` otherwise.
     func reload(section: Section, state: ItemDetailState, animated: Bool) {
-        var snapshot = self.dataSource.snapshot()
+        var snapshot = dataSource.snapshot()
 
         guard let sectionType = snapshot.sectionIdentifiers.first(where: { $0.section == section }) else { return }
 
         let oldRows = snapshot.itemIdentifiers(inSection: sectionType)
-        let newRows = self.rows(for: section, state: state)
+        let newRows = rows(for: section, state: state)
         snapshot.deleteItems(oldRows)
         snapshot.appendItems(newRows, toSection: sectionType)
 
-        let toReload = self.rowsToReload(from: oldRows, to: newRows, in: section)
+        let toReload = rowsToReload(from: oldRows, to: newRows, in: section)
         if !toReload.isEmpty {
             snapshot.reloadItems(toReload)
         }
 
-        self.dataSource.apply(snapshot, animatingDifferences: animated, completion: nil)
-    }
+        dataSource.apply(snapshot, animatingDifferences: animated, completion: nil)
 
-    /// Returns an array of rows which need to be reloaded manually. Some sections are "special" because their rows don't hold the values which they show in collection view, they just hold their
-    /// identifiers which don't change. So if the value changes, we have to manually reload these rows.
-    /// - parameter oldRows: Rows from previous snapshot.
-    /// - parameter newRows: Rows from new snapshot.
-    /// - parameter section: Section of given rows.
-    /// - returns: Array of rows to reload.
-    private func rowsToReload(from oldRows: [Row], to newRows: [Row], in section: Section) -> [Row] {
-        switch section {
-        case .title:
-            // Always reload title, if reload is requested, the value changed.
-            return [.title]
+        /// Returns an array of rows which need to be reloaded manually. Some sections are "special" because their rows don't hold the values which they show in collection view, they just hold their
+        /// identifiers which don't change. So if the value changes, we have to manually reload these rows.
+        /// - parameter oldRows: Rows from previous snapshot.
+        /// - parameter newRows: Rows from new snapshot.
+        /// - parameter section: Section of given rows.
+        /// - returns: Array of rows to reload.
+        func rowsToReload(from oldRows: [Row], to newRows: [Row], in section: Section) -> [Row] {
+            switch section {
+            case .title:
+                // Always reload title, if reload is requested, the value changed.
+                return [.title]
 
-        case .abstract:
-            // Always reload abstract, if reload is requested, the value changed.
-            return [.abstract]
+            case .abstract:
+                // Always reload abstract, if reload is requested, the value changed.
+                return [.abstract]
 
-        case .fields:
-            // Reload fields which weren't removed.
-            var toReload: [Row] = []
-            for row in oldRows {
-                if newRows.contains(row) {
-                    toReload.append(row)
+            case .fields:
+                // Reload fields which weren't removed.
+                var toReload: [Row] = []
+                for row in oldRows {
+                    if newRows.contains(row) {
+                        toReload.append(row)
+                    }
                 }
-            }
-            return toReload
+                return toReload
 
-        default:
-            // Rows in other sections hold their respective values, so they will reload based on the diff.
-            return []
+            default:
+                // Rows in other sections hold their respective values, so they will reload based on the diff.
+                return []
+            }
         }
     }
 
     /// Update height of updated cell and scroll to it. The cell itself doesn't need to be reloaded, since the change took place inside of it (text field or text view).
     func updateHeightAndScrollToUpdated(row: Row, state: ItemDetailState) {
-        guard let indexPath = self.dataSource.indexPath(for: row), let cellFrame = self.collectionView.cellForItem(at: indexPath)?.frame else { return }
+        guard let indexPath = dataSource.indexPath(for: row), let cellFrame = collectionView.cellForItem(at: indexPath)?.frame else { return }
 
-        let snapshot = self.dataSource.snapshot()
-        self.dataSource.apply(snapshot, animatingDifferences: false)
+        let snapshot = dataSource.snapshot()
+        dataSource.apply(snapshot, animatingDifferences: false)
 
-        let cellBottom = cellFrame.maxY - self.collectionView.contentOffset.y
-        let tableViewBottom = self.collectionView.superview!.bounds.maxY - self.collectionView.contentInset.bottom
-        let safeAreaTop = self.collectionView.superview!.safeAreaInsets.top
+        let cellBottom = cellFrame.maxY - collectionView.contentOffset.y
+        let tableViewBottom = collectionView.superview!.bounds.maxY - collectionView.contentInset.bottom
+        let safeAreaTop = collectionView.superview!.safeAreaInsets.top
 
         // Scroll either when cell bottom is below keyboard or cell top is not visible on screen
-        if cellBottom > tableViewBottom || cellFrame.minY < (safeAreaTop + self.collectionView.contentOffset.y) {
+        if cellBottom > tableViewBottom || cellFrame.minY < (safeAreaTop + collectionView.contentOffset.y) {
             // Scroll to top if cell is smaller than visible screen, so that it's fully visible, otherwise scroll to bottom.
             let position: UICollectionView.ScrollPosition = cellFrame.height + safeAreaTop < tableViewBottom ? .top : .bottom
-            self.collectionView.scrollToItem(at: indexPath, at: position, animated: false)
+            collectionView.scrollToItem(at: indexPath, at: position, animated: false)
         }
     }
 
     func updateAttachment(with attachment: Attachment, isProcessing: Bool) {
-        var snapshot = self.dataSource.snapshot()
+        var snapshot = dataSource.snapshot()
 
         guard let section = snapshot.sectionIdentifiers.first(where: { $0.section == .attachments }) else { return }
 
@@ -236,34 +588,16 @@ final class ItemDetailCollectionViewHandler: NSObject {
         guard let index = rows.firstIndex(where: { $0.isAttachment(withKey: attachment.key) }) else { return }
 
         snapshot.deleteItems(rows)
-        rows[index] = self.attachmentRow(for: attachment, isProcessing: isProcessing)
+        rows[index] = attachmentRow(for: attachment, isProcessing: isProcessing)
         snapshot.appendItems(rows, toSection: section)
 
-        self.dataSource.apply(snapshot, animatingDifferences: false, completion: nil)
-    }
-
-    private func delete(row: Row) {
-        switch row {
-        case .creator(let creator):
-            self.viewModel.process(action: .deleteCreator(creator.id))
-
-        case .tag(_, let tag, _):
-            self.viewModel.process(action: .deleteTag(tag))
-
-        case .attachment(let attachment, _):
-            self.viewModel.process(action: .deleteAttachment(attachment))
-
-        case .note(let note, _):
-            self.viewModel.process(action: .deleteNote(note))
-
-        case .title, .abstract, .addAttachment, .addCreator, .addNote, .addTag, .dateAdded, .dateModified, .type, .field: break
-        }
+        dataSource.apply(snapshot, animatingDifferences: false, completion: nil)
     }
 
     func scrollTo(itemKey: String, animated: Bool) {
         var row: Row?
 
-        for _row in self.dataSource.snapshot().itemIdentifiers {
+        for _row in dataSource.snapshot().itemIdentifiers {
             switch _row {
             case .note(let note, _) where note.key == itemKey:
                 row = _row
@@ -276,47 +610,12 @@ final class ItemDetailCollectionViewHandler: NSObject {
             }
         }
 
-        guard let row = row, let indexPath = self.dataSource.indexPath(for: row) else { return }
+        guard let row = row, let indexPath = dataSource.indexPath(for: row) else { return }
 
-        self.collectionView.scrollToItem(at: indexPath, at: .centeredVertically, animated: animated)
+        collectionView.scrollToItem(at: indexPath, at: .centeredVertically, animated: animated)
     }
 
     // MARK: - Helpers
-
-    /// Creates array of visible sections for current state data.
-    /// - parameter data: New data.
-    /// - parameter isEditing: Current editing table view state.
-    /// - returns: Array of visible sections.
-    private func sections(for data: ItemDetailState.Data, isEditing: Bool) -> [Section] {
-        if isEditing {
-            // Only "metadata" sections are visible during editing.
-            if data.isAttachment {
-                return [.title, .type, .fields, .dates]
-            } else {
-                return [.title, .type, .creators, .fields, .dates, .abstract]
-            }
-        }
-
-        var sections: [Section] = [.title]
-        // Item type is always visible
-        sections.append(.type)
-        if !data.creators.isEmpty {
-            sections.append(.creators)
-        }
-        if !data.fieldIds.isEmpty {
-            sections.append(.fields)
-        }
-        sections.append(.dates)
-        if let abstract = data.abstract, !abstract.isEmpty {
-            sections.append(.abstract)
-        }
-        if !data.isAttachment {
-            sections.append(.notes)
-        }
-        sections.append(contentsOf: [.tags, .attachments])
-
-        return sections
-    }
 
     private func rows(for section: Section, state: ItemDetailState) -> [Row] {
         switch section {
@@ -326,10 +625,10 @@ final class ItemDetailCollectionViewHandler: NSObject {
         case .attachments:
             var attachments = state.attachments.map({ attachment in
                 let isProcessing = state.backgroundProcessedItems.contains(attachment.key)
-                return self.attachmentRow(for: attachment, isProcessing: isProcessing)
+                return attachmentRow(for: attachment, isProcessing: isProcessing)
             })
 
-            if !self.viewModel.state.data.isAttachment {
+            if !viewModel.state.data.isAttachment {
                 attachments += [.addAttachment]
             }
 
@@ -380,11 +679,11 @@ final class ItemDetailCollectionViewHandler: NSObject {
     }
 
     private func attachmentRow(for attachment: Attachment, isProcessing: Bool) -> Row {
-        if isProcessing || self.delegate?.isDownloadingFromNavigationBar(for: attachment.key) == true {
+        if isProcessing || delegate?.isDownloadingFromNavigationBar(for: attachment.key) == true {
             return .attachment(attachment: attachment, type: .disabled)
         }
 
-        let (progress, error) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
+        let (progress, error) = fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
 
         if let error = error {
             return .attachment(attachment: attachment, type: .failed(error))
@@ -429,85 +728,30 @@ final class ItemDetailCollectionViewHandler: NSObject {
         return (maxTitleWidth, maxNonemptyTitleWidth)
     }
 
-    private func createContextMenu(for attachment: Attachment) -> UIMenu? {
-        var actions: [UIAction] = []
-
-        if case .file(_, _, let location, _) = attachment.type, location == .local {
-            actions.append(UIAction(title: L10n.ItemDetail.deleteAttachmentFile, image: UIImage(systemName: "trash"), attributes: []) { [weak self] _ in
-                self?.viewModel.process(action: .deleteAttachmentFile(attachment))
-            })
-        }
-
-        if !self.viewModel.state.data.isAttachment {
-            actions.append(UIAction(title: L10n.ItemDetail.moveToStandaloneAttachment, image: UIImage(systemName: "arrow.up.to.line"), attributes: []) { [weak self] _ in
-                self?.viewModel.process(action: .moveAttachmentToStandalone(attachment))
-            })
-
-            actions.append(UIAction(title: L10n.moveToTrash, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
-                self?.viewModel.process(action: .deleteAttachment(attachment))
-            })
-        }
-
-        return UIMenu(title: "", children: actions)
-    }
-
-    private func createContextMenu(for note: Note) -> UIMenu? {
-        var actions: [UIAction] = []
-
-        actions.append(UIAction(title: L10n.moveToTrash, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
-            self?.viewModel.process(action: .deleteNote(note))
-        })
-
-        return UIMenu(title: "", children: actions)
-    }
-
-    private func createContextMenu(for tag: Tag) -> UIMenu? {
-        var actions: [UIAction] = []
-
-        actions.append(UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
-            self?.viewModel.process(action: .deleteTag(tag))
-        })
-
-        return UIMenu(title: "", children: actions)
-    }
-
-    private func createContextMenu(for creator: ItemDetailState.Creator) -> UIMenu? {
-        var actions: [UIAction] = []
-
-        actions.append(UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
-            self?.viewModel.process(action: .deleteCreator(creator.id))
-        })
-
-        return UIMenu(title: "", children: actions)
-    }
-
-    private func createContextMenu(for field: ItemDetailState.Field) -> UIMenu? {
-        guard (field.key == FieldKeys.Item.doi || field.baseField == FieldKeys.Item.doi) || (field.key == FieldKeys.Item.url || field.baseField == FieldKeys.Item.url) else { return nil }
-        return UIMenu(title: "", children: [UIAction(title: L10n.copy, handler: { _ in
-            UIPasteboard.general.string = field.value
-        })])
-    }
-
     // MARK: - Cells
 
     private lazy var titleRegistration: UICollectionView.CellRegistration<ItemDetailTitleCell, (String, Bool)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
-            guard let self = self else { return }
-            cell.contentConfiguration = ItemDetailTitleCell.ContentConfiguration(title: data.0, isEditing: data.1, layoutMargins: self.layoutMargins(for: indexPath), textChanged: { [weak self] text in
-                self?.viewModel.process(action: .setTitle(text))
-            })
+            guard let self else { return }
+            cell.contentConfiguration = ItemDetailTitleCell.ContentConfiguration(
+                title: data.0,
+                isEditing: data.1, 
+                layoutMargins: layoutMargins(for: indexPath, self: self),
+                textChanged: { [weak self] text in
+                    self?.viewModel.process(action: .setTitle(text))
+                }
+            )
         }
     }()
 
     private lazy var fieldRegistration: UICollectionView.CellRegistration<ItemDetailFieldCell, (ItemDetailFieldCell.CellType, CGFloat)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
-            guard let self = self else { return }
-
-            cell.contentConfiguration = ItemDetailFieldCell.ContentConfiguration(type: data.0, titleWidth: data.1, layoutMargins: self.layoutMargins(for: indexPath))
+            guard let self else { return }
+            cell.contentConfiguration = ItemDetailFieldCell.ContentConfiguration(type: data.0, titleWidth: data.1, layoutMargins: layoutMargins(for: indexPath, self: self))
 
             switch data.0 {
             case .creator:
-                cell.accessories = self.viewModel.state.isEditing ? [.disclosureIndicator(), .delete(), .reorder()] : []
+                cell.accessories = viewModel.state.isEditing ? [.disclosureIndicator(), .delete(), .reorder()] : []
 
             default:
                 cell.accessories = []
@@ -517,13 +761,12 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
     private lazy var fieldEditRegistration: UICollectionView.CellRegistration<ItemDetailFieldEditCell, (ItemDetailState.Field, CGFloat)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
-            guard let self = self else { return }
-
-            let configuration = ItemDetailFieldEditCell.ContentConfiguration(field: data.0, titleWidth: data.1, layoutMargins: self.layoutMargins(for: indexPath))
+            guard let self else { return }
+            let configuration = ItemDetailFieldEditCell.ContentConfiguration(field: data.0, titleWidth: data.1, layoutMargins: layoutMargins(for: indexPath, self: self))
             let disposable = configuration.textObservable
                 .debounce(.milliseconds(500), scheduler: MainScheduler.instance)
-                .subscribe(with: self, onNext: { `self`, text in
-                    self.viewModel.process(action: .setFieldValue(id: data.0.key, value: text))
+                .subscribe(onNext: { [weak self] text in
+                    self?.viewModel.process(action: .setFieldValue(id: data.0.key, value: text))
                 })
             _ = configuration.disposeBag.insert(disposable)
             cell.contentConfiguration = configuration
@@ -532,13 +775,12 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
     private lazy var fieldMultilineEditRegistration: UICollectionView.CellRegistration<ItemDetailFieldMultilineEditCell, (ItemDetailState.Field, CGFloat)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
-            guard let self = self else { return }
-
-            let configuration = ItemDetailFieldMultilineEditCell.ContentConfiguration(field: data.0, titleWidth: data.1, layoutMargins: self.layoutMargins(for: indexPath))
+            guard let self else { return }
+            let configuration = ItemDetailFieldMultilineEditCell.ContentConfiguration(field: data.0, titleWidth: data.1, layoutMargins: layoutMargins(for: indexPath, self: self))
             let disposable = configuration.textObservable
                 .debounce(.milliseconds(500), scheduler: MainScheduler.instance)
-                .subscribe(with: self, onNext: { `self`, text in
-                    self.viewModel.process(action: .setFieldValue(id: data.0.key, value: text))
+                .subscribe(onNext: { [weak self] text in
+                    self?.viewModel.process(action: .setFieldValue(id: data.0.key, value: text))
                 })
             _ = configuration.disposeBag.insert(disposable)
             cell.contentConfiguration = configuration
@@ -547,24 +789,23 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
     private lazy var addRegistration: UICollectionView.CellRegistration<ItemDetailAddCell, String> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, title in
-            guard let self = self else { return }
-            cell.contentConfiguration = ItemDetailAddCell.ContentConfiguration(title: title, layoutMargins: self.layoutMargins(for: indexPath))
+            guard let self else { return }
+            cell.contentConfiguration = ItemDetailAddCell.ContentConfiguration(title: title, layoutMargins: layoutMargins(for: indexPath, self: self))
         }
     }()
 
     private lazy var abstractRegistration: UICollectionView.CellRegistration<ItemDetailAbstractCell, (String, Bool)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
-            guard let self = self else { return }
-            let width = floor(self.collectionView.frame.width) - (ItemDetailLayout.horizontalInset * 2)
-            cell.contentConfiguration = ItemDetailAbstractCell.ContentConfiguration(text: data.0, isCollapsed: data.1, layoutMargins: self.layoutMargins(for: indexPath), maxWidth: width)
+            guard let self else { return }
+            let width = floor(collectionView.frame.width) - (ItemDetailLayout.horizontalInset * 2)
+            cell.contentConfiguration = ItemDetailAbstractCell.ContentConfiguration(text: data.0, isCollapsed: data.1, layoutMargins: layoutMargins(for: indexPath, self: self), maxWidth: width)
         }
     }()
 
     private lazy var abstractEditRegistration: UICollectionView.CellRegistration<ItemDetailAbstractEditCell, String> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, text in
-            guard let self = self else { return }
-
-            cell.contentConfiguration = ItemDetailAbstractEditCell.ContentConfiguration(text: text, layoutMargins: self.layoutMargins(for: indexPath), textChanged: { [weak self] text in
+            guard let self else { return }
+            cell.contentConfiguration = ItemDetailAbstractEditCell.ContentConfiguration(text: text, layoutMargins: layoutMargins(for: indexPath, self: self), textChanged: { [weak self] text in
                 self?.viewModel.process(action: .setAbstract(text))
             })
         }
@@ -572,22 +813,22 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
     private lazy var noteRegistration: UICollectionView.CellRegistration<ItemDetailNoteCell, (Note, Bool)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
-            guard let self = self else { return }
-            cell.contentConfiguration = ItemDetailNoteCell.ContentConfiguration(note: data.0, isProcessing: data.1, layoutMargins: self.layoutMargins(for: indexPath))
+            guard let self else { return }
+            cell.contentConfiguration = ItemDetailNoteCell.ContentConfiguration(note: data.0, isProcessing: data.1, layoutMargins: layoutMargins(for: indexPath, self: self))
         }
     }()
 
     private lazy var tagRegistration: UICollectionView.CellRegistration<ItemDetailTagCell, (Tag, Bool)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
-            guard let self = self else { return }
-            cell.contentConfiguration = ItemDetailTagCell.ContentConfiguration(tag: data.0, isProcessing: data.1, layoutMargins: self.layoutMargins(for: indexPath))
+            guard let self else { return }
+            cell.contentConfiguration = ItemDetailTagCell.ContentConfiguration(tag: data.0, isProcessing: data.1, layoutMargins: layoutMargins(for: indexPath, self: self))
         }
     }()
 
     private lazy var attachmentRegistration: UICollectionView.CellRegistration<ItemDetailAttachmentCell, (Attachment, ItemDetailAttachmentCell.Kind)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
-            guard let self = self else { return }
-            cell.contentConfiguration = ItemDetailAttachmentCell.ContentConfiguration(attachment: data.0, type: data.1, layoutMargins: self.layoutMargins(for: indexPath))
+            guard let self else { return }
+            cell.contentConfiguration = ItemDetailAttachmentCell.ContentConfiguration(attachment: data.0, type: data.1, layoutMargins: layoutMargins(for: indexPath, self: self))
         }
     }()
 
@@ -595,300 +836,12 @@ final class ItemDetailCollectionViewHandler: NSObject {
         return UICollectionView.CellRegistration { _, _, _ in }
     }()
 
-    // MARK: - Layout
-
-    private func layoutMargins(for indexPath: IndexPath) -> UIEdgeInsets {
-        guard let section = dataSource.sectionIdentifier(for: indexPath.section)?.section else { return UIEdgeInsets() }
-
+    private func layoutMargins(for indexPath: IndexPath, self: ItemDetailCollectionViewHandler) -> UIEdgeInsets {
+        guard let section = self.dataSource.sectionIdentifier(for: indexPath.section)?.section else { return UIEdgeInsets() }
         let isEditing = self.viewModel.state.isEditing
         let isFirstRow = indexPath.row == 0
         let isLastRow = indexPath.row == (self.dataSource.collectionView(self.collectionView, numberOfItemsInSection: indexPath.section) - 1)
-
         return ItemDetailLayout.insets(for: section, isEditing: isEditing, isFirstRow: isFirstRow, isLastRow: isLastRow)
-    }
-
-    private func createCollectionViewLayout() -> UICollectionViewLayout {
-        return UICollectionViewCompositionalLayout { [unowned self] index, environment in
-            var configuration = UICollectionLayoutListConfiguration(appearance: .plain)
-
-            var supplementaryItems: [NSCollectionLayoutBoundarySupplementaryItem] = []
-
-            if let section = dataSource.sectionIdentifier(for: index) {
-                self.setupSeparators(in: &configuration, section: section)
-                self.setupSwipeActions(in: &configuration)
-                if let header = self.createHeader(for: section.section) {
-                    supplementaryItems.append(header)
-                }
-            }
-
-            let layoutSection = NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)
-            layoutSection.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
-            layoutSection.boundarySupplementaryItems = supplementaryItems
-            return layoutSection
-        }
-    }
-
-    private func createHeader(for section: Section) -> NSCollectionLayoutBoundarySupplementaryItem? {
-        switch section {
-        case .attachments, .tags, .notes:
-            let height = ItemDetailLayout.sectionHeaderHeight - ItemDetailLayout.separatorHeight
-            return NSCollectionLayoutBoundarySupplementaryItem(layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .absolute(height)),
-                                                               elementKind: UICollectionView.elementKindSectionHeader, alignment: .top)
-
-        default:
-            return nil
-        }
-    }
-
-    private func setupSwipeActions(in configuration: inout UICollectionLayoutListConfiguration) {
-        configuration.trailingSwipeActionsConfigurationProvider = { [unowned self] indexPath in
-            guard let row = self.dataSource.itemIdentifier(for: indexPath) else { return nil }
-
-            switch row {
-            case .attachment(_, let type) where type != .disabled: break
-            case .note(_, let isProcessing) where !isProcessing: break
-            case .tag(_, _, let isProcessing) where !isProcessing: break
-            case .creator where self.viewModel.state.isEditing: break
-            default: return nil
-            }
-
-            let delete = UIContextualAction(style: .destructive, title: L10n.delete) { _, _, completion in
-                self.delete(row: row)
-                completion(true)
-            }
-            return UISwipeActionsConfiguration(actions: [delete])
-        }
-    }
-
-    private func setupSeparators(in configuration: inout UICollectionLayoutListConfiguration, section: SectionType) {
-        configuration.itemSeparatorHandler = { [unowned self] indexPath, _configuration in
-            var configuration = _configuration
-            let isLastRow = indexPath.row == self.dataSource.snapshot(for: section).items.count - 1
-            configuration.bottomSeparatorVisibility = self.sectionHasSeparator(section.section, isEditing: self.viewModel.state.isEditing, isLastRow: isLastRow) ? .visible : .hidden
-            if configuration.bottomSeparatorVisibility == .visible {
-                configuration.bottomSeparatorInsets = NSDirectionalEdgeInsets(top: 0, leading: self.separatorLeftInset(for: section.section), bottom: 0, trailing: 0)
-            }
-            return configuration
-        }
-    }
-
-    private func sectionHasSeparator(_ section: Section, isEditing: Bool, isLastRow: Bool) -> Bool {
-        switch section {
-        case .title:
-            return true
-
-        case .abstract:
-            return false
-
-        case .type, .fields, .creators:
-            return isEditing
-
-        case .attachments, .notes, .tags:
-            return !isLastRow
-
-        case .dates:
-            return isEditing || isLastRow
-        }
-    }
-
-    private func separatorLeftInset(for section: Section) -> CGFloat {
-        switch section {
-        case .notes, .attachments, .tags:
-            return ItemDetailLayout.iconWidth + ItemDetailLayout.horizontalInset + 17
-
-        case .abstract, .creators, .dates, .fields, .title, .type:
-            return ItemDetailLayout.horizontalInset
-        }
-    }
-
-    // MARK: - Setups
-
-    private func setup(headerView: UIView, indexPath: IndexPath) {
-        guard let view = headerView as? ItemDetailSectionView else { return }
-
-        let section = self.dataSource.snapshot().sectionIdentifiers[indexPath.section].section
-
-        switch section {
-        case .notes:
-            view.setup(with: L10n.ItemDetail.notes)
-
-        case .attachments:
-            view.setup(with: L10n.ItemDetail.attachments)
-
-        case .tags:
-            view.setup(with: L10n.ItemDetail.tags)
-        default: break
-        }
-    }
-
-    /// Sets `collectionView` dataSource, delegate and registers appropriate cells and sections.
-    private func setupCollectionView() {
-        self.collectionView.collectionViewLayout = self.createCollectionViewLayout()
-        self.collectionView.delegate = self
-        // keyboardDismissMode is device based, regardless of horizontal size class.
-        self.collectionView.keyboardDismissMode = UIDevice.current.userInterfaceIdiom == .phone ? .interactive : .none
-        self.collectionView.register(UINib(nibName: "ItemDetailSectionView", bundle: nil), forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: "Header")
-        self.collectionView.isEditing = true
-
-        let titleRegistration = self.titleRegistration
-        let fieldRegistration = self.fieldRegistration
-        let fieldEditRegistration = self.fieldEditRegistration
-        let fieldMultilineEditRegistration = self.fieldMultilineEditRegistration
-        let emptyRegistration = self.emptyRegistration
-        let addRegistration = self.addRegistration
-        let abstractRegistration = self.abstractRegistration
-        let abstractEditRegistration = self.abstractEditRegistration
-        let noteRegistration = self.noteRegistration
-        let tagRegistration = self.tagRegistration
-        let attachmentRegistration = self.attachmentRegistration
-
-        self.dataSource = UICollectionViewDiffableDataSource(collectionView: self.collectionView, cellProvider: { [weak self] collectionView, indexPath, row in
-            guard let self = self else { return collectionView.dequeueConfiguredReusableCell(using: emptyRegistration, for: indexPath, item: ()) }
-
-            let isEditing = self.viewModel.state.isEditing
-            let titleWidth = isEditing ? self.maxTitleWidth : self.maxNonemptyTitleWidth
-
-            switch row {
-            case .title:
-                let title = self.viewModel.state.data.title
-                return collectionView.dequeueConfiguredReusableCell(using: titleRegistration, for: indexPath, item: (title, isEditing))
-
-            case .creator(let creator):
-                return collectionView.dequeueConfiguredReusableCell(using: fieldRegistration, for: indexPath, item: (.creator(creator), titleWidth))
-
-            case .addNote:
-                return collectionView.dequeueConfiguredReusableCell(using: addRegistration, for: indexPath, item: L10n.ItemDetail.addNote)
-
-            case .addAttachment:
-                return collectionView.dequeueConfiguredReusableCell(using: addRegistration, for: indexPath, item: L10n.ItemDetail.addAttachment)
-
-            case .addCreator:
-                return collectionView.dequeueConfiguredReusableCell(using: addRegistration, for: indexPath, item: L10n.ItemDetail.addCreator)
-
-            case .addTag:
-                return collectionView.dequeueConfiguredReusableCell(using: addRegistration, for: indexPath, item: L10n.ItemDetail.addTag)
-
-            case .abstract:
-                let value = self.viewModel.state.data.abstract ?? ""
-
-                if isEditing {
-                    return collectionView.dequeueConfiguredReusableCell(using: abstractEditRegistration, for: indexPath, item: value)
-                }
-
-                let isCollapsed = self.viewModel.state.abstractCollapsed
-                return collectionView.dequeueConfiguredReusableCell(using: abstractRegistration, for: indexPath, item: (value, isCollapsed))
-
-            case .attachment(let attachment, let type):
-                return collectionView.dequeueConfiguredReusableCell(using: attachmentRegistration, for: indexPath, item: (attachment, type))
-
-            case .dateAdded(let date):
-                let date = Formatter.dateAndTime.string(from: date)
-                return collectionView.dequeueConfiguredReusableCell(using: fieldRegistration, for: indexPath, item: (.value(value: date, title: L10n.dateAdded), titleWidth))
-
-            case .dateModified(let date):
-                let date = Formatter.dateAndTime.string(from: date)
-                return collectionView.dequeueConfiguredReusableCell(using: fieldRegistration, for: indexPath, item: (.value(value: date, title: L10n.dateModified), titleWidth))
-
-            case .field(let key, let multiline):
-                guard let field = self.viewModel.state.data.fields[key] else { return collectionView.dequeueConfiguredReusableCell(using: emptyRegistration, for: indexPath, item: ()) }
-
-                if !isEditing || self.viewModel.state.data.isAttachment {
-                    return collectionView.dequeueConfiguredReusableCell(using: fieldRegistration, for: indexPath, item: (.field(field), titleWidth))
-                }
-
-                if multiline {
-                    return collectionView.dequeueConfiguredReusableCell(using: fieldMultilineEditRegistration, for: indexPath, item: (field, titleWidth))
-                }
-
-                return collectionView.dequeueConfiguredReusableCell(using: fieldEditRegistration, for: indexPath, item: (field, titleWidth))
-
-            case .note(let note, let isProcessing):
-                return collectionView.dequeueConfiguredReusableCell(using: noteRegistration, for: indexPath, item: (note, isProcessing))
-
-            case .tag(_, let tag, let isProcessing):
-                return collectionView.dequeueConfiguredReusableCell(using: tagRegistration, for: indexPath, item: (tag, isProcessing))
-
-            case .type(let type):
-                return collectionView.dequeueConfiguredReusableCell(using: fieldRegistration, for: indexPath, item: (.value(value: type, title: L10n.itemType), titleWidth))
-            }
-        })
-
-        self.dataSource.supplementaryViewProvider = { [weak self] collectionView, kind, indexPath in
-            switch kind {
-            case UICollectionView.elementKindSectionHeader:
-                let view = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: "Header", for: indexPath)
-                self?.setup(headerView: view, indexPath: indexPath)
-                return view
-
-            default: fatalError("unknown section")
-            }
-        }
-
-        self.dataSource.reorderingHandlers.canReorderItem = { row -> Bool in
-            switch row {
-            case .creator:
-                return true
-
-            default:
-                return false
-            }
-        }
-
-        self.dataSource.reorderingHandlers.didReorder = { [weak self] transaction in
-            guard let self = self, let difference = transaction.sectionTransactions.first?.difference else { return }
-
-            let changes = difference.compactMap({ change -> CollectionDifference<String>.Change? in
-                switch change {
-                case .insert(let offset, let element, let associatedWith):
-                    switch element {
-                    case .creator(let creator):
-                        return .insert(offset: offset, element: creator.id, associatedWith: associatedWith)
-
-                    default: return nil
-                    }
-
-                case .remove(let offset, let element, let associatedWith):
-                    switch element {
-                    case .creator(let creator):
-                        return .remove(offset: offset, element: creator.id, associatedWith: associatedWith)
-
-                    default: return nil
-                    }
-                }
-            })
-
-            guard let difference = CollectionDifference(changes) else { return }
-
-            self.viewModel.process(action: .moveCreators(difference))
-        }
-    }
-
-    private func setupCollectionView(with keyboardData: KeyboardData) {
-        var insets = self.collectionView.contentInset
-        insets.bottom = keyboardData.visibleHeight
-        self.collectionView.contentInset = insets
-    }
-
-    private func setupKeyboardObserving() {
-        NotificationCenter.default
-                          .keyboardWillShow
-                          .observe(on: MainScheduler.instance)
-                          .subscribe(onNext: { [weak self] notification in
-                              if let data = notification.keyboardData {
-                                  self?.setupCollectionView(with: data)
-                              }
-                          })
-                          .disposed(by: self.disposeBag)
-
-        NotificationCenter.default
-                          .keyboardWillHide
-                          .observe(on: MainScheduler.instance)
-                          .subscribe(onNext: { [weak self] notification in
-                              if let data = notification.keyboardData {
-                                  self?.setupCollectionView(with: data)
-                              }
-                          })
-                          .disposed(by: self.disposeBag)
     }
 }
 
@@ -896,97 +849,159 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         collectionView.deselectItem(at: indexPath, animated: true)
 
-        guard let row = self.dataSource.itemIdentifier(for: indexPath) else { return }
+        guard let row = dataSource.itemIdentifier(for: indexPath) else { return }
 
         switch row {
         case .addNote:
-            self.observer.on(.next(.openNoteEditor(nil)))
+            observer.on(.next(.openNoteEditor(nil)))
 
         case .addAttachment:
-            self.observer.on(.next(.openFilePicker))
+            observer.on(.next(.openFilePicker))
 
         case .addCreator:
-            self.observer.on(.next(.openCreatorCreation))
+            observer.on(.next(.openCreatorCreation))
 
         case .addTag:
-            self.observer.on(.next(.openTagPicker))
+            observer.on(.next(.openTagPicker))
 
         case .abstract:
-            guard !self.viewModel.state.isEditing else { return }
-            self.viewModel.process(action: .toggleAbstractDetailCollapsed)
+            guard !viewModel.state.isEditing else { return }
+            viewModel.process(action: .toggleAbstractDetailCollapsed)
 
         case .attachment(let attachment, let type):
             guard type != .disabled else { return }
-            self.viewModel.process(action: .openAttachment(attachment.key))
+            viewModel.process(action: .openAttachment(attachment.key))
 
         case .creator(let creator):
-            guard self.viewModel.state.isEditing else { return }
-            self.observer.on(.next(.openCreatorEditor(creator)))
+            guard viewModel.state.isEditing else { return }
+            observer.on(.next(.openCreatorEditor(creator)))
 
         case .note(let note, let isProcessing):
             guard !isProcessing else { return }
-            self.observer.on(.next(.openNoteEditor(note)))
+            observer.on(.next(.openNoteEditor(note)))
 
         case .type:
-            guard self.viewModel.state.isEditing && !self.viewModel.state.data.isAttachment else { return }
-            self.observer.on(.next(.openTypePicker))
+            guard viewModel.state.isEditing && !viewModel.state.data.isAttachment else { return }
+            observer.on(.next(.openTypePicker))
 
         case .field(let fieldId, _):
             // Tappable fields should be only tappable when not in editing mode, in case of attachment, URL is not editable, so keep it tappable even while editing.
-            guard !self.viewModel.state.isEditing || (self.viewModel.state.data.type == ItemTypes.attachment), let field = self.viewModel.state.data.fields[fieldId], field.isTappable else { return }
+            guard !viewModel.state.isEditing || (viewModel.state.data.type == ItemTypes.attachment), let field = viewModel.state.data.fields[fieldId], field.isTappable else { return }
             switch field.key {
             case FieldKeys.Item.Attachment.url:
-                self.observer.on(.next(.openUrl(field.value)))
+                observer.on(.next(.openUrl(field.value)))
 
             case FieldKeys.Item.doi:
-                self.observer.on(.next(.openDoi(field.value)))
-            default: break
+                observer.on(.next(.openDoi(field.value)))
+
+            default:
+                break
             }
 
-        case .title, .dateAdded, .dateModified, .tag: break
+        case .title, .dateAdded, .dateModified, .tag:
+            break
         }
     }
 
-    func collectionView(_ collectionView: UICollectionView, targetIndexPathForMoveOfItemFromOriginalIndexPath originalIndexPath: IndexPath, atCurrentIndexPath currentIndexPath: IndexPath,
-                        toProposedIndexPath proposedIndexPath: IndexPath) -> IndexPath {
+    func collectionView(
+        _ collectionView: UICollectionView,
+        targetIndexPathForMoveOfItemFromOriginalIndexPath originalIndexPath: IndexPath,
+        atCurrentIndexPath currentIndexPath: IndexPath,
+        toProposedIndexPath proposedIndexPath: IndexPath
+    ) -> IndexPath {
         let section = dataSource.sectionIdentifier(for: proposedIndexPath.section)?.section
         if section != .creators { return originalIndexPath }
-        if let row = self.dataSource.itemIdentifier(for: proposedIndexPath) {
+        if let row = dataSource.itemIdentifier(for: proposedIndexPath) {
             switch row {
             case .addCreator:
                 return originalIndexPath
-            default: break
+
+            default:
+                break
             }
         }
         return proposedIndexPath
     }
 
     func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
-        guard !self.viewModel.state.isEditing, let row = self.dataSource.itemIdentifier(for: indexPath) else { return nil }
+        guard !viewModel.state.isEditing, let row = dataSource.itemIdentifier(for: indexPath) else { return nil }
 
         let menu: UIMenu?
 
         switch row {
         case .field(let fieldId, _):
-            guard let field = self.viewModel.state.data.fields[fieldId] else { return nil }
-            menu = self.createContextMenu(for: field)
+            guard let field = viewModel.state.data.fields[fieldId] else { return nil }
+            menu = createContextMenu(for: field)
 
         case .attachment(let attachment, _):
-            menu = self.createContextMenu(for: attachment)
+            menu = createContextMenu(for: attachment)
 
         case .tag(_, let tag, _):
-            menu = self.createContextMenu(for: tag)
+            menu = createContextMenu(for: tag)
 
         case .note(let note, _):
-            menu = self.createContextMenu(for: note)
+            menu = createContextMenu(for: note)
 
         case .creator(let creator):
-            menu = self.createContextMenu(for: creator)
+            menu = createContextMenu(for: creator)
 
         default:
             return nil
         }
 
         return menu.flatMap({ menu in UIContextMenuConfiguration(identifier: nil, previewProvider: nil, actionProvider: { _ in menu }) })
+
+        func createContextMenu(for attachment: Attachment) -> UIMenu? {
+            var actions: [UIAction] = []
+
+            if case .file(_, _, let location, _) = attachment.type, location == .local {
+                actions.append(UIAction(title: L10n.ItemDetail.deleteAttachmentFile, image: UIImage(systemName: "trash"), attributes: []) { [weak self] _ in
+                    self?.viewModel.process(action: .deleteAttachmentFile(attachment))
+                })
+            }
+
+            if !viewModel.state.data.isAttachment {
+                actions.append(UIAction(title: L10n.ItemDetail.moveToStandaloneAttachment, image: UIImage(systemName: "arrow.up.to.line"), attributes: []) { [weak self] _ in
+                    self?.viewModel.process(action: .moveAttachmentToStandalone(attachment))
+                })
+
+                actions.append(UIAction(title: L10n.moveToTrash, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
+                    self?.viewModel.process(action: .deleteAttachment(attachment))
+                })
+            }
+
+            return UIMenu(title: "", children: actions)
+        }
+
+        func createContextMenu(for note: Note) -> UIMenu? {
+            var actions: [UIAction] = []
+            actions.append(UIAction(title: L10n.moveToTrash, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
+                self?.viewModel.process(action: .deleteNote(note))
+            })
+            return UIMenu(title: "", children: actions)
+        }
+
+        func createContextMenu(for tag: Tag) -> UIMenu? {
+            var actions: [UIAction] = []
+            actions.append(UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
+                self?.viewModel.process(action: .deleteTag(tag))
+            })
+            return UIMenu(title: "", children: actions)
+        }
+
+        func createContextMenu(for creator: ItemDetailState.Creator) -> UIMenu? {
+            var actions: [UIAction] = []
+            actions.append(UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
+                self?.viewModel.process(action: .deleteCreator(creator.id))
+            })
+            return UIMenu(title: "", children: actions)
+        }
+
+        func createContextMenu(for field: ItemDetailState.Field) -> UIMenu? {
+            guard (field.key == FieldKeys.Item.doi || field.baseField == FieldKeys.Item.doi) || (field.key == FieldKeys.Item.url || field.baseField == FieldKeys.Item.url) else { return nil }
+            return UIMenu(title: "", children: [UIAction(title: L10n.copy, handler: { _ in
+                UIPasteboard.general.string = field.value
+            })])
+        }
     }
 }
