@@ -78,7 +78,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
         var isAdd: Bool {
             switch self {
-            case .addTag, .addNote, .addCreator, .addAttachment: 
+            case .addTag, .addNote, .addCreator, .addAttachment:
                 return true
 
             default:
@@ -157,7 +157,6 @@ final class ItemDetailCollectionViewHandler: NSObject {
             // keyboardDismissMode is device based, regardless of horizontal size class.
             collectionView.keyboardDismissMode = UIDevice.current.userInterfaceIdiom == .phone ? .interactive : .none
             collectionView.register(UINib(nibName: "ItemDetailSectionView", bundle: nil), forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: "Header")
-            collectionView.isEditing = true
 
             let titleRegistration = self.titleRegistration
             let fieldRegistration = self.fieldRegistration
@@ -261,8 +260,8 @@ final class ItemDetailCollectionViewHandler: NSObject {
                 }
             }
 
-            dataSource.reorderingHandlers.didReorder = { [weak self] transaction in
-                guard let self, let difference = transaction.sectionTransactions.first?.difference else { return }
+            dataSource.reorderingHandlers.didReorder = { [weak viewModel] transaction in
+                guard let viewModel, let difference = transaction.sectionTransactions.first?.difference else { return }
 
                 let changes = difference.compactMap({ change -> CollectionDifference<String>.Change? in
                     switch change {
@@ -350,24 +349,25 @@ final class ItemDetailCollectionViewHandler: NSObject {
                     configuration.trailingSwipeActionsConfigurationProvider = { [weak self] indexPath in
                         guard let self, let row = self.dataSource.itemIdentifier(for: indexPath) else { return nil }
 
+                        let title: String
                         switch row {
                         case .attachment(_, let type) where type != .disabled:
-                            break
+                            title = L10n.moveToTrash
 
                         case .note(_, let isProcessing) where !isProcessing:
-                            break
+                            title = L10n.moveToTrash
 
                         case .tag(_, _, let isProcessing) where !isProcessing:
-                            break
+                            title = L10n.delete
 
                         case .creator where self.viewModel.state.isEditing:
-                            break
+                            title = L10n.delete
 
                         default:
                             return nil
                         }
 
-                        let delete = UIContextualAction(style: .destructive, title: L10n.delete) { [weak self] _, _, completion in
+                        let delete = UIContextualAction(style: .destructive, title: title) { [weak self] _, _, completion in
                             if let self {
                                 delete(row: row, self: self)
                             }
@@ -459,6 +459,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
         for section in sections {
             snapshot.appendItems(rows(for: section.section, state: state), toSection: section)
         }
+        collectionView.isEditing = state.isEditing
         dataSource.apply(snapshot, animatingDifferences: animated, completion: nil)
 
         /// Creates array of visible sections for current state data.
@@ -735,7 +736,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
             guard let self else { return }
             cell.contentConfiguration = ItemDetailTitleCell.ContentConfiguration(
                 title: data.0,
-                isEditing: data.1, 
+                isEditing: data.1,
                 layoutMargins: layoutMargins(for: indexPath, self: self),
                 textChanged: { [weak self] text in
                     self?.viewModel.process(action: .setTitle(text))
@@ -942,9 +943,6 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
         case .note(let note, _):
             menu = createContextMenu(for: note)
 
-        case .creator(let creator):
-            menu = createContextMenu(for: creator)
-
         default:
             return nil
         }
@@ -985,14 +983,6 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
             var actions: [UIAction] = []
             actions.append(UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
                 self?.viewModel.process(action: .deleteTag(tag))
-            })
-            return UIMenu(title: "", children: actions)
-        }
-
-        func createContextMenu(for creator: ItemDetailState.Creator) -> UIMenu? {
-            var actions: [UIAction] = []
-            actions.append(UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
-                self?.viewModel.process(action: .deleteCreator(creator.id))
             })
             return UIMenu(title: "", children: actions)
         }
