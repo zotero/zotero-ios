@@ -10,6 +10,7 @@ import UIKit
 
 struct CommentIconDrawingController {
     static let iconSize: CGSize = CGSize(width: 12, height: 12)
+    static let alpha: CGFloat = 0.5
 
     static func draw(context: CGContext, boundingBox: CGRect, color: UIColor) {
         let size = Self.iconSize
@@ -19,8 +20,7 @@ struct CommentIconDrawingController {
         let scale = UIScreen.main.nativeScale
         let onePixelWidthInPoints = 1.0 / scale
 
-        context.saveGState()
-        context.setAlpha(0.5)
+        context.setAlpha(Self.alpha)
         context.translateBy(x: boundingBox.minX - (width / 2), y: boundingBox.maxY - (height / 2))
 
         let poly1: [(CGFloat, CGFloat)] = [(width / 2, 0), (width, 0), (width, height), (0, height), (0, height / 2)]
@@ -46,7 +46,5 @@ struct CommentIconDrawingController {
         context.setLineWidth(onePixelWidthInPoints)
         UIColor.black.setStroke()
         context.strokePath()
-
-        context.restoreGState()
     }
 }
