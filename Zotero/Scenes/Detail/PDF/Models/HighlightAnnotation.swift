@@ -19,16 +19,14 @@ final class HighlightAnnotation: PSPDFKit.HighlightAnnotation {
         super.lockAndRender(in: context, options: options)
 
         guard let comment = contents, !comment.isEmpty, !flags.contains(.hidden) else { return }
-
-        CommentIconDrawingController.draw(context: context, boundingBox: (rects?.first ?? boundingBox), color: (color ?? .black))
+        CommentIconDrawingController.drawAnnotationComment(context: context, boundingBox: (rects?.first ?? boundingBox), color: (color ?? .black))
     }
 
     override func draw(context: CGContext, options: RenderOptions?) {
         super.draw(context: context, options: options)
 
         guard let comment = contents, !comment.isEmpty, !flags.contains(.hidden) else { return }
-
-        CommentIconDrawingController.draw(context: context, boundingBox: (rects?.first ?? boundingBox), color: (color ?? .black))
+        CommentIconDrawingController.drawAnnotationComment(context: context, boundingBox: (rects?.first ?? boundingBox), color: (color ?? .black))
     }
 
     override class var supportsSecureCoding: Bool {
