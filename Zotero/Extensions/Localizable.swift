@@ -16,6 +16,8 @@ internal enum L10n {
   internal static let abstract = L10n.tr("Localizable", "abstract", fallback: "Abstract")
   /// Add
   internal static let add = L10n.tr("Localizable", "add", fallback: "Add")
+  /// Back
+  internal static let back = L10n.tr("Localizable", "back", fallback: "Back")
   /// Due to a beta update, your data must be redownloaded from zotero.org.
   internal static let betaWipeMessage = L10n.tr("Localizable", "beta_wipe_message", fallback: "Due to a beta update, your data must be redownloaded from zotero.org.")
   /// Resync Required
@@ -54,6 +56,8 @@ internal enum L10n {
   internal static let edit = L10n.tr("Localizable", "edit", fallback: "Edit")
   /// Error
   internal static let error = L10n.tr("Localizable", "error", fallback: "Error")
+  /// Forward
+  internal static let forward = L10n.tr("Localizable", "forward", fallback: "Forward")
   /// Item Type
   internal static let itemType = L10n.tr("Localizable", "item_type", fallback: "Item Type")
   /// Keep
