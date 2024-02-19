@@ -756,6 +756,20 @@ extension PDFReaderViewController: SidebarDelegate {
     }
 }
 
+extension PDFReaderViewController: AnnotationsDelegate {
+    func parseAndCacheIfNeededAttributedComment(for annotation: PDFAnnotation) -> NSAttributedString? {
+        let comment = annotation.comment
+        guard !comment.isEmpty else { return nil }
+
+        if let attributedComment = viewModel.state.comments[annotation.key] {
+            return attributedComment
+        }
+
+        viewModel.process(action: .parseAndCacheComment(key: annotation.key, comment: comment))
+        return viewModel.state.comments[annotation.key]
+    }
+}
+
 extension PDFReaderViewController: PDFDocumentDelegate {
     func annotationTool(
         didChangeStateFrom oldState: PSPDFKit.Annotation.Tool?,

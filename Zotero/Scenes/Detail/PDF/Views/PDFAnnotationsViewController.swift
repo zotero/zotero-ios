@@ -15,6 +15,10 @@ import RxSwift
 
 typealias AnnotationsViewControllerAction = (AnnotationView.Action, Annotation, UIButton) -> Void
 
+protocol AnnotationsDelegate: AnyObject {
+    func parseAndCacheIfNeededAttributedComment(for annotation: PDFAnnotation) -> NSAttributedString?
+}
+
 final class PDFAnnotationsViewController: UIViewController {
     private static let cellId = "AnnotationCell"
     private unowned let viewModel: ViewModel<PDFReaderActionHandler>
@@ -32,7 +36,7 @@ final class PDFAnnotationsViewController: UIViewController {
     private var searchController: UISearchController!
     private var isVisible: Bool
 
-    weak var parentDelegate: (PDFReaderContainerDelegate & SidebarDelegate)?
+    weak var parentDelegate: (PDFReaderContainerDelegate & SidebarDelegate & AnnotationsDelegate)?
     weak var coordinatorDelegate: PdfAnnotationsCoordinatorDelegate?
     weak var boundingBoxConverter: AnnotationBoundingBoxConverter?
 
@@ -297,7 +301,7 @@ final class PDFAnnotationsViewController: UIViewController {
 
         switch annotation.type {
         case .image:
-            let attributedString = coordinatorDelegate?.parseAndCacheIfNeededAttributedComment(viewModel: viewModel, annotation: annotation) ?? NSAttributedString()
+            let attributedString = parentDelegate?.parseAndCacheIfNeededAttributedComment(for: annotation) ?? NSAttributedString()
             comment = .init(attributedString: attributedString, isActive: state.selectedAnnotationCommentActive)
             preview = loadPreview()
 
@@ -306,7 +310,7 @@ final class PDFAnnotationsViewController: UIViewController {
             preview = loadPreview()
 
         case .note, .highlight:
-            let attributedString = coordinatorDelegate?.parseAndCacheIfNeededAttributedComment(viewModel: viewModel, annotation: annotation) ?? NSAttributedString()
+            let attributedString = parentDelegate?.parseAndCacheIfNeededAttributedComment(for: annotation) ?? NSAttributedString()
             comment = .init(attributedString: attributedString, isActive: state.selectedAnnotationCommentActive)
             preview = nil
         }
