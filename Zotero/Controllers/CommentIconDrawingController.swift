@@ -9,25 +9,48 @@
 import UIKit
 
 struct CommentIconDrawingController {
-    static let iconSize: CGSize = CGSize(width: 12, height: 12)
+    static func draw(context: CGContext, origin: CGPoint, size: CGSize, color: UIColor, alpha: CGFloat) {
+        let width = size.width
+        let height = size.height
 
-    static func draw(context: CGContext, boundingBox: CGRect, color: UIColor) {
-        guard let colorizedCgImage = Asset.Images.Annotations.commentColored.image.cgImage,
-              let outlineCgImage = Asset.Images.Annotations.comment.image.cgImage else { return }
+        let scale = UIScreen.main.nativeScale
+        let onePixelWidthInPoints = 1.0 / scale
 
-        let size = CommentIconDrawingController.iconSize
+        context.setAlpha(alpha)
+        context.translateBy(x: origin.x, y: origin.y)
 
-        var origin = boundingBox.origin
-        origin.y += boundingBox.height - (size.height / 2)
-        origin.x -= size.width
+        let poly1: [(CGFloat, CGFloat)] = [(width / 2, 0), (width, 0), (width, height), (0, height), (0, height / 2)]
+        let points1 = poly1.map { CGPoint(x: $0, y: $1) }
 
-        let newBoundingBox = CGRect(origin: origin, size: size)
+        let poly2: [(CGFloat, CGFloat)] = [(width / 2, 0), (width / 2, height / 2), (0, height / 2)]
+        let points2 = poly2.map { CGPoint(x: $0, y: $1) }
 
-        context.clip(to: newBoundingBox, mask: colorizedCgImage)
+        context.beginPath()
+        context.addLines(between: points1)
+        context.closePath()
         color.setFill()
-        context.fill(newBoundingBox)
+        context.fillPath()
 
-        context.resetClip()
-        context.draw(outlineCgImage, in: newBoundingBox)
+        context.beginPath()
+        context.addLines(between: points2)
+        context.closePath()
+        UIColor.white.withAlphaComponent(0.4).setFill()
+        context.fillPath()
+
+        context.beginPath()
+        context.addLines(between: points1 + points2)
+        context.setLineWidth(onePixelWidthInPoints)
+        UIColor.black.setStroke()
+        context.strokePath()
+    }
+
+    static func drawAnnotationComment(context: CGContext, boundingBox: CGRect, color: UIColor) {
+        let size: CGSize = CGSize(width: 12, height: 12)
+        let origin: CGPoint = CGPoint(x: boundingBox.minX - (size.width / 2), y: boundingBox.maxY - (size.height / 2))
+        draw(context: context, origin: origin, size: size, color: color, alpha: 0.5)
+    }
+
+    static func drawNoteAnnotation(context: CGContext, boundingBox: CGRect, color: UIColor) {
+        draw(context: context, origin: boundingBox.origin, size: boundingBox.size, color: color, alpha: 1)
     }
 }
