@@ -15,6 +15,10 @@ import RxSwift
 
 typealias AnnotationsViewControllerAction = (AnnotationView.Action, Annotation, UIButton) -> Void
 
+protocol AnnotationsDelegate: AnyObject {
+    func parseAndCacheIfNeededAttributedComment(for annotation: PDFAnnotation) -> NSAttributedString?
+}
+
 final class PDFAnnotationsViewController: UIViewController {
     private static let cellId = "AnnotationCell"
     private unowned let viewModel: ViewModel<PDFReaderActionHandler>
@@ -32,7 +36,7 @@ final class PDFAnnotationsViewController: UIViewController {
     private var searchController: UISearchController!
     private var isVisible: Bool
 
-    weak var parentDelegate: (PDFReaderContainerDelegate & SidebarDelegate)?
+    weak var parentDelegate: (PDFReaderContainerDelegate & SidebarDelegate & AnnotationsDelegate)?
     weak var coordinatorDelegate: PdfAnnotationsCoordinatorDelegate?
     weak var boundingBoxConverter: AnnotationBoundingBoxConverter?
 
@@ -297,7 +301,8 @@ final class PDFAnnotationsViewController: UIViewController {
 
         switch annotation.type {
         case .image:
-            comment = .init(attributedString: self.loadAttributedComment(for: annotation), isActive: state.selectedAnnotationCommentActive)
+            let attributedString = parentDelegate?.parseAndCacheIfNeededAttributedComment(for: annotation) ?? NSAttributedString()
+            comment = .init(attributedString: attributedString, isActive: state.selectedAnnotationCommentActive)
             preview = loadPreview()
 
         case .ink:
@@ -305,7 +310,8 @@ final class PDFAnnotationsViewController: UIViewController {
             preview = loadPreview()
 
         case .note, .highlight:
-            comment = .init(attributedString: self.loadAttributedComment(for: annotation), isActive: state.selectedAnnotationCommentActive)
+            let attributedString = parentDelegate?.parseAndCacheIfNeededAttributedComment(for: annotation) ?? NSAttributedString()
+            comment = .init(attributedString: attributedString, isActive: state.selectedAnnotationCommentActive)
             preview = nil
         }
 
@@ -329,19 +335,6 @@ final class PDFAnnotationsViewController: UIViewController {
             self?.perform(action: action, annotation: annotation)
         })
         _ = cell.disposeBag?.insert(actionSubscription)
-    }
-
-    private func loadAttributedComment(for annotation: PDFAnnotation) -> NSAttributedString? {
-        let comment = annotation.comment
-
-        guard !comment.isEmpty else { return nil }
-
-        if let attributedComment = self.viewModel.state.comments[annotation.key] {
-            return attributedComment
-        }
-
-        self.viewModel.process(action: .parseAndCacheComment(key: annotation.key, comment: comment))
-        return self.viewModel.state.comments[annotation.key]
     }
 
     private func showFilterPopup(from barButton: UIBarButtonItem) {

@@ -184,7 +184,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         navigationController.overrideUserInterfaceStyle = userInterfaceStyle
 
         let author = viewModel.state.library.identifier == .custom(.myLibrary) ? "" : annotation.author(displayName: viewModel.state.displayName, username: viewModel.state.username)
-        let comment = viewModel.state.comments[annotation.key] ?? NSAttributedString()
+        let comment: NSAttributedString = (self.navigationController?.viewControllers.first as? AnnotationsDelegate)?.parseAndCacheIfNeededAttributedComment(for: annotation) ?? NSAttributedString()
         let editability = annotation.editability(currentUserId: viewModel.state.userId, library: viewModel.state.library)
 
         let data = AnnotationPopoverState.Data(
