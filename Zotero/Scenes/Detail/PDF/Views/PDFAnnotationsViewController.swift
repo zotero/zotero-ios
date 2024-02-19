@@ -297,7 +297,8 @@ final class PDFAnnotationsViewController: UIViewController {
 
         switch annotation.type {
         case .image:
-            comment = .init(attributedString: self.loadAttributedComment(for: annotation), isActive: state.selectedAnnotationCommentActive)
+            let attributedString = coordinatorDelegate?.parseAndCacheIfNeededAttributedComment(viewModel: viewModel, annotation: annotation) ?? NSAttributedString()
+            comment = .init(attributedString: attributedString, isActive: state.selectedAnnotationCommentActive)
             preview = loadPreview()
 
         case .ink:
@@ -305,7 +306,8 @@ final class PDFAnnotationsViewController: UIViewController {
             preview = loadPreview()
 
         case .note, .highlight:
-            comment = .init(attributedString: self.loadAttributedComment(for: annotation), isActive: state.selectedAnnotationCommentActive)
+            let attributedString = coordinatorDelegate?.parseAndCacheIfNeededAttributedComment(viewModel: viewModel, annotation: annotation) ?? NSAttributedString()
+            comment = .init(attributedString: attributedString, isActive: state.selectedAnnotationCommentActive)
             preview = nil
         }
 
@@ -329,19 +331,6 @@ final class PDFAnnotationsViewController: UIViewController {
             self?.perform(action: action, annotation: annotation)
         })
         _ = cell.disposeBag?.insert(actionSubscription)
-    }
-
-    private func loadAttributedComment(for annotation: PDFAnnotation) -> NSAttributedString? {
-        let comment = annotation.comment
-
-        guard !comment.isEmpty else { return nil }
-
-        if let attributedComment = self.viewModel.state.comments[annotation.key] {
-            return attributedComment
-        }
-
-        self.viewModel.process(action: .parseAndCacheComment(key: annotation.key, comment: comment))
-        return self.viewModel.state.comments[annotation.key]
     }
 
     private func showFilterPopup(from barButton: UIBarButtonItem) {

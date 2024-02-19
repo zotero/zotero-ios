@@ -56,6 +56,7 @@ protocol PdfAnnotationsCoordinatorDelegate: AnyObject {
         userInterfaceStyle: UIUserInterfaceStyle,
         completed: @escaping (AnnotationsFilter?) -> Void
     )
+    func parseAndCacheIfNeededAttributedComment(viewModel: ViewModel<PDFReaderActionHandler>, annotation: PDFAnnotation) -> NSAttributedString?
 }
 
 final class PDFCoordinator: Coordinator {
@@ -184,7 +185,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         navigationController.overrideUserInterfaceStyle = userInterfaceStyle
 
         let author = viewModel.state.library.identifier == .custom(.myLibrary) ? "" : annotation.author(displayName: viewModel.state.displayName, username: viewModel.state.username)
-        let comment = viewModel.state.comments[annotation.key] ?? NSAttributedString()
+        let comment = parseAndCacheIfNeededAttributedComment(viewModel: viewModel, annotation: annotation) ?? NSAttributedString()
         let editability = annotation.editability(currentUserId: viewModel.state.userId, library: viewModel.state.library)
 
         let data = AnnotationPopoverState.Data(
@@ -582,6 +583,18 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
         }
         
         self.navigationController?.present(navigationController, animated: true, completion: nil)
+    }
+
+    func parseAndCacheIfNeededAttributedComment(viewModel: ViewModel<PDFReaderActionHandler>, annotation: PDFAnnotation) -> NSAttributedString? {
+        let comment = annotation.comment
+        guard !comment.isEmpty else { return nil }
+
+        if let attributedComment = viewModel.state.comments[annotation.key] {
+            return attributedComment
+        }
+
+        viewModel.process(action: .parseAndCacheComment(key: annotation.key, comment: comment))
+        return viewModel.state.comments[annotation.key]
     }
 }
 
