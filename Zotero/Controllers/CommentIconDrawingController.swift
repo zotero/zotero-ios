@@ -49,4 +49,8 @@ struct CommentIconDrawingController {
         let origin: CGPoint = CGPoint(x: boundingBox.minX - (size.width / 2), y: boundingBox.maxY - (size.height / 2))
         draw(context: context, origin: origin, size: size, color: color, alpha: 0.5)
     }
+
+    static func drawNoteAnnotation(context: CGContext, boundingBox: CGRect, color: UIColor) {
+        draw(context: context, origin: boundingBox.origin, size: boundingBox.size, color: color, alpha: 1)
+    }
 }
