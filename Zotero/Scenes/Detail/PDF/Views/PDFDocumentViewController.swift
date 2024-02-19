@@ -100,11 +100,23 @@ final class PDFDocumentViewController: UIViewController {
     }
 
     override func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
-        guard let controller = self.pdfController, let key = presses.first?.key, key.characters == "f", key.modifierFlags.contains(.command) else {
+        guard let controller = self.pdfController, let key = presses.first?.key, key.modifierFlags.contains(.command) else {
             super.pressesBegan(presses, with: event)
             return
         }
-        self.parentDelegate?.showSearch(pdfController: controller, text: nil)
+
+        if key.characters == "f" {
+            self.parentDelegate?.showSearch(pdfController: controller, text: nil)
+            return
+        }
+        if key.characters == "[" || key.keyCode == .keyboardLeftArrow {
+            performBackAction()
+            return
+        }
+        if key.characters == "]" || key.keyCode == .keyboardRightArrow {
+            performForwardAction()
+            return
+        }
     }
 
     // MARK: - Actions
