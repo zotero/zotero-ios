@@ -54,6 +54,8 @@
 "remove" = "Remove";
 "keep" = "Keep";
 "cancel_all" = "Cancel All";
+"back" = "Back";
+"forward" = "Forward";
 
 "beta_wipe_title" = "Resync Required";
 "beta_wipe_message" = "Due to a beta update, your data must be redownloaded from zotero.org.";

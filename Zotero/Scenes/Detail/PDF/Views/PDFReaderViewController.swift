@@ -38,15 +38,7 @@ class PDFReaderViewController: UIViewController {
     private weak var annotationToolbarController: AnnotationToolbarViewController!
     private var documentTop: NSLayoutConstraint!
     private var annotationToolbarHandler: AnnotationToolbarHandler!
-    private weak var toolbarPreviewsOverlay: UIView!
-    private weak var toolbarLeadingPreview: DashedView!
-    private weak var inbetweenTopDashedView: DashedView!
-    private weak var toolbarLeadingPreviewHeight: NSLayoutConstraint!
-    private weak var toolbarTrailingPreview: DashedView!
-    private weak var toolbarTrailingPreviewHeight: NSLayoutConstraint!
-    private weak var toolbarTopPreview: DashedView!
-    private weak var toolbarPinnedPreview: DashedView!
-    private weak var toolbarPinnedPreviewHeight: NSLayoutConstraint!
+    private var intraDocumentNavigationHandler: IntraDocumentNavigationButtonsHandler!
     private(set) var isCompactWidth: Bool
     @CodableUserDefault(key: "PDFReaderToolbarState", defaultValue: AnnotationToolbarHandler.State(position: .leading, visible: true), encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
     var toolbarState: AnnotationToolbarHandler.State
@@ -177,11 +169,18 @@ class PDFReaderViewController: UIViewController {
         super.viewDidLoad()
 
         statusBarHeight = (view.scene as? UIWindowScene)?.statusBarManager?.statusBarFrame.height ?? .zero
-
         set(userActivity: .pdfActivity(for: viewModel.state.key, libraryId: viewModel.state.library.identifier, collectionId: Defaults.shared.selectedCollectionId))
-
         view.backgroundColor = .systemGray6
         setupViews()
+        intraDocumentNavigationHandler = IntraDocumentNavigationButtonsHandler(
+            parent: self,
+            back: { [weak self] in
+                self?.documentController.performBackAction()
+            },
+            forward: { [weak self] in
+                self?.documentController.performForwardAction()
+            }
+        )
         setupNavigationBar()
         setupObserving()
         updateInterface(to: viewModel.state.settings)
@@ -819,6 +818,10 @@ extension PDFReaderViewController: PDFDocumentDelegate {
         if isHidden && isSidebarVisible {
             toggleSidebar(animated: true)
         }
+    }
+
+    func backForwardButtonsChanged(backButtonVisible: Bool, forwardButtonVisible: Bool) {
+        intraDocumentNavigationHandler.set(backButtonVisible: backButtonVisible, forwardButtonVisible: forwardButtonVisible)
     }
 }
 

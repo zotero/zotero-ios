@@ -749,6 +749,7 @@
 		B373C98F2B1F5431007FD56C /* PDFThumbnailsLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = B373C98E2B1F5431007FD56C /* PDFThumbnailsLayout.swift */; };
 		B3748D2026566F4800ED05F8 /* ContainerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3748D1F26566F4800ED05F8 /* ContainerViewController.swift */; };
 		B3748D2226566F6900ED05F8 /* ContainerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3748D2126566F6900ED05F8 /* ContainerViewController.swift */; };
+		B3756E8F2B835BDC0001CD0A /* IntraDocumentNavigationButtonsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3756E8E2B835BDC0001CD0A /* IntraDocumentNavigationButtonsHandler.swift */; };
 		B3764D9D2574F2DE0024274F /* ColorPickerCircleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3764D9C2574F2DE0024274F /* ColorPickerCircleView.swift */; };
 		B37673FB262DB25700C3BFAF /* ItemsToolbarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37673FA262DB25700C3BFAF /* ItemsToolbarController.swift */; };
 		B377F29F2493722100022943 /* AttachmentCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30B40642491222000FAAF6D /* AttachmentCreator.swift */; };
@@ -1731,6 +1732,7 @@
 		B373C98E2B1F5431007FD56C /* PDFThumbnailsLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFThumbnailsLayout.swift; sourceTree = "<group>"; };
 		B3748D1F26566F4800ED05F8 /* ContainerViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ContainerViewController.swift; sourceTree = "<group>"; };
 		B3748D2126566F6900ED05F8 /* ContainerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContainerViewController.swift; sourceTree = "<group>"; };
+		B3756E8E2B835BDC0001CD0A /* IntraDocumentNavigationButtonsHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntraDocumentNavigationButtonsHandler.swift; sourceTree = "<group>"; };
 		B3764D9C2574F2DE0024274F /* ColorPickerCircleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPickerCircleView.swift; sourceTree = "<group>"; };
 		B37673FA262DB25700C3BFAF /* ItemsToolbarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemsToolbarController.swift; sourceTree = "<group>"; };
 		B377F2A1249373A400022943 /* Notifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notifications.swift; sourceTree = "<group>"; };
@@ -2847,6 +2849,7 @@
 				B38B24B826E7664400BDD1BB /* AnnotationToolOptionsViewController.swift */,
 				B33AB487246D315F00490DDE /* CheckboxButton.swift */,
 				B3A95DA929194BDE00BCCF11 /* DashedView.swift */,
+				B3756E8E2B835BDC0001CD0A /* IntraDocumentNavigationButtonsHandler.swift */,
 				B31941DB24531F6600BF6296 /* PDFAnnotationsViewController.swift */,
 				B3B953CD245981DA00FC96DB /* PDFDocumentViewController.swift */,
 				B32259A127070EBA0047598D /* PDFPlainReaderViewController.swift */,
@@ -5242,6 +5245,7 @@
 				B31DDA9E27299BD1002CFA05 /* StoreMtimeForAttachmentDbRequest.swift in Sources */,
 				B3C9D60A24DA9D49003EA1EE /* CollectionsSearchAction.swift in Sources */,
 				B31D973C27F5E51100ED3DA2 /* ItemsToolbarDownloadProgressView.swift in Sources */,
+				B3756E8F2B835BDC0001CD0A /* IntraDocumentNavigationButtonsHandler.swift in Sources */,
 				B3C9D60524DA921B003EA1EE /* CollectionsSearchViewController.swift in Sources */,
 				B3100921272C0960003FC743 /* ReadWebDavDeletionsDbRequest.swift in Sources */,
 				B3E8FE162714297200F51458 /* CiteActionHandler.swift in Sources */,

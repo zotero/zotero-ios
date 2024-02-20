@@ -25,6 +25,7 @@ protocol PDFDocumentDelegate: AnyObject {
     func didChange(undoState undoEnabled: Bool, redoState redoEnabled: Bool)
     func interfaceVisibilityDidChange(to isHidden: Bool)
     func showToolOptions()
+    func backForwardButtonsChanged(backButtonVisible: Bool, forwardButtonVisible: Bool)
 }
 
 final class PDFDocumentViewController: UIViewController {
@@ -99,14 +100,34 @@ final class PDFDocumentViewController: UIViewController {
     }
 
     override func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
-        guard let controller = self.pdfController, let key = presses.first?.key, key.characters == "f", key.modifierFlags.contains(.command) else {
+        guard let controller = self.pdfController, let key = presses.first?.key, key.modifierFlags.contains(.command) else {
             super.pressesBegan(presses, with: event)
             return
         }
-        self.parentDelegate?.showSearch(pdfController: controller, text: nil)
+
+        if key.characters == "f" {
+            self.parentDelegate?.showSearch(pdfController: controller, text: nil)
+            return
+        }
+        if key.characters == "[" || key.keyCode == .keyboardLeftArrow {
+            performBackAction()
+            return
+        }
+        if key.characters == "]" || key.keyCode == .keyboardRightArrow {
+            performForwardAction()
+            return
+        }
     }
 
     // MARK: - Actions
+
+    func performBackAction() {
+        pdfController?.backForwardList.requestBack(animated: true)
+    }
+
+    func performForwardAction() {
+        pdfController?.backForwardList.requestForward(animated: true)
+    }
 
     func focus(page: UInt) {
         self.scrollIfNeeded(to: page, animated: true, completion: {})
@@ -522,6 +543,8 @@ final class PDFDocumentViewController: UIViewController {
             builder.createAnnotationMenuGroups = self.createAnnotationCreationMenuGroups()
             builder.isTextSelectionEnabled = true
             builder.isImageSelectionEnabled = true
+            builder.showBackActionButton = false
+            builder.showForwardActionButton = false
             builder.contentMenuConfiguration = ContentMenuConfiguration {
                 $0.annotationToolChoices = { _, _, _, _ in
                     return [.highlight]
@@ -538,6 +561,7 @@ final class PDFDocumentViewController: UIViewController {
         let controller = PDFViewController(document: document, configuration: pdfConfiguration)
         controller.view.backgroundColor = .systemGray6
         controller.delegate = self
+        controller.backForwardList.delegate = self
         controller.formSubmissionDelegate = nil
         controller.annotationStateManager.add(self)
         controller.annotationStateManager.pencilInteraction.delegate = self
@@ -744,6 +768,21 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
                 return element
             }
         })
+    }
+}
+
+extension PDFDocumentViewController: BackForwardActionListDelegate {
+    func backForwardList(_ list: BackForwardActionList, requestedBackActionExecution actions: [Action], animated: Bool) {
+        pdfController?.backForwardList(list, requestedBackActionExecution: actions, animated: animated)
+    }
+
+    func backForwardList(_ list: BackForwardActionList, requestedForwardActionExecution actions: [Action], animated: Bool) {
+        pdfController?.backForwardList(list, requestedForwardActionExecution: actions, animated: animated)
+    }
+
+    func backForwardListDidUpdate(_ list: BackForwardActionList) {
+        pdfController?.backForwardListDidUpdate(list)
+        parentDelegate?.backForwardButtonsChanged(backButtonVisible: list.backAction != nil, forwardButtonVisible: list.forwardAction != nil)
     }
 }
 
