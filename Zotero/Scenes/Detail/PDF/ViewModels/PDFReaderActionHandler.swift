@@ -1782,8 +1782,16 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 self.annotationPreviewController.store(for: annotation, parentKey: key, libraryId: libraryId, isDark: isDark)
             }
         }
+        var filteredZoteroAnnotations: [PSPDFKit.Annotation] = []
+        for annotation in zoteroAnnotations {
+            guard annotation.pageIndex < document.pageCount else {
+                DDLogError("PDFReaderActionHandler: annotation \(annotation.key ?? "-") for item \(key); \(libraryId) has incorrect page index - \(annotation.pageIndex) / \(document.pageCount)")
+                continue
+            }
+            filteredZoteroAnnotations.append(annotation)
+        }
         // Add zotero annotations to document
-        document.add(annotations: zoteroAnnotations, options: [.suppressNotifications: true])
+        document.add(annotations: filteredZoteroAnnotations, options: [.suppressNotifications: true])
     }
 
     // MARK: - Translate sync (db) changes to PDF document
