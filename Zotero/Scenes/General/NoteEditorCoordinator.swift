@@ -22,7 +22,7 @@ protocol NoteEditorCoordinatorDelegate: AnyObject {
 
 final class NoteEditorCoordinator: NSObject, Coordinator {
     typealias SaveResult = Result<Note, Error>
-    typealias SaveCallback = (SaveResult) -> Void
+    typealias SaveCallback = (_ key: String?, _ result: SaveResult) -> Void
 
     weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]

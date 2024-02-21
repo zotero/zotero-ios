@@ -63,10 +63,10 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             case .edit(let key):
                 updateExistingNote(library: library, key: key, text: text, tags: tags)
 
-            case .readOnly:
+            case .readOnly(let key):
                 let error = State.Error.cantSaveReadonlyNote
                 DDLogError("NoteEditorActionHandler: can't update read only note: \(error)")
-                saveCallback(.failure(error))
+                saveCallback(key, .failure(error))
             }
 
             func createItemNote(library: Library, parentKey: String, text: String, tags: [Tag]) {
@@ -94,11 +94,11 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                         update(viewModel: viewModel) { state in
                             state.kind = .edit(key: note.key)
                         }
-                        saveCallback(.success(note))
+                        saveCallback(note.key, .success(note))
 
                     case .failure(let error):
                         DDLogError("NoteEditorActionHandler: can't create item note: \(error)")
-                        saveCallback(.failure(error))
+                        saveCallback(note.key, .failure(error))
                     }
                 }
             }
@@ -109,9 +109,9 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 perform(request: request) { error in
                     if let error {
                         DDLogError("NoteEditorActionHandler: can't update existing note: \(error)")
-                        saveCallback(.failure(error))
+                        saveCallback(key, .failure(error))
                     } else {
-                        saveCallback(.success(note))
+                        saveCallback(key, .success(note))
                     }
                 }
             }
