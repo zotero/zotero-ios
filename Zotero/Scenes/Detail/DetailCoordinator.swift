@@ -367,7 +367,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
 
         controller.addAction(UIAlertAction(title: L10n.Items.newNote, style: .default, handler: { [weak self, weak viewModel] _ in
             guard let self, let viewModel else { return }
-            showNote(library: viewModel.state.library, kind: .standaloneCreation(collection: viewModel.state.collection)) { [weak viewModel] result in
+            showNote(library: viewModel.state.library, kind: .standaloneCreation(collection: viewModel.state.collection)) { [weak viewModel] _, result in
                 viewModel?.process(action: .processNoteSaveResult(result))
             }
         }))
@@ -895,7 +895,7 @@ extension DetailCoordinator: DetailNoteEditorCoordinatorDelegate {
         text: String = "",
         tags: [Tag] = [],
         title: NoteEditorState.TitleData? = nil,
-        saveCallback: @escaping NoteEditorSaveCallback = { _ in }
+        saveCallback: @escaping NoteEditorSaveCallback = { _, _  in }
     ) {
         guard let navigationController else { return }
         let controller = createNoteController(library: library, kind: kind, text: text, tags: tags, title: title, saveCallback: saveCallback)
