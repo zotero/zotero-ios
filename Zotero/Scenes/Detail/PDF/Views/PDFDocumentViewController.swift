@@ -25,7 +25,7 @@ protocol PDFDocumentDelegate: AnyObject {
     func didChange(undoState undoEnabled: Bool, redoState redoEnabled: Bool)
     func interfaceVisibilityDidChange(to isHidden: Bool)
     func showToolOptions()
-    func backForwardButtonsChanged(backButtonVisible: Bool, forwardButtonVisible: Bool)
+    func backNavigationButtonChanged(visible: Bool)
 }
 
 final class PDFDocumentViewController: UIViewController {
@@ -782,7 +782,7 @@ extension PDFDocumentViewController: BackForwardActionListDelegate {
 
     func backForwardListDidUpdate(_ list: BackForwardActionList) {
         pdfController?.backForwardListDidUpdate(list)
-        parentDelegate?.backForwardButtonsChanged(backButtonVisible: list.backAction != nil, forwardButtonVisible: list.forwardAction != nil)
+        parentDelegate?.backNavigationButtonChanged(visible: list.backAction != nil)
     }
 }
 
