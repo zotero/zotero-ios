@@ -138,7 +138,7 @@ final class AttachmentDownloader: NSObject {
         session = URLSessionCreator.createSession(for: Self.sessionId, delegate: self, httpMaximumConnectionsPerHost: Self.maxConcurrentDownloads)
         session.getAllTasks { [weak self] tasks in
             guard let self else { return }
-            resumeDownloads(tasks: tasks, self: self)
+            resumeDownloads(tasks: tasks, downloader: self)
         }
 
         NotificationCenter.default
@@ -147,19 +147,24 @@ final class AttachmentDownloader: NSObject {
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] notification in
                 guard let self, let notification = notification.object as? AttachmentFileDeletedNotification else { return }
-                handleDeletedAttachments(notification: notification, self: self)
+                handleDeletedAttachments(notification: notification, downloader: self)
             })
             .disposed(by: disposeBag)
 
-        func resumeDownloads(tasks: [URLSessionTask], self: AttachmentDownloader) {
+        func resumeDownloads(tasks: [URLSessionTask], downloader: AttachmentDownloader) {
             var taskIds: Set<Int> = []
             for task in tasks {
                 taskIds.insert(task.taskIdentifier)
             }
 
-            self.dbQueue.async { [weak self] in
-                guard let self else { return }
-                let (cancelledTaskIds, activeDownloads, downloadsToRestore) = loadDatabaseDownloads(existingTaskIds: taskIds, self: self)
+            downloader.dbQueue.async { [weak downloader] in
+                guard let downloader else { return }
+                let (cancelledTaskIds, activeDownloads, downloadsToRestore) = loadDatabaseDownloads(
+                    existingTaskIds: taskIds,
+                    dbStorage: downloader.dbStorage,
+                    dbQueue: downloader.dbQueue,
+                    fileStorage: downloader.fileStorage
+                )
 
                 DDLogInfo("AttachmentDownloader: cancel stored downloads - \(cancelledTaskIds.count)")
                 for taskId in cancelledTaskIds {
@@ -169,139 +174,140 @@ final class AttachmentDownloader: NSObject {
 
                 guard !activeDownloads.isEmpty || !downloadsToRestore.isEmpty else { return }
 
-                self.accessQueue.async(flags: .barrier) { [weak self] in
-                    guard let self else { return }
+                downloader.accessQueue.async(flags: .barrier) { [weak downloader] in
+                    guard let downloader else { return }
 
                     DDLogInfo("AttachmentDownloader: cache downloads in progress - \(activeDownloads.count); restore downloads - \(downloadsToRestore.count)")
 
-                    let failedDownloads = storeDownloadData(for: activeDownloads, self: self)
-                    self.queue = downloadsToRestore
+                    let failedDownloads = storeDownloadData(for: activeDownloads, downloader: downloader)
+                    downloader.queue = downloadsToRestore
 
                     for download in activeDownloads {
                         if let (download, error) = failedDownloads.first(where: { $0.0 == download.1.download }) {
-                            self.observable.on(.next(Update(download: download, kind: .failed(error))))
+                            downloader.observable.on(.next(Update(download: download, kind: .failed(error))))
                         } else {
-                            self.observable.on(.next(Update(download: download.1.download, kind: .progress)))
+                            downloader.observable.on(.next(Update(download: download.1.download, kind: .progress)))
                         }
                     }
                     for download in downloadsToRestore {
-                        self.addProgressToBatchProgress(progress: download.progress)
-                        self.observable.on(.next(Update(download: download.download, kind: .progress)))
+                        downloader.addProgressToBatchProgress(progress: download.progress)
+                        downloader.observable.on(.next(Update(download: download.download, kind: .progress)))
                     }
 
-                    self.startNextDownloadIfPossible()
+                    downloader.startNextDownloadIfPossible()
 
                     guard !failedDownloads.isEmpty else { return }
 
-                    self.dbQueue.async { [weak self] in
-                        guard let self else { return }
+                    downloader.dbQueue.async { [weak downloader] in
+                        guard let downloader else { return }
                         do {
                             let requests = failedDownloads.map({ DeleteDownloadDbRequest(key: $0.0.key, libraryId: $0.0.libraryId) })
-                            try self.dbStorage.perform(writeRequests: requests, on: self.dbQueue)
+                            try downloader.dbStorage.perform(writeRequests: requests, on: downloader.dbQueue)
                         } catch let error {
                             DDLogError("AttachmentDownloader: can't update downloads - \(error)")
                         }
                     }
                 }
             }
-        }
 
-        func loadDatabaseDownloads(existingTaskIds: Set<Int>, self: AttachmentDownloader) -> (Set<Int>, [(Int, EnqueuedDownload)], [EnqueuedDownload]) {
-            var cancelledTaskIds: Set<Int> = []
-            var activeDownloads: [(Int, EnqueuedDownload)] = []
-            var downloadsToRestore: [EnqueuedDownload] = []
+            func loadDatabaseDownloads(existingTaskIds: Set<Int>, dbStorage: DbStorage, dbQueue: DispatchQueue, fileStorage: FileStorage) -> (Set<Int>, [(Int, EnqueuedDownload)], [EnqueuedDownload]) {
+                var cancelledTaskIds: Set<Int> = []
+                var activeDownloads: [(Int, EnqueuedDownload)] = []
+                var downloadsToRestore: [EnqueuedDownload] = []
 
-            do {
-                var toDelete: [Download] = []
-                let downloads = try self.dbStorage.perform(request: ReadAllDownloadsDbRequest(), on: self.dbQueue)
-                for rDownload in downloads {
-                    guard let libraryId = rDownload.libraryId else { continue }
+                do {
+                    var toDelete: [Download] = []
+                    let downloads = try dbStorage.perform(request: ReadAllDownloadsDbRequest(), on: dbQueue)
+                    for rDownload in downloads {
+                        guard let libraryId = rDownload.libraryId else { continue }
 
-                    let download = Download(key: rDownload.key, parentKey: rDownload.parentKey, libraryId: libraryId)
+                        let download = Download(key: rDownload.key, parentKey: rDownload.parentKey, libraryId: libraryId)
 
-                    guard let attachmentItem = try? self.dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: rDownload.key), on: self.dbQueue),
-                          let attachment = AttachmentCreator.attachment(for: attachmentItem, fileStorage: self.fileStorage, urlDetector: nil),
-                          case .file(let filename, let contentType, _, _, _) = attachment.type else {
-                        // Attachment item doesn't exist anymore, cancel download
-                        toDelete.append(download)
-                        if let taskId = rDownload.taskId {
-                            cancelledTaskIds.insert(taskId)
+                        guard let attachmentItem = try? dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: rDownload.key), on: dbQueue),
+                              let attachment = AttachmentCreator.attachment(for: attachmentItem, fileStorage: fileStorage, urlDetector: nil),
+                              case .file(let filename, let contentType, _, _, _) = attachment.type else {
+                            // Attachment item doesn't exist anymore, cancel download
+                            toDelete.append(download)
+                            if let taskId = rDownload.taskId {
+                                cancelledTaskIds.insert(taskId)
+                            }
+                            continue
                         }
+
+                        let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
+
+                        if let taskId = rDownload.taskId, existingTaskIds.contains(taskId) {
+                            // Download is ongoing, cache data
+                            activeDownloads.append((taskId, EnqueuedDownload(download: download, file: file, progress: Progress(), extractAfterDownload: false)))
+                        } else {
+                            // Download was cancelled by OS, restart download
+                            downloadsToRestore.append(EnqueuedDownload(download: download, file: file, progress: Progress(), extractAfterDownload: false))
+                        }
+                    }
+
+                    let requests = toDelete.map({ DeleteDownloadDbRequest(key: $0.key, libraryId: $0.libraryId) })
+                    try dbStorage.perform(writeRequests: requests, on: dbQueue)
+                } catch let error {
+                    DDLogError("AttachmentDownloader: can't load downloads - \(error)")
+                }
+
+                return (cancelledTaskIds, activeDownloads, downloadsToRestore)
+            }
+
+            func storeDownloadData(for downloads: [(Int, EnqueuedDownload)], downloader: AttachmentDownloader) -> [(Download, Swift.Error)] {
+                var failed: [(Download, Swift.Error)] = []
+                for (taskId, enqueuedDownload) in downloads {
+                    DDLogInfo("AttachmentDownloader: cached \(taskId); \(enqueuedDownload.download.key); (\(enqueuedDownload.download.parentKey ?? "-")); \(enqueuedDownload.download.libraryId)")
+                    let progress = Progress(totalUnitCount: 100)
+                    downloader.addProgressToBatchProgress(progress: progress)
+                    if let error = downloader.initialErrors[taskId] {
+                        downloader.errors[enqueuedDownload.download] = error
+                        progress.completedUnitCount = 100
+                        failed.append((enqueuedDownload.download, error))
                         continue
                     }
-
-                    let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
-
-                    if let taskId = rDownload.taskId, existingTaskIds.contains(taskId) {
-                        // Download is ongoing, cache data
-                        activeDownloads.append((taskId, EnqueuedDownload(download: download, file: file, progress: Progress(), extractAfterDownload: false)))
-                    } else {
-                        // Download was cancelled by OS, restart download
-                        downloadsToRestore.append(EnqueuedDownload(download: download, file: file, progress: Progress(), extractAfterDownload: false))
-                    }
+                    downloader.activeDownloads[enqueuedDownload.download] = ActiveDownload(
+                        taskId: taskId,
+                        file: enqueuedDownload.file,
+                        progress: progress,
+                        extractAfterDownload: false,
+                        logData: nil
+                    )
+                    downloader.taskIdToDownload[taskId] = enqueuedDownload.download
                 }
-
-                let requests = toDelete.map({ DeleteDownloadDbRequest(key: $0.key, libraryId: $0.libraryId) })
-                try self.dbStorage.perform(writeRequests: requests, on: self.dbQueue)
-            } catch let error {
-                DDLogError("AttachmentDownloader: can't load downloads - \(error)")
+                return failed
             }
-
-            return (cancelledTaskIds, activeDownloads, downloadsToRestore)
         }
 
-        func storeDownloadData(for downloads: [(Int, EnqueuedDownload)], self: AttachmentDownloader) -> [(Download, Swift.Error)] {
-            var failed: [(Download, Swift.Error)] = []
-            for (taskId, enqueuedDownload) in downloads {
-                DDLogInfo("AttachmentDownloader: cached \(taskId); \(enqueuedDownload.download.key); (\(enqueuedDownload.download.parentKey ?? "-")); \(enqueuedDownload.download.libraryId)")
-                let progress = Progress(totalUnitCount: 100)
-                self.addProgressToBatchProgress(progress: progress)
-                if let error = self.initialErrors[taskId] {
-                    self.errors[enqueuedDownload.download] = error
-                    progress.completedUnitCount = 100
-                    failed.append((enqueuedDownload.download, error))
-                }
-                self.activeDownloads[enqueuedDownload.download] = ActiveDownload(
-                    taskId: taskId,
-                    file: enqueuedDownload.file,
-                    progress: progress,
-                    extractAfterDownload: false,
-                    logData: nil
-                )
-                self.taskIdToDownload[taskId] = enqueuedDownload.download
-            }
-            return failed
-        }
-
-        func handleDeletedAttachments(notification: AttachmentFileDeletedNotification, self: AttachmentDownloader) {
+        func handleDeletedAttachments(notification: AttachmentFileDeletedNotification, downloader: AttachmentDownloader) {
             switch notification {
             case .individual(let key, let parentKey, let libraryId):
-                self.cancel(key: key, parentKey: parentKey, libraryId: libraryId)
+                downloader.cancel(key: key, parentKey: parentKey, libraryId: libraryId)
 
             case .allForItems(let keys, let libraryId):
-                self.dbQueue.async { [weak self] in
-                    guard let self else { return }
+                downloader.dbQueue.async { [weak downloader] in
+                    guard let downloader else { return }
                     do {
-                        let downloads = try self.dbStorage.perform(request: DeleteDownloadsDbRequest(keys: keys, libraryId: libraryId), on: self.dbQueue)
-                        self.cancel(downloads: downloads)
+                        let downloads = try downloader.dbStorage.perform(request: DeleteDownloadsDbRequest(keys: keys, libraryId: libraryId), on: downloader.dbQueue)
+                        downloader.cancel(downloads: downloads)
                     } catch let error {
                         DDLogError("AttachmentDownloader: can't delete downloads for \(keys); \(libraryId) - \(error)")
                     }
                 }
 
             case .library(let libraryId):
-                self.dbQueue.async { [weak self] in
-                    guard let self else { return }
+                downloader.dbQueue.async { [weak downloader] in
+                    guard let downloader else { return }
                     do {
-                        let downloads = try self.dbStorage.perform(request: DeleteLibraryDownloadsDbRequest(libraryId: libraryId), on: self.dbQueue)
-                        self.cancel(downloads: downloads)
+                        let downloads = try downloader.dbStorage.perform(request: DeleteLibraryDownloadsDbRequest(libraryId: libraryId), on: downloader.dbQueue)
+                        downloader.cancel(downloads: downloads)
                     } catch let error {
                         DDLogError("AttachmentDownloader: can't delete downloads for \(libraryId) - \(error)")
                     }
                 }
 
             case .all:
-                self.cancelAll()
+                downloader.cancelAll()
             }
         }
     }
@@ -312,7 +318,6 @@ final class AttachmentDownloader: NSObject {
         guard identifier == Self.sessionId else { return false }
         DDLogInfo("AttachmentDownloader: handle events for background url session \(identifier)")
         backgroundCompletionHandler = completionHandler
-        session = URLSessionCreator.createSession(for: identifier, delegate: self)
         return true
     }
 
