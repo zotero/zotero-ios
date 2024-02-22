@@ -105,7 +105,7 @@ final class AttachmentDownloader: NSObject {
         var remainingBatchCount = 0
 
         self.accessQueue.sync { [weak self] in
-            guard let self = self else { return }
+            guard let self else { return }
             progress = batchProgress
             remainingBatchCount = queue.count + activeDownloads.count
             totalBatchCount = totalCount
@@ -450,8 +450,8 @@ final class AttachmentDownloader: NSObject {
                     }
 
                     // Try removing zip file, don't return error if it fails, we've got what we wanted.
-                    try? self.fileStorage.remove(zipFile)
-                    finishExtraction(self: self)
+                    try? fileStorage.remove(zipFile)
+                    finishExtraction(downloader: self)
                     return
                 }
                 // Remove other contents of folder so that zip extraction doesn't fail
@@ -487,40 +487,41 @@ final class AttachmentDownloader: NSObject {
                 if !fileStorage.has(file) {
                     throw AttachmentDownloader.Error.zipDidntContainRequestedFile
                 }
-                finishExtraction(self: self)
+                finishExtraction(downloader: self)
             } catch let error {
                 DDLogError("AttachmentDownloader: unzip error - \(error)")
                 if let error = error as? AttachmentDownloader.Error {
-                    report(error: error, self: self)
+                    report(error: error, downloader: self)
                 } else {
-                    report(error: AttachmentDownloader.Error.cantUnzipSnapshot, self: self)
+                    report(error: AttachmentDownloader.Error.cantUnzipSnapshot, downloader: self)
                 }
             }
         }
 
-        func finishExtraction(self: AttachmentDownloader) {
-            self.dbQueue.async { [weak self] in
-                guard let self else { return }
+        func finishExtraction(downloader: AttachmentDownloader) {
+            self.dbQueue.async { [weak downloader] in
+                guard let downloader else { return }
                 do {
-                    try self.dbStorage.perform(request: MarkFileAsDownloadedDbRequest(key: download.key, libraryId: download.libraryId, downloaded: true, compressed: false), on: self.dbQueue)
-                    self.accessQueue.async(flags: .barrier) { [weak self] in
-                        guard let self else { return }
-                        self.extractions[download] = nil
-                        self.observable.on(.next(Update(download: download, kind: .ready)))
+                    let request = MarkFileAsDownloadedDbRequest(key: download.key, libraryId: download.libraryId, downloaded: true, compressed: false)
+                    try downloader.dbStorage.perform(request: request, on: downloader.dbQueue)
+                    downloader.accessQueue.async(flags: .barrier) { [weak downloader] in
+                        guard let downloader else { return }
+                        downloader.extractions[download] = nil
+                        downloader.observable.on(.next(Update(download: download, kind: .ready)))
                     }
                 } catch let error {
                     DDLogError("AttachmentDownloader: can't store new compressed value - \(error)")
-                    report(error: AttachmentDownloader.Error.cantUnzipSnapshot, self: self)
+                    report(error: AttachmentDownloader.Error.cantUnzipSnapshot, downloader: downloader)
                 }
             }
         }
 
-        func report(error: Error, self: AttachmentDownloader) {
-            self.accessQueue.async(flags: .barrier) { [weak self] in
-                guard let self else { return }
-                self.errors[download] = error
-                self.extractions[download] = nil
-                self.observable.on(.next(Update(download: download, kind: .failed(error))))
+        func report(error: Error, downloader: AttachmentDownloader) {
+            downloader.accessQueue.async(flags: .barrier) { [weak downloader] in
+                guard let downloader else { return }
+                downloader.errors[download] = error
+                downloader.extractions[download] = nil
+                downloader.observable.on(.next(Update(download: download, kind: .failed(error))))
             }
         }
     }
@@ -532,7 +533,7 @@ final class AttachmentDownloader: NSObject {
         dbQueue.async { [weak self] in
             guard let self else { return }
             do {
-                try self.dbStorage.perform(request: DeleteDownloadDbRequest(key: key, libraryId: libraryId), on: self.dbQueue)
+                try dbStorage.perform(request: DeleteDownloadDbRequest(key: key, libraryId: libraryId), on: dbQueue)
             } catch let error {
                 DDLogError("AttachmentDownloader: can't delete download \(key); \(String(describing: parentKey)); \(libraryId) - \(error)")
             }
@@ -603,7 +604,7 @@ final class AttachmentDownloader: NSObject {
         dbQueue.async { [weak self] in
             guard let self else { return }
             do {
-                try self.dbStorage.perform(request: DeleteAllDownloadsDbRequest(), on: self.dbQueue)
+                try dbStorage.perform(request: DeleteAllDownloadsDbRequest(), on: dbQueue)
             } catch let error {
                 DDLogError("AttachmentDownloader: can't delete all downloads - \(error)")
             }
@@ -809,7 +810,7 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
         }
 
         do {
-            if let error = checkFileResponse(for: Files.file(from: location)) {
+            if let error = checkFileResponse(for: Files.file(from: location), fileStorage: fileStorage) {
                 throw error
             }
             // If there is some older version of given file, remove so that it can be replaced
@@ -842,10 +843,10 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
             }
         }
 
-        func checkFileResponse(for file: File) -> Swift.Error? {
-            let size = self.fileStorage.size(of: file)
-            if size == 0 || (size == 9 && (try? self.fileStorage.read(file)).flatMap({ String(data: $0, encoding: .utf8) }) == "Not found") {
-                try? self.fileStorage.remove(file)
+        func checkFileResponse(for file: File, fileStorage: FileStorage) -> Swift.Error? {
+            let size = fileStorage.size(of: file)
+            if size == 0 || (size == 9 && (try? fileStorage.read(file)).flatMap({ String(data: $0, encoding: .utf8) }) == "Not found") {
+                try? fileStorage.remove(file)
                 return AFError.responseValidationFailed(reason: .unacceptableStatusCode(code: 404))
             }
             return nil
