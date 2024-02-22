@@ -59,7 +59,8 @@ extension ObservableType where Element == (Data?, HTTPURLResponse) {
             case .responseValidationFailed(let reason):
                 switch reason {
                 case .unacceptableStatusCode(let code):
-                    if code == 429 || (code >= 500 && code <= 599) {
+                    // Ignore 507 code, if WebDAV server is full, retrying won't help.
+                    if code == 429 || (code >= 500 && code <= 599 && code != 507) {
                         if let retryHeader = responseError.headers?["Retry-After"] {
                             if let time = retryHeader as? Double {
                                 return .constant(time)
