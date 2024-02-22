@@ -176,9 +176,6 @@ class PDFReaderViewController: UIViewController {
             parent: self,
             back: { [weak self] in
                 self?.documentController.performBackAction()
-            },
-            forward: { [weak self] in
-                self?.documentController.performForwardAction()
             }
         )
         setupNavigationBar()
@@ -820,8 +817,8 @@ extension PDFReaderViewController: PDFDocumentDelegate {
         }
     }
 
-    func backForwardButtonsChanged(backButtonVisible: Bool, forwardButtonVisible: Bool) {
-        intraDocumentNavigationHandler.set(backButtonVisible: backButtonVisible, forwardButtonVisible: forwardButtonVisible)
+    func backNavigationButtonChanged(visible: Bool) {
+        intraDocumentNavigationHandler.set(backButtonVisible: visible)
     }
 }
 
