@@ -72,13 +72,15 @@ final class PDFSearchViewController: UIViewController {
             let searchBar = UISearchBar()
             searchBar.translatesAutoresizingMaskIntoConstraints = false
             searchBar.placeholder = L10n.Pdf.Search.title
-            searchBar.rx.text.observe(on: MainScheduler.instance)
-                             .skip(1)
-                             .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
-                             .subscribe(onNext: { [weak self] text in
-                                 self?.text = text
-                             })
-                             .disposed(by: disposeBag)
+            searchBar.rx
+                .text
+                .observe(on: MainScheduler.instance)
+                .skip(1)
+                .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
+                .subscribe(onNext: { [weak self] text in
+                    self?.text = text
+                })
+                .disposed(by: disposeBag)
             view.addSubview(searchBar)
             self.searchBar = searchBar
 
