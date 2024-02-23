@@ -44,10 +44,10 @@ final class PDFSearchViewController: UIViewController {
     }
 
     init(controller: PDFViewController, text: String?) {
-        self.pdfController = controller
-        self.results = []
         self.text = text
-        self.disposeBag = DisposeBag()
+        pdfController = controller
+        results = []
+        disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -57,19 +57,58 @@ final class PDFSearchViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        setupViews()
 
-        self.setupViews()
+        func setupViews() {
+            let tableView = UITableView()
+            tableView.translatesAutoresizingMaskIntoConstraints = false
+            tableView.dataSource = self
+            tableView.delegate = self
+            tableView.keyboardDismissMode = UIDevice.current.userInterfaceIdiom == .pad ? .none : .interactive
+            tableView.register(UINib(nibName: "PDFSearchCell", bundle: nil), forCellReuseIdentifier: PDFSearchViewController.cellId)
+            view.addSubview(tableView)
+            self.tableView = tableView
+
+            let searchBar = UISearchBar()
+            searchBar.translatesAutoresizingMaskIntoConstraints = false
+            searchBar.placeholder = L10n.Pdf.Search.title
+            searchBar.rx.text.observe(on: MainScheduler.instance)
+                             .skip(1)
+                             .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
+                             .subscribe(onNext: { [weak self] text in
+                                 self?.text = text
+                             })
+                             .disposed(by: disposeBag)
+            view.addSubview(searchBar)
+            self.searchBar = searchBar
+
+            NSLayoutConstraint.activate([
+                searchBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+                searchBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                searchBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+                tableView.topAnchor.constraint(equalTo: searchBar.bottomAnchor)
+            ])
+
+            let label = UILabel(frame: CGRect(x: 0, y: 0, width: tableView.frame.width, height: 44))
+            label.font = UIFont.preferredFont(forTextStyle: .footnote)
+            label.textColor = .darkGray
+            label.textAlignment = .center
+            tableView.tableFooterView = label
+            footerLabel = label
+        }
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-
-        self.searchBar.becomeFirstResponder()
+        searchBar.becomeFirstResponder()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        self.currentSearch?.cancelAllOperations()
+        currentSearch?.cancelAllOperations()
     }
 
     deinit {
@@ -81,24 +120,24 @@ final class PDFSearchViewController: UIViewController {
             super.pressesBegan(presses, with: event)
             return
         }
-        self.dismiss(animated: true, completion: nil)
+        dismiss(animated: true, completion: nil)
     }
 
     // MARK: - Actions
 
     private func search(for string: String) {
-        guard let document = self.pdfController.document else { return }
+        guard let document = pdfController.document else { return }
 
         if string.isEmpty {
-            self.finishSearch(with: [])
-            self.footerLabel.text = nil
+            finishSearch(with: [])
+            footerLabel.text = nil
         }
 
         let search = TextSearch(document: document)
         search.delegate = self
         search.comparisonOptions = [.caseInsensitive, .diacriticInsensitive]
         search.search(for: string)
-        self.currentSearch = search
+        currentSearch = search
     }
 
     private func finishSearch(with results: [SearchResult]) {
@@ -106,49 +145,6 @@ final class PDFSearchViewController: UIViewController {
         self.results = results
         delegate?.didFinishSearch(with: results, for: text)
         self.tableView.reloadData()
-    }
-
-    // MARK: - Setups
-
-    private func setupViews() {
-        let tableView = UITableView()
-        tableView.translatesAutoresizingMaskIntoConstraints = false
-        tableView.dataSource = self
-        tableView.delegate = self
-        tableView.keyboardDismissMode = UIDevice.current.userInterfaceIdiom == .pad ? .none : .interactive
-        tableView.register(UINib(nibName: "PDFSearchCell", bundle: nil), forCellReuseIdentifier: PDFSearchViewController.cellId)
-        self.view.addSubview(tableView)
-        self.tableView = tableView
-
-        let searchBar = UISearchBar()
-        searchBar.translatesAutoresizingMaskIntoConstraints = false
-        searchBar.placeholder = L10n.Pdf.Search.title
-        searchBar.rx.text.observe(on: MainScheduler.instance)
-                         .skip(1)
-                         .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
-                         .subscribe(onNext: { [weak self] text in
-                             self?.text = text
-                         })
-                         .disposed(by: self.disposeBag)
-        self.view.addSubview(searchBar)
-        self.searchBar = searchBar
-
-        NSLayoutConstraint.activate([
-            searchBar.topAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.topAnchor),
-            searchBar.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
-            searchBar.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
-            tableView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
-            tableView.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.bottomAnchor),
-            tableView.topAnchor.constraint(equalTo: searchBar.bottomAnchor)
-        ])
-
-        let label = UILabel(frame: CGRect(x: 0, y: 0, width: tableView.frame.width, height: 44))
-        label.font = UIFont.preferredFont(forTextStyle: .footnote)
-        label.textColor = .darkGray
-        label.textAlignment = .center
-        tableView.tableFooterView = label
-        self.footerLabel = label
     }
 }
 
@@ -158,48 +154,49 @@ extension PDFSearchViewController: UITableViewDataSource, UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return self.results.count
+        return results.count
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: PDFSearchViewController.cellId, for: indexPath)
-        if let cell = cell as? PDFSearchCell {
-            let result = self.results[indexPath.row]
-            cell.setup(with: result)
+        if indexPath.row < results.count, let cell = cell as? PDFSearchCell {
+            cell.setup(with: results[indexPath.row])
         }
         return cell
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
+
+        let result = indexPath.row < results.count ? results[indexPath.row] : nil
+
         dismiss(animated: true) { [weak self] in
-            guard let self else { return }
-            delegate?.didSelectSearchResult(results[indexPath.row])
+            guard let result, let self else { return }
+            delegate?.didSelectSearchResult(result)
         }
     }
 }
 
 extension PDFSearchViewController: TextSearchDelegate {
     func willStart(_ textSearch: TextSearch, term searchTerm: String, isFullSearch: Bool) {
-        self.searchBar.isLoading = true
+        searchBar.isLoading = true
     }
 
     func didFinish(_ textSearch: TextSearch, term searchTerm: String, searchResults: [SearchResult], isFullSearch: Bool, pageTextFound: Bool) {
-        self.finishSearch(with: searchResults)
-
+        finishSearch(with: searchResults)
         if searchTerm.isEmpty {
-            self.footerLabel.text = nil
+            footerLabel.text = nil
         } else {
-            self.footerLabel.text = L10n.Pdf.Search.matches(searchResults.count)
+            footerLabel.text = L10n.Pdf.Search.matches(searchResults.count)
         }
     }
 
     func didFail(_ textSearch: TextSearch, withError error: Error) {
-        self.finishSearch(with: [])
-        self.footerLabel.text = L10n.Pdf.Search.failed
+        finishSearch(with: [])
+        footerLabel.text = L10n.Pdf.Search.failed
     }
 
     func didCancel(_ textSearch: TextSearch, term searchTerm: String, isFullSearch: Bool) {
-        self.searchBar.isLoading = false
+        searchBar.isLoading = false
     }
 }
