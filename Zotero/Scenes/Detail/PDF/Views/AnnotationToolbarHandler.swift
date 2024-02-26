@@ -13,7 +13,7 @@ import RxSwift
 protocol AnnotationToolbarHandlerDelegate: AnyObject {
     var toolbarState: AnnotationToolbarHandler.State { get set }
     var statusBarVisible: Bool { get set }
-    var statusBarHeight: CGFloat { get set }
+    var statusBarHeight: CGFloat { get }
     var isNavigationBarHidden: Bool { get }
     var navigationBarHeight: CGFloat { get }
     var isSidebarHidden: Bool { get }

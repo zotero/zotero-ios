@@ -15,8 +15,7 @@ import RxSwift
 
 protocol PDFReaderContainerDelegate: AnyObject {
     var isSidebarVisible: Bool { get }
-    var statusBarHeight: CGFloat { get }
-    var navigationBarHeight: CGFloat { get }
+    var documentTopOffset: CGFloat { get }
 
     func showSearch(pdfController: PDFViewController, text: String?)
 }
@@ -51,10 +50,6 @@ class PDFReaderViewController: UIViewController {
     private var previousTraitCollection: UITraitCollection?
     var isSidebarVisible: Bool { return sidebarControllerLeft?.constant == 0 }
     var key: String { return viewModel.state.key }
-    var statusBarHeight: CGFloat = .zero
-    var navigationBarHeight: CGFloat {
-        return navigationController?.navigationBar.frame.height ?? 0.0
-    }
 
     weak var coordinatorDelegate: (PdfReaderCoordinatorDelegate & PdfAnnotationsCoordinatorDelegate)?
 
@@ -168,7 +163,6 @@ class PDFReaderViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        statusBarHeight = (view.scene as? UIWindowScene)?.statusBarManager?.statusBarFrame.height ?? .zero
         set(userActivity: .pdfActivity(for: viewModel.state.key, libraryId: viewModel.state.library.identifier, collectionId: Defaults.shared.selectedCollectionId))
         view.backgroundColor = .systemGray6
         setupViews()
@@ -371,7 +365,6 @@ class PDFReaderViewController: UIViewController {
 
         coordinator.animate { [weak self] _ in
             guard let self else { return }
-            statusBarHeight = view.safeAreaInsets.top - (navigationController?.isNavigationBarHidden == true ? 0 : navigationBarHeight)
             annotationToolbarHandler.viewWillTransitionToNewSize()
         }
     }
@@ -616,13 +609,30 @@ class PDFReaderViewController: UIViewController {
     }
 }
 
-extension PDFReaderViewController: PDFReaderContainerDelegate {}
+extension PDFReaderViewController: PDFReaderContainerDelegate {
+    var documentTopOffset: CGFloat {
+        documentTop.constant
+    }
+}
 
 extension PDFReaderViewController: AnnotationToolbarHandlerDelegate {
+    var statusBarHeight: CGFloat {
+        guard let view = viewIfLoaded else { return 0 }
+        if let statusBarManager = (view.scene as? UIWindowScene)?.statusBarManager, !statusBarManager.isStatusBarHidden {
+            return statusBarManager.statusBarFrame.height
+        } else {
+            return max(view.safeAreaInsets.top - (navigationController?.isNavigationBarHidden == true ? 0 : navigationBarHeight), 0)
+        }
+    }
+
     var isNavigationBarHidden: Bool {
         navigationController?.navigationBar.isHidden ?? false
     }
-    
+
+    var navigationBarHeight: CGFloat {
+        return navigationController?.navigationBar.frame.height ?? 0.0
+    }
+
     var isSidebarHidden: Bool {
         !isSidebarVisible
     }
@@ -806,10 +816,9 @@ extension PDFReaderViewController: PDFDocumentDelegate {
             view.layoutIfNeeded()
             if shouldChangeNavigationBarVisibility {
                 navigationController?.navigationBar.alpha = isHidden ? 0 : 1
+                navigationController?.setNavigationBarHidden(isHidden, animated: false)
             }
-        }, completion: { [weak self] finished in
-            guard let self, finished, shouldChangeNavigationBarVisibility else { return }
-            navigationController?.setNavigationBarHidden(isHidden, animated: false)
+            annotationToolbarHandler.interfaceVisibilityDidChange()
         })
 
         if isHidden && isSidebarVisible {
