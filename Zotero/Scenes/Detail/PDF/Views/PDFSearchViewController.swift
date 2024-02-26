@@ -72,6 +72,8 @@ final class PDFSearchViewController: UIViewController {
             let searchBar = UISearchBar()
             searchBar.translatesAutoresizingMaskIntoConstraints = false
             searchBar.placeholder = L10n.Pdf.Search.title
+            // Set search bar delegate before reactive extension, otherwise reactive will be overwritten.
+            searchBar.delegate = self
             searchBar.rx
                 .text
                 .observe(on: MainScheduler.instance)
@@ -200,5 +202,11 @@ extension PDFSearchViewController: TextSearchDelegate {
 
     func didCancel(_ textSearch: TextSearch, term searchTerm: String, isFullSearch: Bool) {
         searchBar.isLoading = false
+    }
+}
+
+extension PDFSearchViewController: UISearchBarDelegate {
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        searchBar.resignFirstResponder()
     }
 }
