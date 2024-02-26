@@ -93,7 +93,7 @@ final class ItemDetailViewController: UIViewController {
         super.viewWillTransition(to: size, with: coordinator)
 
         coordinator.animate(alongsideTransition: { _ in
-            self.collectionView.reloadData()
+            self.collectionView?.reloadData()
         }, completion: nil)
     }
 
