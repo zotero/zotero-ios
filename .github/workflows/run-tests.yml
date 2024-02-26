@@ -11,11 +11,11 @@ on:
 jobs:
   tests:
     name: Run Xcode Tests
-    runs-on: macos-13
+    runs-on: macos-14
     strategy:
       matrix:
-        xcode: ["15.0.1"]
-        ios_version: ["17.0.1"]
+        xcode: ["15.2"]
+        ios_version: ["17.2"]
         device_name: ["iPhone 15"]
         
     steps:
