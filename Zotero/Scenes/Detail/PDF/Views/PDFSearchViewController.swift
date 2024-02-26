@@ -64,7 +64,7 @@ final class PDFSearchViewController: UIViewController {
             tableView.translatesAutoresizingMaskIntoConstraints = false
             tableView.dataSource = self
             tableView.delegate = self
-            tableView.keyboardDismissMode = UIDevice.current.userInterfaceIdiom == .pad ? .none : .interactive
+            tableView.keyboardDismissMode = UIDevice.current.userInterfaceIdiom == .pad ? .none : .onDrag
             tableView.register(UINib(nibName: "PDFSearchCell", bundle: nil), forCellReuseIdentifier: PDFSearchViewController.cellId)
             view.addSubview(tableView)
             self.tableView = tableView
