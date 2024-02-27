@@ -149,6 +149,19 @@ class PDFReaderViewController: UIViewController {
         return barButton
     }()
 
+    override var keyCommands: [UIKeyCommand]? {
+        var keyCommands: [UIKeyCommand] = [
+            .init(title: L10n.Pdf.Search.title, action: #selector(search), input: "f", modifierFlags: [.command])
+        ]
+        if intraDocumentNavigationHandler?.showsBackButton == true {
+            keyCommands += [
+                .init(title: L10n.back, action: #selector(performBackAction), input: "[", modifierFlags: [.command]),
+                .init(title: L10n.back, action: #selector(performBackAction), input: UIKeyCommand.inputLeftArrow, modifierFlags: [.command])
+            ]
+        }
+        return keyCommands
+    }
+
     init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool) {
         self.viewModel = viewModel
         isCompactWidth = compactSize
@@ -599,6 +612,15 @@ class PDFReaderViewController: UIViewController {
         viewModel.process(action: .changeIdleTimerDisabled(false))
         viewModel.process(action: .clearTmpData)
         navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
+    }
+
+    @objc private func search() {
+        guard let pdfController = documentController.pdfController else { return }
+        showSearch(pdfController: pdfController, text: nil)
+    }
+
+    @objc private func performBackAction() {
+        documentController.performBackAction()
     }
 
     // MARK: - Setups
