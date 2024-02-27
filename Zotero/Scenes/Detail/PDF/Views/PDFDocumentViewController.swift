@@ -113,20 +113,12 @@ final class PDFDocumentViewController: UIViewController {
             performBackAction()
             return
         }
-        if key.characters == "]" || key.keyCode == .keyboardRightArrow {
-            performForwardAction()
-            return
-        }
     }
 
     // MARK: - Actions
 
     func performBackAction() {
         pdfController?.backForwardList.requestBack(animated: true)
-    }
-
-    func performForwardAction() {
-        pdfController?.backForwardList.requestForward(animated: true)
     }
 
     func focus(page: UInt) {
