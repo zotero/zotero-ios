@@ -968,6 +968,8 @@ internal enum L10n {
       internal static let locked = L10n.tr("Localizable", "pdf.locked.locked", fallback: "Locked")
     }
     internal enum Search {
+      /// Dismiss Search
+      internal static let dismiss = L10n.tr("Localizable", "pdf.search.dismiss", fallback: "Dismiss Search")
       /// Search failed
       internal static let failed = L10n.tr("Localizable", "pdf.search.failed", fallback: "Search failed")
       /// Plural format key: "%#@matches@"

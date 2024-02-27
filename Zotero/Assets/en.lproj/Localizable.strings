@@ -221,6 +221,7 @@
 "pdf.annotations_sidebar.filter.tags_placeholder" = "Select Tags…";
 "pdf.search.title" = "Search in Document";
 "pdf.search.failed" = "Search failed";
+"pdf.search.dismiss" = "Dismiss Search";
 "pdf.annotation_popover.title" = "Edit Annotation";
 "pdf.annotation_popover.delete" = "Delete Annotation";
 "pdf.annotation_popover.update_subsequent_pages" = "Update subsequent pages";
