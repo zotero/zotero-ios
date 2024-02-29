@@ -43,6 +43,10 @@ final class PDFSearchViewController: UIViewController {
         }
     }
 
+    override var keyCommands: [UIKeyCommand]? {
+        [.init(title: L10n.Pdf.Search.dismiss, action: #selector(dismissSearch), input: UIKeyCommand.inputEscape)]
+    }
+
     init(controller: PDFViewController, text: String?) {
         self.text = text
         pdfController = controller
@@ -119,14 +123,6 @@ final class PDFSearchViewController: UIViewController {
         DDLogInfo("PDFSearchViewController deinitialized")
     }
 
-    override func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
-        guard let key = presses.first?.key, key.keyCode == .keyboardEscape else {
-            super.pressesBegan(presses, with: event)
-            return
-        }
-        dismiss(animated: true, completion: nil)
-    }
-
     // MARK: - Actions
 
     private func search(for string: String) {
@@ -149,6 +145,10 @@ final class PDFSearchViewController: UIViewController {
         self.results = results
         delegate?.didFinishSearch(with: results, for: text)
         self.tableView.reloadData()
+    }
+
+    @objc private func dismissSearch() {
+        dismiss(animated: true)
     }
 }
 

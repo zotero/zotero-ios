@@ -99,34 +99,10 @@ final class PDFDocumentViewController: UIViewController {
         self.updatePencilSettingsIfNeeded()
     }
 
-    override func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
-        guard let controller = self.pdfController, let key = presses.first?.key, key.modifierFlags.contains(.command) else {
-            super.pressesBegan(presses, with: event)
-            return
-        }
-
-        if key.characters == "f" {
-            self.parentDelegate?.showSearch(pdfController: controller, text: nil)
-            return
-        }
-        if key.characters == "[" || key.keyCode == .keyboardLeftArrow {
-            performBackAction()
-            return
-        }
-        if key.characters == "]" || key.keyCode == .keyboardRightArrow {
-            performForwardAction()
-            return
-        }
-    }
-
     // MARK: - Actions
 
     func performBackAction() {
         pdfController?.backForwardList.requestBack(animated: true)
-    }
-
-    func performForwardAction() {
-        pdfController?.backForwardList.requestForward(animated: true)
     }
 
     func focus(page: UInt) {

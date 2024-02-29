@@ -10,6 +10,9 @@ import UIKit
 
 final class IntraDocumentNavigationButtonsHandler {
     private weak var backButton: UIButton!
+    var showsBackButton: Bool {
+        backButton?.isHidden == false
+    }
 
     init(parent: UIViewController, back: @escaping () -> Void) {
         var backConfiguration = UIButton.Configuration.plain()
