@@ -238,7 +238,7 @@ final class FileAttachmentView: UIView {
 
         case .ready(let type):
             switch type {
-            case .file(_, _, let location, _):
+            case .file(_, _, let location, _, _):
                 switch location {
                 case .local: return .image(asset: self.mainAsset(for: type, style: style))
                 case .remoteMissing: return .imageWithBadge(main: self.mainAsset(for: type, style: style), badge: self.badge(for: .missing, style: style))
@@ -283,7 +283,7 @@ final class FileAttachmentView: UIView {
             case .list: return Asset.Images.Attachments.listLink
             }
 
-        case .file(_, let contentType, _, let linkType):
+        case .file(_, let contentType, _, let linkType, _):
             switch linkType {
             case .embeddedImage:
                 switch style {

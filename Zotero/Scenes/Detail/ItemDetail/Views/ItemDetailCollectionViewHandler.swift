@@ -684,7 +684,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
             return .attachment(attachment: attachment, type: .disabled)
         }
 
-        let (progress, error) = fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
+        let (progress, error) = fileDownloader?.data(for: attachment.key, parentKey: viewModel.state.key, libraryId: attachment.libraryId) ?? (nil, nil)
 
         if let error = error {
             return .attachment(attachment: attachment, type: .failed(error))
@@ -952,7 +952,7 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
         func createContextMenu(for attachment: Attachment) -> UIMenu? {
             var actions: [UIAction] = []
 
-            if case .file(_, _, let location, _) = attachment.type, location == .local {
+            if case .file(_, _, let location, _, _) = attachment.type, location == .local {
                 actions.append(UIAction(title: L10n.ItemDetail.deleteAttachmentFile, image: UIImage(systemName: "trash"), attributes: []) { [weak self] _ in
                     self?.viewModel.process(action: .deleteAttachmentFile(attachment))
                 })

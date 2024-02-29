@@ -77,6 +77,16 @@ struct ApiLogger {
         }
     }
 
+    static func logFailedresponse(error: Error, headers: [String: Any]?, statusCode: Int, startData: StartData) {
+        self.logResponseIdentifier(statusCode: statusCode, success: false, startData: startData)
+
+        if startData.logParams.contains(.headers) {
+            self.log(headers: headers ?? [:])
+        }
+
+        DDLogError("\(error)")
+    }
+
     // MARK: - Helpers
 
     static func identifier(method: String, url: String) -> String {

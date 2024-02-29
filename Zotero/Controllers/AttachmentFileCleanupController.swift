@@ -44,14 +44,14 @@ final class AttachmentFileCleanupController {
         self.disposeBag = DisposeBag()
 
         NotificationCenter.default.rx
-                                  .notification(.attachmentDeleted)
-                                  .observe(on: self.scheduler)
-                                  .subscribe(onNext: { [weak self] notification in
-                                      if let file = notification.object as? File {
-                                          self?.delete(file: file)
-                                      }
-                                  })
-                                  .disposed(by: self.disposeBag)
+            .notification(.attachmentDeleted)
+            .observe(on: self.scheduler)
+            .subscribe(onNext: { [weak self] notification in
+                if let file = notification.object as? File {
+                    self?.delete(file: file)
+                }
+            })
+            .disposed(by: self.disposeBag)
     }
 
     private func delete(file: File) {
@@ -236,7 +236,7 @@ final class AttachmentFileCleanupController {
     private func delete(attachment: Attachment) -> Bool {
         do {
             // Don't delete linked files
-            guard case .file(_, _, _, let linkType) = attachment.type, linkType != .linkedFile else { return false }
+            guard case .file(_, _, _, let linkType, _) = attachment.type, linkType != .linkedFile else { return false }
 
             var canDelete: Bool = false
 

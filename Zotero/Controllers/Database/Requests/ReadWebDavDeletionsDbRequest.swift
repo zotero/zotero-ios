@@ -18,6 +18,6 @@ struct ReadWebDavDeletionsDbRequest: DbResponseRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws -> Results<RWebDavDeletion> {
-        return database.objects(RWebDavDeletion.self)
+        return database.objects(RWebDavDeletion.self).filter(.library(with: libraryId))
     }
 }

@@ -30,15 +30,22 @@ private enum ApiAuthType {
 
     var authHeader: String? {
         switch self {
-        case .authHeader(let header): return header
-        case .credentials: return nil
+        case .authHeader(let header):
+            return header
+        
+        case .credentials(let username, let password):
+            guard let base64Encoded = "\(username):\(password)".data(using: .utf8)?.base64EncodedString() else { return nil }
+            return "Basic \(base64Encoded)"
         }
     }
 
     var credentials: (username: String, password: String)? {
         switch self {
-        case .credentials(let username, let password): return (username, password)
-        case .authHeader: return nil
+        case .credentials(let username, let password):
+            return (username, password)
+
+        case .authHeader:
+            return nil
         }
     }
 }
@@ -146,6 +153,11 @@ final class ZoteroApiClient: ApiClient {
         let method = HTTPMethod(rawValue: request.httpMethod.rawValue)
         let headers = HTTPHeaders(convertible.allHeaders)
         return self.createUploadRequest(request: request, queue: queue) { $0.upload(file.createUrl(), to: convertible, method: method, headers: headers) }
+    }
+
+    func urlRequest(from request: ApiRequest) throws -> URLRequest {
+        let convertible = Convertible(request: request, baseUrl: url, token: token(for: request.endpoint), additionalHeaders: manager.sessionConfiguration.httpAdditionalHeaders)
+        return try convertible.asURLRequest()
     }
 
     private func createUploadRequest(request: ApiRequest, queue: DispatchQueue, create: @escaping (Alamofire.Session) -> UploadRequest) -> Single<(Data?, HTTPURLResponse)> {

@@ -81,6 +81,7 @@ final class RItem: Object {
     // MARK: - Attachment data
     @Persisted var backendMd5: String
     @Persisted var fileDownloaded: Bool
+    @Persisted var fileCompressed: Bool
     // MARK: - Annotation data
     @Persisted var rects: List<RRect>
     @Persisted var paths: List<RPath>

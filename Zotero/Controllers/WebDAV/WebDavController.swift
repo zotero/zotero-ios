@@ -81,10 +81,12 @@ struct WebDavDeletionResult {
 
 protocol WebDavController: AnyObject {
     var sessionStorage: WebDavSessionStorage { get }
+    var currentUrl: URL? { get }
 
     func checkServer(queue: DispatchQueue) -> Single<URL>
     func createZoteroDirectory(queue: DispatchQueue) -> Single<()>
     func download(key: String, file: File, queue: DispatchQueue) -> Observable<DownloadRequest>
+    func createURLRequest(from request: ApiRequest) throws -> URLRequest
     func prepareForUpload(key: String, mtime: Int, hash: String, file: File, queue: DispatchQueue) -> Single<WebDavUploadResult>
     func upload(request: AttachmentUploadRequest, fromFile file: File, queue: DispatchQueue) -> Single<(Data?, HTTPURLResponse)>
     func finishUpload(key: String, result: Result<(Int, String, URL), Swift.Error>, file: File?, queue: DispatchQueue) -> Single<()>
@@ -140,6 +142,10 @@ final class WebDavControllerImpl: WebDavController {
                    .asObservable()
                    .flatMap({ Observable.just($0.appendingPathComponent("\(key).zip")) })
                    .flatMap({ self.apiClient.download(request: FileRequest(webDavUrl: $0, destination: file), queue: queue) })
+    }
+
+    func createURLRequest(from request: ApiRequest) throws -> URLRequest {
+        return try apiClient.urlRequest(from: request)
     }
 
     /// Prepares for WebDAV upload. Checks .prop file to see whether the file has been modified. Creates a ZIP file to upload. Updates mtime in db in case it's the only thing that changed.
@@ -550,6 +556,10 @@ final class WebDavControllerImpl: WebDavController {
     /// Creates a propfind request for given url.
     private func propFind(url: URL, queue: DispatchQueue) -> Single<HTTPURLResponse> {
         return self.apiClient.send(request: WebDavPropfindRequest(url: url), queue: queue).flatMap({ Single.just($1) })
+    }
+
+    var currentUrl: URL? {
+        return try? _createUrl(sessionStorage: sessionStorage)
     }
 
     /// Creates and validates WebDAV server URL based on stored session.

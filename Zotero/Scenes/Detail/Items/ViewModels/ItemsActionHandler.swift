@@ -234,11 +234,13 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
     // MARK: - Attachments
 
     private func downloadAttachments(for keys: Set<String>, in viewModel: ViewModel<ItemsActionHandler>) {
+        var attachments: [(Attachment, String?)] = []
         for key in keys {
-            let (progress, _) = self.fileDownloader.data(for: key, libraryId: viewModel.state.library.identifier)
-            guard progress == nil, let attachment = viewModel.state.itemAccessories[key]?.attachment else { return }
-            self.fileDownloader.downloadIfNeeded(attachment: attachment, parentKey: (attachment.key == key ? nil : key))
+            guard let attachment = viewModel.state.itemAccessories[key]?.attachment else { continue }
+            let parentKey = attachment.key == key ? nil : key
+            attachments.append((attachment, parentKey))
         }
+        fileDownloader.batchDownload(attachments: attachments)
     }
 
     private func updateDeletedAttachments(_ notification: AttachmentFileDeletedNotification, in viewModel: ViewModel<ItemsActionHandler>) {
@@ -294,7 +296,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
     }
 
     private func open(attachment: Attachment, parentKey: String?, in viewModel: ViewModel<ItemsActionHandler>) {
-        let (progress, _) = self.fileDownloader.data(for: attachment.key, libraryId: attachment.libraryId)
+        let (progress, _) = self.fileDownloader.data(for: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId)
         if progress != nil {
             if viewModel.state.attachmentToOpen == attachment.key {
                 self.update(viewModel: viewModel) { state in
@@ -302,7 +304,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
                 }
             }
 
-            self.fileDownloader.cancel(key: attachment.key, libraryId: attachment.libraryId)
+            self.fileDownloader.cancel(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId)
         } else {
             self.update(viewModel: viewModel) { state in
                 state.attachmentToOpen = attachment.key
@@ -312,31 +314,46 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
         }
     }
 
-    private func process(downloadUpdate update: AttachmentDownloader.Update, batchData: ItemsState.DownloadBatchData?, in viewModel: ViewModel<ItemsActionHandler>) {
-        let updateKey = update.parentKey ?? update.key
-        guard let accessory = viewModel.state.itemAccessories[updateKey], let attachment = accessory.attachment else { return }
+    private func process(downloadUpdate: AttachmentDownloader.Update, batchData: ItemsState.DownloadBatchData?, in viewModel: ViewModel<ItemsActionHandler>) {
+        let updateKey = downloadUpdate.parentKey ?? downloadUpdate.key
+        guard let accessory = viewModel.state.itemAccessories[updateKey], let attachment = accessory.attachment else {
+            updateViewModel()
+            return
+        }
 
-        switch update.kind {
+        switch downloadUpdate.kind {
         case .ready:
-            guard let updatedAttachment = attachment.changed(location: .local) else { return }
-            self.update(viewModel: viewModel) { state in
-                state.itemAccessories[updateKey] = .attachment(updatedAttachment)
+            DDLogInfo("ItemsActionHandler: download update \(attachment.key); \(attachment.libraryId); kind \(downloadUpdate.kind)")
+            updateViewModel { state in
+                guard let updatedAttachment = attachment.changed(location: .local) else { return }
+                state.itemAccessories[updateKey] = .attachment(attachment: updatedAttachment, parentKey: downloadUpdate.parentKey)
                 state.updateItemKey = updateKey
-
-                if state.downloadBatchData != batchData {
-                    state.downloadBatchData = batchData
-                    state.changes = .batchData
-                }
             }
 
-        case .cancelled, .failed, .progress:
-            self.update(viewModel: viewModel) { state in
+        case .progress:
+            // If file is being extracted, the extraction is usually very quick and sends multiple quick progress updates, due to switching between queues and small delays those updates are then
+            // received here, but the file downloader is already done and we're unnecessarily reloading the table view with the same progress. So we're filtering out those unnecessary updates
+            guard let currentProgress = fileDownloader.data(for: downloadUpdate.key, parentKey: downloadUpdate.parentKey, libraryId: downloadUpdate.libraryId).progress, currentProgress < 1
+            else { return }
+            updateViewModel { state in
                 state.updateItemKey = updateKey
+            }
 
+        case .cancelled, .failed:
+            DDLogInfo("ItemsActionHandler: download update \(attachment.key); \(attachment.libraryId); kind \(downloadUpdate.kind)")
+            updateViewModel { state in
+                state.updateItemKey = updateKey
+            }
+        }
+
+        func updateViewModel(additional: ((inout ItemsState) -> Void)? = nil) {
+            update(viewModel: viewModel) { state in
                 if state.downloadBatchData != batchData {
                     state.downloadBatchData = batchData
                     state.changes = .batchData
                 }
+
+                additional?(&state)
             }
         }
     }
@@ -494,10 +511,14 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
                 continue
             }
 
-            attachments.append(Attachment(type: .file(filename: filename, contentType: original.mimeType, location: .local, linkType: .importedFile),
-                                          title: filename,
-                                          key: key,
-                                          libraryId: libraryId))
+            attachments.append(
+                Attachment(
+                    type: .file(filename: filename, contentType: original.mimeType, location: .local, linkType: .importedFile, compressed: false),
+                    title: filename,
+                    key: key,
+                    libraryId: libraryId
+                )
+            )
         }
 
         if attachments.isEmpty {
@@ -647,7 +668,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
 
     private func accessory(for item: RItem) -> ItemAccessory? {
         if let attachment = AttachmentCreator.mainAttachment(for: item, fileStorage: self.fileStorage) {
-            return .attachment(attachment)
+            return .attachment(attachment: attachment, parentKey: item.key)
         }
 
         if let urlString = item.urlString, self.urlDetector.isUrl(string: urlString), let url = URL(string: urlString) {
