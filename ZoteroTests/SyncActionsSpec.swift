@@ -760,6 +760,8 @@ extension SyncActionError: Equatable {
 }
 
 private class WebDavTestController: WebDavController {
+    var currentUrl: URL?
+    
     enum Error: Swift.Error {
         case shouldntBeCalled
     }
@@ -801,6 +803,10 @@ private class WebDavTestController: WebDavController {
 
     func createZoteroDirectory(queue: DispatchQueue) -> Single<()> {
         return Single.error(Error.shouldntBeCalled)
+    }
+
+    func createURLRequest(from request: Zotero.ApiRequest) throws -> URLRequest {
+        throw Error.shouldntBeCalled
     }
 
     func cancelDeletions() {}

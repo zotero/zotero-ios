@@ -12,11 +12,7 @@ import Foundation
 
 struct FieldKeys {
     struct Collection {
-        #if TESTING
-        static let knownDataKeys: [String] = ["name"]
-        #else
         static let knownDataKeys: [String] = ["key", "version", "name", "parentCollection", "relations"]
-        #endif
     }
 
     struct Item {
@@ -152,10 +148,6 @@ struct FieldKeys {
     }
 
     struct Search {
-        #if TESTING
-        static let knownDataKeys: [String] = ["name", "conditions"]
-        #else
         static let knownDataKeys: [String] = ["key", "version", "name", "conditions"]
-        #endif
     }
 }

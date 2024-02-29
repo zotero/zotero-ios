@@ -135,11 +135,16 @@ final class AttachmentDownloader: NSObject {
 
         super.init()
 
+        #if TESTING
+        let configuration = URLSessionConfiguration.default
+        session = URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
+        #else
         session = URLSessionCreator.createSession(for: Self.sessionId, delegate: self, httpMaximumConnectionsPerHost: Self.maxConcurrentDownloads)
         session.getAllTasks { [weak self] tasks in
             guard let self else { return }
             resumeDownloads(tasks: tasks, downloader: self)
         }
+        #endif
 
         NotificationCenter.default
             .rx
