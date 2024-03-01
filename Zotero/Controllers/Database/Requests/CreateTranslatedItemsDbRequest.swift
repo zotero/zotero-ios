@@ -20,7 +20,7 @@ struct CreateTranslatedItemsDbRequest: DbRequest {
 
     func process(in database: Realm) throws {
         for response in self.responses {
-            let (item, _) = try StoreItemDbRequest(
+            let response = try StoreItemDbRequest(
                 response: response,
                 schemaController: self.schemaController,
                 dateParser: self.dateParser,
@@ -29,25 +29,25 @@ struct CreateTranslatedItemsDbRequest: DbRequest {
             )
             .process(in: database)
 
-            item.changeType = .user
-            for field in item.fields {
+            response.item.changeType = .user
+            for field in response.item.fields {
                 field.changed = true
             }
 
             var changes: RItemChanges = [.type, .fields, .trash, .tags]
-            if !item.collections.isEmpty {
+            if !response.item.collections.isEmpty {
                 changes.insert(.collections)
             }
-            if !item.relations.isEmpty {
+            if !response.item.relations.isEmpty {
                 changes.insert(.relations)
             }
-            if !item.creators.isEmpty {
+            if !response.item.creators.isEmpty {
                 changes.insert(.creators)
             }
-            if !item.tags.isEmpty {
+            if !response.item.tags.isEmpty {
                 changes.insert(.tags)
             }
-            item.changes.append(RObjectChange.create(changes: changes))
+            response.item.changes.append(RObjectChange.create(changes: changes))
         }
     }
 }

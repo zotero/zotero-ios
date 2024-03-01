@@ -11,7 +11,7 @@ import Foundation
 import RxSwift
 
 struct PerformDeletionsSyncAction: SyncAction {
-    typealias Result = [(String, String)]
+    typealias Result = ([PerformItemDeletionsDbRequest.DeletedItem], [PerformItemDeletionsDbRequest.Conflict])
 
     private static let batchSize = 500
     let libraryId: LibraryIdentifier
@@ -23,7 +23,7 @@ struct PerformDeletionsSyncAction: SyncAction {
     unowned let dbStorage: DbStorage
     let queue: DispatchQueue
 
-    var result: Single<[(String, String)]> {
+    var result: Single<([PerformItemDeletionsDbRequest.DeletedItem], [PerformItemDeletionsDbRequest.Conflict])> {
         return Single.create { subscriber -> Disposable in
             do {
                 let hasCollections = try dbStorage.perform(request: CountObjectsDbRequest<RCollection>(), on: queue) > 0
@@ -47,20 +47,22 @@ struct PerformDeletionsSyncAction: SyncAction {
                     }
                 }
 
-                var conflicts: [(String, String)] = []
+                var deletions: [PerformItemDeletionsDbRequest.DeletedItem] = []
+                var conflicts: [PerformItemDeletionsDbRequest.Conflict] = []
+
                 let hasItems = try dbStorage.perform(request: CountObjectsDbRequest<RItem>(), on: queue) > 0
                 if hasItems {
                     try batch(values: items, batchSize: Self.batchSize) { batch in
-                        let batchConflicts = try dbStorage.perform(request: PerformItemDeletionsDbRequest(libraryId: libraryId, keys: batch, conflictMode: conflictMode), on: queue)
-                        conflicts.append(contentsOf: batchConflicts)
+                        let response = try dbStorage.perform(request: PerformItemDeletionsDbRequest(libraryId: libraryId, keys: batch, conflictMode: conflictMode), on: queue)
+                        deletions.append(contentsOf: response.0)
+                        conflicts.append(contentsOf: response.1)
                     }
                 }
 
-                subscriber(.success(conflicts))
+                subscriber(.success((deletions, conflicts)))
             } catch let error {
                 subscriber(.failure(error))
             }
-
             return Disposables.create()
         }
     }

@@ -10,6 +10,21 @@ import Foundation
 
 import RealmSwift
 
+struct ReadCustomLibrary: DbResponseRequest {
+    typealias Response = RCustomLibrary
+
+    let type: RCustomLibraryType
+
+    var needsWrite: Bool { return false }
+
+    func process(in database: Realm) throws -> RCustomLibrary {
+        guard let library = database.objects(RCustomLibrary.self).filter("type == %@", type).first else {
+            throw DbError.objectNotFound
+        }
+        return library
+    }
+}
+
 struct ReadAllCustomLibrariesDbRequest: DbResponseRequest {
     typealias Response = Results<RCustomLibrary>
 

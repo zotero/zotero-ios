@@ -20,7 +20,17 @@ struct PerformItemDeletionsDbRequest: DbResponseRequest {
         case restoreConflicts
     }
 
-    typealias Response = [(String, String)]
+    struct DeletedItem {
+        let key: String
+        let parentKey: String?
+    }
+
+    struct Conflict {
+        let key: String
+        let title: String
+    }
+
+    typealias Response = ([DeletedItem], [Conflict])
 
     let libraryId: LibraryIdentifier
     let keys: [String]
@@ -28,9 +38,11 @@ struct PerformItemDeletionsDbRequest: DbResponseRequest {
 
     var needsWrite: Bool { return true }
 
-    func process(in database: Realm) throws -> [(String, String)] {
+    func process(in database: Realm) throws -> ([DeletedItem], [Conflict]) {
         let objects = database.objects(RItem.self).filter(.keys(keys, in: libraryId))
-        var conflicts: [(String, String)] = []
+
+        var deleted: [DeletedItem] = []
+        var conflicts: [Conflict] = []
 
         for object in objects {
             guard !object.isInvalidated else { continue } // If object is invalidated it has already been removed by some parent before
@@ -39,7 +51,7 @@ struct PerformItemDeletionsDbRequest: DbResponseRequest {
             case .resolveConflicts:
                 if object.selfOrChildChanged {
                     // If remotely deleted item is changed locally, we need to show CR, so we return keys of such items
-                    conflicts.append((object.key, object.displayTitle))
+                    conflicts.append(Conflict(key: object.key, title: object.displayTitle))
                     continue
                 }
 
@@ -53,11 +65,12 @@ struct PerformItemDeletionsDbRequest: DbResponseRequest {
                 break
             }
 
+            deleted.append(DeletedItem(key: object.key, parentKey: object.parent?.key))
             object.willRemove(in: database)
             database.delete(object)
         }
 
-        return conflicts
+        return (deleted, conflicts)
     }
 }
 

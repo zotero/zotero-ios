@@ -1780,7 +1780,7 @@ final class ExtensionViewModel {
             self.state = state
         } catch let error {
             DDLogError("ExtensionViewModel: can't load collections - \(error)")
-            let library = Library(identifier: ExtensionViewModel.defaultLibraryId, name: RCustomLibraryType.myLibrary.libraryName, metadataEditable: true, filesEditable: true)
+            let library = Library(identifier: ExtensionViewModel.defaultLibraryId, name: RCustomLibraryType.myLibrary.libraryName, metadataEditable: true, filesEditable: true, fileSyncType: .asNeeded)
             self.state.collectionPickerState = .picked(library, nil)
         }
     }

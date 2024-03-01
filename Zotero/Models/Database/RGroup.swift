@@ -28,6 +28,7 @@ final class RGroup: Object {
     @Persisted var canEditFiles: Bool
     @Persisted var orderId: Int
     @Persisted var versions: RVersions?
+    @Persisted var fileSyncType: LibraryFileSyncType = .asNeeded
 
     // MARK: - Sync data
     /// Flag that indicates that this group is kept only locally on this device, the group was either removed remotely

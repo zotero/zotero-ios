@@ -90,21 +90,34 @@ extension LibraryIdentifier {
 
 extension LibraryIdentifier {
     func observe(in dbStorage: DbStorage, changes changed: @escaping (Library) -> Void) throws -> (Library, NotificationToken?) {
-        return try observe(changes: changed) { groupId in
-            return try dbStorage.perform(request: ReadGroupDbRequest(identifier: groupId), on: .main)
-        }
+        return try observe(
+            changes: changed,
+            getCustomLibrary: {
+                return try dbStorage.perform(request: ReadCustomLibrary(type: .myLibrary), on: .main)
+            },
+            getGroup: { groupId in
+                return try dbStorage.perform(request: ReadGroupDbRequest(identifier: groupId), on: .main)
+            }
+        )
     }
 
     func observe(in coordinator: DbCoordinator, changes changed: @escaping (Library) -> Void) throws -> (Library, NotificationToken?) {
-        return try observe(changes: changed) { groupId in
-            return try coordinator.perform(request: ReadGroupDbRequest(identifier: groupId))
-        }
+        try observe(
+            changes: changed,
+            getCustomLibrary: {
+                return try coordinator.perform(request: ReadCustomLibrary(type: .myLibrary))
+            },
+            getGroup: { groupId in
+                return try coordinator.perform(request: ReadGroupDbRequest(identifier: groupId))
+            }
+        )
     }
 
-    private func observe(changes changed: @escaping (Library) -> Void, getGroup: (Int) throws -> RGroup) throws -> (Library, NotificationToken?) {
+    private func observe(changes changed: @escaping (Library) -> Void, getCustomLibrary: () throws -> RCustomLibrary, getGroup: (Int) throws -> RGroup) throws -> (Library, NotificationToken?) {
         switch self {
         case .custom(let type):
-            return (Library(identifier: self, name: type.libraryName, metadataEditable: true, filesEditable: true), nil)
+            let library = try getCustomLibrary()
+            return (Library(customLibrary: library), nil)
 
         case .group(let groupId):
             let group = try getGroup(groupId)
