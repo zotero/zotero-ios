@@ -2961,7 +2961,7 @@ struct TestConflictCoordinator: ConflictReceiver & SyncRequestReceiver {
                                                     toDeleteItems: items, toRestoreItems: [], searches: searches, tags: tags))
 
         case .removedItemsHaveLocalChanges(let keys, let libraryId):
-            completed(.remoteDeletionOfChangedItem(libraryId: libraryId, toDelete: keys.map({ $0.0 }), toRestore: []))
+            completed(.remoteDeletionOfChangedItem(libraryId: libraryId, toDelete: keys.map({ $0.key }), toRestore: []))
 
         case .groupRemoved(let id, _):
             completed(.deleteGroup(id))
