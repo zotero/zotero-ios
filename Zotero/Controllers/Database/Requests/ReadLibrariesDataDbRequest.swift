@@ -22,22 +22,30 @@ struct ReadLibrariesDataDbRequest: DbResponseRequest {
 
     func process(in database: Realm) throws -> [LibraryData] {
         var allLibraryData: [LibraryData] = []
-
-        let separatedIds = self.identifiers.flatMap { self.separateTypes(in: $0) }
-
+        let separatedIds = identifiers.flatMap { separateTypes(in: $0) }
         var customLibraries = database.objects(RCustomLibrary.self)
         if let types = separatedIds?.custom {
             customLibraries = customLibraries.filter("type IN %@", types.map({ $0.rawValue }))
         }
         let customData = try customLibraries.map({ library -> LibraryData in
             let libraryId = LibraryIdentifier.custom(library.type)
-            let versions = self.loadVersions ? Versions(versions: library.versions) : Versions.empty
+            let versions = loadVersions ? Versions(versions: library.versions) : Versions.empty
             let version = versions.max
-            let (updates, hasUpload) = try self.updates(for: libraryId, version: version, database: database)
-            let deletions = try self.deletions(for: libraryId, version: version, database: database)
-            let hasWebDavDeletions = !self.webDavEnabled ? false : !database.objects(RWebDavDeletion.self).isEmpty
-            return LibraryData(identifier: libraryId, name: library.type.libraryName, versions: versions, canEditMetadata: true, canEditFiles: true, updates: updates, deletions: deletions,
-                               hasUpload: hasUpload, hasWebDavDeletions: hasWebDavDeletions)
+            let (updates, hasUpload) = try updates(for: libraryId, version: version, database: database)
+            let deletions = try deletions(for: libraryId, version: version, database: database)
+            let hasWebDavDeletions = !webDavEnabled ? false : !database.objects(RWebDavDeletion.self).isEmpty
+            return LibraryData(
+                identifier: libraryId,
+                name: library.type.libraryName,
+                versions: versions,
+                canEditMetadata: true,
+                canEditFiles: true,
+                updates: updates,
+                deletions: deletions,
+                hasUpload: hasUpload,
+                hasWebDavDeletions: hasWebDavDeletions,
+                fileSyncType: library.fileSyncType
+            )
         })
         allLibraryData.append(contentsOf: customData)
 
@@ -48,12 +56,22 @@ struct ReadLibrariesDataDbRequest: DbResponseRequest {
         groups = groups.sorted(byKeyPath: "name")
         let groupData = try groups.map({ group -> LibraryData in
             let libraryId = LibraryIdentifier.group(group.identifier)
-            let versions = self.loadVersions ? Versions(versions: group.versions) : Versions.empty
+            let versions = loadVersions ? Versions(versions: group.versions) : Versions.empty
             let version = versions.max
-            let (updates, hasUpload) = try self.updates(for: libraryId, version: version, database: database)
-            let deletions = try self.deletions(for: libraryId, version: versions.max, database: database)
-            return LibraryData(identifier: libraryId, name: group.name, versions: versions, canEditMetadata: group.canEditMetadata, canEditFiles: group.canEditFiles, updates: updates,
-                               deletions: deletions, hasUpload: hasUpload, hasWebDavDeletions: false)
+            let (updates, hasUpload) = try updates(for: libraryId, version: version, database: database)
+            let deletions = try deletions(for: libraryId, version: versions.max, database: database)
+            return LibraryData(
+                identifier: libraryId,
+                name: group.name,
+                versions: versions,
+                canEditMetadata: group.canEditMetadata,
+                canEditFiles: group.canEditFiles,
+                updates: updates,
+                deletions: deletions,
+                hasUpload: hasUpload,
+                hasWebDavDeletions: false,
+                fileSyncType: group.fileSyncType
+            )
         })
         allLibraryData.append(contentsOf: groupData)
 
@@ -77,36 +95,35 @@ struct ReadLibrariesDataDbRequest: DbResponseRequest {
 
     func deletions(for libraryId: LibraryIdentifier, version: Int, database: Realm) throws -> [DeleteBatch] {
         guard self.fetchUpdates else { return [] }
-
-        let collectionDeletions = (try ReadDeletedObjectsDbRequest<RCollection>(libraryId: libraryId).process(in: database))
-                                                                                                     .map({ $0.key })
-                                                                                                     .chunked(into: DeleteBatch.maxCount)
-                                                                                                     .map({ DeleteBatch(libraryId: libraryId, object: .collection, version: version, keys: $0) })
-        let searchDeletions = try ReadDeletedObjectsDbRequest<RSearch>(libraryId: libraryId).process(in: database)
-                                                                                            .map({ $0.key })
-                                                                                            .chunked(into: DeleteBatch.maxCount)
-                                                                                            .map({ DeleteBatch(libraryId: libraryId, object: .search, version: version, keys: $0) })
-        let itemDeletions = try ReadDeletedObjectsDbRequest<RItem>(libraryId: libraryId).process(in: database)
-                                                                                        .map({ $0.key })
-                                                                                        .chunked(into: DeleteBatch.maxCount)
-                                                                                        .map({ DeleteBatch(libraryId: libraryId, object: .item, version: version, keys: $0) })
+        let collectionDeletions = (try ReadDeletedObjectsDbRequest<RCollection>(libraryId: libraryId)
+            .process(in: database))
+            .map({ $0.key })
+            .chunked(into: DeleteBatch.maxCount)
+            .map({ DeleteBatch(libraryId: libraryId, object: .collection, version: version, keys: $0) })
+        let searchDeletions = try ReadDeletedObjectsDbRequest<RSearch>(libraryId: libraryId)
+            .process(in: database)
+            .map({ $0.key })
+            .chunked(into: DeleteBatch.maxCount)
+            .map({ DeleteBatch(libraryId: libraryId, object: .search, version: version, keys: $0) })
+        let itemDeletions = try ReadDeletedObjectsDbRequest<RItem>(libraryId: libraryId)
+            .process(in: database)
+            .map({ $0.key })
+            .chunked(into: DeleteBatch.maxCount)
+            .map({ DeleteBatch(libraryId: libraryId, object: .item, version: version, keys: $0) })
 
         return collectionDeletions + searchDeletions + itemDeletions
     }
 
     private func updates(for libraryId: LibraryIdentifier, version: Int, database: Realm) throws -> ([WriteBatch], Bool) {
         guard self.fetchUpdates else { return ([], false) }
-
         let collectionParams = try ReadUpdatedCollectionUpdateParametersDbRequest(libraryId: libraryId).process(in: database)
         let (itemParams, hasUpload) = try ReadUpdatedItemUpdateParametersDbRequest(libraryId: libraryId).process(in: database)
         let searchParams = try ReadUpdatedSearchUpdateParametersDbRequest(libraryId: libraryId).process(in: database)
         let settings = try ReadUpdatedSettingsUpdateParametersDbRequest(libraryId: libraryId).process(in: database)
-
-        let batches = self.writeBatches(from: collectionParams, libraryId: libraryId, version: version, object: .collection) +
-                      self.writeBatches(from: itemParams, libraryId: libraryId, version: version, object: .item) +
-                      self.writeBatches(from: searchParams, libraryId: libraryId, version: version, object: .search) +
-                      self.settingsWriteBatches(from: settings, libraryId: libraryId, version: version)
-
+        let batches = writeBatches(from: collectionParams, libraryId: libraryId, version: version, object: .collection) +
+                      writeBatches(from: itemParams, libraryId: libraryId, version: version, object: .item) +
+                      writeBatches(from: searchParams, libraryId: libraryId, version: version, object: .search) +
+                      settingsWriteBatches(from: settings, libraryId: libraryId, version: version)
         return (batches, hasUpload)
     }
 

@@ -264,7 +264,7 @@ extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
     }
     
     func showDefaultCollection() {
-        let library = Library(identifier: visibleLibraryId, name: "", metadataEditable: true, filesEditable: true)
+        let library = Library(identifier: visibleLibraryId, name: "", metadataEditable: true, filesEditable: true, fileSyncType: .asNeeded)
         let collection = Collection(custom: .all)
         showItems(for: collection, in: library)
     }

@@ -27,4 +27,5 @@ final class RCustomLibrary: Object {
     @Persisted(primaryKey: true) var type: RCustomLibraryType = .myLibrary
     @Persisted var orderId: Int = 0
     @Persisted var versions: RVersions?
+    @Persisted var fileSyncType: LibraryFileSyncType = .asNeeded
 }

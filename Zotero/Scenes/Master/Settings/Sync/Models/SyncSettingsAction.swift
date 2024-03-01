@@ -20,4 +20,6 @@ enum SyncSettingsAction {
     case createZoteroDirectory
     case cancelZoteroDirectoryCreation
     case recheckKeys
+    case loadLibraries
+    case setLibraryFileSyncType(libraryId: LibraryIdentifier, syncType: LibraryFileSyncType)
 }

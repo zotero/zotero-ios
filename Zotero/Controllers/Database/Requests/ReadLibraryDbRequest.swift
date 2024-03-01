@@ -20,13 +20,16 @@ struct ReadLibraryDbRequest: DbResponseRequest {
     func process(in database: Realm) throws -> Library {
         switch self.libraryId {
         case .custom(let type):
-            return Library(identifier: self.libraryId, name: type.libraryName, metadataEditable: true, filesEditable: true)
+            guard let customLibrary = database.objects(RCustomLibrary.self).first else {
+                throw DbError.objectNotFound
+            }
+            return Library(identifier: self.libraryId, name: type.libraryName, metadataEditable: true, filesEditable: true, fileSyncType: customLibrary.fileSyncType)
 
         case .group(let identifier):
             guard let group = database.objects(RGroup.self).filter("identifier == %d", identifier).first else {
                 throw DbError.objectNotFound
             }
-            return Library(identifier: self.libraryId, name: group.name, metadataEditable: group.canEditMetadata, filesEditable: group.canEditFiles)
+            return Library(identifier: self.libraryId, name: group.name, metadataEditable: group.canEditMetadata, filesEditable: group.canEditFiles, fileSyncType: group.fileSyncType)
         }
     }
 }

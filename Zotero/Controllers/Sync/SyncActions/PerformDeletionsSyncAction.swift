@@ -11,7 +11,7 @@ import Foundation
 import RxSwift
 
 struct PerformDeletionsSyncAction: SyncAction {
-    typealias Result = [(String, String)]
+    typealias Result = ([PerformDeletionsDbRequest.DeletedItem], [PerformDeletionsDbRequest.Conflict])
 
     let libraryId: LibraryIdentifier
     let collections: [String]
@@ -23,17 +23,22 @@ struct PerformDeletionsSyncAction: SyncAction {
     unowned let dbStorage: DbStorage
     let queue: DispatchQueue
 
-    var result: Single<[(String, String)]> {
+    var result: Single<([PerformDeletionsDbRequest.DeletedItem], [PerformDeletionsDbRequest.Conflict])> {
         return Single.create { subscriber -> Disposable in
             do {
-                let request = PerformDeletionsDbRequest(libraryId: self.libraryId, collections: self.collections, items: self.items, searches: self.searches, tags: self.tags,
-                                                        conflictMode: self.conflictMode)
-                let conflicts = try self.dbStorage.perform(request: request, on: self.queue, invalidateRealm: true)
-                subscriber(.success(conflicts))
+                let request = PerformDeletionsDbRequest(
+                    libraryId: libraryId,
+                    collections: collections,
+                    items: items,
+                    searches: searches,
+                    tags: tags,
+                    conflictMode: conflictMode
+                )
+                let response = try dbStorage.perform(request: request, on: queue, invalidateRealm: true)
+                subscriber(.success(response))
             } catch let error {
                 subscriber(.failure(error))
             }
-
             return Disposables.create()
         }
     }

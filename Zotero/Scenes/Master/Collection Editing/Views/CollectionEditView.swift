@@ -105,13 +105,18 @@ struct CollectionEditView: View {
 
 struct CollectionEditView_Previews: PreviewProvider {
     static var previews: some View {
-        let state = CollectionEditState(library: .init(identifier: .custom(.myLibrary),
-                                                       name: "My Librrary",
-                                                       metadataEditable: true,
-                                                       filesEditable: true),
-                                        key: nil,
-                                        name: "",
-                                        parent: nil)
+        let state = CollectionEditState(
+            library: .init(
+                identifier: .custom(.myLibrary),
+                name: "My Librrary",
+                metadataEditable: true,
+                filesEditable: true,
+                fileSyncType: .asNeeded
+            ),
+            key: nil,
+            name: "",
+            parent: nil
+        )
         let handler = CollectionEditActionHandler(dbStorage: Controllers().userControllers!.dbStorage)
         return CollectionEditView().environmentObject(ViewModel(initialState: state, handler: handler))
     }
