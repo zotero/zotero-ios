@@ -42,9 +42,15 @@ class PDFReaderViewController: UIViewController {
     @CodableUserDefault(key: "PDFReaderToolbarState", defaultValue: AnnotationToolbarHandler.State(position: .leading, visible: true), encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
     var toolbarState: AnnotationToolbarHandler.State
     @UserDefault(key: "PDFReaderStatusBarVisible", defaultValue: true)
+    private var _statusBarVisible: Bool
     var statusBarVisible: Bool {
-        didSet {
-            (navigationController as? NavigationViewController)?.statusBarVisible = statusBarVisible
+        get {
+            return _statusBarVisible || viewModel.state.document.isLocked
+        }
+
+        set {
+            _statusBarVisible = newValue
+            (navigationController as? NavigationViewController)?.statusBarVisible = newValue
         }
     }
     private var previousTraitCollection: UITraitCollection?
@@ -58,6 +64,7 @@ class PDFReaderViewController: UIViewController {
 
         let share = UIBarButtonItem(image: UIImage(systemName: "square.and.arrow.up"), style: .plain, target: nil, action: nil)
         share.accessibilityLabel = L10n.Accessibility.Pdf.share
+        share.isEnabled = !viewModel.state.document.isLocked
         share.title = L10n.Accessibility.Pdf.share
         share.tag = NavigationBarButton.share.rawValue
         let deferredMenu = UIDeferredMenuElement.uncached { [weak self] elementProvider in
@@ -399,6 +406,7 @@ class PDFReaderViewController: UIViewController {
                 guard let checkbox = item.customView as? CheckboxButton else { continue }
                 checkbox.deselectedTintColor = Asset.Colors.zoteroBlueWithDarkMode.color
             }
+            interfaceVisibilityDidChange(to: !toolbarState.visible)
             // Load initial document data after document has been unlocked successfully
             viewModel.process(action: .loadDocumentData(boundingBoxConverter: documentController))
         }
@@ -686,11 +694,11 @@ extension PDFReaderViewController: AnnotationToolbarHandlerDelegate {
     func setNavigationBar(hidden: Bool, animated: Bool) {
         navigationController?.setNavigationBarHidden(hidden, animated: animated)
     }
-    
+
     func setNavigationBar(alpha: CGFloat) {
         navigationController?.navigationBar.alpha = alpha
     }
-    
+
     func topDidChange(forToolbarState state: AnnotationToolbarHandler.State) {
         let (statusBarOffset, _, totalOffset) = annotationToolbarHandler.topOffsets(statusBarVisible: statusBarVisible)
 
