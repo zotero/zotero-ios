@@ -255,7 +255,7 @@ struct AnnotationConverter {
             annotation = self.inkAnnotation(from: zoteroAnnotation, type: type, color: color, boundingBoxConverter: boundingBoxConverter)
 
         case .underline:
-            annotation = self.underlineAnnotation(from: zoteroAnnotation, type: type, boundingBoxConverter: boundingBoxConverter)
+            annotation = self.underlineAnnotation(from: zoteroAnnotation, type: type, color: color, alpha: alpha, boundingBoxConverter: boundingBoxConverter)
 
         case .freeText:
             annotation = self.freeTextAnnotation(from: zoteroAnnotation, color: color, boundingBoxConverter: boundingBoxConverter)
@@ -360,7 +360,13 @@ struct AnnotationConverter {
         return ink
     }
 
-    private static func underlineAnnotation(from annotation: PDFAnnotation, type: Kind, boundingBoxConverter: AnnotationBoundingBoxConverter) -> PSPDFKit.UnderlineAnnotation {
+    private static func underlineAnnotation(
+        from annotation: PDFAnnotation,
+        type: Kind,
+        color: UIColor,
+        alpha: CGFloat,
+        boundingBoxConverter: AnnotationBoundingBoxConverter
+    ) -> PSPDFKit.UnderlineAnnotation {
         let underline: PSPDFKit.UnderlineAnnotation
         switch type {
         case .export:
@@ -372,6 +378,8 @@ struct AnnotationConverter {
 
         underline.boundingBox = annotation.boundingBox(boundingBoxConverter: boundingBoxConverter).rounded(to: 3)
         underline.rects = annotation.rects(boundingBoxConverter: boundingBoxConverter).map({ $0.rounded(to: 3) })
+        underline.color = color
+        underline.alpha = alpha
 
         return underline
     }

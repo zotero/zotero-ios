@@ -381,11 +381,16 @@ class AnnotationToolbarViewController: UIViewController {
     private func createHiddenToolsMenu() -> UIMenu {
         let children = self.toolButtons.filter({ $0.isHidden }).map({ tool in
             let isActive = self.delegate?.activeAnnotationTool == tool.type
-            return UIAction(title: tool.title, image: tool.image.withRenderingMode(.alwaysTemplate), discoverabilityTitle: tool.accessibilityLabel, state: (isActive ? .on : .off),
-                            handler: { [weak self] _ in
-                guard let self = self else { return }
-                self.delegate?.toggle(tool: tool.type, options: self.currentAnnotationOptions)
-            })
+            return UIAction(
+                title: tool.title,
+                image: tool.image.withRenderingMode(.alwaysTemplate),
+                discoverabilityTitle: tool.accessibilityLabel,
+                state: (isActive ? .on : .off),
+                handler: { [weak self] _ in
+                    guard let self else { return }
+                    delegate?.toggle(tool: tool.type, options: currentAnnotationOptions)
+                }
+            )
         })
         return UIMenu(children: children)
     }
@@ -424,7 +429,10 @@ class AnnotationToolbarViewController: UIViewController {
 
             let recognizer = UITapGestureRecognizer()
             recognizer.delegate = self
-            recognizer.rx.event.subscribe(with: self, onNext: { `self`, _ in self.delegate?.toggle(tool: tool.type, options: self.currentAnnotationOptions) }).disposed(by: self.disposeBag)
+            recognizer.rx.event.subscribe(onNext: { [weak self] _ in
+                guard let self else { return }
+                delegate?.toggle(tool: tool.type, options: currentAnnotationOptions)
+            }).disposed(by: disposeBag)
             button.addGestureRecognizer(recognizer)
 
             return button

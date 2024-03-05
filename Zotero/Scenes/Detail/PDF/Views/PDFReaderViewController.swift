@@ -220,7 +220,7 @@ class PDFReaderViewController: UIViewController {
             separator.translatesAutoresizingMaskIntoConstraints = false
             separator.backgroundColor = Asset.Colors.annotationSidebarBorderColor.color
 
-            let annotationToolbar = AnnotationToolbarViewController(tools: [.highlight, .note, .image, .ink, .eraser], undoRedoEnabled: true, size: navigationBarHeight)
+            let annotationToolbar = AnnotationToolbarViewController(tools: [.highlight, .note, .image, .ink, .underline, .freeText, .eraser], undoRedoEnabled: true, size: navigationBarHeight)
             annotationToolbar.delegate = self
 
             add(controller: documentController)
@@ -928,6 +928,12 @@ extension PSPDFKit.Annotation.Tool {
 
         case .note:
             return .note
+
+        case .freeText:
+            return .freeText
+
+        case .underline:
+            return .underline
 
         default:
             return nil
