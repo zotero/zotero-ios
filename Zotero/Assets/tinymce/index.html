@@ -8,32 +8,28 @@
 <script type="text/javascript" src="locale.js"></script>
 <script type="text/javascript">
     tinymce.init({
-        selector: "#tinymce",
-        skin: (window.matchMedia("(prefers-color-scheme: dark)").matches ? "oxide-dark" : ""),
-        content_css: (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "css/note-content.css"),
+        selector: "textarea#tinymce",
+        skin: (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'oxide-dark' : 'oxide'),
+        content_css: (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default'),
         height: "100%",
-
         browser_spellcheck: true,
         convert_urls: false,
         entity_encoding: 'raw',
         fix_list_elements: true,
         paste_retain_style_properties: 'all',
         paste_data_images: true,
-
-        plugins: "autolink,code,contextmenu,directionality,link,lists,nonbreaking,paste,searchreplace,textcolor",
-
-        toolbar1: "bold italic underline strikethrough | subscript superscript | forecolor backcolor | removeformat | blockquote link",
-        toolbar2: "formatselect | alignleft aligncenter alignright | bullist numlist outdent indent | %DIR% | searchreplace",
         toolbar_items_size: 'small',
         menubar: false,
         resize: false,
         statusbar: false,
-
-        contextmenu: "cut copy paste | link | alignmentmenu | dir | code",
         link_context_toolbar: true,
         link_assume_external_targets: true,
         nonbreaking_force_tab: 4,
-
+        target_list: false,
+        plugins: "autolink,code,contextmenu,directionality,link,lists,nonbreaking,searchreplace,textcolor",
+        toolbar1: "bold italic underline strikethrough | subscript superscript | forecolor backcolor | removeformat | blockquote link",
+        toolbar2: "formatselect | alignleft aligncenter alignright | bullist numlist outdent indent | %DIR% | searchreplace",
+        contextmenu: "cut copy paste | link | alignmentmenu | dir | code",
         // More restrictive version of default set, with JS/etc. removed
         valid_elements: "@[id|class|style|title|dir<ltr?rtl|lang|xml::lang],"
             + "a[rel|rev|charset|hreflang|tabindex|accesskey|type|name|href|target|title|class],"
@@ -77,12 +73,7 @@
             + "q[cite],"
             + "samp,"
             + "var,",
-
-        target_list: false,
-
         setup: function (editor) {
-            setLocale(editor);
-
             editor.on('input NodeChange', function() {
                 let value = editor.getContent();
                 if (value !== editor._lastChange) {
@@ -95,6 +86,6 @@
 </script>
 </head>
 <body>
-<div id="tinymce">#initialnote</div>
+<textarea id="tinymce">#initialnote</textarea>
 </body>
 </html>
