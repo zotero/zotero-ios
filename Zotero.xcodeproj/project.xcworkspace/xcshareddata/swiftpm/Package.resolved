@@ -1,12 +1,13 @@
 {
+  "originHash" : "d7734533c379a878d05771141b2ed0c27e035fa73e9e851e790761996bd05c83",
   "pins" : [
     {
       "identity" : "alamofire",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Alamofire/Alamofire",
       "state" : {
-        "revision" : "3dc6a42c7727c49bf26508e29b0a0b35f9c7e1ad",
-        "version" : "5.8.1"
+        "revision" : "723fa5a6c65812aec4a0d7cc432ee198883b6e00",
+        "version" : "5.9.0"
       }
     },
     {
@@ -77,8 +78,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/PSPDFKit/PSPDFKit-SP",
       "state" : {
-        "revision" : "b70f8289374856d78b537454849cb9090fa4db8f",
-        "version" : "13.3.1"
+        "revision" : "f50f63c90dec1e171ac2070cc011896a0ce8bb98",
+        "version" : "13.3.3"
       }
     },
     {
@@ -102,7 +103,7 @@
     {
       "identity" : "realm-core",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/realm/realm-core",
+      "location" : "https://github.com/realm/realm-core.git",
       "state" : {
         "revision" : "a5e87a39cffdcc591f3203c11cfca68100d0b9a6",
         "version" : "13.26.0"
@@ -172,5 +173,5 @@
       }
     }
   ],
-  "version" : 2
+  "version" : 3
 }

@@ -6387,7 +6387,7 @@
 			repositoryURL = "https://github.com/Alamofire/Alamofire";
 			requirement = {
 				kind = exactVersion;
-				version = 5.8.1;
+				version = 5.9.0;
 			};
 		};
 		B356A367252490DB003F1943 /* XCRemoteSwiftPackageReference "keychain-swift" */ = {
@@ -6475,7 +6475,7 @@
 			repositoryURL = "https://github.com/PSPDFKit/PSPDFKit-SP";
 			requirement = {
 				kind = exactVersion;
-				version = 13.3.1;
+				version = 13.3.3;
 			};
 		};
 		B3D84BEE27919FDE005DDD7C /* XCRemoteSwiftPackageReference "Starscream" */ = {
