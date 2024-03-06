@@ -751,30 +751,52 @@ final class ExtensionViewModel {
         state.attachmentState = .downloading(0)
         state.retryCount += 1
 
-        getRedirectedPdfUrl(from: url) { [weak self] newUrl, newCookies, newUserAgent, newReferrer in
+        getRedirectedPdfUrl(from: url, timeout: .seconds(2)) { [weak self] newUrl, newCookies, newUserAgent, newReferrer in
             guard let self else { return }
-            defer {
-                webView?.isHidden = true
-            }
-
             if let newUrl, newUrl != url && state.retryCount < 3 {
                 download(item: item, attachment: attachment, attachmentUrl: newUrl, to: file, cookies: newCookies, userAgent: newUserAgent, referrer: newReferrer)
                 return
             }
 
-            // Didn't help, report failed PDF download
-            state.attachmentState = .failed(.downloadedFileNotPdf)
+            // Check if there is a captcha, to show the web view and load the URL once more.
+            let captchaLocator = ".challenge-form"
+            let javascript = "document.querySelector('\(captchaLocator)') !== null"
+            webView?.call(javascript: javascript)
+                .observe(on: MainScheduler.instance)
+                .subscribe(onSuccess: { [weak self] result in
+                    guard let self else { return }
+                    if let result = result as? Bool, result == true {
+                        webView?.isHidden = false
+                        getRedirectedPdfUrl(from: url, timeout: .seconds(20)) { [weak self] newUrl, newCookies, newUserAgent, newReferrer in
+                            guard let self else { return }
+                            defer {
+                                webView?.isHidden = true
+                            }
+                            if let newUrl, newUrl != url && state.retryCount < 3 {
+                                download(item: item, attachment: attachment, attachmentUrl: newUrl, to: file, cookies: newCookies, userAgent: newUserAgent, referrer: newReferrer)
+                                return
+                            }
+                            state.attachmentState = .failed(.downloadedFileNotPdf)
+                        }
+                    } else {
+                        state.attachmentState = .failed(.downloadedFileNotPdf)
+                        webView?.isHidden = true
+                    }
+                }, onFailure: { [weak self] _ in
+                    guard let self else { return }
+                    state.attachmentState = .failed(.downloadedFileNotPdf)
+                    webView?.isHidden = true
+                })
+                .disposed(by: disposeBag)
         }
 
-        func getRedirectedPdfUrl(from url: URL, completion: @escaping (URL?, String?, String?, String?) -> Void) {
+        func getRedirectedPdfUrl(from url: URL, timeout: RxTimeInterval, completion: @escaping (URL?, String?, String?, String?) -> Void) {
             guard let webView else {
                 completion(nil, nil, nil, nil)
                 return
             }
 
-            // Unhiding web view to show captcha.
-            webView.isHidden = false
-            let handler = RedirectWebViewHandler(url: url, timeoutPerRedirect: .seconds(20), webView: webView)
+            let handler = RedirectWebViewHandler(url: url, timeoutPerRedirect: timeout, webView: webView)
             handler.getPdfUrl(completion: completion)
             redirectHandler = handler
         }
