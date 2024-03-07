@@ -373,28 +373,16 @@ struct ItemResponse {
 
         for object in json {
             switch object.key {
-            case FieldKeys.Item.Annotation.Position.pageIndex:
-                if (object.value as? Int) == nil {
-                    throw SchemaError.invalidValue(value: "\(object.value)", field: FieldKeys.Item.Annotation.Position.pageIndex, key: key)
-                }
-
-            case FieldKeys.Item.Annotation.Position.lineWidth:
-                if (object.value as? Double) == nil {
-                    throw SchemaError.invalidValue(value: "\(object.value)", field: FieldKeys.Item.Annotation.Position.lineWidth, key: key)
-                }
-
             case FieldKeys.Item.Annotation.Position.paths:
-                guard let parsedPaths = object.value as? [[Double]], !parsedPaths.isEmpty && !parsedPaths.contains(where: { $0.count % 2 != 0 }) else {
-                    throw SchemaError.invalidValue(value: "\(object.value)", field: FieldKeys.Item.Annotation.Position.paths, key: key)
+                if let parsedPaths = object.value as? [[Double]], !parsedPaths.isEmpty && !parsedPaths.contains(where: { $0.count % 2 != 0 }) {
+                    paths = parsedPaths
                 }
-                paths = parsedPaths
                 continue
 
             case FieldKeys.Item.Annotation.Position.rects:
-                guard let parsedRects = object.value as? [[Double]], !parsedRects.isEmpty && !parsedRects.contains(where: { $0.count != 4 }) else {
-                    throw SchemaError.invalidValue(value: "\(object.value)", field: FieldKeys.Item.Annotation.Position.rects, key: key)
+                if let parsedRects = object.value as? [[Double]], !parsedRects.isEmpty && !parsedRects.contains(where: { $0.count != 4 }) {
+                    rects = parsedRects
                 }
-                rects = parsedRects
                 continue
 
             default: break
@@ -424,7 +412,7 @@ struct ItemResponse {
     private static func validate(fields: [KeyBaseKeyPair: String], itemType: String, key: String, hasPaths: Bool, hasRects: Bool) throws {
         switch itemType {
         case ItemTypes.annotation:
-            // `position` values are validated in `parsePositionFields(from:key:fields:)` where we have access to their original value, instead of just `String`.
+            // `position` values are not validated at this point. They depend on content type of parent (attachment) item, which is unknown here, so they are validated when this item is being opened.
             guard let rawType = fields[KeyBaseKeyPair(key: FieldKeys.Item.Annotation.type, baseKey: nil)] else {
                 throw SchemaError.missingField(key: key, field: FieldKeys.Item.Annotation.type, itemType: itemType)
             }

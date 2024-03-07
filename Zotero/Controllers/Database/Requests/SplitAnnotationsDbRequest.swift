@@ -112,6 +112,7 @@ struct SplitAnnotationsDbRequest: DbRequest {
         let new = RItem()
         new.key = KeyGenerator.newKey
         new.rawType = item.rawType
+        new.annotationType = item.annotationType
         new.localizedType = item.localizedType
         new.dateAdded = item.dateAdded
         new.dateModified = item.dateModified

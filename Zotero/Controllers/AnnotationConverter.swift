@@ -210,9 +210,10 @@ struct AnnotationConverter {
         username: String,
         boundingBoxConverter: AnnotationBoundingBoxConverter
     ) -> [PSPDFKit.Annotation] {
-        return items.map({ item in
+        return items.compactMap({ item in
+            guard let annotation = PDFDatabaseAnnotation(item: item) else { return nil }
             return self.annotation(
-                from: PDFDatabaseAnnotation(item: item),
+                from: annotation,
                 type: type,
                 interfaceStyle: interfaceStyle,
                 currentUserId: currentUserId,

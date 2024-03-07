@@ -1689,8 +1689,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         boundingBoxConverter: AnnotationBoundingBoxConverter,
         in viewModel: ViewModel<PDFReaderActionHandler>
     ) -> (Int, (PDFReaderState.AnnotationKey, AnnotationDocumentLocation)?) {
-        if let key = viewModel.state.selectedAnnotationKey, let item = databaseAnnotations.filter(.key(key.key)).first {
-            let annotation = PDFDatabaseAnnotation(item: item)
+        if let key = viewModel.state.selectedAnnotationKey, let item = databaseAnnotations.filter(.key(key.key)).first, let annotation = PDFDatabaseAnnotation(item: item) {
             let page = annotation._page ?? storedPage
             let boundingBox = annotation.boundingBox(boundingBoxConverter: boundingBoxConverter)
             return (page, (key, (page, boundingBox)))
@@ -1776,7 +1775,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     private func createSortedKeys(fromDatabaseAnnotations databaseAnnotations: Results<RItem>, documentAnnotations: [String: PDFDocumentAnnotation]) -> [PDFReaderState.AnnotationKey] {
         var keys: [(PDFReaderState.AnnotationKey, String)] = []
         for item in databaseAnnotations {
-            guard self.validate(databaseAnnotation: PDFDatabaseAnnotation(item: item)) else { continue }
+            guard let annotation = PDFDatabaseAnnotation(item: item), self.validate(databaseAnnotation: annotation) else { continue }
             keys.append((PDFReaderState.AnnotationKey(key: item.key, type: .database), item.annotationSortIndex))
         }
         for annotation in documentAnnotations.values {
@@ -1940,8 +1939,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             }
 
             let key = keys[index]
-            guard let item = objects.filter(.key(key.key)).first else { continue }
-            let annotation = PDFDatabaseAnnotation(item: item)
+            guard let item = objects.filter(.key(key.key)).first, let annotation = PDFDatabaseAnnotation(item: item) else { continue }
 
             if canUpdate(key: key, item: item, at: index, viewModel: viewModel) {
                 DDLogInfo("PDFReaderActionHandler: update key \(key)")
@@ -1954,8 +1952,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 }
             }
 
-            guard item.changeType == .sync,
-                  let pdfAnnotation = viewModel.state.document.annotations(at: PageIndex(annotation.page)).first(where: { $0.key == key.key }) else { continue }
+            guard item.changeType == .sync, let pdfAnnotation = viewModel.state.document.annotations(at: PageIndex(annotation.page)).first(where: { $0.key == key.key }) else { continue }
 
             DDLogInfo("PDFReaderActionHandler: update PDF annotation")
             updatedPdfAnnotations.append((pdfAnnotation, annotation))
@@ -1979,8 +1976,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 selectionDeleted = true
             }
 
-            let oldAnnotation = PDFDatabaseAnnotation(item: viewModel.state.databaseAnnotations[index])
-            guard let pdfAnnotation = viewModel.state.document.annotations(at: PageIndex(oldAnnotation.page)).first(where: { $0.key == oldAnnotation.key }) else { continue }
+            guard let oldAnnotation = PDFDatabaseAnnotation(item: viewModel.state.databaseAnnotations[index]),
+                  let pdfAnnotation = viewModel.state.document.annotations(at: PageIndex(oldAnnotation.page)).first(where: { $0.key == oldAnnotation.key })
+            else { continue }
             DDLogInfo("PDFReaderActionHandler: delete PDF annotation")
             deletedPdfAnnotations.append(pdfAnnotation)
         }
@@ -2001,7 +1999,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             keys.insert(PDFReaderState.AnnotationKey(key: item.key, type: .database), at: index)
             DDLogInfo("PDFReaderActionHandler: insert key \(item.key)")
 
-            let annotation = PDFDatabaseAnnotation(item: item)
+            guard let annotation = PDFDatabaseAnnotation(item: item) else {
+                DDLogWarn("PDFReaderActionHandler: tried inserting unsupported annotation (\(item.annotationType))! keys.count=\(keys.count); index=\(index); deletions=\(deletions); insertions=\(insertions); modifications=\(modifications)")
+                shouldCancelUpdate = true
+                break
+            }
 
             switch item.changeType {
             case .user:

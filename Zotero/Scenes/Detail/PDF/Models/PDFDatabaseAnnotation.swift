@@ -14,30 +14,31 @@ import RxSwift
 
 struct PDFDatabaseAnnotation {
     let item: RItem
+    let type: AnnotationType
 
-    var key: String {
-        return self.item.key
+    init?(item: RItem) {
+        guard let _type = AnnotationType(rawValue: item.annotationType) else {
+            DDLogWarn("DatabaseAnnotation: \(item.key) unknown annotation type \(item.annotationType)")
+            return nil
+        }
+        guard AnnotationsConfig.supported.contains(_type.kind) else {
+            return nil
+        }
+        self.item = item
+        type = _type
     }
 
-    var _type: AnnotationType? {
-        guard let rawValue = self.item.fieldValue(for: FieldKeys.Item.Annotation.type) else {
-            DDLogError("DatabaseAnnotation: \(self.key) missing annotation type!")
-            return nil
-        }
-        guard let type = AnnotationType(rawValue: rawValue) else {
-            DDLogWarn("DatabaseAnnotation: \(self.key) unknown annotation type \(rawValue)")
-            return nil
-        }
-        return type
+    var key: String {
+        return item.key
     }
 
     var _page: Int? {
-        guard let rawValue = self.item.fieldValue(for: FieldKeys.Item.Annotation.Position.pageIndex) else {
-            DDLogError("DatabaseAnnotation: \(self.key) missing page!")
+        guard let rawValue = item.fieldValue(for: FieldKeys.Item.Annotation.Position.pageIndex) else {
+            DDLogError("DatabaseAnnotation: \(key) missing page!")
             return nil
         }
         guard let page = Int(rawValue) else {
-            DDLogError("DatabaseAnnotation: \(self.key) page incorrect format \(rawValue)")
+            DDLogError("DatabaseAnnotation: \(key) page incorrect format \(rawValue)")
             // Page is not an int, try double or fail
             return Double(rawValue).flatMap(Int.init)
         }
@@ -45,19 +46,19 @@ struct PDFDatabaseAnnotation {
     }
 
     var _pageLabel: String? {
-        guard let label = self.item.fieldValue(for: FieldKeys.Item.Annotation.pageLabel) else {
-            DDLogError("DatabaseAnnotation: \(self.key) missing page label!")
+        guard let label = item.fieldValue(for: FieldKeys.Item.Annotation.pageLabel) else {
+            DDLogError("DatabaseAnnotation: \(key) missing page label!")
             return nil
         }
         return label
     }
 
     var lineWidth: CGFloat? {
-        return (self.item.fields.filter(.key(FieldKeys.Item.Annotation.Position.lineWidth)).first?.value).flatMap(Double.init).flatMap(CGFloat.init)
+        return (item.fields.filter(.key(FieldKeys.Item.Annotation.Position.lineWidth)).first?.value).flatMap(Double.init).flatMap(CGFloat.init)
     }
 
     func isAuthor(currentUserId: Int) -> Bool {
-        return self.item.libraryId == .custom(.myLibrary) ? true : self.item.createdBy?.identifier == currentUserId
+        return item.libraryId == .custom(.myLibrary) ? true : item.createdBy?.identifier == currentUserId
     }
 
     func author(displayName: String, username: String) -> String {
@@ -65,7 +66,7 @@ struct PDFDatabaseAnnotation {
             return authorName
         }
 
-        if let createdBy = self.item.createdBy {
+        if let createdBy = item.createdBy {
             if !createdBy.name.isEmpty {
                 return createdBy.name
             }
@@ -87,40 +88,40 @@ struct PDFDatabaseAnnotation {
     }
 
     var _color: String? {
-        guard let color = self.item.fieldValue(for: FieldKeys.Item.Annotation.color) else {
-            DDLogError("DatabaseAnnotation: \(self.key) missing color!")
+        guard let color = item.fieldValue(for: FieldKeys.Item.Annotation.color) else {
+            DDLogError("DatabaseAnnotation: \(key) missing color!")
             return nil
         }
         return color
     }
 
     var comment: String {
-        return self.item.fieldValue(for: FieldKeys.Item.Annotation.comment) ?? ""
+        return item.fieldValue(for: FieldKeys.Item.Annotation.comment) ?? ""
     }
 
     var text: String? {
-        return self.item.fields.filter(.key(FieldKeys.Item.Annotation.text)).first?.value
+        return item.fields.filter(.key(FieldKeys.Item.Annotation.text)).first?.value
     }
 
     var fontSize: UInt? {
-        return (self.item.fields.filter(.key(FieldKeys.Item.Annotation.Position.fontSize)).first?.value).flatMap(UInt.init)
+        return (item.fields.filter(.key(FieldKeys.Item.Annotation.Position.fontSize)).first?.value).flatMap(UInt.init)
     }
 
     var rotation: UInt? {
-        guard let rotation = (self.item.fields.filter(.key(FieldKeys.Item.Annotation.Position.rotation)).first?.value).flatMap(Double.init) else { return nil }
+        guard let rotation = (item.fields.filter(.key(FieldKeys.Item.Annotation.Position.rotation)).first?.value).flatMap(Double.init) else { return nil }
         return UInt(round(rotation))
     }
 
     var sortIndex: String {
-        return self.item.annotationSortIndex
+        return item.annotationSortIndex
     }
 
     var dateModified: Date {
-        return self.item.dateModified
+        return item.dateModified
     }
 
     var tags: [Tag] {
-        return self.item.tags.map({ Tag(tag: $0) })
+        return item.tags.map({ Tag(tag: $0) })
     }
 
     func editability(currentUserId: Int, library: Library) -> AnnotationEditability {
@@ -132,21 +133,22 @@ struct PDFDatabaseAnnotation {
             if !library.metadataEditable {
                 return .notEditable
             }
-            return self.isAuthor(currentUserId: currentUserId) ? .editable : .deletable
+            return isAuthor(currentUserId: currentUserId) ? .editable : .deletable
         }
     }
 
     func rects(boundingBoxConverter: AnnotationBoundingBoxConverter) -> [CGRect] {
-        guard let page = self._page else { return [] }
-        return self.item.rects.map({ CGRect(x: $0.minX, y: $0.minY, width: ($0.maxX - $0.minX), height: ($0.maxY - $0.minY)) })
-                              .compactMap({ boundingBoxConverter.convertFromDb(rect: $0, page: PageIndex(page))?.rounded(to: 3) })
+        guard let page = _page else { return [] }
+        return item.rects
+            .map({ CGRect(x: $0.minX, y: $0.minY, width: ($0.maxX - $0.minX), height: ($0.maxY - $0.minY)) })
+            .compactMap({ boundingBoxConverter.convertFromDb(rect: $0, page: PageIndex(page))?.rounded(to: 3) })
     }
 
     func paths(boundingBoxConverter: AnnotationBoundingBoxConverter) -> [[CGPoint]] {
-        guard let page = self._page else { return [] }
+        guard let page = _page else { return [] }
         let pageIndex = PageIndex(page)
         var paths: [[CGPoint]] = []
-        for path in self.item.paths.sorted(byKeyPath: "sortIndex") {
+        for path in item.paths.sorted(byKeyPath: "sortIndex") {
             guard path.coordinates.count % 2 == 0 else { continue }
             let sortedCoordinates = path.coordinates.sorted(byKeyPath: "sortIndex")
             let lines = (0..<(path.coordinates.count / 2)).compactMap({ idx -> CGPoint? in
@@ -157,31 +159,23 @@ struct PDFDatabaseAnnotation {
         }
         return paths
     }
-
-    init(item: RItem) {
-        self.item = item
-    }
 }
 
 extension PDFDatabaseAnnotation: PDFAnnotation {
     var readerKey: PDFReaderState.AnnotationKey {
-        return .init(key: self.key, type: .database)
-    }
-
-    var type: AnnotationType {
-        return self._type ?? .note
+        return .init(key: key, type: .database)
     }
 
     var page: Int {
-        return self._page ?? 0
+        return _page ?? 0
     }
 
     var pageLabel: String {
-        return self._pageLabel ?? ""
+        return _pageLabel ?? ""
     }
     
     var color: String {
-        return self._color ?? "#000000"
+        return _color ?? "#000000"
     }
 
     var isSyncable: Bool {
@@ -191,7 +185,7 @@ extension PDFDatabaseAnnotation: PDFAnnotation {
 
 extension RItem {
     fileprivate func fieldValue(for key: String) -> String? {
-        let value = self.fields.filter(.key(key)).first?.value
+        let value = fields.filter(.key(key)).first?.value
         if value == nil {
             DDLogError("DatabaseAnnotation: missing value for `\(key)`")
         }

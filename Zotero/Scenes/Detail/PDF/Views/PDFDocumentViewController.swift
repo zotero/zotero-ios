@@ -460,7 +460,7 @@ final class PDFDocumentViewController: UIViewController {
             view.removeFromSuperview()
         }
 
-        guard let selection = annotation, selection.type == .highlight && selection.page == Int(pageView.pageIndex) else { return }
+        guard let selection = annotation, (selection.type == .highlight || selection.type == .underline) && selection.page == Int(pageView.pageIndex) else { return }
         // Add custom highlight selection view if needed
         let frame = pageView.convert(selection.boundingBox(boundingBoxConverter: self), from: pageView.pdfCoordinateSpace).insetBy(dx: -SelectionView.inset, dy: -SelectionView.inset)
         let selectionView = SelectionView()

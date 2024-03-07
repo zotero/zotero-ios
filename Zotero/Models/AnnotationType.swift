@@ -8,7 +8,7 @@
 
 import Foundation
 
-enum AnnotationType: String {
+enum AnnotationType: String, CaseIterable {
     case note
     case highlight
     case image

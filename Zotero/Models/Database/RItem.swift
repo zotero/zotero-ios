@@ -119,6 +119,8 @@ final class RItem: Object {
     /// Indicates whether this instance has nonempty publicationTitle, helper variable, used in sorting so that we can show items with titles
     /// first and sort them in any order we want (asd/desc) and all other items later
     @Persisted var hasPublicationTitle: Bool
+    /// Type of annotation
+    @Persisted var annotationType: String
     /// Sort index for annotations
     @Persisted(indexed: true) var annotationSortIndex: String
     // MARK: - Sync data

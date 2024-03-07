@@ -349,8 +349,9 @@ final class PDFAnnotationsViewController: UIViewController {
             }
         }
 
-        for annotation in self.viewModel.state.databaseAnnotations {
-            processAnnotation(PDFDatabaseAnnotation(item: annotation))
+        for dbAnnotation in self.viewModel.state.databaseAnnotations {
+            guard let annotation = PDFDatabaseAnnotation(item: dbAnnotation) else { continue }
+            processAnnotation(annotation)
         }
         for annotation in self.viewModel.state.documentAnnotations.values {
             processAnnotation(annotation)
