@@ -125,7 +125,7 @@ final class PDFCoordinator: Coordinator {
             userId: userId,
             username: username,
             displayName: Defaults.shared.displayName,
-            interfaceStyle: settings.appearanceMode.userInterfaceStyle
+            interfaceStyle: settings.appearanceMode == .automatic ? parentNavigationController.view.traitCollection.userInterfaceStyle : settings.appearanceMode.userInterfaceStyle
         )
         let controller = PDFReaderViewController(
             viewModel: ViewModel(initialState: state, handler: handler),
