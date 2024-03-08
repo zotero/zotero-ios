@@ -229,6 +229,7 @@ final class PDFAnnotationsViewController: UIViewController {
 
         if state.changes.contains(.interfaceStyle) {
             var snapshot = self.dataSource.snapshot()
+            guard !snapshot.sectionIdentifiers.isEmpty else { return }
             snapshot.reloadSections([0])
             self.dataSource.apply(snapshot, animatingDifferences: false, completion: completion)
             return
