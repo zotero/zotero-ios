@@ -12,17 +12,24 @@ import WebKit
 import CocoaLumberjackSwift
 import RxSwift
 
-typealias RedirectWebViewCompletion = (URL?, String?, String?, String?) -> Void
-typealias RedirectWebViewTimeout = () -> Void
+typealias RedirectWebViewCompletion = RedirectWebViewHandler.Completion
 
 final class RedirectWebViewHandler: NSObject {
+    typealias Completion = (Result<(url: URL, cookies: String?, userAgent: String?, referrer: String?), Error>) -> Void
+
+    enum Error: Swift.Error {
+        case webViewNil
+        case invalidURL
+        case extractionFailed
+        case timeout
+    }
+
     private let initialUrl: URL
     private let timeout: RxTimeInterval
     private let timerScheduler: SerialDispatchQueueScheduler
 
     private weak var webView: WKWebView?
     private var completionHandler: RedirectWebViewCompletion?
-    private var timeoutHandler: RedirectWebViewTimeout?
     private var disposeBag: DisposeBag?
 
     init(url: URL, timeoutPerRedirect timeout: RxTimeInterval, webView: WKWebView) {
@@ -36,14 +43,13 @@ final class RedirectWebViewHandler: NSObject {
         webView.navigationDelegate = self
     }
 
-    func getPdfUrl(completion: @escaping RedirectWebViewCompletion, timeout: @escaping RedirectWebViewTimeout) {
+    func getPdfUrl(completion: @escaping RedirectWebViewCompletion) {
         guard let webView else {
-            completion(nil, nil, nil, nil)
+            completion(.failure(.webViewNil))
             return
         }
 
         completionHandler = completion
-        timeoutHandler = timeout
         webView.load(URLRequest(url: initialUrl))
     }
 }
@@ -68,9 +74,12 @@ extension RedirectWebViewHandler: WKNavigationDelegate {
                 // Extract webView data
                 extractData(from: webView) { [weak self] cookies, userAgent, referrer in
                     guard let self else { return }
-                    // Return url
-                    completionHandler?(navigationResponse.response.url, cookies, userAgent, referrer)
-                    completionHandler = nil
+                    if let url = navigationResponse.response.url {
+                        // Return url
+                        completionHandler?(.success((url, cookies, userAgent, referrer)))
+                        return
+                    }
+                    completionHandler?(.failure(.invalidURL))
                 }
             }
             // Don't load web
@@ -88,12 +97,8 @@ extension RedirectWebViewHandler: WKNavigationDelegate {
             Single<Int>.timer(timeout, scheduler: timerScheduler)
                 .observe(on: MainScheduler.instance)
                 .subscribe(onSuccess: { [weak self] _ in
-                    guard let self else { return }
-
                     DDLogInfo("RedirectWebViewHandler: redirection timed out")
-
-                    timeoutHandler?()
-                    timeoutHandler = nil
+                    self?.completionHandler?(.failure(.timeout))
                 })
                 .disposed(by: disposeBag)
         }
