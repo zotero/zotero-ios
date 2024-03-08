@@ -15,7 +15,14 @@ import RxSwift
 typealias RedirectWebViewCompletion = RedirectWebViewHandler.Completion
 
 final class RedirectWebViewHandler: NSObject {
-    typealias Completion = (Result<(url: URL, cookies: String?, userAgent: String?, referrer: String?), Error>) -> Void
+    typealias Completion = (Result<Redirect, Error>) -> Void
+
+    struct Redirect {
+        let url: URL
+        let cookies: String?
+        let userAgent: String?
+        let referrer: String?
+    }
 
     enum Error: Swift.Error {
         case webViewNil
@@ -76,7 +83,7 @@ extension RedirectWebViewHandler: WKNavigationDelegate {
                     guard let self else { return }
                     if let url = navigationResponse.response.url {
                         // Return url
-                        completionHandler?(.success((url, cookies, userAgent, referrer)))
+                        completionHandler?(.success(Redirect(url: url, cookies: cookies, userAgent: userAgent, referrer: referrer)))
                         return
                     }
                     completionHandler?(.failure(.invalidURL))
