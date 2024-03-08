@@ -725,7 +725,7 @@ final class ExtensionViewModel {
     }
 
     private func processDownload(of attachment: [String: Any], url: URL, file: File, item: ItemResponse, cookies: String?, userAgent: String?, referrer: String?) {
-        if self.fileStorage.isPdf(file: file) {
+        if fileStorage.isPdf(file: file) {
             DDLogInfo("ExtensionViewModel: downloaded pdf")
             var state = self.state
             state.attachmentState = .processed
@@ -737,10 +737,10 @@ final class ExtensionViewModel {
         DDLogInfo("ExtensionViewModel: downloaded unsupported attachment")
 
         // Remove downloaded file, it won't be used anymore
-        try? self.fileStorage.remove(file)
+        try? fileStorage.remove(file)
 
         guard (url.host ?? "").contains("sciencedirect") else {
-            self.state.attachmentState = .failed(.downloadedFileNotPdf)
+            state.attachmentState = .failed(.downloadedFileNotPdf)
             return
         }
 
@@ -748,31 +748,62 @@ final class ExtensionViewModel {
 
         DDLogInfo("ExtensionViewModel: detected sciencedirect, trying redirect")
 
-        self.state.attachmentState = .downloading(0)
-        self.state.retryCount += 1
+        state.attachmentState = .downloading(0)
+        state.retryCount += 1
 
-        self.getRedirectedPdfUrl(from: url) { [weak self] newUrl, newCookies, newUserAgent, newReferrer in
-            guard let self = self else { return }
+        getRedirectedPdfUrl(from: url) { [weak self] result in
+            guard let self else { return }
+            switch result {
+            case .success(let result):
+                if result.url != url && state.retryCount < 3 {
+                    download(item: item, attachment: attachment, attachmentUrl: result.url, to: file, cookies: result.cookies, userAgent: result.userAgent, referrer: result.referrer)
+                    webView?.isHidden = true
+                    webView?.stopLoading()
+                    return
+                }
 
-            if let newUrl = newUrl, newUrl != url && self.state.retryCount < 3 {
-                self.download(item: item, attachment: attachment, attachmentUrl: newUrl, to: file, cookies: newCookies, userAgent: newUserAgent, referrer: newReferrer)
+            case .failure(let error):
+                switch error {
+                case .timeout:
+                    // Check if there is a captcha, in order to show the web view.
+                    let captchaLocator = ".challenge-form"
+                    let javascript = "document.querySelector('\(captchaLocator)') !== null"
+                    webView?.call(javascript: javascript)
+                        .observe(on: MainScheduler.instance)
+                        .subscribe(onSuccess: { [weak self] result in
+                            guard let self else { return }
+                            if let result = result as? Bool, result == true {
+                                webView?.isHidden = false
+                            } else {
+                                state.attachmentState = .failed(.downloadedFileNotPdf)
+                            }
+                        }, onFailure: { [weak self] _ in
+                            guard let self else { return }
+                            webView?.stopLoading()
+                            state.attachmentState = .failed(.downloadedFileNotPdf)
+                        })
+                        .disposed(by: disposeBag)
+                    return
+
+                default:
+                    break
+                }
+            }
+            webView?.isHidden = true
+            webView?.stopLoading()
+            state.attachmentState = .failed(.downloadedFileNotPdf)
+        }
+
+        func getRedirectedPdfUrl(from url: URL, completion: @escaping RedirectWebViewCompletion) {
+            guard let webView else {
+                completion(.failure(.webViewNil))
                 return
             }
 
-            // Didn't help, report failed PDF download
-            self.state.attachmentState = .failed(.downloadedFileNotPdf)
+            let handler = RedirectWebViewHandler(url: url, timeoutPerRedirect: .seconds(2), webView: webView)
+            handler.getPdfUrl(completion: completion)
+            redirectHandler = handler
         }
-    }
-
-    private func getRedirectedPdfUrl(from url: URL, completion: @escaping (URL?, String?, String?, String?) -> Void) {
-        guard let webView = self.webView else {
-            completion(nil, nil, nil, nil)
-            return
-        }
-
-        let handler = RedirectWebViewHandler(url: url, timeoutPerRedirect: .seconds(2), webView: webView)
-        handler.getPdfUrl(completion: completion)
-        self.redirectHandler = handler
     }
 
     /// Tries to parse `ItemResponse` from data returned by translation server. It prioritizes items with attachments if there are multiple items.
