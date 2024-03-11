@@ -210,7 +210,6 @@
 		B30566C523FC051F003304F2 /* Tag.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305655F23FC051E003304F2 /* Tag.swift */; };
 		B30566C723FC051F003304F2 /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305656123FC051E003304F2 /* AppGroup.swift */; };
 		B30566C823FC051F003304F2 /* SortType.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305656223FC051E003304F2 /* SortType.swift */; };
-		B30566D923FC0769003304F2 /* tinymce in Resources */ = {isa = PBXBuildFile; fileRef = B30566D823FC0769003304F2 /* tinymce */; };
 		B30566DA23FC07E0003304F2 /* Library.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305653923FC051E003304F2 /* Library.swift */; };
 		B30566DC23FC07EE003304F2 /* ItemResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305654623FC051E003304F2 /* ItemResponse.swift */; };
 		B30566E223FC0810003304F2 /* DeletionsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305648F23FC051E003304F2 /* DeletionsRequest.swift */; };
@@ -1434,7 +1433,6 @@
 		B305655F23FC051E003304F2 /* Tag.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Tag.swift; sourceTree = "<group>"; };
 		B305656123FC051E003304F2 /* AppGroup.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppGroup.swift; sourceTree = "<group>"; };
 		B305656223FC051E003304F2 /* SortType.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SortType.swift; sourceTree = "<group>"; };
-		B30566D823FC0769003304F2 /* tinymce */ = {isa = PBXFileReference; lastKnownFileType = folder; path = tinymce; sourceTree = "<group>"; };
 		B305678F23FC1D9B003304F2 /* CollectionDifference+Separated.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CollectionDifference+Separated.swift"; sourceTree = "<group>"; };
 		B305CEBA29E6E67600B9E2B4 /* AssignItemsToTagDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssignItemsToTagDbRequest.swift; sourceTree = "<group>"; };
 		B307A2722704A87D005986B3 /* IdleTimerController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdleTimerController.swift; sourceTree = "<group>"; };
@@ -2234,8 +2232,6 @@
 				B30B550424B85A6200F94B59 /* Images.xcassets */,
 				B337A5AA244F1DEB00AFD13D /* Localizable.strings */,
 				614D65802A79C9AC007CF449 /* Localizable.stringsdict */,
-				B3CED4C52BC9212600B88FB0 /* note.html */,
-				B30566D823FC0769003304F2 /* tinymce */,
 			);
 			path = Assets;
 			sourceTree = "<group>";
@@ -4404,7 +4400,6 @@
 				B3F0C3FA250A1BD8002D557A /* LibrariesViewController.xib in Resources */,
 				B3E8FE1D2714297200F51458 /* CiteSearchViewController.xib in Resources */,
 				B3593F31241A61C700760E20 /* ItemDetailViewController.xib in Resources */,
-				B30566D923FC0769003304F2 /* tinymce in Resources */,
 				B3BC1F61254322D200BA3388 /* ItemDetailAbstractEditContentView.xib in Resources */,
 				B3D16BF324E161C70002663B /* LoginViewController.xib in Resources */,
 				B34DF1A2257684590019CCD1 /* AnnotationPageLabelViewController.xib in Resources */,
