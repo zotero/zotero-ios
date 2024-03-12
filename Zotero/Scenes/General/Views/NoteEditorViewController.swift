@@ -20,6 +20,8 @@ final class NoteEditorViewController: UIViewController {
     }
 
     @IBOutlet private weak var webView: WKWebView!
+    @IBOutlet private weak var webViewBottom: NSLayoutConstraint!
+    @IBOutlet private weak var tagsContainer: UIView!
     @IBOutlet private weak var tagsTitleLabel: UILabel!
     @IBOutlet private weak var tagsLabel: UILabel!
 
@@ -61,6 +63,7 @@ final class NoteEditorViewController: UIViewController {
 
         view.backgroundColor = .systemBackground
         setupNavbarItems()
+        setupKeyboard()
         setupWebView()
         update(tags: viewModel.state.tags)
         viewModel.process(action: .setup)
@@ -97,7 +100,36 @@ final class NoteEditorViewController: UIViewController {
                 webView.configuration.userContentController.add(self, name: handler.rawValue)
             }
             guard let url = Bundle.main.url(forResource: "editor", withExtension: "html", subdirectory: "Bundled/note_editor") else { return }
+            webView.scrollView.isScrollEnabled = false
             webView.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
+        }
+
+        func setupKeyboard() {
+            NotificationCenter.default
+                .keyboardWillShow
+                .observe(on: MainScheduler.instance)
+                .subscribe(onNext: { [weak self] notification in
+                    guard let self, let data = notification.keyboardData else { return }
+                    moveWebView(toKeyboardData: data, controller: self)
+                })
+                .disposed(by: disposeBag)
+
+            NotificationCenter.default
+                .keyboardWillHide
+                .observe(on: MainScheduler.instance)
+                .subscribe(onNext: { [weak self] notification in
+                    guard let self, let data = notification.keyboardData else { return }
+                    moveWebView(toKeyboardData: data, controller: self)
+                })
+                .disposed(by: disposeBag)
+        }
+
+        func moveWebView(toKeyboardData data: KeyboardData, controller: NoteEditorViewController) {
+            let isClosing = data.endFrame.minY > data.startFrame.minY
+            controller.webViewBottom.constant = isClosing ? 0 : data.endFrame.minY - controller.tagsContainer.frame.height
+            UIView.animate(withDuration: data.animationDuration, delay: 0, options: data.animationOptions, animations: {
+                controller.view.layoutIfNeeded()
+            })
         }
     }
 
