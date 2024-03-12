@@ -383,11 +383,11 @@ final class AttachmentDownloader: NSObject {
 
         case .file(let filename, let contentType, let location, let linkType, let compressed):
             switch linkType {
-            case .linkedFile, .embeddedImage:
+            case .linkedFile:
                 DDLogWarn("AttachmentDownloader: tried opening linkedFile or embeddedImage \(attachment.key)")
                 observable.on(.next(Update(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, kind: .failed(Error.incompatibleAttachment))))
 
-            case .importedFile, .importedUrl:
+            case .importedFile, .importedUrl, .embeddedImage:
                 switch location {
                 case .local:
                     if compressed {
