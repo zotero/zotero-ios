@@ -63,6 +63,7 @@ final class NoteEditorViewController: UIViewController {
         setupNavbarItems()
         setupWebView()
         update(tags: viewModel.state.tags)
+        viewModel.process(action: .setup)
 
         viewModel.stateObservable
             .subscribe(onNext: { [weak self] state in
@@ -73,10 +74,13 @@ final class NoteEditorViewController: UIViewController {
 
         func setupNavbarItems() {
             let done = UIBarButtonItem(title: L10n.done, style: .done, target: nil, action: nil)
-            done.rx.tap
-                .subscribe(with: self, onNext: { `self`, _ in
+            done.rx
+                .tap
+                .subscribe(onNext: { [weak self] _ in
+                    guard let self else { return }
                     forceSaveIfNeeded()
-                    self.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
+                    webView.configuration.userContentController.removeAllScriptMessageHandlers()
+                    navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
                 })
                 .disposed(by: disposeBag)
             navigationItem.rightBarButtonItem = done
@@ -102,6 +106,7 @@ final class NoteEditorViewController: UIViewController {
         if state.changes.contains(.tags) {
             update(tags: state.tags)
         }
+
         if state.changes.contains(.save) {
             debounceSave()
         }
@@ -116,6 +121,11 @@ final class NoteEditorViewController: UIViewController {
             case.itemCreation, .standaloneCreation:
                 break
             }
+        }
+
+        if let resource = state.downloadedResource {
+            let encodedData = WebViewEncoder.encodeAsJSONForJavascript(["id": resource.identifier, "data": resource.data])
+            webView.call(javascript: "notifySubscription(\(encodedData));").subscribe().disposed(by: disposeBag)
         }
 
         func debounceSave() {
@@ -139,6 +149,18 @@ final class NoteEditorViewController: UIViewController {
         case "initialized":
             let data = WebViewEncoder.encodeAsJSONForJavascript(["value": viewModel.state.text, "readOnly": viewModel.state.kind.readOnly])
             webView.call(javascript: "start(\(data));").subscribe().disposed(by: disposeBag)
+
+        case "update":
+            guard let value = data["value"] as? String else { return }
+            viewModel.process(action: .setText(value))
+
+        case "openURL":
+            guard let urlString = data["url"] as? String, let url = URL(string: urlString) else { return }
+            coordinatorDelegate?.show(url: url)
+
+        case "subscribe":
+            guard let subscription = data["subscription"] as? [String: Any] else { return }
+            viewModel.process(action: .loadResource(subscription))
 
         default:
             DDLogWarn("NoteEditorViewController JS: unknown action \(data)")
@@ -191,7 +213,7 @@ extension NoteEditorViewController: WKScriptMessageHandler {
             DDLogInfo("NoteEditorViewController JS: \(body)")
 
         case .messageHandler:
-            guard let body = message.body as? [String: Any], let action = body["action"] as? String else { 
+            guard let body = message.body as? [String: Any], let action = body["action"] as? String else {
                 DDLogError("NoteEditorViewController JS: unknown message \(message.body)")
                 return
             }

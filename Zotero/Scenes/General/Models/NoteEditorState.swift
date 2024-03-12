@@ -11,6 +11,16 @@ import Foundation
 typealias NoteEditorKind = NoteEditorState.Kind
 
 struct NoteEditorState: ViewModelState {
+    struct Resource {
+        let identifier: String
+        let data: [String: Any]
+    }
+
+    struct ResourceMetadata {
+        let identifier: String
+        let type: String
+    }
+
     enum Kind {
         case itemCreation(parentKey: String)
         case standaloneCreation(collection: Collection)
@@ -45,6 +55,7 @@ struct NoteEditorState: ViewModelState {
     }
 
     enum Error: Swift.Error {
+        case cantCreateData
         case cantSaveReadonlyNote
     }
 
@@ -54,6 +65,8 @@ struct NoteEditorState: ViewModelState {
     var kind: Kind
     var text: String
     var tags: [Tag]
+    var pendingResources: [String: ResourceMetadata]
+    var downloadedResource: Resource?
     var changes: Changes
     var title: String?
 
@@ -63,11 +76,14 @@ struct NoteEditorState: ViewModelState {
         self.tags = tags
         self.library = library
         self.parentTitleData = parentTitleData
+        self.title = title
+        pendingResources = [:]
         changes = []
         self.title = title
     }
 
     mutating func cleanup() {
+        downloadedResource = nil
         changes = []
     }
 }
