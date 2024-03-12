@@ -411,9 +411,9 @@ class PDFReaderViewController: UIViewController {
             viewModel.process(action: .loadDocumentData(boundingBoxConverter: documentController))
         }
 
-        if state.changes.contains(.annotations) {
+        if state.changes.contains(.annotations) && state.changes.contains(.selectionDeletion) {
             // Hide popover if annotation has been deleted
-            if (presentedViewController as? UINavigationController)?.viewControllers.first is AnnotationPopover, let key = state.selectedAnnotationKey, !state.sortedKeys.contains(key) {
+            if (presentedViewController as? UINavigationController)?.viewControllers.first is AnnotationPopover {
                 dismiss(animated: true, completion: nil)
             }
         }

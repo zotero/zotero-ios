@@ -992,7 +992,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         state.changes.insert(.selection)
 
-        guard let key = key else {
+        guard let key else {
+            state.changes.insert(.selectionDeletion)
             state.selectedAnnotationKey = nil
             return
         }
