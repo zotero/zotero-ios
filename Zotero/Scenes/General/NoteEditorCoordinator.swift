@@ -70,10 +70,15 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
     }
 
     func start(animated: Bool) {
-        guard let dbStorage = controllers.userControllers?.dbStorage else { return }
-
+        guard let dbStorage = controllers.userControllers?.dbStorage, let fileDownloader = controllers.userControllers?.fileDownloader else { return }
         let state = NoteEditorState(kind: kind, library: library, title: title, text: initialText, tags: initialTags)
-        let handler = NoteEditorActionHandler(dbStorage: dbStorage, schemaController: controllers.schemaController, saveCallback: saveCallback)
+        let handler = NoteEditorActionHandler(
+            dbStorage: dbStorage,
+            fileStorage: controllers.fileStorage,
+            schemaController: controllers.schemaController,
+            attachmentDownloader: fileDownloader,
+            saveCallback: saveCallback
+        )
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = NoteEditorViewController(viewModel: viewModel)
         controller.coordinatorDelegate = self

@@ -9,7 +9,9 @@
 import Foundation
 
 enum NoteEditorAction {
+    case setup
     case save
     case setTags([Tag])
     case setText(String)
+    case loadResource([String: Any])
 }
