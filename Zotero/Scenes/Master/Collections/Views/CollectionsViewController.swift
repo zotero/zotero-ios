@@ -178,6 +178,7 @@ final class CollectionsViewController: UICollectionViewController {
 
     private func setupTitleWithContextMenu(_ title: String) {
         var configuration = UIButton.Configuration.plain()
+        configuration.titleLineBreakMode = .byTruncatingTail
         configuration.attributedTitle = AttributedString(title, attributes: AttributeContainer([.font: UIFont.systemFont(ofSize: 17, weight: .semibold)]))
         configuration.baseForegroundColor = UIColor(dynamicProvider: { $0.userInterfaceStyle == .light ? .black : .white })
         configuration.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12)
