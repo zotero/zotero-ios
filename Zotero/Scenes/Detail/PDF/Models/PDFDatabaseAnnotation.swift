@@ -17,15 +17,15 @@ struct PDFDatabaseAnnotation {
     let type: AnnotationType
 
     init?(item: RItem) {
-        guard let _type = AnnotationType(rawValue: item.annotationType) else {
+        guard let type = AnnotationType(rawValue: item.annotationType) else {
             DDLogWarn("DatabaseAnnotation: \(item.key) unknown annotation type \(item.annotationType)")
             return nil
         }
-        guard AnnotationsConfig.supported.contains(_type.kind) else {
+        guard AnnotationsConfig.supported.contains(type.kind) else {
             return nil
         }
         self.item = item
-        type = _type
+        self.type = type
     }
 
     var key: String {
