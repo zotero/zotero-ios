@@ -48,7 +48,7 @@ final class NoteEditorViewController: UIViewController {
             navigationItem.titleView = NoteEditorTitleView(type: data.type, title: data.title)
         }
 
-        view.backgroundColor = .systemBackground
+        view.backgroundColor = .red
         setupNavbarItems()
         setupKeyboard()
         setupWebView()
@@ -83,12 +83,16 @@ final class NoteEditorViewController: UIViewController {
         }
 
         func setupWebView() {
+            webView.scrollView.isScrollEnabled = false
+
             for handler in JSHandlers.allCases {
                 webView.configuration.userContentController.add(self, name: handler.rawValue)
             }
 
-            guard let url = Bundle.main.url(forResource: "editor", withExtension: "html", subdirectory: "Bundled/note_editor") else { return }
-            webView.scrollView.isScrollEnabled = false
+            guard let url = Bundle.main.url(forResource: "editor", withExtension: "html", subdirectory: "Bundled/note_editor") else {
+                DDLogError("NoteEditorViewController: editor source not found")
+                return
+            }
             webView.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
         }
 
@@ -114,7 +118,7 @@ final class NoteEditorViewController: UIViewController {
 
         func moveWebView(toKeyboardData data: KeyboardData, controller: NoteEditorViewController) {
             let isClosing = data.endFrame.minY > data.startFrame.minY
-            controller.webViewBottom.constant = isClosing ? 0 : data.endFrame.minY - controller.tagsContainer.frame.height
+            controller.webViewBottom.constant = isClosing ? 0 : data.endFrame.minY - 18
             UIView.animate(withDuration: data.animationDuration, delay: 0, options: data.animationOptions, animations: {
                 controller.view.layoutIfNeeded()
             })
@@ -157,6 +161,9 @@ final class NoteEditorViewController: UIViewController {
         case "initialized":
             let data = WebViewEncoder.encodeAsJSONForJavascript(["value": viewModel.state.text, "readOnly": viewModel.state.kind.readOnly])
             webView.call(javascript: "start(\(data));").subscribe().disposed(by: disposeBag)
+
+        case "readerInitialized":
+            DDLogInfo("NoteEditorViewController: reader initialized")
 
         case "update":
             guard let value = data["value"] as? String else { return }
