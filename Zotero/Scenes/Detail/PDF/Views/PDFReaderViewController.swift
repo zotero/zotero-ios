@@ -185,13 +185,14 @@ class PDFReaderViewController: UIViewController {
 
         set(userActivity: .pdfActivity(for: viewModel.state.key, libraryId: viewModel.state.library.identifier, collectionId: Defaults.shared.selectedCollectionId))
         view.backgroundColor = .systemGray6
-        setupViews()
+        // Create intraDocumentNavigationHandler before setting up views, as it may be called by a child view controller, before view has finished loading.
         intraDocumentNavigationHandler = IntraDocumentNavigationButtonsHandler(
             parent: self,
             back: { [weak self] in
-                self?.documentController.performBackAction()
+                self?.documentController?.performBackAction()
             }
         )
+        setupViews()
         setupNavigationBar()
         setupObserving()
         updateInterface(to: viewModel.state.settings)
@@ -861,7 +862,7 @@ extension PDFReaderViewController: PDFDocumentDelegate {
     }
 
     func backNavigationButtonChanged(visible: Bool) {
-        intraDocumentNavigationHandler.set(backButtonVisible: visible)
+        intraDocumentNavigationHandler?.set(backButtonVisible: visible)
     }
 }
 
