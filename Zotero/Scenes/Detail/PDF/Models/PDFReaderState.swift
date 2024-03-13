@@ -48,6 +48,7 @@ struct PDFReaderState: ViewModelState {
         static let initialDataLoaded = Changes(rawValue: 1 << 11)
         static let visiblePageFromDocument = Changes(rawValue: 1 << 12)
         static let visiblePageFromThumbnailList = Changes(rawValue: 1 << 13)
+        static let selectionDeletion = Changes(rawValue: 1 << 14)
     }
 
     enum Error: Swift.Error {

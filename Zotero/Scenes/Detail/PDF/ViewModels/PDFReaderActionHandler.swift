@@ -992,7 +992,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         state.changes.insert(.selection)
 
-        guard let key = key else {
+        guard let key else {
             state.selectedAnnotationKey = nil
             return
         }
@@ -1989,6 +1989,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             if let key = selectKey {
                 self._select(key: key, didSelectInDocument: true, state: &state)
             } else if selectionDeleted {
+                state.changes.insert(.selectionDeletion)
                 self._select(key: nil, didSelectInDocument: true, state: &state)
             }
 
