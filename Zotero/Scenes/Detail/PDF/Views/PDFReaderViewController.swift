@@ -220,6 +220,7 @@ class PDFReaderViewController: UIViewController {
             separator.translatesAutoresizingMaskIntoConstraints = false
             separator.backgroundColor = Asset.Colors.annotationSidebarBorderColor.color
 
+            // TODO: Add .underline and .freeText tools when those annotations are fully available
             let annotationToolbar = AnnotationToolbarViewController(tools: [.highlight, .note, .image, .ink, .eraser], undoRedoEnabled: true, size: navigationBarHeight)
             annotationToolbar.delegate = self
 
@@ -510,6 +511,9 @@ class PDFReaderViewController: UIViewController {
 
         case .eraser:
             size = Float(viewModel.state.activeEraserSize)
+
+        case .freeText:
+            size = Float(self.viewModel.state.activeFontSize)
 
         default:
             size = nil
@@ -905,50 +909,5 @@ extension PDFReaderViewController: PDFSearchDelegate {
 
     func didSelectSearchResult(_ result: SearchResult) {
         documentController.highlightSelectedSearchResult(result)
-    }
-}
-
-extension PSPDFKit.Annotation.Tool {
-    fileprivate var toolbarTool: AnnotationTool? {
-        switch self {
-        case .eraser:
-            return .eraser
-
-        case .highlight:
-            return .highlight
-
-        case .square:
-            return .image
-
-        case .ink:
-            return .ink
-
-        case .note:
-            return .note
-
-        default:
-            return nil
-        }
-    }
-}
-
-extension AnnotationTool {
-    fileprivate var pspdfkitTool: PSPDFKit.Annotation.Tool {
-        switch self {
-        case .eraser:
-            return .eraser
-
-        case .highlight:
-            return .highlight
-
-        case .image:
-            return .square
-
-        case .ink:
-            return .ink
-
-        case .note:
-            return .note
-        }
     }
 }

@@ -47,6 +47,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         static let lineWidth = PdfAnnotationChanges(rawValue: 1 << 3)
         static let paths = PdfAnnotationChanges(rawValue: 1 << 4)
         static let contents = PdfAnnotationChanges(rawValue: 1 << 5)
+        static let rotation = PdfAnnotationChanges(rawValue: 1 << 6)
+        static let fontSize = PdfAnnotationChanges(rawValue: 1 << 7)
 
         static func stringValues(from changes: PdfAnnotationChanges) -> [String] {
             var rawChanges: [String] = []
@@ -67,6 +69,12 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             }
             if changes.contains(.contents) {
                 rawChanges.append("contents")
+            }
+            if changes.contains(.rotation) {
+                rawChanges.append("rotation")
+            }
+            if changes.contains(.fontSize) {
+                rawChanges.append("fontSize")
             }
             return rawChanges
         }
@@ -172,6 +180,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         case .setLineWidth(let key, let width):
             self.set(lineWidth: width, key: key, viewModel: viewModel)
 
+        case .setFontSize(let key, let size):
+            self.set(fontSize: size, key: key, viewModel: viewModel)
+
         case .setCommentActive(let isActive):
             guard viewModel.state.selectedAnnotationKey != nil else { return }
             self.update(viewModel: viewModel) { state in
@@ -182,8 +193,17 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         case .setTags(let key, let tags):
             self.set(tags: tags, key: key, viewModel: viewModel)
 
-        case .updateAnnotationProperties(let key, let color, let lineWidth, let pageLabel, let updateSubsequentLabels, let highlightText):
-            self.set(color: color, lineWidth: lineWidth, pageLabel: pageLabel, updateSubsequentLabels: updateSubsequentLabels, highlightText: highlightText, key: key, viewModel: viewModel)
+        case .updateAnnotationProperties(let key, let color, let lineWidth, let fontSize, let pageLabel, let updateSubsequentLabels, let highlightText):
+            self.set(
+                color: color,
+                lineWidth: lineWidth,
+                fontSize: fontSize,
+                pageLabel: pageLabel,
+                updateSubsequentLabels: updateSubsequentLabels,
+                highlightText: highlightText,
+                key: key,
+                viewModel: viewModel
+            )
 
         case .userInterfaceStyleChanged(let interfaceStyle):
             self.userInterfaceChanged(interfaceStyle: interfaceStyle, in: viewModel)
@@ -253,7 +273,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             for (_, annotations) in state.document.allAnnotations(of: AnnotationsConfig.supported) {
                 for annotation in annotations {
                     let baseColor = annotation.baseColor
-                    let (color, alpha, blendMode) = AnnotationColorGenerator.color(from: UIColor(hex: baseColor), isHighlight: (annotation is PSPDFKit.HighlightAnnotation), userInterfaceStyle: interfaceStyle)
+                    let (color, alpha, blendMode) = AnnotationColorGenerator.color(
+                        from: UIColor(hex: baseColor),
+                        isHighlight: (annotation is PSPDFKit.HighlightAnnotation),
+                        userInterfaceStyle: interfaceStyle
+                    )
                     annotation.color = color
                     annotation.alpha = alpha
                     if let blendMode {
@@ -272,7 +296,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         for (_, annotations) in viewModel.state.document.allAnnotations(of: [.square, .ink]) {
             for annotation in annotations {
                 guard annotation.shouldRenderPreview && annotation.isZoteroAnnotation &&
-                      !self.annotationPreviewController.hasPreview(for: annotation.previewId, parentKey: viewModel.state.key, libraryId: libraryId, isDark: isDark) else { continue }
+                      !self.annotationPreviewController.hasPreview(for: annotation.previewId, parentKey: viewModel.state.key, libraryId: libraryId, isDark: isDark)
+                else { continue }
                 self.annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key, libraryId: libraryId, isDark: isDark)
             }
         }
@@ -403,7 +428,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 //                    rects = annotation.rects
 //                }
 
-            case .note, .image:
+            case .note, .image, .underline, .freeText:
                 return false
             }
         }
@@ -541,9 +566,16 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         if !includeAnnotations {
             annotations = []
         } else {
-            annotations = AnnotationConverter.annotations(from: viewModel.state.databaseAnnotations, type: .export, interfaceStyle: .light, currentUserId: viewModel.state.userId,
-                                                          library: viewModel.state.library, displayName: viewModel.state.displayName, username: viewModel.state.username,
-                                                          boundingBoxConverter: boundingBoxConverter)
+            annotations = AnnotationConverter.annotations(
+                from: viewModel.state.databaseAnnotations,
+                type: .export,
+                interfaceStyle: .light,
+                currentUserId: viewModel.state.userId,
+                library: viewModel.state.library,
+                displayName: viewModel.state.displayName,
+                username: viewModel.state.username,
+                boundingBoxConverter: boundingBoxConverter
+            )
         }
 
         PDFDocumentExporter.export(
@@ -588,6 +620,13 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
             case .ink:
                 Defaults.shared.inkColorHex = hex
+
+            case .underline:
+                Defaults.shared.underlineColorHex = hex
+
+            case .freeText:
+                Defaults.shared.textColorHex = hex
+
             default: return
             }
         }
@@ -599,6 +638,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
             case .ink:
                 Defaults.shared.activeLineWidth = Float(size)
+
+            case .freeText:
+                Defaults.shared.activeFontSize = Float(size)
+
             default: break
             }
         }
@@ -618,6 +661,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 case .eraser:
                     state.activeEraserSize = size
                     state.changes = .activeEraserSize
+
+                case .freeText:
+                    state.activeFontSize = size
+                    state.changes = .activeFontSize
+                    
                 default: break
                 }
             }
@@ -1019,7 +1067,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     /// Starts observing preview controller. If new preview is stored, it will be cached immediately.
     /// - parameter viewModel: ViewModel.
     private func observePreviews(in viewModel: ViewModel<PDFReaderActionHandler>) {
-        self.annotationPreviewController.observable
+        annotationPreviewController
+            .observable
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self, weak viewModel] annotationKey, parentKey, image in
                 guard let self, let viewModel, viewModel.state.key == parentKey else { return }
@@ -1084,6 +1133,12 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         if annotation is PSPDFKit.InkAnnotation {
             return .ink
         }
+        if annotation is PSPDFKit.UnderlineAnnotation {
+            return .underline
+        }
+        if annotation is PSPDFKit.FreeTextAnnotation {
+            return .freeText
+        }
         return nil
     }
 
@@ -1100,6 +1155,12 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         case .ink:
             return .ink
+
+        case .underline:
+            return .underline
+
+        case .freeText:
+            return .freeText
         }
     }
 
@@ -1159,7 +1220,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     /// - parameter viewModel: ViewModel.
     private func remove(key: PDFReaderState.AnnotationKey, in viewModel: ViewModel<PDFReaderActionHandler>) {
         guard let annotation = viewModel.state.annotation(for: key),
-              let pdfAnnotation = viewModel.state.document.annotations(at: PageIndex(annotation.page)).first(where: { $0.key == annotation.key }) else { return }
+              let pdfAnnotation = viewModel.state.document.annotations(at: PageIndex(annotation.page)).first(where: { $0.key == annotation.key })
+        else { return }
         self.remove(annotations: [pdfAnnotation], in: viewModel.state.document)
     }
 
@@ -1168,7 +1230,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         let keys = viewModel.state.selectedAnnotationsDuringEditing.filter({ $0.type == .database })
         let pdfAnnotations = keys.compactMap({ key -> PSPDFKit.Annotation? in
             guard let annotation = viewModel.state.annotation(for: key),
-                  let pdfAnnotation = viewModel.state.document.annotations(at: PageIndex(annotation.page)).first(where: { $0.key == annotation.key }) else { return nil }
+                  let pdfAnnotation = viewModel.state.document.annotations(at: PageIndex(annotation.page)).first(where: { $0.key == annotation.key })
+            else { return nil }
             return pdfAnnotation
         })
         self.remove(annotations: pdfAnnotations, in: viewModel.state.document)
@@ -1195,6 +1258,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     private func set(lineWidth: CGFloat, key: String, viewModel: ViewModel<PDFReaderActionHandler>) {
         guard let annotation = viewModel.state.annotation(for: PDFReaderState.AnnotationKey(key: key, type: .database)) else { return }
         self.update(annotation: annotation, lineWidth: lineWidth, in: viewModel.state.document)
+    }
+
+    private func set(fontSize: UInt, key: String, viewModel: ViewModel<PDFReaderActionHandler>) {
+        guard let annotation = viewModel.state.annotation(for: PDFReaderState.AnnotationKey(key: key, type: .database)) else { return }
+        self.update(annotation: annotation, fontSize: fontSize, in: viewModel.state.document)
     }
 
     private func set(color: String, key: String, viewModel: ViewModel<PDFReaderActionHandler>) {
@@ -1241,10 +1309,19 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
     }
 
-    private func set(color: String, lineWidth: CGFloat, pageLabel: String, updateSubsequentLabels: Bool, highlightText: String, key: String, viewModel: ViewModel<PDFReaderActionHandler>) {
-        // `lineWidth` and `color` is stored in `Document`, update document, which will trigger a notification wich will update the DB
+    private func set(
+        color: String,
+        lineWidth: CGFloat,
+        fontSize: UInt,
+        pageLabel: String,
+        updateSubsequentLabels: Bool,
+        highlightText: String,
+        key: String,
+        viewModel: ViewModel<PDFReaderActionHandler>
+    ) {
+        // `lineWidth`, `fontSize` and `color` is stored in `Document`, update document, which will trigger a notification wich will update the DB
         guard let annotation = viewModel.state.annotation(for: PDFReaderState.AnnotationKey(key: key, type: .database)) else { return }
-        self.update(annotation: annotation, color: (color, viewModel.state.interfaceStyle), lineWidth: lineWidth, in: viewModel.state.document)
+        self.update(annotation: annotation, color: (color, viewModel.state.interfaceStyle), lineWidth: lineWidth, fontSize: fontSize, in: viewModel.state.document)
 
         // Update remaining values directly
         let values = [KeyBaseKeyPair(key: FieldKeys.Item.Annotation.pageLabel, baseKey: nil): pageLabel, KeyBaseKeyPair(key: FieldKeys.Item.Annotation.text, baseKey: nil): highlightText]
@@ -1260,13 +1337,23 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
     }
 
-    private func update(annotation: PDFAnnotation, color: (String, UIUserInterfaceStyle)? = nil, lineWidth: CGFloat? = nil, contents: String? = nil, in document: PSPDFKit.Document) {
+    private func update(
+        annotation: PDFAnnotation,
+        color: (String, UIUserInterfaceStyle)? = nil,
+        lineWidth: CGFloat? = nil,
+        fontSize: UInt? = nil,
+        contents: String? = nil,
+        in document: PSPDFKit.Document
+    ) {
         guard let pdfAnnotation = document.annotations(at: PageIndex(annotation.page)).first(where: { $0.key == annotation.key }) else { return }
 
         var changes: PdfAnnotationChanges = []
 
         if let lineWidth, lineWidth.rounded(to: 3) != annotation.lineWidth {
             changes.insert(.lineWidth)
+        }
+        if let fontSize, fontSize != annotation.fontSize {
+            changes.insert(.fontSize)
         }
         if let (color, _) = color, color != annotation.color {
             changes.insert(.color)
@@ -1293,6 +1380,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
             if changes.contains(.contents), let contents {
                 pdfAnnotation.contents = contents
+            }
+
+            if changes.contains(.fontSize), let textAnnotation = pdfAnnotation as? PSPDFKit.FreeTextAnnotation, let fontSize {
+                textAnnotation.fontSize = CGFloat(fontSize)
             }
 
             NotificationCenter.default.post(
@@ -1368,6 +1459,19 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             }
         } else if hasChanges([.boundingBox, .rects]), let rects = AnnotationConverter.rects(from: annotation) {
             requests.append(EditAnnotationRectsDbRequest(key: key, libraryId: viewModel.state.library.identifier, rects: rects, boundingBoxConverter: boundingBoxConverter))
+        } else if hasChanges([.boundingBox]), let rects = AnnotationConverter.rects(from: annotation) {
+            // FreeTextAnnotation has only `boundingBox` change, not paired with paths or rects.
+            requests.append(EditAnnotationRectsDbRequest(key: key, libraryId: viewModel.state.library.identifier, rects: rects, boundingBoxConverter: boundingBoxConverter))
+        }
+
+        if let textAnnotation = annotation as? PSPDFKit.FreeTextAnnotation {
+            if hasChanges([.rotation]) {
+                requests.append(EditAnnotationRotationDbRequest(key: key, libraryId: viewModel.state.library.identifier, rotation: textAnnotation.rotation))
+            }
+
+            if hasChanges([.fontSize]) {
+                requests.append(EditAnnotationFontSizeDbRequest(key: key, libraryId: viewModel.state.library.identifier, size: UInt(textAnnotation.fontSize)))
+            }
         }
 
         if hasChanges(.color) {
@@ -1585,8 +1689,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         boundingBoxConverter: AnnotationBoundingBoxConverter,
         in viewModel: ViewModel<PDFReaderActionHandler>
     ) -> (Int, (PDFReaderState.AnnotationKey, AnnotationDocumentLocation)?) {
-        if let key = viewModel.state.selectedAnnotationKey, let item = databaseAnnotations.filter(.key(key.key)).first {
-            let annotation = PDFDatabaseAnnotation(item: item)
+        if let key = viewModel.state.selectedAnnotationKey, let item = databaseAnnotations.filter(.key(key.key)).first, let annotation = PDFDatabaseAnnotation(item: item) {
             let page = annotation._page ?? storedPage
             let boundingBox = annotation.boundingBox(boundingBoxConverter: boundingBoxConverter)
             return (page, (key, (page, boundingBox)))
@@ -1642,7 +1745,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     private func observeDocument(in viewModel: ViewModel<PDFReaderActionHandler>) {
         NotificationCenter.default.rx
             .notification(.PSPDFAnnotationChanged)
-            .observe(on: MainScheduler.instance)
+            // Debounce these notifications because FreeTextAnnotation rotation change spams these annotations in milliseconds and it looks bad in sidebar while it's also unnecessary cpu burden
+            .debounce(.milliseconds(100), scheduler: MainScheduler.instance)
             .subscribe(onNext: { [weak self, weak viewModel] notification in
                 guard let self, let viewModel else { return }
                 self.processAnnotationObserving(notification: notification, viewModel: viewModel)
@@ -1671,7 +1775,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     private func createSortedKeys(fromDatabaseAnnotations databaseAnnotations: Results<RItem>, documentAnnotations: [String: PDFDocumentAnnotation]) -> [PDFReaderState.AnnotationKey] {
         var keys: [(PDFReaderState.AnnotationKey, String)] = []
         for item in databaseAnnotations {
-            guard self.validate(databaseAnnotation: PDFDatabaseAnnotation(item: item)) else { continue }
+            guard let annotation = PDFDatabaseAnnotation(item: item), self.validate(databaseAnnotation: annotation) else { continue }
             keys.append((PDFReaderState.AnnotationKey(key: item.key, type: .database), item.annotationSortIndex))
         }
         for annotation in documentAnnotations.values {
@@ -1696,9 +1800,23 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 return false
             }
 
-        case .highlight, .image, .note:
+        case .highlight, .image, .note, .underline:
             if databaseAnnotation.item.rects.isEmpty {
                 DDLogInfo("PDFReaderActionHandler: \(databaseAnnotation.type) annotation \(databaseAnnotation.key) missing rects")
+                return false
+            }
+
+        case .freeText:
+            if databaseAnnotation.item.rects.isEmpty {
+                DDLogInfo("PDFReaderActionHandler: \(databaseAnnotation.type) annotation \(databaseAnnotation.key) missing rects")
+                return false
+            }
+            if databaseAnnotation.fontSize == nil {
+                DDLogInfo("PDFReaderActionHandler: \(databaseAnnotation.type) annotation \(databaseAnnotation.key) missing fontSize")
+                return false
+            }
+            if databaseAnnotation.rotation == nil {
+                DDLogInfo("PDFReaderActionHandler: \(databaseAnnotation.type) annotation \(databaseAnnotation.key) missing rotation")
                 return false
             }
         }
@@ -1821,8 +1939,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             }
 
             let key = keys[index]
-            guard let item = objects.filter(.key(key.key)).first else { continue }
-            let annotation = PDFDatabaseAnnotation(item: item)
+            guard let item = objects.filter(.key(key.key)).first, let annotation = PDFDatabaseAnnotation(item: item) else { continue }
 
             if canUpdate(key: key, item: item, at: index, viewModel: viewModel) {
                 DDLogInfo("PDFReaderActionHandler: update key \(key)")
@@ -1835,8 +1952,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 }
             }
 
-            guard item.changeType == .sync,
-                  let pdfAnnotation = viewModel.state.document.annotations(at: PageIndex(annotation.page)).first(where: { $0.key == key.key }) else { continue }
+            guard item.changeType == .sync, let pdfAnnotation = viewModel.state.document.annotations(at: PageIndex(annotation.page)).first(where: { $0.key == key.key }) else { continue }
 
             DDLogInfo("PDFReaderActionHandler: update PDF annotation")
             updatedPdfAnnotations.append((pdfAnnotation, annotation))
@@ -1860,8 +1976,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 selectionDeleted = true
             }
 
-            let oldAnnotation = PDFDatabaseAnnotation(item: viewModel.state.databaseAnnotations[index])
-            guard let pdfAnnotation = viewModel.state.document.annotations(at: PageIndex(oldAnnotation.page)).first(where: { $0.key == oldAnnotation.key }) else { continue }
+            guard let oldAnnotation = PDFDatabaseAnnotation(item: viewModel.state.databaseAnnotations[index]),
+                  let pdfAnnotation = viewModel.state.document.annotations(at: PageIndex(oldAnnotation.page)).first(where: { $0.key == oldAnnotation.key })
+            else { continue }
             DDLogInfo("PDFReaderActionHandler: delete PDF annotation")
             deletedPdfAnnotations.append(pdfAnnotation)
         }
@@ -1882,7 +1999,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             keys.insert(PDFReaderState.AnnotationKey(key: item.key, type: .database), at: index)
             DDLogInfo("PDFReaderActionHandler: insert key \(item.key)")
 
-            let annotation = PDFDatabaseAnnotation(item: item)
+            guard let annotation = PDFDatabaseAnnotation(item: item) else {
+                DDLogWarn("PDFReaderActionHandler: tried inserting unsupported annotation (\(item.annotationType))! keys.count=\(keys.count); index=\(index); deletions=\(deletions); insertions=\(insertions); modifications=\(modifications)")
+                shouldCancelUpdate = true
+                break
+            }
 
             switch item.changeType {
             case .user:
@@ -2043,7 +2164,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
 
         switch annotation.type {
-        case .highlight:
+        case .highlight, .underline:
             let newBoundingBox = annotation.boundingBox(boundingBoxConverter: boundingBoxConverter)
             if newBoundingBox != pdfAnnotation.boundingBox.rounded(to: 3) {
                 pdfAnnotation.boundingBox = newBoundingBox
@@ -2079,7 +2200,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 }
             }
 
-        case .image:
+        case .image, .freeText:
             let newBoundingBox = annotation.boundingBox(boundingBoxConverter: boundingBoxConverter)
             if pdfAnnotation.boundingBox.rounded(to: 3) != newBoundingBox {
                 changes.insert(.boundingBox)

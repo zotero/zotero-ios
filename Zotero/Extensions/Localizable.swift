@@ -246,8 +246,16 @@ internal enum L10n {
       internal static let tags = L10n.tr("Localizable", "accessibility.pdf.tags", fallback: "Tags")
       /// Double tap to edit tags
       internal static let tagsHint = L10n.tr("Localizable", "accessibility.pdf.tags_hint", fallback: "Double tap to edit tags")
+      /// Text annotation
+      internal static let textAnnotation = L10n.tr("Localizable", "accessibility.pdf.text_annotation", fallback: "Text annotation")
+      /// Create text annotation
+      internal static let textAnnotationTool = L10n.tr("Localizable", "accessibility.pdf.text_annotation_tool", fallback: "Create text annotation")
       /// Toggle annotation toolbar
       internal static let toggleAnnotationToolbar = L10n.tr("Localizable", "accessibility.pdf.toggle_annotation_toolbar", fallback: "Toggle annotation toolbar")
+      /// Underline annotation
+      internal static let underlineAnnotation = L10n.tr("Localizable", "accessibility.pdf.underline_annotation", fallback: "Underline annotation")
+      /// Create underline annotation
+      internal static let underlineAnnotationTool = L10n.tr("Localizable", "accessibility.pdf.underline_annotation_tool", fallback: "Create underline annotation")
       /// Undo
       internal static let undo = L10n.tr("Localizable", "accessibility.pdf.undo", fallback: "Undo")
     }
@@ -889,6 +897,8 @@ internal enum L10n {
     internal static let sync = L10n.tr("Localizable", "onboarding.sync", fallback: "<b>Synchronize and collaborate</b> across devices, keeping your reading and notes seamlessly up to date.")
   }
   internal enum Pdf {
+    /// Do you really want to delete annotation?
+    internal static let deleteAnnotation = L10n.tr("Localizable", "pdf.delete_annotation", fallback: "Do you really want to delete annotation?")
     /// This document has been deleted. Do you want to restore it?
     internal static let deletedMessage = L10n.tr("Localizable", "pdf.deleted_message", fallback: "This document has been deleted. Do you want to restore it?")
     /// Deleted
@@ -936,6 +946,10 @@ internal enum L10n {
       internal static let ink = L10n.tr("Localizable", "pdf.annotation_toolbar.ink", fallback: "Ink")
       /// Note
       internal static let note = L10n.tr("Localizable", "pdf.annotation_toolbar.note", fallback: "Note")
+      /// Text
+      internal static let text = L10n.tr("Localizable", "pdf.annotation_toolbar.text", fallback: "Text")
+      /// Underline
+      internal static let underline = L10n.tr("Localizable", "pdf.annotation_toolbar.underline", fallback: "Underline")
     }
     internal enum AnnotationsSidebar {
       /// Add comment

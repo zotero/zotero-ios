@@ -93,6 +93,9 @@ final class Defaults {
     @UserDefault(key: "PdfReaderEraserSize", defaultValue: 10)
     var activeEraserSize: Float
 
+    @UserDefault(key: "PdfReaderFontSize", defaultValue: 12)
+    var activeFontSize: Float
+
     @UserDefault(key: "PDFReaderState.highlightColor", defaultValue: AnnotationsConfig.defaultActiveColor)
     var highlightColorHex: String
 
@@ -104,6 +107,12 @@ final class Defaults {
 
     @UserDefault(key: "PDFReaderState.inkColor", defaultValue: AnnotationsConfig.defaultActiveColor)
     var inkColorHex: String
+
+    @UserDefault(key: "PDFReaderState.underlineColor", defaultValue: AnnotationsConfig.defaultActiveColor)
+    var underlineColorHex: String
+
+    @UserDefault(key: "PDFReaderState.textColor", defaultValue: AnnotationsConfig.defaultActiveColor)
+    var textColorHex: String
 
     @CodableUserDefault(key: "PDFReaderSettings", defaultValue: PDFSettings.default, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder, defaults: .standard)
     var pdfSettings: PDFSettings

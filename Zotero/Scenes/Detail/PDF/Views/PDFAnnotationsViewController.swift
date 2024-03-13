@@ -125,13 +125,14 @@ final class PDFAnnotationsViewController: UIViewController {
                 userId: self.viewModel.state.userId,
                 library: self.viewModel.state.library,
                 sender: sender,
-                userInterfaceStyle: self.viewModel.state.settings.appearanceMode.userInterfaceStyle,
-                saveAction: { [weak self] color, lineWidth, pageLabel, updateSubsequentLabels, highlightText in
+                userInterfaceStyle: self.viewModel.state.interfaceStyle,
+                saveAction: { [weak self] color, lineWidth, fontSize, pageLabel, updateSubsequentLabels, highlightText in
                     self?.viewModel.process(
                         action: .updateAnnotationProperties(
                             key: key.key,
                             color: color,
                             lineWidth: lineWidth,
+                            fontSize: fontSize,
                             pageLabel: pageLabel,
                             updateSubsequentLabels: updateSubsequentLabels,
                             highlightText: highlightText
@@ -288,15 +289,6 @@ final class PDFAnnotationsViewController: UIViewController {
 
     private func setup(cell: AnnotationCell, with annotation: PDFAnnotation, state: PDFReaderState) {
         let selected = annotation.key == state.selectedAnnotationKey?.key
-
-        let loadPreview: () -> UIImage? = {
-            let preview = state.previewCache.object(forKey: (annotation.key as NSString))
-            if preview == nil {
-                self.viewModel.process(action: .requestPreviews(keys: [annotation.key], notify: true))
-            }
-            return preview
-        }
-
         let preview: UIImage?
         let comment: AnnotationView.Comment?
 
@@ -304,13 +296,13 @@ final class PDFAnnotationsViewController: UIViewController {
         case .image:
             let attributedString = parentDelegate?.parseAndCacheIfNeededAttributedComment(for: annotation) ?? NSAttributedString()
             comment = .init(attributedString: attributedString, isActive: state.selectedAnnotationCommentActive)
-            preview = loadPreview()
+            preview = loadPreview(for: annotation, state: state)
 
-        case .ink:
+        case .ink, .freeText:
             comment = nil
-            preview = loadPreview()
+            preview = loadPreview(for: annotation, state: state)
 
-        case .note, .highlight:
+        case .note, .highlight, .underline:
             let attributedString = parentDelegate?.parseAndCacheIfNeededAttributedComment(for: annotation) ?? NSAttributedString()
             comment = .init(attributedString: attributedString, isActive: state.selectedAnnotationCommentActive)
             preview = nil
@@ -336,6 +328,14 @@ final class PDFAnnotationsViewController: UIViewController {
             self?.perform(action: action, annotation: annotation)
         })
         _ = cell.disposeBag?.insert(actionSubscription)
+
+        func loadPreview(for annotation: PDFAnnotation, state: PDFReaderState) -> UIImage? {
+            let preview = state.previewCache.object(forKey: (annotation.key as NSString))
+            if preview == nil {
+                self.viewModel.process(action: .requestPreviews(keys: [annotation.key], notify: true))
+            }
+            return preview
+        }
     }
 
     private func showFilterPopup(from barButton: UIBarButtonItem) {
@@ -349,8 +349,9 @@ final class PDFAnnotationsViewController: UIViewController {
             }
         }
 
-        for annotation in self.viewModel.state.databaseAnnotations {
-            processAnnotation(PDFDatabaseAnnotation(item: annotation))
+        for dbAnnotation in self.viewModel.state.databaseAnnotations {
+            guard let annotation = PDFDatabaseAnnotation(item: dbAnnotation) else { continue }
+            processAnnotation(annotation)
         }
         for annotation in self.viewModel.state.documentAnnotations.values {
             processAnnotation(annotation)
@@ -607,8 +608,8 @@ extension PDFAnnotationsViewController: UITableViewDelegate, UITableViewDataSour
             .filter({ key in
                 guard let annotation = self.viewModel.state.annotation(for: key) else { return false }
                 switch annotation.type {
-                case .image, .ink: return true
-                case .note, .highlight: return false
+                case .image, .ink, .freeText: return true
+                case .note, .highlight, .underline: return false
                 }
             })
             .map({ $0.key })

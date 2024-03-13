@@ -19,13 +19,13 @@ struct EditAnnotationPathsDbRequest: DbRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
-        guard let item = database.objects(RItem.self).filter(.key(self.key, in: self.libraryId)).first else { return }
-        let page = UInt(PDFDatabaseAnnotation(item: item).page)
-        let dbPaths = self.paths.map { path in
-            return path.map({ self.boundingBoxConverter.convertToDb(point: $0, page: page) ?? $0 })
+        guard let item = database.objects(RItem.self).filter(.key(key, in: libraryId)).first, let annotation = PDFDatabaseAnnotation(item: item) else { return }
+        let page = UInt(annotation.page)
+        let dbPaths = paths.map { path in
+            return path.map({ boundingBoxConverter.convertToDb(point: $0, page: page) ?? $0 })
         }
-        guard self.paths(dbPaths, differFrom: item.paths) else { return }
-        self.sync(paths: dbPaths, in: item, database: database)
+        guard paths(dbPaths, differFrom: item.paths) else { return }
+        sync(paths: dbPaths, in: item, database: database)
     }
 
     private func sync(paths: [[CGPoint]], in item: RItem, database: Realm) {

@@ -50,13 +50,24 @@ final class AnnotationEditCoordinator: Coordinator {
         let state = AnnotationEditState(data: data)
         let handler = AnnotationEditActionHandler()
         let viewModel = ViewModel(initialState: state, handler: handler)
-        let controller = AnnotationEditViewController(viewModel: viewModel, includeColorPicker: true, saveAction: self.saveAction, deleteAction: self.deleteAction)
+        let controller = AnnotationEditViewController(
+            viewModel: viewModel,
+            includeColorPicker: true,
+            includeFontPicker: data.type == .freeText,
+            saveAction: self.saveAction,
+            deleteAction: self.deleteAction
+        )
         controller.coordinatorDelegate = self
         self.navigationController?.setViewControllers([controller], animated: false)
     }
 }
 
 extension AnnotationEditCoordinator: AnnotationEditCoordinatorDelegate {
+    func showFontSizePicker(picked: @escaping (UInt) -> Void) {
+        let controller = FontSizePickerViewController(pickAction: picked)
+        self.navigationController?.pushViewController(controller, animated: true)
+    }
+    
     func showPageLabelEditor(label: String, updateSubsequentPages: Bool, saveAction: @escaping AnnotationPageLabelSaveAction) {
         let state = AnnotationPageLabelState(label: label, updateSubsequentPages: updateSubsequentPages)
         let handler = AnnotationPageLabelActionHandler()

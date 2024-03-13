@@ -13,7 +13,7 @@ import RealmSwift
 import Network
 
 struct Database {
-    private static let schemaVersion: UInt64 = 44
+    private static let schemaVersion: UInt64 = 45
 
     static func mainConfiguration(url: URL, fileStorage: FileStorage) -> Realm.Configuration {
         var config = Realm.Configuration(
@@ -82,6 +82,24 @@ struct Database {
             }
             if schemaVersion < 42 {
                 extractEmojisFromTags(migration: migration)
+            }
+            if schemaVersion < 45 {
+                extractAnnotationTypeFromItems(migration: migration)
+            }
+        }
+    }
+
+    private static func extractAnnotationTypeFromItems(migration: Migration) {
+        migration.enumerateObjects(ofType: RItem.className()) { oldObject, newObject in
+            guard let rawType = oldObject?["rawType"] as? String, let fields = oldObject?["fields"] as? List<MigrationObject> else { return }
+
+            switch rawType {
+            case ItemTypes.annotation:
+                guard let annotationType = fields.first(where: { $0["key"] as? String == FieldKeys.Item.Annotation.type })?["value"] as? String, !annotationType.isEmpty else { return }
+                newObject?["annotationType"] = annotationType
+
+            default:
+                return
             }
         }
     }

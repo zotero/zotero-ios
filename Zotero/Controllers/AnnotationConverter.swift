@@ -81,34 +81,41 @@ struct AnnotationConverter {
 
         let type: AnnotationType
         let rects: [CGRect]
-        let text: String?
+        var text: String?
         let paths: [[CGPoint]]
-        let lineWidth: CGFloat?
+        var lineWidth: CGFloat?
+        var fontSize: UInt?
+        var rotation: UInt?
 
         if let annotation = annotation as? PSPDFKit.NoteAnnotation {
             type = .note
             rects = self.rects(fromNoteAnnotation: annotation)
-            text = nil
             paths = []
-            lineWidth = nil
         } else if let annotation = annotation as? PSPDFKit.HighlightAnnotation {
             type = .highlight
-            rects = self.rects(fromHighlightAnnotation: annotation)
+            rects = self.rects(fromHighlightAndUnderlineAnnotation: annotation)
             text = TextConverter.convertTextForAnnotation(from: annotation.markedUpString)
             paths = []
-            lineWidth = nil
         } else if let annotation = annotation as? PSPDFKit.SquareAnnotation {
             type = .image
             rects = self.rects(fromSquareAnnotation: annotation)
-            text = nil
             paths = []
-            lineWidth = nil
         } else if let annotation = annotation as? PSPDFKit.InkAnnotation {
             type = .ink
             rects = []
-            text = nil
             paths = self.paths(from: annotation)
             lineWidth = annotation.lineWidth
+        } else if let annotation = annotation as? PSPDFKit.UnderlineAnnotation {
+            type = .underline
+            rects = self.rects(fromHighlightAndUnderlineAnnotation: annotation)
+            text = TextConverter.convertTextForAnnotation(from: annotation.markedUpString)
+            paths = []
+        } else if let annotation = annotation as? PSPDFKit.FreeTextAnnotation {
+            type = .freeText
+            fontSize = UInt(annotation.fontSize)
+            rotation = annotation.rotation
+            paths = []
+            rects = self.rects(fromTextAnnotation: annotation)
         } else {
             return nil
         }
@@ -126,6 +133,8 @@ struct AnnotationConverter {
             color: color,
             comment: comment,
             text: text,
+            fontSize: fontSize,
+            rotation: rotation,
             sortIndex: sortIndex,
             dateModified: date
         )
@@ -143,11 +152,14 @@ struct AnnotationConverter {
         if let annotation = annotation as? PSPDFKit.NoteAnnotation {
             return self.rects(fromNoteAnnotation: annotation)
         }
-        if let annotation = annotation as? PSPDFKit.HighlightAnnotation {
-            return self.rects(fromHighlightAnnotation: annotation)
+        if annotation is PSPDFKit.HighlightAnnotation || annotation is PSPDFKit.UnderlineAnnotation {
+            return self.rects(fromHighlightAndUnderlineAnnotation: annotation)
         }
         if let annotation = annotation as? PSPDFKit.SquareAnnotation {
             return self.rects(fromSquareAnnotation: annotation)
+        }
+        if let annotation = annotation as? PSPDFKit.FreeTextAnnotation {
+            return self.rects(fromTextAnnotation: annotation)
         }
         return nil
     }
@@ -156,12 +168,21 @@ struct AnnotationConverter {
         return [CGRect(origin: annotation.boundingBox.origin.rounded(to: 3), size: AnnotationsConfig.noteAnnotationSize)]
     }
 
-    private static func rects(fromHighlightAnnotation annotation: PSPDFKit.HighlightAnnotation) -> [CGRect] {
+    private static func rects(fromHighlightAndUnderlineAnnotation annotation: PSPDFKit.Annotation) -> [CGRect] {
         return (annotation.rects ?? [annotation.boundingBox]).map({ $0.rounded(to: 3) })
     }
 
     private static func rects(fromSquareAnnotation annotation: PSPDFKit.SquareAnnotation) -> [CGRect] {
         return [annotation.boundingBox.rounded(to: 3)]
+    }
+
+    private static func rects(fromTextAnnotation annotation: PSPDFKit.FreeTextAnnotation) -> [CGRect] {
+        guard annotation.rotation > 0 else { return [annotation.boundingBox] }
+        let originalRotation = annotation.rotation
+        annotation.setRotation(0, updateBoundingBox: true)
+        let boundingBox = annotation.boundingBox.rounded(to: 3)
+        annotation.setRotation(originalRotation, updateBoundingBox: true)
+        return [boundingBox]
     }
 
     private static func createName(from displayName: String, username: String) -> String {
@@ -189,9 +210,10 @@ struct AnnotationConverter {
         username: String,
         boundingBoxConverter: AnnotationBoundingBoxConverter
     ) -> [PSPDFKit.Annotation] {
-        return items.map({ item in
+        return items.compactMap({ item in
+            guard let annotation = PDFDatabaseAnnotation(item: item) else { return nil }
             return self.annotation(
-                from: PDFDatabaseAnnotation(item: item),
+                from: annotation,
                 type: type,
                 interfaceStyle: interfaceStyle,
                 currentUserId: currentUserId,
@@ -232,6 +254,12 @@ struct AnnotationConverter {
 
         case .ink:
             annotation = self.inkAnnotation(from: zoteroAnnotation, type: type, color: color, boundingBoxConverter: boundingBoxConverter)
+
+        case .underline:
+            annotation = self.underlineAnnotation(from: zoteroAnnotation, type: type, color: color, alpha: alpha, boundingBoxConverter: boundingBoxConverter)
+
+        case .freeText:
+            annotation = self.freeTextAnnotation(from: zoteroAnnotation, color: color, boundingBoxConverter: boundingBoxConverter)
         }
 
         switch type {
@@ -331,6 +359,39 @@ struct AnnotationConverter {
         ink.color = color
         ink.lineWidth = annotation.lineWidth ?? 1
         return ink
+    }
+
+    private static func underlineAnnotation(
+        from annotation: PDFAnnotation,
+        type: Kind,
+        color: UIColor,
+        alpha: CGFloat,
+        boundingBoxConverter: AnnotationBoundingBoxConverter
+    ) -> PSPDFKit.UnderlineAnnotation {
+        let underline: PSPDFKit.UnderlineAnnotation
+        switch type {
+        case .export:
+            underline = PSPDFKit.UnderlineAnnotation()
+
+        case .zotero:
+            underline = UnderlineAnnotation()
+        }
+
+        underline.boundingBox = annotation.boundingBox(boundingBoxConverter: boundingBoxConverter).rounded(to: 3)
+        underline.rects = annotation.rects(boundingBoxConverter: boundingBoxConverter).map({ $0.rounded(to: 3) })
+        underline.color = color
+        underline.alpha = alpha
+
+        return underline
+    }
+
+    private static func freeTextAnnotation(from annotation: PDFAnnotation, color: UIColor, boundingBoxConverter: AnnotationBoundingBoxConverter) -> PSPDFKit.FreeTextAnnotation {
+        let text = PSPDFKit.FreeTextAnnotation(contents: annotation.comment)
+        text.color = color
+        text.fontSize = CGFloat(annotation.fontSize ?? 0)
+        text.setBoundingBox(annotation.boundingBox(boundingBoxConverter: boundingBoxConverter).rounded(to: 3), transformSize: true)
+        text.setRotation(annotation.rotation ?? 0, updateBoundingBox: true)
+        return text
     }
 }
 

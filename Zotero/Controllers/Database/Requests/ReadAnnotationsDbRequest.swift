@@ -19,9 +19,11 @@ struct ReadAnnotationsDbRequest: DbResponseRequest {
     var needsWrite: Bool { return false }
 
     func process(in database: Realm) throws -> Results<RItem> {
+        let supportedTypes = AnnotationType.allCases.filter({ AnnotationsConfig.supported.contains($0.kind) }).map({ $0.rawValue })
         return database.objects(RItem.self).filter(.parent(self.attachmentKey, in: self.libraryId))
                                            .filter(.items(type: ItemTypes.annotation, notSyncState: .dirty))
                                            .filter(.deleted(false))
+                                           .filter("annotationType in %@", supportedTypes)
                                            .sorted(byKeyPath: "annotationSortIndex", ascending: true)
     }
 }

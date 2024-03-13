@@ -22,17 +22,17 @@ struct CreatePDFAnnotationsDbRequest: DbRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
-        guard let parent = database.objects(RItem.self).filter(.key(self.attachmentKey, in: self.libraryId)).first else { return }
+        guard let parent = database.objects(RItem.self).filter(.key(attachmentKey, in: libraryId)).first else { return }
 
-        for annotation in self.annotations {
-            self.create(annotation: annotation, parent: parent, in: database)
+        for annotation in annotations {
+            create(annotation: annotation, parent: parent, in: database)
         }
     }
 
     private func create(annotation: PDFDocumentAnnotation, parent: RItem, in database: Realm) {
         let item: RItem
 
-        if let _item = database.objects(RItem.self).filter(.key(annotation.key, in: self.libraryId)).first {
+        if let _item = database.objects(RItem.self).filter(.key(annotation.key, in: libraryId)).first {
             if !_item.deleted {
                 // If item exists and is not deleted locally, we can ignore this request
                 return
@@ -46,12 +46,13 @@ struct CreatePDFAnnotationsDbRequest: DbRequest {
             item = RItem()
             item.key = annotation.key
             item.rawType = ItemTypes.annotation
-            item.localizedType = self.schemaController.localized(itemType: ItemTypes.annotation) ?? ""
-            item.libraryId = self.libraryId
+            item.localizedType = schemaController.localized(itemType: ItemTypes.annotation) ?? ""
+            item.libraryId = libraryId
             item.dateAdded = annotation.dateModified
             database.add(item)
         }
 
+        item.annotationType = annotation.type.rawValue
         item.syncState = .synced
         item.changeType = .user
         item.htmlFreeContent = annotation.comment.isEmpty ? nil : annotation.comment.strippedRichTextTags
@@ -89,8 +90,10 @@ struct CreatePDFAnnotationsDbRequest: DbRequest {
 
             case FieldKeys.Item.Annotation.Position.pageIndex where field.baseKey == FieldKeys.Item.Annotation.position:
                 rField.value = "\(annotation.page)"
+
             case FieldKeys.Item.Annotation.Position.lineWidth where field.baseKey == FieldKeys.Item.Annotation.position:
                 rField.value = annotation.lineWidth.flatMap({ "\(Decimal($0).rounded(to: 3))" }) ?? ""
+
             case FieldKeys.Item.Annotation.pageLabel:
                 rField.value = annotation.pageLabel
 
@@ -100,6 +103,13 @@ struct CreatePDFAnnotationsDbRequest: DbRequest {
 
             case FieldKeys.Item.Annotation.text:
                 rField.value = annotation.text ?? ""
+
+            case FieldKeys.Item.Annotation.Position.rotation where field.baseKey == FieldKeys.Item.Annotation.position:
+                rField.value = "\(annotation.rotation ?? 0)"
+
+            case FieldKeys.Item.Annotation.Position.fontSize where field.baseKey == FieldKeys.Item.Annotation.position:
+                rField.value = "\(annotation.fontSize ?? 0)"
+
             default: break
             }
 
@@ -108,12 +118,12 @@ struct CreatePDFAnnotationsDbRequest: DbRequest {
     }
 
     private func add(rects: [CGRect], to item: RItem, changes: inout RItemChanges, database: Realm) {
-        guard !rects.isEmpty else { return }
+        guard !rects.isEmpty, let annotation = PDFDatabaseAnnotation(item: item) else { return }
 
-        let page = UInt(PDFDatabaseAnnotation(item: item).page)
+        let page = UInt(annotation.page)
 
         for rect in rects {
-            let dbRect = self.boundingBoxConverter.convertToDb(rect: rect, page: page) ?? rect
+            let dbRect = boundingBoxConverter.convertToDb(rect: rect, page: page) ?? rect
             
             let rRect = RRect()
             rRect.minX = Double(dbRect.minX)
@@ -126,16 +136,16 @@ struct CreatePDFAnnotationsDbRequest: DbRequest {
     }
 
     private func add(paths: [[CGPoint]], to item: RItem, changes: inout RItemChanges, database: Realm) {
-        guard !paths.isEmpty else { return }
+        guard !paths.isEmpty, let annotation = PDFDatabaseAnnotation(item: item) else { return }
 
-        let page = UInt(PDFDatabaseAnnotation(item: item).page)
+        let page = UInt(annotation.page)
 
         for (idx, path) in paths.enumerated() {
             let rPath = RPath()
             rPath.sortIndex = idx
 
             for (idy, point) in path.enumerated() {
-                let dbPoint = self.boundingBoxConverter.convertToDb(point: point, page: page) ?? point
+                let dbPoint = boundingBoxConverter.convertToDb(point: point, page: page) ?? point
 
                 let rXCoordinate = RPathCoordinate()
                 rXCoordinate.value = Double(dbPoint.x)

@@ -13,7 +13,17 @@ import PSPDFKit
 struct AnnotationsConfig {
     static let defaultActiveColor = "#ffd400"
     static let allColors: [String] = ["#ffd400", "#ff6666", "#5fb236", "#2ea8e5", "#a28ae5", "#e56eee", "#f19837", "#aaaaaa", "#000000"]
-    static let colorNames: [String: String] = ["#ffd400": "Yellow", "#ff6666": "Red", "#5fb236": "Green", "#2ea8e5": "Blue", "#a28ae5": "Purple", "#e56eee": "Magenta", "#f19837": "Orange", "#aaaaaa": "Gray", "#000000": "Black"]
+    static let colorNames: [String: String] = [
+        "#ffd400": "Yellow",
+        "#ff6666": "Red",
+        "#5fb236": "Green",
+        "#2ea8e5": "Blue",
+        "#a28ae5": "Purple",
+        "#e56eee": "Magenta",
+        "#f19837": "Orange",
+        "#aaaaaa": "Gray",
+        "#000000": "Black"
+    ]
     // Maps different variations colors to their base color
     static let colorVariationMap: [String: String] = createColorVariationMap()
     static let keyKey = "Zotero:Key"
@@ -22,11 +32,12 @@ struct AnnotationsConfig {
     // Size of note annotation in PDF document.
     static let noteAnnotationSize: CGSize = CGSize(width: 22, height: 22)
     static let positionSizeLimit = 65000
-    static let supported: PSPDFKit.Annotation.Kind = [.note, .highlight, .square, .ink]
+    // TODO: Enable when text/underline annotations are fully available
+    static let supported: PSPDFKit.Annotation.Kind = [.note, .highlight, .square, .ink]//, .underline, .freeText]
 
     static func colors(for type: AnnotationType) -> [String] {
         switch type {
-        case .ink:
+        case .ink, .freeText:
             return ["#ffd400", "#ff6666", "#5fb236", "#2ea8e5", "#a28ae5", "#e56eee", "#f19837", "#aaaaaa", "#000000"]
 
         default:

@@ -50,8 +50,16 @@ struct AttributedTagStringGenerator {
     }
 
     static func attributedString(from tags: [Tag], limit: Int? = nil) -> NSMutableAttributedString {
+        let sorted = tags.sorted { lTag, rTag in
+            if !rTag.color.isEmpty && lTag.color.isEmpty {
+                return false
+            } else if rTag.color.isEmpty && !lTag.color.isEmpty {
+                return true
+            }
+            return lTag.name.localizedCaseInsensitiveCompare(rTag.name) == .orderedAscending
+        }
         let wholeString = NSMutableAttributedString()
-        for (index, tag) in tags.enumerated() {
+        for (index, tag) in sorted.enumerated() {
             if let limit = limit, index == limit {
                 break
             }

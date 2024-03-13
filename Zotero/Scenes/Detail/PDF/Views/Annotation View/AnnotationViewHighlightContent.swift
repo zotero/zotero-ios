@@ -41,9 +41,7 @@ final class AnnotationViewHighlightContent: UIView {
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.minimumLineHeight = self.layout.lineHeight
         paragraphStyle.maximumLineHeight = self.layout.lineHeight
-        let attributedString = NSAttributedString(string: text, attributes: [.paragraphStyle: paragraphStyle,
-                                                                             .font: self.layout.font,
-                                                                             .foregroundColor: Asset.Colors.annotationText.color])
+        let attributedString = NSAttributedString(string: text, attributes: [.paragraphStyle: paragraphStyle, .font: self.layout.font, .foregroundColor: Asset.Colors.annotationText.color])
 
         self.lineView.backgroundColor = color
         self.textLabel.attributedText = attributedString

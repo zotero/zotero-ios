@@ -12,8 +12,8 @@ import Combine
 import CocoaLumberjackSwift
 import PSPDFKit
 import PSPDFKitUI
-import RxSwift
 import RealmSwift
+import RxSwift
 
 protocol PDFDocumentDelegate: AnyObject {
     func annotationTool(
@@ -38,6 +38,8 @@ final class PDFDocumentViewController: UIViewController {
 
     private static var toolHistory: [PSPDFKit.Annotation.Tool] = []
     private var selectionView: SelectionView?
+    // Used to decide whether text annotation should start editing on tap
+    private var selectedAnnotationWasSelectedBefore: Bool
     var scrubberBarHeight: CGFloat {
         return self.pdfController?.userInterfaceView.scrubberBar.frame.height ?? 0
     }
@@ -52,6 +54,7 @@ final class PDFDocumentViewController: UIViewController {
     init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool, initialUIHidden: Bool) {
         self.viewModel = viewModel
         self.initialUIHidden = initialUIHidden
+        self.selectedAnnotationWasSelectedBefore = false
         self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
@@ -172,6 +175,9 @@ final class PDFDocumentViewController: UIViewController {
         case .eraser:
             stateManager.lineWidth = self.viewModel.state.activeEraserSize
 
+        case .freeText:
+            stateManager.fontSize = self.viewModel.state.activeFontSize
+
         default: break
         }
     }
@@ -241,11 +247,15 @@ final class PDFDocumentViewController: UIViewController {
         }
 
         if state.changes.contains(.activeLineWidth) {
-            self.set(lineWidth: state.activeLineWidth, in: pdfController.annotationStateManager)
+            pdfController.annotationStateManager.lineWidth = state.activeLineWidth
         }
 
         if state.changes.contains(.activeEraserSize) {
-            self.set(lineWidth: state.activeEraserSize, in: pdfController.annotationStateManager)
+            pdfController.annotationStateManager.lineWidth = state.activeEraserSize
+        }
+
+        if state.changes.contains(.activeFontSize) {
+            pdfController.annotationStateManager.fontSize = state.activeFontSize
         }
 
         if let notification = state.pdfNotification {
@@ -320,49 +330,53 @@ final class PDFDocumentViewController: UIViewController {
     }
 
     private func showPopupAnnotationIfNeeded(state: PDFReaderState) {
-        guard !(self.parentDelegate?.isSidebarVisible ?? false),
+        guard !(parentDelegate?.isSidebarVisible ?? false),
               let annotation = state.selectedAnnotation,
-              let pageView = self.pdfController?.pageViewForPage(at: UInt(annotation.page)) else { return }
+              annotation.type != .freeText,
+              let pageView = pdfController?.pageViewForPage(at: UInt(annotation.page)) else { return }
 
         let key = annotation.readerKey
-        var frame = self.view.convert(annotation.boundingBox(boundingBoxConverter: self), from: pageView.pdfCoordinateSpace)
+        var frame = view.convert(annotation.boundingBox(boundingBoxConverter: self), from: pageView.pdfCoordinateSpace)
         frame.origin.y += parentDelegate?.documentTopOffset ?? 0
-        let observable = self.coordinatorDelegate?.showAnnotationPopover(
-            viewModel: self.viewModel,
+        let observable = coordinatorDelegate?.showAnnotationPopover(
+            viewModel: viewModel,
             sourceRect: frame,
             popoverDelegate: self,
-            userInterfaceStyle: self.viewModel.state.settings.appearanceMode.userInterfaceStyle
+            userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle
         )
 
         guard let observable else { return }
-        observable.subscribe(with: self) { `self`, state in
+        observable.subscribe(onNext: { [weak self] state in
+            guard let self else { return }
             if state.changes.contains(.color) {
-                self.viewModel.process(action: .setColor(key: key.key, color: state.color))
+                viewModel.process(action: .setColor(key: key.key, color: state.color))
             }
             if state.changes.contains(.comment) {
-                self.viewModel.process(action: .setComment(key: key.key, comment: state.comment))
+                viewModel.process(action: .setComment(key: key.key, comment: state.comment))
             }
             if state.changes.contains(.deletion) {
-                self.viewModel.process(action: .removeAnnotation(key))
+                viewModel.process(action: .removeAnnotation(key))
             }
             if state.changes.contains(.lineWidth) {
-                self.viewModel.process(action: .setLineWidth(key: key.key, width: state.lineWidth))
+                viewModel.process(action: .setLineWidth(key: key.key, width: state.lineWidth))
             }
             if state.changes.contains(.tags) {
-                self.viewModel.process(action: .setTags(key: key.key, tags: state.tags))
+                viewModel.process(action: .setTags(key: key.key, tags: state.tags))
             }
             if state.changes.contains(.pageLabel) || state.changes.contains(.highlight) {
-                self.viewModel.process(action:
+                // TODO: - fix font size
+                viewModel.process(action:
                         .updateAnnotationProperties(
                             key: key.key,
                             color: state.color,
                             lineWidth: state.lineWidth,
+                            fontSize: 0,
                             pageLabel: state.pageLabel,
                             updateSubsequentLabels: state.updateSubsequentLabels,
                             highlightText: state.highlightText)
                 )
             }
-        }
+        })
         .disposed(by: disposeBag)
     }
 
@@ -401,10 +415,6 @@ final class PDFDocumentViewController: UIViewController {
         if stateManager.state == tool {
             stateManager.drawColor = toolColor
         }
-    }
-
-    private func set(lineWidth: CGFloat, in stateManager: AnnotationStateManager) {
-        stateManager.lineWidth = lineWidth
     }
 
     func setInterface(hidden: Bool) {
@@ -450,7 +460,7 @@ final class PDFDocumentViewController: UIViewController {
             view.removeFromSuperview()
         }
 
-        guard let selection = annotation, selection.type == .highlight && selection.page == Int(pageView.pageIndex) else { return }
+        guard let selection = annotation, (selection.type == .highlight || selection.type == .underline) && selection.page == Int(pageView.pageIndex) else { return }
         // Add custom highlight selection view if needed
         let frame = pageView.convert(selection.boundingBox(boundingBoxConverter: self), from: pageView.pdfCoordinateSpace).insetBy(dx: -SelectionView.inset, dy: -SelectionView.inset)
         let selectionView = SelectionView()
@@ -526,12 +536,16 @@ final class PDFDocumentViewController: UIViewController {
                     return [.highlight]
                 }
             }
+            builder.freeTextAccessoryViewEnabled = false
             builder.scrubberBarType = .horizontal
 //            builder.thumbnailBarMode = .scrubberBar
             builder.markupAnnotationMergeBehavior = .never
+            builder.freeTextAccessoryViewEnabled = false
             builder.overrideClass(PSPDFKit.HighlightAnnotation.self, with: HighlightAnnotation.self)
             builder.overrideClass(PSPDFKit.NoteAnnotation.self, with: NoteAnnotation.self)
             builder.overrideClass(PSPDFKit.SquareAnnotation.self, with: SquareAnnotation.self)
+            builder.overrideClass(PSPDFKit.UnderlineAnnotation.self, with: UnderlineAnnotation.self)
+            builder.overrideClass(FreeTextAnnotationView.self, with: CustomFreeTextAnnotationView.self)
         }
 
         let controller = PDFViewController(document: document, configuration: pdfConfiguration)
@@ -622,6 +636,12 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
         return false
     }
 
+    func pdfViewController(_ pdfController: PDFViewController, shouldSelect annotations: [PSPDFKit.Annotation], on pageView: PDFPageView) -> [PSPDFKit.Annotation] {
+        guard let annotation = annotations.first, annotation.type == .freeText else { return annotations }
+        self.selectedAnnotationWasSelectedBefore = pageView.selectedAnnotations.contains(annotation)
+        return annotations
+    }
+
     func pdfViewController(
         _ sender: PDFViewController,
         menuForAnnotations annotations: [PSPDFKit.Annotation],
@@ -629,6 +649,21 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
         appearance: EditMenuAppearance,
         suggestedMenu: UIMenu
     ) -> UIMenu {
+        guard let annotation = annotations.first,
+              annotation.type == .freeText,
+              let annotationView = pageView.visibleAnnotationViews.first(where: { $0.annotation == annotation }) as? CustomFreeTextAnnotationView
+        else { return UIMenu(children: []) }
+
+        annotationView.delegate = self
+        annotationView.annotationKey = annotation.key.flatMap({ .init(key: $0, type: .database) })
+
+        if annotation.key != nil && self.selectedAnnotationWasSelectedBefore {
+            // Focus only if Zotero annotation is selected, if annotation popup is dismissed and this annotation has been already selected
+            annotationView.beginEditing()
+        }
+
+        self.selectedAnnotationWasSelectedBefore = false
+
         return UIMenu(children: [])
     }
 
@@ -882,6 +917,61 @@ extension PDFDocumentViewController: AnnotationBoundingBoxConverter {
         }
 
         return textOffset
+    }
+}
+
+extension PDFDocumentViewController: FreeTextInputDelegate {
+    func showColorPicker(sender: UIView, key: PDFReaderState.AnnotationKey, updated: @escaping (String) -> Void) {
+        let color = self.viewModel.state.annotation(for: key)?.color
+        self.coordinatorDelegate?.showToolSettings(
+            tool: .freeText,
+            colorHex: color,
+            sizeValue: nil,
+            sender: .view(sender, nil),
+            userInterfaceStyle: self.overrideUserInterfaceStyle,
+            valueChanged: { newColor, _ in
+                guard let newColor else { return }
+                self.viewModel.process(action: .setColor(key: key.key, color: newColor))
+                updated(newColor)
+            }
+        )
+    }
+    
+    func showFontSizePicker(sender: UIView, key: PDFReaderState.AnnotationKey, updated: @escaping (UInt) -> Void) {
+        self.coordinatorDelegate?.showFontSizePicker(sender: sender, picked: { [weak self] size in
+            self?.viewModel.process(action: .setFontSize(key: key.key, size: size))
+            updated(size)
+        })
+    }
+
+    func showTagPicker(sender: UIView, key: PDFReaderState.AnnotationKey, updated: @escaping ([Tag]) -> Void) {
+        let tags = Set((self.getTags(for: key) ?? []).compactMap({ $0.name }))
+        self.coordinatorDelegate?.showTagPicker(libraryId: self.viewModel.state.library.identifier, selected: tags, userInterfaceStyle: self.viewModel.state.interfaceStyle, picked: { tags in
+            self.viewModel.process(action: .setTags(key: key.key, tags: tags))
+            updated(tags)
+        })
+    }
+
+    func deleteAnnotation(sender: UIView, key: PDFReaderState.AnnotationKey) {
+        self.coordinatorDelegate?.showDeleteAlertForAnnotation(sender: sender, delete: {
+            self.viewModel.process(action: .removeAnnotation(key))
+        })
+    }
+
+    func change(fontSize: UInt, for key: PDFReaderState.AnnotationKey) {
+        self.viewModel.process(action: .setFontSize(key: key.key, size: fontSize))
+    }
+    
+    func getFontSize(for key: PDFReaderState.AnnotationKey) -> UInt? {
+        return self.viewModel.state.annotation(for: key)?.fontSize
+    }
+
+    func getColor(for key: PDFReaderState.AnnotationKey) -> UIColor? {
+        return (self.viewModel.state.annotation(for: key)?.color).flatMap({ UIColor(hex: $0) })
+    }
+
+    func getTags(for key: PDFReaderState.AnnotationKey) -> [Tag]? {
+        return self.viewModel.state.annotation(for: key)?.tags
     }
 }
 

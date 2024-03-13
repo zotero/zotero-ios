@@ -21,6 +21,8 @@ struct PDFDocumentAnnotation {
     let color: String
     let comment: String
     let text: String?
+    var fontSize: UInt?
+    var rotation: UInt?
     let sortIndex: String
     let dateModified: Date
 }

@@ -43,7 +43,7 @@ extension PSPDFKit.Annotation {
     }
 
     var shouldRenderPreview: Bool {
-        return (self is PSPDFKit.SquareAnnotation) || (self is PSPDFKit.InkAnnotation)
+        return (self is PSPDFKit.SquareAnnotation) || (self is PSPDFKit.InkAnnotation) || (self is PSPDFKit.FreeTextAnnotation)
     }
 
     var previewId: String {

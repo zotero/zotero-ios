@@ -102,6 +102,7 @@ extension AnnotationPreviewController {
 
         // Cache and report original color
         let rect = annotation.previewBoundingBox
+        let includeAnnotation = annotation is PSPDFKit.InkAnnotation || annotation is PSPDFKit.FreeTextAnnotation
         self.enqueue(
             key: annotation.previewId,
             parentKey: parentKey,
@@ -111,7 +112,7 @@ extension AnnotationPreviewController {
             rect: rect,
             imageSize: previewSize,
             imageScale: 0.0,
-            includeAnnotation: (annotation is PSPDFKit.InkAnnotation),
+            includeAnnotation: includeAnnotation,
             invertColors: false,
             isDark: isDark,
             type: .cachedAndReported

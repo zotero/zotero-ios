@@ -33,6 +33,9 @@ protocol PdfReaderCoordinatorDelegate: AnyObject {
     func showReader(document: Document, userInterfaceStyle: UIUserInterfaceStyle)
     func showCitation(for itemId: String, libraryId: LibraryIdentifier)
     func copyBibliography(using presenter: UIViewController, for itemId: String, libraryId: LibraryIdentifier)
+    func showFontSizePicker(sender: UIView, picked: @escaping (UInt) -> Void)
+    func showDeleteAlertForAnnotation(sender: UIView, delete: @escaping () -> Void)
+    func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, userInterfaceStyle: UIUserInterfaceStyle?, picked: @escaping ([Tag]) -> Void)
 }
 
 protocol PdfAnnotationsCoordinatorDelegate: AnyObject {
@@ -348,6 +351,16 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         self.navigationController?.present(controller, animated: true, completion: nil)
     }
 
+    func showDeleteAlertForAnnotation(sender: UIView, delete: @escaping () -> Void) {
+        let controller = UIAlertController(title: nil, message: L10n.Pdf.deleteAnnotation, preferredStyle: .actionSheet)
+        controller.popoverPresentationController?.sourceView = sender
+        controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
+        controller.addAction(UIAlertAction(title: L10n.delete, style: .destructive, handler: { _ in
+            delete()
+        }))
+        self.navigationController?.present(controller, animated: true, completion: nil)
+    }
+
     func showSettings(with settings: PDFSettings, sender: UIBarButtonItem) -> ViewModel<ReaderSettingsActionHandler> {
         DDLogInfo("PDFCoordinator: show settings")
 
@@ -386,6 +399,25 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
 
     func copyBibliography(using presenter: UIViewController, for itemId: String, libraryId: LibraryIdentifier) {
         (parentCoordinator as? DetailCoordinator)?.copyBibliography(using: presenter, for: Set([itemId]), libraryId: libraryId, delegate: self)
+    }
+
+    func showFontSizePicker(sender: UIView, picked: @escaping (UInt) -> Void) {
+        let controller = FontSizePickerViewController(pickAction: picked)
+        let presentedController: UIViewController
+        switch UIDevice.current.userInterfaceIdiom {
+        case .pad:
+            controller.modalPresentationStyle = .popover
+            controller.popoverPresentationController?.sourceView = sender
+            controller.preferredContentSize = CGSize(width: 200, height: 400)
+            presentedController = controller
+
+        default:
+            let navigationController = UINavigationController(rootViewController: controller)
+            navigationController.modalPresentationStyle = .formSheet
+            presentedController = navigationController
+        }
+
+        self.navigationController?.present(presentedController, animated: true)
     }
 }
 
@@ -564,7 +596,8 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
                 color: annotation.color,
                 lineWidth: annotation.lineWidth ?? 0,
                 pageLabel: annotation.pageLabel,
-                highlightText: annotation.text ?? ""
+                highlightText: annotation.text ?? "",
+                fontSize: annotation.fontSize
             ),
             saveAction: saveAction,
             deleteAction: deleteAction,

@@ -8,9 +8,11 @@
 
 import Foundation
 
-enum AnnotationType: String {
+enum AnnotationType: String, CaseIterable {
     case note
     case highlight
     case image
     case ink
+    case underline
+    case freeText = "text"
 }
