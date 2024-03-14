@@ -4220,6 +4220,7 @@
 				B3CF8840266E0FE6009CFC20 /* Run Script */,
 				B3593F142668D37900FA4BB2 /* Run Script */,
 				B34A85AC243CB1E4003D5638 /* ShellScript */,
+				B3A1D03D2BA321B30040FEE9 /* ShellScript */,
 				B337A5AD244F229400AFD13D /* SwiftGen */,
 				B30D59512206F60400884C4A /* Sources */,
 				B30D59522206F60400884C4A /* Frameworks */,
@@ -4626,6 +4627,24 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "python3 \"$SCRIPT_INPUT_FILE_0\"\n";
+		};
+		B3A1D03D2BA321B30040FEE9 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/scripts/bundle_note_editor.sh",
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "sh \"$SCRIPT_INPUT_FILE_0\"\n";
 		};
 		B3CF8840266E0FE6009CFC20 /* Run Script */ = {
 			isa = PBXShellScriptBuildPhase;
