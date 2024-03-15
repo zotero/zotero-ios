@@ -694,7 +694,7 @@ final class AttachmentDownloader: NSObject {
         func createDownloadTask(from enqueuedDownload: EnqueuedDownload) -> (URLSessionTask, Download, ActiveDownload)? {
             do {
                 let request: URLRequest
-                if webDavController.sessionStorage.isEnabled {
+                if case .custom = enqueuedDownload.download.libraryId, webDavController.sessionStorage.isEnabled {
                     guard let url = webDavController.currentUrl?.appendingPathComponent("\(enqueuedDownload.download.key).zip") else { return nil }
                     let apiRequest = FileRequest(webDavUrl: url, destination: enqueuedDownload.file)
                     request = try webDavController.createURLRequest(from: apiRequest)
