@@ -26,6 +26,12 @@ struct StoreItemsResponse {
         case invalidCreator(key: String, creatorType: String)
     }
 
+    struct AttachmentData {
+        let attachment: Attachment
+        let parentKey: String?
+    }
+
+    let changedAttachments: [AttachmentData]
     let changedFilenames: [FilenameChange]
     let conflicts: [Error]
 }
@@ -42,12 +48,13 @@ struct StoreItemsDbResponseRequest: DbResponseRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws -> StoreItemsResponse {
+        var attachmentChanges: [StoreItemsResponse.AttachmentData] = []
         var filenameChanges: [StoreItemsResponse.FilenameChange] = []
         var errors: [StoreItemsResponse.Error] = []
 
         for response in self.responses {
             do {
-                let (_, change) = try StoreItemDbRequest(
+                let data = try StoreItemDbRequest(
                     response: response,
                     schemaController: self.schemaController,
                     dateParser: self.dateParser,
@@ -55,8 +62,11 @@ struct StoreItemsDbResponseRequest: DbResponseRequest {
                     denyIncorrectCreator: self.denyIncorrectCreator
                 )
                 .process(in: database)
-                if let change = change {
+                if let change = data.filenameChange {
                     filenameChanges.append(change)
+                }
+                if data.attachmentChanged, let attachment = AttachmentCreator.attachment(for: data.item, fileStorage: nil, urlDetector: nil) {
+                    attachmentChanges.append(StoreItemsResponse.AttachmentData(attachment: attachment, parentKey: data.item.parent?.key))
                 }
             } catch let error as StoreItemsResponse.Error {
                 errors.append(error)
@@ -65,12 +75,18 @@ struct StoreItemsDbResponseRequest: DbResponseRequest {
             }
         }
 
-        return StoreItemsResponse(changedFilenames: filenameChanges, conflicts: errors)
+        return StoreItemsResponse(changedAttachments: attachmentChanges, changedFilenames: filenameChanges, conflicts: errors)
     }
 }
 
 struct StoreItemDbRequest: DbResponseRequest {
-    typealias Response = (RItem, StoreItemsResponse.FilenameChange?)
+    typealias Response = ResponseData
+
+    struct ResponseData {
+        let item: RItem
+        let filenameChange: StoreItemsResponse.FilenameChange?
+        let attachmentChanged: Bool
+    }
 
     let response: ItemResponse
     unowned let schemaController: SchemaController
@@ -80,7 +96,7 @@ struct StoreItemDbRequest: DbResponseRequest {
 
     var needsWrite: Bool { return true }
 
-    func process(in database: Realm) throws -> (RItem, StoreItemsResponse.FilenameChange?) {
+    func process(in database: Realm) throws -> ResponseData {
         guard let libraryId = self.response.library.libraryId else { throw DbError.primaryKeyUnavailable }
 
         let item: RItem
@@ -126,7 +142,7 @@ struct StoreItemDbRequest: DbResponseRequest {
         schemaController: SchemaController,
         dateParser: DateParser,
         database: Realm
-    ) throws -> (RItem, StoreItemsResponse.FilenameChange?) {
+    ) throws -> ResponseData {
         item.key = response.key
         item.rawType = response.rawType
         item.localizedType = schemaController.localized(itemType: response.rawType) ?? ""
@@ -141,7 +157,7 @@ struct StoreItemDbRequest: DbResponseRequest {
         item.changeType = .sync
         item.libraryId = libraryId
 
-        let filenameChange = self.syncFields(data: response, item: item, database: database, schemaController: schemaController, dateParser: dateParser)
+        let (filenameChange, md5Changed) = self.syncFields(data: response, item: item, database: database, schemaController: schemaController, dateParser: dateParser)
         self.syncParent(key: response.parentKey, libraryId: libraryId, item: item, database: database)
         self.syncCollections(keys: response.collectionKeys, libraryId: libraryId, item: item, database: database)
         self.sync(tags: response.tags, libraryId: libraryId, item: item, database: database)
@@ -155,10 +171,10 @@ struct StoreItemDbRequest: DbResponseRequest {
         // Item title depends on item type, creators and fields, so we update derived titles (displayTitle and sortTitle) after everything else synced
         item.updateDerivedTitles()
 
-        return (item, filenameChange)
+        return ResponseData(item: item, filenameChange: filenameChange, attachmentChanged: md5Changed)
     }
 
-    static func syncFields(data: ItemResponse, item: RItem, database: Realm, schemaController: SchemaController, dateParser: DateParser) -> StoreItemsResponse.FilenameChange? {
+    static func syncFields(data: ItemResponse, item: RItem, database: Realm, schemaController: SchemaController, dateParser: DateParser) -> (StoreItemsResponse.FilenameChange?, Bool) {
         var oldName: String?
         var newName: String?
         var contentType: String?
@@ -257,12 +273,13 @@ struct StoreItemDbRequest: DbResponseRequest {
         item.set(publisher: publisher)
         item.set(publicationTitle: publicationTitle)
         item.annotationSortIndex = sortIndex ?? ""
+        let md5DidChange = item.backendMd5 != (md5 ?? "")
         item.backendMd5 = md5 ?? ""
 
         if let oldName = oldName, let newName = newName, let contentType = contentType {
-            return StoreItemsResponse.FilenameChange(key: item.key, oldName: oldName, newName: newName, contentType: contentType)
+            return (StoreItemsResponse.FilenameChange(key: item.key, oldName: oldName, newName: newName, contentType: contentType), md5DidChange)
         }
-        return nil
+        return (nil, md5DidChange)
     }
 
     static func sync(rects: [[Double]], in item: RItem, database: Realm) {

@@ -50,7 +50,7 @@ struct CollectionsState: ViewModelState {
 
     init(libraryId: LibraryIdentifier, selectedCollectionId: CollectionIdentifier) {
         self.libraryId = libraryId
-        self.library = Library(identifier: .custom(.myLibrary), name: "", metadataEditable: false, filesEditable: false)
+        self.library = Library(identifier: .custom(.myLibrary), name: "", metadataEditable: false, filesEditable: false, fileSyncType: .asNeeded)
         self.selectedCollectionId = selectedCollectionId
         self.changes = []
         self.collectionTree = CollectionTree(nodes: [], collections: [:], collapsed: [:])

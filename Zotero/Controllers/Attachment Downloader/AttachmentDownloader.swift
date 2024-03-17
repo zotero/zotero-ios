@@ -104,7 +104,7 @@ final class AttachmentDownloader: NSObject {
         var totalBatchCount = 0
         var remainingBatchCount = 0
 
-        self.accessQueue.sync { [weak self] in
+        accessQueue.sync { [weak self] in
             guard let self else { return }
             progress = batchProgress
             remainingBatchCount = queue.count + activeDownloads.count
@@ -342,10 +342,10 @@ final class AttachmentDownloader: NSObject {
 
                     case .importedFile, .importedUrl:
                         switch location {
-                        case .local:
+                        case .local, .remoteMissing:
                             break
 
-                        case .remote, .remoteMissing, .localAndChangedRemotely:
+                        case .remote, .localAndChangedRemotely:
                             DDLogInfo("AttachmentDownloader: batch download remote\(location == .remoteMissing ? "ly missing" : "") file \(attachment.key)")
                             let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
                             let progress = Progress(totalUnitCount: 100)
@@ -504,7 +504,7 @@ final class AttachmentDownloader: NSObject {
         }
 
         func finishExtraction(downloader: AttachmentDownloader) {
-            self.dbQueue.async { [weak downloader] in
+            downloader.dbQueue.async { [weak downloader] in
                 guard let downloader else { return }
                 do {
                     let request = MarkFileAsDownloadedDbRequest(key: download.key, libraryId: download.libraryId, downloaded: true, compressed: false)
