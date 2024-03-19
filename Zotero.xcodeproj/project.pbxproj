@@ -29,6 +29,8 @@
 		614D65872A8030C9007CF449 /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 614D65862A8030C9007CF449 /* OrderedCollections */; };
 		61639F852AE03B8500026003 /* InstantPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61639F842AE03B8500026003 /* InstantPresenter.swift */; };
 		618404262A4456A9005AAF22 /* IdentifierLookupController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 618404252A4456A9005AAF22 /* IdentifierLookupController.swift */; };
+		618D83E42BA964FF00E7966B /* RDownload.swift in Sources */ = {isa = PBXBuildFile; fileRef = 618D83E32BA964FF00E7966B /* RDownload.swift */; };
+		618D83E52BA9660700E7966B /* RDownload.swift in Sources */ = {isa = PBXBuildFile; fileRef = 618D83E32BA964FF00E7966B /* RDownload.swift */; };
 		61A0C8472B8F669C0048FF92 /* PSPDFKitUI+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61A0C8462B8F669B0048FF92 /* PSPDFKitUI+Extensions.swift */; };
 		61ABA7512A6137D1002A4219 /* ShareableImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61ABA7502A6137D1002A4219 /* ShareableImage.swift */; };
 		61BD13952A5831EF008A0704 /* TextKit1TextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61BD13942A5831EF008A0704 /* TextKit1TextView.swift */; };
@@ -1237,6 +1239,7 @@
 		614D65842A7BCC22007CF449 /* ci_post_clone.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ci_post_clone.sh; sourceTree = "<group>"; };
 		61639F842AE03B8500026003 /* InstantPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantPresenter.swift; sourceTree = "<group>"; };
 		618404252A4456A9005AAF22 /* IdentifierLookupController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdentifierLookupController.swift; sourceTree = "<group>"; };
+		618D83E32BA964FF00E7966B /* RDownload.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RDownload.swift; sourceTree = "<group>"; };
 		61A0C8462B8F669B0048FF92 /* PSPDFKitUI+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PSPDFKitUI+Extensions.swift"; sourceTree = "<group>"; };
 		61ABA7502A6137D1002A4219 /* ShareableImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareableImage.swift; sourceTree = "<group>"; };
 		61BD13942A5831EF008A0704 /* TextKit1TextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextKit1TextView.swift; sourceTree = "<group>"; };
@@ -2622,6 +2625,7 @@
 				B305653023FC051E003304F2 /* RCollection.swift */,
 				B305653123FC051E003304F2 /* RCreator.swift */,
 				B305653723FC051E003304F2 /* RCustomLibrary.swift */,
+				618D83E32BA964FF00E7966B /* RDownload.swift */,
 				B305653523FC051E003304F2 /* RGroup.swift */,
 				B305653223FC051E003304F2 /* RItem.swift */,
 				B3E4463B248FBBA3007FE8AB /* RLink.swift */,
@@ -5006,6 +5010,7 @@
 				B32DE61F26320271000287EC /* PopoverNavigationViewController.swift in Sources */,
 				B3CAE1182B0E38BA0000F8CA /* EmojiExtractor.swift in Sources */,
 				B3DEAAA728AD01CA00F72D90 /* URLSession+Extensions.swift in Sources */,
+				618D83E42BA964FF00E7966B /* RDownload.swift in Sources */,
 				B357A28C285B73BD00E73CA1 /* ScannerState.swift in Sources */,
 				B3E8FE5A2714325200F51458 /* SavingSettingsActionHandler.swift in Sources */,
 				B30566B623FC051F003304F2 /* DeletionsResponse.swift in Sources */,
@@ -5662,6 +5667,7 @@
 				B305672D23FC091A003304F2 /* MarkGroupAsLocalOnlySyncAction.swift in Sources */,
 				B3B8800A25FB590900904235 /* DeviceInfoProvider.swift in Sources */,
 				B30566FC23FC0862003304F2 /* MarkCollectionAndItemsAsDeletedDbRequest.swift in Sources */,
+				618D83E52BA9660700E7966B /* RDownload.swift in Sources */,
 				B3F9A4CC2B04F2AC00684030 /* WebViewEncoder.swift in Sources */,
 				B3D59F142A38A6C100F6BB7D /* RevertLibraryFilesSyncAction.swift in Sources */,
 				B377F2A02493725E00022943 /* UrlDetector.swift in Sources */,
