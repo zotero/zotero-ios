@@ -265,7 +265,7 @@ final class Controllers {
         // Disable ongoing sync and unsubscribe from websocket
         controllers?.disableSync(apiKey: self.apiKey)
         // Cancel all downloads
-        controllers?.fileDownloader.cancelAll()
+        controllers?.fileDownloader.stop()
         // Cancel all identifier lookups
         controllers?.identifierLookupController.cancelAllLookups()
         // Cancel all remote downloads
@@ -330,19 +330,8 @@ final class UserControllers {
         let backgroundUploadProcessor = BackgroundUploadProcessor(apiClient: controllers.apiClient, dbStorage: dbStorage, fileStorage: controllers.fileStorage, webDavController: webDavController)
         let backgroundUploadObserver = BackgroundUploadObserver(context: backgroundUploadContext, processor: backgroundUploadProcessor, backgroundTaskController: controllers.backgroundTaskController)
         let fileDownloader = AttachmentDownloader(userId: userId, apiClient: controllers.apiClient, fileStorage: controllers.fileStorage, dbStorage: dbStorage, webDavController: webDavController)
-        let syncController = SyncController(
-            userId: userId,
-            apiClient: controllers.apiClient,
-            dbStorage: dbStorage,
-            fileStorage: controllers.fileStorage,
-            schemaController: controllers.schemaController,
-            dateParser: controllers.dateParser,
-            backgroundUploaderContext: backgroundUploadContext,
-            webDavController: webDavController,
-            attachmentDownloader: fileDownloader,
-            syncDelayIntervals: DelayIntervals.sync,
-            maxRetryCount: DelayIntervals.retry.count
-        )
+        let syncController = SyncController(userId: userId, apiClient: controllers.apiClient, dbStorage: dbStorage, fileStorage: controllers.fileStorage, schemaController: controllers.schemaController,
+                                            dateParser: controllers.dateParser, backgroundUploaderContext: backgroundUploadContext, webDavController: webDavController, attachmentDownloader: fileDownloader, syncDelayIntervals: DelayIntervals.sync, maxRetryCount: DelayIntervals.retry.count)
         let webSocketController = WebSocketController(dbStorage: dbStorage, lowPowerModeController: controllers.lowPowerModeController)
         let fileCleanupController = AttachmentFileCleanupController(fileStorage: controllers.fileStorage, dbStorage: dbStorage)
 

@@ -25,12 +25,12 @@ struct AttachmentCreator {
     static func mainAttachment(for item: RItem, fileStorage: FileStorage) -> Attachment? {
         if item.rawType == ItemTypes.attachment {
             // If item is attachment, create `Attachment` and ignore linked attachments.
-            if let attachment = attachment(for: item, fileStorage: fileStorage, urlDetector: nil) {
+            if let attachment = self.attachment(for: item, fileStorage: fileStorage, urlDetector: nil) {
                 switch attachment.type {
                 case .url:
                     return attachment
 
-                case .file(_, _, _, let linkType, _) where linkType == .importedFile || linkType == .importedUrl:
+                case .file(_, _, _, let linkType) where linkType == .importedFile || linkType == .importedUrl:
                     return attachment
                 default: break
                 }
@@ -38,27 +38,19 @@ struct AttachmentCreator {
             return nil
         }
 
-        var attachmentData = attachmentData(for: item)
+        var attachmentData = self.attachmentData(for: item)
 
         guard !attachmentData.isEmpty else { return nil }
 
         attachmentData.sort { lData, rData in
-            mainAttachmentsAreInIncreasingOrder(lData: (lData.1, lData.3, lData.4), rData: (rData.1, rData.3, rData.4))
+            self.mainAttachmentsAreInIncreasingOrder(lData: (lData.1, lData.3, lData.4), rData: (rData.1, rData.3, rData.4))
         }
 
         guard let (idx, contentType, linkMode, _, _) = attachmentData.first else { return nil }
         let rAttachment = item.children[idx]
         let linkType: Attachment.FileLinkType = linkMode == .importedFile ? .importedFile : .importedUrl
         guard let libraryId = rAttachment.libraryId,
-              let type = importedType(
-                for: rAttachment,
-                contentType: contentType,
-                libraryId: libraryId,
-                fileStorage: fileStorage,
-                linkType: linkType,
-                compressed: rAttachment.fileCompressed
-              )
-        else { return nil }
+              let type = self.importedType(for: rAttachment, contentType: contentType, libraryId: libraryId, fileStorage: fileStorage, linkType: linkType) else { return nil }
         return Attachment(item: rAttachment, type: type)
     }
 
@@ -66,16 +58,14 @@ struct AttachmentCreator {
         guard !attachments.isEmpty else { return nil }
         return attachments.filter({ attachment in
             switch attachment.type {
-            case .file(_, let contentType, _, _, _):
+            case .file(_, let contentType, _, _):
                 return contentType == "application/pdf"
             default:
                 return false
             }
         }).sorted { lAttachment, rAttachment in
-            return mainAttachmentsAreInIncreasingOrder(
-                lData: ("application/pdf", (lAttachment.url == parentUrl), lAttachment.dateAdded),
-                rData: ("application/pdf", (rAttachment.url == parentUrl), rAttachment.dateAdded)
-            )
+            return self.mainAttachmentsAreInIncreasingOrder(lData: ("application/pdf", (lAttachment.url == parentUrl), lAttachment.dateAdded),
+                                                            rData: ("application/pdf", (rAttachment.url == parentUrl), rAttachment.dateAdded))
         }.first
     }
 
@@ -87,7 +77,7 @@ struct AttachmentCreator {
             guard (child.rawType == ItemTypes.attachment) && (child.syncState != .dirty) && !child.trash,
                   let linkMode = child.fields.first(where: { $0.key == FieldKeys.Item.Attachment.linkMode }).flatMap({ LinkMode(rawValue: $0.value) }),
                   (linkMode == .importedUrl) || (linkMode == .importedFile),
-                  let contentType = contentType(for: child),
+                  let contentType = self.contentType(for: child),
                   AttachmentCreator.mainAttachmentContentTypes.contains(contentType) else { continue }
 
             var hasMatchingUrlWithParent = false
@@ -105,8 +95,8 @@ struct AttachmentCreator {
     /// - parameter rData: Content type, indicator whether attachment and parent item has matching URLs, date added of attachment.
     /// returns: `true` if lData and rData are in increasing order (lData < rData)
     private static func mainAttachmentsAreInIncreasingOrder(lData: (String, Bool, Date), rData: (String, Bool, Date)) -> Bool {
-        let lPriority = priority(for: lData.0)
-        let rPriority = priority(for: rData.0)
+        let lPriority = self.priority(for: lData.0)
+        let rPriority = self.priority(for: rData.0)
 
         guard lPriority == rPriority else {
             // Sort based on content type priority
@@ -138,7 +128,7 @@ struct AttachmentCreator {
     /// - parameter urlDetector: Url detector to validate url attachment.
     /// - returns: Attachment if recognized. Nil otherwise.
     static func attachment(for item: RItem, options: Options = .light, fileStorage: FileStorage?, urlDetector: UrlDetector?) -> Attachment? {
-        return attachmentType(for: item, options: options, fileStorage: fileStorage, urlDetector: urlDetector).flatMap({ Attachment(item: item, type: $0) })
+        return self.attachmentType(for: item, options: options, fileStorage: fileStorage, urlDetector: urlDetector).flatMap({ Attachment(item: item, type: $0) })
     }
 
     /// Returns attachment content type type based on attachment item.
@@ -158,20 +148,20 @@ struct AttachmentCreator {
 
         switch linkMode {
         case .importedFile:
-            return importedType(for: item, libraryId: libraryId, fileStorage: fileStorage, linkType: .importedFile, compressed: item.fileCompressed)
+            return self.importedType(for: item, libraryId: libraryId, fileStorage: fileStorage, linkType: .importedFile)
 
         case .embeddedImage:
-            return embeddedImageType(for: item, libraryId: libraryId, options: options, fileStorage: fileStorage)
+            return self.embeddedImageType(for: item, libraryId: libraryId, options: options, fileStorage: fileStorage)
 
         case .importedUrl:
-            return importedType(for: item, libraryId: libraryId, fileStorage: fileStorage, linkType: .importedUrl, compressed: item.fileCompressed)
+            return self.importedType(for: item, libraryId: libraryId, fileStorage: fileStorage, linkType: .importedUrl)
 
         case .linkedFile:
-            return linkedFileType(item: item, libraryId: libraryId)
+            return self.linkedFileType(item: item, libraryId: libraryId)
 
         case .linkedUrl:
             guard let urlDetector = urlDetector else { return nil }
-            return linkedUrlType(for: item, libraryId: libraryId, urlDetector: urlDetector)
+            return self.linkedUrlType(for: item, libraryId: libraryId, urlDetector: urlDetector)
         }
     }
 
@@ -189,28 +179,21 @@ struct AttachmentCreator {
             return nil
         }
         let file = Files.annotationPreview(annotationKey: parent.key, pdfKey: attachmentItem.key, libraryId: libraryId, isDark: (options == .dark))
-        let location = location(for: item, file: file, fileStorage: fileStorage)
-        let filename = filename(for: item, ext: "png")
-        return .file(filename: filename, contentType: "image/png", location: location, linkType: .embeddedImage, compressed: false)
+        let location = self.location(for: item, file: file, fileStorage: fileStorage)
+        let filename = self.filename(for: item, ext: "png")
+        return .file(filename: filename, contentType: "image/png", location: location, linkType: .embeddedImage)
     }
 
-    private static func importedType(for item: RItem, libraryId: LibraryIdentifier, fileStorage: FileStorage?, linkType: Attachment.FileLinkType, compressed: Bool) -> Attachment.Kind? {
-        guard let contentType = contentType(for: item) else { return nil }
-        return importedType(for: item, contentType: contentType, libraryId: libraryId, fileStorage: fileStorage, linkType: linkType, compressed: compressed)
+    private static func importedType(for item: RItem, libraryId: LibraryIdentifier, fileStorage: FileStorage?, linkType: Attachment.FileLinkType) -> Attachment.Kind? {
+        guard let contentType = self.contentType(for: item) else { return nil }
+        return self.importedType(for: item, contentType: contentType, libraryId: libraryId, fileStorage: fileStorage, linkType: linkType)
     }
 
-    private static func importedType(
-        for item: RItem,
-        contentType: String,
-        libraryId: LibraryIdentifier,
-        fileStorage: FileStorage?,
-        linkType: Attachment.FileLinkType,
-        compressed: Bool
-    ) -> Attachment.Kind? {
-        let filename = filename(for: item, ext: contentType.extensionFromMimeType)
+    private static func importedType(for item: RItem, contentType: String, libraryId: LibraryIdentifier, fileStorage: FileStorage?, linkType: Attachment.FileLinkType) -> Attachment.Kind? {
+        let filename = self.filename(for: item, ext: contentType.extensionFromMimeType)
         let file = Files.attachmentFile(in: libraryId, key: item.key, filename: filename, contentType: contentType)
-        let location = location(for: item, file: file, fileStorage: fileStorage)
-        return .file(filename: filename, contentType: contentType, location: location, linkType: linkType, compressed: compressed)
+        let location = self.location(for: item, file: file, fileStorage: fileStorage)
+        return .file(filename: filename, contentType: contentType, location: location, linkType: linkType)
     }
 
     private static func linkedFileType(item: RItem, libraryId: LibraryIdentifier) -> Attachment.Kind? {
@@ -222,8 +205,8 @@ struct AttachmentCreator {
             DDLogError("AttachmentCreator: path missing for item \(item.key)")
             return nil
         }
-        let filename = filename(for: item, ext: URL(fileURLWithPath: path).pathExtension)
-        return .file(filename: filename, contentType: contentType, location: .local, linkType: .linkedFile, compressed: false)
+        let filename = self.filename(for: item, ext: URL(fileURLWithPath: path).pathExtension)
+        return .file(filename: filename, contentType: contentType, location: .local, linkType: .linkedFile)
     }
 
     private static func linkedUrlType(for item: RItem, libraryId: LibraryIdentifier, urlDetector: UrlDetector) -> Attachment.Kind? {
@@ -278,15 +261,13 @@ struct AttachmentCreator {
         // If file storage is not specified, we don't care about location anyway. Let's just return `.remote`.
         guard let fileStorage = fileStorage else { return .remote }
 
-        let webDavEnabled = Defaults.shared.webDavEnabled
-
-        if fileStorage.has(file) || (webDavEnabled && fileStorage.has(file.copyWithExt("zip"))) {
+        if fileStorage.has(file) {
             if !item.backendMd5.isEmpty, let md5 = md5(from: file.createUrl()), item.backendMd5 != md5 {
                 return .localAndChangedRemotely
             } else {
                 return .local
             }
-        } else if webDavEnabled || item.links.contains(where: { $0.type == LinkType.enclosure.rawValue }) {
+        } else if Defaults.shared.webDavEnabled || item.links.contains(where: { $0.type == LinkType.enclosure.rawValue }) {
             return .remote
         } else {
             return .remoteMissing

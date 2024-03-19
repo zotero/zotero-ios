@@ -13,7 +13,7 @@ import RealmSwift
 import Network
 
 struct Database {
-    private static let schemaVersion: UInt64 = 44
+    private static let schemaVersion: UInt64 = 42
 
     static func mainConfiguration(url: URL, fileStorage: FileStorage) -> Realm.Configuration {
         var config = Realm.Configuration(
@@ -42,8 +42,7 @@ struct Database {
             RUser.self,
             RWebDavDeletion.self,
             RVersions.self,
-            RObjectChange.self,
-            RDownload.self
+            RObjectChange.self
         ]
         return config
     }

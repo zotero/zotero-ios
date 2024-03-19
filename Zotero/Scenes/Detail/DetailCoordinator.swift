@@ -184,7 +184,7 @@ final class DetailCoordinator: Coordinator {
         case .url(let url):
             self.show(url: url)
 
-        case .file(let filename, let contentType, _, _, _):
+        case .file(let filename, let contentType, _, _):
             let file = Files.attachmentFile(in: library.identifier, key: attachment.key, filename: filename, contentType: contentType)
             let url = file.createUrl()
             let rect = sourceRect ?? CGRect(x: (sourceView.frame.width / 3.0), y: (sourceView.frame.height * 2.0 / 3.0), width: (sourceView.frame.width / 3), height: (sourceView.frame.height / 3))

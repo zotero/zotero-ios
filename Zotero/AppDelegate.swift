@@ -117,8 +117,8 @@ final class AppDelegate: UIResponder {
         for (key, libraryId, type) in items {
             switch type {
             case .url: break
-            case .file(_, _, _, let linkType, _) where (linkType == .embeddedImage || linkType == .linkedFile): break // Embedded images and linked files don't need to be checked.
-            case .file(let filename, let contentType, _, let linkType, _):
+            case .file(_, _, _, let linkType) where (linkType == .embeddedImage || linkType == .linkedFile): break // Embedded images and linked files don't need to be checked.
+            case .file(let filename, let contentType, _, let linkType):
                 // Snapshots were stored based on new structure, no need to do anything.
                 guard linkType != .importedUrl || contentType != "text/html" else { continue }
 
@@ -313,7 +313,6 @@ extension AppDelegate: UIApplicationDelegate {
             return
         }
 
-        guard !userControllers.fileDownloader.handleEventsForBackgroundURLSession(with: identifier, completionHandler: completionHandler) else { return }
         userControllers.backgroundUploadObserver.handleEventsForBackgroundURLSession(with: identifier, completionHandler: completionHandler)
     }
 

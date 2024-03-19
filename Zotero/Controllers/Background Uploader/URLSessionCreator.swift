@@ -9,22 +9,13 @@
 import Foundation
 
 final class URLSessionCreator {
-    static func createSession(
-        for identifier: String,
-        delegate: URLSessionDelegate?,
-        delegateQueue: OperationQueue? = nil,
-        isDiscretionary: Bool = false,
-        httpMaximumConnectionsPerHost: Int? = nil
-    ) -> URLSession {
+    static func createSession(for identifier: String, delegate: URLSessionDelegate?) -> URLSession {
         let configuration = URLSessionConfiguration.background(withIdentifier: identifier)
         configuration.sharedContainerIdentifier = AppGroup.identifier
         configuration.timeoutIntervalForRequest = ApiConstants.requestTimeout
         configuration.timeoutIntervalForResource = ApiConstants.resourceTimeout
         configuration.sessionSendsLaunchEvents = true
-        configuration.isDiscretionary = isDiscretionary
-        if let httpMaximumConnectionsPerHost {
-            configuration.httpMaximumConnectionsPerHost = httpMaximumConnectionsPerHost
-        }
-        return URLSession(configuration: configuration, delegate: delegate, delegateQueue: delegateQueue)
+        configuration.isDiscretionary = false
+        return URLSession(configuration: configuration, delegate: delegate, delegateQueue: nil)
     }
 }

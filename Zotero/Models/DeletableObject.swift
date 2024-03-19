@@ -106,7 +106,7 @@ extension RItem: Deletable {
         switch type {
         case .url: break
 
-        case .file(_, let contentType, _, let linkType, _):
+        case .file(_, let contentType, _, let linkType):
             // Don't try to remove linked attachments
             guard linkType != .linkedFile, let libraryId = self.libraryId else { return }
 

@@ -86,7 +86,7 @@ class ItemDetailAttachmentContentView: UIView {
 
         case .default:
             switch attachment.type {
-            case .file(_, _, let location, _, _):
+            case .file(_, _, let location, _):
                 switch location {
                 case .remoteMissing:
                     self.accessibilityTraits = []

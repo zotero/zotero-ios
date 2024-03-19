@@ -9,7 +9,7 @@
 import Foundation
 
 enum ItemAccessory {
-    case attachment(attachment: Attachment, parentKey: String?)
+    case attachment(Attachment)
     case doi(String)
     case url(URL)
 }
@@ -17,9 +17,9 @@ enum ItemAccessory {
 extension ItemAccessory {
     func updatedAttachment(update: (Attachment) -> Attachment?) -> ItemAccessory? {
         switch self {
-        case .attachment(let attachment, let parentKey):
+        case .attachment(let attachment):
             if let new = update(attachment) {
-                return .attachment(attachment: new, parentKey: parentKey)
+                return .attachment(new)
             }
             return nil
 
@@ -30,11 +30,8 @@ extension ItemAccessory {
 
     var attachment: Attachment? {
         switch self {
-        case .attachment(let attachment, _):
-            return attachment
-
-        case .doi, .url:
-            return nil
+        case .attachment(let attachment): return attachment
+        case .doi, .url: return nil
         }
     }
 }

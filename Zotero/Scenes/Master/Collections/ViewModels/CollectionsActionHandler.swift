@@ -84,14 +84,12 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
                 guard let attachment = AttachmentCreator.attachment(for: item, fileStorage: self.fileStorage, urlDetector: nil) else { return nil }
 
                 switch attachment.type {
-                case .file(_, _, _, let linkType, _):
+                case .file(_, _, _, let linkType):
                     switch linkType {
                     case .importedFile, .importedUrl:
                         return (attachment, item.parent?.key)
-
                     default: break
                     }
-
                 default: break
                 }
 

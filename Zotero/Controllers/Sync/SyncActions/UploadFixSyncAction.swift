@@ -138,7 +138,7 @@ class UploadFixSyncAction: SyncAction {
                     DDLogError("UploadFixSyncAction: incorrect item type - \(attachment.type)")
                     subscriber(.failure(Error.incorrectAttachmentType(attachment.type)))
 
-                case .file(let filename, let contentType, let location, let linkType, let compressed):
+                case .file(let filename, let contentType, let location, let linkType):
                     switch linkType {
                     case .embeddedImage, .linkedFile:
                         DDLogError("UploadFixSyncAction: incorrect link type - \(linkType)")
@@ -153,7 +153,7 @@ class UploadFixSyncAction: SyncAction {
                         case .local, .localAndChangedRemotely, .remote:
                             // Create new attachment model with updated location so that `AttachmentDownloader` doesn't ignore it
                             let newAttachment = Attachment(
-                                type: .file(filename: filename, contentType: contentType, location: .remote, linkType: linkType, compressed: compressed),
+                                type: .file(filename: filename, contentType: contentType, location: .remote, linkType: linkType),
                                 title: attachment.title,
                                 key: attachment.key,
                                 libraryId: attachment.libraryId

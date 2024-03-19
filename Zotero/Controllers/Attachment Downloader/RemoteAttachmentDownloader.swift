@@ -148,7 +148,7 @@ final class RemoteAttachmentDownloader {
             
             func file(for attachment: Attachment) -> File? {
                 switch attachment.type {
-                case .file(let filename, let contentType, _, _, _):
+                case .file(let filename, let contentType, _, _):
                     return Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
 
                 case .url:

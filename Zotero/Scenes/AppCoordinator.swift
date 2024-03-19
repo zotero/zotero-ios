@@ -232,7 +232,7 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
                                 guard let attachment = AttachmentCreator.attachment(for: item, fileStorage: self.controllers.fileStorage, urlDetector: nil) else { return }
 
                                 switch attachment.type {
-                                case .file(let filename, let contentType, let location, _, _):
+                                case .file(let filename, let contentType, let location, _):
                                     switch location {
                                     case .local, .localAndChangedRemotely:
                                         let file = Files.attachmentFile(in: libraryId, key: key, filename: filename, contentType: contentType)
@@ -380,7 +380,7 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
             completion: (() -> Void)? = nil
         ) {
             switch attachment.type {
-            case .file(let filename, let contentType, _, _, _) where contentType == "application/pdf":
+            case .file(let filename, let contentType, _, _) where contentType == "application/pdf":
                 guard let presenter = window.rootViewController else { return }
                 let file = Files.attachmentFile(in: library.identifier, key: attachment.key, filename: filename, contentType: contentType)
                 let url = file.createUrl()
