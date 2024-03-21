@@ -405,20 +405,29 @@ final class UserControllers {
     fileprivate func enableSync(apiKey: String) {
         self.itemLocaleController.loadLocale()
 
+        // Enable idleTimerController before syncScheduler inProgress observation starts
+        idleTimerController.enable()
+        // Reset Defaults.shared.didPerformFullSyncFix if needed
+        if Defaults.shared.performFullSyncGuard < Defaults.currentPerformFullSyncGuard {
+            Defaults.shared.didPerformFullSyncFix = false
+            Defaults.shared.performFullSyncGuard = Defaults.currentPerformFullSyncGuard
+        }
         // Observe sync to enable/disable the device falling asleep
-        self.syncScheduler.inProgress
+        // Skip first value that is observed during syncScheduler initialization, to avoid reseting didPerformFullSyncFix before the actual first sync occurs
+        syncScheduler.inProgress
+            .skip(1)
             .observe(on: MainScheduler.instance)
-            .subscribe(with: self, onNext: { `self`, inProgress in
+            .subscribe(onNext: { [weak self] inProgress in
                 if inProgress {
-                    self.idleTimerController.disable()
+                    self?.idleTimerController.disable()
                 } else {
-                    self.idleTimerController.enable()
+                    self?.idleTimerController.enable()
                     if !Defaults.shared.didPerformFullSyncFix {
                         Defaults.shared.didPerformFullSyncFix = true
                     }
                 }
             })
-            .disposed(by: self.disposeBag)
+            .disposed(by: disposeBag)
 
         // Observe local changes to start sync
         self.changeObserver.observable
