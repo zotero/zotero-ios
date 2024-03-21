@@ -407,6 +407,11 @@ final class UserControllers {
 
         // Enable idleTimerController before syncScheduler inProgress observation starts
         idleTimerController.enable()
+        // Reset Defaults.shared.didPerformFullSyncFix if needed
+        if Defaults.shared.performFullSyncGuard < Defaults.currentPerformFullSyncGuard {
+            Defaults.shared.didPerformFullSyncFix = false
+            Defaults.shared.performFullSyncGuard = Defaults.currentPerformFullSyncGuard
+        }
         // Observe sync to enable/disable the device falling asleep
         // Skip first value that is observed during syncScheduler initialization, to avoid reseting didPerformFullSyncFix before the actual first sync occurs
         syncScheduler.inProgress
