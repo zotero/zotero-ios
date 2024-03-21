@@ -1125,8 +1125,7 @@ final class ExtensionViewModel {
 
                 do {
                     let request = MarkAttachmentUploadedDbRequest(libraryId: data.libraryId, key: data.attachment.key, version: version)
-                    let request2 = UpdateVersionsDbRequest(version: version, libraryId: data.libraryId, type: .object(.item))
-                    try dbStorage.perform(writeRequests: [request, request2], on: self.backgroundQueue)
+                    try dbStorage.perform(request: request, on: self.backgroundQueue)
                     return Single.just(())
                 } catch let error {
                     return Single.error(error)
