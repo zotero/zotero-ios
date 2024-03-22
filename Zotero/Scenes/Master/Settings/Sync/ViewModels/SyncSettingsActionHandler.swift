@@ -43,6 +43,7 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
             self.set(fileSyncType: type, in: viewModel)
 
         case .setScheme(let scheme):
+            guard scheme != viewModel.state.scheme else { break }
             self.update(viewModel: viewModel) { state in
                 state.scheme = scheme
                 state.webDavVerificationResult = nil
@@ -51,9 +52,11 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
             self.webDavController.resetVerification()
 
         case .setUrl(let url):
+            guard url != viewModel.state.url else { break }
             self.set(url: url, in: viewModel)
 
         case .setUsername(let username):
+            guard username != viewModel.state.username else { break }
             self.update(viewModel: viewModel) { state in
                 state.username = username
                 state.webDavVerificationResult = nil
@@ -62,6 +65,7 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
             self.webDavController.resetVerification()
 
         case .setPassword(let password):
+            guard password != viewModel.state.password else { break }
             self.update(viewModel: viewModel) { state in
                 state.password = password
                 state.webDavVerificationResult = nil
