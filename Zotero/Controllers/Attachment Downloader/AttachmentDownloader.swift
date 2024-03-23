@@ -24,7 +24,7 @@ final class AttachmentDownloader: NSObject {
     struct Update {
         enum Kind {
             case progress
-            case ready
+            case ready(compressed: Bool?)
             case failed(Swift.Error)
             case cancelled
         }
@@ -379,7 +379,7 @@ final class AttachmentDownloader: NSObject {
         switch attachment.type {
         case .url:
             DDLogInfo("AttachmentDownloader: open url \(attachment.key)")
-            observable.on(.next(Update(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, kind: .ready)))
+            observable.on(.next(Update(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, kind: .ready(compressed: nil))))
 
         case .file(let filename, let contentType, let location, let linkType, let compressed):
             switch linkType {
@@ -395,7 +395,7 @@ final class AttachmentDownloader: NSObject {
                         extract(zipFile: file.copyWithExt("zip"), toFile: file, download: Download(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId))
                     } else {
                         DDLogInfo("AttachmentDownloader: open local file \(attachment.key)")
-                        observable.on(.next(Update(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, kind: .ready)))
+                        observable.on(.next(Update(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, kind: .ready(compressed: false))))
                     }
 
                 case .remote, .remoteMissing:
@@ -512,7 +512,7 @@ final class AttachmentDownloader: NSObject {
                     downloader.accessQueue.async(flags: .barrier) { [weak downloader] in
                         guard let downloader else { return }
                         downloader.extractions[download] = nil
-                        downloader.observable.on(.next(Update(download: download, kind: .ready)))
+                        downloader.observable.on(.next(Update(download: download, kind: .ready(compressed: false))))
                     }
                 } catch let error {
                     DDLogError("AttachmentDownloader: can't store new compressed value - \(error)")
@@ -725,7 +725,7 @@ final class AttachmentDownloader: NSObject {
         }
     }
 
-    private func finish(activeDownload: ActiveDownload, download: Download, result: Result<(Bool), Swift.Error>) {
+    private func finish(activeDownload: ActiveDownload, download: Download, compressed: Bool?, result: Result<(Bool), Swift.Error>) {
         activeDownloads[download] = nil
         taskIdToDownload[activeDownload.taskId] = nil
         resetBatchDataIfNeeded()
@@ -745,7 +745,7 @@ final class AttachmentDownloader: NSObject {
         case .success(let notifyObserver):
             errors[download] = nil
             if notifyObserver {
-                observable.on(.next(Update(download: download, kind: .ready)))
+                observable.on(.next(Update(download: download, kind: .ready(compressed: compressed))))
             }
 
         case .failure(let error):
@@ -759,7 +759,7 @@ final class AttachmentDownloader: NSObject {
             } else if fileStorage.has(activeDownload.file) {
                 DDLogError("AttachmentDownloader: failed to download remotely changed attachment \(activeDownload.taskId) - \(error)")
                 errors[download] = nil
-                observable.on(.next(Update(download: download, kind: .ready)))
+                observable.on(.next(Update(download: download, kind: .ready(compressed: compressed))))
             } else {
                 DDLogError("AttachmentDownloader: failed to download attachment \(activeDownload.taskId) - \(error)")
                 errors[download] = error
@@ -836,7 +836,7 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
             }
 
             accessQueue.sync(flags: .barrier) { [weak self] in
-                self?.finish(activeDownload: activeDownload, download: download, result: .success(!shouldExtractAfterDownload))
+                self?.finish(activeDownload: activeDownload, download: download, compressed: isCompressed, result: .success(!shouldExtractAfterDownload))
             }
 
             if let zipFile, shouldExtractAfterDownload {
@@ -844,7 +844,7 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
             }
         } catch let error {
             accessQueue.sync(flags: .barrier) { [weak self] in
-                self?.finish(activeDownload: activeDownload, download: download, result: .failure(error))
+                self?.finish(activeDownload: activeDownload, download: download, compressed: isCompressed, result: .failure(error))
             }
         }
 
@@ -865,7 +865,7 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
                 if let data = activeDownload.logData {
                     logResponse(for: data, task: task, error: error)
                 }
-                finish(activeDownload: activeDownload, download: download, result: .failure(error))
+                finish(activeDownload: activeDownload, download: download, compressed: nil, result: .failure(error))
             } else if activeDownloads.isEmpty {
                 // Though in some cases the `URLSession` can report errors before `activeDownloads` is populated with data (when app was killed manually for example), so let's just store errors
                 // so that it's apparent that these tasks finished already.

@@ -86,10 +86,11 @@ struct Attachment: Identifiable, Equatable {
         }
     }
 
-    func changed(location: FileLocation) -> Attachment? {
+    func changed(location: FileLocation, compressed: Bool?) -> Attachment? {
         switch type {
-        case .file(let filename, let contentType, let oldLocation, let linkType, let compressed):
-            if oldLocation == location {
+        case .file(let filename, let contentType, let oldLocation, let linkType, let oldCompressed):
+            let compressed = compressed ?? oldCompressed
+            if oldLocation == location && oldCompressed == compressed {
                 return self
             }
             return Attachment(
