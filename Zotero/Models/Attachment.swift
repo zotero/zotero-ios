@@ -91,7 +91,7 @@ struct Attachment: Identifiable, Equatable {
         case .file(let filename, let contentType, let oldLocation, let linkType, let oldCompressed):
             let compressed = compressed ?? oldCompressed
             if oldLocation == location && oldCompressed == compressed {
-                return self
+                return nil
             }
             return Attachment(
                 type: .file(filename: filename, contentType: contentType, location: location, linkType: linkType, compressed: compressed),
