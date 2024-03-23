@@ -49,16 +49,8 @@ struct AttachmentCreator {
         guard let (idx, contentType, linkMode, _, _) = attachmentData.first else { return nil }
         let rAttachment = item.children[idx]
         let linkType: Attachment.FileLinkType = linkMode == .importedFile ? .importedFile : .importedUrl
-        guard let libraryId = rAttachment.libraryId,
-              let type = importedType(
-                for: rAttachment,
-                contentType: contentType,
-                libraryId: libraryId,
-                fileStorage: fileStorage,
-                linkType: linkType,
-                compressed: rAttachment.fileCompressed
-              )
-        else { return nil }
+        guard let libraryId = rAttachment.libraryId else { return nil }
+        let type = importedType(for: rAttachment, contentType: contentType, libraryId: libraryId, fileStorage: fileStorage, linkType: linkType, compressed: rAttachment.fileCompressed)
         return Attachment(item: rAttachment, type: type)
     }
 
@@ -206,7 +198,7 @@ struct AttachmentCreator {
         fileStorage: FileStorage?,
         linkType: Attachment.FileLinkType,
         compressed: Bool
-    ) -> Attachment.Kind? {
+    ) -> Attachment.Kind {
         let filename = filename(for: item, ext: contentType.extensionFromMimeType)
         let file = Files.attachmentFile(in: libraryId, key: item.key, filename: filename, contentType: contentType)
         let location = location(for: item, file: file, fileStorage: fileStorage)
