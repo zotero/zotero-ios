@@ -45,6 +45,7 @@ final class AppCoordinator: NSObject {
     private var conflictAlertQueueController: ConflictAlertQueueController?
     var presentedRestoredControllerWindow: UIWindow?
     private var downloadDisposeBag: DisposeBag?
+    private var reportIdCompletion: (() -> Void)?
 
     private var viewController: UIViewController? {
         guard let rootViewController = window?.rootViewController else { return nil }
@@ -661,9 +662,10 @@ extension AppCoordinator: CrashReporterCoordinator {
     func report(id: String, completion: @escaping () -> Void) {
         var actions = [
             UIAlertAction(title: L10n.ok, style: .cancel, handler: { _ in completion() }),
-            UIAlertAction(title: L10n.Settings.CrashAlert.copyId, style: .default, handler: { _ in
+            UIAlertAction(title: L10n.Settings.CrashAlert.submitId, style: .default, handler: { [weak self] _ in
+                guard let self else { return }
                 UIPasteboard.general.string = id
-                completion()
+                submit(reportId: id, coordinator: self, completion: completion)
             })
         ]
 
@@ -677,6 +679,16 @@ extension AppCoordinator: CrashReporterCoordinator {
         }
 
         showAlert(title: L10n.Settings.CrashAlert.title, message: L10n.Settings.CrashAlert.message(id), actions: actions)
+
+        func submit(reportId: String, coordinator: AppCoordinator, completion: @escaping () -> Void) {
+            guard let viewController, var components = URLComponents(string: "https://forums.zotero.org/post/discussion") else { return }
+            components.queryItems = [URLQueryItem(name: "name", value: "iOS Crash Report"), URLQueryItem(name: "body", value: reportId)]
+            guard let url = components.url else { return }
+            coordinator.reportIdCompletion = completion
+            let controller = SFSafariViewController(url: url)
+            controller.delegate = self
+            viewController.present(controller, animated: true, completion: nil)
+        }
     }
 
     private func exportDb(with userId: Int, completion: (() -> Void)?) {
@@ -861,3 +873,9 @@ extension AppCoordinator: SyncRequestReceiver {
 }
 
 extension AppCoordinator: InstantPresenter {}
+
+extension AppCoordinator: SFSafariViewControllerDelegate {
+    func safariViewControllerDidFinish(_ controller: SFSafariViewController) {
+        reportIdCompletion?()
+    }
+}
