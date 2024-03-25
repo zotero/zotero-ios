@@ -322,10 +322,10 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
         }
 
         switch downloadUpdate.kind {
-        case .ready:
+        case .ready(let compressed):
             DDLogInfo("ItemsActionHandler: download update \(attachment.key); \(attachment.libraryId); kind \(downloadUpdate.kind)")
+            guard let updatedAttachment = attachment.changed(location: .local, compressed: compressed) else { return }
             updateViewModel { state in
-                guard let updatedAttachment = attachment.changed(location: .local) else { return }
                 state.itemAccessories[updateKey] = .attachment(attachment: updatedAttachment, parentKey: downloadUpdate.parentKey)
                 state.updateItemKey = updateKey
             }

@@ -603,8 +603,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 state.updateAttachmentKey = attachment.key
             }
 
-        case .ready:
-            guard let new = attachment.changed(location: .local) else { return }
+        case .ready(let compressed):
+            guard let new = attachment.changed(location: .local, compressed: compressed) else { return }
             self.update(viewModel: viewModel) { state in
                 state.attachments[index] = new
                 state.updateAttachmentKey = new.key
