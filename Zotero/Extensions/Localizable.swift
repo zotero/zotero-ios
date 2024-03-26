@@ -58,6 +58,10 @@ internal enum L10n {
   internal static let error = L10n.tr("Localizable", "error", fallback: "Error")
   /// Forward
   internal static let forward = L10n.tr("Localizable", "forward", fallback: "Forward")
+  /// Full sync has finished. Please report Debug ID %@ in the Zotero Forums.
+  internal static func fullSyncDebug(_ p1: Any) -> String {
+    return L10n.tr("Localizable", "full_sync_debug", String(describing: p1), fallback: "Full sync has finished. Please report Debug ID %@ in the Zotero Forums.")
+  }
   /// Item Type
   internal static let itemType = L10n.tr("Localizable", "item_type", fallback: "Item Type")
   /// Keep
@@ -1067,6 +1071,8 @@ internal enum L10n {
     internal static let debug = L10n.tr("Localizable", "settings.debug", fallback: "Debug Output Logging")
     /// Export Database File
     internal static let exportDb = L10n.tr("Localizable", "settings.export_db", fallback: "Export Database File")
+    /// Full Sync Debugging
+    internal static let fullSyncDebug = L10n.tr("Localizable", "settings.full_sync_debug", fallback: "Full Sync Debugging")
     /// Item count
     internal static let itemCount = L10n.tr("Localizable", "settings.item_count", fallback: "Item count")
     /// Show item count for all collections.
@@ -1174,6 +1180,14 @@ internal enum L10n {
       internal static let language = L10n.tr("Localizable", "settings.export.language", fallback: "Language")
       /// Quick Copy
       internal static let title = L10n.tr("Localizable", "settings.export.title", fallback: "Quick Copy")
+    }
+    internal enum FullSync {
+      /// Full sync is in progress. Wait for it to finish and submit Debug ID to Zotero Forums.
+      internal static let inProgress = L10n.tr("Localizable", "settings.full_sync.in_progress", fallback: "Full sync is in progress. Wait for it to finish and submit Debug ID to Zotero Forums.")
+      /// Sync is already in progress. Wait for it to finish.
+      internal static let otherInProgress = L10n.tr("Localizable", "settings.full_sync.other_in_progress", fallback: "Sync is already in progress. Wait for it to finish.")
+      /// Start Full Sync Debugging
+      internal static let start = L10n.tr("Localizable", "settings.full_sync.start", fallback: "Start Full Sync Debugging")
     }
     internal enum General {
       /// Show collection sizes

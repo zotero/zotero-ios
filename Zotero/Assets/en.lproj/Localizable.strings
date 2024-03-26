@@ -61,6 +61,7 @@
 "beta_wipe_message" = "Due to a beta update, your data must be redownloaded from zotero.org.";
 "migration_debug" = "App failed to initialize and can’t function properly. Please report Debug ID %@ in the Zotero Forums.";
 "login_debug" = "App failed to log in. Please log in again and report Debug ID %@ in the Zotero Forums.";
+"full_sync_debug" = "Full sync has finished. Please report Debug ID %@ in the Zotero Forums.";
 
 "day_suffixes" = "st,nd,rd,th";
 
@@ -342,6 +343,10 @@
 "settings.export.copy_as_html" = "Copy as HTML";
 "settings.versionAndBuild" = "Version %@ Build %@";
 "settings.export_db" = "Export Database File";
+"settings.full_sync_debug" = "Full Sync Debugging";
+"settings.full_sync.start" = "Start Full Sync Debugging";
+"settings.full_sync.other_in_progress" = "Sync is already in progress. Wait for it to finish.";
+"settings.full_sync.in_progress" = "Full sync is in progress. Wait for it to finish and submit Debug ID to Zotero Forums.";
 
 "shareext.save" = "Save to Zotero";
 "shareext.decoding_attachment" = "Searching for items";
