@@ -37,6 +37,10 @@ final class IntraDocumentNavigationButtonsHandler {
         ])
     }
 
+    func bringButtonToFront() {
+        backButton.superview?.bringSubviewToFront(backButton)
+    }
+
     func set(backButtonVisible: Bool) {
         backButton.isHidden = !backButtonVisible
     }
