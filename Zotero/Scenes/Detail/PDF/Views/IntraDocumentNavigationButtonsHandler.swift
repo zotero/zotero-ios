@@ -23,7 +23,7 @@ final class IntraDocumentNavigationButtonsHandler {
         backConfiguration.imagePadding = 8
         let backButton = UIButton(configuration: backConfiguration)
         backButton.translatesAutoresizingMaskIntoConstraints = false
-        backButton.isHidden = true
+        backButton.isHidden = false
         backButton.addAction(
             UIAction(handler: { _ in back() }),
             for: .touchUpInside
@@ -35,6 +35,10 @@ final class IntraDocumentNavigationButtonsHandler {
             backButton.leadingAnchor.constraint(equalTo: parent.view.leadingAnchor, constant: 30),
             parent.view.bottomAnchor.constraint(equalTo: backButton.bottomAnchor, constant: 80)
         ])
+    }
+
+    func bringButtonToTop() {
+        backButton.superview?.bringSubviewToFront(backButton)
     }
 
     func set(backButtonVisible: Bool) {
