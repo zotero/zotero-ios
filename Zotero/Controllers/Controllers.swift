@@ -411,6 +411,8 @@ final class UserControllers {
         if Defaults.shared.performFullSyncGuard < Defaults.currentPerformFullSyncGuard {
             Defaults.shared.didPerformFullSyncFix = false
             Defaults.shared.performFullSyncGuard = Defaults.currentPerformFullSyncGuard
+        } else {
+            Defaults.shared.didPerformFullSyncFix = true
         }
         // Observe sync to enable/disable the device falling asleep
         // Skip first value that is observed during syncScheduler initialization, to avoid reseting didPerformFullSyncFix before the actual first sync occurs
