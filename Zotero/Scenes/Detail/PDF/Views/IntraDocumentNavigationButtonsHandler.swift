@@ -23,7 +23,7 @@ final class IntraDocumentNavigationButtonsHandler {
         backConfiguration.imagePadding = 8
         let backButton = UIButton(configuration: backConfiguration)
         backButton.translatesAutoresizingMaskIntoConstraints = false
-        backButton.isHidden = false
+        backButton.isHidden = true
         backButton.addAction(
             UIAction(handler: { _ in back() }),
             for: .touchUpInside
