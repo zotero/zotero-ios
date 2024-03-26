@@ -6467,7 +6467,7 @@
 			repositoryURL = "https://github.com/Quick/Quick";
 			requirement = {
 				kind = exactVersion;
-				version = 7.4.0;
+				version = 7.5.0;
 			};
 		};
 		B356A3942524A6D5003F1943 /* XCRemoteSwiftPackageReference "OHHTTPStubs" */ = {
@@ -6483,7 +6483,7 @@
 			repositoryURL = "https://github.com/CocoaLumberjack/CocoaLumberjack";
 			requirement = {
 				kind = exactVersion;
-				version = 3.8.3;
+				version = 3.8.5;
 			};
 		};
 		B35C9C042642A0BC0004C47E /* XCRemoteSwiftPackageReference "realm-cocoa" */ = {
@@ -6491,7 +6491,7 @@
 			repositoryURL = "https://github.com/realm/realm-cocoa";
 			requirement = {
 				kind = exactVersion;
-				version = 10.47.0;
+				version = 10.49.1;
 			};
 		};
 		B35E4B8B25248B3C000EA134 /* XCRemoteSwiftPackageReference "RxSwift" */ = {
@@ -6515,7 +6515,7 @@
 			repositoryURL = "https://github.com/daltoniam/Starscream";
 			requirement = {
 				kind = exactVersion;
-				version = 4.0.6;
+				version = 4.0.8;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
