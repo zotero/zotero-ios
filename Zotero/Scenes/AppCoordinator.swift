@@ -45,7 +45,6 @@ final class AppCoordinator: NSObject {
     private var conflictAlertQueueController: ConflictAlertQueueController?
     var presentedRestoredControllerWindow: UIWindow?
     private var downloadDisposeBag: DisposeBag?
-    private var reportIdCompletion: (() -> Void)?
 
     private var viewController: UIViewController? {
         guard let rootViewController = window?.rootViewController else { return nil }
@@ -682,12 +681,10 @@ extension AppCoordinator: CrashReporterCoordinator {
 
         func submit(reportId: String, coordinator: AppCoordinator, completion: @escaping () -> Void) {
             guard let viewController, var components = URLComponents(string: "https://forums.zotero.org/post/discussion") else { return }
-            components.queryItems = [URLQueryItem(name: "name", value: "iOS Crash Report"), URLQueryItem(name: "body", value: reportId)]
+            components.queryItems = [URLQueryItem(name: "name", value: "iOS Crash Report: \(reportId)"), URLQueryItem(name: "body", value: "[Describe what you were doing when the crash occurred.]")]
             guard let url = components.url else { return }
-            coordinator.reportIdCompletion = completion
-            let controller = SFSafariViewController(url: url)
-            controller.delegate = self
-            viewController.present(controller, animated: true, completion: nil)
+            UIApplication.shared.open(url)
+            completion()
         }
     }
 
@@ -873,9 +870,3 @@ extension AppCoordinator: SyncRequestReceiver {
 }
 
 extension AppCoordinator: InstantPresenter {}
-
-extension AppCoordinator: SFSafariViewControllerDelegate {
-    func safariViewControllerDidFinish(_ controller: SFSafariViewController) {
-        reportIdCompletion?()
-    }
-}
