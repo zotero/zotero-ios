@@ -49,6 +49,7 @@ protocol StorageSettingsSettingsCoordinatorDelegate: AnyObject {
 protocol DebuggingSettingsSettingsCoordinatorDelegate: AnyObject {
     func exportDb()
     func showLogs(string: BehaviorRelay<String>)
+    func showFullSyncDebugging()
 }
 
 final class SettingsCoordinator: NSObject, Coordinator {
@@ -401,6 +402,19 @@ extension SettingsCoordinator: DebuggingSettingsSettingsCoordinatorDelegate {
 
     func showLogs(string: BehaviorRelay<String>) {
         let controller = LogsViewController(logs: self.controllers.debugLogging.logString, lines: self.controllers.debugLogging.logLines)
+        self.navigationController?.pushViewController(controller, animated: true)
+    }
+
+    func showFullSyncDebugging() {
+        guard let debugger = controllers.userControllers?.fullSyncDebugger, let scheduler = controllers.userControllers?.syncScheduler else { return }
+        let handler = FullSyncDebuggingActionHandler(fullSyncDebugger: debugger)
+        let state = FullSyncDebuggingState(syncTypeInProgress: scheduler.syncTypeInProgress)
+        let viewModel = ViewModel(initialState: state, handler: handler)
+        viewModel.process(action: .startObserving)
+
+        let view = FullSyncDebuggingView()
+        let controller = UIHostingController(rootView: view.environmentObject(viewModel))
+        controller.preferredContentSize = SettingsCoordinator.defaultSize
         self.navigationController?.pushViewController(controller, animated: true)
     }
 }

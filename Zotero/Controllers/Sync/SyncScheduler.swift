@@ -15,6 +15,7 @@ import RxSwift
 protocol SynchronizationScheduler: AnyObject {
     var syncController: SynchronizationController { get }
     var inProgress: BehaviorRelay<Bool> { get }
+    var syncTypeInProgress: SyncController.Kind? { get }
 
     func request(sync type: SyncController.Kind, libraries: SyncController.Libraries)
     func cancelSync()
@@ -70,6 +71,13 @@ final class SyncScheduler: SynchronizationScheduler, WebSocketScheduler {
     }
 
     var inProgress: BehaviorRelay<Bool>
+    var syncTypeInProgress: SyncController.Kind? {
+        var type: SyncController.Kind?
+        queue.sync { [weak self] in
+            type = self?.syncInProgress?.type
+        }
+        return type
+    }
 
     init(controller: SyncController, retryIntervals: [Int]) {
         let queue = DispatchQueue(label: "org.zotero.SchedulerAccessQueue", qos: .utility, attributes: .concurrent)
