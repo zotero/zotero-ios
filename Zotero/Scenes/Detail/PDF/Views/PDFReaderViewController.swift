@@ -196,7 +196,7 @@ class PDFReaderViewController: UIViewController {
         setupNavigationBar()
         setupObserving()
         updateInterface(to: viewModel.state.settings)
-        intraDocumentNavigationHandler.bringButtonToTop()
+        intraDocumentNavigationHandler.bringButtonToFront()
 
         if !viewModel.state.document.isLocked {
             viewModel.process(action: .loadDocumentData(boundingBoxConverter: documentController))

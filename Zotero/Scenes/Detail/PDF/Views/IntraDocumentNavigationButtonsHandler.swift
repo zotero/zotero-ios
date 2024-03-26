@@ -37,7 +37,7 @@ final class IntraDocumentNavigationButtonsHandler {
         ])
     }
 
-    func bringButtonToTop() {
+    func bringButtonToFront() {
         backButton.superview?.bringSubviewToFront(backButton)
     }
 
