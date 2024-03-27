@@ -84,6 +84,43 @@ final class AnnotationCell: UITableViewCell {
     }
 
     func setup(
+        with annotation: HtmlEpubAnnotation,
+        comment: AnnotationView.Comment?,
+        selected: Bool,
+        availableWidth: CGFloat,
+        library: Library,
+        isEditing: Bool,
+        currentUserId: Int,
+        state: HtmlEpubReaderState
+    ) {
+        if !selected {
+            annotationView.resignFirstResponder()
+        }
+
+        key = annotation.key
+        selectionView.layer.borderWidth = selected ? PDFReaderLayout.cellSelectionLineWidth : 0
+        let availableWidth = availableWidth - (PDFReaderLayout.annotationLayout.horizontalInset * 2)
+        annotationView.setup(
+            with: annotation,
+            comment: comment,
+            selected: selected,
+            availableWidth: availableWidth,
+            library: library,
+            currentUserId: currentUserId
+        )
+
+        setupAccessibility(
+            isAuthor: annotation.isAuthor,
+            authorName: annotation.author,
+            type: annotation.type,
+            pageLabel: annotation.pageLabel,
+            text: annotation.text,
+            comment: annotation.comment,
+            selected: selected
+        )
+    }
+
+    func setup(
         with annotation: PDFAnnotation,
         comment: AnnotationView.Comment?,
         preview: UIImage?,
