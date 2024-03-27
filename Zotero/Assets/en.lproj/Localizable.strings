@@ -465,6 +465,7 @@
 "errors.shareext.webdav_error" = "Error uploading attachment to WebDAV server";
 "errors.shareext.personal_quota_reached" = "You have reached your Zotero Storage quota, and the file could not be uploaded. See your account settings for additional storage options.\n\nThe file was saved to your local library.";
 "errors.shareext.group_quota_reached" = "The group \“%@\” has reached its Zotero Storage quota, and the file could not be uploaded. The group owner can view their account settings for additional storage options.\n\nThe file was saved to the local library.";
+"errors.shareext.forbidden" = "You don't have necessary rights to submit this item to %@.";
 "errors.shareext.webdav_not_verified" = "WebDAV verification error";
 "errors.db_failure" = "Error creating database. Please try logging in again.";
 "errors.logging.title" = "Debugging Error";

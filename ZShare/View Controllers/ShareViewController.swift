@@ -519,6 +519,17 @@ final class ShareViewController: UIViewController {
                 return L10n.Errors.Shareext.groupQuotaReached(groupName)
             }
 
+        case .forbidden(let libraryId):
+            switch libraryId {
+            case .custom:
+                return L10n.Errors.Shareext.forbidden(L10n.Libraries.myLibrary)
+
+            case .group(let groupId):
+                let group = try? self.dbStorage.perform(request: ReadGroupDbRequest(identifier: groupId), on: .main)
+                let groupName = group?.name ?? "\(groupId)"
+                return L10n.Errors.Shareext.forbidden(groupName)
+            }
+
         case .downloadedFileNotPdf, .md5Missing, .mtimeMissing:
             return nil
         }

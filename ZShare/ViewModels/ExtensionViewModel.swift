@@ -67,6 +67,7 @@ final class ExtensionViewModel {
                 case parseError(Parsing.Error)
                 case schemaError(SchemaError)
                 case quotaLimit(LibraryIdentifier)
+                case forbidden(LibraryIdentifier)
                 case webDavNotVerified
                 case webDavFailure
                 case md5Missing
@@ -1054,8 +1055,17 @@ final class ExtensionViewModel {
         case .responseValidationFailed(let reason):
             switch reason {
             case .unacceptableStatusCode(let code):
-                if code == 413, let libraryId = libraryId {
-                    return .quotaLimit(libraryId)
+                if let libraryId {
+                    switch code {
+                    case 413:
+                        return .quotaLimit(libraryId)
+
+                    case 403:
+                        return .forbidden(libraryId)
+
+                    default:
+                        break
+                    }
                 }
                 return defaultError
 

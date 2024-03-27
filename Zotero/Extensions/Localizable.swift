@@ -588,6 +588,10 @@ internal enum L10n {
       internal static let failedAdditional = L10n.tr("Localizable", "errors.shareext.failed_additional", fallback: "You can still save this page as a webpage item.")
       /// Unable to save PDF
       internal static let fileNotPdf = L10n.tr("Localizable", "errors.shareext.file_not_pdf", fallback: "Unable to save PDF")
+      /// You don't have necessary rights to submit this item to %@.
+      internal static func forbidden(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "errors.shareext.forbidden", String(describing: p1), fallback: "You don't have necessary rights to submit this item to %@.")
+      }
       /// The group “%@” has reached its Zotero Storage quota, and the file could not be uploaded. The group owner can view their account settings for additional storage options.
       /// 
       /// The file was saved to the local library.
