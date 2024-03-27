@@ -202,7 +202,7 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
                         // Collection is missing, show all items instead
                         collection = Collection(custom: .all)
                     }
-                    mainController.showItems(for: collection, in: library)
+                mainController.showItems(for: collection, in: library.identifier)
 
                     mainController.getDetailCoordinator { [weak self] coordinator in
                         guard let self else { return }

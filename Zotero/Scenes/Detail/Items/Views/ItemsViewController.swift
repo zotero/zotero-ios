@@ -34,6 +34,7 @@ final class ItemsViewController: UIViewController {
     private var tableViewHandler: ItemsTableViewHandler!
     private var toolbarController: ItemsToolbarController!
     private var resultsToken: NotificationToken?
+    private var libraryToken: NotificationToken?
     weak var tagFilterDelegate: ItemsTagFilterDelegate?
 
     private weak var coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)?
@@ -158,7 +159,7 @@ final class ItemsViewController: UIViewController {
             }
         }
 
-        if state.changes.contains(.selection) {
+        if state.changes.contains(.selection) || state.changes.contains(.library) {
             self.setupRightBarButtonItems(for: state)
             self.toolbarController.reloadToolbarItems(for: state)
         }
@@ -484,8 +485,10 @@ final class ItemsViewController: UIViewController {
             let selectItems = rightBarButtonSelectItemTypes(for: state)
             if state.collection.identifier.isTrash {
                 items = selectItems + [.emptyTrash]
-            } else {
+            } else if state.library.metadataEditable {
                 items = [.add] + selectItems
+            } else {
+                items = selectItems
             }
             return items
             
