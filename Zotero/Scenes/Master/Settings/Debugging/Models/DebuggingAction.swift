@@ -17,4 +17,5 @@ enum DebuggingAction {
     case monitorIfNeeded
     case clearLogs
     case showLogs
+    case showFullSyncDebugging
 }

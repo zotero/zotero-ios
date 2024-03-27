@@ -774,6 +774,11 @@
 		B378F4D0242D0D5500B88A05 /* RepoRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B378F4CE242D0CC200B88A05 /* RepoRequest.swift */; };
 		B378F4D1242D0E4900B88A05 /* RepoParserDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B378F4CC242CD45700B88A05 /* RepoParserDelegate.swift */; };
 		B378F4D2242D0EE700B88A05 /* Translator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B378F4C8242CC8EF00B88A05 /* Translator.swift */; };
+		B379D92A2BB2E94900AF5025 /* FullSyncDebuggingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B379D9292BB2E94900AF5025 /* FullSyncDebuggingView.swift */; };
+		B379D92C2BB2EDF500AF5025 /* FullSyncDebuggingActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B379D92B2BB2EDF500AF5025 /* FullSyncDebuggingActionHandler.swift */; };
+		B379D92E2BB2EE1200AF5025 /* FullSyncDebuggingAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B379D92D2BB2EE1200AF5025 /* FullSyncDebuggingAction.swift */; };
+		B379D9302BB2EE1C00AF5025 /* FullSyncDebuggingState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B379D92F2BB2EE1C00AF5025 /* FullSyncDebuggingState.swift */; };
+		B379D9322BB30E6600AF5025 /* FullSyncDebugger.swift in Sources */ = {isa = PBXBuildFile; fileRef = B379D9312BB30E6600AF5025 /* FullSyncDebugger.swift */; };
 		B37AA2802899093900A1C643 /* ItemDetailCollectionViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37AA27F2899093900A1C643 /* ItemDetailCollectionViewHandler.swift */; };
 		B37AA28228990F6300A1C643 /* ItemDetailTitleContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37AA28128990F6300A1C643 /* ItemDetailTitleContentView.swift */; };
 		B37AA2842899123C00A1C643 /* UICollectionViewListCell+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37AA2832899123C00A1C643 /* UICollectionViewListCell+Extensions.swift */; };
@@ -1765,6 +1770,11 @@
 		B378F4C8242CC8EF00B88A05 /* Translator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Translator.swift; sourceTree = "<group>"; };
 		B378F4CC242CD45700B88A05 /* RepoParserDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepoParserDelegate.swift; sourceTree = "<group>"; };
 		B378F4CE242D0CC200B88A05 /* RepoRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepoRequest.swift; sourceTree = "<group>"; };
+		B379D9292BB2E94900AF5025 /* FullSyncDebuggingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullSyncDebuggingView.swift; sourceTree = "<group>"; };
+		B379D92B2BB2EDF500AF5025 /* FullSyncDebuggingActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullSyncDebuggingActionHandler.swift; sourceTree = "<group>"; };
+		B379D92D2BB2EE1200AF5025 /* FullSyncDebuggingAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullSyncDebuggingAction.swift; sourceTree = "<group>"; };
+		B379D92F2BB2EE1C00AF5025 /* FullSyncDebuggingState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullSyncDebuggingState.swift; sourceTree = "<group>"; };
+		B379D9312BB30E6600AF5025 /* FullSyncDebugger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullSyncDebugger.swift; sourceTree = "<group>"; };
 		B37AA27F2899093900A1C643 /* ItemDetailCollectionViewHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailCollectionViewHandler.swift; sourceTree = "<group>"; };
 		B37AA28128990F6300A1C643 /* ItemDetailTitleContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailTitleContentView.swift; sourceTree = "<group>"; };
 		B37AA2832899123C00A1C643 /* UICollectionViewListCell+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UICollectionViewListCell+Extensions.swift"; sourceTree = "<group>"; };
@@ -2261,6 +2271,7 @@
 				B3CAE1172B0E38BA0000F8CA /* EmojiExtractor.swift */,
 				B3D3FCA8267762EC008E243A /* ExportLocaleReader.swift */,
 				B305648123FC051E003304F2 /* Formatter.swift */,
+				B379D9312BB30E6600AF5025 /* FullSyncDebugger.swift */,
 				B367330C24ACB63300E0CDA8 /* HtmlAttributedStringConverter.swift */,
 				B307A2722704A87D005986B3 /* IdleTimerController.swift */,
 				61639F842AE03B8500026003 /* InstantPresenter.swift */,
@@ -3990,6 +4001,7 @@
 			isa = PBXGroup;
 			children = (
 				B3E8FE4F27142BAB00F51458 /* DebuggingActionHandler.swift */,
+				B379D92B2BB2EDF500AF5025 /* FullSyncDebuggingActionHandler.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -3999,6 +4011,8 @@
 			children = (
 				B3E8FE4D27142B5E00F51458 /* DebuggingAction.swift */,
 				B3E8FE4B27142B5700F51458 /* DebuggingState.swift */,
+				B379D92D2BB2EE1200AF5025 /* FullSyncDebuggingAction.swift */,
+				B379D92F2BB2EE1C00AF5025 /* FullSyncDebuggingState.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -4007,6 +4021,7 @@
 			isa = PBXGroup;
 			children = (
 				B3E8FE5127142C2F00F51458 /* DebuggingView.swift */,
+				B379D9292BB2E94900AF5025 /* FullSyncDebuggingView.swift */,
 				B32F0BD9298BFCEE00C04557 /* LogsViewController.swift */,
 			);
 			path = Views;
@@ -4954,6 +4969,7 @@
 				B3F09AE829CAFF8D0084E4D8 /* TagFilterState.swift in Sources */,
 				B30565E723FC051E003304F2 /* ObjectUserChangeObserver.swift in Sources */,
 				B305669F23FC051F003304F2 /* RCustomLibrary.swift in Sources */,
+				B379D92C2BB2EDF500AF5025 /* FullSyncDebuggingActionHandler.swift in Sources */,
 				B37AA28628994B7600A1C643 /* ItemDetailFieldContentView.swift in Sources */,
 				B305667323FC051F003304F2 /* FileManager+Utils.swift in Sources */,
 				B307A2732704A87D005986B3 /* IdleTimerController.swift in Sources */,
@@ -5034,12 +5050,15 @@
 				B31CC58328646DD20055C114 /* ManualLookupActionHandler.swift in Sources */,
 				B305661623FC051E003304F2 /* MarkGroupAsLocalOnlySyncAction.swift in Sources */,
 				B3E8FE4C27142B5700F51458 /* DebuggingState.swift in Sources */,
+				B379D92A2BB2E94900AF5025 /* FullSyncDebuggingView.swift in Sources */,
 				B372CEE02486504600B423AE /* GroupVersionsRequest.swift in Sources */,
 				B32989D628D1D94F009B61F3 /* RObjectChange.swift in Sources */,
 				B31DFE7D2746917A005CD69B /* FileRequest.swift in Sources */,
 				B325DBB224375DAC00EFF0F5 /* ConflictResolution.swift in Sources */,
+				B379D92E2BB2EE1200AF5025 /* FullSyncDebuggingAction.swift in Sources */,
 				B3422F4A289BBA8C00C53DD2 /* ItemDetailAbstractEditContentView.swift in Sources */,
 				B3F9A4BE2B04CEC300684030 /* ReaderSettingsSegmentedCell.swift in Sources */,
+				B379D9322BB30E6600AF5025 /* FullSyncDebugger.swift in Sources */,
 				B30565D023FC051E003304F2 /* CreateCollectionDbRequest.swift in Sources */,
 				B30565C123FC051E003304F2 /* MarkObjectsAsDeletedDbRequest.swift in Sources */,
 				B3830CDC255451AB00910FE0 /* TagPickerState.swift in Sources */,
@@ -5190,6 +5209,7 @@
 				B3E8FE6E2714344D00F51458 /* SettingsListButtonRow.swift in Sources */,
 				B3DCDF21240945D80039ED0D /* CollectionsPickerState.swift in Sources */,
 				B3F9A4CB2B04F28400684030 /* WebViewEncoder.swift in Sources */,
+				B379D9302BB2EE1C00AF5025 /* FullSyncDebuggingState.swift in Sources */,
 				B3D58D5625ED856F00D8FA31 /* DebugLogUploadRequest.swift in Sources */,
 				B3E1BEC9254B0B9500D9BB27 /* ItemDetailFieldEditCell.swift in Sources */,
 				B361820F24C9B9E800B30D56 /* SelectableTextField.swift in Sources */,

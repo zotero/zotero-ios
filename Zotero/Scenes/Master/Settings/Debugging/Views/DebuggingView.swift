@@ -14,15 +14,15 @@ struct DebuggingView: View {
     var body: some View {
         Form {
             Section {
-                if self.viewModel.state.isLogging {
+                if viewModel.state.isLogging {
                     Button {
-                        self.viewModel.process(action: .cancelLogging)
+                        viewModel.process(action: .cancelLogging)
                     } label: {
                         Text(L10n.Settings.cancelLogging).foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
                     }
 
                     Button {
-                        self.viewModel.process(action: .stopLogging)
+                        viewModel.process(action: .stopLogging)
                     } label: {
                         Text(L10n.Settings.stopLogging).foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
                     }
@@ -31,20 +31,20 @@ struct DebuggingView: View {
                     Text(L10n.Settings.loggingDesc2)
                 } else {
                     Button {
-                        self.viewModel.process(action: .startImmediateLogging)
+                        viewModel.process(action: .startImmediateLogging)
                     } label: {
                         Text(L10n.Settings.startLogging).foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
                     }
 
                     Button {
-                        self.viewModel.process(action: .startLoggingOnNextLaunch)
+                        viewModel.process(action: .startLoggingOnNextLaunch)
                     } label: {
                         Text(L10n.Settings.startLoggingOnLaunch).foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
                     }
                 }
             }
 
-            if self.viewModel.state.isLogging {
+            if viewModel.state.isLogging {
                 Section {
                     Button {
                         self.viewModel.process(action: .showLogs)
@@ -53,20 +53,28 @@ struct DebuggingView: View {
                     }
 
                     Button {
-                        self.viewModel.process(action: .clearLogs)
+                        viewModel.process(action: .clearLogs)
                     } label: {
                         Text(L10n.Settings.clearOutput).foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
                     }
 
-                    Text(L10n.Settings.linesLogged(self.viewModel.state.numberOfLines))
+                    Text(L10n.Settings.linesLogged(viewModel.state.numberOfLines))
                 }
             }
 
             Section {
                 Button {
-                    self.viewModel.process(action: .exportDb)
+                    viewModel.process(action: .exportDb)
                 } label: {
                     Text(L10n.Settings.exportDb).foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
+                }
+            }
+
+            Section {
+                Button {
+                    viewModel.process(action: .showFullSyncDebugging)
+                } label: {
+                    SettingsListButtonRow(text: L10n.Settings.fullSyncDebug, detailText: nil, enabled: true)
                 }
             }
         }
