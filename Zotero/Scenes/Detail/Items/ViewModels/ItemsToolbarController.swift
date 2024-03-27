@@ -48,15 +48,22 @@ final class ItemsToolbarController {
     }
 
     private static func editingActions(for state: ItemsState) -> [ItemAction] {
-        if state.collection.identifier.isTrash {
+        if state.collection.identifier.isTrash && state.library.metadataEditable {
             return [ItemAction(type: .restore), ItemAction(type: .delete)]
         }
 
-        var actions = [ItemAction(type: .addToCollection), ItemAction(type: .trash)]
+        var actions: [ItemAction] = []
+        if state.library.metadataEditable {
+            actions.append(contentsOf: [ItemAction(type: .addToCollection), ItemAction(type: .trash)])
+        }
         switch state.collection.identifier {
         case .collection:
-            actions.insert(ItemAction(type: .removeFromCollection), at: 1)
-        case .custom, .search: break
+            if state.library.metadataEditable {
+                actions.insert(ItemAction(type: .removeFromCollection), at: 1)
+            }
+
+        case .custom, .search:
+            break
         }
         actions.append(ItemAction(type: .share))
         return actions

@@ -86,13 +86,20 @@ final class DetailCoordinator: Coordinator {
     weak var navigationController: UINavigationController?
 
     let collection: Collection
-    let library: Library
+    let libraryId: LibraryIdentifier
     let searchItemKeys: [String]?
     private unowned let controllers: Controllers
     private let disposeBag: DisposeBag
 
-    init(library: Library, collection: Collection, searchItemKeys: [String]?, navigationController: UINavigationController, itemsTagFilterDelegate: ItemsTagFilterDelegate?, controllers: Controllers) {
-        self.library = library
+    init(
+        libraryId: LibraryIdentifier,
+        collection: Collection,
+        searchItemKeys: [String]?,
+        navigationController: UINavigationController,
+        itemsTagFilterDelegate: ItemsTagFilterDelegate?,
+        controllers: Controllers
+    ) {
+        self.libraryId = libraryId
         self.collection = collection
         self.searchItemKeys = searchItemKeys
         self.navigationController = navigationController
@@ -107,11 +114,11 @@ final class DetailCoordinator: Coordinator {
     }
 
     func start(animated: Bool) {
-        guard let userControllers = self.controllers.userControllers else { return }
-        DDLogInfo("DetailCoordinator: show items for \(self.collection.id); \(self.library.id)")
-        let controller = self.createItemsViewController(
-            collection: self.collection,
-            library: self.library,
+        guard let userControllers = controllers.userControllers else { return }
+        DDLogInfo("DetailCoordinator: show items for \(collection.id); \(libraryId)")
+        let controller = createItemsViewController(
+            collection: collection,
+            libraryId: libraryId,
             dbStorage: userControllers.dbStorage,
             fileDownloader: userControllers.fileDownloader,
             remoteFileDownloader: userControllers.remoteFileDownloader,
@@ -119,15 +126,15 @@ final class DetailCoordinator: Coordinator {
             syncScheduler: userControllers.syncScheduler,
             citationController: userControllers.citationController,
             fileCleanupController: userControllers.fileCleanupController,
-            itemsTagFilterDelegate: self.itemsTagFilterDelegate,
-            htmlAttributedStringConverter: self.controllers.htmlAttributedStringConverter
+            itemsTagFilterDelegate: itemsTagFilterDelegate,
+            htmlAttributedStringConverter: controllers.htmlAttributedStringConverter
         )
-        self.navigationController?.setViewControllers([controller], animated: animated)
+        navigationController?.setViewControllers([controller], animated: animated)
     }
 
     private func createItemsViewController(
         collection: Collection,
-        library: Library,
+        libraryId: LibraryIdentifier,
         dbStorage: DbStorage,
         fileDownloader: AttachmentDownloader,
         remoteFileDownloader: RemoteAttachmentDownloader,
@@ -146,7 +153,7 @@ final class DetailCoordinator: Coordinator {
         let identifierLookupBatchData = ItemsState.IdentifierLookupBatchData(batchData: identifierLookupController.batchData)
         let state = ItemsState(
             collection: collection,
-            library: library,
+            libraryId: libraryId,
             sortType: .default,
             searchTerm: searchTerm,
             filters: [],
@@ -342,13 +349,15 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         controller.popoverPresentationController?.barButtonItem = button
 
-        controller.addAction(UIAlertAction(title: L10n.Items.lookup, style: .default, handler: { [weak self] _ in
-            self?.showLookup(startWith: .manual(restoreLookupState: false))
-        }))
+        if viewModel.state.library.filesEditable {
+            controller.addAction(UIAlertAction(title: L10n.Items.lookup, style: .default, handler: { [weak self] _ in
+                self?.showLookup(startWith: .manual(restoreLookupState: false))
+            }))
 
-        controller.addAction(UIAlertAction(title: L10n.Items.barcode, style: .default, handler: { [weak self] _ in
-            self?.showLookup(startWith: .scanner)
-        }))
+            controller.addAction(UIAlertAction(title: L10n.Items.barcode, style: .default, handler: { [weak self] _ in
+                self?.showLookup(startWith: .scanner)
+            }))
+        }
 
         controller.addAction(UIAlertAction(title: L10n.Items.new, style: .default, handler: { [weak self, weak viewModel] _ in
             guard let self, let viewModel else { return }
@@ -372,11 +381,13 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
             }
         }))
 
-        controller.addAction(UIAlertAction(title: L10n.Items.newFile, style: .default, handler: { [weak self, weak viewModel] _ in
-            self?.showAttachmentPicker(save: { urls in
-                viewModel?.process(action: .addAttachments(urls))
-            })
-        }))
+        if viewModel.state.library.filesEditable {
+            controller.addAction(UIAlertAction(title: L10n.Items.newFile, style: .default, handler: { [weak self, weak viewModel] _ in
+                self?.showAttachmentPicker(save: { urls in
+                    viewModel?.process(action: .addAttachments(urls))
+                })
+            }))
+        }
 
         controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
 
