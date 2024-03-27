@@ -261,11 +261,13 @@ final class AnnotationToolbarHandler: NSObject {
     func enableLeadingSafeConstraint() {
         toolbarLeading.isActive = false
         toolbarLeadingSafeArea.isActive = true
+        toolbarLeadingSafeArea.constant = toolbarLeading.constant
     }
 
     func disableLeadingSafeConstraint() {
         toolbarLeadingSafeArea.isActive = false
         toolbarLeading.isActive = true
+        toolbarLeading.constant = toolbarLeadingSafeArea.constant
     }
 
     func set(hidden: Bool, animated: Bool) {
