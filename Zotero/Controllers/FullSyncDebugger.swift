@@ -12,12 +12,7 @@ import RxSwift
 
 final class FullSyncDebugger {
     var syncTypeInProgress: Observable<SyncController.Kind?> {
-        return syncScheduler.inProgress.map({ [weak self] progress in
-            if !progress {
-                return nil
-            }
-            return self?.syncScheduler.syncTypeInProgress
-        })
+        return syncScheduler.syncTypeInProgressObservable
     }
 
     private unowned let sessionController: SessionController

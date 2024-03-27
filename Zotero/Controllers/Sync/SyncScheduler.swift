@@ -16,6 +16,7 @@ protocol SynchronizationScheduler: AnyObject {
     var syncController: SynchronizationController { get }
     var inProgress: BehaviorRelay<Bool> { get }
     var syncTypeInProgress: SyncController.Kind? { get }
+    var syncTypeInProgressObservable: Observable<SyncController.Kind?> { get }
 
     func request(sync type: SyncController.Kind, libraries: SyncController.Libraries)
     func cancelSync()
@@ -71,6 +72,14 @@ final class SyncScheduler: SynchronizationScheduler, WebSocketScheduler {
     }
 
     var inProgress: BehaviorRelay<Bool>
+    var syncTypeInProgressObservable: Observable<SyncController.Kind?> {
+        return inProgress.map({ [weak self] progress in
+            if !progress {
+                return nil
+            }
+            return self?.syncInProgress?.type
+        })
+    }
     var syncTypeInProgress: SyncController.Kind? {
         var type: SyncController.Kind?
         queue.sync { [weak self] in
@@ -205,14 +214,15 @@ final class SyncScheduler: SynchronizationScheduler, WebSocketScheduler {
             return
         }
 
+        DDLogInfo("SyncScheduler: start \(nextSync.type) sync for \(nextSync.libraries)")
+        self.syncQueue.removeFirst()
+        self.syncInProgress = nextSync
+
         if !self.inProgress.value {
             // Report sync start
             self.inProgress.accept(true)
         }
 
-        DDLogInfo("SyncScheduler: start \(nextSync.type) sync for \(nextSync.libraries)")
-        self.syncQueue.removeFirst()
-        self.syncInProgress = nextSync
         self.syncController.start(type: nextSync.type, libraries: nextSync.libraries, retryAttempt: nextSync.retryAttempt)
     }
 
