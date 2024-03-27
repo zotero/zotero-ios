@@ -463,23 +463,22 @@ extension AppCoordinator: DebugLoggingCoordinator {
             }
 
             func share(debugId: String, customMessage: String?, userId: Int) {
-                var actions = [
+                let actions = [
                     UIAlertAction(title: L10n.ok, style: .cancel, handler: nil),
-                    UIAlertAction(title: L10n.copy, style: .default, handler: { _ in
+                    UIAlertAction(title: L10n.Settings.CrashAlert.submitForum, style: .default, handler: { _ in
                         UIPasteboard.general.string = debugId
+                        submit(debugId: debugId)
                     })
                 ]
-
-                if userId > 0 {
-                    let action = UIAlertAction(title: L10n.Settings.CrashAlert.exportDb, style: .default) { [weak self] _ in
-                        UIPasteboard.general.string = debugId
-                        self?.exportDb(with: userId, completion: nil)
-                    }
-                    actions.append(action)
-                }
-
                 let message = customMessage ?? L10n.Settings.LogAlert.message(debugId)
                 self.showAlert(title: L10n.Settings.LogAlert.title, message: message, actions: actions)
+            }
+
+            func submit(debugId: String) {
+                guard var components = URLComponents(string: "https://forums.zotero.org/post/discussion") else { return }
+                components.queryItems = [URLQueryItem(name: "name", value: "iOS Debug Log: \(debugId)"), URLQueryItem(name: "body", value: "[Describe the issue you're reporting.]")]
+                guard let url = components.url else { return }
+                UIApplication.shared.open(url)
             }
         }
     }
