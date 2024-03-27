@@ -679,8 +679,8 @@ extension AppCoordinator: CrashReporterCoordinator {
 
         showAlert(title: L10n.Settings.CrashAlert.title, message: L10n.Settings.CrashAlert.message(id), actions: actions)
 
-        func submit(reportId: String, coordinator: AppCoordinator, completion: @escaping () -> Void) {
-            guard let viewController, var components = URLComponents(string: "https://forums.zotero.org/post/discussion") else { return }
+        func submit(reportId: String, completion: @escaping () -> Void) {
+            guard var components = URLComponents(string: "https://forums.zotero.org/post/discussion") else { return }
             components.queryItems = [URLQueryItem(name: "name", value: "iOS Crash Report: \(reportId)"), URLQueryItem(name: "body", value: "[Describe what you were doing when the crash occurred.]")]
             guard let url = components.url else { return }
             UIApplication.shared.open(url)
