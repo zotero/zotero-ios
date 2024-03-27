@@ -66,14 +66,14 @@ final class AnnotationToolbarHandler: NSObject {
     private var toolbarTrailingSafeArea: NSLayoutConstraint!
     weak var dragHandleLongPressRecognizer: UILongPressGestureRecognizer!
     private weak var toolbarPreviewsOverlay: UIView!
-    private weak var toolbarLeadingPreview: DashedView!
+    private weak var toolbarPinnedPreview: DashedView!
+    private weak var toolbarPinnedPreviewHeight: NSLayoutConstraint!
     private weak var inbetweenTopDashedView: DashedView!
+    private weak var toolbarTopPreview: DashedView!
+    private weak var toolbarLeadingPreview: DashedView!
     private weak var toolbarLeadingPreviewHeight: NSLayoutConstraint!
     private weak var toolbarTrailingPreview: DashedView!
     private weak var toolbarTrailingPreviewHeight: NSLayoutConstraint!
-    private weak var toolbarTopPreview: DashedView!
-    private weak var toolbarPinnedPreview: DashedView!
-    private weak var toolbarPinnedPreviewHeight: NSLayoutConstraint!
 
     var stateDidChange: ((State) -> Void)?
     var didHide: (() -> Void)?
@@ -105,18 +105,14 @@ final class AnnotationToolbarHandler: NSObject {
             previewsOverlay.backgroundColor = .clear
             previewsOverlay.isHidden = true
 
-            let topPreview = DashedView(type: .partialStraight(sides: [.left, .right, .bottom]))
-            setup(toolbarPositionView: topPreview)
-            let inbetweenTopDash = DashedView(type: .partialStraight(sides: .bottom))
-            setup(toolbarPositionView: inbetweenTopDash)
             let pinnedPreview = DashedView(type: .partialStraight(sides: [.left, .right, .top]))
-            setup(toolbarPositionView: pinnedPreview)
+            let inbetweenTopDash = DashedView(type: .partialStraight(sides: .bottom))
+            let topPreview = DashedView(type: .partialStraight(sides: [.left, .right, .bottom]))
             let leadingPreview = DashedView(type: .rounded(cornerRadius: 8))
             leadingPreview.translatesAutoresizingMaskIntoConstraints = false
-            setup(toolbarPositionView: leadingPreview)
             let trailingPreview = DashedView(type: .rounded(cornerRadius: 8))
             trailingPreview.translatesAutoresizingMaskIntoConstraints = false
-            setup(toolbarPositionView: trailingPreview)
+            [pinnedPreview, inbetweenTopDash, topPreview, leadingPreview, trailingPreview].forEach({ setup(toolbarPositionView: $0) })
 
             let topPreviewContainer = UIStackView(arrangedSubviews: [pinnedPreview, inbetweenTopDash, topPreview])
             topPreviewContainer.translatesAutoresizingMaskIntoConstraints = false
