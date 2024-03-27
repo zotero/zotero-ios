@@ -1160,8 +1160,8 @@ internal enum L10n {
       internal static func messageWithDb(_ p1: Any) -> String {
         return L10n.tr("Localizable", "settings.crash_alert.message_with_db", String(describing: p1), fallback: "Your Report ID is %@.\n\nPlease post a message to the Zotero Forums (forums.zotero.org) with this Report ID and any steps necessary to reproduce the crash.\n\nIf Zotero crashes repeatedly, please tap \"Export Database\" and send exported files to support@zotero.org.")
       }
-      /// Submit Report ID
-      internal static let submitId = L10n.tr("Localizable", "settings.crash_alert.submit_id", fallback: "Submit Report ID")
+      /// Submit to Zotero Forums
+      internal static let submitForum = L10n.tr("Localizable", "settings.crash_alert.submit_forum", fallback: "Submit to Zotero Forums")
       /// Crash Log Sent
       internal static let title = L10n.tr("Localizable", "settings.crash_alert.title", fallback: "Crash Log Sent")
     }

@@ -661,10 +661,10 @@ extension AppCoordinator: CrashReporterCoordinator {
     func report(id: String, completion: @escaping () -> Void) {
         var actions = [
             UIAlertAction(title: L10n.ok, style: .cancel, handler: { _ in completion() }),
-            UIAlertAction(title: L10n.Settings.CrashAlert.submitId, style: .default, handler: { [weak self] _ in
+            UIAlertAction(title: L10n.Settings.CrashAlert.submitForum, style: .default, handler: { [weak self] _ in
                 guard let self else { return }
                 UIPasteboard.general.string = id
-                submit(reportId: id, coordinator: self, completion: completion)
+                submit(reportId: id, completion: completion)
             })
         ]
 
