@@ -157,7 +157,7 @@ struct ItemsState: ViewModelState {
         case .custom:
             library = Library(identifier: libraryId, name: L10n.Libraries.myLibrary, metadataEditable: true, filesEditable: true)
 
-        case .group(let groupId):
+        case .group:
             library = Library(identifier: libraryId, name: L10n.unknown, metadataEditable: false, filesEditable: false)
         }
     }

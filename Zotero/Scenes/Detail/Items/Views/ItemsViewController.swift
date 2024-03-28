@@ -171,7 +171,7 @@ final class ItemsViewController: UIViewController {
         if let key = state.itemKeyToDuplicate {
             self.coordinatorDelegate?.showItemDetail(
                 for: .duplication(itemKey: key, collectionKey: self.viewModel.state.collection.identifier.key),
-                library: self.viewModel.state.library,
+                libraryId: self.viewModel.state.libraryId,
                 scrolledToKey: nil,
                 animated: true
             )
@@ -195,7 +195,7 @@ final class ItemsViewController: UIViewController {
     private func handle(action: ItemsTableViewHandler.TapAction) {
         switch action {
         case .metadata(let item):
-            self.coordinatorDelegate?.showItemDetail(for: .preview(key: item.key), library: self.viewModel.state.library, scrolledToKey: nil, animated: true)
+            self.coordinatorDelegate?.showItemDetail(for: .preview(key: item.key), libraryId: self.viewModel.state.libraryId, scrolledToKey: nil, animated: true)
 
         case .attachment(let attachment, let parentKey):
             self.viewModel.process(action: .openAttachment(attachment: attachment, parentKey: parentKey))
@@ -257,7 +257,7 @@ final class ItemsViewController: UIViewController {
 
             self.coordinatorDelegate?.showItemDetail(
                 for: .creation(type: ItemTypes.document, child: attachment, collectionKey: collectionKey),
-                library: self.viewModel.state.library,
+                libraryId: self.viewModel.state.libraryId,
                 scrolledToKey: nil,
                 animated: true
             )
@@ -340,7 +340,7 @@ final class ItemsViewController: UIViewController {
                 self.tableViewHandler.reload(snapshot: results.freeze(), modifications: modifications, insertions: insertions, deletions: deletions) {
                     self.updateTagFilter(with: self.viewModel.state)
                 }
-                self.updateEmptyTrashButton(toEnabled: !results.isEmpty)
+                self.updateEmptyTrashButton(toEnabled: viewModel.state.library.metadataEditable && !results.isEmpty)
 
             case .error(let error):
                 DDLogError("ItemsViewController: could not load results - \(error)")
@@ -478,8 +478,8 @@ final class ItemsViewController: UIViewController {
         let expectedItems = rightBarButtonItemTypes(for: state)
         guard currentItems != expectedItems else { return }
         self.navigationItem.rightBarButtonItems = expectedItems.map({ createRightBarButtonItem($0) }).reversed()
-        self.updateEmptyTrashButton(toEnabled: state.results?.isEmpty == false)
-        
+        self.updateEmptyTrashButton(toEnabled: state.library.metadataEditable && state.results?.isEmpty == false)
+
         func rightBarButtonItemTypes(for state: ItemsState) -> [RightBarButtonItem] {
             var items: [RightBarButtonItem]
             let selectItems = rightBarButtonSelectItemTypes(for: state)
@@ -626,10 +626,10 @@ extension ItemsViewController: ItemsTableViewHandlerDelegate {
 }
 
 extension ItemsViewController: DetailCoordinatorAttachmentProvider {
-    func attachment(for key: String, parentKey: String?, libraryId: LibraryIdentifier) -> (Attachment, Library, UIView, CGRect?)? {
+    func attachment(for key: String, parentKey: String?, libraryId: LibraryIdentifier) -> (Attachment, UIView, CGRect?)? {
         guard let accessory = self.viewModel.state.itemAccessories[parentKey ?? key], let attachment = accessory.attachment else { return nil }
         let (sourceView, sourceRect) = self.tableViewHandler.sourceDataForCell(for: (parentKey ?? key))
-        return (attachment, self.viewModel.state.library, sourceView, sourceRect)
+        return (attachment, sourceView, sourceRect)
     }
 }
 

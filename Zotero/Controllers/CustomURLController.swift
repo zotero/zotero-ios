@@ -18,8 +18,8 @@ final class CustomURLController {
     }
 
     enum Kind {
-        case itemDetail(key: String, library: Library, preselectedChildKey: String?)
-        case pdfReader(attachment: Attachment, library: Library, page: Int?, annotation: String?, parentKey: String?, isAvailable: Bool)
+        case itemDetail(key: String, libraryId: LibraryIdentifier, preselectedChildKey: String?)
+        case pdfReader(attachment: Attachment, libraryId: LibraryIdentifier, page: Int?, annotation: String?, parentKey: String?, isAvailable: Bool)
     }
 
     private unowned let dbStorage: DbStorage
@@ -50,9 +50,8 @@ final class CustomURLController {
 
             func loadSelectKind(key: String, libraryId: LibraryIdentifier) -> Kind? {
                 do {
-                    let library = try dbStorage.perform(request: ReadLibraryDbRequest(libraryId: libraryId), on: .main)
                     let item = try dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key), on: .main)
-                    return .itemDetail(key: (item.parent?.key ?? item.key), library: library, preselectedChildKey: item.key)
+                    return .itemDetail(key: (item.parent?.key ?? item.key), libraryId: libraryId, preselectedChildKey: item.key)
                 } catch let error {
                     DDLogError("CustomURLConverter: library (\(libraryId)) or item (\(key)) not found - \(error)")
                     return nil
@@ -78,15 +77,14 @@ final class CustomURLController {
                         return nil
                     }
 
-                    let library = try dbStorage.perform(request: ReadLibraryDbRequest(libraryId: libraryId), on: .main)
                     let parentKey = item.parent?.key
 
                     switch location {
                     case .local:
-                        return .pdfReader(attachment: attachment, library: library, page: page, annotation: annotation, parentKey: parentKey, isAvailable: true)
+                        return .pdfReader(attachment: attachment, libraryId: libraryId, page: page, annotation: annotation, parentKey: parentKey, isAvailable: true)
 
                     case .remote, .localAndChangedRemotely:
-                        return .pdfReader(attachment: attachment, library: library, page: page, annotation: annotation, parentKey: parentKey, isAvailable: false)
+                        return .pdfReader(attachment: attachment, libraryId: libraryId, page: page, annotation: annotation, parentKey: parentKey, isAvailable: false)
 
                     case .remoteMissing:
                         DDLogInfo("CustomURLConverter: attachment \(attachment.key) missing remotely")

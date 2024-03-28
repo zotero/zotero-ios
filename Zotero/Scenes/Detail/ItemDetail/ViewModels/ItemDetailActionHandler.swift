@@ -155,6 +155,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
     private func loadInitialData(in viewModel: ViewModel<ItemDetailActionHandler>) {
         let key = viewModel.state.key
         let libraryId = viewModel.state.library.identifier
+        let library: Library
         var collectionKey: String?
         var data: (data: ItemDetailState.Data, attachments: [Attachment], notes: [Note], tags: [Tag])
 
@@ -168,10 +169,13 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 update(viewModel: viewModel) { state in
                     state.libraryToken = libraryToken
                 }
+                library = Library(group: group)
 
             case .custom: // No need to observe main library
-                break
+                library = viewModel.state.library
             }
+        } else {
+            library = viewModel.state.library
         }
 
         do {
@@ -200,7 +204,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 )
 
             case .preview:
-                self.reloadData(isEditing: viewModel.state.isEditing, library: viewModel.state.library, in: viewModel)
+                self.reloadData(isEditing: viewModel.state.isEditing, library: library, in: viewModel)
                 return
             }
         } catch let error {
@@ -228,7 +232,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
 
             switch result {
             case .success:
-                self.reloadData(isEditing: true, library: viewModel.state.library, in: viewModel)
+                self.reloadData(isEditing: true, library: library, in: viewModel)
 
             case .failure(let error):
                 DDLogError("ItemDetailActionHandler: can't create initial item - \(error)")

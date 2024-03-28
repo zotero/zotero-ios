@@ -30,9 +30,9 @@ struct PDFReaderState: ViewModelState {
     }
 
     struct Changes: OptionSet {
-        typealias RawValue = UInt16
+        typealias RawValue = UInt32
 
-        let rawValue: UInt16
+        let rawValue: UInt32
 
         static let annotations = Changes(rawValue: 1 << 0)
         static let selection = Changes(rawValue: 1 << 1)
@@ -50,6 +50,7 @@ struct PDFReaderState: ViewModelState {
         static let visiblePageFromThumbnailList = Changes(rawValue: 1 << 13)
         static let selectionDeletion = Changes(rawValue: 1 << 14)
         static let activeFontSize = Changes(rawValue: 1 << 15)
+        static let library = Changes(rawValue: 1 << 16)
     }
 
     enum Error: Swift.Error {
@@ -63,7 +64,7 @@ struct PDFReaderState: ViewModelState {
 
     let key: String
     let parentKey: String?
-    let library: Library
+    let libraryId: LibraryIdentifier
     let document: PSPDFKit.Document
     let previewCache: NSCache<NSString, UIImage>
     let commentFont: UIFont
@@ -71,6 +72,8 @@ struct PDFReaderState: ViewModelState {
     let username: String
     let displayName: String
 
+    var library: Library
+    var libraryToken: NotificationToken?
     var sortedKeys: [AnnotationKey]
     var snapshotKeys: [AnnotationKey]?
     var token: NotificationToken?
@@ -125,7 +128,7 @@ struct PDFReaderState: ViewModelState {
         url: URL,
         key: String,
         parentKey: String?,
-        library: Library,
+        libraryId: LibraryIdentifier,
         initialPage: Int?,
         preselectedAnnotationKey: String?,
         settings: PDFSettings,
@@ -136,7 +139,7 @@ struct PDFReaderState: ViewModelState {
     ) {
         self.key = key
         self.parentKey = parentKey
-        self.library = library
+        self.libraryId = libraryId
         self.document = Document(url: url)
         self.previewCache = NSCache()
         self.commentFont = PDFReaderLayout.annotationLayout.font
@@ -171,6 +174,14 @@ struct PDFReaderState: ViewModelState {
         self.shouldStoreAnnotationPreviewsIfNeeded = false
 
         self.previewCache.totalCostLimit = 1024 * 1024 * 10 // Cache object limit - 10 MB
+
+        switch libraryId {
+        case .custom:
+            library = Library(identifier: libraryId, name: L10n.Libraries.myLibrary, metadataEditable: true, filesEditable: true)
+
+        case .group:
+            library = Library(identifier: libraryId, name: L10n.unknown, metadataEditable: false, filesEditable: false)
+        }
     }
 
     func annotation(for key: AnnotationKey) -> PDFAnnotation? {
