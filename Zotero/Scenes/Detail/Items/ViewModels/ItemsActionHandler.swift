@@ -222,12 +222,52 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
 
     private func loadInitialState(in viewModel: ViewModel<ItemsActionHandler>) {
         let sortType = Defaults.shared.itemsSortType
-        let results = self.results(for: viewModel.state.searchTerm, filters: viewModel.state.filters, collectionId: viewModel.state.collection.identifier, sortType: sortType, libraryId: viewModel.state.library.identifier)
+        let results = results(
+            for: viewModel.state.searchTerm,
+            filters: viewModel.state.filters,
+            collectionId: viewModel.state.collection.identifier,
+            sortType: sortType,
+            libraryId: viewModel.state.libraryId
+        )
+
+        var library: Library?
+        var libraryToken: NotificationToken?
+
+        if let libraryObject = try? dbStorage.perform(request: ReadLibraryObjectDbRequest(libraryId: viewModel.state.libraryId), on: .main) {
+            switch libraryObject {
+            case .group(let group):
+                library = Library(identifier: viewModel.state.libraryId, name: group.name, metadataEditable: group.canEditMetadata, filesEditable: group.canEditFiles)
+                libraryToken = group.observe(keyPaths: RGroup.observableKeypathsForAccessRights, on: .main) { [weak viewModel] (change: ObjectChange<RGroup>) in
+                    guard let viewModel else { return }
+                    observeGroup(change: change, viewModel: viewModel)
+                }
+
+            case .custom: // No need to observe main library
+                break
+            }
+        }
 
         self.update(viewModel: viewModel) { state in
             state.results = results
+            if let library {
+                state.library = library
+            }
+            state.libraryToken = libraryToken
             state.sortType = sortType
             state.error = (results == nil ? .dataLoading : nil)
+        }
+
+        func observeGroup(change: ObjectChange<RGroup>, viewModel: ViewModel<ItemsActionHandler>) {
+            switch change {
+            case .change(let group, _):
+                update(viewModel: viewModel) { state in
+                    state.library = Library(group: group)
+                    state.changes = .library
+                }
+
+            case .deleted, .error:
+                break
+            }
         }
     }
 

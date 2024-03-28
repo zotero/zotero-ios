@@ -30,3 +30,27 @@ struct ReadLibraryDbRequest: DbResponseRequest {
         }
     }
 }
+
+struct ReadLibraryObjectDbRequest: DbResponseRequest {
+    typealias Response = LibraryObject
+
+    let libraryId: LibraryIdentifier
+
+    var needsWrite: Bool { return false }
+
+    func process(in database: Realm) throws -> LibraryObject {
+        switch self.libraryId {
+        case .custom:
+            guard let object = database.objects(RCustomLibrary.self).first else {
+                throw DbError.objectNotFound
+            }
+            return .custom(object)
+
+        case .group(let identifier):
+            guard let group = database.objects(RGroup.self).filter("identifier == %d", identifier).first else {
+                throw DbError.objectNotFound
+            }
+            return .group(group)
+        }
+    }
+}

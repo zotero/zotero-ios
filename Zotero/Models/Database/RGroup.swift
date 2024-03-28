@@ -17,6 +17,8 @@ enum GroupType: String, PersistableEnum {
 }
 
 final class RGroup: Object {
+    static let observableKeypathsForAccessRights = ["canEditMetadata", "canEditFiles"]
+
     @Persisted(primaryKey: true) var identifier: Int
     @Persisted var owner: Int
     @Persisted var name: String

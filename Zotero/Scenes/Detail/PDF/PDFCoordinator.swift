@@ -69,17 +69,26 @@ final class PDFCoordinator: Coordinator {
 
     private let key: String
     private let parentKey: String?
-    private let library: Library
+    private let libraryId: LibraryIdentifier
     private let url: URL
     private let page: Int?
     private let preselectedAnnotationKey: String?
     private unowned let controllers: Controllers
     private let disposeBag: DisposeBag
 
-    init(key: String, parentKey: String?, library: Library, url: URL, page: Int?, preselectedAnnotationKey: String?, navigationController: NavigationViewController, controllers: Controllers) {
+    init(
+        key: String,
+        parentKey: String?,
+        libraryId: LibraryIdentifier,
+        url: URL,
+        page: Int?,
+        preselectedAnnotationKey: String?,
+        navigationController: NavigationViewController,
+        controllers: Controllers
+    ) {
         self.key = key
         self.parentKey = parentKey
-        self.library = library
+        self.libraryId = libraryId
         self.url = url
         self.page = page
         self.preselectedAnnotationKey = preselectedAnnotationKey
@@ -121,7 +130,7 @@ final class PDFCoordinator: Coordinator {
             url: self.url,
             key: self.key,
             parentKey: self.parentKey,
-            library: self.library,
+            libraryId: self.libraryId,
             initialPage: self.page,
             preselectedAnnotationKey: self.preselectedAnnotationKey,
             settings: settings,

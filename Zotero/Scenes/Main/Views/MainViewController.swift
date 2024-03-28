@@ -15,7 +15,7 @@ import CocoaLumberjackSwift
 import RxSwift
 
 protocol MainCoordinatorDelegate: AnyObject {
-    func showItems(for collection: Collection, in library: Library)
+    func showItems(for collection: Collection, in libraryId: LibraryIdentifier)
 }
 
 protocol MainCoordinatorSyncToolbarDelegate: AnyObject {
@@ -87,12 +87,12 @@ final class MainViewController: UISplitViewController {
         self.detailCoordinatorGetter = completed
     }
 
-    private func showItems(for collection: Collection, in library: Library, searchItemKeys: [String]?) {
+    private func showItems(for collection: Collection, in libraryId: LibraryIdentifier, searchItemKeys: [String]?) {
         let navigationController = UINavigationController()
         let tagFilterController = (self.viewControllers.first as? MasterContainerViewController)?.bottomController as? ItemsTagFilterDelegate
 
         let coordinator = DetailCoordinator(
-            library: library,
+            libraryId: libraryId,
             collection: collection,
             searchItemKeys: searchItemKeys,
             navigationController: navigationController,
@@ -126,9 +126,9 @@ extension MainViewController: UISplitViewControllerDelegate {
 }
 
 extension MainViewController: MainCoordinatorDelegate {
-    func showItems(for collection: Collection, in library: Library) {
-        guard isCollapsed || detailCoordinator?.library != library || detailCoordinator?.collection.identifier != collection.identifier else { return }
-        showItems(for: collection, in: library, searchItemKeys: nil)
+    func showItems(for collection: Collection, in libraryId: LibraryIdentifier) {
+        guard isCollapsed || detailCoordinator?.libraryId != libraryId || detailCoordinator?.collection.identifier != collection.identifier else { return }
+        showItems(for: collection, in: libraryId, searchItemKeys: nil)
     }
 }
 
@@ -137,20 +137,17 @@ extension MainViewController: MainCoordinatorSyncToolbarDelegate {
         guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
 
         do {
-            var library: Library?
             var collectionType: CollectionIdentifier.CustomType?
 
             try dbStorage.perform(on: .main, with: { coordinator in
-                library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
-
                 let isAnyInTrash = try coordinator.perform(request: CheckAnyItemIsInTrashDbRequest(libraryId: libraryId, keys: keys))
                 collectionType = isAnyInTrash ? .trash : .all
             })
 
-            guard let library = library, let collectionType = collectionType else { return }
+            guard let collectionType else { return }
 
             self.masterCoordinator?.showCollections(for: libraryId, preselectedCollection: .custom(collectionType), animated: true)
-            self.showItems(for: Collection(custom: collectionType), in: library, searchItemKeys: keys)
+            self.showItems(for: Collection(custom: collectionType), in: libraryId, searchItemKeys: keys)
         } catch let error {
             DDLogError("MainViewController: can't load searched keys - \(error)")
         }

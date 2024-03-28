@@ -10,7 +10,7 @@ import Foundation
 
 import RealmSwift
 
-struct ReadCollectionDbRequest: DbResponseRequest {
+struct ReadRCollectionDbRequest: DbResponseRequest {
     typealias Response = RCollection
 
     let libraryId: LibraryIdentifier
@@ -19,9 +19,32 @@ struct ReadCollectionDbRequest: DbResponseRequest {
     var needsWrite: Bool { return false }
 
     func process(in database: Realm) throws -> RCollection {
-        guard let collection = database.objects(RCollection.self).filter(.key(self.key, in: self.libraryId)).first else {
+        guard let collection = database.objects(RCollection.self).filter(.key(key, in: libraryId)).first else {
             throw DbError.objectNotFound
         }
         return collection
+    }
+}
+
+struct ReadCollectionDbRequest: DbResponseRequest {
+    typealias Response = Collection?
+
+    let collectionId: CollectionIdentifier
+    let libraryId: LibraryIdentifier
+
+    var needsWrite: Bool { return false }
+
+    func process(in database: Realm) throws -> Collection? {
+        switch collectionId {
+        case .collection(let key):
+            let rCollection = try ReadRCollectionDbRequest(libraryId: libraryId, key: key).process(in: database)
+            return Collection(object: rCollection, itemCount: 0)
+
+        case .custom(let type):
+            return Collection(custom: type)
+
+        default:
+            return nil
+        }
     }
 }

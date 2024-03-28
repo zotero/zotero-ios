@@ -93,9 +93,13 @@ final class ItemsTableViewHandler: NSObject {
             case .localAndChangedRemotely:
                 actions.append(ItemAction(type: .download))
                 actions.append(ItemAction(type: .removeDownload))
-            case .remoteMissing: break
+
+            case .remoteMissing:
+                break
             }
         }
+
+        guard state.library.metadataEditable else { return actions }
 
         actions.append(ItemAction(type: .addToCollection))
 
@@ -420,7 +424,7 @@ extension ItemsTableViewHandler: UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
-        guard !tableView.isEditing && self.viewModel.state.library.metadataEditable, let item = self.snapshot?[indexPath.row] else { return nil }
+        guard !tableView.isEditing, let item = self.snapshot?[indexPath.row] else { return nil }
 
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ -> UIMenu? in
             return self.createContextMenu(for: item)
