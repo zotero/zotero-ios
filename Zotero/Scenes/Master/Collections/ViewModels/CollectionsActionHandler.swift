@@ -196,8 +196,22 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
 
         do {
             try self.dbStorage.perform(on: .main, with: { coordinator in
-                let library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
+                let libraryObject = try coordinator.perform(request: ReadLibraryObjectDbRequest(libraryId: libraryId))
                 let collections = try coordinator.perform(request: ReadCollectionsDbRequest(libraryId: libraryId))
+                let library: Library
+                var libraryToken: NotificationToken?
+
+                switch libraryObject {
+                case .group(let group):
+                    library = Library(identifier: libraryId, name: group.name, metadataEditable: group.canEditMetadata, filesEditable: group.canEditFiles)
+                    libraryToken = group.observe(keyPaths: RGroup.observableKeypathsForAccessRights, on: .main) { [weak viewModel] (change: ObjectChange<RGroup>) in
+                        guard let viewModel else { return }
+                        observeGroup(change: change, viewModel: viewModel)
+                    }
+
+                case .custom: // No need to observe main library
+                    library = viewModel.state.library
+                }
 
                 var allItemCount = 0
                 var unfiledItemCount = 0
@@ -238,6 +252,7 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
                 self.update(viewModel: viewModel) { state in
                     state.collectionTree = collectionTree
                     state.library = library
+                    state.libraryToken = libraryToken
                     state.collectionsToken = collectionsToken
                     state.itemsToken = itemsToken
                     state.unfiledToken = unfiledToken
@@ -248,6 +263,19 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
             DDLogError("CollectionsActionHandlers: can't load data - \(error)")
             self.update(viewModel: viewModel) { state in
                 state.error = .dataLoading
+            }
+        }
+
+        func observeGroup(change: ObjectChange<RGroup>, viewModel: ViewModel<CollectionsActionHandler>) {
+            switch change {
+            case .change(let group, _):
+                update(viewModel: viewModel) { state in
+                    state.library = Library(group: group)
+                    state.changes = .library
+                }
+
+            case .deleted, .error:
+                break
             }
         }
     }
