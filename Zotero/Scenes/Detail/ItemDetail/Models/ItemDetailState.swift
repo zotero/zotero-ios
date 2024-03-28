@@ -258,7 +258,7 @@ struct ItemDetailState: ViewModelState {
         return AttachmentCreator.mainPdfAttachment(from: self.attachments, parentUrl: url)?.key
     }
 
-    init(type: DetailType, library: Library, preScrolledChildKey: String?, userId: Int) {
+    init(type: DetailType, libraryId: LibraryIdentifier, preScrolledChildKey: String?, userId: Int) {
         switch type {
         case .preview(let key):
             self.key = key
@@ -271,8 +271,7 @@ struct ItemDetailState: ViewModelState {
 
         self.type = type
         self.userId = userId
-        libraryId = library.identifier
-        self.library = library
+        self.libraryId = libraryId
         self.changes = []
         self.data = .empty
         self.attachments = []
@@ -285,6 +284,14 @@ struct ItemDetailState: ViewModelState {
         self.isLoadingData = true
         self.preScrolledChildKey = preScrolledChildKey
         self.hideController = false
+
+        switch libraryId {
+        case .custom:
+            library = Library(identifier: libraryId, name: L10n.Libraries.myLibrary, metadataEditable: true, filesEditable: true)
+
+        case .group:
+            library = Library(identifier: libraryId, name: L10n.unknown, metadataEditable: false, filesEditable: false)
+        }
     }
 
     mutating func cleanup() {

@@ -302,7 +302,7 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
             name = collection.name
 
             if let parentKey = viewModel.state.collectionTree.parent(of: collection.identifier)?.key {
-                let request = ReadCollectionDbRequest(libraryId: viewModel.state.library.identifier, key: parentKey)
+                let request = ReadRCollectionDbRequest(libraryId: viewModel.state.library.identifier, key: parentKey)
                 let rCollection = try? self.dbStorage.perform(request: request, on: .main)
                 parent = rCollection.flatMap { Collection(object: $0, itemCount: 0) }
             } else {

@@ -215,11 +215,11 @@ final class AnnotationToolbarHandler: NSObject {
         delegate.layoutIfNeeded()
     }
     
-    func viewIsAppearing(documentIsLocked: Bool) {
+    func viewIsAppearing(editingEnabled: Bool) {
         setConstraints(for: delegate.toolbarState.position, statusBarVisible: delegate.statusBarVisible)
         delegate.topDidChange(forToolbarState: delegate.toolbarState)
         setAnnotationToolbarHandleMinimumLongPressDuration(forPosition: delegate.toolbarState.position)
-        if delegate.toolbarState.visible && !documentIsLocked {
+        if delegate.toolbarState.visible && editingEnabled {
             showAnnotationToolbar(state: delegate.toolbarState, statusBarVisible: delegate.statusBarVisible, animated: false)
         } else {
             hideAnnotationToolbar(newState: delegate.toolbarState, statusBarVisible: delegate.statusBarVisible, animated: false)
