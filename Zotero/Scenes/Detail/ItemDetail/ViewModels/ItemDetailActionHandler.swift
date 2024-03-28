@@ -30,8 +30,16 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
     private let backgroundScheduler: SerialDispatchQueueScheduler
     private let disposeBag: DisposeBag
 
-    init(apiClient: ApiClient, fileStorage: FileStorage, dbStorage: DbStorage, schemaController: SchemaController, dateParser: DateParser, urlDetector: UrlDetector, fileDownloader: AttachmentDownloader,
-         fileCleanupController: AttachmentFileCleanupController) {
+    init(
+        apiClient: ApiClient,
+        fileStorage: FileStorage,
+        dbStorage: DbStorage,
+        schemaController: SchemaController,
+        dateParser: DateParser,
+        urlDetector: UrlDetector,
+        fileDownloader: AttachmentDownloader,
+        fileCleanupController: AttachmentFileCleanupController
+    ) {
         let queue = DispatchQueue(label: "org.zotero.ItemDetailActionHandler.background", qos: .userInitiated)
         self.apiClient = apiClient
         self.fileStorage = fileStorage
@@ -52,7 +60,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             self.loadInitialData(in: viewModel)
 
         case .reloadData:
-            self.reloadData(isEditing: viewModel.state.isEditing, in: viewModel)
+            self.reloadData(isEditing: viewModel.state.isEditing, library: viewModel.state.library, in: viewModel)
 
         case .changeType(let type):
             self.changeType(to: type, in: viewModel)
@@ -150,6 +158,22 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         var collectionKey: String?
         var data: (data: ItemDetailState.Data, attachments: [Attachment], notes: [Note], tags: [Tag])
 
+        if let libraryObject = try? dbStorage.perform(request: ReadLibraryObjectDbRequest(libraryId: libraryId), on: .main) {
+            switch libraryObject {
+            case .group(let group):
+                let libraryToken = group.observe(keyPaths: RGroup.observableKeypathsForAccessRights, on: .main) { [weak viewModel] (change: ObjectChange<RGroup>) in
+                    guard let viewModel else { return }
+                    observeGroup(change: change, viewModel: viewModel)
+                }
+                update(viewModel: viewModel) { state in
+                    state.libraryToken = libraryToken
+                }
+
+            case .custom: // No need to observe main library
+                break
+            }
+        }
+
         do {
             switch viewModel.state.type {
             case .creation(let itemType, let child, let _collectionKey):
@@ -176,7 +200,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 )
 
             case .preview:
-                self.reloadData(isEditing: viewModel.state.isEditing, in: viewModel)
+                self.reloadData(isEditing: viewModel.state.isEditing, library: viewModel.state.library, in: viewModel)
                 return
             }
         } catch let error {
@@ -200,11 +224,11 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         )
 
         self.perform(request: request, invalidateRealm: true) { [weak viewModel] result in
-            guard let viewModel = viewModel else { return }
+            guard let viewModel else { return }
 
             switch result {
             case .success:
-                self.reloadData(isEditing: true, in: viewModel)
+                self.reloadData(isEditing: true, library: viewModel.state.library, in: viewModel)
 
             case .failure(let error):
                 DDLogError("ItemDetailActionHandler: can't create initial item - \(error)")
@@ -213,10 +237,21 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 }
             }
         }
+
+        func observeGroup(change: ObjectChange<RGroup>, viewModel: ViewModel<ItemDetailActionHandler>) {
+            switch change {
+            case .change(let group, _):
+                reloadData(isEditing: viewModel.state.isEditing, library: Library(group: group), in: viewModel)
+
+            case .deleted, .error:
+                break
+            }
+        }
     }
 
-    private func reloadData(isEditing: Bool, in viewModel: ViewModel<ItemDetailActionHandler>) {
+    private func reloadData(isEditing: Bool, library: Library, in viewModel: ViewModel<ItemDetailActionHandler>) {
         do {
+            let canEdit = isEditing && library.metadataEditable
             let item = try self.dbStorage.perform(request: ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: viewModel.state.key), on: .main, refreshRealm: true)
 
             let token = item.observe(keyPaths: RItem.observableKeypathsForItemDetail) { [weak viewModel] change in
@@ -233,11 +268,11 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 doiDetector: FieldKeys.Item.isDoi
             )
 
-            if !isEditing {
+            if !canEdit {
                 data.fieldIds = ItemDetailDataCreator.filteredFieldKeys(from: data.fieldIds, fields: data.fields)
             }
 
-            self.saveReloaded(data: data, attachments: attachments, notes: notes, tags: tags, isEditing: isEditing, token: token, in: viewModel)
+            self.saveReloaded(data: data, attachments: attachments, notes: notes, tags: tags, isEditing: canEdit, library: library, token: token, in: viewModel)
         } catch let error {
             DDLogError("ItemDetailActionHandler: can't load data - \(error)")
             self.update(viewModel: viewModel) { state in
@@ -246,7 +281,16 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         }
     }
 
-    private func saveReloaded(data: ItemDetailState.Data, attachments: [Attachment], notes: [Note], tags: [Tag], isEditing: Bool, token: NotificationToken, in viewModel: ViewModel<ItemDetailActionHandler>) {
+    private func saveReloaded(
+        data: ItemDetailState.Data,
+        attachments: [Attachment],
+        notes: [Note],
+        tags: [Tag],
+        isEditing: Bool,
+        library: Library,
+        token: NotificationToken,
+        in viewModel: ViewModel<ItemDetailActionHandler>
+    ) {
         self.update(viewModel: viewModel) { state in
             state.data = data
             if state.snapshot != nil || isEditing {
@@ -256,6 +300,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             state.attachments = attachments
             state.notes = notes
             state.tags = tags
+            state.library = library
             state.isLoadingData = false
             state.isEditing = isEditing
             state.observationToken = token

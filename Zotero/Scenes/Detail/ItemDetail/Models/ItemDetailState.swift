@@ -222,9 +222,10 @@ struct ItemDetailState: ViewModelState {
     }
 
     let key: String
-    let library: Library
+    let libraryId: LibraryIdentifier
     let userId: Int
 
+    var library: Library
     var type: DetailType
     var changes: Changes
     var isEditing: Bool
@@ -241,6 +242,7 @@ struct ItemDetailState: ViewModelState {
     var updateAttachmentKey: String?
     var isLoadingData: Bool
     var observationToken: NotificationToken?
+    var libraryToken: NotificationToken?
     var attachmentToOpen: String?
     // Identifiers of items which are currently being processed in background and should be disabled in UI
     var backgroundProcessedItems: Set<String>
@@ -269,6 +271,7 @@ struct ItemDetailState: ViewModelState {
 
         self.type = type
         self.userId = userId
+        libraryId = library.identifier
         self.library = library
         self.changes = []
         self.data = .empty
