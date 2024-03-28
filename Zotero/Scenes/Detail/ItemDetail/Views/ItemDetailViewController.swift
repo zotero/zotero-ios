@@ -246,7 +246,7 @@ final class ItemDetailViewController: UIViewController {
     /// Updates navigation bar with appropriate buttons based on editing state.
     /// - parameter isEditing: Current editing state of tableView.
     private func setNavigationBarButtons(to state: ItemDetailState) {
-        guard state.library.metadataEditable && !state.isLoadingData else { return }
+        guard !state.isLoadingData else { return }
 
         self.navigationItem.setHidesBackButton(state.isEditing, animated: false)
 
@@ -261,7 +261,7 @@ final class ItemDetailViewController: UIViewController {
             }
             self.setEditingNavigationBarButtons(isSaving: state.isSaving, includesCancel: includesCancel)
         } else {
-            self.setPreviewNavigationBarButtons(attachmentButtonState: self.mainAttachmentButtonState(from: state))
+            self.setPreviewNavigationBarButtons(attachmentButtonState: self.mainAttachmentButtonState(from: state), library: state.library)
         }
     }
 
@@ -280,7 +280,7 @@ final class ItemDetailViewController: UIViewController {
         return .ready(key)
     }
 
-    private func setPreviewNavigationBarButtons(attachmentButtonState: MainAttachmentButtonState?) {
+    private func setPreviewNavigationBarButtons(attachmentButtonState: MainAttachmentButtonState?, library: Library) {
         if let state = attachmentButtonState, case .downloading(_, let progress) = state,
            let rightBarButtonItems = self.navigationItem.rightBarButtonItems,
            rightBarButtonItems.count == 3,
@@ -290,13 +290,18 @@ final class ItemDetailViewController: UIViewController {
 
         self.navigationItem.setHidesBackButton(false, animated: false)
 
-        let button = UIBarButtonItem(title: L10n.edit, style: .plain, target: nil, action: nil)
-        button.rx.tap.subscribe(onNext: { [weak self] _ in
-                         self?.viewModel.process(action: .startEditing)
-                     })
-                     .disposed(by: self.disposeBag)
+        var buttons: [UIBarButtonItem] = []
+        if library.metadataEditable {
+            let button = UIBarButtonItem(title: L10n.edit, style: .plain, target: nil, action: nil)
+            button.rx.tap.subscribe(onNext: { [weak self] _ in
+                self?.viewModel.process(action: .startEditing)
+            })
+            .disposed(by: self.disposeBag)
+            buttons.append(button)
+        }
+        buttons.append(contentsOf: self.attachmentButtonItems(for: attachmentButtonState))
 
-        self.navigationItem.rightBarButtonItems = [button] + self.attachmentButtonItems(for: attachmentButtonState)
+        self.navigationItem.rightBarButtonItems = buttons
         self.navigationItem.leftBarButtonItem = nil
     }
 

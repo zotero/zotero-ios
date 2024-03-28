@@ -232,19 +232,18 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
 
         var library: Library?
         var libraryToken: NotificationToken?
-        let libraryObject = try? dbStorage.perform(request: ReadLibraryObjectDbRequest(libraryId: viewModel.state.libraryId), on: .main)
 
-        if let libraryObject {
+        if let libraryObject = try? dbStorage.perform(request: ReadLibraryObjectDbRequest(libraryId: viewModel.state.libraryId), on: .main) {
             switch libraryObject {
-            case .custom(let custom):
-                library = Library(identifier: viewModel.state.libraryId, name: L10n.Libraries.myLibrary, metadataEditable: true, filesEditable: true)
-
             case .group(let group):
                 library = Library(identifier: viewModel.state.libraryId, name: group.name, metadataEditable: group.canEditMetadata, filesEditable: group.canEditFiles)
-                libraryToken = group.observe(keyPaths: ["canEditMetadata", "canEditFiles"], on: .main) { [weak viewModel] (change: ObjectChange<RGroup>) in
+                libraryToken = group.observe(keyPaths: RGroup.observableKeypathsForAccessRights, on: .main) { [weak viewModel] (change: ObjectChange<RGroup>) in
                     guard let viewModel else { return }
                     observeGroup(change: change, viewModel: viewModel)
                 }
+
+            case .custom: // No need to observe main library
+                break
             }
         }
 

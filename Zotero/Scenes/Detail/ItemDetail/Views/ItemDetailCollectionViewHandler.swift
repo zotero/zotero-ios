@@ -347,7 +347,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
                 func setupSwipeActions(in configuration: inout UICollectionLayoutListConfiguration, self: ItemDetailCollectionViewHandler) {
                     configuration.trailingSwipeActionsConfigurationProvider = { [weak self] indexPath in
-                        guard let self, let row = self.dataSource.itemIdentifier(for: indexPath) else { return nil }
+                        guard let self, self.viewModel.state.library.metadataEditable, let row = self.dataSource.itemIdentifier(for: indexPath) else { return nil }
 
                         let title: String
                         switch row {
@@ -453,7 +453,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
     func reloadAll(to state: ItemDetailState, animated: Bool) {
         // Assign new id to all sections, just reload everything
         let id = UUID().uuidString
-        let sections = sections(for: state.data, isEditing: state.isEditing).map({ SectionType(identifier: id, section: $0) })
+        let sections = sections(for: state.data, isEditing: state.isEditing, library: state.library).map({ SectionType(identifier: id, section: $0) })
         var snapshot = NSDiffableDataSourceSnapshot<SectionType, Row>()
         snapshot.appendSections(sections)
         for section in sections {
@@ -466,7 +466,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
         /// - parameter data: New data.
         /// - parameter isEditing: Current editing table view state.
         /// - returns: Array of visible sections.
-        func sections(for data: ItemDetailState.Data, isEditing: Bool) -> [Section] {
+        func sections(for data: ItemDetailState.Data, isEditing: Bool, library: Library) -> [Section] {
             if isEditing {
                 // Only "metadata" sections are visible during editing.
                 if data.isAttachment {
@@ -489,10 +489,15 @@ final class ItemDetailCollectionViewHandler: NSObject {
             if let abstract = data.abstract, !abstract.isEmpty {
                 sections.append(.abstract)
             }
-            if !data.isAttachment {
+            if !data.isAttachment && (library.metadataEditable || !state.notes.isEmpty) {
                 sections.append(.notes)
             }
-            sections.append(contentsOf: [.tags, .attachments])
+            if library.metadataEditable || !state.tags.isEmpty {
+                sections.append(.tags)
+            }
+            if (library.metadataEditable && library.filesEditable) || !state.attachments.isEmpty {
+                sections.append(.attachments)
+            }
 
             return sections
         }
@@ -628,11 +633,9 @@ final class ItemDetailCollectionViewHandler: NSObject {
                 let isProcessing = state.backgroundProcessedItems.contains(attachment.key)
                 return attachmentRow(for: attachment, isProcessing: isProcessing)
             })
-
-            if !viewModel.state.data.isAttachment {
+            if !viewModel.state.data.isAttachment && state.library.metadataEditable && state.library.filesEditable {
                 attachments += [.addAttachment]
             }
-
             return attachments
 
         case .creators:
@@ -640,7 +643,6 @@ final class ItemDetailCollectionViewHandler: NSObject {
                 guard let creator = state.data.creators[creatorId] else { return nil }
                 return .creator(creator)
             })
-
             if state.isEditing {
                 return creators + [.addCreator]
             }
@@ -659,7 +661,10 @@ final class ItemDetailCollectionViewHandler: NSObject {
                 let isProcessing = state.backgroundProcessedItems.contains(note.key)
                 return .note(note: note, isProcessing: isProcessing)
             })
-            return notes + [.addNote]
+            if state.library.metadataEditable {
+                return notes + [.addNote]
+            }
+            return notes
 
         case .tags:
             let tags: [Row] = state.tags.map({ tag in
@@ -669,7 +674,10 @@ final class ItemDetailCollectionViewHandler: NSObject {
                 }
                 return .tag(id: UUID(), tag: tag, isProcessing: isProcessing)
             })
-            return tags + [.addTag]
+            if state.library.metadataEditable {
+                return tags + [.addTag]
+            }
+            return tags
 
         case .title:
             return [.title]
