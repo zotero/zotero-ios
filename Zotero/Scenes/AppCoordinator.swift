@@ -455,6 +455,7 @@ extension AppCoordinator: DebugLoggingCoordinator {
         func showAlert(for result: Result<(String, String?, Int), DebugLogging.Error>, logs: [URL]?, retry: (() -> Void)?, completion: (() -> Void)?) {
             switch result {
             case .success((let debugId, let customMessage, let userId)):
+                UIPasteboard.general.string = debugId
                 share(debugId: debugId, customMessage: customMessage, userId: userId)
                 completion?()
 
@@ -466,7 +467,6 @@ extension AppCoordinator: DebugLoggingCoordinator {
                 let actions = [
                     UIAlertAction(title: L10n.ok, style: .cancel, handler: nil),
                     UIAlertAction(title: L10n.Settings.CrashAlert.submitForum, style: .default, handler: { _ in
-                        UIPasteboard.general.string = debugId
                         submit(debugId: debugId)
                     })
                 ]

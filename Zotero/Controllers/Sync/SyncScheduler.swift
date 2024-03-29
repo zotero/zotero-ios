@@ -72,14 +72,14 @@ final class SyncScheduler: SynchronizationScheduler, WebSocketScheduler {
     }
 
     var inProgress: BehaviorRelay<Bool>
-    var syncTypeInProgressObservable: Observable<SyncController.Kind?> {
+    lazy var syncTypeInProgressObservable: Observable<SyncController.Kind?> = {
         return inProgress.map({ [weak self] progress in
             if !progress {
                 return nil
             }
             return self?.syncInProgress?.type
         })
-    }
+    }()
     var syncTypeInProgress: SyncController.Kind? {
         var type: SyncController.Kind?
         queue.sync { [weak self] in
