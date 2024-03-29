@@ -661,9 +661,10 @@ extension AppCoordinator: CrashReporterCoordinator {
     func report(id: String, completion: @escaping () -> Void) {
         var actions = [
             UIAlertAction(title: L10n.ok, style: .cancel, handler: { _ in completion() }),
-            UIAlertAction(title: L10n.Settings.CrashAlert.copyId, style: .default, handler: { _ in
+            UIAlertAction(title: L10n.Settings.CrashAlert.submitForum, style: .default, handler: { [weak self] _ in
+                guard let self else { return }
                 UIPasteboard.general.string = id
-                completion()
+                submit(reportId: id, completion: completion)
             })
         ]
 
@@ -677,6 +678,14 @@ extension AppCoordinator: CrashReporterCoordinator {
         }
 
         showAlert(title: L10n.Settings.CrashAlert.title, message: L10n.Settings.CrashAlert.message(id), actions: actions)
+
+        func submit(reportId: String, completion: @escaping () -> Void) {
+            guard var components = URLComponents(string: "https://forums.zotero.org/post/discussion") else { return }
+            components.queryItems = [URLQueryItem(name: "name", value: "iOS Crash Report: \(reportId)"), URLQueryItem(name: "body", value: "[Describe what you were doing when the crash occurred.]")]
+            guard let url = components.url else { return }
+            UIApplication.shared.open(url)
+            completion()
+        }
     }
 
     private func exportDb(with userId: Int, completion: (() -> Void)?) {
