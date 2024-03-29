@@ -22,20 +22,20 @@ struct SyncVersionsDbRequest: DbResponseRequest {
     var needsWrite: Bool { return false }
 
     func process(in database: Realm) throws -> [String] {
-        switch self.syncObject {
+        switch syncObject {
         case .collection:
-            return self.check(versions: self.versions, for: database.objects(RCollection.self))
+            return check(versions: versions, for: database.objects(RCollection.self).filter(.library(with: libraryId)))
 
         case .search:
-            return self.check(versions: self.versions, for: database.objects(RSearch.self))
+            return check(versions: versions, for: database.objects(RSearch.self).filter(.library(with: libraryId)))
 
         case .item:
-            let objects = database.objects(RItem.self).filter(.isTrash(false))
-            return self.check(versions: self.versions, for: objects)
+            let objects = database.objects(RItem.self).filter(.library(with: libraryId)).filter(.isTrash(false))
+            return check(versions: versions, for: objects)
 
         case .trash:
-            let objects = database.objects(RItem.self).filter(.isTrash(true))
-            return self.check(versions: self.versions, for: objects)
+            let objects = database.objects(RItem.self).filter(.library(with: libraryId)).filter(.isTrash(true))
+            return check(versions: versions, for: objects)
 
         case .settings:
             return []
@@ -44,26 +44,26 @@ struct SyncVersionsDbRequest: DbResponseRequest {
 
     private func check<Obj: SyncableObject>(versions: [String: Int], for objects: Results<Obj>) -> [String] {
         let date = Date()
-        var toUpdate = Array(self.versions.keys)
+        var toUpdate = Array(versions.keys)
 
         for object in objects {
             if object.syncState == .synced {
-                if let version = self.versions[object.key], version == object.version,
+                if let version = versions[object.key], version == object.version,
                    let index = toUpdate.firstIndex(of: object.key) {
                     toUpdate.remove(at: index)
                 }
                 continue
             }
 
-            switch self.syncType {
+            switch syncType {
             case .ignoreIndividualDelays, .full:
                 guard !toUpdate.contains(object.key) else { continue }
                 toUpdate.append(object.key)
 
             case .collectionsOnly, .normal, .keysOnly, .prioritizeDownloads:
                 // Check backoff schedule to see whether object can be synced again
-                let delayIdx = min(object.syncRetries, (self.delayIntervals.count - 1))
-                let delay = self.delayIntervals[delayIdx]
+                let delayIdx = min(object.syncRetries, (delayIntervals.count - 1))
+                let delay = delayIntervals[delayIdx]
                 if date.timeIntervalSince(object.lastSyncDate) >= delay {
                     // Object can be synced, if it's not already in array, add it.
                     guard !toUpdate.contains(object.key) else { continue }
@@ -89,7 +89,7 @@ struct SyncGroupVersionsDbRequest: DbResponseRequest {
     var needsWrite: Bool { return false }
 
     func process(in database: Realm) throws -> ([Int], [(Int, String)]) {
-        let allKeys = Array(self.versions.keys)
+        let allKeys = Array(versions.keys)
 
         let toRemove = database.objects(RGroup.self).filter("NOT identifier IN %@", allKeys)
         let toRemoveIds = Array(toRemove.map({ ($0.identifier, $0.name) }))
@@ -101,7 +101,7 @@ struct SyncGroupVersionsDbRequest: DbResponseRequest {
                     toUpdate.append(library.identifier)
                 }
             } else {
-                if let version = self.versions[library.identifier], version == library.version,
+                if let version = versions[library.identifier], version == library.version,
                    let index = toUpdate.firstIndex(of: library.identifier) {
                     toUpdate.remove(at: index)
                 }
