@@ -84,7 +84,6 @@ struct ItemsState: ViewModelState {
     }
 
     let collection: Collection
-    let libraryId: LibraryIdentifier
 
     var library: Library
     var libraryToken: NotificationToken?
@@ -137,7 +136,6 @@ struct ItemsState: ViewModelState {
         error: ItemsError?
     ) {
         self.collection = collection
-        self.libraryId = libraryId
         self.filters = []
         self.keys = []
         self.itemAccessories = [:]

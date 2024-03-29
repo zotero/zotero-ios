@@ -321,6 +321,10 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
             title = L10n.error
             message = L10n.Errors.Pdf.pageIndexNotInt
 
+        case .documentEmpty:
+            title = L10n.error
+            message = L10n.Errors.Pdf.emptyDocument
+
         case .unknown:
             title = L10n.error
             message = L10n.Errors.unknown

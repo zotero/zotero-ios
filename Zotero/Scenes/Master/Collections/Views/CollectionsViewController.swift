@@ -109,7 +109,7 @@ final class CollectionsViewController: UICollectionViewController {
         if let result = state.itemKeysForBibliography {
             switch result {
             case .success(let keys):
-                self.coordinatorDelegate?.showCiteExport(for: keys, libraryId: state.libraryId)
+                self.coordinatorDelegate?.showCiteExport(for: keys, libraryId: state.library.identifier)
 
             case .failure:
                 self.coordinatorDelegate?.showCiteExportError()

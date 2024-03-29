@@ -221,52 +221,33 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
     }
 
     private func loadInitialState(in viewModel: ViewModel<ItemsActionHandler>) {
-        let sortType = Defaults.shared.itemsSortType
-        let results = results(
-            for: viewModel.state.searchTerm,
-            filters: viewModel.state.filters,
-            collectionId: viewModel.state.collection.identifier,
-            sortType: sortType,
-            libraryId: viewModel.state.libraryId
-        )
-
-        var library: Library?
-        var libraryToken: NotificationToken?
-
-        if let libraryObject = try? dbStorage.perform(request: ReadLibraryObjectDbRequest(libraryId: viewModel.state.libraryId), on: .main) {
-            switch libraryObject {
-            case .group(let group):
-                library = Library(identifier: viewModel.state.libraryId, name: group.name, metadataEditable: group.canEditMetadata, filesEditable: group.canEditFiles)
-                libraryToken = group.observe(keyPaths: RGroup.observableKeypathsForAccessRights, on: .main) { [weak viewModel] (change: ObjectChange<RGroup>) in
-                    guard let viewModel else { return }
-                    observeGroup(change: change, viewModel: viewModel)
-                }
-
-            case .custom: // No need to observe main library
-                break
-            }
-        }
-
-        self.update(viewModel: viewModel) { state in
-            state.results = results
-            if let library {
-                state.library = library
-            }
-            state.libraryToken = libraryToken
-            state.sortType = sortType
-            state.error = (results == nil ? .dataLoading : nil)
-        }
-
-        func observeGroup(change: ObjectChange<RGroup>, viewModel: ViewModel<ItemsActionHandler>) {
-            switch change {
-            case .change(let group, _):
+        do {
+            let sortType = Defaults.shared.itemsSortType
+            let libraryObject = try dbStorage.perform(request: ReadLibraryObjectDbRequest(libraryId: viewModel.state.library.identifier), on: .main)
+            let (library, libraryToken) = libraryObject.observe(changes: { [weak viewModel] library in
+                guard let viewModel else { return }
                 update(viewModel: viewModel) { state in
-                    state.library = Library(group: group)
+                    state.library = library
                     state.changes = .library
                 }
+            })
+            let results = try results(
+                for: viewModel.state.searchTerm,
+                filters: viewModel.state.filters,
+                collectionId: viewModel.state.collection.identifier,
+                sortType: sortType,
+                libraryId: viewModel.state.library.identifier
+            )
 
-            case .deleted, .error:
-                break
+            update(viewModel: viewModel) { state in
+                state.results = results
+                state.library = library
+                state.libraryToken = libraryToken
+                state.sortType = sortType
+            }
+        } catch let error {
+            update(viewModel: viewModel) { state in
+                state.error = (error as? ItemsError) ?? .dataLoading
             }
         }
     }
@@ -507,9 +488,15 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
     // MARK: - Overlay actions
 
     private func changeSortType(to sortType: ItemsSortType, in viewModel: ViewModel<ItemsActionHandler>) {
-        let results = self.results(for: viewModel.state.searchTerm, filters: viewModel.state.filters, collectionId: viewModel.state.collection.identifier, sortType: sortType, libraryId: viewModel.state.library.identifier)
+        let results = try? results(
+            for: viewModel.state.searchTerm,
+            filters: viewModel.state.filters,
+            collectionId: viewModel.state.collection.identifier,
+            sortType: sortType,
+            libraryId: viewModel.state.library.identifier
+        )
 
-        self.update(viewModel: viewModel) { state in
+        update(viewModel: viewModel) { state in
             state.sortType = sortType
             state.results = results
             state.changes.insert(.results)
@@ -635,9 +622,14 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
     private func filter(with filters: [ItemsFilter], in viewModel: ViewModel<ItemsActionHandler>) {
         guard filters != viewModel.state.filters else { return }
 
-        let results = self.results(for: viewModel.state.searchTerm, filters: filters, collectionId: viewModel.state.collection.identifier, sortType: viewModel.state.sortType, libraryId: viewModel.state.library.identifier)
-
-        self.update(viewModel: viewModel) { state in
+        let results = try? results(
+            for: viewModel.state.searchTerm,
+            filters: filters,
+            collectionId: viewModel.state.collection.identifier,
+            sortType: viewModel.state.sortType,
+            libraryId: viewModel.state.library.identifier
+        )
+        update(viewModel: viewModel) { state in
             state.filters = filters
             state.results = results
             state.changes = [.results, .filters]
@@ -647,22 +639,27 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
     private func search(for text: String?, ignoreOriginal: Bool, in viewModel: ViewModel<ItemsActionHandler>) {
         guard ignoreOriginal || text != viewModel.state.searchTerm else { return }
 
-        let results = self.results(for: text, filters: viewModel.state.filters, collectionId: viewModel.state.collection.identifier, sortType: viewModel.state.sortType, libraryId: viewModel.state.library.identifier)
-
-        self.update(viewModel: viewModel) { state in
+        let results = try? results(
+            for: text,
+            filters: viewModel.state.filters,
+            collectionId: viewModel.state.collection.identifier,
+            sortType: viewModel.state.sortType,
+            libraryId: viewModel.state.library.identifier
+        )
+        update(viewModel: viewModel) { state in
             state.searchTerm = text
             state.results = results
             state.changes = .results
         }
     }
 
-    private func results(for searchText: String?, filters: [ItemsFilter], collectionId: CollectionIdentifier, sortType: ItemsSortType, libraryId: LibraryIdentifier) -> Results<RItem>? {
+    private func results(for searchText: String?, filters: [ItemsFilter], collectionId: CollectionIdentifier, sortType: ItemsSortType, libraryId: LibraryIdentifier) throws -> Results<RItem> {
         var searchComponents: [String] = []
         if let text = searchText, !text.isEmpty {
             searchComponents = self.createComponents(from: text)
         }
         let request = ReadItemsDbRequest(collectionId: collectionId, libraryId: libraryId, filters: filters, sortType: sortType, searchTextComponents: searchComponents)
-        return try? self.dbStorage.perform(request: request, on: .main)
+        return try self.dbStorage.perform(request: request, on: .main)
     }
 
     private func createComponents(from searchTerm: String) -> [String] {

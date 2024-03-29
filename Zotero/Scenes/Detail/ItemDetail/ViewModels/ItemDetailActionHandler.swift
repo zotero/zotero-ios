@@ -153,32 +153,22 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
     }
 
     private func loadInitialData(in viewModel: ViewModel<ItemDetailActionHandler>) {
-        let key = viewModel.state.key
-        let libraryId = viewModel.state.library.identifier
         let library: Library
         var collectionKey: String?
         var data: (data: ItemDetailState.Data, attachments: [Attachment], notes: [Note], tags: [Tag])
 
-        if let libraryObject = try? dbStorage.perform(request: ReadLibraryObjectDbRequest(libraryId: libraryId), on: .main) {
-            switch libraryObject {
-            case .group(let group):
-                let libraryToken = group.observe(keyPaths: RGroup.observableKeypathsForAccessRights, on: .main) { [weak viewModel] (change: ObjectChange<RGroup>) in
-                    guard let viewModel else { return }
-                    observeGroup(change: change, viewModel: viewModel)
-                }
-                update(viewModel: viewModel) { state in
-                    state.libraryToken = libraryToken
-                }
-                library = Library(group: group)
-
-            case .custom: // No need to observe main library
-                library = viewModel.state.library
-            }
-        } else {
-            library = viewModel.state.library
-        }
-
         do {
+            let libraryToken: NotificationToken?
+            let libraryObject = try dbStorage.perform(request: ReadLibraryObjectDbRequest(libraryId: viewModel.state.library.identifier), on: .main)
+            (library, libraryToken) = libraryObject.observe(changes: { [weak viewModel] library in
+                guard let viewModel else { return }
+                reloadData(isEditing: viewModel.state.isEditing, library: library, in: viewModel)
+            })
+
+            update(viewModel: viewModel) { state in
+                state.libraryToken = libraryToken
+            }
+
             switch viewModel.state.type {
             case .creation(let itemType, let child, let _collectionKey):
                 collectionKey = _collectionKey
@@ -193,7 +183,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
 
             case .duplication(let itemKey, let _collectionKey):
                 collectionKey = _collectionKey
-                let item = try self.dbStorage.perform(request: ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: itemKey), on: .main)
+                let item = try self.dbStorage.perform(request: ReadItemDbRequest(libraryId: library.identifier, key: itemKey), on: .main)
                 data = try ItemDetailDataCreator.createData(
                     from: .existing(item: item, ignoreChildren: true),
                     schemaController: self.schemaController,
@@ -216,8 +206,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         }
 
         let request = CreateItemFromDetailDbRequest(
-            key: key,
-            libraryId: libraryId,
+            key: viewModel.state.key,
+            libraryId: library.identifier,
             collectionKey: collectionKey,
             data: data.data,
             attachments: data.attachments,
@@ -239,16 +229,6 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 self.update(viewModel: viewModel) { state in
                     state.error = .cantCreateData
                 }
-            }
-        }
-
-        func observeGroup(change: ObjectChange<RGroup>, viewModel: ViewModel<ItemDetailActionHandler>) {
-            switch change {
-            case .change(let group, _):
-                reloadData(isEditing: viewModel.state.isEditing, library: Library(group: group), in: viewModel)
-
-            case .deleted, .error:
-                break
             }
         }
     }

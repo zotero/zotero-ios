@@ -1627,37 +1627,22 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
     /// Loads annotations from DB, converts them to Zotero annotations and adds matching PSPDFKit annotations to document.
     private func loadDocumentData(boundingBoxConverter: AnnotationBoundingBoxConverter, in viewModel: ViewModel<PDFReaderActionHandler>) {
-        guard let boundingBoxConverter = self.delegate, viewModel.state.document.pageCount > 0 else { return }
-
-        let isDark = viewModel.state.interfaceStyle == .dark
-        let key = viewModel.state.key
-        let libraryId = viewModel.state.libraryId
-        let library: Library
-        var libraryToken: NotificationToken?
-
-        if let libraryObject = try? dbStorage.perform(request: ReadLibraryObjectDbRequest(libraryId: libraryId), on: .main) {
-            switch libraryObject {
-            case .group(let group):
-                libraryToken = group.observe(keyPaths: RGroup.observableKeypathsForAccessRights, on: .main) { [weak viewModel] (change: ObjectChange<RGroup>) in
-                    guard let viewModel else { return }
-                    observeGroup(change: change, viewModel: viewModel)
-                }
-                library = Library(group: group)
-
-            case .custom: // No need to observe main library
-                library = viewModel.state.library
+        do {
+            guard let boundingBoxConverter = self.delegate, viewModel.state.document.pageCount > 0 else {
+                throw PDFReaderState.Error.documentEmpty
             }
-        } else {
-            library = viewModel.state.library
-        }
 
-        let dbResult = self.loadAnnotationsAndPage(for: key, libraryId: libraryId)
-
-        switch dbResult {
-        case .success((let liveAnnotations, let page)):
-            let token = self.observe(items: liveAnnotations, viewModel: viewModel)
+            let isDark = viewModel.state.interfaceStyle == .dark
+            let key = viewModel.state.key
+            let libraryObject = try dbStorage.perform(request: ReadLibraryObjectDbRequest(libraryId: viewModel.state.library.identifier), on: .main)
+            let (library, libraryToken) = libraryObject.observe(changes: { [weak self, weak viewModel] library in
+                guard let self, let viewModel else { return }
+                observe(library: library, viewModel: viewModel, handler: self)
+            })
+            let (liveAnnotations, storedPage) = try loadAnnotationsAndPage(for: key, libraryId: library.identifier)
+            let token = observe(items: liveAnnotations, viewModel: viewModel, handler: self)
             let databaseAnnotations = liveAnnotations.freeze()
-            let documentAnnotations = self.loadAnnotations(from: viewModel.state.document, library: library, username: viewModel.state.username, displayName: viewModel.state.displayName)
+            let documentAnnotations = loadAnnotations(from: viewModel.state.document, library: library, username: viewModel.state.username, displayName: viewModel.state.displayName)
             let dbToPdfAnnotations = AnnotationConverter.annotations(
                 from: databaseAnnotations,
                 interfaceStyle: viewModel.state.interfaceStyle,
@@ -1667,15 +1652,12 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 username: viewModel.state.username,
                 boundingBoxConverter: boundingBoxConverter
             )
-            let sortedKeys = self.createSortedKeys(fromDatabaseAnnotations: databaseAnnotations, documentAnnotations: documentAnnotations)
-
-            self.update(document: viewModel.state.document, zoteroAnnotations: dbToPdfAnnotations, key: key, libraryId: library.identifier, isDark: isDark)
-            // Store previews
+            let sortedKeys = createSortedKeys(fromDatabaseAnnotations: databaseAnnotations, documentAnnotations: documentAnnotations)
+            update(document: viewModel.state.document, zoteroAnnotations: dbToPdfAnnotations, key: key, libraryId: library.identifier, isDark: isDark)
             for annotation in dbToPdfAnnotations {
-                self.annotationPreviewController.store(for: annotation, parentKey: key, libraryId: library.identifier, isDark: isDark)
+                annotationPreviewController.store(for: annotation, parentKey: key, libraryId: library.identifier, isDark: isDark)
             }
-
-            let (page, selectedData) = self.preselectedData(databaseAnnotations: databaseAnnotations, storedPage: page, boundingBoxConverter: boundingBoxConverter, in: viewModel)
+            let (page, selectedData) = preselectedData(databaseAnnotations: databaseAnnotations, storedPage: storedPage, boundingBoxConverter: boundingBoxConverter, in: viewModel)
 
             self.update(viewModel: viewModel) { state in
                 state.library = library
@@ -1695,28 +1677,48 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 }
             }
 
-        case .failure:
-            // TODO: - show error
-            break
+            observeDocument(in: viewModel)
+        } catch let error {
+            // TODO: - Show error
         }
 
-        self.observeDocument(in: viewModel)
-
-        func observeGroup(change: ObjectChange<RGroup>, viewModel: ViewModel<PDFReaderActionHandler>) {
-            switch change {
-            case .change(let group, _):
-                update(viewModel: viewModel) { state in
-                    if state.selectedAnnotationKey != nil {
-                        state.selectedAnnotationKey = nil
-                        state.changes = [.selection, .selectionDeletion]
-                    }
-                    state.library = Library(group: group)
-                    state.changes.insert(.library)
+        func observe(library: Library, viewModel: ViewModel<PDFReaderActionHandler>, handler: PDFReaderActionHandler) {
+            handler.update(viewModel: viewModel) { state in
+                if state.selectedAnnotationKey != nil {
+                    state.selectedAnnotationKey = nil
+                    state.changes = [.selection, .selectionDeletion]
                 }
-
-            case .deleted, .error:
-                break
+                state.library = library
+                state.changes.insert(.library)
             }
+        }
+
+        func observe(items: Results<RItem>, viewModel: ViewModel<PDFReaderActionHandler>, handler: PDFReaderActionHandler) -> NotificationToken {
+            return items.observe { [weak handler, weak viewModel] change in
+                guard let handler, let viewModel else { return }
+                switch change {
+                case .update(let objects, let deletions, let insertions, let modifications):
+                    handler.update(objects: objects, deletions: deletions, insertions: insertions, modifications: modifications, viewModel: viewModel)
+
+                case .error, .initial: break
+                }
+            }
+        }
+
+        func loadAnnotationsAndPage(for key: String, libraryId: LibraryIdentifier) throws -> (Results<RItem>, Int) {
+            var results: Results<RItem>!
+            var pageStr = "0"
+
+            try dbStorage.perform(on: .main, with: { coordinator in
+                pageStr = try coordinator.perform(request: ReadDocumentDataDbRequest(attachmentKey: key, libraryId: libraryId))
+                results = try coordinator.perform(request: ReadAnnotationsDbRequest(attachmentKey: key, libraryId: libraryId))
+            })
+
+            guard let page = Int(pageStr) else {
+                throw PDFReaderState.Error.pageNotInt
+            }
+
+            return (results, page)
         }
     }
 
@@ -1870,37 +1872,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
 
         return true
-    }
-
-    private func loadAnnotationsAndPage(for key: String, libraryId: LibraryIdentifier) -> Result<(Results<RItem>, Int), Error> {
-        do {
-            var results: Results<RItem>!
-            var pageStr = "0"
-
-            try self.dbStorage.perform(on: .main, with: { coordinator in
-                pageStr = try coordinator.perform(request: ReadDocumentDataDbRequest(attachmentKey: key, libraryId: libraryId))
-                results = try coordinator.perform(request: ReadAnnotationsDbRequest(attachmentKey: key, libraryId: libraryId))
-            })
-
-            guard let page = Int(pageStr) else {
-                return .failure(PDFReaderState.Error.pageNotInt)
-            }
-
-            return .success((results, page))
-        } catch let error {
-            return .failure(error)
-        }
-    }
-
-    private func observe(items: Results<RItem>, viewModel: ViewModel<PDFReaderActionHandler>) -> NotificationToken {
-        return items.observe { [weak self, weak viewModel] change in
-            guard let self, let viewModel else { return }
-            switch change {
-            case .update(let objects, let deletions, let insertions, let modifications):
-                self.update(objects: objects, deletions: deletions, insertions: insertions, modifications: modifications, viewModel: viewModel)
-            case .error, .initial: break
-            }
-        }
     }
 
     private func loadAnnotations(from document: PSPDFKit.Document, library: Library, username: String, displayName: String) -> [String: PDFDocumentAnnotation] {

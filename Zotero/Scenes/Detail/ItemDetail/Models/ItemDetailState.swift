@@ -222,7 +222,6 @@ struct ItemDetailState: ViewModelState {
     }
 
     let key: String
-    let libraryId: LibraryIdentifier
     let userId: Int
 
     var library: Library
@@ -271,7 +270,6 @@ struct ItemDetailState: ViewModelState {
 
         self.type = type
         self.userId = userId
-        self.libraryId = libraryId
         self.changes = []
         self.data = .empty
         self.attachments = []

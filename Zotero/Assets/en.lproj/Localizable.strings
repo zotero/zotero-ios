@@ -493,6 +493,7 @@
 "errors.pdf.cant_add_annotations" = "Can't add annotations.";
 "errors.pdf.cant_delete_annotations" = "Can't delete annotations.";
 "errors.pdf.incompatible_document" = "This document is not supported.";
+"errors.pdf.empty_document" = "This document is empty.";
 "errors.pdf.page_index_not_int" = "Incorrect format of page stored for this document.";
 
 "accessibility.untitled" = "Untitled";

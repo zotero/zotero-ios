@@ -79,7 +79,10 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
 
     private func _downloadAttachments(in collectionId: CollectionIdentifier, viewModel: ViewModel<CollectionsActionHandler>) {
         do {
-            let items = try self.dbStorage.perform(request: ReadAllAttachmentsFromCollectionDbRequest(collectionId: collectionId, libraryId: viewModel.state.libraryId), on: self.backgroundQueue)
+            let items = try self.dbStorage.perform(
+                request: ReadAllAttachmentsFromCollectionDbRequest(collectionId: collectionId, libraryId: viewModel.state.library.identifier),
+                on: self.backgroundQueue
+            )
             let attachments = items.compactMap({ item -> (Attachment, String?)? in
                 guard let attachment = AttachmentCreator.attachment(for: item, fileStorage: self.fileStorage, urlDetector: nil) else { return nil }
 
@@ -104,7 +107,7 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
     }
 
     private func emptyTrash(in viewModel: ViewModel<CollectionsActionHandler>) {
-        self.perform(request: EmptyTrashDbRequest(libraryId: viewModel.state.libraryId)) { error in
+        self.perform(request: EmptyTrashDbRequest(libraryId: viewModel.state.library.identifier)) { error in
             guard let error = error else { return }
             DDLogError("CollectionsActionHandler: can't empty trash - \(error)")
             // TODO: - show error
@@ -113,7 +116,7 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
 
     private func loadItemKeysForBibliography(collection: Collection, in viewModel: ViewModel<CollectionsActionHandler>) {
         do {
-            let items = try self.dbStorage.perform(request: ReadItemsDbRequest(collectionId: collection.identifier, libraryId: viewModel.state.libraryId), on: .main)
+            let items = try self.dbStorage.perform(request: ReadItemsDbRequest(collectionId: collection.identifier, libraryId: viewModel.state.library.identifier), on: .main)
             let keys = Set(items.map({ $0.key }))
             self.update(viewModel: viewModel) { state in
                 state.itemKeysForBibliography = .success(keys)
@@ -139,7 +142,7 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
             }
         }
 
-        let request = SetCollectionsCollapsedDbRequest(identifiers: changedCollections, collapsed: allCollapsed, libraryId: viewModel.state.libraryId)
+        let request = SetCollectionsCollapsedDbRequest(identifiers: changedCollections, collapsed: allCollapsed, libraryId: viewModel.state.library.identifier)
         self.perform(request: request) { error in
             guard let error = error else { return }
             DDLogError("CollectionsActionHandler: can't change collapsed all - \(error)")
@@ -191,27 +194,20 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
     }
 
     private func loadData(in viewModel: ViewModel<CollectionsActionHandler>) {
-        let libraryId = viewModel.state.libraryId
         let includeItemCounts = Defaults.shared.showCollectionItemCounts
+        let libraryId = viewModel.state.library.identifier
 
         do {
-            try self.dbStorage.perform(on: .main, with: { coordinator in
+            try dbStorage.perform(on: .main, with: { coordinator in
                 let libraryObject = try coordinator.perform(request: ReadLibraryObjectDbRequest(libraryId: libraryId))
                 let collections = try coordinator.perform(request: ReadCollectionsDbRequest(libraryId: libraryId))
-                let library: Library
-                var libraryToken: NotificationToken?
-
-                switch libraryObject {
-                case .group(let group):
-                    library = Library(identifier: libraryId, name: group.name, metadataEditable: group.canEditMetadata, filesEditable: group.canEditFiles)
-                    libraryToken = group.observe(keyPaths: RGroup.observableKeypathsForAccessRights, on: .main) { [weak viewModel] (change: ObjectChange<RGroup>) in
-                        guard let viewModel else { return }
-                        observeGroup(change: change, viewModel: viewModel)
+                let (library, libraryToken) = libraryObject.observe(changes: { [weak viewModel] library in
+                    guard let viewModel else { return }
+                    update(viewModel: viewModel) { state in
+                        state.library = library
+                        state.changes = .library
                     }
-
-                case .custom: // No need to observe main library
-                    library = viewModel.state.library
-                }
+                })
 
                 var allItemCount = 0
                 var unfiledItemCount = 0
@@ -263,19 +259,6 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
             DDLogError("CollectionsActionHandlers: can't load data - \(error)")
             self.update(viewModel: viewModel) { state in
                 state.error = .dataLoading
-            }
-        }
-
-        func observeGroup(change: ObjectChange<RGroup>, viewModel: ViewModel<CollectionsActionHandler>) {
-            switch change {
-            case .change(let group, _):
-                update(viewModel: viewModel) { state in
-                    state.library = Library(group: group)
-                    state.changes = .library
-                }
-
-            case .deleted, .error:
-                break
             }
         }
     }
@@ -374,7 +357,7 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
     }
 
     private func update(collections: Results<RCollection>, includeItemCounts: Bool, viewModel: ViewModel<CollectionsActionHandler>) {
-        let tree = CollectionTreeBuilder.collections(from: collections, libraryId: viewModel.state.libraryId, includeItemCounts: includeItemCounts)
+        let tree = CollectionTreeBuilder.collections(from: collections, libraryId: viewModel.state.library.identifier, includeItemCounts: includeItemCounts)
 
         self.update(viewModel: viewModel) { state in
             state.collectionTree.replace(identifiersMatching: { $0.isCollection }, with: tree)

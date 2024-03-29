@@ -171,7 +171,7 @@ final class ItemsViewController: UIViewController {
         if let key = state.itemKeyToDuplicate {
             self.coordinatorDelegate?.showItemDetail(
                 for: .duplication(itemKey: key, collectionKey: self.viewModel.state.collection.identifier.key),
-                libraryId: self.viewModel.state.libraryId,
+                libraryId: self.viewModel.state.library.identifier,
                 scrolledToKey: nil,
                 animated: true
             )
@@ -195,7 +195,7 @@ final class ItemsViewController: UIViewController {
     private func handle(action: ItemsTableViewHandler.TapAction) {
         switch action {
         case .metadata(let item):
-            self.coordinatorDelegate?.showItemDetail(for: .preview(key: item.key), libraryId: self.viewModel.state.libraryId, scrolledToKey: nil, animated: true)
+            self.coordinatorDelegate?.showItemDetail(for: .preview(key: item.key), libraryId: self.viewModel.state.library.identifier, scrolledToKey: nil, animated: true)
 
         case .attachment(let attachment, let parentKey):
             self.viewModel.process(action: .openAttachment(attachment: attachment, parentKey: parentKey))
@@ -257,7 +257,7 @@ final class ItemsViewController: UIViewController {
 
             self.coordinatorDelegate?.showItemDetail(
                 for: .creation(type: ItemTypes.document, child: attachment, collectionKey: collectionKey),
-                libraryId: self.viewModel.state.libraryId,
+                libraryId: self.viewModel.state.library.identifier,
                 scrolledToKey: nil,
                 animated: true
             )

@@ -371,7 +371,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
                 collectionKey = nil
             }
             showTypePicker(selected: "") { [weak self] type in
-                self?.showItemDetail(for: .creation(type: type, child: nil, collectionKey: collectionKey), libraryId: viewModel.state.libraryId, scrolledToKey: nil, animated: true)
+                self?.showItemDetail(for: .creation(type: type, child: nil, collectionKey: collectionKey), libraryId: viewModel.state.library.identifier, scrolledToKey: nil, animated: true)
             }
         }))
 

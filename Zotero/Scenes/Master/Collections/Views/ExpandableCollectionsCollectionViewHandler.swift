@@ -246,7 +246,7 @@ extension ExpandableCollectionsCollectionViewHandler: UICollectionViewDropDelega
         guard self.viewModel.state.library.metadataEditable &&            // allow only when library is editable
               session.localDragSession != nil &&                          // allow only local drag session
               session.items.compactMap({ $0.localObject as? RItem })      // allow drag from the same library
-                           .compactMap({ $0.libraryId }).first == self.viewModel.state.libraryId else { return UICollectionViewDropProposal(operation: .forbidden) }
+                           .compactMap({ $0.libraryId }).first == self.viewModel.state.library.identifier else { return UICollectionViewDropProposal(operation: .forbidden) }
 
         // Allow only dropping to user collections, not custom collections, such as "All Items" or "My Publications"
         if let destination = destinationIndexPath, let collection = self.dataSource.itemIdentifier(for: destination), collection.identifier.isCollection {

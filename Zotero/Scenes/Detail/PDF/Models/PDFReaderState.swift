@@ -60,11 +60,11 @@ struct PDFReaderState: ViewModelState {
         case mergeTooBig
         case pageNotInt
         case unknown
+        case documentEmpty
     }
 
     let key: String
     let parentKey: String?
-    let libraryId: LibraryIdentifier
     let document: PSPDFKit.Document
     let previewCache: NSCache<NSString, UIImage>
     let commentFont: UIFont
@@ -139,7 +139,6 @@ struct PDFReaderState: ViewModelState {
     ) {
         self.key = key
         self.parentKey = parentKey
-        self.libraryId = libraryId
         self.document = Document(url: url)
         self.previewCache = NSCache()
         self.commentFont = PDFReaderLayout.annotationLayout.font

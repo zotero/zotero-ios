@@ -33,8 +33,6 @@ struct CollectionsState: ViewModelState {
         case edit(Collection)
     }
 
-    let libraryId: LibraryIdentifier
-
     var library: Library
     var libraryToken: NotificationToken?
     var collectionTree: CollectionTree
@@ -51,7 +49,6 @@ struct CollectionsState: ViewModelState {
     var itemKeysForBibliography: Swift.Result<Set<String>, Error>?
 
     init(libraryId: LibraryIdentifier, selectedCollectionId: CollectionIdentifier) {
-        self.libraryId = libraryId
         self.selectedCollectionId = selectedCollectionId
         self.changes = []
         self.collectionTree = CollectionTree(nodes: [], collections: [:], collapsed: [:])
