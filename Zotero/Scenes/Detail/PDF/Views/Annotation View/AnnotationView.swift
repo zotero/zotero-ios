@@ -90,6 +90,47 @@ final class AnnotationView: UIView {
 
     // MARK: - Setups
 
+    func setup(with annotation: HtmlEpubAnnotation, comment: Comment?, selected: Bool, availableWidth: CGFloat, library: Library, currentUserId: Int) {
+        let color = UIColor(hex: annotation.color)
+        let canEdit = library.metadataEditable && selected
+        let author = library.identifier == .custom(.myLibrary) ? "" : annotation.author
+
+        header.setup(
+            type: annotation.type,
+            authorName: author,
+            pageLabel: annotation.pageLabel,
+            colorHex: annotation.color,
+            shareMenuProvider: { _ in
+                return nil
+            },
+            isEditable: canEdit,
+            showsLock: !library.metadataEditable,
+            accessibilityType: .cell
+        )
+        setupContent(
+            type: annotation.type,
+            comment: annotation.comment,
+            text: annotation.text,
+            color: color,
+            canEdit: canEdit,
+            selected: selected,
+            availableWidth: availableWidth,
+            accessibilityType: .cell
+        )
+        setup(comment: comment, canEdit: canEdit)
+        setup(tags: annotation.tags, canEdit: canEdit, accessibilityEnabled: selected)
+        setupObserving()
+
+        let commentButtonIsHidden = commentTextView.isHidden
+        let highlightContentIsHidden = highlightContent?.isHidden ?? true
+        let imageContentIsHidden = imageContent?.isHidden ?? true
+
+        // Top separator is hidden only if there is only header visible and nothing else
+        topSeparator.isHidden = commentTextView.isHidden && commentButtonIsHidden && highlightContentIsHidden && imageContentIsHidden && tags.isHidden && tagsButton.isHidden
+        // Bottom separator is visible, when tags are showing (either actual tags or tags button) and there is something visible above them (other than header, either content or comments/comments button)
+        bottomSeparator.isHidden = (tags.isHidden && tagsButton.isHidden) || (commentTextView.isHidden && commentButtonIsHidden && highlightContentIsHidden && imageContentIsHidden)
+    }
+
     /// Setups up annotation view with given annotation and additional data.
     /// - parameter annotation: Annotation to show in view.
     /// - parameter comment: Comment to show. If nil, comment field is not shown.
@@ -278,7 +319,7 @@ final class AnnotationView: UIView {
         tagsButton.rx.tap.flatMap({ Observable.just(Action.tags) }).bind(to: actionPublisher)
         header.menuTap.flatMap({ Observable.just(Action.options($0)) }).bind(to: actionPublisher)
     }
-    
+
     private func setupObserving() {
         var disposables: [Disposable] = buildDisposables()
         if let doneTap = header.doneTap {

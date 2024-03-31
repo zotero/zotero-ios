@@ -33,12 +33,22 @@ struct ReaderSettingsState: ViewModelState {
     var idleTimerDisabled: Bool
 
     init(settings: PDFSettings) {
-        self.transition = settings.transition
-        self.pageMode = settings.pageMode
-        self.scrollDirection = settings.direction
-        self.pageFitting = settings.pageFitting
-        self.appearance = settings.appearanceMode
-        self.idleTimerDisabled = settings.idleTimerDisabled
+        transition = settings.transition
+        pageMode = settings.pageMode
+        scrollDirection = settings.direction
+        pageFitting = settings.pageFitting
+        appearance = settings.appearanceMode
+        idleTimerDisabled = settings.idleTimerDisabled
+    }
+
+    init(settings: HtmlEpubSettings) {
+        appearance = settings.appearance
+        idleTimerDisabled = settings.idleTimerDisabled
+        // These don't apply to HTML/Epub, assign random values
+        transition = .curl
+        pageMode = .automatic
+        scrollDirection = .horizontal
+        pageFitting = .adaptive
     }
 
     func cleanup() {}
