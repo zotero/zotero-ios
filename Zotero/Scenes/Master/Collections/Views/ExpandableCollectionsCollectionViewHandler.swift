@@ -103,22 +103,29 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
     private func createContextMenu(for collection: Collection) -> UIMenu? {
         switch collection.identifier {
         case .collection(let key):
-            guard self.viewModel.state.library.metadataEditable else { return nil }
+            var actions: [UIAction] = []
 
-            let edit = UIAction(title: L10n.edit, image: UIImage(systemName: "pencil")) { [weak self] _ in
-                self?.viewModel.process(action: .startEditing(.edit(collection)))
+            if viewModel.state.library.metadataEditable {
+                let edit = UIAction(title: L10n.edit, image: UIImage(systemName: "pencil")) { [weak self] _ in
+                    self?.viewModel.process(action: .startEditing(.edit(collection)))
+                }
+                let subcollection = UIAction(title: L10n.Collections.newSubcollection, image: UIImage(systemName: "folder.badge.plus")) { [weak self] _ in
+                    self?.viewModel.process(action: .startEditing(.addSubcollection(collection)))
+                }
+                actions.append(contentsOf: [edit, subcollection])
             }
-            let subcollection = UIAction(title: L10n.Collections.newSubcollection, image: UIImage(systemName: "folder.badge.plus")) { [weak self] _ in
-                self?.viewModel.process(action: .startEditing(.addSubcollection(collection)))
-            }
+            
             let createBibliography = UIAction(title: L10n.Collections.createBibliography, image: UIImage(systemName: "doc.on.doc")) { [weak self] _ in
                 self?.viewModel.process(action: .loadItemKeysForBibliography(collection))
             }
-            let delete = UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
-                self?.viewModel.process(action: .deleteCollection(key))
-            }
+            actions.append(createBibliography)
 
-            var actions: [UIAction] = [edit, subcollection, createBibliography, delete]
+            if viewModel.state.library.metadataEditable {
+                let delete = UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
+                    self?.viewModel.process(action: .deleteCollection(key))
+                }
+                actions.append(delete)
+            }
 
             if collection.itemCount > 0 {
                 let downloadAttachments = UIAction(title: L10n.Collections.downloadAttachments, image: UIImage(systemName: "arrow.down.to.line.compact")) { [weak self] _ in
@@ -239,7 +246,7 @@ extension ExpandableCollectionsCollectionViewHandler: UICollectionViewDropDelega
         guard self.viewModel.state.library.metadataEditable &&            // allow only when library is editable
               session.localDragSession != nil &&                          // allow only local drag session
               session.items.compactMap({ $0.localObject as? RItem })      // allow drag from the same library
-                           .compactMap({ $0.libraryId }).first == self.viewModel.state.libraryId else { return UICollectionViewDropProposal(operation: .forbidden) }
+                           .compactMap({ $0.libraryId }).first == self.viewModel.state.library.identifier else { return UICollectionViewDropProposal(operation: .forbidden) }
 
         // Allow only dropping to user collections, not custom collections, such as "All Items" or "My Publications"
         if let destination = destinationIndexPath, let collection = self.dataSource.itemIdentifier(for: destination), collection.identifier.isCollection {

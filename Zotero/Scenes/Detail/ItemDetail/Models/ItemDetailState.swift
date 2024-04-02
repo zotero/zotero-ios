@@ -222,9 +222,9 @@ struct ItemDetailState: ViewModelState {
     }
 
     let key: String
-    let library: Library
     let userId: Int
 
+    var library: Library
     var type: DetailType
     var changes: Changes
     var isEditing: Bool
@@ -241,6 +241,7 @@ struct ItemDetailState: ViewModelState {
     var updateAttachmentKey: String?
     var isLoadingData: Bool
     var observationToken: NotificationToken?
+    var libraryToken: NotificationToken?
     var attachmentToOpen: String?
     // Identifiers of items which are currently being processed in background and should be disabled in UI
     var backgroundProcessedItems: Set<String>
@@ -256,7 +257,7 @@ struct ItemDetailState: ViewModelState {
         return AttachmentCreator.mainPdfAttachment(from: self.attachments, parentUrl: url)?.key
     }
 
-    init(type: DetailType, library: Library, preScrolledChildKey: String?, userId: Int) {
+    init(type: DetailType, libraryId: LibraryIdentifier, preScrolledChildKey: String?, userId: Int) {
         switch type {
         case .preview(let key):
             self.key = key
@@ -269,7 +270,6 @@ struct ItemDetailState: ViewModelState {
 
         self.type = type
         self.userId = userId
-        self.library = library
         self.changes = []
         self.data = .empty
         self.attachments = []
@@ -282,6 +282,14 @@ struct ItemDetailState: ViewModelState {
         self.isLoadingData = true
         self.preScrolledChildKey = preScrolledChildKey
         self.hideController = false
+
+        switch libraryId {
+        case .custom:
+            library = Library(identifier: libraryId, name: L10n.Libraries.myLibrary, metadataEditable: true, filesEditable: true)
+
+        case .group:
+            library = Library(identifier: libraryId, name: L10n.unknown, metadataEditable: false, filesEditable: false)
+        }
     }
 
     mutating func cleanup() {

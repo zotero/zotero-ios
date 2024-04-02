@@ -18,7 +18,7 @@ import RxSwift
 import SwiftyGif
 
 protocol DetailCoordinatorAttachmentProvider {
-    func attachment(for key: String, parentKey: String?, libraryId: LibraryIdentifier) -> (Attachment, Library, UIView, CGRect?)?
+    func attachment(for key: String, parentKey: String?, libraryId: LibraryIdentifier) -> (Attachment, UIView, CGRect?)?
 }
 
 protocol DetailMissingStyleErrorDelegate: AnyObject {
@@ -33,7 +33,7 @@ protocol DetailCopyBibliographyCoordinatorDelegate: DetailMissingStyleErrorDeleg
 
 protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showCollectionsPicker(in library: Library, completed: @escaping (Set<String>) -> Void)
-    func showItemDetail(for type: ItemDetailState.DetailType, library: Library, scrolledToKey childKey: String?, animated: Bool)
+    func showItemDetail(for type: ItemDetailState.DetailType, libraryId: LibraryIdentifier, scrolledToKey childKey: String?, animated: Bool)
     func showAttachmentError(_ error: Error)
     func showAddActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
     func showSortActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
@@ -86,13 +86,20 @@ final class DetailCoordinator: Coordinator {
     weak var navigationController: UINavigationController?
 
     let collection: Collection
-    let library: Library
+    let libraryId: LibraryIdentifier
     let searchItemKeys: [String]?
     private unowned let controllers: Controllers
     private let disposeBag: DisposeBag
 
-    init(library: Library, collection: Collection, searchItemKeys: [String]?, navigationController: UINavigationController, itemsTagFilterDelegate: ItemsTagFilterDelegate?, controllers: Controllers) {
-        self.library = library
+    init(
+        libraryId: LibraryIdentifier,
+        collection: Collection,
+        searchItemKeys: [String]?,
+        navigationController: UINavigationController,
+        itemsTagFilterDelegate: ItemsTagFilterDelegate?,
+        controllers: Controllers
+    ) {
+        self.libraryId = libraryId
         self.collection = collection
         self.searchItemKeys = searchItemKeys
         self.navigationController = navigationController
@@ -107,11 +114,11 @@ final class DetailCoordinator: Coordinator {
     }
 
     func start(animated: Bool) {
-        guard let userControllers = self.controllers.userControllers else { return }
-        DDLogInfo("DetailCoordinator: show items for \(self.collection.id); \(self.library.id)")
-        let controller = self.createItemsViewController(
-            collection: self.collection,
-            library: self.library,
+        guard let userControllers = controllers.userControllers else { return }
+        DDLogInfo("DetailCoordinator: show items for \(collection.id); \(libraryId)")
+        let controller = createItemsViewController(
+            collection: collection,
+            libraryId: libraryId,
             dbStorage: userControllers.dbStorage,
             fileDownloader: userControllers.fileDownloader,
             remoteFileDownloader: userControllers.remoteFileDownloader,
@@ -119,15 +126,15 @@ final class DetailCoordinator: Coordinator {
             syncScheduler: userControllers.syncScheduler,
             citationController: userControllers.citationController,
             fileCleanupController: userControllers.fileCleanupController,
-            itemsTagFilterDelegate: self.itemsTagFilterDelegate,
-            htmlAttributedStringConverter: self.controllers.htmlAttributedStringConverter
+            itemsTagFilterDelegate: itemsTagFilterDelegate,
+            htmlAttributedStringConverter: controllers.htmlAttributedStringConverter
         )
-        self.navigationController?.setViewControllers([controller], animated: animated)
+        navigationController?.setViewControllers([controller], animated: animated)
     }
 
     private func createItemsViewController(
         collection: Collection,
-        library: Library,
+        libraryId: LibraryIdentifier,
         dbStorage: DbStorage,
         fileDownloader: AttachmentDownloader,
         remoteFileDownloader: RemoteAttachmentDownloader,
@@ -146,7 +153,7 @@ final class DetailCoordinator: Coordinator {
         let identifierLookupBatchData = ItemsState.IdentifierLookupBatchData(batchData: identifierLookupController.batchData)
         let state = ItemsState(
             collection: collection,
-            library: library,
+            libraryId: libraryId,
             sortType: .default,
             searchTerm: searchTerm,
             filters: [],
@@ -173,26 +180,27 @@ final class DetailCoordinator: Coordinator {
     }
 
     func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier) {
-        guard let (attachment, library, sourceView, sourceRect) = self.navigationController?.viewControllers.reversed()
-                                                                      .compactMap({ ($0 as? DetailCoordinatorAttachmentProvider)?.attachment(for: key, parentKey: parentKey, libraryId: libraryId) })
-                                                                      .first else { return }
-        self.show(attachment: attachment, parentKey: parentKey, library: library, sourceView: sourceView, sourceRect: sourceRect)
+        guard let (attachment, sourceView, sourceRect) = self.navigationController?.viewControllers.reversed()
+            .compactMap({ ($0 as? DetailCoordinatorAttachmentProvider)?.attachment(for: key, parentKey: parentKey, libraryId: libraryId) })
+            .first
+        else { return }
+        self.show(attachment: attachment, parentKey: parentKey, libraryId: libraryId, sourceView: sourceView, sourceRect: sourceRect)
     }
 
-    private func show(attachment: Attachment, parentKey: String?, library: Library, sourceView: UIView, sourceRect: CGRect?) {
+    private func show(attachment: Attachment, parentKey: String?, libraryId: LibraryIdentifier, sourceView: UIView, sourceRect: CGRect?) {
         switch attachment.type {
         case .url(let url):
             self.show(url: url)
 
         case .file(let filename, let contentType, _, _, _):
-            let file = Files.attachmentFile(in: library.identifier, key: attachment.key, filename: filename, contentType: contentType)
+            let file = Files.attachmentFile(in: libraryId, key: attachment.key, filename: filename, contentType: contentType)
             let url = file.createUrl()
             let rect = sourceRect ?? CGRect(x: (sourceView.frame.width / 3.0), y: (sourceView.frame.height * 2.0 / 3.0), width: (sourceView.frame.width / 3), height: (sourceView.frame.height / 3))
 
             switch contentType {
             case "application/pdf":
                 DDLogInfo("DetailCoordinator: show PDF \(attachment.key)")
-                self.showPdf(at: url, key: attachment.key, parentKey: parentKey, library: library)
+                self.showPdf(at: url, key: attachment.key, parentKey: parentKey, libraryId: libraryId)
 
             case "text/html":
                 DDLogInfo("DetailCoordinator: show HTML \(attachment.key)")
@@ -276,14 +284,14 @@ final class DetailCoordinator: Coordinator {
         navigationController.present(controller, animated: true, completion: nil)
     }
 
-    func createPDFController(key: String, parentKey: String?, library: Library, url: URL, page: Int? = nil, preselectedAnnotationKey: String? = nil) -> NavigationViewController {
+    func createPDFController(key: String, parentKey: String?, libraryId: LibraryIdentifier, url: URL, page: Int? = nil, preselectedAnnotationKey: String? = nil) -> NavigationViewController {
         let navigationController = NavigationViewController()
         navigationController.modalPresentationStyle = .fullScreen
         
         let coordinator = PDFCoordinator(
             key: key,
             parentKey: parentKey,
-            library: library,
+            libraryId: libraryId,
             url: url,
             page: page,
             preselectedAnnotationKey: preselectedAnnotationKey,
@@ -297,8 +305,8 @@ final class DetailCoordinator: Coordinator {
         return navigationController
     }
     
-    private func showPdf(at url: URL, key: String, parentKey: String?, library: Library) {
-        let controller = createPDFController(key: key, parentKey: parentKey, library: library, url: url)
+    private func showPdf(at url: URL, key: String, parentKey: String?, libraryId: LibraryIdentifier) {
+        let controller = createPDFController(key: key, parentKey: parentKey, libraryId: libraryId, url: url)
         navigationController?.present(controller, animated: true, completion: nil)
     }
 
@@ -342,13 +350,15 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         controller.popoverPresentationController?.barButtonItem = button
 
-        controller.addAction(UIAlertAction(title: L10n.Items.lookup, style: .default, handler: { [weak self] _ in
-            self?.showLookup(startWith: .manual(restoreLookupState: false))
-        }))
+        if viewModel.state.library.metadataAndFilesEditable {
+            controller.addAction(UIAlertAction(title: L10n.Items.lookup, style: .default, handler: { [weak self] _ in
+                self?.showLookup(startWith: .manual(restoreLookupState: false))
+            }))
 
-        controller.addAction(UIAlertAction(title: L10n.Items.barcode, style: .default, handler: { [weak self] _ in
-            self?.showLookup(startWith: .scanner)
-        }))
+            controller.addAction(UIAlertAction(title: L10n.Items.barcode, style: .default, handler: { [weak self] _ in
+                self?.showLookup(startWith: .scanner)
+            }))
+        }
 
         controller.addAction(UIAlertAction(title: L10n.Items.new, style: .default, handler: { [weak self, weak viewModel] _ in
             guard let self, let viewModel else { return }
@@ -361,7 +371,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
                 collectionKey = nil
             }
             showTypePicker(selected: "") { [weak self] type in
-                self?.showItemDetail(for: .creation(type: type, child: nil, collectionKey: collectionKey), library: viewModel.state.library, scrolledToKey: nil, animated: true)
+                self?.showItemDetail(for: .creation(type: type, child: nil, collectionKey: collectionKey), libraryId: viewModel.state.library.identifier, scrolledToKey: nil, animated: true)
             }
         }))
 
@@ -372,11 +382,13 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
             }
         }))
 
-        controller.addAction(UIAlertAction(title: L10n.Items.newFile, style: .default, handler: { [weak self, weak viewModel] _ in
-            self?.showAttachmentPicker(save: { urls in
-                viewModel?.process(action: .addAttachments(urls))
-            })
-        }))
+        if viewModel.state.library.metadataAndFilesEditable {
+            controller.addAction(UIAlertAction(title: L10n.Items.newFile, style: .default, handler: { [weak self, weak viewModel] _ in
+                self?.showAttachmentPicker(save: { urls in
+                    viewModel?.process(action: .addAttachments(urls))
+                })
+            }))
+        }
 
         controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
 
@@ -469,7 +481,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         return navigationController
     }
 
-    func showItemDetail(for type: ItemDetailState.DetailType, library: Library, scrolledToKey childKey: String?, animated: Bool) {
+    func showItemDetail(for type: ItemDetailState.DetailType, libraryId: LibraryIdentifier, scrolledToKey childKey: String?, animated: Bool) {
         guard let dbStorage = self.controllers.userControllers?.dbStorage,
               let fileDownloader = self.controllers.userControllers?.fileDownloader,
               let fileCleanupController = self.controllers.userControllers?.fileCleanupController
@@ -486,7 +498,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
             DDLogInfo("DetailCoordinator: show item creation")
         }
 
-        let state = ItemDetailState(type: type, library: library, preScrolledChildKey: childKey, userId: Defaults.shared.userId)
+        let state = ItemDetailState(type: type, libraryId: libraryId, preScrolledChildKey: childKey, userId: Defaults.shared.userId)
         let handler = ItemDetailActionHandler(
             apiClient: self.controllers.apiClient,
             fileStorage: self.controllers.fileStorage,

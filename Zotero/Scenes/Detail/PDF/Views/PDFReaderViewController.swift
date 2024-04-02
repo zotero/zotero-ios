@@ -193,14 +193,15 @@ class PDFReaderViewController: UIViewController {
             }
         )
         setupViews()
-        setupNavigationBar()
         setupObserving()
-        updateInterface(to: viewModel.state.settings)
-        intraDocumentNavigationHandler.bringButtonToFront()
 
         if !viewModel.state.document.isLocked {
             viewModel.process(action: .loadDocumentData(boundingBoxConverter: documentController))
         }
+
+        setupNavigationBar()
+        updateInterface(to: viewModel.state.settings)
+        intraDocumentNavigationHandler.bringButtonToFront()
 
         func setupViews() {
             let topSafeAreaSpacer = UIView()
@@ -302,16 +303,6 @@ class PDFReaderViewController: UIViewController {
 
             navigationItem.leftBarButtonItems = [closeButton, sidebarButton, readerButton]
             navigationItem.rightBarButtonItems = createRightBarButtonItems()
-
-            func createRightBarButtonItems() -> [UIBarButtonItem] {
-                var buttons = [settingsButton, shareButton, searchButton]
-
-                if viewModel.state.library.metadataEditable {
-                    buttons.append(toolbarButton)
-                }
-
-                return buttons
-            }
         }
 
         func setupObserving() {
@@ -351,7 +342,8 @@ class PDFReaderViewController: UIViewController {
 
     override func viewIsAppearing(_ animated: Bool) {
         super.viewIsAppearing(animated)
-        annotationToolbarHandler.viewIsAppearing(documentIsLocked: viewModel.state.document.isLocked)
+        let editingEnabled = viewModel.state.library.metadataEditable && !viewModel.state.document.isLocked
+        annotationToolbarHandler.viewIsAppearing(editingEnabled: editingEnabled)
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -433,6 +425,16 @@ class PDFReaderViewController: UIViewController {
             if state.selectedAnnotation != nil {
                 toggleSidebar(animated: false)
             }
+        }
+
+        if state.changes.contains(.library) {
+            let hidden = !state.library.metadataEditable || !toolbarState.visible
+            if !state.library.metadataEditable {
+                documentController.disableAnnotationTools()
+            }
+            annotationToolbarHandler.set(hidden: hidden, animated: true)
+            (toolbarButton.customView as? CheckboxButton)?.isSelected = toolbarState.visible
+            navigationItem.rightBarButtonItems = createRightBarButtonItems()
         }
 
         if let tool = state.changedColorForTool, documentController.pdfController?.annotationStateManager.state == tool, let color = state.toolColors[tool] {
@@ -642,6 +644,16 @@ class PDFReaderViewController: UIViewController {
     private func setupAccessibility(forSidebarButton button: UIBarButtonItem) {
         button.accessibilityLabel = isSidebarVisible ? L10n.Accessibility.Pdf.sidebarClose : L10n.Accessibility.Pdf.sidebarOpen
         button.title = isSidebarVisible ? L10n.Accessibility.Pdf.sidebarClose : L10n.Accessibility.Pdf.sidebarOpen
+    }
+
+    private func createRightBarButtonItems() -> [UIBarButtonItem] {
+        var buttons = [settingsButton, shareButton, searchButton]
+
+        if viewModel.state.library.metadataEditable {
+            buttons.append(toolbarButton)
+        }
+
+        return buttons
     }
 }
 

@@ -48,7 +48,7 @@ final class CollectionsViewController: UICollectionViewController {
 
         if isSplit {
             if let collection = self.viewModel.state.collectionTree.collection(for: self.viewModel.state.selectedCollectionId) {
-                self.coordinatorDelegate?.showItems(for: collection, in: self.viewModel.state.library)
+                self.coordinatorDelegate?.showItems(for: collection, in: self.viewModel.state.library.identifier)
             } else {
                 self.viewModel.process(action: .select(.custom(.all)))
             }
@@ -56,7 +56,7 @@ final class CollectionsViewController: UICollectionViewController {
 
         self.setupTitleWithContextMenu(self.viewModel.state.library.name)
         if self.viewModel.state.library.metadataEditable {
-            self.setupAddNavbarItem()
+            self.setupNavigationBar()
         }
 
         self.collectionViewHandler = ExpandableCollectionsCollectionViewHandler(collectionView: self.collectionView, dragDropController: self.dragDropController, viewModel: self.viewModel, splitDelegate: self)
@@ -91,11 +91,15 @@ final class CollectionsViewController: UICollectionViewController {
 
         if state.changes.contains(.selection), let collection = state.collectionTree.collection(for: state.selectedCollectionId) {
             Defaults.shared.selectedCollectionId = collection.identifier
-            self.coordinatorDelegate?.showItems(for: collection, in: state.library)
+            self.coordinatorDelegate?.showItems(for: collection, in: state.library.identifier)
 
             if !requiresUpdate {
                 self.selectIfNeeded(collectionId: state.selectedCollectionId, tree: state.collectionTree, scrollToPosition: false)
             }
+        }
+
+        if state.changes.contains(.library) {
+            setupNavigationBar()
         }
 
         if let data = state.editingData {
@@ -105,7 +109,7 @@ final class CollectionsViewController: UICollectionViewController {
         if let result = state.itemKeysForBibliography {
             switch result {
             case .success(let keys):
-                self.coordinatorDelegate?.showCiteExport(for: keys, libraryId: state.libraryId)
+                self.coordinatorDelegate?.showCiteExport(for: keys, libraryId: state.library.identifier)
 
             case .failure:
                 self.coordinatorDelegate?.showCiteExportError()
@@ -153,27 +157,32 @@ final class CollectionsViewController: UICollectionViewController {
 
     // MARK: - Setups
 
-    private func setupAddNavbarItem() {
-        let addItem = UIBarButtonItem(image: UIImage(systemName: "plus"), style: .plain, target: nil, action: nil)
-        addItem.accessibilityLabel = L10n.Accessibility.Collections.createCollection
-        addItem.rx.tap
-               .subscribe(onNext: { [weak self] _ in
-                self?.viewModel.process(action: .startEditing(.add))
-               })
-               .disposed(by: self.disposeBag)
-
+    private func setupNavigationBar() {
         let searchItem = UIBarButtonItem(image: UIImage(systemName: "magnifyingglass"), style: .plain, target: nil, action: nil)
         searchItem.accessibilityLabel = L10n.Accessibility.Collections.searchCollections
         searchItem.rx.tap
-                  .subscribe(onNext: { [weak self] _ in
-                      guard let self = self else { return }
-                      self.coordinatorDelegate?.showSearch(for: self.viewModel.state, in: self, selectAction: { [weak self] collection in
-                          self?.select(searchResult: collection)
-                      })
-                  })
-                  .disposed(by: self.disposeBag)
+            .subscribe(onNext: { [weak self] _ in
+                guard let self else { return }
+                coordinatorDelegate?.showSearch(for: viewModel.state, in: self, selectAction: { [weak self] collection in
+                    self?.select(searchResult: collection)
+                })
+            })
+            .disposed(by: disposeBag)
 
-        self.navigationItem.rightBarButtonItems = [searchItem, addItem]
+        var buttons: [UIBarButtonItem] = [searchItem]
+
+        if viewModel.state.library.metadataEditable {
+            let addItem = UIBarButtonItem(image: UIImage(systemName: "plus"), style: .plain, target: nil, action: nil)
+            addItem.accessibilityLabel = L10n.Accessibility.Collections.createCollection
+            addItem.rx.tap
+                .subscribe(onNext: { [weak self] _ in
+                    self?.viewModel.process(action: .startEditing(.add))
+                })
+                .disposed(by: disposeBag)
+            buttons.append(addItem)
+        }
+
+        self.navigationItem.rightBarButtonItems = buttons
     }
 
     private func setupTitleWithContextMenu(_ title: String) {

@@ -24,6 +24,7 @@ struct CollectionsState: ViewModelState {
         static let trashItemCount = Changes(rawValue: 1 << 3)
         static let unfiledItemCount = Changes(rawValue: 1 << 4)
         static let collapsedState = Changes(rawValue: 1 << 5)
+        static let library = Changes(rawValue: 1 << 6)
     }
 
     enum EditingType {
@@ -32,9 +33,8 @@ struct CollectionsState: ViewModelState {
         case edit(Collection)
     }
 
-    let libraryId: LibraryIdentifier
-
     var library: Library
+    var libraryToken: NotificationToken?
     var collectionTree: CollectionTree
     var selectedCollectionId: CollectionIdentifier
     var editingData: CollectionStateEditingData?
@@ -49,11 +49,17 @@ struct CollectionsState: ViewModelState {
     var itemKeysForBibliography: Swift.Result<Set<String>, Error>?
 
     init(libraryId: LibraryIdentifier, selectedCollectionId: CollectionIdentifier) {
-        self.libraryId = libraryId
-        self.library = Library(identifier: .custom(.myLibrary), name: "", metadataEditable: false, filesEditable: false)
         self.selectedCollectionId = selectedCollectionId
         self.changes = []
         self.collectionTree = CollectionTree(nodes: [], collections: [:], collapsed: [:])
+
+        switch libraryId {
+        case .custom:
+            library = Library(identifier: libraryId, name: L10n.Libraries.myLibrary, metadataEditable: true, filesEditable: true)
+
+        case .group:
+            library = Library(identifier: libraryId, name: L10n.unknown, metadataEditable: false, filesEditable: false)
+        }
     }
 
     mutating func cleanup() {

@@ -528,6 +528,8 @@ internal enum L10n {
       internal static let cantDeleteAnnotations = L10n.tr("Localizable", "errors.pdf.cant_delete_annotations", fallback: "Can't delete annotations.")
       /// Can't update annotation.
       internal static let cantUpdateAnnotation = L10n.tr("Localizable", "errors.pdf.cant_update_annotation", fallback: "Can't update annotation.")
+      /// This document is empty.
+      internal static let emptyDocument = L10n.tr("Localizable", "errors.pdf.empty_document", fallback: "This document is empty.")
       /// This document is not supported.
       internal static let incompatibleDocument = L10n.tr("Localizable", "errors.pdf.incompatible_document", fallback: "This document is not supported.")
       /// The combined annotation would be too large.
@@ -588,6 +590,10 @@ internal enum L10n {
       internal static let failedAdditional = L10n.tr("Localizable", "errors.shareext.failed_additional", fallback: "You can still save this page as a webpage item.")
       /// Unable to save PDF
       internal static let fileNotPdf = L10n.tr("Localizable", "errors.shareext.file_not_pdf", fallback: "Unable to save PDF")
+      /// You don't have necessary rights to submit this item to %@.
+      internal static func forbidden(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "errors.shareext.forbidden", String(describing: p1), fallback: "You don't have necessary rights to submit this item to %@.")
+      }
       /// The group “%@” has reached its Zotero Storage quota, and the file could not be uploaded. The group owner can view their account settings for additional storage options.
       /// 
       /// The file was saved to the local library.

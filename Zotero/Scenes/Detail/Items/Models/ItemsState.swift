@@ -23,6 +23,7 @@ struct ItemsState: ViewModelState {
         static let attachmentsRemoved = Changes(rawValue: 1 << 4)
         static let filters = Changes(rawValue: 1 << 5)
         static let batchData = Changes(rawValue: 1 << 6)
+        static let library = Changes(rawValue: 1 << 7)
     }
 
     struct DownloadBatchData: Equatable {
@@ -83,8 +84,9 @@ struct ItemsState: ViewModelState {
     }
 
     let collection: Collection
-    let library: Library
 
+    var library: Library
+    var libraryToken: NotificationToken?
     var sortType: ItemsSortType
     var searchTerm: String?
     var results: Results<RItem>?
@@ -124,7 +126,7 @@ struct ItemsState: ViewModelState {
 
     init(
         collection: Collection,
-        library: Library,
+        libraryId: LibraryIdentifier,
         sortType: ItemsSortType,
         searchTerm: String?,
         filters: [ItemsFilter],
@@ -134,7 +136,6 @@ struct ItemsState: ViewModelState {
         error: ItemsError?
     ) {
         self.collection = collection
-        self.library = library
         self.filters = []
         self.keys = []
         self.itemAccessories = [:]
@@ -149,6 +150,14 @@ struct ItemsState: ViewModelState {
         self.identifierLookupBatchData = identifierLookupBatchData
         self.searchTerm = searchTerm
         self.itemTitles = [:]
+
+        switch libraryId {
+        case .custom:
+            library = Library(identifier: libraryId, name: L10n.Libraries.myLibrary, metadataEditable: true, filesEditable: true)
+
+        case .group:
+            library = Library(identifier: libraryId, name: L10n.unknown, metadataEditable: false, filesEditable: false)
+        }
     }
 
     mutating func cleanup() {
