@@ -159,8 +159,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
 
         do {
             let libraryToken: NotificationToken?
-            let libraryObject = try dbStorage.perform(request: ReadLibraryObjectDbRequest(libraryId: viewModel.state.library.identifier), on: .main)
-            (library, libraryToken) = libraryObject.observe(changes: { [weak viewModel] library in
+            (library, libraryToken) = try viewModel.state.library.identifier.observe(in: dbStorage, changes: { [weak viewModel] library in
                 guard let viewModel else { return }
                 reloadData(isEditing: viewModel.state.isEditing, library: library, in: viewModel)
             })

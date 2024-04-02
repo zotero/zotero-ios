@@ -1634,8 +1634,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
             let isDark = viewModel.state.interfaceStyle == .dark
             let key = viewModel.state.key
-            let libraryObject = try dbStorage.perform(request: ReadLibraryObjectDbRequest(libraryId: viewModel.state.library.identifier), on: .main)
-            let (library, libraryToken) = libraryObject.observe(changes: { [weak self, weak viewModel] library in
+            let (library, libraryToken) = try viewModel.state.library.identifier.observe(in: dbStorage, changes: { [weak self, weak viewModel] library in
                 guard let self, let viewModel else { return }
                 observe(library: library, viewModel: viewModel, handler: self)
             })

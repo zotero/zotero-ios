@@ -8,6 +8,7 @@
 
 import Foundation
 
+import RealmSwift
 import RxSwift
 
 enum LibraryIdentifier: Equatable, Hashable {
@@ -83,6 +84,40 @@ extension LibraryIdentifier {
             case .myLibrary:
                 return "My Library"
             }
+        }
+    }
+}
+
+extension LibraryIdentifier {
+    func observe(in dbStorage: DbStorage, changes changed: @escaping (Library) -> Void) throws -> (Library, NotificationToken?) {
+        return try observe(changes: changed) { groupId in
+            return try dbStorage.perform(request: ReadGroupDbRequest(identifier: groupId), on: .main)
+        }
+    }
+
+    func observe(in coordinator: DbCoordinator, changes changed: @escaping (Library) -> Void) throws -> (Library, NotificationToken?) {
+        return try observe(changes: changed) { groupId in
+            return try coordinator.perform(request: ReadGroupDbRequest(identifier: groupId))
+        }
+    }
+
+    private func observe(changes changed: @escaping (Library) -> Void, getGroup: (Int) throws -> RGroup) throws -> (Library, NotificationToken?) {
+        switch self {
+        case .custom(let type):
+            return (Library(identifier: self, name: type.libraryName, metadataEditable: true, filesEditable: true), nil)
+
+        case .group(let groupId):
+            let group = try getGroup(groupId)
+            let token = group.observe(keyPaths: RGroup.observableKeypathsForAccessRights, on: .main) { (change: ObjectChange<RGroup>) in
+                switch change {
+                case .change(let group, _):
+                    changed(Library(group: group))
+
+                case .deleted, .error:
+                    break
+                }
+            }
+            return (Library(group: group), token)
         }
     }
 }

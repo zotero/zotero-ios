@@ -206,12 +206,10 @@
 		B30566C323FC051F003304F2 /* SyncObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305655D23FC051E003304F2 /* SyncObject.swift */; };
 		B30566C423FC051F003304F2 /* DeleteBatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305655E23FC051E003304F2 /* DeleteBatch.swift */; };
 		B30566C523FC051F003304F2 /* Tag.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305655F23FC051E003304F2 /* Tag.swift */; };
-		B30566C623FC051F003304F2 /* LibraryObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305656023FC051E003304F2 /* LibraryObject.swift */; };
 		B30566C723FC051F003304F2 /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305656123FC051E003304F2 /* AppGroup.swift */; };
 		B30566C823FC051F003304F2 /* SortType.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305656223FC051E003304F2 /* SortType.swift */; };
 		B30566D923FC0769003304F2 /* tinymce in Resources */ = {isa = PBXBuildFile; fileRef = B30566D823FC0769003304F2 /* tinymce */; };
 		B30566DA23FC07E0003304F2 /* Library.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305653923FC051E003304F2 /* Library.swift */; };
-		B30566DB23FC07E7003304F2 /* LibraryObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305656023FC051E003304F2 /* LibraryObject.swift */; };
 		B30566DC23FC07EE003304F2 /* ItemResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305654623FC051E003304F2 /* ItemResponse.swift */; };
 		B30566E223FC0810003304F2 /* DeletionsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305648F23FC051E003304F2 /* DeletionsRequest.swift */; };
 		B30566E323FC0815003304F2 /* UpdatesRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305649023FC051E003304F2 /* UpdatesRequest.swift */; };
@@ -1428,7 +1426,6 @@
 		B305655D23FC051E003304F2 /* SyncObject.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncObject.swift; sourceTree = "<group>"; };
 		B305655E23FC051E003304F2 /* DeleteBatch.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DeleteBatch.swift; sourceTree = "<group>"; };
 		B305655F23FC051E003304F2 /* Tag.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Tag.swift; sourceTree = "<group>"; };
-		B305656023FC051E003304F2 /* LibraryObject.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LibraryObject.swift; sourceTree = "<group>"; };
 		B305656123FC051E003304F2 /* AppGroup.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppGroup.swift; sourceTree = "<group>"; };
 		B305656223FC051E003304F2 /* SortType.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SortType.swift; sourceTree = "<group>"; };
 		B30566D823FC0769003304F2 /* tinymce */ = {isa = PBXFileReference; lastKnownFileType = folder; path = tinymce; sourceTree = "<group>"; };
@@ -2636,7 +2633,6 @@
 				B305653823FC051E003304F2 /* KeyedResponse.swift */,
 				B305653923FC051E003304F2 /* Library.swift */,
 				B341C8CA25CBFAD3005562E5 /* LibraryIdentifier.swift */,
-				B305656023FC051E003304F2 /* LibraryObject.swift */,
 				B361A3002511F98700271173 /* LinkMode.swift */,
 				B3E44641248FBE9B007FE8AB /* LinkType.swift */,
 				B39D336723FFD96C00EF2ACB /* Note.swift */,
@@ -4815,7 +4811,6 @@
 				B3830CF625545EE400910FE0 /* TagPickerCell.swift in Sources */,
 				B30565C623FC051E003304F2 /* ReadDeletedObjectsDbRequest.swift in Sources */,
 				B30566AF23FC051F003304F2 /* LibraryResponse.swift in Sources */,
-				B30566C623FC051F003304F2 /* LibraryObject.swift in Sources */,
 				B3868537270D90640068A022 /* RawDataEncoding.swift in Sources */,
 				B37C5B6D26453C58009A37E5 /* NoteEditorAction.swift in Sources */,
 				B30566C223FC051F003304F2 /* LibraryData.swift in Sources */,
@@ -5567,7 +5562,6 @@
 				B3501F5425139B40007961DB /* Rounding+Extensions.swift in Sources */,
 				B34341A1260A0A4800093E63 /* CollectionIdentifier.swift in Sources */,
 				B3868538270D92DA0068A022 /* RawDataEncoding.swift in Sources */,
-				B30566DB23FC07E7003304F2 /* LibraryObject.swift in Sources */,
 				B30566DC23FC07EE003304F2 /* ItemResponse.swift in Sources */,
 				B30566FA23FC085C003304F2 /* MarkAllLibraryObjectChangesAsSyncedDbRequest.swift in Sources */,
 				B305677423FC0BCD003304F2 /* ItemTitleFormatter.swift in Sources */,

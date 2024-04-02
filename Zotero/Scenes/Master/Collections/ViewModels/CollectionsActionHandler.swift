@@ -199,9 +199,8 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
 
         do {
             try dbStorage.perform(on: .main, with: { coordinator in
-                let libraryObject = try coordinator.perform(request: ReadLibraryObjectDbRequest(libraryId: libraryId))
                 let collections = try coordinator.perform(request: ReadCollectionsDbRequest(libraryId: libraryId))
-                let (library, libraryToken) = libraryObject.observe(changes: { [weak viewModel] library in
+                let (library, libraryToken) = try libraryId.observe(in: coordinator, changes: { [weak viewModel] library in
                     guard let viewModel else { return }
                     update(viewModel: viewModel) { state in
                         state.library = library

@@ -223,8 +223,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
     private func loadInitialState(in viewModel: ViewModel<ItemsActionHandler>) {
         do {
             let sortType = Defaults.shared.itemsSortType
-            let libraryObject = try dbStorage.perform(request: ReadLibraryObjectDbRequest(libraryId: viewModel.state.library.identifier), on: .main)
-            let (library, libraryToken) = libraryObject.observe(changes: { [weak viewModel] library in
+            let (library, libraryToken) = try viewModel.state.library.identifier.observe(in: dbStorage, changes: { [weak viewModel] library in
                 guard let viewModel else { return }
                 update(viewModel: viewModel) { state in
                     state.library = library
