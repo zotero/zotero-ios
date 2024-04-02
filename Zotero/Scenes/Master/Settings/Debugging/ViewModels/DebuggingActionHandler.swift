@@ -70,6 +70,9 @@ struct DebuggingActionHandler: ViewModelActionHandler {
                 state.numberOfLines = 0
                 state.disposeBag = nil
             }
+
+        case .showFullSyncDebugging:
+            coordinatorDelegate.showFullSyncDebugging()
         }
     }
 
