@@ -18,6 +18,10 @@ struct Library: Equatable, Identifiable, Hashable {
         return self.identifier
     }
 
+    var metadataAndFilesEditable: Bool {
+        return metadataEditable && filesEditable
+    }
+
     init(customLibrary: RCustomLibrary) {
         self.identifier = .custom(customLibrary.type)
         self.name = customLibrary.type.libraryName

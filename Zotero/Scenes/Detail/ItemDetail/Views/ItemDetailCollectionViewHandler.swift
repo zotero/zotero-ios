@@ -495,7 +495,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
             if library.metadataEditable || !state.tags.isEmpty {
                 sections.append(.tags)
             }
-            if (library.metadataEditable && library.filesEditable) || !state.attachments.isEmpty {
+            if library.metadataAndFilesEditable || !state.attachments.isEmpty {
                 sections.append(.attachments)
             }
 
@@ -633,7 +633,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
                 let isProcessing = state.backgroundProcessedItems.contains(attachment.key)
                 return attachmentRow(for: attachment, isProcessing: isProcessing)
             })
-            if !viewModel.state.data.isAttachment && state.library.metadataEditable && state.library.filesEditable {
+            if !viewModel.state.data.isAttachment && state.library.metadataAndFilesEditable {
                 attachments += [.addAttachment]
             }
             return attachments

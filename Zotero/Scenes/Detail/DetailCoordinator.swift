@@ -350,7 +350,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         controller.popoverPresentationController?.barButtonItem = button
 
-        if viewModel.state.library.metadataEditable && viewModel.state.library.filesEditable {
+        if viewModel.state.library.metadataAndFilesEditable {
             controller.addAction(UIAlertAction(title: L10n.Items.lookup, style: .default, handler: { [weak self] _ in
                 self?.showLookup(startWith: .manual(restoreLookupState: false))
             }))
@@ -382,7 +382,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
             }
         }))
 
-        if viewModel.state.library.metadataEditable && viewModel.state.library.filesEditable {
+        if viewModel.state.library.metadataAndFilesEditable {
             controller.addAction(UIAlertAction(title: L10n.Items.newFile, style: .default, handler: { [weak self, weak viewModel] _ in
                 self?.showAttachmentPicker(save: { urls in
                     viewModel?.process(action: .addAttachments(urls))
