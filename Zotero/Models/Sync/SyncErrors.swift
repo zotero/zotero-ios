@@ -108,7 +108,7 @@ enum SyncActionError: Error {
     case attachmentMissing(key: String, libraryId: LibraryIdentifier, title: String)
     case authorizationFailed(statusCode: Int, response: String, hadIfMatchHeader: Bool)
     case objectPreconditionError
-    case submitUpdateFailures(String)
+    case submitUpdateFailures([FailedUpdateResponse])
 }
 
 extension SyncError.Fatal: Equatable {

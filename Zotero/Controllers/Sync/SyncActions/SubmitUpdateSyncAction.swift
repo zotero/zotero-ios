@@ -154,8 +154,7 @@ struct SubmitUpdateSyncAction: SyncAction {
 
         DDLogError("SubmitUpdateSyncAction: failures - \(failedResponses)")
 
-        let errorMessages = failedResponses.map({ $0.message }).joined(separator: "\n")
-        return SyncActionError.submitUpdateFailures(errorMessages)
+        return SyncActionError.submitUpdateFailures(failedResponses)
     }
 
     private func process(response: UpdatesResponse) -> (unchangedKeys: [String], parsingFailedKeys: [String], changedCollections: [CollectionResponse], changedItems: [ItemResponse], changedSearches: [SearchResponse]) {

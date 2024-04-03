@@ -1962,7 +1962,11 @@ final class SyncController: SynchronizationController {
             case .annotationNeededSplitting(let message, let keys, let libraryId):
                 return .nonFatal(.annotationDidSplit(message: message, keys: keys, libraryId: libraryId))
 
-            case .submitUpdateFailures(let message), .authorizationFailed(_, let message, _): // .authorizationFailed handled separately by `finishSubmission()`
+            case .submitUpdateFailures(let failures):
+                let message = failures.map({ $0.message }).joined(separator: "\n")
+                return .nonFatal(.unknown(message: message, data: data))
+
+            case .authorizationFailed(_, let message, _): // .authorizationFailed handled separately by `finishSubmission()`
                 return .nonFatal(.unknown(message: message, data: data))
                 
             case .attachmentAlreadyUploaded, .attachmentItemNotSubmitted: // These are handled separately by `finishSubmission()`
