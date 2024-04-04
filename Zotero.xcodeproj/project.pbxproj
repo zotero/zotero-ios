@@ -957,6 +957,8 @@
 		B3BC6B20250FA437006A8B9C /* SchemaError.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC6B1F250FA437006A8B9C /* SchemaError.swift */; };
 		B3BC6B21250FA50F006A8B9C /* SchemaError.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC6B1F250FA437006A8B9C /* SchemaError.swift */; };
 		B3BD2BB325C98D2900275EF9 /* BackgroundTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BD2BB225C98D2900275EF9 /* BackgroundTimer.swift */; };
+		B3BD2F902BBEE38900EDDDD6 /* CountObjectsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BD2F8F2BBEE38900EDDDD6 /* CountObjectsDbRequest.swift */; };
+		B3BD2F912BBEE46B00EDDDD6 /* CountObjectsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BD2F8F2BBEE38900EDDDD6 /* CountObjectsDbRequest.swift */; };
 		B3BD86BC258CBCD600EF6674 /* SearchBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BD86BB258CBCD600EF6674 /* SearchBar.swift */; };
 		B3BF7EE728A51BDC00A5A659 /* DeleteTagFromItemDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BF7EE628A51BDC00A5A659 /* DeleteTagFromItemDbRequest.swift */; };
 		B3BF7EE928A51EDA00A5A659 /* EditTagsForItemDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BF7EE828A51EDA00A5A659 /* EditTagsForItemDbRequest.swift */; };
@@ -1934,6 +1936,7 @@
 		B3BC6B1C250F797B006A8B9C /* FieldKeys.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FieldKeys.swift; sourceTree = "<group>"; };
 		B3BC6B1F250FA437006A8B9C /* SchemaError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaError.swift; sourceTree = "<group>"; };
 		B3BD2BB225C98D2900275EF9 /* BackgroundTimer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BackgroundTimer.swift; sourceTree = "<group>"; };
+		B3BD2F8F2BBEE38900EDDDD6 /* CountObjectsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountObjectsDbRequest.swift; sourceTree = "<group>"; };
 		B3BD86BB258CBCD600EF6674 /* SearchBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchBar.swift; sourceTree = "<group>"; };
 		B3BF7EE628A51BDC00A5A659 /* DeleteTagFromItemDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteTagFromItemDbRequest.swift; sourceTree = "<group>"; };
 		B3BF7EE828A51EDA00A5A659 /* EditTagsForItemDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditTagsForItemDbRequest.swift; sourceTree = "<group>"; };
@@ -2324,6 +2327,7 @@
 				B358D3B3279590C200A67054 /* CheckAnyItemIsInTrashDbRequest.swift */,
 				B305644423FC051E003304F2 /* CheckItemIsChangedDbRequest.swift */,
 				B3E34888283CFA92002A8A06 /* CleanupUnusedTags.swift */,
+				B3BD2F8F2BBEE38900EDDDD6 /* CountObjectsDbRequest.swift */,
 				B305645B23FC051E003304F2 /* CreateAttachmentDbRequest.swift */,
 				B39D33702400150B00EF2ACB /* CreateAttachmentsDbRequest.swift */,
 				B305645523FC051E003304F2 /* CreateCollectionDbRequest.swift */,
@@ -4678,6 +4682,7 @@
 				B378F4C9242CC8EF00B88A05 /* Translator.swift in Sources */,
 				B30565BA23FC051E003304F2 /* EditCollectionDbRequest.swift in Sources */,
 				B36E4F66275123F4001FB99D /* WebDavCreateZoteroDirectoryRequest.swift in Sources */,
+				B3BD2F902BBEE38900EDDDD6 /* CountObjectsDbRequest.swift in Sources */,
 				B3E8FE062714292E00F51458 /* StorageSettingsRow.swift in Sources */,
 				B34C40F525710B430057D5F5 /* AnnotationEditViewController.swift in Sources */,
 				B37AA2882899529000A1C643 /* ItemDetailAddContentView.swift in Sources */,
@@ -5689,6 +5694,7 @@
 				B305678323FC0D6B003304F2 /* SecureStorage.swift in Sources */,
 				B32EE26224A0998700442974 /* RUser.swift in Sources */,
 				B39E013328327CAC0091CE4A /* WebViewHandler.swift in Sources */,
+				B3BD2F912BBEE46B00EDDDD6 /* CountObjectsDbRequest.swift in Sources */,
 				B30566F823FC0858003304F2 /* DeleteObjectsDbRequest.swift in Sources */,
 				B30566E523FC081D003304F2 /* KeyRequest.swift in Sources */,
 				B305670123FC089F003304F2 /* MarkObjectsAsSyncedDbRequest.swift in Sources */,

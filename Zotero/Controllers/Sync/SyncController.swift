@@ -83,7 +83,14 @@ final class SyncController: SynchronizationController {
         /// Load deletions of objects in library. If an object is currently being edited by user, we need to ask for permissions or alert the user.
         case syncDeletions(LibraryIdentifier, Int)
         /// Performs deletions on objects.
-        case performDeletions(libraryId: LibraryIdentifier, collections: [String], items: [String], searches: [String], tags: [String], conflictMode: PerformDeletionsDbRequest.ConflictResolutionMode)
+        case performDeletions(
+            libraryId: LibraryIdentifier,
+            collections: [String],
+            items: [String],
+            searches: [String],
+            tags: [String],
+            conflictMode: PerformItemDeletionsDbRequest.ConflictResolutionMode
+        )
         /// Restores remote deletions
         case restoreDeletions(libraryId: LibraryIdentifier, collections: [String], items: [String])
         /// Stores version for deletions in given library.
@@ -1343,7 +1350,7 @@ final class SyncController: SynchronizationController {
         items: [String],
         searches: [String],
         tags: [String],
-        conflictMode: PerformDeletionsDbRequest.ConflictResolutionMode
+        conflictMode: PerformItemDeletionsDbRequest.ConflictResolutionMode
     ) {
         let action = PerformDeletionsSyncAction(
             libraryId: libraryId,
