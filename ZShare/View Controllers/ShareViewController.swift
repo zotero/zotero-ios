@@ -366,7 +366,8 @@ final class ShareViewController: UIViewController {
                 self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(ShareViewController.cancel))
                 return
 
-            default: break
+            default:
+                break
             }
         }
 

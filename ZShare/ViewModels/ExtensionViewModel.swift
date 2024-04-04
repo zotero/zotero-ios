@@ -75,10 +75,26 @@ final class ExtensionViewModel {
 
                 var isFatal: Bool {
                     switch self {
-                    case .cantLoadWebData, .cantLoadSchema, .forbidden:
+                    case .cantLoadWebData,
+                         .cantLoadSchema,
+                         .forbidden,
+                         .itemsNotFound,
+                         .downloadedFileNotPdf,
+                         .parseError,
+                         .schemaError,
+                         .md5Missing,
+                         .mtimeMissing:
                         return true
 
-                    default:
+                    case .apiFailure,
+                         .downloadFailed,
+                         .expired,
+                         .unknown,
+                         .fileMissing,
+                         .webViewError,
+                         .quotaLimit,
+                         .webDavNotVerified,
+                         .webDavFailure:
                         return false
                     }
                 }
