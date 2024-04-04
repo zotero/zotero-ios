@@ -361,11 +361,13 @@ final class ShareViewController: UIViewController {
     private func updateNavigationItems(for state: ExtensionViewModel.State.AttachmentState, isSubmitting: Bool) {
         if let error = state.error {
             switch error {
-            case .quotaLimit, .webDavFailure, .apiFailure:
+            case .quotaLimit, .webDavFailure, .apiFailure, .forbidden:
                 self.navigationItem.leftBarButtonItem = nil
                 self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(ShareViewController.cancel))
                 return
-            default: break
+
+            default:
+                break
             }
         }
 

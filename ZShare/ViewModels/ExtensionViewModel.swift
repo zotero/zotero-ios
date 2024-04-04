@@ -75,15 +75,37 @@ final class ExtensionViewModel {
 
                 var isFatal: Bool {
                     switch self {
-                    case .cantLoadWebData, .cantLoadSchema: return true
-                    default: return false
+                    case .cantLoadWebData,
+                         .cantLoadSchema,
+                         .forbidden,
+                         .itemsNotFound,
+                         .downloadedFileNotPdf,
+                         .parseError,
+                         .schemaError,
+                         .md5Missing,
+                         .mtimeMissing:
+                        return true
+
+                    case .apiFailure,
+                         .downloadFailed,
+                         .expired,
+                         .unknown,
+                         .fileMissing,
+                         .webViewError,
+                         .quotaLimit,
+                         .webDavNotVerified,
+                         .webDavFailure:
+                        return false
                     }
                 }
 
                 var isFatalOrQuota: Bool {
                     switch self {
-                    case .cantLoadWebData, .cantLoadSchema, .quotaLimit: return true
-                    default: return false
+                    case .quotaLimit:
+                        return true
+
+                    default:
+                        return isFatal
                     }
                 }
             }
@@ -171,6 +193,16 @@ final class ExtensionViewModel {
             let filename: String
             let libraryId: LibraryIdentifier
             let userId: Int
+
+            var parentKey: String {
+                switch type {
+                case .translated(let item, _):
+                    return item.key
+
+                case .file:
+                    return attachment.key
+                }
+            }
 
             init(item: ItemResponse, attachmentKey: String, attachmentData: [String: Any], attachmentFile: File, linkType: Attachment.FileLinkType, defaultTitle: String, libraryId: LibraryIdentifier,
                  userId: Int, dateParser: DateParser) {
@@ -957,36 +989,89 @@ final class ExtensionViewModel {
             switch attachment {
             case .item(let item):
                 DDLogInfo("ExtensionViewModel: submit item")
-                self.submit(item: item, libraryId: libraryId, userId: userId, apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage,
-                            schemaController: self.schemaController, dateParser: self.dateParser)
+                self.submit(
+                    item: item,
+                    libraryId: libraryId,
+                    userId: userId,
+                    apiClient: self.apiClient,
+                    dbStorage: self.dbStorage,
+                    fileStorage: self.fileStorage,
+                    schemaController: self.schemaController,
+                    dateParser: self.dateParser
+                )
 
             case .itemWithAttachment(let item, let attachmentData, let attachmentFile):
                 DDLogInfo("ExtensionViewModel: submit item with attachment")
-                let data = State.UploadData(item: item, attachmentKey: self.state.attachmentKey, attachmentData: attachmentData, attachmentFile: attachmentFile, linkType: .importedUrl,
-                                            defaultTitle: (self.state.title ?? "Unknown"), libraryId: libraryId, userId: userId, dateParser: self.dateParser)
+                let data = State.UploadData(
+                    item: item,
+                    attachmentKey: self.state.attachmentKey,
+                    attachmentData: attachmentData,
+                    attachmentFile: attachmentFile,
+                    linkType: .importedUrl,
+                    defaultTitle: (self.state.title ?? "Unknown"),
+                    libraryId: libraryId,
+                    userId: userId,
+                    dateParser: self.dateParser
+                )
                 self.upload(data: data, apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage, webDavController: self.webDavController)
 
             case .file(let file, let filename):
                 DDLogInfo("ExtensionViewModel: upload local file")
-                let data = State.UploadData(file: file, filename: filename, attachmentKey: self.state.attachmentKey, linkType: (self.state.url == nil ? .importedFile : .importedUrl),
-                                            remoteUrl: self.state.url, collections: collectionKeys, tags: tags, libraryId: libraryId, userId: userId)
+                let data = State.UploadData(
+                    file: file,
+                    filename: filename,
+                    attachmentKey: self.state.attachmentKey,
+                    linkType: (self.state.url == nil ? .importedFile : .importedUrl),
+                    remoteUrl: self.state.url,
+                    collections: collectionKeys,
+                    tags: tags,
+                    libraryId: libraryId,
+                    userId: userId
+                )
                 self.upload(data: data, apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage, webDavController: self.webDavController)
             }
         } else if let url = self.state.url {
             DDLogInfo("ExtensionViewModel: submit webpage")
 
             let date = Date()
-            let fields: [KeyBaseKeyPair: String] = [KeyBaseKeyPair(key: FieldKeys.Item.Attachment.url, baseKey: nil): url,
-                                                    KeyBaseKeyPair(key: FieldKeys.Item.title, baseKey: nil): (self.state.title ?? "Unknown"),
-                                                    KeyBaseKeyPair(key: FieldKeys.Item.accessDate, baseKey: nil): Formatter.iso8601.string(from: date)]
+            let fields: [KeyBaseKeyPair: String] = [
+                KeyBaseKeyPair(key: FieldKeys.Item.Attachment.url, baseKey: nil): url,
+                KeyBaseKeyPair(key: FieldKeys.Item.title, baseKey: nil): (self.state.title ?? "Unknown"),
+                KeyBaseKeyPair(key: FieldKeys.Item.accessDate, baseKey: nil): Formatter.iso8601.string(from: date)
+            ]
 
-            let webItem = ItemResponse(rawType: ItemTypes.webpage, key: KeyGenerator.newKey, library: LibraryResponse(libraryId: libraryId),
-                                       parentKey: nil, collectionKeys: collectionKeys, links: nil, parsedDate: nil, isTrash: false, version: 0,
-                                       dateModified: date, dateAdded: date, fields: fields, tags: tags, creators: [], relations: [:], createdBy: nil,
-                                       lastModifiedBy: nil, rects: nil, paths: nil)
+            let webItem = ItemResponse(
+                rawType: ItemTypes.webpage,
+                key: KeyGenerator.newKey,
+                library: LibraryResponse(libraryId: libraryId),
+                parentKey: nil,
+                collectionKeys: collectionKeys,
+                links: nil,
+                parsedDate: nil,
+                isTrash: false,
+                version: 0,
+                dateModified: date,
+                dateAdded: date,
+                fields: fields,
+                tags: tags,
+                creators: [],
+                relations: [:],
+                createdBy: nil,
+                lastModifiedBy: nil,
+                rects: nil,
+                paths: nil
+            )
 
-            self.submit(item: webItem, libraryId: libraryId, userId: userId, apiClient: self.apiClient, dbStorage: self.dbStorage,
-                        fileStorage: self.fileStorage, schemaController: self.schemaController, dateParser: self.dateParser)
+            self.submit(
+                item: webItem,
+                libraryId: libraryId,
+                userId: userId,
+                apiClient: self.apiClient,
+                dbStorage: self.dbStorage,
+                fileStorage: self.fileStorage,
+                schemaController: self.schemaController,
+                dateParser: self.dateParser
+            )
         } else {
             DDLogInfo("ExtensionViewModel: nothing to submit")
         }
@@ -1000,29 +1085,84 @@ final class ExtensionViewModel {
     /// - parameter fileStorage: File storage
     /// - parameter schemaController: Schema controller for validating item type and field types.
     /// - parameter dateParser: Date parser for item creation
-    private func submit(item: ItemResponse, libraryId: LibraryIdentifier, userId: Int, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController,
-                        dateParser: DateParser) {
-        self.createItem(item, libraryId: libraryId, schemaController: schemaController, dateParser: dateParser, queue: self.backgroundQueue)
-            .subscribe(on: self.backgroundScheduler)
-            .flatMap { parameters, changeUuids in
-                return SubmitUpdateSyncAction(parameters: [parameters], changeUuids: changeUuids, sinceVersion: nil, object: .item, libraryId: libraryId, userId: userId, updateLibraryVersion: false,
-                                              apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage, schemaController: self.schemaController, dateParser: self.dateParser,
-                                              queue: self.backgroundQueue, scheduler: self.backgroundScheduler).result
+    private func submit(
+        item: ItemResponse,
+        libraryId: LibraryIdentifier,
+        userId: Int,
+        apiClient: ApiClient,
+        dbStorage: DbStorage,
+        fileStorage: FileStorage,
+        schemaController: SchemaController,
+        dateParser: DateParser
+    ) {
+        create(item: item, libraryId: libraryId, schemaController: schemaController, dateParser: dateParser, queue: backgroundQueue)
+            .subscribe(on: backgroundScheduler)
+            .flatMap { [weak self] parameters, changeUuids -> Single<(Int, Error?)> in
+                guard let self else { return Single.error(State.AttachmentState.Error.expired) }
+                return SubmitUpdateSyncAction(
+                    parameters: [parameters],
+                    changeUuids: changeUuids,
+                    sinceVersion: nil,
+                    object: .item,
+                    libraryId: libraryId,
+                    userId: userId,
+                    updateLibraryVersion: false,
+                    apiClient: apiClient,
+                    dbStorage: dbStorage,
+                    fileStorage: fileStorage,
+                    schemaController: schemaController,
+                    dateParser: dateParser,
+                    queue: backgroundQueue,
+                    scheduler: backgroundScheduler
+                ).result
+                .flatMap { version, error in
+                    guard let error else { return Single.just((version, error)) }
+                    return Single.error(error)
+                }
             }
             .observe(on: MainScheduler.instance)
             .subscribe(onSuccess: { [weak self] _ in
                 self?.state.isDone = true
             }, onFailure: { [weak self] error in
                 guard let self = self else { return }
-
                 DDLogError("ExtensionViewModel: could not submit standalone item - \(error)")
-
-                var state = self.state
-                state.attachmentState = .failed(self.attachmentError(from: error, libraryId: libraryId))
-                state.isSubmitting = false
-                self.state = state
+                handleSubmission(error: attachmentError(from: error, libraryId: libraryId), parentKey: item.key, libraryId: libraryId)
             })
-            .disposed(by: self.disposeBag)
+            .disposed(by: disposeBag)
+
+        /// Creates an `RItem` instance in DB.
+        /// - parameter item: Parsed item to be created.
+        /// - parameter schemaController: Schema controller for validating item type and field types.
+        /// - returns: `Single` with `updateParameters` of created `RItem`.
+        func create(item: ItemResponse, libraryId: LibraryIdentifier, schemaController: SchemaController, dateParser: DateParser, queue: DispatchQueue) -> Single<([String: Any], [String: [String]])> {
+            return Single.create { subscriber -> Disposable in
+                DDLogInfo("ExtensionViewModel: create db item")
+
+                do {
+                    var changeUuids: [String: [String]] = [:]
+                    var parameters: [String: Any] = [:]
+
+                    try dbStorage.perform(on: queue, with: { coordinator in
+                        if let collectionKey = item.collectionKeys.first {
+                            try coordinator.perform(request: UpdateCollectionLastUsedDbRequest(key: collectionKey, libraryId: libraryId))
+                        }
+
+                        let request = CreateBackendItemDbRequest(item: item, schemaController: schemaController, dateParser: dateParser)
+                        let item = try coordinator.perform(request: request)
+                        parameters = item.updateParameters ?? [:]
+                        changeUuids = [item.key: Array(item.changes.map({ $0.identifier }))]
+
+                        coordinator.invalidate()
+                    })
+
+                    subscriber(.success((parameters, changeUuids)))
+                } catch let error {
+                    subscriber(.failure(error))
+                }
+
+                return Disposables.create()
+            }
+        }
     }
 
     private func attachmentError(from error: Error, libraryId: LibraryIdentifier?) -> State.AttachmentState.Error {
@@ -1037,78 +1177,54 @@ final class ExtensionViewModel {
             DDLogError("ExtensionViewModel: schema failed - \(error)")
             return .schemaError(error)
         }
+        if let error = error as? SyncActionError {
+            switch error {
+            case .submitUpdateFailures(let responses):
+                guard let response = responses.first else { return .unknown }
+                return alamoErrorRequiresAbort(.responseValidationFailed(reason: .unacceptableStatusCode(code: response.code)), url: nil, libraryId: libraryId)
+
+            default:
+                return .unknown
+            }
+        }
         if let error = error as? TranslationWebViewHandler.Error {
             return .webViewError(error)
         }
         if let responseError = error as? AFResponseError {
-            return self.alamoErrorRequiresAbort(responseError.error, url: responseError.url, libraryId: libraryId)
+            return alamoErrorRequiresAbort(responseError.error, url: responseError.url, libraryId: libraryId)
         }
         if let alamoError = error as? AFError {
-            return self.alamoErrorRequiresAbort(alamoError, url: nil, libraryId: libraryId)
+            return alamoErrorRequiresAbort(alamoError, url: nil, libraryId: libraryId)
         }
         return .unknown
-    }
 
-    private func alamoErrorRequiresAbort(_ error: AFError, url: URL?, libraryId: LibraryIdentifier?) -> State.AttachmentState.Error {
-        let defaultError: State.AttachmentState.Error = (url?.absoluteString ?? "").contains(ApiConstants.baseUrlString) ? .apiFailure : .webDavFailure
-        switch error {
-        case .responseValidationFailed(let reason):
-            switch reason {
-            case .unacceptableStatusCode(let code):
-                if let libraryId {
-                    switch code {
-                    case 413:
-                        return .quotaLimit(libraryId)
+        func alamoErrorRequiresAbort(_ error: AFError, url: URL?, libraryId: LibraryIdentifier?) -> State.AttachmentState.Error {
+            let defaultError: State.AttachmentState.Error = (url?.absoluteString ?? ApiConstants.baseUrlString).contains(ApiConstants.baseUrlString) ? .apiFailure : .webDavFailure
+            switch error {
+            case .responseValidationFailed(let reason):
+                switch reason {
+                case .unacceptableStatusCode(let code):
+                    if let libraryId {
+                        switch code {
+                        case 413:
+                            return .quotaLimit(libraryId)
 
-                    case 403:
-                        return .forbidden(libraryId)
+                        case 403:
+                            return .forbidden(libraryId)
 
-                    default:
-                        break
+                        default:
+                            break
+                        }
                     }
+                    return defaultError
+
+                default:
+                    return defaultError
                 }
-                return defaultError
 
             default:
                 return defaultError
             }
-
-        default:
-            return defaultError
-        }
-    }
-
-    /// Creates an `RItem` instance in DB.
-    /// - parameter item: Parsed item to be created.
-    /// - parameter schemaController: Schema controller for validating item type and field types.
-    /// - returns: `Single` with `updateParameters` of created `RItem`.
-    private func createItem(_ item: ItemResponse, libraryId: LibraryIdentifier, schemaController: SchemaController, dateParser: DateParser, queue: DispatchQueue) -> Single<([String: Any], [String: [String]])> {
-        return Single.create { subscriber -> Disposable in
-            DDLogInfo("ExtensionViewModel: create db item")
-
-            do {
-                var changeUuids: [String: [String]] = [:]
-                var parameters: [String: Any] = [:]
-
-                try self.dbStorage.perform(on: queue, with: { coordinator in
-                    if let collectionKey = item.collectionKeys.first {
-                        try coordinator.perform(request: UpdateCollectionLastUsedDbRequest(key: collectionKey, libraryId: libraryId))
-                    }
-
-                    let request = CreateBackendItemDbRequest(item: item, schemaController: schemaController, dateParser: dateParser)
-                    let item = try coordinator.perform(request: request)
-                    parameters = item.updateParameters ?? [:]
-                    changeUuids = [item.key: Array(item.changes.map({ $0.identifier }))]
-
-                    coordinator.invalidate()
-                })
-
-                subscriber(.success((parameters, changeUuids)))
-            } catch let error {
-                subscriber(.failure(error))
-            }
-
-            return Disposables.create()
         }
     }
 
@@ -1119,129 +1235,188 @@ final class ExtensionViewModel {
     /// - parameter fileStorage: File storage
     private func upload(data: State.UploadData, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, webDavController: WebDavController) {
         if Defaults.shared.webDavEnabled {
-            self.uploadToWebDav(data: data, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage, webDavController: webDavController)
+            uploadToWebDav(data: data, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage, webDavController: webDavController)
         } else {
-            self.uploadToZotero(data: data, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage)
+            uploadToZotero(data: data, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage)
         }
-    }
 
-    private func uploadToZotero(data: State.UploadData, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage) {
-        let authorize = self.submit(data: data, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage)
-                            .flatMap { submissionData -> Single<(AuthorizeUploadResponse, String)> in
-                                return AuthorizeUploadSyncAction(key: data.attachment.key, filename: data.filename, filesize: submissionData.filesize, md5: submissionData.md5,
-                                                                 mtime: submissionData.mtime, libraryId: data.libraryId, userId: data.userId, oldMd5: nil, apiClient: apiClient,
-                                                                 queue: self.backgroundQueue, scheduler: self.backgroundScheduler).result
-                                            .flatMap({ return Single.just(($0, submissionData.md5)) })
-                            }
-
-        authorize.flatMap { [weak self] response, md5 -> Single<()> in
-            guard let self = self else { return Single.error(State.AttachmentState.Error.expired) }
-
-            switch response {
-            case .exists(let version):
-                DDLogInfo("ExtensionViewModel: file exists remotely")
-
-                do {
-                    let request = MarkAttachmentUploadedDbRequest(libraryId: data.libraryId, key: data.attachment.key, version: version)
-                    try dbStorage.perform(request: request, on: self.backgroundQueue)
-                    return Single.just(())
-                } catch let error {
-                    return Single.error(error)
+        func uploadToZotero(data: State.UploadData, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage) {
+            let authorize = submit(data: data, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage)
+                .flatMap { [weak self] submissionData -> Single<(AuthorizeUploadResponse, String)> in
+                    guard let self else { return Single.error(State.AttachmentState.Error.expired) }
+                    return AuthorizeUploadSyncAction(
+                        key: data.attachment.key,
+                        filename: data.filename,
+                        filesize: submissionData.filesize,
+                        md5: submissionData.md5,
+                        mtime: submissionData.mtime,
+                        libraryId: data.libraryId,
+                        userId: data.userId,
+                        oldMd5: nil,
+                        apiClient: apiClient,
+                        queue: backgroundQueue,
+                        scheduler: backgroundScheduler
+                    ).result
+                    .flatMap({ return Single.just(($0, submissionData.md5)) })
                 }
 
-            case .new(let response):
-                DDLogInfo("ExtensionViewModel: upload authorized")
+            authorize.flatMap { [weak self] response, md5 -> Single<()> in
+                guard let self else { return Single.error(State.AttachmentState.Error.expired) }
 
-                // sessionId and size are set by background uploader.
-                let upload = BackgroundUpload(type: .zotero(uploadKey: response.uploadKey), key: self.state.attachmentKey, libraryId: data.libraryId, userId: data.userId,
-                                              remoteUrl: response.url, fileUrl: data.file.createUrl(), md5: md5, date: Date())
-                return self.backgroundUploader.start(upload: upload, filename: data.filename, mimeType: ExtensionViewModel.defaultMimetype, parameters: response.params,
-                                                     headers: ["If-None-Match": "*"], delegate: self.backgroundUploadObserver)
-                .flatMap({ session in
-                    self.backgroundUploadObserver.startObservingInShareExtension(session: session)
-                    return Single.just(())
-                })
+                switch response {
+                case .exists(let version):
+                    DDLogInfo("ExtensionViewModel: file exists remotely")
+                    do {
+                        let request = MarkAttachmentUploadedDbRequest(libraryId: data.libraryId, key: data.attachment.key, version: version)
+                        try dbStorage.perform(request: request, on: self.backgroundQueue)
+                        return Single.just(())
+                    } catch let error {
+                        return Single.error(error)
+                    }
+
+                case .new(let response):
+                    DDLogInfo("ExtensionViewModel: upload authorized")
+                    // sessionId and size are set by background uploader.
+                    let upload = BackgroundUpload(
+                        type: .zotero(uploadKey: response.uploadKey),
+                        key: state.attachmentKey,
+                        libraryId: data.libraryId,
+                        userId: data.userId,
+                        remoteUrl: response.url,
+                        fileUrl: data.file.createUrl(),
+                        md5: md5,
+                        date: Date()
+                    )
+                    return backgroundUploader.start(
+                        upload: upload,
+                        filename: data.filename,
+                        mimeType: ExtensionViewModel.defaultMimetype,
+                        parameters: response.params,
+                        headers: ["If-None-Match": "*"],
+                        delegate: backgroundUploadObserver
+                    )
+                    .flatMap({ [weak self] session in
+                        guard let self else { return Single.error(State.AttachmentState.Error.expired) }
+                        backgroundUploadObserver.startObservingInShareExtension(session: session)
+                        return Single.just(())
+                    })
+                }
             }
+            .observe(on: MainScheduler.instance)
+            .subscribe(onSuccess: { [weak self] _ in
+                self?.state.isDone = true
+            }, onFailure: { [weak self] error in
+                guard let self else { return }
+                DDLogError("ExtensionViewModel: could not submit item or attachment - \(error)")
+                handleSubmission(error: attachmentError(from: error, libraryId: data.libraryId), parentKey: data.parentKey, libraryId: data.libraryId)
+            })
+            .disposed(by: self.disposeBag)
         }
-        .observe(on: MainScheduler.instance)
-        .subscribe(onSuccess: { [weak self] _ in
-            self?.state.isDone = true
-        }, onFailure: { [weak self] error in
-            guard let self = self else { return }
 
-            DDLogError("ExtensionViewModel: could not submit item or attachment - \(error)")
-
-            var state = self.state
-            state.attachmentState = .failed(self.attachmentError(from: error, libraryId: data.libraryId))
-            state.isSubmitting = false
-            self.state = state
-        })
-        .disposed(by: self.disposeBag)
-    }
-
-    private func uploadToWebDav(data: State.UploadData, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, webDavController: WebDavController) {
-        let prepare = self.submit(data: data, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage)
-                          .flatMap { submissionData -> Single<(WebDavUploadResult, SubmissionData)> in
-                              return webDavController.prepareForUpload(key: data.attachment.key, mtime: submissionData.mtime, hash: submissionData.md5, file: data.file, queue: self.backgroundQueue)
-                                                     .flatMap({ return Single.just(($0, submissionData)) })
-                          }
-
-        prepare.flatMap { [weak self] response, submissionData -> Single<()> in
-            guard let self = self else { return Single.error(State.AttachmentState.Error.expired) }
-
-            switch response {
-            case .exists:
-                DDLogInfo("ExtensionViewModel: file exists remotely")
-
-                do {
-                    let request = MarkAttachmentUploadedDbRequest(libraryId: data.libraryId, key: data.attachment.key, version: nil)
-                    try dbStorage.perform(request: request, on: self.backgroundQueue)
-                    return Single.just(())
-                } catch let error {
-                    return Single.error(error)
+        func uploadToWebDav(data: State.UploadData, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, webDavController: WebDavController) {
+            let prepare = submit(data: data, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage)
+                .flatMap { [weak self] submissionData -> Single<(WebDavUploadResult, SubmissionData)> in
+                    guard let self else { return Single.error(State.AttachmentState.Error.expired) }
+                    return webDavController.prepareForUpload(key: data.attachment.key, mtime: submissionData.mtime, hash: submissionData.md5, file: data.file, queue: backgroundQueue)
+                    .flatMap({ return Single.just(($0, submissionData)) })
                 }
 
-            case .new(let url, let file):
-                DDLogInfo("ExtensionViewModel: upload authorized")
+            prepare.flatMap { [weak self] response, submissionData -> Single<()> in
+                guard let self else { return Single.error(State.AttachmentState.Error.expired) }
 
-                let upload = BackgroundUpload(type: .webdav(mtime: submissionData.mtime), key: self.state.attachmentKey, libraryId: data.libraryId, userId: data.userId,
-                                              remoteUrl: url, fileUrl: file.createUrl(), md5: submissionData.md5, date: Date())
-                return self.backgroundUploader.start(upload: upload, filename: (data.attachment.key + ".zip"), mimeType: ExtensionViewModel.zipMimetype, parameters: [:], headers: [:],
-                                                     delegate: self.backgroundUploadObserver)
-                           .flatMap({ session in
-                               self.backgroundUploadObserver.startObservingInShareExtension(session: session)
-                               return Single.just(())
-                           })
+                switch response {
+                case .exists:
+                    DDLogInfo("ExtensionViewModel: file exists remotely")
+                    do {
+                        let request = MarkAttachmentUploadedDbRequest(libraryId: data.libraryId, key: data.attachment.key, version: nil)
+                        try dbStorage.perform(request: request, on: backgroundQueue)
+                        return Single.just(())
+                    } catch let error {
+                        return Single.error(error)
+                    }
+
+                case .new(let url, let file):
+                    DDLogInfo("ExtensionViewModel: upload authorized")
+                    let upload = BackgroundUpload(
+                        type: .webdav(mtime: submissionData.mtime),
+                        key: state.attachmentKey,
+                        libraryId: data.libraryId,
+                        userId: data.userId,
+                        remoteUrl: url,
+                        fileUrl: file.createUrl(),
+                        md5: submissionData.md5,
+                        date: Date()
+                    )
+                    return backgroundUploader.start(
+                        upload: upload,
+                        filename: (data.attachment.key + ".zip"),
+                        mimeType: ExtensionViewModel.zipMimetype,
+                        parameters: [:],
+                        headers: [:],
+                        delegate: backgroundUploadObserver
+                    )
+                    .flatMap({ [weak self] session in
+                        guard let self else { return Single.error(State.AttachmentState.Error.expired) }
+                        backgroundUploadObserver.startObservingInShareExtension(session: session)
+                        return Single.just(())
+                    })
+                }
+            }
+            .observe(on: MainScheduler.instance)
+            .subscribe(onSuccess: { [weak self] _ in
+                self?.state.isDone = true
+            }, onFailure: { [weak self] error in
+                guard let self else { return }
+                DDLogError("ExtensionViewModel: could not submit item or attachment to webdav - \(error)")
+                handleSubmission(error: attachmentError(from: error, libraryId: data.libraryId), parentKey: data.parentKey, libraryId: data.libraryId)
+            })
+            .disposed(by: disposeBag)
+        }
+
+        func submit(data: State.UploadData, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage) -> Single<SubmissionData> {
+            switch data.type {
+            case .file(let location, let collections, let tags):
+                DDLogInfo("ExtensionViewModel: prepare upload for local file")
+                return prepareAndSubmit(
+                    attachment: data.attachment,
+                    collections: collections,
+                    tags: tags,
+                    file: data.file,
+                    tmpFile: location,
+                    libraryId: data.libraryId,
+                    userId: data.userId,
+                    apiClient: apiClient,
+                    dbStorage: dbStorage,
+                    fileStorage: fileStorage
+                )
+
+            case .translated(let item, let location):
+                DDLogInfo("ExtensionViewModel: prepare upload for local file")
+                return prepareAndSubmit(
+                    item: item,
+                    attachment: data.attachment,
+                    file: data.file,
+                    tmpFile: location,
+                    libraryId: data.libraryId,
+                    userId: data.userId,
+                    apiClient: apiClient,
+                    dbStorage: dbStorage,
+                    fileStorage: fileStorage
+                )
             }
         }
-        .observe(on: MainScheduler.instance)
-        .subscribe(onSuccess: { [weak self] _ in
-            self?.state.isDone = true
-        }, onFailure: { [weak self] error in
-            guard let self = self else { return }
-
-            DDLogError("ExtensionViewModel: could not submit item or attachment - \(error)")
-
-            var state = self.state
-            state.attachmentState = .failed(self.attachmentError(from: error, libraryId: data.libraryId))
-            state.isSubmitting = false
-            self.state = state
-        })
-        .disposed(by: self.disposeBag)
     }
 
-    private func submit(data: State.UploadData, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage) -> Single<SubmissionData> {
-        switch data.type {
-        case .file(let location, let collections, let tags):
-            DDLogInfo("ExtensionViewModel: prepare upload for local file")
-            return self.prepareAndSubmit(attachment: data.attachment, collections: collections, tags: tags, file: data.file, tmpFile: location, libraryId: data.libraryId, userId: data.userId,
-                                         apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage)
-
-        case .translated(let item, let location):
-            DDLogInfo("ExtensionViewModel: prepare upload for local file")
-            return self.prepareAndSubmit(item: item, attachment: data.attachment, file: data.file, tmpFile: location, libraryId: data.libraryId, userId: data.userId, apiClient: apiClient,
-                                         dbStorage: dbStorage, fileStorage: fileStorage)
+    private func handleSubmission(error: State.AttachmentState.Error, parentKey: String, libraryId: LibraryIdentifier) {
+        backgroundQueue.async { [weak self] in
+            guard let self else { return }
+            try? dbStorage.perform(request: DeleteFailedItemsDbRequest(key: parentKey, libraryId: libraryId), on: backgroundQueue)
         }
+
+        var state = self.state
+        state.attachmentState = .failed(error)
+        state.isSubmitting = false
+        self.state = state
     }
 
     /// Prepares for file upload. Copies local file to new location appropriate for new item. Creates `RItem` instance in DB for attachment. Submits new `RItem`s to Zotero API.
@@ -1258,25 +1433,53 @@ final class ExtensionViewModel {
     /// - parameter fileStorage: File storage.
     /// - parameter webDavController: WebDAV controller.
     /// - returns: `Single` with Authorization response and md5 hash of file.
-    private func prepareAndSubmit(attachment: Attachment, collections: Set<String>, tags: [TagResponse], file: File, tmpFile: File, libraryId: LibraryIdentifier, userId: Int,
-                                  apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage) -> Single<SubmissionData> {
-        return self.moveFile(from: tmpFile, to: file)
-                   .subscribe(on: self.backgroundScheduler)
-                   .flatMap { [weak self] filesize -> Single<([String: Any], [String: [String]], SubmissionData)> in
-                       guard let self = self else { return Single.error(State.AttachmentState.Error.expired) }
-                       return self.create(attachment: attachment, collections: collections, tags: tags, queue: self.backgroundQueue)
-                                  .flatMap({ Single.just(($0, $1, SubmissionData(filesize: filesize, md5: $2, mtime: $3))) })
-                                  .do(onError: { [weak self] _ in
-                                      // If attachment item couldn't be created in DB, remove the moved file if possible, it won't be processed even from the main app
-                                      try? self?.fileStorage.remove(file)
-                                  })
-                   }
-                   .flatMap { parameters, changeUuids, data -> Single<SubmissionData> in
-                       return SubmitUpdateSyncAction(parameters: [parameters], changeUuids: changeUuids, sinceVersion: nil, object: .item, libraryId: libraryId, userId: userId,
-                                                     updateLibraryVersion: false, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage, schemaController: self.schemaController,
-                                                     dateParser: self.dateParser, queue: self.backgroundQueue, scheduler: self.backgroundScheduler).result
-                                    .flatMap({ _ in Single.just(data) })
-                   }
+    private func prepareAndSubmit(
+        attachment: Attachment,
+        collections: Set<String>,
+        tags: [TagResponse],
+        file: File,
+        tmpFile: File,
+        libraryId: LibraryIdentifier,
+        userId: Int,
+        apiClient: ApiClient,
+        dbStorage: DbStorage,
+        fileStorage: FileStorage
+    ) -> Single<SubmissionData> {
+        return moveFile(from: tmpFile, to: file)
+            .subscribe(on: backgroundScheduler)
+            .flatMap { [weak self] filesize -> Single<([String: Any], [String: [String]], SubmissionData)> in
+                guard let self else { return Single.error(State.AttachmentState.Error.expired) }
+                return create(attachment: attachment, collections: collections, tags: tags, queue: backgroundQueue)
+                    .flatMap({ Single.just(($0, $1, SubmissionData(filesize: filesize, md5: $2, mtime: $3))) })
+                    .do(onError: { [weak self] _ in
+                        // If attachment item couldn't be created in DB, remove the moved file if possible, it won't be processed even from the main app
+                        try? self?.fileStorage.remove(file)
+                    })
+            }
+            .flatMap { [weak self] parameters, changeUuids, data -> Single<SubmissionData> in
+                guard let self else { return Single.error(State.AttachmentState.Error.expired) }
+                return SubmitUpdateSyncAction(
+                    parameters: [parameters],
+                    changeUuids: changeUuids,
+                    sinceVersion: nil,
+                    object: .item,
+                    libraryId: libraryId,
+                    userId: userId,
+                    updateLibraryVersion: false,
+                    apiClient: apiClient,
+                    dbStorage: dbStorage,
+                    fileStorage: fileStorage,
+                    schemaController: schemaController,
+                    dateParser: dateParser,
+                    queue: backgroundQueue,
+                    scheduler: backgroundScheduler
+                )
+                .result
+                .flatMap { _, error in
+                    guard let error else { return Single.just(data) }
+                    return Single.error(error)
+                }
+            }
     }
 
     /// Prepares for file upload. Moves file to new location appropriate for new item. Creates `RItem` instances in DB for item and attachment. Submits new `RItem`s to Zotero API.
@@ -1291,25 +1494,52 @@ final class ExtensionViewModel {
     /// - parameter dbStorage: Database storage
     /// - parameter fileStorage: File storage
     /// - returns: `Single` with Authorization response and md5 hash of file.
-    private func prepareAndSubmit(item: ItemResponse, attachment: Attachment, file: File, tmpFile: File, libraryId: LibraryIdentifier, userId: Int,
-                                  apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage) -> Single<SubmissionData> {
-        return self.moveFile(from: tmpFile, to: file)
-                   .subscribe(on: self.backgroundScheduler)
-                   .flatMap { [weak self] filesize -> Single<([[String: Any]], [String: [String]], SubmissionData)> in
-                       guard let self = self else { return Single.error(State.AttachmentState.Error.expired) }
-                       return self.createItems(item: item, attachment: attachment, queue: self.backgroundQueue)
-                                  .flatMap({ Single.just(($0, $1, SubmissionData(filesize: filesize, md5: $2, mtime: $3))) })
-                                  .do(onError: { [weak self] _ in
-                                      // If attachment item couldn't be created in DB, remove the moved file if possible, it won't be processed even from the main app
-                                      try? self?.fileStorage.remove(file)
-                                  })
-                   }
-                   .flatMap { parameters, changeUuids, data -> Single<SubmissionData> in
-                       return SubmitUpdateSyncAction(parameters: parameters, changeUuids: changeUuids, sinceVersion: nil, object: .item, libraryId: libraryId, userId: userId,
-                                                     updateLibraryVersion: false, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage, schemaController: self.schemaController,
-                                                     dateParser: self.dateParser, queue: self.backgroundQueue, scheduler: self.backgroundScheduler).result
-                                    .flatMap({ _ in Single.just(data) })
-                   }
+    private func prepareAndSubmit(
+        item: ItemResponse,
+        attachment: Attachment,
+        file: File,
+        tmpFile: File,
+        libraryId: LibraryIdentifier,
+        userId: Int,
+        apiClient: ApiClient,
+        dbStorage: DbStorage,
+        fileStorage: FileStorage
+    ) -> Single<SubmissionData> {
+        return moveFile(from: tmpFile, to: file)
+            .subscribe(on: backgroundScheduler)
+            .flatMap { [weak self] filesize -> Single<([[String: Any]], [String: [String]], SubmissionData)> in
+                guard let self else { return Single.error(State.AttachmentState.Error.expired) }
+                return createItems(item: item, attachment: attachment, queue: backgroundQueue)
+                    .flatMap({ Single.just(($0, $1, SubmissionData(filesize: filesize, md5: $2, mtime: $3))) })
+                    .do(onError: { [weak self] _ in
+                        // If attachment item couldn't be created in DB, remove the moved file if possible, it won't be processed even from the main app
+                        try? self?.fileStorage.remove(file)
+                    })
+            }
+            .flatMap { [weak self] parameters, changeUuids, data -> Single<SubmissionData> in
+                guard let self else { return Single.error(State.AttachmentState.Error.expired) }
+                return SubmitUpdateSyncAction(
+                    parameters: parameters,
+                    changeUuids: changeUuids,
+                    sinceVersion: nil,
+                    object: .item,
+                    libraryId: libraryId,
+                    userId: userId,
+                    updateLibraryVersion: false,
+                    apiClient: apiClient,
+                    dbStorage: dbStorage,
+                    fileStorage: fileStorage,
+                    schemaController: schemaController,
+                    dateParser: dateParser,
+                    queue: backgroundQueue,
+                    scheduler: backgroundScheduler
+                )
+                .result
+                .flatMap { _, error in
+                    guard let error else { return Single.just(data) }
+                    return Single.error(error)
+                }
+            }
     }
 
     /// Moves downloaded file from temporary folder to file appropriate for given attachment item.
