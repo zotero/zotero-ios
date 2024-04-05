@@ -75,7 +75,6 @@ final class AnnotationToolbarHandler: NSObject {
     private weak var toolbarTrailingPreview: DashedView!
     private weak var toolbarTrailingPreviewHeight: NSLayoutConstraint!
 
-    var stateDidChange: ((State) -> Void)?
     var didHide: (() -> Void)?
 
     init(controller: AnnotationToolbarViewController, delegate: AnnotationToolbarHandlerDelegate) {
