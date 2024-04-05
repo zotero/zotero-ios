@@ -10,7 +10,7 @@ import Foundation
 
 import RealmSwift
 
-struct PerformDeletionsDbRequest: DbResponseRequest {
+struct PerformItemDeletionsDbRequest: DbResponseRequest {
     enum ConflictResolutionMode {
         /// Collect conflicting object keys and return them. Used initially on normal sync to see whether there are conflicts.
         case resolveConflicts
@@ -23,31 +23,19 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
     typealias Response = [(String, String)]
 
     let libraryId: LibraryIdentifier
-    let collections: [String]
-    let items: [String]
-    let searches: [String]
-    let tags: [String]
+    let keys: [String]
     let conflictMode: ConflictResolutionMode
 
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws -> [(String, String)] {
-        self.deleteCollections(with: self.collections, database: database)
-        self.deleteSearches(with: self.searches, database: database)
-        let conflicts = self.deleteItems(with: self.items, database: database)
-        self.deleteTags(with: self.tags, database: database)
-        return conflicts
-    }
-
-    private func deleteItems(with keys: [String], database: Realm) -> [(String, String)] {
-        let objects = database.objects(RItem.self).filter(.keys(keys, in: self.libraryId))
-
+        let objects = database.objects(RItem.self).filter(.keys(keys, in: libraryId))
         var conflicts: [(String, String)] = []
 
         for object in objects {
             guard !object.isInvalidated else { continue } // If object is invalidated it has already been removed by some parent before
 
-            switch self.conflictMode {
+            switch conflictMode {
             case .resolveConflicts:
                 if object.selfOrChildChanged {
                     // If remotely deleted item is changed locally, we need to show CR, so we return keys of such items
@@ -61,7 +49,8 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
                     continue
                 }
 
-            case .deleteConflicts: break
+            case .deleteConflicts:
+                break
             }
 
             object.willRemove(in: database)
@@ -70,13 +59,18 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
 
         return conflicts
     }
+}
 
-    private func deleteCollections(with keys: [String], database: Realm) {
-        let objects = database.objects(RCollection.self).filter(.keys(keys, in: self.libraryId))
+struct PerformCollectionDeletionsDbRequest: DbRequest {
+    let libraryId: LibraryIdentifier
+    let keys: [String]
 
+    var needsWrite: Bool { return true }
+
+    func process(in database: Realm) throws {
+        let objects = database.objects(RCollection.self).filter(.keys(keys, in: libraryId))
         for object in objects {
             guard !object.isInvalidated else { continue } // If object is invalidated it has already been removed by some parent before
-
             if object.isChanged {
                 // If remotely deleted collection is changed locally, we want to keep the collection, so we mark that
                 // this collection is new and it will be reinserted by sync
@@ -87,10 +81,16 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
             }
         }
     }
+}
 
-    private func deleteSearches(with keys: [String], database: Realm) {
-        let objects = database.objects(RSearch.self).filter(.keys(keys, in: self.libraryId))
+struct PerformSearchDeletionsDbRequest: DbRequest {
+    let libraryId: LibraryIdentifier
+    let keys: [String]
 
+    var needsWrite: Bool { return true }
+
+    func process(in database: Realm) throws {
+        let objects = database.objects(RSearch.self).filter(.keys(keys, in: libraryId))
         for object in objects {
             guard !object.isInvalidated else { continue }
             if object.isChanged {
@@ -103,9 +103,16 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
             }
         }
     }
+}
 
-    private func deleteTags(with names: [String], database: Realm) {
-        let tags = database.objects(RTag.self).filter(.names(names, in: self.libraryId))
+struct PerformTagDeletionsDbRequest: DbRequest {
+    let libraryId: LibraryIdentifier
+    let names: [String]
+
+    var needsWrite: Bool { return true }
+
+    func process(in database: Realm) throws {
+        let tags = database.objects(RTag.self).filter(.names(names, in: libraryId))
         for tag in tags {
             database.delete(tag.tags)
         }
