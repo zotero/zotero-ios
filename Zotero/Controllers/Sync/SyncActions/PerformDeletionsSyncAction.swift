@@ -69,7 +69,7 @@ struct PerformDeletionsSyncAction: SyncAction {
         guard !values.isEmpty else { return }
         var count = 0
         while count < values.count {
-            let upperLimit = count + batchSize < values.count ? (count + batchSize) : values.count
+            let upperLimit = min(count + batchSize, values.count)
             let slice = values[count..<upperLimit]
             try deleteValues(Array(slice))
             count += batchSize
