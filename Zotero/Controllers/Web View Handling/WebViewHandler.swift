@@ -45,7 +45,8 @@ final class WebViewHandler: NSObject {
         super.init()
 
         webView.navigationDelegate = self
-        webView.customUserAgent = "Zotero_iOS/\(DeviceInfoProvider.versionString ?? "")-\(DeviceInfoProvider.buildString ?? "")"
+        let userAgent = webView.value(forKey: "userAgent") ?? ""
+        webView.customUserAgent = "\(userAgent) Zotero_iOS/\(DeviceInfoProvider.versionString ?? "")-\(DeviceInfoProvider.buildString ?? "")"
 
         if let handlers = javascriptHandlers {
             handlers.forEach { handler in
