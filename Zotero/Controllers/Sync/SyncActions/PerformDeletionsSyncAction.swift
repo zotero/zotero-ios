@@ -72,7 +72,7 @@ struct PerformDeletionsSyncAction: SyncAction {
             let upperLimit = min(count + batchSize, values.count)
             let slice = values[count..<upperLimit]
             try deleteValues(Array(slice))
-            count += batchSize
+            count = upperLimit
         }
     }
 }
