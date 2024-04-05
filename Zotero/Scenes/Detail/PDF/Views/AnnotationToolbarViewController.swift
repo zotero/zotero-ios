@@ -400,16 +400,6 @@ class AnnotationToolbarViewController: UIViewController {
         colorPickerButton.tintColor = activeColor
     }
 
-    func deselectActiveTool() {
-        for view in stackView.arrangedSubviews {
-            guard let checkbox = view as? CheckboxButton, checkbox.isSelected else { continue }
-            checkbox.isSelected = false
-            break
-        }
-        colorPickerButton.isHidden = true
-        (stackView.arrangedSubviews.last as? UIButton)?.menu = createHiddenToolsMenu()
-    }
-
     func set(selected: Bool, to tool: AnnotationTool, color: UIColor?) {
         guard let idx = toolButtons.firstIndex(where: { $0.type == tool }) else { return }
 
