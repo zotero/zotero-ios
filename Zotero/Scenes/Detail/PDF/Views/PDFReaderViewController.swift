@@ -770,11 +770,14 @@ extension PDFReaderViewController: AnnotationToolbarDelegate {
             return isCompactWidth ? documentController.view.frame.size.width : (documentController.view.frame.size.width - (2 * AnnotationToolbarHandler.toolbarFullInset))
 
         case .trailing, .leading:
-            let window = (view.scene as? UIWindowScene)?.keyWindow
-            let topInset = window?.safeAreaInsets.top ?? 0
-            let bottomInset = window?.safeAreaInsets.bottom ?? 0
             let interfaceIsHidden = navigationController?.isNavigationBarHidden ?? false
-            return view.frame.size.height - (2 * AnnotationToolbarHandler.toolbarCompactInset) - (interfaceIsHidden ? 0 : (topInset + documentController.scrubberBarHeight)) - bottomInset
+            let documentAvailableHeight: CGFloat
+            if !interfaceIsHidden, let scrubberBarFrame = documentController.pdfController?.userInterfaceView.scrubberBar.frame {
+                documentAvailableHeight = scrubberBarFrame.minY
+            } else {
+                documentAvailableHeight = documentController.view.frame.height - documentController.view.safeAreaInsets.bottom
+            }
+            return documentAvailableHeight - (2 * AnnotationToolbarHandler.toolbarCompactInset)
         }
     }
 
