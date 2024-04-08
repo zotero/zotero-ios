@@ -54,7 +54,7 @@ final class AnnotationViewHeader: UIView {
             return Asset.Images.Annotations.areaMedium.image
 
         case .highlight:
-            return Asset.Images.Annotations.highlighterMedium.image
+            return Asset.Images.Annotations.highlightMedium.image
 
         case .note:
             return Asset.Images.Annotations.noteMedium.image
@@ -63,10 +63,10 @@ final class AnnotationViewHeader: UIView {
             return Asset.Images.Annotations.inkMedium.image
 
         case .underline:
-            return UIImage(systemName: "underline")
+            return Asset.Images.Annotations.underlineMedium.image
 
         case .freeText:
-            return UIImage(systemName: "character")
+            return Asset.Images.Annotations.textMedium.image
         }
     }
 

@@ -52,12 +52,16 @@ internal enum Asset {
       internal static let areaLarge = ImageAsset(name: "Annotations/area.large")
       internal static let areaMedium = ImageAsset(name: "Annotations/area.medium")
       internal static let eraserLarge = ImageAsset(name: "Annotations/eraser.large")
-      internal static let highlighterLarge = ImageAsset(name: "Annotations/highlighter.large")
-      internal static let highlighterMedium = ImageAsset(name: "Annotations/highlighter.medium")
+      internal static let highlightLarge = ImageAsset(name: "Annotations/highlight.large")
+      internal static let highlightMedium = ImageAsset(name: "Annotations/highlight.medium")
       internal static let inkLarge = ImageAsset(name: "Annotations/ink.large")
       internal static let inkMedium = ImageAsset(name: "Annotations/ink.medium")
       internal static let noteLarge = ImageAsset(name: "Annotations/note.large")
       internal static let noteMedium = ImageAsset(name: "Annotations/note.medium")
+      internal static let textLarge = ImageAsset(name: "Annotations/text.large")
+      internal static let textMedium = ImageAsset(name: "Annotations/text.medium")
+      internal static let underlineLarge = ImageAsset(name: "Annotations/underline.large")
+      internal static let underlineMedium = ImageAsset(name: "Annotations/underline.medium")
     }
     internal enum Attachments {
       internal static let badgeDetailDownload = ImageAsset(name: "Attachments/badge-detail-download")

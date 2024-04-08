@@ -114,7 +114,7 @@ class AnnotationToolbarViewController: UIViewController {
                     type: .highlight,
                     title: L10n.Pdf.AnnotationToolbar.highlight,
                     accessibilityLabel: L10n.Accessibility.Pdf.highlightAnnotationTool,
-                    image: Asset.Images.Annotations.highlighterLarge.image,
+                    image: Asset.Images.Annotations.highlightLarge.image,
                     isHidden: false
                 )
 
@@ -159,7 +159,7 @@ class AnnotationToolbarViewController: UIViewController {
                     type: .underline,
                     title: L10n.Pdf.AnnotationToolbar.underline,
                     accessibilityLabel: L10n.Accessibility.Pdf.underlineAnnotationTool,
-                    image: UIImage(systemName: "underline", withConfiguration: UIImage.SymbolConfiguration(scale: .large))!,
+                    image: Asset.Images.Annotations.underlineLarge.image,
                     isHidden: false
                 )
 
@@ -168,7 +168,7 @@ class AnnotationToolbarViewController: UIViewController {
                     type: .freeText,
                     title: L10n.Pdf.AnnotationToolbar.text,
                     accessibilityLabel: L10n.Accessibility.Pdf.textAnnotationTool,
-                    image: UIImage(systemName: "character", withConfiguration: UIImage.SymbolConfiguration(scale: .large))!,
+                    image: Asset.Images.Annotations.textLarge.image,
                     isHidden: false
                 )
             }
