@@ -373,6 +373,9 @@ class AnnotationToolbarViewController: UIViewController {
         let pickerToAdditionalOffset = isHorizontal ? colorPickerToAdditionalHorizontal.constant : colorPickerToAdditionalVertical.constant
         let additionalOffset = isHorizontal ? additionalTrailing.constant : additionalBottom.constant
         let remainingSize = maxAvailableSize - stackViewOffset - containerToPickerOffset - pickerSize - pickerToAdditionalOffset - additionalSize - additionalOffset
+        if remainingSize < 0 {
+            DDLogWarn("AnnotationToolbarViewController: not enough \(isHorizontal ? "horizontal" : "vertical") minimum size")
+        }
         let count = max(0, min(Int(floor(remainingSize / buttonSize)), toolButtons.count))
 
         for idx in 0..<count {
