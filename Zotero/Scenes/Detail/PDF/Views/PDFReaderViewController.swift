@@ -691,10 +691,6 @@ extension PDFReaderViewController: AnnotationToolbarHandlerDelegate {
         return view
     }
 
-    var documentView: UIView {
-        return documentController.view
-    }
-
     func layoutIfNeeded() {
         view.layoutIfNeeded()
     }

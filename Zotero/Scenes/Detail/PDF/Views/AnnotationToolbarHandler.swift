@@ -18,7 +18,6 @@ protocol AnnotationToolbarHandlerDelegate: AnyObject {
     var navigationBarHeight: CGFloat { get }
     var isCompactWidth: Bool { get }
     var containerView: UIView { get }
-    var documentView: UIView { get }
     var additionalToolbarInsets: NSDirectionalEdgeInsets { get }
 
     func layoutIfNeeded()
@@ -443,10 +442,9 @@ final class AnnotationToolbarHandler: NSObject {
             let location = recognizer.location(in: delegate.containerView)
             let position = position(
                 fromTouch: location,
-                frame: controller.view.frame,
-                containerFrame: delegate.documentView.frame,
-                velocity: CGPoint(),
-                statusBarVisible: delegate.statusBarVisible
+                containerView: delegate.containerView,
+                additionalInsets: delegate.additionalToolbarInsets,
+                velocity: CGPoint()
             )
 
             controller.view.frame = originalFrame.offsetBy(dx: translation.x, dy: translation.y)
@@ -462,10 +460,9 @@ final class AnnotationToolbarHandler: NSObject {
             let location = recognizer.location(in: delegate.containerView)
             let position = position(
                 fromTouch: location,
-                frame: controller.view.frame,
-                containerFrame: delegate.documentView.frame,
-                velocity: velocity,
-                statusBarVisible: delegate.statusBarVisible
+                containerView: delegate.containerView,
+                additionalInsets: delegate.additionalToolbarInsets,
+                velocity: velocity
             )
             let newState = State(position: position, visible: true)
 
@@ -483,32 +480,33 @@ final class AnnotationToolbarHandler: NSObject {
 
         /// Return new position for given touch point and velocity of toolbar. The user can pan up/left/right to move the toolbar. If velocity > 1500, it's considered a swipe and the toolbar is moved
         /// in swipe direction. Otherwise the toolbar is pinned to closest point from touch.
-        func position(fromTouch point: CGPoint, frame: CGRect, containerFrame: CGRect, velocity: CGPoint, statusBarVisible: Bool) -> State.Position {
+        func position(fromTouch point: CGPoint, containerView: UIView, additionalInsets: NSDirectionalEdgeInsets, velocity: CGPoint) -> State.Position {
+            let xMin = additionalInsets.leading
+            let xMax = containerView.frame.size.width - additionalInsets.leading - additionalInsets.trailing
+            let xPos = point.x - xMin
             if isSwipe(fromVelocity: velocity) {
                 // Move in direction of swipe
-                if abs(velocity.y) > abs(velocity.x) && containerFrame.size.width >= Self.minToolbarWidth {
+                if abs(velocity.y) > abs(velocity.x) && xMax >= Self.minToolbarWidth {
                     return .top
                 }
                 return velocity.x < 0 ? .leading : .trailing
             }
 
-            let topViewBottomRightPoint = toolbarTopPreview.convert(CGPoint(x: toolbarTopPreview.bounds.maxX, y: toolbarTopPreview.bounds.maxY), to: delegate.containerView)
+            let topViewBottomRightPoint = toolbarTopPreview.convert(CGPoint(x: toolbarTopPreview.bounds.maxX, y: toolbarTopPreview.bounds.maxY), to: containerView)
 
             if point.y < topViewBottomRightPoint.y {
-                let pinnedViewBottomRightPoint = toolbarPinnedPreview.convert(CGPoint(x: toolbarPinnedPreview.frame.maxX, y: toolbarPinnedPreview.frame.maxY), to: delegate.containerView)
+                let pinnedViewBottomRightPoint = toolbarPinnedPreview.convert(CGPoint(x: toolbarPinnedPreview.frame.maxX, y: toolbarPinnedPreview.frame.maxY), to: containerView)
                 return point.y < pinnedViewBottomRightPoint.y ? .pinned : .top
             }
 
-            let xPos = point.x - containerFrame.minX
-
             if point.y < (topViewBottomRightPoint.y + 150) {
-                if xPos > 150 && xPos < (containerFrame.size.width - 150) {
+                if xPos > 150 && xPos < (xMax - 150) {
                     return .top
                 }
                 return xPos <= 150 ? .leading : .trailing
             }
 
-            return xPos > containerFrame.size.width / 2 ? .trailing : .leading
+            return xPos > xMax / 2 ? .trailing : .leading
         }
 
         func showPreviewsOnDragIfNeeded(translation: CGPoint, velocity: CGPoint, currentPosition: State.Position) {
@@ -668,7 +666,8 @@ final class AnnotationToolbarHandler: NSObject {
     private func showPreviews() {
         updatePositionOverlayViews(
             currentHeight: controller.view.frame.height,
-            containerSize: delegate.documentView.frame.size,
+            containerView: delegate.containerView,
+            additionalInsets: delegate.additionalToolbarInsets,
             position: delegate.toolbarState.position,
             statusBarVisible: delegate.statusBarVisible
         )
@@ -681,8 +680,9 @@ final class AnnotationToolbarHandler: NSObject {
             delegate.setNavigationBar(alpha: 0)
         })
 
-        func updatePositionOverlayViews(currentHeight: CGFloat, containerSize: CGSize, position: State.Position, statusBarVisible: Bool) {
-            let topToolbarsAvailable = containerSize.width >= Self.minToolbarWidth
+        func updatePositionOverlayViews(currentHeight: CGFloat, containerView: UIView, additionalInsets: NSDirectionalEdgeInsets, position: State.Position, statusBarVisible: Bool) {
+            let xMax = containerView.frame.size.width - additionalInsets.leading - additionalInsets.trailing
+            let topToolbarsAvailable = xMax >= Self.minToolbarWidth
             let verticalHeight: CGFloat
             switch position {
             case .leading, .trailing:
@@ -691,7 +691,8 @@ final class AnnotationToolbarHandler: NSObject {
                 verticalHeight = currentHeight - offset + (DashedView.dashWidth * 2) + 1
 
             case .top, .pinned:
-                verticalHeight = min(containerSize.height - currentHeight - (position == .pinned ? delegate.navigationBarHeight : 0), AnnotationToolbarViewController.estimatedVerticalHeight)
+                let yMax = containerView.frame.size.height - additionalInsets.top - additionalInsets.bottom
+                verticalHeight = min(yMax - currentHeight - (position == .pinned ? delegate.navigationBarHeight : 0), AnnotationToolbarViewController.estimatedVerticalHeight)
             }
 
             toolbarPinnedPreview.isHidden = !topToolbarsAvailable || (position == .top && !statusBarVisible)
