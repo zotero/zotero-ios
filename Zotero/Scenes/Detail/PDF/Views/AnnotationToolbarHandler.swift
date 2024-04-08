@@ -16,12 +16,10 @@ protocol AnnotationToolbarHandlerDelegate: AnyObject {
     var statusBarHeight: CGFloat { get }
     var isNavigationBarHidden: Bool { get }
     var navigationBarHeight: CGFloat { get }
-    var isSidebarHidden: Bool { get }
     var isCompactWidth: Bool { get }
     var containerView: UIView { get }
     var documentView: UIView { get }
-    var toolbarLeadingAnchor: NSLayoutXAxisAnchor { get }
-    var toolbarLeadingSafeAreaAnchor: NSLayoutXAxisAnchor { get }
+    var additionalToolbarInsets: NSDirectionalEdgeInsets { get }
 
     func layoutIfNeeded()
     func setNeedsLayout()
@@ -59,13 +57,14 @@ final class AnnotationToolbarHandler: NSObject {
     private let disposeBag: DisposeBag
 
     private var toolbarInitialFrame: CGRect?
-    private weak var toolbarTop: NSLayoutConstraint!
+    private var toolbarTop: NSLayoutConstraint!
     private var toolbarLeading: NSLayoutConstraint!
-    private var toolbarLeadingSafeArea: NSLayoutConstraint!
     private var toolbarTrailing: NSLayoutConstraint!
     private var toolbarTrailingSafeArea: NSLayoutConstraint!
     weak var dragHandleLongPressRecognizer: UILongPressGestureRecognizer!
     private weak var toolbarPreviewsOverlay: UIView!
+    private var toolbarPreviewsOverlayLeading: NSLayoutConstraint!
+    private var toolbarPreviewsOverlayTrailing: NSLayoutConstraint!
     private weak var toolbarPinnedPreview: DashedView!
     private weak var toolbarPinnedPreviewHeight: NSLayoutConstraint!
     private weak var inbetweenTopDashedView: DashedView!
@@ -99,6 +98,9 @@ final class AnnotationToolbarHandler: NSObject {
         }
 
         func createViewsWithConstraints() {
+            let containerView = delegate.containerView
+            let toolbarView = controller.view!
+
             let previewsOverlay = UIView()
             previewsOverlay.translatesAutoresizingMaskIntoConstraints = false
             previewsOverlay.backgroundColor = .clear
@@ -117,54 +119,60 @@ final class AnnotationToolbarHandler: NSObject {
             topPreviewContainer.translatesAutoresizingMaskIntoConstraints = false
             topPreviewContainer.axis = .vertical
 
-            delegate.documentView.insertSubview(previewsOverlay, belowSubview: controller.view)
+            containerView.insertSubview(previewsOverlay, belowSubview: toolbarView)
             previewsOverlay.addSubview(topPreviewContainer)
             previewsOverlay.addSubview(leadingPreview)
             previewsOverlay.addSubview(trailingPreview)
 
-            toolbarLeading = controller.view.leadingAnchor.constraint(equalTo: delegate.toolbarLeadingAnchor, constant: Self.toolbarFullInset)
-            toolbarLeading.priority = .init(999)
-            toolbarLeadingSafeArea = controller.view.leadingAnchor.constraint(equalTo: delegate.toolbarLeadingSafeAreaAnchor)
-            toolbarTrailing = delegate.containerView.trailingAnchor.constraint(equalTo: controller.view.trailingAnchor, constant: Self.toolbarFullInset)
-            toolbarTrailingSafeArea = delegate.containerView.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: controller.view.trailingAnchor, constant: Self.toolbarFullInset)
-            let toolbarTop = controller.view.topAnchor.constraint(equalTo: delegate.containerView.topAnchor, constant: Self.toolbarCompactInset)
+            toolbarLeading = toolbarView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor)
+            toolbarTrailing = containerView.trailingAnchor.constraint(equalTo: toolbarView.trailingAnchor)
+            toolbarTop = toolbarView.topAnchor.constraint(equalTo: containerView.topAnchor)
+            toolbarPreviewsOverlayLeading = previewsOverlay.leadingAnchor.constraint(equalTo: containerView.leadingAnchor)
+            toolbarPreviewsOverlayTrailing = containerView.trailingAnchor.constraint(equalTo: previewsOverlay.trailingAnchor)
+            let pinnedPreviewHeight = pinnedPreview.heightAnchor.constraint(equalToConstant: controller.size)
             let leadingPreviewHeight = leadingPreview.heightAnchor.constraint(equalToConstant: 50)
             let trailingPreviewHeight = trailingPreview.heightAnchor.constraint(equalToConstant: 50)
-            let pinnedPreviewHeight = pinnedPreview.heightAnchor.constraint(equalToConstant: controller.size)
 
             NSLayoutConstraint.activate([
+                // Toolbar
                 toolbarTop,
-                toolbarLeadingSafeArea,
-                previewsOverlay.topAnchor.constraint(equalTo: delegate.containerView.topAnchor),
-                previewsOverlay.bottomAnchor.constraint(equalTo: delegate.containerView.safeAreaLayoutGuide.bottomAnchor),
-                previewsOverlay.leadingAnchor.constraint(equalTo: delegate.documentView.leadingAnchor),
-                previewsOverlay.trailingAnchor.constraint(equalTo: delegate.containerView.trailingAnchor),
+                toolbarLeading,
+                // Previews overlay
+                previewsOverlay.topAnchor.constraint(equalTo: containerView.topAnchor),
+                previewsOverlay.bottomAnchor.constraint(equalTo: containerView.safeAreaLayoutGuide.bottomAnchor),
+                toolbarPreviewsOverlayLeading,
+                toolbarPreviewsOverlayTrailing,
+                // Top previews container
                 topPreviewContainer.topAnchor.constraint(equalTo: previewsOverlay.topAnchor),
                 topPreviewContainer.leadingAnchor.constraint(equalTo: previewsOverlay.leadingAnchor),
                 previewsOverlay.trailingAnchor.constraint(equalTo: topPreviewContainer.trailingAnchor),
+                // Pinned preview
                 pinnedPreviewHeight,
+                // In between top dash
+                inbetweenTopDash.heightAnchor.constraint(equalToConstant: 2 / UIScreen.main.scale),
+                // Top preview
                 topPreview.heightAnchor.constraint(equalToConstant: controller.size),
-                leadingPreview.leadingAnchor.constraint(equalTo: previewsOverlay.safeAreaLayoutGuide.leadingAnchor, constant: Self.toolbarFullInset),
+                // Leading preview
                 leadingPreview.topAnchor.constraint(equalTo: topPreviewContainer.bottomAnchor, constant: Self.toolbarCompactInset),
-                leadingPreviewHeight,
+                leadingPreview.leadingAnchor.constraint(equalTo: previewsOverlay.safeAreaLayoutGuide.leadingAnchor, constant: Self.toolbarFullInset),
                 leadingPreview.widthAnchor.constraint(equalToConstant: controller.size),
-                previewsOverlay.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: trailingPreview.trailingAnchor, constant: Self.toolbarFullInset),
+                leadingPreviewHeight,
+                // Trailing preview
                 trailingPreview.topAnchor.constraint(equalTo: topPreviewContainer.bottomAnchor, constant: Self.toolbarCompactInset),
-                trailingPreviewHeight,
+                previewsOverlay.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: trailingPreview.trailingAnchor, constant: Self.toolbarFullInset),
                 trailingPreview.widthAnchor.constraint(equalToConstant: controller.size),
-                inbetweenTopDash.heightAnchor.constraint(equalToConstant: 2 / UIScreen.main.scale)
+                trailingPreviewHeight
             ])
 
-            self.toolbarTop = toolbarTop
             toolbarPreviewsOverlay = previewsOverlay
             toolbarTopPreview = topPreview
             toolbarPinnedPreview = pinnedPreview
+            toolbarPinnedPreviewHeight = pinnedPreviewHeight
+            inbetweenTopDashedView = inbetweenTopDash
             toolbarLeadingPreview = leadingPreview
             toolbarLeadingPreviewHeight = leadingPreviewHeight
             toolbarTrailingPreview = trailingPreview
             toolbarTrailingPreviewHeight = trailingPreviewHeight
-            toolbarPinnedPreviewHeight = pinnedPreviewHeight
-            inbetweenTopDashedView = inbetweenTopDash
 
             func setup(toolbarPositionView view: DashedView) {
                 view.backgroundColor = previewBackgroundColor
@@ -211,7 +219,7 @@ final class AnnotationToolbarHandler: NSObject {
     }
     
     func viewIsAppearing(editingEnabled: Bool) {
-        setConstraints(for: delegate.toolbarState.position, statusBarVisible: delegate.statusBarVisible)
+        recalculateConstraints()
         delegate.topDidChange(forToolbarState: delegate.toolbarState)
         setAnnotationToolbarHandleMinimumLongPressDuration(forPosition: delegate.toolbarState.position)
         if delegate.toolbarState.visible && editingEnabled {
@@ -224,7 +232,7 @@ final class AnnotationToolbarHandler: NSObject {
     func viewWillTransitionToNewSize() {
         controller.prepareForSizeChange()
         controller.updateAdditionalButtons()
-        setConstraints(for: delegate.toolbarState.position, statusBarVisible: delegate.statusBarVisible)
+        recalculateConstraints()
         delegate.topDidChange(forToolbarState: delegate.toolbarState)
         delegate.layoutIfNeeded()
         controller.sizeDidChange()
@@ -232,7 +240,7 @@ final class AnnotationToolbarHandler: NSObject {
 
     func interfaceVisibilityDidChange() {
         delegate.topDidChange(forToolbarState: delegate.toolbarState)
-        setConstraints(for: delegate.toolbarState.position, statusBarVisible: delegate.statusBarVisible)
+        recalculateConstraints()
     }
 
     private func isCompactSize(for rotation: AnnotationToolbarViewController.Rotation) -> Bool {
@@ -252,18 +260,6 @@ final class AnnotationToolbarHandler: NSObject {
     }
 
     // MARK: - Actions
-
-    func enableLeadingSafeConstraint() {
-        toolbarLeading.isActive = false
-        toolbarLeadingSafeArea.isActive = true
-        toolbarLeadingSafeArea.constant = toolbarLeading.constant
-    }
-
-    func disableLeadingSafeConstraint() {
-        toolbarLeadingSafeArea.isActive = false
-        toolbarLeading.isActive = true
-        toolbarLeading.constant = toolbarLeadingSafeArea.constant
-    }
 
     func set(hidden: Bool, animated: Bool) {
         delegate.toolbarState = State(position: delegate.toolbarState.position, visible: !hidden)
@@ -367,20 +363,14 @@ final class AnnotationToolbarHandler: NSObject {
         case .pinned:
             setupTopConstraints(isCompact: isCompact, isPinned: true, statusBarVisible: statusBarVisible)
         }
+        toolbarPreviewsOverlayLeading.constant = delegate.additionalToolbarInsets.leading
+        toolbarPreviewsOverlayTrailing.constant = delegate.additionalToolbarInsets.trailing
 
         func setupLeadingConstraints(isCompact: Bool, statusBarVisible: Bool) {
             let inset = isCompact ? Self.toolbarCompactInset : Self.toolbarFullInset
             toolbarTrailing.isActive = false
-            toolbarTrailingSafeArea.isActive = false
-            if !delegate.isSidebarHidden {
-                toolbarLeadingSafeArea.isActive = false
-                toolbarLeading.isActive = true
-                toolbarLeading.constant = inset
-            } else {
-                toolbarLeading.isActive = false
-                toolbarLeadingSafeArea.isActive = true
-                toolbarLeadingSafeArea.constant = inset
-            }
+            toolbarLeading.isActive = true
+            toolbarLeading.constant = inset + max(delegate.containerView.safeAreaInsets.left, delegate.additionalToolbarInsets.leading)
             toolbarTop.constant = inset + topOffsets(statusBarVisible: statusBarVisible).total
             controller.set(rotation: .vertical, isCompactSize: isCompact)
         }
@@ -388,25 +378,25 @@ final class AnnotationToolbarHandler: NSObject {
         func setupTrailingConstraints(isCompact: Bool, statusBarVisible: Bool) {
             let inset = isCompact ? Self.toolbarCompactInset : Self.toolbarFullInset
             toolbarLeading.isActive = false
-            toolbarLeadingSafeArea.isActive = false
-            toolbarTrailing.isActive = false
-            toolbarTrailingSafeArea.isActive = true
-            toolbarTrailingSafeArea.constant = inset
+            toolbarTrailing.isActive = true
+            toolbarTrailing.constant = inset + max(delegate.containerView.safeAreaInsets.right, delegate.additionalToolbarInsets.trailing)
             toolbarTop.constant = inset + topOffsets(statusBarVisible: statusBarVisible).total
             controller.set(rotation: .vertical, isCompactSize: isCompact)
         }
 
         func setupTopConstraints(isCompact: Bool, isPinned: Bool, statusBarVisible: Bool) {
-            toolbarLeadingSafeArea.isActive = false
-            toolbarTrailingSafeArea.isActive = false
             toolbarTrailing.isActive = true
-            toolbarTrailing.constant = 0
+            toolbarTrailing.constant = max(0, delegate.additionalToolbarInsets.trailing)
             toolbarLeading.isActive = true
-            toolbarLeading.constant = 0
+            toolbarLeading.constant = max(0, delegate.additionalToolbarInsets.leading)
             let topOffsets = topOffsets(statusBarVisible: statusBarVisible)
             toolbarTop.constant = isPinned ? topOffsets.statusBarHeight : topOffsets.total
             controller.set(rotation: .horizontal, isCompactSize: isCompact)
         }
+    }
+
+    func recalculateConstraints() {
+        setConstraints(for: delegate.toolbarState.position, statusBarVisible: delegate.statusBarVisible)
     }
 
     // MARK: - Gesture recognizers

@@ -376,6 +376,10 @@ class PDFReaderViewController: UIViewController {
 
         if isSidebarVisible {
             documentControllerLeft.constant = isCompactWidth ? 0 : PDFReaderLayout.sidebarWidth
+            // If the layout is compact and toolbar is visible, then close it.
+            if isCompactWidth && toolbarState.visible {
+                closeAnnotationToolbar()
+            }
         }
 
         coordinator.animate { [weak self] _ in
@@ -537,13 +541,6 @@ class PDFReaderViewController: UIViewController {
     private func toggleSidebar(animated: Bool) {
         let shouldShow = !isSidebarVisible
 
-        if toolbarState.position == .leading {
-            if shouldShow {
-                annotationToolbarHandler.disableLeadingSafeConstraint()
-            } else {
-                annotationToolbarHandler.enableLeadingSafeConstraint()
-            }
-        }
         // If the layout is compact, show annotation sidebar above pdf document.
         if !isCompactWidth {
             documentControllerLeft.constant = shouldShow ? PDFReaderLayout.sidebarWidth : 0
@@ -551,6 +548,9 @@ class PDFReaderViewController: UIViewController {
             closeAnnotationToolbar()
         }
         sidebarControllerLeft.constant = shouldShow ? 0 : -PDFReaderLayout.sidebarWidth
+        if toolbarState.visible {
+            annotationToolbarHandler.recalculateConstraints()
+        }
 
         if let button = navigationItem.leftBarButtonItems?.first(where: { $0.tag == NavigationBarButton.sidebar.rawValue }) {
             setupAccessibility(forSidebarButton: button)
@@ -681,16 +681,10 @@ extension PDFReaderViewController: AnnotationToolbarHandlerDelegate {
         return navigationController?.navigationBar.frame.height ?? 0.0
     }
 
-    var isSidebarHidden: Bool {
-        !isSidebarVisible
-    }
-
-    var toolbarLeadingAnchor: NSLayoutXAxisAnchor {
-        return sidebarController.view.trailingAnchor
-    }
-
-    var toolbarLeadingSafeAreaAnchor: NSLayoutXAxisAnchor {
-        return view.safeAreaLayoutGuide.leadingAnchor
+    var additionalToolbarInsets: NSDirectionalEdgeInsets {
+        let top = documentTopOffset
+        let leading = isSidebarVisible ? documentControllerLeft.constant : 0
+        return NSDirectionalEdgeInsets(top: top, leading: leading, bottom: 0, trailing: 0)
     }
 
     var containerView: UIView {
