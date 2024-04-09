@@ -48,7 +48,6 @@ final class NoteEditorViewController: UIViewController {
             navigationItem.titleView = NoteEditorTitleView(type: data.type, title: data.title)
         }
 
-        view.backgroundColor = .red
         setupNavbarItems()
         setupKeyboard()
         setupWebView()
@@ -114,12 +113,17 @@ final class NoteEditorViewController: UIViewController {
                     moveWebView(toKeyboardData: data, controller: self)
                 })
                 .disposed(by: disposeBag)
+
+            NotificationCenter.default.removeObserver(webView!, name: UIResponder.keyboardWillChangeFrameNotification, object: nil)
+            NotificationCenter.default.removeObserver(webView!, name: UIResponder.keyboardWillShowNotification, object: nil)
+            NotificationCenter.default.removeObserver(webView!, name: UIResponder.keyboardWillHideNotification, object: nil)
         }
 
         func moveWebView(toKeyboardData data: KeyboardData, controller: NoteEditorViewController) {
             let isClosing = data.endFrame.minY > data.startFrame.minY
-            controller.webViewBottom.constant = isClosing ? 0 : data.endFrame.minY - 18
+            controller.webViewBottom.constant = isClosing ? 0 : data.endFrame.minY// - 18
             UIView.animate(withDuration: data.animationDuration, delay: 0, options: data.animationOptions, animations: {
+                controller.webView.scrollView.contentOffset = CGPoint(x: 0, y: controller.webView.scrollView.contentSize.height)
                 controller.view.layoutIfNeeded()
             })
         }
