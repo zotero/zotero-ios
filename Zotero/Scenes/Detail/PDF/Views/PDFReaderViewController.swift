@@ -376,6 +376,10 @@ class PDFReaderViewController: UIViewController {
 
         if isSidebarVisible {
             documentControllerLeft.constant = isCompactWidth ? 0 : PDFReaderLayout.sidebarWidth
+            // If the layout is compact and toolbar is visible, then close it.
+            if isCompactWidth && toolbarState.visible {
+                closeAnnotationToolbar()
+            }
         }
 
         coordinator.animate { [weak self] _ in
@@ -537,13 +541,6 @@ class PDFReaderViewController: UIViewController {
     private func toggleSidebar(animated: Bool) {
         let shouldShow = !isSidebarVisible
 
-        if toolbarState.position == .leading {
-            if shouldShow {
-                annotationToolbarHandler.disableLeadingSafeConstraint()
-            } else {
-                annotationToolbarHandler.enableLeadingSafeConstraint()
-            }
-        }
         // If the layout is compact, show annotation sidebar above pdf document.
         if !isCompactWidth {
             documentControllerLeft.constant = shouldShow ? PDFReaderLayout.sidebarWidth : 0
@@ -551,6 +548,9 @@ class PDFReaderViewController: UIViewController {
             closeAnnotationToolbar()
         }
         sidebarControllerLeft.constant = shouldShow ? 0 : -PDFReaderLayout.sidebarWidth
+        if toolbarState.visible {
+            annotationToolbarHandler.recalculateConstraints()
+        }
 
         if let button = navigationItem.leftBarButtonItems?.first(where: { $0.tag == NavigationBarButton.sidebar.rawValue }) {
             setupAccessibility(forSidebarButton: button)
@@ -681,24 +681,14 @@ extension PDFReaderViewController: AnnotationToolbarHandlerDelegate {
         return navigationController?.navigationBar.frame.height ?? 0.0
     }
 
-    var isSidebarHidden: Bool {
-        !isSidebarVisible
-    }
-
-    var toolbarLeadingAnchor: NSLayoutXAxisAnchor {
-        return sidebarController.view.trailingAnchor
-    }
-
-    var toolbarLeadingSafeAreaAnchor: NSLayoutXAxisAnchor {
-        return view.safeAreaLayoutGuide.leadingAnchor
+    var additionalToolbarInsets: NSDirectionalEdgeInsets {
+        let top = documentTopOffset
+        let leading = isSidebarVisible ? documentControllerLeft.constant : 0
+        return NSDirectionalEdgeInsets(top: top, leading: leading, bottom: 0, trailing: 0)
     }
 
     var containerView: UIView {
         return view
-    }
-
-    var documentView: UIView {
-        return documentController.view
     }
 
     func layoutIfNeeded() {
@@ -770,11 +760,14 @@ extension PDFReaderViewController: AnnotationToolbarDelegate {
             return isCompactWidth ? documentController.view.frame.size.width : (documentController.view.frame.size.width - (2 * AnnotationToolbarHandler.toolbarFullInset))
 
         case .trailing, .leading:
-            let window = (view.scene as? UIWindowScene)?.keyWindow
-            let topInset = window?.safeAreaInsets.top ?? 0
-            let bottomInset = window?.safeAreaInsets.bottom ?? 0
             let interfaceIsHidden = navigationController?.isNavigationBarHidden ?? false
-            return view.frame.size.height - (2 * AnnotationToolbarHandler.toolbarCompactInset) - (interfaceIsHidden ? 0 : (topInset + documentController.scrubberBarHeight)) - bottomInset
+            let documentAvailableHeight: CGFloat
+            if !interfaceIsHidden, let scrubberBarFrame = documentController.pdfController?.userInterfaceView.scrubberBar.frame {
+                documentAvailableHeight = scrubberBarFrame.minY
+            } else {
+                documentAvailableHeight = documentController.view.frame.height - documentController.view.safeAreaInsets.bottom
+            }
+            return documentAvailableHeight - (2 * AnnotationToolbarHandler.toolbarCompactInset)
         }
     }
 

@@ -37,76 +37,77 @@ class DashedView: UIView {
     private let type: Kind
 
     private var dashLayer: CAShapeLayer? {
-        return (self.layer.sublayers ?? []).compactMap({ $0 as? CAShapeLayer }).first
+        return (layer.sublayers ?? []).compactMap({ $0 as? CAShapeLayer }).first
     }
 
     var dashColor: UIColor {
         didSet {
-            guard let layer = self.dashLayer else { return }
-            layer.strokeColor = self.dashColor.cgColor
+            dashLayer?.strokeColor = dashColor.cgColor
         }
     }
 
     init(type: Kind) {
-        self.dashColor = .black
+        dashColor = .black
         self.type = type
         super.init(frame: CGRect())
         switch type {
         case .rounded(let cornerRadius):
-            self.layer.cornerRadius = cornerRadius
+            layer.cornerRadius = cornerRadius
             
         case .partialStraight:
             break
         }
-        self.addDashedBorder(color: .black)
+        addDashedBorder(color: dashColor)
     }
-
+    
     required init?(coder: NSCoder) {
-        self.dashColor = .black
-        self.type = .rounded(cornerRadius: 8)
+        dashColor = .black
+        let cornerRadius: CGFloat = 8
+        type = .rounded(cornerRadius: cornerRadius)
         super.init(coder: coder)
-        self.addDashedBorder(color: .black)
+        layer.cornerRadius = cornerRadius
+        addDashedBorder(color: dashColor)
     }
 
     override func layoutSubviews() {
         super.layoutSubviews()
 
-        guard let layer = self.dashLayer else { return }
+        guard let dashLayer else { return }
 
-        layer.frame = self.bounds
-        layer.path = self.createPath(forType: self.type)
+        dashLayer.frame = bounds
+        dashLayer.path = createPath(forType: type)
     }
 
     private func addDashedBorder(color: UIColor) {
         let shapeLayer = CAShapeLayer()
-        shapeLayer.frame = self.bounds
+        shapeLayer.frame = bounds
         shapeLayer.fillColor = UIColor.clear.cgColor
         shapeLayer.strokeColor = color.cgColor
-        shapeLayer.lineWidth = DashedView.dashWidth
+        shapeLayer.lineWidth = Self.dashWidth
         shapeLayer.lineJoin = CAShapeLayerLineJoin.round
         shapeLayer.lineDashPattern = [6, 3]
-        shapeLayer.path = self.createPath(forType: self.type)
-        self.layer.addSublayer(shapeLayer)
+        shapeLayer.path = createPath(forType: type)
+        layer.addSublayer(shapeLayer)
     }
 
     private func createPath(forType type: Kind) -> CGPath {
         switch type {
         case .rounded(let cornerRadius):
-            return UIBezierPath(roundedRect: self.bounds, cornerRadius: cornerRadius).cgPath
+            return UIBezierPath(roundedRect: bounds, cornerRadius: cornerRadius).cgPath
 
         case .partialStraight(let sides):
             let path = CGMutablePath()
             if sides.contains(.left) {
-                path.addLines(between: [CGPoint(x: self.bounds.minX, y: self.bounds.minY), CGPoint(x: self.bounds.minX, y: self.bounds.maxY)])
+                path.addLines(between: [CGPoint(x: bounds.minX, y: bounds.minY), CGPoint(x: bounds.minX, y: bounds.maxY)])
             }
             if sides.contains(.right) {
-                path.addLines(between: [CGPoint(x: self.bounds.maxX, y: self.bounds.minY), CGPoint(x: self.bounds.maxX, y: self.bounds.maxY)])
+                path.addLines(between: [CGPoint(x: bounds.maxX, y: bounds.minY), CGPoint(x: bounds.maxX, y: bounds.maxY)])
             }
             if sides.contains(.top) {
-                path.addLines(between: [CGPoint(x: self.bounds.minX, y: self.bounds.minY), CGPoint(x: self.bounds.maxX, y: self.bounds.minY)])
+                path.addLines(between: [CGPoint(x: bounds.minX, y: bounds.minY), CGPoint(x: bounds.maxX, y: bounds.minY)])
             }
             if sides.contains(.bottom) {
-                path.addLines(between: [CGPoint(x: self.bounds.minX, y: self.bounds.maxY), CGPoint(x: self.bounds.maxX, y: self.bounds.maxY)])
+                path.addLines(between: [CGPoint(x: bounds.minX, y: bounds.maxY), CGPoint(x: bounds.maxX, y: bounds.maxY)])
             }
             return path
         }
