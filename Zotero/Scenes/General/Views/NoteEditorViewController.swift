@@ -123,7 +123,6 @@ final class NoteEditorViewController: UIViewController {
             let isClosing = data.endFrame.minY > data.startFrame.minY
             controller.webViewBottom.constant = isClosing ? 0 : data.endFrame.minY// - 18
             UIView.animate(withDuration: data.animationDuration, delay: 0, options: data.animationOptions, animations: {
-                controller.webView.scrollView.contentOffset = CGPoint(x: 0, y: controller.webView.scrollView.contentSize.height)
                 controller.view.layoutIfNeeded()
             })
         }
