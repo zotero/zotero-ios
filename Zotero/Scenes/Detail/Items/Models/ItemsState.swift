@@ -153,10 +153,10 @@ struct ItemsState: ViewModelState {
 
         switch libraryId {
         case .custom:
-            library = Library(identifier: libraryId, name: L10n.Libraries.myLibrary, metadataEditable: true, filesEditable: true)
+            library = Library(identifier: libraryId, name: L10n.Libraries.myLibrary, metadataEditable: true, filesEditable: true, fileSyncType: .asNeeded)
 
         case .group:
-            library = Library(identifier: libraryId, name: L10n.unknown, metadataEditable: false, filesEditable: false)
+            library = Library(identifier: libraryId, name: L10n.unknown, metadataEditable: false, filesEditable: false, fileSyncType: .asNeeded)
         }
     }
 

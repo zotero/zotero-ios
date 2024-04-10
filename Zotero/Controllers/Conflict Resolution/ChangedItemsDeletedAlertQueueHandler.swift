@@ -13,7 +13,7 @@ struct ChangedItemsDeletedAlertQueueHandler: ConflictAlertQueueHandler {
     let alertAction: ConflictAlertQueueAction
     let completion: () -> Void
 
-    init(conflicts: [PerformDeletionsDbRequest.Conflict], completion: @escaping ([String], [String]) -> Void) {
+    init(conflicts: [PerformItemDeletionsDbRequest.Conflict], completion: @escaping ([String], [String]) -> Void) {
         self.count = conflicts.count
 
         var toDelete: [String] = []

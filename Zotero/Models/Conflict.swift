@@ -13,5 +13,5 @@ enum Conflict {
     case groupMetadataWriteDenied(groupId: Int, name: String)
     case groupFileWriteDenied(groupId: Int, name: String)
     case objectsRemovedRemotely(libraryId: LibraryIdentifier, collections: [String], items: [String], searches: [String], tags: [String])
-    case removedItemsHaveLocalChanges(keys: [PerformDeletionsDbRequest.Conflict], libraryId: LibraryIdentifier)
+    case removedItemsHaveLocalChanges(keys: [PerformItemDeletionsDbRequest.Conflict], libraryId: LibraryIdentifier)
 }

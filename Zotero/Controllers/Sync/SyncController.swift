@@ -1433,7 +1433,7 @@ final class SyncController: SynchronizationController {
     }
 
     private func finishDeletionsSync(
-        result: Result<([PerformDeletionsDbRequest.DeletedItem], [PerformDeletionsDbRequest.Conflict]), Error>,
+        result: Result<([PerformItemDeletionsDbRequest.DeletedItem], [PerformItemDeletionsDbRequest.Conflict]), Error>,
         items: [String]?,
         libraryId: LibraryIdentifier,
         version: Int? = nil
@@ -1454,7 +1454,7 @@ final class SyncController: SynchronizationController {
             }
         }
 
-        func processNextAction(withConflicts conflicts: [PerformDeletionsDbRequest.Conflict]) {
+        func processNextAction(withConflicts conflicts: [PerformItemDeletionsDbRequest.Conflict]) {
             if !conflicts.isEmpty {
                 resolve(conflict: .removedItemsHaveLocalChanges(keys: conflicts, libraryId: libraryId))
             } else {
@@ -1462,7 +1462,7 @@ final class SyncController: SynchronizationController {
             }
         }
 
-        func cancelActiveDownloads(deletedItems: [PerformDeletionsDbRequest.DeletedItem], libraryId: LibraryIdentifier) {
+        func cancelActiveDownloads(deletedItems: [PerformItemDeletionsDbRequest.DeletedItem], libraryId: LibraryIdentifier) {
             for item in deletedItems {
                 attachmentDownloader.cancel(key: item.key, parentKey: item.parentKey, libraryId: libraryId)
             }
