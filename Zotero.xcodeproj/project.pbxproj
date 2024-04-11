@@ -29,6 +29,8 @@
 		614D65872A8030C9007CF449 /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 614D65862A8030C9007CF449 /* OrderedCollections */; };
 		61639F852AE03B8500026003 /* InstantPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61639F842AE03B8500026003 /* InstantPresenter.swift */; };
 		618404262A4456A9005AAF22 /* IdentifierLookupController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 618404252A4456A9005AAF22 /* IdentifierLookupController.swift */; };
+		618D83E72BAAC88C00E7966B /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 618D83E62BAAC88C00E7966B /* PrivacyInfo.xcprivacy */; };
+		618D83E82BAAC88C00E7966B /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 618D83E62BAAC88C00E7966B /* PrivacyInfo.xcprivacy */; };
 		61A0C8472B8F669C0048FF92 /* PSPDFKitUI+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61A0C8462B8F669B0048FF92 /* PSPDFKitUI+Extensions.swift */; };
 		61ABA7512A6137D1002A4219 /* ShareableImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61ABA7502A6137D1002A4219 /* ShareableImage.swift */; };
 		61BD13952A5831EF008A0704 /* TextKit1TextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61BD13942A5831EF008A0704 /* TextKit1TextView.swift */; };
@@ -1258,6 +1260,7 @@
 		614D65842A7BCC22007CF449 /* ci_post_clone.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ci_post_clone.sh; sourceTree = "<group>"; };
 		61639F842AE03B8500026003 /* InstantPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantPresenter.swift; sourceTree = "<group>"; };
 		618404252A4456A9005AAF22 /* IdentifierLookupController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdentifierLookupController.swift; sourceTree = "<group>"; };
+		618D83E62BAAC88C00E7966B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		61A0C8462B8F669B0048FF92 /* PSPDFKitUI+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PSPDFKitUI+Extensions.swift"; sourceTree = "<group>"; };
 		61ABA7502A6137D1002A4219 /* ShareableImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareableImage.swift; sourceTree = "<group>"; };
 		61BD13942A5831EF008A0704 /* TextKit1TextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextKit1TextView.swift; sourceTree = "<group>"; };
@@ -2805,6 +2808,7 @@
 				B3231333243F0F0000F1905A /* SceneDelegate.swift */,
 				B39EE32A223A5E3500302E29 /* TestAppDelegate.swift */,
 				B3F3A6A922F97D4300E3A09C /* Zotero.entitlements */,
+				618D83E62BAAC88C00E7966B /* PrivacyInfo.xcprivacy */,
 			);
 			path = Zotero;
 			sourceTree = "<group>";
@@ -4387,6 +4391,7 @@
 			files = (
 				B3593F33241A61C700760E20 /* ItemDetailNoteContentView.xib in Resources */,
 				B398143F257A8EB2002C755C /* HighlightEditCell.xib in Resources */,
+				618D83E72BAAC88C00E7966B /* PrivacyInfo.xcprivacy in Resources */,
 				B32A273D254841B80081E061 /* CreatorEditViewController.xib in Resources */,
 				B3830CE9255451DC00910FE0 /* TagPickerViewController.xib in Resources */,
 				B357A28A285B706B00E73CA1 /* ScannerViewController.xib in Resources */,
@@ -4488,6 +4493,7 @@
 				B35F476A24F8F55600FE328D /* webview_extraction.js in Resources */,
 				B3AB38B8238ED023008A1ABB /* Assets.xcassets in Resources */,
 				B36459DE2644119100A0C2C0 /* TagPickerViewController.xib in Resources */,
+				618D83E82BAAC88C00E7966B /* PrivacyInfo.xcprivacy in Resources */,
 				B311B3222386A39800BCF592 /* MainInterface.storyboard in Resources */,
 				B36459E926441A2000A0C2C0 /* TagRow.xib in Resources */,
 				614D65832A79C9B0007CF449 /* Localizable.stringsdict in Resources */,
