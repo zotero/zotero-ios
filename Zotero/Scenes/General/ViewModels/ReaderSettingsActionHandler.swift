@@ -17,33 +17,38 @@ struct ReaderSettingsActionHandler: ViewModelActionHandler {
     func process(action: ReaderSettingsAction, in viewModel: ViewModel<ReaderSettingsActionHandler>) {
         switch action {
         case .setTransition(let pageTransition):
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.transition = pageTransition
             }
 
         case .setPageMode(let pageMode):
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.pageMode = pageMode
             }
 
         case .setDirection(let direction):
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.scrollDirection = direction
             }
 
         case .setPageFitting(let fitting):
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.pageFitting = fitting
             }
 
         case .setAppearance(let appearance):
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.appearance = appearance
             }
 
         case .setIdleTimerDisabled(let disabled):
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.idleTimerDisabled = disabled
+            }
+
+        case .setPageSpreads(let isFirstPageAlwaysSingle):
+            update(viewModel: viewModel) { state in
+                state.isFirstPageAlwaysSingle = isFirstPageAlwaysSingle
             }
         }
     }

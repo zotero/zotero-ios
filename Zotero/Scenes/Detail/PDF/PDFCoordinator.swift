@@ -379,7 +379,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
 
         let state = ReaderSettingsState(settings: settings)
         let viewModel = ViewModel(initialState: state, handler: ReaderSettingsActionHandler())
-        let baseController = ReaderSettingsViewController(rows: [.pageTransition, .pageMode, .scrollDirection, .pageFitting, .appearance, .sleep], viewModel: viewModel)
+        let baseController = ReaderSettingsViewController(rows: [.pageTransition, .pageMode, .scrollDirection, .pageFitting, .pageSpreads, .appearance, .sleep], viewModel: viewModel)
 
         let controller: UIViewController
         if UIDevice.current.userInterfaceIdiom == .pad {
@@ -390,7 +390,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
 
         controller.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
         controller.popoverPresentationController?.barButtonItem = sender
-        controller.preferredContentSize = CGSize(width: 480, height: 306)
+        controller.preferredContentSize = CGSize(width: 480, height: 350)
         controller.overrideUserInterfaceStyle = settings.appearanceMode.userInterfaceStyle
         self.navigationController?.present(controller, animated: true, completion: nil)
 

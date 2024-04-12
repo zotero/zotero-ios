@@ -16,6 +16,7 @@ enum ReaderSettingsAction {
     case setPageMode(PSPDFKitUI.PageMode)
     case setDirection(PSPDFKitUI.ScrollDirection)
     case setPageFitting(PSPDFKitUI.PDFConfiguration.SpreadFitting)
+    case setPageSpreads(isFirstPageAlwaysSingle: Bool)
     // General
     case setAppearance(ReaderSettingsState.Appearance)
     case setIdleTimerDisabled(Bool)
