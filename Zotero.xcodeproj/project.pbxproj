@@ -694,7 +694,6 @@
 		B35EDECC263ADD0C003574AC /* TextPreviewViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B35EDECA263ADD0C003574AC /* TextPreviewViewController.xib */; };
 		B35F476A24F8F55600FE328D /* webview_extraction.js in Resources */ = {isa = PBXBuildFile; fileRef = B35F476924F8F55600FE328D /* webview_extraction.js */; };
 		B35FC1F02628490C00858772 /* MarkFileAsDownloadedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35FC1EF2628490C00858772 /* MarkFileAsDownloadedDbRequest.swift */; };
-		B3604FF824769F0900669CB7 /* note.html in Resources */ = {isa = PBXBuildFile; fileRef = B3604FF724769F0900669CB7 /* note.html */; };
 		B36181EC24C96B0500B30D56 /* SearchableCollection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36181EB24C96B0500B30D56 /* SearchableCollection.swift */; };
 		B36181FC24C9A7C000B30D56 /* LoginActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36181EF24C9A7C000B30D56 /* LoginActionHandler.swift */; };
 		B36181FD24C9A7C000B30D56 /* LoginError.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36181F124C9A7C000B30D56 /* LoginError.swift */; };
@@ -993,6 +992,7 @@
 		B3CD66BF29E800E3008180C7 /* ItemsFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CD66BE29E800E3008180C7 /* ItemsFilter.swift */; };
 		B3CD96B3283796F500B8ACCB /* RemoteAttachmentDownloadOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CD96B2283796F500B8ACCB /* RemoteAttachmentDownloadOperation.swift */; };
 		B3CE697624DD7D6A00D333AF /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B30B550224B85A3A00F94B59 /* Colors.xcassets */; };
+		B3CED4C62BC9212600B88FB0 /* note.html in Resources */ = {isa = PBXBuildFile; fileRef = B3CED4C52BC9212600B88FB0 /* note.html */; };
 		B3CF8830266DFFAF009CFC20 /* ReadStylesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B331F9B4265400D70099F6A6 /* ReadStylesDbRequest.swift */; };
 		B3CF906629D1C71800614A89 /* CreatorEditCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CF906529D1C71800614A89 /* CreatorEditCoordinator.swift */; };
 		B3D037202604FCBA00BCFB05 /* FileAttachmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30B40622490F09400FAAF6D /* FileAttachmentView.swift */; };
@@ -1718,7 +1718,6 @@
 		B35EDECA263ADD0C003574AC /* TextPreviewViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = TextPreviewViewController.xib; sourceTree = "<group>"; };
 		B35F476924F8F55600FE328D /* webview_extraction.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = webview_extraction.js; sourceTree = "<group>"; };
 		B35FC1EF2628490C00858772 /* MarkFileAsDownloadedDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkFileAsDownloadedDbRequest.swift; sourceTree = "<group>"; };
-		B3604FF724769F0900669CB7 /* note.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = note.html; sourceTree = "<group>"; };
 		B36181EB24C96B0500B30D56 /* SearchableCollection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchableCollection.swift; sourceTree = "<group>"; };
 		B36181EF24C9A7C000B30D56 /* LoginActionHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginActionHandler.swift; sourceTree = "<group>"; };
 		B36181F124C9A7C000B30D56 /* LoginError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginError.swift; sourceTree = "<group>"; };
@@ -1966,6 +1965,7 @@
 		B3CCB8D929B73DED0097520B /* UnlockPDFViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnlockPDFViewController.swift; sourceTree = "<group>"; };
 		B3CD66BE29E800E3008180C7 /* ItemsFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemsFilter.swift; sourceTree = "<group>"; };
 		B3CD96B2283796F500B8ACCB /* RemoteAttachmentDownloadOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteAttachmentDownloadOperation.swift; sourceTree = "<group>"; };
+		B3CED4C52BC9212600B88FB0 /* note.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = note.html; sourceTree = "<group>"; };
 		B3CF906529D1C71800614A89 /* CreatorEditCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatorEditCoordinator.swift; sourceTree = "<group>"; };
 		B3D06ADD29DD8C21009C0D98 /* DeleteAutomaticTagsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteAutomaticTagsDbRequest.swift; sourceTree = "<group>"; };
 		B3D0793527CCF63800C454D6 /* AnnotationBoundingBoxCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationBoundingBoxCalculator.swift; sourceTree = "<group>"; };
@@ -2234,7 +2234,7 @@
 				B30B550424B85A6200F94B59 /* Images.xcassets */,
 				B337A5AA244F1DEB00AFD13D /* Localizable.strings */,
 				614D65802A79C9AC007CF449 /* Localizable.stringsdict */,
-				B3604FF724769F0900669CB7 /* note.html */,
+				B3CED4C52BC9212600B88FB0 /* note.html */,
 				B30566D823FC0769003304F2 /* tinymce */,
 			);
 			path = Assets;
@@ -4395,7 +4395,6 @@
 				B32A273D254841B80081E061 /* CreatorEditViewController.xib in Resources */,
 				B3830CE9255451DC00910FE0 /* TagPickerViewController.xib in Resources */,
 				B357A28A285B706B00E73CA1 /* ScannerViewController.xib in Resources */,
-				B3604FF824769F0900669CB7 /* note.html in Resources */,
 				B3AAB0F9283B9915008188D6 /* LookupItemCell.xib in Resources */,
 				B3593F22241A61C700760E20 /* ItemDetailAddContentView.xib in Resources */,
 				B3593F21241A61C700760E20 /* ItemDetailAttachmentContentView.xib in Resources */,
@@ -4428,6 +4427,7 @@
 				B30B550324B85A3A00F94B59 /* Colors.xcassets in Resources */,
 				B31CC57D286468C80055C114 /* ManualLookupViewController.xib in Resources */,
 				B35DC8E6261D9E7C00ED30F4 /* ItemDetailFieldMultilineEditContentView.xib in Resources */,
+				B3CED4C62BC9212600B88FB0 /* note.html in Resources */,
 				B30B405F2490CAFC00FAAF6D /* ItemCell.xib in Resources */,
 				B31A5E52286308960026589F /* LookupIdentifierCell.xib in Resources */,
 				B32A495B2A44730D00080945 /* licenses in Resources */,
