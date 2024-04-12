@@ -44,7 +44,7 @@ extension PDFSettings: Codable {
         let appearanceRaw = try container.decode(UInt.self, forKey: .appearanceMode)
         let modeRaw = (try? container.decode(UInt.self, forKey: .pageMode)) ?? 2
         let fittingRaw = (try? container.decode(Int.self, forKey: .pageFitting)) ?? 2
-        let isFirstPageAlwaysSingle = (try? container.decode(Bool.self, forKey: .isFirstPageAlwaysSingle)) ?? false
+        let isFirstPageAlwaysSingle = (try? container.decode(Bool.self, forKey: .isFirstPageAlwaysSingle)) ?? true
 
         self.direction = ScrollDirection(rawValue: directionRaw) ?? .horizontal
         self.transition = PageTransition(rawValue: transitionRaw) ?? .scrollPerSpread
