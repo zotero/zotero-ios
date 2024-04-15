@@ -109,9 +109,8 @@ final class NoteEditorViewController: UIViewController {
                         openItems = UIBarButtonItem(image: UIImage(systemName: "\(items.count).square"), style: .plain, target: nil, action: nil)
                         openItems.isEnabled = true
                         if let sessionIdentifier = view.scene?.session.persistentIdentifier {
-                            let deferredOpenItemsMenuElement = openItemsController.deferredOpenItemsMenuElement(for: sessionIdentifier, disableOpenItem: true) { [weak self] item, _ in
-                                guard let self, let coordinatorDelegate else { return }
-                                openItemsController.restore(item, using: coordinatorDelegate)
+                            let deferredOpenItemsMenuElement = openItemsController.deferredOpenItemsMenuElement(for: sessionIdentifier, disableOpenItem: true) { [weak self] in
+                                self?.coordinatorDelegate
                             }
                             let openItemsMenu = UIMenu(title: "Open Items", options: [.displayInline], children: [deferredOpenItemsMenuElement])
                             openItems.menu = UIMenu(children: [openItemsMenu])
