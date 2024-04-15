@@ -851,8 +851,8 @@ extension AppCoordinator: SyncRequestReceiver {
 }
 
 extension AppCoordinator: OpenItemsPresenter {
-    func showItem(with presentation: ItemPresentation) {
-        guard let window, let mainController = window.rootViewController as? MainViewController else { return }
+    func showItem(with presentation: ItemPresentation?) {
+        guard let presentation, let window, let mainController = window.rootViewController as? MainViewController else { return }
         mainController.getDetailCoordinator { [weak self] coordinator in
             guard let self else { return }
             self.show(

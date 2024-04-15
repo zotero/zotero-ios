@@ -81,7 +81,7 @@ final class NoteEditorViewController: UIViewController {
 
             func rightBarButtonItemTypes(for state: NoteEditorState) -> [RightBarButtonItem] {
                 var items: [RightBarButtonItem] = [.done]
-                if state.openItemsCount > 1 {
+                if state.openItemsCount > 0 {
                     items = [.restoreOpenItems] + items
                 }
                 return items
@@ -107,10 +107,10 @@ final class NoteEditorViewController: UIViewController {
                         openItems = UIBarButtonItem(image: UIImage(systemName: "\(items.count).square"), style: .plain, target: nil, action: nil)
                         openItems.isEnabled = true
                         if let sessionIdentifier = view.scene?.session.persistentIdentifier {
-                            let deferredOpenItemsMenuElement = openItemsController.deferredOpenItemsMenuElement(for: sessionIdentifier, disableOpenItem: true) { [weak self] in
+                            let deferredOpenItemsMenuElement = openItemsController.deferredOpenItemsMenuElement(for: sessionIdentifier, showMenuForCurrentItem: true) { [weak self] in
                                 self?.coordinatorDelegate
                             }
-                            let openItemsMenu = UIMenu(title: "Open Items", options: [.displayInline], children: [deferredOpenItemsMenuElement])
+                            let openItemsMenu = UIMenu(title: L10n.Accessibility.Pdf.openItems, options: [.displayInline], children: [deferredOpenItemsMenuElement])
                             openItems.menu = UIMenu(children: [openItemsMenu])
                         }
                     } else {

@@ -102,7 +102,7 @@ extension NoteEditorCoordinator: NoteEditorCoordinatorDelegate {
 }
 
 extension NoteEditorCoordinator: OpenItemsPresenter {
-    func showItem(with presentation: ItemPresentation) {
+    func showItem(with presentation: ItemPresentation?) {
         (parentCoordinator as? OpenItemsPresenter)?.showItem(with: presentation)
     }
 }

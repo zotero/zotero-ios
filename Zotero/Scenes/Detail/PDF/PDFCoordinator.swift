@@ -659,7 +659,7 @@ extension PDFCoordinator: DetailCitationCoordinatorDelegate {
 extension PDFCoordinator: DetailCopyBibliographyCoordinatorDelegate { }
 
 extension PDFCoordinator: OpenItemsPresenter {
-    func showItem(with presentation: ItemPresentation) {
+    func showItem(with presentation: ItemPresentation?) {
         (parentCoordinator as? OpenItemsPresenter)?.showItem(with: presentation)
     }
 }

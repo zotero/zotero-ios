@@ -115,10 +115,10 @@ class PDFReaderViewController: UIViewController {
         openItems.accessibilityLabel = L10n.Accessibility.Pdf.openItems
         openItems.title = L10n.Accessibility.Pdf.openItems
         if let sessionIdentifier = view.scene?.session.persistentIdentifier {
-            let deferredOpenItemsMenuElement = openItemsController.deferredOpenItemsMenuElement(for: sessionIdentifier, disableOpenItem: true) { [weak self] in
+            let deferredOpenItemsMenuElement = openItemsController.deferredOpenItemsMenuElement(for: sessionIdentifier, showMenuForCurrentItem: true) { [weak self] in
                 self?.coordinatorDelegate
             }
-            let openItemsMenu = UIMenu(title: "Open Items", options: [.displayInline], children: [deferredOpenItemsMenuElement])
+            let openItemsMenu = UIMenu(title: L10n.Accessibility.Pdf.openItems, options: [.displayInline], children: [deferredOpenItemsMenuElement])
             openItems.menu = UIMenu(children: [openItemsMenu])
         }
         return openItems
@@ -707,7 +707,7 @@ class PDFReaderViewController: UIViewController {
 
     private func createRightBarButtonItems() -> [UIBarButtonItem] {
         var buttons = [settingsButton, shareButton, searchButton]
-        if let sessionIdentifier = view.scene?.session.persistentIdentifier, openItemsController.getItems(for: sessionIdentifier).count > 1 {
+        if let sessionIdentifier = view.scene?.session.persistentIdentifier {
             buttons.insert(openItemsButton, at: 1)
             openItemsButton.image = .init(systemName: "\(openItemsController.getItems(for: sessionIdentifier).count).square")
         }
