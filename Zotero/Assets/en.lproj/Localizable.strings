@@ -569,3 +569,7 @@
 "accessibility.pdf.toggle_annotation_toolbar" = "Toggle annotation toolbar";
 "accessibility.pdf.show_more_tools" = "Show more";
 "accessibility.pdf.open_items" = "Open Items";
+"accessibility.pdf.current_item" = "Current Item";
+"accessibility.pdf.current_item_close" = "Close";
+"accessibility.pdf.current_item_move_first" = "Move first";
+"accessibility.pdf.current_item_move_last" = "Move last";

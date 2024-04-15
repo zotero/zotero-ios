@@ -15,7 +15,7 @@ typealias OpenItem = OpenItemsController.Item
 typealias ItemPresentation = OpenItemsController.Presentation
 
 protocol OpenItemsPresenter: AnyObject {
-    func showItem(with presentation: ItemPresentation)
+    func showItem(with presentation: ItemPresentation?)
 }
 
 final class OpenItemsController {
@@ -172,6 +172,14 @@ final class OpenItemsController {
         }
     }
 
+    private func setItemsSortedByUserIndex(_ items: [Item], for sessionIdentifier: String, validate: Bool) {
+        var newItems = items
+        for i in 0..<newItems.count {
+            newItems[i].userIndex = i
+        }
+        setItems(newItems, for: sessionIdentifier, validate: validate)
+    }
+
     func open(_ kind: Item.Kind, for sessionIdentifier: String) {
         DDLogInfo("OpenItemsController: opened item \(kind) for \(sessionIdentifier)")
         var existingItems = getItems(for: sessionIdentifier)
@@ -189,7 +197,30 @@ final class OpenItemsController {
             setItems(newItems, for: sessionIdentifier, validate: false)
         }
     }
-    
+
+    func close(_ kind: Item.Kind, for sessionIdentifier: String) {
+        DDLogInfo("OpenItemsController: closed open item \(kind) for \(sessionIdentifier)")
+        var existingItems = itemsSortedByUserOrder(for: sessionIdentifier)
+        if let index = existingItems.firstIndex(where: { $0.kind == kind }) {
+            existingItems.remove(at: index)
+            setItemsSortedByUserIndex(existingItems, for: sessionIdentifier, validate: false)
+        } else {
+            DDLogWarn("OpenItemsController: item was already closed")
+        }
+    }
+
+    func move(_ kind: Item.Kind, to userIndex: Int, for sessionIdentifier: String) {
+        DDLogInfo("OpenItemsController: moved open item \(kind) to user index \(userIndex) for \(sessionIdentifier)")
+        var existingItems = itemsSortedByUserOrder(for: sessionIdentifier)
+        let userIndex = min(existingItems.count, max(0, userIndex))
+        if let index = existingItems.firstIndex(where: { $0.kind == kind }) {
+            existingItems.move(fromOffsets: IndexSet(integer: index), toOffset: userIndex)
+            setItemsSortedByUserIndex(existingItems, for: sessionIdentifier, validate: false)
+        } else {
+            DDLogWarn("OpenItemsController: item was not open")
+        }
+    }
+
     @discardableResult
     func restore(_ item: Item, using presenter: OpenItemsPresenter) -> Bool {
         guard let presentation = loadPresentation(for: item) else { return false }
@@ -227,30 +258,56 @@ final class OpenItemsController {
         return item
     }
     
-    func deferredOpenItemsMenuElement(for sessionIdentifier: String, disableOpenItem: Bool, openItemPresenterProvider: @escaping () -> OpenItemsPresenter?) -> UIDeferredMenuElement {
-        UIDeferredMenuElement { [weak self] elementProvider in
+    func deferredOpenItemsMenuElement(for sessionIdentifier: String, showMenuForCurrentItem: Bool, openItemPresenterProvider: @escaping () -> OpenItemsPresenter?) -> UIDeferredMenuElement {
+        UIDeferredMenuElement.uncached { [weak self] elementProvider in
             guard let self else {
                 elementProvider([])
                 return
             }
-            var actions: [UIAction] = []
-            let openItem: Item? = disableOpenItem ? itemsSortedByLastOpen(for: sessionIdentifier).first : nil
+            var elements: [UIMenuElement] = []
+            let openItem: Item? = showMenuForCurrentItem ? itemsSortedByLastOpen(for: sessionIdentifier).first : nil
             let existingItemsSortedByLastOpen = itemsSortedByUserOrder(for: sessionIdentifier)
             let itemTuples: [(Item, RItem)] = filterValidItemsWithRItem(existingItemsSortedByLastOpen)
-            for (item, rItem) in itemTuples {
-                var attributes: UIMenuElement.Attributes = []
-                var state: UIMenuElement.State = .off
+            let itemsCount = itemTuples.count
+            for (index, (item, rItem)) in itemTuples.enumerated() {
                 if item == openItem {
-                    attributes = [.disabled]
-                    state = .on
+                    var currentItemActions: [UIAction] = []
+                    let closeAction = UIAction(title: L10n.Accessibility.Pdf.currentItemClose, image: .init(systemName: "xmark.circle")) { [weak self] _ in
+                        guard let self else { return }
+                        close(item.kind, for: sessionIdentifier)
+                        guard let presenter = openItemPresenterProvider() else { return }
+                        if restoreMostRecentlyOpenedItem(using: presenter, sessionIdentifier: sessionIdentifier) == nil {
+                            DDLogInfo("OpenItemsController: no open item to restore after close")
+                            presenter.showItem(with: nil)
+                        }
+                    }
+                    currentItemActions.append(closeAction)
+                    if index > 0 {
+                        let moveToTopAction = UIAction(title: L10n.Accessibility.Pdf.currentItemMoveFirst, image: .init(systemName: "arrowshape.up.circle")) { [weak self] _ in
+                            guard let self else { return }
+                            move(item.kind, to: 0, for: sessionIdentifier)
+                        }
+                        currentItemActions.append(moveToTopAction)
+                    }
+                    if index < itemsCount - 1 {
+                        let moveToBottomAction = UIAction(title: L10n.Accessibility.Pdf.currentItemMoveLast, image: .init(systemName: "arrowshape.down.circle")) { [weak self] _ in
+                            guard let self else { return }
+                            move(item.kind, to: itemsCount, for: sessionIdentifier)
+                        }
+                        currentItemActions.append(moveToBottomAction)
+                    }
+                    let currentItemMenu = UIMenu(title: L10n.Accessibility.Pdf.currentItem, options: [.displayInline], children: currentItemActions)
+                    let currentItemElement = UIMenu(title: rItem.displayTitle, children: [currentItemMenu])
+                    elements.append(currentItemElement)
+                } else {
+                    let itemAction = UIAction(title: rItem.displayTitle) { [weak self] _ in
+                        guard let self, let presenter = openItemPresenterProvider() else { return }
+                        restore(item, using: presenter)
+                    }
+                    elements.append(itemAction)
                 }
-                let itemAction = UIAction(title: rItem.displayTitle, attributes: attributes, state: state) { [weak self] _ in
-                    guard let self, let presenter = openItemPresenterProvider() else { return }
-                    restore(item, using: presenter)
-                }
-                actions.append(itemAction)
             }
-            elementProvider(actions)
+            elementProvider(elements)
         }
     }
     

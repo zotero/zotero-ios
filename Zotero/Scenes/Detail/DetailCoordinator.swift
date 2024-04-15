@@ -1045,7 +1045,7 @@ extension DetailCoordinator: DetailCitationCoordinatorDelegate {
 extension DetailCoordinator: DetailCopyBibliographyCoordinatorDelegate { }
 
 extension DetailCoordinator: OpenItemsPresenter {
-    func showItem(with presentation: ItemPresentation) {
+    func showItem(with presentation: ItemPresentation?) {
         switch presentation {
         case .pdf(let library, let key, let parentKey, let url):
             showPDF(at: url, key: key, parentKey: parentKey, libraryId: library.identifier)
@@ -1054,6 +1054,9 @@ extension DetailCoordinator: OpenItemsPresenter {
             let kind: NoteEditorKind = library.metadataEditable ? .edit(key: key) : .readOnly(key: key)
             // TODO: Check if a callback is required
             showNote(library: library, kind: kind, text: text, tags: tags, title: title)
+
+        case .none:
+            navigationController?.dismiss(animated: true)
         }
     }
 }
