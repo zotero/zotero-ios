@@ -22,3 +22,4 @@ rm -rf pdf-keys
 brew install node
 npm install webpack
 npm install webpack-cli
+npm install html-webpack-plugin
