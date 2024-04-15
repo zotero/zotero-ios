@@ -92,11 +92,11 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     func sceneDidBecomeActive(_ scene: UIScene) {
-        window?.windowScene?.userActivity?.becomeCurrent()
+        scene.userActivity?.becomeCurrent()
     }
 
     func sceneWillResignActive(_ scene: UIScene) {
-        window?.windowScene?.userActivity?.resignCurrent()
+        scene.userActivity?.resignCurrent()
     }
 
     func sceneWillEnterForeground(_ scene: UIScene) {
