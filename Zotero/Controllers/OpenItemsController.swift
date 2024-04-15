@@ -225,7 +225,7 @@ final class OpenItemsController {
         return item
     }
     
-    func deferredOpenItemsMenuElement(for sessionIdentifier: String, disableOpenItem: Bool, itemActionCallback: @escaping (Item, UIAction) -> Void) -> UIDeferredMenuElement {
+    func deferredOpenItemsMenuElement(for sessionIdentifier: String, disableOpenItem: Bool, openItemPresenterProvider: @escaping () -> OpenItemsPresenter?) -> UIDeferredMenuElement {
         UIDeferredMenuElement { [weak self] elementProvider in
             guard let self else {
                 elementProvider([])
@@ -234,7 +234,7 @@ final class OpenItemsController {
             var actions: [UIAction] = []
             let openItem: Item? = disableOpenItem ? itemsSortedByLastOpen(for: sessionIdentifier).first : nil
             let existingItemsSortedByLastOpen = itemsSortedByUserOrder(for: sessionIdentifier)
-            var itemTuples: [(Item, RItem)] = filterValidItemsWithRItem(existingItemsSortedByLastOpen)
+            let itemTuples: [(Item, RItem)] = filterValidItemsWithRItem(existingItemsSortedByLastOpen)
             for (item, rItem) in itemTuples {
                 var attributes: UIMenuElement.Attributes = []
                 var state: UIMenuElement.State = .off
@@ -242,8 +242,9 @@ final class OpenItemsController {
                     attributes = [.disabled]
                     state = .on
                 }
-                let itemAction = UIAction(title: rItem.displayTitle, attributes: attributes, state: state) { action in
-                    itemActionCallback(item, action)
+                let itemAction = UIAction(title: rItem.displayTitle, attributes: attributes, state: state) { [weak self] _ in
+                    guard let self, let presenter = openItemPresenterProvider() else { return }
+                    restore(item, using: presenter)
                 }
                 actions.append(itemAction)
             }

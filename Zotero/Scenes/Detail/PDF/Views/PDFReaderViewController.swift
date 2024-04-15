@@ -113,9 +113,8 @@ class PDFReaderViewController: UIViewController {
         openItems.accessibilityLabel = L10n.Accessibility.Pdf.openItems
         openItems.title = L10n.Accessibility.Pdf.openItems
         if let sessionIdentifier = view.scene?.session.persistentIdentifier {
-            let deferredOpenItemsMenuElement = openItemsController.deferredOpenItemsMenuElement(for: sessionIdentifier, disableOpenItem: true) { [weak self] item, _ in
-                guard let self, let coordinatorDelegate else { return }
-                openItemsController.restore(item, using: coordinatorDelegate)
+            let deferredOpenItemsMenuElement = openItemsController.deferredOpenItemsMenuElement(for: sessionIdentifier, disableOpenItem: true) { [weak self] in
+                self?.coordinatorDelegate
             }
             let openItemsMenu = UIMenu(title: "Open Items", options: [.displayInline], children: [deferredOpenItemsMenuElement])
             openItems.menu = UIMenu(children: [openItemsMenu])
