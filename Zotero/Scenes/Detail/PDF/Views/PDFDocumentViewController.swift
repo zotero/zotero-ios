@@ -210,12 +210,14 @@ final class PDFDocumentViewController: UIViewController {
             if pdfController.configuration.scrollDirection != state.settings.direction ||
                pdfController.configuration.pageTransition != state.settings.transition ||
                pdfController.configuration.pageMode != state.settings.pageMode ||
-               pdfController.configuration.spreadFitting != state.settings.pageFitting {
+               pdfController.configuration.spreadFitting != state.settings.pageFitting ||
+                pdfController.configuration.isFirstPageAlwaysSingle != state.settings.isFirstPageAlwaysSingle {
                 pdfController.updateConfiguration { configuration in
                     configuration.scrollDirection = state.settings.direction
                     configuration.pageTransition = state.settings.transition
                     configuration.pageMode = state.settings.pageMode
                     configuration.spreadFitting = state.settings.pageFitting
+                    configuration.isFirstPageAlwaysSingle = state.settings.isFirstPageAlwaysSingle
                 }
             }
         }
@@ -523,6 +525,7 @@ final class PDFDocumentViewController: UIViewController {
             builder.pageTransition = settings.transition
             builder.pageMode = settings.pageMode
             builder.spreadFitting = settings.pageFitting
+            builder.isFirstPageAlwaysSingle = settings.isFirstPageAlwaysSingle
             builder.documentLabelEnabled = .NO
             builder.allowedAppearanceModes = [.night]
             builder.isCreateAnnotationMenuEnabled = self.viewModel.state.library.metadataEditable

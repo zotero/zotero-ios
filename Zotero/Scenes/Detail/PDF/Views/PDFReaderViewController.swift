@@ -614,7 +614,8 @@ class PDFReaderViewController: UIViewController {
                     direction: state.scrollDirection,
                     pageFitting: state.pageFitting,
                     appearanceMode: state.appearance,
-                    idleTimerDisabled: state.idleTimerDisabled
+                    idleTimerDisabled: state.idleTimerDisabled,
+                    isFirstPageAlwaysSingle: state.isFirstPageAlwaysSingle
                 )
                 viewModel.process(action: .setSettings(settings: settings, parentUserInterfaceStyle: interfaceStyle))
             })

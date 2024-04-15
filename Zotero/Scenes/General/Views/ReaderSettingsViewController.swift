@@ -19,6 +19,7 @@ final class ReaderSettingsViewController: UICollectionViewController {
         case pageFitting
         case sleep
         case appearance
+        case pageSpreads
     }
 
     let viewModel: ViewModel<ReaderSettingsActionHandler>
@@ -154,6 +155,15 @@ final class ReaderSettingsViewController: UICollectionViewController {
                 actions = [UIAction(title: L10n.Pdf.Settings.PageFitting.fit, handler: { [weak self] _ in self?.viewModel.process(action: .setPageFitting(.fit)) }),
                            UIAction(title: L10n.Pdf.Settings.PageFitting.fill, handler: { [weak self] _ in self?.viewModel.process(action: .setPageFitting(.fill)) }),
                            UIAction(title: L10n.Pdf.Settings.PageFitting.automatic, handler: { [weak self] _ in self?.viewModel.process(action: .setPageFitting(.adaptive)) })]
+
+            case .pageSpreads:
+                title = L10n.Pdf.Settings.PageSpreads.title
+                getSelectedIndex = { [weak self] in
+                    guard let self else { return 0 }
+                    return viewModel.state.isFirstPageAlwaysSingle ? 1 : 0
+                }
+                actions = [UIAction(title: L10n.Pdf.Settings.PageSpreads.odd, handler: { [weak self] _ in self?.viewModel.process(action: .setPageSpreads(isFirstPageAlwaysSingle: false)) }),
+                           UIAction(title: L10n.Pdf.Settings.PageSpreads.even, handler: { [weak self] _ in self?.viewModel.process(action: .setPageSpreads(isFirstPageAlwaysSingle: true)) })]
 
             case .appearance:
                 title = L10n.Pdf.Settings.Appearance.title

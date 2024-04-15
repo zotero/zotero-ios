@@ -265,6 +265,9 @@
 "pdf.settings.page_fitting.title" = "Page Fitting";
 "pdf.settings.page_fitting.fit" = "Fit";
 "pdf.settings.page_fitting.fill" = "Fill";
+"pdf.settings.page_spreads.title" = "Page Spreads";
+"pdf.settings.page_spreads.odd" = "Odd";
+"pdf.settings.page_spreads.even" = "Even";
 "pdf.settings.page_fitting.automatic" = "Automatic";
 "pdf.export.export" = "Export PDF";
 "pdf.export.export_annotated" = "Export Annotated PDF";

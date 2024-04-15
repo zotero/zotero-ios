@@ -30,15 +30,17 @@ struct ReaderSettingsState: ViewModelState {
     var scrollDirection: PSPDFKitUI.ScrollDirection
     var pageFitting: PSPDFKitUI.PDFConfiguration.SpreadFitting
     var appearance: ReaderSettingsState.Appearance
+    var isFirstPageAlwaysSingle: Bool
     var idleTimerDisabled: Bool
 
     init(settings: PDFSettings) {
-        self.transition = settings.transition
-        self.pageMode = settings.pageMode
-        self.scrollDirection = settings.direction
-        self.pageFitting = settings.pageFitting
-        self.appearance = settings.appearanceMode
-        self.idleTimerDisabled = settings.idleTimerDisabled
+        transition = settings.transition
+        pageMode = settings.pageMode
+        scrollDirection = settings.direction
+        pageFitting = settings.pageFitting
+        appearance = settings.appearanceMode
+        isFirstPageAlwaysSingle = settings.isFirstPageAlwaysSingle
+        idleTimerDisabled = settings.idleTimerDisabled
     }
 
     func cleanup() {}

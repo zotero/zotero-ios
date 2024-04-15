@@ -1036,6 +1036,14 @@ internal enum L10n {
         /// Page Mode
         internal static let title = L10n.tr("Localizable", "pdf.settings.page_mode.title", fallback: "Page Mode")
       }
+      internal enum PageSpreads {
+        /// Even
+        internal static let even = L10n.tr("Localizable", "pdf.settings.page_spreads.even", fallback: "Even")
+        /// Odd
+        internal static let odd = L10n.tr("Localizable", "pdf.settings.page_spreads.odd", fallback: "Odd")
+        /// Page Spreads
+        internal static let title = L10n.tr("Localizable", "pdf.settings.page_spreads.title", fallback: "Page Spreads")
+      }
       internal enum PageTransition {
         /// Continuous
         internal static let continuous = L10n.tr("Localizable", "pdf.settings.page_transition.continuous", fallback: "Continuous")
