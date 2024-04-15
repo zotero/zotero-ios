@@ -177,6 +177,7 @@ final class OpenItemsController {
         var existingItems = getItems(for: sessionIdentifier)
         if let index = existingItems.firstIndex(where: { $0.kind == kind }) {
             existingItems[index].lastOpened = .now
+            // No need to call setItems, to register a new items observer, as only items metadata were updated.
             itemsBySessionIdentifier[sessionIdentifier] = existingItems
             DDLogInfo("OpenItemsController: already opened item \(kind) became most recent for \(sessionIdentifier)")
             observable(for: sessionIdentifier).on(.next(existingItems))
@@ -204,7 +205,8 @@ final class OpenItemsController {
         var itemsChanged: Bool = false
         defer {
             if itemsChanged {
-                observable(for: sessionIdentifier).on(.next(existingItems))
+                // setItems will produce next observable event
+                setItems(existingItems, for: sessionIdentifier, validate: false)
             }
         }
         var item: Item?
