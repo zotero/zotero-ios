@@ -52,9 +52,7 @@ final class NoteEditorViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        if let sessionIdentifier = view.scene?.session.persistentIdentifier {
-            set(userActivity: .pdfActivity(with: openItemsController.getItems(for: sessionIdentifier), libraryId: viewModel.state.library.identifier, collectionId: Defaults.shared.selectedCollectionId))
-        }
+        openItemsController.setOpenItemsUserActivity(from: self, libraryId: viewModel.state.library.identifier, title: viewModel.state.title?.title)
 
         if let data = viewModel.state.title {
             navigationItem.titleView = NoteEditorTitleView(type: data.type, title: data.title)
