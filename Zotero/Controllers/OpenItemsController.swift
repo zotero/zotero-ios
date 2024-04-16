@@ -441,7 +441,7 @@ final class OpenItemsController {
 
 extension OpenItemsController {
     func setOpenItemsUserActivity(from viewController: UIViewController, libraryId: LibraryIdentifier, collectionId: CollectionIdentifier? = nil, title: String? = nil) {
-        guard let sessionIdentifier = viewController.view.scene?.session.persistentIdentifier else { return }
+        guard let sessionIdentifier = viewController.getSessionIdentifier() else { return }
         let activity: NSUserActivity = .pdfActivity(with: getItems(for: sessionIdentifier), libraryId: libraryId, collectionId: collectionId ?? Defaults.shared.selectedCollectionId).set(title: title)
         viewController.set(userActivity: activity)
     }
