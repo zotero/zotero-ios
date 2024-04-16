@@ -268,7 +268,12 @@ final class OpenItemsController {
         return item
     }
     
-    func deferredOpenItemsMenuElement(for sessionIdentifier: String, showMenuForCurrentItem: Bool, openItemPresenterProvider: @escaping () -> OpenItemsPresenter?) -> UIDeferredMenuElement {
+    func deferredOpenItemsMenuElement(
+        for sessionIdentifier: String,
+        showMenuForCurrentItem: Bool,
+        openItemPresenterProvider: @escaping () -> OpenItemsPresenter?,
+        completion: @escaping (_ changedCurrentItem: Bool, _ openItemsChanged: Bool) -> Void
+    ) -> UIDeferredMenuElement {
         UIDeferredMenuElement.uncached { [weak self] elementProvider in
             guard let self else {
                 elementProvider([])
@@ -290,12 +295,14 @@ final class OpenItemsController {
                             DDLogInfo("OpenItemsController: no open item to restore after close")
                             presenter.showItem(with: nil)
                         }
+                        completion(true, true)
                     }
                     currentItemActions.append(closeAction)
                     if index > 0 {
                         let moveToTopAction = UIAction(title: L10n.Accessibility.Pdf.currentItemMoveFirst, image: .init(systemName: "arrowshape.up.circle")) { [weak self] _ in
                             guard let self else { return }
                             move(item.kind, to: 0, for: sessionIdentifier)
+                            completion(false, true)
                         }
                         currentItemActions.append(moveToTopAction)
                     }
@@ -303,12 +310,15 @@ final class OpenItemsController {
                         let moveToBottomAction = UIAction(title: L10n.Accessibility.Pdf.currentItemMoveLast, image: .init(systemName: "arrowshape.down.circle")) { [weak self] _ in
                             guard let self else { return }
                             move(item.kind, to: itemsCount, for: sessionIdentifier)
+                            completion(false, true)
                         }
                         currentItemActions.append(moveToBottomAction)
                     }
                     if itemsCount > 1 {
                         let closeOtherAction = UIAction(title: L10n.Accessibility.Pdf.closeOtherOpenItems, image: .init(systemName: "checkmark.circle.badge.xmark")) { [weak self] _ in
-                            self?.setItems([item], for: sessionIdentifier, validate: false)
+                            guard let self else { return }
+                            setItems([item], for: sessionIdentifier, validate: false)
+                            completion(false, true)
                         }
                         currentItemActions.append(closeOtherAction)
                     }
@@ -319,6 +329,7 @@ final class OpenItemsController {
                     let itemAction = UIAction(title: rItem.displayTitle, image: item.kind.icon) { [weak self] _ in
                         guard let self, let presenter = openItemPresenterProvider() else { return }
                         restore(item, using: presenter)
+                        completion(true, false)
                     }
                     elements.append(itemAction)
                 }
@@ -328,6 +339,7 @@ final class OpenItemsController {
                 guard let self else { return }
                 setItems([], for: sessionIdentifier, validate: false)
                 openItemPresenterProvider()?.showItem(with: nil)
+                completion(true, true)
             }
             let closeAllElement = UIMenu(options: [.displayInline], children: [closeAllAction])
             elements.append(closeAllElement)
@@ -441,8 +453,11 @@ final class OpenItemsController {
 
 extension OpenItemsController {
     func setOpenItemsUserActivity(from viewController: UIViewController, libraryId: LibraryIdentifier, collectionId: CollectionIdentifier? = nil, title: String? = nil) {
-        guard let sessionIdentifier = viewController.getSessionIdentifier() else { return }
-        let activity: NSUserActivity = .pdfActivity(with: getItems(for: sessionIdentifier), libraryId: libraryId, collectionId: collectionId ?? Defaults.shared.selectedCollectionId).set(title: title)
-        viewController.set(userActivity: activity)
+        var items: [Item] = []
+        if let sessionIdentifier = viewController.getSessionIdentifier() {
+            items = getItems(for: sessionIdentifier)
+        }
+        let activity: NSUserActivity = items.isEmpty ? .mainActivity(with: []) : .pdfActivity(with: items, libraryId: libraryId, collectionId: collectionId ?? Defaults.shared.selectedCollectionId)
+        viewController.set(userActivity: activity.set(title: title))
     }
 }

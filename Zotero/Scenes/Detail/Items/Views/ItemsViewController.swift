@@ -581,9 +581,19 @@ final class ItemsViewController: UIViewController {
                     controller.restoreMostRecentlyOpenedItem(using: presenter, sessionIdentifier: sessionIdentifier)
                 }
                 if let controller = controllers.userControllers?.openItemsController, let sessionIdentifier = getSessionIdentifier() {
-                    let deferredOpenItemsMenuElement = controller.deferredOpenItemsMenuElement(for: sessionIdentifier, showMenuForCurrentItem: false) { [weak self] in
-                        self?.presenter
-                    }
+                    let deferredOpenItemsMenuElement = controller.deferredOpenItemsMenuElement(
+                        for: sessionIdentifier,
+                        showMenuForCurrentItem: false,
+                        openItemPresenterProvider: { [weak self] in
+                            self?.presenter
+                        },
+                        completion: { [weak self] _, openItemsChanged in
+                            guard let self, openItemsChanged else { return }
+                            set(userActivity: .mainActivity(with: controllers.userControllers?.openItemsController.getItems(for: sessionIdentifier) ?? [])
+                                .set(title: coordinatorDelegate?.displayTitle)
+                            )
+                        }
+                    )
                     let openItemsMenu = UIMenu(title: L10n.Accessibility.Pdf.openItems, options: [.displayInline], children: [deferredOpenItemsMenuElement])
                     menu = UIMenu(children: [openItemsMenu])
                 }

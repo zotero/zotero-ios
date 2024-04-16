@@ -106,9 +106,17 @@ final class NoteEditorViewController: UIViewController {
                     openItems.accessibilityLabel = L10n.Accessibility.Pdf.openItems
                     openItems.title = L10n.Accessibility.Pdf.openItems
                     if let sessionIdentifier = getSessionIdentifier() {
-                        let deferredOpenItemsMenuElement = openItemsController.deferredOpenItemsMenuElement(for: sessionIdentifier, showMenuForCurrentItem: true) { [weak self] in
-                            self?.coordinatorDelegate
-                        }
+                        let deferredOpenItemsMenuElement = openItemsController.deferredOpenItemsMenuElement(
+                            for: sessionIdentifier,
+                            showMenuForCurrentItem: true,
+                            openItemPresenterProvider: { [weak self] in
+                                self?.coordinatorDelegate
+                            },
+                            completion: { [weak self] changedCurrentItem, openItemsChanged in
+                                guard let self, !changedCurrentItem && openItemsChanged else { return }
+                                openItemsController.setOpenItemsUserActivity(from: self, libraryId: viewModel.state.library.identifier, title: viewModel.state.title?.title)
+                            }
+                        )
                         let openItemsMenu = UIMenu(title: L10n.Accessibility.Pdf.openItems, options: [.displayInline], children: [deferredOpenItemsMenuElement])
                         openItems.menu = UIMenu(children: [openItemsMenu])
                     }

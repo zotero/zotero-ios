@@ -32,6 +32,7 @@ protocol DetailCitationCoordinatorDelegate: DetailMissingStyleErrorDelegate {
 protocol DetailCopyBibliographyCoordinatorDelegate: DetailMissingStyleErrorDelegate { }
 
 protocol DetailItemsCoordinatorDelegate: AnyObject {
+    var displayTitle: String { get }
     func showCollectionsPicker(in library: Library, completed: @escaping (Set<String>) -> Void)
     func showItemDetail(for type: ItemDetailState.DetailType, libraryId: LibraryIdentifier, scrolledToKey childKey: String?, animated: Bool)
     func showAttachmentError(_ error: Error)
@@ -386,6 +387,10 @@ final class DetailCoordinator: Coordinator {
 }
 
 extension DetailCoordinator: DetailItemsCoordinatorDelegate {
+    var displayTitle: String {
+        collection.name
+    }
+
     func showAddActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem) {
         let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         controller.popoverPresentationController?.barButtonItem = button
@@ -985,7 +990,7 @@ extension DetailCoordinator: DetailNoteEditorCoordinatorDelegate {
                     // If indeed a new note is created inform open items controller about it.
                     if let self, let openItemsController = controllers.userControllers?.openItemsController {
                         openItemsController.open(.note(libraryId: library.identifier, key: note.key), for: sessionIdentifier)
-                        openItemsController.setOpenItemsUserActivity(from: navigationController, libraryId: library.identifier)
+                        openItemsController.setOpenItemsUserActivity(from: navigationController, libraryId: library.identifier, title: note.title)
                     }
 
                 case .failure:

@@ -33,7 +33,7 @@ final class MainViewController: UISplitViewController {
     private var detailCoordinator: DetailCoordinator? {
         didSet {
             guard let detailCoordinator else { return }
-            set(userActivity: .mainActivity(with: controllers.userControllers?.openItemsController.getItems(for: sessionIdentifier) ?? []).set(title: detailCoordinator.collection.name))
+            set(userActivity: .mainActivity(with: controllers.userControllers?.openItemsController.getItems(for: sessionIdentifier) ?? []).set(title: detailCoordinator.displayTitle))
             if let detailCoordinatorGetter {
                 detailCoordinatorGetter(detailCoordinator)
                 self.detailCoordinatorGetter = nil
@@ -91,7 +91,7 @@ final class MainViewController: UISplitViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         guard let detailCoordinator else { return }
-        set(userActivity: .mainActivity(with: controllers.userControllers?.openItemsController.getItems(for: sessionIdentifier) ?? []).set(title: detailCoordinator.collection.name))
+        set(userActivity: .mainActivity(with: controllers.userControllers?.openItemsController.getItems(for: sessionIdentifier) ?? []).set(title: detailCoordinator.displayTitle))
     }
 
     func getDetailCoordinator(completed: @escaping (DetailCoordinator) -> Void) {
