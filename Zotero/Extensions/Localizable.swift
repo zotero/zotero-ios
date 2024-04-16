@@ -194,6 +194,8 @@ internal enum L10n {
       internal static let annotationHint = L10n.tr("Localizable", "accessibility.pdf.annotation_hint", fallback: "Double tap to select and edit")
       /// Author
       internal static let author = L10n.tr("Localizable", "accessibility.pdf.author", fallback: "Author")
+      /// Close all
+      internal static let closeAllOpenItems = L10n.tr("Localizable", "accessibility.pdf.close_all_open_items", fallback: "Close all")
       /// Color picker
       internal static let colorPicker = L10n.tr("Localizable", "accessibility.pdf.color_picker", fallback: "Color picker")
       /// Comment
