@@ -317,6 +317,15 @@ final class OpenItemsController {
                     elements.append(itemAction)
                 }
             }
+
+            let closeAllAction = UIAction(title: L10n.Accessibility.Pdf.closeAllOpenItems, image: .init(systemName: "xmark.square")) { [weak self] _ in
+                guard let self else { return }
+                setItems([], for: sessionIdentifier, validate: false)
+                openItemPresenterProvider()?.showItem(with: nil)
+            }
+            let closeAllElement = UIMenu(options: [.displayInline], children: [closeAllAction])
+            elements.append(closeAllElement)
+
             elementProvider(elements)
         }
     }

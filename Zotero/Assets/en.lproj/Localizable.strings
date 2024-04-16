@@ -580,3 +580,4 @@
 "accessibility.pdf.current_item_close" = "Close";
 "accessibility.pdf.current_item_move_first" = "Move first";
 "accessibility.pdf.current_item_move_last" = "Move last";
+"accessibility.pdf.close_all_open_items" = "Close all";
