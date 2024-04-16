@@ -306,6 +306,12 @@ final class OpenItemsController {
                         }
                         currentItemActions.append(moveToBottomAction)
                     }
+                    if itemsCount > 1 {
+                        let closeOtherAction = UIAction(title: L10n.Accessibility.Pdf.closeOtherOpenItems, image: .init(systemName: "checkmark.circle.badge.xmark")) { [weak self] _ in
+                            self?.setItems([item], for: sessionIdentifier, validate: false)
+                        }
+                        currentItemActions.append(closeOtherAction)
+                    }
                     let currentItemMenu = UIMenu(title: L10n.Accessibility.Pdf.currentItem, options: [.displayInline], children: currentItemActions)
                     let currentItemElement = UIMenu(title: rItem.displayTitle, image: item.kind.icon, children: [currentItemMenu])
                     elements.append(currentItemElement)
