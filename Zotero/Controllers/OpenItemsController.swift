@@ -40,6 +40,16 @@ final class OpenItemsController {
                 }
             }
 
+            var icon: UIImage {
+                switch self {
+                case .pdf:
+                    return Asset.Images.ItemTypes.pdf.image
+
+                case .note:
+                    return Asset.Images.ItemTypes.note.image
+                }
+            }
+
             // MARK: Codable
             enum CodingKeys: CodingKey {
                 case pdfKind
@@ -297,10 +307,10 @@ final class OpenItemsController {
                         currentItemActions.append(moveToBottomAction)
                     }
                     let currentItemMenu = UIMenu(title: L10n.Accessibility.Pdf.currentItem, options: [.displayInline], children: currentItemActions)
-                    let currentItemElement = UIMenu(title: rItem.displayTitle, children: [currentItemMenu])
+                    let currentItemElement = UIMenu(title: rItem.displayTitle, image: item.kind.icon, children: [currentItemMenu])
                     elements.append(currentItemElement)
                 } else {
-                    let itemAction = UIAction(title: rItem.displayTitle) { [weak self] _ in
+                    let itemAction = UIAction(title: rItem.displayTitle, image: item.kind.icon) { [weak self] _ in
                         guard let self, let presenter = openItemPresenterProvider() else { return }
                         restore(item, using: presenter)
                     }
