@@ -342,7 +342,7 @@ class PDFReaderViewController: UIViewController {
                 .disposed(by: disposeBag)
 
             navigationItem.leftBarButtonItems = [closeButton, sidebarButton, readerButton]
-            navigationItem.rightBarButtonItems = createRightBarButtonItems()
+            navigationItem.rightBarButtonItems = createRightBarButtonItems(for: viewModel.state)
         }
 
         func setupObserving() {
@@ -352,6 +352,15 @@ class PDFReaderViewController: UIViewController {
                     self?.update(state: state)
                 })
                 .disposed(by: disposeBag)
+
+            if let sessionIdentifier = view.scene?.session.persistentIdentifier {
+                openItemsController.observable(for: sessionIdentifier)
+                    .observe(on: MainScheduler.instance)
+                    .subscribe(onNext: { [weak self] items in
+                        self?.viewModel.process(action: .updateOpenItems(items: items))
+                    })
+                    .disposed(by: disposeBag)
+            }
 
             NotificationCenter.default.rx
                 .notification(UIApplication.didBecomeActiveNotification)
@@ -488,7 +497,9 @@ class PDFReaderViewController: UIViewController {
             }
             annotationToolbarHandler.set(hidden: hidden, animated: true)
             (toolbarButton.customView as? CheckboxButton)?.isSelected = toolbarState.visible
-            navigationItem.rightBarButtonItems = createRightBarButtonItems()
+        }
+        if state.changes.contains(.library) || state.changes.contains(.openItems) {
+            navigationItem.rightBarButtonItems = createRightBarButtonItems(for: state)
         }
 
         if let tool = state.changedColorForTool, documentController.pdfController?.annotationStateManager.state == tool, let color = state.toolColors[tool] {
@@ -705,14 +716,12 @@ class PDFReaderViewController: UIViewController {
         button.title = isSidebarVisible ? L10n.Accessibility.Pdf.sidebarClose : L10n.Accessibility.Pdf.sidebarOpen
     }
 
-    private func createRightBarButtonItems() -> [UIBarButtonItem] {
+    private func createRightBarButtonItems(for state: PDFReaderState) -> [UIBarButtonItem] {
         var buttons = [settingsButton, shareButton, searchButton]
-        if let sessionIdentifier = view.scene?.session.persistentIdentifier {
-            buttons.insert(openItemsButton, at: 1)
-            openItemsButton.image = .init(systemName: "\(openItemsController.getItems(for: sessionIdentifier).count).square")
-        }
+        buttons.insert(openItemsButton, at: 1)
+        openItemsButton.image = .init(systemName: "\(state.openItemsCount).square")
 
-        if viewModel.state.library.metadataEditable {
+        if state.library.metadataEditable {
             buttons.append(toolbarButton)
         }
 

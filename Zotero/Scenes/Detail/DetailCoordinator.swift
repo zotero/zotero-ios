@@ -304,6 +304,7 @@ final class DetailCoordinator: Coordinator {
             page: page,
             preselectedAnnotationKey: preselectedAnnotationKey,
             navigationController: navigationController,
+            sessionIdentifier: sessionIdentifier,
             controllers: controllers
         )
         navigationController.coordinator = coordinator

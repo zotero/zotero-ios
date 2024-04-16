@@ -74,6 +74,7 @@ final class PDFCoordinator: Coordinator {
     private let url: URL
     private let page: Int?
     private let preselectedAnnotationKey: String?
+    private let sessionIdentifier: String
     private unowned let controllers: Controllers
     private let disposeBag: DisposeBag
 
@@ -85,6 +86,7 @@ final class PDFCoordinator: Coordinator {
         page: Int?,
         preselectedAnnotationKey: String?,
         navigationController: NavigationViewController,
+        sessionIdentifier: String,
         controllers: Controllers
     ) {
         self.key = key
@@ -94,6 +96,7 @@ final class PDFCoordinator: Coordinator {
         self.page = page
         self.preselectedAnnotationKey = preselectedAnnotationKey
         self.navigationController = navigationController
+        self.sessionIdentifier = sessionIdentifier
         self.controllers = controllers
         self.childCoordinators = []
         self.disposeBag = DisposeBag()
@@ -140,7 +143,8 @@ final class PDFCoordinator: Coordinator {
             userId: userId,
             username: username,
             displayName: Defaults.shared.displayName,
-            interfaceStyle: settings.appearanceMode == .automatic ? parentNavigationController.view.traitCollection.userInterfaceStyle : settings.appearanceMode.userInterfaceStyle
+            interfaceStyle: settings.appearanceMode == .automatic ? parentNavigationController.view.traitCollection.userInterfaceStyle : settings.appearanceMode.userInterfaceStyle,
+            openItemsCount: openItemsController.getItems(for: sessionIdentifier).count
         )
         let controller = PDFReaderViewController(
             viewModel: ViewModel(initialState: state, handler: handler),
