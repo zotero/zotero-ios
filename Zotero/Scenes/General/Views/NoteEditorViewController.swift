@@ -101,24 +101,17 @@ final class NoteEditorViewController: UIViewController {
                     item = done
 
                 case .restoreOpenItems:
-                    let openItems: UIBarButtonItem
-                    if let sessionIdentifier = view.scene?.session.persistentIdentifier {
-                        let items = openItemsController.getItems(for: sessionIdentifier)
-                        openItems = UIBarButtonItem(image: UIImage(systemName: "\(items.count).square"), style: .plain, target: nil, action: nil)
-                        openItems.isEnabled = true
-                        if let sessionIdentifier = view.scene?.session.persistentIdentifier {
-                            let deferredOpenItemsMenuElement = openItemsController.deferredOpenItemsMenuElement(for: sessionIdentifier, showMenuForCurrentItem: true) { [weak self] in
-                                self?.coordinatorDelegate
-                            }
-                            let openItemsMenu = UIMenu(title: L10n.Accessibility.Pdf.openItems, options: [.displayInline], children: [deferredOpenItemsMenuElement])
-                            openItems.menu = UIMenu(children: [openItemsMenu])
-                        }
-                    } else {
-                        openItems = UIBarButtonItem(image: UIImage(systemName: "0.square"), style: .plain, target: nil, action: nil)
-                        openItems.isEnabled = false
-                    }
+                    let openItems = UIBarButtonItem(image: UIImage(systemName: "0.square"), style: .plain, target: nil, action: nil)
+                    openItems.isEnabled = true
                     openItems.accessibilityLabel = L10n.Accessibility.Pdf.openItems
                     openItems.title = L10n.Accessibility.Pdf.openItems
+                    if let sessionIdentifier = view.scene?.session.persistentIdentifier {
+                        let deferredOpenItemsMenuElement = openItemsController.deferredOpenItemsMenuElement(for: sessionIdentifier, showMenuForCurrentItem: true) { [weak self] in
+                            self?.coordinatorDelegate
+                        }
+                        let openItemsMenu = UIMenu(title: L10n.Accessibility.Pdf.openItems, options: [.displayInline], children: [deferredOpenItemsMenuElement])
+                        openItems.menu = UIMenu(children: [openItemsMenu])
+                    }
                     item = openItems
                 }
 
