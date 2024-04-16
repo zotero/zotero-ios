@@ -262,6 +262,14 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             update(viewModel: viewModel) { state in
                 state.unlockSuccessful = result
             }
+
+        case .updateOpenItems(let items):
+            update(viewModel: viewModel) { state in
+                if state.openItemsCount != items.count {
+                    state.openItemsCount = items.count
+                    state.changes = .openItems
+                }
+            }
         }
     }
 
