@@ -22,9 +22,9 @@ struct CreateAttachmentsDbRequest: DbResponseRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws -> [(String, String)] {
-        guard let libraryId = self.attachments.first?.libraryId else { return [] }
+        guard let libraryId = attachments.first?.libraryId else { return [] }
 
-        let parent = self.parentKey.flatMap({ database.objects(RItem.self).uniqueObject(key: $0, libraryId: libraryId) })
+        let parent = parentKey.flatMap({ database.objects(RItem.self).uniqueObject(key: $0, libraryId: libraryId) })
         if let parent = parent {
             // This is to mitigate the issue in item detail screen (ItemDetailActionHandler.shouldReloadData) where observing of `children` doesn't report changes between `oldValue` and `newValue`.
             parent.version = parent.version
@@ -32,10 +32,16 @@ struct CreateAttachmentsDbRequest: DbResponseRequest {
 
         var failed: [(String, String)] = []
 
-        for attachment in self.attachments {
+        for attachment in attachments {
             do {
-                let attachment = try CreateAttachmentDbRequest(attachment: attachment, parentKey: nil, localizedType: self.localizedType, includeAccessDate: attachment.hasUrl,
-                                                               collections: self.collections, tags: []).process(in: database)
+                let attachment = try CreateAttachmentDbRequest(
+                    attachment: attachment,
+                    parentKey: nil,
+                    localizedType: localizedType,
+                    includeAccessDate: attachment.hasUrl,
+                    collections: collections,
+                    tags: []
+                ).process(in: database)
                 if let parent = parent {
                     attachment.parent = parent
                     attachment.changes.append(RObjectChange.create(changes: RItemChanges.parent))
