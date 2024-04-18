@@ -206,10 +206,10 @@ internal enum L10n {
       internal static let currentItem = L10n.tr("Localizable", "accessibility.pdf.current_item", fallback: "Current Item")
       /// Close
       internal static let currentItemClose = L10n.tr("Localizable", "accessibility.pdf.current_item_close", fallback: "Close")
-      /// Move first
-      internal static let currentItemMoveFirst = L10n.tr("Localizable", "accessibility.pdf.current_item_move_first", fallback: "Move first")
-      /// Move last
-      internal static let currentItemMoveLast = L10n.tr("Localizable", "accessibility.pdf.current_item_move_last", fallback: "Move last")
+      /// Move to end
+      internal static let currentItemMoveToEnd = L10n.tr("Localizable", "accessibility.pdf.current_item_move_to end", fallback: "Move to end")
+      /// Move to start
+      internal static let currentItemMoveToStart = L10n.tr("Localizable", "accessibility.pdf.current_item_move_to_start", fallback: "Move to start")
       /// Edit annotation
       internal static let editAnnotation = L10n.tr("Localizable", "accessibility.pdf.edit_annotation", fallback: "Edit annotation")
       /// Eraser
