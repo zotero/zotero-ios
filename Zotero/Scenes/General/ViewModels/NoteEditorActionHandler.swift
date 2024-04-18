@@ -58,6 +58,91 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
 
         case .loadResource(let data):
             loadResource(data: data, in: viewModel)
+
+        case .importImages(let data):
+            backgroundQueue.async { [weak viewModel] in
+                guard let viewModel else { return }
+                importImages(data: data, in: viewModel)
+            }
+        }
+    }
+
+    private func importImages(data: [String: Any], in viewModel: ViewModel<NoteEditorActionHandler>) {
+        guard !viewModel.state.kind.readOnly, let rawImages = data["images"] as? [[String: Any]] else { return }
+
+        let libraryId = viewModel.state.library.identifier
+        var images: [(String, Attachment)] = []
+
+        for imageData in rawImages {
+            guard
+                let nodeId = imageData["nodeID"] as? String,
+                let src = imageData["src"] as? String,
+                let mimeType = src.mimeTypeFromBase64EncodedImageData,
+                let image = src.data(using: .utf8)
+            else { continue }
+
+            let key = KeyGenerator.newKey
+            let file = Files.attachmentFile(in: libraryId, key: key, filename: "image", contentType: mimeType)
+
+            do {
+                try self.fileStorage.write(image, to: file, options: .atomic)
+            } catch let error {
+                DDLogError("NoteEditorActionHandler: can't write file - \(error)")
+                continue
+            }
+
+            let attachment = Attachment(
+                type: .file(filename: "image", contentType: mimeType, location: .local, linkType: .embeddedImage, compressed: false),
+                title: "image",
+                key: key,
+                libraryId: libraryId
+            )
+            images.append((nodeId, attachment))
+        }
+
+        guard !images.isEmpty, let parentKey = createItemIfNeeded() else {
+            return
+        }
+
+        let type = schemaController.localized(itemType: ItemTypes.attachment) ?? ""
+        let request = CreateAttachmentsDbRequest(attachments: images.map({ $0.1 }), parentKey: parentKey, localizedType: type, collections: [])
+
+        do {
+            let failedKeys = try dbStorage.perform(request: request, on: backgroundQueue).map({ $0.0 })
+            let successfulNodeIds = images.filter({ !failedKeys.contains($0.1.key) }).map({ $0.0 })
+        } catch let error {
+            DDLogError("NoteEditorActionHandler: can't create embedded images - \(error)")
+        }
+
+        func createItemIfNeeded() -> String? {
+            let note: Note
+            let request: CreateNoteDbRequest
+            switch viewModel.state.kind {
+            case .itemCreation(let parentKey):
+                (note, request) = createItemNote(library: viewModel.state.library, parentKey: parentKey, text: viewModel.state.text, tags: viewModel.state.tags)
+
+            case .standaloneCreation(let collection):
+                (note, request) = createStandaloneNote(library: viewModel.state.library, collection: collection, text: viewModel.state.text, tags: viewModel.state.tags)
+
+            case .edit(let key):
+                return key
+
+            case .readOnly(let key):
+                return nil
+            }
+
+            do {
+                _ = try dbStorage.perform(request: request, on: backgroundQueue)
+                update(viewModel: viewModel) { state in
+                    state.kind = .edit(key: note.key)
+                }
+                saveCallback(note.key, .success(note))
+                return note.key
+            } catch let error {
+                DDLogError("NoteEditorActionHandler: can't create item note for added image: \(error)")
+                saveCallback(note.key, .failure(error))
+                return nil
+            }
         }
     }
 
@@ -144,10 +229,12 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
 
         switch kind {
         case .itemCreation(let parentKey):
-            createItemNote(library: library, parentKey: parentKey, text: text, tags: tags)
+            let (note, request) = createItemNote(library: library, parentKey: parentKey, text: text, tags: tags)
+            create(note: note, with: request)
 
         case .standaloneCreation(let collection):
-            createStandaloneNote(library: library, collection: collection, text: text, tags: tags)
+            let (note, request) = createStandaloneNote(library: library, collection: collection, text: text, tags: tags)
+            create(note: note, with: request)
 
         case .edit(let key):
             updateExistingNote(library: library, key: key, text: text, tags: tags)
@@ -158,25 +245,7 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             saveCallback(key, .failure(error))
         }
 
-        func createItemNote(library: Library, parentKey: String, text: String, tags: [Tag]) {
-            let key = KeyGenerator.newKey
-            let note = Note(key: key, text: text, tags: tags)
-            let type = schemaController.localized(itemType: ItemTypes.note) ?? ItemTypes.note
-            let request = CreateNoteDbRequest(note: note, localizedType: type, libraryId: library.identifier, collectionKey: nil, parentKey: parentKey)
-            createNote(note, with: request)
-        }
-
-        func createStandaloneNote(library: Library, collection: Collection, text: String, tags: [Tag]) {
-            let key = KeyGenerator.newKey
-            let note = Note(key: key, text: text, tags: tags)
-            let type = schemaController.localized(itemType: ItemTypes.note) ?? ItemTypes.note
-            let collectionKey = collection.isCollection ? collection.identifier.key : nil
-
-            let request = CreateNoteDbRequest(note: note, localizedType: type, libraryId: library.identifier, collectionKey: collectionKey, parentKey: nil)
-            createNote(note, with: request)
-        }
-
-        func createNote<Request: DbResponseRequest>(_ note: Note, with request: Request) {
+        func create<Request: DbResponseRequest>(note: Note, with request: Request) {
             perform(request: request, invalidateRealm: true) { result in
                 switch result {
                 case .success:
@@ -204,5 +273,22 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 }
             }
         }
+    }
+
+    private func createItemNote(library: Library, parentKey: String, text: String, tags: [Tag]) -> (Note, CreateNoteDbRequest) {
+        let key = KeyGenerator.newKey
+        let note = Note(key: key, text: text, tags: tags)
+        let type = schemaController.localized(itemType: ItemTypes.note) ?? ItemTypes.note
+        let request = CreateNoteDbRequest(note: note, localizedType: type, libraryId: library.identifier, collectionKey: nil, parentKey: parentKey)
+        return (note, request)
+    }
+
+    private func createStandaloneNote(library: Library, collection: Collection, text: String, tags: [Tag]) -> (Note, CreateNoteDbRequest) {
+        let key = KeyGenerator.newKey
+        let note = Note(key: key, text: text, tags: tags)
+        let type = schemaController.localized(itemType: ItemTypes.note) ?? ItemTypes.note
+        let collectionKey = collection.isCollection ? collection.identifier.key : nil
+        let request = CreateNoteDbRequest(note: note, localizedType: type, libraryId: library.identifier, collectionKey: collectionKey, parentKey: nil)
+        return (note, request)
     }
 }

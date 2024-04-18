@@ -109,6 +109,12 @@ extension String {
         return UTType(tag: self, tagClass: .mimeType, conformingTo: nil)?.preferredFilenameExtension
     }
 
+    var mimeTypeFromBase64EncodedImageData: String? {
+        guard count > 6, let endIndex = firstIndex(of: ";") else { return nil }
+        let startIndex = index(startIndex, offsetBy: 5)
+        return String(self[startIndex..<endIndex])
+    }
+
     var strippedHtmlTags: String {
         guard !self.isEmpty else { return self }
         return self.replacingOccurrences(of: "<[^>]*>", with: "", options: .regularExpression, range: nil)

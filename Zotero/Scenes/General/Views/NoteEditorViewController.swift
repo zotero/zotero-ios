@@ -180,8 +180,11 @@ final class NoteEditorViewController: UIViewController {
             guard let subscription = data["subscription"] as? [String: Any] else { return }
             viewModel.process(action: .loadResource(subscription))
 
+        case "importImages":
+            viewModel.process(action: .importImages(data))
+
         default:
-            DDLogWarn("NoteEditorViewController JS: unknown action \(data)")
+            DDLogWarn("NoteEditorViewController JS: unknown action \(action); \(data)")
         }
     }
 
