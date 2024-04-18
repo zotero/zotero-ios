@@ -313,7 +313,7 @@ final class OpenItemsController {
                     }
                     currentItemActions.append(closeAction)
                     if index > 0 {
-                        let moveToTopAction = UIAction(title: L10n.Accessibility.Pdf.currentItemMoveFirst, image: .init(systemName: "arrowshape.up.circle")) { [weak self] _ in
+                        let moveToTopAction = UIAction(title: L10n.Accessibility.Pdf.currentItemMoveToStart, image: .init(systemName: "arrowshape.up.circle")) { [weak self] _ in
                             guard let self else { return }
                             move(item.kind, to: 0, for: sessionIdentifier)
                             completion(false, true)
@@ -321,7 +321,7 @@ final class OpenItemsController {
                         currentItemActions.append(moveToTopAction)
                     }
                     if index < itemsCount - 1 {
-                        let moveToBottomAction = UIAction(title: L10n.Accessibility.Pdf.currentItemMoveLast, image: .init(systemName: "arrowshape.down.circle")) { [weak self] _ in
+                        let moveToBottomAction = UIAction(title: L10n.Accessibility.Pdf.currentItemMoveToEnd, image: .init(systemName: "arrowshape.down.circle")) { [weak self] _ in
                             guard let self else { return }
                             move(item.kind, to: itemsCount, for: sessionIdentifier)
                             completion(false, true)

@@ -578,7 +578,7 @@
 "accessibility.pdf.open_items" = "Open Items";
 "accessibility.pdf.current_item" = "Current Item";
 "accessibility.pdf.current_item_close" = "Close";
-"accessibility.pdf.current_item_move_first" = "Move first";
-"accessibility.pdf.current_item_move_last" = "Move last";
+"accessibility.pdf.current_item_move_to_start" = "Move to start";
+"accessibility.pdf.current_item_move_to end" = "Move to end";
 "accessibility.pdf.close_all_open_items" = "Close all";
 "accessibility.pdf.close_other_open_items" = "Close other items";
