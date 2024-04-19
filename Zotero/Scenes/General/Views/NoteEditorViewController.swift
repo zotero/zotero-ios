@@ -138,6 +138,14 @@ final class NoteEditorViewController: UIViewController {
             debounceSave()
         }
 
+        if !state.createdImages.isEmpty {
+            let webViewCalls = state.createdImages.map({
+                let encodedData = WebViewEncoder.encodeAsJSONForJavascript(["nodeID": $0.nodeId, "attachmentKey": $0.key])
+                return webView.call(javascript: "attachImportedImage(\(encodedData));").asObservable()
+            })
+            Observable.concat(webViewCalls).subscribe().disposed(by: disposeBag)
+        }
+
         if let resource = state.downloadedResource {
             let encodedData = WebViewEncoder.encodeAsJSONForJavascript(["id": resource.identifier, "data": resource.data])
             webView.call(javascript: "notifySubscription(\(encodedData));").subscribe().disposed(by: disposeBag)
@@ -179,6 +187,9 @@ final class NoteEditorViewController: UIViewController {
         case "subscribe":
             guard let subscription = data["subscription"] as? [String: Any] else { return }
             viewModel.process(action: .loadResource(subscription))
+
+        case "unsubscribe":
+            viewModel.process(action: .deleteResource(data))
 
         case "importImages":
             viewModel.process(action: .importImages(data))
