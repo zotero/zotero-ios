@@ -59,6 +59,9 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         case .loadResource(let data):
             loadResource(data: data, in: viewModel)
 
+        case .deleteResource(let data):
+            deleteResource(data: data, in: viewModel)
+
         case .importImages(let data):
             backgroundQueue.async { [weak viewModel] in
                 guard let viewModel else { return }
@@ -109,9 +112,14 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
 
         do {
             let failedKeys = try dbStorage.perform(request: request, on: backgroundQueue).map({ $0.0 })
-            let successfulNodeIds = images.filter({ !failedKeys.contains($0.1.key) }).map({ $0.0 })
+            let successfulImages = images.filter({ !failedKeys.contains($0.1.key) }).map({ NoteEditorState.CreatedImage(nodeId: $0.0, key: $0.1.key) })
+            update(viewModel: viewModel) { state in
+                state.createdImages = successfulImages
+                state.changes = .save
+            }
         } catch let error {
             DDLogError("NoteEditorActionHandler: can't create embedded images - \(error)")
+            saveCallback(parentKey, .failure(error))
         }
 
         func createItemIfNeeded() -> String? {
@@ -128,6 +136,7 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 return key
 
             case .readOnly(let key):
+                saveCallback(key, .failure(State.Error.cantSaveReadonlyNote))
                 return nil
             }
 
@@ -165,10 +174,9 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
 
         func process(key: String, libraryId: LibraryIdentifier, viewModel: ViewModel<NoteEditorActionHandler>) {
             guard let metadata = viewModel.state.pendingResources[key] else { return }
-
             switch metadata.type {
             case "image":
-                processImage(identifier: metadata.identifier, key: key, libraryId: libraryId, viewModel: viewModel)
+                processImage(identifier: metadata.identifier, key: key, filename: metadata.filename, contentType: metadata.contentType, libraryId: libraryId, viewModel: viewModel)
 
             default:
                 DDLogWarn("NoteEditorActionHandler: unknown resource type - \(metadata.type); \(key); \(libraryId)")
@@ -176,14 +184,14 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         }
     }
 
-    private func processImage(identifier: String, key: String, libraryId: LibraryIdentifier, viewModel: ViewModel<NoteEditorActionHandler>) {
-        let file = Files.attachmentFile(in: libraryId, key: key, filename: "image", contentType: "image/png")
+    private func processImage(identifier: String, key: String, filename: String, contentType: String, libraryId: LibraryIdentifier, viewModel: ViewModel<NoteEditorActionHandler>) {
+        let file = Files.attachmentFile(in: libraryId, key: key, filename: filename, contentType: contentType)
         do {
             let data = try fileStorage.read(file).base64EncodedData()
             guard let dataString = String(data: data, encoding: .utf8) else {
                 throw NoteEditorState.Error.cantCreateData
             }
-            let resource = NoteEditorState.Resource(identifier: identifier, data: ["src": "data:image/png;base64,\(dataString)"])
+            let resource = NoteEditorState.Resource(identifier: identifier, data: ["src": "data:\(contentType);base64,\(dataString)"])
             update(viewModel: viewModel) { state in
                 state.pendingResources[key] = nil
                 state.downloadedResource = resource
@@ -197,28 +205,32 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         guard case .edit(let noteKey) = viewModel.state.kind,
               let identifier = data["id"] as? String,
               let type = data["type"] as? String,
-              let key = (data["data"] as? [String: Any])?["attachmentKey"] as? String
+              let key = (data["data"] as? [String: Any])?["attachmentKey"] as? String,
+              let item = try? dbStorage.perform(request: ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: key), on: .main),
+              let attachment = AttachmentCreator.attachment(for: item, fileStorage: fileStorage, urlDetector: nil),
+              case .file(let filename, let contentType, let location, _, _) = attachment.type
         else { return }
 
-        let file = Files.attachmentFile(in: viewModel.state.library.identifier, key: key, filename: "image", contentType: "image/png")
-
-        if fileStorage.has(file) {
-            processImage(identifier: identifier, key: key, libraryId: viewModel.state.library.identifier, viewModel: viewModel)
+        if location == .local {
+            processImage(identifier: identifier, key: key, filename: filename, contentType: contentType, libraryId: viewModel.state.library.identifier, viewModel: viewModel)
             return
         }
 
-        let metadata = NoteEditorState.ResourceMetadata(identifier: identifier, type: type)
+        let metadata = NoteEditorState.ResourceMetadata(identifier: identifier, type: type, filename: filename, contentType: contentType)
         update(viewModel: viewModel) { state in
             state.pendingResources[key] = metadata
         }
 
-        let attachment = Attachment(
-            type: .file(filename: "image", contentType: "image/png", location: .remote, linkType: .embeddedImage, compressed: false),
-            title: "image",
-            key: key,
-            libraryId: viewModel.state.library.identifier
-        )
         attachmentDownloader.downloadIfNeeded(attachment: attachment, parentKey: noteKey)
+    }
+
+    private func deleteResource(data: [String: Any], in viewModel: ViewModel<NoteEditorActionHandler>) {
+        guard let key = data["id"] as? String else { return }
+        let request = MarkObjectsAsDeletedDbRequest<RItem>(keys: [key], libraryId: viewModel.state.library.identifier)
+        perform(request: request) { error in
+            guard let error else { return }
+            DDLogError("NoteEditorActionHandler: could not mark image as deleted \(key) - \(error)")
+        }
     }
 
     private func save(in viewModel: ViewModel<NoteEditorActionHandler>) {

@@ -19,6 +19,13 @@ struct NoteEditorState: ViewModelState {
     struct ResourceMetadata {
         let identifier: String
         let type: String
+        let filename: String
+        let contentType: String
+    }
+
+    struct CreatedImage {
+        let nodeId: String
+        let key: String
     }
 
     enum Kind {
@@ -65,6 +72,7 @@ struct NoteEditorState: ViewModelState {
     var tags: [Tag]
     var pendingResources: [String: ResourceMetadata]
     var downloadedResource: Resource?
+    var createdImages: [CreatedImage]
     var changes: Changes
 
     init(kind: Kind, library: Library, title: TitleData?, text: String, tags: [Tag]) {
@@ -75,10 +83,12 @@ struct NoteEditorState: ViewModelState {
         self.title = title
         pendingResources = [:]
         changes = []
+        createdImages = []
     }
 
     mutating func cleanup() {
         downloadedResource = nil
         changes = []
+        createdImages = []
     }
 }
