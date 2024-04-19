@@ -140,11 +140,11 @@ class UploadFixSyncAction: SyncAction {
 
                 case .file(let filename, let contentType, let location, let linkType, let compressed):
                     switch linkType {
-                    case .embeddedImage, .linkedFile:
+                    case .linkedFile:
                         DDLogError("UploadFixSyncAction: incorrect link type - \(linkType)")
                         subscriber(.failure(Error.incorrectLinkType(linkType)))
 
-                    case .importedFile, .importedUrl:
+                    case .importedFile, .importedUrl, .embeddedImage:
                         switch location {
                         case .remoteMissing:
                             DDLogError("UploadFixSyncAction: attachment missing remotely")

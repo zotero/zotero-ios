@@ -337,10 +337,10 @@ final class AttachmentDownloader: NSObject {
 
                 case .file(let filename, let contentType, let location, let linkType, _):
                     switch linkType {
-                    case .linkedFile, .embeddedImage:
+                    case .linkedFile:
                         break
 
-                    case .importedFile, .importedUrl:
+                    case .importedFile, .importedUrl, .embeddedImage:
                         switch location {
                         case .local:
                             break

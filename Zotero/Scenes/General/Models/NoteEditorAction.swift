@@ -14,5 +14,6 @@ enum NoteEditorAction {
     case setTags([Tag])
     case setText(String)
     case loadResource([String: Any])
+    case deleteResource([String: Any])
     case importImages([String: Any])
 }
