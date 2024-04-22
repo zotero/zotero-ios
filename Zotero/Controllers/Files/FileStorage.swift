@@ -33,6 +33,7 @@ protocol FileStorage: AnyObject {
     func directoryData(for files: [File]) -> DirectoryData
     func isZip(file: File) -> Bool
     func isPdf(file: File) -> Bool
+    func isEmptyOrNotFoundResponse(file: File) -> Bool
 }
 
 final class FileStorageController: FileStorage {
@@ -169,5 +170,10 @@ final class FileStorageController: FileStorage {
         }
 
         return DirectoryData(fileCount: count, mbSize: (Double(totalSize) / 1048576))
+    }
+
+    func isEmptyOrNotFoundResponse(file: File) -> Bool {
+        let size = size(of: file)
+        return size == 0 || (size == 9 && (try? read(file)).flatMap({ String(data: $0, encoding: .utf8) })?.caseInsensitiveCompare("Not found") == .orderedSame)
     }
 }

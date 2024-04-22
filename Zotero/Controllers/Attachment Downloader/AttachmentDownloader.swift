@@ -796,15 +796,7 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
             return
         }
 
-        var error: Swift.Error?
-        do {
-            if let responseError = checkFileResponse(for: Files.file(from: location), fileStorage: fileStorage, downloadTask: downloadTask) {
-                throw responseError
-            }
-        } catch let responseError {
-            error = responseError
-        }
-
+        let error = checkFileResponse(for: Files.file(from: location), fileStorage: fileStorage, downloadTask: downloadTask)
         if let data = activeDownload.logData {
             logResponse(for: data, task: downloadTask, error: error)
         }
@@ -862,8 +854,7 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
         }
 
         func checkFileResponse(for file: File, fileStorage: FileStorage, downloadTask: URLSessionDownloadTask) -> Swift.Error? {
-            let size = fileStorage.size(of: file)
-            if size == 0 || (size == 9 && (try? fileStorage.read(file)).flatMap({ String(data: $0, encoding: .utf8) })?.caseInsensitiveCompare("Not found") == .orderedSame) {
+            if fileStorage.isEmptyOrNotFoundResponse(file: file) {
                 try? fileStorage.remove(file)
                 return AFResponseError(
                     url: downloadTask.currentRequest?.url,
