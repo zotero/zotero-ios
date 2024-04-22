@@ -724,26 +724,38 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
             switch responseError.error {
             case .responseValidationFailed(let reason):
                 switch reason {
-                case .unacceptableStatusCode(let code) where code == 404:
-                    let webDavEnabled = self.controllers.userControllers?.webDavController.sessionStorage.isEnabled ?? false
+                case .unacceptableStatusCode(let code):
+                    let webDavEnabled = controllers.userControllers?.webDavController.sessionStorage.isEnabled ?? false
+                    switch code {
+                    case 401:
+                        if webDavEnabled {
+                            return(L10n.Errors.Attachments.unauthorizedWebdav, [])
+                        }
 
-                    let messageStart: String
-                    if webDavEnabled {
-                        messageStart = L10n.Errors.Attachments.missingWebdav
-                    } else {
-                        messageStart = L10n.Errors.Attachments.missingZotero
+                    case 404:
+                        let messageStart: String
+                        if webDavEnabled {
+                            messageStart = L10n.Errors.Attachments.missingWebdav
+                        } else {
+                            messageStart = L10n.Errors.Attachments.missingZotero
+                        }
+
+                        let message = "\(messageStart) \(L10n.Errors.Attachments.missingAdditional)"
+                        let action = UIAlertAction(title: L10n.moreInformation, style: .default) { [weak self] _ in
+                            self?.showWeb(url: URL(string: "https://www.zotero.org/support/kb/files_not_syncing")!)
+                        }
+                        return (message, [action])
+
+                    default:
+                        break
                     }
 
-                    let message = "\(messageStart) \(L10n.Errors.Attachments.missingAdditional)"
-                    let action = UIAlertAction(title: L10n.moreInformation, style: .default) { [weak self] _ in
-                        self?.showWeb(url: URL(string: "https://www.zotero.org/support/kb/files_not_syncing")!)
-                    }
-                    return (message, [action])
-
-                default: break
+                default:
+                    break
                 }
 
-            default: break
+            default:
+                break
             }
         }
 

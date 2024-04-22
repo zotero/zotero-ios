@@ -412,6 +412,8 @@ internal enum L10n {
       internal static let missingWebdav = L10n.tr("Localizable", "errors.attachments.missing_webdav", fallback: "The attached file is not available on the WebDAV server.")
       /// The attached file is not available in the online library.
       internal static let missingZotero = L10n.tr("Localizable", "errors.attachments.missing_zotero", fallback: "The attached file is not available in the online library.")
+      /// The WebDAV server did not accept the username and password you have saved in settings.
+      internal static let unauthorizedWebdav = L10n.tr("Localizable", "errors.attachments.unauthorized_webdav", fallback: "The WebDAV server did not accept the username and password you have saved in settings.")
     }
     internal enum Citation {
       /// Could not generate bibliography.
