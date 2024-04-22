@@ -111,7 +111,7 @@ class RemoteAttachmentDownloadOperation: AsynchronousOperation {
     /// When the request returns 404 "Not found" Alamofire download doesn't recognize it and just downloads the file with content "Not found".
     private func checkFileResponse(for file: File) -> Swift.Error? {
         let size = self.fileStorage.size(of: file)
-        if size == 0 || (size == 9 && (try? self.fileStorage.read(file)).flatMap({ String(data: $0, encoding: .utf8) }) == "Not found") {
+        if size == 0 || (size == 9 && (try? self.fileStorage.read(file)).flatMap({ String(data: $0, encoding: .utf8) })?.caseInsensitiveCompare("Not found") == .orderedSame) {
             return AFError.responseValidationFailed(reason: .unacceptableStatusCode(code: 404))
         }
         if file.mimeType == "application/pdf" && !self.fileStorage.isPdf(file: file) {

@@ -796,10 +796,26 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
             return
         }
 
+        var error: Swift.Error?
+        do {
+            if let responseError = checkFileResponse(for: Files.file(from: location), fileStorage: fileStorage, downloadTask: downloadTask) {
+                throw responseError
+            }
+        } catch let responseError {
+            error = responseError
+        }
+
         if let data = activeDownload.logData {
-            logResponse(for: data, task: downloadTask, error: nil)
+            logResponse(for: data, task: downloadTask, error: error)
         }
         DDLogInfo("AttachmentDownloader: didFinishDownloadingTo \(downloadTask.taskIdentifier)")
+
+        if let error {
+            accessQueue.sync(flags: .barrier) { [weak self] in
+                self?.finish(activeDownload: activeDownload, download: download, compressed: nil, result: .failure(error))
+            }
+            return
+        }
 
         var zipFile: File?
         var shouldExtractAfterDownload = activeDownload.extractAfterDownload
@@ -815,9 +831,6 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
         }
 
         do {
-            if let error = checkFileResponse(for: Files.file(from: location), fileStorage: fileStorage) {
-                throw error
-            }
             // If there is some older version of given file, remove so that it can be replaced
             if let zipFile, fileStorage.has(zipFile) {
                 try fileStorage.remove(zipFile)
@@ -848,11 +861,17 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
             }
         }
 
-        func checkFileResponse(for file: File, fileStorage: FileStorage) -> Swift.Error? {
+        func checkFileResponse(for file: File, fileStorage: FileStorage, downloadTask: URLSessionDownloadTask) -> Swift.Error? {
             let size = fileStorage.size(of: file)
-            if size == 0 || (size == 9 && (try? fileStorage.read(file)).flatMap({ String(data: $0, encoding: .utf8) }) == "Not found") {
+            if size == 0 || (size == 9 && (try? fileStorage.read(file)).flatMap({ String(data: $0, encoding: .utf8) })?.caseInsensitiveCompare("Not found") == .orderedSame) {
                 try? fileStorage.remove(file)
-                return AFError.responseValidationFailed(reason: .unacceptableStatusCode(code: 404))
+                return AFResponseError(
+                    url: downloadTask.currentRequest?.url,
+                    httpMethod: downloadTask.currentRequest?.httpMethod ?? "Unknown",
+                    error: .responseValidationFailed(reason: .unacceptableStatusCode(code: 404)),
+                    headers: (downloadTask.response as? HTTPURLResponse)?.allHeaderFields,
+                    response: "Not found"
+                )
             }
             return nil
         }
