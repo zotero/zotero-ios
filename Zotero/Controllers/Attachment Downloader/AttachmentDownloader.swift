@@ -798,11 +798,11 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
 
         var error: Swift.Error?
         do {
-            if let fileResponseError = checkFileResponse(for: Files.file(from: location), fileStorage: fileStorage) {
-                throw fileResponseError
+            if let responseError = checkFileResponse(for: Files.file(from: location), fileStorage: fileStorage, downloadTask: downloadTask) {
+                throw responseError
             }
-        } catch let fileResponseError {
-            error = fileResponseError
+        } catch let responseError {
+            error = responseError
         }
 
         if let data = activeDownload.logData {
@@ -861,11 +861,17 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
             }
         }
 
-        func checkFileResponse(for file: File, fileStorage: FileStorage) -> Swift.Error? {
+        func checkFileResponse(for file: File, fileStorage: FileStorage, downloadTask: URLSessionDownloadTask) -> Swift.Error? {
             let size = fileStorage.size(of: file)
             if size == 0 || (size == 9 && (try? fileStorage.read(file)).flatMap({ String(data: $0, encoding: .utf8) })?.caseInsensitiveCompare("Not found") == .orderedSame) {
                 try? fileStorage.remove(file)
-                return AFError.responseValidationFailed(reason: .unacceptableStatusCode(code: 404))
+                return AFResponseError(
+                    url: downloadTask.currentRequest?.url,
+                    httpMethod: downloadTask.currentRequest?.httpMethod ?? "Unknown",
+                    error: .responseValidationFailed(reason: .unacceptableStatusCode(code: 404)),
+                    headers: (downloadTask.response as? HTTPURLResponse)?.allHeaderFields,
+                    response: "Not found"
+                )
             }
             return nil
         }
