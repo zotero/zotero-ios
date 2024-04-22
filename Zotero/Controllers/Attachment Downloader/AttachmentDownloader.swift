@@ -850,7 +850,7 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
 
         func checkFileResponse(for file: File, fileStorage: FileStorage) -> Swift.Error? {
             let size = fileStorage.size(of: file)
-            if size == 0 || (size == 9 && (try? fileStorage.read(file)).flatMap({ String(data: $0, encoding: .utf8) }) == "Not found") {
+            if size == 0 || (size == 9 && (try? fileStorage.read(file)).flatMap({ String(data: $0, encoding: .utf8) })?.caseInsensitiveCompare("Not found") == .orderedSame) {
                 try? fileStorage.remove(file)
                 return AFError.responseValidationFailed(reason: .unacceptableStatusCode(code: 404))
             }
