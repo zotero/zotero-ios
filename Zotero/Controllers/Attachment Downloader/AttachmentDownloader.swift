@@ -796,10 +796,26 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
             return
         }
 
+        var error: Swift.Error?
+        do {
+            if let fileResponseError = checkFileResponse(for: Files.file(from: location), fileStorage: fileStorage) {
+                throw fileResponseError
+            }
+        } catch let fileResponseError {
+            error = fileResponseError
+        }
+
         if let data = activeDownload.logData {
-            logResponse(for: data, task: downloadTask, error: nil)
+            logResponse(for: data, task: downloadTask, error: error)
         }
         DDLogInfo("AttachmentDownloader: didFinishDownloadingTo \(downloadTask.taskIdentifier)")
+
+        if let error {
+            accessQueue.sync(flags: .barrier) { [weak self] in
+                self?.finish(activeDownload: activeDownload, download: download, compressed: nil, result: .failure(error))
+            }
+            return
+        }
 
         var zipFile: File?
         var shouldExtractAfterDownload = activeDownload.extractAfterDownload
@@ -815,9 +831,6 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
         }
 
         do {
-            if let error = checkFileResponse(for: Files.file(from: location), fileStorage: fileStorage) {
-                throw error
-            }
             // If there is some older version of given file, remove so that it can be replaced
             if let zipFile, fileStorage.has(zipFile) {
                 try fileStorage.remove(zipFile)
