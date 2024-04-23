@@ -406,6 +406,12 @@ internal enum L10n {
       internal static let cantOpenAttachment = L10n.tr("Localizable", "errors.attachments.cant_open_attachment", fallback: "The attached file could not be found.")
       /// Unable to unzip snapshot
       internal static let cantUnzipSnapshot = L10n.tr("Localizable", "errors.attachments.cant_unzip_snapshot", fallback: "Unable to unzip snapshot")
+      /// You don't have permission to access %@ on the WebDAV server.
+      internal static func forbiddenWebdav(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "errors.attachments.forbidden_webdav", String(describing: p1), fallback: "You don't have permission to access %@ on the WebDAV server.")
+      }
+      /// the file
+      internal static let genericFilename = L10n.tr("Localizable", "errors.attachments.generic_filename", fallback: "the file")
       /// Linked files are not supported on iOS. You can open them using the Zotero desktop app.
       internal static let incompatibleAttachment = L10n.tr("Localizable", "errors.attachments.incompatible_attachment", fallback: "Linked files are not supported on iOS. You can open them using the Zotero desktop app.")
       /// Please check that the file has synced on the device where it was added.

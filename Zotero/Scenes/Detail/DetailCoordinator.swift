@@ -746,6 +746,12 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
                                 return(L10n.Errors.Attachments.unauthorizedWebdav, [action, cancelAction])
                             }
 
+                        case 403:
+                            if webDavEnabled {
+                                let message = L10n.Errors.Attachments.forbiddenWebdav(responseError.url?.lastPathComponent ?? L10n.Errors.Attachments.genericFilename)
+                                return(message, actions)
+                            }
+
                         case 404:
                             let messageStart: String
                             if webDavEnabled {

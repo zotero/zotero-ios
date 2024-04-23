@@ -802,6 +802,9 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
         case 401:
             error = createError(from: downloadTask, statusCode: 401, response: "Unauthorized")
 
+        case 403:
+            error = createError(from: downloadTask, statusCode: 403, response: "Forbidden")
+
         case 404:
             error = createError(from: downloadTask, statusCode: 404, response: "Not Found")
 
