@@ -343,6 +343,16 @@ final class DetailCoordinator: Coordinator {
         self.transitionDelegate = nil
         self.navigationController?.present(controller, animated: true, completion: nil)
     }
+
+    private func showSettings(using presenter: UINavigationController, initialScreen: SettingsCoordinator.InitialScreen? = nil) {
+        let navigationController = NavigationViewController()
+        let containerController = ContainerViewController(rootViewController: navigationController)
+        let coordinator = SettingsCoordinator(navigationController: navigationController, controllers: controllers, initialScreen: initialScreen)
+        coordinator.parentCoordinator = self
+        childCoordinators.append(coordinator)
+        coordinator.start(animated: false)
+        presenter.present(containerController, animated: true)
+    }
 }
 
 extension DetailCoordinator: DetailItemsCoordinatorDelegate {
@@ -697,54 +707,62 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
     }
 
     func showAttachmentError(_ error: Error) {
-        let (message, additionalActions) = self.attachmentMessageAndActions(for: error)
+        let (message, actions) = attachmentMessageAndActions(for: error)
         let controller = UIAlertController(title: L10n.error, message: message, preferredStyle: .alert)
-        controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
-        for action in additionalActions {
+        for action in actions {
             controller.addAction(action)
         }
-        self.navigationController?.present(controller, animated: true, completion: nil)
-    }
+        navigationController?.present(controller, animated: true, completion: nil)
 
-    private func attachmentMessageAndActions(for error: Error) -> (String, [UIAlertAction]) {
-        if let error = error as? AttachmentDownloader.Error {
-            switch error {
-            case .incompatibleAttachment:
-                return (L10n.Errors.Attachments.incompatibleAttachment, [])
+        func attachmentMessageAndActions(for error: Error) -> (String, [UIAlertAction]) {
+            var actions: [UIAlertAction] = [UIAlertAction(title: L10n.ok, style: .cancel)]
+            if let error = error as? AttachmentDownloader.Error {
+                switch error {
+                case .incompatibleAttachment:
+                    return (L10n.Errors.Attachments.incompatibleAttachment, actions)
 
-            case .zipDidntContainRequestedFile:
-                return (L10n.Errors.Attachments.cantOpenAttachment, [])
+                case .zipDidntContainRequestedFile:
+                    return (L10n.Errors.Attachments.cantOpenAttachment, actions)
 
-            case .cantUnzipSnapshot:
-                return (L10n.Errors.Attachments.cantUnzipSnapshot, [])
+                case .cantUnzipSnapshot:
+                    return (L10n.Errors.Attachments.cantUnzipSnapshot, actions)
+                }
             }
-        }
 
-        if let responseError = error as? AFResponseError {
-            switch responseError.error {
-            case .responseValidationFailed(let reason):
-                switch reason {
-                case .unacceptableStatusCode(let code):
-                    let webDavEnabled = controllers.userControllers?.webDavController.sessionStorage.isEnabled ?? false
-                    switch code {
-                    case 401:
-                        if webDavEnabled {
-                            return(L10n.Errors.Attachments.unauthorizedWebdav, [])
-                        }
+            if let responseError = error as? AFResponseError {
+                switch responseError.error {
+                case .responseValidationFailed(let reason):
+                    switch reason {
+                    case .unacceptableStatusCode(let code):
+                        let webDavEnabled = controllers.userControllers?.webDavController.sessionStorage.isEnabled ?? false
+                        switch code {
+                        case 401:
+                            if webDavEnabled {
+                                let action = UIAlertAction(title: L10n.goToSettings, style: .default) { [weak self] _ in
+                                    guard let self, let navigationController else { return }
+                                    showSettings(using: navigationController, initialScreen: .sync)
+                                }
+                                let cancelAction = UIAlertAction(title: L10n.cancel, style: .cancel)
+                                return(L10n.Errors.Attachments.unauthorizedWebdav, [action, cancelAction])
+                            }
 
-                    case 404:
-                        let messageStart: String
-                        if webDavEnabled {
-                            messageStart = L10n.Errors.Attachments.missingWebdav
-                        } else {
-                            messageStart = L10n.Errors.Attachments.missingZotero
-                        }
+                        case 404:
+                            let messageStart: String
+                            if webDavEnabled {
+                                messageStart = L10n.Errors.Attachments.missingWebdav
+                            } else {
+                                messageStart = L10n.Errors.Attachments.missingZotero
+                            }
 
-                        let message = "\(messageStart) \(L10n.Errors.Attachments.missingAdditional)"
-                        let action = UIAlertAction(title: L10n.moreInformation, style: .default) { [weak self] _ in
-                            self?.showWeb(url: URL(string: "https://www.zotero.org/support/kb/files_not_syncing")!)
+                            let message = "\(messageStart) \(L10n.Errors.Attachments.missingAdditional)"
+                            let action = UIAlertAction(title: L10n.moreInformation, style: .default) { [weak self] _ in
+                                self?.showWeb(url: URL(string: "https://www.zotero.org/support/kb/files_not_syncing")!)
+                            }
+                            return (message, actions + [action])
+
+                        default:
+                            break
                         }
-                        return (message, [action])
 
                     default:
                         break
@@ -753,13 +771,10 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
                 default:
                     break
                 }
-
-            default:
-                break
             }
-        }
 
-        return (L10n.Errors.Attachments.cantOpenAttachment, [])
+            return (L10n.Errors.Attachments.cantOpenAttachment, actions)
+        }
     }
 
     func showCreatorCreation(for itemType: String, saved: @escaping CreatorEditSaveAction) {
@@ -939,8 +954,8 @@ extension DetailCoordinator: DetailMissingStyleErrorDelegate {
         guard let resolvedPresenter = presenter ?? navigationController else { return }
         let controller = UIAlertController(title: L10n.error, message: L10n.Errors.Citation.missingStyle, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
-        controller.addAction(UIAlertAction(title: L10n.Errors.Citation.openSettings, style: .default, handler: { _ in
-            openExportSettings(using: resolvedPresenter)
+        controller.addAction(UIAlertAction(title: L10n.Errors.Citation.openSettings, style: .default, handler: { [weak self] _ in
+            self?.showSettings(using: resolvedPresenter, initialScreen: .export)
         }))
 
         if resolvedPresenter.presentedViewController == nil {
@@ -949,16 +964,6 @@ extension DetailCoordinator: DetailMissingStyleErrorDelegate {
             resolvedPresenter.dismiss(animated: true) {
                 resolvedPresenter.present(controller, animated: true)
             }
-        }
-
-        func openExportSettings(using presenter: UINavigationController) {
-            let navigationController = NavigationViewController()
-            let containerController = ContainerViewController(rootViewController: navigationController)
-            let coordinator = SettingsCoordinator(startsWithExport: true, navigationController: navigationController, controllers: controllers)
-            coordinator.parentCoordinator = self
-            childCoordinators.append(coordinator)
-            coordinator.start(animated: false)
-            presenter.present(containerController, animated: true)
         }
     }
 }

@@ -62,6 +62,8 @@ internal enum L10n {
   internal static func fullSyncDebug(_ p1: Any) -> String {
     return L10n.tr("Localizable", "full_sync_debug", String(describing: p1), fallback: "Full sync has finished. Please report Debug ID %@ in the Zotero Forums.")
   }
+  /// Go to Settings
+  internal static let goToSettings = L10n.tr("Localizable", "go_to_settings", fallback: "Go to Settings")
   /// Item Type
   internal static let itemType = L10n.tr("Localizable", "item_type", fallback: "Item Type")
   /// Keep

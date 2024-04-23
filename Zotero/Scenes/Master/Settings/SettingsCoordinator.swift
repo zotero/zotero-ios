@@ -53,12 +53,17 @@ protocol DebuggingSettingsSettingsCoordinatorDelegate: AnyObject {
 }
 
 final class SettingsCoordinator: NSObject, Coordinator {
+    enum InitialScreen {
+        case export
+        case sync
+    }
+
     weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
     weak var navigationController: UINavigationController?
 
     private unowned let controllers: Controllers
-    private let startsWithExport: Bool
+    private let initialScreen: InitialScreen?
     private let disposeBag: DisposeBag
     private static let defaultSize: CGSize = CGSize(width: 580, height: 560)
 
@@ -66,12 +71,12 @@ final class SettingsCoordinator: NSObject, Coordinator {
     private var transitionDelegate: EmptyTransitioningDelegate?
     private var safariDidFinish: (() -> Void)?
 
-    init(startsWithExport: Bool, navigationController: NavigationViewController, controllers: Controllers) {
+    init(navigationController: NavigationViewController, controllers: Controllers, initialScreen: InitialScreen? = nil) {
         self.navigationController = navigationController
         self.controllers = controllers
-        self.startsWithExport = startsWithExport
-        self.childCoordinators = []
-        self.disposeBag = DisposeBag()
+        self.initialScreen = initialScreen
+        childCoordinators = []
+        disposeBag = DisposeBag()
 
         super.init()
 
@@ -82,13 +87,22 @@ final class SettingsCoordinator: NSObject, Coordinator {
     }
 
     func start(animated: Bool) {
-        guard let listController = self.createListController() else { return }
+        guard let listController = createListController() else { return }
 
         var controllers: [UIViewController] = [listController]
-        if self.startsWithExport {
-            controllers.append(self.createExportController())
+        switch initialScreen {
+        case .export:
+            controllers.append(createExportController())
+
+        case .sync:
+            if let syncController = createSyncController() {
+                controllers.append(syncController)
+            }
+
+        default:
+            break
         }
-        self.navigationController?.setViewControllers(controllers, animated: animated)
+        navigationController?.setViewControllers(controllers, animated: animated)
     }
 
     private func createListController() -> UIViewController? {
@@ -120,6 +134,44 @@ final class SettingsCoordinator: NSObject, Coordinator {
         view.coordinatorDelegate = self
 
         let controller = UIHostingController(rootView: view.environmentObject(viewModel))
+        controller.preferredContentSize = SettingsCoordinator.defaultSize
+        return controller
+    }
+
+    private func createSyncController() -> UIViewController? {
+        guard let dbStorage = controllers.userControllers?.dbStorage,
+              let syncScheduler = controllers.userControllers?.syncScheduler,
+              let webDavController = controllers.userControllers?.webDavController else {
+            DDLogError("SettingsCoordinator: can't show sync, missing userControllers")
+            return nil
+        }
+
+        let handler = SyncSettingsActionHandler(
+            dbStorage: dbStorage,
+            fileStorage: controllers.fileStorage,
+            sessionController: controllers.sessionController,
+            webDavController: webDavController,
+            syncScheduler: syncScheduler,
+            coordinatorDelegate: self
+        )
+        let state = SyncSettingsState(
+            account: Defaults.shared.username,
+            fileSyncType: (webDavController.sessionStorage.isEnabled ? .webDav : .zotero),
+            scheme: webDavController.sessionStorage.scheme,
+            url: webDavController.sessionStorage.url,
+            username: webDavController.sessionStorage.username,
+            password: webDavController.sessionStorage.password,
+            isVerified: webDavController.sessionStorage.isVerified
+        )
+        let viewModel = ViewModel(initialState: state, handler: handler)
+        var view = SyncSettingsView()
+        view.coordinatorDelegate = self
+
+        let controller = DisappearActionHostingController(rootView: view.environmentObject(viewModel))
+        controller.willDisappear = {
+            // Dismiss keyboard when controller disappears, SwiftUI sometimes keeps an active field visible even when it's removed from view hierarchy.
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        }
         controller.preferredContentSize = SettingsCoordinator.defaultSize
         return controller
     }
@@ -156,33 +208,8 @@ extension SettingsCoordinator: StorageSettingsSettingsCoordinatorDelegate {
 
 extension SettingsCoordinator: SettingsCoordinatorDelegate {
     func showSync() {
-        guard let dbStorage = self.controllers.userControllers?.dbStorage,
-              let syncScheduler = self.controllers.userControllers?.syncScheduler,
-              let webDavController = self.controllers.userControllers?.webDavController else {
-            DDLogError("SettingsCoordinator: can't show sync, missing userControllers")
-            return
-        }
-
-        let handler = SyncSettingsActionHandler(dbStorage: dbStorage, fileStorage: self.controllers.fileStorage, sessionController: self.controllers.sessionController,
-                                                webDavController: webDavController, syncScheduler: syncScheduler, coordinatorDelegate: self)
-        let state = SyncSettingsState(account: Defaults.shared.username,
-                                      fileSyncType: (webDavController.sessionStorage.isEnabled ? .webDav : .zotero),
-                                      scheme: webDavController.sessionStorage.scheme,
-                                      url: webDavController.sessionStorage.url,
-                                      username: webDavController.sessionStorage.username,
-                                      password: webDavController.sessionStorage.password,
-                                      isVerified: webDavController.sessionStorage.isVerified)
-        let viewModel = ViewModel(initialState: state, handler: handler)
-        var view = SyncSettingsView()
-        view.coordinatorDelegate = self
-
-        let controller = DisappearActionHostingController(rootView: view.environmentObject(viewModel))
-        controller.willDisappear = {
-            // Dismiss keyboard when controller disappears, SwiftUI sometimes keeps an active field visible even when it's removed from view hierarchy.
-            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-        }
-        controller.preferredContentSize = SettingsCoordinator.defaultSize
-        self.navigationController?.pushViewController(controller, animated: true)
+        guard let controller = createSyncController() else { return }
+        navigationController?.pushViewController(controller, animated: true)
     }
 
     func showSupport() {
