@@ -220,9 +220,7 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
                     var collection: Collection?
 
                     do {
-                        try dbStorage.perform(on: .main, with: { coordinator in
-                            collection = try coordinator.perform(request: ReadCollectionDbRequest(collectionId: collectionId, libraryId: libraryId))
-                        })
+                        collection = try dbStorage.perform(request: ReadCollectionDbRequest(collectionId: collectionId, libraryId: libraryId), on: .main)
                     } catch let error {
                         DDLogError("AppCoordinator: can't load restored data - \(error)")
                         return nil
@@ -862,7 +860,7 @@ extension AppCoordinator: OpenItemsPresenter {
         guard let presentation, let window, let mainController = window.rootViewController as? MainViewController else { return }
         mainController.getDetailCoordinator { [weak self] coordinator in
             guard let self else { return }
-            self.show(
+            show(
                 viewControllerProvider: {
                     switch presentation {
                     case .pdf(let library, let key, let parentKey, let url):
