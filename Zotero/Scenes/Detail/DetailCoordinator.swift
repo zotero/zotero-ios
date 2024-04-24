@@ -292,6 +292,19 @@ final class DetailCoordinator: Coordinator {
         navigationController.present(controller, animated: true, completion: nil)
     }
 
+    private func showDetail(presentedBy presenter: UIViewController, detailControllerProvider: () -> DetailNavigationViewController) {
+        if let presentedViewController = presenter.presentedViewController {
+            if let presentedDetailNavigationController = presentedViewController as? DetailNavigationViewController {
+                presentedDetailNavigationController.replaceContents(with: detailControllerProvider(), animated: false)
+                return
+            }
+            guard let window = presentedViewController.view.window else { return }
+            show(viewControllerProvider: detailControllerProvider, by: presenter, in: window, animated: false)
+            return
+        }
+        presenter.present(detailControllerProvider(), animated: true)
+    }
+
     func createPDFController(key: String, parentKey: String?, libraryId: LibraryIdentifier, url: URL, page: Int? = nil, preselectedAnnotationKey: String? = nil) -> DetailNavigationViewController {
         let navigationController = DetailNavigationViewController()
         navigationController.modalPresentationStyle = .fullScreen
@@ -324,19 +337,9 @@ final class DetailCoordinator: Coordinator {
         }
         openItemsController.open(kind, for: sessionIdentifier)
 
-        let viewControllerProvider: () -> DetailNavigationViewController = {
+        showDetail(presentedBy: navigationController) {
             self.createPDFController(key: key, parentKey: parentKey, libraryId: libraryId, url: url)
         }
-        if let presentedViewController = navigationController.presentedViewController {
-            if let presentedDetailNavigationController = presentedViewController as? DetailNavigationViewController {
-                presentedDetailNavigationController.replaceContents(with: viewControllerProvider(), animated: false)
-                return
-            }
-            guard let window = presentedViewController.view.window else { return }
-            show(viewControllerProvider: viewControllerProvider, by: navigationController, in: window, animated: false)
-            return
-        }
-        navigationController.present(viewControllerProvider(), animated: true)
     }
 
     private func show(_ kind: OpenItem.Kind, collectionId: CollectionIdentifier, targetSessionIdentifier: String, sourceSessionIdentifier: String, openItemsController: OpenItemsController) {
@@ -1034,19 +1037,9 @@ extension DetailCoordinator: DetailNoteEditorCoordinatorDelegate {
             openItemsController.open(kind, for: sessionIdentifier)
         }
 
-        let viewControllerProvider: () -> DetailNavigationViewController = {
+        showDetail(presentedBy: navigationController) {
             self.createNoteController(library: library, kind: kind, text: text, tags: tags, title: title, saveCallback: amendedSaveCallback)
         }
-        if let presentedViewController = navigationController.presentedViewController {
-            if let presentedDetailNavigationController = presentedViewController as? DetailNavigationViewController {
-                presentedDetailNavigationController.replaceContents(with: viewControllerProvider(), animated: false)
-                return
-            }
-            guard let window = presentedViewController.view.window else { return }
-            show(viewControllerProvider: viewControllerProvider, by: navigationController, in: window, animated: false)
-            return
-        }
-        navigationController.present(viewControllerProvider(), animated: true)
     }
 }
 
