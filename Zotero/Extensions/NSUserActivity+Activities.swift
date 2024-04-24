@@ -29,60 +29,53 @@ extension NSUserActivity {
     private static let restoreMostRecentlyOpenedItemKey = "restoreMostRecentlyOpenedItem"
     
     static func mainActivity(with openItems: [OpenItem]) -> NSUserActivity {
-        let activity = NSUserActivity(activityType: self.mainId)
-        activity.addUserInfoEntries(from: openItemsToUserInfo(openItems: openItems))
-        let userInfo: [AnyHashable: Any] = [restoreMostRecentlyOpenedItemKey: false]
-        activity.addUserInfoEntries(from: userInfo)
-        return activity
+        return NSUserActivity(activityType: self.mainId)
+            .addUserInfoEntries(openItems: openItems)
+            .addUserInfoEntries(restoreMostRecentlyOpened: false)
     }
 
     static func pdfActivity(with openItems: [OpenItem], libraryId: LibraryIdentifier, collectionId: CollectionIdentifier) -> NSUserActivity {
-        let activity = NSUserActivity(activityType: self.pdfId)
-        activity.addUserInfoEntries(from: openItemsToUserInfo(openItems: openItems))
-        var userInfo: [AnyHashable: Any] = [libraryIdKey: libraryIdToString(libraryId), restoreMostRecentlyOpenedItemKey: true]
-        if let collectionIdData = try? JSONEncoder().encode(collectionId) {
-            userInfo[collectionIdKey] = collectionIdData
-        }
-        activity.addUserInfoEntries(from: userInfo)
-        return activity
+        return NSUserActivity(activityType: self.pdfId)
+            .addUserInfoEntries(openItems: openItems)
+            .addUserInfoEntries(libraryId: libraryId, collectionId: collectionId, restoreMostRecentlyOpened: true)
     }
     
-    private static func openItemsToUserInfo(openItems: [OpenItem]) -> [AnyHashable: Any] {
+    @discardableResult
+    func addUserInfoEntries(openItems: [OpenItem]) -> Self {
         var userInfo: [AnyHashable: Any] = [:]
         let encoder = JSONEncoder()
-        userInfo[openItemsKey] = openItems.compactMap { try? encoder.encode($0) }
-        return userInfo
-    }
-    
-    private static func libraryIdToString(_ libraryId: LibraryIdentifier) -> String {
-        switch libraryId {
-        case .custom:
-            return "myLibrary"
-        case .group(let groupId):
-            return "g:\(groupId)"
-        }
+        userInfo[Self.openItemsKey] = openItems.compactMap { try? encoder.encode($0) }
+        addUserInfoEntries(from: userInfo)
+        return self
     }
 
     @discardableResult
-    func set(title: String? = nil) -> NSUserActivity {
+    func set(title: String? = nil) -> Self {
         self.title = title
         return self
     }
 
-    private func stringToLibraryId(_ string: String) -> LibraryIdentifier? {
-        guard !string.isEmpty else { return nil }
-
-        if string == "myLibrary" {
-            return .custom(.myLibrary)
+    @discardableResult
+    func addUserInfoEntries(libraryId: LibraryIdentifier? = nil, collectionId: CollectionIdentifier? = nil, restoreMostRecentlyOpened: Bool = false) -> Self {
+        var userInfo: [AnyHashable: Any] = [:]
+        if let libraryId {
+            userInfo[Self.libraryIdKey] = libraryIdToString(libraryId)
         }
+        if let collectionId, let collectionIdData = try? JSONEncoder().encode(collectionId) {
+            userInfo[Self.collectionIdKey] = collectionIdData
+        }
+        userInfo[Self.restoreMostRecentlyOpenedItemKey] = restoreMostRecentlyOpened
+        addUserInfoEntries(from: userInfo)
+        return self
 
-        if string[string.startIndex..<string.index(string.startIndex, offsetBy: 1)] == "g" {
-            if let groupId = Int(String(string[string.index(string.startIndex, offsetBy: 2)..<string.endIndex])) {
-                return .group(groupId)
+        func libraryIdToString(_ libraryId: LibraryIdentifier) -> String {
+            switch libraryId {
+            case .custom:
+                return "myLibrary"
+            case .group(let groupId):
+                return "g:\(groupId)"
             }
         }
-
-        return nil
     }
 
     var restoredStateData: RestoredStateData? {
@@ -106,5 +99,21 @@ extension NSUserActivity {
         }
         // TODO: Migrate old pdf activity ("key", "libraryId") to "openItems"?
         return RestoredStateData(libraryId: libraryId, collectionId: collectionId, openItems: openItems, restoreMostRecentlyOpenedItem: restoreMostRecentlyOpenedItem)
+
+        func stringToLibraryId(_ string: String) -> LibraryIdentifier? {
+            guard !string.isEmpty else { return nil }
+
+            if string == "myLibrary" {
+                return .custom(.myLibrary)
+            }
+
+            if string[string.startIndex..<string.index(string.startIndex, offsetBy: 1)] == "g" {
+                if let groupId = Int(String(string[string.index(string.startIndex, offsetBy: 2)..<string.endIndex])) {
+                    return .group(groupId)
+                }
+            }
+
+            return nil
+        }
     }
 }
