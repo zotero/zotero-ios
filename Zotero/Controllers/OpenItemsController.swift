@@ -166,23 +166,21 @@ final class OpenItemsController {
                 keysByLibraryIdentifier[libraryId] = keys
             }
             do {
-                try dbStorage.perform(on: .main) { coordinator in
-                    let objects = try coordinator.perform(request: ReadItemsWithKeysFromMultipleLibrariesDbRequest(keysByLibraryIdentifier: keysByLibraryIdentifier))
-                    token = objects.observe { [weak self] changes in
-                        switch changes {
-                        case .initial:
-                            break
+                let objects = try dbStorage.perform(request: ReadItemsWithKeysFromMultipleLibrariesDbRequest(keysByLibraryIdentifier: keysByLibraryIdentifier), on: .main)
+                token = objects.observe { [weak self] changes in
+                    switch changes {
+                    case .initial:
+                        break
 
-                        case .update(_, let deletions, _, _):
-                            if !deletions.isEmpty, let self {
-                                // Observed items have been deleted, call setItems to validate and register new observer.
-                                let existingItems = getItems(for: sessionIdentifier)
-                                setItems(existingItems, for: sessionIdentifier, validate: true)
-                            }
-
-                        case .error(let error):
-                            DDLogError("OpenItemsController: register observer error - \(error)")
+                    case .update(_, let deletions, _, _):
+                        if !deletions.isEmpty, let self {
+                            // Observed items have been deleted, call setItems to validate and register new observer.
+                            let existingItems = getItems(for: sessionIdentifier)
+                            setItems(existingItems, for: sessionIdentifier, validate: true)
                         }
+
+                    case .error(let error):
+                        DDLogError("OpenItemsController: register observer error - \(error)")
                     }
                 }
             } catch let error {
@@ -225,24 +223,24 @@ final class OpenItemsController {
     func close(_ kind: Item.Kind, for sessionIdentifier: String) {
         DDLogInfo("OpenItemsController: closed open item \(kind) for \(sessionIdentifier)")
         var existingItems = itemsSortedByUserOrder(for: sessionIdentifier)
-        if let index = existingItems.firstIndex(where: { $0.kind == kind }) {
-            existingItems.remove(at: index)
-            setItemsSortedByUserIndex(existingItems, for: sessionIdentifier, validate: false)
-        } else {
+        guard let index = existingItems.firstIndex(where: { $0.kind == kind }) else {
             DDLogWarn("OpenItemsController: item was already closed")
+            return
         }
+        existingItems.remove(at: index)
+        setItemsSortedByUserIndex(existingItems, for: sessionIdentifier, validate: false)
     }
 
     func move(_ kind: Item.Kind, to userIndex: Int, for sessionIdentifier: String) {
         DDLogInfo("OpenItemsController: moved open item \(kind) to user index \(userIndex) for \(sessionIdentifier)")
         var existingItems = itemsSortedByUserOrder(for: sessionIdentifier)
         let userIndex = min(existingItems.count, max(0, userIndex))
-        if let index = existingItems.firstIndex(where: { $0.kind == kind }) {
-            existingItems.move(fromOffsets: IndexSet(integer: index), toOffset: userIndex)
-            setItemsSortedByUserIndex(existingItems, for: sessionIdentifier, validate: false)
-        } else {
+        guard let index = existingItems.firstIndex(where: { $0.kind == kind }) else {
             DDLogWarn("OpenItemsController: item was not open")
+            return
         }
+        existingItems.move(fromOffsets: IndexSet(integer: index), toOffset: userIndex)
+        setItemsSortedByUserIndex(existingItems, for: sessionIdentifier, validate: false)
     }
 
     @discardableResult
@@ -398,63 +396,55 @@ final class OpenItemsController {
     }
 
     private func loadPresentation(for item: Item) -> Presentation? {
-        switch item.kind {
-        case .pdf(let libraryId, let key):
-            return loadPDFPresentation(key: key, libraryId: libraryId)
+        var presentation: Presentation?
+        do {
+            try dbStorage.perform(on: .main) { coordinator in
+                switch item.kind {
+                case .pdf(let libraryId, let key):
+                    presentation = try loadPDFPresentation(key: key, libraryId: libraryId, coordinator: coordinator)
 
-        case .note(let libraryId, let key):
-            return loadNotePresentation(key: key, libraryId: libraryId)
-        }
-
-        func loadPDFPresentation(key: String, libraryId: LibraryIdentifier) -> Presentation? {
-            var library: Library?
-            var url: URL?
-            var parentKey: String?
-            do {
-                try dbStorage.perform(on: .main) { coordinator in
-                    library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
-                    let rItem = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
-                    parentKey = rItem.parent?.key
-                    guard let attachment = AttachmentCreator.attachment(for: rItem, fileStorage: fileStorage, urlDetector: nil) else { return }
-                    switch attachment.type {
-                    case .file(let filename, let contentType, let location, _, _):
-                        switch location {
-                        case .local, .localAndChangedRemotely:
-                            let file = Files.attachmentFile(in: libraryId, key: key, filename: filename, contentType: contentType)
-                            url = file.createUrl()
-
-                        case .remote, .remoteMissing:
-                            break
-                        }
-
-                    case .url:
-                        break
-                    }
+                case .note(let libraryId, let key):
+                    presentation = try loadNotePresentation(key: key, libraryId: libraryId, coordinator: coordinator)
                 }
-            } catch let error {
-                DDLogError("OpenItemsController: can't load item \(item) - \(error)")
             }
-            guard let library, let url else { return nil }
+        } catch let error {
+            DDLogError("OpenItemsController: can't load item \(item) - \(error)")
+        }
+        return presentation
+
+        func loadPDFPresentation(key: String, libraryId: LibraryIdentifier, coordinator: DbCoordinator) throws -> Presentation? {
+            let library: Library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
+            let rItem = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
+            let parentKey = rItem.parent?.key
+            guard let attachment = AttachmentCreator.attachment(for: rItem, fileStorage: fileStorage, urlDetector: nil) else { return nil }
+            var url: URL?
+            switch attachment.type {
+            case .file(let filename, let contentType, let location, _, _):
+                switch location {
+                case .local, .localAndChangedRemotely:
+                    let file = Files.attachmentFile(in: libraryId, key: key, filename: filename, contentType: contentType)
+                    url = file.createUrl()
+
+                case .remote, .remoteMissing:
+                    break
+                }
+
+            case .url:
+                break
+            }
+            guard let url else { return nil }
             return .pdf(library: library, key: key, parentKey: parentKey, url: url)
         }
 
-        func loadNotePresentation(key: String, libraryId: LibraryIdentifier) -> Presentation? {
-            var library: Library?
-            var note: Note?
+        func loadNotePresentation(key: String, libraryId: LibraryIdentifier, coordinator: DbCoordinator) throws -> Presentation? {
+            let library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
+            let rItem = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
+            let note = Note(item: rItem)
             var title: NoteEditorState.TitleData?
-            do {
-                try dbStorage.perform(on: .main) { coordinator in
-                    library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
-                    let rItem = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
-                    note = Note(item: rItem)
-                    if let parent = rItem.parent {
-                        title = NoteEditorState.TitleData(type: parent.rawType, title: parent.displayTitle)
-                    }
-                }
-            } catch let error {
-                DDLogError("OpenItemsController: can't load item \(item) - \(error)")
+            if let parent = rItem.parent {
+                title = NoteEditorState.TitleData(type: parent.rawType, title: parent.displayTitle)
             }
-            guard let library, let note else { return nil }
+            guard let note else { return nil }
             return .note(library: library, key: note.key, text: note.text, tags: note.tags, title: title)
         }
     }
