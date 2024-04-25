@@ -110,7 +110,7 @@ class PDFReaderViewController: UIViewController {
         return share
     }()
     private lazy var openItemsButton: UIBarButtonItem = {
-        let openItems = UIBarButtonItem(image: UIImage(systemName: "0.square"), style: .plain, target: nil, action: nil)
+        let openItems = UIBarButtonItem(image: .openItemsImage(count: 0), style: .plain, target: nil, action: nil)
         openItems.isEnabled = true
         openItems.accessibilityLabel = L10n.Accessibility.Pdf.openItems
         openItems.title = L10n.Accessibility.Pdf.openItems
@@ -727,7 +727,7 @@ class PDFReaderViewController: UIViewController {
     private func createRightBarButtonItems(for state: PDFReaderState) -> [UIBarButtonItem] {
         var buttons = [settingsButton, shareButton, searchButton]
         buttons.insert(openItemsButton, at: 1)
-        openItemsButton.image = .init(systemName: "\(state.openItemsCount).square")
+        openItemsButton.image = .openItemsImage(count: state.openItemsCount)
 
         if state.library.metadataEditable {
             buttons.append(toolbarButton)

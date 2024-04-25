@@ -101,7 +101,7 @@ final class NoteEditorViewController: UIViewController {
                     item = done
 
                 case .restoreOpenItems:
-                    let openItems = UIBarButtonItem(image: UIImage(systemName: "0.square"), style: .plain, target: nil, action: nil)
+                    let openItems = UIBarButtonItem(image: .openItemsImage(count: 0), style: .plain, target: nil, action: nil)
                     openItems.isEnabled = true
                     openItems.accessibilityLabel = L10n.Accessibility.Pdf.openItems
                     openItems.title = L10n.Accessibility.Pdf.openItems
@@ -129,7 +129,7 @@ final class NoteEditorViewController: UIViewController {
 
             func updateRestoreOpenItemsButton(withCount count: Int) {
                 guard let item = navigationItem.rightBarButtonItems?.first(where: { button in RightBarButtonItem(rawValue: button.tag) == .restoreOpenItems }) else { return }
-                item.image = UIImage(systemName: "\(count).square")
+                item.image = .openItemsImage(count: count)
             }
 
             func forceSaveIfNeeded() {
