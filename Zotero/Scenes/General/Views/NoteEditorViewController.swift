@@ -105,7 +105,7 @@ final class NoteEditorViewController: UIViewController {
                     openItems.isEnabled = true
                     openItems.accessibilityLabel = L10n.Accessibility.Pdf.openItems
                     openItems.title = L10n.Accessibility.Pdf.openItems
-                    if let sessionIdentifier = getSessionIdentifier() {
+                    if let sessionIdentifier {
                         let deferredOpenItemsMenuElement = openItemsController.deferredOpenItemsMenuElement(
                             for: sessionIdentifier,
                             showMenuForCurrentItem: true,
@@ -149,7 +149,7 @@ final class NoteEditorViewController: UIViewController {
         }
 
         func setupOpenItemsObserving() {
-            guard let sessionIdentifier = getSessionIdentifier() else { return }
+            guard let sessionIdentifier else { return }
             openItemsController.observable(for: sessionIdentifier)
                 .observe(on: MainScheduler.instance)
                 .subscribe(onNext: { [weak self] items in

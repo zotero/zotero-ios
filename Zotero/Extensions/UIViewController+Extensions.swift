@@ -70,7 +70,7 @@ extension UIViewController {
         return presentingViewController?.scene
     }
 
-    func getSessionIdentifier() -> String? {
+    var sessionIdentifier: String? {
         scene?.session.persistentIdentifier
     }
 }

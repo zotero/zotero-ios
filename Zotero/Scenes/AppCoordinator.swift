@@ -129,7 +129,7 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
             controllers.userControllers?.syncScheduler.syncController.set(coordinator: nil)
         } else {
             (urlContext, data) = preprocess(connectionOptions: options, session: session)
-            let controller = MainViewController(sessionIdentifier: session.persistentIdentifier, controllers: controllers)
+            let controller = MainViewController(controllers: controllers)
             viewController = controller
 
             conflictReceiverAlertController = ConflictReceiverAlertController(viewController: controller)
