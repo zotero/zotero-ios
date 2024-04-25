@@ -476,3 +476,13 @@ extension UIImage {
         return count <= 50 ? UIImage(systemName: "\(count).square") : UIImage(systemName: "square.grid.3x3.square")
     }
 }
+
+extension UIBarButtonItem {
+    static func openItemsBarButtonItem() -> UIBarButtonItem {
+        let barButtonItem = UIBarButtonItem(image: .openItemsImage(count: 0), style: .plain, target: nil, action: nil)
+        barButtonItem.isEnabled = true
+        barButtonItem.accessibilityLabel = L10n.Accessibility.Pdf.openItems
+        barButtonItem.title = L10n.Accessibility.Pdf.openItems
+        return barButtonItem
+    }
+}

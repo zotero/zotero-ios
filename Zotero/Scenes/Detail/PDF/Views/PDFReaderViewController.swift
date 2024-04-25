@@ -110,10 +110,7 @@ class PDFReaderViewController: UIViewController {
         return share
     }()
     private lazy var openItemsButton: UIBarButtonItem = {
-        let openItems = UIBarButtonItem(image: .openItemsImage(count: 0), style: .plain, target: nil, action: nil)
-        openItems.isEnabled = true
-        openItems.accessibilityLabel = L10n.Accessibility.Pdf.openItems
-        openItems.title = L10n.Accessibility.Pdf.openItems
+        let openItems = UIBarButtonItem.openItemsBarButtonItem()
         if let sessionIdentifier {
             let deferredOpenItemsMenuElement = openItemsController.deferredOpenItemsMenuElement(
                 for: sessionIdentifier,
