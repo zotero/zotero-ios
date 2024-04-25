@@ -117,8 +117,12 @@ class PDFReaderViewController: UIViewController {
                     self?.coordinatorDelegate
                 },
                 completion: { [weak self] changedCurrentItem, openItemsChanged in
-                    guard let self, !changedCurrentItem && openItemsChanged else { return }
-                    openItemsController.setOpenItemsUserActivity(from: self, libraryId: viewModel.state.library.identifier, title: viewModel.state.displayTitle)
+                    guard let self else { return }
+                    if changedCurrentItem {
+                        close(dismiss: false)
+                    } else if openItemsChanged {
+                        openItemsController.setOpenItemsUserActivity(from: self, libraryId: viewModel.state.library.identifier, title: viewModel.state.displayTitle)
+                    }
                 }
             )
             let openItemsMenu = UIMenu(title: L10n.Accessibility.Pdf.openItems, options: [.displayInline], children: [deferredOpenItemsMenuElement])
@@ -332,7 +336,7 @@ class PDFReaderViewController: UIViewController {
             let closeButton = UIBarButtonItem(image: UIImage(systemName: "chevron.left"), style: .plain, target: nil, action: nil)
             closeButton.title = L10n.close
             closeButton.accessibilityLabel = L10n.close
-            closeButton.rx.tap.subscribe(onNext: { [weak self] _ in self?.close() }).disposed(by: disposeBag)
+            closeButton.rx.tap.subscribe(onNext: { [weak self] _ in self?.close(dismiss: true) }).disposed(by: disposeBag)
 
             let readerButton = UIBarButtonItem(image: Asset.Images.pdfRawReader.image, style: .plain, target: nil, action: nil)
             readerButton.isEnabled = !viewModel.state.document.isLocked
@@ -458,7 +462,7 @@ class PDFReaderViewController: UIViewController {
         if state.changes.contains(.md5) {
             // TODO: Restore when edge-cases that change the local file unexpectedly are resolved.
 //            coordinatorDelegate?.showDocumentChangedAlert { [weak self] in
-//                self?.close()
+//                self?.close(dismiss: true)
 //            }
 //            return
         }
@@ -692,12 +696,13 @@ class PDFReaderViewController: UIViewController {
             .disposed(by: disposeBag)
     }
 
-    private func close() {
+    private func close(dismiss: Bool) {
         if let page = documentController?.pdfController?.pageIndex {
             viewModel.process(action: .submitPendingPage(Int(page)))
         }
         viewModel.process(action: .changeIdleTimerDisabled(false))
         viewModel.process(action: .clearTmpData)
+        guard dismiss else { return }
         navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
     }
 
