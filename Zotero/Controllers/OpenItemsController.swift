@@ -475,7 +475,7 @@ extension OpenItemsController {
     }
 
     func setOpenItemsUserActivity(from viewController: UIViewController, libraryId: LibraryIdentifier, collectionId: CollectionIdentifier? = nil, title: String? = nil) {
-        let activity = openItemsUserActivity(for: viewController.getSessionIdentifier(), libraryId: libraryId, collectionId: collectionId).set(title: title)
+        let activity = openItemsUserActivity(for: viewController.sessionIdentifier, libraryId: libraryId, collectionId: collectionId).set(title: title)
         viewController.set(userActivity: activity)
     }
 }

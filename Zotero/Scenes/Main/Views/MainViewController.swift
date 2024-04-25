@@ -24,7 +24,6 @@ protocol MainCoordinatorSyncToolbarDelegate: AnyObject {
 
 final class MainViewController: UISplitViewController {
     // Constants
-    private let sessionIdentifier: String
     private let controllers: Controllers
     private let disposeBag: DisposeBag
     // Variables
@@ -33,7 +32,11 @@ final class MainViewController: UISplitViewController {
     private var detailCoordinator: DetailCoordinator? {
         didSet {
             guard let detailCoordinator else { return }
-            set(userActivity: .mainActivity(with: controllers.userControllers?.openItemsController.getItems(for: sessionIdentifier) ?? []).set(title: detailCoordinator.displayTitle))
+            var openItems: [OpenItem] = []
+            if let openItemsController = controllers.userControllers?.openItemsController, let sessionIdentifier {
+                openItems = openItemsController.getItems(for: sessionIdentifier)
+            }
+            set(userActivity: .mainActivity(with: openItems).set(title: detailCoordinator.displayTitle))
             if let detailCoordinatorGetter {
                 detailCoordinatorGetter(detailCoordinator)
                 self.detailCoordinatorGetter = nil
@@ -44,8 +47,7 @@ final class MainViewController: UISplitViewController {
 
     // MARK: - Lifecycle
 
-    init(sessionIdentifier: String, controllers: Controllers) {
-        self.sessionIdentifier = sessionIdentifier
+    init(controllers: Controllers) {
         self.controllers = controllers
         self.disposeBag = DisposeBag()
 
@@ -91,7 +93,11 @@ final class MainViewController: UISplitViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         guard let detailCoordinator else { return }
-        set(userActivity: .mainActivity(with: controllers.userControllers?.openItemsController.getItems(for: sessionIdentifier) ?? []).set(title: detailCoordinator.displayTitle))
+        var openItems: [OpenItem] = []
+        if let openItemsController = controllers.userControllers?.openItemsController, let sessionIdentifier {
+            openItems = openItemsController.getItems(for: sessionIdentifier)
+        }
+        set(userActivity: .mainActivity(with: openItems).set(title: detailCoordinator.displayTitle))
     }
 
     func getDetailCoordinator(completed: @escaping (DetailCoordinator) -> Void) {
@@ -103,6 +109,7 @@ final class MainViewController: UISplitViewController {
     }
 
     private func showItems(for collection: Collection, in libraryId: LibraryIdentifier, searchItemKeys: [String]?) {
+        guard let sessionIdentifier else { return }
         let navigationController = UINavigationController()
         let tagFilterController = (self.viewControllers.first as? MasterContainerViewController)?.bottomController as? ItemsTagFilterDelegate
 

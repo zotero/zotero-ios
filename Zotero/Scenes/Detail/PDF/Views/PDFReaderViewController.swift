@@ -114,7 +114,7 @@ class PDFReaderViewController: UIViewController {
         openItems.isEnabled = true
         openItems.accessibilityLabel = L10n.Accessibility.Pdf.openItems
         openItems.title = L10n.Accessibility.Pdf.openItems
-        if let sessionIdentifier = getSessionIdentifier() {
+        if let sessionIdentifier {
             let deferredOpenItemsMenuElement = openItemsController.deferredOpenItemsMenuElement(
                 for: sessionIdentifier,
                 showMenuForCurrentItem: true,
@@ -361,7 +361,7 @@ class PDFReaderViewController: UIViewController {
                 })
                 .disposed(by: disposeBag)
 
-            if let sessionIdentifier = getSessionIdentifier() {
+            if let sessionIdentifier {
                 openItemsController.observable(for: sessionIdentifier)
                     .observe(on: MainScheduler.instance)
                     .subscribe(onNext: { [weak self] items in

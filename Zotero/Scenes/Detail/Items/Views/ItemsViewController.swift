@@ -577,10 +577,10 @@ final class ItemsViewController: UIViewController {
                 image = .openItemsImage(count: 0)
                 accessibilityLabel = L10n.Items.restoreOpen
                 primaryAction = UIAction { [weak self] _ in
-                    guard let self, let presenter, let controller = controllers.userControllers?.openItemsController, let sessionIdentifier = getSessionIdentifier() else { return }
+                    guard let self, let presenter, let controller = controllers.userControllers?.openItemsController, let sessionIdentifier else { return }
                     controller.restoreMostRecentlyOpenedItem(using: presenter, sessionIdentifier: sessionIdentifier)
                 }
-                if let controller = controllers.userControllers?.openItemsController, let sessionIdentifier = getSessionIdentifier() {
+                if let controller = controllers.userControllers?.openItemsController, let sessionIdentifier {
                     let deferredOpenItemsMenuElement = controller.deferredOpenItemsMenuElement(
                         for: sessionIdentifier,
                         showMenuForCurrentItem: false,
@@ -624,7 +624,7 @@ final class ItemsViewController: UIViewController {
     }
 
     private func setupOpenItemsObserving() {
-        guard let controller = controllers.userControllers?.openItemsController, let sessionIdentifier = getSessionIdentifier() else { return }
+        guard let controller = controllers.userControllers?.openItemsController, let sessionIdentifier else { return }
         controller.observable(for: sessionIdentifier)
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] items in
