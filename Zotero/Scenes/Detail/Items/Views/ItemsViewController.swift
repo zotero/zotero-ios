@@ -478,8 +478,8 @@ final class ItemsViewController: UIViewController {
     }
 
     private func updateRestoreOpenItemsButton(withCount count: Int) {
-        guard let item = self.navigationItem.rightBarButtonItems?.first(where: { button in RightBarButtonItem(rawValue: button.tag) == .restoreOpenItems }) else { return }
-        item.image = UIImage(systemName: "\(count).square")
+        guard let item = navigationItem.rightBarButtonItems?.first(where: { button in RightBarButtonItem(rawValue: button.tag) == .restoreOpenItems }) else { return }
+        item.image = .openItemsImage(count: count)
     }
     
     private func setupRightBarButtonItems(for state: ItemsState) {
@@ -574,7 +574,7 @@ final class ItemsViewController: UIViewController {
                 }
 
             case .restoreOpenItems:
-                image = UIImage(systemName: "0.square")
+                image = .openItemsImage(count: 0)
                 accessibilityLabel = L10n.Items.restoreOpen
                 primaryAction = UIAction { [weak self] _ in
                     guard let self, let presenter, let controller = controllers.userControllers?.openItemsController, let sessionIdentifier = getSessionIdentifier() else { return }

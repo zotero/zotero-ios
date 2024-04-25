@@ -479,3 +479,10 @@ extension OpenItemsController {
         viewController.set(userActivity: activity)
     }
 }
+
+extension UIImage {
+    static func openItemsImage(count: Int) -> UIImage? {
+        let count = max(0, count)
+        return count <= 50 ? UIImage(systemName: "\(count).square") : UIImage(systemName: "square.grid.3x3.square")
+    }
+}
