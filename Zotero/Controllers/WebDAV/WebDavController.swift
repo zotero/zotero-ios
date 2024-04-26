@@ -118,20 +118,20 @@ final class WebDavControllerImpl: WebDavController {
         configuration.timeoutIntervalForRequest = 15
         configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
 
-        self.apiClient = ZoteroApiClient(baseUrl: "http://zotero.org/", configuration: configuration, includeCredentialDelegate: true)
+        self.apiClient = ZoteroApiClient(baseUrl: "http://zotero.org/", configuration: configuration)
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
         self.sessionStorage = sessionStorage
         self.deletionQueue = queue
 
         if self.sessionStorage.isVerified {
-            self.apiClient.set(credentials: (self.sessionStorage.username, self.sessionStorage.password), for: .webDav)
+            self.apiClient.set(credentials: (self.sessionStorage.username, self.sessionStorage.password))
         }
     }
 
     func resetVerification() {
         self.sessionStorage.isVerified = false
-        self.apiClient.set(credentials: nil, for: .webDav)
+        self.apiClient.set(credentials: nil)
     }
 
     /// Creates url in WebDAV server of item which should be downloaded.
@@ -453,7 +453,7 @@ final class WebDavControllerImpl: WebDavController {
         DDLogInfo("WebDavController: checkServer")
         return self.loadCredentials()
                    .do(onSuccess: { [weak self] credentials in
-                       self?.apiClient.set(credentials: credentials, for: .webDav)
+                       self?.apiClient.set(credentials: credentials)
                    })
                    .flatMap({ _ in return self.createUrl() })
                    .flatMap({ url in return self.checkIsDav(url: url, queue: queue) })
@@ -466,7 +466,7 @@ final class WebDavControllerImpl: WebDavController {
 
                        /// .fileMissingAfterUpload is not a critical/fatal error. We can still mark webdav as verified.
                        guard let error = error as? WebDavError.Verification, case .fileMissingAfterUpload = error else {
-                           self?.apiClient.set(credentials: nil, for: .webDav)
+                           self?.apiClient.set(credentials: nil)
                            return
                        }
                        self?.sessionStorage.isVerified = true

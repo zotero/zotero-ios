@@ -8,12 +8,6 @@
 
 import Foundation
 
-enum ApiEndpointType {
-    case zotero
-    case webDav
-    case other
-}
-
 enum ApiEndpoint {
     case zotero(path: String)
     case webDav(URL)

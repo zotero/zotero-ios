@@ -212,7 +212,7 @@ final class Controllers {
     private func set(sessionData data: SessionData, isLogin: Bool, debugLogging: DebugLogging) {
         do {
             // Set API auth token
-            self.apiClient.set(authToken: ("Bearer " + data.apiToken), for: .zotero)
+            self.apiClient.set(authToken: ("Bearer " + data.apiToken))
 
             // Start logging to catch user controller issues
             debugLogging.start(type: .immediate)
@@ -237,7 +237,7 @@ final class Controllers {
             let userId = Defaults.shared.userId
 
             // Initialization failed, clear everything
-            self.apiClient.set(authToken: nil, for: .zotero)
+            self.apiClient.set(authToken: nil)
             self.userControllers = nil
             // Stop observing session so that we don't get another event after reset
             self.sessionCancellable = nil
@@ -275,7 +275,7 @@ final class Controllers {
         // Clear user controllers
         self.userControllers = nil
         // Clear API auth token
-        self.apiClient.set(authToken: nil, for: .zotero)
+        self.apiClient.set(authToken: nil)
         // Remove cache files
         try? self.fileStorage.remove(Files.cache)
         // Remove cached item jsons

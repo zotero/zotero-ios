@@ -54,30 +54,27 @@ final class ZoteroApiClient: ApiClient {
     private let url: URL
     private let manager: Alamofire.Session
 
-    private var tokens: [ApiEndpointType: ApiAuthType]
+    private var token: ApiAuthType?
 
-    init(baseUrl: String, configuration: URLSessionConfiguration, includeCredentialDelegate: Bool = false) {
+    init(baseUrl: String, configuration: URLSessionConfiguration) {
         guard let url = URL(string: baseUrl) else {
             fatalError("Incorrect base url provided for ZoteroApiClient")
         }
 
         self.url = url
-        let delegate = includeCredentialDelegate ? CredentialSessionDelegate() : SessionDelegate()
-        self.manager = Alamofire.Session(configuration: configuration, delegate: delegate)
-        self.tokens = [:]
+        self.manager = Alamofire.Session(configuration: configuration, delegate: SessionDelegate())
     }
 
-    func set(authToken: String?, for endpoint: ApiEndpointType) {
-        self.tokens[endpoint] = authToken.flatMap({ .authHeader($0) })
+    func set(authToken: String?) {
+        token = authToken.flatMap({ .authHeader($0) })
     }
 
-    func set(credentials: (String, String)?, for endpoint: ApiEndpointType) {
-        if let credentials = credentials {
-            self.tokens[endpoint] = .credentials(username: credentials.0, password: credentials.1)
-            (self.manager.delegate as? CredentialSessionDelegate)?.credential = URLCredential(user: credentials.0, password: credentials.1, persistence: .forSession)
-        } else {
-            self.tokens[endpoint] = nil
+    func set(credentials: (String, String)?) {
+        guard let (username, password) = credentials else {
+            token = nil
+            return
         }
+        token = .credentials(username: username, password: password)
     }
 
     /// Creates and starts a data request, takes care of retrying request in case of failure. Responds on main queue.
@@ -87,7 +84,7 @@ final class ZoteroApiClient: ApiClient {
 
     /// Creates and starts a data request, takes care of retrying request in case of failure.
     func send(request: ApiRequest, queue: DispatchQueue) -> Single<(Data?, HTTPURLResponse)> {
-        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token(for: request.endpoint), additionalHeaders: self.manager.sessionConfiguration.httpAdditionalHeaders)
+        let convertible = Convertible(request: request, baseUrl: self.url, token: token?.authHeader, additionalHeaders: self.manager.sessionConfiguration.httpAdditionalHeaders)
         return self.createRequestSingle(for: request.endpoint) { $0.request(convertible).validate(acceptableStatusCodes: request.acceptableStatusCodes) }
                    .flatMap({ (dataRequest: DataRequest) -> Single<(Data?, HTTPURLResponse)> in
                        return dataRequest.rx.loggedResponseDataWithResponseError(queue: queue, encoding: request.encoding, logParams: request.logParams)
@@ -123,7 +120,7 @@ final class ZoteroApiClient: ApiClient {
 
     /// Creates download request. Request needs to be started manually.
     func download(request: ApiDownloadRequest, queue: DispatchQueue) -> Observable<DownloadRequest> {
-        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token(for: request.endpoint), additionalHeaders: self.manager.sessionConfiguration.httpAdditionalHeaders)
+        let convertible = Convertible(request: request, baseUrl: self.url, token: token?.authHeader, additionalHeaders: self.manager.sessionConfiguration.httpAdditionalHeaders)
         return self.createRequestSingle(for: request.endpoint) { manager -> DownloadRequest in
             return manager.download(convertible) { _, _ in (request.downloadUrl, [.createIntermediateDirectories, .removePreviousFile]) }
                 .validate(statusCode: request.acceptableStatusCodes)
@@ -135,28 +132,28 @@ final class ZoteroApiClient: ApiClient {
     }
 
     func upload(request: ApiRequest, data: Data, queue: DispatchQueue) -> Single<(Data?, HTTPURLResponse)> {
-        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token(for: request.endpoint), additionalHeaders: self.manager.sessionConfiguration.httpAdditionalHeaders)
+        let convertible = Convertible(request: request, baseUrl: self.url, token: token?.authHeader, additionalHeaders: self.manager.sessionConfiguration.httpAdditionalHeaders)
         let method = HTTPMethod(rawValue: request.httpMethod.rawValue)
         let headers = HTTPHeaders(convertible.allHeaders)
         return self.createUploadRequest(request: request, queue: queue) { $0.upload(data, to: convertible, method: method, headers: headers) }
     }
 
     func upload(request: ApiRequest, queue: DispatchQueue, multipartFormData: @escaping (MultipartFormData) -> Void) -> Single<(Data?, HTTPURLResponse)> {
-        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token(for: request.endpoint), additionalHeaders: self.manager.sessionConfiguration.httpAdditionalHeaders)
+        let convertible = Convertible(request: request, baseUrl: self.url, token: token?.authHeader, additionalHeaders: self.manager.sessionConfiguration.httpAdditionalHeaders)
         let method = HTTPMethod(rawValue: request.httpMethod.rawValue)
         let headers = HTTPHeaders(convertible.allHeaders)
         return self.createUploadRequest(request: request, queue: queue) { $0.upload(multipartFormData: multipartFormData, to: convertible, method: method, headers: headers) }
     }
 
     func upload(request: ApiRequest, fromFile file: File, queue: DispatchQueue) -> Single<(Data?, HTTPURLResponse)> {
-        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token(for: request.endpoint), additionalHeaders: self.manager.sessionConfiguration.httpAdditionalHeaders)
+        let convertible = Convertible(request: request, baseUrl: self.url, token: token?.authHeader, additionalHeaders: self.manager.sessionConfiguration.httpAdditionalHeaders)
         let method = HTTPMethod(rawValue: request.httpMethod.rawValue)
         let headers = HTTPHeaders(convertible.allHeaders)
         return self.createUploadRequest(request: request, queue: queue) { $0.upload(file.createUrl(), to: convertible, method: method, headers: headers) }
     }
 
     func urlRequest(from request: ApiRequest) throws -> URLRequest {
-        let convertible = Convertible(request: request, baseUrl: url, token: token(for: request.endpoint), additionalHeaders: manager.sessionConfiguration.httpAdditionalHeaders)
+        let convertible = Convertible(request: request, baseUrl: url, token: token?.authHeader, additionalHeaders: manager.sessionConfiguration.httpAdditionalHeaders)
         return try convertible.asURLRequest()
     }
 
@@ -176,36 +173,17 @@ final class ZoteroApiClient: ApiClient {
     }
 
     private func createRequestSingle<R: Request>(for endpoint: ApiEndpoint, create: @escaping (Alamofire.Session) -> R) -> Single<R> {
-        return Single.create { subscriber in
-            let alamoRequest = self.createRequest(for: endpoint, create: create)
+        return Single.create { [weak self] subscriber in
+            guard let self else {
+                return Disposables.create()
+            }
+            var alamoRequest = create(manager)
+            if let credentials = token?.credentials {
+                alamoRequest = alamoRequest.authenticate(username: credentials.username, password: credentials.password)
+            }
             subscriber(.success(alamoRequest))
             return Disposables.create()
         }
-    }
-
-    private func createRequest<R: Request>(for endpoint: ApiEndpoint, create: @escaping (Alamofire.Session) -> R) -> R {
-        var alamoRequest = create(self.manager)
-        if let credentials = self.tokens[self.endpointType(for: endpoint)]?.credentials {
-            alamoRequest = alamoRequest.authenticate(username: credentials.username, password: credentials.password)
-        }
-        return alamoRequest
-    }
-
-    private func endpointType(for endpoint: ApiEndpoint) -> ApiEndpointType {
-        switch endpoint {
-        case .zotero:
-            return .zotero
-
-        case .webDav:
-            return .webDav
-
-        case .other:
-            return .other
-        }
-    }
-
-    private func token(for endpoint: ApiEndpoint) -> String? {
-        return self.tokens[self.endpointType(for: endpoint)]?.authHeader
     }
 }
 
@@ -213,22 +191,5 @@ extension ResponseHeaders {
     var lastModifiedVersion: Int {
         // Workaround for broken headers (stored in case-sensitive dictionary)
         return (self.value(forCaseInsensitive: "last-modified-version") as? String).flatMap(Int.init) ?? 0
-    }
-}
-
-private final class CredentialSessionDelegate: SessionDelegate {
-    var credential: URLCredential?
-
-    override func urlSession(_ session: URLSession, task: URLSessionTask, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
-        guard challenge.previousFailureCount == 0 else {
-            completionHandler(.rejectProtectionSpace, nil)
-            return
-        }
-
-        if let credential = self.credential {
-            completionHandler(.useCredential, credential)
-        } else {
-            completionHandler(.performDefaultHandling, nil)
-        }
     }
 }
