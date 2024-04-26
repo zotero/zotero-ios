@@ -784,6 +784,7 @@ final class AttachmentDownloader: NSObject {
 
 extension AttachmentDownloader: URLSessionDownloadDelegate {
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
+        let statusCode = (downloadTask.response as? HTTPURLResponse)?.statusCode ?? -1
         var download: Download?
         var activeDownload: ActiveDownload?
         accessQueue.sync { [weak self] in
@@ -796,7 +797,20 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
             return
         }
 
-        let error = checkFileResponse(for: Files.file(from: location), fileStorage: fileStorage, downloadTask: downloadTask)
+        let error: Swift.Error?
+        switch statusCode {
+        case 401:
+            error = createError(from: downloadTask, statusCode: 401, response: "Unauthorized")
+
+        case 403:
+            error = createError(from: downloadTask, statusCode: 403, response: "Forbidden")
+
+        case 404:
+            error = createError(from: downloadTask, statusCode: 404, response: "Not Found")
+
+        default:
+            error = checkFileResponse(for: Files.file(from: location), fileStorage: fileStorage, downloadTask: downloadTask)
+        }
         if let data = activeDownload.logData {
             logResponse(for: data, task: downloadTask, error: error)
         }
@@ -856,15 +870,19 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
         func checkFileResponse(for file: File, fileStorage: FileStorage, downloadTask: URLSessionDownloadTask) -> Swift.Error? {
             if fileStorage.isEmptyOrNotFoundResponse(file: file) {
                 try? fileStorage.remove(file)
-                return AFResponseError(
-                    url: downloadTask.currentRequest?.url,
-                    httpMethod: downloadTask.currentRequest?.httpMethod ?? "Unknown",
-                    error: .responseValidationFailed(reason: .unacceptableStatusCode(code: 404)),
-                    headers: (downloadTask.response as? HTTPURLResponse)?.allHeaderFields,
-                    response: "Not found"
-                )
+                return createError(from: downloadTask, statusCode: 404, response: "Not Found")
             }
             return nil
+        }
+
+        func createError(from downloadTask: URLSessionDownloadTask, statusCode: Int, response: String) -> AFResponseError {
+            return AFResponseError(
+                url: downloadTask.currentRequest?.url,
+                httpMethod: downloadTask.currentRequest?.httpMethod ?? "Unknown",
+                error: .responseValidationFailed(reason: .unacceptableStatusCode(code: statusCode)),
+                headers: (downloadTask.response as? HTTPURLResponse)?.allHeaderFields,
+                response: response
+            )
         }
     }
 

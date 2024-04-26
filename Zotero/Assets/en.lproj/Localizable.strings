@@ -56,6 +56,7 @@
 "cancel_all" = "Cancel All";
 "back" = "Back";
 "forward" = "Forward";
+"go_to_settings" = "Go to Settings";
 
 "beta_wipe_title" = "Resync Required";
 "beta_wipe_message" = "Due to a beta update, your data must be redownloaded from zotero.org.";
@@ -379,6 +380,9 @@
 "errors.attachments.missing_zotero" = "The attached file is not available in the online library.";
 "errors.attachments.missing_webdav" = "The attached file is not available on the WebDAV server.";
 "errors.attachments.missing_additional" = "Please check that the file has synced on the device where it was added.";
+"errors.attachments.unauthorized_webdav" = "The WebDAV server did not accept the username and password you have saved in settings.";
+"errors.attachments.forbidden_webdav" = "You don't have permission to access %@ on the WebDAV server.";
+"errors.attachments.generic_filename" = "the file";
 "errors.login.invalid_password" = "Invalid password";
 "errors.login.invalid_username" = "Invalid username";
 "errors.login.invalid_credentials" = "Invalid username or password";

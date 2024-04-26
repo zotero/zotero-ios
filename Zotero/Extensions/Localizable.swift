@@ -62,6 +62,8 @@ internal enum L10n {
   internal static func fullSyncDebug(_ p1: Any) -> String {
     return L10n.tr("Localizable", "full_sync_debug", String(describing: p1), fallback: "Full sync has finished. Please report Debug ID %@ in the Zotero Forums.")
   }
+  /// Go to Settings
+  internal static let goToSettings = L10n.tr("Localizable", "go_to_settings", fallback: "Go to Settings")
   /// Item Type
   internal static let itemType = L10n.tr("Localizable", "item_type", fallback: "Item Type")
   /// Keep
@@ -404,6 +406,12 @@ internal enum L10n {
       internal static let cantOpenAttachment = L10n.tr("Localizable", "errors.attachments.cant_open_attachment", fallback: "The attached file could not be found.")
       /// Unable to unzip snapshot
       internal static let cantUnzipSnapshot = L10n.tr("Localizable", "errors.attachments.cant_unzip_snapshot", fallback: "Unable to unzip snapshot")
+      /// You don't have permission to access %@ on the WebDAV server.
+      internal static func forbiddenWebdav(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "errors.attachments.forbidden_webdav", String(describing: p1), fallback: "You don't have permission to access %@ on the WebDAV server.")
+      }
+      /// the file
+      internal static let genericFilename = L10n.tr("Localizable", "errors.attachments.generic_filename", fallback: "the file")
       /// Linked files are not supported on iOS. You can open them using the Zotero desktop app.
       internal static let incompatibleAttachment = L10n.tr("Localizable", "errors.attachments.incompatible_attachment", fallback: "Linked files are not supported on iOS. You can open them using the Zotero desktop app.")
       /// Please check that the file has synced on the device where it was added.
@@ -412,6 +420,8 @@ internal enum L10n {
       internal static let missingWebdav = L10n.tr("Localizable", "errors.attachments.missing_webdav", fallback: "The attached file is not available on the WebDAV server.")
       /// The attached file is not available in the online library.
       internal static let missingZotero = L10n.tr("Localizable", "errors.attachments.missing_zotero", fallback: "The attached file is not available in the online library.")
+      /// The WebDAV server did not accept the username and password you have saved in settings.
+      internal static let unauthorizedWebdav = L10n.tr("Localizable", "errors.attachments.unauthorized_webdav", fallback: "The WebDAV server did not accept the username and password you have saved in settings.")
     }
     internal enum Citation {
       /// Could not generate bibliography.

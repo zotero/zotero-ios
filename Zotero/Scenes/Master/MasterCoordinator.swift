@@ -206,9 +206,9 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
     func showSettings() {
         let navigationController = NavigationViewController()
         let containerController = ContainerViewController(rootViewController: navigationController)
-        let coordinator = SettingsCoordinator(startsWithExport: false, navigationController: navigationController, controllers: self.controllers)
+        let coordinator = SettingsCoordinator(navigationController: navigationController, controllers: controllers)
         coordinator.parentCoordinator = self
-        self.childCoordinators.append(coordinator)
+        childCoordinators.append(coordinator)
         coordinator.start(animated: false)
 
         self.navigationController?.present(containerController, animated: true, completion: nil)
