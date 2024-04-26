@@ -715,7 +715,7 @@ final class ShareViewController: UIViewController {
         let secureStorage = KeychainSecureStorage()
         let webDavController = WebDavControllerImpl(dbStorage: dbStorage, fileStorage: fileStorage, sessionStorage: SecureWebDavSessionStorage(secureStorage: secureStorage))
 
-        apiClient.set(authToken: ("Bearer " + session.apiToken), for: .zotero)
+        apiClient.set(authToken: ("Bearer " + session.apiToken))
         translatorsController.updateFromRepo(type: .shareExtension)
 
         self.fileStorage = fileStorage
