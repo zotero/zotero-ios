@@ -93,9 +93,10 @@ final class NoteEditorViewController: UIViewController {
                 case .done:
                     let done = UIBarButtonItem(title: L10n.done, style: .done, target: nil, action: nil)
                     done.rx.tap
-                        .subscribe(with: self, onNext: { `self`, _ in
+                        .subscribe(onNext: { [weak self] _ in
+                            guard let self else { return }
                             forceSaveIfNeeded()
-                            self.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
+                            navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
                         })
                         .disposed(by: disposeBag)
                     item = done
@@ -110,8 +111,12 @@ final class NoteEditorViewController: UIViewController {
                                 self?.coordinatorDelegate
                             },
                             completion: { [weak self] changedCurrentItem, openItemsChanged in
-                                guard let self, !changedCurrentItem && openItemsChanged else { return }
-                                openItemsController.setOpenItemsUserActivity(from: self, libraryId: viewModel.state.library.identifier, title: viewModel.state.title?.title)
+                                guard let self else { return }
+                                if changedCurrentItem {
+                                    forceSaveIfNeeded()
+                                } else if openItemsChanged {
+                                    openItemsController.setOpenItemsUserActivity(from: self, libraryId: viewModel.state.library.identifier, title: viewModel.state.title?.title)
+                                }
                             }
                         )
                         let openItemsMenu = UIMenu(title: L10n.Accessibility.Pdf.openItems, options: [.displayInline], children: [deferredOpenItemsMenuElement])
@@ -127,12 +132,6 @@ final class NoteEditorViewController: UIViewController {
             func updateRestoreOpenItemsButton(withCount count: Int) {
                 guard let item = navigationItem.rightBarButtonItems?.first(where: { button in RightBarButtonItem(rawValue: button.tag) == .restoreOpenItems }) else { return }
                 item.image = .openItemsImage(count: count)
-            }
-
-            func forceSaveIfNeeded() {
-                guard debounceDisposeBag != nil else { return }
-                debounceDisposeBag = nil
-                viewModel.process(action: .save)
             }
         }
 
@@ -214,6 +213,12 @@ final class NoteEditorViewController: UIViewController {
         coordinatorDelegate?.showTagPicker(libraryId: viewModel.state.library.identifier, selected: selected, picked: { [weak self] tags in
             self?.viewModel.process(action: .setTags(tags))
         })
+    }
+
+    private func forceSaveIfNeeded() {
+        guard debounceDisposeBag != nil else { return }
+        debounceDisposeBag = nil
+        viewModel.process(action: .save)
     }
 }
 
