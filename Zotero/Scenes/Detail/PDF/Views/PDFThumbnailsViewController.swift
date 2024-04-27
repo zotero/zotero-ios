@@ -17,6 +17,7 @@ class PDFThumbnailsViewController: UICollectionViewController {
     private let disposeBag: DisposeBag
 
     private var dataSource: UICollectionViewDiffableDataSource<Int, PDFThumbnailsState.Page>!
+    private var didAppear: Bool = false
 
     private lazy var cellRegistration: UICollectionView.CellRegistration<PDFThumbnailsCell, PDFThumbnailsState.Page> = {
         return UICollectionView.CellRegistration<PDFThumbnailsCell, PDFThumbnailsState.Page> { [weak self] cell, indexPath, page in
@@ -69,6 +70,14 @@ class PDFThumbnailsViewController: UICollectionViewController {
             collectionView.delegate = self
             collectionView.prefetchDataSource = self
             collectionView.backgroundColor = .systemGray6
+        }
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        if #unavailable(iOS 16.0), !didAppear {
+            didAppear = true
+            viewIsAppearing(animated)
         }
     }
 

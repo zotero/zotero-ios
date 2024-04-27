@@ -43,6 +43,8 @@ class PDFSidebarViewController: UIViewController {
     private unowned let viewModel: ViewModel<PDFReaderActionHandler>
     private let disposeBag: DisposeBag
 
+    private var didAppear: Bool = false
+    
     private weak var picker: UISegmentedControl!
     private weak var thumbnailsController: PDFThumbnailsViewController!
     private weak var annotationsController: PDFAnnotationsViewController!
@@ -70,6 +72,14 @@ class PDFSidebarViewController: UIViewController {
         setupControllers()
         setupViews()
         select(tab: .annotations)
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        if #unavailable(iOS 16.0), !didAppear {
+            didAppear = true
+            viewIsAppearing(animated)
+        }
     }
 
     override func viewIsAppearing(_ animated: Bool) {
