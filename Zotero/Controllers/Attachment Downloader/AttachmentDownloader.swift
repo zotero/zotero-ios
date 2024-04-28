@@ -817,6 +817,7 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
         DDLogInfo("AttachmentDownloader: didFinishDownloadingTo \(downloadTask.taskIdentifier)")
 
         if let error {
+            try? fileStorage.remove(Files.file(from: location))
             accessQueue.sync(flags: .barrier) { [weak self] in
                 self?.finish(activeDownload: activeDownload, download: download, compressed: nil, result: .failure(error))
             }
@@ -869,7 +870,6 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
 
         func checkFileResponse(for file: File, fileStorage: FileStorage, downloadTask: URLSessionDownloadTask) -> Swift.Error? {
             if fileStorage.isEmptyOrNotFoundResponse(file: file) {
-                try? fileStorage.remove(file)
                 return createError(from: downloadTask, statusCode: 404, response: "Not Found")
             }
             return nil
