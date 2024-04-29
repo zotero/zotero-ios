@@ -450,7 +450,6 @@ extension AppCoordinator: DebugLoggingCoordinator {
         func showAlert(for result: Result<(String, String?, Int), DebugLogging.Error>, logs: [URL]?, retry: (() -> Void)?, completion: (() -> Void)?) {
             switch result {
             case .success((let debugId, let customMessage, let userId)):
-                UIPasteboard.general.string = debugId
                 share(debugId: debugId, customMessage: customMessage, userId: userId)
                 completion?()
 
@@ -463,6 +462,9 @@ extension AppCoordinator: DebugLoggingCoordinator {
                     UIAlertAction(title: L10n.ok, style: .cancel, handler: nil),
                     UIAlertAction(title: L10n.Settings.CrashAlert.submitForum, style: .default, handler: { _ in
                         submit(debugId: debugId)
+                    }),
+                    UIAlertAction(title: L10n.Settings.CrashAlert.copy, style: .default, handler: { _ in
+                        UIPasteboard.general.string = debugId
                     })
                 ]
                 let message = customMessage ?? L10n.Settings.LogAlert.message(debugId)
@@ -470,6 +472,7 @@ extension AppCoordinator: DebugLoggingCoordinator {
             }
 
             func submit(debugId: String) {
+                UIPasteboard.general.string = debugId
                 guard var components = URLComponents(string: "https://forums.zotero.org/post/discussion") else { return }
                 components.queryItems = [URLQueryItem(name: "name", value: "iOS Debug Log: \(debugId)"), URLQueryItem(name: "body", value: "[Describe the issue you're reporting.]")]
                 guard let url = components.url else { return }
