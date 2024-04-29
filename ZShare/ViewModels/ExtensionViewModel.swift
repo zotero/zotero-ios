@@ -1184,8 +1184,7 @@ final class ExtensionViewModel {
                 return alamoErrorRequiresAbort(.responseValidationFailed(reason: .unacceptableStatusCode(code: response.code)), url: nil, libraryId: libraryId)
 
             case .authorizationFailed(let statusCode, let response, _):
-                guard statusCode == 413 else { return .unknown }
-                return alamoErrorRequiresAbort(.responseValidationFailed(reason: .unacceptableStatusCode(code: 413)), url: nil, libraryId: libraryId)
+                return alamoErrorRequiresAbort(.responseValidationFailed(reason: .unacceptableStatusCode(code: statusCode)), url: nil, libraryId: libraryId)
 
             default:
                 return .unknown
