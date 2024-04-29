@@ -1174,6 +1174,8 @@ internal enum L10n {
       internal static let searchTitle = L10n.tr("Localizable", "settings.cite_search.search_title", fallback: "Search styles")
     }
     internal enum CrashAlert {
+      /// Copy to Clipboard
+      internal static let copy = L10n.tr("Localizable", "settings.crash_alert.copy", fallback: "Copy to Clipboard")
       /// Copy and Export Database
       internal static let exportDb = L10n.tr("Localizable", "settings.crash_alert.export_db", fallback: "Copy and Export Database")
       /// Your Report ID is %@.
