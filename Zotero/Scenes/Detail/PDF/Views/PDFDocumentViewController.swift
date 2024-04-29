@@ -45,7 +45,6 @@ final class PDFDocumentViewController: UIViewController {
     }
     private var searchResults: [SearchResult] = []
     private var pageIndexCancellable: AnyCancellable?
-    private var didAppear: Bool = false
 
     weak var parentDelegate: (PDFReaderContainerDelegate & PDFDocumentDelegate)?
     weak var coordinatorDelegate: PdfReaderCoordinatorDelegate?
@@ -70,14 +69,6 @@ final class PDFDocumentViewController: UIViewController {
         self.view.backgroundColor = .systemGray6
         self.setupViews()
         self.setupObserving()
-    }
-
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        if #unavailable(iOS 16.0), !didAppear {
-            didAppear = true
-            viewIsAppearing(animated)
-        }
     }
 
     override func viewIsAppearing(_ animated: Bool) {
