@@ -73,6 +73,9 @@ class PDFSidebarViewController: UIViewController {
     }
 
     override func viewIsAppearing(_ animated: Bool) {
+        if #unavailable(iOS 16.0) {
+            children.forEach { $0.viewIsAppearing(animated) }
+        }
         super.viewIsAppearing(animated)
         thumbnailsController.set(visiblePage: viewModel.state.visiblePage)
     }
