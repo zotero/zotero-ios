@@ -1183,6 +1183,9 @@ final class ExtensionViewModel {
                 guard let response = responses.first else { return .unknown }
                 return alamoErrorRequiresAbort(.responseValidationFailed(reason: .unacceptableStatusCode(code: response.code)), url: nil, libraryId: libraryId)
 
+            case .authorizationFailed(let statusCode, let response, _):
+                return alamoErrorRequiresAbort(.responseValidationFailed(reason: .unacceptableStatusCode(code: statusCode)), url: nil, libraryId: libraryId)
+
             default:
                 return .unknown
             }
@@ -1408,9 +1411,15 @@ final class ExtensionViewModel {
     }
 
     private func handleSubmission(error: State.AttachmentState.Error, parentKey: String, libraryId: LibraryIdentifier) {
-        backgroundQueue.async { [weak self] in
-            guard let self else { return }
-            try? dbStorage.perform(request: DeleteFailedItemsDbRequest(key: parentKey, libraryId: libraryId), on: backgroundQueue)
+        switch error {
+        case .quotaLimit:
+            break
+
+        default:
+            backgroundQueue.async { [weak self] in
+                guard let self else { return }
+                try? dbStorage.perform(request: DeleteFailedItemsDbRequest(key: parentKey, libraryId: libraryId), on: backgroundQueue)
+            }
         }
 
         var state = self.state
