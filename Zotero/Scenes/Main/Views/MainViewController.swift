@@ -27,13 +27,16 @@ final class MainViewController: UISplitViewController {
     private let controllers: Controllers
     private let disposeBag: DisposeBag
     // Variables
-    private var didAppear: Bool = false
     private var syncToolbarController: SyncToolbarController?
     private(set) var masterCoordinator: MasterCoordinator?
     private var detailCoordinator: DetailCoordinator? {
         didSet {
-            if let action = self.detailCoordinatorGetter, let coordinator = self.detailCoordinator {
-                action(coordinator)
+            guard let detailCoordinator else { return }
+            let userActivity: NSUserActivity = .mainActivity
+            userActivity.title = detailCoordinator.collection.name
+            set(userActivity: userActivity)
+            if let detailCoordinatorGetter {
+                detailCoordinatorGetter(detailCoordinator)
                 self.detailCoordinatorGetter = nil
             }
         }
@@ -75,8 +78,10 @@ final class MainViewController: UISplitViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        self.set(userActivity: .mainActivity)
-        self.didAppear = true
+        guard let detailCoordinator else { return }
+        let userActivity: NSUserActivity = .mainActivity
+        userActivity.title = detailCoordinator.collection.name
+        set(userActivity: userActivity)
     }
 
     func getDetailCoordinator(completed: @escaping (DetailCoordinator) -> Void) {
