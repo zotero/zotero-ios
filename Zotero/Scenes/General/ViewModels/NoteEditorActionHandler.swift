@@ -73,6 +73,8 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
     private func importImages(data: [String: Any], in viewModel: ViewModel<NoteEditorActionHandler>) {
         guard !viewModel.state.kind.readOnly, let rawImages = data["images"] as? [[String: Any]] else { return }
 
+        DDLogInfo("NoteEditorActionHandler: Import \(rawImages.count) images")
+
         let libraryId = viewModel.state.library.identifier
         var images: [(String, Attachment)] = []
 
@@ -80,8 +82,9 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             guard
                 let nodeId = imageData["nodeID"] as? String,
                 let src = imageData["src"] as? String,
-                let mimeType = src.mimeTypeFromBase64EncodedImageData,
-                let image = src.data(using: .utf8)
+                let mimeType = src.mimeTypeFromNoteEditorSrc,
+                let base64EncodedData = src.base64DataFromNoteEditorSrc?.data(using: .utf8),
+                let image = Data(base64Encoded: base64EncodedData)
             else { continue }
 
             let key = KeyGenerator.newKey
@@ -110,9 +113,12 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         let type = schemaController.localized(itemType: ItemTypes.attachment) ?? ""
         let request = CreateAttachmentsDbRequest(attachments: images.map({ $0.1 }), parentKey: parentKey, localizedType: type, collections: [])
 
+        DDLogInfo("NoteEditorActionHandler: submit \(images.count) images")
+
         do {
             let failedKeys = try dbStorage.perform(request: request, on: backgroundQueue).map({ $0.0 })
             let successfulImages = images.filter({ !failedKeys.contains($0.1.key) }).map({ NoteEditorState.CreatedImage(nodeId: $0.0, key: $0.1.key) })
+            DDLogInfo("NoteEditorActionHandler: successfully created \(successfulImages)")
             update(viewModel: viewModel) { state in
                 state.createdImages = successfulImages
                 state.changes = .save
@@ -192,13 +198,14 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             guard let dataString = String(data: data, encoding: .utf8) else {
                 throw NoteEditorState.Error.cantCreateData
             }
+            DDLogInfo("NoteEditorActionHandler: loaded resource '\(contentType)' for \(identifier); \(key)")
             let resource = NoteEditorState.Resource(identifier: identifier, data: ["src": "data:\(contentType);base64,\(dataString)"])
             update(viewModel: viewModel) { state in
                 state.pendingResources[key] = nil
                 state.downloadedResource = resource
             }
         } catch let error {
-            DDLogError("NoteEditorActionHandler: can't read downloaded file - \(error)")
+            DDLogError("NoteEditorActionHandler: can't read resource for \(key) - \(error)")
         }
     }
 
@@ -207,10 +214,12 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
               let identifier = data["id"] as? String,
               let type = data["type"] as? String,
               let key = (data["data"] as? [String: Any])?["attachmentKey"] as? String,
-              let item = try? dbStorage.perform(request: ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: key), on: .main),
+              let item = try? dbStorage.perform(request: ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: key), on: .main, refreshRealm: true),
               let attachment = AttachmentCreator.attachment(for: item, fileStorage: fileStorage, urlDetector: nil),
               case .file(let filename, let contentType, let location, _, _) = attachment.type
         else { return }
+
+        DDLogInfo("NoteEditorActionHandler: load resource for \(identifier); \(key)")
 
         if location == .local {
             processImage(identifier: identifier, key: key, filename: filename, contentType: contentType, libraryId: viewModel.state.library.identifier, viewModel: viewModel)
@@ -227,6 +236,7 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
 
     private func deleteResource(data: [String: Any], in viewModel: ViewModel<NoteEditorActionHandler>) {
         guard let key = data["id"] as? String else { return }
+        DDLogInfo("NoteEditorActionHandler: delete resource for \(key)")
         let request = MarkObjectsAsDeletedDbRequest<RItem>(keys: [key], libraryId: viewModel.state.library.identifier)
         perform(request: request) { error in
             guard let error else { return }
