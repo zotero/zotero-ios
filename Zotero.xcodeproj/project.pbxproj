@@ -6441,7 +6441,7 @@
 			repositoryURL = "https://github.com/microsoft/plcrashreporter";
 			requirement = {
 				kind = exactVersion;
-				version = 1.11.1;
+				version = 1.11.2;
 			};
 		};
 		B356A361252490B3003F1943 /* XCRemoteSwiftPackageReference "Alamofire" */ = {
@@ -6457,7 +6457,7 @@
 			repositoryURL = "https://github.com/evgenyneu/keychain-swift";
 			requirement = {
 				kind = exactVersion;
-				version = 22.0.0;
+				version = 24.0.0;
 			};
 		};
 		B356A3732524A601003F1943 /* XCRemoteSwiftPackageReference "RxSwiftExt" */ = {
@@ -6521,7 +6521,7 @@
 			repositoryURL = "https://github.com/realm/realm-cocoa";
 			requirement = {
 				kind = exactVersion;
-				version = 10.49.1;
+				version = 10.49.3;
 			};
 		};
 		B35E4B8B25248B3C000EA134 /* XCRemoteSwiftPackageReference "RxSwift" */ = {
@@ -6529,7 +6529,7 @@
 			repositoryURL = "https://github.com/ReactiveX/RxSwift";
 			requirement = {
 				kind = exactVersion;
-				version = 6.6.0;
+				version = 6.7.1;
 			};
 		};
 		B3A6C59D252CA08200F24CBE /* XCRemoteSwiftPackageReference "PSPDFKit-SP" */ = {
