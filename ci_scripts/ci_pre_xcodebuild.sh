@@ -20,13 +20,3 @@ echo "$plist" > licenses/licenses.plist
 rm -rf pdf-keys
 
 brew install node
-npm install
-npm install webpack
-npm install webpack-cli
-npm install html-webpack-plugin
-npm install mini-css-extract-plugin
-npm install css-minimizer-webpack-plugin
-npm install terser-webpack-plugin
-npm install clean-webpack-plugin 
-npm install babel-loader
-npm install postcss-loader
