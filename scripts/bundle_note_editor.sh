@@ -13,5 +13,6 @@ if [ -d "$EDITOR_DIR" ]; then
 fi
 
 cd "$SCRIPT_DIR/../note-editor"
+npm ci
 npm run build:ios
 mv "$SCRIPT_DIR/../note-editor/build/ios" "$SCRIPT_DIR/../bundled/note_editor"
