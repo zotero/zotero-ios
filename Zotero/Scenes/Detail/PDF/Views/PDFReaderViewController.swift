@@ -183,7 +183,9 @@ class PDFReaderViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        set(userActivity: .pdfActivity(for: viewModel.state.key, libraryId: viewModel.state.library.identifier, collectionId: Defaults.shared.selectedCollectionId))
+        set(userActivity: .pdfActivity(for: viewModel.state.key, libraryId: viewModel.state.library.identifier, collectionId: Defaults.shared.selectedCollectionId)
+            .set(title: viewModel.state.displayTitle)
+        )
         view.backgroundColor = .systemGray6
         // Create intraDocumentNavigationHandler before setting up views, as it may be called by a child view controller, before view has finished loading.
         intraDocumentNavigationHandler = IntraDocumentNavigationButtonsHandler(

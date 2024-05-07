@@ -32,6 +32,12 @@ extension NSUserActivity {
         return activity
     }
 
+    @discardableResult
+    func set(title: String? = nil) -> NSUserActivity {
+        self.title = title
+        return self
+    }
+
     private static func libraryIdToString(_ libraryId: LibraryIdentifier) -> String {
         switch libraryId {
         case .custom:

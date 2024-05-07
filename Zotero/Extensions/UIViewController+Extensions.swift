@@ -42,7 +42,10 @@ extension UIViewController {
     }
 
     func set(userActivity: NSUserActivity) {
-        self.window?.windowScene?.userActivity = userActivity
+        if let scene {
+            scene.userActivity = userActivity
+            scene.title = userActivity.title
+        }
         userActivity.becomeCurrent()
     }
 
