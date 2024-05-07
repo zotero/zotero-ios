@@ -32,9 +32,7 @@ final class MainViewController: UISplitViewController {
     private var detailCoordinator: DetailCoordinator? {
         didSet {
             guard let detailCoordinator else { return }
-            let userActivity: NSUserActivity = .mainActivity
-            userActivity.title = detailCoordinator.collection.name
-            set(userActivity: userActivity)
+            set(userActivity: .mainActivity.set(title: detailCoordinator.collection.name))
             if let detailCoordinatorGetter {
                 detailCoordinatorGetter(detailCoordinator)
                 self.detailCoordinatorGetter = nil
@@ -79,9 +77,7 @@ final class MainViewController: UISplitViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         guard let detailCoordinator else { return }
-        let userActivity: NSUserActivity = .mainActivity
-        userActivity.title = detailCoordinator.collection.name
-        set(userActivity: userActivity)
+        set(userActivity: .mainActivity.set(title: detailCoordinator.collection.name))
     }
 
     func getDetailCoordinator(completed: @escaping (DetailCoordinator) -> Void) {
