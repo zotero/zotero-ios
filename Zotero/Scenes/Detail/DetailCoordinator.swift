@@ -1021,9 +1021,9 @@ extension DetailCoordinator: DetailNoteEditorCoordinatorDelegate {
             DDLogInfo("DetailCoordinator: show note creation")
             amendedSaveCallback = { [weak self] key, result in
                 switch result {
-                case .success(let note):
+                case .success((let note, let isCreated)):
                     // If indeed a new note is created inform open items controller about it.
-                    if let self, let openItemsController = controllers.userControllers?.openItemsController {
+                    if isCreated, let self, let openItemsController = controllers.userControllers?.openItemsController {
                         openItemsController.open(.note(libraryId: library.identifier, key: note.key), for: sessionIdentifier)
                         openItemsController.setOpenItemsUserActivity(from: navigationController, libraryId: library.identifier, title: note.title)
                     }
