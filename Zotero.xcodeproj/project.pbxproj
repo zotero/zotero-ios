@@ -6557,7 +6557,7 @@
 			repositoryURL = "https://github.com/PSPDFKit/PSPDFKit-SP";
 			requirement = {
 				kind = exactVersion;
-				version = 13.3.1;
+				version = 13.5.0;
 			};
 		};
 		B3D84BEE27919FDE005DDD7C /* XCRemoteSwiftPackageReference "Starscream" */ = {
