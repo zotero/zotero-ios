@@ -42,8 +42,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/evgenyneu/keychain-swift",
       "state" : {
-        "revision" : "75677d8be3c50898c8ffd0d107f88aa2740301fc",
-        "version" : "22.0.0"
+        "revision" : "5e1b02b6a9dac2a759a1d5dbc175c86bd192a608",
+        "version" : "24.0.0"
       }
     },
     {
@@ -69,8 +69,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/microsoft/plcrashreporter",
       "state" : {
-        "revision" : "1aed8f7dc79ce8e674c61e430ef51ca3db18cea9",
-        "version" : "1.11.1"
+        "revision" : "6752f71de206f6a53fa6a758c3660fd9a7fe7527",
+        "version" : "1.11.2"
       }
     },
     {
@@ -96,8 +96,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/realm/realm-cocoa",
       "state" : {
-        "revision" : "e0c2fbb442979fbf1e4be80e01d142f310a9c762",
-        "version" : "10.49.1"
+        "revision" : "abbe849262c165dbd33b2d1c15c0f04783eb3311",
+        "version" : "10.49.3"
       }
     },
     {
@@ -105,8 +105,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/realm/realm-core.git",
       "state" : {
-        "revision" : "374dd672af357732dccc135fecc905406fec3223",
-        "version" : "14.4.1"
+        "revision" : "4d815c6e6883bfdcb67cf755d0f0f29a4b399ea7",
+        "version" : "14.5.2"
       }
     },
     {
@@ -114,8 +114,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ReactiveX/RxSwift",
       "state" : {
-        "revision" : "9dcaa4b333db437b0fbfaf453fad29069044a8b4",
-        "version" : "6.6.0"
+        "revision" : "b06a8c8596e4c3e8e7788e08e720e3248563ce6a",
+        "version" : "6.7.1"
       }
     },
     {
