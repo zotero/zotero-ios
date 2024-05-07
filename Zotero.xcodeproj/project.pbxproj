@@ -24,6 +24,9 @@
 		6144B5DF2A4AE48F00914B3C /* SyncControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */; };
 		6144B5E02A4AE49800914B3C /* TranslatorsControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F47C00243B339F004F8B1E /* TranslatorsControllerSpec.swift */; };
 		6144B5E12A4AE95E00914B3C /* WebDavControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3202C6B271048FF00485BE4 /* WebDavControllerSpec.swift */; };
+		61457F572BEA2F53000AE230 /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 61457F562BEA2F53000AE230 /* RealmSwift */; };
+		61457F582BEA2F53000AE230 /* RealmSwift in Embed Frameworks */ = {isa = PBXBuildFile; productRef = 61457F562BEA2F53000AE230 /* RealmSwift */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		61457F5A2BEA2F66000AE230 /* RealmSwift in CopyFiles */ = {isa = PBXBuildFile; productRef = B35C9C072642A0BC0004C47E /* RealmSwift */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		614D65822A79C9AC007CF449 /* Localizable.stringsdict in Resources */ = {isa = PBXBuildFile; fileRef = 614D65802A79C9AC007CF449 /* Localizable.stringsdict */; };
 		614D65832A79C9B0007CF449 /* Localizable.stringsdict in Resources */ = {isa = PBXBuildFile; fileRef = 614D65802A79C9AC007CF449 /* Localizable.stringsdict */; };
 		614D65872A8030C9007CF449 /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 614D65862A8030C9007CF449 /* OrderedCollections */; };
@@ -1219,6 +1222,17 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		61457F592BEA2F53000AE230 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				61457F582BEA2F53000AE230 /* RealmSwift in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		B311B3272386A39800BCF592 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1236,6 +1250,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				61457F5A2BEA2F66000AE230 /* RealmSwift in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2153,6 +2168,7 @@
 				B356A3982524A6D5003F1943 /* OHHTTPStubs in Frameworks */,
 				B356A3902524A6BA003F1943 /* Quick in Frameworks */,
 				B356A3962524A6D5003F1943 /* OHHTTPStubsSwift in Frameworks */,
+				61457F572BEA2F53000AE230 /* RealmSwift in Frameworks */,
 				B356A38A2524A698003F1943 /* Nimble in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -4241,6 +4257,7 @@
 				B30D59672206F60500884C4A /* Sources */,
 				B30D59682206F60500884C4A /* Frameworks */,
 				B30D59692206F60500884C4A /* Resources */,
+				61457F592BEA2F53000AE230 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -4253,6 +4270,7 @@
 				B356A38F2524A6BA003F1943 /* Quick */,
 				B356A3952524A6D5003F1943 /* OHHTTPStubsSwift */,
 				B356A3972524A6D5003F1943 /* OHHTTPStubs */,
+				61457F562BEA2F53000AE230 /* RealmSwift */,
 			);
 			productName = ZoteroTests;
 			productReference = B30D596B2206F60500884C4A /* ZoteroTests.xctest */;
@@ -6521,7 +6539,7 @@
 			repositoryURL = "https://github.com/realm/realm-cocoa";
 			requirement = {
 				kind = exactVersion;
-				version = 10.49.3;
+				version = 10.50.0;
 			};
 		};
 		B35E4B8B25248B3C000EA134 /* XCRemoteSwiftPackageReference "RxSwift" */ = {
@@ -6551,6 +6569,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		61457F562BEA2F53000AE230 /* RealmSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B35C9C042642A0BC0004C47E /* XCRemoteSwiftPackageReference "realm-cocoa" */;
+			productName = RealmSwift;
+		};
 		614D65862A8030C9007CF449 /* OrderedCollections */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 614D65852A8030C9007CF449 /* XCRemoteSwiftPackageReference "swift-collections" */;
