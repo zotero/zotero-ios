@@ -74,7 +74,15 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
     func start(animated: Bool) {
         guard let dbStorage = controllers.userControllers?.dbStorage, let openItemsController = controllers.userControllers?.openItemsController else { return }
 
-        let state = NoteEditorState(kind: kind, library: library, title: title, text: initialText, tags: initialTags, openItemsCount: openItemsController.getItems(for: sessionIdentifier).count)
+        let state = NoteEditorState(
+            kind: kind,
+            library: library,
+            title: title,
+            text: initialText,
+            tags: initialTags,
+            openItemsCount: openItemsController.getItems(for: sessionIdentifier).count,
+            activityTitle: kind.key.flatMap { (try? dbStorage.perform(request: ReadItemDbRequest(libraryId: library.identifier, key: $0), on: .main))?.displayTitle }
+        )
         let handler = NoteEditorActionHandler(dbStorage: dbStorage, schemaController: controllers.schemaController, saveCallback: saveCallback)
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = NoteEditorViewController(viewModel: viewModel, openItemsController: openItemsController)
