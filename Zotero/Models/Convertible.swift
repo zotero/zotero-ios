@@ -23,15 +23,23 @@ struct Convertible {
         switch request.endpoint {
         case .zotero(let path):
             self.url = baseUrl.appendingPathComponent(path)
+            self.token = token
+            self.headers = Convertible.merge(headers: request.headers ?? [:], with: additionalHeaders)
 
-        case .webDav(let url), .other(let url):
+        case .webDav(let url):
             self.url = url
+            self.token = token
+            self.headers = Convertible.merge(headers: request.headers ?? [:], with: additionalHeaders)
+
+        case .other(let url):
+            self.url = url
+            self.token = nil
+            self.headers = [:]
         }
-        self.token = token
+
         self.httpMethod = request.httpMethod
         self.encoding = request.encoding.alamoEncoding
         self.parameters = request.parameters
-        self.headers = Convertible.merge(headers: request.headers ?? [:], with: additionalHeaders)
         self.timeout = request.timeout
     }
 
