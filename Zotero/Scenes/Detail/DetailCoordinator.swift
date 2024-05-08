@@ -1025,7 +1025,6 @@ extension DetailCoordinator: DetailNoteEditorCoordinatorDelegate {
                     // If indeed a new note is created inform open items controller about it.
                     if isCreated, let self, let openItemsController = controllers.userControllers?.openItemsController {
                         openItemsController.open(.note(libraryId: library.identifier, key: note.key), for: sessionIdentifier)
-                        openItemsController.setOpenItemsUserActivity(from: navigationController, libraryId: library.identifier, title: note.title)
                     }
 
                 case .failure:
