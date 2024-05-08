@@ -26,6 +26,16 @@ struct NoteEditorState: ViewModelState {
                 return false
             }
         }
+
+        var key: String? {
+            switch self {
+            case .itemCreation, .standaloneCreation:
+                return nil
+                
+            case .edit(let key), .readOnly(let key):
+                return key
+            }
+        }
     }
 
     struct Changes: OptionSet {
@@ -36,7 +46,7 @@ struct NoteEditorState: ViewModelState {
         static let tags = Changes(rawValue: 1 << 0)
         static let save = Changes(rawValue: 1 << 1)
         static let openItems = Changes(rawValue: 1 << 2)
-        static let displayTitle = Changes(rawValue: 1 << 3)
+        static let activityTitle = Changes(rawValue: 1 << 3)
     }
 
     struct TitleData {
@@ -56,9 +66,9 @@ struct NoteEditorState: ViewModelState {
     var tags: [Tag]
     var changes: Changes
     var openItemsCount: Int
-    var displayTitle: String?
+    var activityTitle: String?
 
-    init(kind: Kind, library: Library, title: TitleData?, text: String, tags: [Tag], openItemsCount: Int) {
+    init(kind: Kind, library: Library, title: TitleData?, text: String, tags: [Tag], openItemsCount: Int, activityTitle: String?) {
         self.kind = kind
         self.text = text
         self.tags = tags
@@ -66,13 +76,7 @@ struct NoteEditorState: ViewModelState {
         self.title = title
         changes = []
         self.openItemsCount = openItemsCount
-        displayTitle = generateDisplayTitle()
-    }
-
-    func generateDisplayTitle() -> String? {
-        let parts = [title?.title, NotePreviewGenerator.preview(from: text)].compactMap({ $0 })
-        guard !parts.isEmpty else { return nil }
-        return parts.joined(separator: " / ")
+        self.activityTitle = activityTitle
     }
 
     mutating func cleanup() {

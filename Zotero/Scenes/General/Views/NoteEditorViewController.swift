@@ -52,7 +52,7 @@ final class NoteEditorViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        openItemsController.setOpenItemsUserActivity(from: self, libraryId: viewModel.state.library.identifier, title: viewModel.state.displayTitle)
+        openItemsController.setOpenItemsUserActivity(from: self, libraryId: viewModel.state.library.identifier, title: viewModel.state.activityTitle)
 
         if let data = viewModel.state.title {
             navigationItem.titleView = NoteEditorTitleView(type: data.type, title: data.title)
@@ -115,7 +115,7 @@ final class NoteEditorViewController: UIViewController {
                                 if changedCurrentItem {
                                     forceSaveIfNeeded()
                                 } else if openItemsChanged {
-                                    openItemsController.setOpenItemsUserActivity(from: self, libraryId: viewModel.state.library.identifier, title: viewModel.state.displayTitle)
+                                    openItemsController.setOpenItemsUserActivity(from: self, libraryId: viewModel.state.library.identifier, title: viewModel.state.activityTitle)
                                 }
                             }
                         )
@@ -164,8 +164,8 @@ final class NoteEditorViewController: UIViewController {
             if state.changes.contains(.openItems) {
                 setupNavbarItems(for: state)
             }
-            if state.changes.contains(.displayTitle) {
-                openItemsController.setOpenItemsUserActivity(from: self, libraryId: state.library.identifier, title: state.displayTitle)
+            if state.changes.contains(.activityTitle) {
+                openItemsController.setOpenItemsUserActivity(from: self, libraryId: state.library.identifier, title: state.activityTitle)
             }
 
             func debounceSave() {
