@@ -26,16 +26,6 @@ struct NoteEditorState: ViewModelState {
                 return false
             }
         }
-
-        var key: String? {
-            switch self {
-            case .itemCreation, .standaloneCreation:
-                return nil
-                
-            case .edit(let key), .readOnly(let key):
-                return key
-            }
-        }
     }
 
     struct Changes: OptionSet {
@@ -46,7 +36,7 @@ struct NoteEditorState: ViewModelState {
         static let tags = Changes(rawValue: 1 << 0)
         static let save = Changes(rawValue: 1 << 1)
         static let openItems = Changes(rawValue: 1 << 2)
-        static let activityTitle = Changes(rawValue: 1 << 3)
+        static let title = Changes(rawValue: 1 << 3)
     }
 
     struct TitleData {
@@ -59,24 +49,24 @@ struct NoteEditorState: ViewModelState {
     }
 
     let library: Library
-    let title: TitleData?
+    let parentTitleData: TitleData?
 
     var kind: Kind
     var text: String
     var tags: [Tag]
     var changes: Changes
     var openItemsCount: Int
-    var activityTitle: String?
+    var title: String?
 
-    init(kind: Kind, library: Library, title: TitleData?, text: String, tags: [Tag], openItemsCount: Int, activityTitle: String?) {
+    init(kind: Kind, library: Library, parentTitleData: TitleData?, text: String, tags: [Tag], openItemsCount: Int, title: String?) {
         self.kind = kind
         self.text = text
         self.tags = tags
         self.library = library
-        self.title = title
+        self.parentTitleData = parentTitleData
         changes = []
         self.openItemsCount = openItemsCount
-        self.activityTitle = activityTitle
+        self.title = title
     }
 
     mutating func cleanup() {

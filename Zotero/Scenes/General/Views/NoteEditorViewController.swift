@@ -52,10 +52,10 @@ final class NoteEditorViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        openItemsController.setOpenItemsUserActivity(from: self, libraryId: viewModel.state.library.identifier, title: viewModel.state.activityTitle)
+        openItemsController.setOpenItemsUserActivity(from: self, libraryId: viewModel.state.library.identifier, title: viewModel.state.title)
 
-        if let data = viewModel.state.title {
-            navigationItem.titleView = NoteEditorTitleView(type: data.type, title: data.title)
+        if let parentTitleData = viewModel.state.parentTitleData {
+            navigationItem.titleView = NoteEditorTitleView(type: parentTitleData.type, title: parentTitleData.title)
         }
 
         view.backgroundColor = .systemBackground
@@ -115,7 +115,7 @@ final class NoteEditorViewController: UIViewController {
                                 if changedCurrentItem {
                                     forceSaveIfNeeded()
                                 } else if openItemsChanged {
-                                    openItemsController.setOpenItemsUserActivity(from: self, libraryId: viewModel.state.library.identifier, title: viewModel.state.activityTitle)
+                                    openItemsController.setOpenItemsUserActivity(from: self, libraryId: viewModel.state.library.identifier, title: viewModel.state.title)
                                 }
                             }
                         )
@@ -164,8 +164,8 @@ final class NoteEditorViewController: UIViewController {
             if state.changes.contains(.openItems) {
                 setupNavbarItems(for: state)
             }
-            if state.changes.contains(.activityTitle) {
-                openItemsController.setOpenItemsUserActivity(from: self, libraryId: state.library.identifier, title: state.activityTitle)
+            if state.changes.contains(.title) {
+                openItemsController.setOpenItemsUserActivity(from: self, libraryId: state.library.identifier, title: state.title)
             }
 
             func debounceSave() {

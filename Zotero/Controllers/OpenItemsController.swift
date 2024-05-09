@@ -99,7 +99,7 @@ final class OpenItemsController {
 
     enum Presentation {
         case pdf(library: Library, key: String, parentKey: String?, url: URL)
-        case note(library: Library, key: String, text: String, tags: [Tag], title: NoteEditorState.TitleData?)
+        case note(library: Library, key: String, text: String, tags: [Tag], parentTitleData: NoteEditorState.TitleData?, title: String)
     }
     
     // MARK: Properties
@@ -440,12 +440,9 @@ final class OpenItemsController {
             let library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
             let rItem = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
             let note = Note(item: rItem)
-            var title: NoteEditorState.TitleData?
-            if let parent = rItem.parent {
-                title = NoteEditorState.TitleData(type: parent.rawType, title: parent.displayTitle)
-            }
+            let parentTitleData: NoteEditorState.TitleData? = rItem.parent.flatMap { .init(type: $0.rawType, title: $0.displayTitle) }
             guard let note else { return nil }
-            return .note(library: library, key: note.key, text: note.text, tags: note.tags, title: title)
+            return .note(library: library, key: note.key, text: note.text, tags: note.tags, parentTitleData: parentTitleData, title: note.title)
         }
     }
 
