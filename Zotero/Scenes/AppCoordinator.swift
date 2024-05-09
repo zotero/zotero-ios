@@ -866,10 +866,10 @@ extension AppCoordinator: OpenItemsPresenter {
                     case .pdf(let library, let key, let parentKey, let url):
                         return coordinator.createPDFController(key: key, parentKey: parentKey, libraryId: library.identifier, url: url)
 
-                    case .note(let library, let key, let text, let tags, let title):
+                    case .note(let library, let key, let text, let tags, let parentTitleData, let title):
                         let kind: NoteEditorKind = library.metadataEditable ? .edit(key: key) : .readOnly(key: key)
                         // TODO: Check if a callback is required
-                        return coordinator.createNoteController(library: library, kind: kind, text: text, tags: tags, title: title) { _, _ in
+                        return coordinator.createNoteController(library: library, kind: kind, text: text, tags: tags, parentTitleData: parentTitleData, title: title) { _, _ in
                         }
                     }
                 },

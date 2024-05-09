@@ -31,7 +31,8 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
     private let kind: NoteEditorKind
     private let initialText: String
     private let initialTags: [Tag]
-    private let title: NoteEditorState.TitleData?
+    private let parentTitleData: NoteEditorState.TitleData?
+    private let title: String?
     private let library: Library
     private let saveCallback: NoteEditorSaveCallback
     private let sessionIdentifier: String
@@ -42,7 +43,8 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
         kind: NoteEditorKind,
         text: String,
         tags: [Tag],
-        title: NoteEditorState.TitleData?,
+        parentTitleData: NoteEditorState.TitleData?,
+        title: String?,
         saveCallback: @escaping NoteEditorSaveCallback,
         navigationController: NavigationViewController,
         sessionIdentifier: String,
@@ -51,6 +53,7 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
         self.kind = kind
         initialText = text
         initialTags = tags
+        self.parentTitleData = parentTitleData
         self.title = title
         self.library = library
         self.saveCallback = saveCallback
@@ -77,11 +80,11 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
         let state = NoteEditorState(
             kind: kind,
             library: library,
-            title: title,
+            parentTitleData: parentTitleData,
             text: initialText,
             tags: initialTags,
             openItemsCount: openItemsController.getItems(for: sessionIdentifier).count,
-            activityTitle: kind.key.flatMap { (try? dbStorage.perform(request: ReadItemDbRequest(libraryId: library.identifier, key: $0), on: .main))?.displayTitle }
+            title: title
         )
         let handler = NoteEditorActionHandler(dbStorage: dbStorage, schemaController: controllers.schemaController, saveCallback: saveCallback)
         let viewModel = ViewModel(initialState: state, handler: handler)

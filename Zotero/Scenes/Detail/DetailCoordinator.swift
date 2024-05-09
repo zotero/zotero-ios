@@ -68,7 +68,7 @@ protocol DetailItemDetailCoordinatorDelegate: AnyObject {
 }
 
 protocol DetailNoteEditorCoordinatorDelegate: AnyObject {
-    func showNote(library: Library, kind: NoteEditorKind, text: String, tags: [Tag], title: NoteEditorState.TitleData?, saveCallback: @escaping NoteEditorSaveCallback)
+    func showNote(library: Library, kind: NoteEditorKind, text: String, tags: [Tag], parentTitleData: NoteEditorState.TitleData?, title: String?, saveCallback: @escaping NoteEditorSaveCallback)
 }
 
 protocol ItemsTagFilterDelegate: AnyObject {
@@ -529,7 +529,8 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         kind: NoteEditorKind,
         text: String,
         tags: [Tag],
-        title: NoteEditorState.TitleData?,
+        parentTitleData: NoteEditorState.TitleData?,
+        title: String?,
         saveCallback: @escaping NoteEditorSaveCallback
     ) -> DetailNavigationViewController {
         let navigationController = DetailNavigationViewController()
@@ -541,6 +542,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
             kind: kind,
             text: text,
             tags: tags,
+            parentTitleData: parentTitleData,
             title: title,
             saveCallback: saveCallback,
             navigationController: navigationController,
@@ -1011,7 +1013,8 @@ extension DetailCoordinator: DetailNoteEditorCoordinatorDelegate {
         kind: NoteEditorKind,
         text: String = "",
         tags: [Tag] = [],
-        title: NoteEditorState.TitleData? = nil,
+        parentTitleData: NoteEditorState.TitleData? = nil,
+        title: String? = nil,
         saveCallback: @escaping NoteEditorSaveCallback = { _, _  in }
     ) {
         guard let navigationController else { return }
@@ -1046,7 +1049,7 @@ extension DetailCoordinator: DetailNoteEditorCoordinatorDelegate {
         }
 
         showDetail(presentedBy: navigationController) {
-            self.createNoteController(library: library, kind: kind, text: text, tags: tags, title: title, saveCallback: amendedSaveCallback)
+            self.createNoteController(library: library, kind: kind, text: text, tags: tags, parentTitleData: parentTitleData, title: title, saveCallback: amendedSaveCallback)
         }
     }
 }
@@ -1086,10 +1089,10 @@ extension DetailCoordinator: OpenItemsPresenter {
         case .pdf(let library, let key, let parentKey, let url):
             showPDF(at: url, key: key, parentKey: parentKey, libraryId: library.identifier)
 
-        case .note(let library, let key, let text, let tags, let title):
+        case .note(let library, let key, let text, let tags, let parentTitleData, let title):
             let kind: NoteEditorKind = library.metadataEditable ? .edit(key: key) : .readOnly(key: key)
             // TODO: Check if a callback is required
-            showNote(library: library, kind: kind, text: text, tags: tags, title: title)
+            showNote(library: library, kind: kind, text: text, tags: tags, parentTitleData: parentTitleData, title: title)
 
         case .none:
             navigationController?.dismiss(animated: true)
