@@ -38,6 +38,7 @@ class PDFReaderViewController: UIViewController {
     private var documentTop: NSLayoutConstraint!
     private var annotationToolbarHandler: AnnotationToolbarHandler!
     private var intraDocumentNavigationHandler: IntraDocumentNavigationButtonsHandler!
+    private var selectedText: String?
     private(set) var isCompactWidth: Bool
     @CodableUserDefault(key: "PDFReaderToolbarState", defaultValue: AnnotationToolbarHandler.State(position: .leading, visible: true), encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
     var toolbarState: AnnotationToolbarHandler.State
@@ -157,7 +158,13 @@ class PDFReaderViewController: UIViewController {
     }()
 
     override var keyCommands: [UIKeyCommand]? {
-        var keyCommands: [UIKeyCommand] = [
+        var keyCommands: [UIKeyCommand] = []
+        if let selectedText {
+            keyCommands += [
+                .init(title: L10n.copy, action: #selector(copySelectedText), input: "c", modifierFlags: [.command])
+            ]
+        }
+        keyCommands += [
             .init(title: L10n.Pdf.Search.title, action: #selector(search), input: "f", modifierFlags: [.command])
         ]
         if intraDocumentNavigationHandler?.showsBackButton == true {
@@ -636,6 +643,10 @@ class PDFReaderViewController: UIViewController {
         navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
     }
 
+    @objc private func copySelectedText() {
+        UIPasteboard.general.string = selectedText
+    }
+
     @objc private func search() {
         guard let pdfController = documentController.pdfController else { return }
         showSearch(pdfController: pdfController, text: nil)
@@ -875,6 +886,10 @@ extension PDFReaderViewController: PDFDocumentDelegate {
 
     func backNavigationButtonChanged(visible: Bool) {
         intraDocumentNavigationHandler?.set(backButtonVisible: visible)
+    }
+
+    func didSelectText(_ text: String) {
+        selectedText = text.isEmpty ? nil : text
     }
 }
 

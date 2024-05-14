@@ -26,6 +26,7 @@ protocol PDFDocumentDelegate: AnyObject {
     func interfaceVisibilityDidChange(to isHidden: Bool)
     func showToolOptions()
     func backNavigationButtonChanged(visible: Bool)
+    func didSelectText(_ text: String)
 }
 
 final class PDFDocumentViewController: UIViewController {
@@ -782,6 +783,10 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
                 return element
             }
         })
+    }
+
+    func pdfViewController(_ pdfController: PDFViewController, didSelectText text: String, with glyphs: [Glyph], at rect: CGRect, on pageView: PDFPageView) {
+        parentDelegate?.didSelectText(text)
     }
 }
 
