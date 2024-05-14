@@ -12,7 +12,7 @@ import Foundation
 
 struct FieldKeys {
     struct Collection {
-        static let knownDataKeys: [String] = ["key", "version", "name", "parentCollection", "relations"]
+        static let knownDataKeys: [String] = ["key", "version", "name", "parentCollection", "relations", "deleted"]
     }
 
     struct Item {
@@ -174,6 +174,6 @@ struct FieldKeys {
     }
 
     struct Search {
-        static let knownDataKeys: [String] = ["key", "version", "name", "conditions"]
+        static let knownDataKeys: [String] = ["key", "version", "name", "conditions", "deleted"]
     }
 }
