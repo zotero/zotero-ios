@@ -264,27 +264,29 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     // MARK: - Dark mode changes
 
     private func userInterfaceChanged(interfaceStyle: UIUserInterfaceStyle, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        viewModel.state.previewCache.removeAllObjects()
+
+        for (_, annotations) in viewModel.state.document.allAnnotations(of: AnnotationsConfig.supported) {
+            for annotation in annotations {
+                let baseColor = annotation.baseColor
+                let (color, alpha, blendMode) = AnnotationColorGenerator.color(
+                    from: UIColor(hex: baseColor),
+                    isHighlight: (annotation is PSPDFKit.HighlightAnnotation),
+                    userInterfaceStyle: interfaceStyle
+                )
+                annotation.color = color
+                annotation.alpha = alpha
+                if let blendMode {
+                    annotation.blendMode = blendMode
+                }
+            }
+        }
+
+        storeAnnotationPreviewsIfNeeded(in: viewModel)
+
         self.update(viewModel: viewModel) { state in
             state.interfaceStyle = interfaceStyle
             state.changes = .interfaceStyle
-            state.previewCache.removeAllObjects()
-            state.shouldStoreAnnotationPreviewsIfNeeded = true
-
-            for (_, annotations) in state.document.allAnnotations(of: AnnotationsConfig.supported) {
-                for annotation in annotations {
-                    let baseColor = annotation.baseColor
-                    let (color, alpha, blendMode) = AnnotationColorGenerator.color(
-                        from: UIColor(hex: baseColor),
-                        isHighlight: (annotation is PSPDFKit.HighlightAnnotation),
-                        userInterfaceStyle: interfaceStyle
-                    )
-                    annotation.color = color
-                    annotation.alpha = alpha
-                    if let blendMode {
-                        annotation.blendMode = blendMode
-                    }
-                }
-            }
         }
     }
 
@@ -300,10 +302,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 else { continue }
                 self.annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key, libraryId: libraryId, isDark: isDark)
             }
-        }
-
-        self.update(viewModel: viewModel) { state in
-            state.shouldStoreAnnotationPreviewsIfNeeded = false
         }
     }
 

@@ -165,10 +165,6 @@ final class PDFAnnotationsViewController: UIViewController {
             self.emptyLabel.isHidden = !self.tableView.isHidden
         }
 
-        if state.shouldStoreAnnotationPreviewsIfNeeded {
-            self.viewModel.process(action: .updateAnnotationPreviews)
-        }
-
         self.reloadIfNeeded(for: state) {
             if let keys = state.loadedPreviewImageAnnotationKeys {
                 self.updatePreviewsIfVisible(for: keys)

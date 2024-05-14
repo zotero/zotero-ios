@@ -118,9 +118,6 @@ struct PDFReaderState: ViewModelState {
     var updatedAnnotationKeys: [AnnotationKey]?
     /// Annotations that loaded their preview images and need to show them
     var loadedPreviewImageAnnotationKeys: Set<String>?
-    /// Used when user interface style (dark mode) changes. Indicates that annotation previews need to be stored for new appearance
-    /// if they are not available.
-    var shouldStoreAnnotationPreviewsIfNeeded: Bool
     /// Page that should be shown initially, instead of stored page
     var initialPage: Int?
     var unlockSuccessful: Bool?
@@ -173,7 +170,6 @@ struct PDFReaderState: ViewModelState {
         self.activeFontSize = CGFloat(Defaults.shared.activeFontSize)
         self.deletionEnabled = false
         self.mergingEnabled = false
-        self.shouldStoreAnnotationPreviewsIfNeeded = false
 
         self.previewCache.totalCostLimit = 1024 * 1024 * 10 // Cache object limit - 10 MB
 
