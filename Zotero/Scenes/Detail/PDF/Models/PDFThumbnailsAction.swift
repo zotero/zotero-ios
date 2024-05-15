@@ -14,4 +14,5 @@ enum PDFThumbnailsAction {
     case setUserInterface(isDark: Bool)
     case loadPages
     case setSelectedPage(pageIndex: Int, type: PDFThumbnailsState.SelectionType)
+    case reloadThumbnails
 }

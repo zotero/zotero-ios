@@ -175,9 +175,14 @@ class PDFSidebarViewController: UIViewController {
 
         viewModel
             .stateObservable
-            .subscribe(with: thumbnailsViewModel, onNext: { viewModel, state in
-                guard state.changes.contains(.visiblePageFromDocument) else { return }
-                viewModel.process(action: .setSelectedPage(pageIndex: state.visiblePage, type: .fromDocument))
+            .subscribe(onNext: { [weak thumbnailsViewModel] state in
+                guard let thumbnailsViewModel else { return }
+                if state.changes.contains(.visiblePageFromDocument) {
+                    thumbnailsViewModel.process(action: .setSelectedPage(pageIndex: state.visiblePage, type: .fromDocument))
+                }
+                if state.changes.contains(.annotations) {
+                    thumbnailsViewModel.process(action: .reloadThumbnails)
+                }
             })
             .disposed(by: disposeBag)
 
