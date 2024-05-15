@@ -158,13 +158,7 @@ class PDFReaderViewController: UIViewController {
     }()
 
     override var keyCommands: [UIKeyCommand]? {
-        var keyCommands: [UIKeyCommand] = []
-        if let selectedText {
-            keyCommands += [
-                .init(title: L10n.copy, action: #selector(copySelectedText), input: "c", modifierFlags: [.command])
-            ]
-        }
-        keyCommands += [
+        var keyCommands: [UIKeyCommand] = [
             .init(title: L10n.Pdf.Search.title, action: #selector(search), input: "f", modifierFlags: [.command])
         ]
         if intraDocumentNavigationHandler?.showsBackButton == true {
@@ -174,6 +168,22 @@ class PDFReaderViewController: UIViewController {
             ]
         }
         return keyCommands
+    }
+
+    override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
+        if sender is UIKeyCommand {
+            switch action {
+            case #selector(UIResponderStandardEditActions.copy(_:)):
+                return selectedText != nil
+
+            case #selector(search), #selector(performBackAction):
+                return true
+
+            default:
+                break
+            }
+        }
+        return false
     }
 
     init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool) {
@@ -402,6 +412,10 @@ class PDFReaderViewController: UIViewController {
 
     override var prefersStatusBarHidden: Bool {
         return !statusBarVisible
+    }
+
+    override var canBecomeFirstResponder: Bool {
+        true
     }
 
     // MARK: - Actions
@@ -643,10 +657,6 @@ class PDFReaderViewController: UIViewController {
         navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
     }
 
-    @objc private func copySelectedText() {
-        UIPasteboard.general.string = selectedText
-    }
-
     @objc private func search() {
         guard let pdfController = documentController.pdfController else { return }
         showSearch(pdfController: pdfController, text: nil)
@@ -671,6 +681,13 @@ class PDFReaderViewController: UIViewController {
         }
 
         return buttons
+    }
+}
+
+extension PDFReaderViewController {
+    // MARK: - UIResponderStandardEditActions
+    override func copy(_ sender: Any?) {
+        UIPasteboard.general.string = selectedText
     }
 }
 

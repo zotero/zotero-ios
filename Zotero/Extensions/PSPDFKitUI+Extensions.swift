@@ -12,4 +12,8 @@ extension PSPDFKitUI.PDFViewController {
     open override var keyCommands: [UIKeyCommand]? {
         []
     }
+
+    open override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
+        false
+    }
 }
