@@ -209,7 +209,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             self.userInterfaceChanged(interfaceStyle: interfaceStyle, in: viewModel)
 
         case .updateAnnotationPreviews:
-            self.storeAnnotationPreviewsIfNeeded(in: viewModel)
+            self.storeAnnotationPreviewsIfNeeded(isDark: viewModel.state.interfaceStyle == .dark, in: viewModel)
 
         case .setToolOptions(let hex, let size, let tool):
             self.setToolOptions(hex: hex, size: size, tool: tool, in: viewModel)
@@ -282,7 +282,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             }
         }
 
-        storeAnnotationPreviewsIfNeeded(in: viewModel)
+        storeAnnotationPreviewsIfNeeded(isDark: interfaceStyle == .dark, in: viewModel)
 
         self.update(viewModel: viewModel) { state in
             state.interfaceStyle = interfaceStyle
@@ -290,12 +290,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
     }
 
-    private func storeAnnotationPreviewsIfNeeded(in viewModel: ViewModel<PDFReaderActionHandler>) {
-        let isDark = viewModel.state.interfaceStyle == .dark
+    private func storeAnnotationPreviewsIfNeeded(isDark: Bool, in viewModel: ViewModel<PDFReaderActionHandler>) {
         let libraryId = viewModel.state.library.identifier
 
         // Load area annotations if needed.
-        for (_, annotations) in viewModel.state.document.allAnnotations(of: [.square, .ink]) {
+        for (_, annotations) in viewModel.state.document.allAnnotations(of: [.square, .ink, .freeText]) {
             for annotation in annotations {
                 guard annotation.shouldRenderPreview && annotation.isZoteroAnnotation &&
                       !self.annotationPreviewController.hasPreview(for: annotation.previewId, parentKey: viewModel.state.key, libraryId: libraryId, isDark: isDark)

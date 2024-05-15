@@ -58,7 +58,7 @@ import PSPDFKit
 
 extension AnnotationPreviewController {
     /// Renders part of document if it's not cached already and returns as `Single`. Does not write results to cache file.
-    /// - parameter document: Document to render.
+    /// - parameter documentURL: URL document to render.
     /// - parameter page: Page of document to render.
     /// - parameter rect: Part of page of document to render.
     /// - parameter imageSize: Size of rendered image.
@@ -67,7 +67,7 @@ extension AnnotationPreviewController {
     /// - parameter parentKey: Key of parent of annotation.
     /// - parameter libraryId: Library identifier of item.
     /// - returns: `Single` with rendered image.
-    func render(document: Document, page: PageIndex, rect: CGRect, imageSize: CGSize, imageScale: CGFloat, key: String, parentKey: String, libraryId: LibraryIdentifier) -> Single<UIImage> {
+    func render(documentURL: URL, page: PageIndex, rect: CGRect, imageSize: CGSize, imageScale: CGFloat, key: String, parentKey: String, libraryId: LibraryIdentifier) -> Single<UIImage> {
         return Single.create { [weak self] subscriber -> Disposable in
             guard let self = self else { return Disposables.create() }
 
@@ -76,11 +76,11 @@ extension AnnotationPreviewController {
                 self.subscribers[subscriberKey] = subscriber
             }
 
-            self.enqueue(
+            enqueue(
                 key: key,
                 parentKey: parentKey,
                 libraryId: libraryId,
-                document: document,
+                documentURL: documentURL,
                 pageIndex: page,
                 rect: rect,
                 imageSize: imageSize,
@@ -98,22 +98,21 @@ extension AnnotationPreviewController {
     /// - parameter libraryId: Library identifier of item.
     /// - parameter isDark: `true` if dark mode is on, `false` otherwise.
     func store(for annotation: PSPDFKit.Annotation, parentKey: String, libraryId: LibraryIdentifier, isDark: Bool) {
-        guard annotation.shouldRenderPreview && annotation.isZoteroAnnotation, let document = annotation.document else { return }
+        guard annotation.shouldRenderPreview && annotation.isZoteroAnnotation, let documentURL = annotation.document?.fileURL else { return }
 
         // Cache and report original color
         let rect = annotation.previewBoundingBox
         let includeAnnotation = annotation is PSPDFKit.InkAnnotation || annotation is PSPDFKit.FreeTextAnnotation
-        self.enqueue(
+        enqueue(
             key: annotation.previewId,
             parentKey: parentKey,
             libraryId: libraryId,
-            document: document,
+            documentURL: documentURL,
             pageIndex: annotation.pageIndex,
             rect: rect,
             imageSize: previewSize,
             imageScale: 0.0,
             includeAnnotation: includeAnnotation,
-            invertColors: false,
             isDark: isDark,
             type: .cachedAndReported
         )
@@ -178,13 +177,12 @@ extension AnnotationPreviewController {
     /// - parameter key: Key of annotation.
     /// - parameter parentKey: Key of PDF item in which the annotation is stored.
     /// - parameter libraryId: Library identifier of item.
-    /// - parameter document: Document to render.
+    /// - parameter documentURL: URL to document to render.
     /// - parameter pageIndex: Page to render.
     /// - parameter rect: Part of page to render.
     /// - parameter imageSize: Size of rendered image.
     /// - parameter imageScale: Scale factor of rendering. 0.0 will result to the PSPDFkit default. Unsupported values will also result to default.
     /// - parameter includeAnnotation: If true, render annotation as well, otherwise render PDF only.
-    /// - parameter invertColors: `true` if colors should be inverted, false otherwise.
     /// - parameter isDark: `true` if rendered image is in dark mode, `false` otherwise.
     /// - parameter type: Type of preview image. If `temporary`, requested image is temporary and is returned as `Single<UIImage>`. Otherwise image is
     ///                   cached locally and reported through `PublishSubject`.
@@ -192,22 +190,23 @@ extension AnnotationPreviewController {
         key: String,
         parentKey: String,
         libraryId: LibraryIdentifier,
-        document: Document,
+        documentURL: URL,
         pageIndex: PageIndex,
         rect: CGRect,
         imageSize: CGSize,
         imageScale: CGFloat,
         includeAnnotation: Bool = false,
-        invertColors: Bool = false,
         isDark: Bool = false,
         type: PreviewType
     ) {
+        let document = Document(url: documentURL)
         var skipAnnotations = document.annotations(at: pageIndex)
         if includeAnnotation {
             skipAnnotations = skipAnnotations.filter({ $0.previewId != key })
         }
 
         let options = RenderOptions()
+        options.invertRenderColor = isDark
         options.skipAnnotationArray = skipAnnotations
 
         let request = MutableRenderRequest(document: document)

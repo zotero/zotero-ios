@@ -224,10 +224,6 @@ final class PDFAnnotationsViewController: UIViewController {
             return
         }
 
-        if state.changes.contains(.library) {
-            tableView.reloadData()
-        }
-
         if state.changes.contains(.interfaceStyle) {
             var snapshot = self.dataSource.snapshot()
             guard !snapshot.sectionIdentifiers.isEmpty else { return }
@@ -253,6 +249,10 @@ final class PDFAnnotationsViewController: UIViewController {
             completion()
 
             return
+        }
+
+        if state.changes.contains(.library) {
+            tableView.reloadData()
         }
 
         if state.changes.contains(.sidebarEditing) {
