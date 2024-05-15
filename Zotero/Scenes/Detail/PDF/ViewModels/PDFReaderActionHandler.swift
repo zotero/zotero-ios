@@ -209,7 +209,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             self.userInterfaceChanged(interfaceStyle: interfaceStyle, in: viewModel)
 
         case .updateAnnotationPreviews:
-            self.storeAnnotationPreviewsIfNeeded(in: viewModel)
+            self.storeAnnotationPreviewsIfNeeded(isDark: viewModel.state.interfaceStyle == .dark, in: viewModel)
 
         case .setToolOptions(let hex, let size, let tool):
             self.setToolOptions(hex: hex, size: size, tool: tool, in: viewModel)
@@ -264,46 +264,43 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     // MARK: - Dark mode changes
 
     private func userInterfaceChanged(interfaceStyle: UIUserInterfaceStyle, in viewModel: ViewModel<PDFReaderActionHandler>) {
-        self.update(viewModel: viewModel) { state in
-            state.interfaceStyle = interfaceStyle
-            state.changes = .interfaceStyle
-            state.previewCache.removeAllObjects()
-            state.shouldStoreAnnotationPreviewsIfNeeded = true
+        viewModel.state.previewCache.removeAllObjects()
 
-            for (_, annotations) in state.document.allAnnotations(of: AnnotationsConfig.supported) {
-                for annotation in annotations {
-                    let baseColor = annotation.baseColor
-                    let (color, alpha, blendMode) = AnnotationColorGenerator.color(
-                        from: UIColor(hex: baseColor),
-                        isHighlight: (annotation is PSPDFKit.HighlightAnnotation),
-                        userInterfaceStyle: interfaceStyle
-                    )
-                    annotation.color = color
-                    annotation.alpha = alpha
-                    if let blendMode {
-                        annotation.blendMode = blendMode
-                    }
+        for (_, annotations) in viewModel.state.document.allAnnotations(of: AnnotationsConfig.supported) {
+            for annotation in annotations {
+                let baseColor = annotation.baseColor
+                let (color, alpha, blendMode) = AnnotationColorGenerator.color(
+                    from: UIColor(hex: baseColor),
+                    isHighlight: (annotation is PSPDFKit.HighlightAnnotation),
+                    userInterfaceStyle: interfaceStyle
+                )
+                annotation.color = color
+                annotation.alpha = alpha
+                if let blendMode {
+                    annotation.blendMode = blendMode
                 }
             }
         }
+
+        storeAnnotationPreviewsIfNeeded(isDark: interfaceStyle == .dark, in: viewModel)
+
+        self.update(viewModel: viewModel) { state in
+            state.interfaceStyle = interfaceStyle
+            state.changes = .interfaceStyle
+        }
     }
 
-    private func storeAnnotationPreviewsIfNeeded(in viewModel: ViewModel<PDFReaderActionHandler>) {
-        let isDark = viewModel.state.interfaceStyle == .dark
+    private func storeAnnotationPreviewsIfNeeded(isDark: Bool, in viewModel: ViewModel<PDFReaderActionHandler>) {
         let libraryId = viewModel.state.library.identifier
 
         // Load area annotations if needed.
-        for (_, annotations) in viewModel.state.document.allAnnotations(of: [.square, .ink]) {
+        for (_, annotations) in viewModel.state.document.allAnnotations(of: [.square, .ink, .freeText]) {
             for annotation in annotations {
                 guard annotation.shouldRenderPreview && annotation.isZoteroAnnotation &&
                       !self.annotationPreviewController.hasPreview(for: annotation.previewId, parentKey: viewModel.state.key, libraryId: libraryId, isDark: isDark)
                 else { continue }
                 self.annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key, libraryId: libraryId, isDark: isDark)
             }
-        }
-
-        self.update(viewModel: viewModel) { state in
-            state.shouldStoreAnnotationPreviewsIfNeeded = false
         }
     }
 
