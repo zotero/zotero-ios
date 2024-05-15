@@ -58,7 +58,7 @@ import PSPDFKit
 
 extension AnnotationPreviewController {
     /// Renders part of document if it's not cached already and returns as `Single`. Does not write results to cache file.
-    /// - parameter documentURL: URL document to render.
+    /// - parameter document: Document to render.
     /// - parameter page: Page of document to render.
     /// - parameter rect: Part of page of document to render.
     /// - parameter imageSize: Size of rendered image.
