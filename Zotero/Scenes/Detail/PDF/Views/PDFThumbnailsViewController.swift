@@ -110,7 +110,7 @@ class PDFThumbnailsViewController: UICollectionViewController {
         var snapshot = dataSource.snapshot()
         guard snapshot.numberOfSections > 0 else { return }
 
-        if state.changes.contains(.userInterface) {
+        if state.changes.contains(.userInterface) || state.changes.contains(.reload) {
             snapshot.reloadSections([0])
             dataSource.apply(snapshot)
         }

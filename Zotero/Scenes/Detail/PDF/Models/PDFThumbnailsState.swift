@@ -20,6 +20,7 @@ struct PDFThumbnailsState: ViewModelState {
         static let pages = Changes(rawValue: 1 << 1)
         static let selection = Changes(rawValue: 1 << 2)
         static let scrollToSelection = Changes(rawValue: 1 << 3)
+        static let reload = Changes(rawValue: 1 << 4)
     }
 
     enum SelectionType {

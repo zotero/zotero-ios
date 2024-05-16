@@ -41,6 +41,17 @@ struct PDFThumbnailsActionHandler: ViewModelActionHandler {
 
         case .setSelectedPage(let pageIndex, let type):
             set(selectedPage: pageIndex, type: type, viewModel: viewModel)
+
+        case .reloadThumbnails:
+            reloadThumbnails(viewModel: viewModel)
+        }
+    }
+
+    private func reloadThumbnails(viewModel: ViewModel<PDFThumbnailsActionHandler>) {
+        viewModel.state.cache.removeAllObjects()
+        thumbnailController.deleteAll(forKey: viewModel.state.key, libraryId: viewModel.state.libraryId)
+        update(viewModel: viewModel) { state in
+            state.changes = .reload
         }
     }
 
