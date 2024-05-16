@@ -38,6 +38,7 @@ class PDFReaderViewController: UIViewController {
     private var documentTop: NSLayoutConstraint!
     private var annotationToolbarHandler: AnnotationToolbarHandler!
     private var intraDocumentNavigationHandler: IntraDocumentNavigationButtonsHandler!
+    private var selectedText: String?
     private(set) var isCompactWidth: Bool
     @CodableUserDefault(key: "PDFReaderToolbarState", defaultValue: AnnotationToolbarHandler.State(position: .leading, visible: true), encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
     var toolbarState: AnnotationToolbarHandler.State
@@ -167,6 +168,22 @@ class PDFReaderViewController: UIViewController {
             ]
         }
         return keyCommands
+    }
+
+    override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
+        if sender is UIKeyCommand {
+            switch action {
+            case #selector(UIResponderStandardEditActions.copy(_:)):
+                return selectedText != nil
+
+            case #selector(search), #selector(performBackAction):
+                return true
+
+            default:
+                break
+            }
+        }
+        return false
     }
 
     init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool) {
@@ -395,6 +412,10 @@ class PDFReaderViewController: UIViewController {
 
     override var prefersStatusBarHidden: Bool {
         return !statusBarVisible
+    }
+
+    override var canBecomeFirstResponder: Bool {
+        true
     }
 
     // MARK: - Actions
@@ -663,6 +684,13 @@ class PDFReaderViewController: UIViewController {
     }
 }
 
+extension PDFReaderViewController {
+    // MARK: - UIResponderStandardEditActions
+    override func copy(_ sender: Any?) {
+        UIPasteboard.general.string = selectedText
+    }
+}
+
 extension PDFReaderViewController: PDFReaderContainerDelegate {
     var documentTopOffset: CGFloat {
         documentTop.constant
@@ -875,6 +903,10 @@ extension PDFReaderViewController: PDFDocumentDelegate {
 
     func backNavigationButtonChanged(visible: Bool) {
         intraDocumentNavigationHandler?.set(backButtonVisible: visible)
+    }
+
+    func didSelectText(_ text: String) {
+        selectedText = text.isEmpty ? nil : text
     }
 }
 
