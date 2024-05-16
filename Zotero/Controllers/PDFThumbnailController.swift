@@ -105,7 +105,7 @@ extension PDFThumbnailController {
     private func enqueue(subscriberKey: SubscriberKey, document: Document, imageSize: CGSize) {
         guard let fileUrl = document.fileURL else { return }
         let newDocument = Document(url: fileUrl)
-        newDocument.add(annotations: document.allAnnotations(of: .all).map({ $0.value }).flatMap({ $0 }))
+        newDocument.add(annotations: document.annotations(at: subscriberKey.page), options: [.suppressNotifications: true])
 
         let options = RenderOptions()
         options.invertRenderColor = subscriberKey.isDark

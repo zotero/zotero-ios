@@ -48,6 +48,7 @@ struct PDFThumbnailsActionHandler: ViewModelActionHandler {
     }
 
     private func reloadThumbnails(viewModel: ViewModel<PDFThumbnailsActionHandler>) {
+        viewModel.state.cache.removeAllObjects()
         thumbnailController.deleteAll(forKey: viewModel.state.key, libraryId: viewModel.state.libraryId)
         update(viewModel: viewModel) { state in
             state.changes = .reload

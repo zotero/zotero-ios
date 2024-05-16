@@ -204,7 +204,7 @@ extension AnnotationPreviewController {
         let newDocument = Document(url: fileURL)
 
         if includeAnnotation, let annotation = document.annotations(at: pageIndex).first(where: { $0.previewId == key }) {
-            newDocument.add(annotations: [annotation])
+            newDocument.add(annotations: [annotation], options: [.suppressNotifications: true])
         }
 
         let options = RenderOptions()
