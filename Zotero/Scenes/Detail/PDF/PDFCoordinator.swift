@@ -445,7 +445,7 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
         title: String
     ) -> UIDeferredMenuElement {
         UIDeferredMenuElement { [weak self, weak boundingBoxConverter] elementProvider in
-            guard let self, let boundingBoxConverter, let documentURL = state.document.fileURL else {
+            guard let self, let boundingBoxConverter else {
                 elementProvider([])
                 return
             }
@@ -456,7 +456,7 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
             size.width *= scale
             size.height *= scale
             annotationPreviewController.render(
-                documentURL: documentURL,
+                document: state.document,
                 page: pageIndex,
                 rect: rect,
                 imageSize: size,
@@ -514,7 +514,7 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
     }
     
     func shareAnnotationImage(state: PDFReaderState, annotation: PDFAnnotation, scale: CGFloat = 1.0, sender: UIButton) {
-        guard annotation.type == .image, let pdfReaderViewController = navigationController?.viewControllers.last as? PDFReaderViewController, let documentURL = state.document.fileURL else { return }
+        guard annotation.type == .image, let pdfReaderViewController = navigationController?.viewControllers.last as? PDFReaderViewController else { return }
         let annotationPreviewController = controllers.annotationPreviewController
         let pageIndex: PageIndex = UInt(annotation.page)
         let rect = annotation.boundingBox(boundingBoxConverter: pdfReaderViewController)
@@ -522,7 +522,7 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
         size.width *= scale
         size.height *= scale
         annotationPreviewController.render(
-            documentURL: documentURL,
+            document: state.document,
             page: pageIndex,
             rect: rect,
             imageSize: size,

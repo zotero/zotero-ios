@@ -67,7 +67,7 @@ extension AnnotationPreviewController {
     /// - parameter parentKey: Key of parent of annotation.
     /// - parameter libraryId: Library identifier of item.
     /// - returns: `Single` with rendered image.
-    func render(documentURL: URL, page: PageIndex, rect: CGRect, imageSize: CGSize, imageScale: CGFloat, key: String, parentKey: String, libraryId: LibraryIdentifier) -> Single<UIImage> {
+    func render(document: Document, page: PageIndex, rect: CGRect, imageSize: CGSize, imageScale: CGFloat, key: String, parentKey: String, libraryId: LibraryIdentifier) -> Single<UIImage> {
         return Single.create { [weak self] subscriber -> Disposable in
             guard let self = self else { return Disposables.create() }
 
@@ -80,7 +80,7 @@ extension AnnotationPreviewController {
                 key: key,
                 parentKey: parentKey,
                 libraryId: libraryId,
-                documentURL: documentURL,
+                document: document,
                 pageIndex: page,
                 rect: rect,
                 imageSize: imageSize,
@@ -98,7 +98,7 @@ extension AnnotationPreviewController {
     /// - parameter libraryId: Library identifier of item.
     /// - parameter isDark: `true` if dark mode is on, `false` otherwise.
     func store(for annotation: PSPDFKit.Annotation, parentKey: String, libraryId: LibraryIdentifier, isDark: Bool) {
-        guard annotation.shouldRenderPreview && annotation.isZoteroAnnotation, let documentURL = annotation.document?.fileURL else { return }
+        guard annotation.shouldRenderPreview && annotation.isZoteroAnnotation, let document = annotation.document else { return }
 
         // Cache and report original color
         let rect = annotation.previewBoundingBox
@@ -107,7 +107,7 @@ extension AnnotationPreviewController {
             key: annotation.previewId,
             parentKey: parentKey,
             libraryId: libraryId,
-            documentURL: documentURL,
+            document: document,
             pageIndex: annotation.pageIndex,
             rect: rect,
             imageSize: previewSize,
@@ -177,7 +177,7 @@ extension AnnotationPreviewController {
     /// - parameter key: Key of annotation.
     /// - parameter parentKey: Key of PDF item in which the annotation is stored.
     /// - parameter libraryId: Library identifier of item.
-    /// - parameter documentURL: URL to document to render.
+    /// - parameter document: Document to render.
     /// - parameter pageIndex: Page to render.
     /// - parameter rect: Part of page to render.
     /// - parameter imageSize: Size of rendered image.
@@ -190,7 +190,7 @@ extension AnnotationPreviewController {
         key: String,
         parentKey: String,
         libraryId: LibraryIdentifier,
-        documentURL: URL,
+        document: Document,
         pageIndex: PageIndex,
         rect: CGRect,
         imageSize: CGSize,
@@ -199,17 +199,18 @@ extension AnnotationPreviewController {
         isDark: Bool = false,
         type: PreviewType
     ) {
-        let document = Document(url: documentURL)
-        var skipAnnotations = document.annotations(at: pageIndex)
-        if includeAnnotation {
-            skipAnnotations = skipAnnotations.filter({ $0.previewId != key })
+        guard let fileURL = document.fileURL else { return }
+
+        let newDocument = Document(url: fileURL)
+
+        if includeAnnotation, let annotation = document.annotations(at: pageIndex).first(where: { $0.previewId == key }) {
+            newDocument.add(annotations: [annotation])
         }
 
         let options = RenderOptions()
         options.invertRenderColor = isDark
-        options.skipAnnotationArray = skipAnnotations
 
-        let request = MutableRenderRequest(document: document)
+        let request = MutableRenderRequest(document: newDocument)
         request.pageIndex = pageIndex
         request.pdfRect = rect
         request.imageSize = imageSize
