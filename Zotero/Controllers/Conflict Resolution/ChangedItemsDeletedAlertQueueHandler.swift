@@ -13,21 +13,21 @@ struct ChangedItemsDeletedAlertQueueHandler: ConflictAlertQueueHandler {
     let alertAction: ConflictAlertQueueAction
     let completion: () -> Void
 
-    init(items: [(String, String)], completion: @escaping ([String], [String]) -> Void) {
-        self.count = items.count
+    init(conflicts: [PerformItemDeletionsDbRequest.Conflict], completion: @escaping ([String], [String]) -> Void) {
+        self.count = conflicts.count
 
         var toDelete: [String] = []
         var toRestore: [String] = []
 
         self.alertAction = { index, completion in
-            let (key, title) = items[index]
-            let controller = UIAlertController(title: L10n.warning, message: L10n.Sync.ConflictResolution.changedItemDeleted(title), preferredStyle: .alert)
+            let conflict = conflicts[index]
+            let controller = UIAlertController(title: L10n.warning, message: L10n.Sync.ConflictResolution.changedItemDeleted(conflict.title), preferredStyle: .alert)
             controller.addAction(UIAlertAction(title: L10n.restore, style: .default, handler: { _ in
-                toRestore.append(key)
+                toRestore.append(conflict.key)
                 completion()
             }))
             controller.addAction(UIAlertAction(title: L10n.delete, style: .destructive, handler: { _ in
-                toDelete.append(key)
+                toDelete.append(conflict.key)
                 completion()
             }))
             return controller

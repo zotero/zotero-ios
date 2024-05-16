@@ -32,6 +32,12 @@ struct SyncSettingsView: View {
                 self.fileSyncSection
             }
 
+            if self.viewModel.state.fileSyncType == .webDav {
+                Section(header: Text("WebDAV")) {
+                    self.webDavSettings
+                }
+            }
+
             Section(header: Text(L10n.Settings.Sync.account)) {
                 Button {
                     self.coordinatorDelegate?.showWeb(url: URL(string: "https://www.zotero.org/settings/account")!, completion: {
@@ -60,6 +66,12 @@ struct SyncSettingsView: View {
         view.coordinatorDelegate = self.coordinatorDelegate
         return view
     }
+
+    private var webDavSettings: some View {
+        var view = WebDavSettings()
+        view.coordinatorDelegate = self.coordinatorDelegate
+        return view
+    }
 }
 
 struct FileSyncingSection: View {
@@ -68,21 +80,17 @@ struct FileSyncingSection: View {
     weak var coordinatorDelegate: SettingsCoordinatorDelegate?
 
     var body: some View {
-        Picker(L10n.Settings.Sync.fileSyncingTypeMessage, selection: self.viewModel.binding(get: \.fileSyncType, action: { .setFileSyncType($0) })) {
+        Picker(L10n.Settings.Sync.fileSyncingTypeMessage, selection: viewModel.binding(get: \.fileSyncType, action: { .setFileSyncType($0) })) {
             Text("Zotero").tag(SyncSettingsState.FileSyncType.zotero)
             Text("WebDAV").tag(SyncSettingsState.FileSyncType.webDav)
         }
-        .disabled(self.viewModel.state.updatingFileSyncType)
+        .disabled(viewModel.state.updatingFileSyncType)
 
-        if self.viewModel.state.fileSyncType == .webDav {
-            self.webDavSettings
+        Button {
+            coordinatorDelegate?.showFileDownloadSettings(viewModel: viewModel)
+        } label: {
+            SettingsListButtonRow(text: "Download files for libraries", detailText: nil, enabled: true)
         }
-    }
-
-    private var webDavSettings: some View {
-        var view = WebDavSettings()
-        view.coordinatorDelegate = self.coordinatorDelegate
-        return view
     }
 }
 

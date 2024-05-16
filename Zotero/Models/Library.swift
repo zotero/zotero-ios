@@ -13,6 +13,7 @@ struct Library: Equatable, Identifiable, Hashable {
     let name: String
     let metadataEditable: Bool
     let filesEditable: Bool
+    let fileSyncType: LibraryFileSyncType
 
     var id: LibraryIdentifier {
         return self.identifier
@@ -23,23 +24,30 @@ struct Library: Equatable, Identifiable, Hashable {
     }
 
     init(customLibrary: RCustomLibrary) {
-        self.identifier = .custom(customLibrary.type)
-        self.name = customLibrary.type.libraryName
-        self.metadataEditable = true
-        self.filesEditable = true
+        identifier = .custom(customLibrary.type)
+        name = customLibrary.type.libraryName
+        metadataEditable = true
+        filesEditable = true
+        fileSyncType = customLibrary.fileSyncType
     }
 
     init(group: RGroup) {
-        self.identifier = .group(group.identifier)
-        self.name = group.name
-        self.metadataEditable = group.canEditMetadata
-        self.filesEditable = group.canEditFiles
+        identifier = .group(group.identifier)
+        name = group.name
+        metadataEditable = group.canEditMetadata
+        filesEditable = group.canEditFiles
+        fileSyncType = group.fileSyncType
     }
 
-    init(identifier: LibraryIdentifier, name: String, metadataEditable: Bool, filesEditable: Bool) {
+    init(identifier: LibraryIdentifier, name: String, metadataEditable: Bool, filesEditable: Bool, fileSyncType: LibraryFileSyncType) {
         self.identifier = identifier
         self.name = name
         self.metadataEditable = metadataEditable
         self.filesEditable = filesEditable
+        self.fileSyncType = fileSyncType
+    }
+
+    func copy(with syncType: LibraryFileSyncType) -> Library {
+        return Library(identifier: identifier, name: name, metadataEditable: metadataEditable, filesEditable: filesEditable, fileSyncType: syncType)
     }
 }

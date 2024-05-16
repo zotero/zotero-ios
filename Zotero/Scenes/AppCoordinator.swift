@@ -758,13 +758,13 @@ extension AppCoordinator: ConflictReceiver {
                 }
                 controller.start(with: handler)
 
-            case .removedItemsHaveLocalChanges(let items, let libraryId):
+            case .removedItemsHaveLocalChanges(let conflicts, let libraryId):
                 guard let controller = conflictAlertQueueController else {
-                    completed(.remoteDeletionOfChangedItem(libraryId: libraryId, toDelete: items.map({ $0.0 }), toRestore: []))
+                    completed(.remoteDeletionOfChangedItem(libraryId: libraryId, toDelete: conflicts.map({ $0.key }), toRestore: []))
                     return
                 }
 
-                let handler = ChangedItemsDeletedAlertQueueHandler(items: items) { toDelete, toRestore in
+                let handler = ChangedItemsDeletedAlertQueueHandler(conflicts: conflicts) { toDelete, toRestore in
                     completed(.remoteDeletionOfChangedItem(libraryId: libraryId, toDelete: toDelete, toRestore: toRestore))
                 }
                 controller.start(with: handler)

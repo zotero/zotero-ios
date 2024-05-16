@@ -30,6 +30,7 @@ protocol SettingsCoordinatorDelegate: AnyObject {
     func showSchemePicker(viewModel: ViewModel<SyncSettingsActionHandler>)
     func promptZoteroDirCreation(url: String, create: @escaping () -> Void, cancel: @escaping () -> Void)
     func showWeb(url: URL, completion: @escaping () -> Void)
+    func showFileDownloadSettings(viewModel: ViewModel<SyncSettingsActionHandler>)
 }
 
 protocol CitationStyleSearchSettingsCoordinatorDelegate: AnyObject {
@@ -367,6 +368,15 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
         controller.transitioningDelegate = self.transitionDelegate
         self.transitionDelegate = nil
         self.navigationController?.present(controller, animated: true, completion: nil)
+    }
+
+    func showFileDownloadSettings(viewModel: ViewModel<SyncSettingsActionHandler>) {
+        viewModel.process(action: .loadLibraries)
+
+        var view = FileDownloadSettingsView()
+        view.coordinatorDelegate = self
+        let controller = UIHostingController(rootView: view.environmentObject(viewModel))
+        self.navigationController?.pushViewController(controller, animated: true)
     }
 }
 

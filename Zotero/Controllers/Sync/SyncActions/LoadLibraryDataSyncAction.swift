@@ -27,18 +27,18 @@ struct LoadLibraryDataSyncAction: SyncAction {
 
             switch self.type {
             case .all:
-                request = ReadLibrariesDataDbRequest(identifiers: nil, fetchUpdates: self.fetchUpdates, loadVersions: self.loadVersions, webDavEnabled: self.webDavEnabled)
+                request = ReadLibrariesDataDbRequest(identifiers: nil, fetchUpdates: fetchUpdates, loadVersions: loadVersions, webDavEnabled: webDavEnabled)
 
             case .specific(let ids):
                 if ids.isEmpty {
                     subscriber(.success([]))
                     return Disposables.create()
                 }
-                request = ReadLibrariesDataDbRequest(identifiers: ids, fetchUpdates: self.fetchUpdates, loadVersions: self.loadVersions, webDavEnabled: self.webDavEnabled)
+                request = ReadLibrariesDataDbRequest(identifiers: ids, fetchUpdates: fetchUpdates, loadVersions: loadVersions, webDavEnabled: webDavEnabled)
             }
 
             do {
-                let data = try self.dbStorage.perform(request: request, on: self.queue, invalidateRealm: true)
+                let data = try dbStorage.perform(request: request, on: queue, invalidateRealm: true)
                 subscriber(.success(data))
             } catch let error {
                 subscriber(.failure(error))

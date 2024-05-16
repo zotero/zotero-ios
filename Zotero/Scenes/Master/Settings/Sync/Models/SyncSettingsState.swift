@@ -27,18 +27,20 @@ struct SyncSettingsState: ViewModelState {
     var isVerifyingWebDav: Bool
     var webDavVerificationResult: Result<(), Error>?
     var apiDisposeBag: DisposeBag
+    var libraries: [Library]
 
     init(account: String, fileSyncType: FileSyncType, scheme: WebDavScheme, url: String, username: String, password: String, isVerified: Bool) {
         self.account = account
         self.fileSyncType = fileSyncType
-        self.updatingFileSyncType = false
+        updatingFileSyncType = false
         self.scheme = scheme
         self.url = url
         self.username = username
         self.password = password
-        self.isVerifyingWebDav = false
-        self.webDavVerificationResult = isVerified ? .success(()) : nil
-        self.apiDisposeBag = DisposeBag()
+        isVerifyingWebDav = false
+        webDavVerificationResult = isVerified ? .success(()) : nil
+        apiDisposeBag = DisposeBag()
+        libraries = []
     }
 
     func cleanup() {}

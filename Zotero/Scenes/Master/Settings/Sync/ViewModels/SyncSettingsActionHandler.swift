@@ -89,7 +89,35 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
             }
             self.observeSyncIssues(in: viewModel)
             self.syncScheduler.request(sync: .keysOnly, libraries: .all)
+
+        case .loadLibraries:
+            loadLibraries(in: viewModel)
+
+        case .setLibraryFileSyncType(let libraryId, let syncType):
+            set(syncType: syncType, for: libraryId, in: viewModel)
         }
+    }
+
+    private func loadLibraries(in viewModel: ViewModel<SyncSettingsActionHandler>) {
+        var libraries: [Library] = []
+        if let customLibrary = try? dbStorage.perform(request: ReadLibraryDbRequest(libraryId: .custom(.myLibrary)), on: .main) {
+            libraries.append(customLibrary)
+        }
+        let groups = (try? dbStorage.perform(request: ReadAllGroupsDbRequest(), on: .main))?.map(Library.init) ?? []
+        libraries.append(contentsOf: groups)
+
+        update(viewModel: viewModel) { state in
+            state.libraries = libraries
+        }
+    }
+
+    private func set(syncType: LibraryFileSyncType, for identifier: LibraryIdentifier, in viewModel: ViewModel<SyncSettingsActionHandler>) {
+        update(viewModel: viewModel) { state in
+            guard let index = state.libraries.firstIndex(where: { $0.identifier == identifier }) else { return }
+            state.libraries[index] = state.libraries[index].copy(with: syncType)
+        }
+
+        try? dbStorage.perform(request: EditLibrarySyncTypeDbRequest(identifier: identifier, syncType: syncType), on: .main)
     }
 
     /// Observes result of keys only sync, if we're getting Forbidden (403) now, log the user out
