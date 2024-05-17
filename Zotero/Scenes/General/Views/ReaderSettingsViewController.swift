@@ -60,7 +60,7 @@ final class ReaderSettingsViewController: UICollectionViewController {
     // MARK: - Actions
 
     private func update(state: ReaderSettingsState) {
-        overrideUserInterfaceStyle = state.appearance.userInterfaceStyle
+        (navigationController ?? self).overrideUserInterfaceStyle = state.appearance.userInterfaceStyle
     }
 
     @objc private func done() {
