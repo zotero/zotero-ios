@@ -1383,21 +1383,39 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         DDLogInfo("PDFReaderActionHandler: annotations added - \(annotations.map({ "\(type(of: $0));key=\($0.key ?? "nil");" }))")
 
-        let finalAnnotations = splitIfNeededAndProcess(
-            annotations: annotations,
-            state: viewModel.state,
-            boundingBoxConverter: boundingBoxConverter,
-            annotationPreviewController: annotationPreviewController
-        )
+        let (keptAsIs, toRemove, toAdd) = transformIfNeeded(annotations: annotations, state: viewModel.state)
+        // Transformed annotations need to be added, before they are converted, otherwise their document property is nil.
+        viewModel.state.document.remove(annotations: toRemove, options: [.suppressNotifications: true])
+        viewModel.state.document.add(annotations: toAdd, options: [.suppressNotifications: true])
+        let finalAnnotations = keptAsIs + toAdd
 
         guard !finalAnnotations.isEmpty else { return }
+        let documentAnnotations: [PDFDocumentAnnotation] = finalAnnotations.compactMap { annotation in
+            var color: UIColor? = annotation.color
+            if color == nil, let tool = tool(from: annotation), let activeColor = viewModel.state.toolColors[tool] {
+                color = activeColor
+            }
+            guard let color else { return nil }
+            let documentAnnotation = AnnotationConverter.annotation(
+                from: annotation,
+                color: color.hexString,
+                library: viewModel.state.library,
+                username: viewModel.state.username,
+                displayName: viewModel.state.displayName,
+                boundingBoxConverter: boundingBoxConverter
+            )
+            guard let documentAnnotation else { return nil }
+            // Only create preview for annotations that will be
+            annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, isDark: (viewModel.state.interfaceStyle == .dark))
+            return documentAnnotation
+        }
 
         let request = CreatePDFAnnotationsDbRequest(
             attachmentKey: viewModel.state.key,
             libraryId: viewModel.state.library.identifier,
-            annotations: finalAnnotations,
+            annotations: documentAnnotations,
             userId: viewModel.state.userId,
-            schemaController: self.schemaController,
+            schemaController: schemaController,
             boundingBoxConverter: boundingBoxConverter
         )
         perform(request: request) { [weak self, weak viewModel] error in
@@ -1410,78 +1428,35 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             }
         }
 
-        func splitIfNeededAndProcess(
-            annotations: [PSPDFKit.Annotation],
-            state: PDFReaderState,
-            boundingBoxConverter: AnnotationBoundingBoxConverter,
-            annotationPreviewController: AnnotationPreviewController
-        ) -> [PDFDocumentAnnotation] {
+        func transformIfNeeded(annotations: [PSPDFKit.Annotation], state: PDFReaderState) -> (keptAsIs: [PSPDFKit.Annotation], toRemove: [PSPDFKit.Annotation], toAdd: [PSPDFKit.Annotation]) {
+            var keptAsIs: [PSPDFKit.Annotation] = []
             var toRemove: [PSPDFKit.Annotation] = []
             var toAdd: [PSPDFKit.Annotation] = []
-            var documentAnnotations: [PDFDocumentAnnotation] = []
 
             for annotation in annotations {
                 guard let tool = tool(from: annotation), let activeColor = state.toolColors[tool] else { continue }
-                let activeColorString = activeColor.hexString
                 // `AnnotationStateManager` doesn't apply the `blendMode` to created annotations, so it needs to be applied to newly created annotations here.
                 let (_, _, blendMode) = AnnotationColorGenerator.color(from: activeColor, isHighlight: (annotation is PSPDFKit.HighlightAnnotation), userInterfaceStyle: state.interfaceStyle)
                 annotation.blendMode = blendMode ?? .normal
 
                 // Either annotation is new (key not assigned) or the user used undo/redo and we check whether the annotation exists in DB
-                guard annotation.key == nil || state.annotation(for: .init(key: annotation.key!, type: .database)) == nil else { continue }
+                guard annotation.key == nil || state.annotation(for: .init(key: annotation.key!, type: .database)) == nil else {
+                    keptAsIs.append(annotation)
+                    continue
+                }
 
                 let splitAnnotations = splitIfNeeded(annotation: annotation, user: state.displayName)
 
-                if splitAnnotations.count > 1 {
-                    DDLogInfo("PDFReaderActionHandler: did split annotations into \(splitAnnotations.count)")
-                    toRemove.append(annotation)
-                    toAdd.append(contentsOf: splitAnnotations)
+                guard splitAnnotations.count > 1 else {
+                    keptAsIs.append(annotation)
+                    continue
                 }
-
-                documentAnnotations.append(contentsOf:
-                    splitAnnotations.compactMap({
-                        AnnotationConverter.annotation(
-                            from: $0,
-                            color: activeColorString,
-                            library: state.library,
-                            username: state.username,
-                            displayName: state.displayName,
-                            boundingBoxConverter: boundingBoxConverter
-                        )
-                    })
-                )
-
-                for pdfAnnotation in splitAnnotations {
-                    annotationPreviewController.store(for: pdfAnnotation, parentKey: state.key, libraryId: state.library.identifier, isDark: (state.interfaceStyle == .dark))
-                }
+                DDLogInfo("PDFReaderActionHandler: did split annotations into \(splitAnnotations.count)")
+                toRemove.append(annotation)
+                toAdd.append(contentsOf: splitAnnotations)
             }
 
-            state.document.remove(annotations: toRemove, options: [.suppressNotifications: true])
-            state.document.add(annotations: toAdd, options: [.suppressNotifications: true])
-
-            return documentAnnotations
-
-            func tool(from annotation: PSPDFKit.Annotation) -> PSPDFKit.Annotation.Tool? {
-                if annotation is PSPDFKit.HighlightAnnotation {
-                    return .highlight
-                }
-                if annotation is PSPDFKit.NoteAnnotation {
-                    return .note
-                }
-                if annotation is PSPDFKit.SquareAnnotation {
-                    return .square
-                }
-                if annotation is PSPDFKit.InkAnnotation {
-                    return .ink
-                }
-                if annotation is PSPDFKit.UnderlineAnnotation {
-                    return .underline
-                }
-                if annotation is PSPDFKit.FreeTextAnnotation {
-                    return .freeText
-                }
-                return nil
-            }
+            return (keptAsIs, toRemove, toAdd)
 
             /// Splits annotation if it exceedes position limit. If it is within limit, it returs original annotation.
             /// - parameter annotation: Annotation to split
@@ -1534,6 +1509,28 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                     }
                 }
             }
+        }
+
+        func tool(from annotation: PSPDFKit.Annotation) -> PSPDFKit.Annotation.Tool? {
+            if annotation is PSPDFKit.HighlightAnnotation {
+                return .highlight
+            }
+            if annotation is PSPDFKit.NoteAnnotation {
+                return .note
+            }
+            if annotation is PSPDFKit.SquareAnnotation {
+                return .square
+            }
+            if annotation is PSPDFKit.InkAnnotation {
+                return .ink
+            }
+            if annotation is PSPDFKit.UnderlineAnnotation {
+                return .underline
+            }
+            if annotation is PSPDFKit.FreeTextAnnotation {
+                return .freeText
+            }
+            return nil
         }
     }
 
