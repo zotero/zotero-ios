@@ -1466,14 +1466,49 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                     continue
                 }
 
-                let splitAnnotations = splitIfNeeded(annotation: annotation)
+                var workingAnnotation = annotation
+                if annotation is HighlightAnnotation, let rects = annotation.rects, rects.count > 1 {
+                    // Check if there are gaps for sequential highlight rects on the same line, and if so transform the annotation to eliminate them.
+                    var mergedRects: [CGRect] = []
+                    for rect in rects {
+                        guard let previousRect = mergedRects.last, rect.minY == previousRect.minY, rect.height == previousRect.height else {
+                            mergedRects.append(rect)
+                            continue
+                        }
+                        let mergedRect = CGRect(x: previousRect.minX, y: previousRect.minY, width: rect.minX + rect.width - previousRect.minX, height: previousRect.height)
+                        mergedRects.removeLast()
+                        mergedRects.append(mergedRect)
+                    }
+                    if mergedRects.count < rects.count {
+                        DDLogInfo("PDFReaderActionHandler: did merge highlight annotation rects")
+                        let newAnnotation = HighlightAnnotation()
+                        newAnnotation.rects = mergedRects
+                        newAnnotation.boundingBox = AnnotationBoundingBoxCalculator.boundingBox(from: rects)
+                        newAnnotation.alpha = annotation.alpha
+                        newAnnotation.color = annotation.color
+                        newAnnotation.blendMode = annotation.blendMode
+                        newAnnotation.contents = annotation.contents
+                        newAnnotation.pageIndex = annotation.pageIndex
+                        toRemove.append(annotation)
+                        toAdd.append(newAnnotation)
+                        workingAnnotation = newAnnotation
+                    }
+                }
+
+                let splitAnnotations = splitIfNeeded(annotation: workingAnnotation)
 
                 guard splitAnnotations.count > 1 else {
-                    keptAsIs.append(annotation)
+                    if workingAnnotation == annotation {
+                        keptAsIs.append(annotation)
+                    }
                     continue
                 }
                 DDLogInfo("PDFReaderActionHandler: did split annotations into \(splitAnnotations.count)")
-                toRemove.append(annotation)
+                if workingAnnotation == annotation {
+                    toRemove.append(annotation)
+                } else {
+                    toAdd.removeLast()
+                }
                 toAdd.append(contentsOf: splitAnnotations)
             }
 
