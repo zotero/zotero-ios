@@ -75,7 +75,7 @@ final class PDFDocumentViewController: UIViewController {
     override func viewIsAppearing(_ animated: Bool) {
         super.viewIsAppearing(animated)
         self.setInterface(hidden: self.initialUIHidden)
-        self.updateInterface(to: self.viewModel.state.settings)
+        updateInterface(to: viewModel.state.settings.appearanceMode, userInterfaceStyle: traitCollection.userInterfaceStyle)
         if let (page, _) = self.viewModel.state.focusDocumentLocation, let annotation = self.viewModel.state.selectedAnnotation {
             self.select(annotation: annotation, pageIndex: PageIndex(page), document: self.viewModel.state.document)
         }
@@ -204,7 +204,7 @@ final class PDFDocumentViewController: UIViewController {
 
     private func update(state: PDFReaderState, pdfController: PDFViewController) {
         if state.changes.contains(.interfaceStyle) {
-            self.updateInterface(to: state.settings)
+            updateInterface(to: state.settings.appearanceMode, userInterfaceStyle: state.interfaceStyle)
         }
 
         if state.changes.contains(.settings) {
@@ -313,10 +313,10 @@ final class PDFDocumentViewController: UIViewController {
         }
     }
 
-    private func updateInterface(to settings: PDFSettings) {
-        switch settings.appearanceMode {
+    private func updateInterface(to appearanceMode: ReaderSettingsState.Appearance, userInterfaceStyle: UIUserInterfaceStyle) {
+        switch appearanceMode {
         case .automatic:
-            self.pdfController?.appearanceModeManager.appearanceMode = self.traitCollection.userInterfaceStyle == .dark ? .night : []
+            self.pdfController?.appearanceModeManager.appearanceMode = userInterfaceStyle == .dark ? .night : []
             self.pdfController?.overrideUserInterfaceStyle = .unspecified
             self.unlockController?.overrideUserInterfaceStyle = .unspecified
 
