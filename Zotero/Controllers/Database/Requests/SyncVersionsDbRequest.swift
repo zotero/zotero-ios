@@ -91,7 +91,7 @@ struct SyncGroupVersionsDbRequest: DbResponseRequest {
     func process(in database: Realm) throws -> ([Int], [(Int, String)]) {
         let allKeys = Array(versions.keys)
 
-        let toRemove = database.objects(RGroup.self).filter("NOT identifier IN %@", allKeys)
+        let toRemove = database.objects(RGroup.self).filter("isLocalOnly == false").filter("NOT identifier IN %@", allKeys)
         let toRemoveIds = Array(toRemove.map({ ($0.identifier, $0.name) }))
 
         var toUpdate: [Int] = allKeys
