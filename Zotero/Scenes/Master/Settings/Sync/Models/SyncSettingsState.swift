@@ -19,7 +19,7 @@ struct SyncSettingsState: ViewModelState {
     let account: String
 
     var fileSyncType: FileSyncType
-    var updatingFileSyncType: Bool
+    var markingForReupload: Bool
     var scheme: WebDavScheme
     var url: String
     var username: String
@@ -31,7 +31,7 @@ struct SyncSettingsState: ViewModelState {
     init(account: String, fileSyncType: FileSyncType, scheme: WebDavScheme, url: String, username: String, password: String, isVerified: Bool) {
         self.account = account
         self.fileSyncType = fileSyncType
-        self.updatingFileSyncType = false
+        self.markingForReupload = false
         self.scheme = scheme
         self.url = url
         self.username = username
