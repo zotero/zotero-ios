@@ -137,7 +137,7 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
             state.markingForReupload = true
         }
 
-        markAttachmentsForReupload(for: .webDav) { error in
+        markAttachmentsForReupload(for: .webDav) { _ in
             update(viewModel: viewModel) { state in
                 state.markingForReupload = false
             }
