@@ -128,17 +128,24 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
         if url.contains("%") {
             decodedUrl = url.removingPercentEncoding ?? url
         }
-        self.webDavController.sessionStorage.url = decodedUrl
-        self.webDavController.resetVerification()
+        webDavController.sessionStorage.url = decodedUrl
+        webDavController.resetVerification()
 
-        self.update(viewModel: viewModel) { state in
+        update(viewModel: viewModel) { state in
             state.url = url
             state.webDavVerificationResult = nil
+            state.markingForReupload = true
+        }
+
+        markAttachmentsForReupload(for: .webDav) { error in
+            update(viewModel: viewModel) { state in
+                state.markingForReupload = false
+            }
         }
     }
 
     private func cancelVerification(viewModel: ViewModel<SyncSettingsActionHandler>) {
-        self.update(viewModel: viewModel) { state in
+        update(viewModel: viewModel) { state in
             state.isVerifyingWebDav = false
             state.apiDisposeBag = DisposeBag()
         }
@@ -147,41 +154,41 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
     private func set(fileSyncType type: SyncSettingsState.FileSyncType, in viewModel: ViewModel<SyncSettingsActionHandler>) {
         guard viewModel.state.fileSyncType != type else { return }
 
-        self.syncScheduler.cancelSync()
+        syncScheduler.cancelSync()
 
         let oldType = viewModel.state.fileSyncType
 
-        self.update(viewModel: viewModel) { state in
+        update(viewModel: viewModel) { state in
             state.fileSyncType = type
-            state.updatingFileSyncType = true
+            state.markingForReupload = true
         }
 
-        self.resetDownloads(for: type) { error in
-            self.update(viewModel: viewModel) { state in
-                if let error = error {
+        markAttachmentsForReupload(for: type) { error in
+            update(viewModel: viewModel) { state in
+                if error != nil {
                     state.fileSyncType = oldType
                     // TODO: show error
                 }
-                state.updatingFileSyncType = false
+                state.markingForReupload = false
             }
 
             guard error == nil else { return }
 
-            self.webDavController.sessionStorage.isEnabled = type == .webDav
+            webDavController.sessionStorage.isEnabled = type == .webDav
 
             if type == .zotero {
-                if self.syncScheduler.inProgress.value {
-                    self.syncScheduler.cancelSync()
+                if syncScheduler.inProgress.value {
+                    syncScheduler.cancelSync()
                 }
-                self.syncScheduler.request(sync: .normal, libraries: .all)
+                syncScheduler.request(sync: .normal, libraries: .all)
             }
         }
     }
 
-    private func resetDownloads(for type: SyncSettingsState.FileSyncType, completion: @escaping (Error?) -> Void) {
-        self.backgroundQueue.async {
+    private func markAttachmentsForReupload(for type: SyncSettingsState.FileSyncType, completion: @escaping (Error?) -> Void) {
+        backgroundQueue.async {
             do {
-                try self._resetDownloads(for: type)
+                try performMark(for: type)
                 DispatchQueue.main.async {
                     completion(nil)
                 }
@@ -192,17 +199,15 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
                 }
             }
         }
-    }
 
-    private func _resetDownloads(for type: SyncSettingsState.FileSyncType) throws {
-        let keys = self.downloadedAttachmentKeys()
-
-        var requests: [DbRequest] = [MarkAttachmentsNotUploadedDbRequest(keys: keys, libraryId: .custom(.myLibrary))]
-        if type == .zotero {
-            requests.append(DeleteAllWebDavDeletionsDbRequest())
+        func performMark(for type: SyncSettingsState.FileSyncType) throws {
+            let keys = downloadedAttachmentKeys()
+            var requests: [DbRequest] = [MarkAttachmentsNotUploadedDbRequest(keys: keys, libraryId: .custom(.myLibrary))]
+            if type == .zotero {
+                requests.append(DeleteAllWebDavDeletionsDbRequest())
+            }
+            try dbStorage.perform(writeRequests: requests, on: backgroundQueue)
         }
-
-        try self.dbStorage.perform(writeRequests: requests, on: self.backgroundQueue)
     }
 
     private func downloadedAttachmentKeys() -> [String] {
