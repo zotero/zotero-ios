@@ -67,45 +67,45 @@ final class SyncToolbarController {
     // MARK: - Actions
 
     private func update(progress: SyncProgress) {
-        self.pendingErrors = nil
+        pendingErrors = nil
 
         switch progress {
         case .aborted(let error):
             switch error {
             case .cancelled:
-                self.pendingErrors = nil
-                self.timerDisposeBag = DisposeBag()
+                pendingErrors = nil
+                timerDisposeBag = DisposeBag()
                 if !toolbarIsHidden {
                     setToolbar(hidden: true, animated: true)
                 }
 
             default:
-                self.pendingErrors = [error]
+                pendingErrors = [error]
                 if toolbarIsHidden {
                     setToolbar(hidden: false, animated: true)
                 }
-                self.set(progress: progress)
+                set(progress: progress)
             }
 
         case .finished(let errors):
             if errors.isEmpty {
-                self.pendingErrors = nil
-                self.timerDisposeBag = DisposeBag()
+                pendingErrors = nil
+                timerDisposeBag = DisposeBag()
                 if !toolbarIsHidden {
                     setToolbar(hidden: true, animated: true)
                 }
                 return
             }
 
-            self.pendingErrors = errors
+            pendingErrors = errors
             if toolbarIsHidden {
                 setToolbar(hidden: false, animated: true)
             }
-            self.set(progress: progress)
-            self.hideToolbarWithDelay()
+            set(progress: progress)
+            hideToolbarWithDelay()
 
         case .starting:
-            self.hideToolbarWithDelay()
+            hideToolbarWithDelay()
 
         default: break
         }
@@ -116,7 +116,7 @@ final class SyncToolbarController {
 
         guard let error = errors.first else { return }
         
-        let (message, data) = self.alertMessage(from: error)
+        let (message, data) = alertMessage(from: error)
 
         let controller = UIAlertController(title: L10n.error, message: message, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: { [weak self] _ in
@@ -128,14 +128,15 @@ final class SyncToolbarController {
                 self?.coordinatorDelegate?.showItems(with: keys, in: data.libraryId)
             }))
         }
-        self.viewController.present(controller, animated: true, completion: nil)
+        viewController.present(controller, animated: true, completion: nil)
     }
 
     private func alertMessage(from error: Error) -> (message: String, additionalData: SyncError.ErrorData?) {
         if let error = error as? SyncError.Fatal {
             switch error {
-            case .cancelled: break // should not happen
-                
+            case .cancelled: // should not happen
+                break
+
             case .apiError(let response, let data):
                 return (L10n.Errors.api(response), data)
 
@@ -194,7 +195,7 @@ final class SyncToolbarController {
                     return (L10n.Errors.SyncToolbar.personalQuotaReached, nil)
 
                 case .group(let groupId):
-                    let group = try? self.dbStorage.perform(request: ReadGroupDbRequest(identifier: groupId), on: .main)
+                    let group = try? dbStorage.perform(request: ReadGroupDbRequest(identifier: groupId), on: .main)
                     let groupName = group?.name ?? "\(groupId)"
                     return (L10n.Errors.SyncToolbar.groupQuotaReached(groupName), nil)
                 }
@@ -215,12 +216,15 @@ final class SyncToolbarController {
                 switch error {
                 case .itemPropInvalid(let string):
                     return (L10n.Errors.SyncToolbar.webdavItemProp(string), nil)
-                case .notChanged: break // Should not happen
+
+                case .notChanged: // Should not happen
+                    break
                 }
 
             case .webDavUpload(let error):
                 switch error {
-                case .cantCreatePropData: break // Should not happen
+                case .cantCreatePropData: // Should not happen
+                    break
 
                 case .apiError(let error, let httpMethod):
                     guard let statusCode = error.unacceptableStatusCode else { break }
@@ -250,23 +254,22 @@ final class SyncToolbarController {
         }
 
         UIView.animate(withDuration: 0.15, delay: 0, options: [.curveEaseOut], animations: { [weak self] in
-                self?.viewController.view.layoutIfNeeded()
+            self?.viewController.view.layoutIfNeeded()
         })
     }
 
     private func hideToolbarWithDelay() {
-        self.timerDisposeBag = DisposeBag()
-
+        timerDisposeBag = DisposeBag()
         Single<Int>.timer(SyncToolbarController.finishVisibilityTime,
                           scheduler: MainScheduler.instance)
                    .subscribe(onSuccess: { [weak self] _ in
                        self?.setToolbar(hidden: true, animated: true)
                    })
-                   .disposed(by: self.timerDisposeBag)
+                   .disposed(by: timerDisposeBag)
     }
 
     private func set(progress: SyncProgress) {
-        let item = UIBarButtonItem(customView: self.toolbarView(with: self.text(for: progress)))
+        let item = UIBarButtonItem(customView: toolbarView(with: text(for: progress)))
         toolbar.setItems([item], animated: false)
     }
 
@@ -281,14 +284,15 @@ final class SyncToolbarController {
         button.contentVerticalAlignment = .center
         button.setTitle(text, for: .normal)
 
-        button.rx
-              .tap
-              .observe(on: MainScheduler.instance)
-              .subscribe(onNext: { [weak self] _ in
-                  guard let self, let pendingErrors else { return }
-                  showErrorAlert(with: pendingErrors)
-              })
-              .disposed(by: disposeBag)
+        button
+            .rx
+            .tap
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] _ in
+                guard let self, let pendingErrors else { return }
+                showErrorAlert(with: pendingErrors)
+            })
+            .disposed(by: disposeBag)
 
         return button
     }
@@ -309,9 +313,9 @@ final class SyncToolbarController {
 
         case .object(let object, let progress, let libraryName, _):
             if let progress = progress {
-                return L10n.SyncToolbar.objectWithData(self.name(for: object), progress.completed, progress.total, libraryName)
+                return L10n.SyncToolbar.objectWithData(name(for: object), progress.completed, progress.total, libraryName)
             }
-            return L10n.SyncToolbar.object(self.name(for: object), libraryName)
+            return L10n.SyncToolbar.object(name(for: object), libraryName)
 
         case .changes(let progress):
             return L10n.SyncToolbar.writes(progress.completed, progress.total)
@@ -333,7 +337,7 @@ final class SyncToolbarController {
             if case .forbidden = error {
                 return L10n.Errors.SyncToolbar.forbidden
             }
-            return L10n.SyncToolbar.aborted(self.alertMessage(from: error).message)
+            return L10n.SyncToolbar.aborted(alertMessage(from: error).message)
         }
     }
 
