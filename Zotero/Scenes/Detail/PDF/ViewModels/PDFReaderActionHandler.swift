@@ -1430,7 +1430,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 // Either annotation is new (key not assigned) or the user used undo/redo and we check whether the annotation exists in DB
                 guard annotation.key == nil || state.annotation(for: .init(key: annotation.key!, type: .database)) == nil else { continue }
 
-                let splitAnnotations = splitIfNeeded(annotation: annotation, user: state.displayName, activeColor: activeColorString)
+                let splitAnnotations = splitIfNeeded(annotation: annotation, user: state.displayName)
 
                 if splitAnnotations.count > 1 {
                     DDLogInfo("PDFReaderActionHandler: did split annotations into \(splitAnnotations.count)")
@@ -1486,15 +1486,14 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             /// Splits annotation if it exceedes position limit. If it is within limit, it returs original annotation.
             /// - parameter annotation: Annotation to split
             /// - parameter user: User which created the annotation if it's new
-            /// - parameter activeColor: Currently active color
             /// - returns: Array with original annotation if limit was not exceeded. Otherwise array of new split annotations.
-            func splitIfNeeded(annotation: PSPDFKit.Annotation, user: String, activeColor: String) -> [PSPDFKit.Annotation] {
+            func splitIfNeeded(annotation: PSPDFKit.Annotation, user: String) -> [PSPDFKit.Annotation] {
                 if let annotation = annotation as? HighlightAnnotation, let rects = annotation.rects, let splitRects = AnnotationSplitter.splitRectsIfNeeded(rects: rects) {
-                    return createAnnotations(from: splitRects, original: annotation, activeColor: activeColor)
+                    return createAnnotations(from: splitRects, original: annotation)
                 }
 
                 if let annotation = annotation as? InkAnnotation, let paths = annotation.lines, let splitPaths = AnnotationSplitter.splitPathsIfNeeded(paths: paths) {
-                    return createAnnotations(from: splitPaths, original: annotation, activeColor: activeColor)
+                    return createAnnotations(from: splitPaths, original: annotation)
                 }
 
                 if annotation.key == nil {
@@ -1504,7 +1503,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
                 return [annotation]
 
-                func createAnnotations(from splitRects: [[CGRect]], original: HighlightAnnotation, activeColor: String) -> [HighlightAnnotation] {
+                func createAnnotations(from splitRects: [[CGRect]], original: HighlightAnnotation) -> [HighlightAnnotation] {
                     guard splitRects.count > 1 else { return [original] }
                     return splitRects.map { rects -> HighlightAnnotation in
                         let new = HighlightAnnotation()
@@ -1520,7 +1519,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                     }
                 }
 
-                func createAnnotations(from splitPaths: [[[DrawingPoint]]], original: InkAnnotation, activeColor: String) -> [InkAnnotation] {
+                func createAnnotations(from splitPaths: [[[DrawingPoint]]], original: InkAnnotation) -> [InkAnnotation] {
                     guard splitPaths.count > 1 else { return [original] }
                     return splitPaths.map { paths in
                         let new = InkAnnotation(lines: paths)
