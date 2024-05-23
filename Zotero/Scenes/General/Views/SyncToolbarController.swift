@@ -12,37 +12,61 @@ import RxSwift
 
 final class SyncToolbarController {
     private static let finishVisibilityTime: RxTimeInterval = .seconds(4)
-    private unowned let viewController: UINavigationController
+    private unowned let viewController: UIViewController
     private unowned let dbStorage: DbStorage
     private let disposeBag: DisposeBag
 
+    private var toolbar: UIToolbar!
+    private var toolbarBottom: NSLayoutConstraint!
     private var pendingErrors: [Error]?
     private var timerDisposeBag: DisposeBag
+    private var toolbarIsHidden: Bool {
+        return toolbarBottom.constant != 0
+    }
 
     weak var coordinatorDelegate: MainCoordinatorSyncToolbarDelegate?
 
-    init(parent: UINavigationController, progressObservable: PublishSubject<SyncProgress>, dbStorage: DbStorage) {
-        self.viewController = parent
+    init(parent: UIViewController, progressObservable: PublishSubject<SyncProgress>, dbStorage: DbStorage) {
+        viewController = parent
         self.dbStorage = dbStorage
-        self.disposeBag = DisposeBag()
-        self.timerDisposeBag = DisposeBag()
+        disposeBag = DisposeBag()
+        timerDisposeBag = DisposeBag()
+        setupToolbar()
 
-        parent.setToolbarHidden(true, animated: false)
-        parent.toolbar.barTintColor = UIColor(dynamicProvider: { traitCollection in
-            return traitCollection.userInterfaceStyle == .dark ? .black : .white
-        })
-
+        setToolbar(hidden: true, animated: false)
         progressObservable.observe(on: MainScheduler.instance)
                           .subscribe(onNext: { [weak self] progress in
                               guard let self = self else { return }
-                              self.update(progress: progress, in: self.viewController)
+                              update(progress: progress)
                           })
-                          .disposed(by: self.disposeBag)
+                          .disposed(by: disposeBag)
+
+        func setupToolbar() {
+            let toolbar = UIToolbar()
+            toolbar.barTintColor = UIColor(dynamicProvider: { traitCollection in
+                return traitCollection.userInterfaceStyle == .dark ? .black : .white
+            })
+            toolbar.translatesAutoresizingMaskIntoConstraints = false
+            parent.view.addSubview(toolbar)
+            self.toolbar = toolbar
+
+            let bottom = parent.view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: toolbar.bottomAnchor)
+            toolbarBottom = bottom
+
+            NSLayoutConstraint.activate([
+                toolbar.heightAnchor.constraint(equalToConstant: 45),
+                toolbar.leadingAnchor.constraint(equalTo: parent.view.leadingAnchor),
+                toolbar.trailingAnchor.constraint(equalTo: parent.view.trailingAnchor),
+                bottom
+            ])
+
+            parent.view.layoutIfNeeded()
+        }
     }
 
     // MARK: - Actions
 
-    private func update(progress: SyncProgress, in controller: UINavigationController) {
+    private func update(progress: SyncProgress) {
         self.pendingErrors = nil
 
         switch progress {
@@ -51,44 +75,44 @@ final class SyncToolbarController {
             case .cancelled:
                 self.pendingErrors = nil
                 self.timerDisposeBag = DisposeBag()
-                if !controller.isToolbarHidden {
-                    controller.setToolbarHidden(true, animated: true)
+                if !toolbarIsHidden {
+                    setToolbar(hidden: true, animated: true)
                 }
 
             default:
                 self.pendingErrors = [error]
-                if controller.isToolbarHidden {
-                    controller.setToolbarHidden(false, animated: true)
+                if toolbarIsHidden {
+                    setToolbar(hidden: false, animated: true)
                 }
-                self.set(progress: progress, in: controller)
+                self.set(progress: progress)
             }
 
         case .finished(let errors):
             if errors.isEmpty {
                 self.pendingErrors = nil
                 self.timerDisposeBag = DisposeBag()
-                if !controller.isToolbarHidden {
-                    controller.setToolbarHidden(true, animated: true)
+                if !toolbarIsHidden {
+                    setToolbar(hidden: true, animated: true)
                 }
                 return
             }
 
             self.pendingErrors = errors
-            if controller.isToolbarHidden {
-                controller.setToolbarHidden(false, animated: true)
+            if toolbarIsHidden {
+                setToolbar(hidden: false, animated: true)
             }
-            self.set(progress: progress, in: controller)
-            self.hideToolbarWithDelay(in: controller)
+            self.set(progress: progress)
+            self.hideToolbarWithDelay()
 
         case .starting:
-            self.hideToolbarWithDelay(in: controller)
+            self.hideToolbarWithDelay()
 
         default: break
         }
     }
 
     private func showErrorAlert(with errors: [Error]) {
-        self.viewController.setToolbarHidden(true, animated: true)
+        setToolbar(hidden: true, animated: true)
 
         guard let error = errors.first else { return }
         
@@ -217,24 +241,37 @@ final class SyncToolbarController {
         return ("", nil)
     }
 
-    private func hideToolbarWithDelay(in controller: UINavigationController) {
+    private func setToolbar(hidden: Bool, animated: Bool) {
+        toolbarBottom.constant = hidden ? -((viewController.splitViewController?.view.safeAreaInsets.bottom ?? viewController.view.safeAreaInsets.bottom) + toolbar.frame.height) : 0
+
+        if !animated {
+            viewController.view.layoutIfNeeded()
+            return
+        }
+
+        UIView.animate(withDuration: 0.15, delay: 0, options: [.curveEaseOut], animations: { [weak self] in
+                self?.viewController.view.layoutIfNeeded()
+        })
+    }
+
+    private func hideToolbarWithDelay() {
         self.timerDisposeBag = DisposeBag()
 
         Single<Int>.timer(SyncToolbarController.finishVisibilityTime,
                           scheduler: MainScheduler.instance)
-                   .subscribe(onSuccess: { [weak controller] _ in
-                       controller?.setToolbarHidden(true, animated: true)
+                   .subscribe(onSuccess: { [weak self] _ in
+                       self?.setToolbar(hidden: true, animated: true)
                    })
                    .disposed(by: self.timerDisposeBag)
     }
 
-    private func set(progress: SyncProgress, in controller: UINavigationController) {
+    private func set(progress: SyncProgress) {
         let item = UIBarButtonItem(customView: self.toolbarView(with: self.text(for: progress)))
-        controller.toolbar.setItems([item], animated: false)
+        toolbar.setItems([item], animated: false)
     }
 
     private func toolbarView(with text: String) -> UIView {
-        let textColor: UIColor = self.viewController.traitCollection.userInterfaceStyle == .light ? .black : .white
+        let textColor: UIColor = viewController.traitCollection.userInterfaceStyle == .light ? .black : .white
         let button = UIButton(frame: UIScreen.main.bounds)
         button.titleLabel?.font = .preferredFont(forTextStyle: .footnote)
         button.titleLabel?.adjustsFontSizeToFitWidth = true
@@ -248,10 +285,10 @@ final class SyncToolbarController {
               .tap
               .observe(on: MainScheduler.instance)
               .subscribe(onNext: { [weak self] _ in
-                  guard let errors = self?.pendingErrors else { return }
-                  self?.showErrorAlert(with: errors)
+                  guard let self, let pendingErrors else { return }
+                  showErrorAlert(with: pendingErrors)
               })
-              .disposed(by: self.disposeBag)
+              .disposed(by: disposeBag)
 
         return button
     }
