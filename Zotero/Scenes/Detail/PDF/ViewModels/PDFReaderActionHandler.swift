@@ -1378,7 +1378,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     /// Updates annotations based on insertions to PSPDFKit document.
     /// - parameter annotations: Annotations that were added to the document.
     /// - parameter viewModel: ViewModel.
-    private func add(annotations: [PSPDFKit.Annotation], selectFirst: Bool, in viewModel: ViewModel<PDFReaderActionHandler>) {
+    private func add(annotations: [PSPDFKit.Annotation], in viewModel: ViewModel<PDFReaderActionHandler>) {
         guard let boundingBoxConverter = delegate else { return }
 
         DDLogInfo("PDFReaderActionHandler: annotations added - \(annotations.map({ "\(type(of: $0));key=\($0.key ?? "nil");" }))")
@@ -1851,7 +1851,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
             case .PSPDFAnnotationsAdded:
                 guard let annotations = notification.object as? [PSPDFKit.Annotation] else { return }
-                handler.add(annotations: annotations, selectFirst: false, in: viewModel)
+                handler.add(annotations: annotations, in: viewModel)
 
             case .PSPDFAnnotationsRemoved:
                 guard let annotations = notification.object as? [PSPDFKit.Annotation] else { return }
