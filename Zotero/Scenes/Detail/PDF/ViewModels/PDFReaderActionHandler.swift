@@ -1384,10 +1384,20 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         DDLogInfo("PDFReaderActionHandler: annotations added - \(annotations.map({ "\(type(of: $0));key=\($0.key ?? "nil");" }))")
 
         let (keptAsIs, toRemove, toAdd) = transformIfNeeded(annotations: annotations, state: viewModel.state)
-        // Transformed annotations need to be added, before they are converted, otherwise their document property is nil.
-        viewModel.state.document.remove(annotations: toRemove, options: [.suppressNotifications: true])
-        viewModel.state.document.add(annotations: toAdd, options: [.suppressNotifications: true])
         let finalAnnotations = keptAsIs + toAdd
+        if !toRemove.isEmpty || !toAdd.isEmpty {
+            // Originally added annotations are transformed, so we remove them by performing last undo.
+            // This also removes the undo command from the stack, allowing us to record the transformed addition.
+            if viewModel.state.document.undoController.undoManager.canUndo {
+                viewModel.state.document.undoController.undoManager.undo()
+            }
+            // Remove may be superfluous, if those annotations are already removed by the undo, but it doesn't cause any issue.
+            viewModel.state.document.remove(annotations: toRemove, options: [.suppressNotifications: true])
+            viewModel.state.document.undoController.recordCommand(named: nil, adding: finalAnnotations) {
+                // Transformed annotations need to be added, before they are converted, otherwise their document property is nil.
+                viewModel.state.document.add(annotations: finalAnnotations, options: [.suppressNotifications: true])
+            }
+        }
 
         guard !finalAnnotations.isEmpty else { return }
         let documentAnnotations: [PDFDocumentAnnotation] = finalAnnotations.compactMap { annotation in
@@ -1795,6 +1805,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         NotificationCenter.default.rx
             .notification(.PSPDFAnnotationsAdded)
             .observe(on: MainScheduler.instance)
+            // Delay annotations added notifications, so they have completely recorded their undo command.
+            .delay(.microseconds(250), scheduler: MainScheduler.instance)
             .subscribe(onNext: nextBlock)
             .disposed(by: pdfDisposeBag)
 
