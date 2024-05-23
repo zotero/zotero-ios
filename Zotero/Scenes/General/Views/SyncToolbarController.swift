@@ -36,7 +36,6 @@ final class SyncToolbarController {
         setToolbar(hidden: true, animated: false)
         progressObservable.observe(on: MainScheduler.instance)
                           .subscribe(onNext: { [weak self] progress in
-                              guard let self = self else { return }
                               update(progress: progress)
                           })
                           .disposed(by: disposeBag)
