@@ -12,87 +12,110 @@ import RxSwift
 
 final class SyncToolbarController {
     private static let finishVisibilityTime: RxTimeInterval = .seconds(4)
-    private unowned let viewController: UINavigationController
+    private unowned let viewController: UIViewController
     private unowned let dbStorage: DbStorage
     private let disposeBag: DisposeBag
 
+    private var toolbar: UIToolbar!
+    private var toolbarBottom: NSLayoutConstraint!
     private var pendingErrors: [Error]?
     private var timerDisposeBag: DisposeBag
+    private var toolbarIsHidden: Bool {
+        return toolbarBottom.constant != 0
+    }
 
     weak var coordinatorDelegate: MainCoordinatorSyncToolbarDelegate?
 
-    init(parent: UINavigationController, progressObservable: PublishSubject<SyncProgress>, dbStorage: DbStorage) {
-        self.viewController = parent
+    init(parent: UIViewController, progressObservable: PublishSubject<SyncProgress>, dbStorage: DbStorage) {
+        viewController = parent
         self.dbStorage = dbStorage
-        self.disposeBag = DisposeBag()
-        self.timerDisposeBag = DisposeBag()
+        disposeBag = DisposeBag()
+        timerDisposeBag = DisposeBag()
+        setupToolbar()
 
-        parent.setToolbarHidden(true, animated: false)
-        parent.toolbar.barTintColor = UIColor(dynamicProvider: { traitCollection in
-            return traitCollection.userInterfaceStyle == .dark ? .black : .white
-        })
-
+        setToolbar(hidden: true, animated: false)
         progressObservable.observe(on: MainScheduler.instance)
                           .subscribe(onNext: { [weak self] progress in
-                              guard let self = self else { return }
-                              self.update(progress: progress, in: self.viewController)
+                              self?.update(progress: progress)
                           })
-                          .disposed(by: self.disposeBag)
+                          .disposed(by: disposeBag)
+
+        func setupToolbar() {
+            let toolbar = UIToolbar()
+            toolbar.barTintColor = UIColor(dynamicProvider: { traitCollection in
+                return traitCollection.userInterfaceStyle == .dark ? .black : .white
+            })
+            toolbar.translatesAutoresizingMaskIntoConstraints = false
+            parent.view.addSubview(toolbar)
+            self.toolbar = toolbar
+
+            let bottom = parent.view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: toolbar.bottomAnchor)
+            toolbarBottom = bottom
+
+            NSLayoutConstraint.activate([
+                toolbar.heightAnchor.constraint(equalToConstant: 45),
+                toolbar.leadingAnchor.constraint(equalTo: parent.view.leadingAnchor),
+                toolbar.trailingAnchor.constraint(equalTo: parent.view.trailingAnchor),
+                bottom
+            ])
+
+            parent.view.layoutIfNeeded()
+        }
     }
 
     // MARK: - Actions
 
-    private func update(progress: SyncProgress, in controller: UINavigationController) {
-        self.pendingErrors = nil
+    private func update(progress: SyncProgress) {
+        pendingErrors = nil
 
         switch progress {
         case .aborted(let error):
             switch error {
             case .cancelled:
-                self.pendingErrors = nil
-                self.timerDisposeBag = DisposeBag()
-                if !controller.isToolbarHidden {
-                    controller.setToolbarHidden(true, animated: true)
+                pendingErrors = nil
+                timerDisposeBag = DisposeBag()
+                if !toolbarIsHidden {
+                    setToolbar(hidden: true, animated: true)
                 }
 
             default:
-                self.pendingErrors = [error]
-                if controller.isToolbarHidden {
-                    controller.setToolbarHidden(false, animated: true)
+                pendingErrors = [error]
+                if toolbarIsHidden {
+                    setToolbar(hidden: false, animated: true)
                 }
-                self.set(progress: progress, in: controller)
+                set(progress: progress)
             }
 
         case .finished(let errors):
             if errors.isEmpty {
-                self.pendingErrors = nil
-                self.timerDisposeBag = DisposeBag()
-                if !controller.isToolbarHidden {
-                    controller.setToolbarHidden(true, animated: true)
+                pendingErrors = nil
+                timerDisposeBag = DisposeBag()
+                if !toolbarIsHidden {
+                    setToolbar(hidden: true, animated: true)
                 }
                 return
             }
 
-            self.pendingErrors = errors
-            if controller.isToolbarHidden {
-                controller.setToolbarHidden(false, animated: true)
+            pendingErrors = errors
+            if toolbarIsHidden {
+                setToolbar(hidden: false, animated: true)
             }
-            self.set(progress: progress, in: controller)
-            self.hideToolbarWithDelay(in: controller)
+            set(progress: progress)
+            hideToolbarWithDelay()
 
         case .starting:
-            self.hideToolbarWithDelay(in: controller)
+            hideToolbarWithDelay()
 
         default: break
         }
     }
 
     private func showErrorAlert(with errors: [Error]) {
-        self.viewController.setToolbarHidden(true, animated: true)
+        setToolbar(hidden: true, animated: true)
 
         guard let error = errors.first else { return }
         
-        let (message, data) = self.alertMessage(from: error)
+        let (message, data) = alertMessage(from: error)
 
         let controller = UIAlertController(title: L10n.error, message: message, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: { [weak self] _ in
@@ -104,14 +127,15 @@ final class SyncToolbarController {
                 self?.coordinatorDelegate?.showItems(with: keys, in: data.libraryId)
             }))
         }
-        self.viewController.present(controller, animated: true, completion: nil)
+        viewController.present(controller, animated: true, completion: nil)
     }
 
     private func alertMessage(from error: Error) -> (message: String, additionalData: SyncError.ErrorData?) {
         if let error = error as? SyncError.Fatal {
             switch error {
-            case .cancelled: break // should not happen
-                
+            case .cancelled: // should not happen
+                break
+
             case .apiError(let response, let data):
                 return (L10n.Errors.api(response), data)
 
@@ -170,7 +194,7 @@ final class SyncToolbarController {
                     return (L10n.Errors.SyncToolbar.personalQuotaReached, nil)
 
                 case .group(let groupId):
-                    let group = try? self.dbStorage.perform(request: ReadGroupDbRequest(identifier: groupId), on: .main)
+                    let group = try? dbStorage.perform(request: ReadGroupDbRequest(identifier: groupId), on: .main)
                     let groupName = group?.name ?? "\(groupId)"
                     return (L10n.Errors.SyncToolbar.groupQuotaReached(groupName), nil)
                 }
@@ -191,12 +215,15 @@ final class SyncToolbarController {
                 switch error {
                 case .itemPropInvalid(let string):
                     return (L10n.Errors.SyncToolbar.webdavItemProp(string), nil)
-                case .notChanged: break // Should not happen
+
+                case .notChanged: // Should not happen
+                    break
                 }
 
             case .webDavUpload(let error):
                 switch error {
-                case .cantCreatePropData: break // Should not happen
+                case .cantCreatePropData: // Should not happen
+                    break
 
                 case .apiError(let error, let httpMethod):
                     guard let statusCode = error.unacceptableStatusCode else { break }
@@ -217,24 +244,36 @@ final class SyncToolbarController {
         return ("", nil)
     }
 
-    private func hideToolbarWithDelay(in controller: UINavigationController) {
-        self.timerDisposeBag = DisposeBag()
+    private func setToolbar(hidden: Bool, animated: Bool) {
+        toolbarBottom.constant = hidden ? -((viewController.splitViewController?.view.safeAreaInsets.bottom ?? viewController.view.safeAreaInsets.bottom) + toolbar.frame.height) : 0
 
-        Single<Int>.timer(SyncToolbarController.finishVisibilityTime,
-                          scheduler: MainScheduler.instance)
-                   .subscribe(onSuccess: { [weak controller] _ in
-                       controller?.setToolbarHidden(true, animated: true)
-                   })
-                   .disposed(by: self.timerDisposeBag)
+        if !animated {
+            viewController.view.layoutIfNeeded()
+            return
+        }
+
+        UIView.animate(withDuration: 0.15, delay: 0, options: [.curveEaseOut], animations: { [weak self] in
+            self?.viewController.view.layoutIfNeeded()
+        })
     }
 
-    private func set(progress: SyncProgress, in controller: UINavigationController) {
-        let item = UIBarButtonItem(customView: self.toolbarView(with: self.text(for: progress)))
-        controller.toolbar.setItems([item], animated: false)
+    private func hideToolbarWithDelay() {
+        timerDisposeBag = DisposeBag()
+        Single<Int>.timer(SyncToolbarController.finishVisibilityTime,
+                          scheduler: MainScheduler.instance)
+                   .subscribe(onSuccess: { [weak self] _ in
+                       self?.setToolbar(hidden: true, animated: true)
+                   })
+                   .disposed(by: timerDisposeBag)
+    }
+
+    private func set(progress: SyncProgress) {
+        let item = UIBarButtonItem(customView: toolbarView(with: text(for: progress)))
+        toolbar.setItems([item], animated: false)
     }
 
     private func toolbarView(with text: String) -> UIView {
-        let textColor: UIColor = self.viewController.traitCollection.userInterfaceStyle == .light ? .black : .white
+        let textColor: UIColor = viewController.traitCollection.userInterfaceStyle == .light ? .black : .white
         let button = UIButton(frame: UIScreen.main.bounds)
         button.titleLabel?.font = .preferredFont(forTextStyle: .footnote)
         button.titleLabel?.adjustsFontSizeToFitWidth = true
@@ -244,14 +283,15 @@ final class SyncToolbarController {
         button.contentVerticalAlignment = .center
         button.setTitle(text, for: .normal)
 
-        button.rx
-              .tap
-              .observe(on: MainScheduler.instance)
-              .subscribe(onNext: { [weak self] _ in
-                  guard let errors = self?.pendingErrors else { return }
-                  self?.showErrorAlert(with: errors)
-              })
-              .disposed(by: self.disposeBag)
+        button
+            .rx
+            .tap
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] _ in
+                guard let self, let pendingErrors else { return }
+                showErrorAlert(with: pendingErrors)
+            })
+            .disposed(by: disposeBag)
 
         return button
     }
@@ -272,9 +312,9 @@ final class SyncToolbarController {
 
         case .object(let object, let progress, let libraryName, _):
             if let progress = progress {
-                return L10n.SyncToolbar.objectWithData(self.name(for: object), progress.completed, progress.total, libraryName)
+                return L10n.SyncToolbar.objectWithData(name(for: object), progress.completed, progress.total, libraryName)
             }
-            return L10n.SyncToolbar.object(self.name(for: object), libraryName)
+            return L10n.SyncToolbar.object(name(for: object), libraryName)
 
         case .changes(let progress):
             return L10n.SyncToolbar.writes(progress.completed, progress.total)
@@ -296,7 +336,7 @@ final class SyncToolbarController {
             if case .forbidden = error {
                 return L10n.Errors.SyncToolbar.forbidden
             }
-            return L10n.SyncToolbar.aborted(self.alertMessage(from: error).message)
+            return L10n.SyncToolbar.aborted(alertMessage(from: error).message)
         }
     }
 

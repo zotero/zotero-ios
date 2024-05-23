@@ -74,6 +74,18 @@ final class MainViewController: UISplitViewController {
         DDLogInfo("MainViewController: viewDidLoad")
     }
 
+    override func viewIsAppearing(_ animated: Bool) {
+        super.viewIsAppearing(animated)
+
+        if syncToolbarController == nil,
+           let progressObservable = controllers.userControllers?.syncScheduler.syncController.progressObservable,
+           let dbStorage = controllers.userControllers?.dbStorage,
+           let masterController = viewControllers.first {
+            syncToolbarController = SyncToolbarController(parent: masterController, progressObservable: progressObservable, dbStorage: dbStorage)
+            syncToolbarController?.coordinatorDelegate = self
+        }
+    }
+
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         guard let detailCoordinator else { return }
@@ -115,11 +127,6 @@ final class MainViewController: UISplitViewController {
         masterCoordinator.start(animated: false)
         self.viewControllers = [masterController]
         self.masterCoordinator = masterCoordinator
-
-        if let progressObservable = self.controllers.userControllers?.syncScheduler.syncController.progressObservable, let dbStorage = self.controllers.userControllers?.dbStorage {
-            self.syncToolbarController = SyncToolbarController(parent: masterController, progressObservable: progressObservable, dbStorage: dbStorage)
-            self.syncToolbarController?.coordinatorDelegate = self
-        }
     }
 }
 
