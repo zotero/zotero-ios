@@ -1821,59 +1821,60 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         func processAnnotationObserving(handler: PDFReaderActionHandler, notification: Notification, viewModel: ViewModel<PDFReaderActionHandler>) {
             guard isNotification(notification, from: viewModel.state.document) else { return }
 
-            switch notification.name {
-            case .PSPDFAnnotationChanged:
-                guard let annotation = notification.object as? PSPDFKit.Annotation else { return }
+            // TODO: Improve this if PSPDFKit allows more control for automatic command recording, e.g. by providing a detached recorder
+            // Delay handling of notifications until next main run loop iteration, so they have completely recorded their undo command.
+            DispatchQueue.main.async { [weak handler, weak viewModel] in
+                guard let handler, let viewModel else { return }
 
-                if let changes = notification.userInfo?[PSPDFAnnotationChangedNotificationKeyPathKey] as? [String] {
-                    if let freeTextAnnotation = annotation as? PSPDFKit.FreeTextAnnotation, let key = annotation.key {
-                        if changes.contains("rotation") {
-                            // Debounce these notifications because FreeTextAnnotation rotation change spams these annotations in milliseconds
-                            // and it looks bad in sidebar while it's also unnecessary cpu burden.
-                            let disposeBag = DisposeBag()
-                            handler.freeTextAnnotationRotationDebounceDisposeBagByKey[key] = disposeBag
-                            handler.debouncedFreeTextAnnotationAndChangesByKey[key] = (changes, freeTextAnnotation)
-                            Single<Int>.timer(.milliseconds(100), scheduler: MainScheduler.instance)
-                                .subscribe(onSuccess: { [weak handler, weak viewModel] _ in
-                                    guard let handler, let viewModel else { return }
-                                    handler.freeTextAnnotationRotationDebounceDisposeBagByKey[key] = nil
-                                    if let (changes, annotation) = handler.debouncedFreeTextAnnotationAndChangesByKey[key] {
-                                        handler.debouncedFreeTextAnnotationAndChangesByKey[key] = nil
-                                        handler.change(annotation: annotation, with: changes, in: viewModel)
-                                    }
-                                })
-                                .disposed(by: disposeBag)
-                        } else {
-                            handler.freeTextAnnotationRotationDebounceDisposeBagByKey[key] = nil
-                            if let (changes, annotation) = handler.debouncedFreeTextAnnotationAndChangesByKey[key] {
-                                handler.debouncedFreeTextAnnotationAndChangesByKey[key] = nil
+                switch notification.name {
+                case .PSPDFAnnotationChanged:
+                    guard let annotation = notification.object as? PSPDFKit.Annotation else { return }
+
+                    if let changes = notification.userInfo?[PSPDFAnnotationChangedNotificationKeyPathKey] as? [String] {
+                        if let freeTextAnnotation = annotation as? PSPDFKit.FreeTextAnnotation, let key = annotation.key {
+                            if changes.contains("rotation") {
+                                // Debounce these notifications because FreeTextAnnotation rotation change spams these annotations in milliseconds
+                                // and it looks bad in sidebar while it's also unnecessary cpu burden.
+                                let disposeBag = DisposeBag()
+                                handler.freeTextAnnotationRotationDebounceDisposeBagByKey[key] = disposeBag
+                                handler.debouncedFreeTextAnnotationAndChangesByKey[key] = (changes, freeTextAnnotation)
+                                Single<Int>.timer(.milliseconds(100), scheduler: MainScheduler.instance)
+                                    .subscribe(onSuccess: { [weak handler, weak viewModel] _ in
+                                        guard let handler, let viewModel else { return }
+                                        handler.freeTextAnnotationRotationDebounceDisposeBagByKey[key] = nil
+                                        if let (changes, annotation) = handler.debouncedFreeTextAnnotationAndChangesByKey[key] {
+                                            handler.debouncedFreeTextAnnotationAndChangesByKey[key] = nil
+                                            handler.change(annotation: annotation, with: changes, in: viewModel)
+                                        }
+                                    })
+                                    .disposed(by: disposeBag)
+                            } else {
+                                handler.freeTextAnnotationRotationDebounceDisposeBagByKey[key] = nil
+                                if let (changes, annotation) = handler.debouncedFreeTextAnnotationAndChangesByKey[key] {
+                                    handler.debouncedFreeTextAnnotationAndChangesByKey[key] = nil
+                                    handler.change(annotation: annotation, with: changes, in: viewModel)
+                                }
                                 handler.change(annotation: annotation, with: changes, in: viewModel)
                             }
+                        } else {
                             handler.change(annotation: annotation, with: changes, in: viewModel)
                         }
-                    } else {
+                    } else if annotation is PSPDFKit.InkAnnotation, notification.userInfo?["com.pspdfkit.sourceDrawLayer"] != nil {
+                        let changes = PdfAnnotationChanges.stringValues(from: [.boundingBox, .paths])
                         handler.change(annotation: annotation, with: changes, in: viewModel)
                     }
-                } else if annotation is PSPDFKit.InkAnnotation, notification.userInfo?["com.pspdfkit.sourceDrawLayer"] != nil {
-                    let changes = PdfAnnotationChanges.stringValues(from: [.boundingBox, .paths])
-                    handler.change(annotation: annotation, with: changes, in: viewModel)
-                }
 
-            case .PSPDFAnnotationsAdded:
-                guard let annotations = notification.object as? [PSPDFKit.Annotation] else { return }
-                // TODO: Improve this if PSPDFKit allows more control for automatic command recording, e.g. by providing a detached recorder
-                // Delay handling of added notifications until next main run loop iteration, so they have completely recorded their undo command.
-                DispatchQueue.main.async { [weak handler, weak viewModel] in
-                    guard let handler, let viewModel else { return }
+                case .PSPDFAnnotationsAdded:
+                    guard let annotations = notification.object as? [PSPDFKit.Annotation] else { return }
                     handler.add(annotations: annotations, in: viewModel)
+
+                case .PSPDFAnnotationsRemoved:
+                    guard let annotations = notification.object as? [PSPDFKit.Annotation] else { return }
+                    handler.remove(annotations: annotations, in: viewModel)
+
+                default:
+                    break
                 }
-
-            case .PSPDFAnnotationsRemoved:
-                guard let annotations = notification.object as? [PSPDFKit.Annotation] else { return }
-                handler.remove(annotations: annotations, in: viewModel)
-
-            default:
-                break
             }
 
             handler.update(viewModel: viewModel) { state in
