@@ -1385,6 +1385,12 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         let (keptAsIs, toRemove, toAdd) = transformIfNeeded(annotations: annotations, state: viewModel.state)
         let finalAnnotations = keptAsIs + toAdd
+        for annotation in finalAnnotations {
+            if annotation.key == nil {
+                annotation.user = viewModel.state.displayName
+                annotation.customData = [AnnotationsConfig.keyKey: KeyGenerator.newKey]
+            }
+        }
         if !toRemove.isEmpty || !toAdd.isEmpty {
             let document = viewModel.state.document
             let undoController = document.undoController
@@ -1460,7 +1466,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                     continue
                 }
 
-                let splitAnnotations = splitIfNeeded(annotation: annotation, user: state.displayName)
+                let splitAnnotations = splitIfNeeded(annotation: annotation)
 
                 guard splitAnnotations.count > 1 else {
                     keptAsIs.append(annotation)
@@ -1477,18 +1483,13 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             /// - parameter annotation: Annotation to split
             /// - parameter user: User which created the annotation if it's new
             /// - returns: Array with original annotation if limit was not exceeded. Otherwise array of new split annotations.
-            func splitIfNeeded(annotation: PSPDFKit.Annotation, user: String) -> [PSPDFKit.Annotation] {
+            func splitIfNeeded(annotation: PSPDFKit.Annotation) -> [PSPDFKit.Annotation] {
                 if let annotation = annotation as? HighlightAnnotation, let rects = annotation.rects, let splitRects = AnnotationSplitter.splitRectsIfNeeded(rects: rects) {
                     return createAnnotations(from: splitRects, original: annotation)
                 }
 
                 if let annotation = annotation as? InkAnnotation, let paths = annotation.lines, let splitPaths = AnnotationSplitter.splitPathsIfNeeded(paths: paths) {
                     return createAnnotations(from: splitPaths, original: annotation)
-                }
-
-                if annotation.key == nil {
-                    annotation.user = user
-                    annotation.customData = [AnnotationsConfig.keyKey: KeyGenerator.newKey]
                 }
 
                 return [annotation]
@@ -1504,7 +1505,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                         new.blendMode = original.blendMode
                         new.contents = original.contents
                         new.pageIndex = original.pageIndex
-                        new.customData = [AnnotationsConfig.keyKey: KeyGenerator.newKey]
                         return new
                     }
                 }
@@ -1519,7 +1519,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                         new.blendMode = original.blendMode
                         new.contents = original.contents
                         new.pageIndex = original.pageIndex
-                        new.customData = [AnnotationsConfig.keyKey: KeyGenerator.newKey]
                         return new
                     }
                 }
