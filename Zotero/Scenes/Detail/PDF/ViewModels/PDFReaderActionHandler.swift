@@ -1386,16 +1386,21 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         let (keptAsIs, toRemove, toAdd) = transformIfNeeded(annotations: annotations, state: viewModel.state)
         let finalAnnotations = keptAsIs + toAdd
         if !toRemove.isEmpty || !toAdd.isEmpty {
+            let document = viewModel.state.document
+            let undoController = document.undoController
+            let undoManager = undoController.undoManager
             // Originally added annotations are transformed, so we remove them by performing last undo.
             // This also removes the undo command from the stack, allowing us to record the transformed addition.
-            if viewModel.state.document.undoController.undoManager.canUndo {
-                viewModel.state.document.undoController.undoManager.undo()
+            undoManager.disableUndoRegistration()
+            if undoManager.canUndo {
+                undoManager.undo()
             }
-            // Remove may be superfluous, if those annotations are already removed by the undo, but it doesn't cause any issue.
-            viewModel.state.document.remove(annotations: toRemove, options: [.suppressNotifications: true])
-            viewModel.state.document.undoController.recordCommand(named: nil, adding: finalAnnotations) {
+            undoManager.enableUndoRegistration()
+            undoController.recordCommand(named: nil, adding: finalAnnotations) {
+                // Remove may be superfluous, if those annotations are already removed by the undo, but it doesn't cause any issue.
+                document.remove(annotations: toRemove, options: [.suppressNotifications: true])
                 // Transformed annotations need to be added, before they are converted, otherwise their document property is nil.
-                viewModel.state.document.add(annotations: finalAnnotations, options: [.suppressNotifications: true])
+                document.add(annotations: finalAnnotations, options: [.suppressNotifications: true])
             }
         }
 
@@ -1805,8 +1810,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         NotificationCenter.default.rx
             .notification(.PSPDFAnnotationsAdded)
             .observe(on: MainScheduler.instance)
-            // Delay annotations added notifications, so they have completely recorded their undo command.
-            .delay(.microseconds(250), scheduler: MainScheduler.instance)
             .subscribe(onNext: nextBlock)
             .disposed(by: pdfDisposeBag)
 
@@ -1859,7 +1862,12 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
             case .PSPDFAnnotationsAdded:
                 guard let annotations = notification.object as? [PSPDFKit.Annotation] else { return }
-                handler.add(annotations: annotations, in: viewModel)
+                // TODO: Improve this if PSPDFKit allows more control for automatic command recording, e.g. by providing a detached recorder
+                // Delay handling of added notifications until next main run loop iteration, so they have completely recorded their undo command.
+                DispatchQueue.main.async { [weak handler, weak viewModel] in
+                    guard let handler, let viewModel else { return }
+                    handler.add(annotations: annotations, in: viewModel)
+                }
 
             case .PSPDFAnnotationsRemoved:
                 guard let annotations = notification.object as? [PSPDFKit.Annotation] else { return }
