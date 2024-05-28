@@ -2008,6 +2008,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 shouldCancelUpdate = true
                 break
             }
+            guard annotation.page < viewModel.state.document.pageCount else {
+                DDLogWarn("PDFReaderActionHandler: tried inserting page (\(annotation.page)) outside of document page count (\(viewModel.state.document.pageCount)); \(annotation.key); \(viewModel.state.key)")
+                continue
+            }
 
             switch item.changeType {
             case .user:
