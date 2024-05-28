@@ -563,7 +563,7 @@ final class ExtensionViewModel {
 
             DDLogInfo("ExtensionViewModel: load item provider")
 
-            itemProvider.loadItem(forTypeIdentifier: (UTType.url.identifier), options: nil, completionHandler: { item, error -> Void in
+            itemProvider.loadItem(forTypeIdentifier: (UTType.url.identifier), options: nil, completionHandler: { item, error in
                 DDLogInfo("ExtensionViewModel: loaded item provider")
                 if let error = error {
                     DDLogError("ExtensionViewModel: url load error - \(error)")
@@ -598,7 +598,7 @@ final class ExtensionViewModel {
 
             DDLogInfo("ExtensionViewModel: load item provider")
 
-            itemProvider.loadItem(forTypeIdentifier: (UTType.propertyList.identifier), options: nil, completionHandler: { item, error -> Void in
+            itemProvider.loadItem(forTypeIdentifier: (UTType.propertyList.identifier), options: nil, completionHandler: { item, error in
                 DDLogInfo("ExtensionViewModel: loaded item provider")
                 if let error = error {
                     DDLogError("ExtensionViewModel: web data load error - \(error)")
@@ -648,7 +648,7 @@ final class ExtensionViewModel {
 
             DDLogInfo("ExtensionViewModel: load item provider")
 
-            itemProvider.loadItem(forTypeIdentifier: (UTType.plainText.identifier), options: nil, completionHandler: { item, error -> Void in
+            itemProvider.loadItem(forTypeIdentifier: (UTType.plainText.identifier), options: nil, completionHandler: { item, error in
                 DDLogInfo("ExtensionViewModel: loaded item provider")
                 if let error = error {
                     DDLogError("ExtensionViewModel: url plaintext error - \(error)")

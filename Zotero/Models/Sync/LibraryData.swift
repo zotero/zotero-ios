@@ -83,8 +83,6 @@ struct LibraryData {
 //        self.hasWebDavDeletions = hasWebDavDeletions
 //    }
 //
-//    // MARK: - Testing only
-//
 //    init(identifier: LibraryIdentifier, name: String, versions: Versions, updates: [WriteBatch] = [], deletions: [DeleteBatch] = []) {
 //        self.identifier = identifier
 //        self.name = name
