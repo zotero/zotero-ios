@@ -721,15 +721,21 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
     /// Updates the `keys` array which mirrors `Results<RItem>` identifiers. Updates `selectedItems` if needed. Updates `attachments` if needed.
     private func processUpdate(items: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int], in viewModel: ViewModel<ItemsActionHandler>) {
         self.update(viewModel: viewModel) { state in
-            if state.isEditing {
-                deletions.sorted().reversed().forEach { idx in
-                    let key = state.keys.remove(at: idx)
-                    if state.selectedItems.remove(key) != nil {
-                        state.changes.insert(.selection)
-                    }
-                    state.itemAccessories[key] = nil
-                    state.itemTitles[key] = nil
+            var shouldRebuildKeys = false
+
+            for idx in deletions.sorted().reversed() {
+                guard idx < state.keys.count else {
+                    shouldRebuildKeys = true
+                    state.selectedItems = []
+                    state.changes.insert(.selection)
+                    break
                 }
+                let key = state.keys.remove(at: idx)
+                if state.selectedItems.remove(key) != nil {
+                    state.changes.insert(.selection)
+                }
+                state.itemAccessories[key] = nil
+                state.itemTitles[key] = nil
             }
 
             modifications.forEach { idx in
@@ -738,13 +744,22 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
                 state.itemTitles[item.key] = self.htmlAttributedStringConverter.convert(text: item.displayTitle, baseAttributes: [.font: state.itemTitleFont])
             }
 
-            insertions.forEach { idx in
+            for idx in insertions {
                 let item = items[idx]
-                if state.isEditing {
-                    state.keys.insert(item.key, at: idx)
-                }
                 state.itemAccessories[item.key] = self.accessory(for: item)
                 state.itemTitles[item.key] = self.htmlAttributedStringConverter.convert(text: item.displayTitle, baseAttributes: [.font: state.itemTitleFont])
+
+                if !shouldRebuildKeys {
+                    if idx >= state.keys.count {
+                        shouldRebuildKeys = true
+                        continue
+                    }
+                    state.keys.insert(item.key, at: idx)
+                }
+            }
+
+            if shouldRebuildKeys {
+                state.keys = Array(items.map({ $0.key }))
             }
         }
     }
