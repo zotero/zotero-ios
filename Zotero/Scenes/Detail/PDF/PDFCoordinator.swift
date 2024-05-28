@@ -36,6 +36,7 @@ protocol PdfReaderCoordinatorDelegate: AnyObject {
     func showFontSizePicker(sender: UIView, picked: @escaping (UInt) -> Void)
     func showDeleteAlertForAnnotation(sender: UIView, delete: @escaping () -> Void)
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, userInterfaceStyle: UIUserInterfaceStyle?, picked: @escaping ([Tag]) -> Void)
+    func showDocumentChangedAlert(key: String, parentKey: String?, libraryId: LibraryIdentifier)
 }
 
 protocol PdfAnnotationsCoordinatorDelegate: AnyObject {
@@ -432,6 +433,10 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         }
 
         self.navigationController?.present(presentedController, animated: true)
+    }
+
+    func showDocumentChangedAlert(key: String, parentKey: String?, libraryId: LibraryIdentifier) {
+        (parentCoordinator as? DetailCoordinator)?.showDocumentChangedAlert(key: key, parentKey: parentKey, libraryId: libraryId)
     }
 }
 

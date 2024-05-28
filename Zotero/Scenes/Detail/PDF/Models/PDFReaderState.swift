@@ -51,6 +51,7 @@ struct PDFReaderState: ViewModelState {
         static let selectionDeletion = Changes(rawValue: 1 << 14)
         static let activeFontSize = Changes(rawValue: 1 << 15)
         static let library = Changes(rawValue: 1 << 16)
+        static let md5 = Changes(rawValue: 1 << 17)
     }
 
     enum Error: Swift.Error {
@@ -78,6 +79,7 @@ struct PDFReaderState: ViewModelState {
     var sortedKeys: [AnnotationKey]
     var snapshotKeys: [AnnotationKey]?
     var token: NotificationToken?
+    var itemToken: NotificationToken?
     var databaseAnnotations: Results<RItem>!
     var documentAnnotations: [String: PDFDocumentAnnotation]
     var comments: [String: NSAttributedString]
