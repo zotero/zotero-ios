@@ -1632,10 +1632,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             let key = viewModel.state.key
             let (item, liveAnnotations, storedPage) = try loadItemAnnotationsAndPage(for: key, libraryId: viewModel.state.library.identifier)
 
-            if let url = viewModel.state.document.fileURL, let md5 = md5(from: url), item.backendMd5 != md5 {
-                update(viewModel: viewModel) { state in
-                    state.changes = .md5
-                }
+            if checkWhetherMd5Changed(forItem: item, andUpdateViewModel: viewModel, handler: self) {
                 return
             }
 
@@ -1716,15 +1713,21 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 guard let handler, let viewModel else { return }
                 switch change {
                 case .change(let item, _):
-                    guard let documentURL = viewModel.state.document.fileURL, let md5 = md5(from: documentURL), item.backendMd5 != md5 else { return }
-                    handler.update(viewModel: viewModel) { state in
-                        state.changes = .md5
-                    }
+                    checkWhetherMd5Changed(forItem: item, andUpdateViewModel: viewModel, handler: handler)
 
                 case .deleted, .error:
                     break
                 }
             }
+        }
+
+        @discardableResult
+        func checkWhetherMd5Changed(forItem item: RItem, andUpdateViewModel viewModel: ViewModel<PDFReaderActionHandler>, handler: PDFReaderActionHandler) -> Bool {
+            guard let documentURL = viewModel.state.document.fileURL, let md5 = md5(from: documentURL), item.backendMd5 != md5 else { return false }
+            handler.update(viewModel: viewModel) { state in
+                state.changes = .md5
+            }
+            return true
         }
 
         func loadItemAnnotationsAndPage(for key: String, libraryId: LibraryIdentifier) throws -> (RItem, Results<RItem>, Int) {
