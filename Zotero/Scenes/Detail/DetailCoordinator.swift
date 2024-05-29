@@ -353,12 +353,6 @@ final class DetailCoordinator: Coordinator {
         coordinator.start(animated: false)
         presenter.present(containerController, animated: true)
     }
-
-    func showDocumentChangedAlert(key: String, parentKey: String?, libraryId: LibraryIdentifier) {
-        let controller = UIAlertController(title: L10n.warning, message: L10n.Errors.Pdf.documentChanged, preferredStyle: .alert)
-        controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
-        navigationController?.present(controller, animated: true)
-    }
 }
 
 extension DetailCoordinator: DetailItemsCoordinatorDelegate {

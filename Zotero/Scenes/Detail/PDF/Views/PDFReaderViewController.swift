@@ -422,10 +422,9 @@ class PDFReaderViewController: UIViewController {
 
     private func update(state: PDFReaderState) {
         if state.changes.contains(.md5) {
-            DispatchQueue.main.async {
-                self.coordinatorDelegate?.showDocumentChangedAlert(key: state.key, parentKey: state.parentKey, libraryId: state.library.identifier)
+            self.coordinatorDelegate?.showDocumentChangedAlert(key: state.key, parentKey: state.parentKey, libraryId: state.library.identifier) { [weak self] in
+                self?.close()
             }
-            close()
             return
         }
 
