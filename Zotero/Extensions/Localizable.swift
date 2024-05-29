@@ -538,6 +538,8 @@ internal enum L10n {
       internal static let cantDeleteAnnotations = L10n.tr("Localizable", "errors.pdf.cant_delete_annotations", fallback: "Can't delete annotations.")
       /// Can't update annotation.
       internal static let cantUpdateAnnotation = L10n.tr("Localizable", "errors.pdf.cant_update_annotation", fallback: "Can't update annotation.")
+      /// This document has been changed. You have to re-download it if you want to continue editing it.
+      internal static let documentChanged = L10n.tr("Localizable", "errors.pdf.document_changed", fallback: "This document has been changed. You have to re-download it if you want to continue editing it.")
       /// This document is empty.
       internal static let emptyDocument = L10n.tr("Localizable", "errors.pdf.empty_document", fallback: "This document is empty.")
       /// This document is not supported.

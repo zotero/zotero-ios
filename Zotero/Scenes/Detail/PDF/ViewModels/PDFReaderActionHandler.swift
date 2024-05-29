@@ -1629,13 +1629,18 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 throw PDFReaderState.Error.documentEmpty
             }
 
-            let isDark = viewModel.state.interfaceStyle == .dark
             let key = viewModel.state.key
+            let (item, liveAnnotations, storedPage) = try loadItemAnnotationsAndPage(for: key, libraryId: viewModel.state.library.identifier)
+
+            if checkWhetherMd5Changed(forItem: item, andUpdateViewModel: viewModel, handler: self) {
+                return
+            }
+
             let (library, libraryToken) = try viewModel.state.library.identifier.observe(in: dbStorage, changes: { [weak self, weak viewModel] library in
                 guard let self, let viewModel else { return }
                 observe(library: library, viewModel: viewModel, handler: self)
             })
-            let (liveAnnotations, storedPage) = try loadAnnotationsAndPage(for: key, libraryId: library.identifier)
+            let itemToken = observe(item: item, viewModel: viewModel, handler: self)
             let token = observe(items: liveAnnotations, viewModel: viewModel, handler: self)
             let databaseAnnotations = liveAnnotations.freeze()
             let documentAnnotations = loadAnnotations(from: viewModel.state.document, library: library, username: viewModel.state.username, displayName: viewModel.state.displayName)
@@ -1649,6 +1654,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 boundingBoxConverter: boundingBoxConverter
             )
             let sortedKeys = createSortedKeys(fromDatabaseAnnotations: databaseAnnotations, documentAnnotations: documentAnnotations)
+            let isDark = viewModel.state.interfaceStyle == .dark
             update(document: viewModel.state.document, zoteroAnnotations: dbToPdfAnnotations, key: key, libraryId: library.identifier, isDark: isDark)
             for annotation in dbToPdfAnnotations {
                 annotationPreviewController.store(for: annotation, parentKey: key, libraryId: library.identifier, isDark: isDark)
@@ -1663,6 +1669,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 state.sortedKeys = sortedKeys
                 state.visiblePage = page
                 state.token = token
+                state.itemToken = itemToken
                 state.changes = [.annotations, .initialDataLoaded]
                 state.initialPage = nil
 
@@ -1701,11 +1708,35 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             }
         }
 
-        func loadAnnotationsAndPage(for key: String, libraryId: LibraryIdentifier) throws -> (Results<RItem>, Int) {
+        func observe(item: RItem, viewModel: ViewModel<PDFReaderActionHandler>, handler: PDFReaderActionHandler) -> NotificationToken {
+            return item.observe(keyPaths: ["fields"], on: .main) { [weak handler, weak viewModel] (change: ObjectChange<RItem>) in
+                guard let handler, let viewModel else { return }
+                switch change {
+                case .change(let item, _):
+                    checkWhetherMd5Changed(forItem: item, andUpdateViewModel: viewModel, handler: handler)
+
+                case .deleted, .error:
+                    break
+                }
+            }
+        }
+
+        @discardableResult
+        func checkWhetherMd5Changed(forItem item: RItem, andUpdateViewModel viewModel: ViewModel<PDFReaderActionHandler>, handler: PDFReaderActionHandler) -> Bool {
+            guard let documentURL = viewModel.state.document.fileURL, let md5 = md5(from: documentURL), item.backendMd5 != md5 else { return false }
+            handler.update(viewModel: viewModel) { state in
+                state.changes = .md5
+            }
+            return true
+        }
+
+        func loadItemAnnotationsAndPage(for key: String, libraryId: LibraryIdentifier) throws -> (RItem, Results<RItem>, Int) {
             var results: Results<RItem>!
             var pageStr = "0"
+            var item: RItem!
 
             try dbStorage.perform(on: .main, with: { coordinator in
+                item = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
                 pageStr = try coordinator.perform(request: ReadDocumentDataDbRequest(attachmentKey: key, libraryId: libraryId))
                 results = try coordinator.perform(request: ReadAnnotationsDbRequest(attachmentKey: key, libraryId: libraryId))
             })
@@ -1714,7 +1745,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 throw PDFReaderState.Error.pageNotInt
             }
 
-            return (results, page)
+            return (item, results, page)
         }
     }
 
@@ -2007,6 +2038,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 DDLogWarn("PDFReaderActionHandler: tried inserting unsupported annotation (\(item.annotationType))! keys.count=\(keys.count); index=\(index); deletions=\(deletions); insertions=\(insertions); modifications=\(modifications)")
                 shouldCancelUpdate = true
                 break
+            }
+            guard annotation.page < viewModel.state.document.pageCount else {
+                DDLogWarn("PDFReaderActionHandler: tried inserting page (\(annotation.page)) outside of document page count (\(viewModel.state.document.pageCount)); \(annotation.key); \(viewModel.state.key)")
+                continue
             }
 
             switch item.changeType {

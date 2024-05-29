@@ -502,6 +502,7 @@
 "errors.pdf.incompatible_document" = "This document is not supported.";
 "errors.pdf.empty_document" = "This document is empty.";
 "errors.pdf.page_index_not_int" = "Incorrect format of page stored for this document.";
+"errors.pdf.document_changed" = "This document has been changed. You have to re-download it if you want to continue editing it.";
 
 "accessibility.untitled" = "Untitled";
 "accessibility.locked" = "Locked";

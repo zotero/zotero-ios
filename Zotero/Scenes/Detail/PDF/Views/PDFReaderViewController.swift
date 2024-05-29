@@ -421,6 +421,13 @@ class PDFReaderViewController: UIViewController {
     // MARK: - Actions
 
     private func update(state: PDFReaderState) {
+        if state.changes.contains(.md5) {
+            coordinatorDelegate?.showDocumentChangedAlert { [weak self] in
+                self?.close()
+            }
+            return
+        }
+
         if let success = state.unlockSuccessful, success {
             // Enable bar buttons
             for item in navigationItem.leftBarButtonItems ?? [] {
