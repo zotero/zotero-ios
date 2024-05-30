@@ -76,7 +76,7 @@ struct PDFThumbnailsActionHandler: ViewModelActionHandler {
         update(viewModel: viewModel) { state in
             state.pages = labels
             if state.selectedPageIndex >= state.pages.count {
-                state.selectedPageIndex = 0
+                state.selectedPageIndex = state.pages.count - 1
             }
             state.changes = .pages
         }
