@@ -30,6 +30,7 @@ struct CreatePDFAnnotationsDbRequest: DbRequest {
     }
 
     private func create(annotation: PDFDocumentAnnotation, parent: RItem, in database: Realm) {
+        var fromRestore = false
         let item: RItem
 
         if let _item = database.objects(RItem.self).filter(.key(annotation.key, in: libraryId)).first {
@@ -41,6 +42,7 @@ struct CreatePDFAnnotationsDbRequest: DbRequest {
             // If item exists and was already deleted locally and not yet synced, we re-add the item
             item = _item
             item.deleted = false
+            fromRestore = true
         } else {
             // If item didn't exist, create it
             item = RItem()
@@ -66,8 +68,8 @@ struct CreatePDFAnnotationsDbRequest: DbRequest {
         // We need to submit tags on creation even if they are empty, so we need to mark them as changed
         var changes: RItemChanges = [.parent, .fields, .type, .tags]
         self.addFields(for: annotation, to: item, database: database)
-        self.add(rects: annotation.rects, to: item, changes: &changes, database: database)
-        self.add(paths: annotation.paths, to: item, changes: &changes, database: database)
+        self.add(rects: annotation.rects, fromRestore: fromRestore, to: item, changes: &changes, database: database)
+        self.add(paths: annotation.paths, fromRestore: fromRestore, to: item, changes: &changes, database: database)
         item.changes.append(RObjectChange.create(changes: changes))
     }
 
@@ -117,7 +119,11 @@ struct CreatePDFAnnotationsDbRequest: DbRequest {
         }
     }
 
-    private func add(rects: [CGRect], to item: RItem, changes: inout RItemChanges, database: Realm) {
+    private func add(rects: [CGRect], fromRestore: Bool, to item: RItem, changes: inout RItemChanges, database: Realm) {
+        if fromRestore {
+            item.rects.removeAll()
+            changes.insert(.rects)
+        }
         guard !rects.isEmpty, let annotation = PDFDatabaseAnnotation(item: item) else { return }
 
         let page = UInt(annotation.page)
@@ -135,7 +141,11 @@ struct CreatePDFAnnotationsDbRequest: DbRequest {
         changes.insert(.rects)
     }
 
-    private func add(paths: [[CGPoint]], to item: RItem, changes: inout RItemChanges, database: Realm) {
+    private func add(paths: [[CGPoint]], fromRestore: Bool, to item: RItem, changes: inout RItemChanges, database: Realm) {
+        if fromRestore {
+            item.paths.removeAll()
+            changes.insert(.paths)
+        }
         guard !paths.isEmpty, let annotation = PDFDatabaseAnnotation(item: item) else { return }
 
         let page = UInt(annotation.page)
