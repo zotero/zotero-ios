@@ -1765,7 +1765,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             return (initialPage, nil)
         }
 
-        return (storedPage, nil)
+        if storedPage >= 0 && storedPage < viewModel.state.document.pageCount {
+            return (storedPage, nil)
+        }
+
+        return (Int(viewModel.state.document.pageCount - 1), nil)
     }
 
     private func processAnnotationObserving(notification: Notification, viewModel: ViewModel<PDFReaderActionHandler>) {

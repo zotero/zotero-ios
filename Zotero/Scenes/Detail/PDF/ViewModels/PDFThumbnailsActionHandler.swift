@@ -48,6 +48,7 @@ struct PDFThumbnailsActionHandler: ViewModelActionHandler {
     }
 
     private func reloadThumbnails(viewModel: ViewModel<PDFThumbnailsActionHandler>) {
+        guard !viewModel.state.pages.isEmpty else { return }
         viewModel.state.cache.removeAllObjects()
         thumbnailController.deleteAll(forKey: viewModel.state.key, libraryId: viewModel.state.libraryId)
         update(viewModel: viewModel) { state in
@@ -56,7 +57,7 @@ struct PDFThumbnailsActionHandler: ViewModelActionHandler {
     }
 
     private func set(selectedPage: Int, type: PDFThumbnailsState.SelectionType, viewModel: ViewModel<PDFThumbnailsActionHandler>) {
-        guard selectedPage != viewModel.state.selectedPageIndex else { return }
+        guard selectedPage != viewModel.state.selectedPageIndex && selectedPage < viewModel.state.pages.count else { return }
         update(viewModel: viewModel) { state in
             state.selectedPageIndex = selectedPage
             switch type {
@@ -74,6 +75,9 @@ struct PDFThumbnailsActionHandler: ViewModelActionHandler {
         let labels = (0..<viewModel.state.document.pageCount).map({ PDFThumbnailsState.Page(title: viewModel.state.document.pageLabelForPage(at: $0, substituteWithPlainLabel: true) ?? "") })
         update(viewModel: viewModel) { state in
             state.pages = labels
+            if state.selectedPageIndex >= state.pages.count {
+                state.selectedPageIndex = state.pages.count - 1
+            }
             state.changes = .pages
         }
     }
