@@ -26,6 +26,7 @@ struct ReadCollectionsDbRequest: DbResponseRequest {
     func process(in database: Realm) throws -> Results<RCollection> {
         let predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [.notSyncState(.dirty, in: self.libraryId),
                                                                             .deleted(false),
+                                                                            .isTrash(false),
                                                                             .key(notIn: self.excludedKeys)])
         return database.objects(RCollection.self).filter(predicate)
     }
