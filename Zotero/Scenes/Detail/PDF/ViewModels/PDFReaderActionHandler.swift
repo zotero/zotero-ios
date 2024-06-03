@@ -94,6 +94,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     private var pdfDisposeBag: DisposeBag
     private var pageDebounceDisposeBag: DisposeBag?
     private var freeTextAnnotationRotationDebounceDisposeBagByKey: [String: DisposeBag]
+    private var debouncedFreeTextAnnotationAndChangesByKey: [String: ([String], PSPDFKit.FreeTextAnnotation)]
     weak var delegate: (PDFReaderContainerDelegate & AnnotationBoundingBoxConverter)?
 
     init(
@@ -117,6 +118,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         self.backgroundQueue = DispatchQueue(label: "org.zotero.Zotero.PDFReaderActionHandler.queue", qos: .userInteractive)
         self.pdfDisposeBag = DisposeBag()
         freeTextAnnotationRotationDebounceDisposeBagByKey = [:]
+        debouncedFreeTextAnnotationAndChangesByKey = [:]
         self.disposeBag = DisposeBag()
     }
 
@@ -1788,16 +1790,24 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                         // and it looks bad in sidebar while it's also unnecessary cpu burden.
                         let disposeBag = DisposeBag()
                         freeTextAnnotationRotationDebounceDisposeBagByKey[key] = disposeBag
+                        debouncedFreeTextAnnotationAndChangesByKey[key] = (changes, freeTextAnnotation)
                         Single<Int>.timer(.milliseconds(100), scheduler: MainScheduler.instance)
                             .subscribe(onSuccess: { [weak self, weak viewModel] _ in
                                 guard let self, let viewModel else { return }
-                                change(annotation: annotation, with: changes, in: viewModel)
                                 freeTextAnnotationRotationDebounceDisposeBagByKey[key] = nil
+                                if let (changes, annotation) = debouncedFreeTextAnnotationAndChangesByKey[key] {
+                                    debouncedFreeTextAnnotationAndChangesByKey[key] = nil
+                                    change(annotation: annotation, with: changes, in: viewModel)
+                                }
                             })
                             .disposed(by: disposeBag)
                     } else {
-                        change(annotation: annotation, with: changes, in: viewModel)
                         freeTextAnnotationRotationDebounceDisposeBagByKey[key] = nil
+                        if let (changes, annotation) = debouncedFreeTextAnnotationAndChangesByKey[key] {
+                            debouncedFreeTextAnnotationAndChangesByKey[key] = nil
+                            change(annotation: annotation, with: changes, in: viewModel)
+                        }
+                        change(annotation: annotation, with: changes, in: viewModel)
                     }
                 } else {
                     change(annotation: annotation, with: changes, in: viewModel)
