@@ -93,6 +93,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
     private var pdfDisposeBag: DisposeBag
     private var pageDebounceDisposeBag: DisposeBag?
+    private var freeTextAnnotationRotationDebounceDisposeBagByKey: [String: DisposeBag]
+    private var debouncedFreeTextAnnotationAndChangesByKey: [String: ([String], PSPDFKit.FreeTextAnnotation)]
     weak var delegate: (PDFReaderContainerDelegate & AnnotationBoundingBoxConverter)?
 
     init(
@@ -115,6 +117,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         self.dateParser = dateParser
         self.backgroundQueue = DispatchQueue(label: "org.zotero.Zotero.PDFReaderActionHandler.queue", qos: .userInteractive)
         self.pdfDisposeBag = DisposeBag()
+        freeTextAnnotationRotationDebounceDisposeBagByKey = [:]
+        debouncedFreeTextAnnotationAndChangesByKey = [:]
         self.disposeBag = DisposeBag()
     }
 
@@ -1780,7 +1784,34 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             guard let annotation = notification.object as? PSPDFKit.Annotation else { return }
 
             if let changes = notification.userInfo?[PSPDFAnnotationChangedNotificationKeyPathKey] as? [String] {
-                self.change(annotation: annotation, with: changes, in: viewModel)
+                if let freeTextAnnotation = annotation as? PSPDFKit.FreeTextAnnotation, let key = annotation.key {
+                    if changes.contains("rotation") {
+                        // Debounce these notifications because FreeTextAnnotation rotation change spams these annotations in milliseconds
+                        // and it looks bad in sidebar while it's also unnecessary cpu burden.
+                        let disposeBag = DisposeBag()
+                        freeTextAnnotationRotationDebounceDisposeBagByKey[key] = disposeBag
+                        debouncedFreeTextAnnotationAndChangesByKey[key] = (changes, freeTextAnnotation)
+                        Single<Int>.timer(.milliseconds(100), scheduler: MainScheduler.instance)
+                            .subscribe(onSuccess: { [weak self, weak viewModel] _ in
+                                guard let self, let viewModel else { return }
+                                freeTextAnnotationRotationDebounceDisposeBagByKey[key] = nil
+                                if let (changes, annotation) = debouncedFreeTextAnnotationAndChangesByKey[key] {
+                                    debouncedFreeTextAnnotationAndChangesByKey[key] = nil
+                                    change(annotation: annotation, with: changes, in: viewModel)
+                                }
+                            })
+                            .disposed(by: disposeBag)
+                    } else {
+                        freeTextAnnotationRotationDebounceDisposeBagByKey[key] = nil
+                        if let (changes, annotation) = debouncedFreeTextAnnotationAndChangesByKey[key] {
+                            debouncedFreeTextAnnotationAndChangesByKey[key] = nil
+                            change(annotation: annotation, with: changes, in: viewModel)
+                        }
+                        change(annotation: annotation, with: changes, in: viewModel)
+                    }
+                } else {
+                    change(annotation: annotation, with: changes, in: viewModel)
+                }
             } else if annotation is PSPDFKit.InkAnnotation, notification.userInfo?["com.pspdfkit.sourceDrawLayer"] != nil {
                 let changes = PdfAnnotationChanges.stringValues(from: [.boundingBox, .paths])
                 self.change(annotation: annotation, with: changes, in: viewModel)
@@ -1815,8 +1846,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     private func observeDocument(in viewModel: ViewModel<PDFReaderActionHandler>) {
         NotificationCenter.default.rx
             .notification(.PSPDFAnnotationChanged)
-            // Debounce these notifications because FreeTextAnnotation rotation change spams these annotations in milliseconds and it looks bad in sidebar while it's also unnecessary cpu burden
-            .debounce(.milliseconds(100), scheduler: MainScheduler.instance)
             .subscribe(onNext: { [weak self, weak viewModel] notification in
                 guard let self, let viewModel else { return }
                 self.processAnnotationObserving(notification: notification, viewModel: viewModel)
