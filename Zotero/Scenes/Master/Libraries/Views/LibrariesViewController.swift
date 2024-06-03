@@ -18,15 +18,21 @@ final class LibrariesViewController: UIViewController {
     private static let customLibrariesSection = 0
     private static let groupLibrariesSection = 1
     private let viewModel: ViewModel<LibrariesActionHandler>
+    private unowned let syncScheduler: SynchronizationScheduler
     private unowned let identifierLookupController: IdentifierLookupController
     private let disposeBag: DisposeBag
 
+    private var refreshController: SyncRefreshController?
     weak var coordinatorDelegate: MasterLibrariesCoordinatorDelegate?
+    private var isSplit: Bool {
+        splitViewController?.isCollapsed == false
+    }
 
     // MARK: - Lifecycle
 
-    init(viewModel: ViewModel<LibrariesActionHandler>, identifierLookupController: IdentifierLookupController) {
+    init(viewModel: ViewModel<LibrariesActionHandler>, syncScheduler: SynchronizationScheduler, identifierLookupController: IdentifierLookupController) {
         self.viewModel = viewModel
+        self.syncScheduler = syncScheduler
         self.identifierLookupController = identifierLookupController
         self.disposeBag = DisposeBag()
         super.init(nibName: "LibrariesViewController", bundle: nil)
@@ -52,6 +58,17 @@ final class LibrariesViewController: UIViewController {
                           self?.update(to: state)
                       })
                       .disposed(by: self.disposeBag)
+    }
+
+    override func viewIsAppearing(_ animated: Bool) {
+        super.viewIsAppearing(animated)
+
+        if !isSplit {
+            guard tableView.refreshControl == nil else { return }
+            refreshController = SyncRefreshController(libraryId: nil, view: tableView, syncScheduler: syncScheduler)
+        } else {
+            refreshController = nil
+        }
     }
 
     // MARK: - UI State

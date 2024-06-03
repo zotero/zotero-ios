@@ -56,19 +56,24 @@ final class MasterCoordinator: NSObject, Coordinator {
 
     func start(animated: Bool) {
         guard let userControllers = self.controllers.userControllers else { return }
-        let librariesController = self.createLibrariesViewController(dbStorage: userControllers.dbStorage, identifierLookupController: userControllers.identifierLookupController)
+        let librariesController = self.createLibrariesViewController(
+            dbStorage: userControllers.dbStorage,
+            syncScheduler: userControllers.syncScheduler,
+            identifierLookupController: userControllers.identifierLookupController
+        )
         let collectionsController = self.createCollectionsViewController(
             libraryId: self.visibleLibraryId,
             selectedCollectionId: Defaults.shared.selectedCollectionId,
             dbStorage: userControllers.dbStorage,
+            syncScheduler: userControllers.syncScheduler,
             attachmentDownloader: userControllers.fileDownloader
         )
         self.navigationController?.setViewControllers([librariesController, collectionsController], animated: animated)
     }
 
-    private func createLibrariesViewController(dbStorage: DbStorage, identifierLookupController: IdentifierLookupController) -> UIViewController {
+    private func createLibrariesViewController(dbStorage: DbStorage, syncScheduler: SynchronizationScheduler, identifierLookupController: IdentifierLookupController) -> UIViewController {
         let viewModel = ViewModel(initialState: LibrariesState(), handler: LibrariesActionHandler(dbStorage: dbStorage))
-        let controller = LibrariesViewController(viewModel: viewModel, identifierLookupController: identifierLookupController)
+        let controller = LibrariesViewController(viewModel: viewModel, syncScheduler: syncScheduler, identifierLookupController: identifierLookupController)
         controller.coordinatorDelegate = self
         return controller
     }
@@ -77,12 +82,14 @@ final class MasterCoordinator: NSObject, Coordinator {
         libraryId: LibraryIdentifier,
         selectedCollectionId: CollectionIdentifier,
         dbStorage: DbStorage,
+        syncScheduler: SynchronizationScheduler,
         attachmentDownloader: AttachmentDownloader
     ) -> CollectionsViewController {
         DDLogInfo("MasterTopCoordinator: show collections for \(selectedCollectionId.id); \(libraryId)")
         let handler = CollectionsActionHandler(dbStorage: dbStorage, fileStorage: self.controllers.fileStorage, attachmentDownloader: attachmentDownloader)
         let state = CollectionsState(libraryId: libraryId, selectedCollectionId: selectedCollectionId)
-        return CollectionsViewController(viewModel: ViewModel(initialState: state, handler: handler), dragDropController: self.controllers.dragDropController, coordinatorDelegate: self)
+        let viewModel = ViewModel(initialState: state, handler: handler)
+        return CollectionsViewController(viewModel: viewModel, dragDropController: controllers.dragDropController, syncScheduler: syncScheduler, coordinatorDelegate: self)
     }
 
     private func storeIfNeeded(libraryId: LibraryIdentifier, preselectedCollection collectionId: CollectionIdentifier? = nil) -> CollectionIdentifier {
@@ -112,6 +119,7 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
             libraryId: libraryId,
             selectedCollectionId: collectionId,
             dbStorage: userControllers.dbStorage,
+            syncScheduler: userControllers.syncScheduler,
             attachmentDownloader: userControllers.fileDownloader
         )
 
@@ -164,6 +172,7 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
             libraryId: libraryId,
             selectedCollectionId: collectionId,
             dbStorage: userControllers.dbStorage,
+            syncScheduler: userControllers.syncScheduler,
             attachmentDownloader: userControllers.fileDownloader
         )
         self.navigationController?.pushViewController(controller, animated: true)
@@ -180,6 +189,7 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
                 libraryId: libraryId,
                 selectedCollectionId: collectionId,
                 dbStorage: userControllers.dbStorage,
+                syncScheduler: userControllers.syncScheduler,
                 attachmentDownloader: userControllers.fileDownloader
             )
             navigationController.pushViewController(controller, animated: animated)
@@ -189,6 +199,7 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
                 libraryId: libraryId,
                 selectedCollectionId: collectionId,
                 dbStorage: userControllers.dbStorage,
+                syncScheduler: userControllers.syncScheduler,
                 attachmentDownloader: userControllers.fileDownloader
             )
 

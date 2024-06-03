@@ -182,9 +182,6 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
         case .removeDownloads(let ids):
             self.fileCleanupController.delete(.allForItems(ids, viewModel.state.library.identifier), completed: nil)
 
-        case .startSync:
-            self.syncScheduler.request(sync: .ignoreIndividualDelays, libraries: .specific([viewModel.state.library.identifier]))
-
         case .emptyTrash:
             self.emptyTrash(in: viewModel)
 
