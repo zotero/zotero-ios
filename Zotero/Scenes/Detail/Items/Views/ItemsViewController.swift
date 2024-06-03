@@ -35,6 +35,7 @@ final class ItemsViewController: UIViewController {
     private var toolbarController: ItemsToolbarController!
     private var resultsToken: NotificationToken?
     private var libraryToken: NotificationToken?
+    private var refreshController: SyncRefreshController!
     weak var tagFilterDelegate: ItemsTagFilterDelegate?
 
     private weak var coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)?
@@ -72,7 +73,9 @@ final class ItemsViewController: UIViewController {
         self.setupRightBarButtonItems(for: self.viewModel.state)
         self.setupTitle()
         self.setupSearchBar()
-        self.setupPullToRefresh()
+        if let scheduler = controllers.userControllers?.syncScheduler {
+            refreshController = SyncRefreshController(libraryId: viewModel.state.library.identifier, view: tableView, syncScheduler: scheduler)
+        }
         self.setupFileObservers()
         self.startObservingSyncProgress()
         self.setupAppStateObserver()
@@ -179,14 +182,6 @@ final class ItemsViewController: UIViewController {
 
         if let error = state.error {
             self.process(error: error, state: state)
-        }
-    }
-
-    private func update(progress: SyncProgress) {
-        switch progress {
-        case .aborted, .finished:
-            self.tableView.refreshControl?.endRefreshing()
-        default: break
         }
     }
 
@@ -375,10 +370,6 @@ final class ItemsViewController: UIViewController {
                 }
             })
             .disposed(by: self.disposeBag)
-    }
-
-    @objc private func startSync() {
-        self.viewModel.process(action: .startSync)
     }
 
     private func emptyTrash() {
@@ -593,25 +584,6 @@ final class ItemsViewController: UIViewController {
         controller.delegate = self
         navigationItem.hidesSearchBarWhenScrolling = false
         navigationItem.searchController = controller
-    }
-
-    private func setupPullToRefresh() {
-        let control = UIRefreshControl()
-        control.addTarget(self, action: #selector(ItemsViewController.startSync), for: .valueChanged)
-        self.tableView.refreshControl = control
-
-        self.setupSyncObserving()
-    }
-
-    private func setupSyncObserving() {
-        guard let scheduler = self.controllers.userControllers?.syncScheduler else { return }
-        scheduler.syncController
-            .progressObservable
-            .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { [weak self] progress in
-                self?.update(progress: progress)
-            })
-            .disposed(by: self.disposeBag)
     }
 }
 

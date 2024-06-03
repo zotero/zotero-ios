@@ -19,17 +19,20 @@ protocol SplitControllerDelegate: AnyObject {
 
 final class CollectionsViewController: UICollectionViewController {
     let viewModel: ViewModel<CollectionsActionHandler>
+    private unowned let syncScheduler: SynchronizationScheduler
     private unowned let dragDropController: DragDropController
     private let disposeBag: DisposeBag
 
     private var collectionViewHandler: ExpandableCollectionsCollectionViewHandler!
     private weak var coordinatorDelegate: MasterCollectionsCoordinatorDelegate?
+    private var refreshController: SyncRefreshController?
     var selectedIdentifier: CollectionIdentifier {
         return self.viewModel.state.selectedCollectionId
     }
 
-    init(viewModel: ViewModel<CollectionsActionHandler>, dragDropController: DragDropController, coordinatorDelegate: MasterCollectionsCoordinatorDelegate) {
+    init(viewModel: ViewModel<CollectionsActionHandler>, dragDropController: DragDropController, syncScheduler: SynchronizationScheduler, coordinatorDelegate: MasterCollectionsCoordinatorDelegate) {
         self.viewModel = viewModel
+        self.syncScheduler = syncScheduler
         self.dragDropController = dragDropController
         self.coordinatorDelegate = coordinatorDelegate
         self.disposeBag = DisposeBag()
@@ -59,7 +62,12 @@ final class CollectionsViewController: UICollectionViewController {
             self.setupNavigationBar()
         }
 
-        self.collectionViewHandler = ExpandableCollectionsCollectionViewHandler(collectionView: self.collectionView, dragDropController: self.dragDropController, viewModel: self.viewModel, splitDelegate: self)
+        self.collectionViewHandler = ExpandableCollectionsCollectionViewHandler(
+            collectionView: self.collectionView,
+            dragDropController: self.dragDropController,
+            viewModel: self.viewModel,
+            splitDelegate: self
+        )
         self.collectionViewHandler.update(with: self.viewModel.state.collectionTree, selectedId: self.viewModel.state.selectedCollectionId, animated: false)
 
         self.viewModel.stateObservable
@@ -68,6 +76,19 @@ final class CollectionsViewController: UICollectionViewController {
                           self?.update(to: state)
                       })
                       .disposed(by: self.disposeBag)
+    }
+
+    override func viewIsAppearing(_ animated: Bool) {
+        super.viewIsAppearing(animated)
+
+        if !isSplit {
+            guard collectionView.refreshControl == nil else { return }
+            // There is a UIKit but with UICollectionView and UIRefreshController. The indicator doesn't show up when you go back from items to collections screen. But if you go back again to
+            // libraries and then go back forward to collections, it starts showing up again.
+            refreshController = SyncRefreshController(libraryId: viewModel.state.library.identifier, view: collectionView, syncScheduler: syncScheduler)
+        } else {
+            refreshController = nil
+        }
     }
 
     override func viewDidLayoutSubviews() {
