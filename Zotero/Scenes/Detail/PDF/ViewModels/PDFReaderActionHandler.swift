@@ -1699,6 +1699,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 throw PDFReaderState.Error.documentEmpty
             }
 
+            let start = CFAbsoluteTimeGetCurrent()
+
             let key = viewModel.state.key
             let (item, liveAnnotations, storedPage) = try loadItemAnnotationsAndPage(for: key, libraryId: viewModel.state.library.identifier)
 
@@ -1726,10 +1728,15 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             let sortedKeys = createSortedKeys(fromDatabaseAnnotations: databaseAnnotations, documentAnnotations: documentAnnotations)
             let isDark = viewModel.state.interfaceStyle == .dark
             update(document: viewModel.state.document, zoteroAnnotations: dbToPdfAnnotations, key: key, libraryId: library.identifier, isDark: isDark)
-            for annotation in dbToPdfAnnotations {
-                annotationPreviewController.store(for: annotation, parentKey: key, libraryId: library.identifier, isDark: isDark)
+            annotationPreviewController.async { controller in
+                for annotation in dbToPdfAnnotations {
+                    controller.store(for: annotation, parentKey: key, libraryId: library.identifier, isDark: isDark)
+                }
             }
             let (page, selectedData) = preselectedData(databaseAnnotations: databaseAnnotations, storedPage: storedPage, boundingBoxConverter: boundingBoxConverter, in: viewModel)
+
+            let end = CFAbsoluteTimeGetCurrent()
+            DDLogInfo("TTL: \(end - start)")
 
             update(viewModel: viewModel) { state in
                 state.library = library
@@ -2029,7 +2036,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         for (_, annotations) in allAnnotations {
             for annotation in annotations {
                 annotation.flags.update(with: .locked)
-                annotationPreviewController.store(for: annotation, parentKey: key, libraryId: libraryId, isDark: isDark)
+                annotationPreviewController.async { controller in
+                    controller.store(for: annotation, parentKey: key, libraryId: libraryId, isDark: isDark)
+                }
             }
         }
         var filteredZoteroAnnotations: [PSPDFKit.Annotation] = []
@@ -2204,7 +2213,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 if annotation.flags.contains(.readOnly) {
                     annotation.flags.remove(.readOnly)
                 }
-                annotationPreviewController.delete(for: annotation, parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
+                annotationPreviewController.async { [weak viewModel] controller in
+                    guard let viewModel else { return }
+                    controller.delete(for: annotation, parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
+                }
             }
             viewModel.state.document.remove(annotations: deletedPdfAnnotations, options: nil)
         }
@@ -2212,13 +2224,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         if !insertedPdfAnnotations.isEmpty {
             viewModel.state.document.add(annotations: insertedPdfAnnotations, options: nil)
 
-            for pdfAnnotation in insertedPdfAnnotations {
-                annotationPreviewController.store(
-                    for: pdfAnnotation,
-                    parentKey: viewModel.state.key,
-                    libraryId: viewModel.state.library.identifier,
-                    isDark: (viewModel.state.interfaceStyle == .dark)
-                )
+            annotationPreviewController.async { controller in
+                for pdfAnnotation in insertedPdfAnnotations {
+                    controller.store(for: pdfAnnotation, parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, isDark: (viewModel.state.interfaceStyle == .dark))
+                }
             }
         }
         observeDocument(in: viewModel)
@@ -2353,7 +2362,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         guard !changes.isEmpty else { return }
 
-        annotationPreviewController.store(for: pdfAnnotation, parentKey: parentKey, libraryId: libraryId, isDark: (interfaceStyle == .dark))
+        annotationPreviewController.async { controller in
+            controller.store(for: pdfAnnotation, parentKey: parentKey, libraryId: libraryId, isDark: (interfaceStyle == .dark))
+        }
 
         NotificationCenter.default.post(
             name: NSNotification.Name.PSPDFAnnotationChanged,

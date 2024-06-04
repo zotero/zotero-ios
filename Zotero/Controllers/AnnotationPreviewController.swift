@@ -45,10 +45,17 @@ final class AnnotationPreviewController: NSObject {
     init(previewSize: CGSize, fileStorage: FileStorage) {
         self.previewSize = previewSize
         self.fileStorage = fileStorage
-        self.subscribers = [:]
-        self.observable = PublishSubject()
-        self.queue = DispatchQueue(label: "org.zotero.AnnotationPreviewController.queue", qos: .userInitiated)
+        subscribers = [:]
+        observable = PublishSubject()
+        queue = DispatchQueue(label: "org.zotero.AnnotationPreviewController.queue", qos: .userInitiated)
         super.init()
+    }
+
+    func async(completion: @escaping (AnnotationPreviewController) -> Void) {
+        queue.async { [weak self] in
+            guard let self else { return }
+            completion(self)
+        }
     }
 }
 
@@ -69,11 +76,11 @@ extension AnnotationPreviewController {
     /// - returns: `Single` with rendered image.
     func render(document: Document, page: PageIndex, rect: CGRect, imageSize: CGSize, imageScale: CGFloat, key: String, parentKey: String, libraryId: LibraryIdentifier) -> Single<UIImage> {
         return Single.create { [weak self] subscriber -> Disposable in
-            guard let self = self else { return Disposables.create() }
+            guard let self else { return Disposables.create() }
 
             let subscriberKey = SubscriberKey(key: key, parentKey: parentKey, size: imageSize, scale: imageScale)
-            self.queue.async(flags: .barrier) {
-                self.subscribers[subscriberKey] = subscriber
+            queue.async(flags: .barrier) { [weak self] in
+                self?.subscribers[subscriberKey] = subscriber
             }
 
             enqueue(
@@ -126,17 +133,16 @@ extension AnnotationPreviewController {
         guard annotation.shouldRenderPreview && annotation.isZoteroAnnotation else { return }
 
         let key = annotation.previewId
-        self.queue.async(flags: .barrier) { [weak self] in
-            guard let self = self else { return }
-            try? self.fileStorage.remove(Files.annotationPreview(annotationKey: key, pdfKey: parentKey, libraryId: libraryId, isDark: true))
-            try? self.fileStorage.remove(Files.annotationPreview(annotationKey: key, pdfKey: parentKey, libraryId: libraryId, isDark: false))
+        queue.async(flags: .barrier) { [weak self] in
+            guard let self else { return }
+            try? fileStorage.remove(Files.annotationPreview(annotationKey: key, pdfKey: parentKey, libraryId: libraryId, isDark: true))
+            try? fileStorage.remove(Files.annotationPreview(annotationKey: key, pdfKey: parentKey, libraryId: libraryId, isDark: false))
         }
     }
 
     func deleteAll(parentKey: String, libraryId: LibraryIdentifier) {
-        self.queue.async(flags: .barrier) { [weak self] in
-            guard let self = self else { return }
-            try? self.fileStorage.remove(Files.annotationPreviews(for: parentKey, libraryId: libraryId))
+        queue.async(flags: .barrier) { [weak self] in
+            try? self?.fileStorage.remove(Files.annotationPreviews(for: parentKey, libraryId: libraryId))
         }
     }
 
@@ -147,7 +153,7 @@ extension AnnotationPreviewController {
     /// - parameter isDark: `true` if dark mode is on, `false` otherwise.
     /// - returns: `true` if preview is available, `false` otherwise.
     func hasPreview(for key: String, parentKey: String, libraryId: LibraryIdentifier, isDark: Bool) -> Bool {
-        return self.fileStorage.has(Files.annotationPreview(annotationKey: key, pdfKey: parentKey, libraryId: libraryId, isDark: isDark))
+        return fileStorage.has(Files.annotationPreview(annotationKey: key, pdfKey: parentKey, libraryId: libraryId, isDark: isDark))
     }
 
     /// Loads cached preview for given annotation.
@@ -157,13 +163,14 @@ extension AnnotationPreviewController {
     /// - parameter isDark: `true` if dark mode is on, `false` otherwise.
     /// - parameter completed: Completion handler which contains loaded preview or `nil` if loading wasn't successful.
     func preview(for key: String, parentKey: String, libraryId: LibraryIdentifier, isDark: Bool, completed: @escaping (UIImage?) -> Void) {
-        self.queue.async { [weak self] in
-            guard let self = self else { return }
+        queue.async { [weak self] in
+            guard let self else { return }
 
             do {
-                let data = try self.fileStorage.read(Files.annotationPreview(annotationKey: key, pdfKey: parentKey, libraryId: libraryId, isDark: isDark))
+                let data = try fileStorage.read(Files.annotationPreview(annotationKey: key, pdfKey: parentKey, libraryId: libraryId, isDark: isDark))
+                let image = UIImage(data: data)
                 DispatchQueue.main.async {
-                    completed(UIImage(data: data))
+                    completed(image)
                 }
             } catch {
                 DispatchQueue.main.async {
@@ -241,14 +248,14 @@ extension AnnotationPreviewController {
         case .success(let image):
             switch type {
             case .temporary(let subscriberKey):
-                self.perform(event: .success(image), subscriberKey: subscriberKey)
+                perform(event: .success(image), subscriberKey: subscriberKey)
 
             case .cachedOnly:
-                self.cache(image: image, key: key, pdfKey: parentKey, libraryId: libraryId, isDark: isDark)
+                cache(image: image, key: key, pdfKey: parentKey, libraryId: libraryId, isDark: isDark)
 
             case .cachedAndReported:
-                self.cache(image: image, key: key, pdfKey: parentKey, libraryId: libraryId, isDark: isDark)
-                self.observable.on(.next((key, parentKey, image)))
+                cache(image: image, key: key, pdfKey: parentKey, libraryId: libraryId, isDark: isDark)
+                observable.on(.next((key, parentKey, image)))
             }
 
         case .failure(let error):
@@ -257,7 +264,7 @@ extension AnnotationPreviewController {
             switch type {
             case .temporary(let subscriberKey):
                 // Temporary request always needs to return an error if image was not available
-                self.perform(event: .failure(error), subscriberKey: subscriberKey)
+                perform(event: .failure(error), subscriberKey: subscriberKey)
                 
             default:
                 break
@@ -266,8 +273,8 @@ extension AnnotationPreviewController {
     }
 
     private func perform(event: SingleEvent<UIImage>, subscriberKey: SubscriberKey) {
-        self.subscribers[subscriberKey]?(event)
-        self.subscribers[subscriberKey] = nil
+        subscribers[subscriberKey]?(event)
+        subscribers[subscriberKey] = nil
     }
 
     private func cache(image: UIImage, key: String, pdfKey: String, libraryId: LibraryIdentifier, isDark: Bool) {
@@ -277,7 +284,7 @@ extension AnnotationPreviewController {
         }
 
         do {
-            try self.fileStorage.write(data, to: Files.annotationPreview(annotationKey: key, pdfKey: pdfKey, libraryId: libraryId, isDark: isDark), options: .atomicWrite)
+            try fileStorage.write(data, to: Files.annotationPreview(annotationKey: key, pdfKey: pdfKey, libraryId: libraryId, isDark: isDark), options: .atomicWrite)
         } catch let error {
             DDLogError("AnnotationPreviewController: can't store preview - \(error)")
         }
