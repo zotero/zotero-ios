@@ -684,9 +684,13 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             switch oldest.0.type {
             case .ink:
                 try merge(inkAnnotations: toMerge, in: viewModel)
-            case .highlight: break
-                //            merge(highlightAnnotations: toMerge, in: viewModel)
-            default: break
+
+            case .highlight:
+                break
+//                merge(highlightAnnotations: toMerge, in: viewModel)
+
+            default:
+                break
             }
 
             update(viewModel: viewModel) { state in
@@ -700,113 +704,145 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 state.error = (error as? PDFReaderState.Error) ?? .unknown
             }
         }
-    }
 
-    typealias InkAnnotatationsData = (oldestAnnotation: PDFAnnotation, oldestDocumentAnnotation: PSPDFKit.InkAnnotation, lines: [[DrawingPoint]], lineWidth: CGFloat, tags: [Tag])
+        func sortedSyncableAnnotationsAndDocumentAnnotations(from selected: Set<PDFReaderState.AnnotationKey>, state: PDFReaderState) -> [(PDFAnnotation, PSPDFKit.Annotation)] {
+            var tuples: [(PDFAnnotation, PSPDFKit.Annotation)] = []
 
-    private func merge(inkAnnotations annotations: [(PDFAnnotation, PSPDFKit.Annotation)], in viewModel: ViewModel<PDFReaderActionHandler>) throws {
-        guard let (oldestAnnotation, oldestInkAnnotation, lines, lineWidth, tags) = collectInkAnnotationData(from: annotations, in: viewModel) else { return }
-
-        if AnnotationSplitter.splitPathsIfNeeded(paths: lines) != nil {
-            throw PDFReaderState.Error.mergeTooBig
-        }
-
-        let toDeleteDocumentAnnotations = annotations.dropFirst().map({ $0.1 })
-
-        // Update PDF document with merged annotations
-        viewModel.state.document.undoController.recordCommand(named: nil, in: { recorder in
-            recorder.record(changing: [oldestInkAnnotation]) {
-                oldestInkAnnotation.lines = lines
-                oldestInkAnnotation.lineWidth = lineWidth
-
-                NotificationCenter.default.post(
-                    name: NSNotification.Name.PSPDFAnnotationChanged,
-                    object: oldestInkAnnotation,
-                    userInfo: [PSPDFAnnotationChangedNotificationKeyPathKey: PdfAnnotationChanges.stringValues(from: [.lineWidth, .paths])]
-                )
-            }
-
-            recorder.record(removing: toDeleteDocumentAnnotations) {
-                viewModel.state.document.remove(annotations: toDeleteDocumentAnnotations)
-            }
-        })
-
-        // Update tags in merged annotation
-        set(tags: tags, key: oldestAnnotation.key, viewModel: viewModel)
-    }
-
-    private func collectInkAnnotationData(from annotations: [(PDFAnnotation, PSPDFKit.Annotation)], in viewModel: ViewModel<PDFReaderActionHandler>) -> InkAnnotatationsData? {
-        guard let (oldestAnnotation, oldestDocumentAnnotation) = annotations.first, let oldestInkAnnotation = oldestDocumentAnnotation as? PSPDFKit.InkAnnotation else { return nil }
-
-        var lines: [[DrawingPoint]] = oldestInkAnnotation.lines ?? []
-        var lineWidthData: [CGFloat: (Int, Date)] = [oldestInkAnnotation.lineWidth: (1, (oldestInkAnnotation.creationDate ?? Date(timeIntervalSince1970: 0)))]
-        // TODO: - enable comment merging when ink annotations support commenting
-//        var comment = oldestAnnotation.comment
-        var tags: [Tag] = oldestAnnotation.tags
-
-        for (annotation, documentAnnotation) in annotations.dropFirst() {
-            guard let inkAnnotation = documentAnnotation as? PSPDFKit.InkAnnotation else { continue }
-
-            if let _lines = inkAnnotation.lines {
-                lines.append(contentsOf: _lines)
-            }
-
-            if let (count, date) = lineWidthData[documentAnnotation.lineWidth] {
-                var newDate = date
-                if let annotationDate = documentAnnotation.creationDate, annotationDate.compare(date) == .orderedAscending {
-                    newDate = annotationDate
-                }
-                lineWidthData[documentAnnotation.lineWidth] = ((count + 1), newDate)
-            } else {
-                lineWidthData[documentAnnotation.lineWidth] = (1, (documentAnnotation.creationDate ?? Date(timeIntervalSince1970: 0)))
-            }
-
-//            comment += "\n\n" + annotation.comment
-
-            for tag in annotation.tags {
-                if !tags.contains(tag) {
-                    tags.append(tag)
+            for (page, annotations) in groupedAnnotationsByPage(from: selected, state: state) {
+                let documentAnnotations = state.document.annotations(at: UInt(page))
+                for annotation in annotations {
+                    guard let documentAnnotation = documentAnnotations.first(where: { $0.key == annotation.key }) else { continue }
+                    tuples.append((annotation, documentAnnotation))
                 }
             }
+
+            return tuples.sorted(by: { lTuple, rTuple in
+                return (lTuple.1.creationDate ?? Date()).compare(rTuple.1.creationDate ?? Date()) == .orderedAscending
+            })
+
+            func groupedAnnotationsByPage(from keys: Set<PDFReaderState.AnnotationKey>, state: PDFReaderState) -> [Int: [PDFAnnotation]] {
+                var groupedAnnotations: [Int: [PDFAnnotation]] = [:]
+                for key in keys {
+                    guard let annotation = state.annotation(for: key) else { continue }
+                    var annotations = groupedAnnotations[annotation.page, default: []]
+                    annotations.append(annotation)
+                    groupedAnnotations[annotation.page] = annotations
+                }
+                return groupedAnnotations
+            }
         }
 
-        return (oldestAnnotation, oldestInkAnnotation, lines, chooseMergedLineWidth(from: lineWidthData), tags)
-    }
+        func merge(inkAnnotations annotations: [(PDFAnnotation, PSPDFKit.Annotation)], in viewModel: ViewModel<PDFReaderActionHandler>) throws {
+            guard let (oldestAnnotation, oldestInkAnnotation, lines, lineWidth, tags) = collectInkAnnotationData(from: annotations, in: viewModel) else { return }
 
-    /// Choose line width based on 2 properties. 1. Choose line width which was used the most times. If multiple line widths were used the same amount of time, pick line width with oldest annotation.
-    /// - parameter lineWidthData: Line widths data collected from annotations. It contains count of usage and date of oldest annotation grouped by lineWidth.
-    /// - returns: Best line width based on above properties.
-    private func chooseMergedLineWidth(from lineWidthData: [CGFloat: (Int, Date)]) -> CGFloat {
-        if lineWidthData.isEmpty {
-            // Should never happen
-            return 1
-        }
-        if lineWidthData.keys.count == 1, let width = lineWidthData.keys.first {
-            return width
-        }
-
-        var data: [(CGFloat, Int, Date)] = []
-        for (key, value) in lineWidthData {
-            data.append((key, value.0, value.1))
-        }
-
-        data.sort { lData, rData in
-            if lData.1 != rData.1 {
-                // If counts differ, sort in descending order.
-                return lData.1 > rData.1
+            if AnnotationSplitter.splitPathsIfNeeded(paths: lines) != nil {
+                throw PDFReaderState.Error.mergeTooBig
             }
 
-            // Otherwise sort by date in ascending order.
+            let toDeleteDocumentAnnotations = annotations.dropFirst().map({ $0.1 })
 
-            if lData.2 == rData.2 {
-                // If dates are the same, just pick one
-                return true
+            // Update PDF document with merged annotations
+            viewModel.state.document.undoController.recordCommand(named: nil, in: { recorder in
+                recorder.record(changing: [oldestInkAnnotation]) {
+                    let changes: PdfAnnotationChanges
+                    oldestInkAnnotation.lines = lines
+                    if oldestInkAnnotation.lineWidth != lineWidth {
+                        changes = [.lineWidth, .paths]
+                        oldestInkAnnotation.lineWidth = lineWidth
+                    } else {
+                        changes = [.paths]
+                    }
+
+                    NotificationCenter.default.post(
+                        name: NSNotification.Name.PSPDFAnnotationChanged,
+                        object: oldestInkAnnotation,
+                        userInfo: [PSPDFAnnotationChangedNotificationKeyPathKey: PdfAnnotationChanges.stringValues(from: changes)]
+                    )
+                }
+
+                recorder.record(removing: toDeleteDocumentAnnotations) {
+                    viewModel.state.document.remove(annotations: toDeleteDocumentAnnotations)
+                }
+            })
+
+            // Update tags in merged annotation
+            set(tags: tags, key: oldestAnnotation.key, viewModel: viewModel)
+
+            typealias InkAnnotatationsData = (oldestAnnotation: PDFAnnotation, oldestDocumentAnnotation: PSPDFKit.InkAnnotation, lines: [[DrawingPoint]], lineWidth: CGFloat, tags: [Tag])
+
+            func collectInkAnnotationData(from annotations: [(PDFAnnotation, PSPDFKit.Annotation)], in viewModel: ViewModel<PDFReaderActionHandler>) -> InkAnnotatationsData? {
+                guard let (oldestAnnotation, oldestDocumentAnnotation) = annotations.first, let oldestInkAnnotation = oldestDocumentAnnotation as? PSPDFKit.InkAnnotation else { return nil }
+
+                var lines: [[DrawingPoint]] = oldestInkAnnotation.lines ?? []
+                var lineWidthData: [CGFloat: (Int, Date)] = [oldestInkAnnotation.lineWidth: (1, (oldestInkAnnotation.creationDate ?? Date(timeIntervalSince1970: 0)))]
+                // TODO: - enable comment merging when ink annotations support commenting
+//                var comment = oldestAnnotation.comment
+                var tags: [Tag] = oldestAnnotation.tags
+
+                for (annotation, documentAnnotation) in annotations.dropFirst() {
+                    guard let inkAnnotation = documentAnnotation as? PSPDFKit.InkAnnotation else { continue }
+
+                    lines += inkAnnotation.lines ?? []
+
+                    if let (count, date) = lineWidthData[documentAnnotation.lineWidth] {
+                        var newDate = date
+                        if let annotationDate = documentAnnotation.creationDate, annotationDate < date {
+                            newDate = annotationDate
+                        }
+                        lineWidthData[documentAnnotation.lineWidth] = ((count + 1), newDate)
+                    } else {
+                        lineWidthData[documentAnnotation.lineWidth] = (1, (documentAnnotation.creationDate ?? Date(timeIntervalSince1970: 0)))
+                    }
+
+//                    comment += "\n\n" + annotation.comment
+
+                    for tag in annotation.tags {
+                        if !tags.contains(tag) {
+                            tags.append(tag)
+                        }
+                    }
+                }
+
+                return (oldestAnnotation, oldestInkAnnotation, lines, chooseMergedLineWidth(from: lineWidthData), tags)
+
+                /// Choose line width based on 2 properties. First choose line width which was used the most times.
+                /// If multiple line widths were used the same amount of time, pick line width with oldest annotation.
+                /// - parameter lineWidthData: Line widths data collected from annotations. It contains count of usage and date of oldest annotation grouped by lineWidth.
+                /// - returns: Best line width based on above properties.
+                func chooseMergedLineWidth(from lineWidthData: [CGFloat: (Int, Date)]) -> CGFloat {
+                    if lineWidthData.isEmpty {
+                        // Should never happen
+                        return 1
+                    }
+                    if lineWidthData.keys.count == 1, let width = lineWidthData.keys.first {
+                        return width
+                    }
+
+                    var data: [(lineWidth: CGFloat, count: Int, oldestCreationDate: Date)] = []
+                    for (key, value) in lineWidthData {
+                        data.append((key, value.0, value.1))
+                    }
+
+                    data.sort { lData, rData in
+                        if lData.count != rData.count {
+                            // If counts differ, sort in descending order.
+                            return lData.count > rData.count
+                        }
+
+                        // Otherwise sort by date in ascending order.
+
+                        if lData.oldestCreationDate == rData.oldestCreationDate {
+                            // If dates are the same, just pick one
+                            return true
+                        }
+
+                        return lData.oldestCreationDate < rData.oldestCreationDate
+                    }
+
+                    return data[0].lineWidth
+                }
             }
-
-            return lData.2.compare(rData.2) == .orderedAscending
         }
-
-        return data[0].0
     }
 
 //    private func merge(highlightAnnotations annotations: [(Annotation, PSPDFKit.Annotation)], in viewModel: ViewModel<PDFReaderActionHandler>) {
@@ -880,37 +916,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 //            }
 //        }
 //    }
-
-    private func groupedAnnotationsByPage(from keys: Set<PDFReaderState.AnnotationKey>, state: PDFReaderState) -> [Int: [PDFAnnotation]] {
-        var groupedAnnotations: [Int: [PDFAnnotation]] = [:]
-        for key in keys {
-            guard let annotation = state.annotation(for: key) else { continue }
-
-            if var annotations = groupedAnnotations[annotation.page] {
-                annotations.append(annotation)
-                groupedAnnotations[annotation.page] = annotations
-            } else {
-                groupedAnnotations[annotation.page] = [annotation]
-            }
-        }
-        return groupedAnnotations
-    }
-
-    private func sortedSyncableAnnotationsAndDocumentAnnotations(from selected: Set<PDFReaderState.AnnotationKey>, state: PDFReaderState) -> [(PDFAnnotation, PSPDFKit.Annotation)] {
-        var tuples: [(PDFAnnotation, PSPDFKit.Annotation)] = []
-
-        for (page, annotations) in groupedAnnotationsByPage(from: selected, state: state) {
-            let documentAnnotations = state.document.annotations(at: UInt(page))
-            for annotation in annotations {
-                guard let documentAnnotation = documentAnnotations.first(where: { $0.key == annotation.key }) else { continue }
-                tuples.append((annotation, documentAnnotation))
-            }
-        }
-
-        return tuples.sorted(by: { lTuple, rTuple in
-            return (lTuple.1.creationDate ?? Date()).compare(rTuple.1.creationDate ?? Date()) == .orderedAscending
-        })
-    }
 
     private func set(filter: AnnotationsFilter?, in viewModel: ViewModel<PDFReaderActionHandler>) {
         guard filter != viewModel.state.filter else { return }
