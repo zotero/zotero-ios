@@ -208,7 +208,10 @@ extension AnnotationPreviewController {
         }
 
         let options = RenderOptions()
-        options.invertRenderColor = isDark
+        if isDark {
+            options.invertRenderColor = true
+            options.filters = [.colorCorrectInverted]
+        }
 
         let request = MutableRenderRequest(document: newDocument)
         request.pageIndex = pageIndex
