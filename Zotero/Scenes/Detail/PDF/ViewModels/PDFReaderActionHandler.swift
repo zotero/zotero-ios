@@ -1465,23 +1465,65 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                     keptAsIs.append(annotation)
                     continue
                 }
+                var workingAnnotation = annotation
 
-                let splitAnnotations = splitIfNeeded(annotation: annotation)
+                if let mergedHighlightAnnotation = mergeHighlightRectsIfNeeded(annotation: annotation) {
+                    DDLogInfo("PDFReaderActionHandler: did merge highlight annotation rects")
+                    toRemove.append(annotation)
+                    toAdd.append(mergedHighlightAnnotation)
+                    workingAnnotation = mergedHighlightAnnotation
+                }
+
+                let splitAnnotations = splitIfNeeded(annotation: workingAnnotation)
 
                 guard splitAnnotations.count > 1 else {
-                    keptAsIs.append(annotation)
+                    if workingAnnotation == annotation {
+                        keptAsIs.append(annotation)
+                    }
                     continue
                 }
                 DDLogInfo("PDFReaderActionHandler: did split annotations into \(splitAnnotations.count)")
-                toRemove.append(annotation)
+                if workingAnnotation == annotation {
+                    toRemove.append(annotation)
+                } else {
+                    toAdd.removeLast()
+                }
                 toAdd.append(contentsOf: splitAnnotations)
             }
 
             return (keptAsIs, toRemove, toAdd)
 
-            /// Splits annotation if it exceedes position limit. If it is within limit, it returs original annotation.
+            // TODO: Remove if issue is fixed in PSPDFKit
+            /// Merges highlight annotation rects that are in the same text line. If not a higlight annotation, or merges are not needed, it returns nil.
+            /// Issue appeared in PSPDFKit 13.5.0
             /// - parameter annotation: Annotation to split
-            /// - parameter user: User which created the annotation if it's new
+            func mergeHighlightRectsIfNeeded(annotation: PSPDFKit.Annotation) -> HighlightAnnotation? {
+                guard annotation is HighlightAnnotation, let rects = annotation.rects, rects.count > 1 else { return nil }
+                // Check if there are gaps for sequential highlight rects on the same line, and if so transform the annotation to eliminate them.
+                var mergedRects: [CGRect] = []
+                for rect in rects {
+                    guard let previousRect = mergedRects.last, rect.minY == previousRect.minY, rect.height == previousRect.height else {
+                        mergedRects.append(rect)
+                        continue
+                    }
+                    let mergedRect = CGRect(x: previousRect.minX, y: previousRect.minY, width: rect.minX + rect.width - previousRect.minX, height: previousRect.height)
+                    mergedRects.removeLast()
+                    mergedRects.append(mergedRect)
+                }
+                guard mergedRects.count < rects.count else { return nil }
+                let newAnnotation = HighlightAnnotation()
+                newAnnotation.rects = mergedRects
+                newAnnotation.boundingBox = AnnotationBoundingBoxCalculator.boundingBox(from: rects)
+                newAnnotation.alpha = annotation.alpha
+                newAnnotation.color = annotation.color
+                newAnnotation.blendMode = annotation.blendMode
+                newAnnotation.contents = annotation.contents
+                newAnnotation.pageIndex = annotation.pageIndex
+                return newAnnotation
+            }
+
+            /// Splits annotation if it exceedes position limit. If it is within limit, it returns original annotation.
+            /// - parameter annotation: Annotation to split
             /// - returns: Array with original annotation if limit was not exceeded. Otherwise array of new split annotations.
             func splitIfNeeded(annotation: PSPDFKit.Annotation) -> [PSPDFKit.Annotation] {
                 if let annotation = annotation as? HighlightAnnotation, let rects = annotation.rects, let splitRects = AnnotationSplitter.splitRectsIfNeeded(rects: rects) {
