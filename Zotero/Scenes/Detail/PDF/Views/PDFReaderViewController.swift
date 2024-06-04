@@ -179,6 +179,12 @@ class PDFReaderViewController: UIViewController {
             case #selector(search), #selector(performBackAction):
                 return true
 
+            case #selector(undo(_:)):
+                return canUndo
+
+            case #selector(redo(_:)):
+                return canRedo
+
             default:
                 break
             }
@@ -671,6 +677,14 @@ class PDFReaderViewController: UIViewController {
 
     @objc private func performBackAction() {
         documentController.performBackAction()
+    }
+
+    @objc private func undo(_ sender: Any?) {
+        performUndo()
+    }
+
+    @objc private func redo(_ sender: Any?) {
+        performRedo()
     }
 
     // MARK: - Setups
