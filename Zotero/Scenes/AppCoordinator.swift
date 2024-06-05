@@ -18,6 +18,7 @@ protocol AppDelegateCoordinatorDelegate: AnyObject {
     func showMainScreen(isLoggedIn: Bool, options: UIScene.ConnectionOptions, session: UISceneSession, animated: Bool)
     func didRotate(to size: CGSize)
     func show(customUrl: CustomURLController.Kind, animated: Bool)
+    func showMainScreenIfNeeded() -> Bool
 }
 
 protocol AppOnboardingCoordinatorDelegate: AnyObject {
@@ -398,6 +399,12 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
                 completion?()
             }
         }
+    }
+
+    func showMainScreenIfNeeded() -> Bool {
+        guard let window, let mainController = window.rootViewController as? MainViewController else { return false }
+        mainController.dismiss(animated: false)
+        return true
     }
 }
 
