@@ -18,7 +18,7 @@ protocol AppDelegateCoordinatorDelegate: AnyObject {
     func showMainScreen(isLoggedIn: Bool, options: UIScene.ConnectionOptions, session: UISceneSession, animated: Bool)
     func didRotate(to size: CGSize)
     func show(customUrl: CustomURLController.Kind, animated: Bool)
-    func showMainScreenIfNeeded() -> Bool
+    func showMainScreen(with libraryId: LibraryIdentifier, selectedCollection collectionId: CollectionIdentifier) -> Bool
 }
 
 protocol AppOnboardingCoordinatorDelegate: AnyObject {
@@ -127,8 +127,8 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
             conflictAlertQueueController = nil
             controllers.userControllers?.syncScheduler.syncController.set(coordinator: nil)
         } else {
-            let controller = MainViewController(controllers: controllers)
             (urlContext, data) = preprocess(connectionOptions: options, session: session)
+            let controller = MainViewController(controllers: controllers)
             viewController = controller
 
             conflictReceiverAlertController = ConflictReceiverAlertController(viewController: controller)
@@ -155,12 +155,14 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
         func preprocess(connectionOptions: UIScene.ConnectionOptions, session: UISceneSession) -> (UIOpenURLContext?, RestoredStateData?) {
             let urlContext = connectionOptions.urlContexts.first
             var userActivity: NSUserActivity?
+            var data: RestoredStateData?
             if connectionOptions.shortcutItem?.type == NSUserActivity.mainId {
                 userActivity = .mainActivity
+                data = .myLibrary
             } else {
                 userActivity = connectionOptions.userActivities.first ?? session.stateRestorationActivity
+                data = userActivity?.restoredStateData
             }
-            let data = userActivity?.restoredStateData
             if let data {
                 // If scene had state stored, check if defaults need to be updated first
                 DDLogInfo("AppCoordinator: Preprocessing restored state - \(data)")
@@ -189,7 +191,7 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
             }
 
             func showRestoredState(for data: RestoredStateData) {
-                DDLogInfo("AppCoordinator: show restored state - \(data.key); \(data.libraryId); \(data.collectionId)")
+                DDLogInfo("AppCoordinator: show restored state - \(data.key ?? "(nil)"); \(data.libraryId); \(data.collectionId)")
                 guard let mainController = window.rootViewController as? MainViewController else {
                     DDLogWarn("AppCoordinator: show restored state aborted - invalid root view controller")
                     return
@@ -200,37 +202,41 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
                 }
                 var collection: Collection
                 if let optionalCollection {
-                    DDLogInfo("AppCoordinator: show restored state using restored collection - \(url.relativePath)")
+                    DDLogInfo("AppCoordinator: show restored state using restored collection")
                     collection = optionalCollection
                     // No need to set selected collection identifier here, this happened already in show main screen / preprocess
                 } else {
-                    DDLogWarn("AppCoordinator: show restored state using all items collection - \(url.relativePath)")
+                    DDLogWarn("AppCoordinator: show restored state using all items collection")
                     // Collection is missing, show all items instead
                     collection = Collection(custom: .all)
                 }
                 mainController.showItems(for: collection, in: data.libraryId)
 
+                guard let key = data.key, let url, let parentKey else { return }
+                DDLogInfo("AppCoordinator: show restored state URL - \(url.relativePath)")
                 mainController.getDetailCoordinator { [weak self] coordinator in
                     guard let self else { return }
                     self.show(
                         viewControllerProvider: {
-                            coordinator.createPDFController(key: data.key, parentKey: parentKey, libraryId: data.libraryId, url: url)
+                            coordinator.createPDFController(key: key, parentKey: parentKey, libraryId: data.libraryId, url: url)
                         },
                         by: mainController,
                         in: window,
                         animated: false
                     )
                 }
-                
-                func loadRestoredStateData(forKey key: String, libraryId: LibraryIdentifier, collectionId: CollectionIdentifier) -> (URL, Collection?, String?)? {
+
+                func loadRestoredStateData(forKey key: String?, libraryId: LibraryIdentifier, collectionId: CollectionIdentifier) -> (URL?, Collection?, String?)? {
                     guard let dbStorage = self.controllers.userControllers?.dbStorage else { return nil }
-                    
+
                     var url: URL?
                     var collection: Collection?
                     var parentKey: String?
                     
                     do {
                         try dbStorage.perform(on: .main, with: { coordinator in
+                            collection = try coordinator.perform(request: ReadCollectionDbRequest(collectionId: collectionId, libraryId: libraryId))
+                            guard let key else { return }
                             let item = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
                             parentKey = item.parent?.key
                             
@@ -242,8 +248,7 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
                                 case .local, .localAndChangedRemotely:
                                     let file = Files.attachmentFile(in: libraryId, key: key, filename: filename, contentType: contentType)
                                     url = file.createUrl()
-                                    collection = try coordinator.perform(request: ReadCollectionDbRequest(collectionId: collectionId, libraryId: libraryId))
-                                    
+
                                 case .remote, .remoteMissing:
                                     break
                                 }
@@ -257,7 +262,6 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
                         return nil
                     }
                     
-                    guard let url  else { return nil }
                     return (url, collection, parentKey)
                 }
             }
@@ -401,9 +405,11 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
         }
     }
 
-    func showMainScreenIfNeeded() -> Bool {
+    func showMainScreen(with libraryId: LibraryIdentifier, selectedCollection collectionId: CollectionIdentifier) -> Bool {
         guard let window, let mainController = window.rootViewController as? MainViewController else { return false }
-        mainController.dismiss(animated: false)
+        mainController.dismiss(animated: false) {
+            mainController.masterCoordinator?.showCollections(for: libraryId, preselectedCollection: collectionId, animated: false)
+        }
         return true
     }
 }

@@ -9,9 +9,13 @@
 import Foundation
 
 struct RestoredStateData {
-    let key: String
+    let key: String?
     let libraryId: LibraryIdentifier
     let collectionId: CollectionIdentifier
+
+    static var myLibrary: Self = {
+        .init(key: nil, libraryId: .custom(.myLibrary), collectionId: .custom(.all))
+    }()
 }
 
 extension NSUserActivity {

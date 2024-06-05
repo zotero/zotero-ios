@@ -83,7 +83,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     func windowScene(_ windowScene: UIWindowScene, performActionFor shortcutItem: UIApplicationShortcutItem, completionHandler: @escaping (Bool) -> Void) {
         if shortcutItem.type == NSUserActivity.mainId {
-            completionHandler(coordinator.showMainScreenIfNeeded())
+            completionHandler(coordinator.showMainScreen(with: .custom(.myLibrary), selectedCollection: .custom(.all)))
         }
         completionHandler(false)
     }
