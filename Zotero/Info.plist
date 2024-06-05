@@ -88,6 +88,15 @@
 			</array>
 		</dict>
 	</dict>
+	<key>UIApplicationShortcutItems</key>
+	<array>
+		<dict>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>Reset open item</string>
+			<key>UIApplicationShortcutItemType</key>
+			<string>org.zotero.MainActivity</string>
+		</dict>
+	</array>
 	<key>UIBackgroundModes</key>
 	<array/>
 	<key>UILaunchStoryboardName</key>

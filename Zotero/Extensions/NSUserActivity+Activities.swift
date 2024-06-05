@@ -16,7 +16,7 @@ struct RestoredStateData {
 
 extension NSUserActivity {
     private static let pdfId = "org.zotero.PDFActivity"
-    private static let mainId = "org.zotero.MainActivity"
+    static let mainId = "org.zotero.MainActivity"
 
     static var mainActivity: NSUserActivity {
         return NSUserActivity(activityType: self.mainId)

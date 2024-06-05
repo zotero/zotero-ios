@@ -153,7 +153,12 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
 
         func preprocess(connectionOptions: UIScene.ConnectionOptions, session: UISceneSession) -> (UIOpenURLContext?, RestoredStateData?) {
             let urlContext = connectionOptions.urlContexts.first
-            let userActivity = connectionOptions.userActivities.first ?? session.stateRestorationActivity
+            var userActivity: NSUserActivity?
+            if connectionOptions.shortcutItem?.type == NSUserActivity.mainId {
+                userActivity = .mainActivity
+            } else {
+                userActivity = connectionOptions.userActivities.first ?? session.stateRestorationActivity
+            }
             let data = userActivity?.restoredStateData
             if let data {
                 // If scene had state stored, check if defaults need to be updated first
