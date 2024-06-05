@@ -92,7 +92,7 @@
 	<array>
 		<dict>
 			<key>UIApplicationShortcutItemTitle</key>
-			<string>Reset open item</string>
+			<string>my_library</string>
 			<key>UIApplicationShortcutItemType</key>
 			<string>org.zotero.MainActivity</string>
 		</dict>
