@@ -51,7 +51,9 @@ struct PDFThumbnailsState: ViewModelState {
     var changes: Changes
 
     init(key: String, libraryId: LibraryIdentifier, document: Document, selectedPageIndex: Int, isDark: Bool) {
-        self.cache = NSCache()
+        let cache = NSCache<NSNumber, UIImage>()
+        cache.totalCostLimit = 1024 * 1024 * 5 // Cache object limit - 5 MB
+        self.cache = cache
         self.thumbnailSize = CGSize(width: PDFThumbnailsLayout.cellImageHeight, height: PDFThumbnailsLayout.cellImageHeight)
         self.key = key
         self.libraryId = libraryId

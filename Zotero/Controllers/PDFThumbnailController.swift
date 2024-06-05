@@ -26,14 +26,17 @@ final class PDFThumbnailController: NSObject {
     }
 
     private let queue: DispatchQueue
+    private let scheduler: SerialDispatchQueueScheduler
     private unowned let fileStorage: FileStorage
 
     private var subscribers: [SubscriberKey: (SingleEvent<UIImage>) -> Void]
 
     init(fileStorage: FileStorage) {
+        let queue = DispatchQueue(label: "org.zotero.PdfThumbnailController.queue", qos: .userInitiated)
         self.fileStorage = fileStorage
-        self.subscribers = [:]
-        self.queue = DispatchQueue(label: "org.zotero.PdfThumbnailController.queue", qos: .userInitiated)
+        subscribers = [:]
+        self.queue = queue
+        scheduler = SerialDispatchQueueScheduler(queue: queue, internalSerialQueueName: "org.zotero.PdfThumbnailController.scheduler")
         super.init()
     }
 }
@@ -48,26 +51,26 @@ extension PDFThumbnailController {
         let observables = pages.map({
             cache(page: $0, key: key, libraryId: libraryId, document: document, imageSize: imageSize, isDark: isDark).flatMap({ _ in return Single.just(()) }).asObservable()
         })
-        return Observable.merge(observables)
+        return Observable.merge(observables).subscribe(on: scheduler)
     }
 
     func cache(page: UInt, key: String, libraryId: LibraryIdentifier, document: Document, imageSize: CGSize, isDark: Bool) -> Single<UIImage> {
         return Single.create { [weak self] subscriber -> Disposable in
             guard let self else { return Disposables.create() }
+            dispatchPrecondition(condition: .onQueue(queue))
             let subscriberKey = SubscriberKey(key: key, libraryId: libraryId, page: page, size: imageSize, isDark: isDark)
-            self.queue.async(flags: .barrier) { [weak self] in
-                self?.subscribers[subscriberKey] = subscriber
-            }
-            self.enqueue(subscriberKey: subscriberKey, document: document, imageSize: imageSize)
+            subscribers[subscriberKey] = subscriber
+            enqueue(subscriberKey: subscriberKey, document: document, imageSize: imageSize)
             return Disposables.create()
         }
+        .subscribe(on: scheduler)
     }
 
     /// Deletes cached thumbnails for given PDF document.
     /// - parameter key: Attachment item key.
     /// - parameter libraryId: Library identifier of item.
     func deleteAll(forKey key: String, libraryId: LibraryIdentifier) {
-        self.queue.async(flags: .barrier) { [weak self] in
+        queue.async { [weak self] in
             try? self?.fileStorage.remove(Files.pageThumbnails(for: key, libraryId: libraryId))
         }
     }
@@ -142,8 +145,8 @@ extension PDFThumbnailController {
         }
 
         func perform(event: SingleEvent<UIImage>, subscriberKey: SubscriberKey) {
-            self.subscribers[subscriberKey]?(event)
-            self.subscribers[subscriberKey] = nil
+            subscribers[subscriberKey]?(event)
+            subscribers[subscriberKey] = nil
         }
 
         func cache(image: UIImage, page: UInt, key: String, libraryId: LibraryIdentifier, isDark: Bool) {
@@ -152,7 +155,7 @@ extension PDFThumbnailController {
                 return
             }
             do {
-                try self.fileStorage.write(data, to: Files.pageThumbnail(pageIndex: page, key: key, libraryId: libraryId, isDark: isDark), options: .atomicWrite)
+                try fileStorage.write(data, to: Files.pageThumbnail(pageIndex: page, key: key, libraryId: libraryId, isDark: isDark), options: .atomicWrite)
             } catch let error {
                 DDLogError("PdfThumbnailController: can't store preview - \(error)")
             }

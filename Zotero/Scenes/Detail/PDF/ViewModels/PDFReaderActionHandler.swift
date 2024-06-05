@@ -1699,8 +1699,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 throw PDFReaderState.Error.documentEmpty
             }
 
-            let start = CFAbsoluteTimeGetCurrent()
-
             let key = viewModel.state.key
             let (item, liveAnnotations, storedPage) = try loadItemAnnotationsAndPage(for: key, libraryId: viewModel.state.library.identifier)
 
@@ -1734,9 +1732,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 }
             }
             let (page, selectedData) = preselectedData(databaseAnnotations: databaseAnnotations, storedPage: storedPage, boundingBoxConverter: boundingBoxConverter, in: viewModel)
-
-            let end = CFAbsoluteTimeGetCurrent()
-            DDLogInfo("TTL: \(end - start)")
 
             update(viewModel: viewModel) { state in
                 state.library = library
