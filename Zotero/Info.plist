@@ -91,6 +91,8 @@
 	<key>UIApplicationShortcutItems</key>
 	<array>
 		<dict>
+			<key>UIApplicationShortcutItemIconFile</key>
+			<string>Cells/document</string>
 			<key>UIApplicationShortcutItemTitle</key>
 			<string>my_library</string>
 			<key>UIApplicationShortcutItemType</key>
