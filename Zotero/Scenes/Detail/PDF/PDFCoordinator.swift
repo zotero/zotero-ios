@@ -451,8 +451,11 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
         scale: CGFloat,
         title: String
     ) -> UIDeferredMenuElement {
-        UIDeferredMenuElement { [weak self, weak boundingBoxConverter] elementProvider in
-            guard let self, let boundingBoxConverter else {
+        let document = state.document
+        let key = state.key
+        let library = state.library
+        return UIDeferredMenuElement { [weak self, weak boundingBoxConverter, weak document] elementProvider in
+            guard let self, let boundingBoxConverter, let document else {
                 elementProvider([])
                 return
             }
@@ -463,14 +466,14 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
             size.width *= scale
             size.height *= scale
             annotationPreviewController.render(
-                document: state.document,
+                document: document,
                 page: pageIndex,
                 rect: rect,
                 imageSize: size,
                 imageScale: 1.0,
                 key: annotation.key,
-                parentKey: state.key,
-                libraryId: state.library.id
+                parentKey: key,
+                libraryId: library.id
             )
             .observe(on: MainScheduler.instance)
             .subscribe { [weak self] image in
