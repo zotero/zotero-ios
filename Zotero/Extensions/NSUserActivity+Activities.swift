@@ -9,14 +9,18 @@
 import Foundation
 
 struct RestoredStateData {
-    let key: String
+    let key: String?
     let libraryId: LibraryIdentifier
     let collectionId: CollectionIdentifier
+
+    static var myLibrary: Self = {
+        .init(key: nil, libraryId: .custom(.myLibrary), collectionId: .custom(.all))
+    }()
 }
 
 extension NSUserActivity {
     private static let pdfId = "org.zotero.PDFActivity"
-    private static let mainId = "org.zotero.MainActivity"
+    static let mainId = "org.zotero.MainActivity"
 
     static var mainActivity: NSUserActivity {
         return NSUserActivity(activityType: self.mainId)

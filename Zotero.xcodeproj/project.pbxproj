@@ -11,6 +11,7 @@
 		61391B802B3C6F22003B314A /* CopyBibliographyState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61391B7F2B3C6F22003B314A /* CopyBibliographyState.swift */; };
 		61391B832B3C6F83003B314A /* CopyBibliographyActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61391B822B3C6F83003B314A /* CopyBibliographyActionHandler.swift */; };
 		61391B862B3C6FF4003B314A /* CopyBibliographyViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61391B852B3C6FF4003B314A /* CopyBibliographyViewController.swift */; };
+		613F32792C1086960088EF70 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 613F32772C1086950088EF70 /* InfoPlist.strings */; };
 		6144B5D42A4ADCDE00914B3C /* CreatorSummaryFormatterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F9FA223743C36004ED34C /* CreatorSummaryFormatterSpec.swift */; };
 		6144B5D52A4ADD3C00914B3C /* DateParserSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32A3C79247FFF14009E2C5D /* DateParserSpec.swift */; };
 		6144B5D62A4ADD7E00914B3C /* ItemResponseSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EDEC250242DB00D8BC1E /* ItemResponseSpec.swift */; };
@@ -1271,6 +1272,7 @@
 		61391B7F2B3C6F22003B314A /* CopyBibliographyState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CopyBibliographyState.swift; sourceTree = "<group>"; };
 		61391B822B3C6F83003B314A /* CopyBibliographyActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CopyBibliographyActionHandler.swift; sourceTree = "<group>"; };
 		61391B852B3C6FF4003B314A /* CopyBibliographyViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CopyBibliographyViewController.swift; sourceTree = "<group>"; };
+		613F32782C1086950088EF70 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		614D65812A79C9AC007CF449 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = en; path = en.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
 		614D65842A7BCC22007CF449 /* ci_post_clone.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ci_post_clone.sh; sourceTree = "<group>"; };
 		61639F842AE03B8500026003 /* InstantPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantPresenter.swift; sourceTree = "<group>"; };
@@ -2249,6 +2251,7 @@
 				B305643323FC051E003304F2 /* Assets.xcassets */,
 				B30B550224B85A3A00F94B59 /* Colors.xcassets */,
 				B30B550424B85A6200F94B59 /* Images.xcassets */,
+				613F32772C1086950088EF70 /* InfoPlist.strings */,
 				B337A5AA244F1DEB00AFD13D /* Localizable.strings */,
 				614D65802A79C9AC007CF449 /* Localizable.stringsdict */,
 				B3CED4C52BC9212600B88FB0 /* note.html */,
@@ -4419,6 +4422,7 @@
 				B3593F22241A61C700760E20 /* ItemDetailAddContentView.xib in Resources */,
 				B3593F21241A61C700760E20 /* ItemDetailAttachmentContentView.xib in Resources */,
 				B3ADAE3F28339F2700D46271 /* translation in Resources */,
+				613F32792C1086960088EF70 /* InfoPlist.strings in Resources */,
 				B361820324C9A7C000B30D56 /* OnboardingViewController.xib in Resources */,
 				B361820424C9A7C000B30D56 /* OnboardingPageView.xib in Resources */,
 				B3F0C3FA250A1BD8002D557A /* LibrariesViewController.xib in Resources */,
@@ -5793,6 +5797,14 @@
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
+		613F32772C1086950088EF70 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				613F32782C1086950088EF70 /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
 		614D65802A79C9AC007CF449 /* Localizable.stringsdict */ = {
 			isa = PBXVariantGroup;
 			children = (
