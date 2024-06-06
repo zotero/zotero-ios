@@ -44,9 +44,9 @@ class PDFSidebarViewController: UIViewController {
     private let disposeBag: DisposeBag
 
     private weak var picker: UISegmentedControl!
-    private weak var thumbnailsController: PDFThumbnailsViewController!
-    private weak var annotationsController: PDFAnnotationsViewController!
-    private weak var outlineController: TableOfContentsViewController!
+    private weak var controllerContainer: UIView?
+    private weak var currentController: UIViewController?
+    private var controllerDisposeBag: DisposeBag?
     weak var parentDelegate: (PDFReaderContainerDelegate & SidebarDelegate & AnnotationsDelegate)?
     weak var coordinatorDelegate: PdfAnnotationsCoordinatorDelegate?
     weak var boundingBoxConverter: AnnotationBoundingBoxConverter?
@@ -64,10 +64,10 @@ class PDFSidebarViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        view.isHidden = true
         view.backgroundColor = .systemGray6
         definesPresentationContext = true
 
-        setupControllers()
         setupViews()
         select(tab: .annotations)
     }
@@ -77,7 +77,6 @@ class PDFSidebarViewController: UIViewController {
             children.forEach { $0.viewIsAppearing(animated) }
         }
         super.viewIsAppearing(animated)
-        thumbnailsController.set(visiblePage: viewModel.state.visiblePage)
     }
 
     private func select(tab: Tab) {
@@ -88,18 +87,104 @@ class PDFSidebarViewController: UIViewController {
 
     private func show(tab: Tab) {
         view.endEditing(true)
-        annotationsController.view.isHidden = tab != .annotations
-        outlineController.view.isHidden = tab != .outline
-        thumbnailsController.view.isHidden = tab != .thumbnails
+
+        if let controller = currentController {
+            controllerDisposeBag = nil
+            controller.willMove(toParent: nil)
+            controller.view.removeFromSuperview()
+            controller.removeFromParent()
+            controller.didMove(toParent: nil)
+        }
+
+        let controller: UIViewController
+        switch tab {
+        case .annotations:
+            controller = createAnnotationsController()
+
+        case .outline:
+            controller = createToCController()
+
+        case .thumbnails:
+            controller = createThumbnailsController()
+        }
+
+        controller.view.translatesAutoresizingMaskIntoConstraints = false
+        controller.view.setContentHuggingPriority(.defaultLow, for: .vertical)
+        controller.willMove(toParent: self)
+        addChild(controller)
+        view.addSubview(controller.view)
+        controller.didMove(toParent: self)
+        currentController = controller
+
+        guard let container = controllerContainer else { return }
+
+        NSLayoutConstraint.activate([
+            container.topAnchor.constraint(equalTo: controller.view.topAnchor),
+            container.bottomAnchor.constraint(equalTo: controller.view.bottomAnchor),
+            container.leadingAnchor.constraint(equalTo: controller.view.leadingAnchor),
+            container.trailingAnchor.constraint(equalTo: controller.view.trailingAnchor)
+        ])
+
+        func createAnnotationsController() -> PDFAnnotationsViewController {
+            let annotationsController = PDFAnnotationsViewController(viewModel: viewModel)
+            annotationsController.parentDelegate = parentDelegate
+            annotationsController.coordinatorDelegate = coordinatorDelegate
+            annotationsController.boundingBoxConverter = boundingBoxConverter
+            return annotationsController
+        }
+
+        func createToCController() -> TableOfContentsViewController {
+            let tocState = TableOfContentsState(document: viewModel.state.document)
+            return TableOfContentsViewController(viewModel: ViewModel(initialState: tocState, handler: TableOfContentsActionHandler()), selectionAction: { [weak self] page in
+                self?.parentDelegate?.tableOfContentsSelected(page: page)
+            })
+        }
+
+        func createThumbnailsController() -> PDFThumbnailsViewController {
+            let thumbnailsState = PDFThumbnailsState(
+                key: viewModel.state.key,
+                libraryId: viewModel.state.library.identifier,
+                document: viewModel.state.document,
+                selectedPageIndex: viewModel.state.visiblePage,
+                isDark: viewModel.state.interfaceStyle == .dark
+            )
+            let thumbnailsViewModel = ViewModel(initialState: thumbnailsState, handler: PDFThumbnailsActionHandler(thumbnailController: viewModel.handler.pdfThumbnailController))
+            let thumbnailsController = PDFThumbnailsViewController(viewModel: thumbnailsViewModel)
+            let disposeBag = DisposeBag()
+            controllerDisposeBag = disposeBag
+
+            viewModel
+                .stateObservable
+                .subscribe(onNext: { [weak thumbnailsViewModel] state in
+                    guard let thumbnailsViewModel else { return }
+                    if state.changes.contains(.visiblePageFromDocument) {
+                        thumbnailsViewModel.process(action: .setSelectedPage(pageIndex: state.visiblePage, type: .fromDocument))
+                    }
+                    if state.changes.contains(.annotations) {
+                        thumbnailsViewModel.process(action: .reloadThumbnails)
+                    }
+                })
+                .disposed(by: disposeBag)
+
+            thumbnailsViewModel
+                .stateObservable
+                .subscribe(with: viewModel, onNext: { viewModel, state in
+                    guard state.changes.contains(.selection) else { return }
+                    viewModel.process(action: .setVisiblePage(page: state.selectedPageIndex, userActionFromDocument: false, fromThumbnailList: true))
+                })
+                .disposed(by: disposeBag)
+
+            return thumbnailsController
+        }
     }
 
     private func setupViews() {
         let picker = UISegmentedControl(items: Tab.sortedTabs.map({ $0.title }))
         picker.translatesAutoresizingMaskIntoConstraints = false
 
-        picker.rx.controlEvent(.valueChanged).subscribe(with: self, onNext: { `self`, _ in
+        picker.rx.controlEvent(.valueChanged).subscribe(onNext: { [weak self] _ in
             let tab = Tab.sortedTabs[picker.selectedSegmentIndex]
-            self.show(tab: tab)
+            self?.show(tab: tab)
         })
         .disposed(by: disposeBag)
         view.addSubview(picker)
@@ -109,19 +194,10 @@ class PDFSidebarViewController: UIViewController {
         container.clipsToBounds = true
         container.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(container)
-
-        annotationsController.view.translatesAutoresizingMaskIntoConstraints = false
-        container.addSubview(annotationsController.view)
-        outlineController.view.translatesAutoresizingMaskIntoConstraints = false
-        container.addSubview(outlineController.view)
-        thumbnailsController.view.translatesAutoresizingMaskIntoConstraints = false
-        container.addSubview(thumbnailsController.view)
+        controllerContainer = container
 
         picker.setContentHuggingPriority(.defaultHigh, for: .vertical)
         container.setContentHuggingPriority(.defaultLow, for: .vertical)
-        annotationsController.view.setContentHuggingPriority(.defaultLow, for: .vertical)
-        outlineController.view.setContentHuggingPriority(.defaultLow, for: .vertical)
-        thumbnailsController.view.setContentHuggingPriority(.defaultLow, for: .vertical)
 
         NSLayoutConstraint.activate([
             picker.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
@@ -130,74 +206,7 @@ class PDFSidebarViewController: UIViewController {
             view.trailingAnchor.constraint(equalTo: picker.trailingAnchor, constant: 15),
             view.bottomAnchor.constraint(equalTo: container.bottomAnchor),
             view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            container.topAnchor.constraint(equalTo: thumbnailsController.view.topAnchor),
-            container.bottomAnchor.constraint(equalTo: thumbnailsController.view.bottomAnchor),
-            container.leadingAnchor.constraint(equalTo: thumbnailsController.view.leadingAnchor),
-            container.trailingAnchor.constraint(equalTo: thumbnailsController.view.trailingAnchor),
-            container.topAnchor.constraint(equalTo: annotationsController.view.topAnchor),
-            container.bottomAnchor.constraint(equalTo: annotationsController.view.bottomAnchor),
-            container.leadingAnchor.constraint(equalTo: annotationsController.view.leadingAnchor),
-            container.trailingAnchor.constraint(equalTo: annotationsController.view.trailingAnchor),
-            container.topAnchor.constraint(equalTo: outlineController.view.topAnchor),
-            container.bottomAnchor.constraint(equalTo: outlineController.view.bottomAnchor),
-            container.leadingAnchor.constraint(equalTo: outlineController.view.leadingAnchor),
-            container.trailingAnchor.constraint(equalTo: outlineController.view.trailingAnchor)
+            view.trailingAnchor.constraint(equalTo: container.trailingAnchor)
         ])
-    }
-
-    private func setupControllers() {
-        let annotationsController = PDFAnnotationsViewController(viewModel: viewModel)
-        annotationsController.parentDelegate = parentDelegate
-        annotationsController.coordinatorDelegate = coordinatorDelegate
-        annotationsController.boundingBoxConverter = boundingBoxConverter
-        add(childController: annotationsController)
-        self.annotationsController = annotationsController
-
-        let tocState = TableOfContentsState(document: viewModel.state.document)
-        let outlineController = TableOfContentsViewController(viewModel: ViewModel(initialState: tocState, handler: TableOfContentsActionHandler()), selectionAction: { [weak self] page in
-            self?.parentDelegate?.tableOfContentsSelected(page: page)
-        })
-        add(childController: outlineController)
-        self.outlineController = outlineController
-
-        let thumbnailsState = PDFThumbnailsState(
-            key: viewModel.state.key,
-            libraryId: viewModel.state.library.identifier,
-            document: viewModel.state.document,
-            selectedPageIndex: viewModel.state.visiblePage,
-            isDark: viewModel.state.interfaceStyle == .dark
-        )
-        let thumbnailsViewModel = ViewModel(initialState: thumbnailsState, handler: PDFThumbnailsActionHandler(thumbnailController: viewModel.handler.pdfThumbnailController))
-        let thumbnailsController = PDFThumbnailsViewController(viewModel: thumbnailsViewModel)
-        add(childController: thumbnailsController)
-        self.thumbnailsController = thumbnailsController
-
-        viewModel
-            .stateObservable
-            .subscribe(onNext: { [weak thumbnailsViewModel] state in
-                guard let thumbnailsViewModel else { return }
-                if state.changes.contains(.visiblePageFromDocument) {
-                    thumbnailsViewModel.process(action: .setSelectedPage(pageIndex: state.visiblePage, type: .fromDocument))
-                }
-                if state.changes.contains(.annotations) {
-                    thumbnailsViewModel.process(action: .reloadThumbnails)
-                }
-            })
-            .disposed(by: disposeBag)
-
-        thumbnailsViewModel
-            .stateObservable
-            .subscribe(with: viewModel, onNext: { viewModel, state in
-                guard state.changes.contains(.selection) else { return }
-                viewModel.process(action: .setVisiblePage(page: state.selectedPageIndex, userActionFromDocument: false, fromThumbnailList: true))
-            })
-            .disposed(by: disposeBag)
-    }
-
-    private func add(childController controller: UIViewController) {
-        controller.willMove(toParent: self)
-        addChild(controller)
-        controller.didMove(toParent: self)
     }
 }

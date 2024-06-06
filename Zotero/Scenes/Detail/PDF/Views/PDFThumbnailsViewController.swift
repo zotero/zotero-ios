@@ -77,6 +77,10 @@ class PDFThumbnailsViewController: UICollectionViewController {
         viewModel.process(action: .loadPages)
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+    }
+
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
         guard traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) else { return }
@@ -92,9 +96,11 @@ class PDFThumbnailsViewController: UICollectionViewController {
             var snapshot = NSDiffableDataSourceSnapshot<Int, PDFThumbnailsState.Page>()
             snapshot.appendSections([0])
             snapshot.appendItems(state.pages)
-            dataSource.apply(snapshot) { [weak self] in
-                guard let self else { return }
-                let indexPath = IndexPath(row: self.viewModel.state.selectedPageIndex, section: 0)
+            dataSource.apply(snapshot, animatingDifferences: false)
+
+            let indexPath = IndexPath(row: viewModel.state.selectedPageIndex, section: 0)
+            // Without .main.async the collection view cell is not actually selected, the collection view only scrolls to correct position. It doesn't help to have it in completion handler.
+            DispatchQueue.main.async {
                 self.collectionView.selectItem(at: indexPath, animated: false, scrollPosition: .centeredVertically)
             }
         }
