@@ -1632,9 +1632,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             let key = viewModel.state.key
             let (item, liveAnnotations, storedPage) = try loadItemAnnotationsAndPage(for: key, libraryId: viewModel.state.library.identifier)
 
-            if checkWhetherMd5Changed(forItem: item, andUpdateViewModel: viewModel, handler: self) {
-                return
-            }
+            // TODO: Restore when edge-cases that change the local file unexpectedly are resolved.
+//            if checkWhetherMd5Changed(forItem: item, andUpdateViewModel: viewModel, handler: self) {
+//                return
+//            }
 
             let (library, libraryToken) = try viewModel.state.library.identifier.observe(in: dbStorage, changes: { [weak self, weak viewModel] library in
                 guard let self, let viewModel else { return }
