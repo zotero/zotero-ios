@@ -44,7 +44,7 @@ class PDFSidebarViewController: UIViewController {
     private let disposeBag: DisposeBag
 
     private weak var picker: UISegmentedControl!
-    private weak var controllerContainer: UIView?
+    private weak var controllerContainer: UIView!
     private weak var currentController: UIViewController?
     private var controllerDisposeBag: DisposeBag?
     weak var parentDelegate: (PDFReaderContainerDelegate & SidebarDelegate & AnnotationsDelegate)?
@@ -116,13 +116,11 @@ class PDFSidebarViewController: UIViewController {
         controller.didMove(toParent: self)
         currentController = controller
 
-        guard let container = controllerContainer else { return }
-
         NSLayoutConstraint.activate([
-            container.topAnchor.constraint(equalTo: controller.view.topAnchor),
-            container.bottomAnchor.constraint(equalTo: controller.view.bottomAnchor),
-            container.leadingAnchor.constraint(equalTo: controller.view.leadingAnchor),
-            container.trailingAnchor.constraint(equalTo: controller.view.trailingAnchor)
+            controllerContainer.topAnchor.constraint(equalTo: controller.view.topAnchor),
+            controllerContainer.bottomAnchor.constraint(equalTo: controller.view.bottomAnchor),
+            controllerContainer.leadingAnchor.constraint(equalTo: controller.view.leadingAnchor),
+            controllerContainer.trailingAnchor.constraint(equalTo: controller.view.trailingAnchor)
         ])
 
         func createAnnotationsController() -> PDFAnnotationsViewController {
