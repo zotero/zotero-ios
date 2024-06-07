@@ -14,6 +14,61 @@ import RxSwift
 typealias AnnotationPreviewUpdate = (annotationKey: String, pdfKey: String, image: UIImage)
 
 final class AnnotationPreviewController: NSObject {
+    fileprivate struct EnqueuedData {
+        let key: String
+        let parentKey: String
+        let libraryId: LibraryIdentifier
+        let document: Document
+        let pageIndex: PageIndex
+        let rect: CGRect
+        let imageSize: CGSize
+        let imageScale: CGFloat
+        let includeAnnotation: Bool
+        let isDark: Bool
+        let type: PreviewType
+
+        init(
+            document: Document,
+            page: PageIndex,
+            rect: CGRect,
+            imageSize: CGSize,
+            imageScale: CGFloat,
+            key: String,
+            parentKey: String,
+            libraryId: LibraryIdentifier,
+            includeAnnotation: Bool = false,
+            isDark: Bool = false,
+            type: PreviewType
+        ) {
+            self.key = key
+            self.parentKey = parentKey
+            self.libraryId = libraryId
+            self.document = document
+            pageIndex = page
+            self.rect = rect
+            self.imageSize = imageSize
+            self.imageScale = imageScale
+            self.includeAnnotation = includeAnnotation
+            self.isDark = isDark
+            self.type = type
+        }
+
+        init?(annotation: PSPDFKit.Annotation, parentKey: String, libraryId: LibraryIdentifier, imageSize: CGSize, imageScale: CGFloat, isDark: Bool, type: PreviewType) {
+            guard annotation.shouldRenderPreview && annotation.isZoteroAnnotation, let document = annotation.document else { return nil }
+            key = annotation.previewId
+            self.parentKey = parentKey
+            self.libraryId = libraryId
+            self.document = document
+            pageIndex = annotation.pageIndex
+            rect = annotation.previewBoundingBox
+            self.imageSize = imageSize
+            self.imageScale = imageScale
+            includeAnnotation = annotation is PSPDFKit.InkAnnotation || annotation is PSPDFKit.FreeTextAnnotation
+            self.isDark = isDark
+            self.type = type
+        }
+    }
+
     enum Error: Swift.Error {
         case imageNotAvailable
     }
@@ -38,16 +93,19 @@ final class AnnotationPreviewController: NSObject {
     let observable: PublishSubject<AnnotationPreviewUpdate>
     private let previewSize: CGSize
     private let queue: DispatchQueue
+    private let scheduler: SerialDispatchQueueScheduler
     private unowned let fileStorage: FileStorage
 
     private var subscribers: [SubscriberKey: (SingleEvent<UIImage>) -> Void]
 
     init(previewSize: CGSize, fileStorage: FileStorage) {
+        let queue = DispatchQueue(label: "org.zotero.AnnotationPreviewController.queue", qos: .userInitiated)
         self.previewSize = previewSize
         self.fileStorage = fileStorage
-        self.subscribers = [:]
-        self.observable = PublishSubject()
-        self.queue = DispatchQueue(label: "org.zotero.AnnotationPreviewController.queue", qos: .userInitiated)
+        self.queue = queue
+        scheduler = SerialDispatchQueueScheduler(queue: queue, internalSerialQueueName: "org.zotero.AnnotationPreviewController.scheduler")
+        subscribers = [:]
+        observable = PublishSubject()
         super.init()
     }
 }
@@ -69,27 +127,27 @@ extension AnnotationPreviewController {
     /// - returns: `Single` with rendered image.
     func render(document: Document, page: PageIndex, rect: CGRect, imageSize: CGSize, imageScale: CGFloat, key: String, parentKey: String, libraryId: LibraryIdentifier) -> Single<UIImage> {
         return Single.create { [weak self] subscriber -> Disposable in
-            guard let self = self else { return Disposables.create() }
+            guard let self else { return Disposables.create() }
 
             let subscriberKey = SubscriberKey(key: key, parentKey: parentKey, size: imageSize, scale: imageScale)
-            self.queue.async(flags: .barrier) {
-                self.subscribers[subscriberKey] = subscriber
-            }
-
-            enqueue(
-                key: key,
-                parentKey: parentKey,
-                libraryId: libraryId,
-                document: document,
-                pageIndex: page,
-                rect: rect,
-                imageSize: imageSize,
-                imageScale: imageScale,
-                type: .temporary(subscriberKey: subscriberKey)
+            subscribers[subscriberKey] = subscriber
+            enqueue(data:
+                .init(
+                    document: document,
+                    page: page,
+                    rect: rect,
+                    imageSize: imageSize,
+                    imageScale: imageScale,
+                    key: key,
+                    parentKey: parentKey,
+                    libraryId: libraryId,
+                    type: .temporary(subscriberKey: subscriberKey)
+                )
             )
 
             return Disposables.create()
         }
+        .subscribe(on: scheduler)
     }
 
     /// Stores preview for given annotation.
@@ -98,24 +156,25 @@ extension AnnotationPreviewController {
     /// - parameter libraryId: Library identifier of item.
     /// - parameter isDark: `true` if dark mode is on, `false` otherwise.
     func store(for annotation: PSPDFKit.Annotation, parentKey: String, libraryId: LibraryIdentifier, isDark: Bool) {
-        guard annotation.shouldRenderPreview && annotation.isZoteroAnnotation, let document = annotation.document else { return }
+        queue.async { [weak self] in
+            guard
+                let self,
+                let data = EnqueuedData(annotation: annotation, parentKey: parentKey, libraryId: libraryId, imageSize: previewSize, imageScale: 0, isDark: isDark, type: .cachedAndReported)
+            else { return }
+            enqueue(data: data)
+        }
+    }
 
-        // Cache and report original color
-        let rect = annotation.previewBoundingBox
-        let includeAnnotation = annotation is PSPDFKit.InkAnnotation || annotation is PSPDFKit.FreeTextAnnotation
-        enqueue(
-            key: annotation.previewId,
-            parentKey: parentKey,
-            libraryId: libraryId,
-            document: document,
-            pageIndex: annotation.pageIndex,
-            rect: rect,
-            imageSize: previewSize,
-            imageScale: 0.0,
-            includeAnnotation: includeAnnotation,
-            isDark: isDark,
-            type: .cachedAndReported
-        )
+    func store(annotations: [PSPDFKit.Annotation], parentKey: String, libraryId: LibraryIdentifier, isDark: Bool) {
+        queue.async { [weak self] in
+            guard let self else { return }
+            for annotation in annotations {
+                guard
+                    let data = EnqueuedData(annotation: annotation, parentKey: parentKey, libraryId: libraryId, imageSize: previewSize, imageScale: 0, isDark: isDark, type: .cachedOnly)
+                else { continue }
+                enqueue(data: data)
+            }
+        }
     }
 
     /// Deletes cached preview for given annotation.
@@ -123,20 +182,26 @@ extension AnnotationPreviewController {
     /// - parameter parentKey: Key of PDF item.
     /// - parameter libraryId: Library identifier of item.
     func delete(for annotation: PSPDFKit.Annotation, parentKey: String, libraryId: LibraryIdentifier) {
-        guard annotation.shouldRenderPreview && annotation.isZoteroAnnotation else { return }
+        delete(annotations: [annotation], parentKey: parentKey, libraryId: libraryId)
+    }
 
-        let key = annotation.previewId
-        self.queue.async(flags: .barrier) { [weak self] in
-            guard let self = self else { return }
-            try? self.fileStorage.remove(Files.annotationPreview(annotationKey: key, pdfKey: parentKey, libraryId: libraryId, isDark: true))
-            try? self.fileStorage.remove(Files.annotationPreview(annotationKey: key, pdfKey: parentKey, libraryId: libraryId, isDark: false))
+    func delete(annotations: [PSPDFKit.Annotation], parentKey: String, libraryId: LibraryIdentifier) {
+        let keys: [String] = annotations.compactMap({ annotation in
+            guard annotation.shouldRenderPreview && annotation.isZoteroAnnotation else { return nil }
+            return annotation.previewId
+        })
+        queue.async { [weak self] in
+            guard let self else { return }
+            for key in keys {
+                try? fileStorage.remove(Files.annotationPreview(annotationKey: key, pdfKey: parentKey, libraryId: libraryId, isDark: true))
+                try? fileStorage.remove(Files.annotationPreview(annotationKey: key, pdfKey: parentKey, libraryId: libraryId, isDark: false))
+            }
         }
     }
 
     func deleteAll(parentKey: String, libraryId: LibraryIdentifier) {
-        self.queue.async(flags: .barrier) { [weak self] in
-            guard let self = self else { return }
-            try? self.fileStorage.remove(Files.annotationPreviews(for: parentKey, libraryId: libraryId))
+        queue.async { [weak self] in
+            try? self?.fileStorage.remove(Files.annotationPreviews(for: parentKey, libraryId: libraryId))
         }
     }
 
@@ -147,7 +212,7 @@ extension AnnotationPreviewController {
     /// - parameter isDark: `true` if dark mode is on, `false` otherwise.
     /// - returns: `true` if preview is available, `false` otherwise.
     func hasPreview(for key: String, parentKey: String, libraryId: LibraryIdentifier, isDark: Bool) -> Bool {
-        return self.fileStorage.has(Files.annotationPreview(annotationKey: key, pdfKey: parentKey, libraryId: libraryId, isDark: isDark))
+        return fileStorage.has(Files.annotationPreview(annotationKey: key, pdfKey: parentKey, libraryId: libraryId, isDark: isDark))
     }
 
     /// Loads cached preview for given annotation.
@@ -157,13 +222,14 @@ extension AnnotationPreviewController {
     /// - parameter isDark: `true` if dark mode is on, `false` otherwise.
     /// - parameter completed: Completion handler which contains loaded preview or `nil` if loading wasn't successful.
     func preview(for key: String, parentKey: String, libraryId: LibraryIdentifier, isDark: Bool, completed: @escaping (UIImage?) -> Void) {
-        self.queue.async { [weak self] in
-            guard let self = self else { return }
+        queue.async { [weak self] in
+            guard let self else { return }
 
             do {
-                let data = try self.fileStorage.read(Files.annotationPreview(annotationKey: key, pdfKey: parentKey, libraryId: libraryId, isDark: isDark))
+                let data = try fileStorage.read(Files.annotationPreview(annotationKey: key, pdfKey: parentKey, libraryId: libraryId, isDark: isDark))
+                let image = UIImage(data: data)
                 DispatchQueue.main.async {
-                    completed(UIImage(data: data))
+                    completed(image)
                 }
             } catch {
                 DispatchQueue.main.async {
@@ -186,38 +252,26 @@ extension AnnotationPreviewController {
     /// - parameter isDark: `true` if rendered image is in dark mode, `false` otherwise.
     /// - parameter type: Type of preview image. If `temporary`, requested image is temporary and is returned as `Single<UIImage>`. Otherwise image is
     ///                   cached locally and reported through `PublishSubject`.
-    private func enqueue(
-        key: String,
-        parentKey: String,
-        libraryId: LibraryIdentifier,
-        document: Document,
-        pageIndex: PageIndex,
-        rect: CGRect,
-        imageSize: CGSize,
-        imageScale: CGFloat,
-        includeAnnotation: Bool = false,
-        isDark: Bool = false,
-        type: PreviewType
-    ) {
-        guard let fileURL = document.fileURL else { return }
+    private func enqueue(data: EnqueuedData) {
+        guard let fileURL = data.document.fileURL else { return }
 
         let newDocument = Document(url: fileURL)
 
-        if includeAnnotation, let annotation = document.annotations(at: pageIndex).first(where: { $0.previewId == key }) {
+        if data.includeAnnotation, let annotation = data.document.annotations(at: data.pageIndex).first(where: { $0.previewId == data.key }) {
             newDocument.add(annotations: [annotation], options: [.suppressNotifications: true])
         }
 
         let options = RenderOptions()
-        if isDark {
+        if data.isDark {
             options.invertRenderColor = true
             options.filters = [.colorCorrectInverted]
         }
 
         let request = MutableRenderRequest(document: newDocument)
-        request.pageIndex = pageIndex
-        request.pdfRect = rect
-        request.imageSize = imageSize
-        request.imageScale = [1.0, 2.0, 3.0].contains(imageScale) ? imageScale : 0.0
+        request.pageIndex = data.pageIndex
+        request.pdfRect = data.rect
+        request.imageSize = data.imageSize
+        request.imageScale = [1.0, 2.0, 3.0].contains(data.imageScale) ? data.imageScale : 0.0
         request.options = options
 
         do {
@@ -226,7 +280,7 @@ extension AnnotationPreviewController {
             task.completionHandler = { [weak self] image, error in
                 let result: Result<UIImage, Swift.Error> = image.flatMap({ .success($0) }) ?? .failure(error ?? Error.imageNotAvailable)
                 self?.queue.async {
-                    self?.completeRequest(with: result, key: key, parentKey: parentKey, libraryId: libraryId, isDark: isDark, type: type)
+                    self?.completeRequest(with: result, key: data.key, parentKey: data.parentKey, libraryId: data.libraryId, isDark: data.isDark, type: data.type)
                 }
             }
 
@@ -241,14 +295,14 @@ extension AnnotationPreviewController {
         case .success(let image):
             switch type {
             case .temporary(let subscriberKey):
-                self.perform(event: .success(image), subscriberKey: subscriberKey)
+                perform(event: .success(image), subscriberKey: subscriberKey)
 
             case .cachedOnly:
-                self.cache(image: image, key: key, pdfKey: parentKey, libraryId: libraryId, isDark: isDark)
+                cache(image: image, key: key, pdfKey: parentKey, libraryId: libraryId, isDark: isDark)
 
             case .cachedAndReported:
-                self.cache(image: image, key: key, pdfKey: parentKey, libraryId: libraryId, isDark: isDark)
-                self.observable.on(.next((key, parentKey, image)))
+                cache(image: image, key: key, pdfKey: parentKey, libraryId: libraryId, isDark: isDark)
+                observable.on(.next((key, parentKey, image)))
             }
 
         case .failure(let error):
@@ -257,7 +311,7 @@ extension AnnotationPreviewController {
             switch type {
             case .temporary(let subscriberKey):
                 // Temporary request always needs to return an error if image was not available
-                self.perform(event: .failure(error), subscriberKey: subscriberKey)
+                perform(event: .failure(error), subscriberKey: subscriberKey)
                 
             default:
                 break
@@ -266,8 +320,8 @@ extension AnnotationPreviewController {
     }
 
     private func perform(event: SingleEvent<UIImage>, subscriberKey: SubscriberKey) {
-        self.subscribers[subscriberKey]?(event)
-        self.subscribers[subscriberKey] = nil
+        subscribers[subscriberKey]?(event)
+        subscribers[subscriberKey] = nil
     }
 
     private func cache(image: UIImage, key: String, pdfKey: String, libraryId: LibraryIdentifier, isDark: Bool) {
@@ -277,7 +331,7 @@ extension AnnotationPreviewController {
         }
 
         do {
-            try self.fileStorage.write(data, to: Files.annotationPreview(annotationKey: key, pdfKey: pdfKey, libraryId: libraryId, isDark: isDark), options: .atomicWrite)
+            try fileStorage.write(data, to: Files.annotationPreview(annotationKey: key, pdfKey: pdfKey, libraryId: libraryId, isDark: isDark), options: .atomicWrite)
         } catch let error {
             DDLogError("AnnotationPreviewController: can't store preview - \(error)")
         }

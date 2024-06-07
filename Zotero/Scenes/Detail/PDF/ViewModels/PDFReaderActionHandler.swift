@@ -1725,11 +1725,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             )
             let sortedKeys = createSortedKeys(fromDatabaseAnnotations: databaseAnnotations, documentAnnotations: documentAnnotations)
             let isDark = viewModel.state.interfaceStyle == .dark
-            update(document: viewModel.state.document, zoteroAnnotations: dbToPdfAnnotations, key: key, libraryId: library.identifier, isDark: isDark)
-            for annotation in dbToPdfAnnotations {
-                annotationPreviewController.store(for: annotation, parentKey: key, libraryId: library.identifier, isDark: isDark)
-            }
             let (page, selectedData) = preselectedData(databaseAnnotations: databaseAnnotations, storedPage: storedPage, boundingBoxConverter: boundingBoxConverter, in: viewModel)
+
+            update(document: viewModel.state.document, zoteroAnnotations: dbToPdfAnnotations, key: key, libraryId: library.identifier, isDark: isDark)
+            annotationPreviewController.store(annotations: dbToPdfAnnotations, parentKey: key, libraryId: library.identifier, isDark: isDark)
 
             update(viewModel: viewModel) { state in
                 state.library = library
@@ -2025,13 +2024,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
     private func update(document: PSPDFKit.Document, zoteroAnnotations: [PSPDFKit.Annotation], key: String, libraryId: LibraryIdentifier, isDark: Bool) {
         // Disable all non-zotero annotations, store previews if needed
-        let allAnnotations = document.allAnnotations(of: PSPDFKit.Annotation.Kind.all)
-        for (_, annotations) in allAnnotations {
-            for annotation in annotations {
-                annotation.flags.update(with: .locked)
-                annotationPreviewController.store(for: annotation, parentKey: key, libraryId: libraryId, isDark: isDark)
-            }
-        }
+        let pdfAnnotations = document.allAnnotations(of: PSPDFKit.Annotation.Kind.all).values.flatMap({ $0 })
+        pdfAnnotations.forEach({ $0.flags.update(with: .locked) })
+        annotationPreviewController.store(annotations: pdfAnnotations, parentKey: key, libraryId: libraryId, isDark: isDark)
+        // Filter compatible zotero annotations
         var filteredZoteroAnnotations: [PSPDFKit.Annotation] = []
         for annotation in zoteroAnnotations {
             guard annotation.pageIndex < document.pageCount else {
@@ -2204,22 +2200,19 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 if annotation.flags.contains(.readOnly) {
                     annotation.flags.remove(.readOnly)
                 }
-                annotationPreviewController.delete(for: annotation, parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
             }
+            annotationPreviewController.delete(annotations: deletedPdfAnnotations, parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
             viewModel.state.document.remove(annotations: deletedPdfAnnotations, options: nil)
         }
         // Insert new annotations to `Document`
         if !insertedPdfAnnotations.isEmpty {
             viewModel.state.document.add(annotations: insertedPdfAnnotations, options: nil)
-
-            for pdfAnnotation in insertedPdfAnnotations {
-                annotationPreviewController.store(
-                    for: pdfAnnotation,
-                    parentKey: viewModel.state.key,
-                    libraryId: viewModel.state.library.identifier,
-                    isDark: (viewModel.state.interfaceStyle == .dark)
-                )
-            }
+            annotationPreviewController.store(
+                annotations: insertedPdfAnnotations,
+                parentKey: viewModel.state.key,
+                libraryId: viewModel.state.library.identifier,
+                isDark: (viewModel.state.interfaceStyle == .dark)
+            )
         }
         observeDocument(in: viewModel)
 
