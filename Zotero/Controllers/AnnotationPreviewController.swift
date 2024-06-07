@@ -182,14 +182,7 @@ extension AnnotationPreviewController {
     /// - parameter parentKey: Key of PDF item.
     /// - parameter libraryId: Library identifier of item.
     func delete(for annotation: PSPDFKit.Annotation, parentKey: String, libraryId: LibraryIdentifier) {
-        guard annotation.shouldRenderPreview && annotation.isZoteroAnnotation else { return }
-        let key = annotation.previewId
-
-        queue.async { [weak self] in
-            guard let self else { return }
-            try? fileStorage.remove(Files.annotationPreview(annotationKey: key, pdfKey: parentKey, libraryId: libraryId, isDark: true))
-            try? fileStorage.remove(Files.annotationPreview(annotationKey: key, pdfKey: parentKey, libraryId: libraryId, isDark: false))
-        }
+        delete(annotations: [annotation], parentKey: parentKey, libraryId: libraryId)
     }
 
     func delete(annotations: [PSPDFKit.Annotation], parentKey: String, libraryId: LibraryIdentifier) {
