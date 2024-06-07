@@ -32,7 +32,7 @@ final class PDFThumbnailController: NSObject {
     private var subscribers: [SubscriberKey: (SingleEvent<UIImage>) -> Void]
 
     init(fileStorage: FileStorage) {
-        let queue = DispatchQueue(label: "org.zotero.PdfThumbnailController.queue", qos: .userInitiated)
+        let queue = DispatchQueue(label: "org.zotero.PdfThumbnailController.queue", qos: .default)
         self.fileStorage = fileStorage
         subscribers = [:]
         self.queue = queue
