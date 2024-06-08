@@ -1793,7 +1793,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         @discardableResult
         func checkWhetherMd5Changed(forItem item: RItem, andUpdateViewModel viewModel: ViewModel<PDFReaderActionHandler>, handler: PDFReaderActionHandler) -> Bool {
-            guard let documentURL = viewModel.state.document.fileURL, let md5 = md5(from: documentURL), item.backendMd5 != md5 else { return false }
+            guard let documentURL = viewModel.state.document.fileURL, let md5 = md5(from: documentURL), !item.backendMd5.isEmpty, item.backendMd5 != md5 else { return false }
             handler.update(viewModel: viewModel) { state in
                 state.changes = .md5
             }
