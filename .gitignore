@@ -80,3 +80,4 @@ fastlane/test_output
 bundled/translators
 bundled/styles
 bundled/locales
+bundled/note_editor
