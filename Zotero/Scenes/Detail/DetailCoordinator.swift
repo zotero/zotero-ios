@@ -327,17 +327,18 @@ final class DetailCoordinator: Coordinator {
     func show(url: URL) {
         DDLogInfo("DetailCoordinator: show url \(url.absoluteString)")
 
-        if controllers.urlDetector.isUrl(string: url.absoluteString) {
-            var fixedUrl = url
-            if url.scheme == nil {
-                var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
-                components?.scheme = "https"
-                fixedUrl = components?.url ?? url
-            }
-            UIApplication.shared.open(fixedUrl)
-        } else {
+        if !controllers.urlDetector.isUrl(string: url.absoluteString) {
             self.showWeb(url: url)
+            return
         }
+
+        var fixedUrl = url
+        if url.scheme == nil {
+            var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+            components?.scheme = "https"
+            fixedUrl = components?.url ?? url
+        }
+        UIApplication.shared.open(fixedUrl)
     }
 
     func showWeb(url: URL) {
