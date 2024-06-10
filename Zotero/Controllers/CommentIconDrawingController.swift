@@ -16,6 +16,8 @@ struct CommentIconDrawingController {
         let scale = UIScreen.main.nativeScale
         let onePixelWidthInPoints = 1.0 / scale
 
+        context.saveGState()
+
         context.setAlpha(alpha)
         context.translateBy(x: origin.x, y: origin.y)
 
@@ -42,6 +44,8 @@ struct CommentIconDrawingController {
         context.setLineWidth(onePixelWidthInPoints)
         UIColor.black.setStroke()
         context.strokePath()
+
+        context.restoreGState()
     }
 
     static func drawAnnotationComment(context: CGContext, boundingBox: CGRect, color: UIColor) {
