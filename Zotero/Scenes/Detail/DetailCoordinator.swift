@@ -327,8 +327,14 @@ final class DetailCoordinator: Coordinator {
     func show(url: URL) {
         DDLogInfo("DetailCoordinator: show url \(url.absoluteString)")
 
-        if let scheme = url.scheme, scheme != "http" && scheme != "https" {
-            UIApplication.shared.open(url)
+        if controllers.urlDetector.isUrl(string: url.absoluteString) {
+            var fixedUrl = url
+            if url.scheme == nil {
+                var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+                components?.scheme = "https"
+                fixedUrl = components?.url ?? url
+            }
+            UIApplication.shared.open(fixedUrl)
         } else {
             self.showWeb(url: url)
         }
