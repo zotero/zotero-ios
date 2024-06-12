@@ -372,6 +372,8 @@ final class UserControllers {
                 try coordinator.perform(request: ResetSettingsVersionDbRequest())
                 controllers?.tagOrderNeedsSync = false
             }
+
+//            try coordinator.perform(request: CreateTestNote())
         })
 
         self.isFirstLaunch = isFirstLaunch

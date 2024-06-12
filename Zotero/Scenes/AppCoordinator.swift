@@ -676,8 +676,7 @@ extension AppCoordinator: CrashReporterCoordinator {
     func report(id: String, completion: @escaping () -> Void) {
         var actions = [
             UIAlertAction(title: L10n.ok, style: .cancel, handler: { _ in completion() }),
-            UIAlertAction(title: L10n.Settings.CrashAlert.submitForum, style: .default, handler: { [weak self] _ in
-                guard let self else { return }
+            UIAlertAction(title: L10n.Settings.CrashAlert.submitForum, style: .default, handler: { _ in
                 UIPasteboard.general.string = id
                 submit(reportId: id, completion: completion)
             })

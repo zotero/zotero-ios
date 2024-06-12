@@ -127,7 +127,7 @@ struct CreateItemFromDetailDbRequest: DbResponseRequest {
                     parentKey: nil,
                     localizedType: (self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""),
                     includeAccessDate: attachment.hasUrl,
-                    collections: [], 
+                    collections: [],
                     tags: []
                 )
                 .process(in: database)

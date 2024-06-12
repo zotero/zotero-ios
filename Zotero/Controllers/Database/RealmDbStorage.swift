@@ -191,7 +191,7 @@ extension Results where Element: Syncable & Object {
         let sorted = filtered.sorted(byKeyPath: "version", ascending: false)
 
         if let database = realm, database.isInWriteTransaction {
-            for idx in 1..<sorted.count {
+            for idx in (1..<sorted.count).reversed() {
                 database.delete(sorted[idx])
             }
         }
