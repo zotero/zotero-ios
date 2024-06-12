@@ -19,7 +19,7 @@ struct ReadDocumentDataDbRequest: DbResponseRequest {
     var needsWrite: Bool { return false }
 
     func process(in database: Realm) throws -> String {
-        guard let pageIndex = database.objects(RPageIndex.self).filter(.key(self.attachmentKey, in: self.libraryId)).first else { return "0" }
+        guard let pageIndex = database.objects(RPageIndex.self).uniqueObject(key: attachmentKey, libraryId: libraryId) else { return "0" }
         return pageIndex.index
     }
 }

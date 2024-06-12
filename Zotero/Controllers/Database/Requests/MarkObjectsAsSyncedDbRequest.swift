@@ -54,7 +54,7 @@ struct MarkSettingsAsSyncedDbRequest: DbRequest {
 
     func process(in database: Realm) throws {
         for setting in self.settings {
-            guard let object = database.objects(RPageIndex.self).filter(.key(setting.0, in: setting.1)).first else { continue }
+            guard let object = database.objects(RPageIndex.self).uniqueObject(key: setting.0, libraryId: setting.1) else { continue }
             if object.version != self.version {
                 object.version = self.version
             }
@@ -76,7 +76,7 @@ struct MarkCollectionAsSyncedAndUpdateDbRequest: DbRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
-        guard let collection = database.objects(RCollection.self).filter(.key(self.response.key, in: self.libraryId)).first else { return }
+        guard let collection = database.objects(RCollection.self).uniqueObject(key: response.key, libraryId: libraryId) else { return }
 
         collection.deleteChanges(uuids: self.changeUuids, database: database)
         self.updateUnchangedData(of: collection, with: self.response, database: database)
@@ -116,7 +116,7 @@ struct MarkItemAsSyncedAndUpdateDbRequest: DbRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
-        guard let item = database.objects(RItem.self).filter(.key(self.response.key, in: self.libraryId)).first else { return }
+        guard let item = database.objects(RItem.self).uniqueObject(key: response.key, libraryId: libraryId) else { return }
 
         item.deleteChanges(uuids: self.changeUuids, database: database)
         try self.updateUnchangedData(of: item, with: self.response, database: database)
@@ -204,7 +204,7 @@ struct MarkSearchAsSyncedAndUpdateDbRequest: DbRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
-        guard let search = database.objects(RSearch.self).filter(.key(self.response.key, in: self.libraryId)).first else { return }
+        guard let search = database.objects(RSearch.self).uniqueObject(key: response.key, libraryId: libraryId) else { return }
 
         search.deleteChanges(uuids: self.changeUuids, database: database)
         self.updateUnchangedData(of: search, response: self.response, database: database)

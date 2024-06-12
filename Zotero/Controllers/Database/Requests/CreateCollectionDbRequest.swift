@@ -31,7 +31,7 @@ struct CreateCollectionDbRequest: DbRequest {
             collection.parentKey = key
             changes.insert(.parent)
 
-            if let parent = database.objects(RCollection.self).filter(.key(key, in: self.libraryId)).first {
+            if let parent = database.objects(RCollection.self).uniqueObject(key: key, libraryId: libraryId) {
                 parent.collapsed = false
             }
         }

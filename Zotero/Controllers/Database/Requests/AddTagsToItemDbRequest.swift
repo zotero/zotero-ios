@@ -19,7 +19,7 @@ struct AddTagsToItemDbRequest: DbRequest {
     let tagNames: Set<String>
 
     func process(in database: Realm) throws {
-        guard let item = database.objects(RItem.self).filter(.key(self.key, in: self.libraryId)).first else { return }
+        guard let item = database.objects(RItem.self).uniqueObject(key: key, libraryId: libraryId) else { return }
 
         var toAdd: Set<String> = self.tagNames
 

@@ -18,7 +18,7 @@ struct MoveItemsToParentDbRequest: DbRequest {
     var needsWrite: Bool {  return true }
 
     func process(in database: Realm) throws {
-        guard let parent = database.objects(RItem.self).filter(.key(self.parentKey, in: self.libraryId)).first else {
+        guard let parent = database.objects(RItem.self).uniqueObject(key: parentKey, libraryId: libraryId) else {
             return
         }
 

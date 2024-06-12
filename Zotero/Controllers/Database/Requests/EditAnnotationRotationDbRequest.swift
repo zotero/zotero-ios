@@ -18,7 +18,7 @@ struct EditAnnotationRotationDbRequest: DbRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
-        guard let item = database.objects(RItem.self).filter(.key(self.key, in: self.libraryId)).first else { return }
+        guard let item = database.objects(RItem.self).uniqueObject(key: key, libraryId: libraryId) else { return }
 
         let field: RItemField
         if let _field = item.fields.filter(.key(FieldKeys.Item.Annotation.Position.rotation)).first {

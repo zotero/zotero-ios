@@ -173,3 +173,29 @@ extension RealmDbCoordinator: DbCoordinator {
         self.realm.invalidate()
     }
 }
+
+extension Results where Element: Syncable & Object {
+    func uniqueObject(key: String, libraryId: LibraryIdentifier) -> Element? {
+        let filtered = filter(.key(key, in: libraryId))
+
+        if filtered.isEmpty {
+            return nil
+        }
+
+        if filtered.count == 1 {
+            return filtered.first
+        }
+
+        DDLogError("\(type(of: Element.self)) \(key); \(libraryId) contains more than 1 instance!")
+
+        let sorted = filtered.sorted(byKeyPath: "version", ascending: false)
+
+        if let database = realm, database.isInWriteTransaction {
+            for idx in 1..<sorted.count {
+                database.delete(sorted[idx])
+            }
+        }
+
+        return sorted.first
+    }
+}

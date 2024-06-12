@@ -24,7 +24,7 @@ struct CreateAttachmentsDbRequest: DbResponseRequest {
     func process(in database: Realm) throws -> [(String, String)] {
         guard let libraryId = self.attachments.first?.libraryId else { return [] }
 
-        let parent = self.parentKey.flatMap({ database.objects(RItem.self).filter(.key($0, in: libraryId)).first })
+        let parent = self.parentKey.flatMap({ database.objects(RItem.self).uniqueObject(key: $0, libraryId: libraryId) })
         if let parent = parent {
             // This is to mitigate the issue in item detail screen (ItemDetailActionHandler.shouldReloadData) where observing of `children` doesn't report changes between `oldValue` and `newValue`.
             parent.version = parent.version

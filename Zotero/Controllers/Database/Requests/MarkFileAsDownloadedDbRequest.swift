@@ -27,7 +27,7 @@ struct MarkFileAsDownloadedDbRequest: DbRequest {
     }
 
     func process(in database: Realm) throws {
-        guard let item = database.objects(RItem.self).filter(.key(key, in: libraryId)).first else {
+        guard let item = database.objects(RItem.self).uniqueObject(key: key, libraryId: libraryId) else {
             DDLogError("MarkFileAsDownloadedDbRequest: item not found")
             return
         }

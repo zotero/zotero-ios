@@ -19,7 +19,7 @@ struct CheckItemIsChangedDbRequest: DbResponseRequest {
     var needsWrite: Bool { return false }
 
     func process(in database: Realm) throws -> Bool {
-        guard let item = database.objects(RItem.self).filter(.key(self.key, in: self.libraryId)).first else { throw DbError.objectNotFound }
+        guard let item = database.objects(RItem.self).uniqueObject(key: key, libraryId: libraryId) else { throw DbError.objectNotFound }
         return item.isChanged
     }
 }

@@ -19,7 +19,7 @@ struct ReadFilenameDbRequest: DbResponseRequest {
     var needsWrite: Bool { return false }
 
     func process(in database: Realm) throws -> String {
-        guard let item = database.objects(RItem.self).filter(.key(self.key, in: self.libraryId)).first, item.rawType == ItemTypes.attachment else {
+        guard let item = database.objects(RItem.self).uniqueObject(key: key, libraryId: libraryId), item.rawType == ItemTypes.attachment else {
             throw DbError.objectNotFound
         }
 

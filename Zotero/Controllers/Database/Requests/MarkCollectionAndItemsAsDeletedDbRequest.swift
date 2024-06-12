@@ -17,7 +17,7 @@ struct MarkCollectionAndItemsAsDeletedDbRequest: DbRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
-        guard let object = database.objects(RCollection.self).filter(.key(self.key, in: self.libraryId)).first else {
+        guard let object = database.objects(RCollection.self).uniqueObject(key: key, libraryId: libraryId) else {
             throw DbError.objectNotFound
         }
         object.items.forEach({

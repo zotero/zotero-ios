@@ -25,7 +25,7 @@ struct StoreCollectionsDbRequest: DbRequest {
         guard let libraryId = data.library.libraryId else { throw DbError.primaryKeyUnavailable }
 
         let collection: RCollection
-        if let existing = database.objects(RCollection.self).filter(.key(data.key, in: libraryId)).first {
+        if let existing = database.objects(RCollection.self).uniqueObject(key: data.key, libraryId: libraryId) {
             collection = existing
         } else {
             collection = RCollection()
@@ -67,7 +67,7 @@ struct StoreCollectionsDbRequest: DbRequest {
         guard let key = parentCollection else { return }
 
         let parent: RCollection
-        if let existing = database.objects(RCollection.self).filter(.key(key, in: libraryId)).first {
+        if let existing = database.objects(RCollection.self).uniqueObject(key: key, libraryId: libraryId) {
             parent = existing
         } else {
             parent = RCollection()

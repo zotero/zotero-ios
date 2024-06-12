@@ -84,7 +84,7 @@ struct StoreItemDbRequest: DbResponseRequest {
         guard let libraryId = self.response.library.libraryId else { throw DbError.primaryKeyUnavailable }
 
         let item: RItem
-        if let existing = database.objects(RItem.self).filter(.key(self.response.key, in: libraryId)).first {
+        if let existing = database.objects(RItem.self).uniqueObject(key: response.key, libraryId: libraryId) {
             item = existing
         } else {
             item = RItem()
@@ -352,7 +352,7 @@ struct StoreItemDbRequest: DbResponseRequest {
 
         let parent: RItem
 
-        if let existing = database.objects(RItem.self).filter(.key(key, in: libraryId)).first {
+        if let existing = database.objects(RItem.self).uniqueObject(key: key, libraryId: libraryId) {
             parent = existing
         } else {
             parent = RItem()

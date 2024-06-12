@@ -30,7 +30,7 @@ struct CreateItemWithAttachmentDbRequest: DbResponseRequest {
         )
         .process(in: database)
 
-        guard let item = database.objects(RItem.self).filter(.key(self.item.key, in: self.attachment.libraryId)).first else {
+        guard let item = database.objects(RItem.self).uniqueObject(key: item.key, libraryId: attachment.libraryId) else {
             throw DbError.objectNotFound
         }
 

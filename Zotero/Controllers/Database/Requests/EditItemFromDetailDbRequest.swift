@@ -22,7 +22,7 @@ struct EditItemFromDetailDbRequest: DbRequest {
     let dateParser: DateParser
 
     func process(in database: Realm) throws {
-        guard let item = database.objects(RItem.self).filter(.key(self.itemKey, in: self.libraryId)).first else { return }
+        guard let item = database.objects(RItem.self).uniqueObject(key: itemKey, libraryId: libraryId) else { return }
 
         var changes: RItemChanges = []
 

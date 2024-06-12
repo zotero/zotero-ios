@@ -31,7 +31,7 @@ struct CreateItemFromDetailDbRequest: DbResponseRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws -> RItem {
-        guard database.objects(RItem.self).filter(.key(self.key, in: self.libraryId)).first == nil else {
+        guard database.objects(RItem.self).uniqueObject(key: key, libraryId: libraryId) == nil else {
             DDLogError("CreateItemFromDetailDbRequest: Trying to create item that already exists!")
             throw Error.alreadyExists
         }
@@ -51,7 +51,7 @@ struct CreateItemFromDetailDbRequest: DbResponseRequest {
         var changes: RItemChanges = [.type, .fields]
 
         if let key = self.collectionKey,
-           let collection = database.objects(RCollection.self).filter(.key(key, in: self.libraryId)).first {
+           let collection = database.objects(RCollection.self).uniqueObject(key: key, libraryId: libraryId) {
             collection.items.append(item)
             changes.insert(.collections)
         }
@@ -115,18 +115,22 @@ struct CreateItemFromDetailDbRequest: DbResponseRequest {
 
         for attachment in self.attachments {
             // Existing standalone attachment can be assigend as a child for new item, check whether attachment exists and update/create accordingly.
-            if let rAttachment = database.objects(RItem.self).filter(.key(attachment.key, in: self.libraryId)).first {
+            if let rAttachment = database.objects(RItem.self).uniqueObject(key: attachment.key, libraryId: libraryId) {
                 // In this case the attachment doesn't change anyhow, just assign this new item as a parent.
                 rAttachment.parent = item
                 rAttachment.changes.append(RObjectChange.create(changes: RItemChanges.parent))
                 rAttachment.changeType = .user
                 rAttachment.changesSyncPaused = true
             } else {
-                let rAttachment = try CreateAttachmentDbRequest(attachment: attachment,
-                                                                parentKey: nil,
-                                                                localizedType: (self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""),
-                                                                includeAccessDate: attachment.hasUrl,
-                                                                collections: [], tags: []).process(in: database)
+                let rAttachment = try CreateAttachmentDbRequest(
+                    attachment: attachment,
+                    parentKey: nil,
+                    localizedType: (self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""),
+                    includeAccessDate: attachment.hasUrl,
+                    collections: [], 
+                    tags: []
+                )
+                .process(in: database)
                 rAttachment.libraryId = self.libraryId
                 rAttachment.parent = item
                 rAttachment.changesSyncPaused = true

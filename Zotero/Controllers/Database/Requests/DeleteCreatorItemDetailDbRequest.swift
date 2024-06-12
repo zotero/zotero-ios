@@ -18,7 +18,7 @@ struct DeleteCreatorItemDetailDbRequest: DbRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
-        guard let item = database.objects(RItem.self).filter(.key(key, in: libraryId)).first,
+        guard let item = database.objects(RItem.self).uniqueObject(key: key, libraryId: libraryId),
             let creator = item.creators.filter("uuid == %@", creatorId).first,
             !creator.isInvalidated
         else { return }

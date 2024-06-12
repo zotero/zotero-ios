@@ -19,7 +19,7 @@ struct EditAnnotationRectsDbRequest: DbRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
-        guard let item = database.objects(RItem.self).filter(.key(key, in: libraryId)).first, let annotation = PDFDatabaseAnnotation(item: item) else { return }
+        guard let item = database.objects(RItem.self).uniqueObject(key: key, libraryId: libraryId), let annotation = PDFDatabaseAnnotation(item: item) else { return }
         let page = UInt(annotation.page)
         let dbRects = rects.map({ boundingBoxConverter.convertToDb(rect: $0, page: page) ?? $0 })
         guard rects(dbRects, differFrom: item.rects) else { return }

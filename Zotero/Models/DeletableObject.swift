@@ -85,7 +85,7 @@ extension RItem: Deletable {
     }
 
     private func deletePageIndex(in database: Realm) {
-        guard let libraryId = self.libraryId, let pageIndex = database.objects(RPageIndex.self).filter(.key(self.key, in: libraryId)).first else { return }
+        guard let libraryId = self.libraryId, let pageIndex = database.objects(RPageIndex.self).uniqueObject(key: key, libraryId: libraryId) else { return }
         database.delete(pageIndex)
     }
 

@@ -197,7 +197,7 @@ extension RCollection {
                 DDLogInfo("RCollection: parent infinite loop; key=\(parentKey); keys=\(keys)")
                 return level
             }
-            object = database.objects(RCollection.self).filter(.key(parentKey, in: libraryId)).first
+            object = database.objects(RCollection.self).uniqueObject(key: parentKey, libraryId: libraryId)
             level += 1
             keys.insert(parentKey)
         }

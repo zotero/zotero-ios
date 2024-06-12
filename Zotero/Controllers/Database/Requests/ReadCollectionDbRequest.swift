@@ -19,7 +19,7 @@ struct ReadRCollectionDbRequest: DbResponseRequest {
     var needsWrite: Bool { return false }
 
     func process(in database: Realm) throws -> RCollection {
-        guard let collection = database.objects(RCollection.self).filter(.key(key, in: libraryId)).first else {
+        guard let collection = database.objects(RCollection.self).uniqueObject(key: key, libraryId: libraryId) else {
             throw DbError.objectNotFound
         }
         return collection
