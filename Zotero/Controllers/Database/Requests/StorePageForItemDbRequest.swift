@@ -20,7 +20,7 @@ struct StorePageForItemDbRequest: DbRequest {
     func process(in database: Realm) throws {
         let pageIndex: RPageIndex
 
-        if let existing = database.objects(RPageIndex.self).filter(.key(self.key, in: self.libraryId)).first {
+        if let existing = database.objects(RPageIndex.self).uniqueObject(key: key, libraryId: libraryId) {
             guard existing.index != self.page else { return }
             pageIndex = existing
         } else {

@@ -20,7 +20,7 @@ struct SetCollectionCollapsedDbRequest: DbRequest {
     func process(in database: Realm) throws {
         switch self.identifier {
         case .collection(let key):
-            guard let collection = database.objects(RCollection.self).filter(.key(key, in: self.libraryId)).first, collection.collapsed != self.collapsed else { return }
+            guard let collection = database.objects(RCollection.self).uniqueObject(key: key, libraryId: libraryId), collection.collapsed != self.collapsed else { return }
             collection.collapsed = self.collapsed
         case .search: break // TODO
         case .custom: break

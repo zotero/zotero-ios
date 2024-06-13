@@ -36,8 +36,17 @@ struct ReadLibrariesDataDbRequest: DbResponseRequest {
             let (updates, hasUpload) = try self.updates(for: libraryId, version: version, database: database)
             let deletions = try self.deletions(for: libraryId, version: version, database: database)
             let hasWebDavDeletions = !self.webDavEnabled ? false : !database.objects(RWebDavDeletion.self).isEmpty
-            return LibraryData(identifier: libraryId, name: library.type.libraryName, versions: versions, canEditMetadata: true, canEditFiles: true, updates: updates, deletions: deletions,
-                               hasUpload: hasUpload, hasWebDavDeletions: hasWebDavDeletions)
+            return LibraryData(
+                identifier: libraryId,
+                name: library.type.libraryName,
+                versions: versions,
+                canEditMetadata: true,
+                canEditFiles: true,
+                updates: updates,
+                deletions: deletions,
+                hasUpload: hasUpload,
+                hasWebDavDeletions: hasWebDavDeletions
+            )
         })
         allLibraryData.append(contentsOf: customData)
 
@@ -52,8 +61,17 @@ struct ReadLibrariesDataDbRequest: DbResponseRequest {
             let version = versions.max
             let (updates, hasUpload) = try self.updates(for: libraryId, version: version, database: database)
             let deletions = try self.deletions(for: libraryId, version: versions.max, database: database)
-            return LibraryData(identifier: libraryId, name: group.name, versions: versions, canEditMetadata: group.canEditMetadata, canEditFiles: group.canEditFiles, updates: updates,
-                               deletions: deletions, hasUpload: hasUpload, hasWebDavDeletions: false)
+            return LibraryData(
+                identifier: libraryId,
+                name: group.name,
+                versions: versions,
+                canEditMetadata: group.canEditMetadata,
+                canEditFiles: group.canEditFiles,
+                updates: updates,
+                deletions: deletions,
+                hasUpload: hasUpload,
+                hasWebDavDeletions: false
+            )
         })
         allLibraryData.append(contentsOf: groupData)
 

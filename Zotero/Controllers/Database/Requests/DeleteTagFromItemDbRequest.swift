@@ -19,7 +19,7 @@ struct DeleteTagFromItemDbRequest: DbRequest {
     let tagName: String
 
     func process(in database: Realm) throws {
-        guard let item = database.objects(RItem.self).filter(.key(self.key, in: self.libraryId)).first else { return }
+        guard let item = database.objects(RItem.self).uniqueObject(key: key, libraryId: libraryId) else { return }
 
         let tagsToRemove = item.tags.filter(.tagName(self.tagName))
 

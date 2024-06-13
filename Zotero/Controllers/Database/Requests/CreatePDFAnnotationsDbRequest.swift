@@ -22,7 +22,7 @@ struct CreatePDFAnnotationsDbRequest: DbRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
-        guard let parent = database.objects(RItem.self).filter(.key(attachmentKey, in: libraryId)).first else { return }
+        guard let parent = database.objects(RItem.self).uniqueObject(key: attachmentKey, libraryId: libraryId) else { return }
 
         for annotation in annotations {
             create(annotation: annotation, parent: parent, in: database)
@@ -33,7 +33,7 @@ struct CreatePDFAnnotationsDbRequest: DbRequest {
         var fromRestore = false
         let item: RItem
 
-        if let _item = database.objects(RItem.self).filter(.key(annotation.key, in: libraryId)).first {
+        if let _item = database.objects(RItem.self).uniqueObject(key: annotation.key, libraryId: libraryId) {
             if !_item.deleted {
                 // If item exists and is not deleted locally, we can ignore this request
                 return

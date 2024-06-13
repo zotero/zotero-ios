@@ -17,7 +17,7 @@ struct CancelParentCreationDbRequest: DbRequest {
     var needsWrite: Bool {  return true }
 
     func process(in database: Realm) throws {
-        guard let item = database.objects(RItem.self).filter(.key(self.key, in: self.libraryId)).first, item.parent != nil else { return }
+        guard let item = database.objects(RItem.self).uniqueObject(key: key, libraryId: libraryId), item.parent != nil else { return }
         item.parent = nil
         let parentChange = item.changes.filter { change in
             return change.rawChanges == RItemChanges.parent.rawValue

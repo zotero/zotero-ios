@@ -22,7 +22,7 @@ struct EditNoteDbRequest: DbRequest {
     }
 
     func process(in database: Realm) throws {
-        guard let item = database.objects(RItem.self).filter(.key(self.note.key, in: self.libraryId)).first else {
+        guard let item = database.objects(RItem.self).uniqueObject(key: note.key, libraryId: libraryId) else {
             throw DbError.objectNotFound
         }
 

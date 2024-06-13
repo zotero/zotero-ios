@@ -18,7 +18,7 @@ struct StoreMtimeForAttachmentDbRequest: DbRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
-        guard let item = database.objects(RItem.self).filter(.key(self.key, in: self.libraryId)).first,
+        guard let item = database.objects(RItem.self).uniqueObject(key: key, libraryId: libraryId),
               let field = item.fields.filter(.key(FieldKeys.Item.Attachment.mtime)).first else {
             throw DbError.objectNotFound
         }

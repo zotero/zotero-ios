@@ -30,7 +30,7 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws -> RItem {
-        guard database.objects(RItem.self).filter(.key(self.attachment.key, in: self.attachment.libraryId)).first == nil else {
+        guard database.objects(RItem.self).uniqueObject(key: attachment.key, libraryId: attachment.libraryId) == nil else {
             DDLogError("CreateAttachmentDbRequest: Trying to create attachment that already exists!")
             throw Error.alreadyExists
         }
@@ -169,7 +169,7 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
         self.collections.forEach { key in
             let collection: RCollection
 
-            if let existing = database.objects(RCollection.self).filter(.key(key, in: self.attachment.libraryId)).first {
+            if let existing = database.objects(RCollection.self).uniqueObject(key: key, libraryId: attachment.libraryId) {
                 collection = existing
             } else {
                 collection = RCollection()
@@ -190,7 +190,7 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
 
         // MARK: - Parent
 
-        if let key = self.parentKey, let parent = database.objects(RItem.self).filter(.key(key, in: self.attachment.libraryId)).first {
+        if let key = self.parentKey, let parent = database.objects(RItem.self).uniqueObject(key: key, libraryId: attachment.libraryId) {
             item.parent = parent
             changes.insert(.parent)
         }

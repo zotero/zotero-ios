@@ -19,7 +19,7 @@ struct EditCreatorItemDetailDbRequest: DbRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
-        guard let item = database.objects(RItem.self).filter(.key(key, in: libraryId)).first else { return }
+        guard let item = database.objects(RItem.self).uniqueObject(key: key, libraryId: libraryId) else { return }
 
         let rCreator: RCreator
 

@@ -33,7 +33,7 @@ struct CreateBackendItemDbRequest: DbResponseRequest {
         )
         .process(in: database)
 
-        guard let item = database.objects(RItem.self).filter(.key(self.item.key, in: libraryId)).first else {
+        guard let item = database.objects(RItem.self).uniqueObject(key: item.key, libraryId: libraryId) else {
             throw DbError.objectNotFound
         }
 

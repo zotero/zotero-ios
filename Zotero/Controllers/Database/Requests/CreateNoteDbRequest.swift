@@ -27,7 +27,7 @@ struct CreateNoteDbRequest: DbResponseRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws -> RItem {
-        guard database.objects(RItem.self).filter(.key(self.note.key, in: self.libraryId)).first == nil else {
+        guard database.objects(RItem.self).uniqueObject(key: note.key, libraryId: libraryId) == nil else {
             DDLogError("CreateNoteDbRequest: Trying to create note that already exists!")
             throw Error.alreadyExists
         }
@@ -50,7 +50,7 @@ struct CreateNoteDbRequest: DbResponseRequest {
 
         // Assign parent
         if let key = self.parentKey,
-           let parent = database.objects(RItem.self).filter(.key(key, in: self.libraryId)).first {
+           let parent = database.objects(RItem.self).uniqueObject(key: key, libraryId: libraryId) {
             item.parent = parent
             changes.insert(.parent)
 
@@ -60,7 +60,7 @@ struct CreateNoteDbRequest: DbResponseRequest {
 
         // Assign collection
         if let key = self.collectionKey,
-           let collection = database.objects(RCollection.self).filter(.key(key, in: self.libraryId)).first {
+           let collection = database.objects(RCollection.self).uniqueObject(key: key, libraryId: libraryId) {
             collection.items.append(item)
             changes.insert(.collections)
         }
