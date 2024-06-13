@@ -240,34 +240,20 @@ extension AnnotationPreviewController {
     }
 
     /// Creates and enqueues a render request for PSPDFKit rendering engine.
-    /// - parameter key: Key of annotation.
-    /// - parameter parentKey: Key of PDF item in which the annotation is stored.
-    /// - parameter libraryId: Library identifier of item.
-    /// - parameter document: Document to render.
-    /// - parameter pageIndex: Page to render.
-    /// - parameter rect: Part of page to render.
-    /// - parameter imageSize: Size of rendered image.
-    /// - parameter imageScale: Scale factor of rendering. 0.0 will result to the PSPDFkit default. Unsupported values will also result to default.
-    /// - parameter includeAnnotation: If true, render annotation as well, otherwise render PDF only.
-    /// - parameter isDark: `true` if rendered image is in dark mode, `false` otherwise.
-    /// - parameter type: Type of preview image. If `temporary`, requested image is temporary and is returned as `Single<UIImage>`. Otherwise image is
-    ///                   cached locally and reported through `PublishSubject`.
     private func enqueue(data: EnqueuedData) {
-        guard let fileURL = data.document.fileURL else { return }
-
-        let newDocument = Document(url: fileURL)
-
-        if data.includeAnnotation, let annotation = data.document.annotations(at: data.pageIndex).first(where: { $0.previewId == data.key }) {
-            newDocument.add(annotations: [annotation], options: [.suppressNotifications: true])
+        var skipAnnotations = data.document.annotations(at: data.pageIndex)
+        if data.includeAnnotation {
+            skipAnnotations = skipAnnotations.filter({ $0.previewId != data.key })
         }
 
         let options = RenderOptions()
+        options.skipAnnotationArray = skipAnnotations
         if data.isDark {
             options.invertRenderColor = true
             options.filters = [.colorCorrectInverted]
         }
 
-        let request = MutableRenderRequest(document: newDocument)
+        let request = MutableRenderRequest(document: data.document)
         request.pageIndex = data.pageIndex
         request.pdfRect = data.rect
         request.imageSize = data.imageSize

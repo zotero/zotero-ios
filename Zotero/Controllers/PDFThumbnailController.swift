@@ -106,14 +106,13 @@ extension PDFThumbnailController {
     /// - parameter document: Document to render.
     /// - parameter imageSize: Size of rendered image.
     private func enqueue(subscriberKey: SubscriberKey, document: Document, imageSize: CGSize) {
-        guard let fileUrl = document.fileURL else { return }
-        let newDocument = Document(url: fileUrl)
-        newDocument.add(annotations: document.annotations(at: subscriberKey.page), options: [.suppressNotifications: true])
-
         let options = RenderOptions()
-        options.invertRenderColor = subscriberKey.isDark
+        if subscriberKey.isDark {
+            options.invertRenderColor = true
+            options.filters = [.colorCorrectInverted]
+        }
 
-        let request = MutableRenderRequest(document: newDocument)
+        let request = MutableRenderRequest(document: document)
         request.pageIndex = subscriberKey.page
         request.imageSize = imageSize
         request.options = options
