@@ -451,6 +451,7 @@
 "errors.settings.webdav.forbidden" = "You don’t have permission to access the specified folder on the WebDAV server.";
 "errors.settings.webdav.internet_connection" = "Unable to connect to the network. Please try again.";
 "errors.settings.webdav.host_not_found" = "Could not connect to WebDAV server";
+"errors.settings.webdav.ats" = "Due to iOS restrictions, you must use HTTPS to connect to a non-local WebDAV server.";
 "errors.shareext.logged_out" = "Please log into the app before using this extension.";
 "errors.shareext.cant_load_data" = "Failed to load data. Please try again.";
 "errors.shareext.unknown" = "An unknown error occurred.";

@@ -226,8 +226,10 @@ final class SyncToolbarController {
                     break
 
                 case .apiError(let error, let httpMethod):
-                    guard let statusCode = error.unacceptableStatusCode else { break }
-                    return (L10n.Errors.SyncToolbar.webdavRequestFailed(statusCode, httpMethod ?? "Unknown"), nil)
+                    if let statusCode = error.unacceptableStatusCode {
+                        return (L10n.Errors.SyncToolbar.webdavRequestFailed(statusCode, httpMethod ?? "Unknown"), nil)
+                    }
+                    return (WebDavError.message(for: error), nil)
                 }
 
             case .annotationDidSplit(let string, let keys, let libraryId):
@@ -241,7 +243,7 @@ final class SyncToolbarController {
             }
         }
 
-        return ("", nil)
+        return (error.localizedDescription, nil)
     }
 
     private func setToolbar(hidden: Bool, animated: Bool) {
