@@ -379,6 +379,13 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
         }
         return true
     }
+
+    func continueUserActivity(_ userActivity: NSUserActivity, for sessionIdentifier: String) {
+        guard userActivity.activityType == NSUserActivity.pdfId, let window, let mainController = window.rootViewController as? MainViewController else { return }
+        mainController.getDetailCoordinator { [weak self] coordinator in
+            self?.controllers.userControllers?.openItemsController.restoreMostRecentlyOpenedItem(using: coordinator, sessionIdentifier: sessionIdentifier)
+        }
+    }
 }
 
 extension AppCoordinator: MFMailComposeViewControllerDelegate {

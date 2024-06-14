@@ -107,6 +107,7 @@ final class OpenItemsController {
     private unowned let fileStorage: FileStorage
     // TODO: Use a better data structure, such as an ordered set
     private var itemsBySessionIdentifier: [String: [Item]] = [:]
+    private var sessionIdentifierByItemKind: [Item.Kind: String] = [:]
     private var itemsTokenBySessionIdentifier: [String: NotificationToken] = [:]
     private var observableBySessionIdentifier: [String: PublishSubject<[Item]>] = [:]
     private let disposeBag: DisposeBag
@@ -140,7 +141,16 @@ final class OpenItemsController {
         // Invalidate previous observer first.
         itemsTokenBySessionIdentifier[sessionIdentifier]?.invalidate()
         itemsTokenBySessionIdentifier[sessionIdentifier] = nil
+        // Update itemsBySessionIdentifier.
         itemsBySessionIdentifier[sessionIdentifier] = newItems
+        // Update sessionIdentifierByItemKind. Recompute for all session identifier, to remove any closed items.
+        var newSessionIdentifierByItemKind: [Item.Kind: String] = [:]
+        itemsBySessionIdentifier.forEach { (sessionIdentifier, items) in
+            items.forEach { item in
+                newSessionIdentifierByItemKind[item.kind] = sessionIdentifier
+            }
+        }
+        sessionIdentifierByItemKind = newSessionIdentifierByItemKind
         // Register observer for newly set items.
         itemsTokenBySessionIdentifier[sessionIdentifier] = registerObserver(for: newItems)
         observable(for: sessionIdentifier).on(.next(newItems))
@@ -188,6 +198,10 @@ final class OpenItemsController {
             newItems[i].userIndex = i
         }
         setItems(newItems, for: sessionIdentifier, validate: validate)
+    }
+
+    func sessionIdentifier(for kind: Item.Kind) -> String? {
+        sessionIdentifierByItemKind[kind]
     }
 
     func open(_ kind: Item.Kind, for sessionIdentifier: String) {
@@ -452,12 +466,16 @@ final class OpenItemsController {
 }
 
 extension OpenItemsController {
-    func setOpenItemsUserActivity(from viewController: UIViewController, libraryId: LibraryIdentifier, collectionId: CollectionIdentifier? = nil, title: String? = nil) {
+    func openItemsUserActivity(for sessionIdentifier: String?, libraryId: LibraryIdentifier, collectionId: CollectionIdentifier? = nil) -> NSUserActivity {
         var items: [Item] = []
-        if let sessionIdentifier = viewController.getSessionIdentifier() {
+        if let sessionIdentifier {
             items = getItems(for: sessionIdentifier)
         }
-        let activity: NSUserActivity = items.isEmpty ? .mainActivity(with: []) : .pdfActivity(with: items, libraryId: libraryId, collectionId: collectionId ?? Defaults.shared.selectedCollectionId)
-        viewController.set(userActivity: activity.set(title: title))
+        return items.isEmpty ? .mainActivity(with: []) : .pdfActivity(with: items, libraryId: libraryId, collectionId: collectionId ?? Defaults.shared.selectedCollectionId)
+    }
+
+    func setOpenItemsUserActivity(from viewController: UIViewController, libraryId: LibraryIdentifier, collectionId: CollectionIdentifier? = nil, title: String? = nil) {
+        let activity = openItemsUserActivity(for: viewController.getSessionIdentifier(), libraryId: libraryId, collectionId: collectionId).set(title: title)
+        viewController.set(userActivity: activity)
     }
 }

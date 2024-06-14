@@ -118,4 +118,8 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func stateRestorationActivity(for scene: UIScene) -> NSUserActivity? {
         return scene.userActivity
     }
+
+    func scene(_ scene: UIScene, continue userActivity: NSUserActivity) {
+        coordinator.continueUserActivity(userActivity, for: scene.session.persistentIdentifier)
+    }
 }
