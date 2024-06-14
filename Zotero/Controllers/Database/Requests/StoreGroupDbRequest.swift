@@ -39,36 +39,33 @@ struct StoreGroupDbRequest: DbRequest {
         let canEditMetadata: Bool
         let canEditFiles: Bool
 
-        if self.userId == self.response.data.owner {
-            canEditMetadata = true
-            canEditFiles = true
+        if response.data.libraryEditing == "admins" {
+            canEditMetadata = (response.data.admins ?? []).contains(userId)
         } else {
-            if self.response.data.libraryEditing == "admins" {
-                canEditMetadata = (self.response.data.admins ?? []).contains(self.userId)
-            } else {
-                canEditMetadata = true
-            }
-
-            switch self.response.data.fileEditing {
-            case "none":
-                canEditFiles = false
-            case "admins":
-                canEditFiles = (self.response.data.admins ?? []).contains(self.userId)
-            case "members":
-                canEditFiles = true
-
-            default:
-                canEditFiles = false
-            }
+            canEditMetadata = true
         }
 
-        group.name = self.response.data.name
-        group.desc = self.response.data.description
-        group.owner = self.response.data.owner
+        switch response.data.fileEditing {
+        case "none":
+            canEditFiles = false
+
+        case "admins":
+            canEditFiles = (response.data.admins ?? []).contains(userId)
+
+        case "members":
+            canEditFiles = true
+
+        default:
+            canEditFiles = false
+        }
+
+        group.name = response.data.name
+        group.desc = response.data.description
+        group.owner = response.data.owner
         group.type = groupType
         group.canEditMetadata = canEditMetadata
         group.canEditFiles = canEditFiles
-        group.version = self.response.version
+        group.version = response.version
         group.syncState = .synced
         group.isLocalOnly = false
     }
