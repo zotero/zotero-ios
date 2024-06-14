@@ -317,8 +317,13 @@ final class DetailCoordinator: Coordinator {
     }
 
     private func showPDF(at url: URL, key: String, parentKey: String?, libraryId: LibraryIdentifier) {
-        guard let navigationController else { return }
-        controllers.userControllers?.openItemsController.open(.pdf(libraryId: libraryId, key: key), for: sessionIdentifier)
+        guard let navigationController, let openItemsController = controllers.userControllers?.openItemsController else { return }
+        let kind: OpenItem.Kind = .pdf(libraryId: libraryId, key: key)
+        if let existingSessionIdentifier = openItemsController.sessionIdentifier(for: kind), existingSessionIdentifier != sessionIdentifier {
+            show(kind, collectionId: collection.id, targetSessionIdentifier: existingSessionIdentifier, sourceSessionIdentifier: sessionIdentifier, openItemsController: openItemsController)
+            return
+        }
+        openItemsController.open(kind, for: sessionIdentifier)
 
         let viewControllerProvider: () -> DetailNavigationViewController = {
             self.createPDFController(key: key, parentKey: parentKey, libraryId: libraryId, url: url)
@@ -333,6 +338,24 @@ final class DetailCoordinator: Coordinator {
             return
         }
         navigationController.present(viewControllerProvider(), animated: true)
+    }
+
+    private func show(_ kind: OpenItem.Kind, collectionId: CollectionIdentifier, targetSessionIdentifier: String, sourceSessionIdentifier: String, openItemsController: OpenItemsController) {
+        let application = UIApplication.shared
+        guard let itemSession = application.openSessions.first(where: { $0.persistentIdentifier == targetSessionIdentifier }) else { return }
+        openItemsController.open(kind, for: targetSessionIdentifier)
+        let userActivity = openItemsController.openItemsUserActivity(for: targetSessionIdentifier, libraryId: kind.libraryId, collectionId: collectionId)
+        let options = UIScene.ActivationRequestOptions()
+        options.requestingScene = application.connectedScenes.first(where: { $0.session.persistentIdentifier == sourceSessionIdentifier })
+        let errorHandler: (any Error) -> Void = { error in
+            DDLogError("DetailCoordinator: failed to activate scene session: \(itemSession) - \(error)")
+        }
+        if #available(iOS 17.0, *) {
+            let request = UISceneSessionActivationRequest(session: itemSession, userActivity: userActivity, options: options)
+            application.activateSceneSession(for: request, errorHandler: errorHandler)
+        } else {
+            application.requestSceneSessionActivation(itemSession, userActivity: userActivity, options: options, errorHandler: errorHandler)
+        }
     }
 
     private func showWebView(for url: URL) {
@@ -1011,7 +1034,13 @@ extension DetailCoordinator: DetailNoteEditorCoordinatorDelegate {
 
         case .edit(let key), .readOnly(let key):
             DDLogInfo("DetailCoordinator: show note \(key)")
-            controllers.userControllers?.openItemsController.open(.note(libraryId: library.identifier, key: key), for: sessionIdentifier)
+            guard let openItemsController = controllers.userControllers?.openItemsController else { return }
+            let kind: OpenItem.Kind = .note(libraryId: library.identifier, key: key)
+            if let existingSessionIdentifier = openItemsController.sessionIdentifier(for: kind), existingSessionIdentifier != sessionIdentifier {
+                show(kind, collectionId: collection.id, targetSessionIdentifier: existingSessionIdentifier, sourceSessionIdentifier: sessionIdentifier, openItemsController: openItemsController)
+                return
+            }
+            openItemsController.open(kind, for: sessionIdentifier)
         }
 
         let viewControllerProvider: () -> DetailNavigationViewController = {
