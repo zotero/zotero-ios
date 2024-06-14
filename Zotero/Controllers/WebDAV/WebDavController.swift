@@ -71,6 +71,66 @@ enum WebDavError {
         case cantCreatePropData
         case apiError(error: AFError, httpMethod: String?)
     }
+
+    static func message(for error: Error) -> String {
+        if let error = error as? WebDavError.Verification {
+            return error.message
+        }
+
+        if let responseError = error as? AFResponseError, let message = errorMessage(for: responseError.error) {
+            return message
+        }
+
+        if let error = error as? AFError, let message = errorMessage(for: error) {
+            return message
+        }
+
+        return error.localizedDescription
+
+        func errorMessage(for error: AFError) -> String? {
+            switch error {
+            case .sessionTaskFailed(let error):
+                let nsError = error as NSError
+                if nsError.domain == NSURLErrorDomain {
+                    switch nsError.code {
+                    case NSURLErrorNotConnectedToInternet:
+                        return L10n.Errors.Settings.Webdav.internetConnection
+
+                    case NSURLErrorCannotConnectToHost, NSURLErrorTimedOut:
+                        return L10n.Errors.Settings.Webdav.hostNotFound
+
+                    case NSURLErrorAppTransportSecurityRequiresSecureConnection:
+                        return L10n.Errors.Settings.Webdav.ats
+
+                    default: break
+                    }
+                }
+
+            case .responseValidationFailed(let reason):
+                switch reason {
+                case .unacceptableStatusCode(let statusCode):
+                    switch statusCode {
+                    case 401:
+                        return L10n.Errors.Settings.Webdav.unauthorized
+
+                    case 403:
+                        return L10n.Errors.Settings.Webdav.forbidden
+
+                    default:
+                        return nil
+                    }
+
+                default:
+                    break
+                }
+
+            default:
+                break
+            }
+
+            return L10n.Errors.Settings.Webdav.hostNotFound
+        }
+    }
 }
 
 struct WebDavDeletionResult {

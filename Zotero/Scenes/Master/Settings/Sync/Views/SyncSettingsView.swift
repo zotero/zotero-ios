@@ -148,64 +148,13 @@ struct WebDavSettings: View {
         }
 
         if case .failure(let error) = self.viewModel.state.webDavVerificationResult {
-            Text(self.errorMessage(for: error))
+            Text(WebDavError.message(for: error))
                 .foregroundColor(.red)
         }
     }
 
     private var canVerifyServer: Bool {
         return !self.viewModel.state.url.isEmpty && !self.viewModel.state.username.isEmpty && !self.viewModel.state.password.isEmpty
-    }
-
-    private func errorMessage(for error: Error) -> String {
-        if let error = error as? WebDavError.Verification {
-            return error.message
-        }
-
-        if let responseError = error as? AFResponseError, let message = self.errorMessage(for: responseError.error) {
-            return message
-        }
-        if let error = error as? AFError, let message = self.errorMessage(for: error) {
-            return message
-        }
-
-        return error.localizedDescription
-    }
-
-    private func errorMessage(for error: AFError) -> String? {
-        switch error {
-        case .sessionTaskFailed(let error):
-            let nsError = error as NSError
-            if nsError.domain == NSURLErrorDomain {
-                switch nsError.code {
-                case NSURLErrorNotConnectedToInternet:
-                    return L10n.Errors.Settings.Webdav.internetConnection
-
-                case NSURLErrorCannotConnectToHost, NSURLErrorTimedOut:
-                    return L10n.Errors.Settings.Webdav.hostNotFound
-                default: break
-                }
-            }
-
-        case .responseValidationFailed(let reason):
-            switch reason {
-            case .unacceptableStatusCode(let statusCode):
-                switch statusCode {
-                case 401:
-                    return L10n.Errors.Settings.Webdav.unauthorized
-
-                case 403:
-                    return L10n.Errors.Settings.Webdav.forbidden
-                default: return nil
-                }
-
-            default: break
-            }
-
-        default: break
-        }
-
-        return L10n.Errors.Settings.Webdav.hostNotFound
     }
 }
 

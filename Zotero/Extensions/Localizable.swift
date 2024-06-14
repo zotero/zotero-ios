@@ -555,6 +555,8 @@ internal enum L10n {
       /// Could not collect storage data
       internal static let storage = L10n.tr("Localizable", "errors.settings.storage", fallback: "Could not collect storage data")
       internal enum Webdav {
+        /// Due to iOS restrictions, you must use HTTPS to connect to a non-local WebDAV server.
+        internal static let ats = L10n.tr("Localizable", "errors.settings.webdav.ats", fallback: "Due to iOS restrictions, you must use HTTPS to connect to a non-local WebDAV server.")
         /// A potential problem was found with your WebDAV server.
         /// 
         /// An uploaded file was not immediately available for download. There may be a short delay between when you upload files and when they become available, particularly if you are using a cloud storage service.
