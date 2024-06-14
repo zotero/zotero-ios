@@ -38,28 +38,22 @@ struct StoreGroupDbRequest: DbRequest {
 
         let canEditMetadata: Bool
         let canEditFiles: Bool
-
-        if self.userId == self.response.data.owner {
-            canEditMetadata = true
-            canEditFiles = true
+        if self.response.data.libraryEditing == "admins" {
+            canEditMetadata = (self.response.data.admins ?? []).contains(self.userId)
         } else {
-            if self.response.data.libraryEditing == "admins" {
-                canEditMetadata = (self.response.data.admins ?? []).contains(self.userId)
-            } else {
-                canEditMetadata = true
-            }
+            canEditMetadata = true
+        }
 
-            switch self.response.data.fileEditing {
-            case "none":
-                canEditFiles = false
-            case "admins":
-                canEditFiles = (self.response.data.admins ?? []).contains(self.userId)
-            case "members":
-                canEditFiles = true
+        switch self.response.data.fileEditing {
+        case "none":
+            canEditFiles = false
+        case "admins":
+            canEditFiles = (self.response.data.admins ?? []).contains(self.userId)
+        case "members":
+            canEditFiles = true
 
-            default:
-                canEditFiles = false
-            }
+        default:
+            canEditFiles = false
         }
 
         group.name = self.response.data.name
