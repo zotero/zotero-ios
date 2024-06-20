@@ -141,6 +141,7 @@ struct PDFReaderState: ViewModelState {
         self.key = key
         self.parentKey = parentKey
         self.document = Document(url: url)
+        document.overrideClass(PSPDFKit.AnnotationManager.self, with: AnnotationManager.self)
         self.displayTitle = displayTitle
         self.previewCache = NSCache()
         self.commentFont = PDFReaderLayout.annotationLayout.font

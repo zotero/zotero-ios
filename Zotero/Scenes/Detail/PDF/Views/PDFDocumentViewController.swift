@@ -550,6 +550,7 @@ final class PDFDocumentViewController: UIViewController {
             builder.overrideClass(PSPDFKit.SquareAnnotation.self, with: SquareAnnotation.self)
             builder.overrideClass(PSPDFKit.UnderlineAnnotation.self, with: UnderlineAnnotation.self)
             builder.overrideClass(FreeTextAnnotationView.self, with: CustomFreeTextAnnotationView.self)
+            builder.overrideClass(PSPDFKit.AnnotationManager.self, with: AnnotationManager.self)
         }
 
         let controller = PDFViewController(document: document, configuration: pdfConfiguration)
