@@ -168,7 +168,7 @@ final class WebViewHandler: NSObject {
         if let value = self.userAgent {
             request.setValue(value, forHTTPHeaderField: "User-Agent")
         }
-        if let value = self.referrer {
+        if headers["Referer"] == nil, let value = self.referrer, !value.isEmpty {
             request.setValue(value, forHTTPHeaderField: "Referer")
         }
         request.httpBody = body?.data(using: .utf8)
