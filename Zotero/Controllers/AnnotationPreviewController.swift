@@ -241,13 +241,7 @@ extension AnnotationPreviewController {
 
     /// Creates and enqueues a render request for PSPDFKit rendering engine.
     private func enqueue(data: EnqueuedData) {
-        var skipAnnotations = data.document.annotations(at: data.pageIndex)
-        if data.includeAnnotation {
-            skipAnnotations = skipAnnotations.filter({ $0.previewId != data.key })
-        }
-
         let options = RenderOptions()
-        options.skipAnnotationArray = skipAnnotations
         if data.isDark {
             options.invertRenderColor = true
             options.filters = [.colorCorrectInverted]
@@ -257,6 +251,7 @@ extension AnnotationPreviewController {
         request.pageIndex = data.pageIndex
         request.pdfRect = data.rect
         request.imageSize = data.imageSize
+        request.annotations = data.includeAnnotation ? data.document.annotations(at: data.pageIndex).filter({ $0.previewId == data.key }) : []
         request.imageScale = [1.0, 2.0, 3.0].contains(data.imageScale) ? data.imageScale : 0.0
         request.options = options
 
