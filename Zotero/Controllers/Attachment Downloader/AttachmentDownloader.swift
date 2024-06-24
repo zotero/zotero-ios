@@ -581,7 +581,7 @@ final class AttachmentDownloader: NSObject {
         }
     }
 
-    func cancelAll() {
+    func cancelAll(invalidateSession: Bool = false) {
         DDLogInfo("AttachmentDownloader: stop all tasks")
 
         accessQueue.sync(flags: .barrier) { [weak self] in
@@ -613,6 +613,10 @@ final class AttachmentDownloader: NSObject {
             } catch let error {
                 DDLogError("AttachmentDownloader: can't delete all downloads - \(error)")
             }
+        }
+
+        if invalidateSession {
+            session?.invalidateAndCancel()
         }
     }
 
