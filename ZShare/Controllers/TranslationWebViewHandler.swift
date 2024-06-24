@@ -247,7 +247,7 @@ final class TranslationWebViewHandler {
 
         case .item:
             if let info = body as? [[String: Any]] {
-                self.observable.on(.next(.loadedItems(data: info, cookies: self.webViewHandler.cookies, userAgent: self.webViewHandler.userAgent, referrer: self.webViewHandler.referrer)))
+                self.observable.on(.next(.loadedItems(data: info, cookies: self.webViewHandler.cookies, userAgent: self.webViewHandler.userAgent, referrer: self.webViewHandler.referer)))
             } else {
                 DDLogError("TranslationWebViewHandler: got incompatible body - \(body)")
                 self.observable.on(.error(Error.incompatibleItem))

@@ -26,7 +26,7 @@ final class WebViewHandler: NSObject {
     // Cookies, User-Agent and Referrer from original website are stored and added to requests in `sendRequest(with:)`.
     private(set) var cookies: String?
     private(set) var userAgent: String?
-    private(set) var referrer: String?
+    private(set) var referer: String?
 
     // MARK: - Lifecycle
 
@@ -60,7 +60,7 @@ final class WebViewHandler: NSObject {
     func set(cookies: String?, userAgent: String?, referrer: String?) {
         self.cookies = cookies
         self.userAgent = userAgent
-        self.referrer = referrer
+        self.referer = referrer
     }
 
     func load(fileUrl: URL) -> Single<()> {
@@ -165,11 +165,11 @@ final class WebViewHandler: NSObject {
         headers.forEach { key, value in
             request.setValue(value, forHTTPHeaderField: key)
         }
-        if let value = self.userAgent {
-            request.setValue(value, forHTTPHeaderField: "User-Agent")
+        if headers["User-Agent"] == nil, let userAgent {
+            request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
         }
-        if let value = self.referrer {
-            request.setValue(value, forHTTPHeaderField: "Referer")
+        if headers["Referer"] == nil, let referer, !referer.isEmpty {
+            request.setValue(referer, forHTTPHeaderField: "Referer")
         }
         request.httpBody = body?.data(using: .utf8)
         request.timeoutInterval = timeout
