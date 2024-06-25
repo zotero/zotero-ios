@@ -1220,6 +1220,8 @@ internal enum L10n {
       internal static let start = L10n.tr("Localizable", "settings.full_sync.start", fallback: "Start Full Sync Debugging")
     }
     internal enum General {
+      /// Open links in external browser
+      internal static let openLinksInExternalBrowser = L10n.tr("Localizable", "settings.general.open_links_in_external_browser", fallback: "Open links in external browser")
       /// Show collection sizes
       internal static let showCollectionItemCounts = L10n.tr("Localizable", "settings.general.show_collection_item_counts", fallback: "Show collection sizes")
       /// Show Items from Subcollections

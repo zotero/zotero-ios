@@ -26,7 +26,7 @@ struct GeneralSettingsView: View {
             )
 
             SettingsToggleRow(
-                title: "Open links in external browser",
+                title: L10n.Settings.General.openLinksInExternalBrowser,
                 subtitle: nil,
                 value: self.viewModel.binding(keyPath: \.openLinksInExternalBrowser, action: { .setOpenLinksInExternalBrowser($0) })
             )
