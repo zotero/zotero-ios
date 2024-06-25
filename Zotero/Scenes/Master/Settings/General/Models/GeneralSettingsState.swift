@@ -29,5 +29,15 @@ struct GeneralSettingsState: ViewModelState {
         }
     }
 
+    var openLinksInExternalBrowser: Bool {
+        get {
+            return Defaults.shared.openLinksInExternalBrowser
+        }
+
+        set {
+            Defaults.shared.openLinksInExternalBrowser = newValue
+        }
+    }
+
     func cleanup() {}
 }

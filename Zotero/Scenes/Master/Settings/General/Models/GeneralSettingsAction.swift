@@ -11,4 +11,5 @@ import Foundation
 enum GeneralSettingsAction {
     case setShowSubcollectionItems(Bool)
     case setShowCollectionItemCounts(Bool)
+    case setOpenLinksInExternalBrowser(Bool)
 }

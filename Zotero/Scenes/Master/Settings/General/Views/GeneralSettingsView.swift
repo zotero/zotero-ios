@@ -13,13 +13,23 @@ struct GeneralSettingsView: View {
 
     var body: some View {
         Form {
-            SettingsToggleRow(title: L10n.Settings.General.showSubcollectionsTitle,
-                              subtitle: nil,
-                              value: self.viewModel.binding(keyPath: \.showSubcollectionItems, action: { .setShowSubcollectionItems($0) }))
+            SettingsToggleRow(
+                title: L10n.Settings.General.showSubcollectionsTitle,
+                subtitle: nil,
+                value: self.viewModel.binding(keyPath: \.showSubcollectionItems, action: { .setShowSubcollectionItems($0) })
+            )
 
-            SettingsToggleRow(title: L10n.Settings.General.showCollectionItemCounts,
-                              subtitle: nil,
-                              value: self.viewModel.binding(keyPath: \.showCollectionItemCounts, action: { .setShowCollectionItemCounts($0) }))
+            SettingsToggleRow(
+                title: L10n.Settings.General.showCollectionItemCounts,
+                subtitle: nil,
+                value: self.viewModel.binding(keyPath: \.showCollectionItemCounts, action: { .setShowCollectionItemCounts($0) })
+            )
+
+            SettingsToggleRow(
+                title: "Open links in external browser",
+                subtitle: nil,
+                value: self.viewModel.binding(keyPath: \.openLinksInExternalBrowser, action: { .setOpenLinksInExternalBrowser($0) })
+            )
         }
         .navigationBarTitle(L10n.Settings.General.title)
     }

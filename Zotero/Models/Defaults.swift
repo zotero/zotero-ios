@@ -56,6 +56,9 @@ final class Defaults {
     @UserDefault(key: "ShowCollectionItemCounts", defaultValue: true, defaults: .standard)
     var showCollectionItemCounts: Bool
 
+    @UserDefault(key: "OpenLinksInExternalBrowser", defaultValue: false, defaults: .standard)
+    var openLinksInExternalBrowser: Bool
+
     @UserDefault(key: "QuickCopyStyleId", defaultValue: "http://www.zotero.org/styles/chicago-note-bibliography", defaults: .standard)
     var quickCopyStyleId: String
 
