@@ -15,13 +15,18 @@ struct GeneralSettingsActionHandler: ViewModelActionHandler {
     func process(action: GeneralSettingsAction, in viewModel: ViewModel<GeneralSettingsActionHandler>) {
         switch action {
         case .setShowSubcollectionItems(let value):
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.showSubcollectionItems = value
             }
 
         case .setShowCollectionItemCounts(let value):
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.showCollectionItemCounts = value
+            }
+
+        case .setOpenLinksInExternalBrowser(let value):
+            update(viewModel: viewModel) { state in
+                state.openLinksInExternalBrowser = value
             }
         }
     }

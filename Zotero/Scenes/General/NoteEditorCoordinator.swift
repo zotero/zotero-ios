@@ -15,7 +15,6 @@ typealias NoteEditorSaveResult = NoteEditorCoordinator.SaveResult
 typealias NoteEditorSaveCallback = NoteEditorCoordinator.SaveCallback
 
 protocol NoteEditorCoordinatorDelegate: AnyObject {
-    func showWeb(url: URL)
     func show(url: URL)
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
 }
@@ -94,22 +93,7 @@ extension NoteEditorCoordinator: NoteEditorCoordinatorDelegate {
     }
 
     func show(url: URL) {
-        if let scheme = url.scheme, scheme != "http" && scheme != "https" {
-            UIApplication.shared.open(url)
-        } else {
-            showWeb(url: url)
-        }
-    }
-
-    func showWeb(url: URL) {
-        guard let navigationController else { return }
-
-        let controller = SFSafariViewController(url: url.withHttpSchemeIfMissing)
-        controller.modalPresentationStyle = .fullScreen
-        // Changes transition to normal modal transition instead of push from right.
-        transitionDelegate = EmptyTransitioningDelegate()
-        controller.transitioningDelegate = self.transitionDelegate
-        transitionDelegate = nil
-        navigationController.present(controller, animated: true, completion: nil)
+        guard let detailCoordinator = parentCoordinator as? DetailCoordinator else { return }
+        detailCoordinator.show(url: url)
     }
 }

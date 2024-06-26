@@ -327,8 +327,8 @@ final class DetailCoordinator: Coordinator {
     func show(url: URL) {
         DDLogInfo("DetailCoordinator: show url \(url.absoluteString)")
 
-        if !controllers.urlDetector.isUrl(string: url.absoluteString) {
-            self.showWeb(url: url)
+        if !Defaults.shared.openLinksInExternalBrowser || !controllers.urlDetector.isUrl(string: url.absoluteString) {
+            showWeb(url: url)
             return
         }
 
@@ -341,7 +341,7 @@ final class DetailCoordinator: Coordinator {
         UIApplication.shared.open(fixedUrl)
     }
 
-    func showWeb(url: URL) {
+    private func showWeb(url: URL) {
         let controller = SFSafariViewController(url: url.withHttpSchemeIfMissing)
         controller.modalPresentationStyle = .fullScreen
         // Changes transition to normal modal transition instead of push from right.
@@ -722,7 +722,7 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
         navigationController?.present(controller, animated: true, completion: nil)
 
         func attachmentMessageAndActions(for error: Error) -> (String, [UIAlertAction]) {
-            var actions: [UIAlertAction] = [UIAlertAction(title: L10n.ok, style: .cancel)]
+            let actions: [UIAlertAction] = [UIAlertAction(title: L10n.ok, style: .cancel)]
             if let error = error as? AttachmentDownloader.Error {
                 switch error {
                 case .incompatibleAttachment:
