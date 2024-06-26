@@ -20,6 +20,10 @@ struct CommentIconDrawingController {
 
         context.setAlpha(alpha)
         context.translateBy(x: origin.x, y: origin.y)
+        if context.ctm.d < 0 {
+            context.translateBy(x: 0, y: height)
+            context.scaleBy(x: 1, y: -1)
+        }
 
         let poly1: [(CGFloat, CGFloat)] = [(width / 2, 0), (width, 0), (width, height), (0, height), (0, height / 2)]
         let points1 = poly1.map { CGPoint(x: $0, y: $1) }
