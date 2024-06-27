@@ -1408,8 +1408,13 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             }
             undoManager.enableUndoRegistration()
             undoController.recordCommand(named: nil, adding: finalAnnotations) {
-                // Remove may be superfluous, if those annotations are already removed by the undo, but it doesn't cause any issue.
-                document.remove(annotations: toRemove, options: [.suppressNotifications: true])
+                // Remove may be superfluous, if those annotations are already removed by the undo.
+                // Annotations are filtered, so only those that still need to are removed, to avoid an edge case where undocumented PSPDFKit expection
+                // "The removed annotation does not belong to the current document" is thrown.
+                let needRemove = toRemove.compactMap { document.annotation(on: Int($0.pageIndex), with: $0.key ?? $0.uuid) }
+                if !needRemove.isEmpty {
+                    document.remove(annotations: needRemove, options: [.suppressNotifications: true])
+                }
                 // Transformed annotations need to be added, before they are converted, otherwise their document property is nil.
                 document.add(annotations: finalAnnotations, options: [.suppressNotifications: true])
             }
