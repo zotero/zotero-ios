@@ -1183,7 +1183,7 @@ final class ExtensionViewModel {
                 guard let response = responses.first else { return .unknown }
                 return alamoErrorRequiresAbort(.responseValidationFailed(reason: .unacceptableStatusCode(code: response.code)), url: nil, libraryId: libraryId)
 
-            case .authorizationFailed(let statusCode, let response, _):
+            case .authorizationFailed(let statusCode, _, _):
                 return alamoErrorRequiresAbort(.responseValidationFailed(reason: .unacceptableStatusCode(code: statusCode)), url: nil, libraryId: libraryId)
 
             default:

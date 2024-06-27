@@ -789,6 +789,12 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
     func pdfViewController(_ pdfController: PDFViewController, didSelectText text: String, with glyphs: [Glyph], at rect: CGRect, on pageView: PDFPageView) {
         parentDelegate?.didSelectText(text)
     }
+
+    func pdfViewController(_ pdfController: PDFViewController, didFinishRenderTaskFor pageView: PDFPageView, error: (any Error)?) {
+        if let error {
+            DDLogError("PDFDocumentViewController: PDFViewController didFinishRenderTaskFor \(pageView) with error - \(error)")
+        }
+    }
 }
 
 extension PDFDocumentViewController: BackForwardActionListDelegate {
