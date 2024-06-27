@@ -170,7 +170,7 @@ ns_number_init_as_function_reference: error
 
 opening_brace:
   severity: error
-  allowMultilineFunc: true
+  allow_multiline_func: true
 
 operator_usage_whitespace:
   severity: error
@@ -213,7 +213,7 @@ return_arrow_whitespace: error
 
 self_binding:
   severity: error
-  bindIdentifier: self
+  bind_identifier: self
 
 self_in_property_initialization: error
 
