@@ -1704,6 +1704,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 throw PDFReaderState.Error.documentEmpty
             }
 
+            let startTime = CFAbsoluteTimeGetCurrent()
+
             let key = viewModel.state.key
             let (item, liveAnnotations, storedPage) = try loadItemAnnotationsAndPage(for: key, libraryId: viewModel.state.library.identifier)
 
@@ -1719,7 +1721,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             let itemToken = observe(item: item, viewModel: viewModel, handler: self)
             let token = observe(items: liveAnnotations, viewModel: viewModel, handler: self)
             let databaseAnnotations = liveAnnotations.freeze()
+
+            let loadDocumentAnnotationsStartTime = CFAbsoluteTimeGetCurrent()
             let documentAnnotations = loadAnnotations(from: viewModel.state.document, library: library, username: viewModel.state.username, displayName: viewModel.state.displayName)
+            
+            let convertDbAnnotationsStartTime = CFAbsoluteTimeGetCurrent()
             let dbToPdfAnnotations = AnnotationConverter.annotations(
                 from: databaseAnnotations,
                 interfaceStyle: viewModel.state.interfaceStyle,
@@ -1729,11 +1735,16 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 username: viewModel.state.username,
                 boundingBoxConverter: boundingBoxConverter
             )
+
+            let sortStartTime = CFAbsoluteTimeGetCurrent()
             let sortedKeys = createSortedKeys(fromDatabaseAnnotations: databaseAnnotations, documentAnnotations: documentAnnotations)
+
             let isDark = viewModel.state.interfaceStyle == .dark
             let (page, selectedData) = preselectedData(databaseAnnotations: databaseAnnotations, storedPage: storedPage, boundingBoxConverter: boundingBoxConverter, in: viewModel)
 
+            let updateDocumentStartTime = CFAbsoluteTimeGetCurrent()
             update(document: viewModel.state.document, zoteroAnnotations: dbToPdfAnnotations, key: key, libraryId: library.identifier, isDark: isDark)
+            let storePreviewsStartTime = CFAbsoluteTimeGetCurrent()
             annotationPreviewController.store(annotations: dbToPdfAnnotations, parentKey: key, libraryId: library.identifier, isDark: isDark)
 
             update(viewModel: viewModel) { state in
@@ -1754,6 +1765,14 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                     state.focusSidebarKey = key
                 }
             }
+
+            let endTime = CFAbsoluteTimeGetCurrent()
+            DDLogInfo("PDFReaderActionHandler: loaded PDF with \(viewModel.state.document.pageCount) pages, \(documentAnnotations.count) document annotations, \(dbToPdfAnnotations.count) zotero annotations")
+            let timeLog = "PDFReaderActionHandler: total time \(endTime - startTime), initial loading: \(loadDocumentAnnotationsStartTime - startTime), " +
+                "load document annotations: \(convertDbAnnotationsStartTime - loadDocumentAnnotationsStartTime), " +
+                "load zotero annotations: \(sortStartTime - convertDbAnnotationsStartTime), " + "sort keys: \(updateDocumentStartTime - sortStartTime), " +
+                "update document: \(storePreviewsStartTime - updateDocumentStartTime), store previews: \(endTime - storePreviewsStartTime)"
+            DDLogInfo(DDLogMessageFormat(stringLiteral: timeLog))
 
             observeDocument(in: viewModel)
         } catch let error {
