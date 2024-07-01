@@ -256,15 +256,16 @@ final class AnnotationViewHeader: UIView {
         self.authorTrailingToContainer = self.trailingAnchor.constraint(greaterThanOrEqualTo: authorLabel.trailingAnchor, constant: layout.horizontalInset)
         self.authorTrailingToButton = rightBarButtons.leadingAnchor.constraint(greaterThanOrEqualTo: authorLabel.trailingAnchor, constant: layout.horizontalInset)
         let authorCenter = authorLabel.centerXAnchor.constraint(equalTo: self.centerXAnchor)
-        authorCenter.priority = UILayoutPriority(rawValue: 750)
+        authorCenter.priority = .defaultHigh
+        let pageLabelBottom = bottomAnchor.constraint(equalTo: pageLabel.bottomAnchor, constant: layout.headerVerticalInsets)
+        pageLabelBottom.priority = .defaultHigh
 
         NSLayoutConstraint.activate([
             // Vertical
-            typeImageView.centerYAnchor.constraint(equalTo: self.centerYAnchor),
-            pageLabel.centerYAnchor.constraint(equalTo: self.centerYAnchor),
+            typeImageView.centerYAnchor.constraint(equalTo: pageLabel.centerYAnchor),
             pageLabel.topAnchor.constraint(equalTo: self.topAnchor, constant: layout.headerVerticalInsets),
-            self.bottomAnchor.constraint(equalTo: pageLabel.bottomAnchor, constant: layout.headerVerticalInsets),
-            authorLabel.centerYAnchor.constraint(equalTo: self.centerYAnchor),
+            pageLabelBottom,
+            authorLabel.centerYAnchor.constraint(equalTo: pageLabel.centerYAnchor),
             rightBarButtons.topAnchor.constraint(equalTo: self.topAnchor),
             rightBarButtons.bottomAnchor.constraint(equalTo: self.bottomAnchor),
             // Horizontal

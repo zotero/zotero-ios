@@ -44,7 +44,9 @@ final class AnnotationViewImageContent: UIView {
         self.addSubview(imageView)
 
         let height = imageView.heightAnchor.constraint(equalToConstant: 0)
+        height.priority = .init(999)
         let bottomInset = self.bottomAnchor.constraint(equalTo: imageView.bottomAnchor, constant: layout.verticalSpacerHeight)
+        bottomInset.priority = .defaultHigh
 
         NSLayoutConstraint.activate([
             // Horizontal
