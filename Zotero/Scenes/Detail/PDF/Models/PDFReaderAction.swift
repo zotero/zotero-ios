@@ -49,4 +49,5 @@ enum PDFReaderAction {
     case changeFilter(AnnotationsFilter?)
     case submitPendingPage(Int)
     case unlock(String)
+    case updateOpenItems(items: [OpenItem])
 }

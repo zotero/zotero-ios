@@ -21,6 +21,7 @@ final class ItemsViewController: UIViewController {
         case deselectAll
         case add
         case emptyTrash
+        case restoreOpenItems
     }
 
     @IBOutlet private weak var tableView: UITableView!
@@ -39,11 +40,18 @@ final class ItemsViewController: UIViewController {
     weak var tagFilterDelegate: ItemsTagFilterDelegate?
 
     private weak var coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)?
+    private weak var presenter: OpenItemsPresenter?
 
-    init(viewModel: ViewModel<ItemsActionHandler>, controllers: Controllers, coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)) {
+    init(
+        viewModel: ViewModel<ItemsActionHandler>,
+        controllers: Controllers,
+        coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate),
+        presenter: OpenItemsPresenter
+    ) {
         self.viewModel = viewModel
         self.controllers = controllers
         self.coordinatorDelegate = coordinatorDelegate
+        self.presenter = presenter
         self.disposeBag = DisposeBag()
 
         super.init(nibName: "ItemsViewController", bundle: nil)
@@ -79,6 +87,7 @@ final class ItemsViewController: UIViewController {
         self.setupFileObservers()
         self.startObservingSyncProgress()
         self.setupAppStateObserver()
+        setupOpenItemsObserving()
 
         if let term = self.viewModel.state.searchTerm, !term.isEmpty {
             navigationItem.searchController?.searchBar.text = term
@@ -170,6 +179,10 @@ final class ItemsViewController: UIViewController {
         if state.changes.contains(.filters) || state.changes.contains(.batchData) {
             self.toolbarController.reloadToolbarItems(for: state)
         }
+        
+        if state.changes.contains(.openItems) {
+            setupRightBarButtonItems(for: state)
+        }
 
         if let key = state.itemKeyToDuplicate {
             self.coordinatorDelegate?.showItemDetail(
@@ -208,7 +221,7 @@ final class ItemsViewController: UIViewController {
             guard let note = Note(item: item) else { return }
             let tags = Array(item.tags.map({ Tag(tag: $0) }))
             let library = self.viewModel.state.library
-            coordinatorDelegate?.showNote(library: library, kind: .edit(key: note.key), text: note.text, tags: tags, title: nil) { [weak self] _, result in
+            coordinatorDelegate?.showNote(library: library, kind: .edit(key: note.key), text: note.text, tags: tags, parentTitleData: nil, title: note.title) { [weak self] _, result in
                 self?.viewModel.process(action: .processNoteSaveResult(result))
             }
         }
@@ -464,7 +477,15 @@ final class ItemsViewController: UIViewController {
         item.isEnabled = enabled
     }
 
+    private func updateRestoreOpenItemsButton(withCount count: Int) {
+        guard let item = navigationItem.rightBarButtonItems?.first(where: { button in RightBarButtonItem(rawValue: button.tag) == .restoreOpenItems }) else { return }
+        item.image = .openItemsImage(count: count)
+    }
+    
     private func setupRightBarButtonItems(for state: ItemsState) {
+        defer {
+            updateRestoreOpenItemsButton(withCount: state.openItemsCount)
+        }
         let currentItems = (self.navigationItem.rightBarButtonItems ?? []).compactMap({ RightBarButtonItem(rawValue: $0.tag) })
         let expectedItems = rightBarButtonItemTypes(for: state)
         guard currentItems != expectedItems else { return }
@@ -480,6 +501,9 @@ final class ItemsViewController: UIViewController {
                 items = [.add] + selectItems
             } else {
                 items = selectItems
+            }
+            if state.openItemsCount > 0 {
+                items = [.restoreOpenItems] + items
             }
             return items
             
@@ -500,35 +524,36 @@ final class ItemsViewController: UIViewController {
         func createRightBarButtonItem(_ type: RightBarButtonItem) -> UIBarButtonItem {
             var image: UIImage?
             var title: String?
-            let action: (UIBarButtonItem) -> Void
+            let primaryAction: UIAction?
+            var menu: UIMenu?
             let accessibilityLabel: String
             
             switch type {
             case .deselectAll:
                 title = L10n.Items.deselectAll
                 accessibilityLabel = L10n.Accessibility.Items.deselectAllItems
-                action = { [weak self] _ in
+                primaryAction = UIAction { [weak self] _ in
                     self?.viewModel.process(action: .toggleSelectionState)
                 }
                 
             case .selectAll:
                 title = L10n.Items.selectAll
                 accessibilityLabel = L10n.Accessibility.Items.selectAllItems
-                action = { [weak self] _ in
+                primaryAction = UIAction { [weak self] _ in
                     self?.viewModel.process(action: .toggleSelectionState)
                 }
                 
             case .done:
                 title = L10n.done
                 accessibilityLabel = L10n.done
-                action = { [weak self] _ in
+                primaryAction = UIAction { [weak self] _ in
                     self?.viewModel.process(action: .stopEditing)
                 }
                 
             case .select:
                 title = L10n.select
                 accessibilityLabel = L10n.Accessibility.Items.selectItems
-                action = { [weak self] _ in
+                primaryAction = UIAction { [weak self] _ in
                     self?.viewModel.process(action: .startEditing)
                 }
                 
@@ -536,35 +561,47 @@ final class ItemsViewController: UIViewController {
                 image = UIImage(systemName: "plus")
                 accessibilityLabel = L10n.Items.new
                 title = L10n.Items.new
-                action = { [weak self] item in
-                    guard let self else { return }
-                    self.coordinatorDelegate?.showAddActions(viewModel: self.viewModel, button: item)
+                primaryAction = UIAction { [weak self] action in
+                    guard let self, let sender = action.sender as? UIBarButtonItem else { return }
+                    coordinatorDelegate?.showAddActions(viewModel: viewModel, button: sender)
                 }
                 
             case .emptyTrash:
                 title = L10n.Collections.emptyTrash
                 accessibilityLabel = L10n.Collections.emptyTrash
-                action = { [weak self] _ in
+                primaryAction = UIAction { [weak self] _ in
                     self?.emptyTrash()
                 }
-            }
-            
-            let item: UIBarButtonItem
-            if #available(iOS 16.0, *) {
-                item = UIBarButtonItem(title: title, image: image, target: nil, action: nil)
-            } else {
-                if let title = title {
-                    item = UIBarButtonItem(title: title, style: .plain, target: nil, action: nil)
-                } else if let image = image {
-                    item = UIBarButtonItem(image: image, style: .plain, target: nil, action: nil)
-                } else {
-                    fatalError("ItemsViewController: you need a title or image!")
+
+            case .restoreOpenItems:
+                image = .openItemsImage(count: 0)
+                accessibilityLabel = L10n.Items.restoreOpen
+                primaryAction = UIAction { [weak self] _ in
+                    guard let self, let presenter, let controller = controllers.userControllers?.openItemsController, let sessionIdentifier else { return }
+                    controller.restoreMostRecentlyOpenedItem(using: presenter, sessionIdentifier: sessionIdentifier)
+                }
+                if let controller = controllers.userControllers?.openItemsController, let sessionIdentifier {
+                    let deferredOpenItemsMenuElement = controller.deferredOpenItemsMenuElement(
+                        for: sessionIdentifier,
+                        showMenuForCurrentItem: false,
+                        openItemPresenterProvider: { [weak self] in
+                            self?.presenter
+                        },
+                        completion: { [weak self] _, openItemsChanged in
+                            guard let self, openItemsChanged else { return }
+                            set(userActivity: .mainActivity(with: controllers.userControllers?.openItemsController.getItems(for: sessionIdentifier) ?? [])
+                                .set(title: coordinatorDelegate?.displayTitle)
+                            )
+                        }
+                    )
+                    let openItemsMenu = UIMenu(title: L10n.Accessibility.Pdf.openItems, options: [.displayInline], children: [deferredOpenItemsMenuElement])
+                    menu = UIMenu(children: [openItemsMenu])
                 }
             }
             
+            let item = UIBarButtonItem(title: title, image: image, primaryAction: primaryAction, menu: menu)
             item.tag = type.rawValue
             item.accessibilityLabel = accessibilityLabel
-            item.rx.tap.subscribe(onNext: { _ in action(item) }).disposed(by: self.disposeBag)
             return item
         }
     }
@@ -584,6 +621,16 @@ final class ItemsViewController: UIViewController {
         controller.delegate = self
         navigationItem.hidesSearchBarWhenScrolling = false
         navigationItem.searchController = controller
+    }
+
+    private func setupOpenItemsObserving() {
+        guard let controller = controllers.userControllers?.openItemsController, let sessionIdentifier else { return }
+        controller.observable(for: sessionIdentifier)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] items in
+                self?.viewModel.process(action: .updateOpenItems(items: items))
+            })
+            .disposed(by: disposeBag)
     }
 }
 
