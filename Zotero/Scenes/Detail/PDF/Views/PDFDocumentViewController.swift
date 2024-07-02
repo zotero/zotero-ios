@@ -830,6 +830,8 @@ extension PDFDocumentViewController: AnnotationStateManagerDelegate {
 
 extension PDFDocumentViewController: UIPencilInteractionDelegate {
     func pencilInteractionDidTap(_ interaction: UIPencilInteraction) {
+        guard self.parentDelegate?.isToolbarVisible == true else { return }
+    
         switch UIPencilInteraction.preferredTapAction {
         case .switchEraser:
             if let tool = self.pdfController?.annotationStateManager.state, tool != .eraser {
