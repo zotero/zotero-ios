@@ -208,12 +208,17 @@ struct AnnotationConverter {
         library: Library,
         displayName: String,
         username: String,
+        documentPageCount: UInt,
         boundingBoxConverter: AnnotationBoundingBoxConverter
     ) -> [PSPDFKit.Annotation] {
         return items.compactMap({ item in
-            guard let annotation = PDFDatabaseAnnotation(item: item) else { return nil }
-            return self.annotation(
-                from: annotation,
+            guard let dbAnnotation = PDFDatabaseAnnotation(item: item) else { return nil }
+            guard dbAnnotation.page < documentPageCount else {
+                DDLogWarn("AnnotationConverter: annotation \(item.key) for item \(item.parent?.key ?? ""); \(item.parent?.libraryId ?? .custom(.myLibrary)) has incorrect page index - \(dbAnnotation.page) / \(documentPageCount)")
+                return nil
+            }
+            return annotation(
+                from: dbAnnotation,
                 type: type,
                 interfaceStyle: interfaceStyle,
                 currentUserId: currentUserId,

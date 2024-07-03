@@ -575,6 +575,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 library: viewModel.state.library,
                 displayName: viewModel.state.displayName,
                 username: viewModel.state.username,
+                documentPageCount: viewModel.state.document.pageCount,
                 boundingBoxConverter: boundingBoxConverter
             )
         }
@@ -1707,6 +1708,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             let startTime = CFAbsoluteTimeGetCurrent()
 
             let key = viewModel.state.key
+            let isDark = viewModel.state.interfaceStyle == .dark
             let (item, liveAnnotations, storedPage) = try loadItemAnnotationsAndPage(for: key, libraryId: viewModel.state.library.identifier)
 
             // TODO: Restore when edge-cases that change the local file unexpectedly are resolved.
@@ -1723,8 +1725,15 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             let databaseAnnotations = liveAnnotations.freeze()
 
             let loadDocumentAnnotationsStartTime = CFAbsoluteTimeGetCurrent()
-            let documentAnnotations = loadAnnotations(from: viewModel.state.document, library: library, username: viewModel.state.username, displayName: viewModel.state.displayName)
-            
+            let documentAnnotations = loadSupportedAndLockUnsupportedAnnotations(
+                from: viewModel.state.document,
+                key: viewModel.state.key,
+                library: library,
+                username: viewModel.state.username,
+                displayName: viewModel.state.displayName,
+                isDark: isDark
+            )
+
             let convertDbAnnotationsStartTime = CFAbsoluteTimeGetCurrent()
             let dbToPdfAnnotations = AnnotationConverter.annotations(
                 from: databaseAnnotations,
@@ -1733,18 +1742,18 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 library: library,
                 displayName: viewModel.state.displayName,
                 username: viewModel.state.username,
+                documentPageCount: viewModel.state.document.pageCount,
                 boundingBoxConverter: boundingBoxConverter
             )
 
             let sortStartTime = CFAbsoluteTimeGetCurrent()
             let sortedKeys = createSortedKeys(fromDatabaseAnnotations: databaseAnnotations, documentAnnotations: documentAnnotations)
-
-            let isDark = viewModel.state.interfaceStyle == .dark
             let (page, selectedData) = preselectedData(databaseAnnotations: databaseAnnotations, storedPage: storedPage, boundingBoxConverter: boundingBoxConverter, in: viewModel)
 
             let updateDocumentStartTime = CFAbsoluteTimeGetCurrent()
-            update(document: viewModel.state.document, zoteroAnnotations: dbToPdfAnnotations, key: key, libraryId: library.identifier, isDark: isDark)
-            let storePreviewsStartTime = CFAbsoluteTimeGetCurrent()
+            viewModel.state.document.add(annotations: dbToPdfAnnotations, options: [.suppressNotifications: true])
+            let endTime = CFAbsoluteTimeGetCurrent()
+
             annotationPreviewController.store(annotations: dbToPdfAnnotations, parentKey: key, libraryId: library.identifier, isDark: isDark)
 
             update(viewModel: viewModel) { state in
@@ -1766,12 +1775,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 }
             }
 
-            let endTime = CFAbsoluteTimeGetCurrent()
             DDLogInfo("PDFReaderActionHandler: loaded PDF with \(viewModel.state.document.pageCount) pages, \(documentAnnotations.count) document annotations, \(dbToPdfAnnotations.count) zotero annotations")
             let timeLog = "PDFReaderActionHandler: total time \(endTime - startTime), initial loading: \(loadDocumentAnnotationsStartTime - startTime), " +
                 "load document annotations: \(convertDbAnnotationsStartTime - loadDocumentAnnotationsStartTime), " +
-                "load zotero annotations: \(sortStartTime - convertDbAnnotationsStartTime), " + "sort keys: \(updateDocumentStartTime - sortStartTime), " +
-                "update document: \(storePreviewsStartTime - updateDocumentStartTime), store previews: \(endTime - storePreviewsStartTime)"
+                "load zotero annotations: \(sortStartTime - convertDbAnnotationsStartTime), " + "sort keys: \(updateDocumentStartTime - sortStartTime), update document: \(endTime - updateDocumentStartTime)"
             DDLogInfo(DDLogMessageFormat(stringLiteral: timeLog))
 
             observeDocument(in: viewModel)
@@ -2022,47 +2029,43 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         return true
     }
 
-    private func loadAnnotations(from document: PSPDFKit.Document, library: Library, username: String, displayName: String) -> [String: PDFDocumentAnnotation] {
+    private func loadSupportedAndLockUnsupportedAnnotations(
+        from document: PSPDFKit.Document,
+        key: String,
+        library: Library,
+        username: String,
+        displayName: String,
+        isDark: Bool
+    ) -> [String: PDFDocumentAnnotation] {
+        let documentAnnotations = document.allAnnotations(of: PSPDFKit.Annotation.Kind.all).values.flatMap({ $0 })
+        annotationPreviewController.store(annotations: documentAnnotations, parentKey: key, libraryId: library.identifier, isDark: isDark)
+
         var annotations: [String: PDFDocumentAnnotation] = [:]
-        for (_, pdfAnnotations) in document.allAnnotations(of: AnnotationsConfig.supported) {
-            for pdfAnnotation in pdfAnnotations {
-                // Check whether square annotation was previously created by Zotero. If it's just "normal" square (instead of our image) annotation, don't convert it to Zotero annotation.
-                if let square = pdfAnnotation as? PSPDFKit.SquareAnnotation, !square.isZoteroAnnotation {
-                    continue
-                }
+        for pdfAnnotation in documentAnnotations {
+            pdfAnnotation.flags.update(with: .locked)
 
-                guard let annotation = AnnotationConverter.annotation(
-                    from: pdfAnnotation,
-                    color: (pdfAnnotation.color?.hexString ?? "#000000"),
-                    library: library,
-                    username: username,
-                    displayName: displayName,
-                    boundingBoxConverter: delegate
-                )
-                else { continue }
-
-                annotations[annotation.key] = annotation
+            // Unsupported annotations aren't visible in sidebar
+            if !AnnotationsConfig.supported.contains(pdfAnnotation.type) {
+                continue
             }
+            // Check whether square annotation was previously created by Zotero. If it's just "normal" square (instead of our image) annotation, don't convert it to Zotero annotation.
+            if let square = pdfAnnotation as? PSPDFKit.SquareAnnotation, !square.isZoteroAnnotation {
+                continue
+            }
+
+            guard let annotation = AnnotationConverter.annotation(
+                from: pdfAnnotation,
+                color: (pdfAnnotation.color?.hexString ?? "#000000"),
+                library: library,
+                username: username,
+                displayName: displayName,
+                boundingBoxConverter: delegate
+            )
+            else { continue }
+
+            annotations[annotation.key] = annotation
         }
         return annotations
-    }
-
-    private func update(document: PSPDFKit.Document, zoteroAnnotations: [PSPDFKit.Annotation], key: String, libraryId: LibraryIdentifier, isDark: Bool) {
-        // Disable all non-zotero annotations, store previews if needed
-//        let pdfAnnotations = document.allAnnotations(of: PSPDFKit.Annotation.Kind.all).values.flatMap({ $0 })
-//        pdfAnnotations.forEach({ $0.flags.update(with: .locked) })
-//        annotationPreviewController.store(annotations: pdfAnnotations, parentKey: key, libraryId: libraryId, isDark: isDark)
-//        // Filter compatible zotero annotations
-//        var filteredZoteroAnnotations: [PSPDFKit.Annotation] = []
-//        for annotation in zoteroAnnotations {
-//            guard annotation.pageIndex < document.pageCount else {
-//                DDLogError("PDFReaderActionHandler: annotation \(annotation.key ?? "-") for item \(key); \(libraryId) has incorrect page index - \(annotation.pageIndex) / \(document.pageCount)")
-//                continue
-//            }
-//            filteredZoteroAnnotations.append(annotation)
-//        }
-        // Add zotero annotations to document
-        document.add(annotations: zoteroAnnotations, options: [.suppressNotifications: true])
     }
 
     // MARK: - Translate sync (db) changes to PDF document
