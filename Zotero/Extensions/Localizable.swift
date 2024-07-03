@@ -933,6 +933,10 @@ internal enum L10n {
     internal static func lineWidthPoint(_ p1: Float) -> String {
       return L10n.tr("Localizable", "pdf.line_width_point", p1, fallback: "%0.1f pt")
     }
+    /// Next Viewport
+    internal static let nextViewport = L10n.tr("Localizable", "pdf.next_viewport", fallback: "Next Viewport")
+    /// Previous Viewport
+    internal static let previousViewport = L10n.tr("Localizable", "pdf.previous_viewport", fallback: "Previous Viewport")
     internal enum AnnotationPopover {
       /// Delete Annotation
       internal static let delete = L10n.tr("Localizable", "pdf.annotation_popover.delete", fallback: "Delete Annotation")
