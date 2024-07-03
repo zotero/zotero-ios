@@ -2049,20 +2049,20 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
     private func update(document: PSPDFKit.Document, zoteroAnnotations: [PSPDFKit.Annotation], key: String, libraryId: LibraryIdentifier, isDark: Bool) {
         // Disable all non-zotero annotations, store previews if needed
-        let pdfAnnotations = document.allAnnotations(of: PSPDFKit.Annotation.Kind.all).values.flatMap({ $0 })
-        pdfAnnotations.forEach({ $0.flags.update(with: .locked) })
-        annotationPreviewController.store(annotations: pdfAnnotations, parentKey: key, libraryId: libraryId, isDark: isDark)
-        // Filter compatible zotero annotations
-        var filteredZoteroAnnotations: [PSPDFKit.Annotation] = []
-        for annotation in zoteroAnnotations {
-            guard annotation.pageIndex < document.pageCount else {
-                DDLogError("PDFReaderActionHandler: annotation \(annotation.key ?? "-") for item \(key); \(libraryId) has incorrect page index - \(annotation.pageIndex) / \(document.pageCount)")
-                continue
-            }
-            filteredZoteroAnnotations.append(annotation)
-        }
+//        let pdfAnnotations = document.allAnnotations(of: PSPDFKit.Annotation.Kind.all).values.flatMap({ $0 })
+//        pdfAnnotations.forEach({ $0.flags.update(with: .locked) })
+//        annotationPreviewController.store(annotations: pdfAnnotations, parentKey: key, libraryId: libraryId, isDark: isDark)
+//        // Filter compatible zotero annotations
+//        var filteredZoteroAnnotations: [PSPDFKit.Annotation] = []
+//        for annotation in zoteroAnnotations {
+//            guard annotation.pageIndex < document.pageCount else {
+//                DDLogError("PDFReaderActionHandler: annotation \(annotation.key ?? "-") for item \(key); \(libraryId) has incorrect page index - \(annotation.pageIndex) / \(document.pageCount)")
+//                continue
+//            }
+//            filteredZoteroAnnotations.append(annotation)
+//        }
         // Add zotero annotations to document
-        document.add(annotations: filteredZoteroAnnotations, options: [.suppressNotifications: true])
+        document.add(annotations: zoteroAnnotations, options: [.suppressNotifications: true])
     }
 
     // MARK: - Translate sync (db) changes to PDF document

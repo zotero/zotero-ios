@@ -298,7 +298,7 @@ struct AnnotationConverter {
             square = SquareAnnotation()
         }
 
-        square.boundingBox = annotation.boundingBox(boundingBoxConverter: boundingBoxConverter).rounded(to: 3)
+        square.boundingBox = annotation.boundingBox(boundingBoxConverter: boundingBoxConverter)
         square.borderColor = color
         square.lineWidth = AnnotationsConfig.imageAnnotationLineWidth
 
@@ -323,8 +323,8 @@ struct AnnotationConverter {
             highlight = HighlightAnnotation()
         }
 
-        highlight.boundingBox = annotation.boundingBox(boundingBoxConverter: boundingBoxConverter).rounded(to: 3)
-        highlight.rects = annotation.rects(boundingBoxConverter: boundingBoxConverter).map({ $0.rounded(to: 3) })
+        highlight.rects = annotation.rects(boundingBoxConverter: boundingBoxConverter)
+        highlight.boundingBox = annotation.boundingBox(rects: highlight.rects!)
         highlight.color = color
         highlight.alpha = alpha
 
@@ -343,7 +343,7 @@ struct AnnotationConverter {
             note = NoteAnnotation(contents: annotation.comment)
         }
 
-        let boundingBox = annotation.boundingBox(boundingBoxConverter: boundingBoxConverter).rounded(to: 3)
+        let boundingBox = annotation.boundingBox(boundingBoxConverter: boundingBoxConverter)
         note.boundingBox = CGRect(origin: boundingBox.origin, size: AnnotationsConfig.noteAnnotationSize)
         note.borderStyle = .dashed
         note.color = color
@@ -377,8 +377,8 @@ struct AnnotationConverter {
             underline = UnderlineAnnotation()
         }
 
-        underline.boundingBox = annotation.boundingBox(boundingBoxConverter: boundingBoxConverter).rounded(to: 3)
-        underline.rects = annotation.rects(boundingBoxConverter: boundingBoxConverter).map({ $0.rounded(to: 3) })
+        underline.rects = annotation.rects(boundingBoxConverter: boundingBoxConverter)
+        underline.boundingBox = annotation.boundingBox(rects: underline.rects!)
         underline.color = color
         underline.alpha = alpha
 
@@ -389,7 +389,7 @@ struct AnnotationConverter {
         let text = PSPDFKit.FreeTextAnnotation(contents: annotation.comment)
         text.color = color
         text.fontSize = CGFloat(annotation.fontSize ?? 0)
-        text.setBoundingBox(annotation.boundingBox(boundingBoxConverter: boundingBoxConverter).rounded(to: 3), transformSize: true)
+        text.setBoundingBox(annotation.boundingBox(boundingBoxConverter: boundingBoxConverter), transformSize: true)
         text.setRotation(annotation.rotation ?? 0, updateBoundingBox: true)
         return text
     }
