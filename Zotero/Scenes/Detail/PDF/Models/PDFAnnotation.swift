@@ -34,7 +34,7 @@ protocol PDFAnnotation {
 
 extension PDFAnnotation {
     func previewBoundingBox(boundingBoxConverter: AnnotationBoundingBoxConverter) -> CGRect {
-        let boundingBox = self.boundingBox(boundingBoxConverter: boundingBoxConverter)
+        let boundingBox = boundingBox(boundingBoxConverter: boundingBoxConverter)
         switch self.type {
         case .image:
             return AnnotationPreviewBoundingBoxCalculator.imagePreviewRect(from: boundingBox, lineWidth: AnnotationsConfig.imageAnnotationLineWidth)
@@ -46,8 +46,19 @@ extension PDFAnnotation {
             return AnnotationPreviewBoundingBoxCalculator.freeTextPreviewRect(from: boundingBox, rotation: self.rotation ?? 0)
 
         case .note, .highlight, .underline:
-            return boundingBox.rounded(to: 3)
+            return boundingBox
         }
+    }
+
+    func boundingBox(rects: [CGRect]) -> CGRect {
+        if rects.count == 1 {
+            return rects[0]
+        }
+        return AnnotationBoundingBoxCalculator.boundingBox(from: rects).rounded(to: 3)
+    }
+
+    func boundingBox(paths: [[CGPoint]], lineWidth: CGFloat) -> CGRect {
+        return AnnotationBoundingBoxCalculator.boundingBox(from: paths, lineWidth: lineWidth)
     }
 
     func boundingBox(boundingBoxConverter: AnnotationBoundingBoxConverter) -> CGRect {
@@ -55,14 +66,11 @@ extension PDFAnnotation {
         case .ink:
             let paths = self.paths(boundingBoxConverter: boundingBoxConverter)
             let lineWidth = self.lineWidth ?? 1
-            return AnnotationBoundingBoxCalculator.boundingBox(from: paths, lineWidth: lineWidth).rounded(to: 3)
+            return boundingBox(paths: paths, lineWidth: lineWidth)
 
         case .note, .image, .highlight, .underline, .freeText:
             let rects = self.rects(boundingBoxConverter: boundingBoxConverter)
-            if rects.count == 1 {
-                return rects[0].rounded(to: 3)
-            }
-            return AnnotationBoundingBoxCalculator.boundingBox(from: rects).rounded(to: 3)
+            return boundingBox(rects: rects)
         }
     }
 }

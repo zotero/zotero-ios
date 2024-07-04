@@ -18,10 +18,11 @@ struct PDFDatabaseAnnotation {
 
     init?(item: RItem) {
         guard let type = AnnotationType(rawValue: item.annotationType) else {
-            DDLogWarn("DatabaseAnnotation: \(item.key) unknown annotation type \(item.annotationType)")
+            DDLogWarn("PDFDatabaseAnnotation: \(item.key) unknown annotation type \(item.annotationType)")
             return nil
         }
         guard AnnotationsConfig.supported.contains(type.kind) else {
+            DDLogWarn("PDFDatabaseAnnotation: \(item.key) unsupported annotation type \(type)")
             return nil
         }
         self.item = item
@@ -34,11 +35,11 @@ struct PDFDatabaseAnnotation {
 
     var _page: Int? {
         guard let rawValue = item.fieldValue(for: FieldKeys.Item.Annotation.Position.pageIndex) else {
-            DDLogError("DatabaseAnnotation: \(key) missing page!")
+            DDLogError("PDFDatabaseAnnotation: \(key) missing page!")
             return nil
         }
         guard let page = Int(rawValue) else {
-            DDLogError("DatabaseAnnotation: \(key) page incorrect format \(rawValue)")
+            DDLogError("PDFDatabaseAnnotation: \(key) page incorrect format \(rawValue)")
             // Page is not an int, try double or fail
             return Double(rawValue).flatMap(Int.init)
         }
@@ -47,7 +48,7 @@ struct PDFDatabaseAnnotation {
 
     var _pageLabel: String? {
         guard let label = item.fieldValue(for: FieldKeys.Item.Annotation.pageLabel) else {
-            DDLogError("DatabaseAnnotation: \(key) missing page label!")
+            DDLogError("PDFDatabaseAnnotation: \(key) missing page label!")
             return nil
         }
         return label
@@ -89,7 +90,7 @@ struct PDFDatabaseAnnotation {
 
     var _color: String? {
         guard let color = item.fieldValue(for: FieldKeys.Item.Annotation.color) else {
-            DDLogError("DatabaseAnnotation: \(key) missing color!")
+            DDLogError("PDFDatabaseAnnotation: \(key) missing color!")
             return nil
         }
         return color
@@ -187,7 +188,7 @@ extension RItem {
     fileprivate func fieldValue(for key: String) -> String? {
         let value = fields.filter(.key(key)).first?.value
         if value == nil {
-            DDLogError("DatabaseAnnotation: missing value for `\(key)`")
+            DDLogError("PDFDatabaseAnnotation: missing value for `\(key)`")
         }
         return value
     }
