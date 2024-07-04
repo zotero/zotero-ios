@@ -37,8 +37,7 @@ final class PDFDocumentViewController: UIViewController {
     private let disposeBag: DisposeBag
     private let initialUIHidden: Bool
 
-    private static var toolHistory: [PSPDFKit.Annotation.Tool] = []
-    private static var disabledAnnotationTools: Bool = false
+    private static var toolHistory: [PSPDFKit.Annotation.Tool?] = []
     
     private var selectionView: SelectionView?
     // Used to decide whether text annotation should start editing on tap
@@ -134,29 +133,24 @@ final class PDFDocumentViewController: UIViewController {
 
     func disableAnnotationTools() {
         guard let tool = self.pdfController?.annotationStateManager.state else { return }
-        self.toggle(annotationTool: tool, color: nil, tappedWithStylus: false)
-        PDFDocumentViewController.disabledAnnotationTools = true
+        self.toggle(annotationTool: tool, color: nil, tappedWithStylus: false, noToolHistory: true)
     }
 
-    func toggle(annotationTool: PSPDFKit.Annotation.Tool, color: UIColor?, tappedWithStylus: Bool, resetPencilManager: Bool = true) {
+    func toggle(annotationTool: PSPDFKit.Annotation.Tool, color: UIColor?, tappedWithStylus: Bool, resetPencilManager: Bool = true, noToolHistory: Bool = false) {
         guard let stateManager = self.pdfController?.annotationStateManager else { return }
 
         stateManager.stylusMode = .fromStylusManager
 
-        if let tool = stateManager.state {
-            PDFDocumentViewController.toolHistory.append(tool)
-            if PDFDocumentViewController.toolHistory.count > 2 {
-                PDFDocumentViewController.toolHistory.remove(at: 0)
+        if !noToolHistory {
+            let toolToAdd = stateManager.state == annotationTool ? nil : annotationTool
+            if PDFDocumentViewController.toolHistory.last != toolToAdd {
+                PDFDocumentViewController.toolHistory.append(toolToAdd)
+                if PDFDocumentViewController.toolHistory.count > 2 {
+                    PDFDocumentViewController.toolHistory.remove(at: 0)
+                }
             }
-        } else if !PDFDocumentViewController.disabledAnnotationTools {
-            // Normally, toggling from the unset state implies the "selection tool" is being used
-            // Resetting the tool history functionally queues the unset state
-            PDFDocumentViewController.toolHistory.removeAll()
-        } else {
-            // But if this is the first toggle since annotation tools were disabled, the user has either reopened the PDF or reactivated annotation mode -- do not queue the unset state
-            PDFDocumentViewController.disabledAnnotationTools = false
         }
-
+        
         if stateManager.state == annotationTool {
             stateManager.setState(nil, variant: nil)
             if resetPencilManager {
@@ -845,24 +839,33 @@ extension PDFDocumentViewController: UIPencilInteractionDelegate {
     
         switch UIPencilInteraction.preferredTapAction {
         case .switchEraser:
-            if let tool = self.pdfController?.annotationStateManager.state, tool != .eraser {
-                self.toggle(annotationTool: .eraser, color: nil, tappedWithStylus: true)
+            if let tool = self.pdfController?.annotationStateManager.state {
+                if tool != .eraser {
+                    self.toggle(annotationTool: .eraser, color: nil, tappedWithStylus: true)
+                } else {
+                    // Find the most recent non-eraser tool – if it's the "nil tool," default to `tool` to unset current tool
+                    let previous = PDFDocumentViewController.toolHistory.last(where: { $0 != .eraser }) ?? tool
+                    let color = self.viewModel.state.toolColors[previous ?? tool]
+                    self.toggle(annotationTool: previous ?? tool, color: color, tappedWithStylus: true)
+                }
             } else {
-                let tool = (PDFDocumentViewController.toolHistory.last == .eraser ? .ink : PDFDocumentViewController.toolHistory.last) ?? .ink
-                let color = self.viewModel.state.toolColors[tool]
-                self.toggle(annotationTool: tool, color: color, tappedWithStylus: true)
+                // Pick up on the user's tool-eraser switching by finding the most recent non-nil tool
+                let previous = PDFDocumentViewController.toolHistory.last(where: { $0 != nil }) ?? .ink
+                let color = self.viewModel.state.toolColors[previous ?? .ink]
+                self.toggle(annotationTool: previous ?? .ink, color: color, tappedWithStylus: true)
             }
 
         case .switchPrevious:
-            if !PDFDocumentViewController.disabledAnnotationTools {
-                let previous = PDFDocumentViewController.toolHistory.last ?? (self.pdfController?.annotationStateManager.state ?? .ink)
-                let color = self.viewModel.state.toolColors[previous]
-                self.toggle(annotationTool: previous, color: color, tappedWithStylus: true)
+            if let tool = self.pdfController?.annotationStateManager.state {
+                // Find the most recent different tool – if it's the "nil tool," default to `tool` to unset current tool
+                let previous = PDFDocumentViewController.toolHistory.last(where: { $0 != tool }) ?? tool
+                let color = self.viewModel.state.toolColors[previous ?? tool]
+                self.toggle(annotationTool: previous ?? tool, color: color, tappedWithStylus: true)
             } else {
-                // If this is the first toggle since annotation tools were disabled, resume switching where user left off
-                let previous = PDFDocumentViewController.toolHistory.first ?? .ink
-                let color = self.viewModel.state.toolColors[previous]
-                self.toggle(annotationTool: previous, color: color, tappedWithStylus: true)
+                // Since we can't switch from nil to nil, find the most recent non-nil tool
+                let previous = PDFDocumentViewController.toolHistory.last(where: { $0 != nil }) ?? .ink
+                let color = self.viewModel.state.toolColors[previous ?? .ink]
+                self.toggle(annotationTool: previous ?? .ink, color: color, tappedWithStylus: true)
             }
 
         case .showColorPalette, .showInkAttributes:
