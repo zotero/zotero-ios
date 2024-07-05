@@ -844,11 +844,9 @@ extension PDFDocumentViewController: UIPencilInteractionDelegate {
                     let color = self.viewModel.state.toolColors[previous]
                     self.toggle(annotationTool: previous, color: color, tappedWithStylus: true)
                 }
-            } else {
             }
 
         case .switchPrevious:
-            if let tool = self.pdfController?.annotationStateManager.state {
             let previous: Annotation.Tool
             if let tool = pdfController?.annotationStateManager.state {
                 // Find the most recent different tool – if it's the "nil tool", default to `tool` to unset current tool
@@ -859,8 +857,6 @@ extension PDFDocumentViewController: UIPencilInteractionDelegate {
             }
             let color = viewModel.state.toolColors[previous]
             toggle(annotationTool: previous, color: color, tappedWithStylus: true)
-            } else {
-            }
 
         case .showColorPalette, .showInkAttributes:
             self.parentDelegate?.showToolOptions()
