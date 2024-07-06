@@ -15,6 +15,7 @@ import RxSwift
 
 protocol PDFReaderContainerDelegate: AnyObject {
     var isSidebarVisible: Bool { get }
+    var isToolbarVisible: Bool { get }
     var documentTopOffset: CGFloat { get }
 
     func showSearch(pdfController: PDFViewController, text: String?)
@@ -56,6 +57,7 @@ class PDFReaderViewController: UIViewController {
     }
     private var previousTraitCollection: UITraitCollection?
     var isSidebarVisible: Bool { return sidebarControllerLeft?.constant == 0 }
+    var isToolbarVisible: Bool { return toolbarState.visible }
     var key: String { return viewModel.state.key }
 
     weak var coordinatorDelegate: (PdfReaderCoordinatorDelegate & PdfAnnotationsCoordinatorDelegate)?
