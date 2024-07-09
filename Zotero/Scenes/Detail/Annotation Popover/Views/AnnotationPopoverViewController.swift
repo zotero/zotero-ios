@@ -17,11 +17,11 @@ final class AnnotationPopoverViewController: UIViewController {
 
     @IBOutlet private weak var scrollView: UIScrollView!
     @IBOutlet private weak var containerStackView: UIStackView!
-    private weak var header: AnnotationViewHeader!
+    private weak var header: AnnotationViewHeader?
     private weak var comment: AnnotationViewTextView?
-    private weak var colorPicker: ColorPickerStackView!
-    private weak var tagsButton: AnnotationViewButton!
-    private weak var tags: AnnotationViewText!
+    private weak var colorPicker: ColorPickerStackView?
+    private weak var tagsButton: AnnotationViewButton?
+    private weak var tags: AnnotationViewText?
     private weak var deleteButton: UIButton!
 
     weak var coordinatorDelegate: AnnotationPopoverAnnotationCoordinatorDelegate?
@@ -84,7 +84,7 @@ final class AnnotationPopoverViewController: UIViewController {
 
     private func update(state: AnnotationPopoverState) {
         // Update header
-        header.setup(
+        header?.setup(
             type: state.type,
             authorName: state.author,
             pageLabel: state.pageLabel,
@@ -98,13 +98,13 @@ final class AnnotationPopoverViewController: UIViewController {
         )
 
         // Update selected color
-        colorPicker.setSelected(hexColor: state.color)
+        colorPicker?.setSelected(hexColor: state.color)
 
         // Update tags
         if !state.tags.isEmpty {
-            tags.setup(with: AnnotationView.attributedString(from: state.tags, layout: AnnotationPopoverLayout.annotationLayout))
+            tags?.setup(with: AnnotationView.attributedString(from: state.tags, layout: AnnotationPopoverLayout.annotationLayout))
         }
-        tags.isHidden = state.tags.isEmpty
+        tags?.isHidden = state.tags.isEmpty
         tagsButton?.isHidden = !state.tags.isEmpty
     }
 
