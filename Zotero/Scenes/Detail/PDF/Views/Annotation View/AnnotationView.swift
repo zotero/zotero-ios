@@ -111,11 +111,13 @@ final class AnnotationView: UIView {
             type: annotation.type,
             comment: annotation.comment,
             text: annotation.text,
+            preview: nil,
             color: color,
             canEdit: canEdit,
             selected: selected,
             availableWidth: availableWidth,
-            accessibilityType: .cell
+            accessibilityType: .cell,
+            getSize: { .zero }
         )
         setup(comment: comment, canEdit: canEdit)
         setup(tags: annotation.tags, canEdit: canEdit, accessibilityEnabled: selected)
@@ -174,7 +176,8 @@ final class AnnotationView: UIView {
             accessibilityType: .cell
         )
         setupContent(
-            for: annotation,
+            type: annotation.type,
+            comment: annotation.comment,
             text: text,
             preview: preview,
             color: color,
@@ -182,7 +185,7 @@ final class AnnotationView: UIView {
             selected: selected,
             availableWidth: availableWidth,
             accessibilityType: .cell,
-            boundingBoxConverter: boundingBoxConverter
+            getSize: { annotation.previewBoundingBox(boundingBoxConverter: boundingBoxConverter).size }
         )
         setup(comment: comment, canEdit: canEdit)
         setup(tags: annotation.tags, canEdit: canEdit, accessibilityEnabled: selected)
@@ -198,7 +201,8 @@ final class AnnotationView: UIView {
     }
 
     private func setupContent(
-        for annotation: PDFAnnotation,
+        type: AnnotationType,
+        comment: String,
         text: NSAttributedString?,
         preview: UIImage?,
         color: UIColor,
@@ -206,19 +210,19 @@ final class AnnotationView: UIView {
         selected: Bool,
         availableWidth: CGFloat,
         accessibilityType: AccessibilityType,
-        boundingBoxConverter: AnnotationBoundingBoxConverter
+        getSize: () -> CGSize
     ) {
         guard let highlightContent, let imageContent else { return }
 
         highlightContent.isUserInteractionEnabled = false
 
-        switch annotation.type {
+        switch type {
         case .note:
             highlightContent.isHidden = true
             imageContent.isHidden = true
 
         case .highlight, .underline:
-            let bottomInset = inset(from: layout.highlightLineVerticalInsets, hasComment: !annotation.comment.isEmpty, selected: selected, canEdit: canEdit)
+            let bottomInset = inset(from: layout.highlightLineVerticalInsets, hasComment: !comment.isEmpty, selected: selected, canEdit: canEdit)
             highlightContent.isHidden = false
             imageContent.isHidden = true
             highlightContent.setup(with: color, text: text ?? .init(), bottomInset: bottomInset, accessibilityType: accessibilityType)
@@ -226,7 +230,7 @@ final class AnnotationView: UIView {
         case .image, .ink, .freeText:
             highlightContent.isHidden = true
             imageContent.isHidden = false
-            let size = annotation.previewBoundingBox(boundingBoxConverter: boundingBoxConverter).size
+            let size = getSize()
             let maxWidth = availableWidth - (layout.horizontalInset * 2)
             var maxHeight = ceil((size.height / size.width) * maxWidth)
             if maxHeight.isNaN || maxHeight.isInfinite {
@@ -234,7 +238,7 @@ final class AnnotationView: UIView {
             } else {
                 maxHeight = min((maxWidth * 2), maxHeight)
             }
-            let bottomInset = inset(from: layout.verticalSpacerHeight, hasComment: !annotation.comment.isEmpty, selected: selected, canEdit: canEdit)
+            let bottomInset = inset(from: layout.verticalSpacerHeight, hasComment: !comment.isEmpty, selected: selected, canEdit: canEdit)
             imageContent.setup(with: preview, height: maxHeight, bottomInset: bottomInset)
         }
     }

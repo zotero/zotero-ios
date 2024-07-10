@@ -227,7 +227,7 @@ final class DetailCoordinator: Coordinator {
 
             case "text/html", "application/epub+zip":
                 DDLogInfo("DetailCoordinator: show HTML / EPUB \(attachment.key)")
-                showHtmlEpubReader(for: url, key: attachment.key, library: library)
+                showHtmlEpubReader(for: url, key: attachment.key, libraryId: libraryId)
 
             case "text/plain":
                 let text = try? String(contentsOf: url, encoding: .utf8)
@@ -358,11 +358,11 @@ final class DetailCoordinator: Coordinator {
         navigationController?.present(controller, animated: true, completion: nil)
     }
 
-    private func showHtmlEpubReader(for url: URL, key: String, library: Library) {
+    private func showHtmlEpubReader(for url: URL, key: String, libraryId: LibraryIdentifier) {
         let navigationController = NavigationViewController()
         navigationController.modalPresentationStyle = .fullScreen
 
-        let coordinator = HtmlEpubCoordinator(key: key, library: library, url: url, navigationController: navigationController, controllers: controllers)
+        let coordinator = HtmlEpubCoordinator(key: key, libraryId: libraryId, url: url, navigationController: navigationController, controllers: controllers)
         coordinator.parentCoordinator = self
         self.childCoordinators.append(coordinator)
         coordinator.start(animated: false)
