@@ -44,3 +44,23 @@ func md5(from url: URL) -> String? {
         return nil
     }
 }
+
+var cachedMD5AndModificationDateByURL: [URL: (String, Date)] = [:]
+func cachedMD5(from url: URL, using fileManager: FileManager) -> String? {
+    let newModificationDate: Date
+    if let attributes = try? fileManager.attributesOfItem(atPath: url.path), let modificationDate = attributes[.modificationDate] as? Date {
+        newModificationDate = modificationDate
+    } else {
+        newModificationDate = .distantPast
+    }
+    if let (cachedMd5, cachedModificationDate) = cachedMD5AndModificationDateByURL[url], newModificationDate <= cachedModificationDate {
+        return cachedMd5
+    }
+    let md5 = md5(from: url)
+    if let md5 {
+        cachedMD5AndModificationDateByURL[url] = (md5, newModificationDate)
+    } else {
+        cachedMD5AndModificationDateByURL[url] = nil
+    }
+    return md5
+}
