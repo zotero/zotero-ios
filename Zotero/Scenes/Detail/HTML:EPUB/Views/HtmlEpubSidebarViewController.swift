@@ -273,7 +273,7 @@ class HtmlEpubSidebarViewController: UIViewController {
                 library: viewModel.state.library,
                 sender: sender,
                 userInterfaceStyle: viewModel.state.settings.appearance.userInterfaceStyle,
-                saveAction: { [weak self] color, lineWidth, pageLabel, updateSubsequentLabels, highlightText in
+                saveAction: { [weak self] color, lineWidth, _, pageLabel, updateSubsequentLabels, highlightText in
                     self?.viewModel.process(
                         action: .updateAnnotationProperties(
                             key: key,
