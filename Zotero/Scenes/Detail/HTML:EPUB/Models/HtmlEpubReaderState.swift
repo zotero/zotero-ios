@@ -90,11 +90,10 @@ struct HtmlEpubReaderState: ViewModelState {
     /// Selected annotations when annotations are being edited in sidebar
     var selectedAnnotationsDuringEditing: Set<String>
 
-    init(url: URL, key: String, settings: HtmlEpubSettings, library: Library, userId: Int, username: String) {
+    init(url: URL, key: String, settings: HtmlEpubSettings, libraryId: LibraryIdentifier, userId: Int, username: String) {
         self.url = url
         self.key = key
         self.settings = settings
-        self.library = library
         self.userId = userId
         self.username = username
         commentFont = PDFReaderLayout.annotationLayout.font
@@ -110,6 +109,14 @@ struct HtmlEpubReaderState: ViewModelState {
         changes = []
         deletionEnabled = false
         selectedAnnotationsDuringEditing = []
+
+        switch libraryId {
+        case .custom:
+            library = Library(identifier: libraryId, name: L10n.Libraries.myLibrary, metadataEditable: true, filesEditable: true)
+
+        case .group:
+            library = Library(identifier: libraryId, name: L10n.unknown, metadataEditable: false, filesEditable: false)
+        }
     }
 
     mutating func cleanup() {
