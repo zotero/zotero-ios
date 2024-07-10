@@ -426,11 +426,10 @@ class PDFReaderViewController: UIViewController {
 
     private func update(state: PDFReaderState) {
         if state.changes.contains(.md5) {
-            // TODO: Restore when edge-cases that change the local file unexpectedly are resolved.
-//            coordinatorDelegate?.showDocumentChangedAlert { [weak self] in
-//                self?.close()
-//            }
-//            return
+            coordinatorDelegate?.showDocumentChangedAlert { [weak self] in
+                self?.close()
+            }
+            return
         }
 
         if let success = state.unlockSuccessful, success {

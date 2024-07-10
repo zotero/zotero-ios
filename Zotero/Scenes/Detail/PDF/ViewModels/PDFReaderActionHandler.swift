@@ -1711,10 +1711,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             let isDark = viewModel.state.interfaceStyle == .dark
             let (item, liveAnnotations, storedPage) = try loadItemAnnotationsAndPage(for: key, libraryId: viewModel.state.library.identifier)
 
-            // TODO: Restore when edge-cases that change the local file unexpectedly are resolved.
-//            if checkWhetherMd5Changed(forItem: item, andUpdateViewModel: viewModel, handler: self) {
-//                return
-//            }
+            if checkWhetherMd5Changed(forItem: item, andUpdateViewModel: viewModel, handler: self) {
+                return
+            }
 
             let (library, libraryToken) = try viewModel.state.library.identifier.observe(in: dbStorage, changes: { [weak self, weak viewModel] library in
                 guard let self, let viewModel else { return }
