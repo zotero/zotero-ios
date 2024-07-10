@@ -172,7 +172,7 @@ struct FieldKeys {
                             KeyBaseKeyPair(key: Annotation.Position.htmlEpubType, baseKey: Annotation.position),
                             KeyBaseKeyPair(key: Annotation.Position.htmlEpubValue, baseKey: Annotation.position)]
 
-                case .ink, .image:
+                case .ink, .image, .underline, .freeText:
                     return []
                 }
             }

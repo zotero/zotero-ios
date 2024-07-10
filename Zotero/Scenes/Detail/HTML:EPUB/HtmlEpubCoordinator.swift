@@ -50,14 +50,14 @@ final class HtmlEpubCoordinator: Coordinator {
     weak var navigationController: UINavigationController?
 
     private let key: String
-    private let library: Library
+    private let libraryId: LibraryIdentifier
     private let url: URL
     private unowned let controllers: Controllers
     private let disposeBag: DisposeBag
 
-    init(key: String, library: Library, url: URL, navigationController: NavigationViewController, controllers: Controllers) {
+    init(key: String, libraryId: LibraryIdentifier, url: URL, navigationController: NavigationViewController, controllers: Controllers) {
         self.key = key
-        self.library = library
+        self.libraryId = libraryId
         self.url = url
         self.navigationController = navigationController
         self.controllers = controllers
@@ -89,7 +89,7 @@ final class HtmlEpubCoordinator: Coordinator {
             dateParser: controllers.dateParser,
             idleTimerController: controllers.idleTimerController
         )
-        let state = HtmlEpubReaderState(url: url, key: key, settings: Defaults.shared.htmlEpubSettings, library: library, userId: userId, username: username)
+        let state = HtmlEpubReaderState(url: url, key: key, settings: Defaults.shared.htmlEpubSettings, libraryId: libraryId, userId: userId, username: username)
         let controller = HtmlEpubReaderViewController(
             viewModel: ViewModel(initialState: state, handler: handler),
             compactSize: UIDevice.current.isCompactWidth(size: parentNavigationController.view.frame.size)
@@ -191,7 +191,8 @@ extension HtmlEpubCoordinator: HtmlEpubSidebarCoordinatorDelegate {
                 color: annotation.color,
                 lineWidth: 0,
                 pageLabel: annotation.pageLabel,
-                highlightText: annotation.text ?? ""
+                highlightText: annotation.text ?? "",
+                fontSize: 12
             ),
             saveAction: saveAction,
             deleteAction: deleteAction,
