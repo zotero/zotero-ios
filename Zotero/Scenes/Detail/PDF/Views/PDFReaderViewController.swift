@@ -163,19 +163,6 @@ class PDFReaderViewController: UIViewController {
         var keyCommands: [UIKeyCommand] = [
             .init(title: L10n.Pdf.Search.title, action: #selector(search), input: "f", modifierFlags: [.command])
         ]
-        switch viewModel.state.settings.direction {
-        case .horizontal:
-            keyCommands += [
-                .init(title: L10n.Pdf.previousViewport, action: #selector(previousViewportAction), input: UIKeyCommand.inputLeftArrow, modifierFlags: [.alternate]),
-                .init(title: L10n.Pdf.nextViewport, action: #selector(nextViewportAction), input: UIKeyCommand.inputRightArrow, modifierFlags: [.alternate])
-            ]
-
-        case .vertical:
-            keyCommands += [
-                .init(title: L10n.Pdf.previousViewport, action: #selector(previousViewportAction), input: UIKeyCommand.inputUpArrow, modifierFlags: [.alternate]),
-                .init(title: L10n.Pdf.nextViewport, action: #selector(nextViewportAction), input: UIKeyCommand.inputDownArrow, modifierFlags: [.alternate])
-            ]
-        }
         if intraDocumentNavigationHandler?.showsBackButton == true {
             keyCommands += [
                 .init(title: L10n.back, action: #selector(performBackAction), input: "[", modifierFlags: [.command]),
@@ -191,7 +178,7 @@ class PDFReaderViewController: UIViewController {
             case #selector(UIResponderStandardEditActions.copy(_:)):
                 return selectedText != nil
 
-            case #selector(search), #selector(previousViewportAction), #selector(nextViewportAction), #selector(performBackAction):
+            case #selector(search), #selector(performBackAction):
                 return true
 
             case #selector(undo(_:)):
@@ -433,10 +420,6 @@ class PDFReaderViewController: UIViewController {
 
     override var prefersStatusBarHidden: Bool {
         return !statusBarVisible
-    }
-
-    override var canBecomeFirstResponder: Bool {
-        true
     }
 
     // MARK: - Actions
@@ -689,26 +672,6 @@ class PDFReaderViewController: UIViewController {
     @objc private func search() {
         guard let pdfController = documentController.pdfController else { return }
         showSearch(pdfController: pdfController, text: nil)
-    }
-
-    @objc private func previousViewportAction() {
-        guard let documentViewController = documentController.pdfController?.documentViewController else { return }
-        if documentViewController.scrollToPreviousViewport(animated: true) {
-            // Viewport scrolled, return.
-            return
-        }
-        // Viewport didn't scroll, this may happen if page is not zoomed. Scroll by spread instead.
-        documentViewController.scrollToPreviousSpread(animated: true)
-    }
-
-    @objc private func nextViewportAction() {
-        guard let documentViewController = documentController.pdfController?.documentViewController else { return }
-        if documentViewController.scrollToNextViewport(animated: true) {
-            // Viewport scrolled, return.
-            return
-        }
-        // Viewport didn't scroll, this may happen if page is not zoomed. Scroll by spread instead.
-        documentViewController.scrollToNextSpread(animated: true)
     }
 
     @objc private func performBackAction() {
