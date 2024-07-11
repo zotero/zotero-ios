@@ -53,7 +53,7 @@ func cachedMD5(from url: URL, using fileManager: FileManager) -> String? {
     } else {
         newModificationDate = .distantPast
     }
-    if let (cachedMd5, cachedModificationDate) = cachedMD5AndModificationDateByURL[url], newModificationDate <= cachedModificationDate {
+    if let (cachedMd5, cachedModificationDate) = cachedMD5AndModificationDateByURL[url], newModificationDate == cachedModificationDate {
         return cachedMd5
     }
     let md5 = md5(from: url)
