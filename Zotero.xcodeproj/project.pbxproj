@@ -852,6 +852,7 @@
 		B390EE2C29B5F419004F979B /* PDFCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B390EE2B29B5F419004F979B /* PDFCoordinator.swift */; };
 		B391480726D9093E0016B7B2 /* UIPasteboard+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B391480626D9093E0016B7B2 /* UIPasteboard+Extensions.swift */; };
 		B391480826D909E40016B7B2 /* UIPasteboard+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B391480626D9093E0016B7B2 /* UIPasteboard+Extensions.swift */; };
+		B391E4192C3FFA8A00F1BEFC /* ParentWithSidebarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B391E4182C3FFA8A00F1BEFC /* ParentWithSidebarController.swift */; };
 		B394A0E226A709A900CA307F /* NoteEditorTitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B394A0E126A709A900CA307F /* NoteEditorTitleView.swift */; };
 		B39505E42AE9466800F73079 /* AnnotationPopoverActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39505E32AE9466800F73079 /* AnnotationPopoverActionHandler.swift */; };
 		B39505E72AE9469300F73079 /* AnnotationPopoverAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39505E52AE9469300F73079 /* AnnotationPopoverAction.swift */; };
@@ -1894,6 +1895,7 @@
 		B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeysResponseProcessor.swift; sourceTree = "<group>"; };
 		B390EE2B29B5F419004F979B /* PDFCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFCoordinator.swift; sourceTree = "<group>"; };
 		B391480626D9093E0016B7B2 /* UIPasteboard+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIPasteboard+Extensions.swift"; sourceTree = "<group>"; };
+		B391E4182C3FFA8A00F1BEFC /* ParentWithSidebarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentWithSidebarController.swift; sourceTree = "<group>"; };
 		B394A0E126A709A900CA307F /* NoteEditorTitleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteEditorTitleView.swift; sourceTree = "<group>"; };
 		B39505E32AE9466800F73079 /* AnnotationPopoverActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationPopoverActionHandler.swift; sourceTree = "<group>"; };
 		B39505E52AE9469300F73079 /* AnnotationPopoverAction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnnotationPopoverAction.swift; sourceTree = "<group>"; };
@@ -3277,6 +3279,7 @@
 				B3486B8026CFAFEA0036A267 /* SingleCitation */,
 				B3C3EC282C492A570062705A /* Trash */,
 				B3593F61241A62DD00760E20 /* DetailCoordinator.swift */,
+				B391E4182C3FFA8A00F1BEFC /* ParentWithSidebarController.swift */,
 			);
 			path = Detail;
 			sourceTree = "<group>";
@@ -5655,6 +5658,7 @@
 				B34DF1BD2576956F0019CCD1 /* SwitchCell.swift in Sources */,
 				B3A14DF825A7666C00DF5334 /* StorePageForItemDbRequest.swift in Sources */,
 				B3863FCE2AD830FE005082F0 /* ReorderCreatorsItemDetailDbRequest.swift in Sources */,
+				B391E4192C3FFA8A00F1BEFC /* ParentWithSidebarController.swift in Sources */,
 				B30566C123FC051F003304F2 /* SyncErrors.swift in Sources */,
 				B35FC1F02628490C00858772 /* MarkFileAsDownloadedDbRequest.swift in Sources */,
 				B3593F7C241A76E600760E20 /* CollectionEditView.swift in Sources */,
