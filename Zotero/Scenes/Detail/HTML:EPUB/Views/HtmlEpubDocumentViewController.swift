@@ -190,15 +190,15 @@ class HtmlEpubDocumentViewController: UIViewController {
     private func process(handler: String, message: Any) {
         switch handler {
         case JSHandlers.log.rawValue:
-            DDLogInfo("HtmlEpubReaderViewController: JSLOG \(message)")
+            DDLogInfo("HtmlEpubDocumentViewController: JSLOG \(message)")
 
         case JSHandlers.text.rawValue:
             guard let data = message as? [String: Any], let event = data["event"] as? String else {
-                DDLogWarn("HtmlEpubReaderViewController: unknown message - \(message)")
+                DDLogWarn("HtmlEpubDocumentViewController: unknown message - \(message)")
                 return
             }
 
-            DDLogInfo("HtmlEpubReaderViewController: \(event)")
+            DDLogInfo("HtmlEpubDocumentViewController: \(event)")
 
             switch event {
             case "onInitialized":
@@ -206,15 +206,15 @@ class HtmlEpubDocumentViewController: UIViewController {
 
             case "onSaveAnnotations":
                 guard let params = data["params"] as? [String: Any] else {
-                    DDLogWarn("HtmlEpubReaderViewController: event \(event) missing params - \(message)")
+                    DDLogWarn("HtmlEpubDocumentViewController: event \(event) missing params - \(message)")
                     return
                 }
-                DDLogInfo("HtmlEpubReaderViewController: \(params)")
+                DDLogInfo("HtmlEpubDocumentViewController: \(params)")
                 viewModel.process(action: .saveAnnotations(params))
 
             case "onSetAnnotationPopup":
                 guard let params = data["params"] as? [String: Any] else {
-                    DDLogWarn("HtmlEpubReaderViewController: event \(event) missing params - \(message)")
+                    DDLogWarn("HtmlEpubDocumentViewController: event \(event) missing params - \(message)")
                     return
                 }
                 
@@ -224,7 +224,7 @@ class HtmlEpubDocumentViewController: UIViewController {
                 }
 
                 guard let rectArray = params["rect"] as? [CGFloat], let key = (params["annotation"] as? [String: Any])?["id"] as? String else {
-                    DDLogError("HtmlEpubReaderViewController: incorrect params for document selection - \(params)")
+                    DDLogError("HtmlEpubDocumentViewController: incorrect params for document selection - \(params)")
                     return
                 }
 
@@ -234,7 +234,7 @@ class HtmlEpubDocumentViewController: UIViewController {
 
             case "onChangeViewState":
                 guard let params = data["params"] as? [String: Any] else {
-                    DDLogWarn("HtmlEpubReaderViewController: event \(event) missing params - \(message)")
+                    DDLogWarn("HtmlEpubDocumentViewController: event \(event) missing params - \(message)")
                     return
                 }
                 viewModel.process(action: .setViewState(params))
