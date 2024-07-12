@@ -8,7 +8,7 @@
  SCRIPT_DIR=`dirname "$SCRIPT_PATH"`
  READER_DIR="$SCRIPT_DIR/../bundled/reader"
 
- if [ -d "$EDITOR_DIR" ]; then
+ if [ -d "$READER_DIR" ]; then
      rm -rf "$READER_DIR"
  fi
 
