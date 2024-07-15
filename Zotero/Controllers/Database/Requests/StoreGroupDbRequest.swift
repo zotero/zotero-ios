@@ -56,7 +56,7 @@ struct StoreGroupDbRequest: DbRequest {
             canEditFiles = true
 
         default:
-            canEditFiles = false
+            canEditFiles = (response.data.owner == userId)
         }
 
         group.name = response.data.name
