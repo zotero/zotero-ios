@@ -36,11 +36,12 @@ struct StoreGroupDbRequest: DbRequest {
             database.add(group)
         }
 
+        let isOwner = (response.data.owner == userId)
         let canEditMetadata: Bool
         let canEditFiles: Bool
 
         if response.data.libraryEditing == "admins" {
-            canEditMetadata = (response.data.admins ?? []).contains(userId)
+            canEditMetadata = isOwner || (response.data.admins ?? []).contains(userId)
         } else {
             canEditMetadata = true
         }
@@ -50,13 +51,13 @@ struct StoreGroupDbRequest: DbRequest {
             canEditFiles = false
 
         case "admins":
-            canEditFiles = (response.data.admins ?? []).contains(userId)
+            canEditFiles = isOwner || (response.data.admins ?? []).contains(userId)
 
         case "members":
             canEditFiles = true
 
         default:
-            canEditFiles = false
+            canEditFiles = isOwner
         }
 
         group.name = response.data.name
