@@ -76,7 +76,7 @@ class HtmlEpubDocumentViewController: UIViewController {
 
         func load() {
             guard let readerUrl = Bundle.main.url(forResource: "view", withExtension: "html", subdirectory: "Bundled/reader") else {
-                DDLogError("HtmlEpubReaderViewController: can't load reader view.html")
+                DDLogError("HtmlEpubDocumentViewController: can't load reader view.html")
                 return
             }
             webViewHandler.load(fileUrl: readerUrl).subscribe().disposed(by: disposeBag)
@@ -138,7 +138,7 @@ class HtmlEpubDocumentViewController: UIViewController {
             webViewHandler.call(javascript: "search({ term: \(WebViewEncoder.encodeForJavascript(term.data(using: .utf8))) });")
                 .observe(on: MainScheduler.instance)
                 .subscribe(onFailure: { error in
-                    DDLogError("HtmlEpubReaderViewController: searching document failed - \(error)")
+                    DDLogError("HtmlEpubDocumentViewController: searching document failed - \(error)")
                 })
                 .disposed(by: disposeBag)
         }
@@ -147,7 +147,7 @@ class HtmlEpubDocumentViewController: UIViewController {
             webViewHandler.call(javascript: "select({ key: '\(key)' });")
                 .observe(on: MainScheduler.instance)
                 .subscribe(onFailure: { error in
-                    DDLogError("HtmlEpubReaderViewController: navigating to \(key) failed - \(error)")
+                    DDLogError("HtmlEpubDocumentViewController: navigating to \(key) failed - \(error)")
                 })
                 .disposed(by: disposeBag)
         }
@@ -159,7 +159,7 @@ class HtmlEpubDocumentViewController: UIViewController {
             webViewHandler.call(javascript: "updateAnnotations({ deletions: \(encodedDeletions), insertions: \(encodedInsertions), modifications: \(encodedModifications)});")
                 .observe(on: MainScheduler.instance)
                 .subscribe(onFailure: { error in
-                    DDLogError("HtmlEpubReaderViewController: updating document failed - \(error)")
+                    DDLogError("HtmlEpubDocumentViewController: updating document failed - \(error)")
                 })
                 .disposed(by: disposeBag)
         }
@@ -181,7 +181,7 @@ class HtmlEpubDocumentViewController: UIViewController {
             webViewHandler.call(javascript: javascript)
                 .observe(on: MainScheduler.instance)
                 .subscribe(onFailure: { error in
-                    DDLogError("HtmlEpubReaderViewController: loading document failed - \(error)")
+                    DDLogError("HtmlEpubDocumentViewController: loading document failed - \(error)")
                 })
                 .disposed(by: disposeBag)
         }
