@@ -180,7 +180,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
             self.downloadAttachments(for: keys, in: viewModel)
 
         case .removeDownloads(let ids):
-            self.fileCleanupController.delete(.allForItems(ids, viewModel.state.library.identifier), completed: nil)
+            self.fileCleanupController.delete(.allForItems(ids, viewModel.state.library.identifier))
 
         case .emptyTrash:
             self.emptyTrash(in: viewModel)

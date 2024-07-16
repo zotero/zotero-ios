@@ -467,7 +467,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
     }
 
     private func deleteFile(of attachment: Attachment, in viewModel: ViewModel<ItemDetailActionHandler>) {
-        self.fileCleanupController.delete(.individual(attachment: attachment, parentKey: viewModel.state.key), completed: nil)
+        self.fileCleanupController.delete(.individual(attachment: attachment, parentKey: viewModel.state.key))
     }
 
     private func updateDeletedAttachmentFiles(_ notification: AttachmentFileDeletedNotification, in viewModel: ViewModel<ItemDetailActionHandler>) {
