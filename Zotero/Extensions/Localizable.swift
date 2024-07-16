@@ -343,6 +343,8 @@ internal enum L10n {
     internal static let createTitle = L10n.tr("Localizable", "collections.create_title", fallback: "Create Collection")
     /// Delete Collection
     internal static let delete = L10n.tr("Localizable", "collections.delete", fallback: "Delete Collection")
+    /// Remove Downloads
+    internal static let deleteAttachmentFiles = L10n.tr("Localizable", "collections.delete_attachment_files", fallback: "Remove Downloads")
     /// Delete Collection and Items
     internal static let deleteWithItems = L10n.tr("Localizable", "collections.delete_with_items", fallback: "Delete Collection and Items")
     /// Download Attachments

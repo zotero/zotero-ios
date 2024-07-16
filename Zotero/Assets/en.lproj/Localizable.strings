@@ -98,6 +98,7 @@
 "collections.expand_all" = "Expand All";
 "collections.create_bibliography" = "Create Bibliography from Collection";
 "collections.download_attachments" = "Download Attachments";
+"collections.delete_attachment_files" = "Remove Downloads";
 
 "sync_toolbar.starting" = "Sync starting";
 "sync_toolbar.groups" = "Syncing groups";
