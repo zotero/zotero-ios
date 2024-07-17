@@ -37,48 +37,48 @@ final class ItemsToolbarController {
     init(viewController: UIViewController, initialState: ItemsState, delegate: ItemsToolbarControllerDelegate) {
         self.viewController = viewController
         self.delegate = delegate
-        self.editingActions = Self.editingActions(for: initialState)
-        self.disposeBag = DisposeBag()
+        editingActions = createEditingActions(for: initialState)
+        disposeBag = DisposeBag()
 
-        self.createToolbarItems(for: initialState)
+        createToolbarItems(for: initialState)
+
+        func createEditingActions(for state: ItemsState) -> [ItemAction] {
+            if state.collection.identifier.isTrash && state.library.metadataEditable {
+                return [ItemAction(type: .restore), ItemAction(type: .delete)]
+            }
+
+            var actions: [ItemAction] = []
+            if state.library.metadataEditable {
+                actions.append(contentsOf: [ItemAction(type: .addToCollection), ItemAction(type: .trash)])
+            }
+            switch state.collection.identifier {
+            case .collection:
+                if state.library.metadataEditable {
+                    actions.insert(ItemAction(type: .removeFromCollection), at: 1)
+                }
+
+            case .custom, .search:
+                break
+            }
+            actions.append(ItemAction(type: .share))
+            return actions
+        }
     }
 
     func willAppear() {
-        self.viewController.navigationController?.setToolbarHidden(false, animated: false)
-    }
-
-    private static func editingActions(for state: ItemsState) -> [ItemAction] {
-        if state.collection.identifier.isTrash && state.library.metadataEditable {
-            return [ItemAction(type: .restore), ItemAction(type: .delete)]
-        }
-
-        var actions: [ItemAction] = []
-        if state.library.metadataEditable {
-            actions.append(contentsOf: [ItemAction(type: .addToCollection), ItemAction(type: .trash)])
-        }
-        switch state.collection.identifier {
-        case .collection:
-            if state.library.metadataEditable {
-                actions.insert(ItemAction(type: .removeFromCollection), at: 1)
-            }
-
-        case .custom, .search:
-            break
-        }
-        actions.append(ItemAction(type: .share))
-        return actions
+        viewController.navigationController?.setToolbarHidden(false, animated: false)
     }
 
     // MARK: - Actions
 
     func createToolbarItems(for state: ItemsState) {
         if state.isEditing {
-            self.viewController.toolbarItems = self.createEditingToolbarItems(from: self.editingActions)
-            self.updateEditingToolbarItems(for: state.selectedItems, results: state.results)
+            viewController.toolbarItems = createEditingToolbarItems(from: editingActions)
+            updateEditingToolbarItems(for: state.selectedItems, results: state.results)
         } else {
-            let filters = self.sizeClassSpecificFilters(from: state.filters)
-            self.viewController.toolbarItems = self.createNormalToolbarItems(for: filters)
-            self.updateNormalToolbarItems(
+            let filters = sizeClassSpecificFilters(from: state.filters)
+            viewController.toolbarItems = createNormalToolbarItems(for: filters)
+            updateNormalToolbarItems(
                 for: filters,
                 downloadBatchData: state.downloadBatchData,
                 remoteDownloadBatchData: state.remoteDownloadBatchData,
@@ -86,14 +86,111 @@ final class ItemsToolbarController {
                 results: state.results
             )
         }
+
+        func createEditingToolbarItems(from actions: [ItemAction]) -> [UIBarButtonItem] {
+            let spacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
+            let items = actions.map({ action -> UIBarButtonItem in
+                let item = UIBarButtonItem(image: action.image, style: .plain, target: nil, action: nil)
+                switch action.type {
+                case .addToCollection, .trash, .delete, .removeFromCollection, .restore:
+                    item.tag = ToolbarItem.empty.tag
+
+                case .sort, .filter, .createParent, .copyCitation, .copyBibliography, .share, .removeDownload, .download, .duplicate:
+                    break
+                }
+                switch action.type {
+                case .addToCollection:
+                    item.accessibilityLabel = L10n.Accessibility.Items.addToCollection
+
+                case .trash:
+                    item.accessibilityLabel = L10n.Accessibility.Items.trash
+
+                case .delete:
+                    item.accessibilityLabel = L10n.Accessibility.Items.delete
+
+                case .removeFromCollection:
+                    item.accessibilityLabel = L10n.Accessibility.Items.removeFromCollection
+
+                case .restore:
+                    item.accessibilityLabel = L10n.Accessibility.Items.restore
+
+                case .share:
+                    item.accessibilityLabel = L10n.Accessibility.Items.share
+
+                case .sort, .filter, .createParent, .copyCitation, .copyBibliography, .removeDownload, .download, .duplicate:
+                    break
+                }
+                item.rx.tap.subscribe(onNext: { [weak self] _ in
+                    self?.delegate?.process(action: action.type, button: item)
+                })
+                .disposed(by: disposeBag)
+                return item
+            })
+            return [spacer] + (0..<(2 * items.count)).map({ idx -> UIBarButtonItem in idx % 2 == 0 ? items[idx / 2] : spacer })
+        }
+
+        func createNormalToolbarItems(for filters: [ItemsFilter]) -> [UIBarButtonItem] {
+            let fixedSpacer = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
+            fixedSpacer.width = 16
+            let flexibleSpacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
+
+            let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease.circle" : "line.horizontal.3.decrease.circle.fill"
+            let filterButton = UIBarButtonItem(image: UIImage(systemName: filterImageName), style: .plain, target: nil, action: nil)
+            filterButton.tag = ToolbarItem.filter.tag
+            filterButton.accessibilityLabel = L10n.Accessibility.Items.filterItems
+            filterButton.rx.tap.subscribe(onNext: { [weak self] _ in
+                self?.delegate?.process(action: .filter, button: filterButton)
+            })
+            .disposed(by: disposeBag)
+
+            let action = ItemAction(type: .sort)
+            let sortButton = UIBarButtonItem(image: action.image, style: .plain, target: nil, action: nil)
+            sortButton.accessibilityLabel = L10n.Accessibility.Items.sortItems
+            sortButton.rx.tap.subscribe(onNext: { [weak self] _ in
+                self?.delegate?.process(action: action.type, button: sortButton)
+            })
+            .disposed(by: disposeBag)
+
+            let titleButton = UIBarButtonItem(customView: createTitleView())
+            titleButton.tag = ToolbarItem.title.tag
+
+            return [fixedSpacer, filterButton, flexibleSpacer, titleButton, flexibleSpacer, sortButton, fixedSpacer]
+
+            func createTitleView() -> UIStackView {
+                // Filter title label
+                let filterLabel = UILabel()
+                filterLabel.adjustsFontForContentSizeCategory = true
+                filterLabel.textColor = .label
+                filterLabel.font = .preferredFont(forTextStyle: .footnote)
+                filterLabel.textAlignment = .center
+                filterLabel.isHidden = true
+
+                // Batch download view
+                let progressView = ItemsToolbarDownloadProgressView()
+                let tap = UITapGestureRecognizer()
+                tap.rx
+                   .event
+                   .observe(on: MainScheduler.instance)
+                   .subscribe(onNext: { [weak self] _ in
+                       self?.delegate?.showLookup()
+                   })
+                   .disposed(by: self.disposeBag)
+                progressView.addGestureRecognizer(tap)
+                progressView.isHidden = true
+
+                let stackView = UIStackView(arrangedSubviews: [filterLabel, progressView])
+                stackView.axis = .horizontal
+                return stackView
+            }
+        }
     }
 
     func reloadToolbarItems(for state: ItemsState) {
         if state.isEditing {
-            self.updateEditingToolbarItems(for: state.selectedItems, results: state.results)
+            updateEditingToolbarItems(for: state.selectedItems, results: state.results)
         } else {
-            self.updateNormalToolbarItems(
-                for: self.sizeClassSpecificFilters(from: state.filters),
+            updateNormalToolbarItems(
+                for: sizeClassSpecificFilters(from: state.filters),
                 downloadBatchData: state.downloadBatchData,
                 remoteDownloadBatchData: state.remoteDownloadBatchData,
                 identifierLookupBatchData: state.identifierLookupBatchData,
@@ -123,7 +220,7 @@ final class ItemsToolbarController {
     // MARK: - Helpers
 
     private func updateEditingToolbarItems(for selectedItems: Set<String>, results: Results<RItem>?) {
-        self.viewController.toolbarItems?.forEach({ item in
+        viewController.toolbarItems?.forEach({ item in
             switch ToolbarItem(rawValue: item.tag) {
             case .empty:
                 item.isEnabled = !selectedItems.isEmpty
@@ -144,12 +241,12 @@ final class ItemsToolbarController {
         identifierLookupBatchData: ItemsState.IdentifierLookupBatchData,
         results: Results<RItem>?
     ) {
-        if let item = self.viewController.toolbarItems?.first(where: { $0.tag == ToolbarItem.filter.tag }) {
+        if let item = viewController.toolbarItems?.first(where: { $0.tag == ToolbarItem.filter.tag }) {
             let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease.circle" : "line.horizontal.3.decrease.circle.fill"
             item.image = UIImage(systemName: filterImageName)
         }
 
-        if let item = self.viewController.toolbarItems?.first(where: { $0.tag == ToolbarItem.title.tag }),
+        if let item = viewController.toolbarItems?.first(where: { $0.tag == ToolbarItem.title.tag }),
            let stackView = item.customView as? UIStackView {
             if let filterLabel = stackView.subviews.first as? UILabel {
                 let itemCount = results?.count ?? 0
@@ -195,99 +292,5 @@ final class ItemsToolbarController {
 
             stackView.sizeToFit()
         }
-    }
-
-    private func createNormalToolbarItems(for filters: [ItemsFilter]) -> [UIBarButtonItem] {
-        let fixedSpacer = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
-        fixedSpacer.width = 16
-        let flexibleSpacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
-
-        let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease.circle" : "line.horizontal.3.decrease.circle.fill"
-        let filterButton = UIBarButtonItem(image: UIImage(systemName: filterImageName), style: .plain, target: nil, action: nil)
-        filterButton.tag = ToolbarItem.filter.tag
-        filterButton.accessibilityLabel = L10n.Accessibility.Items.filterItems
-        filterButton.rx.tap.subscribe(onNext: { [weak self] _ in
-            self?.delegate?.process(action: .filter, button: filterButton)
-        })
-        .disposed(by: self.disposeBag)
-
-        let action = ItemAction(type: .sort)
-        let sortButton = UIBarButtonItem(image: action.image, style: .plain, target: nil, action: nil)
-        sortButton.accessibilityLabel = L10n.Accessibility.Items.sortItems
-        sortButton.rx.tap.subscribe(onNext: { [weak self] _ in
-            self?.delegate?.process(action: action.type, button: sortButton)
-        })
-        .disposed(by: self.disposeBag)
-
-        let titleButton = UIBarButtonItem(customView: self.createTitleView())
-        titleButton.tag = ToolbarItem.title.tag
-
-        return [fixedSpacer, filterButton, flexibleSpacer, titleButton, flexibleSpacer, sortButton, fixedSpacer]
-    }
-
-    private func createEditingToolbarItems(from actions: [ItemAction]) -> [UIBarButtonItem] {
-        let spacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
-        let items = actions.map({ action -> UIBarButtonItem in
-            let item = UIBarButtonItem(image: action.image, style: .plain, target: nil, action: nil)
-            switch action.type {
-            case .addToCollection, .trash, .delete, .removeFromCollection, .restore:
-                item.tag = ToolbarItem.empty.tag
-            case .sort, .filter, .createParent, .copyCitation, .copyBibliography, .share, .removeDownload, .download, .duplicate: break
-            }
-            switch action.type {
-            case .addToCollection:
-                item.accessibilityLabel = L10n.Accessibility.Items.addToCollection
-
-            case .trash:
-                item.accessibilityLabel = L10n.Accessibility.Items.trash
-
-            case .delete:
-                item.accessibilityLabel = L10n.Accessibility.Items.delete
-
-            case .removeFromCollection:
-                item.accessibilityLabel = L10n.Accessibility.Items.removeFromCollection
-
-            case .restore:
-                item.accessibilityLabel = L10n.Accessibility.Items.restore
-
-            case .share:
-                item.accessibilityLabel = L10n.Accessibility.Items.share
-            case .sort, .filter, .createParent, .copyCitation, .copyBibliography, .removeDownload, .download, .duplicate: break
-            }
-            item.rx.tap.subscribe(onNext: { [weak self] _ in
-                guard let self = self else { return }
-                self.delegate?.process(action: action.type, button: item)
-            })
-            .disposed(by: self.disposeBag)
-            return item
-        })
-        return [spacer] + (0..<(2 * items.count)).map({ idx -> UIBarButtonItem in idx % 2 == 0 ? items[idx / 2] : spacer })
-    }
-
-    private func createTitleView() -> UIStackView {
-        // Filter title label
-        let filterLabel = UILabel()
-        filterLabel.adjustsFontForContentSizeCategory = true
-        filterLabel.textColor = .label
-        filterLabel.font = .preferredFont(forTextStyle: .footnote)
-        filterLabel.textAlignment = .center
-        filterLabel.isHidden = true
-
-        // Batch download view
-        let progressView = ItemsToolbarDownloadProgressView()
-        let tap = UITapGestureRecognizer()
-        tap.rx
-           .event
-           .observe(on: MainScheduler.instance)
-           .subscribe(onNext: { [weak self] _ in
-               self?.delegate?.showLookup()
-           })
-           .disposed(by: self.disposeBag)
-        progressView.addGestureRecognizer(tap)
-        progressView.isHidden = true
-
-        let stackView = UIStackView(arrangedSubviews: [filterLabel, progressView])
-        stackView.axis = .horizontal
-        return stackView
     }
 }
