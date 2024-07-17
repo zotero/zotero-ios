@@ -43,25 +43,25 @@ final class ItemsToolbarController {
         createToolbarItems(for: initialState)
 
         func createEditingActions(for state: ItemsState) -> [ItemAction] {
+            var types: [ItemAction.Kind] = []
             if state.collection.identifier.isTrash && state.library.metadataEditable {
-                return [ItemAction(type: .restore), ItemAction(type: .delete)]
-            }
-
-            var actions: [ItemAction] = []
-            if state.library.metadataEditable {
-                actions.append(contentsOf: [ItemAction(type: .addToCollection), ItemAction(type: .trash)])
-            }
-            switch state.collection.identifier {
-            case .collection:
+                types.append(contentsOf: [.restore, .delete, .removeDownload])
+            } else {
                 if state.library.metadataEditable {
-                    actions.insert(ItemAction(type: .removeFromCollection), at: 1)
+                    types.append(contentsOf: [.addToCollection, .trash])
                 }
+                switch state.collection.identifier {
+                case .collection:
+                    if state.library.metadataEditable {
+                        types.insert(.removeFromCollection, at: 1)
+                    }
 
-            case .custom, .search:
-                break
+                case .custom, .search:
+                    break
+                }
+                types.append(contentsOf: [.removeDownload, .share])
             }
-            actions.append(ItemAction(type: .share))
-            return actions
+            return types.map { .init(type: $0) }
         }
     }
 
@@ -92,10 +92,10 @@ final class ItemsToolbarController {
             let items = actions.map({ action -> UIBarButtonItem in
                 let item = UIBarButtonItem(image: action.image, style: .plain, target: nil, action: nil)
                 switch action.type {
-                case .addToCollection, .trash, .delete, .removeFromCollection, .restore, .share:
+                case .addToCollection, .trash, .delete, .removeFromCollection, .restore, .share, .removeDownload:
                     item.tag = ToolbarItem.empty.tag
 
-                case .sort, .filter, .createParent, .copyCitation, .copyBibliography, .removeDownload, .download, .duplicate:
+                case .sort, .filter, .createParent, .copyCitation, .copyBibliography, .download, .duplicate:
                     break
                 }
                 switch action.type {
@@ -117,7 +117,10 @@ final class ItemsToolbarController {
                 case .share:
                     item.accessibilityLabel = L10n.Accessibility.Items.share
 
-                case .sort, .filter, .createParent, .copyCitation, .copyBibliography, .removeDownload, .download, .duplicate:
+                case .removeDownload:
+                    item.accessibilityLabel = L10n.Accessibility.Items.removeDownloads
+
+                case .sort, .filter, .createParent, .copyCitation, .copyBibliography, .download, .duplicate:
                     break
                 }
                 item.rx.tap.subscribe(onNext: { [weak self] _ in

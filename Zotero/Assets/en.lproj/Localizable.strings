@@ -533,6 +533,7 @@
 "accessibility.items.restore" = "Restore selected items";
 "accessibility.items.duplicate" = "Duplicate selected item";
 "accessibility.items.share" = "Share selected items";
+"accessibility.items.remove_downloads" = "Remove downloads for selected items";
 "accessibility.item_detail.download_and_open" = "Double tap to download and open";
 "accessibility.item_detail.open" = "Double tap to open";
 "accessibility.pdf.sidebar_open" = "Open sidebar";

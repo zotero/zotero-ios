@@ -174,6 +174,8 @@ internal enum L10n {
       internal static let filterItems = L10n.tr("Localizable", "accessibility.items.filter_items", fallback: "Filter items")
       /// Open item info
       internal static let openItem = L10n.tr("Localizable", "accessibility.items.open_item", fallback: "Open item info")
+      /// Remove downloads for selected items
+      internal static let removeDownloads = L10n.tr("Localizable", "accessibility.items.remove_downloads", fallback: "Remove downloads for selected items")
       /// Remove selected items from collection
       internal static let removeFromCollection = L10n.tr("Localizable", "accessibility.items.remove_from_collection", fallback: "Remove selected items from collection")
       /// Restore selected items
