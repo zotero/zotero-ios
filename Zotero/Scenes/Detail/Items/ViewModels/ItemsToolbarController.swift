@@ -92,10 +92,10 @@ final class ItemsToolbarController {
             let items = actions.map({ action -> UIBarButtonItem in
                 let item = UIBarButtonItem(image: action.image, style: .plain, target: nil, action: nil)
                 switch action.type {
-                case .addToCollection, .trash, .delete, .removeFromCollection, .restore:
+                case .addToCollection, .trash, .delete, .removeFromCollection, .restore, .share:
                     item.tag = ToolbarItem.empty.tag
 
-                case .sort, .filter, .createParent, .copyCitation, .copyBibliography, .share, .removeDownload, .download, .duplicate:
+                case .sort, .filter, .createParent, .copyCitation, .copyBibliography, .removeDownload, .download, .duplicate:
                     break
                 }
                 switch action.type {
