@@ -23,11 +23,12 @@ struct RCollectionChanges: OptionSet {
 extension RCollectionChanges {
     static let name = RCollectionChanges(rawValue: 1 << 0)
     static let parent = RCollectionChanges(rawValue: 1 << 1)
-    static let all: RCollectionChanges = [.name, .parent]
+    static let trash = RCollectionChanges(rawValue: 1 << 2)
+    static let all: RCollectionChanges = [.name, .parent, .trash]
 }
 
 final class RCollection: Object {
-    static let observableKeypathsForList: [String] = ["name", "parentKey", "items"]
+    static let observableKeypathsForList: [String] = ["name", "parentKey", "items", "trash"]
 
     @Persisted(indexed: true) var key: String
     @Persisted var name: String

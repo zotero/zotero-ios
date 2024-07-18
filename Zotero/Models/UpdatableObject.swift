@@ -51,28 +51,30 @@ extension Updatable {
 
 extension RCollection: Updatable {
     var updateParameters: [String: Any]? {
-        guard self.isChanged else { return nil }
+        guard isChanged else { return nil }
 
-        var parameters: [String: Any] = ["key": self.key,
-                                         "version": self.version]
+        var parameters: [String: Any] = ["key": key, "version": version]
 
-        let changes = self.changedFields
+        let changes = changedFields
         if changes.contains(.name) {
-            parameters["name"] = self.name
+            parameters["name"] = name
         }
         if changes.contains(.parent) {
-            if let key = self.parentKey {
+            if let key = parentKey {
                 parameters["parentCollection"] = key
             } else {
                 parameters["parentCollection"] = false
             }
+        }
+        if changes.contains(.trash) {
+            parameters["deleted"] = trash
         }
 
         return parameters
     }
 
     var selfOrChildChanged: Bool {
-        return self.isChanged
+        return isChanged
     }
 
     func markAsChanged(in database: Realm) {
