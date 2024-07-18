@@ -161,7 +161,7 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
         }
 
         func removeDownloadsAction(for identifier: CollectionIdentifier, in viewModel: ViewModel<CollectionsActionHandler>) -> UIAction {
-            UIAction(title: L10n.Collections.deleteAttachmentFiles, image: UIImage(systemName: "trash")) { [weak viewModel] _ in
+            UIAction(title: L10n.Collections.deleteAttachmentFiles, image: UIImage(systemName: "arrow.down.circle.dotted")) { [weak viewModel] _ in
                 viewModel?.process(action: .removeDownloads(identifier))
             }
         }
