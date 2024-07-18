@@ -295,7 +295,7 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
     }
 
     private func delete<Obj: DeletableObject&Updatable>(object: Obj.Type, keys: [String], in viewModel: ViewModel<CollectionsActionHandler>) {
-        let request = MarkObjectsAsDeletedDbRequest<Obj>(keys: keys, libraryId: viewModel.state.library.identifier)
+        let request = MarkCollectionsAsTrashedDbRequest(keys: keys, libraryId: viewModel.state.library.identifier, trashed: true)
         self.perform(request: request) { [weak viewModel] error in
             guard let error = error, let viewModel = viewModel else { return }
 

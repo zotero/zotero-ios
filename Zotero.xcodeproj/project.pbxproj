@@ -977,6 +977,8 @@
 		B3BD86BC258CBCD600EF6674 /* SearchBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BD86BB258CBCD600EF6674 /* SearchBar.swift */; };
 		B3BF7EE728A51BDC00A5A659 /* DeleteTagFromItemDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BF7EE628A51BDC00A5A659 /* DeleteTagFromItemDbRequest.swift */; };
 		B3BF7EE928A51EDA00A5A659 /* EditTagsForItemDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BF7EE828A51EDA00A5A659 /* EditTagsForItemDbRequest.swift */; };
+		B3C3EC232C48FD970062705A /* MarkCollectionsAsTrashedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C3EC222C48FD970062705A /* MarkCollectionsAsTrashedDbRequest.swift */; };
+		B3C3EC242C48FD970062705A /* MarkCollectionsAsTrashedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C3EC222C48FD970062705A /* MarkCollectionsAsTrashedDbRequest.swift */; };
 		B3C43C2028589F300007076D /* NotePreviewGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C43C1F28589F300007076D /* NotePreviewGenerator.swift */; };
 		B3C43C212858A84A0007076D /* NotePreviewGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C43C1F28589F300007076D /* NotePreviewGenerator.swift */; };
 		B3C6AB28248E1B720009AC96 /* SyncBatchProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C6AB27248E1B720009AC96 /* SyncBatchProcessor.swift */; };
@@ -1978,6 +1980,7 @@
 		B3BD86BB258CBCD600EF6674 /* SearchBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchBar.swift; sourceTree = "<group>"; };
 		B3BF7EE628A51BDC00A5A659 /* DeleteTagFromItemDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteTagFromItemDbRequest.swift; sourceTree = "<group>"; };
 		B3BF7EE828A51EDA00A5A659 /* EditTagsForItemDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditTagsForItemDbRequest.swift; sourceTree = "<group>"; };
+		B3C3EC222C48FD970062705A /* MarkCollectionsAsTrashedDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkCollectionsAsTrashedDbRequest.swift; sourceTree = "<group>"; };
 		B3C43C1F28589F300007076D /* NotePreviewGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotePreviewGenerator.swift; sourceTree = "<group>"; };
 		B3C6AB27248E1B720009AC96 /* SyncBatchProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncBatchProcessor.swift; sourceTree = "<group>"; };
 		B3C6AB2A248E3EB90009AC96 /* ApiOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiOperation.swift; sourceTree = "<group>"; };
@@ -2414,6 +2417,7 @@
 				B3F4F2A02728015700685E1A /* MarkAttachmentsNotUploadedDbRequest.swift */,
 				B305645623FC051E003304F2 /* MarkAttachmentUploadedDbRequest.swift */,
 				B305645A23FC051E003304F2 /* MarkCollectionAndItemsAsDeletedDbRequest.swift */,
+				B3C3EC222C48FD970062705A /* MarkCollectionsAsTrashedDbRequest.swift */,
 				B35FC1EF2628490C00858772 /* MarkFileAsDownloadedDbRequest.swift */,
 				B305643923FC051E003304F2 /* MarkForResyncDbAction.swift */,
 				B305646623FC051E003304F2 /* MarkGroupAsLocalOnlyDbRequest.swift */,
@@ -4943,6 +4947,7 @@
 				B37AA28228990F6300A1C643 /* ItemDetailTitleContentView.swift in Sources */,
 				B3486B8A26CFAFEA0036A267 /* SingleCitationState.swift in Sources */,
 				B34A73002670C9ED00A7B186 /* SyncRepoResponseDbRequest.swift in Sources */,
+				B3C3EC242C48FD970062705A /* MarkCollectionsAsTrashedDbRequest.swift in Sources */,
 				B30566A823FC051F003304F2 /* Convertible.swift in Sources */,
 				B3868540270DC3AA0068A022 /* WebDavScheme.swift in Sources */,
 				B32370402C0DC65600170779 /* LookupWebViewHandler.swift in Sources */,
@@ -5637,6 +5642,7 @@
 				B3902DE72480DBC1007EE48E /* ComponentDate.swift in Sources */,
 				B305677323FC0B5D003304F2 /* Array+Utils.swift in Sources */,
 				B305673423FC092A003304F2 /* SyncSettingsSyncAction.swift in Sources */,
+				B3C3EC232C48FD970062705A /* MarkCollectionsAsTrashedDbRequest.swift in Sources */,
 				B30566EC23FC082D003304F2 /* CrashUploadRequest.swift in Sources */,
 				B361A3022511F9BE00271173 /* LinkMode.swift in Sources */,
 				B3FC74342721858200F55531 /* WebDavSessionStorage.swift in Sources */,
