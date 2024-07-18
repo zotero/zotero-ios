@@ -45,7 +45,7 @@ final class ItemsToolbarController {
         func createEditingActions(for state: ItemsState) -> [ItemAction] {
             var types: [ItemAction.Kind] = []
             if state.collection.identifier.isTrash && state.library.metadataEditable {
-                types.append(contentsOf: [.restore, .delete, .removeDownload])
+                types.append(contentsOf: [.restore, .delete, .download, .removeDownload])
             } else {
                 if state.library.metadataEditable {
                     types.append(contentsOf: [.addToCollection, .trash])
@@ -59,7 +59,7 @@ final class ItemsToolbarController {
                 case .custom, .search:
                     break
                 }
-                types.append(contentsOf: [.removeDownload, .share])
+                types.append(contentsOf: [.download, .removeDownload, .share])
             }
             return types.map { .init(type: $0) }
         }
@@ -92,10 +92,10 @@ final class ItemsToolbarController {
             let items = actions.map({ action -> UIBarButtonItem in
                 let item = UIBarButtonItem(image: action.image, style: .plain, target: nil, action: nil)
                 switch action.type {
-                case .addToCollection, .trash, .delete, .removeFromCollection, .restore, .share, .removeDownload:
+                case .addToCollection, .trash, .delete, .removeFromCollection, .restore, .share, .download, .removeDownload:
                     item.tag = ToolbarItem.empty.tag
 
-                case .sort, .filter, .createParent, .copyCitation, .copyBibliography, .download, .duplicate:
+                case .sort, .filter, .createParent, .copyCitation, .copyBibliography, .duplicate:
                     break
                 }
                 switch action.type {
@@ -117,10 +117,13 @@ final class ItemsToolbarController {
                 case .share:
                     item.accessibilityLabel = L10n.Accessibility.Items.share
 
+                case .download:
+                    item.accessibilityLabel = L10n.Accessibility.Items.downloadAttachments
+
                 case .removeDownload:
                     item.accessibilityLabel = L10n.Accessibility.Items.removeDownloads
 
-                case .sort, .filter, .createParent, .copyCitation, .copyBibliography, .download, .duplicate:
+                case .sort, .filter, .createParent, .copyCitation, .copyBibliography, .duplicate:
                     break
                 }
                 item.rx.tap.subscribe(onNext: { [weak self] _ in

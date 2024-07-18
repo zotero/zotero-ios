@@ -168,6 +168,8 @@ internal enum L10n {
       internal static let delete = L10n.tr("Localizable", "accessibility.items.delete", fallback: "Delete selected items")
       /// Deselect All Items
       internal static let deselectAllItems = L10n.tr("Localizable", "accessibility.items.deselect_all_items", fallback: "Deselect All Items")
+      /// Download attachments for selected items
+      internal static let downloadAttachments = L10n.tr("Localizable", "accessibility.items.download_attachments", fallback: "Download attachments for selected items")
       /// Duplicate selected item
       internal static let duplicate = L10n.tr("Localizable", "accessibility.items.duplicate", fallback: "Duplicate selected item")
       /// Filter items
