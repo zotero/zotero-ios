@@ -15,18 +15,20 @@ struct ReadCollectionsDbRequest: DbResponseRequest {
 
     let libraryId: LibraryIdentifier
     let excludedKeys: Set<String>
+    let trash: Bool
 
     var needsWrite: Bool { return false }
 
-    init(libraryId: LibraryIdentifier, excludedKeys: Set<String> = []) {
+    init(libraryId: LibraryIdentifier, trash: Bool = false, excludedKeys: Set<String> = []) {
         self.libraryId = libraryId
+        self.trash = trash
         self.excludedKeys = excludedKeys
     }
 
     func process(in database: Realm) throws -> Results<RCollection> {
         let predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [.notSyncState(.dirty, in: self.libraryId),
                                                                             .deleted(false),
-                                                                            .isTrash(false),
+                                                                            .isTrash(trash),
                                                                             .key(notIn: self.excludedKeys)])
         return database.objects(RCollection.self).filter(predicate)
     }
