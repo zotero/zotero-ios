@@ -392,7 +392,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
 
     private func cacheItemAccessory(for item: RItem, in viewModel: ViewModel<ItemsActionHandler>) {
         // Create cached accessory only if there is nothing in cache yet.
-        guard viewModel.state.itemAccessories[item.key] == nil, let accessory = self.accessory(for: item) else { return }
+        guard viewModel.state.itemAccessories[item.key] == nil, let accessory = ItemAccessory.create(from: item, fileStorage: fileStorage, urlDetector: urlDetector) else { return }
         self.update(viewModel: viewModel) { state in
             state.itemAccessories[item.key] = accessory
         }
@@ -680,22 +680,6 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
 
     // MARK: - Helpers
 
-    private func accessory(for item: RItem) -> ItemAccessory? {
-        if let attachment = AttachmentCreator.mainAttachment(for: item, fileStorage: self.fileStorage) {
-            return .attachment(attachment: attachment, parentKey: (item.key != attachment.key) ? item.key : nil)
-        }
-
-        if let urlString = item.urlString, self.urlDetector.isUrl(string: urlString), let url = URL(string: urlString) {
-            return .url(url)
-        }
-
-        if let doi = item.doi {
-            return .doi(doi)
-        }
-
-        return nil
-    }
-
     /// Updates the `keys` array which mirrors `Results<RItem>` identifiers. Updates `selectedItems` if needed. Updates `attachments` if needed.
     private func processUpdate(items: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int], in viewModel: ViewModel<ItemsActionHandler>) {
         self.update(viewModel: viewModel) { state in
@@ -718,13 +702,13 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
 
             modifications.forEach { idx in
                 let item = items[idx]
-                state.itemAccessories[item.key] = self.accessory(for: item)
+                state.itemAccessories[item.key] = ItemAccessory.create(from: item, fileStorage: fileStorage, urlDetector: urlDetector)
                 state.itemTitles[item.key] = self.htmlAttributedStringConverter.convert(text: item.displayTitle, baseAttributes: [.font: state.itemTitleFont])
             }
 
             for idx in insertions {
                 let item = items[idx]
-                state.itemAccessories[item.key] = self.accessory(for: item)
+                state.itemAccessories[item.key] = ItemAccessory.create(from: item, fileStorage: fileStorage, urlDetector: urlDetector)
                 state.itemTitles[item.key] = self.htmlAttributedStringConverter.convert(text: item.displayTitle, baseAttributes: [.font: state.itemTitleFont])
 
                 if !shouldRebuildKeys {
