@@ -857,6 +857,8 @@
 		B398A915270C6A4300968EE8 /* WebDavController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B398A914270C6A4300968EE8 /* WebDavController.swift */; };
 		B398A917270C6A5B00968EE8 /* WebDavSessionStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B398A916270C6A5B00968EE8 /* WebDavSessionStorage.swift */; };
 		B398D6C02A77F9C60049A296 /* FontSizeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B398D6BF2A77F9C60049A296 /* FontSizeView.swift */; };
+		B39ADE712C4AAB090006FA79 /* OrderedDictionary+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39ADE702C4AAB030006FA79 /* OrderedDictionary+Utils.swift */; };
+		B39ADE722C4AAB090006FA79 /* OrderedDictionary+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39ADE702C4AAB030006FA79 /* OrderedDictionary+Utils.swift */; };
 		B39AF554290033CD001F400F /* TableOfContentsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39AF553290033CD001F400F /* TableOfContentsViewController.swift */; };
 		B39B18E8223947050019F467 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39B18E7223947050019F467 /* main.swift */; };
 		B39C9AB7252B589F00462D27 /* Threading+Extras.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650423FC051E003304F2 /* Threading+Extras.swift */; };
@@ -979,6 +981,11 @@
 		B3BF7EE928A51EDA00A5A659 /* EditTagsForItemDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BF7EE828A51EDA00A5A659 /* EditTagsForItemDbRequest.swift */; };
 		B3C3EC232C48FD970062705A /* MarkCollectionsAsTrashedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C3EC222C48FD970062705A /* MarkCollectionsAsTrashedDbRequest.swift */; };
 		B3C3EC242C48FD970062705A /* MarkCollectionsAsTrashedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C3EC222C48FD970062705A /* MarkCollectionsAsTrashedDbRequest.swift */; };
+		B3C3EC2A2C492A870062705A /* TrashViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C3EC292C492A870062705A /* TrashViewController.swift */; };
+		B3C3EC2C2C492A970062705A /* TrashActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C3EC2B2C492A970062705A /* TrashActionHandler.swift */; };
+		B3C3EC2E2C492A9F0062705A /* TrashState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C3EC2D2C492A9F0062705A /* TrashState.swift */; };
+		B3C3EC302C492AAC0062705A /* TrashAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C3EC2F2C492AAC0062705A /* TrashAction.swift */; };
+		B3C3EC322C492CEA0062705A /* TrashObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C3EC312C492CEA0062705A /* TrashObject.swift */; };
 		B3C43C2028589F300007076D /* NotePreviewGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C43C1F28589F300007076D /* NotePreviewGenerator.swift */; };
 		B3C43C212858A84A0007076D /* NotePreviewGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C43C1F28589F300007076D /* NotePreviewGenerator.swift */; };
 		B3C6AB28248E1B720009AC96 /* SyncBatchProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C6AB27248E1B720009AC96 /* SyncBatchProcessor.swift */; };
@@ -1873,6 +1880,7 @@
 		B398A914270C6A4300968EE8 /* WebDavController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebDavController.swift; sourceTree = "<group>"; };
 		B398A916270C6A5B00968EE8 /* WebDavSessionStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavSessionStorage.swift; sourceTree = "<group>"; };
 		B398D6BF2A77F9C60049A296 /* FontSizeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontSizeView.swift; sourceTree = "<group>"; };
+		B39ADE702C4AAB030006FA79 /* OrderedDictionary+Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OrderedDictionary+Utils.swift"; sourceTree = "<group>"; };
 		B39AF553290033CD001F400F /* TableOfContentsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableOfContentsViewController.swift; sourceTree = "<group>"; };
 		B39B18E7223947050019F467 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		B39C7BDD251237D600C2CCF1 /* ReadUpdatedItemUpdateParametersSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadUpdatedItemUpdateParametersSpec.swift; sourceTree = "<group>"; };
@@ -1981,6 +1989,11 @@
 		B3BF7EE628A51BDC00A5A659 /* DeleteTagFromItemDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteTagFromItemDbRequest.swift; sourceTree = "<group>"; };
 		B3BF7EE828A51EDA00A5A659 /* EditTagsForItemDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditTagsForItemDbRequest.swift; sourceTree = "<group>"; };
 		B3C3EC222C48FD970062705A /* MarkCollectionsAsTrashedDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkCollectionsAsTrashedDbRequest.swift; sourceTree = "<group>"; };
+		B3C3EC292C492A870062705A /* TrashViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrashViewController.swift; sourceTree = "<group>"; };
+		B3C3EC2B2C492A970062705A /* TrashActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrashActionHandler.swift; sourceTree = "<group>"; };
+		B3C3EC2D2C492A9F0062705A /* TrashState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrashState.swift; sourceTree = "<group>"; };
+		B3C3EC2F2C492AAC0062705A /* TrashAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrashAction.swift; sourceTree = "<group>"; };
+		B3C3EC312C492CEA0062705A /* TrashObject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrashObject.swift; sourceTree = "<group>"; };
 		B3C43C1F28589F300007076D /* NotePreviewGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotePreviewGenerator.swift; sourceTree = "<group>"; };
 		B3C6AB27248E1B720009AC96 /* SyncBatchProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncBatchProcessor.swift; sourceTree = "<group>"; };
 		B3C6AB2A248E3EB90009AC96 /* ApiOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiOperation.swift; sourceTree = "<group>"; };
@@ -2599,6 +2612,7 @@
 		B305650223FC051E003304F2 /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
+				B39ADE702C4AAB030006FA79 /* OrderedDictionary+Utils.swift */,
 				B305651123FC051E003304F2 /* Array+Utils.swift */,
 				B30B550A24B85CC900F94B59 /* Assets.swift */,
 				B30B550F24B8646E00F94B59 /* Assets+SwiftUI.swift */,
@@ -3215,6 +3229,7 @@
 				B3ADAE402833AD6700D46271 /* Lookup */,
 				B31941D824531F6600BF6296 /* PDF */,
 				B3486B8026CFAFEA0036A267 /* SingleCitation */,
+				B3C3EC282C492A570062705A /* Trash */,
 				B3593F61241A62DD00760E20 /* DetailCoordinator.swift */,
 			);
 			path = Detail;
@@ -3781,6 +3796,42 @@
 				B3A47C3529015FCE00E7D90D /* TableOfContentsActionHandler.swift */,
 			);
 			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		B3C3EC252C492A570062705A /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				B3C3EC2F2C492AAC0062705A /* TrashAction.swift */,
+				B3C3EC2D2C492A9F0062705A /* TrashState.swift */,
+				B3C3EC312C492CEA0062705A /* TrashObject.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		B3C3EC262C492A570062705A /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				B3C3EC2B2C492A970062705A /* TrashActionHandler.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		B3C3EC272C492A570062705A /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				B3C3EC292C492A870062705A /* TrashViewController.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		B3C3EC282C492A570062705A /* Trash */ = {
+			isa = PBXGroup;
+			children = (
+				B3C3EC252C492A570062705A /* Models */,
+				B3C3EC262C492A570062705A /* ViewModels */,
+				B3C3EC272C492A570062705A /* Views */,
+			);
+			path = Trash;
 			sourceTree = "<group>";
 		};
 		B3DCDED72408F5150039ED0D /* General */ = {
@@ -4828,6 +4879,7 @@
 				B3593F28241A61C700760E20 /* ItemDetailFieldCell.swift in Sources */,
 				B361A3012511F98700271173 /* LinkMode.swift in Sources */,
 				B3429B8124BDE73A008359FC /* UIDevice+Extensions.swift in Sources */,
+				B3C3EC322C492CEA0062705A /* TrashObject.swift in Sources */,
 				B3229FD128C0A07500DAF3B7 /* EditAnnotationRectsDbRequest.swift in Sources */,
 				B3DF9AD22747AAD2007933CB /* ApiRequest.swift in Sources */,
 				B3DCDF0E240912500039ED0D /* SinglePickerActionHandler.swift in Sources */,
@@ -4860,6 +4912,7 @@
 				B310091D272C0126003FC743 /* DeleteWebDavDeletionsDbRequest.swift in Sources */,
 				B3593F36241A61C700760E20 /* ItemDetailSectionView.swift in Sources */,
 				B305661423FC051E003304F2 /* Licenses.swift in Sources */,
+				B3C3EC2A2C492A870062705A /* TrashViewController.swift in Sources */,
 				B3E4463C248FBBA3007FE8AB /* RLink.swift in Sources */,
 				B3DF9AD82747AB63007933CB /* ApiLogParameters.swift in Sources */,
 				B305660423FC051E003304F2 /* Alamofire+RxSwift.swift in Sources */,
@@ -5153,6 +5206,7 @@
 				B3F9A4BE2B04CEC300684030 /* ReaderSettingsSegmentedCell.swift in Sources */,
 				B379D9322BB30E6600AF5025 /* FullSyncDebugger.swift in Sources */,
 				B30565D023FC051E003304F2 /* CreateCollectionDbRequest.swift in Sources */,
+				B3C3EC2C2C492A970062705A /* TrashActionHandler.swift in Sources */,
 				B30565C123FC051E003304F2 /* MarkObjectsAsDeletedDbRequest.swift in Sources */,
 				B3830CDC255451AB00910FE0 /* TagPickerState.swift in Sources */,
 				B39D336823FFD96C00EF2ACB /* Note.swift in Sources */,
@@ -5227,6 +5281,7 @@
 				B305661123FC051E003304F2 /* AuthorizeUploadRequest.swift in Sources */,
 				B3E8FE052714292E00F51458 /* StorageSettingsView.swift in Sources */,
 				B36CBD4C25DD397D003C4613 /* ConflictAlertQueueController.swift in Sources */,
+				B3C3EC302C492AAC0062705A /* TrashAction.swift in Sources */,
 				B357DEE624165E0B00E06153 /* DebugLogFormatter.swift in Sources */,
 				B30565DF23FC051E003304F2 /* ReadSearchesDbRequest.swift in Sources */,
 				B30566AD23FC051F003304F2 /* ItemResponse.swift in Sources */,
@@ -5297,6 +5352,7 @@
 				B3486B8926CFAFEA0036A267 /* SingleCitationActionHandler.swift in Sources */,
 				B3A351DF271577D0002E597A /* WebDavTestWriteRequest.swift in Sources */,
 				B3593F26241A61C700760E20 /* ItemDetailAbstractCell.swift in Sources */,
+				B3C3EC2E2C492A9F0062705A /* TrashState.swift in Sources */,
 				B3D0793627CCF63800C454D6 /* AnnotationBoundingBoxCalculator.swift in Sources */,
 				B30566A223FC051F003304F2 /* Attachment.swift in Sources */,
 				B30565BF23FC051E003304F2 /* CheckItemIsChangedDbRequest.swift in Sources */,
@@ -5374,6 +5430,7 @@
 				B3BC1F60254322D200BA3388 /* ItemDetailAbstractEditCell.swift in Sources */,
 				B3422F44289A9F2400C53DD2 /* ItemDetailAttachmentContentView.swift in Sources */,
 				B30566C523FC051F003304F2 /* Tag.swift in Sources */,
+				B39ADE712C4AAB090006FA79 /* OrderedDictionary+Utils.swift in Sources */,
 				B31EEE5724EBCAF100E3B3AD /* RRect.swift in Sources */,
 				B3E8FE562714320900F51458 /* SavingSettingsState.swift in Sources */,
 				B30565B423FC051E003304F2 /* MarkForResyncDbAction.swift in Sources */,
@@ -5707,6 +5764,7 @@
 				B353F1FC242E23680062EE24 /* ResetTranslatorsDbRequest.swift in Sources */,
 				B37080532AA7216E006F56B9 /* Localizable.swift in Sources */,
 				B3AB43A927E8A81D006F3E4E /* Dictionary+Extensions.swift in Sources */,
+				B39ADE722C4AAB090006FA79 /* OrderedDictionary+Utils.swift in Sources */,
 				B36459E0264411AC00A0C2C0 /* ViewModel.swift in Sources */,
 				B32EBFC3276A892E0003897E /* BackgroundUploader.swift in Sources */,
 				B3902DE62480DBB7007EE48E /* DateParser.swift in Sources */,

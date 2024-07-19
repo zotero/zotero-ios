@@ -29,26 +29,30 @@ struct ItemCellModel {
 
     init(item: RItem, typeName: String, title: NSAttributedString, accessory: Accessory?) {
         self.key = item.key
-        let contentType: String? = item.rawType == ItemTypes.attachment ? item.fields.filter(.key(FieldKeys.Item.Attachment.contentType)).first?.value : nil
-        self.typeIconName = ItemTypes.iconName(for: item.rawType, contentType: contentType)
+        self.typeIconName = Self.typeIconName(for: item)
         self.typeName = typeName
         self.title = title
-        self.subtitle = ItemCellModel.subtitle(for: item)
-        self.hasNote = ItemCellModel.hasNote(item: item)
+        self.subtitle = Self.creatorSummary(for: item)
+        self.hasNote = Self.hasNote(item: item)
         self.accessory = accessory
-        let (colors, emojis) = ItemCellModel.tagData(item: item)
+        let (colors, emojis) = Self.tagData(item: item)
         self.tagColors = colors
         self.tagEmojis = emojis
     }
 
-    fileprivate static func hasNote(item: RItem) -> Bool {
+    static func hasNote(item: RItem) -> Bool {
         return !item.children
             .filter(.items(type: ItemTypes.note, notSyncState: .dirty))
             .filter(.isTrash(false))
             .isEmpty
     }
 
-    fileprivate static func tagData(item: RItem) -> ([UIColor], [String]) {
+    static func typeIconName(for item: RItem) -> String {
+        let contentType: String? = item.rawType == ItemTypes.attachment ? item.fields.filter(.key(FieldKeys.Item.Attachment.contentType)).first?.value : nil
+        return ItemTypes.iconName(for: item.rawType, contentType: contentType)
+    }
+
+    static func tagData(item: RItem) -> ([UIColor], [String]) {
         var colors: [UIColor] = []
         var emojis: [String] = []
         for tag in item.tags {
@@ -65,7 +69,7 @@ struct ItemCellModel {
         return (colors, emojis)
     }
 
-    private static func subtitle(for item: RItem) -> String {
+    static func creatorSummary(for item: RItem) -> String {
         guard item.creatorSummary != nil || item.parsedYear != 0 else { return "" }
         var result = item.creatorSummary ?? ""
         if !result.isEmpty {
