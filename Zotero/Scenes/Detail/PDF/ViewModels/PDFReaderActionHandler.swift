@@ -1547,7 +1547,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                             trimmedRects.append(currentRect)
                             continue
                         }
-                        let trim = intersection.height / 2
+                        // Each rect is trimmed by half the intersection height, plus 0.25 to have a small gap between the lines.
+                        let trim = (intersection.height / 2) + 0.25
                         let previousTrimmedRect = CGRect(x: previousRect.minX, y: previousRect.minY + trim, width: previousRect.width, height: previousRect.height - trim)
                         let currentTrimmedRect = CGRect(x: currentRect.minX, y: currentRect.minY, width: currentRect.width, height: currentRect.height - trim)
                         trimmedRects.removeLast()
