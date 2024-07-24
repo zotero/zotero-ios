@@ -6537,7 +6537,7 @@
 			repositoryURL = "https://github.com/Quick/Quick";
 			requirement = {
 				kind = exactVersion;
-				version = 7.6.1;
+				version = 7.6.2;
 			};
 		};
 		B356A3942524A6D5003F1943 /* XCRemoteSwiftPackageReference "OHHTTPStubs" */ = {
@@ -6561,7 +6561,7 @@
 			repositoryURL = "https://github.com/realm/realm-cocoa";
 			requirement = {
 				kind = exactVersion;
-				version = 10.52.1;
+				version = 10.52.2;
 			};
 		};
 		B35E4B8B25248B3C000EA134 /* XCRemoteSwiftPackageReference "RxSwift" */ = {
