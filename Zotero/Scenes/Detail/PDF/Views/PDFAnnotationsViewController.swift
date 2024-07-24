@@ -16,6 +16,7 @@ import RxSwift
 typealias AnnotationsViewControllerAction = (AnnotationView.Action, Annotation, UIButton) -> Void
 
 protocol AnnotationsDelegate: AnyObject {
+    func parseAndCacheIfNeededAttributedText(for annotation: PDFAnnotation) -> NSAttributedString?
     func parseAndCacheIfNeededAttributedComment(for annotation: PDFAnnotation) -> NSAttributedString?
 }
 
@@ -279,27 +280,39 @@ final class PDFAnnotationsViewController: UIViewController {
     private func setup(cell: AnnotationCell, with annotation: PDFAnnotation, state: PDFReaderState) {
         let selected = annotation.key == state.selectedAnnotationKey?.key
         let preview: UIImage?
+        let text: NSAttributedString?
         let comment: AnnotationView.Comment?
 
+        // Annotation text
         switch annotation.type {
-        case .image:
+        case .highlight, .underline:
+            text = parentDelegate?.parseAndCacheIfNeededAttributedText(for: annotation)
+
+        case .note, .image, .ink, .freeText:
+            text = nil
+        }
+        // Annotation comment
+        switch annotation.type {
+        case .note, .highlight, .image, .underline:
             let attributedString = parentDelegate?.parseAndCacheIfNeededAttributedComment(for: annotation) ?? NSAttributedString()
             comment = .init(attributedString: attributedString, isActive: state.selectedAnnotationCommentActive)
-            preview = loadPreview(for: annotation, state: state)
 
         case .ink, .freeText:
             comment = nil
+        }
+        // Annotation preview
+        switch annotation.type {
+        case .image, .ink, .freeText:
             preview = loadPreview(for: annotation, state: state)
 
         case .note, .highlight, .underline:
-            let attributedString = parentDelegate?.parseAndCacheIfNeededAttributedComment(for: annotation) ?? NSAttributedString()
-            comment = .init(attributedString: attributedString, isActive: state.selectedAnnotationCommentActive)
             preview = nil
         }
 
         guard let boundingBoxConverter, let pdfAnnotationsCoordinatorDelegate = coordinatorDelegate else { return }
         cell.setup(
             with: annotation,
+            text: text,
             comment: comment,
             preview: preview,
             selected: selected,

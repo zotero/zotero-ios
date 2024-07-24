@@ -92,6 +92,7 @@ final class AnnotationView: UIView {
 
     /// Setups up annotation view with given annotation and additional data.
     /// - parameter annotation: Annotation to show in view.
+    /// - parameter text: Text to show. If nil, text field is not shown.
     /// - parameter comment: Comment to show. If nil, comment field is not shown.
     /// - parameter preview: Preview image to show. If nil, no image is shown.
     /// - parameter selected: If true, selected state style is applied.
@@ -101,6 +102,7 @@ final class AnnotationView: UIView {
     /// - parameter state: State required for setting up share menu.
     func setup(
         with annotation: PDFAnnotation,
+        text: NSAttributedString?,
         comment: Comment?,
         preview: UIImage?,
         selected: Bool,
@@ -132,6 +134,7 @@ final class AnnotationView: UIView {
         )
         setupContent(
             for: annotation,
+            text: text,
             preview: preview,
             color: color,
             canEdit: canEdit,
@@ -156,6 +159,7 @@ final class AnnotationView: UIView {
 
     private func setupContent(
         for annotation: PDFAnnotation,
+        text: NSAttributedString?,
         preview: UIImage?,
         color: UIColor,
         canEdit: Bool,
@@ -177,7 +181,7 @@ final class AnnotationView: UIView {
             let bottomInset = inset(from: layout.highlightLineVerticalInsets, hasComment: !annotation.comment.isEmpty, selected: selected, canEdit: canEdit)
             highlightContent.isHidden = false
             imageContent.isHidden = true
-            highlightContent.setup(with: color, text: (annotation.text ?? ""), bottomInset: bottomInset, accessibilityType: accessibilityType)
+            highlightContent.setup(with: color, text: text ?? .init(), bottomInset: bottomInset, accessibilityType: accessibilityType)
 
         case .image, .ink, .freeText:
             highlightContent.isHidden = true

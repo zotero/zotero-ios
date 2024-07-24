@@ -69,6 +69,7 @@ struct PDFReaderState: ViewModelState {
     let document: PSPDFKit.Document
     let displayTitle: String?
     let previewCache: NSCache<NSString, UIImage>
+    let textFont: UIFont
     let commentFont: UIFont
     let userId: Int
     let username: String
@@ -82,6 +83,7 @@ struct PDFReaderState: ViewModelState {
     var itemToken: NotificationToken?
     var databaseAnnotations: Results<RItem>!
     var documentAnnotations: [String: PDFDocumentAnnotation]
+    var texts: [String: NSAttributedString]
     var comments: [String: NSAttributedString]
     var searchTerm: String?
     var filter: AnnotationsFilter?
@@ -144,12 +146,14 @@ struct PDFReaderState: ViewModelState {
         document.overrideClass(PSPDFKit.AnnotationManager.self, with: AnnotationManager.self)
         self.displayTitle = displayTitle
         self.previewCache = NSCache()
+        self.textFont = PDFReaderLayout.annotationLayout.font
         self.commentFont = PDFReaderLayout.annotationLayout.font
         self.userId = userId
         self.username = username
         self.displayName = displayName
         self.sortedKeys = []
         self.documentAnnotations = [:]
+        self.texts = [:]
         self.comments = [:]
         self.visiblePage = 0
         self.initialPage = initialPage
