@@ -34,15 +34,27 @@ final class PlaceholderTextViewDelegate: NSObject {
     init(placeholder: String, menuItems: [UIMenuItem]?, textView: UITextView) {
         self.menuItems = menuItems
         self.placeholder = placeholder
-        self.placeholderLayer = CATextLayer()
+        placeholderLayer = CATextLayer()
 
         super.init()
 
-        self.setup(placeholder: placeholder, textView: textView)
+        setup(placeholder: placeholder, textView: textView)
+
+        func setup(placeholder: String, textView: UITextView) {
+            placeholderLayer.string = placeholder
+            placeholderLayer.font = textView.font
+            placeholderLayer.fontSize = textView.font?.pointSize ?? 0
+            placeholderLayer.foregroundColor = UIColor.placeholderText.cgColor
+            placeholderLayer.contentsScale = UIScreen.main.scale
+
+            textView.layer.addSublayer(placeholderLayer)
+
+            layoutPlaceholder(in: textView)
+        }
     }
 
     func set(text: String, to textView: UITextView) {
-        self.placeholderLayer.isHidden = !text.isEmpty
+        placeholderLayer.isHidden = !text.isEmpty
 
         let oldRange = textView.selectedRange
         let isSameLengthText = text.count == textView.text.count
@@ -56,7 +68,7 @@ final class PlaceholderTextViewDelegate: NSObject {
     }
 
     func set(text: NSAttributedString, to textView: UITextView) {
-        self.placeholderLayer.isHidden = !text.string.isEmpty
+        placeholderLayer.isHidden = !text.string.isEmpty
 
         let oldRange = textView.selectedRange
         let isSameLengthText = text.string.count == textView.attributedText.string.count
@@ -70,51 +82,39 @@ final class PlaceholderTextViewDelegate: NSObject {
     }
 
     func set(placeholderColor: UIColor) {
-        self.placeholderLayer.foregroundColor = placeholderColor.cgColor
+        placeholderLayer.foregroundColor = placeholderColor.cgColor
     }
 
     func layoutPlaceholder(in textView: UITextView) {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
-        self.placeholderLayer.frame = textView.bounds
+        placeholderLayer.frame = textView.bounds
         CATransaction.commit()
-    }
-
-    private func setup(placeholder: String, textView: UITextView) {
-        self.placeholderLayer.string = placeholder
-        self.placeholderLayer.font = textView.font
-        self.placeholderLayer.fontSize = textView.font?.pointSize ?? 0
-        self.placeholderLayer.foregroundColor = UIColor.placeholderText.cgColor
-        self.placeholderLayer.contentsScale = UIScreen.main.scale
-
-        textView.layer.addSublayer(self.placeholderLayer)
-
-        self.layoutPlaceholder(in: textView)
     }
 }
 
 extension PlaceholderTextViewDelegate: UITextViewDelegate {
     func textViewDidBeginEditing(_ textView: UITextView) {
-        if let menuItems = self.menuItems {
+        if let menuItems {
             UIMenuController.shared.menuItems = menuItems
         }
-        self.placeholderLayer.foregroundColor = UIColor.placeholderText.cgColor
-        self.didBecomeActiveObserver?.on(.next(()))
+        placeholderLayer.foregroundColor = UIColor.placeholderText.cgColor
+        didBecomeActiveObserver?.on(.next(()))
     }
 
     func textViewDidEndEditing(_ textView: UITextView) {
-        self.placeholderLayer.isHidden = !textView.text.isEmpty
+        placeholderLayer.isHidden = !textView.text.isEmpty
     }
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
         if textView.text.isEmpty && !text.isEmpty {
-            self.placeholderLayer.isHidden = true
+            placeholderLayer.isHidden = true
         }
         return true
     }
 
     func textViewDidChange(_ textView: UITextView) {
-        self.textObserver?.on(.next(textView.text))
-        self.textChanged?(textView.text)
+        textObserver?.on(.next(textView.text))
+        textChanged?(textView.text)
     }
 }

@@ -31,38 +31,38 @@ struct AnnotationViewLayout {
     let showDoneButton: Bool
 
     init(type: AnnotationView.Kind) {
-        self.horizontalInset = 16
-        self.pageLabelLeadingOffset = 8
-        self.highlightContentLeadingOffset = 8
-        self.highlightLineWidth = 3
-        self.highlightLineVerticalInsets = 8
+        horizontalInset = 16
+        pageLabelLeadingOffset = 8
+        highlightContentLeadingOffset = 8
+        highlightLineWidth = 3
+        highlightLineVerticalInsets = 8
 
         switch type {
         case .cell:
-            self.headerVerticalInsets = 9
-            self.buttonVerticalInset = 9
-            self.lineHeight = 20
-            self.verticalSpacerHeight = 12.5
-            self.font = .preferredFont(forTextStyle: .subheadline)
-            self.pageLabelFont = .preferredFont(for: .subheadline, weight: .bold)
-            self.showsContent = true
-            self.commentMinHeight = nil
-            self.scrollableBody = false
-            self.backgroundColor = .systemBackground
-            self.showDoneButton = false
+            headerVerticalInsets = 9
+            buttonVerticalInset = 9
+            lineHeight = 20
+            verticalSpacerHeight = 12.5
+            font = .preferredFont(forTextStyle: .subheadline)
+            pageLabelFont = .preferredFont(for: .subheadline, weight: .bold)
+            showsContent = true
+            commentMinHeight = nil
+            scrollableBody = false
+            backgroundColor = .systemBackground
+            showDoneButton = false
             
         case .popover:
-            self.headerVerticalInsets = 14
-            self.buttonVerticalInset = 11
-            self.lineHeight = 22
-            self.verticalSpacerHeight = 16
-            self.font = .preferredFont(forTextStyle: .body)
-            self.pageLabelFont = .preferredFont(for: .body, weight: .bold)
-            self.showsContent = false
-            self.commentMinHeight = self.lineHeight * 3
-            self.scrollableBody = true
-            self.backgroundColor = Asset.Colors.annotationPopoverBackground.color
-            self.showDoneButton = UIDevice.current.userInterfaceIdiom == .phone
+            headerVerticalInsets = 14
+            buttonVerticalInset = 11
+            lineHeight = 22
+            verticalSpacerHeight = 16
+            font = .preferredFont(forTextStyle: .body)
+            pageLabelFont = .preferredFont(for: .body, weight: .bold)
+            showsContent = false
+            commentMinHeight = lineHeight * 3
+            scrollableBody = true
+            backgroundColor = Asset.Colors.annotationPopoverBackground.color
+            showDoneButton = UIDevice.current.userInterfaceIdiom == .phone
         }
     }
 }

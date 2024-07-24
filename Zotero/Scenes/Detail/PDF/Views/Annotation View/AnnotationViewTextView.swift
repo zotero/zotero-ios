@@ -11,23 +11,23 @@ import UIKit
 import RxSwift
 
 final class AnnotationViewTextView: UIView {
-    private(set) weak var textView: UITextView!
+    private(set) var textView: UITextView!
 
     private let layout: AnnotationViewLayout
     private let placeholder: String
 
     private var textViewDelegate: PlaceholderTextViewDelegate!
     var textObservable: Observable<(NSAttributedString, Bool)?> {
-        return self.textViewDelegate.textObservable.flatMap { [weak self] _ -> Observable<(NSAttributedString, Bool)?> in
+        return textViewDelegate.textObservable.flatMap { [weak self] _ -> Observable<(NSAttributedString, Bool)?> in
             guard let self else { return Observable.just(nil) }
-            let height = self.textView.contentSize.height
-            self.textView.sizeToFit()
-            self.setupAccessibilityLabel()
-            return Observable.just((self.textView.attributedText, (height != self.textView.contentSize.height)))
+            let height = textView.contentSize.height
+            textView.sizeToFit()
+            setupAccessibilityLabel()
+            return Observable.just((textView.attributedText, (height != textView.contentSize.height)))
         }
     }
     var didBecomeActive: Observable<()> {
-        return self.textViewDelegate.didBecomeActive
+        return textViewDelegate.didBecomeActive
     }
     var accessibilityLabelPrefix: String?
 
@@ -39,12 +39,53 @@ final class AnnotationViewTextView: UIView {
 
         super.init(frame: CGRect())
 
-        self.translatesAutoresizingMaskIntoConstraints = false
-        self.backgroundColor = layout.backgroundColor
+        translatesAutoresizingMaskIntoConstraints = false
+        backgroundColor = layout.backgroundColor
 
-        self.setupView()
-        self.setupTextViewDelegate()
-        self.textView.sizeToFit()
+        setupView()
+        setupTextViewDelegate()
+        textView.sizeToFit()
+
+        func setupView() {
+            let textView = AnnotationTextView(defaultFont: layout.font)
+            textView.adjustsFontForContentSizeCategory = true
+            textView.textContainerInset = UIEdgeInsets()
+            textView.textContainer.lineFragmentPadding = 0
+            textView.isScrollEnabled = false
+            textView.translatesAutoresizingMaskIntoConstraints = false
+            textView.font = layout.font
+
+            addSubview(textView)
+
+            let topFontOffset = layout.font.ascender - layout.font.xHeight
+            let bottomFontOffset = layout.font.descender
+
+            if let minHeight = layout.commentMinHeight {
+                textView.heightAnchor.constraint(greaterThanOrEqualToConstant: minHeight).isActive = true
+            }
+
+            NSLayoutConstraint.activate([
+                // Horizontal
+                textView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: layout.horizontalInset),
+                trailingAnchor.constraint(equalTo: textView.trailingAnchor, constant: layout.horizontalInset),
+                // Vertical
+                textView.topAnchor.constraint(equalTo: topAnchor, constant: layout.verticalSpacerHeight - topFontOffset),
+                bottomAnchor.constraint(equalTo: textView.bottomAnchor, constant: layout.verticalSpacerHeight + bottomFontOffset)
+            ])
+
+            self.textView = textView
+        }
+
+        func setupTextViewDelegate() {
+            let bold = UIMenuItem(title: "Bold", action: #selector(UITextView.toggleBoldface(_:)))
+            let italics = UIMenuItem(title: "Italics", action: #selector(UITextView.toggleItalics(_:)))
+            let superscript = UIMenuItem(title: "Superscript", action: #selector(AnnotationTextView.toggleSuperscript))
+            let `subscript` = UIMenuItem(title: "Subscript", action: #selector(AnnotationTextView.toggleSubscript))
+            let items = [bold, italics, superscript, `subscript`]
+            let delegate = PlaceholderTextViewDelegate(placeholder: placeholder, menuItems: items, textView: textView)
+            textView.delegate = delegate
+            textViewDelegate = delegate
+        }
     }
 
     required init?(coder: NSCoder) {
@@ -53,89 +94,48 @@ final class AnnotationViewTextView: UIView {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        self.textViewDelegate.layoutPlaceholder(in: self.textView)
+        textViewDelegate.layoutPlaceholder(in: textView)
     }
 
     // MARK: - Actions
 
     @discardableResult
     override func becomeFirstResponder() -> Bool {
-        return self.textView.becomeFirstResponder()
+        return textView.becomeFirstResponder()
     }
 
     override func resignFirstResponder() -> Bool {
-        return self.textView.resignFirstResponder()
+        return textView.resignFirstResponder()
     }
 
     func set(placeholderColor: UIColor) {
-        self.textViewDelegate.set(placeholderColor: placeholderColor)
+        textViewDelegate.set(placeholderColor: placeholderColor)
     }
 
     // MARK: - Setups
 
     func setup(text: NSAttributedString?) {
-        self.setupAccessibilityLabel()
-        self.textView.isAccessibilityElement = true
+        setupAccessibilityLabel()
+        textView.isAccessibilityElement = true
 
-        if let text = text {
-            self.textViewDelegate.set(text: text, to: self.textView)
+        if let text {
+            textViewDelegate.set(text: text, to: textView)
         } else {
-            self.textViewDelegate.set(text: "", to: self.textView)
+            textViewDelegate.set(text: "", to: textView)
         }
     }
 
     private func setupAccessibilityLabel() {
-        if self.textView.attributedText.string.isEmpty {
-            self.accessibilityLabel = self.placeholder
+        if textView.attributedText.string.isEmpty {
+            accessibilityLabel = placeholder
             return
         }
 
-        var label = self.textView.attributedText.string
-        if let prefix = self.accessibilityLabelPrefix {
+        var label = textView.attributedText.string
+        if let prefix = accessibilityLabelPrefix {
             label = prefix + label
         }
-        self.accessibilityLabel = label
-    }
-
-    private func setupView() {
-        let textView = AnnotationTextView(defaultFont: self.layout.font)
-        textView.adjustsFontForContentSizeCategory = true
-        textView.textContainerInset = UIEdgeInsets()
-        textView.textContainer.lineFragmentPadding = 0
-        textView.isScrollEnabled = false
-        textView.translatesAutoresizingMaskIntoConstraints = false
-        textView.font = self.layout.font
-
-        self.addSubview(textView)
-
-        let topFontOffset = self.layout.font.ascender - self.layout.font.xHeight
-        let bottomFontOffset = self.layout.font.descender
-
-        if let minHeight = self.layout.commentMinHeight {
-            textView.heightAnchor.constraint(greaterThanOrEqualToConstant: minHeight).isActive = true
-        }
-
-        NSLayoutConstraint.activate([
-            // Horizontal
-            textView.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: self.layout.horizontalInset),
-            self.trailingAnchor.constraint(equalTo: textView.trailingAnchor, constant: self.layout.horizontalInset),
-            // Vertical
-            textView.topAnchor.constraint(equalTo: self.topAnchor, constant: self.layout.verticalSpacerHeight - topFontOffset),
-            self.bottomAnchor.constraint(equalTo: textView.bottomAnchor, constant: self.layout.verticalSpacerHeight + bottomFontOffset)
-        ])
-
-        self.textView = textView
-    }
-
-    private func setupTextViewDelegate() {
-        let bold = UIMenuItem(title: "Bold", action: #selector(UITextView.toggleBoldface(_:)))
-        let italics = UIMenuItem(title: "Italics", action: #selector(UITextView.toggleItalics(_:)))
-        let superscript = UIMenuItem(title: "Superscript", action: #selector(AnnotationTextView.toggleSuperscript))
-        let `subscript` = UIMenuItem(title: "Subscript", action: #selector(AnnotationTextView.toggleSubscript))
-        let items = [bold, italics, superscript, `subscript`]
-        let delegate = PlaceholderTextViewDelegate(placeholder: self.placeholder, menuItems: items, textView: self.textView)
-        self.textView.delegate = delegate
-        self.textViewDelegate = delegate
+        accessibilityLabel = label
     }
 }
 
@@ -147,7 +147,7 @@ private final class AnnotationTextView: TextKit1TextView {
     init(defaultFont: UIFont) {
         self.defaultFont = defaultFont
         super.init(frame: CGRect(), textContainer: nil)
-        self.font = defaultFont
+        font = defaultFont
     }
 
     required init?(coder: NSCoder) {
@@ -155,25 +155,25 @@ private final class AnnotationTextView: TextKit1TextView {
     }
 
     override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
-        return AnnotationTextView.allowedActions.contains(action.description)
+        return Self.allowedActions.contains(action.description)
     }
 
     @objc func toggleSuperscript() {
-        guard self.selectedRange.length > 0 else { return }
-        self.perform(attributedStringAction: { StringAttribute.toggleSuperscript(in: $0, range: $1, defaultFont: self.defaultFont) })
+        guard selectedRange.length > 0 else { return }
+        perform(attributedStringAction: { StringAttribute.toggleSuperscript(in: $0, range: $1, defaultFont: defaultFont) })
     }
 
     @objc func toggleSubscript() {
-        guard self.selectedRange.length > 0 else { return }
-        self.perform(attributedStringAction: { StringAttribute.toggleSubscript(in: $0, range: $1, defaultFont: self.defaultFont) })
+        guard selectedRange.length > 0 else { return }
+        perform(attributedStringAction: { StringAttribute.toggleSubscript(in: $0, range: $1, defaultFont: defaultFont) })
     }
 
     private func perform(attributedStringAction: (NSMutableAttributedString, NSRange) -> Void) {
-        let range = self.selectedRange
-        let string = NSMutableAttributedString(attributedString: self.attributedText)
+        let range = selectedRange
+        let string = NSMutableAttributedString(attributedString: attributedText)
         attributedStringAction(string, range)
-        self.attributedText = string
-        self.selectedRange = range
-        self.delegate?.textViewDidChange?(self)
+        attributedText = string
+        selectedRange = range
+        delegate?.textViewDidChange?(self)
     }
 }
