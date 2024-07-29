@@ -2799,7 +2799,6 @@
 				B311B31D2386A39800BCF592 /* ZShare */,
 				B30D59562206F60400884C4A /* Products */,
 				9A5CCE075B69890E36482447 /* Frameworks */,
-				B3CED4C82BC93F9000B88FB0 /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -3750,13 +3749,6 @@
 				B3A47C3529015FCE00E7D90D /* TableOfContentsActionHandler.swift */,
 			);
 			path = ViewModels;
-			sourceTree = "<group>";
-		};
-		B3CED4C82BC93F9000B88FB0 /* Recovered References */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = "Recovered References";
 			sourceTree = "<group>";
 		};
 		B3DCDED72408F5150039ED0D /* General */ = {
