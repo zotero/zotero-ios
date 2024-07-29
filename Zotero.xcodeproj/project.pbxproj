@@ -4223,17 +4223,17 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = B30D597F2206F60500884C4A /* Build configuration list for PBXNativeTarget "Zotero" */;
 			buildPhases = (
-				B3CF8840266E0FE6009CFC20 /* Run Script */,
-				B3593F142668D37900FA4BB2 /* Run Script */,
-				B34A85AC243CB1E4003D5638 /* ShellScript */,
-				B3A1D03D2BA321B30040FEE9 /* ShellScript */,
+				B3CF8840266E0FE6009CFC20 /* Bundle Locales */,
+				B3593F142668D37900FA4BB2 /* Bundle Styles */,
+				B34A85AC243CB1E4003D5638 /* Bundle Translators */,
+				B3A1D03D2BA321B30040FEE9 /* Bundle Note Editor */,
 				B337A5AD244F229400AFD13D /* SwiftGen */,
 				B30D59512206F60400884C4A /* Sources */,
 				B30D59522206F60400884C4A /* Frameworks */,
 				B30D59532206F60400884C4A /* Resources */,
 				B311B3272386A39800BCF592 /* Embed Foundation Extensions */,
 				B3E196FA25308D9700DBBE5C /* CopyFiles */,
-				B3E196FB25308DA500DBBE5C /* ShellScript */,
+				B3E196FB25308DA500DBBE5C /* Fix Code Signing */,
 				61AE2F282A2619E50072571D /* SwiftLint */,
 			);
 			buildRules = (
@@ -4594,7 +4594,7 @@
 			shellPath = /bin/sh;
 			shellScript = "swiftgen config lint\nswiftgen config run\n";
 		};
-		B34A85AC243CB1E4003D5638 /* ShellScript */ = {
+		B34A85AC243CB1E4003D5638 /* Bundle Translators */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -4605,6 +4605,7 @@
 			inputPaths = (
 				"$(SRCROOT)/scripts/bundle_translators.py",
 			);
+			name = "Bundle Translators";
 			outputFileListPaths = (
 			);
 			outputPaths = (
@@ -4613,7 +4614,7 @@
 			shellPath = /bin/sh;
 			shellScript = "python3 \"$SCRIPT_INPUT_FILE_0\"\n";
 		};
-		B3593F142668D37900FA4BB2 /* Run Script */ = {
+		B3593F142668D37900FA4BB2 /* Bundle Styles */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -4624,7 +4625,7 @@
 			inputPaths = (
 				"$(SRCROOT)/scripts/bundle_styles.py",
 			);
-			name = "Run Script";
+			name = "Bundle Styles";
 			outputFileListPaths = (
 			);
 			outputPaths = (
@@ -4633,7 +4634,7 @@
 			shellPath = /bin/sh;
 			shellScript = "python3 \"$SCRIPT_INPUT_FILE_0\"\n";
 		};
-		B3A1D03D2BA321B30040FEE9 /* ShellScript */ = {
+		B3A1D03D2BA321B30040FEE9 /* Bundle Note Editor */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -4643,6 +4644,7 @@
 			inputPaths = (
 				"$(SRCROOT)/scripts/bundle_note_editor.sh",
 			);
+			name = "Bundle Note Editor";
 			outputFileListPaths = (
 			);
 			outputPaths = (
@@ -4651,7 +4653,7 @@
 			shellPath = /bin/sh;
 			shellScript = "sh \"$SCRIPT_INPUT_FILE_0\"\n";
 		};
-		B3CF8840266E0FE6009CFC20 /* Run Script */ = {
+		B3CF8840266E0FE6009CFC20 /* Bundle Locales */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 12;
@@ -4662,7 +4664,7 @@
 			inputPaths = (
 				"$(SRCROOT)/scripts/bundle_locales.py",
 			);
-			name = "Run Script";
+			name = "Bundle Locales";
 			outputFileListPaths = (
 			);
 			outputPaths = (
@@ -4671,7 +4673,7 @@
 			shellPath = /bin/sh;
 			shellScript = "python3 \"$SCRIPT_INPUT_FILE_0\"\n";
 		};
-		B3E196FB25308DA500DBBE5C /* ShellScript */ = {
+		B3E196FB25308DA500DBBE5C /* Fix Code Signing */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -4681,6 +4683,7 @@
 			);
 			inputPaths = (
 			);
+			name = "Fix Code Signing";
 			outputFileListPaths = (
 			);
 			outputPaths = (
