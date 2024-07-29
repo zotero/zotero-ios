@@ -85,6 +85,7 @@ final class AnnotationCell: UITableViewCell {
 
     func setup(
         with annotation: PDFAnnotation,
+        text: NSAttributedString?,
         comment: AnnotationView.Comment?,
         preview: UIImage?,
         selected: Bool,
@@ -107,6 +108,7 @@ final class AnnotationCell: UITableViewCell {
         let availableWidth = availableWidth - (PDFReaderLayout.annotationLayout.horizontalInset * 2)
         annotationView.setup(
             with: annotation,
+            text: text,
             comment: comment,
             preview: preview,
             selected: selected,

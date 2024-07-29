@@ -170,6 +170,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         case .setHighlight(let key, let highlight):
             set(highlightText: highlight, key: key, viewModel: viewModel)
 
+        case .parseAndCacheText(let key, let text):
+            update(viewModel: viewModel, notifyListeners: false) { state in
+                state.texts[key] = htmlAttributedStringConverter.convert(text: text, baseAttributes: [.font: state.textFont])
+            }
+
         case .parseAndCacheComment(let key, let comment):
             update(viewModel: viewModel, notifyListeners: false) { state in
                 state.comments[key] = htmlAttributedStringConverter.convert(text: comment, baseAttributes: [.font: state.commentFont])
@@ -1271,12 +1276,18 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         let values = [KeyBaseKeyPair(key: FieldKeys.Item.Annotation.text, baseKey: nil): highlightText]
         let request = EditItemFieldsDbRequest(key: key, libraryId: viewModel.state.library.identifier, fieldValues: values, dateParser: dateParser)
         perform(request: request) { [weak self, weak viewModel] error in
-            guard let error, let self, let viewModel else { return }
+            guard let self, let viewModel else { return }
+            if let error {
+                DDLogError("PDFReaderActionHandler: can't update annotation \(key) - \(error)")
 
-            DDLogError("PDFReaderActionHandler: can't update annotation \(key) - \(error)")
-
+                update(viewModel: viewModel) { state in
+                    state.error = .cantUpdateAnnotation
+                }
+                return
+            }
+            let text = htmlAttributedStringConverter.convert(text: highlightText, baseAttributes: [.font: viewModel.state.textFont])
             update(viewModel: viewModel) { state in
-                state.error = .cantUpdateAnnotation
+                state.texts[key] = text
             }
         }
     }
@@ -1312,12 +1323,18 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         let values = [KeyBaseKeyPair(key: FieldKeys.Item.Annotation.pageLabel, baseKey: nil): pageLabel, KeyBaseKeyPair(key: FieldKeys.Item.Annotation.text, baseKey: nil): highlightText]
         let request = EditItemFieldsDbRequest(key: key, libraryId: viewModel.state.library.identifier, fieldValues: values, dateParser: dateParser)
         perform(request: request) { [weak self, weak viewModel] error in
-            guard let error, let self, let viewModel else { return }
+            guard let self, let viewModel else { return }
+            if let error {
+                DDLogError("PDFReaderActionHandler: can't update annotation \(key) - \(error)")
 
-            DDLogError("PDFReaderActionHandler: can't update annotation \(key) - \(error)")
-
+                update(viewModel: viewModel) { state in
+                    state.error = .cantUpdateAnnotation
+                }
+                return
+            }
+            let text = htmlAttributedStringConverter.convert(text: highlightText, baseAttributes: [.font: viewModel.state.textFont])
             update(viewModel: viewModel) { state in
-                state.error = .cantUpdateAnnotation
+                state.texts[key] = text
             }
         }
     }
@@ -2079,6 +2096,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         // Get sorted database keys
         var keys = (viewModel.state.snapshotKeys ?? viewModel.state.sortedKeys).filter({ $0.type == .database })
+        var texts = viewModel.state.texts
         var comments = viewModel.state.comments
         var selectKey: PDFReaderState.AnnotationKey?
         var selectionDeleted = false
@@ -2104,9 +2122,28 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 updatedKeys.append(key)
 
                 if item.changeType == .sync {
-                    // Update comment if it's remote sync change
-                    DDLogInfo("PDFReaderActionHandler: update comment")
-                    comments[key.key] = htmlAttributedStringConverter.convert(text: annotation.comment, baseAttributes: [.font: viewModel.state.commentFont])
+                    // Update text and comment if it's remote sync change
+                    DDLogInfo("PDFReaderActionHandler: update text and comment")
+                    let text: NSAttributedString?
+                    let comment: NSAttributedString?
+                    // Annotation text
+                    switch annotation.type {
+                    case .highlight, .underline:
+                        text = annotation.text.flatMap({ htmlAttributedStringConverter.convert(text: $0, baseAttributes: [.font: viewModel.state.textFont]) })
+
+                    case .note, .image, .ink, .freeText:
+                        text = nil
+                    }
+                    texts[key.key] = text
+                    // Annotation comment
+                    switch annotation.type {
+                    case .note, .highlight, .image, .underline:
+                        comment = htmlAttributedStringConverter.convert(text: annotation.comment, baseAttributes: [.font: viewModel.state.commentFont])
+
+                    case .ink, .freeText:
+                        comment = nil
+                    }
+                    comments[key.key] = comment
                 }
             }
 
@@ -2250,6 +2287,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         update(viewModel: viewModel) { state in
             // Update db annotations
             state.databaseAnnotations = objects.freeze()
+            state.texts = texts
             state.comments = comments
             state.changes = .annotations
 

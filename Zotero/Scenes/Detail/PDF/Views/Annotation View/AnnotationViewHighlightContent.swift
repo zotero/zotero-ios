@@ -37,21 +37,22 @@ final class AnnotationViewHighlightContent: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func setup(with color: UIColor, text: String, bottomInset: CGFloat, accessibilityType: AnnotationView.AccessibilityType) {
+    func setup(with color: UIColor, text: NSAttributedString, bottomInset: CGFloat, accessibilityType: AnnotationView.AccessibilityType) {
         let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.minimumLineHeight = self.layout.lineHeight
-        paragraphStyle.maximumLineHeight = self.layout.lineHeight
-        let attributedString = NSAttributedString(string: text, attributes: [.paragraphStyle: paragraphStyle, .font: self.layout.font, .foregroundColor: Asset.Colors.annotationText.color])
+        paragraphStyle.minimumLineHeight = layout.lineHeight
+        paragraphStyle.maximumLineHeight = layout.lineHeight
+        let attributedString = NSMutableAttributedString(attributedString: text)
+        attributedString.addAttributes([.paragraphStyle: paragraphStyle, .foregroundColor: Asset.Colors.annotationText.color], range: NSRange(location: 0, length: text.length))
 
-        self.lineView.backgroundColor = color
-        self.textLabel.attributedText = attributedString
-        self.bottomInsetConstraint.constant = bottomInset
+        lineView.backgroundColor = color
+        textLabel.attributedText = attributedString
+        bottomInsetConstraint.constant = bottomInset
 
 //        switch accessibilityType {
 //        case .cell:
-//            self.textLabel.isAccessibilityElement = false
+//            textLabel.isAccessibilityElement = false
 //        case .view:
-//            self.textLabel.accessibilityLabel = attributedString.string
+//            textLabel.accessibilityLabel = attributedString.string
 //        }
     }
 
