@@ -75,6 +75,7 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
 
         DDLogInfo("NoteEditorActionHandler: Import \(rawImages.count) images")
 
+        let imageFilename = "image"
         let libraryId = viewModel.state.library.identifier
         var images: [(String, Attachment)] = []
 
@@ -88,7 +89,7 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             else { continue }
 
             let key = KeyGenerator.newKey
-            let file = Files.attachmentFile(in: libraryId, key: key, filename: "image", contentType: mimeType)
+            let file = Files.attachmentFile(in: libraryId, key: key, filename: imageFilename, contentType: mimeType)
 
             do {
                 try self.fileStorage.write(image, to: file, options: .atomic)
@@ -98,8 +99,8 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             }
 
             let attachment = Attachment(
-                type: .file(filename: "image", contentType: mimeType, location: .local, linkType: .embeddedImage, compressed: false),
-                title: "image",
+                type: .file(filename: imageFilename, contentType: mimeType, location: .local, linkType: .embeddedImage, compressed: false),
+                title: imageFilename,
                 key: key,
                 libraryId: libraryId
             )
