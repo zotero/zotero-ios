@@ -219,7 +219,11 @@ final class ItemsTableViewHandler: NSObject {
     }
 
     func reloadAllAttachments() {
-        self.tableView.reloadData()
+        if viewModel.state.isEditing && !viewModel.state.selectedItems.isEmpty, let indexPathsForSelectedRows = tableView.indexPathsForSelectedRows {
+            tableView.reconfigureRows(at: indexPathsForSelectedRows)
+        } else {
+            tableView.reloadData()
+        }
     }
 
     func reload(snapshot: Results<RItem>, modifications: [Int], insertions: [Int], deletions: [Int], completion: (() -> Void)? = nil) {

@@ -98,6 +98,7 @@
 "collections.expand_all" = "Expand All";
 "collections.create_bibliography" = "Create Bibliography from Collection";
 "collections.download_attachments" = "Download Attachments";
+"collections.delete_attachment_files" = "Remove Downloads";
 
 "sync_toolbar.starting" = "Sync starting";
 "sync_toolbar.groups" = "Syncing groups";
@@ -532,6 +533,8 @@
 "accessibility.items.restore" = "Restore selected items";
 "accessibility.items.duplicate" = "Duplicate selected item";
 "accessibility.items.share" = "Share selected items";
+"accessibility.items.download_attachments" = "Download attachments for selected items";
+"accessibility.items.remove_downloads" = "Remove downloads for selected items";
 "accessibility.item_detail.download_and_open" = "Double tap to download and open";
 "accessibility.item_detail.open" = "Double tap to open";
 "accessibility.pdf.sidebar_open" = "Open sidebar";

@@ -95,7 +95,7 @@ struct ItemAction {
 
         case .removeDownload:
             self.title = L10n.Items.Action.removeDownload
-            self._image = .system("trash")
+            self._image = .system("arrow.down.circle.dotted")
         }
     }
 }

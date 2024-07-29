@@ -19,12 +19,14 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
     private unowned let fileStorage: FileStorage
     unowned let dbStorage: DbStorage
     private unowned let attachmentDownloader: AttachmentDownloader
+    private unowned let fileCleanupController: AttachmentFileCleanupController
 
-    init(dbStorage: DbStorage, fileStorage: FileStorage, attachmentDownloader: AttachmentDownloader) {
-        self.backgroundQueue = DispatchQueue(label: "org.zotero.CollectionsActionHandler.backgroundQueue", qos: .userInitiated)
+    init(dbStorage: DbStorage, fileStorage: FileStorage, attachmentDownloader: AttachmentDownloader, fileCleanupController: AttachmentFileCleanupController) {
+        backgroundQueue = DispatchQueue(label: "org.zotero.CollectionsActionHandler.backgroundQueue", qos: .userInitiated)
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
         self.attachmentDownloader = attachmentDownloader
+        self.fileCleanupController = fileCleanupController
     }
 
     func process(action: CollectionsAction, in viewModel: ViewModel<CollectionsActionHandler>) {
@@ -67,6 +69,9 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
 
         case .downloadAttachments(let identifier):
             self.downloadAttachments(in: identifier, viewModel: viewModel)
+
+        case .removeDownloads(let identifier):
+            removeDownloads(in: identifier, viewModel: viewModel)
         }
     }
 
@@ -103,6 +108,19 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
             self.attachmentDownloader.batchDownload(attachments: Array(attachments))
         } catch let error {
             DDLogError("CollectionsActionHandler: download attachments - \(error)")
+        }
+    }
+
+    private func removeDownloads(in collectionId: CollectionIdentifier, viewModel: ViewModel<CollectionsActionHandler>) {
+        backgroundQueue.async { [weak viewModel] in
+            guard let viewModel else { return }
+            do {
+                let items = try dbStorage.perform(request: ReadItemsDbRequest(collectionId: collectionId, libraryId: viewModel.state.library.identifier), on: backgroundQueue)
+                let keys = Set(items.map { $0.key })
+                fileCleanupController.delete(.allForItems(keys, viewModel.state.library.identifier))
+            } catch let error {
+                DDLogError("CollectionsActionHandler: remove downloads - \(error)")
+            }
         }
     }
 

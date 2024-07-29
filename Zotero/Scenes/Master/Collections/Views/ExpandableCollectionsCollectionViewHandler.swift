@@ -101,59 +101,69 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
     }
 
     private func createContextMenu(for collection: Collection) -> UIMenu? {
+        var actions: [UIAction] = []
         switch collection.identifier {
         case .collection(let key):
-            var actions: [UIAction] = []
-
             if viewModel.state.library.metadataEditable {
-                let edit = UIAction(title: L10n.edit, image: UIImage(systemName: "pencil")) { [weak self] _ in
-                    self?.viewModel.process(action: .startEditing(.edit(collection)))
+                let edit = UIAction(title: L10n.edit, image: UIImage(systemName: "pencil")) { [weak viewModel] _ in
+                    viewModel?.process(action: .startEditing(.edit(collection)))
                 }
-                let subcollection = UIAction(title: L10n.Collections.newSubcollection, image: UIImage(systemName: "folder.badge.plus")) { [weak self] _ in
-                    self?.viewModel.process(action: .startEditing(.addSubcollection(collection)))
+                let subcollection = UIAction(title: L10n.Collections.newSubcollection, image: UIImage(systemName: "folder.badge.plus")) { [weak viewModel] _ in
+                    viewModel?.process(action: .startEditing(.addSubcollection(collection)))
                 }
                 actions.append(contentsOf: [edit, subcollection])
             }
             
-            let createBibliography = UIAction(title: L10n.Collections.createBibliography, image: UIImage(systemName: "doc.on.doc")) { [weak self] _ in
-                self?.viewModel.process(action: .loadItemKeysForBibliography(collection))
+            let createBibliography = UIAction(title: L10n.Collections.createBibliography, image: UIImage(systemName: "doc.on.doc")) { [weak viewModel] _ in
+                viewModel?.process(action: .loadItemKeysForBibliography(collection))
             }
             actions.append(createBibliography)
 
             if viewModel.state.library.metadataEditable {
-                let delete = UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
-                    self?.viewModel.process(action: .deleteCollection(key))
+                let delete = UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak viewModel] _ in
+                    viewModel?.process(action: .deleteCollection(key))
                 }
                 actions.append(delete)
             }
 
             if collection.itemCount > 0 {
-                let downloadAttachments = UIAction(title: L10n.Collections.downloadAttachments, image: UIImage(systemName: "arrow.down.to.line.compact")) { [weak self] _ in
-                    self?.viewModel.process(action: .downloadAttachments(collection.identifier))
-                }
-                actions.insert(downloadAttachments, at: 0)
+                actions.insert(contentsOf: [downloadAttachmentsAction(for: collection.identifier, in: viewModel), removeDownloadsAction(for: collection.identifier, in: viewModel)], at: 0)
             }
 
-            return UIMenu(title: "", children: actions)
-
         case .custom(let type):
+            guard collection.itemCount > 0 else { break }
+            actions.append(removeDownloadsAction(for: collection.identifier, in: viewModel))
+
             switch type {
             case .trash:
-                guard self.viewModel.state.library.metadataEditable && collection.itemCount > 0 else { return nil }
-                let trash = UIAction(title: L10n.Collections.emptyTrash, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
-                    self?.viewModel.process(action: .emptyTrash)
+                if viewModel.state.library.metadataEditable {
+                    let trash = UIAction(title: L10n.Collections.emptyTrash, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak viewModel] _ in
+                        viewModel?.process(action: .emptyTrash)
+                    }
+                    actions.append(trash)
                 }
-                return UIMenu(title: "", children: [trash])
 
             case .publications, .all, .unfiled:
-                let downloadAttachments = UIAction(title: L10n.Collections.downloadAttachments, image: UIImage(systemName: "arrow.down.to.line.compact")) { [weak self] _ in
-                    self?.viewModel.process(action: .downloadAttachments(collection.identifier))
-                }
-                return UIMenu(title: "", children: [downloadAttachments])
+                actions.insert(downloadAttachmentsAction(for: collection.identifier, in: viewModel), at: 0)
             }
 
         case .search:
-            return nil
+            break
+        }
+
+        guard !actions.isEmpty else { return nil }
+        return UIMenu(children: actions)
+
+        func downloadAttachmentsAction(for identifier: CollectionIdentifier, in viewModel: ViewModel<CollectionsActionHandler>) -> UIAction {
+            UIAction(title: L10n.Collections.downloadAttachments, image: UIImage(systemName: "arrow.down.to.line.compact")) { [weak viewModel] _ in
+                viewModel?.process(action: .downloadAttachments(identifier))
+            }
+        }
+
+        func removeDownloadsAction(for identifier: CollectionIdentifier, in viewModel: ViewModel<CollectionsActionHandler>) -> UIAction {
+            UIAction(title: L10n.Collections.deleteAttachmentFiles, image: UIImage(systemName: "arrow.down.circle.dotted")) { [weak viewModel] _ in
+                viewModel?.process(action: .removeDownloads(identifier))
+            }
         }
     }
 

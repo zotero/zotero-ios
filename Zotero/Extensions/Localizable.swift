@@ -168,12 +168,16 @@ internal enum L10n {
       internal static let delete = L10n.tr("Localizable", "accessibility.items.delete", fallback: "Delete selected items")
       /// Deselect All Items
       internal static let deselectAllItems = L10n.tr("Localizable", "accessibility.items.deselect_all_items", fallback: "Deselect All Items")
+      /// Download attachments for selected items
+      internal static let downloadAttachments = L10n.tr("Localizable", "accessibility.items.download_attachments", fallback: "Download attachments for selected items")
       /// Duplicate selected item
       internal static let duplicate = L10n.tr("Localizable", "accessibility.items.duplicate", fallback: "Duplicate selected item")
       /// Filter items
       internal static let filterItems = L10n.tr("Localizable", "accessibility.items.filter_items", fallback: "Filter items")
       /// Open item info
       internal static let openItem = L10n.tr("Localizable", "accessibility.items.open_item", fallback: "Open item info")
+      /// Remove downloads for selected items
+      internal static let removeDownloads = L10n.tr("Localizable", "accessibility.items.remove_downloads", fallback: "Remove downloads for selected items")
       /// Remove selected items from collection
       internal static let removeFromCollection = L10n.tr("Localizable", "accessibility.items.remove_from_collection", fallback: "Remove selected items from collection")
       /// Restore selected items
@@ -343,6 +347,8 @@ internal enum L10n {
     internal static let createTitle = L10n.tr("Localizable", "collections.create_title", fallback: "Create Collection")
     /// Delete Collection
     internal static let delete = L10n.tr("Localizable", "collections.delete", fallback: "Delete Collection")
+    /// Remove Downloads
+    internal static let deleteAttachmentFiles = L10n.tr("Localizable", "collections.delete_attachment_files", fallback: "Remove Downloads")
     /// Delete Collection and Items
     internal static let deleteWithItems = L10n.tr("Localizable", "collections.delete_with_items", fallback: "Delete Collection and Items")
     /// Download Attachments
