@@ -6,27 +6,27 @@ realpath() {
 
 SCRIPT_PATH=`realpath "$0"`
 SCRIPT_DIR=`dirname "$SCRIPT_PATH"`
-HASH_FILE="$SCRIPT_DIR/note_editor_hash.txt"
 EDITOR_SUBMODULE_DIR="$SCRIPT_DIR/../note-editor"
 EDITOR_DIR="$SCRIPT_DIR/../bundled/note_editor"
-
-if [ ! -d "$HASH_FILE" ]; then
-    echo "0" > "$HASH_FILE"
-fi
-
-CACHED_HASH=`cat "$HASH_FILE"`
-CURRENT_HASH=`git ls-tree --object-only HEAD "$EDITOR_SUBMODULE_DIR"`
-
-if [ -d "$EDITOR_DIR" ] && [ $CACHED_HASH != $CURRENT_HASH ]; then
-    rm -rf "$EDITOR_DIR"
-fi
+HASH_FILE="$EDITOR_DIR/note_editor_hash.txt"
 
 if [ -d "$EDITOR_DIR" ]; then
-    exit
+    if [ -d "$HASH_FILE" ]; then
+        CACHED_HASH=`cat "$HASH_FILE"`
+    else 
+        CACHED_HASH=0
+    fi
+    CURRENT_HASH=`git ls-tree --object-only HEAD "$EDITOR_SUBMODULE_DIR"`
+
+    if [ $CACHED_HASH == $CURRENT_HASH ]; then
+        exit
+    else
+        rm -rf "$EDITOR_DIR"
+    fi
 fi
 
 cd "$EDITOR_SUBMODULE_DIR"
 npm ci
 npm run build:ios
-mv "$SCRIPT_DIR/../note-editor/build/ios" "$SCRIPT_DIR/../bundled/note_editor"
+mv "$SCRIPT_DIR/../note-editor/build/ios" "$EDITOR_DIR"
 echo "$CURRENT_HASH" > "$HASH_FILE"
