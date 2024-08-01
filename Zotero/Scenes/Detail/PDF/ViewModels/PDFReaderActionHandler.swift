@@ -1495,11 +1495,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 }
                 var workingAnnotation = annotation
 
-                if let mergedHighlightAnnotation = mergeHighlightRectsIfNeeded(annotation: annotation) {
-                    DDLogInfo("PDFReaderActionHandler: did merge highlight annotation rects")
+                if let transformedHighlightAnnotation = transformHighlightRectsIfNeeded(annotation: annotation) {
+                    DDLogInfo("PDFReaderActionHandler: did transform highlight annotation rects")
                     toRemove.append(annotation)
-                    toAdd.append(mergedHighlightAnnotation)
-                    workingAnnotation = mergedHighlightAnnotation
+                    toAdd.append(transformedHighlightAnnotation)
+                    workingAnnotation = transformedHighlightAnnotation
                 }
 
                 let splitAnnotations = splitIfNeeded(annotation: workingAnnotation)
@@ -1521,33 +1521,70 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
             return (keptAsIs, toRemove, toAdd)
 
-            // TODO: Remove if issue is fixed in PSPDFKit
-            /// Merges highlight annotation rects that are in the same text line. If not a higlight annotation, or merges are not needed, it returns nil.
+            // TODO: Remove if issues are fixed in PSPDFKit
+            /// Transforms highlight annotation if needed.
+            /// (a) Merges rects that are in the same text line.
+            /// (b) Trims different line rects that overlap.
+            /// If not a higlight annotation, or transformations are not needed, it returns nil.
             /// Issue appeared in PSPDFKit 13.5.0
-            /// - parameter annotation: Annotation to split
-            func mergeHighlightRectsIfNeeded(annotation: PSPDFKit.Annotation) -> HighlightAnnotation? {
+            /// - parameter annotation: Annotation to be transformed if needed
+            func transformHighlightRectsIfNeeded(annotation: PSPDFKit.Annotation) -> PSPDFKit.Annotation? {
                 guard annotation is HighlightAnnotation, let rects = annotation.rects, rects.count > 1 else { return nil }
-                // Check if there are gaps for sequential highlight rects on the same line, and if so transform the annotation to eliminate them.
-                var mergedRects: [CGRect] = []
-                for rect in rects {
-                    guard let previousRect = mergedRects.last, rect.minY == previousRect.minY, rect.height == previousRect.height else {
-                        mergedRects.append(rect)
-                        continue
+                var workingRects = rects
+                workingRects = mergeHighlightRectsIfNeeded(workingRects)
+                workingRects = trimOverlappingHighlightRectsIfNeeded(workingRects)
+                guard workingRects != rects else { return nil }
+                return copyHighlightAnnotation(from: annotation, with: workingRects)
+
+                func mergeHighlightRectsIfNeeded(_ rects: [CGRect]) -> [CGRect] {
+                    // Check if there are gaps for sequential highlight rects on the same line, and if so transform the annotation to eliminate them.
+                    var mergedRects: [CGRect] = []
+                    for rect in rects {
+                        guard let previousRect = mergedRects.last, rect.minY == previousRect.minY, rect.height == previousRect.height else {
+                            mergedRects.append(rect)
+                            continue
+                        }
+                        let mergedRect = CGRect(x: previousRect.minX, y: previousRect.minY, width: rect.minX + rect.width - previousRect.minX, height: previousRect.height)
+                        mergedRects.removeLast()
+                        mergedRects.append(mergedRect)
                     }
-                    let mergedRect = CGRect(x: previousRect.minX, y: previousRect.minY, width: rect.minX + rect.width - previousRect.minX, height: previousRect.height)
-                    mergedRects.removeLast()
-                    mergedRects.append(mergedRect)
+                    return mergedRects
                 }
-                guard mergedRects.count < rects.count else { return nil }
-                let newAnnotation = HighlightAnnotation()
-                newAnnotation.rects = mergedRects
-                newAnnotation.boundingBox = AnnotationBoundingBoxCalculator.boundingBox(from: rects)
-                newAnnotation.alpha = annotation.alpha
-                newAnnotation.color = annotation.color
-                newAnnotation.blendMode = annotation.blendMode
-                newAnnotation.contents = annotation.contents
-                newAnnotation.pageIndex = annotation.pageIndex
-                return newAnnotation
+
+                func trimOverlappingHighlightRectsIfNeeded(_ rects: [CGRect]) -> [CGRect] {
+                    // Check if highlight rects for sequential lines overlap, and if so transform the annotation to trim the overlap equally between two rects.
+                    var trimmedRects: [CGRect] = []
+                    for currentRect in rects {
+                        guard let previousRect = trimmedRects.last else {
+                            trimmedRects.append(currentRect)
+                            continue
+                        }
+                        let intersection = previousRect.intersection(currentRect)
+                        guard intersection != .null else {
+                            trimmedRects.append(currentRect)
+                            continue
+                        }
+                        // Each rect is trimmed by half the intersection height, plus 0.25 to have a small gap between the lines.
+                        let trim = (intersection.height / 2) + 0.25
+                        let previousTrimmedRect = CGRect(x: previousRect.minX, y: previousRect.minY + trim, width: previousRect.width, height: previousRect.height - trim)
+                        let currentTrimmedRect = CGRect(x: currentRect.minX, y: currentRect.minY, width: currentRect.width, height: currentRect.height - trim)
+                        trimmedRects.removeLast()
+                        trimmedRects.append(contentsOf: [previousTrimmedRect, currentTrimmedRect])
+                    }
+                    return trimmedRects
+                }
+
+                func copyHighlightAnnotation(from annotation: PSPDFKit.Annotation, with rects: [CGRect]) -> HighlightAnnotation {
+                    let newAnnotation = HighlightAnnotation()
+                    newAnnotation.rects = rects
+                    newAnnotation.boundingBox = AnnotationBoundingBoxCalculator.boundingBox(from: rects)
+                    newAnnotation.alpha = annotation.alpha
+                    newAnnotation.color = annotation.color
+                    newAnnotation.blendMode = annotation.blendMode
+                    newAnnotation.contents = annotation.contents
+                    newAnnotation.pageIndex = annotation.pageIndex
+                    return newAnnotation
+                }
             }
 
             /// Splits annotation if it exceedes position limit. If it is within limit, it returns original annotation.
