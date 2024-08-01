@@ -90,7 +90,7 @@ final class AnnotationView: UIView {
 
     // MARK: - Setups
 
-    func setup(with annotation: HtmlEpubAnnotation, comment: Comment?, selected: Bool, availableWidth: CGFloat, library: Library, currentUserId: Int) {
+    func setup(with annotation: HtmlEpubAnnotation, text: NSAttributedString?, comment: Comment?, selected: Bool, availableWidth: CGFloat, library: Library, currentUserId: Int) {
         let color = UIColor(hex: annotation.color)
         let canEdit = library.metadataEditable && selected
         let author = library.identifier == .custom(.myLibrary) ? "" : annotation.author
@@ -110,7 +110,7 @@ final class AnnotationView: UIView {
         setupContent(
             type: annotation.type,
             comment: annotation.comment,
-            text: annotation.text,
+            text: text,
             preview: nil,
             color: color,
             canEdit: canEdit,
