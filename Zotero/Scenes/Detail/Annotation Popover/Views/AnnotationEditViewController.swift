@@ -188,7 +188,7 @@ final class AnnotationEditViewController: UIViewController {
         self.tableView.dataSource = self
         self.tableView.register(ColorPickerCell.self, forCellReuseIdentifier: Section.properties.cellId(index: 0))
         self.tableView.register(LineWidthCell.self, forCellReuseIdentifier: Section.properties.cellId(index: 1))
-        self.tableView.register(UINib(nibName: "TextContentEditCell", bundle: nil), forCellReuseIdentifier: Section.textContent.cellId(index: 0))
+        self.tableView.register(TextContentEditCell.self, forCellReuseIdentifier: Section.textContent.cellId(index: 0))
         self.tableView.register(FontSizeCell.self, forCellReuseIdentifier: Section.fontSize.cellId(index: 0))
         self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: Section.actions.cellId(index: 0))
         self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: Section.pageLabel.cellId(index: 0))
@@ -228,17 +228,16 @@ extension AnnotationEditViewController: UITableViewDataSource {
         case .textContent:
             if let cell = cell as? TextContentEditCell {
                 cell.setup(with: self.viewModel.state.highlightText, color: self.viewModel.state.color)
-                cell.textObservable
-                    .subscribe(onNext: { [weak self] text, needsHeightReload in
-                        self?.viewModel.process(action: .setHighlight(text))
-
-                        if needsHeightReload {
-                            self?.updatePreferredContentSize()
-                            self?.reloadHeight()
-                            self?.scrollToHighlightCursor()
-                        }
-                    })
-                    .disposed(by: self.disposeBag)
+                cell.textAndHeightReloadNeededObservable.subscribe { [weak self] text, needsHeightReload in
+                    guard let self else { return }
+                    viewModel.process(action: .setHighlight(text))
+                    if needsHeightReload {
+                        updatePreferredContentSize()
+                        reloadHeight()
+                        scrollToHighlightCursor()
+                    }
+                }
+                .disposed(by: cell.disposeBag)
             }
 
         case .fontSize:

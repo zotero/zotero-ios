@@ -851,7 +851,6 @@
 		B3972689247D403200A8B469 /* UrlDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3972688247D403200A8B469 /* UrlDetector.swift */; };
 		B3981427257A5A16002C755C /* AnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3981426257A5A16002C755C /* AnnotationView.swift */; };
 		B398142E257A649D002C755C /* TextContentEditCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B398142C257A649D002C755C /* TextContentEditCell.swift */; };
-		B398143F257A8EB2002C755C /* TextContentEditCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B398143E257A8EB2002C755C /* TextContentEditCell.xib */; };
 		B3981B76258399AA00F8D15A /* NoteAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3981B75258399AA00F8D15A /* NoteAnnotation.swift */; };
 		B398A915270C6A4300968EE8 /* WebDavController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B398A914270C6A4300968EE8 /* WebDavController.swift */; };
 		B398A917270C6A5B00968EE8 /* WebDavSessionStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B398A916270C6A5B00968EE8 /* WebDavSessionStorage.swift */; };
@@ -1858,7 +1857,6 @@
 		B3972688247D403200A8B469 /* UrlDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UrlDetector.swift; sourceTree = "<group>"; };
 		B3981426257A5A16002C755C /* AnnotationView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnnotationView.swift; sourceTree = "<group>"; };
 		B398142C257A649D002C755C /* TextContentEditCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextContentEditCell.swift; sourceTree = "<group>"; };
-		B398143E257A8EB2002C755C /* TextContentEditCell.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = TextContentEditCell.xib; sourceTree = "<group>"; };
 		B3981B75258399AA00F8D15A /* NoteAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteAnnotation.swift; sourceTree = "<group>"; };
 		B398A914270C6A4300968EE8 /* WebDavController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebDavController.swift; sourceTree = "<group>"; };
 		B398A916270C6A5B00968EE8 /* WebDavSessionStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavSessionStorage.swift; sourceTree = "<group>"; };
@@ -3092,7 +3090,6 @@
 				B34DF1BB2576956F0019CCD1 /* SwitchCell.swift */,
 				B34DF1BC2576956F0019CCD1 /* SwitchCell.xib */,
 				B398142C257A649D002C755C /* TextContentEditCell.swift */,
-				B398143E257A8EB2002C755C /* TextContentEditCell.xib */,
 				B34DF1B325768BB70019CCD1 /* TextFieldCell.swift */,
 				B34DF1B425768BB70019CCD1 /* TextFieldCell.xib */,
 			);
@@ -4425,7 +4422,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				B3593F33241A61C700760E20 /* ItemDetailNoteContentView.xib in Resources */,
-				B398143F257A8EB2002C755C /* TextContentEditCell.xib in Resources */,
 				618D83E72BAAC88C00E7966B /* PrivacyInfo.xcprivacy in Resources */,
 				B32A273D254841B80081E061 /* CreatorEditViewController.xib in Resources */,
 				B3830CE9255451DC00910FE0 /* TagPickerViewController.xib in Resources */,
