@@ -9,6 +9,7 @@ SCRIPT_DIR=`dirname "$SCRIPT_PATH"`
 EDITOR_SUBMODULE_DIR="$SCRIPT_DIR/../note-editor"
 EDITOR_DIR="$SCRIPT_DIR/../bundled/note_editor"
 HASH_FILE="$EDITOR_DIR/note_editor_hash.txt"
+CURRENT_HASH=`git ls-tree --object-only HEAD "$EDITOR_SUBMODULE_DIR"`
 
 if [ -d "$EDITOR_DIR" ]; then
     if [ -d "$HASH_FILE" ]; then
@@ -16,7 +17,6 @@ if [ -d "$EDITOR_DIR" ]; then
     else 
         CACHED_HASH=0
     fi
-    CURRENT_HASH=`git ls-tree --object-only HEAD "$EDITOR_SUBMODULE_DIR"`
 
     if [ $CACHED_HASH == $CURRENT_HASH ]; then
         exit
