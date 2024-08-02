@@ -1,5 +1,5 @@
 //
-//  AnnotationTextView.swift
+//  FormattedTextView.swift
 //  Zotero
 //
 //  Created by Miltiadis Vasilakis on 1/8/24.
@@ -7,16 +7,42 @@
 //
 
 import UIKit
+import RxSwift
 
-final class AnnotationTextView: TextKit1TextView {
+final class FormattedTextView: TextKit1TextView {
     private static let allowedActions: [String] = ["cut:", "copy:", "paste:", "toggleBoldface:", "toggleItalics:", "toggleSuperscript", "toggleSubscript", "replace:"]
 
     private let defaultFont: UIFont
+    private let menuItems: [UIMenuItem]
+    private let disposeBag: DisposeBag
 
     init(defaultFont: UIFont) {
         self.defaultFont = defaultFont
+        menuItems = createMenuItems()
+        disposeBag = DisposeBag()
         super.init(frame: CGRect(), textContainer: nil)
         font = defaultFont
+        setupObservers()
+
+        func createMenuItems() -> [UIMenuItem] {
+            let bold = UIMenuItem(title: "Bold", action: #selector(Self.toggleBoldface(_:)))
+            let italics = UIMenuItem(title: "Italics", action: #selector(Self.toggleItalics(_:)))
+            let superscript = UIMenuItem(title: "Superscript", action: #selector(Self.toggleSuperscript))
+            let `subscript` = UIMenuItem(title: "Subscript", action: #selector(Self.toggleSubscript))
+            return [bold, italics, superscript, `subscript`]
+        }
+        
+        func setupObservers() {
+            NotificationCenter.default
+                .rx
+                .notification(Self.textDidBeginEditingNotification)
+                .observe(on: MainScheduler.instance)
+                .subscribe(onNext: { [weak self] _ in
+                    guard let self else { return }
+                    UIMenuController.shared.menuItems = menuItems
+                })
+                .disposed(by: disposeBag)
+        }
     }
 
     required init?(coder: NSCoder) {

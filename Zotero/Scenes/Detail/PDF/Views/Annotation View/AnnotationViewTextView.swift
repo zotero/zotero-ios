@@ -47,7 +47,7 @@ final class AnnotationViewTextView: UIView {
         textView.sizeToFit()
 
         func setupView() {
-            let textView = AnnotationTextView(defaultFont: layout.font)
+            let textView = FormattedTextView(defaultFont: layout.font)
             textView.adjustsFontForContentSizeCategory = true
             textView.textContainerInset = UIEdgeInsets()
             textView.textContainer.lineFragmentPadding = 0
@@ -77,12 +77,7 @@ final class AnnotationViewTextView: UIView {
         }
 
         func setupTextViewDelegate() {
-            let bold = UIMenuItem(title: "Bold", action: #selector(UITextView.toggleBoldface(_:)))
-            let italics = UIMenuItem(title: "Italics", action: #selector(UITextView.toggleItalics(_:)))
-            let superscript = UIMenuItem(title: "Superscript", action: #selector(AnnotationTextView.toggleSuperscript))
-            let `subscript` = UIMenuItem(title: "Subscript", action: #selector(AnnotationTextView.toggleSubscript))
-            let items = [bold, italics, superscript, `subscript`]
-            let delegate = PlaceholderTextViewDelegate(placeholder: placeholder, menuItems: items, textView: textView)
+            let delegate = PlaceholderTextViewDelegate(placeholder: placeholder, textView: textView)
             textView.delegate = delegate
             textViewDelegate = delegate
         }

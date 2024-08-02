@@ -42,7 +42,7 @@
 		61BD13952A5831EF008A0704 /* TextKit1TextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61BD13942A5831EF008A0704 /* TextKit1TextView.swift */; };
 		61C817F22A49B5D30085B1E6 /* CollectionResponseSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EDEE250242E700D8BC1E /* CollectionResponseSpec.swift */; };
 		61E24DCC2ABB385E00D75F50 /* OpenItemsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61E24DCB2ABB385E00D75F50 /* OpenItemsController.swift */; };
-		61DE64D52C5BD0250096776C /* AnnotationTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61DE64D42C5BD0250096776C /* AnnotationTextView.swift */; };
+		61DE64D52C5BD0250096776C /* FormattedTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61DE64D42C5BD0250096776C /* FormattedTextView.swift */; };
 		61FA14CE2B05081D00E7D423 /* TextConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61FA14CD2B05081D00E7D423 /* TextConverter.swift */; };
 		61FA14D02B08E24A00E7D423 /* ColorPickerStackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61FA14CF2B08E24A00E7D423 /* ColorPickerStackView.swift */; };
 		B300B33324291C8D00C1FE1E /* RTranslatorMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300B33224291C8D00C1FE1E /* RTranslatorMetadata.swift */; };
@@ -1287,7 +1287,7 @@
 		61ABA7502A6137D1002A4219 /* ShareableImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareableImage.swift; sourceTree = "<group>"; };
 		61BD13942A5831EF008A0704 /* TextKit1TextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextKit1TextView.swift; sourceTree = "<group>"; };
 		61E24DCB2ABB385E00D75F50 /* OpenItemsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenItemsController.swift; sourceTree = "<group>"; };
-		61DE64D42C5BD0250096776C /* AnnotationTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationTextView.swift; sourceTree = "<group>"; };
+		61DE64D42C5BD0250096776C /* FormattedTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormattedTextView.swift; sourceTree = "<group>"; };
 		61FA14CD2B05081D00E7D423 /* TextConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextConverter.swift; sourceTree = "<group>"; };
 		61FA14CF2B08E24A00E7D423 /* ColorPickerStackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPickerStackView.swift; sourceTree = "<group>"; };
 		B300B33224291C8D00C1FE1E /* RTranslatorMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RTranslatorMetadata.swift; sourceTree = "<group>"; };
@@ -3113,7 +3113,6 @@
 		B3482E57257E3ED1008E817A /* Annotation View */ = {
 			isa = PBXGroup;
 			children = (
-				61DE64D42C5BD0250096776C /* AnnotationTextView.swift */,
 				B3981426257A5A16002C755C /* AnnotationView.swift */,
 				B3F3D63B255EC98600F310C2 /* AnnotationViewButton.swift */,
 				B3F3D62B255EBE3500F310C2 /* AnnotationViewHeader.swift */,
@@ -3803,6 +3802,7 @@
 				B338E81F273AA9B20003DECD /* DisappearActionHostingController.swift */,
 				B3DCDF01240912060039ED0D /* DocumentPickerViewController.swift */,
 				B30B40622490F09400FAAF6D /* FileAttachmentView.swift */,
+				61DE64D42C5BD0250096776C /* FormattedTextView.swift */,
 				B33979CF2493ACA800A923C3 /* ImagePreviewViewController.swift */,
 				B3C9096E2497666900286FCF /* ImagePreviewViewController.xib */,
 				B3DDDAAB24CAD6810014DF99 /* InsetLabel.swift */,
@@ -4967,7 +4967,7 @@
 				B310091A272C00BA003FC743 /* CreateWebDavDeletionsDbRequest.swift in Sources */,
 				B310280D2B1E16F300E41554 /* PDFThumbnailsAction.swift in Sources */,
 				B30B40632490F09400FAAF6D /* FileAttachmentView.swift in Sources */,
-				61DE64D52C5BD0250096776C /* AnnotationTextView.swift in Sources */,
+				61DE64D52C5BD0250096776C /* FormattedTextView.swift in Sources */,
 				B3D0AC98255C14AB007648F5 /* PDFReaderLayout.swift in Sources */,
 				B353F1FB242E21880062EE24 /* ResetTranslatorsDbRequest.swift in Sources */,
 				B3E8FE4E27142B5F00F51458 /* DebuggingAction.swift in Sources */,
