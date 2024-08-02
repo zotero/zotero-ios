@@ -85,6 +85,7 @@ final class AnnotationCell: UITableViewCell {
 
     func setup(
         with annotation: HtmlEpubAnnotation,
+        text: NSAttributedString?,
         comment: AnnotationView.Comment?,
         selected: Bool,
         availableWidth: CGFloat,
@@ -102,6 +103,7 @@ final class AnnotationCell: UITableViewCell {
         let availableWidth = availableWidth - (PDFReaderLayout.annotationLayout.horizontalInset * 2)
         annotationView.setup(
             with: annotation,
+            text: text,
             comment: comment,
             selected: selected,
             availableWidth: availableWidth,

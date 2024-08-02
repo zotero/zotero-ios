@@ -144,8 +144,11 @@ class HtmlEpubSidebarViewController: UIViewController {
             let selected = annotation.key == state.selectedAnnotationKey
             let comment = AnnotationView.Comment(attributedString: loadAttributedComment(for: annotation), isActive: state.selectedAnnotationCommentActive)
 
+            // TODO: - add attributed text
+            let text = annotation.text.flatMap({ NSAttributedString(string: $0) })
             cell.setup(
                 with: annotation,
+                text: text,
                 comment: comment,
                 selected: selected,
                 availableWidth: PDFReaderLayout.sidebarWidth,
