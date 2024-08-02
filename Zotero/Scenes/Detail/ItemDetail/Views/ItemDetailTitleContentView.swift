@@ -15,7 +15,7 @@ final class ItemDetailTitleContentView: UIView {
     @IBOutlet private weak var separatorHeight: NSLayoutConstraint!
 
     lazy var delegate: PlaceholderTextViewDelegate = {
-        PlaceholderTextViewDelegate(placeholder: L10n.ItemDetail.untitled, menuItems: nil, textView: self.textView)
+        PlaceholderTextViewDelegate(placeholder: L10n.ItemDetail.untitled, textView: self.textView)
     }()
 
     override func awakeFromNib() {

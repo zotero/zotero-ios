@@ -11,7 +11,6 @@ import UIKit
 import RxSwift
 
 final class PlaceholderTextViewDelegate: NSObject {
-    private let menuItems: [UIMenuItem]?
     private let placeholderLayer: CATextLayer
     private let placeholder: String
 
@@ -31,8 +30,7 @@ final class PlaceholderTextViewDelegate: NSObject {
         }
     }
 
-    init(placeholder: String, menuItems: [UIMenuItem]?, textView: UITextView) {
-        self.menuItems = menuItems
+    init(placeholder: String, textView: UITextView) {
         self.placeholder = placeholder
         placeholderLayer = CATextLayer()
 
@@ -95,9 +93,6 @@ final class PlaceholderTextViewDelegate: NSObject {
 
 extension PlaceholderTextViewDelegate: UITextViewDelegate {
     func textViewDidBeginEditing(_ textView: UITextView) {
-        if let menuItems {
-            UIMenuController.shared.menuItems = menuItems
-        }
         placeholderLayer.foregroundColor = UIColor.placeholderText.cgColor
         didBecomeActiveObserver?.on(.next(()))
     }
