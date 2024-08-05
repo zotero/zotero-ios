@@ -7,13 +7,15 @@
 //
 
 import UIKit
+import RxSwift
 
 final class ItemDetailTitleCell: UICollectionViewListCell {
     struct ContentConfiguration: UIContentConfiguration {
-        let title: String
+        let title: NSAttributedString
         let isEditing: Bool
         let layoutMargins: UIEdgeInsets
-        let textChanged: (String) -> Void
+        let attributedTextObservable: PublishSubject<NSAttributedString>
+        let disposeBag: CompositeDisposable
 
         func makeContentView() -> UIView & UIContentView {
             return ContentView(configuration: self)
@@ -39,7 +41,7 @@ final class ItemDetailTitleCell: UICollectionViewListCell {
 
             super.init(frame: .zero)
 
-            guard let view = UINib.init(nibName: "ItemDetailTitleContentView", bundle: nil).instantiate(withOwner: self)[0] as? ItemDetailTitleContentView else { return }
+            let view = ItemDetailTitleContentView(frame: .zero)
 
             self.add(contentView: view)
             self.contentView = view
@@ -51,7 +53,19 @@ final class ItemDetailTitleCell: UICollectionViewListCell {
         }
 
         private func apply(configuration: ContentConfiguration) {
-            self.contentView.delegate.textChanged = configuration.textChanged
+            let disposable = contentView.attributedTextObservable.subscribe { [weak self] title in
+                let newConfiguration = ContentConfiguration(
+                    title: title,
+                    isEditing: configuration.isEditing,
+                    layoutMargins: configuration.layoutMargins,
+                    attributedTextObservable: configuration.attributedTextObservable,
+                    disposeBag: configuration.disposeBag
+                )
+                self?.configuration = newConfiguration
+                configuration.attributedTextObservable.onNext(title)
+            }
+            _ = configuration.disposeBag.insert(disposable)
+
             self.contentView.layoutMargins = configuration.layoutMargins
             self.contentView.setup(with: configuration.title, isEditing: configuration.isEditing)
         }

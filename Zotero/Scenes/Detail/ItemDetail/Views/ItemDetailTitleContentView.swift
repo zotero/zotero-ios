@@ -7,52 +7,82 @@
 //
 
 import UIKit
+import RxSwift
 
 final class ItemDetailTitleContentView: UIView {
-    @IBOutlet private weak var textView: UITextView!
-    @IBOutlet private weak var topConstraint: NSLayoutConstraint!
-    @IBOutlet private weak var bottomConstraint: NSLayoutConstraint!
-    @IBOutlet private weak var separatorHeight: NSLayoutConstraint!
+    private var textView: FormattedTextView!
+    private var topConstraint: NSLayoutConstraint!
+    private var bottomConstraint: NSLayoutConstraint!
+    private var separatorHeight: NSLayoutConstraint!
 
-    lazy var delegate: PlaceholderTextViewDelegate = {
-        PlaceholderTextViewDelegate(placeholder: L10n.ItemDetail.untitled, textView: self.textView)
-    }()
-
-    override func awakeFromNib() {
-        super.awakeFromNib()
-
-        self.isAccessibilityElement = false
-
-        self.separatorHeight.constant = ItemDetailLayout.separatorHeight
-
-        self.textView.font = .preferredFont(forTextStyle: .title1)
-        self.textView.delegate = self.delegate
-        self.textView.isScrollEnabled = false
-        self.textView.textContainerInset = UIEdgeInsets()
-        self.textView.textContainer.lineFragmentPadding = 0
-
-        let font = self.textView.font!
-        self.topConstraint.constant = font.capHeight - font.ascender
-        setupBottomConstraint()
+    var attributedTextObservable: Observable<NSAttributedString> {
+        textView.attributedTextObservable
     }
-    
+
+    private var delegate: PlaceholderTextViewDelegate!
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setup()
+        backgroundColor = .systemBackground
+        isAccessibilityElement = false
+        setupBottomConstraint()
+
+        func setup() {
+            let font: UIFont = .preferredFont(for: .headline, weight: .regular)
+            let textView = FormattedTextView(defaultFont: font)
+            textView.textContainerInset = UIEdgeInsets()
+            textView.textContainer.lineFragmentPadding = 0
+            textView.isScrollEnabled = false
+            textView.translatesAutoresizingMaskIntoConstraints = false
+            addSubview(textView)
+            self.textView = textView
+
+            delegate = PlaceholderTextViewDelegate(placeholder: L10n.ItemDetail.untitled, textView: textView)
+            textView.delegate = delegate
+
+            let separatorView = UIView()
+            separatorView.backgroundColor = .separator
+            separatorView.translatesAutoresizingMaskIntoConstraints = false
+            addSubview(separatorView)
+
+            topConstraint = textView.topAnchor.constraint(equalTo: layoutMarginsGuide.topAnchor, constant: font.capHeight - font.ascender)
+            bottomConstraint = layoutMarginsGuide.bottomAnchor.constraint(equalTo: textView.bottomAnchor)
+            separatorHeight = separatorView.heightAnchor.constraint(equalToConstant: ItemDetailLayout.separatorHeight)
+
+            NSLayoutConstraint.activate([
+                topConstraint,
+                bottomConstraint,
+                textView.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor),
+                layoutMarginsGuide.trailingAnchor.constraint(equalTo: textView.trailingAnchor),
+                bottomAnchor.constraint(equalTo: separatorView.bottomAnchor),
+                separatorView.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor),
+                trailingAnchor.constraint(equalTo: separatorView.trailingAnchor),
+                separatorHeight
+            ])
+        }
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         setupBottomConstraint()
     }
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        self.delegate.layoutPlaceholder(in: self.textView)
+        delegate.layoutPlaceholder(in: textView)
     }
 
-    func setup(with title: String, isEditing: Bool) {
-        self.textView.isEditable = isEditing
-        self.delegate.set(text: title, to: self.textView)
+    func setup(with title: NSAttributedString, isEditing: Bool) {
+        textView.isEditable = isEditing
+        delegate.set(text: title, to: textView)
     }
     
     private func setupBottomConstraint() {
-        if traitCollection.horizontalSizeClass == .regular && UIDevice.current.userInterfaceIdiom == .pad {
-            let font = textView.font!
+        if traitCollection.horizontalSizeClass == .regular && UIDevice.current.userInterfaceIdiom == .pad, let font = textView.font {
             bottomConstraint.constant = -font.descender
         } else {
             bottomConstraint.constant = 0

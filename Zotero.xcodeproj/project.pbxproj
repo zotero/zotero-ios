@@ -643,7 +643,6 @@
 		B3593F26241A61C700760E20 /* ItemDetailAbstractCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593ED4241A61C700760E20 /* ItemDetailAbstractCell.swift */; };
 		B3593F27241A61C700760E20 /* ItemDetailFieldContentView.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3593ED5241A61C700760E20 /* ItemDetailFieldContentView.xib */; };
 		B3593F28241A61C700760E20 /* ItemDetailFieldCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593ED6241A61C700760E20 /* ItemDetailFieldCell.swift */; };
-		B3593F29241A61C700760E20 /* ItemDetailTitleContentView.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3593ED7241A61C700760E20 /* ItemDetailTitleContentView.xib */; };
 		B3593F2A241A61C700760E20 /* ItemDetailNoteCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593ED8241A61C700760E20 /* ItemDetailNoteCell.swift */; };
 		B3593F2C241A61C700760E20 /* ItemDetailTagContentView.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3593EDA241A61C700760E20 /* ItemDetailTagContentView.xib */; };
 		B3593F2E241A61C700760E20 /* ItemDetailAttachmentCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593EDC241A61C700760E20 /* ItemDetailAttachmentCell.swift */; };
@@ -1688,7 +1687,6 @@
 		B3593ED4241A61C700760E20 /* ItemDetailAbstractCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemDetailAbstractCell.swift; sourceTree = "<group>"; };
 		B3593ED5241A61C700760E20 /* ItemDetailFieldContentView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ItemDetailFieldContentView.xib; sourceTree = "<group>"; };
 		B3593ED6241A61C700760E20 /* ItemDetailFieldCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemDetailFieldCell.swift; sourceTree = "<group>"; };
-		B3593ED7241A61C700760E20 /* ItemDetailTitleContentView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ItemDetailTitleContentView.xib; sourceTree = "<group>"; };
 		B3593ED8241A61C700760E20 /* ItemDetailNoteCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemDetailNoteCell.swift; sourceTree = "<group>"; };
 		B3593EDA241A61C700760E20 /* ItemDetailTagContentView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ItemDetailTagContentView.xib; sourceTree = "<group>"; };
 		B3593EDC241A61C700760E20 /* ItemDetailAttachmentCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemDetailAttachmentCell.swift; sourceTree = "<group>"; };
@@ -3267,7 +3265,6 @@
 				B3593EDA241A61C700760E20 /* ItemDetailTagContentView.xib */,
 				B3593EDD241A61C700760E20 /* ItemDetailTitleCell.swift */,
 				B37AA28128990F6300A1C643 /* ItemDetailTitleContentView.swift */,
-				B3593ED7241A61C700760E20 /* ItemDetailTitleContentView.xib */,
 				B3593EE5241A61C700760E20 /* ItemDetailViewController.swift */,
 				B3593EDF241A61C700760E20 /* ItemDetailViewController.xib */,
 			);
@@ -4453,7 +4450,6 @@
 				B3593F23241A61C700760E20 /* ItemDetailSectionView.xib in Resources */,
 				B3593F42241A61C700760E20 /* ItemsViewController.xib in Resources */,
 				B37C5B6F26454130009A37E5 /* NoteEditorViewController.xib in Resources */,
-				B3593F29241A61C700760E20 /* ItemDetailTitleContentView.xib in Resources */,
 				B3593F27241A61C700760E20 /* ItemDetailFieldContentView.xib in Resources */,
 				B34DF1BE2576956F0019CCD1 /* SwitchCell.xib in Resources */,
 				B30B550324B85A3A00F94B59 /* Colors.xcassets in Resources */,

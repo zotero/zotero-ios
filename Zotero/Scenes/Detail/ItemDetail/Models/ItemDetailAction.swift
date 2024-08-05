@@ -29,7 +29,7 @@ enum ItemDetailAction {
     case processNoteSaveResult(key: String?, result: NoteEditorSaveResult)
     case setFieldValue(id: String, value: String)
     case setTags([Tag])
-    case setTitle(String)
+    case setTitle(NSAttributedString)
     case setAbstract(String)
     case saveCreator(ItemDetailState.Creator)
     case startEditing
