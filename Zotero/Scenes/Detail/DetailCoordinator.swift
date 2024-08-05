@@ -525,7 +525,8 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
             dateParser: self.controllers.dateParser,
             urlDetector: self.controllers.urlDetector,
             fileDownloader: fileDownloader,
-            fileCleanupController: fileCleanupController
+            fileCleanupController: fileCleanupController,
+            htmlAttributedStringConverter: controllers.htmlAttributedStringConverter
         )
         let viewModel = ViewModel(initialState: state, handler: handler)
 

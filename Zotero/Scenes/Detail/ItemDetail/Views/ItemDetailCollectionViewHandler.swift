@@ -178,7 +178,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
                 switch row {
                 case .title:
-                    let title = viewModel.state.data.title
+                    let title = viewModel.state.data.attributedTitle
                     return collectionView.dequeueConfiguredReusableCell(using: titleRegistration, for: indexPath, item: (title, isEditing))
 
                 case .creator(let creator):
@@ -739,17 +739,22 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
     // MARK: - Cells
 
-    private lazy var titleRegistration: UICollectionView.CellRegistration<ItemDetailTitleCell, (String, Bool)> = {
+    private lazy var titleRegistration: UICollectionView.CellRegistration<ItemDetailTitleCell, (NSAttributedString, Bool)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
             guard let self else { return }
-            cell.contentConfiguration = ItemDetailTitleCell.ContentConfiguration(
+            let configuration = ItemDetailTitleCell.ContentConfiguration(
                 title: data.0,
                 isEditing: data.1,
                 layoutMargins: layoutMargins(for: indexPath, self: self),
-                textChanged: { [weak self] text in
-                    self?.viewModel.process(action: .setTitle(text))
-                }
+                attributedTextObservable: .init(),
+                disposeBag: .init()
             )
+            let disposable = configuration.attributedTextObservable
+                .subscribe(onNext: { [weak self] attributedText in
+                    self?.viewModel.process(action: .setTitle(attributedText))
+                })
+            _ = configuration.disposeBag.insert(disposable)
+            cell.contentConfiguration = configuration
         }
     }()
 

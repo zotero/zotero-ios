@@ -30,6 +30,8 @@ struct ItemDetailDataCreator {
         dateParser: DateParser,
         fileStorage: FileStorage,
         urlDetector: UrlDetector,
+        htmlAttributedStringConverter: HtmlAttributedStringConverter,
+        titleFont: UIFont,
         doiDetector: (String) -> Bool
     ) throws -> (ItemDetailState.Data, [Attachment], [Note], [Tag]) {
         switch type {
@@ -44,6 +46,8 @@ struct ItemDetailDataCreator {
                 dateParser: dateParser,
                 fileStorage: fileStorage,
                 urlDetector: urlDetector,
+                htmlAttributedStringConverter: htmlAttributedStringConverter,
+                titleFont: titleFont,
                 doiDetector: doiDetector
             )
         }
@@ -68,6 +72,7 @@ struct ItemDetailDataCreator {
         let attachments: [Attachment] = child.flatMap({ [$0] }) ?? []
         let data = ItemDetailState.Data(
             title: "",
+            attributedTitle: .init(string: ""),
             type: itemType,
             isAttachment: (itemType == ItemTypes.attachment),
             localizedType: localizedType,
@@ -99,6 +104,8 @@ struct ItemDetailDataCreator {
         dateParser: DateParser,
         fileStorage: FileStorage,
         urlDetector: UrlDetector,
+        htmlAttributedStringConverter: HtmlAttributedStringConverter,
+        titleFont: UIFont,
         doiDetector: (String) -> Bool
     ) throws -> (ItemDetailState.Data, [Attachment], [Note], [Tag]) {
         guard let localizedType = schemaController.localized(itemType: item.rawType) else {
@@ -169,17 +176,20 @@ struct ItemDetailDataCreator {
         }
 
         let tags = item.tags.sorted(byKeyPath: "tag.name").map(Tag.init)
-        let data = ItemDetailState.Data(title: item.baseTitle,
-                                        type: item.rawType,
-                                        isAttachment: (item.rawType == ItemTypes.attachment),
-                                        localizedType: localizedType,
-                                        creators: creators,
-                                        creatorIds: creatorIds,
-                                        fields: fields,
-                                        fieldIds: fieldIds,
-                                        abstract: abstract,
-                                        dateModified: item.dateModified,
-                                        dateAdded: item.dateAdded)
+        let data = ItemDetailState.Data(
+            title: item.baseTitle,
+            attributedTitle: htmlAttributedStringConverter.convert(text: item.baseTitle, baseAttributes: [.font: titleFont]),
+            type: item.rawType,
+            isAttachment: (item.rawType == ItemTypes.attachment),
+            localizedType: localizedType,
+            creators: creators,
+            creatorIds: creatorIds,
+            fields: fields,
+            fieldIds: fieldIds,
+            abstract: abstract,
+            dateModified: item.dateModified,
+            dateAdded: item.dateAdded
+        )
         return (data, attachments, Array(notes), Array(tags))
     }
 
