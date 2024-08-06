@@ -25,6 +25,7 @@ struct HtmlEpubReaderState: ViewModelState {
         static let toolColor = Changes(rawValue: 1 << 6)
         static let sidebarEditingSelection = Changes(rawValue: 1 << 7)
         static let settings = Changes(rawValue: 1 << 8)
+        static let readerInitialised = Changes(rawValue: 1 << 9)
     }
 
     struct DocumentData {
@@ -34,7 +35,7 @@ struct HtmlEpubReaderState: ViewModelState {
         }
 
         let type: String
-        let buffer: String
+        let url: URL
         let annotationsJson: String
         let page: Page?
     }
@@ -53,7 +54,9 @@ struct HtmlEpubReaderState: ViewModelState {
         case unknown
     }
 
-    let url: URL
+    let originalFile: File
+    let readerFile: File
+    let documentFile: File
     let key: String
     let library: Library
     let userId: Int
@@ -91,7 +94,11 @@ struct HtmlEpubReaderState: ViewModelState {
     var selectedAnnotationsDuringEditing: Set<String>
 
     init(url: URL, key: String, settings: HtmlEpubSettings, libraryId: LibraryIdentifier, userId: Int, username: String) {
-        self.url = url
+        let originalFile = Files.file(from: url)
+        let temporaryDirectory = Files.tmpReaderDirectory
+        self.originalFile = originalFile
+        readerFile = temporaryDirectory.copy(withName: "view", ext: "html")
+        documentFile = temporaryDirectory.appending(relativeComponent: "content").copy(withName: originalFile.name, ext: originalFile.ext)
         self.key = key
         self.settings = settings
         self.userId = userId

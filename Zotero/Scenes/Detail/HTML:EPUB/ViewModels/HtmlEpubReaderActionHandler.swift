@@ -19,14 +19,23 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
     private unowned let schemaController: SchemaController
     private unowned let htmlAttributedStringConverter: HtmlAttributedStringConverter
     private unowned let dateParser: DateParser
+    private unowned let fileStorage: FileStorage
     private unowned let idleTimerController: IdleTimerController
     let backgroundQueue: DispatchQueue
 
-    init(dbStorage: DbStorage, schemaController: SchemaController, htmlAttributedStringConverter: HtmlAttributedStringConverter, dateParser: DateParser, idleTimerController: IdleTimerController) {
+    init(
+        dbStorage: DbStorage,
+        schemaController: SchemaController,
+        htmlAttributedStringConverter: HtmlAttributedStringConverter,
+        dateParser: DateParser,
+        fileStorage: FileStorage,
+        idleTimerController: IdleTimerController
+    ) {
         self.dbStorage = dbStorage
         self.schemaController = schemaController
         self.htmlAttributedStringConverter = htmlAttributedStringConverter
         self.dateParser = dateParser
+        self.fileStorage = fileStorage
         self.idleTimerController = idleTimerController
         backgroundQueue = DispatchQueue(label: "org.zotero.Zotero.HtmlEpubReaderActionHandler.queue", qos: .userInteractive)
     }
@@ -35,6 +44,12 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         switch action {
         case .toggleTool(let tool):
             toggle(tool: tool, in: viewModel)
+
+        case .initialiseReader:
+            initialise(in: viewModel)
+
+        case .deinitialiseReader:
+            deinitialise(in: viewModel)
 
         case .loadDocument:
             load(in: viewModel)
@@ -550,19 +565,45 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         }
     }
 
+    private func initialise(in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
+        guard let readerUrl = Bundle.main.url(forResource: "view", withExtension: "html", subdirectory: "Bundled/reader") else {
+            DDLogError("HtmlEpubReaderActionHandler: can't find reader view.html")
+            return
+        }
+
+        // Create temporary directory where both reader files and document file live so that the reader can access everything.
+
+        do {
+            // Copy reader files to temporary directory
+            let readerFiles: [File] = try fileStorage.contentsOfDirectory(at: Files.file(from: readerUrl).directory)
+            for file in readerFiles {
+                try fileStorage.copy(from: file, to: viewModel.state.readerFile.copy(withName: file.name, ext: file.ext))
+            }
+            // Copy document files (in case of snapshot there can be multiple files) to temporary sub-directory
+            let documentFiles: [File] = try fileStorage.contentsOfDirectory(at: viewModel.state.originalFile.directory)
+            for file in documentFiles {
+                try fileStorage.copy(from: file, to: viewModel.state.documentFile.copy(withName: file.name, ext: file.ext))
+            }
+
+            update(viewModel: viewModel) { state in
+                state.changes.insert(.readerInitialised)
+            }
+        } catch let error {
+            DDLogError("HtmlEpubReaderActionHandler: can't initialise reader - \(error)")
+        }
+    }
+
+    private func deinitialise(in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
+        try? fileStorage.remove(viewModel.state.readerFile.directory)
+    }
+
     private func load(in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
         do {
-            let data = try Data(contentsOf: viewModel.state.url)
-            let jsArrayData = try JSONSerialization.data(withJSONObject: [UInt8](data))
-            guard let jsArrayString = String(data: jsArrayData, encoding: .utf8) else {
-                DDLogError("HtmlEpubReaderActionHandler: can't convert data to string")
-                return
-            }
             let (sortedKeys, annotations, json, token, rawPage) = loadAnnotationsAndJson(in: viewModel)
             let type: String
             let page: HtmlEpubReaderState.DocumentData.Page?
 
-            switch viewModel.state.url.pathExtension.lowercased() {
+            switch viewModel.state.documentFile.ext.lowercased() {
             case "epub":
                 type = "epub"
                 page = .epub(cfi: rawPage)
@@ -580,7 +621,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
                 throw HtmlEpubReaderState.Error.incompatibleDocument
             }
 
-            let documentData = HtmlEpubReaderState.DocumentData(type: type, buffer: jsArrayString, annotationsJson: json, page: page)
+            let documentData = HtmlEpubReaderState.DocumentData(type: type, url: viewModel.state.documentFile.createUrl(), annotationsJson: json, page: page)
             update(viewModel: viewModel) { state in
                 state.sortedKeys = sortedKeys
                 state.annotations = annotations

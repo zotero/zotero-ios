@@ -196,6 +196,12 @@ struct Files {
         return FileData(rootPath: Files.cachesRootPath, relativeComponents: ["Zotero", "shareext", "downloads"], name: "item_\(key)", contentType: contentType)
     }
 
+    // MARK: Epub/Html reader
+
+    static var tmpReaderDirectory: File {
+        return FileData.directory(rootPath: Files.cachesRootPath, relativeComponents: ["Zotero", UUID().uuidString])
+    }
+
     // MARK: - Helper
 
     static var cache: File {

@@ -45,7 +45,7 @@ class HtmlEpubDocumentViewController: UIViewController {
 
         observeViewModel()
         setupWebView()
-        load()
+        viewModel.process(action: .initialiseReader)
 
         func observeViewModel() {
             viewModel.stateObservable
@@ -57,8 +57,13 @@ class HtmlEpubDocumentViewController: UIViewController {
         }
 
         func setupWebView() {
-            let webView = WKWebView()
+            let configuration = WKWebViewConfiguration()
+            configuration.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
+            let webView = WKWebView(frame: .zero, configuration: configuration)
             webView.translatesAutoresizingMaskIntoConstraints = false
+            if #available(iOS 16.4, *) {
+                webView.isInspectable = true
+            }
             view.addSubview(webView)
 
             NSLayoutConstraint.activate([
@@ -73,19 +78,20 @@ class HtmlEpubDocumentViewController: UIViewController {
                 self?.process(handler: handler, message: message)
             }
         }
+    }
 
-        func load() {
-            guard let readerUrl = Bundle.main.url(forResource: "view", withExtension: "html", subdirectory: "Bundled/reader") else {
-                DDLogError("HtmlEpubDocumentViewController: can't load reader view.html")
-                return
-            }
-            webViewHandler.load(fileUrl: readerUrl).subscribe().disposed(by: disposeBag)
-        }
+    deinit {
+        viewModel.process(action: .deinitialiseReader)
     }
 
     // MARK: - Actions
 
     private func process(state: HtmlEpubReaderState) {
+        if state.changes.contains(.readerInitialised) {
+            webViewHandler.load(fileUrl: state.readerFile.createUrl()).subscribe().disposed(by: disposeBag)
+            return
+        }
+
         if let data = state.documentData {
             load(documentData: data)
             return
@@ -166,7 +172,7 @@ class HtmlEpubDocumentViewController: UIViewController {
 
         func load(documentData data: HtmlEpubReaderState.DocumentData) {
             DDLogInfo("HtmlEpubDocumentViewController: try creating view for \(data.type); page = \(String(describing: data.page))")
-            var javascript = "createView({ type: '\(data.type)', buf: \(data.buffer), annotations: \(data.annotationsJson)"
+            var javascript = "createView({ type: '\(data.type)', url: '\(data.url.absoluteString)', annotations: \(data.annotationsJson)"
             if let page = data.page {
                 switch page {
                 case .html(let scrollYPercent):
@@ -202,7 +208,7 @@ class HtmlEpubDocumentViewController: UIViewController {
 
             switch event {
             case "onInitialized":
-                viewModel.process(action: .loadDocument)
+                self.viewModel.process(action: .loadDocument)
 
             case "onSaveAnnotations":
                 guard let params = data["params"] as? [String: Any] else {

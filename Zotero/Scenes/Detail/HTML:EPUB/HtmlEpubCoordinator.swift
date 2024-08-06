@@ -87,6 +87,7 @@ final class HtmlEpubCoordinator: Coordinator {
             schemaController: controllers.schemaController,
             htmlAttributedStringConverter: controllers.htmlAttributedStringConverter,
             dateParser: controllers.dateParser,
+            fileStorage: controllers.fileStorage,
             idleTimerController: controllers.idleTimerController
         )
         let state = HtmlEpubReaderState(url: url, key: key, settings: Defaults.shared.htmlEpubSettings, libraryId: libraryId, userId: userId, username: username)
