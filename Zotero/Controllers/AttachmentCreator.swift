@@ -254,7 +254,7 @@ struct AttachmentCreator {
 
         let webDavEnabled = Defaults.shared.webDavEnabled
 
-        if fileStorage.has(file) || (webDavEnabled && fileStorage.has(file.copyWithExt("zip"))) {
+        if fileStorage.has(file) || (webDavEnabled && fileStorage.has(file.copy(withExt: "zip"))) {
             if !item.backendMd5.isEmpty, let md5 = cachedMD5(from: file.createUrl(), using: fileStorage.fileManager), item.backendMd5 != md5 {
                 return .localAndChangedRemotely
             } else {
