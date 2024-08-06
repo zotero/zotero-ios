@@ -19,7 +19,9 @@ protocol File {
 
     func createUrl() -> URL
     func createRelativeUrl() -> URL
-    func copyWithExt(_ ext: String) -> File
+    func appending(relativeComponent: String) -> File
+    func copy(withExt ext: String) -> File
+    func copy(withName name: String, ext: String) -> File
 }
 
 extension File {
@@ -46,8 +48,16 @@ extension File {
         return FileData.directory(rootPath: self.rootPath, relativeComponents: self.relativeComponents)
     }
 
-    func copyWithExt(_ ext: String) -> File {
-        return FileData(rootPath: self.rootPath, relativeComponents: self.relativeComponents, name: self.name, ext: ext)
+    func appending(relativeComponent: String) -> File {
+        return FileData(rootPath: rootPath, relativeComponents: relativeComponents + [relativeComponent], name: name, ext: ext)
+    }
+
+    func copy(withName name: String, ext: String) -> File {
+        return FileData(rootPath: rootPath, relativeComponents: relativeComponents, name: name, ext: ext)
+    }
+
+    func copy(withExt ext: String) -> File {
+        return FileData(rootPath: rootPath, relativeComponents: relativeComponents, name: name, ext: ext)
     }
 }
 
