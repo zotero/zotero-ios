@@ -211,6 +211,59 @@ final class HtmlAttributedStringConverterSpec: QuickSpec {
                 let string = htmlConverter.convert(attributedString: attributedString)
                 expect(string).to(equal(htmlStringRaw))
             }
+
+            it("resets subscript by toggling with title font") {
+                // Edge case found during development, where there are consecutive ranges with the same attributes, due to the selected font.
+                let font = UIFont.preferredFont(for: .headline, weight: .regular)
+                let attributedStringRawParts = [
+                    #"How"#,
+                    #" "#,
+                    #"Far"#,
+                    #" Are We "#,
+                    #"From"#,
+                    #" AGI"#
+                ]
+                let attributedStringRaw = attributedStringRawParts.joined()
+                var htmlStringRaw = ""
+                htmlStringRaw += "<sup>" + attributedStringRawParts[0] + "</sup>"
+                htmlStringRaw += attributedStringRawParts[1]
+                htmlStringRaw += "<sub>" + attributedStringRawParts[2] + "</sub>"
+                htmlStringRaw += attributedStringRawParts[3]
+                htmlStringRaw += "<b>" + attributedStringRawParts[4] + "</b>"
+                htmlStringRaw += attributedStringRawParts[5]
+                let subscriptRange = NSRange(
+                    location: NSAttributedString(string: attributedStringRawParts[0] + attributedStringRawParts[1]).length,
+                    length: NSAttributedString(string: attributedStringRawParts[2]).length
+                )
+                let attributesAndRanges: [([StringAttribute], NSRange)] = [
+                    ([.superscript], NSRange(location: 0, length: NSAttributedString(string: attributedStringRawParts[0]).length)),
+                    ([.subscript], subscriptRange),
+                    ([.bold], NSRange(
+                        location: NSAttributedString(string: attributedStringRawParts[0] + attributedStringRawParts[1] + attributedStringRawParts[2] + attributedStringRawParts[3]).length,
+                        length: NSAttributedString(string: attributedStringRawParts[4]).length
+                    ))
+                ]
+                let attributedString = NSMutableAttributedString(string: attributedStringRaw, attributes: [.font: font])
+                expect(attributedString.string.count).to(equal(attributedStringRaw.count))
+                for (attributes, range) in attributesAndRanges {
+                    attributedString.addAttributes(StringAttribute.nsStringAttributes(from: attributes, baseFont: font), range: range)
+                }
+                let string = htmlConverter.convert(attributedString: attributedString)
+                expect(string).to(equal(htmlStringRaw))
+                // Toggle subscript
+                var newHtmlStringRaw = ""
+                newHtmlStringRaw += "<sup>" + attributedStringRawParts[0] + "</sup>"
+                newHtmlStringRaw += attributedStringRawParts[1]
+                newHtmlStringRaw += attributedStringRawParts[2]
+                newHtmlStringRaw += attributedStringRawParts[3]
+                newHtmlStringRaw += "<b>" + attributedStringRawParts[4] + "</b>"
+                newHtmlStringRaw += attributedStringRawParts[5]
+                let newAttributedString = NSMutableAttributedString(attributedString: attributedString)
+                StringAttribute.toggleSubscript(in: newAttributedString, range: subscriptRange, defaultFont: font)
+                expect(newAttributedString.string.count).to(equal(attributedStringRaw.count))
+                let newString = htmlConverter.convert(attributedString: newAttributedString)
+                expect(newString).to(equal(newHtmlStringRaw))
+            }
         }
     }
 }
