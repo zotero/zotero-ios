@@ -189,18 +189,18 @@ final class HtmlAttributedStringConverterSpec: QuickSpec {
             }
 
             it("converts attributed string with larger length than string count") {
-                let attributedStrintRawParts = [
+                let attributedStringRawParts = [
                     #"This is bold\nas is this. "#,
                     #"Now it is not 😏😂😚👩🏿‍💻 but 2 lines down it is again\n\n"#,
                     #"    here that is 😏😂😚👩🏼‍💻   . \nThe end."#
                 ]
-                let attributedStringRaw = attributedStrintRawParts.joined()
-                let htmlStringRaw = "<b>" + attributedStrintRawParts[0] + "</b>" + attributedStrintRawParts[1] + "<b>" + attributedStrintRawParts[2] + "</b>"
+                let attributedStringRaw = attributedStringRawParts.joined()
+                let htmlStringRaw = "<b>" + attributedStringRawParts[0] + "</b>" + attributedStringRawParts[1] + "<b>" + attributedStringRawParts[2] + "</b>"
                 let attributesAndRanges: [([StringAttribute], NSRange)] = [
-                    ([.bold], NSRange(location: 0, length: NSAttributedString(string: attributedStrintRawParts[0]).length)),
+                    ([.bold], NSRange(location: 0, length: NSAttributedString(string: attributedStringRawParts[0]).length)),
                     ([.bold], NSRange(
-                        location: NSAttributedString(string: attributedStrintRawParts[0] + attributedStrintRawParts[1]).length,
-                        length: NSAttributedString(string: attributedStrintRawParts[2]).length)
+                        location: NSAttributedString(string: attributedStringRawParts[0] + attributedStringRawParts[1]).length,
+                        length: NSAttributedString(string: attributedStringRawParts[2]).length)
                     )
                 ]
                 let attributedString = NSMutableAttributedString(string: attributedStringRaw, attributes: [.font: font])
