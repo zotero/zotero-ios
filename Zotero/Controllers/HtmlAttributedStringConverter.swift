@@ -21,8 +21,20 @@ final class HtmlAttributedStringConverter {
     func convert(attributedString: NSAttributedString) -> String {
         var attributes: [Attribute] = []
 
-        var previousRange: NSRange?
+        var activeAttributesAndRangeTuples: [([StringAttribute], NSRange)] = []
         attributedString.enumerateAttributes(in: NSRange(location: 0, length: attributedString.length), options: []) { nsAttributes, range, _ in
+            let active = StringAttribute.attributes(from: nsAttributes)
+            if let previousTuple = activeAttributesAndRangeTuples.last, active == previousTuple.0, previousTuple.1.location + previousTuple.1.length == range.location {
+                let combinedRange = NSRange(location: previousTuple.1.location, length: previousTuple.1.length + range.length)
+                _ = activeAttributesAndRangeTuples.popLast()
+                activeAttributesAndRangeTuples.append((active, combinedRange))
+            } else {
+                activeAttributesAndRangeTuples.append((active, range))
+            }
+        }
+
+        var previousRange: NSRange?
+        for (active, range) in activeAttributesAndRangeTuples {
             let currentIndex: Int
             if let previousRange {
                 let previousIndex = attributes.first.flatMap { $0.index } ?? 0
@@ -32,8 +44,6 @@ final class HtmlAttributedStringConverter {
             } else {
                 currentIndex = 0
             }
-            // Currently active attributes
-            let active = StringAttribute.attributes(from: nsAttributes)
             // Opened attributes so far
             let opened = self.openedAttributes(from: attributes)
             // Close opened attributes if they are not active anymore

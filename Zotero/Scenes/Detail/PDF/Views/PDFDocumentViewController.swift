@@ -351,8 +351,8 @@ final class PDFDocumentViewController: UIViewController {
         )
 
         guard let observable else { return }
-        observable.subscribe(onNext: { [weak self] state in
-            guard let self else { return }
+        observable.subscribe(onNext: { [weak viewModel] state in
+            guard let viewModel else { return }
             if state.changes.contains(.color) {
                 viewModel.process(action: .setColor(key: key.key, color: state.color))
             }
@@ -370,16 +370,16 @@ final class PDFDocumentViewController: UIViewController {
             }
             if state.changes.contains(.pageLabel) || state.changes.contains(.highlight) {
                 // TODO: - fix font size
-                viewModel.process(action:
-                        .updateAnnotationProperties(
-                            key: key.key,
-                            color: state.color,
-                            lineWidth: state.lineWidth,
-                            fontSize: 0,
-                            pageLabel: state.pageLabel,
-                            updateSubsequentLabels: state.updateSubsequentLabels,
-                            highlightText: state.highlightText)
-                )
+                viewModel.process(action: .updateAnnotationProperties(
+                    key: key.key,
+                    color: state.color,
+                    lineWidth: state.lineWidth,
+                    fontSize: 0,
+                    pageLabel: state.pageLabel,
+                    updateSubsequentLabels: state.updateSubsequentLabels,
+                    highlightText: state.highlightText,
+                    higlightFont: state.highlightFont
+                ))
             }
         })
         .disposed(by: disposeBag)
