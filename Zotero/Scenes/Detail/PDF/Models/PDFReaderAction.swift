@@ -28,15 +28,23 @@ enum PDFReaderAction {
     case setTags(key: String, tags: [Tag])
     case setColor(key: String, color: String)
     case setLineWidth(key: String, width: CGFloat)
-    case setHighlight(key: String, text: String)
-    case updateAnnotationProperties(key: String, color: String, lineWidth: CGFloat, fontSize: UInt, pageLabel: String, updateSubsequentLabels: Bool, highlightText: String)
+    case updateAnnotationProperties(
+        key: String,
+        color: String,
+        lineWidth: CGFloat,
+        fontSize: UInt,
+        pageLabel: String,
+        updateSubsequentLabels: Bool,
+        highlightText: NSAttributedString,
+        higlightFont: UIFont
+    )
     case userInterfaceStyleChanged(UIUserInterfaceStyle)
     case updateAnnotationPreviews
     case setToolOptions(color: String?, size: CGFloat?, tool: PSPDFKit.Annotation.Tool)
     case createNote(pageIndex: PageIndex, origin: CGPoint)
     case createImage(pageIndex: PageIndex, origin: CGPoint)
     case createHighlight(pageIndex: PageIndex, rects: [CGRect])
-    case parseAndCacheText(key: String, text: String)
+    case parseAndCacheText(key: String, text: String, font: UIFont)
     case parseAndCacheComment(key: String, comment: String)
     case setComment(key: String, comment: NSAttributedString)
     case setCommentActive(Bool)

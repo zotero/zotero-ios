@@ -18,7 +18,8 @@ struct AnnotationPopoverState: ViewModelState {
         let color: String
         let lineWidth: CGFloat
         let pageLabel: String
-        let highlightText: String
+        let highlightText: NSAttributedString
+        let highlightFont: UIFont
         let tags: [Tag]
         let showsDeleteButton: Bool
     }
@@ -47,7 +48,8 @@ struct AnnotationPopoverState: ViewModelState {
     var color: String
     var lineWidth: CGFloat
     var pageLabel: String
-    var highlightText: String
+    var highlightText: NSAttributedString
+    var highlightFont: UIFont
     var updateSubsequentLabels: Bool
     var tags: [Tag]
     var changes: Changes
@@ -62,6 +64,7 @@ struct AnnotationPopoverState: ViewModelState {
         self.lineWidth = data.lineWidth
         self.pageLabel = data.pageLabel
         self.highlightText = data.highlightText
+        self.highlightFont = data.highlightFont
         self.tags = data.tags
         self.showsDeleteButton = data.showsDeleteButton
         self.updateSubsequentLabels = false

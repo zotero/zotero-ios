@@ -81,6 +81,7 @@ extension AnnotationPopoverCoordinator: AnnotationPopoverAnnotationCoordinatorDe
             lineWidth: state.lineWidth,
             pageLabel: state.pageLabel,
             highlightText: state.highlightText,
+            highlightFont: state.highlightFont,
             fontSize: nil
         )
         let state = AnnotationEditState(data: data)

@@ -857,15 +857,15 @@ extension PDFReaderViewController: SidebarDelegate {
 }
 
 extension PDFReaderViewController: AnnotationsDelegate {
-    func parseAndCacheIfNeededAttributedText(for annotation: any PDFAnnotation) -> NSAttributedString? {
+    func parseAndCacheIfNeededAttributedText(for annotation: any PDFAnnotation, with font: UIFont) -> NSAttributedString? {
         guard let text = annotation.text, !text.isEmpty else { return nil }
 
-        if let attributedText = viewModel.state.texts[annotation.key] {
+        if let attributedText = viewModel.state.texts[annotation.key]?.1[font] {
             return attributedText
         }
 
-        viewModel.process(action: .parseAndCacheText(key: annotation.key, text: text))
-        return viewModel.state.texts[annotation.key]
+        viewModel.process(action: .parseAndCacheText(key: annotation.key, text: text, font: font))
+        return viewModel.state.texts[annotation.key]?.1[font]
     }
 
     func parseAndCacheIfNeededAttributedComment(for annotation: PDFAnnotation) -> NSAttributedString? {
