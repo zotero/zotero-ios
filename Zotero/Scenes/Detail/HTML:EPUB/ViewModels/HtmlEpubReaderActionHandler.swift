@@ -70,12 +70,26 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
         case .selectAnnotationFromSidebar(let key):
             update(viewModel: viewModel) { state in
-                _select(data: (key, nil), didSelectInDocument: false, state: &state)
+                _select(key: key, didSelectInDocument: false, state: &state)
             }
 
-        case .selectAnnotationFromDocument(let key, let rect):
+        case .selectAnnotationFromDocument(let key):
             update(viewModel: viewModel) { state in
-                _select(data: (key, rect), didSelectInDocument: true, state: &state)
+                _select(key: key, didSelectInDocument: true, state: &state)
+            }
+
+        case .showAnnotationPopover(let key, let rect):
+            update(viewModel: viewModel) { state in
+                state.annotationPopoverKey = key
+                state.annotationPopoverRect = rect
+                state.changes.insert(.popover)
+            }
+
+        case .hideAnnotationPopover:
+            update(viewModel: viewModel) { state in
+                state.annotationPopoverKey = nil
+                state.annotationPopoverRect = nil
+                state.changes.insert(.popover)
             }
 
         case .setComment(let key, let comment):
@@ -91,7 +105,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
         case .deselectSelectedAnnotation:
             update(viewModel: viewModel) { state in
-                _select(data: nil, didSelectInDocument: false, state: &state)
+                _select(key: nil, didSelectInDocument: false, state: &state)
             }
 
         case .parseAndCacheComment(key: let key, comment: let comment):
@@ -188,7 +202,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
             if enabled {
                 // Deselect selected annotation before editing
-                _select(data: nil, didSelectInDocument: false, state: &state)
+                _select(key: nil, didSelectInDocument: false, state: &state)
             } else {
                 // Deselect selected annotations during editing
                 state.selectedAnnotationsDuringEditing = []
@@ -365,12 +379,11 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         }
     }
 
-    private func _select(data: (String, CGRect?)?, didSelectInDocument: Bool, state: inout HtmlEpubReaderState) {
-        guard data?.0 != state.selectedAnnotationKey else { return }
+    private func _select(key: String?, didSelectInDocument: Bool, state: inout HtmlEpubReaderState) {
+        guard key != state.selectedAnnotationKey else { return }
 
         if let existing = state.selectedAnnotationKey {
             add(updatedAnnotationKey: existing, state: &state)
-
             if state.selectedAnnotationCommentActive {
                 state.selectedAnnotationCommentActive = false
                 state.changes.insert(.activeComment)
@@ -379,21 +392,17 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
         state.changes.insert(.selection)
 
-        guard let (key, rect) = data else {
+        guard let key else {
             state.selectedAnnotationKey = nil
-            state.selectedAnnotationRect = nil
             return
         }
 
         state.selectedAnnotationKey = key
-        state.selectedAnnotationRect = rect
-
         if !didSelectInDocument {
             state.focusDocumentKey = key
         } else {
             state.focusSidebarKey = key
         }
-
         add(updatedAnnotationKey: key, state: &state)
 
         func add(updatedAnnotationKey key: String, state: inout HtmlEpubReaderState) {
@@ -792,7 +801,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
             // Update selection
             if selectionDeleted {
-                _select(data: nil, didSelectInDocument: true, state: &state)
+                _select(key: nil, didSelectInDocument: true, state: &state)
             }
 
             // Disable sidebar editing if there are no results
@@ -829,11 +838,6 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
 extension RItem {
     fileprivate var htmlEpubAnnotation: (HtmlEpubAnnotation, [String: Any])? {
-        let tags = Array(tags.map({ typedTag in
-            let color: String? = (typedTag.tag?.color ?? "").isEmpty ? nil : typedTag.tag?.color
-            return Tag(name: typedTag.tag?.name ?? "", color: color ?? "")
-        }))
-
         var type: AnnotationType?
         var position: [String: Any] = [:]
         var text: String?
@@ -845,11 +849,8 @@ extension RItem {
 
         for field in fields {
             switch (field.key, field.baseKey) {
-            case (FieldKeys.Item.Annotation.Position.htmlEpubType, FieldKeys.Item.Annotation.position):
-                position[FieldKeys.Item.Annotation.Position.htmlEpubType] = field.value
-
-            case (FieldKeys.Item.Annotation.Position.htmlEpubValue, FieldKeys.Item.Annotation.position):
-                position[FieldKeys.Item.Annotation.Position.htmlEpubValue] = field.value
+            case (_, FieldKeys.Item.Annotation.position):
+                position[field.key] = field.value
 
             case (FieldKeys.Item.Annotation.type, nil):
                 type = AnnotationType(rawValue: field.value)
@@ -882,7 +883,12 @@ extension RItem {
             return nil
         }
 
-        let json: [String: Any] = [
+        let tags = Array(tags.map({ typedTag in
+            let color: String? = (typedTag.tag?.color ?? "").isEmpty ? nil : typedTag.tag?.color
+            return Tag(name: typedTag.tag?.name ?? "", color: color ?? "")
+        }))
+
+        var json: [String: Any] = [
             "id": key,
             "dateCreated": DateFormatter.iso8601WithFractionalSeconds.string(from: dateAdded),
             "dateModified": DateFormatter.iso8601WithFractionalSeconds.string(from: dateModified),
@@ -896,6 +902,10 @@ extension RItem {
             "position": position,
             "tags": tags.map({ ["name": $0.name, "color": $0.color] })
         ]
+        for (key, value) in unknown {
+            json[key] = value
+        }
+
         let annotation = HtmlEpubAnnotation(
             key: key,
             type: type,

@@ -219,7 +219,7 @@ extension HtmlEpubCoordinator: HtmlEpubSidebarCoordinatorDelegate {
         popoverDelegate: UIPopoverPresentationControllerDelegate,
         userInterfaceStyle: UIUserInterfaceStyle
     ) -> PublishSubject<AnnotationPopoverState>? {
-        guard let currentNavigationController = navigationController, let annotation = viewModel.state.selectedAnnotationKey.flatMap({ viewModel.state.annotations[$0] }) else { return nil }
+        guard let currentNavigationController = navigationController, let annotation = viewModel.state.annotationPopoverKey.flatMap({ viewModel.state.annotations[$0] }) else { return nil }
 
         DDLogInfo("HtmlEpubCoordinator: show annotation popover")
 
