@@ -26,6 +26,7 @@ struct HtmlEpubReaderState: ViewModelState {
         static let sidebarEditingSelection = Changes(rawValue: 1 << 7)
         static let settings = Changes(rawValue: 1 << 8)
         static let readerInitialised = Changes(rawValue: 1 << 9)
+        static let popover = Changes(rawValue: 1 << 10)
     }
 
     struct DocumentData {
@@ -73,7 +74,11 @@ struct HtmlEpubReaderState: ViewModelState {
     var annotationSearchTerm: String?
     var annotationFilter: AnnotationsFilter?
     var selectedAnnotationKey: String?
-    var selectedAnnotationRect: CGRect?
+    var selectedAnnotationCommentActive: Bool
+    /// Selected annotations when annotations are being edited in sidebar
+    var selectedAnnotationsDuringEditing: Set<String>
+    var annotationPopoverKey: String?
+    var annotationPopoverRect: CGRect?
     var documentSearchTerm: String?
     var comments: [String: NSAttributedString]
     var changes: Changes
@@ -86,12 +91,9 @@ struct HtmlEpubReaderState: ViewModelState {
     var focusSidebarKey: String?
     /// Annotation key to focus in document
     var focusDocumentKey: String?
-    var selectedAnnotationCommentActive: Bool
     var sidebarEditingEnabled: Bool
     var notificationToken: NotificationToken?
     var deletionEnabled: Bool
-    /// Selected annotations when annotations are being edited in sidebar
-    var selectedAnnotationsDuringEditing: Set<String>
 
     init(url: URL, key: String, settings: HtmlEpubSettings, libraryId: LibraryIdentifier, userId: Int, username: String) {
         let originalFile = Files.file(from: url)
