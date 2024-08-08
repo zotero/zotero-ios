@@ -14,6 +14,7 @@ enum HtmlEpubReaderAction {
     case deinitialiseReader
     case deselectAnnotationDuringEditing(String)
     case deselectSelectedAnnotation
+    case hideAnnotationPopover
     case initialiseReader
     case loadDocument
     case parseAndCacheComment(key: String, comment: String)
@@ -22,9 +23,9 @@ enum HtmlEpubReaderAction {
     case saveAnnotations([String: Any])
     case searchAnnotations(String)
     case searchDocument(String)
-    case selectAnnotationDuringEditing(String)
-    case selectAnnotationFromSidebar(String)
-    case selectAnnotationFromDocument(key: String, rect: CGRect)
+    case selectAnnotationDuringEditing(key: String)
+    case selectAnnotationFromSidebar(key: String)
+    case selectAnnotationFromDocument(key: String)
     case setColor(key: String, color: String)
     case setComment(key: String, comment: NSAttributedString)
     case setCommentActive(Bool)
@@ -33,6 +34,7 @@ enum HtmlEpubReaderAction {
     case setTags(key: String, tags: [Tag])
     case setToolOptions(color: String?, size: CGFloat?, tool: AnnotationTool)
     case setViewState([String: Any])
+    case showAnnotationPopover(key: String, rect: CGRect)
     case toggleTool(AnnotationTool)
     case updateAnnotationProperties(key: String, color: String, lineWidth: CGFloat, pageLabel: String, updateSubsequentLabels: Bool, highlightText: String)
 }
