@@ -419,9 +419,9 @@ extension HtmlEpubSidebarViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         guard let key = dataSource.itemIdentifier(for: indexPath) else { return }
         if viewModel.state.sidebarEditingEnabled {
-            viewModel.process(action: .selectAnnotationDuringEditing(key))
+            viewModel.process(action: .selectAnnotationDuringEditing(key: key))
         } else {
-            viewModel.process(action: .selectAnnotationFromSidebar(key))
+            viewModel.process(action: .selectAnnotationFromSidebar(key: key))
         }
     }
 

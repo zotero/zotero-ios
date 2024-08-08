@@ -208,7 +208,7 @@ class HtmlEpubDocumentViewController: UIViewController {
 
             switch event {
             case "onInitialized":
-                self.viewModel.process(action: .loadDocument)
+                viewModel.process(action: .loadDocument)
 
             case "onSaveAnnotations":
                 guard let params = data["params"] as? [String: Any] else {
@@ -225,7 +225,7 @@ class HtmlEpubDocumentViewController: UIViewController {
                 }
                 
                 if params.isEmpty {
-                    viewModel.process(action: .deselectSelectedAnnotation)
+                    viewModel.process(action: .hideAnnotationPopover)
                     return
                 }
 
@@ -236,7 +236,18 @@ class HtmlEpubDocumentViewController: UIViewController {
 
                 let navigationBarInset = (parentDelegate?.statusBarHeight ?? 0) + (parentDelegate?.navigationBarHeight ?? 0)
                 let rect = CGRect(x: rectArray[0], y: rectArray[1] + navigationBarInset, width: rectArray[2] - rectArray[0], height: rectArray[3] - rectArray[1])
-                viewModel.process(action: .selectAnnotationFromDocument(key: key, rect: rect))
+                viewModel.process(action: .showAnnotationPopover(key: key, rect: rect))
+
+            case "onSelectAnnotations":
+                guard let params = data["params"] as? [String: Any], let ids = params["ids"] as? [String] else {
+                    DDLogWarn("HtmlEpubDocumentViewController: event \(event) missing params - \(message)")
+                    return
+                }
+                if let key = ids.first {
+                    viewModel.process(action: .selectAnnotationFromDocument(key: key))
+                } else {
+                    viewModel.process(action: .deselectSelectedAnnotation)
+                }
 
             case "onChangeViewState":
                 guard let params = data["params"] as? [String: Any] else {
