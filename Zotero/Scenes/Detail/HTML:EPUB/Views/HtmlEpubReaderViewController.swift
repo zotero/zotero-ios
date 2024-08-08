@@ -274,7 +274,13 @@ class HtmlEpubReaderViewController: UIViewController, ParentWithSidebarControlle
             navigationController?.overrideUserInterfaceStyle = state.settings.appearance.userInterfaceStyle
         }
 
-        handleAnnotationPopover()
+        if state.changes.contains(.popover) {
+            if let key = state.annotationPopoverKey, let rect = state.annotationPopoverRect {
+                showPopover(forKey: key, rect: rect)
+            } else {
+                hidePopover()
+            }
+        }
 
         func select(activeTool tool: AnnotationTool?) {
             if let tool = activeAnnotationTool {
@@ -290,21 +296,22 @@ class HtmlEpubReaderViewController: UIViewController, ParentWithSidebarControlle
         func show(error: HtmlEpubReaderState.Error) {
         }
 
-        func handleAnnotationPopover() {
-            if let key = state.selectedAnnotationKey {
-                if !isSidebarVisible, let rect = state.selectedAnnotationRect {
-                    let observable = coordinatorDelegate?.showAnnotationPopover(
-                        viewModel: viewModel,
-                        sourceRect: rect,
-                        popoverDelegate: self,
-                        userInterfaceStyle: viewModel.state.settings.appearance.userInterfaceStyle
-                    )
-                    observe(key: key, popoverObservable: observable)
-                }
-            } else if navigationController?.presentedViewController is AnnotationPopover ||
-               (navigationController?.presentedViewController as? UINavigationController)?.topViewController is AnnotationPopover {
-                navigationController?.dismiss(animated: true)
-            }
+        func showPopover(forKey key: String, rect: CGRect) {
+            guard !isSidebarVisible else { return }
+            let observable = coordinatorDelegate?.showAnnotationPopover(
+                viewModel: viewModel,
+                sourceRect: rect,
+                popoverDelegate: self,
+                userInterfaceStyle: viewModel.state.settings.appearance.userInterfaceStyle
+            )
+            observe(key: key, popoverObservable: observable)
+        }
+
+        func hidePopover() {
+            guard navigationController?.presentedViewController is AnnotationPopover ||
+                  (navigationController?.presentedViewController as? UINavigationController)?.topViewController is AnnotationPopover
+            else { return }
+            navigationController?.dismiss(animated: true)
         }
 
         func observe(key: String, popoverObservable observable: PublishSubject<AnnotationPopoverState>?) {
