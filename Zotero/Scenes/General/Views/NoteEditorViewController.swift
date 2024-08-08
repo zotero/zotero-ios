@@ -19,6 +19,7 @@ final class NoteEditorViewController: UIViewController {
 
     private static let jsHandler: String = "textHandler"
     private let viewModel: ViewModel<NoteEditorActionHandler>
+    private unowned let htmlAttributedStringConverter: HtmlAttributedStringConverter
     private let disposeBag: DisposeBag
 
     private var debounceDisposeBag: DisposeBag?
@@ -32,8 +33,9 @@ final class NoteEditorViewController: UIViewController {
         }
     }
 
-    init(viewModel: ViewModel<NoteEditorActionHandler>) {
+    init(viewModel: ViewModel<NoteEditorActionHandler>, htmlAttributedStringConverter: HtmlAttributedStringConverter) {
         self.viewModel = viewModel
+        self.htmlAttributedStringConverter = htmlAttributedStringConverter
         disposeBag = DisposeBag()
         super.init(nibName: "NoteEditorViewController", bundle: nil)
     }
@@ -46,7 +48,7 @@ final class NoteEditorViewController: UIViewController {
         super.viewDidLoad()
 
         if let data = viewModel.state.title {
-            navigationItem.titleView = NoteEditorTitleView(type: data.type, title: data.title)
+            navigationItem.titleView = NoteEditorTitleView(type: data.type, title: htmlAttributedStringConverter.convert(text: data.title).string)
         }
 
         view.backgroundColor = .systemBackground
