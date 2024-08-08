@@ -18,7 +18,7 @@ final class AnnotationViewTextView: UIView {
 
     private var textViewDelegate: PlaceholderTextViewDelegate!
     var textObservable: Observable<(NSAttributedString, Bool)?> {
-        return textView.textObservable.flatMap { [weak self] _ -> Observable<(NSAttributedString, Bool)?> in
+        return textView.attributedTextObservable.flatMap { [weak self] _ -> Observable<(NSAttributedString, Bool)?> in
             guard let self else { return .just(nil) }
             let height = textView.contentSize.height
             textView.sizeToFit()

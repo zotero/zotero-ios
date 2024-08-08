@@ -10,7 +10,6 @@ import UIKit
 import RxSwift
 
 final class FormattedTextView: TextKit1TextView {
-    let textObservable: PublishSubject<String>
     let attributedTextObservable: PublishSubject<NSAttributedString>
     let didBecomeActiveObservable: PublishSubject<Void>
 
@@ -19,7 +18,6 @@ final class FormattedTextView: TextKit1TextView {
     private let disposeBag: DisposeBag
 
     init(defaultFont: UIFont) {
-        textObservable = PublishSubject()
         attributedTextObservable = PublishSubject()
         didBecomeActiveObservable = PublishSubject()
         self.defaultFont = defaultFont
@@ -55,7 +53,6 @@ final class FormattedTextView: TextKit1TextView {
                 .observe(on: MainScheduler.instance)
                 .subscribe(onNext: { [weak self] _ in
                     guard let self else { return }
-                    textObservable.onNext(text)
                     attributedTextObservable.onNext(attributedText)
                 })
                 .disposed(by: disposeBag)
@@ -107,7 +104,6 @@ final class FormattedTextView: TextKit1TextView {
         attributedStringAction(string, range)
         attributedText = string
         selectedRange = range
-        textObservable.onNext(text)
         attributedTextObservable.onNext(attributedText)
         delegate?.textViewDidChange?(self)
     }

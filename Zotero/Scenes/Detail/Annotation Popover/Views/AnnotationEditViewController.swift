@@ -10,8 +10,7 @@ import UIKit
 
 import RxSwift
 
-// key, color, lineWidth, fontSize, pageLabel, updateSubsequentLabels, highlightText
-typealias AnnotationEditSaveAction = (String, CGFloat, UInt, String, Bool, String) -> Void
+typealias AnnotationEditSaveAction = (_ key: String, _ lineWidth: CGFloat, _ fontSize: UInt, _ pageLabel: String, _ updateSubsequentLabels: Bool, _ highlightText: NSAttributedString) -> Void
 typealias AnnotationEditDeleteAction = () -> Void
 
 final class AnnotationEditViewController: UIViewController {
@@ -133,7 +132,8 @@ final class AnnotationEditViewController: UIViewController {
             let paragraphStyle = NSMutableParagraphStyle()
             paragraphStyle.minimumLineHeight = AnnotationPopoverLayout.annotationLayout.lineHeight
             paragraphStyle.maximumLineHeight = AnnotationPopoverLayout.annotationLayout.lineHeight
-            let attributedText = NSAttributedString(string: self.viewModel.state.highlightText, attributes: [.font: AnnotationPopoverLayout.annotationLayout.font, .paragraphStyle: paragraphStyle])
+            let attributedText = NSMutableAttributedString(attributedString: viewModel.state.highlightText)
+            attributedText.addAttribute(.paragraphStyle, value: paragraphStyle, range: .init(location: 0, length: attributedText.length))
             let boundingRect = attributedText.boundingRect(with: CGSize(width: width, height: .greatestFiniteMagnitude), options: .usesLineFragmentOrigin, context: nil)
             height += ceil(boundingRect.height) + 58 // 58 for 22 insets and 36 spacer
         }
@@ -231,9 +231,9 @@ extension AnnotationEditViewController: UITableViewDataSource {
         case .textContent:
             if let cell = cell as? TextContentEditCell {
                 cell.setup(with: self.viewModel.state.highlightText, color: self.viewModel.state.color)
-                cell.textAndHeightReloadNeededObservable.subscribe { [weak self] text, needsHeightReload in
+                cell.attributedTextAndHeightReloadNeededObservable.subscribe { [weak self] attributedText, needsHeightReload in
                     guard let self else { return }
-                    viewModel.process(action: .setHighlight(text))
+                    viewModel.process(action: .setHighlight(attributedText))
                     if needsHeightReload {
                         updatePreferredContentSize()
                         reloadHeight()

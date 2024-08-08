@@ -12,9 +12,8 @@ enum AnnotationPopoverAction {
     case setColor(String)
     case setLineWidth(CGFloat)
     case setPageLabel(String, Bool)
-    case setHighlight(String)
     case setTags([Tag])
     case setComment(NSAttributedString)
     case delete
-    case setProperties(pageLabel: String, updateSubsequentLabels: Bool, highlightText: String)
+    case setProperties(pageLabel: String, updateSubsequentLabels: Bool, highlightText: NSAttributedString)
 }

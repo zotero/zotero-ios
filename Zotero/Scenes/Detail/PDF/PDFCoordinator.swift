@@ -45,6 +45,7 @@ protocol PdfAnnotationsCoordinatorDelegate: AnyObject {
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, userInterfaceStyle: UIUserInterfaceStyle?, picked: @escaping ([Tag]) -> Void)
     func showCellOptions(
         for annotation: PDFAnnotation,
+        highlightFont: UIFont,
         userId: Int,
         library: Library,
         sender: UIButton,
@@ -198,7 +199,10 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         navigationController.overrideUserInterfaceStyle = userInterfaceStyle
 
         let author = viewModel.state.library.identifier == .custom(.myLibrary) ? "" : annotation.author(displayName: viewModel.state.displayName, username: viewModel.state.username)
-        let comment: NSAttributedString = (self.navigationController?.viewControllers.first as? AnnotationsDelegate)?.parseAndCacheIfNeededAttributedComment(for: annotation) ?? NSAttributedString()
+        let comment: NSAttributedString = (self.navigationController?.viewControllers.first as? AnnotationsDelegate)?.parseAndCacheIfNeededAttributedComment(for: annotation) ?? .init(string: "")
+        let highlightFont = viewModel.state.textEditorFont
+        let highlightText: NSAttributedString = (self.navigationController?.viewControllers.first as? AnnotationsDelegate)?
+            .parseAndCacheIfNeededAttributedText(for: annotation, with: highlightFont) ?? .init(string: "")
         let editability = annotation.editability(currentUserId: viewModel.state.userId, library: viewModel.state.library)
 
         let data = AnnotationPopoverState.Data(
@@ -210,7 +214,8 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
             color: annotation.color,
             lineWidth: annotation.lineWidth ?? 0,
             pageLabel: annotation.pageLabel,
-            highlightText: annotation.text ?? "",
+            highlightText: highlightText,
+            highlightFont: highlightFont,
             tags: annotation.tags,
             showsDeleteButton: editability != .notEditable
         )
@@ -603,6 +608,7 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
 
     func showCellOptions(
         for annotation: PDFAnnotation,
+        highlightFont: UIFont,
         userId: Int,
         library: Library,
         sender: UIButton,
@@ -613,6 +619,8 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
         let navigationController = NavigationViewController()
         navigationController.overrideUserInterfaceStyle = userInterfaceStyle
 
+        let highlightText: NSAttributedString = (self.navigationController?.viewControllers.first as? AnnotationsDelegate)?
+            .parseAndCacheIfNeededAttributedText(for: annotation, with: highlightFont) ?? .init(string: "")
         let coordinator = AnnotationEditCoordinator(
             data: AnnotationEditState.Data(
                 type: annotation.type,
@@ -620,7 +628,8 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
                 color: annotation.color,
                 lineWidth: annotation.lineWidth ?? 0,
                 pageLabel: annotation.pageLabel,
-                highlightText: annotation.text ?? "",
+                highlightText: highlightText,
+                highlightFont: highlightFont,
                 fontSize: annotation.fontSize
             ),
             saveAction: saveAction,

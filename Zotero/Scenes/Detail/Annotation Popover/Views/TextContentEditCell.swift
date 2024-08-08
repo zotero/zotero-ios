@@ -11,13 +11,13 @@ import UIKit
 import RxSwift
 
 final class TextContentEditCell: RxTableViewCell {
-    let textAndHeightReloadNeededObservable: PublishSubject<(String, Bool)>
+    let attributedTextAndHeightReloadNeededObservable: PublishSubject<(NSAttributedString, Bool)>
 
     private var lineView: UIView?
-    private var textView: UITextView?
+    private var textView: FormattedTextView?
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
-        textAndHeightReloadNeededObservable = PublishSubject()
+        attributedTextAndHeightReloadNeededObservable = PublishSubject()
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         setup()
         selectionStyle = .none
@@ -28,7 +28,7 @@ final class TextContentEditCell: RxTableViewCell {
             contentView.addSubview(lineView)
             self.lineView = lineView
 
-            let textView = TextKit1TextView()
+            let textView = FormattedTextView(defaultFont: AnnotationPopoverLayout.annotationLayout.font)
             textView.textContainerInset = UIEdgeInsets()
             textView.textContainer.lineFragmentPadding = 0
             textView.delegate = self
@@ -59,14 +59,12 @@ final class TextContentEditCell: RxTableViewCell {
         return textView.caretRect(for: selectedPosition)
     }
 
-    func setup(with text: String, color: String) {
+    func setup(with text: NSAttributedString, color: String) {
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.minimumLineHeight = AnnotationPopoverLayout.annotationLayout.lineHeight
         paragraphStyle.maximumLineHeight = AnnotationPopoverLayout.annotationLayout.lineHeight
-        let attributedText = NSAttributedString(
-            string: text,
-            attributes: [.font: AnnotationPopoverLayout.annotationLayout.font, .foregroundColor: Asset.Colors.annotationText.color, .paragraphStyle: paragraphStyle]
-        )
+        let attributedText = NSMutableAttributedString(attributedString: text)
+        attributedText.addAttributes([.foregroundColor: Asset.Colors.annotationText.color, .paragraphStyle: paragraphStyle], range: .init(location: 0, length: attributedText.length))
 
         lineView?.backgroundColor = UIColor(hex: color)
         textView?.attributedText = attributedText
@@ -77,6 +75,6 @@ extension TextContentEditCell: UITextViewDelegate {
     func textViewDidChange(_ textView: UITextView) {
         let height = textView.contentSize.height
         textView.sizeToFit()
-        textAndHeightReloadNeededObservable.onNext((textView.text, height != textView.contentSize.height))
+        attributedTextAndHeightReloadNeededObservable.onNext((textView.attributedText, height != textView.contentSize.height))
     }
 }
