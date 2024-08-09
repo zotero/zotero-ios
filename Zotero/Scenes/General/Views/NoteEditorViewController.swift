@@ -37,16 +37,27 @@ final class NoteEditorViewController: UIViewController {
         disposeBag = DisposeBag()
         super.init(nibName: "NoteEditorViewController", bundle: nil)
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        if let data = viewModel.state.title {
-            navigationItem.titleView = NoteEditorTitleView(type: data.type, title: data.title)
+        switch viewModel.state.kind {
+        case .edit(let key), .readOnly(let key):
+            let openItem = OpenItem(kind: .note(libraryId: viewModel.state.library.identifier, key: key), userIndex: 0)
+            set(userActivity: .pdfActivity(with: [openItem], libraryId: viewModel.state.library.identifier, collectionId: Defaults.shared.selectedCollectionId)
+                .set(title: viewModel.state.title)
+            )
+
+        case.itemCreation, .standaloneCreation:
+            break
+        }
+
+        if let parentTitleData = viewModel.state.parentTitleData {
+            navigationItem.titleView = NoteEditorTitleView(type: parentTitleData.type, title: parentTitleData.title)
         }
 
         view.backgroundColor = .systemBackground
@@ -92,6 +103,18 @@ final class NoteEditorViewController: UIViewController {
             }
             if state.changes.contains(.save) {
                 debounceSave()
+            }
+            if state.changes.contains(.kind) || state.changes.contains(.title) {
+                switch state.kind {
+                case .edit(let key), .readOnly(let key):
+                    let openItem = OpenItem(kind: .note(libraryId: state.library.identifier, key: key), userIndex: 0)
+                    set(userActivity: .pdfActivity(with: [openItem], libraryId: state.library.identifier, collectionId: Defaults.shared.selectedCollectionId)
+                        .set(title: state.title)
+                    )
+
+                case.itemCreation, .standaloneCreation:
+                    break
+                }
             }
 
             func debounceSave() {

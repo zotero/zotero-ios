@@ -9,78 +9,111 @@
 import Foundation
 
 struct RestoredStateData {
-    let key: String?
     let libraryId: LibraryIdentifier
     let collectionId: CollectionIdentifier
+    let openItems: [OpenItem]
+    let restoreMostRecentlyOpenedItem: Bool
 
-    static var myLibrary: Self = {
-        .init(key: nil, libraryId: .custom(.myLibrary), collectionId: .custom(.all))
-    }()
+    static func myLibrary() -> Self {
+        .init(libraryId: .custom(.myLibrary), collectionId: .custom(.all), openItems: [], restoreMostRecentlyOpenedItem: false)
+    }
 }
 
 extension NSUserActivity {
-    private static let pdfId = "org.zotero.PDFActivity"
-    static let mainId = "org.zotero.MainActivity"
+    public static let pdfId = "org.zotero.PDFActivity"
+    public static let mainId = "org.zotero.MainActivity"
 
-    static var mainActivity: NSUserActivity {
+    private static let libraryIdKey = "libraryId"
+    private static let collectionIdKey = "collectionId"
+    private static let openItemsKey = "openItems"
+    private static let restoreMostRecentlyOpenedItemKey = "restoreMostRecentlyOpenedItem"
+    
+    static func mainActivity() -> NSUserActivity {
         return NSUserActivity(activityType: self.mainId)
+            .addUserInfoEntries(openItems: [])
+            .addUserInfoEntries(restoreMostRecentlyOpened: false)
     }
 
-    static func pdfActivity(for key: String, libraryId: LibraryIdentifier, collectionId: CollectionIdentifier) -> NSUserActivity {
-        let activity = NSUserActivity(activityType: self.pdfId)
-        var pdfUserInfo: [AnyHashable: Any] = ["key": key, "libraryId": libraryIdToString(libraryId)]
-        if let collectionIdData = try? JSONEncoder().encode(collectionId) {
-            pdfUserInfo["collectionId"] = collectionIdData
-        }
-        activity.addUserInfoEntries(from: pdfUserInfo)
-        return activity
+    static func pdfActivity(with openItems: [OpenItem], libraryId: LibraryIdentifier, collectionId: CollectionIdentifier) -> NSUserActivity {
+        return NSUserActivity(activityType: self.pdfId)
+            .addUserInfoEntries(openItems: openItems)
+            .addUserInfoEntries(libraryId: libraryId, collectionId: collectionId, restoreMostRecentlyOpened: true)
+    }
+    
+    @discardableResult
+    func addUserInfoEntries(openItems: [OpenItem]) -> Self {
+        var userInfo: [AnyHashable: Any] = [:]
+        let encoder = JSONEncoder()
+        userInfo[Self.openItemsKey] = openItems.compactMap { try? encoder.encode($0) }
+        addUserInfoEntries(from: userInfo)
+        return self
     }
 
     @discardableResult
-    func set(title: String? = nil) -> NSUserActivity {
+    func set(title: String? = nil) -> Self {
         self.title = title
         return self
     }
 
-    private static func libraryIdToString(_ libraryId: LibraryIdentifier) -> String {
-        switch libraryId {
-        case .custom:
-            return "myLibrary"
-        case .group(let groupId):
-            return "g:\(groupId)"
+    @discardableResult
+    func addUserInfoEntries(libraryId: LibraryIdentifier? = nil, collectionId: CollectionIdentifier? = nil, restoreMostRecentlyOpened: Bool = false) -> Self {
+        var userInfo: [AnyHashable: Any] = [:]
+        if let libraryId {
+            userInfo[Self.libraryIdKey] = libraryIdToString(libraryId)
         }
-    }
-
-    private func stringToLibraryId(_ string: String) -> LibraryIdentifier? {
-        guard !string.isEmpty else { return nil }
-
-        if string == "myLibrary" {
-            return .custom(.myLibrary)
+        if let collectionId, let collectionIdData = try? JSONEncoder().encode(collectionId) {
+            userInfo[Self.collectionIdKey] = collectionIdData
         }
+        userInfo[Self.restoreMostRecentlyOpenedItemKey] = restoreMostRecentlyOpened
+        addUserInfoEntries(from: userInfo)
+        return self
 
-        if string[string.startIndex..<string.index(string.startIndex, offsetBy: 1)] == "g" {
-            if let groupId = Int(String(string[string.index(string.startIndex, offsetBy: 2)..<string.endIndex])) {
-                return .group(groupId)
+        func libraryIdToString(_ libraryId: LibraryIdentifier) -> String {
+            switch libraryId {
+            case .custom:
+                return "myLibrary"
+            case .group(let groupId):
+                return "g:\(groupId)"
             }
         }
-
-        return nil
     }
 
     var restoredStateData: RestoredStateData? {
-        guard self.activityType == NSUserActivity.pdfId,
-              let userInfo,
-              let key = userInfo["key"] as? String,
-              let libraryString = userInfo["libraryId"] as? String,
-              let libraryId = stringToLibraryId(libraryString)
-        else { return nil }
-        var collectionId: CollectionIdentifier
-        if let collectionIdData = userInfo["collectionId"] as? Data,
-           let decodedCollectionId = try? JSONDecoder().decode(CollectionIdentifier.self, from: collectionIdData) {
-            collectionId = decodedCollectionId
-        } else {
-            collectionId = Defaults.shared.selectedCollectionId
+        guard let userInfo else { return nil }
+        var libraryId: LibraryIdentifier = Defaults.shared.selectedLibrary
+        var collectionId: CollectionIdentifier = Defaults.shared.selectedCollectionId
+        var openItems: [OpenItem] = []
+        var restoreMostRecentlyOpenedItem = false
+        if let libraryString = userInfo[Self.libraryIdKey] as? String, let _libraryId = stringToLibraryId(libraryString) {
+            libraryId = _libraryId
         }
-        return RestoredStateData(key: key, libraryId: libraryId, collectionId: collectionId)
+        let decoder = JSONDecoder()
+        if let collectionIdData = userInfo[Self.collectionIdKey] as? Data, let _collectionId = try? decoder.decode(CollectionIdentifier.self, from: collectionIdData) {
+            collectionId = _collectionId
+        }
+        if let openItemsDataArray = userInfo[Self.openItemsKey] as? [Data] {
+            openItems = openItemsDataArray.compactMap { try? decoder.decode(OpenItem.self, from: $0) }
+        }
+        if let _restoreMostRecentlyOpenedItem = userInfo[Self.restoreMostRecentlyOpenedItemKey] as? Bool {
+            restoreMostRecentlyOpenedItem = _restoreMostRecentlyOpenedItem
+        }
+        // TODO: Migrate old pdf activity ("key", "libraryId") to "openItems"?
+        return RestoredStateData(libraryId: libraryId, collectionId: collectionId, openItems: openItems, restoreMostRecentlyOpenedItem: restoreMostRecentlyOpenedItem)
+
+        func stringToLibraryId(_ string: String) -> LibraryIdentifier? {
+            guard !string.isEmpty else { return nil }
+
+            if string == "myLibrary" {
+                return .custom(.myLibrary)
+            }
+
+            if string[string.startIndex..<string.index(string.startIndex, offsetBy: 1)] == "g" {
+                if let groupId = Int(String(string[string.index(string.startIndex, offsetBy: 2)..<string.endIndex])) {
+                    return .group(groupId)
+                }
+            }
+
+            return nil
+        }
     }
 }

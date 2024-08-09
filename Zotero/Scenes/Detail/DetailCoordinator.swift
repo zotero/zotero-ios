@@ -33,6 +33,7 @@ protocol DetailCitationCoordinatorDelegate: DetailMissingStyleErrorDelegate {
 protocol DetailCopyBibliographyCoordinatorDelegate: DetailMissingStyleErrorDelegate { }
 
 protocol DetailItemsCoordinatorDelegate: AnyObject {
+    var displayTitle: String { get }
     func showCollectionsPicker(in library: Library, completed: @escaping (Set<String>) -> Void)
     func showItemDetail(for type: ItemDetailState.DetailType, libraryId: LibraryIdentifier, scrolledToKey childKey: String?, animated: Bool)
     func showAttachmentError(_ error: Error)
@@ -67,7 +68,7 @@ protocol DetailItemDetailCoordinatorDelegate: AnyObject {
 }
 
 protocol DetailNoteEditorCoordinatorDelegate: AnyObject {
-    func showNote(library: Library, kind: NoteEditorKind, text: String, tags: [Tag], title: NoteEditorState.TitleData?, saveCallback: @escaping NoteEditorSaveCallback)
+    func showNote(library: Library, kind: NoteEditorKind, text: String, tags: [Tag], parentTitleData: NoteEditorState.TitleData?, title: String?, saveCallback: @escaping NoteEditorSaveCallback)
 }
 
 protocol ItemsTagFilterDelegate: AnyObject {
@@ -201,7 +202,7 @@ final class DetailCoordinator: Coordinator {
             switch contentType {
             case "application/pdf":
                 DDLogInfo("DetailCoordinator: show PDF \(attachment.key)")
-                self.showPdf(at: url, key: attachment.key, parentKey: parentKey, libraryId: libraryId)
+                self.showPDF(at: url, key: attachment.key, parentKey: parentKey, libraryId: libraryId)
 
             case "text/html":
                 DDLogInfo("DetailCoordinator: show HTML \(attachment.key)")
@@ -288,7 +289,7 @@ final class DetailCoordinator: Coordinator {
     func createPDFController(key: String, parentKey: String?, libraryId: LibraryIdentifier, url: URL, page: Int? = nil, preselectedAnnotationKey: String? = nil) -> NavigationViewController {
         let navigationController = NavigationViewController()
         navigationController.modalPresentationStyle = .fullScreen
-        
+
         let coordinator = PDFCoordinator(
             key: key,
             parentKey: parentKey,
@@ -306,7 +307,7 @@ final class DetailCoordinator: Coordinator {
         return navigationController
     }
     
-    private func showPdf(at url: URL, key: String, parentKey: String?, libraryId: LibraryIdentifier) {
+    private func showPDF(at url: URL, key: String, parentKey: String?, libraryId: LibraryIdentifier) {
         let controller = createPDFController(key: key, parentKey: parentKey, libraryId: libraryId, url: url)
         navigationController?.present(controller, animated: true, completion: nil)
     }
@@ -364,6 +365,10 @@ final class DetailCoordinator: Coordinator {
 }
 
 extension DetailCoordinator: DetailItemsCoordinatorDelegate {
+    var displayTitle: String {
+            collection.name
+        }
+
     func showAddActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem) {
         let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         controller.popoverPresentationController?.barButtonItem = button
@@ -475,7 +480,8 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         kind: NoteEditorKind,
         text: String,
         tags: [Tag],
-        title: NoteEditorState.TitleData?,
+        parentTitleData: NoteEditorState.TitleData?,
+        title: String?,
         saveCallback: @escaping NoteEditorSaveCallback
     ) -> NavigationViewController {
         let navigationController = NavigationViewController()
@@ -487,6 +493,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
             kind: kind,
             text: text,
             tags: tags,
+            parentTitleData: parentTitleData,
             title: title,
             saveCallback: saveCallback,
             navigationController: navigationController,
@@ -955,18 +962,19 @@ extension DetailCoordinator: DetailNoteEditorCoordinatorDelegate {
         kind: NoteEditorKind,
         text: String = "",
         tags: [Tag] = [],
-        title: NoteEditorState.TitleData? = nil,
+        parentTitleData: NoteEditorState.TitleData? = nil,
+        title: String? = nil,
         saveCallback: @escaping NoteEditorSaveCallback = { _, _  in }
     ) {
         guard let navigationController else { return }
-        let controller = createNoteController(library: library, kind: kind, text: text, tags: tags, title: title, saveCallback: saveCallback)
         switch kind {
         case .itemCreation, .standaloneCreation:
             DDLogInfo("DetailCoordinator: show note creation")
-            
+
         case .edit(let key), .readOnly(let key):
             DDLogInfo("DetailCoordinator: show note \(key)")
         }
+        let controller = createNoteController(library: library, kind: kind, text: text, tags: tags, parentTitleData: parentTitleData, title: title, saveCallback: saveCallback)
         navigationController.present(controller, animated: true)
     }
 }
