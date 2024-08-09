@@ -20,7 +20,7 @@ protocol NoteEditorCoordinatorDelegate: AnyObject {
 }
 
 final class NoteEditorCoordinator: NSObject, Coordinator {
-    typealias SaveResult = Result<Note, Error>
+    typealias SaveResult = Result<(note: Note, isCreated: Bool), Error>
     typealias SaveCallback = (_ key: String?, _ result: SaveResult) -> Void
 
     weak var parentCoordinator: Coordinator?
@@ -31,7 +31,8 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
     private let kind: NoteEditorKind
     private let initialText: String
     private let initialTags: [Tag]
-    private let title: NoteEditorState.TitleData?
+    private let parentTitleData: NoteEditorState.TitleData?
+    private let title: String?
     private let library: Library
     private let saveCallback: NoteEditorSaveCallback
     private unowned let controllers: Controllers
@@ -41,7 +42,8 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
         kind: NoteEditorKind,
         text: String,
         tags: [Tag],
-        title: NoteEditorState.TitleData?,
+        parentTitleData: NoteEditorState.TitleData?,
+        title: String?,
         saveCallback: @escaping NoteEditorSaveCallback,
         navigationController: NavigationViewController,
         controllers: Controllers
@@ -49,6 +51,7 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
         self.kind = kind
         initialText = text
         initialTags = tags
+        self.parentTitleData = parentTitleData
         self.title = title
         self.library = library
         self.saveCallback = saveCallback
@@ -71,7 +74,14 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
     func start(animated: Bool) {
         guard let dbStorage = controllers.userControllers?.dbStorage else { return }
 
-        let state = NoteEditorState(kind: kind, library: library, title: title, text: initialText, tags: initialTags)
+        let state = NoteEditorState(
+            kind: kind,
+            library: library,
+            parentTitleData: parentTitleData,
+            text: initialText,
+            tags: initialTags,
+            title: title
+        )
         let handler = NoteEditorActionHandler(dbStorage: dbStorage, schemaController: controllers.schemaController, saveCallback: saveCallback)
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = NoteEditorViewController(viewModel: viewModel)

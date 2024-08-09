@@ -13,10 +13,10 @@ class NavigationViewController: UINavigationController {
     var statusBarVisible: Bool = true
 
     override var prefersStatusBarHidden: Bool {
-        return !self.statusBarVisible
+        return !statusBarVisible
     }
 
     deinit {
-        self.dismissHandler?()
+        dismissHandler?()
     }
 }
