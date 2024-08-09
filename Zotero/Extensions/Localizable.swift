@@ -266,6 +266,8 @@ internal enum L10n {
       internal static let underlineAnnotation = L10n.tr("Localizable", "accessibility.pdf.underline_annotation", fallback: "Underline annotation")
       /// Create underline annotation
       internal static let underlineAnnotationTool = L10n.tr("Localizable", "accessibility.pdf.underline_annotation_tool", fallback: "Create underline annotation")
+      /// Underlined text
+      internal static let underlinedText = L10n.tr("Localizable", "accessibility.pdf.underlined_text", fallback: "Underlined text")
       /// Undo
       internal static let undo = L10n.tr("Localizable", "accessibility.pdf.undo", fallback: "Undo")
     }
@@ -947,6 +949,8 @@ internal enum L10n {
     internal static let previousPage = L10n.tr("Localizable", "pdf.previous_page", fallback: "Previous Page")
     /// Previous Viewport
     internal static let previousViewport = L10n.tr("Localizable", "pdf.previous_viewport", fallback: "Previous Viewport")
+    /// Underline
+    internal static let underline = L10n.tr("Localizable", "pdf.underline", fallback: "Underline")
     internal enum AnnotationPopover {
       /// Delete Annotation
       internal static let delete = L10n.tr("Localizable", "pdf.annotation_popover.delete", fallback: "Delete Annotation")

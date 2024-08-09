@@ -137,7 +137,16 @@ final class AnnotationCell: UITableViewCell {
         let author = isAuthor ? nil : authorName
         var label = accessibilityLabel(for: type, pageLabel: pageLabel, author: author)
         if let text {
-            label += ", " + L10n.Accessibility.Pdf.highlightedText + ": " + text
+            switch type {
+            case .highlight:
+                label += ", " + L10n.Accessibility.Pdf.highlightedText + ": " + text
+
+            case .underline:
+                label += ", " + L10n.Accessibility.Pdf.underlinedText + ": " + text
+
+            case .note, .image, .ink, .freeText:
+                break
+            }
         }
         if !selected {
             if !comment.isEmpty {

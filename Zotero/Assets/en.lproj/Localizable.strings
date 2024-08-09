@@ -236,6 +236,7 @@
 "pdf.deleted_message" = "This document has been deleted. Do you want to restore it?";
 "pdf.line_width_point" = "%0.1f pt";
 "pdf.highlight" = "Highlight";
+"pdf.underline" = "Underline";
 "pdf.annotation_share.image.share" = "Share image";
 "pdf.annotation_share.image.medium" = "Medium";
 "pdf.annotation_share.image.large" = "Large";
@@ -562,6 +563,7 @@
 "accessibility.pdf.share_annotation_image" = "Share annotation image";
 "accessibility.pdf.eraser_annotation" = "Eraser";
 "accessibility.pdf.highlighted_text" = "Highlighted text";
+"accessibility.pdf.underlined_text" = "Underlined text";
 "accessibility.pdf.author" = "Author";
 "accessibility.pdf.comment" = "Comment";
 "accessibility.pdf.tags" = "Tags";
