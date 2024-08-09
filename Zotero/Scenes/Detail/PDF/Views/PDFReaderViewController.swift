@@ -250,8 +250,7 @@ class PDFReaderViewController: UIViewController {
             separator.translatesAutoresizingMaskIntoConstraints = false
             separator.backgroundColor = Asset.Colors.annotationSidebarBorderColor.color
 
-            // TODO: Add .underline and .freeText tools when those annotations are fully available
-            let annotationToolbar = AnnotationToolbarViewController(tools: [.highlight, .note, .image, .ink, .eraser], undoRedoEnabled: true, size: navigationBarHeight)
+            let annotationToolbar = AnnotationToolbarViewController(tools: [.highlight, .underline, .note, .freeText, .image, .ink, .eraser], undoRedoEnabled: true, size: navigationBarHeight)
             annotationToolbar.delegate = self
 
             add(controller: documentController)
