@@ -47,4 +47,5 @@ enum ItemsAction {
     case attachmentOpened(String)
     case updateKeys(items: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int])
     case emptyTrash
+    case updateOpenItems(items: [OpenItem])
 }

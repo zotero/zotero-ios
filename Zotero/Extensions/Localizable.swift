@@ -198,10 +198,22 @@ internal enum L10n {
       internal static let annotationHint = L10n.tr("Localizable", "accessibility.pdf.annotation_hint", fallback: "Double tap to select and edit")
       /// Author
       internal static let author = L10n.tr("Localizable", "accessibility.pdf.author", fallback: "Author")
+      /// Close all
+      internal static let closeAllOpenItems = L10n.tr("Localizable", "accessibility.pdf.close_all_open_items", fallback: "Close all")
+      /// Close other items
+      internal static let closeOtherOpenItems = L10n.tr("Localizable", "accessibility.pdf.close_other_open_items", fallback: "Close other items")
       /// Color picker
       internal static let colorPicker = L10n.tr("Localizable", "accessibility.pdf.color_picker", fallback: "Color picker")
       /// Comment
       internal static let comment = L10n.tr("Localizable", "accessibility.pdf.comment", fallback: "Comment")
+      /// Current Item
+      internal static let currentItem = L10n.tr("Localizable", "accessibility.pdf.current_item", fallback: "Current Item")
+      /// Close
+      internal static let currentItemClose = L10n.tr("Localizable", "accessibility.pdf.current_item_close", fallback: "Close")
+      /// Move to end
+      internal static let currentItemMoveToEnd = L10n.tr("Localizable", "accessibility.pdf.current_item_move_to end", fallback: "Move to end")
+      /// Move to start
+      internal static let currentItemMoveToStart = L10n.tr("Localizable", "accessibility.pdf.current_item_move_to_start", fallback: "Move to start")
       /// Edit annotation
       internal static let editAnnotation = L10n.tr("Localizable", "accessibility.pdf.edit_annotation", fallback: "Edit annotation")
       /// Eraser
@@ -230,6 +242,8 @@ internal enum L10n {
       internal static let noteAnnotation = L10n.tr("Localizable", "accessibility.pdf.note_annotation", fallback: "Note annotation")
       /// Create note annotation
       internal static let noteAnnotationTool = L10n.tr("Localizable", "accessibility.pdf.note_annotation_tool", fallback: "Create note annotation")
+      /// Open Items
+      internal static let openItems = L10n.tr("Localizable", "accessibility.pdf.open_items", fallback: "Open Items")
       /// Open text reader
       internal static let openReader = L10n.tr("Localizable", "accessibility.pdf.open_reader", fallback: "Open text reader")
       /// Redo
@@ -833,6 +847,8 @@ internal enum L10n {
     }
     /// Remove from Collection
     internal static let removeFromCollectionTitle = L10n.tr("Localizable", "items.remove_from_collection_title", fallback: "Remove from Collection")
+    /// Restore Open Items
+    internal static let restoreOpen = L10n.tr("Localizable", "items.restore_open", fallback: "Restore Open Items")
     /// Search Items
     internal static let searchTitle = L10n.tr("Localizable", "items.search_title", fallback: "Search Items")
     /// Select All

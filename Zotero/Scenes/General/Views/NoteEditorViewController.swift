@@ -13,6 +13,11 @@ import WebKit
 import RxSwift
 
 final class NoteEditorViewController: UIViewController {
+    private enum RightBarButtonItem: Int {
+        case done
+        case restoreOpenItems
+    }
+
     @IBOutlet private weak var webView: WKWebView!
     @IBOutlet private weak var tagsTitleLabel: UILabel!
     @IBOutlet private weak var tagsLabel: UILabel!
@@ -22,7 +27,8 @@ final class NoteEditorViewController: UIViewController {
     private let disposeBag: DisposeBag
 
     private var debounceDisposeBag: DisposeBag?
-    weak var coordinatorDelegate: NoteEditorCoordinatorDelegate?
+    private unowned let openItemsController: OpenItemsController
+    weak var coordinatorDelegate: (NoteEditorCoordinatorDelegate & OpenItemsPresenter)?
 
     private var htmlUrl: URL? {
         if viewModel.state.kind.readOnly {
@@ -32,26 +38,30 @@ final class NoteEditorViewController: UIViewController {
         }
     }
 
-    init(viewModel: ViewModel<NoteEditorActionHandler>) {
+    init(viewModel: ViewModel<NoteEditorActionHandler>, openItemsController: OpenItemsController) {
         self.viewModel = viewModel
+        self.openItemsController = openItemsController
         disposeBag = DisposeBag()
         super.init(nibName: "NoteEditorViewController", bundle: nil)
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        if let data = viewModel.state.title {
-            navigationItem.titleView = NoteEditorTitleView(type: data.type, title: data.title)
+        openItemsController.setOpenItemsUserActivity(from: self, libraryId: viewModel.state.library.identifier, title: viewModel.state.title)
+
+        if let parentTitleData = viewModel.state.parentTitleData {
+            navigationItem.titleView = NoteEditorTitleView(type: parentTitleData.type, title: parentTitleData.title)
         }
 
         view.backgroundColor = .systemBackground
-        setupNavbarItems()
+        setupNavbarItems(for: viewModel.state)
         setupWebView()
+        setupOpenItemsObserving()
         update(tags: viewModel.state.tags)
 
         viewModel.stateObservable
@@ -60,20 +70,68 @@ final class NoteEditorViewController: UIViewController {
             })
             .disposed(by: disposeBag)
 
-        func setupNavbarItems() {
-            let done = UIBarButtonItem(title: L10n.done, style: .done, target: nil, action: nil)
-            done.rx.tap
-                .subscribe(with: self, onNext: { `self`, _ in
-                    forceSaveIfNeeded()
-                    self.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
-                })
-                .disposed(by: disposeBag)
-            navigationItem.rightBarButtonItem = done
+        func setupNavbarItems(for state: NoteEditorState) {
+            defer {
+                updateRestoreOpenItemsButton(withCount: state.openItemsCount)
+            }
+            let currentItems = (self.navigationItem.rightBarButtonItems ?? []).compactMap({ RightBarButtonItem(rawValue: $0.tag) })
+            let expectedItems = rightBarButtonItemTypes(for: state)
+            guard currentItems != expectedItems else { return }
+            navigationItem.rightBarButtonItems = expectedItems.map({ createRightBarButtonItem($0) }).reversed()
 
-            func forceSaveIfNeeded() {
-                guard debounceDisposeBag != nil else { return }
-                debounceDisposeBag = nil
-                viewModel.process(action: .save)
+            func rightBarButtonItemTypes(for state: NoteEditorState) -> [RightBarButtonItem] {
+                var items: [RightBarButtonItem] = [.done]
+                if state.openItemsCount > 0 {
+                    items = [.restoreOpenItems] + items
+                }
+                return items
+            }
+
+            func createRightBarButtonItem(_ type: RightBarButtonItem) -> UIBarButtonItem {
+                let item: UIBarButtonItem
+                switch type {
+                case .done:
+                    let done = UIBarButtonItem(title: L10n.done, style: .done, target: nil, action: nil)
+                    done.rx.tap
+                        .subscribe(onNext: { [weak self] _ in
+                            guard let self else { return }
+                            forceSaveIfNeeded()
+                            navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
+                        })
+                        .disposed(by: disposeBag)
+                    item = done
+
+                case .restoreOpenItems:
+                    let openItems = UIBarButtonItem.openItemsBarButtonItem()
+                    if let sessionIdentifier {
+                        let deferredOpenItemsMenuElement = openItemsController.deferredOpenItemsMenuElement(
+                            for: sessionIdentifier,
+                            showMenuForCurrentItem: true,
+                            openItemPresenterProvider: { [weak self] in
+                                self?.coordinatorDelegate
+                            },
+                            completion: { [weak self] changedCurrentItem, openItemsChanged in
+                                guard let self else { return }
+                                if changedCurrentItem {
+                                    forceSaveIfNeeded()
+                                } else if openItemsChanged {
+                                    openItemsController.setOpenItemsUserActivity(from: self, libraryId: viewModel.state.library.identifier, title: viewModel.state.title)
+                                }
+                            }
+                        )
+                        let openItemsMenu = UIMenu(title: L10n.Accessibility.Pdf.openItems, options: [.displayInline], children: [deferredOpenItemsMenuElement])
+                        openItems.menu = UIMenu(children: [openItemsMenu])
+                    }
+                    item = openItems
+                }
+
+                item.tag = type.rawValue
+                return item
+            }
+
+            func updateRestoreOpenItemsButton(withCount count: Int) {
+                guard let item = navigationItem.rightBarButtonItems?.first(where: { button in RightBarButtonItem(rawValue: button.tag) == .restoreOpenItems }) else { return }
+                item.image = .openItemsImage(count: count)
             }
         }
 
@@ -86,12 +144,28 @@ final class NoteEditorViewController: UIViewController {
             webView.loadHTMLString(data, baseURL: url)
         }
 
+        func setupOpenItemsObserving() {
+            guard let sessionIdentifier else { return }
+            openItemsController.observable(for: sessionIdentifier)
+                .observe(on: MainScheduler.instance)
+                .subscribe(onNext: { [weak self] items in
+                    self?.viewModel.process(action: .updateOpenItems(items: items))
+                })
+                .disposed(by: disposeBag)
+        }
+
         func process(state: NoteEditorState) {
             if state.changes.contains(.tags) {
                 update(tags: state.tags)
             }
             if state.changes.contains(.save) {
                 debounceSave()
+            }
+            if state.changes.contains(.openItems) {
+                setupNavbarItems(for: state)
+            }
+            if state.changes.contains(.title) {
+                openItemsController.setOpenItemsUserActivity(from: self, libraryId: state.library.identifier, title: state.title)
             }
 
             func debounceSave() {
@@ -142,6 +216,12 @@ final class NoteEditorViewController: UIViewController {
         coordinatorDelegate?.showTagPicker(libraryId: viewModel.state.library.identifier, selected: selected, picked: { [weak self] tags in
             self?.viewModel.process(action: .setTags(tags))
         })
+    }
+
+    private func forceSaveIfNeeded() {
+        guard debounceDisposeBag != nil else { return }
+        debounceDisposeBag = nil
+        viewModel.process(action: .save)
     }
 }
 

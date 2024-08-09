@@ -360,7 +360,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             }
         }
         switch result {
-        case .success(let note):
+        case .success((let note, _)):
             update(viewModel: viewModel) { state in
                 if let oldIndex {
                     state.notes[oldIndex] = note

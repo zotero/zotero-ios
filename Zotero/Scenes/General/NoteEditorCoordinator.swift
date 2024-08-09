@@ -20,7 +20,7 @@ protocol NoteEditorCoordinatorDelegate: AnyObject {
 }
 
 final class NoteEditorCoordinator: NSObject, Coordinator {
-    typealias SaveResult = Result<Note, Error>
+    typealias SaveResult = Result<(note: Note, isCreated: Bool), Error>
     typealias SaveCallback = (_ key: String?, _ result: SaveResult) -> Void
 
     weak var parentCoordinator: Coordinator?
@@ -31,9 +31,11 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
     private let kind: NoteEditorKind
     private let initialText: String
     private let initialTags: [Tag]
-    private let title: NoteEditorState.TitleData?
+    private let parentTitleData: NoteEditorState.TitleData?
+    private let title: String?
     private let library: Library
     private let saveCallback: NoteEditorSaveCallback
+    private let sessionIdentifier: String
     private unowned let controllers: Controllers
 
     init(
@@ -41,18 +43,22 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
         kind: NoteEditorKind,
         text: String,
         tags: [Tag],
-        title: NoteEditorState.TitleData?,
+        parentTitleData: NoteEditorState.TitleData?,
+        title: String?,
         saveCallback: @escaping NoteEditorSaveCallback,
         navigationController: NavigationViewController,
+        sessionIdentifier: String,
         controllers: Controllers
     ) {
         self.kind = kind
         initialText = text
         initialTags = tags
+        self.parentTitleData = parentTitleData
         self.title = title
         self.library = library
         self.saveCallback = saveCallback
         self.navigationController = navigationController
+        self.sessionIdentifier = sessionIdentifier
         self.controllers = controllers
         childCoordinators = []
 
@@ -69,12 +75,20 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
     }
 
     func start(animated: Bool) {
-        guard let dbStorage = controllers.userControllers?.dbStorage else { return }
+        guard let dbStorage = controllers.userControllers?.dbStorage, let openItemsController = controllers.userControllers?.openItemsController else { return }
 
-        let state = NoteEditorState(kind: kind, library: library, title: title, text: initialText, tags: initialTags)
+        let state = NoteEditorState(
+            kind: kind,
+            library: library,
+            parentTitleData: parentTitleData,
+            text: initialText,
+            tags: initialTags,
+            openItemsCount: openItemsController.getItems(for: sessionIdentifier).count,
+            title: title
+        )
         let handler = NoteEditorActionHandler(dbStorage: dbStorage, schemaController: controllers.schemaController, saveCallback: saveCallback)
         let viewModel = ViewModel(initialState: state, handler: handler)
-        let controller = NoteEditorViewController(viewModel: viewModel)
+        let controller = NoteEditorViewController(viewModel: viewModel, openItemsController: openItemsController)
         controller.coordinatorDelegate = self
         navigationController?.setViewControllers([controller], animated: animated)
     }
@@ -95,5 +109,11 @@ extension NoteEditorCoordinator: NoteEditorCoordinatorDelegate {
     func show(url: URL) {
         guard let detailCoordinator = parentCoordinator as? DetailCoordinator else { return }
         detailCoordinator.show(url: url)
+    }
+}
+
+extension NoteEditorCoordinator: OpenItemsPresenter {
+    func showItem(with presentation: ItemPresentation?) {
+        (parentCoordinator as? OpenItemsPresenter)?.showItem(with: presentation)
     }
 }
