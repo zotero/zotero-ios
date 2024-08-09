@@ -16,14 +16,14 @@ typealias AnnotationEditDeleteAction = () -> Void
 
 final class AnnotationEditViewController: UIViewController {
     private enum Section {
-        case properties, pageLabel, actions, highlight, fontSize
+        case properties, pageLabel, actions, textContent, fontSize
 
         func cellId(index: Int) -> String {
             switch self {
             case .properties: return index == 0 ? "ColorPickerCell" : "LineWidthCell"
             case .actions: return "ActionCell"
             case .pageLabel: return "PageLabelCell"
-            case .highlight: return "HighlightCell"
+            case .textContent: return "TextContentCell"
             case .fontSize: return "FontSizeCell"
             }
         }
@@ -48,8 +48,8 @@ final class AnnotationEditViewController: UIViewController {
             if includeFontPicker {
                 sections.insert(.fontSize, at: 0)
             }
-            if viewModel.state.type == .highlight {
-                sections.insert(.highlight, at: 0)
+            if viewModel.state.type == .highlight || viewModel.state.type == .underline {
+                sections.insert(.textContent, at: 0)
             }
         }
 
@@ -90,7 +90,7 @@ final class AnnotationEditViewController: UIViewController {
 
     private func update(to state: AnnotationEditState) {
         if state.changes.contains(.color) {
-            self.reload(sections: [.properties, .highlight])
+            self.reload(sections: [.properties, .textContent])
         }
         if state.changes.contains(.pageLabel) {
             self.reload(sections: [.pageLabel])
@@ -112,7 +112,7 @@ final class AnnotationEditViewController: UIViewController {
     private func scrollToHighlightCursor() {
         let indexPath = IndexPath(row: 0, section: 0)
 
-        guard let cell = self.tableView.cellForRow(at: indexPath) as? HighlightEditCell, let cellCaretRect = cell.caretRect else { return }
+        guard let cell = self.tableView.cellForRow(at: indexPath) as? TextContentEditCell, let cellCaretRect = cell.caretRect else { return }
 
         let rowRect = self.tableView.rectForRow(at: indexPath)
         let caretRect = CGRect(x: (rowRect.minX + cellCaretRect.minX), y: (rowRect.minY + cellCaretRect.minY) + 10, width: cellCaretRect.width, height: cellCaretRect.height)
@@ -123,10 +123,10 @@ final class AnnotationEditViewController: UIViewController {
     }
 
     private func updatePreferredContentSize() {
-        let sectionCount = self.sections.count - (self.sections.contains(.highlight) ? 1 : 0)
+        let sectionCount = self.sections.count - (self.sections.contains(.textContent) ? 1 : 0)
         var height: CGFloat = (CGFloat(sectionCount) * 80) + 36 // 80 for 36 spacer and 44 cell height
 
-        if self.viewModel.state.type == .highlight {
+        if sections.contains(.textContent) {
             let width = AnnotationPopoverLayout.width - ((AnnotationPopoverLayout.annotationLayout.horizontalInset * 2) +
                                                           AnnotationPopoverLayout.annotationLayout.highlightContentLeadingOffset +
                                                           AnnotationPopoverLayout.annotationLayout.highlightLineWidth)
@@ -188,7 +188,7 @@ final class AnnotationEditViewController: UIViewController {
         self.tableView.dataSource = self
         self.tableView.register(ColorPickerCell.self, forCellReuseIdentifier: Section.properties.cellId(index: 0))
         self.tableView.register(LineWidthCell.self, forCellReuseIdentifier: Section.properties.cellId(index: 1))
-        self.tableView.register(UINib(nibName: "HighlightEditCell", bundle: nil), forCellReuseIdentifier: Section.highlight.cellId(index: 0))
+        self.tableView.register(UINib(nibName: "TextContentEditCell", bundle: nil), forCellReuseIdentifier: Section.textContent.cellId(index: 0))
         self.tableView.register(FontSizeCell.self, forCellReuseIdentifier: Section.fontSize.cellId(index: 0))
         self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: Section.actions.cellId(index: 0))
         self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: Section.pageLabel.cellId(index: 0))
@@ -225,8 +225,8 @@ extension AnnotationEditViewController: UITableViewDataSource {
                 cell.valueObservable.subscribe(onNext: { value in self.viewModel.process(action: .setLineWidth(CGFloat(value))) }).disposed(by: cell.disposeBag)
             }
 
-        case .highlight:
-            if let cell = cell as? HighlightEditCell {
+        case .textContent:
+            if let cell = cell as? TextContentEditCell {
                 cell.setup(with: self.viewModel.state.highlightText, color: self.viewModel.state.color)
                 cell.textObservable
                     .subscribe(onNext: { [weak self] text, needsHeightReload in
@@ -270,7 +270,7 @@ extension AnnotationEditViewController: UITableViewDelegate {
         tableView.deselectRow(at: indexPath, animated: true)
 
         switch self.sections[indexPath.section] {
-        case .properties, .highlight: break
+        case .properties, .textContent: break
 
         case .actions:
             self.deleteAction()

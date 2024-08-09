@@ -1,5 +1,5 @@
 //
-//  HighlightEditCell.swift
+//  TextContentEditCell.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 04.12.2020.
@@ -10,7 +10,7 @@ import UIKit
 
 import RxSwift
 
-final class HighlightEditCell: UITableViewCell {
+final class TextContentEditCell: UITableViewCell {
     @IBOutlet private weak var lineView: UIView!
     @IBOutlet private weak var textView: UITextView!
 
@@ -49,7 +49,7 @@ final class HighlightEditCell: UITableViewCell {
     }
 }
 
-extension HighlightEditCell: UITextViewDelegate {
+extension TextContentEditCell: UITextViewDelegate {
     func textViewDidChange(_ textView: UITextView) {
         let height = textView.contentSize.height
         textView.sizeToFit()
