@@ -13,8 +13,8 @@ import RxSwift
 final class TextContentEditCell: RxTableViewCell {
     let attributedTextAndHeightReloadNeededObservable: PublishSubject<(NSAttributedString, Bool)>
 
-    private var lineView: UIView?
-    private var textView: FormattedTextView?
+    private weak var lineView: UIView?
+    private weak var textView: FormattedTextView?
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         attributedTextAndHeightReloadNeededObservable = PublishSubject()

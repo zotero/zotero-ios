@@ -10,10 +10,10 @@ import UIKit
 import RxSwift
 
 final class ItemDetailTitleContentView: UIView {
-    private var textView: FormattedTextView!
-    private var topConstraint: NSLayoutConstraint!
-    private var bottomConstraint: NSLayoutConstraint!
-    private var separatorHeight: NSLayoutConstraint!
+    private weak var textView: FormattedTextView!
+    private weak var topConstraint: NSLayoutConstraint!
+    private weak var bottomConstraint: NSLayoutConstraint!
+    private weak var separatorHeight: NSLayoutConstraint!
 
     var attributedTextObservable: Observable<NSAttributedString> {
         textView.attributedTextObservable
