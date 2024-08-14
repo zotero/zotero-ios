@@ -50,13 +50,15 @@ final class HtmlEpubCoordinator: Coordinator {
     weak var navigationController: UINavigationController?
 
     private let key: String
+    private let parentKey: String?
     private let libraryId: LibraryIdentifier
     private let url: URL
     private unowned let controllers: Controllers
     private let disposeBag: DisposeBag
 
-    init(key: String, libraryId: LibraryIdentifier, url: URL, navigationController: NavigationViewController, controllers: Controllers) {
+    init(key: String, parentKey: String?, libraryId: LibraryIdentifier, url: URL, navigationController: NavigationViewController, controllers: Controllers) {
         self.key = key
+        self.parentKey = parentKey
         self.libraryId = libraryId
         self.url = url
         self.navigationController = navigationController
@@ -90,7 +92,16 @@ final class HtmlEpubCoordinator: Coordinator {
             fileStorage: controllers.fileStorage,
             idleTimerController: controllers.idleTimerController
         )
-        let state = HtmlEpubReaderState(url: url, key: key, settings: Defaults.shared.htmlEpubSettings, libraryId: libraryId, userId: userId, username: username)
+        let state = HtmlEpubReaderState(
+            url: url,
+            key: key,
+            parentKey: parentKey,
+            title: try? dbStorage.perform(request: ReadFilenameDbRequest(libraryId: libraryId, key: key), on: .main),
+            settings: Defaults.shared.htmlEpubSettings,
+            libraryId: libraryId,
+            userId: userId,
+            username: username
+        )
         let controller = HtmlEpubReaderViewController(
             viewModel: ViewModel(initialState: state, handler: handler),
             compactSize: UIDevice.current.isCompactWidth(size: parentNavigationController.view.frame.size)
