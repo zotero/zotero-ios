@@ -209,7 +209,7 @@ class PDFReaderViewController: UIViewController {
         super.viewDidLoad()
 
         let openItem = OpenItem(kind: .pdf(libraryId: viewModel.state.library.identifier, key: viewModel.state.key), userIndex: 0)
-        set(userActivity: .pdfActivity(with: [openItem], libraryId: viewModel.state.library.identifier, collectionId: Defaults.shared.selectedCollectionId)
+        set(userActivity: .contentActivity(with: [openItem], libraryId: viewModel.state.library.identifier, collectionId: Defaults.shared.selectedCollectionId)
             .set(title: viewModel.state.title)
         )
         view.backgroundColor = .systemGray6

@@ -20,7 +20,8 @@ struct RestoredStateData {
 }
 
 extension NSUserActivity {
-    public static let pdfId = "org.zotero.PDFActivity"
+    public static let deprecatedPdfId = "org.zotero.PDFActivity"
+    public static let contentContainerId = "org.zotero.ContentContainerActivity"
     public static let mainId = "org.zotero.MainActivity"
 
     private static let libraryIdKey = "libraryId"
@@ -34,8 +35,8 @@ extension NSUserActivity {
             .addUserInfoEntries(restoreMostRecentlyOpened: false)
     }
 
-    static func pdfActivity(with openItems: [OpenItem], libraryId: LibraryIdentifier, collectionId: CollectionIdentifier) -> NSUserActivity {
-        return NSUserActivity(activityType: self.pdfId)
+    static func contentActivity(with openItems: [OpenItem], libraryId: LibraryIdentifier, collectionId: CollectionIdentifier) -> NSUserActivity {
+        return NSUserActivity(activityType: self.contentContainerId)
             .addUserInfoEntries(openItems: openItems)
             .addUserInfoEntries(libraryId: libraryId, collectionId: collectionId, restoreMostRecentlyOpened: true)
     }
@@ -80,25 +81,17 @@ extension NSUserActivity {
 
     var restoredStateData: RestoredStateData? {
         guard let userInfo else { return nil }
-        var libraryId: LibraryIdentifier = Defaults.shared.selectedLibrary
-        var collectionId: CollectionIdentifier = Defaults.shared.selectedCollectionId
-        var openItems: [OpenItem] = []
-        var restoreMostRecentlyOpenedItem = false
-        if let libraryString = userInfo[Self.libraryIdKey] as? String, let _libraryId = stringToLibraryId(libraryString) {
-            libraryId = _libraryId
+
+        switch activityType {
+        case Self.contentContainerId:
+            return restoreContentContainer()
+
+        case Self.deprecatedPdfId:
+            return restoreDeprecatedPdf()
+
+        default:
+            return nil
         }
-        let decoder = JSONDecoder()
-        if let collectionIdData = userInfo[Self.collectionIdKey] as? Data, let _collectionId = try? decoder.decode(CollectionIdentifier.self, from: collectionIdData) {
-            collectionId = _collectionId
-        }
-        if let openItemsDataArray = userInfo[Self.openItemsKey] as? [Data] {
-            openItems = openItemsDataArray.compactMap { try? decoder.decode(OpenItem.self, from: $0) }
-        }
-        if let _restoreMostRecentlyOpenedItem = userInfo[Self.restoreMostRecentlyOpenedItemKey] as? Bool {
-            restoreMostRecentlyOpenedItem = _restoreMostRecentlyOpenedItem
-        }
-        // TODO: Migrate old pdf activity ("key", "libraryId") to "openItems"?
-        return RestoredStateData(libraryId: libraryId, collectionId: collectionId, openItems: openItems, restoreMostRecentlyOpenedItem: restoreMostRecentlyOpenedItem)
 
         func stringToLibraryId(_ string: String) -> LibraryIdentifier? {
             guard !string.isEmpty else { return nil }
@@ -114,6 +107,41 @@ extension NSUserActivity {
             }
 
             return nil
+        }
+
+        func restoreContentContainer() -> RestoredStateData {
+            var libraryId: LibraryIdentifier = Defaults.shared.selectedLibrary
+            var collectionId: CollectionIdentifier = Defaults.shared.selectedCollectionId
+            var openItems: [OpenItem] = []
+            var restoreMostRecentlyOpenedItem = false
+            if let libraryString = userInfo[Self.libraryIdKey] as? String, let _libraryId = stringToLibraryId(libraryString) {
+                libraryId = _libraryId
+            }
+            let decoder = JSONDecoder()
+            if let collectionIdData = userInfo[Self.collectionIdKey] as? Data, let _collectionId = try? decoder.decode(CollectionIdentifier.self, from: collectionIdData) {
+                collectionId = _collectionId
+            }
+            if let openItemsDataArray = userInfo[Self.openItemsKey] as? [Data] {
+                openItems = openItemsDataArray.compactMap { try? decoder.decode(OpenItem.self, from: $0) }
+            }
+            if let _restoreMostRecentlyOpenedItem = userInfo[Self.restoreMostRecentlyOpenedItemKey] as? Bool {
+                restoreMostRecentlyOpenedItem = _restoreMostRecentlyOpenedItem
+            }
+            return RestoredStateData(libraryId: libraryId, collectionId: collectionId, openItems: openItems, restoreMostRecentlyOpenedItem: restoreMostRecentlyOpenedItem)
+        }
+
+        func restoreDeprecatedPdf() -> RestoredStateData? {
+            guard let key = userInfo["key"] as? String else { return nil }
+            var libraryId: LibraryIdentifier = Defaults.shared.selectedLibrary
+            var collectionId: CollectionIdentifier = Defaults.shared.selectedCollectionId
+            if let libraryString = userInfo["libraryId"] as? String, let _libraryId = stringToLibraryId(libraryString) {
+                libraryId = _libraryId
+            }
+            if let collectionIdData = userInfo["collectionId"] as? Data, let decodedCollectionId = try? JSONDecoder().decode(CollectionIdentifier.self, from: collectionIdData) {
+                collectionId = decodedCollectionId
+            }
+            let item = OpenItem(kind: .pdf(libraryId: libraryId, key: key), userIndex: 0)
+            return RestoredStateData(libraryId: libraryId, collectionId: collectionId, openItems: [item], restoreMostRecentlyOpenedItem: true)
         }
     }
 }
