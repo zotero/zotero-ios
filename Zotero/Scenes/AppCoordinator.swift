@@ -238,6 +238,9 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
                                 case .pdf(let libraryId, let key):
                                     presentation = try loadPDFPresentation(key: key, libraryId: libraryId, coordinator: coordinator)
 
+                                case .html(let libraryId, let key), .epub(let libraryId, let key):
+                                    presentation = try loadEpubHtmlPresentation(key: key, libraryId: libraryId, coordinator: coordinator)
+
                                 case .note(let libraryId, let key):
                                     presentation = try loadNotePresentation(key: key, libraryId: libraryId, coordinator: coordinator)
                                 }
@@ -278,6 +281,30 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
                             let parentTitleData: NoteEditorState.TitleData? = rItem.parent.flatMap { .init(type: $0.rawType, title: $0.displayTitle) }
                             guard let note else { return nil }
                             return .note(library: library, key: note.key, text: note.text, tags: note.tags, parentTitleData: parentTitleData, title: note.title)
+                        }
+
+                        func loadEpubHtmlPresentation(key: String, libraryId: LibraryIdentifier, coordinator: DbCoordinator) throws -> ItemPresentation? {
+                            let library: Library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
+                            let rItem = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
+                            let parentKey = rItem.parent?.key
+                            guard let attachment = AttachmentCreator.attachment(for: rItem, fileStorage: controllers.fileStorage, urlDetector: nil) else { return nil }
+                            var url: URL?
+                            switch attachment.type {
+                            case .file(let filename, let contentType, let location, _, _):
+                                switch location {
+                                case .local, .localAndChangedRemotely:
+                                    let file = Files.attachmentFile(in: libraryId, key: key, filename: filename, contentType: contentType)
+                                    url = file.createUrl()
+
+                                case .remote, .remoteMissing:
+                                    break
+                                }
+
+                            case .url:
+                                break
+                            }
+                            guard let url else { return nil }
+                            return .htmlEpub(library: library, key: key, parentKey: parentKey, url: url)
                         }
                     }
                 }
@@ -378,21 +405,26 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
             animated: Bool,
             completion: (() -> Void)? = nil
         ) {
-            guard let file = attachment.file, file.mimeType == "application/pdf" else {
+            switch attachment.type {
+            case .file(let filename, let contentType, _, _, _) where contentType == "application/pdf":
+                // TODO: - call completion?
+                guard let presenter = window.rootViewController else { return }
+                let file = Files.attachmentFile(in: libraryId, key: attachment.key, filename: filename, contentType: contentType)
+                let url = file.createUrl()
+                show(
+                    viewControllerProvider: {
+                        detailCoordinator.createPDFController(key: attachment.key, parentKey: parentKey, libraryId: libraryId, url: url, page: page, preselectedAnnotationKey: annotation)
+                    },
+                    by: presenter,
+                    in: window,
+                    animated: animated,
+                    completion: completion
+                )
+
+            default:
                 completion?()
                 return
             }
-            // TODO: - call completion?
-            guard let presenter = window.rootViewController else { return }
-            show(
-                viewControllerProvider: {
-                    detailCoordinator.createPDFController(key: attachment.key, parentKey: parentKey, libraryId: libraryId, url: file.createUrl(), page: page, preselectedAnnotationKey: annotation)
-                },
-                by: presenter,
-                in: window,
-                animated: animated,
-                completion: completion
-            )
         }
     }
 
@@ -880,6 +912,9 @@ extension AppCoordinator: OpenItemsPresenter {
                     switch presentation {
                     case .pdf(let library, let key, let parentKey, let url):
                         return coordinator.createPDFController(key: key, parentKey: parentKey, libraryId: library.identifier, url: url)
+
+                    case .htmlEpub(let library, let key, let parentKey, let url):
+                        return coordinator.createHtmlEpubController(key: key, parentKey: parentKey, libraryId: library.identifier, url: url)
 
                     case .note(let library, let key, let text, let tags, let parentTitleData, let title):
                         let kind: NoteEditorKind = library.metadataEditable ? .edit(key: key) : .readOnly(key: key)
