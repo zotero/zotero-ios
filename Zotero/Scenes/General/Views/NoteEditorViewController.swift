@@ -48,7 +48,7 @@ final class NoteEditorViewController: UIViewController {
         switch viewModel.state.kind {
         case .edit(let key), .readOnly(let key):
             let openItem = OpenItem(kind: .note(libraryId: viewModel.state.library.identifier, key: key), userIndex: 0)
-            set(userActivity: .pdfActivity(with: [openItem], libraryId: viewModel.state.library.identifier, collectionId: Defaults.shared.selectedCollectionId)
+            set(userActivity: .contentActivity(with: [openItem], libraryId: viewModel.state.library.identifier, collectionId: Defaults.shared.selectedCollectionId)
                 .set(title: viewModel.state.title)
             )
 
@@ -108,7 +108,7 @@ final class NoteEditorViewController: UIViewController {
                 switch state.kind {
                 case .edit(let key), .readOnly(let key):
                     let openItem = OpenItem(kind: .note(libraryId: state.library.identifier, key: key), userIndex: 0)
-                    set(userActivity: .pdfActivity(with: [openItem], libraryId: state.library.identifier, collectionId: Defaults.shared.selectedCollectionId)
+                    set(userActivity: .contentActivity(with: [openItem], libraryId: state.library.identifier, collectionId: Defaults.shared.selectedCollectionId)
                         .set(title: state.title)
                     )
 
