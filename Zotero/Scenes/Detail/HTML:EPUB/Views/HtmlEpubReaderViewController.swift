@@ -100,6 +100,7 @@ class HtmlEpubReaderViewController: UIViewController, ParentWithSidebarControlle
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        setActivity()
         view.backgroundColor = .systemBackground
         observeViewModel()
         setupNavigationBar()
@@ -219,6 +220,22 @@ class HtmlEpubReaderViewController: UIViewController, ParentWithSidebarControlle
                 addChild(controller)
                 controller.didMove(toParent: self)
             }
+        }
+
+        func setActivity() {
+            let kind: OpenItem.Kind
+            switch viewModel.state.documentFile.ext.lowercased() {
+            case "epub":
+                kind = .epub(libraryId: viewModel.state.library.identifier, key: viewModel.state.key)
+
+            case "html", "htm":
+                kind = .html(libraryId: viewModel.state.library.identifier, key: viewModel.state.key)
+
+            default:
+                return
+            }
+            let openItem = OpenItem(kind: kind, userIndex: 0)
+            set(userActivity: .contentActivity(with: [openItem], libraryId: viewModel.state.library.identifier, collectionId: Defaults.shared.selectedCollectionId).set(title: viewModel.state.title))
         }
     }
 

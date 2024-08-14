@@ -59,7 +59,9 @@ struct HtmlEpubReaderState: ViewModelState {
     let readerFile: File
     let documentFile: File
     let key: String
+    let parentKey: String?
     let library: Library
+    let title: String?
     let userId: Int
     let username: String
     let commentFont: UIFont
@@ -95,13 +97,15 @@ struct HtmlEpubReaderState: ViewModelState {
     var notificationToken: NotificationToken?
     var deletionEnabled: Bool
 
-    init(url: URL, key: String, settings: HtmlEpubSettings, libraryId: LibraryIdentifier, userId: Int, username: String) {
+    init(url: URL, key: String, parentKey: String?, title: String?, settings: HtmlEpubSettings, libraryId: LibraryIdentifier, userId: Int, username: String) {
         let originalFile = Files.file(from: url)
         let temporaryDirectory = Files.tmpReaderDirectory
         self.originalFile = originalFile
         readerFile = temporaryDirectory.copy(withName: "view", ext: "html")
         documentFile = temporaryDirectory.appending(relativeComponent: "content").copy(withName: originalFile.name, ext: originalFile.ext)
         self.key = key
+        self.parentKey = parentKey
+        self.title = title
         self.settings = settings
         self.userId = userId
         self.username = username
