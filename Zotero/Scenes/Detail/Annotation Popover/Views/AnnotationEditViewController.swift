@@ -10,7 +10,7 @@ import UIKit
 
 import RxSwift
 
-typealias AnnotationEditSaveAction = (_ key: String, _ lineWidth: CGFloat, _ fontSize: UInt, _ pageLabel: String, _ updateSubsequentLabels: Bool, _ highlightText: NSAttributedString) -> Void
+typealias AnnotationEditSaveAction = (_ data: AnnotationEditState.Data, _ updateSubsequentLabels: Bool) -> Void
 typealias AnnotationEditDeleteAction = () -> Void
 
 final class AnnotationEditViewController: UIViewController {
@@ -174,7 +174,7 @@ final class AnnotationEditViewController: UIViewController {
                .subscribe(onNext: { [weak self] in
                    guard let self else { return }
                    let state = viewModel.state
-                   saveAction(state.color, state.lineWidth, state.fontSize, state.pageLabel, state.updateSubsequentLabels, state.highlightText)
+                   saveAction(state.data, state.updateSubsequentLabels)
                    self.cancel()
                })
                .disposed(by: self.disposeBag)

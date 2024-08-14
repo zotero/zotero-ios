@@ -109,25 +109,24 @@ final class PDFAnnotationsViewController: UIViewController {
         case .options(let sender):
             guard let sender else { return }
             let key = annotation.readerKey
-            let highlightFont = viewModel.state.textEditorFont
             coordinatorDelegate?.showCellOptions(
                 for: annotation,
-                highlightFont: highlightFont,
+                highlightFont: viewModel.state.textEditorFont,
                 userId: viewModel.state.userId,
                 library: viewModel.state.library,
                 sender: sender,
                 userInterfaceStyle: viewModel.state.interfaceStyle,
-                saveAction: { [weak viewModel] color, lineWidth, fontSize, pageLabel, updateSubsequentLabels, highlightText in
+                saveAction: { [weak viewModel] data, updateSubsequentLabels in
                     guard let viewModel else { return }
                     viewModel.process(action: .updateAnnotationProperties(
                         key: key.key,
-                        color: color,
-                        lineWidth: lineWidth,
-                        fontSize: fontSize,
-                        pageLabel: pageLabel,
+                        color: data.color,
+                        lineWidth: data.lineWidth,
+                        fontSize: data.fontSize ?? 0,
+                        pageLabel: data.pageLabel,
                         updateSubsequentLabels: updateSubsequentLabels,
-                        highlightText: highlightText,
-                        higlightFont: highlightFont
+                        highlightText: data.highlightText,
+                        higlightFont: data.highlightFont
                     ))
                 },
                 deleteAction: { [weak self] in

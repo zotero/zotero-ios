@@ -41,6 +41,10 @@ struct AnnotationEditState: ViewModelState {
     var updateSubsequentLabels: Bool
     var changes: Changes
 
+    var data: Data {
+        .init(type: type, isEditable: isEditable, color: color, lineWidth: lineWidth, pageLabel: pageLabel, highlightText: highlightText, highlightFont: highlightFont, fontSize: fontSize)
+    }
+
     init(data: Data) {
         type = data.type
         isEditable = data.isEditable
