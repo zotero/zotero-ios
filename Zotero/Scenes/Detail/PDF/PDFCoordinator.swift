@@ -131,7 +131,7 @@ final class PDFCoordinator: Coordinator {
             url: self.url,
             key: self.key,
             parentKey: self.parentKey,
-            displayTitle: try? controllers.userControllers?.dbStorage.perform(request: ReadFilenameDbRequest(libraryId: libraryId, key: key), on: .main),
+            title: try? controllers.userControllers?.dbStorage.perform(request: ReadFilenameDbRequest(libraryId: libraryId, key: key), on: .main),
             libraryId: self.libraryId,
             initialPage: self.page,
             preselectedAnnotationKey: self.preselectedAnnotationKey,

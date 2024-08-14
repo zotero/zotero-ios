@@ -67,7 +67,7 @@ struct PDFReaderState: ViewModelState {
     let key: String
     let parentKey: String?
     let document: PSPDFKit.Document
-    let displayTitle: String?
+    let title: String?
     let previewCache: NSCache<NSString, UIImage>
     let textFont: UIFont
     let commentFont: UIFont
@@ -130,7 +130,7 @@ struct PDFReaderState: ViewModelState {
         url: URL,
         key: String,
         parentKey: String?,
-        displayTitle: String?,
+        title: String?,
         libraryId: LibraryIdentifier,
         initialPage: Int?,
         preselectedAnnotationKey: String?,
@@ -144,7 +144,7 @@ struct PDFReaderState: ViewModelState {
         self.parentKey = parentKey
         self.document = Document(url: url)
         document.overrideClass(PSPDFKit.AnnotationManager.self, with: AnnotationManager.self)
-        self.displayTitle = displayTitle
+        self.title = title
         self.previewCache = NSCache()
         self.textFont = PDFReaderLayout.annotationLayout.font
         self.commentFont = PDFReaderLayout.annotationLayout.font

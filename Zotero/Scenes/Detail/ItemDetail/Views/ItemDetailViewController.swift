@@ -125,7 +125,8 @@ final class ItemDetailViewController: UIViewController {
             var kind: NoteEditorKind = .itemCreation(parentKey: viewModel.state.key)
             var text: String = ""
             var tags: [Tag] = []
-            let title = NoteEditorState.TitleData(type: viewModel.state.data.type, title: viewModel.state.data.title)
+            var title: String?
+            let parentTitleData = NoteEditorState.TitleData(type: viewModel.state.data.type, title: viewModel.state.data.title)
             if let note {
                 if library.metadataEditable {
                     kind = .edit(key: note.key)
@@ -134,8 +135,9 @@ final class ItemDetailViewController: UIViewController {
                 }
                 text = note.text
                 tags = note.tags
+                title = note.title
             }
-            coordinatorDelegate?.showNote(library: library, kind: kind, text: text, tags: tags, title: title) { [weak self] key, result in
+            coordinatorDelegate?.showNote(library: library, kind: kind, text: text, tags: tags, parentTitleData: parentTitleData, title: title) { [weak self] key, result in
                 self?.viewModel.process(action: .processNoteSaveResult(key: key, result: result))
             }
 

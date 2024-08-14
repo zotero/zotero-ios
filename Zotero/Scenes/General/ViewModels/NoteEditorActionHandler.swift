@@ -93,8 +93,10 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                     case .success:
                         update(viewModel: viewModel) { state in
                             state.kind = .edit(key: note.key)
+                            state.changes = [.kind]
                         }
-                        saveCallback(note.key, .success(note))
+                        saveCallback(note.key, .success((note: note, isCreated: true)))
+                        updateTitleIfNeeded(title: note.title)
 
                     case .failure(let error):
                         DDLogError("NoteEditorActionHandler: can't create item note: \(error)")
@@ -111,8 +113,17 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                         DDLogError("NoteEditorActionHandler: can't update existing note: \(error)")
                         saveCallback(key, .failure(error))
                     } else {
-                        saveCallback(key, .success(note))
+                        saveCallback(key, .success((note: note, isCreated: false)))
+                        updateTitleIfNeeded(title: note.title)
                     }
+                }
+            }
+
+            func updateTitleIfNeeded(title: String) {
+                guard title != viewModel.state.title else { return }
+                update(viewModel: viewModel) { state in
+                    state.title = title
+                    state.changes = [.title]
                 }
             }
         }
