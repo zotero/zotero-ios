@@ -38,7 +38,7 @@ final class FormattedTextView: TextKit1TextView {
         func setupObservers() {
             NotificationCenter.default
                 .rx
-                .notification(Self.textDidBeginEditingNotification)
+                .notification(Self.textDidBeginEditingNotification, object: self)
                 .observe(on: MainScheduler.instance)
                 .subscribe(onNext: { [weak self] _ in
                     guard let self else { return }
@@ -49,7 +49,7 @@ final class FormattedTextView: TextKit1TextView {
 
             NotificationCenter.default
                 .rx
-                .notification(Self.textDidChangeNotification)
+                .notification(Self.textDidChangeNotification, object: self)
                 .observe(on: MainScheduler.instance)
                 .subscribe(onNext: { [weak self] _ in
                     guard let self else { return }
@@ -59,7 +59,7 @@ final class FormattedTextView: TextKit1TextView {
 
             NotificationCenter.default
                 .rx
-                .notification(Self.textDidEndEditingNotification)
+                .notification(Self.textDidEndEditingNotification, object: self)
                 .observe(on: MainScheduler.instance)
                 .subscribe(onNext: { _ in
                     UIMenuController.shared.menuItems = nil

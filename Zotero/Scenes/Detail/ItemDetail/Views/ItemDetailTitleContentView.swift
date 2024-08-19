@@ -15,18 +15,19 @@ final class ItemDetailTitleContentView: UIView {
     private weak var bottomConstraint: NSLayoutConstraint!
     private weak var separatorHeight: NSLayoutConstraint!
 
-    var attributedTextObservable: Observable<NSAttributedString> {
-        textView.attributedTextObservable
-    }
+    var attributedTextChanged: ((NSAttributedString) -> Void)?
+    private let disposeBag: DisposeBag
 
     private var delegate: PlaceholderTextViewDelegate!
 
     override init(frame: CGRect) {
+        disposeBag = DisposeBag()
         super.init(frame: frame)
         setup()
         backgroundColor = .systemBackground
         isAccessibilityElement = false
         setupBottomConstraint()
+        setupObservers()
 
         func setup() {
             let font: UIFont = .preferredFont(for: .headline, weight: .regular)
@@ -60,6 +61,13 @@ final class ItemDetailTitleContentView: UIView {
                 trailingAnchor.constraint(equalTo: separatorView.trailingAnchor),
                 separatorHeight
             ])
+        }
+
+        func setupObservers() {
+            textView.attributedTextObservable.subscribe { [weak self] text in
+                self?.attributedTextChanged?(text)
+            }
+            .disposed(by: disposeBag)
         }
     }
 

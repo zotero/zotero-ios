@@ -14,8 +14,7 @@ final class ItemDetailTitleCell: UICollectionViewListCell {
         let title: NSAttributedString
         let isEditing: Bool
         let layoutMargins: UIEdgeInsets
-        let attributedTextObservable: PublishSubject<NSAttributedString>
-        let disposeBag: CompositeDisposable
+        let attributedTextChanged: ((NSAttributedString) -> Void)?
 
         func makeContentView() -> UIView & UIContentView {
             return ContentView(configuration: self)
@@ -53,21 +52,9 @@ final class ItemDetailTitleCell: UICollectionViewListCell {
         }
 
         private func apply(configuration: ContentConfiguration) {
-            let disposable = contentView.attributedTextObservable.subscribe { [weak self] title in
-                let newConfiguration = ContentConfiguration(
-                    title: title,
-                    isEditing: configuration.isEditing,
-                    layoutMargins: configuration.layoutMargins,
-                    attributedTextObservable: configuration.attributedTextObservable,
-                    disposeBag: configuration.disposeBag
-                )
-                self?.configuration = newConfiguration
-                configuration.attributedTextObservable.onNext(title)
-            }
-            _ = configuration.disposeBag.insert(disposable)
-
-            self.contentView.layoutMargins = configuration.layoutMargins
-            self.contentView.setup(with: configuration.title, isEditing: configuration.isEditing)
+            contentView.attributedTextChanged = configuration.attributedTextChanged
+            contentView.layoutMargins = configuration.layoutMargins
+            contentView.setup(with: configuration.title, isEditing: configuration.isEditing)
         }
     }
 }

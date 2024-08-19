@@ -90,4 +90,10 @@ extension PlaceholderTextViewDelegate: UITextViewDelegate {
         }
         return true
     }
+
+    func textViewDidChange(_ textView: UITextView) {
+        if textView.text.isEmpty {
+            placeholderLayer.isHidden = false
+        }
+    }
 }

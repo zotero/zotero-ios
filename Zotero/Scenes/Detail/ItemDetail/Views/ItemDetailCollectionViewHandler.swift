@@ -459,8 +459,9 @@ final class ItemDetailCollectionViewHandler: NSObject {
         for section in sections {
             snapshot.appendItems(rows(for: section.section, state: state), toSection: section)
         }
-        collectionView.isEditing = state.isEditing
         dataSource.apply(snapshot, animatingDifferences: animated, completion: nil)
+        // Setting isEditing will trigger reconfiguration of cells, before the new snapshot has been applied, so it is done afterwards to avoid e.g. flickering the old text in a text view.
+        collectionView.isEditing = state.isEditing
 
         /// Creates array of visible sections for current state data.
         /// - parameter data: New data.
@@ -746,14 +747,10 @@ final class ItemDetailCollectionViewHandler: NSObject {
                 title: data.0,
                 isEditing: data.1,
                 layoutMargins: layoutMargins(for: indexPath, self: self),
-                attributedTextObservable: .init(),
-                disposeBag: .init()
-            )
-            let disposable = configuration.attributedTextObservable
-                .subscribe(onNext: { [weak self] attributedText in
+                attributedTextChanged: { [weak self] attributedText in
                     self?.viewModel.process(action: .setTitle(attributedText))
-                })
-            _ = configuration.disposeBag.insert(disposable)
+                }
+            )
             cell.contentConfiguration = configuration
         }
     }()
