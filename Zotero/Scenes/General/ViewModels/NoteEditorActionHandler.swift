@@ -14,23 +14,19 @@ import RxSwift
 struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionHandler {
     typealias Action = NoteEditorAction
     typealias State = NoteEditorState
-    typealias SaveResult = NoteEditorSaveResult
-    typealias SaveCallback = NoteEditorSaveCallback
 
     unowned let dbStorage: DbStorage
     unowned let fileStorage: FileStorage
     unowned let schemaController: SchemaController
     unowned let attachmentDownloader: AttachmentDownloader
-    let saveCallback: SaveCallback
     let backgroundQueue: DispatchQueue
     private let disposeBag: DisposeBag
 
-    init(dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController, attachmentDownloader: AttachmentDownloader, saveCallback: @escaping SaveCallback) {
+    init(dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController, attachmentDownloader: AttachmentDownloader) {
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
         self.schemaController = schemaController
         self.attachmentDownloader = attachmentDownloader
-        self.saveCallback = saveCallback
         disposeBag = DisposeBag()
         backgroundQueue = DispatchQueue(label: "org.zotero.Zotero.NoteEditorActionHandler.queue", qos: .userInteractive)
     }
@@ -43,17 +39,24 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         case .save:
             save(in: viewModel)
 
+        case .saveBeforeClosing:
+            update(viewModel: viewModel) { state in
+                state.isClosing = true
+                state.changes = .closing
+            }
+            save(in: viewModel)
+
         case .setText(let text):
             guard text != viewModel.state.text else { return }
             update(viewModel: viewModel) { state in
                 state.text = text
-                state.changes = .save
+                state.changes = .shouldSave
             }
 
         case .setTags(let tags):
             update(viewModel: viewModel) { state in
                 state.tags = tags
-                state.changes = [.tags, .save]
+                state.changes = [.tags, .shouldSave]
             }
 
         case .loadResource(let data):
@@ -122,11 +125,13 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             DDLogInfo("NoteEditorActionHandler: successfully created \(successfulImages)")
             update(viewModel: viewModel) { state in
                 state.createdImages = successfulImages
-                state.changes = .save
+                state.changes = .shouldSave
             }
         } catch let error {
             DDLogError("NoteEditorActionHandler: can't create embedded images - \(error)")
-            saveCallback(parentKey, .failure(error))
+            update(viewModel: viewModel) { state in
+                state.error = error
+            }
         }
 
         func createItemIfNeeded() -> String? {
@@ -142,8 +147,7 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             case .edit(let key):
                 return key
 
-            case .readOnly(let key):
-                saveCallback(key, .failure(State.Error.cantSaveReadonlyNote))
+            case .readOnly:
                 return nil
             }
 
@@ -151,13 +155,14 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 _ = try dbStorage.perform(request: request, on: backgroundQueue)
                 update(viewModel: viewModel) { state in
                     state.kind = .edit(key: note.key)
+                    updateTitleIfNeeded(title: note.title, state: &state)
                 }
-                saveCallback(note.key, .success((note: note, isCreated: true)))
-                updateTitleIfNeeded(title: note.title, viewModel: viewModel)
                 return note.key
             } catch let error {
                 DDLogError("NoteEditorActionHandler: can't create item note for added image: \(error)")
-                saveCallback(note.key, .failure(error))
+                update(viewModel: viewModel) { state in
+                    state.error = error
+                }
                 return nil
             }
         }
@@ -266,7 +271,15 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         case .readOnly(let key):
             let error = State.Error.cantSaveReadonlyNote
             DDLogError("NoteEditorActionHandler: can't update read only note: \(error)")
-            saveCallback(key, .failure(error))
+            store(error: error, key: key)
+        }
+
+        func store(error: Swift.Error, key: String) {
+            update(viewModel: viewModel) { state in
+                state.error = error
+                state.isClosing = false
+                state.changes = [.saved, .closing]
+            }
         }
 
         func create<Request: DbResponseRequest>(note: Note, with request: Request) {
@@ -275,14 +288,13 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 case .success:
                     update(viewModel: viewModel) { state in
                         state.kind = .edit(key: note.key)
-                        state.changes = [.kind]
+                        state.changes = [.kind, .saved]
+                        updateTitleIfNeeded(title: note.title, state: &state)
                     }
-                    saveCallback(note.key, .success((note: note, isCreated: true)))
-                    updateTitleIfNeeded(title: note.title, viewModel: viewModel)
 
                 case .failure(let error):
                     DDLogError("NoteEditorActionHandler: can't create item note: \(error)")
-                    saveCallback(note.key, .failure(error))
+                    store(error: error, key: note.key)
                 }
             }
         }
@@ -293,10 +305,12 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             perform(request: request) { error in
                 if let error {
                     DDLogError("NoteEditorActionHandler: can't update existing note: \(error)")
-                    saveCallback(key, .failure(error))
+                    store(error: error, key: key)
                 } else {
-                    saveCallback(key, .success((note: note, isCreated: false)))
-                    updateTitleIfNeeded(title: note.title, viewModel: viewModel)
+                    update(viewModel: viewModel) { state in
+                        state.changes = .saved
+                        updateTitleIfNeeded(title: note.title, state: &state)
+                    }
                 }
             }
         }
@@ -319,11 +333,9 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         return (note, request)
     }
 
-    func updateTitleIfNeeded(title: String, viewModel: ViewModel<NoteEditorActionHandler>) {
-        guard title != viewModel.state.title else { return }
-        update(viewModel: viewModel) { state in
-            state.title = title
-            state.changes = [.title]
-        }
+    private func updateTitleIfNeeded(title: String, state: inout NoteEditorState) {
+        guard title != state.title else { return }
+        state.title = title
+        state.changes.insert(.title)
     }
 }

@@ -51,9 +51,11 @@ struct NoteEditorState: ViewModelState {
         let rawValue: UInt8
 
         static let tags = Changes(rawValue: 1 << 0)
-        static let save = Changes(rawValue: 1 << 1)
+        static let shouldSave = Changes(rawValue: 1 << 1)
         static let kind = Changes(rawValue: 1 << 3)
         static let title = Changes(rawValue: 1 << 4)
+        static let saved = Changes(rawValue: 1 << 5)
+        static let closing = Changes(rawValue: 1 << 6)
     }
 
     struct TitleData {
@@ -77,6 +79,8 @@ struct NoteEditorState: ViewModelState {
     var createdImages: [CreatedImage]
     var changes: Changes
     var title: String?
+    var isClosing: Bool
+    var error: Swift.Error?
 
     init(kind: Kind, library: Library, parentTitleData: TitleData?, text: String, tags: [Tag], title: String?) {
         self.kind = kind
@@ -85,6 +89,7 @@ struct NoteEditorState: ViewModelState {
         self.library = library
         self.parentTitleData = parentTitleData
         self.title = title
+        isClosing = false
         pendingResources = [:]
         changes = []
         createdImages = []
@@ -94,5 +99,6 @@ struct NoteEditorState: ViewModelState {
         downloadedResource = nil
         changes = []
         createdImages = []
+        error = nil
     }
 }

@@ -208,9 +208,7 @@ final class ItemsViewController: UIViewController {
             guard let note = Note(item: item) else { return }
             let tags = Array(item.tags.map({ Tag(tag: $0) }))
             let library = self.viewModel.state.library
-            coordinatorDelegate?.showNote(library: library, kind: .edit(key: note.key), text: note.text, tags: tags, parentTitleData: nil, title: note.title) { [weak self] _, result in
-                self?.viewModel.process(action: .processNoteSaveResult(result))
-            }
+            coordinatorDelegate?.showNote(library: library, kind: .edit(key: note.key), text: note.text, tags: tags, parentTitleData: nil, title: note.title, saveCallback: nil)
         }
     }
 

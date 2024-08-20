@@ -25,8 +25,8 @@ final class NoteEditorViewController: UIViewController {
     @IBOutlet private weak var tagsTitleLabel: UILabel!
     @IBOutlet private weak var tagsLabel: UILabel!
 
-    private let viewModel: ViewModel<NoteEditorActionHandler>
     private unowned let htmlAttributedStringConverter: HtmlAttributedStringConverter
+    let viewModel: ViewModel<NoteEditorActionHandler>
     private let disposeBag: DisposeBag
 
     private var debounceDisposeBag: DisposeBag?
@@ -61,7 +61,7 @@ final class NoteEditorViewController: UIViewController {
             navigationItem.titleView = NoteEditorTitleView(type: parentTitleData.type, title: htmlAttributedStringConverter.convert(text: parentTitleData.title).string)
         }
 
-        setupNavbarItems()
+        setupNavbarItems(isClosing: false)
         setupKeyboard()
         setupWebView()
         update(tags: viewModel.state.tags)
@@ -73,26 +73,6 @@ final class NoteEditorViewController: UIViewController {
                 process(state: state)
             })
             .disposed(by: disposeBag)
-
-        func setupNavbarItems() {
-            let done = UIBarButtonItem(title: L10n.done, style: .done, target: nil, action: nil)
-            done.rx
-                .tap
-                .subscribe(onNext: { [weak self] _ in
-                    guard let self else { return }
-                    forceSaveIfNeeded()
-                    webView.configuration.userContentController.removeAllScriptMessageHandlers()
-                    navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
-                })
-                .disposed(by: disposeBag)
-            navigationItem.rightBarButtonItem = done
-
-            func forceSaveIfNeeded() {
-                guard debounceDisposeBag != nil else { return }
-                debounceDisposeBag = nil
-                viewModel.process(action: .save)
-            }
-        }
 
         func setupWebView() {
             webView.scrollView.isScrollEnabled = false
@@ -142,12 +122,52 @@ final class NoteEditorViewController: UIViewController {
     }
 
     // MARK: - Actions
+
+    private func setupNavbarItems(isClosing: Bool) {
+        if isClosing {
+            let activityIndicator = UIActivityIndicatorView(style: .medium)
+            activityIndicator.color = .gray
+            activityIndicator.startAnimating()
+            navigationItem.rightBarButtonItem = UIBarButtonItem(customView: activityIndicator)
+            return
+        }
+
+        let done = UIBarButtonItem(title: L10n.done, style: .done, target: nil, action: nil)
+        done.rx
+            .tap
+            .subscribe(onNext: { [weak self] _ in
+                guard let self else { return }
+                closeAndSaveIfNeeded(controller: self)
+            })
+            .disposed(by: disposeBag)
+        navigationItem.rightBarButtonItem = done
+
+        func closeAndSaveIfNeeded(controller: NoteEditorViewController) {
+            if controller.debounceDisposeBag == nil {
+                controller.close()
+                return
+            }
+
+            controller.debounceDisposeBag = nil
+            controller.viewModel.process(action: .saveBeforeClosing)
+        }
+    }
+
+    private func close() {
+        webView.configuration.userContentController.removeAllScriptMessageHandlers()
+        navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
+    }
+
     func process(state: NoteEditorState) {
+        if state.changes.contains(.saved) && state.isClosing {
+            close()
+        }
+
         if state.changes.contains(.tags) {
             update(tags: state.tags)
         }
 
-        if state.changes.contains(.save) {
+        if state.changes.contains(.shouldSave) {
             debounceSave()
         }
         if state.changes.contains(.kind) || state.changes.contains(.title) {
@@ -163,6 +183,10 @@ final class NoteEditorViewController: UIViewController {
             }
         }
 
+        if state.changes.contains(.closing) {
+            setupNavbarItems(isClosing: state.isClosing)
+        }
+
         if !state.createdImages.isEmpty {
             let webViewCalls = state.createdImages.map({
                 let encodedData = WebViewEncoder.encodeAsJSONForJavascript(["nodeID": $0.nodeId, "attachmentKey": $0.key])
@@ -176,19 +200,32 @@ final class NoteEditorViewController: UIViewController {
             webView.call(javascript: "notifySubscription(\(encodedData));").subscribe().disposed(by: disposeBag)
         }
 
-        func debounceSave() {
-            debounceDisposeBag = nil
-            let disposeBag = DisposeBag()
+        if state.changes.contains(.kind) || state.changes.contains(.title) {
+            switch state.kind {
+            case .edit(let key), .readOnly(let key):
+                let openItem = OpenItem(kind: .note(libraryId: state.library.identifier, key: key), userIndex: 0)
+                set(userActivity: .contentActivity(with: [openItem], libraryId: state.library.identifier, collectionId: Defaults.shared.selectedCollectionId)
+                    .set(title: state.title)
+                )
 
+            case.itemCreation, .standaloneCreation:
+                break
+            }
+        }
+
+        if let error = state.error {
+            coordinatorDelegate?.show(error: error)
+        }
+
+        func debounceSave() {
+            debounceDisposeBag = DisposeBag()
             Single<Int>.timer(.seconds(1), scheduler: MainScheduler.instance)
                 .subscribe(onSuccess: { [weak self] _ in
                     guard let self else { return }
                     viewModel.process(action: .save)
                     debounceDisposeBag = nil
                 })
-                .disposed(by: disposeBag)
-
-            debounceDisposeBag = disposeBag
+                .disposed(by: debounceDisposeBag!)
         }
     }
 

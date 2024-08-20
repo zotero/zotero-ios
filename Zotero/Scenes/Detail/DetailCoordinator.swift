@@ -68,7 +68,7 @@ protocol DetailItemDetailCoordinatorDelegate: AnyObject {
 }
 
 protocol DetailNoteEditorCoordinatorDelegate: AnyObject {
-    func showNote(library: Library, kind: NoteEditorKind, text: String, tags: [Tag], parentTitleData: NoteEditorState.TitleData?, title: String?, saveCallback: @escaping NoteEditorSaveCallback)
+    func showNote(library: Library, kind: NoteEditorKind, text: String, tags: [Tag], parentTitleData: NoteEditorState.TitleData?, title: String?, saveCallback: ((Note) -> Void)?)
 }
 
 protocol ItemsTagFilterDelegate: AnyObject {
@@ -400,9 +400,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
 
         controller.addAction(UIAlertAction(title: L10n.Items.newNote, style: .default, handler: { [weak self, weak viewModel] _ in
             guard let self, let viewModel else { return }
-            showNote(library: viewModel.state.library, kind: .standaloneCreation(collection: viewModel.state.collection)) { [weak viewModel] _, result in
-                viewModel?.process(action: .processNoteSaveResult(result))
-            }
+            showNote(library: viewModel.state.library, kind: .standaloneCreation(collection: viewModel.state.collection), saveCallback: nil)
         }))
 
         if viewModel.state.library.metadataAndFilesEditable {
@@ -481,9 +479,19 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         text: String,
         tags: [Tag],
         parentTitleData: NoteEditorState.TitleData?,
-        title: String?,
-        saveCallback: @escaping NoteEditorSaveCallback
+        title: String?
     ) -> NavigationViewController {
+        return createNoteController(library: library, kind: kind, text: text, tags: tags, parentTitleData: parentTitleData, title: title).0
+    }
+
+    private func createNoteController(
+        library: Library,
+        kind: NoteEditorKind,
+        text: String,
+        tags: [Tag],
+        parentTitleData: NoteEditorState.TitleData?,
+        title: String?
+    ) -> (NavigationViewController, ViewModel<NoteEditorActionHandler>) {
         let navigationController = NavigationViewController()
         navigationController.modalPresentationStyle = .fullScreen
         navigationController.isModalInPresentation = true
@@ -495,7 +503,6 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
             tags: tags,
             parentTitleData: parentTitleData,
             title: title,
-            saveCallback: saveCallback,
             navigationController: navigationController,
             controllers: controllers
         )
@@ -503,7 +510,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         childCoordinators.append(coordinator)
         coordinator.start(animated: false)
 
-        return navigationController
+        return (navigationController, coordinator.viewModel!)
     }
 
     func showItemDetail(for type: ItemDetailState.DetailType, libraryId: LibraryIdentifier, scrolledToKey childKey: String?, animated: Bool) {
@@ -965,7 +972,7 @@ extension DetailCoordinator: DetailNoteEditorCoordinatorDelegate {
         tags: [Tag] = [],
         parentTitleData: NoteEditorState.TitleData? = nil,
         title: String? = nil,
-        saveCallback: @escaping NoteEditorSaveCallback = { _, _  in }
+        saveCallback: ((Note) -> Void)?
     ) {
         guard let navigationController else { return }
         switch kind {
@@ -975,8 +982,18 @@ extension DetailCoordinator: DetailNoteEditorCoordinatorDelegate {
         case .edit(let key), .readOnly(let key):
             DDLogInfo("DetailCoordinator: show note \(key)")
         }
-        let controller = createNoteController(library: library, kind: kind, text: text, tags: tags, parentTitleData: parentTitleData, title: title, saveCallback: saveCallback)
+        let (controller, viewModel) = createNoteController(library: library, kind: kind, text: text, tags: tags, parentTitleData: parentTitleData, title: title)
         navigationController.present(controller, animated: true)
+
+        if let saveCallback {
+            viewModel.stateObservable
+                .observe(on: MainScheduler.instance)
+                .subscribe(onNext: { [weak self] state in
+                    guard let self, state.changes.contains(.saved), case .edit(let key) = state.kind else { return }
+                    saveCallback(Note(key: key, text: state.text, tags: state.tags))
+                })
+                .disposed(by: disposeBag)
+        }
     }
 }
 

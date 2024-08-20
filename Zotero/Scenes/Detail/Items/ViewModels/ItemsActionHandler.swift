@@ -96,9 +96,6 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
                 state.error = .dataLoading
             }
 
-        case .processNoteSaveResult(let result):
-            processNoteSaveResult(result: result, in: viewModel)
-
         case .search(let text):
             self.search(for: (text.isEmpty ? nil : text), ignoreOriginal: false, in: viewModel)
 
@@ -499,22 +496,6 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
         }
 
         Defaults.shared.itemsSortType = sortType
-    }
-
-    private func processNoteSaveResult(result: NoteEditorSaveResult, in viewModel: ViewModel<ItemsActionHandler>) {
-        switch result {
-        case .success:
-            break
-
-        case .failure(let error):
-            DispatchQueue.main.async { [weak viewModel] in
-                DDLogError("ItemsStore: can't save note: \(error)")
-                guard let viewModel else { return }
-                update(viewModel: viewModel) { state in
-                    state.error = .noteSaving
-                }
-            }
-        }
     }
 
     private func addAttachments(urls: [URL], in viewModel: ViewModel<ItemsActionHandler>) {

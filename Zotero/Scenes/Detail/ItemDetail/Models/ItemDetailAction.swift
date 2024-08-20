@@ -26,7 +26,7 @@ enum ItemDetailAction {
     case openAttachment(String)
     case attachmentOpened(String)
     case reloadData
-    case processNoteSaveResult(key: String?, result: NoteEditorSaveResult)
+    case processNoteSaveResult(note: Note)
     case setFieldValue(id: String, value: String)
     case setTags([Tag])
     case setTitle(NSAttributedString)

@@ -97,8 +97,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         case .moveCreators(let diff):
             self.moveCreators(diff: diff, in: viewModel)
 
-        case .processNoteSaveResult(let key, let result):
-            self.processNoteSaveResult(key: key, result: result, in: viewModel)
+        case .processNoteSaveResult(let note):
+            processNoteSaveResult(note: note, in: viewModel)
 
         case .setTags(let tags):
             self.set(tags: tags, in: viewModel)
@@ -359,44 +359,14 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
 
     // MARK: - Notes
 
-    private func processNoteSaveResult(key: String?, result: NoteEditorSaveResult, in viewModel: ViewModel<ItemDetailActionHandler>) {
-        var oldIndex: Int?
-        var oldNote: Note?
-        if let key {
-            oldIndex = viewModel.state.notes.firstIndex(where: { $0.key == key })
-            if let oldIndex {
-                oldNote = viewModel.state.notes[oldIndex]
-            }
-        }
-        switch result {
-        case .success((let note, _)):
-            update(viewModel: viewModel) { state in
-                if let oldIndex {
-                    state.notes[oldIndex] = note
-                } else {
-                    state.notes.append(note)
-                }
-
-                state.reload = .section(.notes)
-            }
-
-        case .failure(let error):
-            if let key {
-                DDLogError("ItemDetailActionHandler: Can't update item note \(key) - \(error)")
+    private func processNoteSaveResult(note: Note, in viewModel: ViewModel<ItemDetailActionHandler>) {
+        update(viewModel: viewModel) { state in
+            if let index = state.notes.firstIndex(where: { $0.key == note.key }) {
+                state.notes[index] = note
             } else {
-                DDLogError("ItemDetailActionHandler: Can't create item note - \(error)")
+                state.notes.append(note)
             }
-            update(viewModel: viewModel) { state in
-                state.reload = .section(.notes)
-                state.error = .cantSaveNote
-
-                guard let oldIndex else { return }
-                if let oldNote {
-                    state.notes[oldIndex] = oldNote
-                } else {
-                    state.notes.remove(at: oldIndex)
-                }
-            }
+            state.reload = .section(.notes)
         }
     }
 

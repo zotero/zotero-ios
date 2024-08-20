@@ -137,8 +137,8 @@ final class ItemDetailViewController: UIViewController {
                 tags = note.tags
                 title = note.title
             }
-            coordinatorDelegate?.showNote(library: library, kind: kind, text: text, tags: tags, parentTitleData: parentTitleData, title: title) { [weak self] key, result in
-                self?.viewModel.process(action: .processNoteSaveResult(key: key, result: result))
+            coordinatorDelegate?.showNote(library: library, kind: kind, text: text, tags: tags, parentTitleData: parentTitleData, title: title) { [weak self] note in
+                self?.viewModel.process(action: .processNoteSaveResult(note: note))
             }
 
         case .openTagPicker:
