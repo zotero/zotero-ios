@@ -193,6 +193,7 @@ extension RItem: Updatable {
                     // Even though these field keys are set for the RItem object, we ignore them when submitting the attachment item itself,
                     // but they are used in file upload
                     parameters[field.key] = ""
+                    
                 default:
                     parameters[field.key] = field.value
                 }
@@ -359,6 +360,7 @@ extension RPageIndex: Updatable {
         switch libraryId {
         case .custom:
             libraryPart = "u"
+
         case .group(let groupId):
             libraryPart = "g\(groupId)"
         }

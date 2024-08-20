@@ -366,6 +366,7 @@ final class ItemTitleFormatterSpec: QuickSpec {
             switch creators[index].namePresentation {
             case .full:
                 creator.name = "Name\(index) Surname\(index)"
+                
             case .separate:
                 creator.firstName = "Name\(index)"
                 creator.lastName = "Surname\(index)"

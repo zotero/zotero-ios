@@ -261,6 +261,7 @@ class LookupViewController: UIViewController {
             switch row {
             case .identifier:
                 cellId = "IdentifierCell"
+                
             case .item, .attachment:
                 cellId = "LookupCell"
             }

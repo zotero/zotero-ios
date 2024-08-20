@@ -60,6 +60,7 @@ struct FilenameFormatter {
 
         case 2:
             return "\(creators.first?.summaryName ?? "") and \(creators.last?.summaryName ?? "")"
+            
         default:
             return "\(creators.first?.summaryName ?? "") et al."
         }

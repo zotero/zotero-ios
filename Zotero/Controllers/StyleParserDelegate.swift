@@ -55,6 +55,7 @@ final class StyleParserDelegate: NSObject, XMLParserDelegate {
                     if self.href == nil, let href = attributeDict["href"] {
                         self.href = URL(string: href)
                     }
+                    
                 case "independent-parent":
                     self.dependencyHref = attributeDict["href"]
                 default: break

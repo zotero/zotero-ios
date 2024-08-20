@@ -56,14 +56,19 @@ final class DebugLogFormatter: NSObject, DDLogFormatter {
         switch level {
         case .debug:
             return "[DEBUG]"
+
         case .error:
             return "[ERROR]"
+
         case .info:
             return "[INFO]"
+
         case .verbose:
             return "[VERBOSE]"
+
         case .warning:
             return "[WARNING]"
+
         default:
             return "[UNKNOWN]"
         }

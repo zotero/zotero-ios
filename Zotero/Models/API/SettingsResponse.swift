@@ -78,6 +78,7 @@ struct PageIndexResponse {
         switch libraryPart[libraryPart.startIndex] {
         case "u":
             libraryId = .custom(.myLibrary)
+            
         case "g":
             guard let groupId = Int(libraryPart[libraryPart.index(libraryPart.startIndex, offsetBy: 1)..<libraryPart.endIndex]) else {
                 throw Parsing.Error.incompatibleValue("groupId=\(libraryPart)")

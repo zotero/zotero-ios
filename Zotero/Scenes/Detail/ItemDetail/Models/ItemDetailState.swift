@@ -139,6 +139,7 @@ struct ItemDetailState: ViewModelState {
                 self.fullName = self.firstName + (self.firstName.isEmpty ? "" : " ") + self.lastName
                 self.firstName = ""
                 self.lastName = ""
+                
             case .separate:
                 if self.fullName.isEmpty {
                     self.firstName = ""

@@ -132,16 +132,22 @@ final class SyncController: SynchronizationController {
             switch self {
             case .syncBatchesToDb(let batches):
                 return "syncBatchesToDb(\(batches.count) batches)"
+
             case .performDeletions(let libraryId, let collections, let items, let searches, let tags, let ignoreConflicts):
                 return "performDeletions(\(libraryId), \(collections.count) collections, \(items.count) items, \(searches.count) searches, \(tags.count) tags, \(ignoreConflicts))"
+
             case .restoreDeletions(let libraryId, let collections, let items):
                 return "restoreDeletions(\(libraryId), \(collections.count) collections, \(items.count) items)"
+
             case .submitWriteBatch(let batch):
                 return "submitWriteBatch(\(batch.libraryId), \(batch.object), \(batch.version), \(batch.parameters.count) objects)"
+
             case .submitDeleteBatch(let batch):
                 return "submitDeleteBatch(\(batch.libraryId), \(batch.object), \(batch.version), \(batch.keys.count) objects)"
+
             case .fixUpload(let key, let libraryId):
                 return "fixUpload(\(key); \(libraryId))"
+
             case .loadKeyPermissions,
                  .createLibraryActions,
                  .createUploadActions,
@@ -2375,12 +2381,16 @@ fileprivate extension SyncController.Action {
         switch self {
         case .submitDeleteBatch(let batch):
             return "Delete \(batch.keys.count) \(batch.object) in \(batch.libraryId.debugName)\n\(batch.keys)"
+
         case .submitWriteBatch(let batch):
             return "Write \(batch.parameters.count) changes for \(batch.object) in \(batch.libraryId.debugName)\n\(batch.parameters)"
+
         case .uploadAttachment(let upload):
             return "Upload \(upload.filename) (\(upload.contentType)) in \(upload.libraryId.debugName)\n\(upload.file.createUrl().absoluteString)"
+
         case .fixUpload(let key, let libraryId):
             return "Fix upload \(key); \(libraryId)"
+            
         case .loadKeyPermissions,
              .createLibraryActions,
              .syncSettings,

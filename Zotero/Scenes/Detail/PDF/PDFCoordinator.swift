@@ -342,9 +342,11 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         switch error {
         case .filenameMissing:
             message = "Could not find attachment item."
+
         case .fileError:
             // TODO: - show storage error or unknown error
             message = "Could not create PDF file."
+            
         case .pdfError:
             message = "Could not export PDF file."
         }

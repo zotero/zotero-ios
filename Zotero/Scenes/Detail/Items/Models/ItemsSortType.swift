@@ -22,20 +22,28 @@ struct ItemsSortType: Codable {
             switch self {
             case .creator:
                 return "Creator"
+
             case .date:
                 return "Date"
+
             case .dateAdded:
                 return "Date Added"
+
             case .dateModified:
                 return "Date Modified"
+
             case .itemType:
                 return "Item Type"
+
             case .publicationTitle:
                 return "Publication Title"
+
             case .publisher:
                 return "Publisher"
+
             case .title:
                 return "Title"
+
             case .year:
                 return "Year"
             }

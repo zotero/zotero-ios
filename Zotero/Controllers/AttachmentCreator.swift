@@ -60,6 +60,7 @@ struct AttachmentCreator {
             switch attachment.type {
             case .file(_, let contentType, _, _, _):
                 return contentType == "application/pdf"
+                
             default:
                 return false
             }

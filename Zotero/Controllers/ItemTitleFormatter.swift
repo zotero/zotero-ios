@@ -57,6 +57,7 @@ struct ItemTitleFormatter {
         switch names.count {
         case 0:
             return ""
+
         case 1:
             return names[0]
 

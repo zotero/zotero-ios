@@ -23,6 +23,7 @@ struct Translator {
             switch key {
             case "id":
                 updatedMetadata["translatorID"] = Translator.value(from: value)
+                
             case "type":
                 updatedMetadata["translatorType"] = Translator.value(from: value)
 
@@ -39,6 +40,7 @@ struct Translator {
         switch key {
         case "id":
             metadata["translatorID"] = Translator.value(from: value)
+
         case "type":
             metadata["translatorType"] = Translator.value(from: value)
 

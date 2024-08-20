@@ -59,6 +59,7 @@ extension LibraryIdentifier {
         switch self {
         case .group(let identifier):
             return "groups/\(identifier)"
+            
         case .custom:
             return "users/\(userId)"
         }
@@ -79,6 +80,7 @@ extension LibraryIdentifier {
         switch self {
         case .group(let groupId):
             return "Group (\(groupId))"
+
         case .custom(let type):
             switch type {
             case .myLibrary:

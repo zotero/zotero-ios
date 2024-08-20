@@ -42,10 +42,13 @@ struct TagColorGenerator {
         switch hex {
         case "#ff6666", "#ff8c19":
             return 0.65
+
         case "#a28ae5", "#2ea8e5", "#5fb236":
             return 0.8
+
         case "#009980", "#999999":
             return 0.9
+
         case "#a6507b", "#576dd9", "#000000":
             return 1.0
 

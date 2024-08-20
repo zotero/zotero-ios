@@ -302,6 +302,7 @@ final class FileAttachmentView: UIView {
                 case .list:
                     return Asset.Images.Attachments.listLink
                 }
+                
             case .importedUrl where contentType == "text/html":
                 switch style {
                 case .list: return Asset.Images.Attachments.listWebPageSnapshot
@@ -315,6 +316,7 @@ final class FileAttachmentView: UIView {
                     case .detail, .shareExtension, .lookup: return Asset.Images.Attachments.detailImage
                     case .list: return Asset.Images.Attachments.listImage
                     }
+                    
                 case "application/pdf":
                     switch style {
                     case .detail, .shareExtension, .lookup: return Asset.Images.Attachments.detailPdf

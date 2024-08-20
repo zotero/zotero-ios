@@ -73,6 +73,7 @@ struct FileData: File {
         case .contentType(let contentType):
             self.mimeType = contentType
             self.ext = contentType.extensionFromMimeType ?? ""
+            
         case .ext(let ext):
             self.mimeType = ext.mimeTypeFromExtension ?? "application/octet-stream"
             self.ext = ext

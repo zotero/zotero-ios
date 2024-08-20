@@ -46,6 +46,7 @@ struct MarkSettingsAsSyncedDbRequest: DbRequest {
         switch libraryId {
         case .custom:
             libraryPart = "u"
+            
         case .group(let groupId):
             libraryPart = "g\(groupId)"
         }

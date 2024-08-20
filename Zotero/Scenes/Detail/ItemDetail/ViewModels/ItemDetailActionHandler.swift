@@ -782,8 +782,10 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             switch value.lowercased() {
             case "tomorrow":
                 return Calendar.current.date(byAdding: .day, value: 1, to: Date())
+
             case "today":
                 return Date()
+                
             case "yesterday":
                 return Calendar.current.date(byAdding: .day, value: -1, to: Date())
 

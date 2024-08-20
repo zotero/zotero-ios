@@ -17,12 +17,16 @@ extension SyncObject {
         switch self {
         case .collection:
             return "collections"
+
         case .search:
             return "searches"
+
         case .item:
             return "items"
+
         case .trash:
             return "items/trash"
+
         case .settings:
             return "settings"
         }

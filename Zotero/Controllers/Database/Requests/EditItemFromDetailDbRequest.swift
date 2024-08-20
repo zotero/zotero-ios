@@ -62,6 +62,7 @@ struct EditItemFromDetailDbRequest: DbRequest {
                 rCreator.name = creator.fullName
                 rCreator.firstName = ""
                 rCreator.lastName = ""
+                
             case .separate:
                 rCreator.name = ""
                 rCreator.firstName = creator.firstName

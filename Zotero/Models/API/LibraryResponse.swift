@@ -36,6 +36,7 @@ struct LibraryResponse {
         case .custom:
             self.id = 0
             self.type = "user"
+
         case .group(let id):
             self.id = id
             self.type = "group"
@@ -46,6 +47,7 @@ struct LibraryResponse {
         switch self.type {
         case "user":
             return .custom(.myLibrary)
+            
         case "group":
             return .group(self.id)
 

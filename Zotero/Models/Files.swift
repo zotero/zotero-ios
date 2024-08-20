@@ -69,10 +69,13 @@ struct Files {
         switch object {
         case .collection:
             objectName = "collection"
+
         case .item, .trash:
             objectName = "item"
+
         case .search:
             objectName = "search"
+
         case .settings:
             objectName = "settings"
         }

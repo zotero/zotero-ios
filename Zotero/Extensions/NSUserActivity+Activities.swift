@@ -73,6 +73,7 @@ extension NSUserActivity {
             switch libraryId {
             case .custom:
                 return "myLibrary"
+                
             case .group(let groupId):
                 return "g:\(groupId)"
             }
