@@ -376,7 +376,8 @@ class AnnotationToolbarViewController: UIViewController {
         if remainingSize < 0 {
             DDLogWarn("AnnotationToolbarViewController: not enough \(isHorizontal ? "horizontal" : "vertical") minimum size")
         }
-        let count = max(0, min(Int(floor(remainingSize / buttonSize)), toolButtons.count))
+        let buttonSpacing = stackView.spacing
+        let count = max(0, min(Int(floor((remainingSize + buttonSpacing) / (buttonSize + buttonSpacing))), toolButtons.count))
 
         for idx in 0..<count {
             guard idx < (count - 1) || count == toolButtons.count else { continue }
