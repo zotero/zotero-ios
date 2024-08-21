@@ -14,7 +14,7 @@ import CocoaLumberjackSwift
 protocol NoteEditorCoordinatorDelegate: AnyObject {
     func show(url: URL)
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
-    func show(error: Error)
+    func show(error: Error, isClosing: Bool)
 }
 
 final class NoteEditorCoordinator: NSObject, Coordinator {
@@ -100,9 +100,16 @@ extension NoteEditorCoordinator: NoteEditorCoordinatorDelegate {
         detailCoordinator.show(url: url)
     }
 
-    func show(error: any Error) {
+    func show(error: any Error, isClosing: Bool) {
         let controller = UIAlertController(title: L10n.error, message: error.localizedDescription, preferredStyle: .alert)
-        controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel))
+        if !isClosing {
+            controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel))
+        } else {
+            controller.addAction(UIAlertAction(title: L10n.stay, style: .cancel))
+            controller.addAction(UIAlertAction(title: L10n.closeWithoutSaving, style: .destructive, handler: { [weak self] _ in
+                self?.navigationController?.dismiss(animated: true)
+            }))
+        }
         navigationController?.present(controller, animated: true)
     }
 }

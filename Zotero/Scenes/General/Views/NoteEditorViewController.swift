@@ -214,7 +214,7 @@ final class NoteEditorViewController: UIViewController {
         }
 
         if let error = state.error {
-            coordinatorDelegate?.show(error: error)
+            coordinatorDelegate?.show(error: error, isClosing: state.changes.contains(.closing))
         }
 
         func debounceSave() {

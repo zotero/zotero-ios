@@ -277,8 +277,12 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         func store(error: Swift.Error, key: String) {
             update(viewModel: viewModel) { state in
                 state.error = error
-                state.isClosing = false
-                state.changes = [.saved, .closing]
+                if !state.isClosing {
+                    state.changes = .saved
+                } else {
+                    state.isClosing = false
+                    state.changes = [.saved, .closing]
+                }
             }
         }
 
