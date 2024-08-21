@@ -1685,21 +1685,25 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 let request = EditItemFieldsDbRequest(key: key, libraryId: viewModel.state.library.identifier, fieldValues: values, dateParser: dateParser)
                 requests.append(request)
             }
-        } else if hasChanges([.boundingBox, .rects]), let rects = AnnotationConverter.rects(from: annotation) {
-            requests.append(EditAnnotationRectsDbRequest(key: key, libraryId: viewModel.state.library.identifier, rects: rects, boundingBoxConverter: boundingBoxConverter))
-        } else if hasChanges([.boundingBox]), let rects = AnnotationConverter.rects(from: annotation) {
+        } else if let textAnnotation = annotation as? PSPDFKit.FreeTextAnnotation {
+            var editFontSize = hasChanges([.fontSize])
             // FreeTextAnnotation has only `boundingBox` change, not paired with paths or rects.
-            requests.append(EditAnnotationRectsDbRequest(key: key, libraryId: viewModel.state.library.identifier, rects: rects, boundingBoxConverter: boundingBoxConverter))
-        }
+            if hasChanges([.boundingBox]), let rects = AnnotationConverter.rects(from: annotation) {
+                requests.append(EditAnnotationRectsDbRequest(key: key, libraryId: viewModel.state.library.identifier, rects: rects, boundingBoxConverter: boundingBoxConverter))
+                // Font size may change due to the user resizing the bounding box, but it is not communicated properly in the PSPDFKit notification.
+                // Therefore, we always edit font size in this case, even if it didn't change.
+                editFontSize = true
+            }
 
-        if let textAnnotation = annotation as? PSPDFKit.FreeTextAnnotation {
             if hasChanges([.rotation]) {
                 requests.append(EditAnnotationRotationDbRequest(key: key, libraryId: viewModel.state.library.identifier, rotation: textAnnotation.rotation))
             }
 
-            if hasChanges([.fontSize]) {
+            if editFontSize {
                 requests.append(EditAnnotationFontSizeDbRequest(key: key, libraryId: viewModel.state.library.identifier, size: UInt(textAnnotation.fontSize)))
             }
+        } else if hasChanges([.boundingBox, .rects]), let rects = AnnotationConverter.rects(from: annotation) {
+            requests.append(EditAnnotationRectsDbRequest(key: key, libraryId: viewModel.state.library.identifier, rects: rects, boundingBoxConverter: boundingBoxConverter))
         }
 
         if hasChanges(.color) {
