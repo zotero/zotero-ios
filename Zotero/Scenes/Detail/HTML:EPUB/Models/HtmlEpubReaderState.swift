@@ -117,6 +117,7 @@ struct HtmlEpubReaderState: ViewModelState {
         selectedAnnotationCommentActive = false
         toolColors = [
             .highlight: UIColor(hex: Defaults.shared.highlightColorHex),
+            .underline: UIColor(hex: Defaults.shared.underlineColorHex),
             .note: UIColor(hex: Defaults.shared.noteColorHex)
         ]
         changes = []
