@@ -156,6 +156,7 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 update(viewModel: viewModel) { state in
                     state.kind = .edit(key: note.key)
                     updateTitleIfNeeded(title: note.title, state: &state)
+                    state.changes = [.kind, .saved]
                 }
                 return note.key
             } catch let error {
