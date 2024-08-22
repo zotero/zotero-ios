@@ -51,6 +51,7 @@ struct CreateHtmlEpubAnnotationsDbRequest: DbRequest {
             database.add(item)
         }
 
+        item.annotationType = annotation.type.rawValue
         item.syncState = .synced
         item.changeType = .user
         item.htmlFreeContent = annotation.comment.isEmpty ? nil : annotation.comment.strippedRichTextTags
