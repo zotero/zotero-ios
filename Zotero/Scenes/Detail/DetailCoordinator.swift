@@ -988,8 +988,8 @@ extension DetailCoordinator: DetailNoteEditorCoordinatorDelegate {
         if let saveCallback {
             viewModel.stateObservable
                 .observe(on: MainScheduler.instance)
-                .subscribe(onNext: { [weak self] state in
-                    guard let self, state.changes.contains(.saved), case .edit(let key) = state.kind else { return }
+                .subscribe(onNext: { state in
+                    guard state.changes.contains(.saved), case .edit(let key) = state.kind else { return }
                     saveCallback(Note(key: key, text: state.text, tags: state.tags))
                 })
                 .disposed(by: disposeBag)
