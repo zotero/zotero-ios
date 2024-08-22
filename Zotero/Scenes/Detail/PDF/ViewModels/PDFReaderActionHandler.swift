@@ -2066,8 +2066,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 return false
             }
             if databaseAnnotation.fontSize == nil {
+                // Since free text annotations are created in AnnotationConverter using `setBoundingBox(annotation.boundingBox(boundingBoxConverter: boundingBoxConverter), transformSize: true)`
+                // it's ok even if they are missing `fontSize`, so we just log it and continue validation.
                 DDLogInfo("PDFReaderActionHandler: \(databaseAnnotation.type) annotation \(databaseAnnotation.key) missing fontSize")
-                return false
             }
             if databaseAnnotation.rotation == nil {
                 DDLogInfo("PDFReaderActionHandler: \(databaseAnnotation.type) annotation \(databaseAnnotation.key) missing rotation")
