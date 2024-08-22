@@ -55,7 +55,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             load(in: viewModel)
 
         case .removeAnnotation(let key):
-            remove(keys: [key], in: viewModel)
+            removeAnnotation(key: key, in: viewModel)
 
         case .saveAnnotations(let params):
             saveAnnotations(params: params, in: viewModel)
@@ -180,6 +180,18 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         }
 
         Defaults.shared.htmlEpubSettings = settings
+    }
+
+    private func removeAnnotation(key: String, in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
+        if viewModel.state.selectedAnnotationKey == key {
+            update(viewModel: viewModel) { state in
+                _select(key: nil, didSelectInDocument: false, state: &state)
+                state.annotationPopoverKey = nil
+                state.annotationPopoverRect = nil
+                state.changes.insert(.popover)
+            }
+        }
+        remove(keys: [key], in: viewModel)
     }
 
     private func removeSelectedAnnotations(in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {

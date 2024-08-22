@@ -56,6 +56,7 @@ class HtmlEpubReaderViewController: UIViewController, ParentWithSidebarControlle
     }
     var isSidebarVisible: Bool { return self.sidebarControllerLeft?.constant == 0 }
     var isDocumentLocked: Bool { return false }
+    private(set) var activeAnnotationTool: AnnotationTool?
     lazy var toolbarButton: UIBarButtonItem = {
         return createToolbarButton()
     }()
@@ -167,7 +168,7 @@ class HtmlEpubReaderViewController: UIViewController, ParentWithSidebarControlle
             documentController.parentDelegate = self
             documentController.view.translatesAutoresizingMaskIntoConstraints = false
 
-            let annotationToolbar = AnnotationToolbarViewController(tools: [.highlight, .note], undoRedoEnabled: false, size: navigationBarHeight)
+            let annotationToolbar = AnnotationToolbarViewController(tools: [.highlight, .underline, .note], undoRedoEnabled: false, size: navigationBarHeight)
             annotationToolbar.delegate = self
 
             let sidebarController = HtmlEpubSidebarViewController(viewModel: viewModel)
@@ -302,11 +303,13 @@ class HtmlEpubReaderViewController: UIViewController, ParentWithSidebarControlle
         func select(activeTool tool: AnnotationTool?) {
             if let tool = activeAnnotationTool {
                 annotationToolbarController?.set(selected: false, to: tool, color: nil)
+                activeAnnotationTool = nil
             }
 
             if let tool {
                 let color = viewModel.state.toolColors[tool]
                 annotationToolbarController?.set(selected: true, to: tool, color: color)
+                activeAnnotationTool = tool
             }
         }
 
@@ -455,10 +458,6 @@ extension HtmlEpubReaderViewController: AnnotationToolbarHandlerDelegate {
 extension HtmlEpubReaderViewController: AnnotationToolbarDelegate {
     var rotation: AnnotationToolbarViewController.Rotation {
         return .horizontal
-    }
-
-    var activeAnnotationTool: AnnotationTool? {
-        return .highlight
     }
 
     var canUndo: Bool {
