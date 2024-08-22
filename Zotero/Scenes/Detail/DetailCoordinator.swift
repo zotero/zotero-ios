@@ -509,7 +509,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         coordinator.parentCoordinator = self
         childCoordinators.append(coordinator)
         coordinator.start(animated: false)
-
+        // Forced unwrapping of `viewModel` must happen after `coordinator.start(animated:)`!
         return (navigationController, coordinator.viewModel!)
     }
 
