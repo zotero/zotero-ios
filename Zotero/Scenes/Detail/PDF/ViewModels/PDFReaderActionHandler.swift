@@ -1675,7 +1675,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             }
 
             if editFontSize {
-                let roundedFontSize = round(textAnnotation.fontSize * 2) / 2
+                let roundedFontSize = AnnotationsConfig.roundFreeTextAnnotationFontSize(textAnnotation.fontSize)
                 requests.append(EditAnnotationFontSizeDbRequest(key: key, libraryId: viewModel.state.library.identifier, size: roundedFontSize))
             }
         } else if hasChanges([.boundingBox, .rects]), let rects = AnnotationConverter.rects(from: annotation) {

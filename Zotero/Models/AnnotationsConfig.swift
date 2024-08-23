@@ -29,6 +29,13 @@ struct AnnotationsConfig {
     static let keyKey = "Zotero:Key"
     // Line width of image annotation in PDF document.
     static let imageAnnotationLineWidth: CGFloat = 2
+    // Free text annotation font size minimum, maximum, increment and rounding
+    static let freeTextAnnotationFontSizeMinimum: CGFloat = 1
+    static let freeTextAnnotationFontSizeMaximum: CGFloat = 200
+    static let freeTextAnnotationFontSizeIncrement: CGFloat = 0.5
+    static func roundFreeTextAnnotationFontSize(_ fontSize: CGFloat) -> CGFloat {
+        round(fontSize * 2) / 2
+    }
     // Size of note annotation in PDF document.
     static let noteAnnotationSize: CGSize = CGSize(width: 22, height: 22)
     static let positionSizeLimit = 65000

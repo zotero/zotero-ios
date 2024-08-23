@@ -78,9 +78,9 @@ final class FontSizeView: UIView {
     private func setup() {
         let stepper = UIStepper()
         stepper.isHidden = !stepperEnabled
-        stepper.stepValue = 0.5
-        stepper.minimumValue = 1
-        stepper.maximumValue = 200
+        stepper.stepValue = AnnotationsConfig.freeTextAnnotationFontSizeIncrement
+        stepper.minimumValue = AnnotationsConfig.freeTextAnnotationFontSizeMinimum
+        stepper.maximumValue = AnnotationsConfig.freeTextAnnotationFontSizeMaximum
         stepper.rx.controlEvent(.valueChanged)
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] _ in

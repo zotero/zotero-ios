@@ -112,7 +112,7 @@ struct AnnotationConverter {
             paths = []
         } else if let annotation = annotation as? PSPDFKit.FreeTextAnnotation {
             type = .freeText
-            let roundedFontSize = round(annotation.fontSize * 2) / 2
+            let roundedFontSize = AnnotationsConfig.roundFreeTextAnnotationFontSize(annotation.fontSize)
             fontSize = roundedFontSize
             rotation = annotation.rotation
             paths = []
