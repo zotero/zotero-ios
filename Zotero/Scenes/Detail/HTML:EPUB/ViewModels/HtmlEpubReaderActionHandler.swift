@@ -699,6 +699,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         var annotations: [String: HtmlEpubAnnotation] = viewModel.state.annotations
         var comments = viewModel.state.comments
         var selectionDeleted = false
+        var popoverWasInserted = false
         // Update database keys based on realm notification
         var updatedKeys: [String] = []
         // Collect modified, deleted and inserted annotations to update the `Document`
@@ -779,6 +780,9 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
             keys.insert(item.key, at: index)
             annotations[item.key] = annotation
+            if viewModel.state.annotationPopoverKey == item.key {
+                popoverWasInserted = true
+            }
             DDLogInfo("HtmlEpubReaderActionHandler: insert key \(item.key)")
 
             switch item.changeType {
@@ -810,6 +814,10 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             // `updatedKeys` will try to update it while the key will be deleted from data source at the same time.
             state.updatedAnnotationKeys = updatedKeys.filter({ state.sortedKeys.contains($0) })
             state.changes = .annotations
+            if popoverWasInserted {
+                // When note annotation is inserted it also wants to show a popover, but the annotation was not stored in local state yet. So we add a `popover` change here so that the popover is shown.
+                state.changes.insert(.popover)
+            }
 
             // Update selection
             if selectionDeleted {
