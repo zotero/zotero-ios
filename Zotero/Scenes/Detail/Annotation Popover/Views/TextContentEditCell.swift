@@ -10,42 +10,64 @@ import UIKit
 
 import RxSwift
 
-final class TextContentEditCell: UITableViewCell {
-    @IBOutlet private weak var lineView: UIView!
-    @IBOutlet private weak var textView: UITextView!
+final class TextContentEditCell: RxTableViewCell {
+    let attributedTextAndHeightReloadNeededObservable: PublishSubject<(NSAttributedString, Bool)>
 
-    private var observer: AnyObserver<(String, Bool)>?
-    var textObservable: Observable<(String, Bool)> {
-        return Observable.create { observer -> Disposable in
-            self.observer = observer
-            return Disposables.create()
+    private weak var lineView: UIView?
+    private weak var textView: FormattedTextView?
+
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        attributedTextAndHeightReloadNeededObservable = PublishSubject()
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        setup()
+        selectionStyle = .none
+
+        func setup() {
+            let lineView = UIView()
+            lineView.translatesAutoresizingMaskIntoConstraints = false
+            contentView.addSubview(lineView)
+            self.lineView = lineView
+
+            let textView = FormattedTextView(defaultFont: AnnotationPopoverLayout.annotationLayout.font)
+            textView.textContainerInset = UIEdgeInsets()
+            textView.textContainer.lineFragmentPadding = 0
+            textView.delegate = self
+            textView.isScrollEnabled = false
+            textView.translatesAutoresizingMaskIntoConstraints = false
+            contentView.addSubview(textView)
+            self.textView = textView
+
+            NSLayoutConstraint.activate([
+                lineView.topAnchor.constraint(equalTo: textView.topAnchor),
+                lineView.bottomAnchor.constraint(equalTo: textView.bottomAnchor),
+                lineView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+                lineView.widthAnchor.constraint(equalToConstant: 3),
+                textView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 10),
+                textView.leadingAnchor.constraint(equalTo: lineView.trailingAnchor, constant: 8),
+                contentView.bottomAnchor.constraint(equalTo: textView.bottomAnchor, constant: 10),
+                contentView.trailingAnchor.constraint(equalTo: textView.trailingAnchor, constant: 16)
+            ])
         }
     }
 
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
     var caretRect: CGRect? {
-        guard self.textView.isFirstResponder, let selectedPosition = self.textView.selectedTextRange?.start else { return nil }
-        return self.textView.caretRect(for: selectedPosition)
+        guard let textView, textView.isFirstResponder, let selectedPosition = textView.selectedTextRange?.start else { return nil }
+        return textView.caretRect(for: selectedPosition)
     }
 
-    override func awakeFromNib() {
-        super.awakeFromNib()
-
-        self.textView.textContainerInset = UIEdgeInsets()
-        self.textView.textContainer.lineFragmentPadding = 0
-        self.textView.delegate = self
-        self.textView.isScrollEnabled = false
-    }
-
-    func setup(with text: String, color: String) {
+    func setup(with text: NSAttributedString, color: String) {
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.minimumLineHeight = AnnotationPopoverLayout.annotationLayout.lineHeight
         paragraphStyle.maximumLineHeight = AnnotationPopoverLayout.annotationLayout.lineHeight
-        let attributedText = NSAttributedString(string: text, attributes: [.font: AnnotationPopoverLayout.annotationLayout.font,
-                                                                           .foregroundColor: Asset.Colors.annotationText.color,
-                                                                           .paragraphStyle: paragraphStyle])
+        let attributedText = NSMutableAttributedString(attributedString: text)
+        attributedText.addAttributes([.foregroundColor: Asset.Colors.annotationText.color, .paragraphStyle: paragraphStyle], range: .init(location: 0, length: attributedText.length))
 
-        self.lineView.backgroundColor = UIColor(hex: color)
-        self.textView.attributedText = attributedText
+        lineView?.backgroundColor = UIColor(hex: color)
+        textView?.attributedText = attributedText
     }
 }
 
@@ -53,6 +75,6 @@ extension TextContentEditCell: UITextViewDelegate {
     func textViewDidChange(_ textView: UITextView) {
         let height = textView.contentSize.height
         textView.sizeToFit()
-        self.observer?.on(.next((textView.text, (height != textView.contentSize.height))))
+        attributedTextAndHeightReloadNeededObservable.onNext((textView.attributedText, height != textView.contentSize.height))
     }
 }

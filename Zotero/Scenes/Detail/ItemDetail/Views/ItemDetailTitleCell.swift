@@ -7,13 +7,14 @@
 //
 
 import UIKit
+import RxSwift
 
 final class ItemDetailTitleCell: UICollectionViewListCell {
     struct ContentConfiguration: UIContentConfiguration {
-        let title: String
+        let title: NSAttributedString
         let isEditing: Bool
         let layoutMargins: UIEdgeInsets
-        let textChanged: (String) -> Void
+        let attributedTextChanged: ((NSAttributedString) -> Void)?
 
         func makeContentView() -> UIView & UIContentView {
             return ContentView(configuration: self)
@@ -39,7 +40,7 @@ final class ItemDetailTitleCell: UICollectionViewListCell {
 
             super.init(frame: .zero)
 
-            guard let view = UINib.init(nibName: "ItemDetailTitleContentView", bundle: nil).instantiate(withOwner: self)[0] as? ItemDetailTitleContentView else { return }
+            let view = ItemDetailTitleContentView(frame: .zero)
 
             self.add(contentView: view)
             self.contentView = view
@@ -51,9 +52,9 @@ final class ItemDetailTitleCell: UICollectionViewListCell {
         }
 
         private func apply(configuration: ContentConfiguration) {
-            self.contentView.delegate.textChanged = configuration.textChanged
-            self.contentView.layoutMargins = configuration.layoutMargins
-            self.contentView.setup(with: configuration.title, isEditing: configuration.isEditing)
+            contentView.attributedTextChanged = configuration.attributedTextChanged
+            contentView.layoutMargins = configuration.layoutMargins
+            contentView.setup(with: configuration.title, isEditing: configuration.isEditing)
         }
     }
 }

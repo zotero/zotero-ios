@@ -171,6 +171,7 @@ struct ItemDetailState: ViewModelState {
 
     struct Data: Equatable {
         var title: String
+        var attributedTitle: NSAttributedString
         var type: String
         var isAttachment: Bool
         var localizedType: String
@@ -212,8 +213,22 @@ struct ItemDetailState: ViewModelState {
 
         static var empty: Data {
             let date = Date()
-            return Data(title: "", type: "", isAttachment: false, localizedType: "", creators: [:], creatorIds: [], fields: [:], fieldIds: [], abstract: nil, dateModified: date, dateAdded: date,
-                        maxFieldTitleWidth: 0, maxNonemptyFieldTitleWidth: 0)
+            return Data(
+                title: "",
+                attributedTitle: .init(string: ""),
+                type: "",
+                isAttachment: false,
+                localizedType: "",
+                creators: [:],
+                creatorIds: [],
+                fields: [:],
+                fieldIds: [],
+                abstract: nil,
+                dateModified: date,
+                dateAdded: date,
+                maxFieldTitleWidth: 0,
+                maxNonemptyFieldTitleWidth: 0
+            )
         }
     }
 
@@ -249,6 +264,9 @@ struct ItemDetailState: ViewModelState {
     // Child key which should be initially shown on screen
     var preScrolledChildKey: String?
     var hideController: Bool
+    var titleFont: UIFont {
+        return .preferredFont(for: .headline, weight: .regular)
+    }
 
     @UserDefault(key: "ItemDetailAbstractCollapsedKey", defaultValue: false)
     var abstractCollapsed: Bool

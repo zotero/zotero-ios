@@ -33,12 +33,6 @@ struct AnnotationPopoverActionHandler: ViewModelActionHandler {
                 state.changes = .pageLabel
             }
 
-        case .setHighlight(let text):
-            update(viewModel: viewModel) { state in
-                state.highlightText = text
-                state.changes = .highlight
-            }
-
         case .setComment(let comment):
             update(viewModel: viewModel) { state in
                 state.comment = comment

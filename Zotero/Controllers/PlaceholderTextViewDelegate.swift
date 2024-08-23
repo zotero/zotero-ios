@@ -11,28 +11,10 @@ import UIKit
 import RxSwift
 
 final class PlaceholderTextViewDelegate: NSObject {
-    private let menuItems: [UIMenuItem]?
     private let placeholderLayer: CATextLayer
     private let placeholder: String
 
-    private var textObserver: AnyObserver<String>?
-    var textObservable: Observable<String> {
-        return Observable.create { observer -> Disposable in
-            self.textObserver = observer
-            return Disposables.create()
-        }
-    }
-    var textChanged: ((String) -> Void)?
-    private var didBecomeActiveObserver: AnyObserver<()>?
-    var didBecomeActive: Observable<()> {
-        return Observable.create { observer -> Disposable in
-            self.didBecomeActiveObserver = observer
-            return Disposables.create()
-        }
-    }
-
-    init(placeholder: String, menuItems: [UIMenuItem]?, textView: UITextView) {
-        self.menuItems = menuItems
+    init(placeholder: String, textView: UITextView) {
         self.placeholder = placeholder
         placeholderLayer = CATextLayer()
 
@@ -95,11 +77,7 @@ final class PlaceholderTextViewDelegate: NSObject {
 
 extension PlaceholderTextViewDelegate: UITextViewDelegate {
     func textViewDidBeginEditing(_ textView: UITextView) {
-        if let menuItems {
-            UIMenuController.shared.menuItems = menuItems
-        }
         placeholderLayer.foregroundColor = UIColor.placeholderText.cgColor
-        didBecomeActiveObserver?.on(.next(()))
     }
 
     func textViewDidEndEditing(_ textView: UITextView) {
@@ -114,7 +92,8 @@ extension PlaceholderTextViewDelegate: UITextViewDelegate {
     }
 
     func textViewDidChange(_ textView: UITextView) {
-        textObserver?.on(.next(textView.text))
-        textChanged?(textView.text)
+        if textView.text.isEmpty {
+            placeholderLayer.isHidden = false
+        }
     }
 }

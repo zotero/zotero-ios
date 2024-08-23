@@ -42,6 +42,7 @@
 		61BD13952A5831EF008A0704 /* TextKit1TextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61BD13942A5831EF008A0704 /* TextKit1TextView.swift */; };
 		61C817F22A49B5D30085B1E6 /* CollectionResponseSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EDEE250242E700D8BC1E /* CollectionResponseSpec.swift */; };
 		61E24DCC2ABB385E00D75F50 /* OpenItemsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61E24DCB2ABB385E00D75F50 /* OpenItemsController.swift */; };
+		61DE64D52C5BD0250096776C /* FormattedTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61DE64D42C5BD0250096776C /* FormattedTextView.swift */; };
 		61FA14CE2B05081D00E7D423 /* TextConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61FA14CD2B05081D00E7D423 /* TextConverter.swift */; };
 		61FA14D02B08E24A00E7D423 /* ColorPickerStackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61FA14CF2B08E24A00E7D423 /* ColorPickerStackView.swift */; };
 		B300B33324291C8D00C1FE1E /* RTranslatorMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300B33224291C8D00C1FE1E /* RTranslatorMetadata.swift */; };
@@ -642,7 +643,6 @@
 		B3593F26241A61C700760E20 /* ItemDetailAbstractCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593ED4241A61C700760E20 /* ItemDetailAbstractCell.swift */; };
 		B3593F27241A61C700760E20 /* ItemDetailFieldContentView.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3593ED5241A61C700760E20 /* ItemDetailFieldContentView.xib */; };
 		B3593F28241A61C700760E20 /* ItemDetailFieldCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593ED6241A61C700760E20 /* ItemDetailFieldCell.swift */; };
-		B3593F29241A61C700760E20 /* ItemDetailTitleContentView.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3593ED7241A61C700760E20 /* ItemDetailTitleContentView.xib */; };
 		B3593F2A241A61C700760E20 /* ItemDetailNoteCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593ED8241A61C700760E20 /* ItemDetailNoteCell.swift */; };
 		B3593F2C241A61C700760E20 /* ItemDetailTagContentView.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3593EDA241A61C700760E20 /* ItemDetailTagContentView.xib */; };
 		B3593F2E241A61C700760E20 /* ItemDetailAttachmentCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593EDC241A61C700760E20 /* ItemDetailAttachmentCell.swift */; };
@@ -850,7 +850,6 @@
 		B3972689247D403200A8B469 /* UrlDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3972688247D403200A8B469 /* UrlDetector.swift */; };
 		B3981427257A5A16002C755C /* AnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3981426257A5A16002C755C /* AnnotationView.swift */; };
 		B398142E257A649D002C755C /* TextContentEditCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B398142C257A649D002C755C /* TextContentEditCell.swift */; };
-		B398143F257A8EB2002C755C /* TextContentEditCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B398143E257A8EB2002C755C /* TextContentEditCell.xib */; };
 		B3981B76258399AA00F8D15A /* NoteAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3981B75258399AA00F8D15A /* NoteAnnotation.swift */; };
 		B398A915270C6A4300968EE8 /* WebDavController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B398A914270C6A4300968EE8 /* WebDavController.swift */; };
 		B398A917270C6A5B00968EE8 /* WebDavSessionStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B398A916270C6A5B00968EE8 /* WebDavSessionStorage.swift */; };
@@ -1287,6 +1286,7 @@
 		61ABA7502A6137D1002A4219 /* ShareableImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareableImage.swift; sourceTree = "<group>"; };
 		61BD13942A5831EF008A0704 /* TextKit1TextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextKit1TextView.swift; sourceTree = "<group>"; };
 		61E24DCB2ABB385E00D75F50 /* OpenItemsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenItemsController.swift; sourceTree = "<group>"; };
+		61DE64D42C5BD0250096776C /* FormattedTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormattedTextView.swift; sourceTree = "<group>"; };
 		61FA14CD2B05081D00E7D423 /* TextConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextConverter.swift; sourceTree = "<group>"; };
 		61FA14CF2B08E24A00E7D423 /* ColorPickerStackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPickerStackView.swift; sourceTree = "<group>"; };
 		B300B33224291C8D00C1FE1E /* RTranslatorMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RTranslatorMetadata.swift; sourceTree = "<group>"; };
@@ -1687,7 +1687,6 @@
 		B3593ED4241A61C700760E20 /* ItemDetailAbstractCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemDetailAbstractCell.swift; sourceTree = "<group>"; };
 		B3593ED5241A61C700760E20 /* ItemDetailFieldContentView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ItemDetailFieldContentView.xib; sourceTree = "<group>"; };
 		B3593ED6241A61C700760E20 /* ItemDetailFieldCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemDetailFieldCell.swift; sourceTree = "<group>"; };
-		B3593ED7241A61C700760E20 /* ItemDetailTitleContentView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ItemDetailTitleContentView.xib; sourceTree = "<group>"; };
 		B3593ED8241A61C700760E20 /* ItemDetailNoteCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemDetailNoteCell.swift; sourceTree = "<group>"; };
 		B3593EDA241A61C700760E20 /* ItemDetailTagContentView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ItemDetailTagContentView.xib; sourceTree = "<group>"; };
 		B3593EDC241A61C700760E20 /* ItemDetailAttachmentCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemDetailAttachmentCell.swift; sourceTree = "<group>"; };
@@ -1856,7 +1855,6 @@
 		B3972688247D403200A8B469 /* UrlDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UrlDetector.swift; sourceTree = "<group>"; };
 		B3981426257A5A16002C755C /* AnnotationView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnnotationView.swift; sourceTree = "<group>"; };
 		B398142C257A649D002C755C /* TextContentEditCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextContentEditCell.swift; sourceTree = "<group>"; };
-		B398143E257A8EB2002C755C /* TextContentEditCell.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = TextContentEditCell.xib; sourceTree = "<group>"; };
 		B3981B75258399AA00F8D15A /* NoteAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteAnnotation.swift; sourceTree = "<group>"; };
 		B398A914270C6A4300968EE8 /* WebDavController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebDavController.swift; sourceTree = "<group>"; };
 		B398A916270C6A5B00968EE8 /* WebDavSessionStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavSessionStorage.swift; sourceTree = "<group>"; };
@@ -3090,7 +3088,6 @@
 				B34DF1BB2576956F0019CCD1 /* SwitchCell.swift */,
 				B34DF1BC2576956F0019CCD1 /* SwitchCell.xib */,
 				B398142C257A649D002C755C /* TextContentEditCell.swift */,
-				B398143E257A8EB2002C755C /* TextContentEditCell.xib */,
 				B34DF1B325768BB70019CCD1 /* TextFieldCell.swift */,
 				B34DF1B425768BB70019CCD1 /* TextFieldCell.xib */,
 			);
@@ -3268,7 +3265,6 @@
 				B3593EDA241A61C700760E20 /* ItemDetailTagContentView.xib */,
 				B3593EDD241A61C700760E20 /* ItemDetailTitleCell.swift */,
 				B37AA28128990F6300A1C643 /* ItemDetailTitleContentView.swift */,
-				B3593ED7241A61C700760E20 /* ItemDetailTitleContentView.xib */,
 				B3593EE5241A61C700760E20 /* ItemDetailViewController.swift */,
 				B3593EDF241A61C700760E20 /* ItemDetailViewController.xib */,
 			);
@@ -3803,6 +3799,7 @@
 				B338E81F273AA9B20003DECD /* DisappearActionHostingController.swift */,
 				B3DCDF01240912060039ED0D /* DocumentPickerViewController.swift */,
 				B30B40622490F09400FAAF6D /* FileAttachmentView.swift */,
+				61DE64D42C5BD0250096776C /* FormattedTextView.swift */,
 				B33979CF2493ACA800A923C3 /* ImagePreviewViewController.swift */,
 				B3C9096E2497666900286FCF /* ImagePreviewViewController.xib */,
 				B3DDDAAB24CAD6810014DF99 /* InsetLabel.swift */,
@@ -4422,7 +4419,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				B3593F33241A61C700760E20 /* ItemDetailNoteContentView.xib in Resources */,
-				B398143F257A8EB2002C755C /* TextContentEditCell.xib in Resources */,
 				618D83E72BAAC88C00E7966B /* PrivacyInfo.xcprivacy in Resources */,
 				B32A273D254841B80081E061 /* CreatorEditViewController.xib in Resources */,
 				B3830CE9255451DC00910FE0 /* TagPickerViewController.xib in Resources */,
@@ -4454,7 +4450,6 @@
 				B3593F23241A61C700760E20 /* ItemDetailSectionView.xib in Resources */,
 				B3593F42241A61C700760E20 /* ItemsViewController.xib in Resources */,
 				B37C5B6F26454130009A37E5 /* NoteEditorViewController.xib in Resources */,
-				B3593F29241A61C700760E20 /* ItemDetailTitleContentView.xib in Resources */,
 				B3593F27241A61C700760E20 /* ItemDetailFieldContentView.xib in Resources */,
 				B34DF1BE2576956F0019CCD1 /* SwitchCell.xib in Resources */,
 				B30B550324B85A3A00F94B59 /* Colors.xcassets in Resources */,
@@ -4968,6 +4963,7 @@
 				B310091A272C00BA003FC743 /* CreateWebDavDeletionsDbRequest.swift in Sources */,
 				B310280D2B1E16F300E41554 /* PDFThumbnailsAction.swift in Sources */,
 				B30B40632490F09400FAAF6D /* FileAttachmentView.swift in Sources */,
+				61DE64D52C5BD0250096776C /* FormattedTextView.swift in Sources */,
 				B3D0AC98255C14AB007648F5 /* PDFReaderLayout.swift in Sources */,
 				B353F1FB242E21880062EE24 /* ResetTranslatorsDbRequest.swift in Sources */,
 				B3E8FE4E27142B5F00F51458 /* DebuggingAction.swift in Sources */,

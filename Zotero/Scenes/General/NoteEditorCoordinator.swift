@@ -84,7 +84,7 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
         )
         let handler = NoteEditorActionHandler(dbStorage: dbStorage, schemaController: controllers.schemaController, saveCallback: saveCallback)
         let viewModel = ViewModel(initialState: state, handler: handler)
-        let controller = NoteEditorViewController(viewModel: viewModel)
+        let controller = NoteEditorViewController(viewModel: viewModel, htmlAttributedStringConverter: controllers.htmlAttributedStringConverter)
         controller.coordinatorDelegate = self
         navigationController?.setViewControllers([controller], animated: animated)
     }

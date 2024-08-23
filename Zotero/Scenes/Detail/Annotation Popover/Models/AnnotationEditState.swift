@@ -15,7 +15,8 @@ struct AnnotationEditState: ViewModelState {
         let color: String
         let lineWidth: CGFloat
         let pageLabel: String
-        let highlightText: String
+        let highlightText: NSAttributedString
+        let highlightFont: UIFont
         let fontSize: UInt?
     }
 
@@ -35,9 +36,14 @@ struct AnnotationEditState: ViewModelState {
     var lineWidth: CGFloat
     var pageLabel: String
     var fontSize: UInt
-    var highlightText: String
+    var highlightText: NSAttributedString
+    var highlightFont: UIFont
     var updateSubsequentLabels: Bool
     var changes: Changes
+
+    var data: Data {
+        .init(type: type, isEditable: isEditable, color: color, lineWidth: lineWidth, pageLabel: pageLabel, highlightText: highlightText, highlightFont: highlightFont, fontSize: fontSize)
+    }
 
     init(data: Data) {
         type = data.type
@@ -46,6 +52,7 @@ struct AnnotationEditState: ViewModelState {
         lineWidth = data.lineWidth
         pageLabel = data.pageLabel
         highlightText = data.highlightText
+        highlightFont = data.highlightFont
         fontSize = data.fontSize ?? 0
         updateSubsequentLabels = false
         changes = []

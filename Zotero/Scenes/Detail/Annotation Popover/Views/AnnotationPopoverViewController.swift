@@ -124,8 +124,8 @@ final class AnnotationPopoverViewController: UIViewController {
         // key, color, lineWidth, fontSize, pageLabel, updateSubsequentLabels, highlightText
         coordinatorDelegate?.showEdit(
             state: viewModel.state,
-            saveAction: { [weak self] _, _, _, pageLabel, updateSubsequentLabels, highlightText in
-                self?.viewModel.process(action: .setProperties(pageLabel: pageLabel, updateSubsequentLabels: updateSubsequentLabels, highlightText: highlightText))
+            saveAction: { [weak self] data, updateSubsequentLabels in
+                self?.viewModel.process(action: .setProperties(pageLabel: data.pageLabel, updateSubsequentLabels: updateSubsequentLabels, highlightText: data.highlightText))
             },
             deleteAction: { [weak self] in
                self?.viewModel.process(action: .delete)

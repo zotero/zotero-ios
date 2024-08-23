@@ -70,6 +70,7 @@ struct PDFReaderState: ViewModelState {
     let title: String?
     let previewCache: NSCache<NSString, UIImage>
     let textFont: UIFont
+    let textEditorFont: UIFont
     let commentFont: UIFont
     let userId: Int
     let username: String
@@ -83,7 +84,7 @@ struct PDFReaderState: ViewModelState {
     var itemToken: NotificationToken?
     var databaseAnnotations: Results<RItem>!
     var documentAnnotations: [String: PDFDocumentAnnotation]
-    var texts: [String: NSAttributedString]
+    var texts: [String: (String, [UIFont: NSAttributedString])]
     var comments: [String: NSAttributedString]
     var searchTerm: String?
     var filter: AnnotationsFilter?
@@ -147,6 +148,7 @@ struct PDFReaderState: ViewModelState {
         self.title = title
         self.previewCache = NSCache()
         self.textFont = PDFReaderLayout.annotationLayout.font
+        self.textEditorFont = AnnotationPopoverLayout.annotationLayout.font
         self.commentFont = PDFReaderLayout.annotationLayout.font
         self.userId = userId
         self.username = username

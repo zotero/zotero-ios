@@ -11,23 +11,23 @@ import UIKit
 import RxSwift
 
 final class AnnotationViewTextView: UIView {
-    private(set) var textView: UITextView!
+    private(set) var textView: FormattedTextView!
 
     private let layout: AnnotationViewLayout
     private let placeholder: String
 
     private var textViewDelegate: PlaceholderTextViewDelegate!
     var textObservable: Observable<(NSAttributedString, Bool)?> {
-        return textViewDelegate.textObservable.flatMap { [weak self] _ -> Observable<(NSAttributedString, Bool)?> in
-            guard let self else { return Observable.just(nil) }
+        return textView.attributedTextObservable.flatMap { [weak self] _ -> Observable<(NSAttributedString, Bool)?> in
+            guard let self else { return .just(nil) }
             let height = textView.contentSize.height
             textView.sizeToFit()
             setupAccessibilityLabel()
-            return Observable.just((textView.attributedText, (height != textView.contentSize.height)))
+            return .just((textView.attributedText, (height != textView.contentSize.height)))
         }
     }
-    var didBecomeActive: Observable<()> {
-        return textViewDelegate.didBecomeActive
+    var didBecomeActive: Observable<Void> {
+        return textView.didBecomeActiveObservable
     }
     var accessibilityLabelPrefix: String?
 
@@ -47,7 +47,7 @@ final class AnnotationViewTextView: UIView {
         textView.sizeToFit()
 
         func setupView() {
-            let textView = AnnotationTextView(defaultFont: layout.font)
+            let textView = FormattedTextView(defaultFont: layout.font)
             textView.adjustsFontForContentSizeCategory = true
             textView.textContainerInset = UIEdgeInsets()
             textView.textContainer.lineFragmentPadding = 0
@@ -77,12 +77,7 @@ final class AnnotationViewTextView: UIView {
         }
 
         func setupTextViewDelegate() {
-            let bold = UIMenuItem(title: "Bold", action: #selector(UITextView.toggleBoldface(_:)))
-            let italics = UIMenuItem(title: "Italics", action: #selector(UITextView.toggleItalics(_:)))
-            let superscript = UIMenuItem(title: "Superscript", action: #selector(AnnotationTextView.toggleSuperscript))
-            let `subscript` = UIMenuItem(title: "Subscript", action: #selector(AnnotationTextView.toggleSubscript))
-            let items = [bold, italics, superscript, `subscript`]
-            let delegate = PlaceholderTextViewDelegate(placeholder: placeholder, menuItems: items, textView: textView)
+            let delegate = PlaceholderTextViewDelegate(placeholder: placeholder, textView: textView)
             textView.delegate = delegate
             textViewDelegate = delegate
         }
@@ -136,44 +131,5 @@ final class AnnotationViewTextView: UIView {
             label = prefix + label
         }
         accessibilityLabel = label
-    }
-}
-
-private final class AnnotationTextView: TextKit1TextView {
-    private static let allowedActions: [String] = ["cut:", "copy:", "paste:", "toggleBoldface:", "toggleItalics:", "toggleSuperscript", "toggleSubscript", "replace:"]
-
-    private let defaultFont: UIFont
-
-    init(defaultFont: UIFont) {
-        self.defaultFont = defaultFont
-        super.init(frame: CGRect(), textContainer: nil)
-        font = defaultFont
-    }
-
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
-        return Self.allowedActions.contains(action.description)
-    }
-
-    @objc func toggleSuperscript() {
-        guard selectedRange.length > 0 else { return }
-        perform(attributedStringAction: { StringAttribute.toggleSuperscript(in: $0, range: $1, defaultFont: defaultFont) })
-    }
-
-    @objc func toggleSubscript() {
-        guard selectedRange.length > 0 else { return }
-        perform(attributedStringAction: { StringAttribute.toggleSubscript(in: $0, range: $1, defaultFont: defaultFont) })
-    }
-
-    private func perform(attributedStringAction: (NSMutableAttributedString, NSRange) -> Void) {
-        let range = selectedRange
-        let string = NSMutableAttributedString(attributedString: attributedText)
-        attributedStringAction(string, range)
-        attributedText = string
-        selectedRange = range
-        delegate?.textViewDidChange?(self)
     }
 }

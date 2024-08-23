@@ -26,6 +26,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
     private unowned let urlDetector: UrlDetector
     private unowned let fileDownloader: AttachmentDownloader
     private unowned let fileCleanupController: AttachmentFileCleanupController
+    private unowned let htmlAttributedStringConverter: HtmlAttributedStringConverter
     let backgroundQueue: DispatchQueue
     private let backgroundScheduler: SerialDispatchQueueScheduler
     private let disposeBag: DisposeBag
@@ -38,7 +39,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         dateParser: DateParser,
         urlDetector: UrlDetector,
         fileDownloader: AttachmentDownloader,
-        fileCleanupController: AttachmentFileCleanupController
+        fileCleanupController: AttachmentFileCleanupController,
+        htmlAttributedStringConverter: HtmlAttributedStringConverter
     ) {
         let queue = DispatchQueue(label: "org.zotero.ItemDetailActionHandler.background", qos: .userInitiated)
         self.apiClient = apiClient
@@ -49,6 +51,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         self.urlDetector = urlDetector
         self.fileDownloader = fileDownloader
         self.fileCleanupController = fileCleanupController
+        self.htmlAttributedStringConverter = htmlAttributedStringConverter
         self.backgroundQueue = queue
         self.backgroundScheduler = SerialDispatchQueueScheduler(queue: queue, internalSerialQueueName: "org.zotero.ItemDetailActionHandler.backgroundScheduler")
         self.disposeBag = DisposeBag()
@@ -177,6 +180,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                     dateParser: self.dateParser,
                     fileStorage: self.fileStorage,
                     urlDetector: self.urlDetector,
+                    htmlAttributedStringConverter: htmlAttributedStringConverter,
+                    titleFont: viewModel.state.titleFont,
                     doiDetector: FieldKeys.Item.isDoi
                 )
 
@@ -189,6 +194,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                     dateParser: self.dateParser,
                     fileStorage: self.fileStorage,
                     urlDetector: self.urlDetector,
+                    htmlAttributedStringConverter: htmlAttributedStringConverter,
+                    titleFont: viewModel.state.titleFont,
                     doiDetector: FieldKeys.Item.isDoi
                 )
 
@@ -248,6 +255,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 dateParser: self.dateParser,
                 fileStorage: self.fileStorage,
                 urlDetector: self.urlDetector,
+                htmlAttributedStringConverter: htmlAttributedStringConverter,
+                titleFont: viewModel.state.titleFont,
                 doiDetector: FieldKeys.Item.isDoi
             )
 
@@ -962,19 +971,21 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         }
     }
 
-    private func set(title: String, in viewModel: ViewModel<ItemDetailActionHandler>) {
+    private func set(title: NSAttributedString, in viewModel: ViewModel<ItemDetailActionHandler>) {
         guard let key = self.schemaController.titleKey(for: viewModel.state.data.type) else {
             DDLogError("ItemDetailActionHandler: schema controller doesn't contain title key for item type \(viewModel.state.data.type)")
             return
         }
+        guard title != viewModel.state.data.attributedTitle else { return }
 
         self.update(viewModel: viewModel) { state in
-            state.data.title = title
+            state.data.attributedTitle = title
+            state.data.title = htmlAttributedStringConverter.convert(attributedString: title)
             state.reload = .row(.title)
         }
 
         let keyPair = KeyBaseKeyPair(key: key, baseKey: (key != FieldKeys.Item.title ? FieldKeys.Item.title : nil))
-        let request = EditItemFieldsDbRequest(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, fieldValues: [keyPair: title], dateParser: dateParser)
+        let request = EditItemFieldsDbRequest(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, fieldValues: [keyPair: viewModel.state.data.title], dateParser: dateParser)
         self.perform(request: request) { error in
             guard let error else { return }
             DDLogError("ItemDetailActionHandler: can't store title - \(error)")

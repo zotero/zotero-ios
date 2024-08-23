@@ -10,8 +10,7 @@ import UIKit
 
 import RxSwift
 
-// key, color, lineWidth, fontSize, pageLabel, updateSubsequentLabels, highlightText
-typealias AnnotationEditSaveAction = (String, CGFloat, UInt, String, Bool, String) -> Void
+typealias AnnotationEditSaveAction = (_ data: AnnotationEditState.Data, _ updateSubsequentLabels: Bool) -> Void
 typealias AnnotationEditDeleteAction = () -> Void
 
 final class AnnotationEditViewController: UIViewController {
@@ -133,7 +132,8 @@ final class AnnotationEditViewController: UIViewController {
             let paragraphStyle = NSMutableParagraphStyle()
             paragraphStyle.minimumLineHeight = AnnotationPopoverLayout.annotationLayout.lineHeight
             paragraphStyle.maximumLineHeight = AnnotationPopoverLayout.annotationLayout.lineHeight
-            let attributedText = NSAttributedString(string: self.viewModel.state.highlightText, attributes: [.font: AnnotationPopoverLayout.annotationLayout.font, .paragraphStyle: paragraphStyle])
+            let attributedText = NSMutableAttributedString(attributedString: viewModel.state.highlightText)
+            attributedText.addAttribute(.paragraphStyle, value: paragraphStyle, range: .init(location: 0, length: attributedText.length))
             let boundingRect = attributedText.boundingRect(with: CGSize(width: width, height: .greatestFiniteMagnitude), options: .usesLineFragmentOrigin, context: nil)
             height += ceil(boundingRect.height) + 58 // 58 for 22 insets and 36 spacer
         }
@@ -174,7 +174,7 @@ final class AnnotationEditViewController: UIViewController {
                .subscribe(onNext: { [weak self] in
                    guard let self else { return }
                    let state = viewModel.state
-                   saveAction(state.color, state.lineWidth, state.fontSize, state.pageLabel, state.updateSubsequentLabels, state.highlightText)
+                   saveAction(state.data, state.updateSubsequentLabels)
                    self.cancel()
                })
                .disposed(by: self.disposeBag)
@@ -188,7 +188,7 @@ final class AnnotationEditViewController: UIViewController {
         self.tableView.dataSource = self
         self.tableView.register(ColorPickerCell.self, forCellReuseIdentifier: Section.properties.cellId(index: 0))
         self.tableView.register(LineWidthCell.self, forCellReuseIdentifier: Section.properties.cellId(index: 1))
-        self.tableView.register(UINib(nibName: "TextContentEditCell", bundle: nil), forCellReuseIdentifier: Section.textContent.cellId(index: 0))
+        self.tableView.register(TextContentEditCell.self, forCellReuseIdentifier: Section.textContent.cellId(index: 0))
         self.tableView.register(FontSizeCell.self, forCellReuseIdentifier: Section.fontSize.cellId(index: 0))
         self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: Section.actions.cellId(index: 0))
         self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: Section.pageLabel.cellId(index: 0))
@@ -219,7 +219,10 @@ extension AnnotationEditViewController: UITableViewDataSource {
         case .properties:
             if let cell = cell as? ColorPickerCell {
                 cell.setup(selectedColor: self.viewModel.state.color, annotationType: self.viewModel.state.type)
-                cell.colorChange.subscribe(onNext: { hex in self.viewModel.process(action: .setColor(hex)) }).disposed(by: cell.disposeBag)
+                cell.colorChange.subscribe { [weak viewModel] hex in
+                    viewModel?.process(action: .setColor(hex))
+                }
+                .disposed(by: cell.disposeBag)
             } else if let cell = cell as? LineWidthCell {
                 cell.set(value: Float(self.viewModel.state.lineWidth))
                 cell.valueObservable.subscribe(onNext: { value in self.viewModel.process(action: .setLineWidth(CGFloat(value))) }).disposed(by: cell.disposeBag)
@@ -228,17 +231,16 @@ extension AnnotationEditViewController: UITableViewDataSource {
         case .textContent:
             if let cell = cell as? TextContentEditCell {
                 cell.setup(with: self.viewModel.state.highlightText, color: self.viewModel.state.color)
-                cell.textObservable
-                    .subscribe(onNext: { [weak self] text, needsHeightReload in
-                        self?.viewModel.process(action: .setHighlight(text))
-
-                        if needsHeightReload {
-                            self?.updatePreferredContentSize()
-                            self?.reloadHeight()
-                            self?.scrollToHighlightCursor()
-                        }
-                    })
-                    .disposed(by: self.disposeBag)
+                cell.attributedTextAndHeightReloadNeededObservable.subscribe { [weak self] attributedText, needsHeightReload in
+                    guard let self else { return }
+                    viewModel.process(action: .setHighlight(attributedText))
+                    if needsHeightReload {
+                        updatePreferredContentSize()
+                        reloadHeight()
+                        scrollToHighlightCursor()
+                    }
+                }
+                .disposed(by: cell.disposeBag)
             }
 
         case .fontSize:

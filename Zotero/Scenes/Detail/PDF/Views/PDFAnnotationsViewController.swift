@@ -16,7 +16,7 @@ import RxSwift
 typealias AnnotationsViewControllerAction = (AnnotationView.Action, Annotation, UIButton) -> Void
 
 protocol AnnotationsDelegate: AnyObject {
-    func parseAndCacheIfNeededAttributedText(for annotation: PDFAnnotation) -> NSAttributedString?
+    func parseAndCacheIfNeededAttributedText(for annotation: PDFAnnotation, with font: UIFont) -> NSAttributedString?
     func parseAndCacheIfNeededAttributedComment(for annotation: PDFAnnotation) -> NSAttributedString?
 }
 
@@ -111,22 +111,23 @@ final class PDFAnnotationsViewController: UIViewController {
             let key = annotation.readerKey
             coordinatorDelegate?.showCellOptions(
                 for: annotation,
+                highlightFont: viewModel.state.textEditorFont,
                 userId: viewModel.state.userId,
                 library: viewModel.state.library,
                 sender: sender,
                 userInterfaceStyle: viewModel.state.interfaceStyle,
-                saveAction: { [weak self] color, lineWidth, fontSize, pageLabel, updateSubsequentLabels, highlightText in
-                    self?.viewModel.process(
-                        action: .updateAnnotationProperties(
-                            key: key.key,
-                            color: color,
-                            lineWidth: lineWidth,
-                            fontSize: fontSize,
-                            pageLabel: pageLabel,
-                            updateSubsequentLabels: updateSubsequentLabels,
-                            highlightText: highlightText
-                        )
-                    )
+                saveAction: { [weak viewModel] data, updateSubsequentLabels in
+                    guard let viewModel else { return }
+                    viewModel.process(action: .updateAnnotationProperties(
+                        key: key.key,
+                        color: data.color,
+                        lineWidth: data.lineWidth,
+                        fontSize: data.fontSize ?? 0,
+                        pageLabel: data.pageLabel,
+                        updateSubsequentLabels: updateSubsequentLabels,
+                        highlightText: data.highlightText,
+                        higlightFont: data.highlightFont
+                    ))
                 },
                 deleteAction: { [weak self] in
                     self?.viewModel.process(action: .removeAnnotation(key))
@@ -286,7 +287,7 @@ final class PDFAnnotationsViewController: UIViewController {
         // Annotation text
         switch annotation.type {
         case .highlight, .underline:
-            text = parentDelegate?.parseAndCacheIfNeededAttributedText(for: annotation)
+            text = parentDelegate?.parseAndCacheIfNeededAttributedText(for: annotation, with: state.textFont)
 
         case .note, .image, .ink, .freeText:
             text = nil

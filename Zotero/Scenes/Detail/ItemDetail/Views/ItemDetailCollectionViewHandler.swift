@@ -178,7 +178,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
                 switch row {
                 case .title:
-                    let title = viewModel.state.data.title
+                    let title = viewModel.state.data.attributedTitle
                     return collectionView.dequeueConfiguredReusableCell(using: titleRegistration, for: indexPath, item: (title, isEditing))
 
                 case .creator(let creator):
@@ -459,8 +459,9 @@ final class ItemDetailCollectionViewHandler: NSObject {
         for section in sections {
             snapshot.appendItems(rows(for: section.section, state: state), toSection: section)
         }
-        collectionView.isEditing = state.isEditing
         dataSource.apply(snapshot, animatingDifferences: animated, completion: nil)
+        // Setting isEditing will trigger reconfiguration of cells, before the new snapshot has been applied, so it is done afterwards to avoid e.g. flickering the old text in a text view.
+        collectionView.isEditing = state.isEditing
 
         /// Creates array of visible sections for current state data.
         /// - parameter data: New data.
@@ -739,17 +740,18 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
     // MARK: - Cells
 
-    private lazy var titleRegistration: UICollectionView.CellRegistration<ItemDetailTitleCell, (String, Bool)> = {
+    private lazy var titleRegistration: UICollectionView.CellRegistration<ItemDetailTitleCell, (NSAttributedString, Bool)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
             guard let self else { return }
-            cell.contentConfiguration = ItemDetailTitleCell.ContentConfiguration(
+            let configuration = ItemDetailTitleCell.ContentConfiguration(
                 title: data.0,
                 isEditing: data.1,
                 layoutMargins: layoutMargins(for: indexPath, self: self),
-                textChanged: { [weak self] text in
-                    self?.viewModel.process(action: .setTitle(text))
+                attributedTextChanged: { [weak self] attributedText in
+                    self?.viewModel.process(action: .setTitle(attributedText))
                 }
             )
+            cell.contentConfiguration = configuration
         }
     }()
 

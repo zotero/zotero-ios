@@ -167,13 +167,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         case .requestPreviews(let keys, let notify):
             loadPreviews(for: keys, notify: notify, in: viewModel)
 
-        case .setHighlight(let key, let highlight):
-            set(highlightText: highlight, key: key, viewModel: viewModel)
-
-        case .parseAndCacheText(let key, let text):
-            update(viewModel: viewModel, notifyListeners: false) { state in
-                state.texts[key] = htmlAttributedStringConverter.convert(text: text, baseAttributes: [.font: state.textFont])
-            }
+        case .parseAndCacheText(let key, let text, let font):
+            updateTextCache(key: key, text: text, font: font, viewModel: viewModel, notifyListeners: false)
 
         case .parseAndCacheComment(let key, let comment):
             update(viewModel: viewModel, notifyListeners: false) { state in
@@ -202,7 +197,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         case .setTags(let key, let tags):
             set(tags: tags, key: key, viewModel: viewModel)
 
-        case .updateAnnotationProperties(let key, let color, let lineWidth, let fontSize, let pageLabel, let updateSubsequentLabels, let highlightText):
+        case .updateAnnotationProperties(let key, let color, let lineWidth, let fontSize, let pageLabel, let updateSubsequentLabels, let highlightText, let highlightFont):
             set(
                 color: color,
                 lineWidth: lineWidth,
@@ -210,6 +205,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 pageLabel: pageLabel,
                 updateSubsequentLabels: updateSubsequentLabels,
                 highlightText: highlightText,
+                highlightFont: highlightFont,
                 key: key,
                 viewModel: viewModel
             )
@@ -1272,26 +1268,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         update(annotation: annotation, contents: htmlComment, in: viewModel.state.document)
     }
 
-    private func set(highlightText: String, key: String, viewModel: ViewModel<PDFReaderActionHandler>) {
-        let values = [KeyBaseKeyPair(key: FieldKeys.Item.Annotation.text, baseKey: nil): highlightText]
-        let request = EditItemFieldsDbRequest(key: key, libraryId: viewModel.state.library.identifier, fieldValues: values, dateParser: dateParser)
-        perform(request: request) { [weak self, weak viewModel] error in
-            guard let self, let viewModel else { return }
-            if let error {
-                DDLogError("PDFReaderActionHandler: can't update annotation \(key) - \(error)")
-
-                update(viewModel: viewModel) { state in
-                    state.error = .cantUpdateAnnotation
-                }
-                return
-            }
-            let text = htmlAttributedStringConverter.convert(text: highlightText, baseAttributes: [.font: viewModel.state.textFont])
-            update(viewModel: viewModel) { state in
-                state.texts[key] = text
-            }
-        }
-    }
-
     private func set(tags: [Tag], key: String, viewModel: ViewModel<PDFReaderActionHandler>) {
         let request = EditTagsForItemDbRequest(key: key, libraryId: viewModel.state.library.identifier, tags: tags)
         perform(request: request) { [weak self, weak viewModel] error in
@@ -1311,7 +1287,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         fontSize: UInt,
         pageLabel: String,
         updateSubsequentLabels: Bool,
-        highlightText: String,
+        highlightText: NSAttributedString,
+        highlightFont: UIFont,
         key: String,
         viewModel: ViewModel<PDFReaderActionHandler>
     ) {
@@ -1320,7 +1297,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         update(annotation: annotation, color: (color, viewModel.state.interfaceStyle), lineWidth: lineWidth, fontSize: fontSize, in: viewModel.state.document)
 
         // Update remaining values directly
-        let values = [KeyBaseKeyPair(key: FieldKeys.Item.Annotation.pageLabel, baseKey: nil): pageLabel, KeyBaseKeyPair(key: FieldKeys.Item.Annotation.text, baseKey: nil): highlightText]
+        let text = htmlAttributedStringConverter.convert(attributedString: highlightText)
+        let values = [KeyBaseKeyPair(key: FieldKeys.Item.Annotation.pageLabel, baseKey: nil): pageLabel, KeyBaseKeyPair(key: FieldKeys.Item.Annotation.text, baseKey: nil): text]
         let request = EditItemFieldsDbRequest(key: key, libraryId: viewModel.state.library.identifier, fieldValues: values, dateParser: dateParser)
         perform(request: request) { [weak self, weak viewModel] error in
             guard let self, let viewModel else { return }
@@ -1332,10 +1310,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 }
                 return
             }
-            let text = htmlAttributedStringConverter.convert(text: highlightText, baseAttributes: [.font: viewModel.state.textFont])
-            update(viewModel: viewModel) { state in
-                state.texts[key] = text
-            }
+            updateTextCache(key: key, text: text, font: highlightFont, viewModel: viewModel, notifyListeners: true)
         }
     }
 
@@ -2165,17 +2140,20 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 if item.changeType == .sync {
                     // Update text and comment if it's remote sync change
                     DDLogInfo("PDFReaderActionHandler: update text and comment")
-                    let text: NSAttributedString?
+
+                    let textCacheTuple: (String, [UIFont: NSAttributedString])?
                     let comment: NSAttributedString?
                     // Annotation text
                     switch annotation.type {
                     case .highlight, .underline:
-                        text = annotation.text.flatMap({ htmlAttributedStringConverter.convert(text: $0, baseAttributes: [.font: viewModel.state.textFont]) })
+                        textCacheTuple = annotation.text.flatMap({
+                            ($0, [viewModel.state.textFont: htmlAttributedStringConverter.convert(text: $0, baseAttributes: [.font: viewModel.state.textFont])])
+                        })
 
                     case .note, .image, .ink, .freeText:
-                        text = nil
+                        textCacheTuple = nil
                     }
-                    texts[key.key] = text
+                    texts[key.key] = textCacheTuple
                     // Annotation comment
                     switch annotation.type {
                     case .note, .highlight, .image, .underline:
@@ -2462,6 +2440,17 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             object: pdfAnnotation,
             userInfo: [PSPDFAnnotationChangedNotificationKeyPathKey: PdfAnnotationChanges.stringValues(from: changes)]
         )
+    }
+
+    private func updateTextCache(key: String, text: String, font: UIFont, viewModel: ViewModel<PDFReaderActionHandler>, notifyListeners: Bool) {
+        update(viewModel: viewModel, notifyListeners: notifyListeners) { state in
+            var (cachedText, attributedTextByFont) = state.texts[key, default: (text, [:])]
+            if cachedText != text {
+                attributedTextByFont = [:]
+            }
+            attributedTextByFont[font] = htmlAttributedStringConverter.convert(text: text, baseAttributes: [.font: font])
+            state.texts[key] = (text, attributedTextByFont)
+        }
     }
 }
 
