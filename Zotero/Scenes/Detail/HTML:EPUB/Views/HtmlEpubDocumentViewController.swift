@@ -134,7 +134,10 @@ class HtmlEpubDocumentViewController: UIViewController {
             case .note:
                 toolName = "note"
 
-            case .eraser, .image, .ink, .underline, .freeText:
+            case .underline:
+                toolName = "underline"
+
+            case .eraser, .image, .ink, .freeText:
                 return
             }
             webViewHandler.call(javascript: "setTool({ type: '\(toolName)', color: '\(color.hexString)' });").subscribe().disposed(by: disposeBag)
