@@ -931,7 +931,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         filterAnnotations(with: newTerm, filter: viewModel.state.filter, in: viewModel)
     }
 
-    /// Filters annotations based on given term and filer parameters.
+    /// Filters annotations based on given term and filter parameters.
     /// - parameter term: Term to filter annotations.
     /// - parameter viewModel: ViewModel.
     private func filterAnnotations(with term: String?, filter: AnnotationsFilter?, in viewModel: ViewModel<PDFReaderActionHandler>) {
@@ -2015,53 +2015,54 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             keys.insert((key, annotation.sortIndex), at: index)
         }
         return keys.map({ $0.0 })
-    }
 
-    private func validate(databaseAnnotation: PDFDatabaseAnnotation) -> Bool {
-        if databaseAnnotation._page == nil {
-            return false
+        func validate(databaseAnnotation: PDFDatabaseAnnotation) -> Bool {
+            if databaseAnnotation._page == nil {
+                return false
+            }
+
+            switch databaseAnnotation.type {
+            case .ink:
+                if databaseAnnotation.item.paths.isEmpty {
+                    DDLogInfo("PDFReaderActionHandler: ink annotation \(databaseAnnotation.key) missing paths")
+                    return false
+                }
+
+            case .highlight, .image, .note, .underline:
+                if databaseAnnotation.item.rects.isEmpty {
+                    DDLogInfo("PDFReaderActionHandler: \(databaseAnnotation.type) annotation \(databaseAnnotation.key) missing rects")
+                    return false
+                }
+
+            case .freeText:
+                if databaseAnnotation.item.rects.isEmpty {
+                    DDLogInfo("PDFReaderActionHandler: \(databaseAnnotation.type) annotation \(databaseAnnotation.key) missing rects")
+                    return false
+                }
+                if databaseAnnotation.fontSize == nil {
+                    // Since free text annotations are created in AnnotationConverter using `setBoundingBox(annotation.boundingBox(boundingBoxConverter: boundingBoxConverter), transformSize: true)`
+                    // it's ok even if they are missing `fontSize`, so we just log it and continue validation.
+                    DDLogInfo("PDFReaderActionHandler: \(databaseAnnotation.type) annotation \(databaseAnnotation.key) missing fontSize")
+                }
+                if databaseAnnotation.rotation == nil {
+                    DDLogInfo("PDFReaderActionHandler: \(databaseAnnotation.type) annotation \(databaseAnnotation.key) missing rotation")
+                    return false
+                }
+            }
+
+            // Sort index consists of 3 parts separated by "|":
+            // - 1. page index (5 characters)
+            // - 2. character offset (6 characters)
+            // - 3. y position from top (5 characters)
+            let sortIndex = databaseAnnotation.sortIndex
+            let parts = sortIndex.split(separator: "|")
+            if parts.count != 3 || parts[0].count != 5 || parts[1].count != 6 || parts[2].count != 5 {
+                DDLogInfo("PDFReaderActionHandler: invalid sort index (\(sortIndex)) for \(databaseAnnotation.key)")
+                return false
+            }
+
+            return true
         }
-
-        switch databaseAnnotation.type {
-        case .ink:
-            if databaseAnnotation.item.paths.isEmpty {
-                DDLogInfo("PDFReaderActionHandler: ink annotation \(databaseAnnotation.key) missing paths")
-                return false
-            }
-
-        case .highlight, .image, .note, .underline:
-            if databaseAnnotation.item.rects.isEmpty {
-                DDLogInfo("PDFReaderActionHandler: \(databaseAnnotation.type) annotation \(databaseAnnotation.key) missing rects")
-                return false
-            }
-
-        case .freeText:
-            if databaseAnnotation.item.rects.isEmpty {
-                DDLogInfo("PDFReaderActionHandler: \(databaseAnnotation.type) annotation \(databaseAnnotation.key) missing rects")
-                return false
-            }
-            if databaseAnnotation.fontSize == nil {
-                DDLogInfo("PDFReaderActionHandler: \(databaseAnnotation.type) annotation \(databaseAnnotation.key) missing fontSize")
-                return false
-            }
-            if databaseAnnotation.rotation == nil {
-                DDLogInfo("PDFReaderActionHandler: \(databaseAnnotation.type) annotation \(databaseAnnotation.key) missing rotation")
-                return false
-            }
-        }
-
-        // Sort index consists of 3 parts separated by "|":
-        // - 1. page index (5 characters)
-        // - 2. character offset (6 characters)
-        // - 3. y position from top (5 characters)
-        let sortIndex = databaseAnnotation.sortIndex
-        let parts = sortIndex.split(separator: "|")
-        if parts.count != 3 || parts[0].count != 5 || parts[1].count != 6 || parts[2].count != 5 {
-            DDLogInfo("PDFReaderActionHandler: invalid sort index (\(sortIndex)) for \(databaseAnnotation.key)")
-            return false
-        }
-
-        return true
     }
 
     private func loadSupportedAndLockUnsupportedAnnotations(
@@ -2110,8 +2111,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         DDLogInfo("PDFReaderActionHandler: database annotation changed")
 
-        // Get sorted database keys
-        var keys = (viewModel.state.snapshotKeys ?? viewModel.state.sortedKeys).filter({ $0.type == .database })
+        let databaseAnnotations = viewModel.state.databaseAnnotations!
         var texts = viewModel.state.texts
         var comments = viewModel.state.comments
         var selectKey: PDFReaderState.AnnotationKey?
@@ -2124,13 +2124,14 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         var insertedPdfAnnotations: [PSPDFKit.Annotation] = []
 
         // Check which annotations changed and update `Document`
+        // Modifications are indexed by the previously observed items
         for index in modifications {
-            if index >= keys.count {
-                DDLogWarn("PDFReaderActionHandler: tried modifying index out of bounds! keys.count=\(keys.count); index=\(index); deletions=\(deletions); insertions=\(insertions); modifications=\(modifications)")
+            if index >= databaseAnnotations.count {
+                DDLogWarn("PDFReaderActionHandler: tried modifying index out of bounds! keys.count=\(databaseAnnotations.count); index=\(index); deletions=\(deletions); insertions=\(insertions); modifications=\(modifications)")
                 continue
             }
 
-            let key = keys[index]
+            let key = PDFReaderState.AnnotationKey(key: databaseAnnotations[index].key, type: .database)
             guard let item = objects.filter(.key(key.key)).first, let annotation = PDFDatabaseAnnotation(item: item) else { continue }
 
             if canUpdate(key: key, item: item, at: index, viewModel: viewModel) {
@@ -2175,14 +2176,15 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         var shouldCancelUpdate = false
 
         // Find `Document` annotations to be removed from document
+        // Modifications are indexed by the previously observed items
         for index in deletions.reversed() {
-            if index >= keys.count {
-                DDLogWarn("PDFReaderActionHandler: tried removing index out of bounds! keys.count=\(keys.count); index=\(index); deletions=\(deletions); insertions=\(insertions); modifications=\(modifications)")
+            if index >= databaseAnnotations.count {
+                DDLogWarn("PDFReaderActionHandler: tried removing index out of bounds! keys.count=\(databaseAnnotations.count); index=\(index); deletions=\(deletions); insertions=\(insertions); modifications=\(modifications)")
                 shouldCancelUpdate = true
                 break
             }
 
-            let key = keys.remove(at: index)
+            let key = PDFReaderState.AnnotationKey(key: databaseAnnotations[index].key, type: .database)
             DDLogInfo("PDFReaderActionHandler: delete key \(key)")
 
             if viewModel.state.selectedAnnotationKey == key {
@@ -2190,7 +2192,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 selectionDeleted = true
             }
 
-            guard let oldAnnotation = PDFDatabaseAnnotation(item: viewModel.state.databaseAnnotations[index]),
+            guard let oldAnnotation = PDFDatabaseAnnotation(item: databaseAnnotations[index]),
                   let pdfAnnotation = viewModel.state.document.annotations(at: PageIndex(oldAnnotation.page)).first(where: { $0.key == oldAnnotation.key })
             else { continue }
             DDLogInfo("PDFReaderActionHandler: delete PDF annotation")
@@ -2202,19 +2204,19 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
 
         // Create `PSPDFKit.Annotation`s which need to be added to the `Document`
+        // Keys for insertions are indexed by the currently observed items
         for index in insertions {
-            if index > keys.count {
-                DDLogWarn("PDFReaderActionHandler: tried inserting index out of bounds! keys.count=\(keys.count); index=\(index); deletions=\(deletions); insertions=\(insertions); modifications=\(modifications)")
+            if index >= objects.count {
+                DDLogWarn("PDFReaderActionHandler: tried inserting index out of bounds! keys.count=\(objects.count); index=\(index); deletions=\(deletions); insertions=\(insertions); modifications=\(modifications)")
                 shouldCancelUpdate = true
                 break
             }
 
             let item = objects[index]
-            keys.insert(PDFReaderState.AnnotationKey(key: item.key, type: .database), at: index)
             DDLogInfo("PDFReaderActionHandler: insert key \(item.key)")
 
             guard let annotation = PDFDatabaseAnnotation(item: item) else {
-                DDLogWarn("PDFReaderActionHandler: tried inserting unsupported annotation (\(item.annotationType))! keys.count=\(keys.count); index=\(index); deletions=\(deletions); insertions=\(insertions); modifications=\(modifications)")
+                DDLogWarn("PDFReaderActionHandler: tried inserting unsupported annotation (\(item.annotationType))! keys.count=\(objects.count); index=\(index); deletions=\(deletions); insertions=\(insertions); modifications=\(modifications)")
                 shouldCancelUpdate = true
                 break
             }
@@ -2253,26 +2255,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             return
         }
 
-        let getSortIndex: (PDFReaderState.AnnotationKey) -> String? = { key in
-            switch key.type {
-            case .document:
-                return viewModel.state.documentAnnotations[key.key]?.sortIndex
-
-            case .database:
-                return objects.filter(.key(key.key)).first?.annotationSortIndex
-            }
-        }
-
-        // Re-add document keys
-        for annotation in viewModel.state.documentAnnotations.values {
-            let key = PDFReaderState.AnnotationKey(key: annotation.key, type: .document)
-            let index = keys.index(of: key, sortedBy: { lKey, rKey in
-                let lSortIndex = getSortIndex(lKey) ?? ""
-                let rSortIndex = getSortIndex(rKey) ?? ""
-                return lSortIndex < rSortIndex
-            })
-            keys.insert(key, at: index)
-        }
+        // Create new sorted keys by re-adding document keys
+        let sortedKeys = createSortedKeys(fromDatabaseAnnotations: objects, documentAnnotations: viewModel.state.documentAnnotations)
 
         // Temporarily disable PDF notifications, because these changes were made by sync and they don't need to be translated back to the database
         pdfDisposeBag = DisposeBag()
@@ -2312,10 +2296,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
             // Apply changed keys
             if state.snapshotKeys != nil {
-                state.snapshotKeys = keys
-                state.sortedKeys = filteredKeys(from: keys, term: state.searchTerm, filter: state.filter, state: state)
+                state.snapshotKeys = sortedKeys
+                state.sortedKeys = filteredKeys(from: sortedKeys, term: state.searchTerm, filter: state.filter, state: state)
             } else {
-                state.sortedKeys = keys
+                state.sortedKeys = sortedKeys
             }
 
             // Filter updated keys to include only keys that are actually available in `sortedKeys`. If filter/search is turned on and an item is edited so that it disappears from the filter/search,
