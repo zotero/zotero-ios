@@ -153,7 +153,7 @@ struct FieldKeys {
 
             static func allHtmlEpubFields(for type: AnnotationType) -> [KeyBaseKeyPair] {
                 switch type {
-                case .highlight:
+                case .highlight, .underline:
                     return [KeyBaseKeyPair(key: Annotation.type, baseKey: nil),
                             KeyBaseKeyPair(key: Annotation.comment, baseKey: nil),
                             KeyBaseKeyPair(key: Annotation.color, baseKey: nil),
@@ -172,7 +172,7 @@ struct FieldKeys {
                             KeyBaseKeyPair(key: Annotation.Position.htmlEpubType, baseKey: Annotation.position),
                             KeyBaseKeyPair(key: Annotation.Position.htmlEpubValue, baseKey: Annotation.position)]
 
-                case .ink, .image, .underline, .freeText:
+                case .ink, .image, .freeText:
                     return []
                 }
             }
