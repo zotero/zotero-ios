@@ -12,21 +12,21 @@ import RxSwift
 
 class FontSizeCell: RxTableViewCell {
     private weak var fontSizeView: FontSizeView!
-    var tapObservable: PublishSubject<()> { return self.fontSizeView.tapObservable }
-    var valueObservable: PublishSubject<UInt> { return self.fontSizeView.valueObservable }
+    var tapObservable: PublishSubject<()> { return fontSizeView.tapObservable }
+    var valueObservable: PublishSubject<CGFloat> { return fontSizeView.valueObservable }
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
-        self.setup()
+        setup()
     }
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
-        self.setup()
+        setup()
     }
 
-    func set(value: UInt) {
-        self.fontSizeView.value = value
+    func set(value: CGFloat) {
+        fontSizeView.value = value
     }
 
     private func setup() {
@@ -34,13 +34,13 @@ class FontSizeCell: RxTableViewCell {
         fontSizeView.translatesAutoresizingMaskIntoConstraints = false
         fontSizeView.button.isUserInteractionEnabled = false
         self.fontSizeView = fontSizeView
-        self.contentView.addSubview(fontSizeView)
+        contentView.addSubview(fontSizeView)
 
         NSLayoutConstraint.activate([
-            self.contentView.topAnchor.constraint(equalTo: fontSizeView.topAnchor),
-            self.contentView.bottomAnchor.constraint(equalTo: fontSizeView.bottomAnchor),
-            self.contentView.leadingAnchor.constraint(equalTo: fontSizeView.leadingAnchor),
-            self.contentView.trailingAnchor.constraint(equalTo: fontSizeView.trailingAnchor)
+            contentView.topAnchor.constraint(equalTo: fontSizeView.topAnchor),
+            contentView.bottomAnchor.constraint(equalTo: fontSizeView.bottomAnchor),
+            contentView.leadingAnchor.constraint(equalTo: fontSizeView.leadingAnchor),
+            contentView.trailingAnchor.constraint(equalTo: fontSizeView.trailingAnchor)
         ])
     }
 }

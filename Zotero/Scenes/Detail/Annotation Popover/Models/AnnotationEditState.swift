@@ -17,7 +17,7 @@ struct AnnotationEditState: ViewModelState {
         let pageLabel: String
         let highlightText: NSAttributedString
         let highlightFont: UIFont
-        let fontSize: UInt?
+        let fontSize: CGFloat?
     }
 
     struct Changes: OptionSet {
@@ -35,7 +35,7 @@ struct AnnotationEditState: ViewModelState {
     var color: String
     var lineWidth: CGFloat
     var pageLabel: String
-    var fontSize: UInt
+    var fontSize: CGFloat
     var highlightText: NSAttributedString
     var highlightFont: UIFont
     var updateSubsequentLabels: Bool

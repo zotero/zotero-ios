@@ -13,7 +13,7 @@ import RealmSwift
 struct EditAnnotationFontSizeDbRequest: DbRequest {
     let key: String
     let libraryId: LibraryIdentifier
-    let size: UInt
+    let size: CGFloat
 
     var needsWrite: Bool { return true }
 

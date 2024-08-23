@@ -14,12 +14,12 @@ import RxSwift
 
 protocol FreeTextInputDelegate: AnyObject {
     func showColorPicker(sender: UIView, key: PDFReaderState.AnnotationKey, updated: @escaping (String) -> Void)
-    func showFontSizePicker(sender: UIView, key: PDFReaderState.AnnotationKey, updated: @escaping (UInt) -> Void)
+    func showFontSizePicker(sender: UIView, key: PDFReaderState.AnnotationKey, updated: @escaping (CGFloat) -> Void)
     func showTagPicker(sender: UIView, key: PDFReaderState.AnnotationKey, updated: @escaping ([Tag]) -> Void)
     func deleteAnnotation(sender: UIView, key: PDFReaderState.AnnotationKey)
-    func change(fontSize: UInt, for key: PDFReaderState.AnnotationKey)
+    func change(fontSize: CGFloat, for key: PDFReaderState.AnnotationKey)
     func getColor(for key: PDFReaderState.AnnotationKey) -> UIColor?
-    func getFontSize(for key: PDFReaderState.AnnotationKey) -> UInt?
+    func getFontSize(for key: PDFReaderState.AnnotationKey) -> CGFloat?
     func getTags(for key: PDFReaderState.AnnotationKey) -> [Tag]?
 }
 
@@ -44,10 +44,10 @@ final class FreeTextInputAccessory: UIView {
 
     init(key: PDFReaderState.AnnotationKey, delegate: FreeTextInputDelegate) {
         self.delegate = delegate
-        self.disposeBag = DisposeBag()
+        disposeBag = DisposeBag()
         super.init(frame: CGRect(x: 0, y: 0, width: 0, height: 44))
-        self.autoresizingMask = .flexibleWidth
-        self.backgroundColor = .systemBackground
+        autoresizingMask = .flexibleWidth
+        backgroundColor = .systemBackground
 
         let separator = UIView()
         separator.backgroundColor = .opaqueSeparator
@@ -56,25 +56,24 @@ final class FreeTextInputAccessory: UIView {
         let separator3 = UIView()
         separator3.backgroundColor = .opaqueSeparator
 
-        let sizePicker = FontSizeView(contentInsets: UIEdgeInsets.zero, stepperEnabled: self.traitCollection.horizontalSizeClass != .compact)
+        let sizePicker = FontSizeView(contentInsets: UIEdgeInsets.zero, stepperEnabled: traitCollection.horizontalSizeClass != .compact)
         sizePicker.value = delegate.getFontSize(for: key) ?? 0
         self.sizePicker = sizePicker
         sizePicker.valueObservable
             .observe(on: MainScheduler.instance)
-            .subscribe(with: self, onNext: { `self`, value in
-                self.delegate?.change(fontSize: value, for: key)
+            .subscribe(onNext: { [weak delegate] value in
+                delegate?.change(fontSize: value, for: key)
             })
-            .disposed(by: self.disposeBag)
+            .disposed(by: disposeBag)
         sizePicker.tapObservable
             .observe(on: MainScheduler.instance)
-            .subscribe(with: self, onNext: { [weak sizePicker] `self`, _ in
-                guard let sizePicker else { return }
-                self.delegate?.showFontSizePicker(sender: sizePicker, key: key, updated: { [weak sizePicker] size in
-                    guard let sizePicker else { return }
-                    sizePicker.value = size
+            .subscribe(onNext: { [weak delegate, weak sizePicker] _ in
+                guard let delegate, let sizePicker else { return }
+                delegate.showFontSizePicker(sender: sizePicker, key: key, updated: { [weak sizePicker] size in
+                    sizePicker?.value = size
                 })
             })
-            .disposed(by: self.disposeBag)
+            .disposed(by: disposeBag)
 
         let colorButton = UIButton()
         var colorConfiguration = UIButton.Configuration.plain()
@@ -88,21 +87,20 @@ final class FreeTextInputAccessory: UIView {
         deleteConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20)
         deleteButton.configuration = deleteConfiguration
 
-        colorButton.tintColor = self.delegate?.getColor(for: key) ?? Asset.Colors.zoteroBlueWithDarkMode.color
+        colorButton.tintColor = delegate.getColor(for: key) ?? Asset.Colors.zoteroBlueWithDarkMode.color
         colorButton.rx.tap
             .observe(on: MainScheduler.instance)
-            .subscribe(with: self, onNext: { [weak colorButton] `self`, _ in
-                guard let colorButton else { return }
-                self.delegate?.showColorPicker(sender: colorButton, key: key, updated: { [weak colorButton] color in
-                    guard let colorButton else { return }
-                    colorButton.tintColor = UIColor(hex: color)
+            .subscribe(onNext: { [weak delegate, weak colorButton] _ in
+                guard let delegate, let colorButton else { return }
+                delegate.showColorPicker(sender: colorButton, key: key, updated: { [weak colorButton] color in
+                    colorButton?.tintColor = UIColor(hex: color)
                 })
             })
-            .disposed(by: self.disposeBag)
+            .disposed(by: disposeBag)
 
         // Can't use the Configuration API for tagButton because it ignores number of lines and just always adds multiple lines
         let tagButton = UIButton()
-        tagButton.setAttributedTitle(self.attributedString(from: self.delegate?.getTags(for: key) ?? []), for: .normal)
+        tagButton.setAttributedTitle(attributedString(from: delegate.getTags(for: key) ?? []), for: .normal)
         tagButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20)
         tagButton.titleLabel?.numberOfLines = 1
         tagButton.titleLabel?.lineBreakMode = .byTruncatingTail
@@ -111,23 +109,23 @@ final class FreeTextInputAccessory: UIView {
         tagButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         tagButton.rx.tap
             .observe(on: MainScheduler.instance)
-            .subscribe(with: self, onNext: { [weak tagButton] `self`, _ in
-                guard let tagButton else { return }
-                self.delegate?.showTagPicker(sender: tagButton, key: key, updated: { [weak tagButton] tags in
-                    guard let tagButton else { return }
-                    tagButton.setAttributedTitle(self.attributedString(from: tags), for: .normal)
+            .subscribe(onNext: { [weak self, weak tagButton] _ in
+                guard let self, let tagButton else { return }
+                self.delegate?.showTagPicker(sender: tagButton, key: key, updated: { [weak self, weak tagButton] tags in
+                    guard let self, let tagButton else { return }
+                    tagButton.setAttributedTitle(attributedString(from: tags), for: .normal)
                 })
             })
-            .disposed(by: self.disposeBag)
+            .disposed(by: disposeBag)
 
         deleteButton.tintColor = .red
         deleteButton.rx.tap
             .observe(on: MainScheduler.instance)
-            .subscribe(with: self, onNext: { [weak deleteButton] `self`, _ in
-                guard let deleteButton else { return }
-                self.delegate?.deleteAnnotation(sender: deleteButton, key: key)
+            .subscribe(onNext: { [weak delegate, weak deleteButton] _ in
+                guard let delegate, let deleteButton else { return }
+                delegate.deleteAnnotation(sender: deleteButton, key: key)
             })
-            .disposed(by: self.disposeBag)
+            .disposed(by: disposeBag)
 
         let spacer = UIView()
 
@@ -135,14 +133,14 @@ final class FreeTextInputAccessory: UIView {
         container.translatesAutoresizingMaskIntoConstraints = false
         container.spacing = 0
         container.alignment = .center
-        self.addSubview(container)
+        addSubview(container)
 
         NSLayoutConstraint.activate([
-            container.leadingAnchor.constraint(greaterThanOrEqualTo: self.leadingAnchor, constant: 20),
-            self.trailingAnchor.constraint(greaterThanOrEqualTo: container.trailingAnchor, constant: 20),
-            container.centerXAnchor.constraint(equalTo: self.centerXAnchor),
-            self.topAnchor.constraint(equalTo: container.topAnchor),
-            self.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            container.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: 20),
+            trailingAnchor.constraint(greaterThanOrEqualTo: container.trailingAnchor, constant: 20),
+            container.centerXAnchor.constraint(equalTo: centerXAnchor),
+            topAnchor.constraint(equalTo: container.topAnchor),
+            bottomAnchor.constraint(equalTo: container.bottomAnchor),
             separator.widthAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale),
             separator.heightAnchor.constraint(equalToConstant: 30),
             separator2.widthAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale),
@@ -167,6 +165,6 @@ final class FreeTextInputAccessory: UIView {
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
-        self.sizePicker?.stepperEnabled = self.traitCollection.horizontalSizeClass != .compact
+        sizePicker?.stepperEnabled = traitCollection.horizontalSizeClass != .compact
     }
 }

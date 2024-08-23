@@ -63,7 +63,7 @@ final class AnnotationEditCoordinator: Coordinator {
 }
 
 extension AnnotationEditCoordinator: AnnotationEditCoordinatorDelegate {
-    func showFontSizePicker(picked: @escaping (UInt) -> Void) {
+    func showFontSizePicker(picked: @escaping (CGFloat) -> Void) {
         let controller = FontSizePickerViewController(pickAction: picked)
         self.navigationController?.pushViewController(controller, animated: true)
     }

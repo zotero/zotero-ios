@@ -32,7 +32,7 @@ enum PDFReaderAction {
         key: String,
         color: String,
         lineWidth: CGFloat,
-        fontSize: UInt,
+        fontSize: CGFloat,
         pageLabel: String,
         updateSubsequentLabels: Bool,
         highlightText: NSAttributedString,
@@ -49,7 +49,7 @@ enum PDFReaderAction {
     case setComment(key: String, comment: NSAttributedString)
     case setCommentActive(Bool)
     case setVisiblePage(page: Int, userActionFromDocument: Bool, fromThumbnailList: Bool)
-    case setFontSize(key: String, size: UInt)
+    case setFontSize(key: String, size: CGFloat)
     case export(includeAnnotations: Bool)
     case clearTmpData
     case setSidebarEditingEnabled(Bool)

@@ -18,7 +18,7 @@ protocol PDFAnnotation {
     var color: String { get }
     var comment: String { get }
     var text: String? { get }
-    var fontSize: UInt? { get }
+    var fontSize: CGFloat? { get }
     var rotation: UInt? { get }
     var sortIndex: String { get }
     var dateModified: Date { get }

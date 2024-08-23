@@ -11,7 +11,7 @@ import UIKit
 import RxSwift
 
 class FontSizePickerViewController: UIViewController {
-    private static let sizes: [UInt] = [
+    private static let sizes: [CGFloat] = [
         10,
         12,
         14,
@@ -26,15 +26,15 @@ class FontSizePickerViewController: UIViewController {
         192
     ]
 
-    private let pickAction: (UInt) -> Void
+    private let pickAction: (CGFloat) -> Void
     private let disposeBag: DisposeBag
 
     private weak var tableView: UITableView!
-    private var dataSource: UITableViewDiffableDataSource<Int, UInt>!
+    private var dataSource: UITableViewDiffableDataSource<Int, CGFloat>!
 
-    init(pickAction: @escaping (UInt) -> Void) {
+    init(pickAction: @escaping (CGFloat) -> Void) {
         self.pickAction = pickAction
-        self.disposeBag = DisposeBag()
+        disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -50,7 +50,7 @@ class FontSizePickerViewController: UIViewController {
         setupSizes()
 
         func setupSizes() {
-            var snapshot = NSDiffableDataSourceSnapshot<Int, UInt>()
+            var snapshot = NSDiffableDataSourceSnapshot<Int, CGFloat>()
             snapshot.appendSections([0])
             snapshot.appendItems(FontSizePickerViewController.sizes)
             dataSource.apply(snapshot, animatingDifferences: false)
@@ -66,7 +66,7 @@ class FontSizePickerViewController: UIViewController {
                 cell.contentConfiguration = configuration
                 return cell
             })
-            tableView.dataSource = self.dataSource
+            tableView.dataSource = dataSource
             tableView.delegate = self
             tableView.translatesAutoresizingMaskIntoConstraints = false
             view.addSubview(tableView)
@@ -87,16 +87,16 @@ class FontSizePickerViewController: UIViewController {
             cancel
                 .rx
                 .tap
-                .subscribe(with: self, onNext: { `self`, _ in
-                    self.navigationController?.presentingViewController?.dismiss(animated: true)
+                .subscribe(onNext: { [weak self] _ in
+                    self?.navigationController?.presentingViewController?.dismiss(animated: true)
                 })
                 .disposed(by: disposeBag)
-            self.navigationItem.leftBarButtonItem = cancel
+            navigationItem.leftBarButtonItem = cancel
         }
     }
 
     override func loadView() {
-        self.view = UIView()
+        view = UIView()
     }
 }
 
@@ -104,7 +104,7 @@ extension FontSizePickerViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         guard let size = dataSource.itemIdentifier(for: indexPath) else { return }
-        self.pickAction(size)
+        pickAction(size)
         if let controller = navigationController {
             if controller.viewControllers.count == 1 {
                 controller.presentingViewController?.dismiss(animated: true)
@@ -112,7 +112,7 @@ extension FontSizePickerViewController: UITableViewDelegate {
                 controller.popViewController(animated: true)
             }
         } else {
-            self.presentingViewController?.dismiss(animated: true)
+            presentingViewController?.dismiss(animated: true)
         }
     }
 }

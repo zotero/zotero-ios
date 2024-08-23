@@ -33,7 +33,7 @@ protocol PdfReaderCoordinatorDelegate: AnyObject {
     func showReader(document: Document, userInterfaceStyle: UIUserInterfaceStyle)
     func showCitation(for itemId: String, libraryId: LibraryIdentifier)
     func copyBibliography(using presenter: UIViewController, for itemId: String, libraryId: LibraryIdentifier)
-    func showFontSizePicker(sender: UIView, picked: @escaping (UInt) -> Void)
+    func showFontSizePicker(sender: UIView, picked: @escaping (CGFloat) -> Void)
     func showDeleteAlertForAnnotation(sender: UIView, delete: @escaping () -> Void)
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, userInterfaceStyle: UIUserInterfaceStyle?, picked: @escaping ([Tag]) -> Void)
     func showDocumentChangedAlert(completed: @escaping () -> Void)
@@ -423,7 +423,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         (parentCoordinator as? DetailCoordinator)?.copyBibliography(using: presenter, for: Set([itemId]), libraryId: libraryId, delegate: self)
     }
 
-    func showFontSizePicker(sender: UIView, picked: @escaping (UInt) -> Void) {
+    func showFontSizePicker(sender: UIView, picked: @escaping (CGFloat) -> Void) {
         let controller = FontSizePickerViewController(pickAction: picked)
         let presentedController: UIViewController
         switch UIDevice.current.userInterfaceIdiom {

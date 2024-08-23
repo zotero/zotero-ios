@@ -16,13 +16,13 @@ protocol AnnotationPopoverAnnotationCoordinatorDelegate: AnyObject {
     func createShareAnnotationMenu(sender: UIButton) -> UIMenu?
     func showEdit(state: AnnotationPopoverState, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction)
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
-    func showFontSizePicker(picked: @escaping (UInt) -> Void)
+    func showFontSizePicker(picked: @escaping (CGFloat) -> Void)
     func didFinish()
 }
 
 protocol AnnotationEditCoordinatorDelegate: AnyObject {
     func showPageLabelEditor(label: String, updateSubsequentPages: Bool, saveAction: @escaping AnnotationPageLabelSaveAction)
-    func showFontSizePicker(picked: @escaping (UInt) -> Void)
+    func showFontSizePicker(picked: @escaping (CGFloat) -> Void)
 }
 
 final class AnnotationPopoverCoordinator: NSObject, Coordinator {
@@ -64,7 +64,7 @@ final class AnnotationPopoverCoordinator: NSObject, Coordinator {
 }
 
 extension AnnotationPopoverCoordinator: AnnotationPopoverAnnotationCoordinatorDelegate {
-    func showFontSizePicker(picked: @escaping (UInt) -> Void) {
+    func showFontSizePicker(picked: @escaping (CGFloat) -> Void) {
         let controller = FontSizePickerViewController(pickAction: picked)
         self.navigationController?.pushViewController(controller, animated: true)
     }
