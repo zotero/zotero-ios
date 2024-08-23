@@ -2136,17 +2136,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         DDLogInfo("PDFReaderActionHandler: database annotation changed")
 
-        // Keys for deletions and modifications are indexed by the previously observed items
-        var previousObservedKeys: [PDFReaderState.AnnotationKey] = []
-        for item in viewModel.state.databaseAnnotations {
-            previousObservedKeys.append(.init(key: item.key, type: .database))
-        }
-        // Keys for insertions are indexed by the currently observed items
-        var currentObservedKeys: [PDFReaderState.AnnotationKey] = []
-        for item in objects {
-            currentObservedKeys.append(.init(key: item.key, type: .database))
-        }
-
+        let databaseAnnotations = viewModel.state.databaseAnnotations!
         var texts = viewModel.state.texts
         var comments = viewModel.state.comments
         var selectKey: PDFReaderState.AnnotationKey?
@@ -2159,13 +2149,14 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         var insertedPdfAnnotations: [PSPDFKit.Annotation] = []
 
         // Check which annotations changed and update `Document`
+        // Modifications are indexed by the previously observed items
         for index in modifications {
-            if index >= previousObservedKeys.count {
-                DDLogWarn("PDFReaderActionHandler: tried modifying index out of bounds! keys.count=\(previousObservedKeys.count); index=\(index); deletions=\(deletions); insertions=\(insertions); modifications=\(modifications)")
+            if index >= databaseAnnotations.count {
+                DDLogWarn("PDFReaderActionHandler: tried modifying index out of bounds! keys.count=\(databaseAnnotations.count); index=\(index); deletions=\(deletions); insertions=\(insertions); modifications=\(modifications)")
                 continue
             }
 
-            let key = previousObservedKeys[index]
+            let key = PDFReaderState.AnnotationKey(key: databaseAnnotations[index].key, type: .database)
             guard let item = objects.filter(.key(key.key)).first, let annotation = PDFDatabaseAnnotation(item: item) else { continue }
 
             if canUpdate(key: key, item: item, at: index, viewModel: viewModel) {
@@ -2207,14 +2198,15 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         var shouldCancelUpdate = false
 
         // Find `Document` annotations to be removed from document
+        // Modifications are indexed by the previously observed items
         for index in deletions.reversed() {
-            if index >= previousObservedKeys.count {
-                DDLogWarn("PDFReaderActionHandler: tried removing index out of bounds! keys.count=\(previousObservedKeys.count); index=\(index); deletions=\(deletions); insertions=\(insertions); modifications=\(modifications)")
+            if index >= databaseAnnotations.count {
+                DDLogWarn("PDFReaderActionHandler: tried removing index out of bounds! keys.count=\(databaseAnnotations.count); index=\(index); deletions=\(deletions); insertions=\(insertions); modifications=\(modifications)")
                 shouldCancelUpdate = true
                 break
             }
 
-            let key = previousObservedKeys.remove(at: index)
+            let key = PDFReaderState.AnnotationKey(key: databaseAnnotations[index].key, type: .database)
             DDLogInfo("PDFReaderActionHandler: delete key \(key)")
 
             if viewModel.state.selectedAnnotationKey == key {
@@ -2222,7 +2214,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 selectionDeleted = true
             }
 
-            guard let oldAnnotation = PDFDatabaseAnnotation(item: viewModel.state.databaseAnnotations[index]),
+            guard let oldAnnotation = PDFDatabaseAnnotation(item: databaseAnnotations[index]),
                   let pdfAnnotation = viewModel.state.document.annotations(at: PageIndex(oldAnnotation.page)).first(where: { $0.key == oldAnnotation.key })
             else { continue }
             DDLogInfo("PDFReaderActionHandler: delete PDF annotation")
@@ -2234,9 +2226,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
 
         // Create `PSPDFKit.Annotation`s which need to be added to the `Document`
+        // Keys for insertions are indexed by the currently observed items
         for index in insertions {
-            if index >= currentObservedKeys.count {
-                DDLogWarn("PDFReaderActionHandler: tried inserting index out of bounds! keys.count=\(currentObservedKeys.count); index=\(index); deletions=\(deletions); insertions=\(insertions); modifications=\(modifications)")
+            if index >= objects.count {
+                DDLogWarn("PDFReaderActionHandler: tried inserting index out of bounds! keys.count=\(objects.count); index=\(index); deletions=\(deletions); insertions=\(insertions); modifications=\(modifications)")
                 shouldCancelUpdate = true
                 break
             }
@@ -2245,7 +2238,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             DDLogInfo("PDFReaderActionHandler: insert key \(item.key)")
 
             guard let annotation = PDFDatabaseAnnotation(item: item) else {
-                DDLogWarn("PDFReaderActionHandler: tried inserting unsupported annotation (\(item.annotationType))! keys.count=\(currentObservedKeys.count); index=\(index); deletions=\(deletions); insertions=\(insertions); modifications=\(modifications)")
+                DDLogWarn("PDFReaderActionHandler: tried inserting unsupported annotation (\(item.annotationType))! keys.count=\(objects.count); index=\(index); deletions=\(deletions); insertions=\(insertions); modifications=\(modifications)")
                 shouldCancelUpdate = true
                 break
             }
