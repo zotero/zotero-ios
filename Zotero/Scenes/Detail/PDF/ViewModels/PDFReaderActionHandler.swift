@@ -1246,7 +1246,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         update(annotation: annotation, lineWidth: lineWidth, in: viewModel.state.document)
     }
 
-    private func set(fontSize: UInt, key: String, viewModel: ViewModel<PDFReaderActionHandler>) {
+    private func set(fontSize: CGFloat, key: String, viewModel: ViewModel<PDFReaderActionHandler>) {
         guard let annotation = viewModel.state.annotation(for: PDFReaderState.AnnotationKey(key: key, type: .database)) else { return }
         update(annotation: annotation, fontSize: fontSize, in: viewModel.state.document)
     }
@@ -1284,7 +1284,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     private func set(
         color: String,
         lineWidth: CGFloat,
-        fontSize: UInt,
+        fontSize: CGFloat,
         pageLabel: String,
         updateSubsequentLabels: Bool,
         highlightText: NSAttributedString,
@@ -1318,7 +1318,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         annotation: PDFAnnotation,
         color: (String, UIUserInterfaceStyle)? = nil,
         lineWidth: CGFloat? = nil,
-        fontSize: UInt? = nil,
+        fontSize: CGFloat? = nil,
         contents: String? = nil,
         in document: PSPDFKit.Document
     ) {
@@ -1675,7 +1675,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             }
 
             if editFontSize {
-                requests.append(EditAnnotationFontSizeDbRequest(key: key, libraryId: viewModel.state.library.identifier, size: UInt(textAnnotation.fontSize)))
+                let roundedFontSize = AnnotationsConfig.roundFreeTextAnnotationFontSize(textAnnotation.fontSize)
+                requests.append(EditAnnotationFontSizeDbRequest(key: key, libraryId: viewModel.state.library.identifier, size: roundedFontSize))
             }
         } else if hasChanges([.boundingBox, .rects]), let rects = AnnotationConverter.rects(from: annotation) {
             requests.append(EditAnnotationRectsDbRequest(key: key, libraryId: viewModel.state.library.identifier, rects: rects, boundingBoxConverter: boundingBoxConverter))

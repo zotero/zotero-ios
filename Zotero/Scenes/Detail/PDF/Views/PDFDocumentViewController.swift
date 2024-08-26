@@ -959,7 +959,7 @@ extension PDFDocumentViewController: FreeTextInputDelegate {
         )
     }
     
-    func showFontSizePicker(sender: UIView, key: PDFReaderState.AnnotationKey, updated: @escaping (UInt) -> Void) {
+    func showFontSizePicker(sender: UIView, key: PDFReaderState.AnnotationKey, updated: @escaping (CGFloat) -> Void) {
         self.coordinatorDelegate?.showFontSizePicker(sender: sender, picked: { [weak self] size in
             self?.viewModel.process(action: .setFontSize(key: key.key, size: size))
             updated(size)
@@ -980,11 +980,11 @@ extension PDFDocumentViewController: FreeTextInputDelegate {
         })
     }
 
-    func change(fontSize: UInt, for key: PDFReaderState.AnnotationKey) {
+    func change(fontSize: CGFloat, for key: PDFReaderState.AnnotationKey) {
         self.viewModel.process(action: .setFontSize(key: key.key, size: fontSize))
     }
     
-    func getFontSize(for key: PDFReaderState.AnnotationKey) -> UInt? {
+    func getFontSize(for key: PDFReaderState.AnnotationKey) -> CGFloat? {
         return self.viewModel.state.annotation(for: key)?.fontSize
     }
 
