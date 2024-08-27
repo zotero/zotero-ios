@@ -576,7 +576,11 @@ final class ItemsViewController: UIViewController {
                 accessibilityLabel = L10n.Items.restoreOpen
                 primaryAction = UIAction { [weak self] _ in
                     guard let self, let presenter, let controller = controllers.userControllers?.openItemsController, let sessionIdentifier else { return }
-                    controller.restoreMostRecentlyOpenedItem(using: presenter, sessionIdentifier: sessionIdentifier)
+                    controller.restoreMostRecentlyOpenedItem(using: presenter, sessionIdentifier: sessionIdentifier) { item in
+                        if item == nil {
+                            DDLogInfo("ItemsViewController: no open item to restore")
+                        }
+                    }
                 }
                 if let controller = controllers.userControllers?.openItemsController, let sessionIdentifier {
                     let deferredOpenItemsMenuElement = controller.deferredOpenItemsMenuElement(
