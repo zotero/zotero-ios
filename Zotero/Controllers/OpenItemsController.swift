@@ -243,41 +243,56 @@ final class OpenItemsController {
         setItemsSortedByUserIndex(existingItems, for: sessionIdentifier, validate: false)
     }
 
-    @discardableResult
-    func restore(_ item: Item, using presenter: OpenItemsPresenter) -> Bool {
-        guard let presentation = loadPresentation(for: item) else { return false }
-        presentItem(with: presentation, using: presenter)
-        return true
+    func restore(_ item: Item, using presenter: OpenItemsPresenter, completion: @escaping (Bool) -> Void) {
+        loadPresentation(for: item) { [weak presenter] presentation in
+            guard let presenter, let presentation else {
+                completion(false)
+                return
+            }
+            presenter.showItem(with: presentation)
+            DDLogInfo("OpenItemsController: presenter \(presenter) presented item with presentation \(presentation)")
+            completion(true)
+        }
     }
     
-    @discardableResult
-    func restoreMostRecentlyOpenedItem(using presenter: OpenItemsPresenter, sessionIdentifier: String) -> Item? {
+    func restoreMostRecentlyOpenedItem(using presenter: OpenItemsPresenter, sessionIdentifier: String, completion: @escaping (Item?) -> Void) {
         // Will restore most recent opened item still present, or none if all fail
         var existingItems = getItems(for: sessionIdentifier)
         DDLogInfo("OpenItemsController: restoring most recently opened item using presenter \(presenter) for \(sessionIdentifier)")
-        var itemsChanged: Bool = false
-        defer {
-            if itemsChanged {
+        let existingItemsSortedByLastOpen = itemsSortedByLastOpen(for: sessionIdentifier)
+        loadFirstAvailablePresentation(from: existingItemsSortedByLastOpen, indexOffset: 0) { [weak self, weak presenter] item, presentation, foundIndex in
+            if let self, foundIndex > 0 {
+                for item in existingItemsSortedByLastOpen[0..<foundIndex] {
+                    DDLogWarn("OpenItemsController: removing not loaded item \(item) for \(sessionIdentifier)")
+                    existingItems.removeAll(where: { $0 == item })
+                }
                 // setItems will produce next observable event
                 setItems(existingItems, for: sessionIdentifier, validate: false)
             }
-        }
-        var item: Item?
-        var presentation: Presentation?
-        let existingItemsSortedByLastOpen = itemsSortedByLastOpen(for: sessionIdentifier)
-        for _item in existingItemsSortedByLastOpen {
-            if let _presentation = loadPresentation(for: _item) {
-                item = _item
-                presentation = _presentation
-                break
+            if let presenter {
+                presenter.showItem(with: presentation)
+                DDLogInfo("OpenItemsController: presenter \(presenter) presented item with presentation \(presentation ?? "<nil>")")
             }
-            DDLogWarn("OpenItemsController: removing not loaded item \(_item) for \(sessionIdentifier)")
-            existingItems.removeAll(where: { $0 == _item })
-            itemsChanged = true
+            completion(item)
         }
-        guard let item, let presentation else { return nil }
-        presentItem(with: presentation, using: presenter)
-        return item
+
+        func loadFirstAvailablePresentation(from items: [Item], indexOffset: Int, completion: @escaping (Item?, Presentation?, Int) -> Void ) {
+            guard !items.isEmpty else {
+                completion(nil, nil, indexOffset)
+                return
+            }
+
+            var remainingItems = items
+            let currentItem = remainingItems.removeFirst()
+
+            loadPresentation(for: currentItem) { presentation in
+                if let presentation {
+                    completion(currentItem, presentation, indexOffset)
+                } else {
+                    loadFirstAvailablePresentation(from: remainingItems, indexOffset: indexOffset + 1, completion: completion)
+                }
+            }
+        }
     }
     
     func deferredOpenItemsMenuElement(
@@ -303,11 +318,12 @@ final class OpenItemsController {
                         guard let self else { return }
                         close(item.kind, for: sessionIdentifier)
                         guard let presenter = openItemPresenterProvider() else { return }
-                        if restoreMostRecentlyOpenedItem(using: presenter, sessionIdentifier: sessionIdentifier) == nil {
-                            DDLogInfo("OpenItemsController: no open item to restore after close")
-                            presenter.showItem(with: nil)
+                        restoreMostRecentlyOpenedItem(using: presenter, sessionIdentifier: sessionIdentifier) { item in
+                            if item == nil {
+                                DDLogInfo("OpenItemsController: no open item to restore after close")
+                            }
+                            completion(true, true)
                         }
-                        completion(true, true)
                     }
                     currentItemActions.append(closeAction)
                     if index > 0 {
@@ -340,8 +356,9 @@ final class OpenItemsController {
                 } else {
                     let itemAction = UIAction(title: rItem.displayTitle, image: item.kind.icon) { [weak self] _ in
                         guard let self, let presenter = openItemPresenterProvider() else { return }
-                        restore(item, using: presenter)
-                        completion(true, false)
+                        restore(item, using: presenter) { restored in
+                            completion(restored, false)
+                        }
                     }
                     elements.append(itemAction)
                 }
@@ -395,60 +412,71 @@ final class OpenItemsController {
         filterValidItemsWithRItem(items).map { $0.0 }
     }
 
-    private func loadPresentation(for item: Item) -> Presentation? {
-        var presentation: Presentation?
-        do {
-            try dbStorage.perform(on: .main) { coordinator in
-                switch item.kind {
-                case .pdf(let libraryId, let key):
-                    presentation = try loadPDFPresentation(key: key, libraryId: libraryId, coordinator: coordinator)
+    private func loadPresentation(for item: Item, completion: @escaping (Presentation?) -> Void) {
+        switch item.kind {
+        case .pdf(let libraryId, let key):
+            loadPDFPresentation(key: key, libraryId: libraryId, completion: completion)
 
-                case .note(let libraryId, let key):
-                    presentation = try loadNotePresentation(key: key, libraryId: libraryId, coordinator: coordinator)
+        case .note(let libraryId, let key):
+            loadNotePresentation(key: key, libraryId: libraryId, completion: completion)
+        }
+
+        func loadPDFPresentation(key: String, libraryId: LibraryIdentifier, completion: @escaping (Presentation?) -> Void) {
+            do {
+                try dbStorage.perform(on: .main) { coordinator in
+                    let library: Library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
+                    let rItem = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
+                    let parentKey = rItem.parent?.key
+                    guard let attachment = AttachmentCreator.attachment(for: rItem, fileStorage: fileStorage, urlDetector: nil) else {
+                        completion(nil)
+                        return
+                    }
+                    switch attachment.type {
+                    case .file(let filename, let contentType, let location, _, _):
+                        switch location {
+                        case .local, .localAndChangedRemotely:
+                            // TODO: Change .localAndChangedRemotely case to download first
+                            let file = Files.attachmentFile(in: libraryId, key: key, filename: filename, contentType: contentType)
+                            let url = file.createUrl()
+                            completion(.pdf(library: library, key: key, parentKey: parentKey, url: url))
+
+                        case .remote:
+                            // TODO: Download first
+                            completion(nil)
+
+                        case .remoteMissing:
+                            DDLogError("OpenItemsController: can't load PDF item (key: \(key), library: \(libraryId)) - remote missing")
+                            completion(nil)
+                        }
+
+                    case .url:
+                        DDLogError("OpenItemsController: can't load PDF item (key: \(key), library: \(libraryId)) - not a file attachment")
+                        completion(nil)
+                    }
                 }
+            } catch let error {
+                DDLogError("OpenItemsController: can't load PDF item (key: \(key), library: \(libraryId)) - \(error)")
+                completion(nil)
             }
-        } catch let error {
-            DDLogError("OpenItemsController: can't load item \(item) - \(error)")
         }
-        return presentation
 
-        func loadPDFPresentation(key: String, libraryId: LibraryIdentifier, coordinator: DbCoordinator) throws -> Presentation? {
-            let library: Library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
-            let rItem = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
-            let parentKey = rItem.parent?.key
-            guard let attachment = AttachmentCreator.attachment(for: rItem, fileStorage: fileStorage, urlDetector: nil) else { return nil }
-            var url: URL?
-            switch attachment.type {
-            case .file(let filename, let contentType, let location, _, _):
-                switch location {
-                case .local, .localAndChangedRemotely:
-                    let file = Files.attachmentFile(in: libraryId, key: key, filename: filename, contentType: contentType)
-                    url = file.createUrl()
-
-                case .remote, .remoteMissing:
-                    break
+        func loadNotePresentation(key: String, libraryId: LibraryIdentifier, completion: @escaping (Presentation?) -> Void) {
+            do {
+                try dbStorage.perform(on: .main) { coordinator in
+                    let library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
+                    let rItem = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
+                    guard let note = Note(item: rItem) else {
+                        completion(nil)
+                        return
+                    }
+                    let parentTitleData: NoteEditorState.TitleData? = rItem.parent.flatMap { .init(type: $0.rawType, title: $0.displayTitle) }
+                    completion(.note(library: library, key: note.key, text: note.text, tags: note.tags, parentTitleData: parentTitleData, title: note.title))
                 }
-
-            case .url:
-                break
+            } catch let error {
+                DDLogError("OpenItemsController: can't load note item (key: \(key), library: \(libraryId)) - \(error)")
+                completion(nil)
             }
-            guard let url else { return nil }
-            return .pdf(library: library, key: key, parentKey: parentKey, url: url)
         }
-
-        func loadNotePresentation(key: String, libraryId: LibraryIdentifier, coordinator: DbCoordinator) throws -> Presentation? {
-            let library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
-            let rItem = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
-            let note = Note(item: rItem)
-            let parentTitleData: NoteEditorState.TitleData? = rItem.parent.flatMap { .init(type: $0.rawType, title: $0.displayTitle) }
-            guard let note else { return nil }
-            return .note(library: library, key: note.key, text: note.text, tags: note.tags, parentTitleData: parentTitleData, title: note.title)
-        }
-    }
-
-    private func presentItem(with presentation: Presentation, using presenter: OpenItemsPresenter) {
-        presenter.showItem(with: presentation)
-        DDLogInfo("OpenItemsController: presented item with presentation \(presentation)")
     }
 }
 
