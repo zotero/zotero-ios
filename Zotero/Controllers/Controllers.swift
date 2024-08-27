@@ -406,7 +406,7 @@ final class UserControllers {
         fullSyncDebugger = FullSyncDebugger(syncScheduler: syncScheduler, debugLogging: controllers.debugLogging, sessionController: controllers.sessionController)
         self.idleTimerController = controllers.idleTimerController
         self.customUrlController = CustomURLController(dbStorage: dbStorage, fileStorage: controllers.fileStorage)
-        openItemsController = OpenItemsController(dbStorage: dbStorage, fileStorage: controllers.fileStorage)
+        openItemsController = OpenItemsController(dbStorage: dbStorage, fileStorage: controllers.fileStorage, attachmentDownloader: fileDownloader)
         self.lastBuildNumber = controllers.lastBuildNumber
         self.disposeBag = DisposeBag()
     }
