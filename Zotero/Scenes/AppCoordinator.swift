@@ -212,7 +212,11 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
                 }
                 mainController.showItems(for: collection, in: data.libraryId)
                 guard data.restoreMostRecentlyOpenedItem else { return }
-                openItemsController.restoreMostRecentlyOpenedItem(using: self, sessionIdentifier: sessionIdentifier)
+                openItemsController.restoreMostRecentlyOpenedItem(using: self, sessionIdentifier: sessionIdentifier) { item in
+                    if item == nil {
+                        DDLogInfo("AppCoordinator: no open item to restore")
+                    }
+                }
 
                 func loadRestoredStateData(libraryId: LibraryIdentifier, collectionId: CollectionIdentifier) -> Collection? {
                     guard let dbStorage = controllers.userControllers?.dbStorage else { return nil }
@@ -355,7 +359,11 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
     func continueUserActivity(_ userActivity: NSUserActivity, for sessionIdentifier: String) {
         guard userActivity.activityType == NSUserActivity.contentContainerId, let window, let mainController = window.rootViewController as? MainViewController else { return }
         mainController.getDetailCoordinator { [weak self] coordinator in
-            self?.controllers.userControllers?.openItemsController.restoreMostRecentlyOpenedItem(using: coordinator, sessionIdentifier: sessionIdentifier)
+            self?.controllers.userControllers?.openItemsController.restoreMostRecentlyOpenedItem(using: coordinator, sessionIdentifier: sessionIdentifier) { item in
+                if item == nil {
+                    DDLogInfo("AppCoordinator: no open item to restore for continued user activity")
+                }
+            }
         }
     }
 }
