@@ -65,6 +65,7 @@ struct HtmlEpubReaderState: ViewModelState {
     let userId: Int
     let username: String
     let commentFont: UIFont
+    let textFont: UIFont
 
     var documentData: DocumentData?
     var settings: HtmlEpubSettings
@@ -83,6 +84,7 @@ struct HtmlEpubReaderState: ViewModelState {
     var annotationPopoverRect: CGRect?
     var documentSearchTerm: String?
     var comments: [String: NSAttributedString]
+    var texts: [String: (String, [UIFont: NSAttributedString])]
     var changes: Changes
     var error: Error?
     /// Updates that need to be performed on html/epub document
@@ -110,9 +112,11 @@ struct HtmlEpubReaderState: ViewModelState {
         self.userId = userId
         self.username = username
         commentFont = PDFReaderLayout.annotationLayout.font
+        textFont = PDFReaderLayout.annotationLayout.font
         sortedKeys = []
         annotations = [:]
         comments = [:]
+        texts = [:]
         sidebarEditingEnabled = false
         selectedAnnotationCommentActive = false
         toolColors = [

@@ -209,9 +209,9 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         navigationController.overrideUserInterfaceStyle = userInterfaceStyle
 
         let author = viewModel.state.library.identifier == .custom(.myLibrary) ? "" : annotation.author(displayName: viewModel.state.displayName, username: viewModel.state.username)
-        let comment: NSAttributedString = (self.navigationController?.viewControllers.first as? AnnotationsDelegate)?.parseAndCacheIfNeededAttributedComment(for: annotation) ?? .init(string: "")
+        let comment: NSAttributedString = (self.navigationController?.viewControllers.first as? PDFAnnotationsDelegate)?.parseAndCacheIfNeededAttributedComment(for: annotation) ?? .init(string: "")
         let highlightFont = viewModel.state.textEditorFont
-        let highlightText: NSAttributedString = (self.navigationController?.viewControllers.first as? AnnotationsDelegate)?
+        let highlightText: NSAttributedString = (self.navigationController?.viewControllers.first as? PDFAnnotationsDelegate)?
             .parseAndCacheIfNeededAttributedText(for: annotation, with: highlightFont) ?? .init(string: "")
         let editability = annotation.editability(currentUserId: viewModel.state.userId, library: viewModel.state.library)
 
@@ -621,7 +621,7 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
         let navigationController = NavigationViewController()
         navigationController.overrideUserInterfaceStyle = userInterfaceStyle
 
-        let highlightText: NSAttributedString = (self.navigationController?.viewControllers.first as? AnnotationsDelegate)?
+        let highlightText: NSAttributedString = (self.navigationController?.viewControllers.first as? PDFAnnotationsDelegate)?
             .parseAndCacheIfNeededAttributedText(for: annotation, with: highlightFont) ?? .init(string: "")
         let coordinator = AnnotationEditCoordinator(
             data: AnnotationEditState.Data(

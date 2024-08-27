@@ -832,7 +832,7 @@ extension PDFReaderViewController: SidebarDelegate {
     }
 }
 
-extension PDFReaderViewController: AnnotationsDelegate {
+extension PDFReaderViewController: PDFAnnotationsDelegate {
     func parseAndCacheIfNeededAttributedText(for annotation: any PDFAnnotation, with font: UIFont) -> NSAttributedString? {
         guard let text = annotation.text, !text.isEmpty else { return nil }
 

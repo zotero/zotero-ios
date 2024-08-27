@@ -113,6 +113,9 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
                 state.comments[key] = self.htmlAttributedStringConverter.convert(text: comment, baseAttributes: [.font: viewModel.state.commentFont])
             }
 
+        case .parseAndCacheText(let key, let text, let font):
+            updateTextCache(key: key, text: text, font: font, viewModel: viewModel)
+
         case .updateAnnotationProperties(let key, let color, let lineWidth, let pageLabel, let updateSubsequentLabels, let highlightText):
             set(color: color, lineWidth: lineWidth, pageLabel: pageLabel, updateSubsequentLabels: updateSubsequentLabels, highlightText: highlightText, key: key, viewModel: viewModel)
 
@@ -145,6 +148,17 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
         case .changeIdleTimerDisabled(let disabled):
             changeIdleTimer(disabled: disabled, in: viewModel)
+        }
+    }
+
+    private func updateTextCache(key: String, text: String, font: UIFont, viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
+        update(viewModel: viewModel, notifyListeners: false) { state in
+            var (cachedText, attributedTextByFont) = state.texts[key, default: (text, [:])]
+            if cachedText != text {
+                attributedTextByFont = [:]
+            }
+            attributedTextByFont[font] = htmlAttributedStringConverter.convert(text: text, baseAttributes: [.font: font])
+            state.texts[key] = (text, attributedTextByFont)
         }
     }
 
@@ -314,10 +328,19 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         }
     }
 
-    private func set(color: String, lineWidth: CGFloat, pageLabel: String, updateSubsequentLabels: Bool, highlightText: String, key: String, viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
+    private func set(
+        color: String,
+        lineWidth: CGFloat,
+        pageLabel: String,
+        updateSubsequentLabels: Bool,
+        highlightText: NSAttributedString,
+        key: String,
+        viewModel: ViewModel<HtmlEpubReaderActionHandler>
+    ) {
+        let text = htmlAttributedStringConverter.convert(attributedString: highlightText)
         let values = [
             KeyBaseKeyPair(key: FieldKeys.Item.Annotation.pageLabel, baseKey: nil): pageLabel,
-            KeyBaseKeyPair(key: FieldKeys.Item.Annotation.text, baseKey: nil): highlightText,
+            KeyBaseKeyPair(key: FieldKeys.Item.Annotation.text, baseKey: nil): text,
             KeyBaseKeyPair(key: FieldKeys.Item.Annotation.color, baseKey: nil): color,
             KeyBaseKeyPair(key: FieldKeys.Item.Annotation.Position.lineWidth, baseKey: FieldKeys.Item.Annotation.position): "\(Decimal(lineWidth).rounded(to: 3))"
         ]
@@ -697,6 +720,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         // Get sorted database keys
         var keys = viewModel.state.snapshotKeys ?? viewModel.state.sortedKeys
         var annotations: [String: HtmlEpubAnnotation] = viewModel.state.annotations
+        var texts = viewModel.state.texts
         var comments = viewModel.state.comments
         var selectionDeleted = false
         var popoverWasInserted = false
@@ -730,7 +754,28 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
                 if item.changeType == .sync {
                     // Update comment if it's remote sync change
                     DDLogInfo("HtmlEpubReaderActionHandler: update comment")
-                    comments[key] = htmlAttributedStringConverter.convert(text: annotation.comment, baseAttributes: [.font: viewModel.state.commentFont])
+                    let textCacheTuple: (String, [UIFont: NSAttributedString])?
+                    let comment: NSAttributedString?
+                    // Annotation text
+                    switch annotation.type {
+                    case .highlight, .underline:
+                        textCacheTuple = annotation.text.flatMap({
+                            ($0, [viewModel.state.textFont: htmlAttributedStringConverter.convert(text: $0, baseAttributes: [.font: viewModel.state.textFont])])
+                        })
+
+                    case .note, .image, .ink, .freeText:
+                        textCacheTuple = nil
+                    }
+                    texts[key] = textCacheTuple
+                    // Annotation comment
+                    switch annotation.type {
+                    case .note, .highlight, .image, .underline:
+                        comment = htmlAttributedStringConverter.convert(text: annotation.comment, baseAttributes: [.font: viewModel.state.commentFont])
+
+                    case .ink, .freeText:
+                        comment = nil
+                    }
+                    comments[key] = comment
                 }
             }
         }
@@ -810,6 +855,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             state.annotations = annotations
             state.documentUpdate = HtmlEpubReaderState.DocumentUpdate(deletions: deletedPdfAnnotations, insertions: insertedPdfAnnotations, modifications: updatedPdfAnnotations)
             state.comments = comments
+            state.texts = texts
             // Filter updated keys to include only keys that are actually available in `sortedKeys`. If filter/search is turned on and an item is edited so that it disappears from the filter/search,
             // `updatedKeys` will try to update it while the key will be deleted from data source at the same time.
             state.updatedAnnotationKeys = updatedKeys.filter({ state.sortedKeys.contains($0) })
