@@ -200,7 +200,11 @@ class BaseItemsViewController: UIViewController {
 
         case .restoreOpenItems:
             guard let presenter, let controller = controllers.userControllers?.openItemsController, let sessionIdentifier else { return }
-            controller.restoreMostRecentlyOpenedItem(using: presenter, sessionIdentifier: sessionIdentifier)
+            controller.restoreMostRecentlyOpenedItem(using: presenter, sessionIdentifier: sessionIdentifier) { item in
+                if item == nil {
+                    DDLogInfo("ItemsViewController: no open item to restore")
+                }
+            }
         }
     }
 
