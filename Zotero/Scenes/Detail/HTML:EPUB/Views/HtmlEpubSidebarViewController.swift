@@ -10,6 +10,11 @@ import UIKit
 
 import RxSwift
 
+protocol HtmlEpubAnnotationsDelegate: AnyObject {
+    func parseAndCacheIfNeededAttributedText(for annotation: HtmlEpubAnnotation, with font: UIFont) -> NSAttributedString?
+    func parseAndCacheIfNeededAttributedComment(for annotation: HtmlEpubAnnotation) -> NSAttributedString?
+}
+
 class HtmlEpubSidebarViewController: UIViewController {
     private static let cellId = "AnnotationCell"
     private let viewModel: ViewModel<HtmlEpubReaderActionHandler>
@@ -274,17 +279,18 @@ class HtmlEpubSidebarViewController: UIViewController {
                 for: annotation,
                 userId: viewModel.state.userId,
                 library: viewModel.state.library,
+                highlightFont: viewModel.state.textFont,
                 sender: sender,
                 userInterfaceStyle: viewModel.state.settings.appearance.userInterfaceStyle,
-                saveAction: { [weak self] color, lineWidth, _, pageLabel, updateSubsequentLabels, highlightText in
+                saveAction: { [weak self] data, updateSubsequentLabels in
                     self?.viewModel.process(
                         action: .updateAnnotationProperties(
                             key: key,
-                            color: color,
-                            lineWidth: lineWidth,
-                            pageLabel: pageLabel,
+                            color: data.color,
+                            lineWidth: data.lineWidth,
+                            pageLabel: data.pageLabel,
                             updateSubsequentLabels: updateSubsequentLabels,
-                            highlightText: highlightText
+                            highlightText: data.highlightText
                         )
                     )
                 },

@@ -22,6 +22,7 @@ protocol HtmlEpubSidebarCoordinatorDelegate: AnyObject {
         for annotation: HtmlEpubAnnotation,
         userId: Int,
         library: Library,
+        highlightFont: UIFont,
         sender: UIButton,
         userInterfaceStyle: UIUserInterfaceStyle,
         saveAction: @escaping AnnotationEditSaveAction,
@@ -188,6 +189,7 @@ extension HtmlEpubCoordinator: HtmlEpubSidebarCoordinatorDelegate {
         for annotation: HtmlEpubAnnotation,
         userId: Int,
         library: Library,
+        highlightFont: UIFont,
         sender: UIButton,
         userInterfaceStyle: UIUserInterfaceStyle,
         saveAction: @escaping AnnotationEditSaveAction,
@@ -196,6 +198,8 @@ extension HtmlEpubCoordinator: HtmlEpubSidebarCoordinatorDelegate {
         let navigationController = NavigationViewController()
         navigationController.overrideUserInterfaceStyle = userInterfaceStyle
 
+        let highlightText: NSAttributedString = (self.navigationController?.viewControllers.first as? HtmlEpubAnnotationsDelegate)?
+            .parseAndCacheIfNeededAttributedText(for: annotation, with: highlightFont) ?? .init(string: "")
         let coordinator = AnnotationEditCoordinator(
             data: AnnotationEditState.Data(
                 type: annotation.type,
@@ -203,7 +207,8 @@ extension HtmlEpubCoordinator: HtmlEpubSidebarCoordinatorDelegate {
                 color: annotation.color,
                 lineWidth: 0,
                 pageLabel: annotation.pageLabel,
-                highlightText: annotation.text ?? "",
+                highlightText: highlightText,
+                highlightFont: highlightFont,
                 fontSize: 12
             ),
             saveAction: saveAction,
@@ -241,7 +246,11 @@ extension HtmlEpubCoordinator: HtmlEpubSidebarCoordinatorDelegate {
         let navigationController = NavigationViewController()
         navigationController.overrideUserInterfaceStyle = userInterfaceStyle
         let author = viewModel.state.library.identifier == .custom(.myLibrary) ? "" : annotation.author
-        let comment = viewModel.state.comments[annotation.key] ?? NSAttributedString()
+        let comment: NSAttributedString = (self.navigationController?.viewControllers.first as? HtmlEpubAnnotationsDelegate)?
+            .parseAndCacheIfNeededAttributedComment(for: annotation) ?? .init(string: "")
+        let highlightFont = viewModel.state.textFont
+        let highlightText: NSAttributedString = (self.navigationController?.viewControllers.first as? HtmlEpubAnnotationsDelegate)?
+            .parseAndCacheIfNeededAttributedText(for: annotation, with: highlightFont) ?? .init(string: "")
         let editability = annotation.editability(currentUserId: viewModel.state.userId, library: viewModel.state.library)
         let data = AnnotationPopoverState.Data(
             libraryId: viewModel.state.library.identifier,
@@ -252,7 +261,8 @@ extension HtmlEpubCoordinator: HtmlEpubSidebarCoordinatorDelegate {
             color: annotation.color,
             lineWidth: 0,
             pageLabel: annotation.pageLabel,
-            highlightText: annotation.text ?? "",
+            highlightText: highlightText,
+            highlightFont: highlightFont,
             tags: annotation.tags,
             showsDeleteButton: editability != .notEditable
         )

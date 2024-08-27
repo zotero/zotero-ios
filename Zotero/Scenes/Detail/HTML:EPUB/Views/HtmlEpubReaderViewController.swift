@@ -510,3 +510,28 @@ extension HtmlEpubReaderViewController: UIPopoverPresentationControllerDelegate 
 }
 
 extension HtmlEpubReaderViewController: HtmlEpubReaderContainerDelegate {}
+
+extension HtmlEpubReaderViewController: HtmlEpubAnnotationsDelegate {
+    func parseAndCacheIfNeededAttributedText(for annotation: HtmlEpubAnnotation, with font: UIFont) -> NSAttributedString? {
+        guard let text = annotation.text, !text.isEmpty else { return nil }
+
+        if let attributedText = viewModel.state.texts[annotation.key]?.1[font] {
+            return attributedText
+        }
+
+        viewModel.process(action: .parseAndCacheText(key: annotation.key, text: text, font: font))
+        return viewModel.state.texts[annotation.key]?.1[font]
+    }
+
+    func parseAndCacheIfNeededAttributedComment(for annotation: HtmlEpubAnnotation) -> NSAttributedString? {
+        let comment = annotation.comment
+        guard !comment.isEmpty else { return nil }
+
+        if let attributedComment = viewModel.state.comments[annotation.key] {
+            return attributedComment
+        }
+
+        viewModel.process(action: .parseAndCacheComment(key: annotation.key, comment: comment))
+        return viewModel.state.comments[annotation.key]
+    }
+}
