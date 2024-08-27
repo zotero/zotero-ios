@@ -105,17 +105,20 @@ final class OpenItemsController {
     // MARK: Properties
     private unowned let dbStorage: DbStorage
     private unowned let fileStorage: FileStorage
+    private unowned let attachmentDownloader: AttachmentDownloader
     // TODO: Use a better data structure, such as an ordered set
     private var itemsBySessionIdentifier: [String: [Item]] = [:]
     private var sessionIdentifierByItemKind: [Item.Kind: String] = [:]
     private var itemsTokenBySessionIdentifier: [String: NotificationToken] = [:]
     private var observableBySessionIdentifier: [String: PublishSubject<[Item]>] = [:]
     private let disposeBag: DisposeBag
+    private var downloadDisposeBag: DisposeBag?
 
     // MARK: Object Lifecycle
-    init(dbStorage: DbStorage, fileStorage: FileStorage) {
+    init(dbStorage: DbStorage, fileStorage: FileStorage, attachmentDownloader: AttachmentDownloader) {
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
+        self.attachmentDownloader = attachmentDownloader
         disposeBag = DisposeBag()
     }
     
@@ -434,15 +437,31 @@ final class OpenItemsController {
                     switch attachment.type {
                     case .file(let filename, let contentType, let location, _, _):
                         switch location {
-                        case .local, .localAndChangedRemotely:
-                            // TODO: Change .localAndChangedRemotely case to download first
-                            let file = Files.attachmentFile(in: libraryId, key: key, filename: filename, contentType: contentType)
-                            let url = file.createUrl()
-                            completion(.pdf(library: library, key: key, parentKey: parentKey, url: url))
+                        case .local:
+                            completion(createPDFPresentation(key: key, parentKey: parentKey, library: library, filename: filename, contentType: contentType))
 
-                        case .remote:
-                            // TODO: Download first
-                            completion(nil)
+                        case .localAndChangedRemotely, .remote:
+                            let disposeBag = DisposeBag()
+                            attachmentDownloader.observable
+                                .observe(on: MainScheduler.instance)
+                                .subscribe(onNext: { [weak self] update in
+                                    guard let self, update.libraryId == attachment.libraryId, update.key == attachment.key else { return }
+                                    switch update.kind {
+                                    case .ready:
+                                        completion(createPDFPresentation(key: key, parentKey: parentKey, library: library, filename: filename, contentType: contentType))
+                                        downloadDisposeBag = nil
+
+                                    case .cancelled, .failed:
+                                        completion(nil)
+                                        downloadDisposeBag = nil
+
+                                    case .progress:
+                                        break
+                                    }
+                                })
+                                .disposed(by: disposeBag)
+                            downloadDisposeBag = disposeBag
+                            attachmentDownloader.downloadIfNeeded(attachment: attachment, parentKey: parentKey)
 
                         case .remoteMissing:
                             DDLogError("OpenItemsController: can't load PDF item (key: \(key), library: \(libraryId)) - remote missing")
@@ -457,6 +476,12 @@ final class OpenItemsController {
             } catch let error {
                 DDLogError("OpenItemsController: can't load PDF item (key: \(key), library: \(libraryId)) - \(error)")
                 completion(nil)
+            }
+
+            func createPDFPresentation(key: String, parentKey: String?, library: Library, filename: String, contentType: String) -> Presentation {
+                let file = Files.attachmentFile(in: library.identifier, key: key, filename: filename, contentType: contentType)
+                let url = file.createUrl()
+                return .pdf(library: library, key: key, parentKey: parentKey, url: url)
             }
         }
 
