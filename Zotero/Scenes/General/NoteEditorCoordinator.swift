@@ -11,18 +11,13 @@ import SafariServices
 
 import CocoaLumberjackSwift
 
-typealias NoteEditorSaveResult = NoteEditorCoordinator.SaveResult
-typealias NoteEditorSaveCallback = NoteEditorCoordinator.SaveCallback
-
 protocol NoteEditorCoordinatorDelegate: AnyObject {
     func show(url: URL)
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
+    func show(error: Error, isClosing: Bool)
 }
 
 final class NoteEditorCoordinator: NSObject, Coordinator {
-    typealias SaveResult = Result<(note: Note, isCreated: Bool), Error>
-    typealias SaveCallback = (_ key: String?, _ result: SaveResult) -> Void
-
     weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
     private var transitionDelegate: EmptyTransitioningDelegate?
@@ -34,8 +29,11 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
     private let parentTitleData: NoteEditorState.TitleData?
     private let title: String?
     private let library: Library
-    private let saveCallback: NoteEditorSaveCallback
     private unowned let controllers: Controllers
+
+    var viewModel: ViewModel<NoteEditorActionHandler>? {
+        (navigationController?.viewControllers.first as? NoteEditorViewController)?.viewModel
+    }
 
     init(
         library: Library,
@@ -44,7 +42,6 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
         tags: [Tag],
         parentTitleData: NoteEditorState.TitleData?,
         title: String?,
-        saveCallback: @escaping NoteEditorSaveCallback,
         navigationController: NavigationViewController,
         controllers: Controllers
     ) {
@@ -54,7 +51,6 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
         self.parentTitleData = parentTitleData
         self.title = title
         self.library = library
-        self.saveCallback = saveCallback
         self.navigationController = navigationController
         self.controllers = controllers
         childCoordinators = []
@@ -72,17 +68,14 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
     }
 
     func start(animated: Bool) {
-        guard let dbStorage = controllers.userControllers?.dbStorage else { return }
-
-        let state = NoteEditorState(
-            kind: kind,
-            library: library,
-            parentTitleData: parentTitleData,
-            text: initialText,
-            tags: initialTags,
-            title: title
+        guard let dbStorage = controllers.userControllers?.dbStorage, let fileDownloader = controllers.userControllers?.fileDownloader else { return }
+        let state = NoteEditorState(kind: kind, library: library, parentTitleData: parentTitleData, text: initialText, tags: initialTags, title: title)
+        let handler = NoteEditorActionHandler(
+            dbStorage: dbStorage,
+            fileStorage: controllers.fileStorage,
+            schemaController: controllers.schemaController,
+            attachmentDownloader: fileDownloader
         )
-        let handler = NoteEditorActionHandler(dbStorage: dbStorage, schemaController: controllers.schemaController, saveCallback: saveCallback)
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = NoteEditorViewController(viewModel: viewModel, htmlAttributedStringConverter: controllers.htmlAttributedStringConverter)
         controller.coordinatorDelegate = self
@@ -105,5 +98,18 @@ extension NoteEditorCoordinator: NoteEditorCoordinatorDelegate {
     func show(url: URL) {
         guard let detailCoordinator = parentCoordinator as? DetailCoordinator else { return }
         detailCoordinator.show(url: url)
+    }
+
+    func show(error: any Error, isClosing: Bool) {
+        let controller = UIAlertController(title: L10n.error, message: error.localizedDescription, preferredStyle: .alert)
+        if !isClosing {
+            controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel))
+        } else {
+            controller.addAction(UIAlertAction(title: L10n.stay, style: .cancel))
+            controller.addAction(UIAlertAction(title: L10n.closeWithoutSaving, style: .destructive, handler: { [weak self] _ in
+                self?.navigationController?.dismiss(animated: true)
+            }))
+        }
+        navigationController?.present(controller, animated: true)
     }
 }

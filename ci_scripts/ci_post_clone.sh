@@ -78,3 +78,6 @@ esac
 # Update Info.plist files
 echo "Setting version to $newVersionString"
 sed -i "" -e "s/MARKETING_VERSION \= [^\;]*\;/MARKETING_VERSION = $newVersionString;/" ../Zotero.xcodeproj/project.pbxproj
+
+# Install node
+which node || HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew install node

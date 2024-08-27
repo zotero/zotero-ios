@@ -57,6 +57,8 @@
 "back" = "Back";
 "forward" = "Forward";
 "go_to_settings" = "Go to Settings";
+"close_without_saving" = "Close without saving";
+"stay" = "Stay";
 
 "beta_wipe_title" = "Resync Required";
 "beta_wipe_message" = "Due to a beta update, your data must be redownloaded from zotero.org.";

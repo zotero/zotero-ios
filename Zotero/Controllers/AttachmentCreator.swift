@@ -154,7 +154,7 @@ struct AttachmentCreator {
             return importedType(for: item, libraryId: libraryId, fileStorage: fileStorage, linkType: .importedFile, compressed: item.fileCompressed)
 
         case .embeddedImage:
-            return embeddedImageType(for: item, libraryId: libraryId, options: options, fileStorage: fileStorage)
+            return importedType(for: item, libraryId: libraryId, fileStorage: fileStorage, linkType: .embeddedImage, compressed: false)
 
         case .importedUrl:
             return importedType(for: item, libraryId: libraryId, fileStorage: fileStorage, linkType: .importedUrl, compressed: item.fileCompressed)
@@ -166,25 +166,6 @@ struct AttachmentCreator {
             guard let urlDetector = urlDetector else { return nil }
             return linkedUrlType(for: item, libraryId: libraryId, urlDetector: urlDetector)
         }
-    }
-
-    private static func embeddedImageType(for item: RItem, libraryId: LibraryIdentifier, options: Options, fileStorage: FileStorage?) -> Attachment.Kind? {
-        guard let parent = item.parent else {
-            DDLogError("AttachmentCreator: embedded image without parent \(item.key)")
-            return nil
-        }
-        guard parent.rawType == ItemTypes.annotation else {
-            DDLogError("AttachmentCreator: embedded image with non-attachment parent \(item.key)")
-            return nil
-        }
-        guard let attachmentItem = parent.parent else {
-            DDLogError("AttachmentCreator: embedded image (\(item.key)) annotation without assigned parent \(parent.key)")
-            return nil
-        }
-        let file = Files.annotationPreview(annotationKey: parent.key, pdfKey: attachmentItem.key, libraryId: libraryId, isDark: (options == .dark))
-        let location = location(for: item, file: file, fileStorage: fileStorage)
-        let filename = filename(for: item, ext: "png")
-        return .file(filename: filename, contentType: "image/png", location: location, linkType: .embeddedImage, compressed: false)
     }
 
     private static func importedType(for item: RItem, libraryId: LibraryIdentifier, fileStorage: FileStorage?, linkType: Attachment.FileLinkType, compressed: Bool) -> Attachment.Kind? {

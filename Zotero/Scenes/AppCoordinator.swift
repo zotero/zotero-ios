@@ -913,9 +913,7 @@ extension AppCoordinator: OpenItemsPresenter {
 
                     case .note(let library, let key, let text, let tags, let parentTitleData, let title):
                         let kind: NoteEditorKind = library.metadataEditable ? .edit(key: key) : .readOnly(key: key)
-                        // TODO: Check if a callback is required
-                        return coordinator.createNoteController(library: library, kind: kind, text: text, tags: tags, parentTitleData: parentTitleData, title: title) { _, _ in
-                        }
+                        return coordinator.createNoteController(library: library, kind: kind, text: text, tags: tags, parentTitleData: parentTitleData, title: title)
                     }
                 },
                 by: mainController,

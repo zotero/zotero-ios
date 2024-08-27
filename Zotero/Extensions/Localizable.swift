@@ -34,6 +34,8 @@ internal enum L10n {
   ///   Created by Michal Rentka on 21/04/2020.
   ///   Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
   internal static let close = L10n.tr("Localizable", "close", fallback: "Close")
+  /// Close without saving
+  internal static let closeWithoutSaving = L10n.tr("Localizable", "close_without_saving", fallback: "Close without saving")
   /// Copy
   internal static let copy = L10n.tr("Localizable", "copy", fallback: "Copy")
   /// Create
@@ -120,6 +122,8 @@ internal enum L10n {
   internal static let share = L10n.tr("Localizable", "share", fallback: "Share")
   /// Size
   internal static let size = L10n.tr("Localizable", "size", fallback: "Size")
+  /// Stay
+  internal static let stay = L10n.tr("Localizable", "stay", fallback: "Stay")
   /// Support and Feedback
   internal static let supportFeedback = L10n.tr("Localizable", "support_feedback", fallback: "Support and Feedback")
   /// Title

@@ -11,6 +11,23 @@ import Foundation
 typealias NoteEditorKind = NoteEditorState.Kind
 
 struct NoteEditorState: ViewModelState {
+    struct Resource {
+        let identifier: String
+        let data: [String: Any]
+    }
+
+    struct ResourceMetadata {
+        let identifier: String
+        let type: String
+        let filename: String
+        let contentType: String
+    }
+
+    struct CreatedImage {
+        let nodeId: String
+        let key: String
+    }
+
     enum Kind {
         case itemCreation(parentKey: String)
         case standaloneCreation(collection: Collection)
@@ -34,9 +51,11 @@ struct NoteEditorState: ViewModelState {
         let rawValue: UInt8
 
         static let tags = Changes(rawValue: 1 << 0)
-        static let save = Changes(rawValue: 1 << 1)
+        static let shouldSave = Changes(rawValue: 1 << 1)
         static let kind = Changes(rawValue: 1 << 3)
         static let title = Changes(rawValue: 1 << 4)
+        static let saved = Changes(rawValue: 1 << 5)
+        static let closing = Changes(rawValue: 1 << 6)
     }
 
     struct TitleData {
@@ -45,6 +64,7 @@ struct NoteEditorState: ViewModelState {
     }
 
     enum Error: Swift.Error {
+        case cantCreateData
         case cantSaveReadonlyNote
     }
 
@@ -54,8 +74,13 @@ struct NoteEditorState: ViewModelState {
     var kind: Kind
     var text: String
     var tags: [Tag]
+    var pendingResources: [String: ResourceMetadata]
+    var downloadedResource: Resource?
+    var createdImages: [CreatedImage]
     var changes: Changes
     var title: String?
+    var isClosing: Bool
+    var error: Swift.Error?
 
     init(kind: Kind, library: Library, parentTitleData: TitleData?, text: String, tags: [Tag], title: String?) {
         self.kind = kind
@@ -63,11 +88,17 @@ struct NoteEditorState: ViewModelState {
         self.tags = tags
         self.library = library
         self.parentTitleData = parentTitleData
-        changes = []
         self.title = title
+        isClosing = false
+        pendingResources = [:]
+        changes = []
+        createdImages = []
     }
 
     mutating func cleanup() {
+        downloadedResource = nil
         changes = []
+        createdImages = []
+        error = nil
     }
 }

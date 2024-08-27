@@ -10,3 +10,6 @@
 [submodule "translators"]
 	path = translators
 	url = https://github.com/zotero/translators.git
+[submodule "note-editor"]
+	path = note-editor
+	url = https://github.com/zotero/note-editor

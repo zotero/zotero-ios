@@ -218,7 +218,6 @@
 		B30566C523FC051F003304F2 /* Tag.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305655F23FC051E003304F2 /* Tag.swift */; };
 		B30566C723FC051F003304F2 /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305656123FC051E003304F2 /* AppGroup.swift */; };
 		B30566C823FC051F003304F2 /* SortType.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305656223FC051E003304F2 /* SortType.swift */; };
-		B30566D923FC0769003304F2 /* tinymce in Resources */ = {isa = PBXBuildFile; fileRef = B30566D823FC0769003304F2 /* tinymce */; };
 		B30566DA23FC07E0003304F2 /* Library.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305653923FC051E003304F2 /* Library.swift */; };
 		B30566DC23FC07EE003304F2 /* ItemResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305654623FC051E003304F2 /* ItemResponse.swift */; };
 		B30566E223FC0810003304F2 /* DeletionsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305648F23FC051E003304F2 /* DeletionsRequest.swift */; };
@@ -998,7 +997,6 @@
 		B3CD66BF29E800E3008180C7 /* ItemsFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CD66BE29E800E3008180C7 /* ItemsFilter.swift */; };
 		B3CD96B3283796F500B8ACCB /* RemoteAttachmentDownloadOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CD96B2283796F500B8ACCB /* RemoteAttachmentDownloadOperation.swift */; };
 		B3CE697624DD7D6A00D333AF /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B30B550224B85A3A00F94B59 /* Colors.xcassets */; };
-		B3CED4C62BC9212600B88FB0 /* note.html in Resources */ = {isa = PBXBuildFile; fileRef = B3CED4C52BC9212600B88FB0 /* note.html */; };
 		B3CF8830266DFFAF009CFC20 /* ReadStylesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B331F9B4265400D70099F6A6 /* ReadStylesDbRequest.swift */; };
 		B3CF906629D1C71800614A89 /* CreatorEditCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CF906529D1C71800614A89 /* CreatorEditCoordinator.swift */; };
 		B3D037202604FCBA00BCFB05 /* FileAttachmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30B40622490F09400FAAF6D /* FileAttachmentView.swift */; };
@@ -1457,7 +1455,6 @@
 		B305655F23FC051E003304F2 /* Tag.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Tag.swift; sourceTree = "<group>"; };
 		B305656123FC051E003304F2 /* AppGroup.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppGroup.swift; sourceTree = "<group>"; };
 		B305656223FC051E003304F2 /* SortType.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SortType.swift; sourceTree = "<group>"; };
-		B30566D823FC0769003304F2 /* tinymce */ = {isa = PBXFileReference; lastKnownFileType = folder; path = tinymce; sourceTree = "<group>"; };
 		B305678F23FC1D9B003304F2 /* CollectionDifference+Separated.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CollectionDifference+Separated.swift"; sourceTree = "<group>"; };
 		B305CEBA29E6E67600B9E2B4 /* AssignItemsToTagDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssignItemsToTagDbRequest.swift; sourceTree = "<group>"; };
 		B307A2722704A87D005986B3 /* IdleTimerController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdleTimerController.swift; sourceTree = "<group>"; };
@@ -1986,7 +1983,6 @@
 		B3CCB8D929B73DED0097520B /* UnlockPDFViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnlockPDFViewController.swift; sourceTree = "<group>"; };
 		B3CD66BE29E800E3008180C7 /* ItemsFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemsFilter.swift; sourceTree = "<group>"; };
 		B3CD96B2283796F500B8ACCB /* RemoteAttachmentDownloadOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteAttachmentDownloadOperation.swift; sourceTree = "<group>"; };
-		B3CED4C52BC9212600B88FB0 /* note.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = note.html; sourceTree = "<group>"; };
 		B3CF906529D1C71800614A89 /* CreatorEditCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatorEditCoordinator.swift; sourceTree = "<group>"; };
 		B3D06ADD29DD8C21009C0D98 /* DeleteAutomaticTagsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteAutomaticTagsDbRequest.swift; sourceTree = "<group>"; };
 		B3D0793527CCF63800C454D6 /* AnnotationBoundingBoxCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationBoundingBoxCalculator.swift; sourceTree = "<group>"; };
@@ -2258,8 +2254,6 @@
 				613F32772C1086950088EF70 /* InfoPlist.strings */,
 				B337A5AA244F1DEB00AFD13D /* Localizable.strings */,
 				614D65802A79C9AC007CF449 /* Localizable.stringsdict */,
-				B3CED4C52BC9212600B88FB0 /* note.html */,
-				B30566D823FC0769003304F2 /* tinymce */,
 			);
 			path = Assets;
 			sourceTree = "<group>";
@@ -4221,16 +4215,17 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = B30D597F2206F60500884C4A /* Build configuration list for PBXNativeTarget "Zotero" */;
 			buildPhases = (
-				B3CF8840266E0FE6009CFC20 /* Run Script */,
-				B3593F142668D37900FA4BB2 /* Run Script */,
-				B34A85AC243CB1E4003D5638 /* ShellScript */,
+				B3CF8840266E0FE6009CFC20 /* Bundle Locales */,
+				B3593F142668D37900FA4BB2 /* Bundle Styles */,
+				B34A85AC243CB1E4003D5638 /* Bundle Translators */,
+				B3A1D03D2BA321B30040FEE9 /* Bundle Note Editor */,
 				B337A5AD244F229400AFD13D /* SwiftGen */,
 				B30D59512206F60400884C4A /* Sources */,
 				B30D59522206F60400884C4A /* Frameworks */,
 				B30D59532206F60400884C4A /* Resources */,
 				B311B3272386A39800BCF592 /* Embed Foundation Extensions */,
 				B3E196FA25308D9700DBBE5C /* CopyFiles */,
-				B3E196FB25308DA500DBBE5C /* ShellScript */,
+				B3E196FB25308DA500DBBE5C /* Fix Code Signing */,
 				61AE2F282A2619E50072571D /* SwiftLint */,
 			);
 			buildRules = (
@@ -4433,7 +4428,6 @@
 				B3F0C3FA250A1BD8002D557A /* LibrariesViewController.xib in Resources */,
 				B3E8FE1D2714297200F51458 /* CiteSearchViewController.xib in Resources */,
 				B3593F31241A61C700760E20 /* ItemDetailViewController.xib in Resources */,
-				B30566D923FC0769003304F2 /* tinymce in Resources */,
 				B3BC1F61254322D200BA3388 /* ItemDetailAbstractEditContentView.xib in Resources */,
 				B3D16BF324E161C70002663B /* LoginViewController.xib in Resources */,
 				B34DF1A2257684590019CCD1 /* AnnotationPageLabelViewController.xib in Resources */,
@@ -4455,7 +4449,6 @@
 				B30B550324B85A3A00F94B59 /* Colors.xcassets in Resources */,
 				B31CC57D286468C80055C114 /* ManualLookupViewController.xib in Resources */,
 				B35DC8E6261D9E7C00ED30F4 /* ItemDetailFieldMultilineEditContentView.xib in Resources */,
-				B3CED4C62BC9212600B88FB0 /* note.html in Resources */,
 				B30B405F2490CAFC00FAAF6D /* ItemCell.xib in Resources */,
 				B31A5E52286308960026589F /* LookupIdentifierCell.xib in Resources */,
 				B32A495B2A44730D00080945 /* licenses in Resources */,
@@ -4593,7 +4586,7 @@
 			shellPath = /bin/sh;
 			shellScript = "swiftgen config lint\nswiftgen config run\n";
 		};
-		B34A85AC243CB1E4003D5638 /* ShellScript */ = {
+		B34A85AC243CB1E4003D5638 /* Bundle Translators */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -4604,6 +4597,7 @@
 			inputPaths = (
 				"$(SRCROOT)/scripts/bundle_translators.py",
 			);
+			name = "Bundle Translators";
 			outputFileListPaths = (
 			);
 			outputPaths = (
@@ -4612,7 +4606,7 @@
 			shellPath = /bin/sh;
 			shellScript = "python3 \"$SCRIPT_INPUT_FILE_0\"\n";
 		};
-		B3593F142668D37900FA4BB2 /* Run Script */ = {
+		B3593F142668D37900FA4BB2 /* Bundle Styles */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -4623,7 +4617,7 @@
 			inputPaths = (
 				"$(SRCROOT)/scripts/bundle_styles.py",
 			);
-			name = "Run Script";
+			name = "Bundle Styles";
 			outputFileListPaths = (
 			);
 			outputPaths = (
@@ -4632,7 +4626,26 @@
 			shellPath = /bin/sh;
 			shellScript = "python3 \"$SCRIPT_INPUT_FILE_0\"\n";
 		};
-		B3CF8840266E0FE6009CFC20 /* Run Script */ = {
+		B3A1D03D2BA321B30040FEE9 /* Bundle Note Editor */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/scripts/bundle_note_editor.sh",
+			);
+			name = "Bundle Note Editor";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "sh \"$SCRIPT_INPUT_FILE_0\"\n";
+		};
+		B3CF8840266E0FE6009CFC20 /* Bundle Locales */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 12;
@@ -4643,7 +4656,7 @@
 			inputPaths = (
 				"$(SRCROOT)/scripts/bundle_locales.py",
 			);
-			name = "Run Script";
+			name = "Bundle Locales";
 			outputFileListPaths = (
 			);
 			outputPaths = (
@@ -4652,7 +4665,7 @@
 			shellPath = /bin/sh;
 			shellScript = "python3 \"$SCRIPT_INPUT_FILE_0\"\n";
 		};
-		B3E196FB25308DA500DBBE5C /* ShellScript */ = {
+		B3E196FB25308DA500DBBE5C /* Fix Code Signing */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -4662,6 +4675,7 @@
 			);
 			inputPaths = (
 			);
+			name = "Fix Code Signing";
 			outputFileListPaths = (
 			);
 			outputPaths = (
@@ -5998,7 +6012,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.24;
+				MARKETING_VERSION = 1.0.32;
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ios.Zotero;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -6035,7 +6049,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.24;
+				MARKETING_VERSION = 1.0.32;
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ios.Zotero;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -6310,7 +6324,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.24;
+				MARKETING_VERSION = 1.0.32;
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ios.Zotero;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
