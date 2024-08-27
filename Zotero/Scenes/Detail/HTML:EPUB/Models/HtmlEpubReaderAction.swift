@@ -6,7 +6,7 @@
 //  Copyright © 2023 Corporation for Digital Scholarship. All rights reserved.
 //
 
-import Foundation
+import UIKit
 
 enum HtmlEpubReaderAction {
     case changeFilter(AnnotationsFilter?)
@@ -18,6 +18,7 @@ enum HtmlEpubReaderAction {
     case initialiseReader
     case loadDocument
     case parseAndCacheComment(key: String, comment: String)
+    case parseAndCacheText(key: String, text: String, font: UIFont)
     case removeAnnotation(String)
     case removeSelectedAnnotations
     case saveAnnotations([String: Any])
@@ -36,5 +37,5 @@ enum HtmlEpubReaderAction {
     case setViewState([String: Any])
     case showAnnotationPopover(key: String, rect: CGRect)
     case toggleTool(AnnotationTool)
-    case updateAnnotationProperties(key: String, color: String, lineWidth: CGFloat, pageLabel: String, updateSubsequentLabels: Bool, highlightText: String)
+    case updateAnnotationProperties(key: String, color: String, lineWidth: CGFloat, pageLabel: String, updateSubsequentLabels: Bool, highlightText: NSAttributedString)
 }

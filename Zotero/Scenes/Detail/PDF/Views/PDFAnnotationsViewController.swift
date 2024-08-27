@@ -15,7 +15,7 @@ import RxSwift
 
 typealias AnnotationsViewControllerAction = (AnnotationView.Action, Annotation, UIButton) -> Void
 
-protocol AnnotationsDelegate: AnyObject {
+protocol PDFAnnotationsDelegate: AnyObject {
     func parseAndCacheIfNeededAttributedText(for annotation: PDFAnnotation, with font: UIFont) -> NSAttributedString?
     func parseAndCacheIfNeededAttributedComment(for annotation: PDFAnnotation) -> NSAttributedString?
 }
@@ -37,7 +37,7 @@ final class PDFAnnotationsViewController: UIViewController {
     private var dataSource: TableViewDiffableDataSource<Int, PDFReaderState.AnnotationKey>!
     private var searchController: UISearchController!
 
-    weak var parentDelegate: (PDFReaderContainerDelegate & SidebarDelegate & AnnotationsDelegate)?
+    weak var parentDelegate: (PDFReaderContainerDelegate & SidebarDelegate & PDFAnnotationsDelegate)?
     weak var coordinatorDelegate: PdfAnnotationsCoordinatorDelegate?
     weak var boundingBoxConverter: AnnotationBoundingBoxConverter?
 
