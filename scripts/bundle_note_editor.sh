@@ -12,7 +12,7 @@ HASH_FILE="$EDITOR_DIR/note_editor_hash.txt"
 CURRENT_HASH=`git ls-tree --object-only HEAD "$EDITOR_SUBMODULE_DIR"`
 
 if [ -d "$EDITOR_DIR" ]; then
-    if [ -d "$HASH_FILE" ]; then
+    if [ -f "$HASH_FILE" ]; then
         CACHED_HASH=`cat "$HASH_FILE"`
     else 
         CACHED_HASH=0
