@@ -1415,21 +1415,16 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         guard !finalAnnotations.isEmpty else { return }
         let documentAnnotations: [PDFDocumentAnnotation] = finalAnnotations.compactMap { annotation in
-            var color: UIColor? = annotation.color
-            if color == nil, let tool = tool(from: annotation), let activeColor = viewModel.state.toolColors[tool] {
-                color = activeColor
-            }
-            guard let color else { return nil }
             let documentAnnotation = AnnotationConverter.annotation(
                 from: annotation,
-                color: color.hexString,
+                color: annotation.baseColor,
                 library: viewModel.state.library,
                 username: viewModel.state.username,
                 displayName: viewModel.state.displayName,
                 boundingBoxConverter: boundingBoxConverter
             )
             guard let documentAnnotation else { return nil }
-            // Only create preview for annotations that will be
+            // Only create preview for annotations that will be added in the database.
             annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, isDark: (viewModel.state.interfaceStyle == .dark))
             return documentAnnotation
         }
