@@ -12,7 +12,6 @@ enum ConflictResolution {
     case deleteGroup(Int)
     case markGroupAsLocalOnly(Int)
     case revertGroupChanges(LibraryIdentifier)
-    case keepGroupChanges(LibraryIdentifier)
     case revertGroupFiles(LibraryIdentifier)
     case skipGroup(LibraryIdentifier)
     case remoteDeletionOfActiveObject(libraryId: LibraryIdentifier, toDeleteCollections: [String], toRestoreCollections: [String],

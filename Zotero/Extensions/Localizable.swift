@@ -684,8 +684,6 @@ internal enum L10n {
       internal static func groupRemoved(_ p1: Any) -> String {
         return L10n.tr("Localizable", "errors.sync.group_removed", String(describing: p1), fallback: "Group '%@' is no longer accessible. What would you like to do?")
       }
-      /// Keep changes
-      internal static let keepChanges = L10n.tr("Localizable", "errors.sync.keep_changes", fallback: "Keep changes")
       /// You can't write to group '%@' anymore. What would you like to do?
       internal static func metadataWriteDenied(_ p1: Any) -> String {
         return L10n.tr("Localizable", "errors.sync.metadata_write_denied", String(describing: p1), fallback: "You can't write to group '%@' anymore. What would you like to do?")
