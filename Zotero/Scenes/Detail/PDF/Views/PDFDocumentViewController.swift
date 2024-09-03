@@ -709,19 +709,18 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
                 case .share:
                     guard action.identifier == .PSPDFKit.share else { return nil }
                     return action.replacing(handler: { [weak self] _ in
-                        guard let self, let view = pdfController?.view else { return }
-                        coordinatorDelegate?.share(text: glyphs.text, rect: glyphs.boundingBox, view: view)
+                        self?.coordinatorDelegate?.share(text: glyphs.text, rect: pageView.convert(glyphs.boundingBox, from: pageView.pdfCoordinateSpace), view: pageView)
                     })
 
                 case .pspdfkitActions:
                     switch action.identifier {
                     case .PSPDFKit.define:
                         return action.replacing(title: L10n.lookUp, handler: { [weak self] _ in
-                            guard let self, let view = pdfController?.view else { return }
+                            guard let self else { return }
                             coordinatorDelegate?.lookup(
                                 text: glyphs.text,
-                                rect: glyphs.boundingBox,
-                                view: view,
+                                rect: pageView.convert(glyphs.boundingBox, from: pageView.pdfCoordinateSpace),
+                                view: pageView,
                                 userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle
                             )
                         })
