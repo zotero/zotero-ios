@@ -657,9 +657,6 @@ final class SyncController: SynchronizationController {
         case .deleteGroup(let id):
             return [.deleteGroup(id)]
 
-        case .keepGroupChanges(let id):
-            return [.markChangesAsResolved(id)]
-
         case .markGroupAsLocalOnly(let id):
             return [.markGroupAsLocalOnly(id)]
 
