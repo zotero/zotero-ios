@@ -832,8 +832,8 @@ extension AppCoordinator: ConflictReceiver {
                         let actions = [UIAlertAction(title: L10n.Errors.Sync.revertToOriginal, style: .cancel, handler: { _ in
                             completed(.revertGroupChanges(.group(groupId)))
                         }),
-                                       UIAlertAction(title: L10n.Errors.Sync.keepChanges, style: .default, handler: { _ in
-                            completed(.keepGroupChanges(.group(groupId)))
+                                       UIAlertAction(title: L10n.Errors.Sync.skipGroup, style: .default, handler: { _ in
+                            completed(.skipGroup(.group(groupId)))
                         })]
                         return (L10n.warning, L10n.Errors.Sync.metadataWriteDenied(groupName), actions)
 
