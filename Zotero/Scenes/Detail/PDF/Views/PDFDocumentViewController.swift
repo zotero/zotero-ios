@@ -737,8 +737,8 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
 
                 case .PSPDFKit.annotate:
                     let actions = [
-                        action.replacing(title: L10n.Pdf.highlight, handler: createHighlightActionHandler(for: self, pageView: pageView)),
-                        UIAction(title: L10n.Pdf.underline, identifier: .underline, handler: createUnderlineActionHandler(for: self, pageView: pageView))
+                        action.replacing(title: L10n.Pdf.highlight, handler: createHighlightActionHandler(for: pageView, in: viewModel)),
+                        UIAction(title: L10n.Pdf.underline, identifier: .underline, handler: createUnderlineActionHandler(for: pageView, in: viewModel))
                     ]
                     return UIMenu(options: [.displayInline], children: actions)
 
@@ -750,8 +750,8 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
                 switch menu.identifier {
                 case .PSPDFKit.annotate:
                     return [
-                        UIAction(title: L10n.Pdf.highlight, handler: createHighlightActionHandler(for: self, pageView: pageView)),
-                        UIAction(title: L10n.Pdf.underline, identifier: .underline, handler: createUnderlineActionHandler(for: self, pageView: pageView))
+                        UIAction(title: L10n.Pdf.highlight, handler: createHighlightActionHandler(for: pageView, in: viewModel)),
+                        UIAction(title: L10n.Pdf.underline, identifier: .underline, handler: createUnderlineActionHandler(for: pageView, in: viewModel))
                     ]
 
                 default:
@@ -781,20 +781,20 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
             })
         }
 
-        func createHighlightActionHandler(for documentViewController: PDFDocumentViewController, pageView: PDFPageView) -> UIActionHandler {
+        func createHighlightActionHandler(for pageView: PDFPageView, in viewModel: ViewModel<PDFReaderActionHandler>) -> UIActionHandler {
             let rects = pageView.selectionView.selectionRects.map({ pageView.convert($0.cgRectValue, to: pageView.pdfCoordinateSpace) })
-            return { [weak documentViewController] _ in
-                guard let documentViewController else { return }
-                documentViewController.viewModel.process(action: .createHighlight(pageIndex: pageView.pageIndex, rects: rects))
+            return { [weak viewModel] _ in
+                guard let viewModel else { return }
+                viewModel.process(action: .createHighlight(pageIndex: pageView.pageIndex, rects: rects))
                 pageView.selectionView.selectedGlyphs = nil
             }
         }
 
-        func createUnderlineActionHandler(for documentViewController: PDFDocumentViewController, pageView: PDFPageView) -> UIActionHandler {
+        func createUnderlineActionHandler(for pageView: PDFPageView, in viewModel: ViewModel<PDFReaderActionHandler>) -> UIActionHandler {
             let rects = pageView.selectionView.selectionRects.map({ pageView.convert($0.cgRectValue, to: pageView.pdfCoordinateSpace) })
-            return { [weak documentViewController] _ in
-                guard let documentViewController else { return }
-                documentViewController.viewModel.process(action: .createUnderline(pageIndex: pageView.pageIndex, rects: rects))
+            return { [weak viewModel] _ in
+                guard let viewModel else { return }
+                viewModel.process(action: .createUnderline(pageIndex: pageView.pageIndex, rects: rects))
                 pageView.selectionView.selectedGlyphs = nil
             }
         }
