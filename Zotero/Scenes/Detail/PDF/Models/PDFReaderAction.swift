@@ -44,6 +44,7 @@ enum PDFReaderAction {
     case createNote(pageIndex: PageIndex, origin: CGPoint)
     case createImage(pageIndex: PageIndex, origin: CGPoint)
     case createHighlight(pageIndex: PageIndex, rects: [CGRect])
+    case createUnderline(pageIndex: PageIndex, rects: [CGRect])
     case parseAndCacheText(key: String, text: String, font: UIFont)
     case parseAndCacheComment(key: String, comment: String)
     case setComment(key: String, comment: NSAttributedString)

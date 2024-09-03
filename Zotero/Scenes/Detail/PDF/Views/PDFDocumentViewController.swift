@@ -690,7 +690,7 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
     func pdfViewController(_ sender: PDFViewController, menuForText glyphs: GlyphSequence, onPageView pageView: PDFPageView, appearance: EditMenuAppearance, suggestedMenu: UIMenu) -> UIMenu {
         return filterActions(
             forMenu: suggestedMenu,
-            predicate: { menuId, action -> UIAction? in
+            predicate: { menuId, action -> UIMenuElement? in
                 switch menuId {
                 case .standardEdit:
                     switch action.identifier {
@@ -736,12 +736,11 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
                     }
 
                 case .PSPDFKit.annotate:
-                    let rects = pageView.selectionView.selectionRects.map({ pageView.convert($0.cgRectValue, to: pageView.pdfCoordinateSpace) })
-                    return action.replacing(title: L10n.Pdf.highlight, handler: { [weak self] _ in
-                        guard let self else { return }
-                        viewModel.process(action: .createHighlight(pageIndex: pageView.pageIndex, rects: rects))
-                        pageView.selectionView.selectedGlyphs = nil
-                    })
+                    let actions = [
+                        action.replacing(title: L10n.Pdf.highlight, handler: createHighlightActionHandler(for: self, pageView: pageView)),
+                        UIAction(title: L10n.Pdf.underline, identifier: .underline, handler: createUnderlineActionHandler(for: self, pageView: pageView))
+                    ]
+                    return UIMenu(options: [.displayInline], children: actions)
 
                 default:
                     return action
@@ -750,13 +749,9 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
             populatingEmptyMenu: { menu -> [UIAction]? in
                 switch menu.identifier {
                 case .PSPDFKit.annotate:
-                    let rects = pageView.selectionView.selectionRects.map({ pageView.convert($0.cgRectValue, to: pageView.pdfCoordinateSpace) })
                     return [
-                        UIAction(title: L10n.Pdf.highlight, handler: { [weak self] _ in
-                            guard let self else { return }
-                            viewModel.process(action: .createHighlight(pageIndex: pageView.pageIndex, rects: rects))
-                            pageView.selectionView.selectedGlyphs = nil
-                        })
+                        UIAction(title: L10n.Pdf.highlight, handler: createHighlightActionHandler(for: self, pageView: pageView)),
+                        UIAction(title: L10n.Pdf.underline, identifier: .underline, handler: createUnderlineActionHandler(for: self, pageView: pageView))
                     ]
 
                 default:
@@ -765,11 +760,11 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
             }
         )
 
-        func filterActions(forMenu menu: UIMenu, predicate: (UIMenu.Identifier, UIAction) -> UIAction?, populatingEmptyMenu: (UIMenu) -> [UIAction]?) -> UIMenu {
+        func filterActions(forMenu menu: UIMenu, predicate: (UIMenu.Identifier, UIAction) -> UIMenuElement?, populatingEmptyMenu: (UIMenu) -> [UIAction]?) -> UIMenu {
             return menu.replacingChildren(menu.children.compactMap { element -> UIMenuElement? in
                 if let action = element as? UIAction {
-                    if let action = predicate(menu.identifier, action) {
-                        return action
+                    if let element = predicate(menu.identifier, action) {
+                        return element
                     } else {
                         return nil
                     }
@@ -784,6 +779,24 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
                     return element
                 }
             })
+        }
+
+        func createHighlightActionHandler(for documentViewController: PDFDocumentViewController, pageView: PDFPageView) -> UIActionHandler {
+            let rects = pageView.selectionView.selectionRects.map({ pageView.convert($0.cgRectValue, to: pageView.pdfCoordinateSpace) })
+            return { [weak documentViewController] _ in
+                guard let documentViewController else { return }
+                documentViewController.viewModel.process(action: .createHighlight(pageIndex: pageView.pageIndex, rects: rects))
+                pageView.selectionView.selectedGlyphs = nil
+            }
+        }
+
+        func createUnderlineActionHandler(for documentViewController: PDFDocumentViewController, pageView: PDFPageView) -> UIActionHandler {
+            let rects = pageView.selectionView.selectionRects.map({ pageView.convert($0.cgRectValue, to: pageView.pdfCoordinateSpace) })
+            return { [weak documentViewController] _ in
+                guard let documentViewController else { return }
+                documentViewController.viewModel.process(action: .createUnderline(pageIndex: pageView.pageIndex, rects: rects))
+                pageView.selectionView.selectedGlyphs = nil
+            }
         }
     }
 
@@ -1036,4 +1049,8 @@ extension UIAction {
             handler: handler
         )
     }
+}
+
+extension UIAction.Identifier {
+    fileprivate static let underline = UIAction.Identifier(rawValue: "org.zotero.menu")
 }
