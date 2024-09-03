@@ -26,7 +26,7 @@ protocol PdfReaderCoordinatorDelegate: AnyObject {
     func show(error: PDFReaderState.Error)
     func show(error: PDFDocumentExporter.Error)
     func share(url: URL, barButton: UIBarButtonItem)
-    func share(text: String, rect: CGRect, view: UIView)
+    func share(text: String, rect: CGRect, view: UIView, userInterfaceStyle: UIUserInterfaceStyle)
     func lookup(text: String, rect: CGRect, view: UIView, userInterfaceStyle: UIUserInterfaceStyle)
     func showDeletedAlertForPdf(completion: @escaping (Bool) -> Void)
     func showSettings(with settings: PDFSettings, sender: UIBarButtonItem) -> ViewModel<ReaderSettingsActionHandler>
@@ -289,13 +289,15 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         self.share(item: url, sourceView: .item(barButton))
     }
 
-    func share(text: String, rect: CGRect, view: UIView) {
-        self.share(item: text, sourceView: .view(view, rect))
+    func share(text: String, rect: CGRect, view: UIView, userInterfaceStyle: UIUserInterfaceStyle) {
+        self.share(item: text, sourceView: .view(view, rect), userInterfaceStyle: userInterfaceStyle)
     }
 
     func lookup(text: String, rect: CGRect, view: UIView, userInterfaceStyle: UIUserInterfaceStyle) {
         DDLogInfo("PDFCoordinator: show lookup")
-        let controller = UIReferenceLibraryViewController(term: text)
+        // When presented as a popover, UIReferenceLibraryViewController ignores overrideUserInterfaceStyle, so we wrap it in a navigation controller to force it.
+        let controller = UINavigationController(rootViewController: UIReferenceLibraryViewController(term: text))
+        controller.setNavigationBarHidden(true, animated: false)
         controller.overrideUserInterfaceStyle = userInterfaceStyle
         controller.modalPresentationStyle = .popover
         controller.popoverPresentationController?.sourceView = view

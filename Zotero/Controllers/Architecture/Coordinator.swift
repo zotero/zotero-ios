@@ -20,7 +20,13 @@ protocol Coordinator: AnyObject {
 
     func start(animated: Bool)
     func childDidFinish(_ child: Coordinator)
-    func share(item: Any, sourceView: SourceView, presenter: UIViewController?, completionWithItemsHandler: UIActivityViewController.CompletionWithItemsHandler?)
+    func share(
+        item: Any,
+        sourceView: SourceView,
+        presenter: UIViewController?,
+        userInterfaceStyle: UIUserInterfaceStyle?,
+        completionWithItemsHandler: UIActivityViewController.CompletionWithItemsHandler?
+    )
 }
 
 extension Coordinator {
@@ -36,8 +42,17 @@ extension Coordinator {
         }
     }
 
-    func share(item: Any, sourceView: SourceView, presenter: UIViewController? = nil, completionWithItemsHandler: UIActivityViewController.CompletionWithItemsHandler? = nil) {
+    func share(
+        item: Any,
+        sourceView: SourceView,
+        presenter: UIViewController? = nil,
+        userInterfaceStyle: UIUserInterfaceStyle? = nil,
+        completionWithItemsHandler: UIActivityViewController.CompletionWithItemsHandler? = nil
+    ) {
         let controller = UIActivityViewController(activityItems: [item], applicationActivities: nil)
+        if let userInterfaceStyle {
+            controller.overrideUserInterfaceStyle = userInterfaceStyle
+        }
         controller.modalPresentationStyle = .pageSheet
         controller.completionWithItemsHandler = completionWithItemsHandler
 

@@ -709,7 +709,13 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
                 case .share:
                     guard action.identifier == .PSPDFKit.share else { return nil }
                     return action.replacing(handler: { [weak self] _ in
-                        self?.coordinatorDelegate?.share(text: glyphs.text, rect: pageView.convert(glyphs.boundingBox, from: pageView.pdfCoordinateSpace), view: pageView)
+                        guard let self else { return }
+                        coordinatorDelegate?.share(
+                            text: glyphs.text,
+                            rect: pageView.convert(glyphs.boundingBox, from: pageView.pdfCoordinateSpace),
+                            view: pageView,
+                            userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle
+                        )
                     })
 
                 case .pspdfkitActions:
