@@ -41,8 +41,8 @@
 		61ABA7512A6137D1002A4219 /* ShareableImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61ABA7502A6137D1002A4219 /* ShareableImage.swift */; };
 		61BD13952A5831EF008A0704 /* TextKit1TextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61BD13942A5831EF008A0704 /* TextKit1TextView.swift */; };
 		61C817F22A49B5D30085B1E6 /* CollectionResponseSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EDEE250242E700D8BC1E /* CollectionResponseSpec.swift */; };
-		61E24DCC2ABB385E00D75F50 /* OpenItemsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61E24DCB2ABB385E00D75F50 /* OpenItemsController.swift */; };
 		61DE64D52C5BD0250096776C /* FormattedTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61DE64D42C5BD0250096776C /* FormattedTextView.swift */; };
+		61E24DCC2ABB385E00D75F50 /* OpenItemsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61E24DCB2ABB385E00D75F50 /* OpenItemsController.swift */; };
 		61FA14CE2B05081D00E7D423 /* TextConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61FA14CD2B05081D00E7D423 /* TextConverter.swift */; };
 		61FA14D02B08E24A00E7D423 /* ColorPickerStackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61FA14CF2B08E24A00E7D423 /* ColorPickerStackView.swift */; };
 		B300B33324291C8D00C1FE1E /* RTranslatorMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300B33224291C8D00C1FE1E /* RTranslatorMetadata.swift */; };
@@ -938,6 +938,11 @@
 		B3B41F1A2848E5A90017CA4B /* AnnotationsFilterAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B41F172848E5A80017CA4B /* AnnotationsFilterAction.swift */; };
 		B3B41F1B2848E5A90017CA4B /* AnnotationsFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B41F182848E5A80017CA4B /* AnnotationsFilter.swift */; };
 		B3B41F1D2848E6B80017CA4B /* AnnotationsFilterPopoverCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B41F1C2848E6B80017CA4B /* AnnotationsFilterPopoverCoordinator.swift */; };
+		B3B557132C884B8300BD6325 /* AnnotationPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B557122C884B7D00BD6325 /* AnnotationPreview.swift */; };
+		B3B557142C884B8300BD6325 /* AnnotationPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B557122C884B7D00BD6325 /* AnnotationPreview.swift */; };
+		B3B557162C884DD600BD6325 /* ZoteroURIConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B557152C884DD200BD6325 /* ZoteroURIConverter.swift */; };
+		B3B557182C8860E600BD6325 /* CitationMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B557172C8860E400BD6325 /* CitationMetadata.swift */; };
+		B3B557192C8860E600BD6325 /* CitationMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B557172C8860E400BD6325 /* CitationMetadata.swift */; };
 		B3B613F7260B844B00B92017 /* EmptyTrashDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B613F6260B844B00B92017 /* EmptyTrashDbRequest.swift */; };
 		B3B6759526205A3C003231A5 /* CollectionRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B6759426205A3C003231A5 /* CollectionRowView.swift */; };
 		B3B6759B26205A48003231A5 /* CollectionRowView.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3B6759A26205A48003231A5 /* CollectionRowView.xib */; };
@@ -1283,8 +1288,8 @@
 		61A0C8462B8F669B0048FF92 /* PSPDFKitUI+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PSPDFKitUI+Extensions.swift"; sourceTree = "<group>"; };
 		61ABA7502A6137D1002A4219 /* ShareableImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareableImage.swift; sourceTree = "<group>"; };
 		61BD13942A5831EF008A0704 /* TextKit1TextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextKit1TextView.swift; sourceTree = "<group>"; };
-		61E24DCB2ABB385E00D75F50 /* OpenItemsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenItemsController.swift; sourceTree = "<group>"; };
 		61DE64D42C5BD0250096776C /* FormattedTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormattedTextView.swift; sourceTree = "<group>"; };
+		61E24DCB2ABB385E00D75F50 /* OpenItemsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenItemsController.swift; sourceTree = "<group>"; };
 		61FA14CD2B05081D00E7D423 /* TextConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextConverter.swift; sourceTree = "<group>"; };
 		61FA14CF2B08E24A00E7D423 /* ColorPickerStackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPickerStackView.swift; sourceTree = "<group>"; };
 		B300B33224291C8D00C1FE1E /* RTranslatorMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RTranslatorMetadata.swift; sourceTree = "<group>"; };
@@ -1935,6 +1940,9 @@
 		B3B41F172848E5A80017CA4B /* AnnotationsFilterAction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnnotationsFilterAction.swift; sourceTree = "<group>"; };
 		B3B41F182848E5A80017CA4B /* AnnotationsFilter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnnotationsFilter.swift; sourceTree = "<group>"; };
 		B3B41F1C2848E6B80017CA4B /* AnnotationsFilterPopoverCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationsFilterPopoverCoordinator.swift; sourceTree = "<group>"; };
+		B3B557122C884B7D00BD6325 /* AnnotationPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationPreview.swift; sourceTree = "<group>"; };
+		B3B557152C884DD200BD6325 /* ZoteroURIConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoteroURIConverter.swift; sourceTree = "<group>"; };
+		B3B557172C8860E400BD6325 /* CitationMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CitationMetadata.swift; sourceTree = "<group>"; };
 		B3B613F6260B844B00B92017 /* EmptyTrashDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyTrashDbRequest.swift; sourceTree = "<group>"; };
 		B3B6759426205A3C003231A5 /* CollectionRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionRowView.swift; sourceTree = "<group>"; };
 		B3B6759A26205A48003231A5 /* CollectionRowView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = CollectionRowView.xib; sourceTree = "<group>"; };
@@ -2325,6 +2333,7 @@
 				B324276C25C81F2000567504 /* WebSocketController.swift */,
 				618404252A4456A9005AAF22 /* IdentifierLookupController.swift */,
 				B3F9A4CA2B04F28400684030 /* WebViewEncoder.swift */,
+				B3B557152C884DD200BD6325 /* ZoteroURIConverter.swift */,
 			);
 			path = Controllers;
 			sourceTree = "<group>";
@@ -2637,11 +2646,13 @@
 				B305655523FC051E003304F2 /* Sync */,
 				B324277025C82D6900567504 /* WebSocket */,
 				B3242CCC246ABBAF00D8748F /* AnnotationsConfig.swift */,
+				B3B557122C884B7D00BD6325 /* AnnotationPreview.swift */,
 				B3F6AA392AB30663005BC22E /* AnnotationTool.swift */,
 				B311737A2AFCF004007D9741 /* AnnotationType.swift */,
 				B305656123FC051E003304F2 /* AppGroup.swift */,
 				B305653A23FC051E003304F2 /* Attachment.swift */,
 				B339459026DE6C2900E59A02 /* AttachmentFileDeletedNotification.swift */,
+				B3B557172C8860E400BD6325 /* CitationMetadata.swift */,
 				B305653B23FC051E003304F2 /* Collection.swift */,
 				B343419D260A093400093E63 /* CollectionIdentifier.swift */,
 				B3325F6E27B41D69007C7137 /* CollectionTree.swift */,
@@ -5070,6 +5081,7 @@
 				B3F09AE629CAFF860084E4D8 /* TagFilterActionHandler.swift in Sources */,
 				B30566B523FC051F003304F2 /* LoginResponse.swift in Sources */,
 				B3B41F1B2848E5A90017CA4B /* AnnotationsFilter.swift in Sources */,
+				B3B557192C8860E600BD6325 /* CitationMetadata.swift in Sources */,
 				B30565CB23FC051E003304F2 /* ReadSearchDbRequest.swift in Sources */,
 				B31CC58128646D990055C114 /* ManualLookupState.swift in Sources */,
 				B3D06ADE29DD8C21009C0D98 /* DeleteAutomaticTagsDbRequest.swift in Sources */,
@@ -5209,6 +5221,7 @@
 				B30565D323FC051E003304F2 /* MoveItemsToParentDbRequest.swift in Sources */,
 				B305669723FC051F003304F2 /* RTag.swift in Sources */,
 				B3FBAC1924570BDE00AA00C0 /* AnnotationPreviewController.swift in Sources */,
+				B3B557162C884DD600BD6325 /* ZoteroURIConverter.swift in Sources */,
 				B305660323FC051E003304F2 /* ZoteroApiClient.swift in Sources */,
 				B3B78C42266FAED500E91D02 /* CitationController.swift in Sources */,
 				B3B41F1A2848E5A90017CA4B /* AnnotationsFilterAction.swift in Sources */,
@@ -5440,6 +5453,7 @@
 				B3593F4B241A61C700760E20 /* LibrariesError.swift in Sources */,
 				B3242CCD246ABBAF00D8748F /* AnnotationsConfig.swift in Sources */,
 				B305669923FC051F003304F2 /* RCreator.swift in Sources */,
+				B3B557132C884B8300BD6325 /* AnnotationPreview.swift in Sources */,
 				B355B12C2850B6C400BAE2C5 /* TableViewDiffableDataSource.swift in Sources */,
 				B310280B2B1E16EC00E41554 /* PDFThumbnailsState.swift in Sources */,
 				B3B953CC245981C100FC96DB /* PDFReaderActionHandler.swift in Sources */,
@@ -5641,6 +5655,7 @@
 				B3FC7436272195DE00F55531 /* WebDavDownloadRequest.swift in Sources */,
 				B3FC7437272195E100F55531 /* WebDavNonexistentPropRequest.swift in Sources */,
 				B30549002B3327CB00853966 /* ReadAllDownloadsDbRequest.swift in Sources */,
+				B3B557142C884B8300BD6325 /* AnnotationPreview.swift in Sources */,
 				B305676F23FC0A55003304F2 /* ArrayEncoding.swift in Sources */,
 				B305672523FC0909003304F2 /* DeleteGroupSyncAction.swift in Sources */,
 				B305670323FC08A4003304F2 /* PerformDeletionsDbRequest.swift in Sources */,
@@ -5753,6 +5768,7 @@
 				B36459E726441A1800A0C2C0 /* TagRow.swift in Sources */,
 				B3FC74322721857C00F55531 /* WebDavController.swift in Sources */,
 				B3B78C47266FB11D00E91D02 /* WKWebView+Extensions.swift in Sources */,
+				B3B557182C8860E600BD6325 /* CitationMetadata.swift in Sources */,
 				B305677023FC0A58003304F2 /* Alamofire+RxSwift.swift in Sources */,
 				B330261225DEAD9A00742025 /* RPageIndex.swift in Sources */,
 				B305670023FC086B003304F2 /* MarkObjectsAsDeletedDbRequest.swift in Sources */,

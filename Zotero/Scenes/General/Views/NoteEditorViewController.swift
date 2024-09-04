@@ -26,15 +26,19 @@ final class NoteEditorViewController: UIViewController {
     @IBOutlet private weak var tagsLabel: UILabel!
 
     private unowned let htmlAttributedStringConverter: HtmlAttributedStringConverter
+    private unowned let dbStorage: DbStorage
+    private unowned let uriConverter: ZoteroURIConverter
     let viewModel: ViewModel<NoteEditorActionHandler>
     private let disposeBag: DisposeBag
 
     private var debounceDisposeBag: DisposeBag?
     weak var coordinatorDelegate: NoteEditorCoordinatorDelegate?
 
-    init(viewModel: ViewModel<NoteEditorActionHandler>, htmlAttributedStringConverter: HtmlAttributedStringConverter) {
+    init(viewModel: ViewModel<NoteEditorActionHandler>, htmlAttributedStringConverter: HtmlAttributedStringConverter, dbStorage: DbStorage, uriConverter: ZoteroURIConverter) {
         self.viewModel = viewModel
         self.htmlAttributedStringConverter = htmlAttributedStringConverter
+        self.dbStorage = dbStorage
+        self.uriConverter = uriConverter
         disposeBag = DisposeBag()
         super.init(nibName: "NoteEditorViewController", bundle: nil)
     }
@@ -65,7 +69,6 @@ final class NoteEditorViewController: UIViewController {
         setupKeyboard()
         setupWebView()
         update(tags: viewModel.state.tags)
-        viewModel.process(action: .setup)
 
         viewModel.stateObservable
             .subscribe(onNext: { [weak self] state in
@@ -256,8 +259,46 @@ final class NoteEditorViewController: UIViewController {
         case "importImages":
             viewModel.process(action: .importImages(data))
 
+        case "openAnnotation":
+            guard
+                let uri = data["attachmentURI"] as? String,
+                let (key, libraryId) = uriConverter.convert(uri: uri),
+                let position = data["position"] as? [String: Any],
+                let rawRects = position["rects"] as? [[Double]],
+                let pageIndex = position["pageIndex"] as? UInt
+            else { return }
+            let rects = rawRects.compactMap({ doubles -> CGRect? in
+                guard doubles.count == 4 else { return nil }
+                return CGRect(x: doubles[0], y: doubles[1], width: doubles[2] - doubles[0], height: doubles[3] - doubles[1])
+            })
+            let preview = AnnotationPreview(parentKey: key, libraryId: libraryId, pageIndex: pageIndex, rects: rects)
+            coordinatorDelegate?.showPdf(withPreview: preview)
+
+        case "openCitationPage":
+            guard let citation = data["citation"] as? [String: Any], let metadata = parseCitation(from: citation) else { return }
+            coordinatorDelegate?.showPdf(withCitation: metadata)
+
+        case "showCitationItem":
+            guard let citation = data["citation"] as? [String: Any], let metadata = parseCitation(from: citation) else { return }
+            coordinatorDelegate?.showItemDetail(withCitation: metadata)
+
         default:
             DDLogWarn("NoteEditorViewController JS: unknown action \(action); \(data)")
+        }
+
+        func parseCitation(from data: [String: Any]) -> CitationMetadata? {
+            guard
+                let rawItems = data["citationItems"] as? [[String: Any]],
+                let rawItem = rawItems.first,
+                let uris = rawItem["uris"] as? [String],
+                let uri = uris.first,
+                let (key, libraryId) = uriConverter.convert(uri: uri),
+                let locator = (rawItem["locator"] as? String).flatMap(UInt.init),
+                let item = try? dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key), on: .main),
+                item.rawType == ItemTypes.annotation,
+                let parentKey = item.parent?.key
+            else { return nil }
+            return CitationMetadata(annotationKey: key, documentKey: parentKey, libraryId: libraryId, locator: locator)
         }
     }
 

@@ -364,30 +364,7 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
                 completion()
                 return
             }
-
-            let disposeBag = DisposeBag()
-
-            downloader.observable
-                .observe(on: MainScheduler.instance)
-                .subscribe(onNext: { [weak self] update in
-                    guard let self, update.libraryId == attachment.libraryId && update.key == attachment.key else { return }
-
-                    switch update.kind {
-                    case .ready:
-                        completion()
-                        downloadDisposeBag = nil
-
-                    case .cancelled, .failed:
-                        downloadDisposeBag = nil
-
-                    case .progress:
-                        break
-                    }
-                })
-                .disposed(by: disposeBag)
-
-            downloadDisposeBag = disposeBag
-            downloader.downloadIfNeeded(attachment: attachment, parentKey: parentKey)
+            downloader.downloadIfNeeded(attachment: attachment, parentKey: parentKey, completion: { _ in completion() })
         }
 
         func open(
@@ -401,24 +378,21 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
             animated: Bool,
             completion: (() -> Void)? = nil
         ) {
-            switch attachment.type {
-            case .file(let filename, let contentType, _, _, _) where contentType == "application/pdf":
-                guard let presenter = window.rootViewController else { return }
-                let file = Files.attachmentFile(in: libraryId, key: attachment.key, filename: filename, contentType: contentType)
-                let url = file.createUrl()
-                show(
-                    viewControllerProvider: {
-                        detailCoordinator.createPDFController(key: attachment.key, parentKey: parentKey, libraryId: libraryId, url: url, page: page, preselectedAnnotationKey: annotation)
-                    },
-                    by: presenter,
-                    in: window,
-                    animated: animated,
-                    completion: completion
-                )
-
-            default:
+            guard let file = attachment.file, file.mimeType == "application/pdf" else {
                 completion?()
+                return
             }
+            // TODO: - call completion?
+            guard let presenter = window.rootViewController else { return }
+            show(
+                viewControllerProvider: {
+                    detailCoordinator.createPDFController(key: attachment.key, parentKey: parentKey, libraryId: libraryId, url: file.createUrl(), page: page, preselectedAnnotationKey: annotation)
+                },
+                by: presenter,
+                in: window,
+                animated: animated,
+                completion: completion
+            )
         }
     }
 

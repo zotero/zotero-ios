@@ -749,6 +749,9 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
 
                 case .cantUnzipSnapshot:
                     return (L10n.Errors.Attachments.cantUnzipSnapshot, cancelAction)
+
+                case .cancelled:
+                    break
                 }
             }
 

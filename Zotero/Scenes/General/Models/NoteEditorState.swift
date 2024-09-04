@@ -16,13 +16,6 @@ struct NoteEditorState: ViewModelState {
         let data: [String: Any]
     }
 
-    struct ResourceMetadata {
-        let identifier: String
-        let type: String
-        let filename: String
-        let contentType: String
-    }
-
     struct CreatedImage {
         let nodeId: String
         let key: String
@@ -74,7 +67,6 @@ struct NoteEditorState: ViewModelState {
     var kind: Kind
     var text: String
     var tags: [Tag]
-    var pendingResources: [String: ResourceMetadata]
     var downloadedResource: Resource?
     var createdImages: [CreatedImage]
     var changes: Changes
@@ -90,7 +82,6 @@ struct NoteEditorState: ViewModelState {
         self.parentTitleData = parentTitleData
         self.title = title
         isClosing = false
-        pendingResources = [:]
         changes = []
         createdImages = []
     }

@@ -117,7 +117,7 @@ final class RemoteAttachmentDownloader {
         func createDownload(url: URL, attachment: Attachment, parentKey: String) -> (Download, RemoteAttachmentDownloadOperation)? {
             let download = Download(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId)
 
-            guard operations[download] == nil, let file = file(for: attachment) else { return nil }
+            guard operations[download] == nil, let file = attachment.file else { return nil }
 
             let progress = Progress(totalUnitCount: 100)
             let operation = RemoteAttachmentDownloadOperation(url: url, file: file, progress: progress, apiClient: apiClient, fileStorage: fileStorage, queue: processingQueue)
@@ -145,16 +145,6 @@ final class RemoteAttachmentDownloader {
             }
 
             return (download, operation)
-            
-            func file(for attachment: Attachment) -> File? {
-                switch attachment.type {
-                case .file(let filename, let contentType, _, _, _):
-                    return Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
-
-                case .url:
-                    return nil
-                }
-            }
             
             func finish(download: Download, file: File, attachment: Attachment, parentKey: String, result: Result<(), Swift.Error>) {
                 operations[download] = nil
