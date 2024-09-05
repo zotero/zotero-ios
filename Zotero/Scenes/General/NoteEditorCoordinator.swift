@@ -84,6 +84,7 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
             viewModel: viewModel,
             htmlAttributedStringConverter: controllers.htmlAttributedStringConverter,
             dbStorage: dbStorage,
+            fileStorage: controllers.fileStorage,
             uriConverter: controllers.uriConverter
         )
         controller.coordinatorDelegate = self
@@ -126,11 +127,13 @@ extension NoteEditorCoordinator: NoteEditorCoordinatorDelegate {
     }
 
     func showPdf(withCitation citation: CitationMetadata) {
-        showPdf(key: citation.documentKey, libraryId: citation.libraryId, preview: (citation.locator, nil))
+        showPdf(key: citation.attachmentKey, libraryId: citation.libraryId, preview: (citation.locator, nil))
     }
 
     func showItemDetail(withCitation citation: CitationMetadata) {
         guard let coordinator = (parentCoordinator as? DetailCoordinator) else { return }
+        coordinator.showItemDetail(for: .preview(key: citation.parentKey), libraryId: citation.libraryId, scrolledToKey: nil, animated: false)
+        navigationController?.dismiss(animated: true)
     }
 
     private func showPdf(key: String, libraryId: LibraryIdentifier, preview: (UInt, [CGRect]?)) {

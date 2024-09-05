@@ -27,6 +27,7 @@ final class NoteEditorViewController: UIViewController {
 
     private unowned let htmlAttributedStringConverter: HtmlAttributedStringConverter
     private unowned let dbStorage: DbStorage
+    private unowned let fileStorage: FileStorage
     private unowned let uriConverter: ZoteroURIConverter
     let viewModel: ViewModel<NoteEditorActionHandler>
     private let disposeBag: DisposeBag
@@ -34,10 +35,17 @@ final class NoteEditorViewController: UIViewController {
     private var debounceDisposeBag: DisposeBag?
     weak var coordinatorDelegate: NoteEditorCoordinatorDelegate?
 
-    init(viewModel: ViewModel<NoteEditorActionHandler>, htmlAttributedStringConverter: HtmlAttributedStringConverter, dbStorage: DbStorage, uriConverter: ZoteroURIConverter) {
+    init(
+        viewModel: ViewModel<NoteEditorActionHandler>,
+        htmlAttributedStringConverter: HtmlAttributedStringConverter,
+        dbStorage: DbStorage,
+        fileStorage: FileStorage,
+        uriConverter: ZoteroURIConverter
+    ) {
         self.viewModel = viewModel
         self.htmlAttributedStringConverter = htmlAttributedStringConverter
         self.dbStorage = dbStorage
+        self.fileStorage = fileStorage
         self.uriConverter = uriConverter
         disposeBag = DisposeBag()
         super.init(nibName: "NoteEditorViewController", bundle: nil)
@@ -295,10 +303,9 @@ final class NoteEditorViewController: UIViewController {
                 let (key, libraryId) = uriConverter.convert(uri: uri),
                 let locator = (rawItem["locator"] as? String).flatMap(UInt.init),
                 let item = try? dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key), on: .main),
-                item.rawType == ItemTypes.annotation,
-                let parentKey = item.parent?.key
+                let attachment = AttachmentCreator.mainAttachment(for: item, fileStorage: fileStorage)
             else { return nil }
-            return CitationMetadata(annotationKey: key, documentKey: parentKey, libraryId: libraryId, locator: locator)
+            return CitationMetadata(attachmentKey: attachment.key, parentKey: key, libraryId: libraryId, locator: locator)
         }
     }
 

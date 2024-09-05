@@ -9,8 +9,8 @@
 import Foundation
 
 struct CitationMetadata {
-    let annotationKey: String
-    let documentKey: String
+    let attachmentKey: String
+    let parentKey: String
     let libraryId: LibraryIdentifier
     let locator: UInt
 }
