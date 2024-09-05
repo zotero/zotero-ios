@@ -265,7 +265,7 @@ struct ItemDetailState: ViewModelState {
     var preScrolledChildKey: String?
     var hideController: Bool
     var titleFont: UIFont {
-        return .preferredFont(for: .headline, weight: .regular)
+        return .preferredFont(forTextStyle: .title1)
     }
 
     @UserDefault(key: "ItemDetailAbstractCollapsedKey", defaultValue: false)

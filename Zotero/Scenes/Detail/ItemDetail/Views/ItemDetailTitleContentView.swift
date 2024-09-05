@@ -30,7 +30,7 @@ final class ItemDetailTitleContentView: UIView {
         setupObservers()
 
         func setup() {
-            let font: UIFont = .preferredFont(for: .headline, weight: .regular)
+            let font: UIFont = .preferredFont(forTextStyle: .title1)
             let textView = FormattedTextView(defaultFont: font)
             textView.textContainerInset = UIEdgeInsets()
             textView.textContainer.lineFragmentPadding = 0
