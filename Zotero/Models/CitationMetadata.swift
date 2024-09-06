@@ -12,5 +12,5 @@ struct CitationMetadata {
     let attachmentKey: String
     let parentKey: String
     let libraryId: LibraryIdentifier
-    let locator: UInt
+    let locator: Int
 }

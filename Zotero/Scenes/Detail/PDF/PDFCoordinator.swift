@@ -75,6 +75,7 @@ final class PDFCoordinator: Coordinator {
     private let url: URL
     private let page: Int?
     private let preselectedAnnotationKey: String?
+    private let previewRects: [CGRect]?
     private unowned let controllers: Controllers
     private let disposeBag: DisposeBag
 
@@ -85,6 +86,7 @@ final class PDFCoordinator: Coordinator {
         url: URL,
         page: Int?,
         preselectedAnnotationKey: String?,
+        previewRects: [CGRect]?,
         navigationController: NavigationViewController,
         controllers: Controllers
     ) {
@@ -94,6 +96,7 @@ final class PDFCoordinator: Coordinator {
         self.url = url
         self.page = page
         self.preselectedAnnotationKey = preselectedAnnotationKey
+        self.previewRects = previewRects
         self.navigationController = navigationController
         self.controllers = controllers
         self.childCoordinators = []
@@ -133,9 +136,10 @@ final class PDFCoordinator: Coordinator {
             key: self.key,
             parentKey: self.parentKey,
             title: try? controllers.userControllers?.dbStorage.perform(request: ReadFilenameDbRequest(libraryId: libraryId, key: key), on: .main),
-            libraryId: self.libraryId,
-            initialPage: self.page,
-            preselectedAnnotationKey: self.preselectedAnnotationKey,
+            libraryId: libraryId,
+            initialPage: page,
+            preselectedAnnotationKey: preselectedAnnotationKey,
+            previewRects: previewRects,
             settings: settings,
             userId: userId,
             username: username,

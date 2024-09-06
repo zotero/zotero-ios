@@ -11,6 +11,6 @@ import UIKit
 struct AnnotationPreview {
     let parentKey: String
     let libraryId: LibraryIdentifier
-    let pageIndex: UInt
+    let pageIndex: Int
     let rects: [CGRect]
 }

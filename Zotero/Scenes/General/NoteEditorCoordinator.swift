@@ -123,11 +123,11 @@ extension NoteEditorCoordinator: NoteEditorCoordinatorDelegate {
     }
 
     func showPdf(withPreview preview: AnnotationPreview) {
-        showPdf(key: preview.parentKey, libraryId: preview.libraryId, preview: (preview.pageIndex, preview.rects))
+        showPdf(key: preview.parentKey, libraryId: preview.libraryId, page: preview.pageIndex, rects: preview.rects)
     }
 
     func showPdf(withCitation citation: CitationMetadata) {
-        showPdf(key: citation.attachmentKey, libraryId: citation.libraryId, preview: (citation.locator, nil))
+        showPdf(key: citation.attachmentKey, libraryId: citation.libraryId, page: citation.locator, rects: nil)
     }
 
     func showItemDetail(withCitation citation: CitationMetadata) {
@@ -136,7 +136,7 @@ extension NoteEditorCoordinator: NoteEditorCoordinatorDelegate {
         navigationController?.dismiss(animated: true)
     }
 
-    private func showPdf(key: String, libraryId: LibraryIdentifier, preview: (UInt, [CGRect]?)) {
+    private func showPdf(key: String, libraryId: LibraryIdentifier, page: Int, rects: [CGRect]?) {
         guard
             let coordinator = (parentCoordinator as? DetailCoordinator),
             let userControllers = controllers.userControllers,
@@ -150,7 +150,7 @@ extension NoteEditorCoordinator: NoteEditorCoordinatorDelegate {
 
             switch result {
             case .success:
-                let controller = coordinator.createPDFController(key: key, parentKey: item.parent?.key, libraryId: libraryId, url: file.createUrl())
+                let controller = coordinator.createPDFController(key: key, parentKey: item.parent?.key, libraryId: libraryId, url: file.createUrl(), page: page, previewRects: rects)
                 navigationController?.present(controller, animated: true)
 
             case .failure(let error):

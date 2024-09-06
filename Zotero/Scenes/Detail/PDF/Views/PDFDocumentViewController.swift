@@ -269,7 +269,12 @@ final class PDFDocumentViewController: UIViewController {
 
         if state.changes.contains(.initialDataLoaded) {
             pdfController.setPageIndex(PageIndex(state.visiblePage), animated: false)
-            self.select(annotation: state.selectedAnnotation, pageIndex: pdfController.pageIndex, document: state.document)
+            select(annotation: state.selectedAnnotation, pageIndex: pdfController.pageIndex, document: state.document)
+            if let previewRects = state.previewRects {
+                DispatchQueue.main.async {
+                    self.show(previewRects: previewRects, pageIndex: pdfController.pageIndex, document: state.document)
+                }
+            }
         }
     }
 
@@ -427,6 +432,40 @@ final class PDFDocumentViewController: UIViewController {
     }
 
     // MARK: - Selection
+
+    /// Shows temporary preview highlight in given rects. Used by note editor to highlight original position of annotation. The annotation may already be deleted, so we're highlighting the original location.
+    /// - parameter previewRects: Rects to select.
+    /// - parameter pageIndex: Page index of page where (selection should happen.
+    /// - parameter document: Active `Document` instance.
+    private func show(previewRects: [CGRect], pageIndex: PageIndex, document: PSPDFKit.Document) {
+        guard !previewRects.isEmpty, let pageView = self.pdfController?.pageViewForPage(at: pageIndex) else { return }
+
+        var views: [UIView] = []
+        for rect in previewRects {
+            let frame = pageView.convert(rect, from: pageView.pdfCoordinateSpace)
+            let view = UIView()
+            view.frame = frame
+            view.backgroundColor = .systemBlue.withAlphaComponent(0.25)
+            pageView.contentView.addSubview(view)
+            views.append(view)
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(3)) {
+            hidePreview()
+        }
+
+        func hidePreview() {
+            UIView.animate(
+                withDuration: 0.2,
+                animations: {
+                    views.forEach({ $0.alpha = 0 })
+                },
+                completion: { _ in
+                    views.forEach({ $0.removeFromSuperview() })
+                }
+            )
+        }
+    }
 
     /// (De)Selects given annotation in document.
     /// - parameter annotation: Annotation to select. Existing selection will be deselected if set to `nil`.

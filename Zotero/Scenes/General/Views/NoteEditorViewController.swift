@@ -273,7 +273,7 @@ final class NoteEditorViewController: UIViewController {
                 let (key, libraryId) = uriConverter.convert(uri: uri),
                 let position = data["position"] as? [String: Any],
                 let rawRects = position["rects"] as? [[Double]],
-                let pageIndex = position["pageIndex"] as? UInt
+                let pageIndex = position["pageIndex"] as? Int
             else { return }
             let rects = rawRects.compactMap({ doubles -> CGRect? in
                 guard doubles.count == 4 else { return nil }
@@ -301,7 +301,7 @@ final class NoteEditorViewController: UIViewController {
                 let uris = rawItem["uris"] as? [String],
                 let uri = uris.first,
                 let (key, libraryId) = uriConverter.convert(uri: uri),
-                let locator = (rawItem["locator"] as? String).flatMap(UInt.init),
+                let locator = (rawItem["locator"] as? String).flatMap(Int.init),
                 let item = try? dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key), on: .main),
                 let attachment = AttachmentCreator.mainAttachment(for: item, fileStorage: fileStorage)
             else { return nil }
