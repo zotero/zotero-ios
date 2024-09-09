@@ -682,7 +682,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
 
     private func accessory(for item: RItem) -> ItemAccessory? {
         if let attachment = AttachmentCreator.mainAttachment(for: item, fileStorage: self.fileStorage) {
-            return .attachment(attachment: attachment, parentKey: item.key)
+            return .attachment(attachment: attachment, parentKey: (item.key != attachment.key) ? item.key : nil)
         }
 
         if let urlString = item.urlString, self.urlDetector.isUrl(string: urlString), let url = URL(string: urlString) {
