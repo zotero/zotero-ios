@@ -125,6 +125,8 @@ struct PDFReaderState: ViewModelState {
     var loadedPreviewImageAnnotationKeys: Set<String>?
     /// Page that should be shown initially, instead of stored page
     var initialPage: Int?
+    /// Rects that should be highlighted initially, used by note editor to highlight original annotation position
+    var previewRects: [CGRect]?
     var unlockSuccessful: Bool?
 
     init(
@@ -135,6 +137,7 @@ struct PDFReaderState: ViewModelState {
         libraryId: LibraryIdentifier,
         initialPage: Int?,
         preselectedAnnotationKey: String?,
+        previewRects: [CGRect]?,
         settings: PDFSettings,
         userId: Int,
         username: String,
@@ -161,6 +164,7 @@ struct PDFReaderState: ViewModelState {
         self.initialPage = initialPage
         self.settings = settings
         self.selectedAnnotationKey = preselectedAnnotationKey.flatMap({ AnnotationKey(key: $0, type: .database) })
+        self.previewRects = previewRects
         self.changes = []
         self.selectedAnnotationCommentActive = false
         self.selectedAnnotationsDuringEditing = []

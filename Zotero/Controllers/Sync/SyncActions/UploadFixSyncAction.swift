@@ -34,8 +34,6 @@ class UploadFixSyncAction: SyncAction {
     let scheduler: SchedulerType
     private let downloadDisposeBag: DisposeBag
 
-    private var finishDownload: ((Swift.Result<(), Swift.Error>) -> Void)?
-
     init(key: String, libraryId: LibraryIdentifier, userId: Int, attachmentDownloader: AttachmentDownloader, fileStorage: FileStorage, dbStorage: DbStorage, queue: DispatchQueue, scheduler: SchedulerType) {
         self.key = key
         self.libraryId = libraryId
@@ -50,28 +48,6 @@ class UploadFixSyncAction: SyncAction {
 
     var result: Single<()> {
         DDLogInfo("UploadFixSyncAction: fix upload for \(self.key); \(self.libraryId)")
-
-        self.attachmentDownloader
-            .observable
-            .observe(on: self.scheduler)
-            .subscribe(with: self, onNext: { `self`, update in
-                guard update.key == self.key && update.libraryId == self.libraryId else { return }
-
-                switch update.kind {
-                case .failed(let error):
-                    self.finishDownload?(.failure(error))
-                    self.finishDownload = nil
-
-                case .ready:
-                    self.finishDownload?(.success(()))
-                    self.finishDownload = nil
-                    
-                case .progress, .cancelled:
-                    break
-                }
-            })
-            .disposed(by: self.downloadDisposeBag)
-
         return self.fetchAndValidateAttachment()
                    .subscribe(on: self.scheduler)
                    .flatMap({ attachment -> Single<Attachment> in
@@ -110,9 +86,15 @@ class UploadFixSyncAction: SyncAction {
                 subscriber(.failure(Error.expired))
                 return Disposables.create()
             }
+            self.attachmentDownloader.downloadIfNeeded(attachment: attachment, parentKey: nil) { result in
+                switch result {
+                case .success:
+                    subscriber(.success(()))
 
-            self.finishDownload = subscriber
-            self.attachmentDownloader.downloadIfNeeded(attachment: attachment, parentKey: nil)
+                case .failure(let error):
+                    subscriber(.failure(error))
+                }
+            }
             return Disposables.create()
         }
     }

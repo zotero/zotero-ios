@@ -32,6 +32,7 @@ struct Attachment: Identifiable, Equatable {
     let dateAdded: Date
 
     var id: String { return self.key }
+
     var hasUrl: Bool {
         switch self.type {
         case .url: return true
@@ -43,6 +44,16 @@ struct Attachment: Identifiable, Equatable {
         switch self.type {
         case .url: return nil
         case .file(_, _, let location, _, _): return location
+        }
+    }
+
+    var file: File? {
+        switch type {
+        case .file(let filename, let contentType, _, _, _):
+            return Files.attachmentFile(in: libraryId, key: key, filename: filename, contentType: contentType)
+
+        case .url:
+            return nil
         }
     }
 

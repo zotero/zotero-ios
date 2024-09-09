@@ -294,8 +294,7 @@ final class IdentifierLookupController {
                 DDLogError("IdentifierLookupController: can't store attachment after download - \(error)")
                 
                 // Storing item failed, remove downloaded file
-                guard case .file(let filename, let contentType, _, _, _) = attachment.type else { return }
-                let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
+                guard let file = attachment.file else { return }
                 try? self.fileStorage.remove(file)
             }
         }

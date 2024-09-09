@@ -33,6 +33,7 @@ final class Controllers {
     let idleTimerController: IdleTimerController
     let backgroundTaskController: BackgroundTaskController
     let lowPowerModeController: LowPowerModeController
+    let uriConverter: ZoteroURIConverter
     let userInitialized: PassthroughSubject<Result<Bool, Error>, Never>
     fileprivate let lastBuildNumber: Int?
 
@@ -102,6 +103,7 @@ final class Controllers {
         self.idleTimerController = IdleTimerController()
         self.backgroundTaskController = BackgroundTaskController()
         self.lowPowerModeController = LowPowerModeController()
+        uriConverter = ZoteroURIConverter()
         self.didInitialize = false
 
         Defaults.shared.lastBuildNumber = DeviceInfoProvider.buildNumber

@@ -286,7 +286,15 @@ final class DetailCoordinator: Coordinator {
         navigationController.present(controller, animated: true, completion: nil)
     }
 
-    func createPDFController(key: String, parentKey: String?, libraryId: LibraryIdentifier, url: URL, page: Int? = nil, preselectedAnnotationKey: String? = nil) -> NavigationViewController {
+    func createPDFController(
+        key: String,
+        parentKey: String?,
+        libraryId: LibraryIdentifier,
+        url: URL,
+        page: Int? = nil,
+        preselectedAnnotationKey: String? = nil,
+        previewRects: [CGRect]? = nil
+    ) -> NavigationViewController {
         let navigationController = NavigationViewController()
         navigationController.modalPresentationStyle = .fullScreen
 
@@ -297,6 +305,7 @@ final class DetailCoordinator: Coordinator {
             url: url,
             page: page,
             preselectedAnnotationKey: preselectedAnnotationKey,
+            previewRects: previewRects,
             navigationController: navigationController,
             controllers: controllers
         )
@@ -749,6 +758,9 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
 
                 case .cantUnzipSnapshot:
                     return (L10n.Errors.Attachments.cantUnzipSnapshot, cancelAction)
+
+                case .cancelled:
+                    break
                 }
             }
 

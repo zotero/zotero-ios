@@ -19,6 +19,7 @@ final class AttachmentDownloader: NSObject {
         case incompatibleAttachment
         case zipDidntContainRequestedFile
         case cantUnzipSnapshot
+        case cancelled
     }
 
     struct Update {
@@ -230,7 +231,7 @@ final class AttachmentDownloader: NSObject {
 
                         guard let attachmentItem = try? dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: rDownload.key), on: dbQueue),
                               let attachment = AttachmentCreator.attachment(for: attachmentItem, fileStorage: fileStorage, urlDetector: nil),
-                              case .file(let filename, let contentType, _, _, _) = attachment.type else {
+                              let file = attachment.file else {
                             // Attachment item doesn't exist anymore, cancel download
                             toDelete.append(download)
                             if let taskId = rDownload.taskId {
@@ -238,8 +239,6 @@ final class AttachmentDownloader: NSObject {
                             }
                             continue
                         }
-
-                        let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
 
                         if let taskId = rDownload.taskId, existingTaskIds.contains(taskId) {
                             // Download is ongoing, cache data
@@ -441,6 +440,30 @@ final class AttachmentDownloader: NSObject {
                 startNextDownloadIfPossible()
             }
         }
+    }
+
+    func downloadIfNeeded(attachment: Attachment, parentKey: String?, completion: @escaping (Result<(), Swift.Error>) -> Void) {
+        observable
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] update in
+                guard let self, update.libraryId == attachment.libraryId && update.key == attachment.key else { return }
+                switch update.kind {
+                case .ready:
+                    completion(.success(()))
+
+                case .cancelled:
+                    completion(.failure(Error.cancelled))
+
+                case .failed(let error):
+                    completion(.failure(error))
+
+                case .progress:
+                    break
+                }
+            })
+            .disposed(by: disposeBag)
+
+        downloadIfNeeded(attachment: attachment, parentKey: parentKey)
     }
 
     private func extract(zipFile: File, toFile file: File, download: Download) {

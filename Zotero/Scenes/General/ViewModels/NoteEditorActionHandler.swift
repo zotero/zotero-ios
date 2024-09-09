@@ -33,9 +33,6 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
 
     func process(action: Action, in viewModel: ViewModel<NoteEditorActionHandler>) {
         switch action {
-        case .setup:
-            setup(in: viewModel)
-
         case .save:
             save(in: viewModel)
 
@@ -169,53 +166,6 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         }
     }
 
-    private func setup(in viewModel: ViewModel<NoteEditorActionHandler>) {
-        attachmentDownloader.observable
-            .subscribe(onNext: { [weak viewModel] update in
-                guard let viewModel else { return }
-                switch update.kind {
-                case .ready:
-                    backgroundQueue.async { [weak viewModel] in
-                        guard let viewModel else { return }
-                        process(key: update.key, libraryId: update.libraryId, viewModel: viewModel)
-                    }
-
-                default:
-                    break
-                }
-            })
-            .disposed(by: disposeBag)
-
-        func process(key: String, libraryId: LibraryIdentifier, viewModel: ViewModel<NoteEditorActionHandler>) {
-            guard let metadata = viewModel.state.pendingResources[key] else { return }
-            switch metadata.type {
-            case "image":
-                processImage(identifier: metadata.identifier, key: key, filename: metadata.filename, contentType: metadata.contentType, libraryId: libraryId, viewModel: viewModel)
-
-            default:
-                DDLogWarn("NoteEditorActionHandler: unknown resource type - \(metadata.type); \(key); \(libraryId)")
-            }
-        }
-    }
-
-    private func processImage(identifier: String, key: String, filename: String, contentType: String, libraryId: LibraryIdentifier, viewModel: ViewModel<NoteEditorActionHandler>) {
-        let file = Files.attachmentFile(in: libraryId, key: key, filename: filename, contentType: contentType)
-        do {
-            let data = try fileStorage.read(file).base64EncodedData()
-            guard let dataString = String(data: data, encoding: .utf8) else {
-                throw NoteEditorState.Error.cantCreateData
-            }
-            DDLogInfo("NoteEditorActionHandler: loaded resource '\(contentType)' for \(identifier); \(key)")
-            let resource = NoteEditorState.Resource(identifier: identifier, data: ["src": "data:\(contentType);base64,\(dataString)"])
-            update(viewModel: viewModel) { state in
-                state.pendingResources[key] = nil
-                state.downloadedResource = resource
-            }
-        } catch let error {
-            DDLogError("NoteEditorActionHandler: can't read resource for \(key) - \(error)")
-        }
-    }
-
     private func loadResource(data: [String: Any], in viewModel: ViewModel<NoteEditorActionHandler>) {
         guard case .edit(let noteKey) = viewModel.state.kind,
               let identifier = data["id"] as? String,
@@ -223,22 +173,44 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
               let key = (data["data"] as? [String: Any])?["attachmentKey"] as? String,
               let item = try? dbStorage.perform(request: ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: key), on: .main, refreshRealm: true),
               let attachment = AttachmentCreator.attachment(for: item, fileStorage: fileStorage, urlDetector: nil),
-              case .file(let filename, let contentType, let location, _, _) = attachment.type
+              let file = attachment.file
         else { return }
 
-        DDLogInfo("NoteEditorActionHandler: load resource for \(identifier); \(key)")
-
-        if location == .local {
-            processImage(identifier: identifier, key: key, filename: filename, contentType: contentType, libraryId: viewModel.state.library.identifier, viewModel: viewModel)
+        guard type == "image" else {
+            DDLogWarn("NoteEditorActionHandler: unknown resource type - \(type); \(key); \(viewModel.state.library.identifier)")
             return
         }
 
-        let metadata = NoteEditorState.ResourceMetadata(identifier: identifier, type: type, filename: filename, contentType: contentType)
-        update(viewModel: viewModel) { state in
-            state.pendingResources[key] = metadata
+        DDLogInfo("NoteEditorActionHandler: load resource for \(identifier); \(key)")
+
+        attachmentDownloader.downloadIfNeeded(attachment: attachment, parentKey: noteKey) { [weak viewModel] result in
+            switch result {
+            case .success:
+                backgroundQueue.async { [weak viewModel] in
+                    guard let viewModel else { return }
+                    processImage(identifier: identifier, file: file, viewModel: viewModel)
+                }
+
+            case .failure(let error):
+                DDLogError("NoteEditorActionHandler: could not load resource for \(identifier); \(key) - \(error)")
+            }
         }
 
-        attachmentDownloader.downloadIfNeeded(attachment: attachment, parentKey: noteKey)
+        func processImage(identifier: String, file: File, viewModel: ViewModel<NoteEditorActionHandler>) {
+            do {
+                let data = try fileStorage.read(file).base64EncodedData()
+                guard let dataString = String(data: data, encoding: .utf8) else {
+                    throw NoteEditorState.Error.cantCreateData
+                }
+                DDLogInfo("NoteEditorActionHandler: loaded resource \(identifier); \(file.relativeComponents.joined(separator: "; "))")
+                let resource = NoteEditorState.Resource(identifier: identifier, data: ["src": "data:\(file.mimeType);base64,\(dataString)"])
+                update(viewModel: viewModel) { state in
+                    state.downloadedResource = resource
+                }
+            } catch let error {
+                DDLogError("NoteEditorActionHandler: can't read resource \(identifier); \(file.relativeComponents.joined(separator: "; ")) - \(error)")
+            }
+        }
     }
 
     private func deleteResource(data: [String: Any], in viewModel: ViewModel<NoteEditorActionHandler>) {

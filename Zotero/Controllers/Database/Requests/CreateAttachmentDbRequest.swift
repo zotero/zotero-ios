@@ -102,19 +102,15 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
                 }
 
             case FieldKeys.Item.Attachment.md5:
-                switch self.attachment.type {
-                case .file(let filename, let contentType, _, _, _):
-                    let file = Files.attachmentFile(in: self.attachment.libraryId, key: self.attachment.key, filename: filename, contentType: contentType)
-                    if let md5Value = md5(from: file.createUrl()) {
-                        if md5Value == "<null>" {
-                            DDLogError("CreateAttachmentDbRequest: incorrect md5 value for attachment \(self.attachment.key)")
-                            throw Error.incorrectMd5Value
-                        }
-                        value = md5Value
-                    } else {
-                        throw Error.cantCreateMd5
+                guard let file = attachment.file else { continue }
+                if let md5Value = md5(from: file.createUrl()) {
+                    if md5Value == "<null>" {
+                        DDLogError("CreateAttachmentDbRequest: incorrect md5 value for attachment \(self.attachment.key)")
+                        throw Error.incorrectMd5Value
                     }
-                case .url: continue
+                    value = md5Value
+                } else {
+                    throw Error.cantCreateMd5
                 }
 
             case FieldKeys.Item.Attachment.mtime:
@@ -129,6 +125,7 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
                 switch self.attachment.type {
                 case .file(let filename, _, _, _, _):
                     value = filename
+                    
                 case .url: continue
                 }
 
@@ -143,16 +140,13 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
                 }
 
             case FieldKeys.Item.Attachment.path:
-                switch self.attachment.type {
-                case .file(let filename, let contentType, _, let linkType, _) where linkType == .linkedFile:
-                    let file = Files.attachmentFile(in: self.attachment.libraryId, key: self.attachment.key, filename: filename, contentType: contentType)
-                    value = file.createUrl().path
-                default: continue
-                }
+                guard let file = attachment.file else { continue }
+                value = file.createUrl().path
 
             case FieldKeys.Item.accessDate:
                 guard self.includeAccessDate else { continue }
                 value = Formatter.iso8601.string(from: self.attachment.dateAdded)
+                
             default: continue
             }
 
