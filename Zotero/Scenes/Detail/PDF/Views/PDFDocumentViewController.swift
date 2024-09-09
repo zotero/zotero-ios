@@ -271,7 +271,7 @@ final class PDFDocumentViewController: UIViewController {
             pdfController.setPageIndex(PageIndex(state.visiblePage), animated: false)
             select(annotation: state.selectedAnnotation, pageIndex: pdfController.pageIndex, document: state.document)
             if let previewRects = state.previewRects {
-                DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500)) {
+                DispatchQueue.main.async {
                     self.show(previewRects: previewRects, pageIndex: pdfController.pageIndex, document: state.document)
                 }
             }
@@ -447,19 +447,21 @@ final class PDFDocumentViewController: UIViewController {
 
         UIView.animate(
             withDuration: 0.2,
+            delay: 0.5,
+            options: .curveEaseIn,
             animations: {
                 view.alpha = 1
             },
             completion: { _ in
-                DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(250)) {
-                    hidePreview()
-                }
+                hidePreview()
             }
         )
 
         func hidePreview() {
             UIView.animate(
                 withDuration: 0.2,
+                delay: 0.2,
+                options: .curveEaseOut,
                 animations: {
                     view.alpha = 0
                 },
