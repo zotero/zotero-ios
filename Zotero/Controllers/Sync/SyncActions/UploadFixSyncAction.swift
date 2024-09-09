@@ -86,7 +86,7 @@ class UploadFixSyncAction: SyncAction {
                 subscriber(.failure(Error.expired))
                 return Disposables.create()
             }
-            self.attachmentDownloader.downloadIfNeeded(attachment: attachment, parentKey: nil) { result in
+            self.attachmentDownloader.downloadIfNeeded(attachment: attachment, parentKey: nil, scheduler: scheduler) { result in
                 switch result {
                 case .success:
                     subscriber(.success(()))

@@ -442,9 +442,9 @@ final class AttachmentDownloader: NSObject {
         }
     }
 
-    func downloadIfNeeded(attachment: Attachment, parentKey: String?, completion: @escaping (Result<(), Swift.Error>) -> Void) {
+    func downloadIfNeeded(attachment: Attachment, parentKey: String?, scheduler: SchedulerType = MainScheduler.instance, completion: @escaping (Result<(), Swift.Error>) -> Void) {
         observable
-            .observe(on: MainScheduler.instance)
+            .observe(on: scheduler)
             .subscribe(onNext: { [weak self] update in
                 guard let self, update.libraryId == attachment.libraryId && update.key == attachment.key else { return }
                 switch update.kind {
