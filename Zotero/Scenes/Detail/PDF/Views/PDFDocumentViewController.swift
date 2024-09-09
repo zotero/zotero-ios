@@ -271,7 +271,7 @@ final class PDFDocumentViewController: UIViewController {
             pdfController.setPageIndex(PageIndex(state.visiblePage), animated: false)
             select(annotation: state.selectedAnnotation, pageIndex: pdfController.pageIndex, document: state.document)
             if let previewRects = state.previewRects {
-                DispatchQueue.main.async {
+                DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500)) {
                     self.show(previewRects: previewRects, pageIndex: pdfController.pageIndex, document: state.document)
                 }
             }
@@ -440,28 +440,31 @@ final class PDFDocumentViewController: UIViewController {
     private func show(previewRects: [CGRect], pageIndex: PageIndex, document: PSPDFKit.Document) {
         guard !previewRects.isEmpty, let pageView = self.pdfController?.pageViewForPage(at: pageIndex) else { return }
 
-        var views: [UIView] = []
-        for rect in previewRects {
-            let frame = pageView.convert(rect, from: pageView.pdfCoordinateSpace)
-            let view = UIView()
-            view.frame = frame
-            view.backgroundColor = .systemBlue.withAlphaComponent(0.25)
-            pageView.contentView.addSubview(view)
-            views.append(view)
-        }
+        let convertedRects = previewRects.map({ pageView.convert($0, from: pageView.pdfCoordinateSpace) })
+        let view = AnnotationPreviewView(frames: convertedRects)
+        view.alpha = 0
+        pageView.contentView.addSubview(view)
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(3)) {
-            hidePreview()
-        }
+        UIView.animate(
+            withDuration: 0.2,
+            animations: {
+                view.alpha = 1
+            },
+            completion: { _ in
+                DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(250)) {
+                    hidePreview()
+                }
+            }
+        )
 
         func hidePreview() {
             UIView.animate(
                 withDuration: 0.2,
                 animations: {
-                    views.forEach({ $0.alpha = 0 })
+                    view.alpha = 0
                 },
                 completion: { _ in
-                    views.forEach({ $0.removeFromSuperview() })
+                    view.removeFromSuperview()
                 }
             )
         }
@@ -506,9 +509,8 @@ final class PDFDocumentViewController: UIViewController {
 
         guard let selection = annotation, (selection.type == .highlight || selection.type == .underline) && selection.page == Int(pageView.pageIndex) else { return }
         // Add custom highlight selection view if needed
-        let frame = pageView.convert(selection.boundingBox(boundingBoxConverter: self), from: pageView.pdfCoordinateSpace).insetBy(dx: -SelectionView.inset, dy: -SelectionView.inset)
-        let selectionView = SelectionView()
-        selectionView.frame = frame
+        let frame = pageView.convert(selection.boundingBox(boundingBoxConverter: self), from: pageView.pdfCoordinateSpace)
+        let selectionView = SelectionView(frame: frame)
         pageView.annotationContainerView.addSubview(selectionView)
         self.selectionView = selectionView
     }
@@ -1037,25 +1039,59 @@ extension PDFDocumentViewController: FreeTextInputDelegate {
 }
 
 final class SelectionView: UIView {
-    static let inset: CGFloat = 4.5 // 2.5 for border, 2 for padding
+    private static let inset: CGFloat = 4.5 // 2.5 for border, 2 for padding
 
-    init() {
-        super.init(frame: CGRect())
-        self.commonSetup()
+    override init(frame: CGRect) {
+        super.init(frame: frame.insetBy(dx: -Self.inset, dy: -Self.inset))
+        commonSetup()
     }
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
-        self.commonSetup()
+        commonSetup()
     }
 
     private func commonSetup() {
-        self.backgroundColor = .clear
-        self.autoresizingMask = [.flexibleTopMargin, .flexibleLeftMargin, .flexibleBottomMargin, .flexibleRightMargin, .flexibleWidth, .flexibleHeight]
-        self.layer.borderColor = Asset.Colors.annotationHighlightSelection.color.cgColor
-        self.layer.borderWidth = 2.5
-        self.layer.cornerRadius = 2.5
-        self.layer.masksToBounds = true
+        backgroundColor = .clear
+        autoresizingMask = [.flexibleTopMargin, .flexibleLeftMargin, .flexibleBottomMargin, .flexibleRightMargin, .flexibleWidth, .flexibleHeight]
+        layer.borderColor = Asset.Colors.annotationHighlightSelection.color.cgColor
+        layer.borderWidth = 2.5
+        layer.cornerRadius = 2.5
+        layer.masksToBounds = true
+    }
+}
+
+final class AnnotationPreviewView: UIView {
+    private static let inset: CGFloat = 4.5 // 2.5 for border, 2 for padding
+
+    init(frames: [CGRect]) {
+        let boundingBox = AnnotationBoundingBoxCalculator.boundingBox(from: frames).insetBy(dx: -Self.inset, dy: -Self.inset)
+        super.init(frame: boundingBox)
+        commonSetup()
+        for rect in frames {
+            addRow(rect: CGRect(origin: CGPoint(x: (rect.origin.x - boundingBox.origin.x), y: (rect.origin.y - boundingBox.origin.y)), size: rect.size))
+        }
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        commonSetup()
+    }
+
+    private func commonSetup() {
+        autoresizingMask = [.flexibleTopMargin, .flexibleLeftMargin, .flexibleBottomMargin, .flexibleRightMargin, .flexibleWidth, .flexibleHeight]
+        layer.borderColor = Asset.Colors.annotationHighlightSelection.color.cgColor
+        layer.borderWidth = 2.5
+        layer.cornerRadius = 2.5
+        layer.masksToBounds = true
+    }
+
+    private func addRow(rect: CGRect) {
+        let view = UIView()
+        view.backgroundColor = Asset.Colors.annotationHighlightSelection.color.withAlphaComponent(0.25)
+        view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        view.frame = rect
+        addSubview(view)
     }
 }
 
