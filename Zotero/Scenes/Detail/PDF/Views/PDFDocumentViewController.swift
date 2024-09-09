@@ -1038,7 +1038,7 @@ extension PDFDocumentViewController: FreeTextInputDelegate {
     }
 }
 
-final class SelectionView: UIView {
+class SelectionView: UIView {
     private static let inset: CGFloat = 4.5 // 2.5 for border, 2 for padding
 
     override init(frame: CGRect) {
@@ -1061,29 +1061,16 @@ final class SelectionView: UIView {
     }
 }
 
-final class AnnotationPreviewView: UIView {
-    private static let inset: CGFloat = 4.5 // 2.5 for border, 2 for padding
-
+final class AnnotationPreviewView: SelectionView {
     init(frames: [CGRect]) {
-        let boundingBox = AnnotationBoundingBoxCalculator.boundingBox(from: frames).insetBy(dx: -Self.inset, dy: -Self.inset)
-        super.init(frame: boundingBox)
-        commonSetup()
+        super.init(frame: AnnotationBoundingBoxCalculator.boundingBox(from: frames))
         for rect in frames {
-            addRow(rect: CGRect(origin: CGPoint(x: (rect.origin.x - boundingBox.origin.x), y: (rect.origin.y - boundingBox.origin.y)), size: rect.size))
+            addRow(rect: CGRect(origin: CGPoint(x: (rect.origin.x - frame.origin.x), y: (rect.origin.y - frame.origin.y)), size: rect.size))
         }
     }
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
-        commonSetup()
-    }
-
-    private func commonSetup() {
-        autoresizingMask = [.flexibleTopMargin, .flexibleLeftMargin, .flexibleBottomMargin, .flexibleRightMargin, .flexibleWidth, .flexibleHeight]
-        layer.borderColor = Asset.Colors.annotationHighlightSelection.color.cgColor
-        layer.borderWidth = 2.5
-        layer.cornerRadius = 2.5
-        layer.masksToBounds = true
     }
 
     private func addRow(rect: CGRect) {
