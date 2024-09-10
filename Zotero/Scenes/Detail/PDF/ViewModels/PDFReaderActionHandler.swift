@@ -1803,8 +1803,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 guard let self, let viewModel else { return }
                 observe(library: library, viewModel: viewModel, handler: self)
             })
-            let itemToken = observe(item: item, viewModel: viewModel, handler: self)
-            let token = observe(items: liveAnnotations, viewModel: viewModel, handler: self)
+            let itemToken = observe(item: item, viewModel: viewModel)
+            let token = observe(items: liveAnnotations, viewModel: viewModel)
             let databaseAnnotations = liveAnnotations.freeze()
 
             let loadDocumentAnnotationsStartTime = CFAbsoluteTimeGetCurrent()
@@ -1880,24 +1880,25 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             }
         }
 
-        func observe(items: Results<RItem>, viewModel: ViewModel<PDFReaderActionHandler>, handler: PDFReaderActionHandler) -> NotificationToken {
-            return items.observe(keyPaths: [\RItem.changeType]) { [weak handler, weak viewModel] change in
-                guard let handler, let viewModel else { return }
+        func observe(items: Results<RItem>, viewModel: ViewModel<PDFReaderActionHandler>) -> NotificationToken {
+            return items.observe { [weak self, weak viewModel] change in
+                guard let self, let viewModel else { return }
                 switch change {
                 case .update(let objects, let deletions, let insertions, let modifications):
-                    handler.update(objects: objects, deletions: deletions, insertions: insertions, modifications: modifications, viewModel: viewModel)
+                    update(objects: objects, deletions: deletions, insertions: insertions, modifications: modifications, viewModel: viewModel)
 
-                case .error, .initial: break
+                case .error, .initial:
+                    break
                 }
             }
         }
 
-        func observe(item: RItem, viewModel: ViewModel<PDFReaderActionHandler>, handler: PDFReaderActionHandler) -> NotificationToken {
-            return item.observe(keyPaths: ["fields"], on: .main) { [weak handler, weak viewModel] (change: ObjectChange<RItem>) in
-                guard let handler, let viewModel else { return }
+        func observe(item: RItem, viewModel: ViewModel<PDFReaderActionHandler>) -> NotificationToken {
+            return item.observe(keyPaths: ["fields"], on: .main) { [weak self, weak viewModel] (change: ObjectChange<RItem>) in
+                guard let self, let viewModel else { return }
                 switch change {
                 case .change(let item, _):
-                    checkWhetherMd5Changed(forItem: item, andUpdateViewModel: viewModel, handler: handler)
+                    checkWhetherMd5Changed(forItem: item, andUpdateViewModel: viewModel, handler: self)
 
                 case .deleted, .error:
                     break
