@@ -226,7 +226,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             addNote(onPage: pageIndex, origin: origin, in: viewModel)
 
         case .createHighlight(let pageIndex, let rects):
-            addHighlight(onPage: pageIndex, rects: rects, in: viewModel)
+            addHighlightOrUnderline(isHighlight: true, onPage: pageIndex, rects: rects, in: viewModel)
+
+        case .createUnderline(let pageIndex, let rects):
+            addHighlightOrUnderline(isHighlight: false, onPage: pageIndex, rects: rects, in: viewModel)
 
         case .setVisiblePage(let page, let userActionFromDocument, let fromThumbnailList):
             set(page: page, userActionFromDocument: userActionFromDocument, fromThumbnailList: fromThumbnailList, in: viewModel)
@@ -1182,22 +1185,22 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
     }
 
-    private func addHighlight(onPage pageIndex: PageIndex, rects: [CGRect], in viewModel: ViewModel<PDFReaderActionHandler>) {
-        guard let activeColor = viewModel.state.toolColors[tool(from: .highlight)] else { return }
+    private func addHighlightOrUnderline(isHighlight: Bool, onPage pageIndex: PageIndex, rects: [CGRect], in viewModel: ViewModel<PDFReaderActionHandler>) {
+        guard let activeColor = viewModel.state.toolColors[tool(from: isHighlight ? .highlight : .underline)] else { return }
         let (color, alpha, blendMode) = AnnotationColorGenerator.color(from: activeColor, isHighlight: true, userInterfaceStyle: viewModel.state.interfaceStyle)
 
-        let highlight = HighlightAnnotation()
-        highlight.rects = rects
-        highlight.boundingBox = AnnotationBoundingBoxCalculator.boundingBox(from: rects)
-        highlight.alpha = alpha
-        highlight.color = color
+        let annotation = isHighlight ? HighlightAnnotation() : UnderlineAnnotation()
+        annotation.rects = rects
+        annotation.boundingBox = AnnotationBoundingBoxCalculator.boundingBox(from: rects)
+        annotation.alpha = alpha
+        annotation.color = color
         if let blendMode {
-            highlight.blendMode = blendMode
+            annotation.blendMode = blendMode
         }
-        highlight.pageIndex = pageIndex
+        annotation.pageIndex = pageIndex
 
-        viewModel.state.document.undoController.recordCommand(named: nil, adding: [highlight]) {
-            viewModel.state.document.add(annotations: [highlight], options: nil)
+        viewModel.state.document.undoController.recordCommand(named: nil, adding: [annotation]) {
+            viewModel.state.document.add(annotations: [annotation], options: nil)
         }
     }
 
