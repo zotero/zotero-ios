@@ -387,7 +387,7 @@ class AnnotationToolbarViewController: UIViewController {
         }
 
         if count < toolButtons.count {
-            for idx in count..<toolButtons.count {
+            for idx in (count - 1)..<toolButtons.count {
                 toolButtons[idx] = toolButtons[idx].copy(isHidden: true)
             }
         } else {
