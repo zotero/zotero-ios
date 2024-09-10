@@ -292,6 +292,23 @@ class HtmlEpubReaderViewController: UIViewController, ParentWithSidebarControlle
             navigationController?.overrideUserInterfaceStyle = state.settings.appearance.userInterfaceStyle
         }
 
+        if state.changes.contains(.md5) {
+            coordinatorDelegate?.showDocumentChangedAlert { [weak self] in
+                self?.close()
+            }
+            return
+        }
+
+        if state.changes.contains(.library) {
+            let hidden = !state.library.metadataEditable || !toolbarState.visible
+            if !state.library.metadataEditable {
+                documentController?.disableAnnotationTools()
+            }
+            annotationToolbarHandler?.set(hidden: hidden, animated: true)
+            (toolbarButton.customView as? CheckboxButton)?.isSelected = toolbarState.visible
+            navigationItem.rightBarButtonItems = createRightBarButtonItems()
+        }
+
         if state.changes.contains(.popover) {
             if let key = state.annotationPopoverKey, let rect = state.annotationPopoverRect {
                 showPopover(forKey: key, rect: rect)

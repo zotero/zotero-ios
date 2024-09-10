@@ -27,6 +27,8 @@ struct HtmlEpubReaderState: ViewModelState {
         static let settings = Changes(rawValue: 1 << 8)
         static let readerInitialised = Changes(rawValue: 1 << 9)
         static let popover = Changes(rawValue: 1 << 10)
+        static let md5 = Changes(rawValue: 1 << 11)
+        static let library = Changes(rawValue: 1 << 12)
     }
 
     struct DocumentData {
@@ -60,13 +62,13 @@ struct HtmlEpubReaderState: ViewModelState {
     let documentFile: File
     let key: String
     let parentKey: String?
-    let library: Library
     let title: String?
     let userId: Int
     let username: String
     let commentFont: UIFont
     let textFont: UIFont
 
+    var library: Library
     var documentData: DocumentData?
     var settings: HtmlEpubSettings
     var activeTool: AnnotationTool?
@@ -96,7 +98,9 @@ struct HtmlEpubReaderState: ViewModelState {
     /// Annotation key to focus in document
     var focusDocumentKey: String?
     var sidebarEditingEnabled: Bool
-    var notificationToken: NotificationToken?
+    var itemToken: NotificationToken?
+    var annotationsToken: NotificationToken?
+    var libraryToken: NotificationToken?
     var deletionEnabled: Bool
 
     init(url: URL, key: String, parentKey: String?, title: String?, settings: HtmlEpubSettings, libraryId: LibraryIdentifier, userId: Int, username: String) {

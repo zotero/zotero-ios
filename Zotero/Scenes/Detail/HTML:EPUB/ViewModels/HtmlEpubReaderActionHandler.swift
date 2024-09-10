@@ -643,74 +643,128 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
     private func load(in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
         do {
-            let (sortedKeys, annotations, json, token, rawPage) = loadAnnotationsAndJson(in: viewModel)
-            let type: String
-            let page: HtmlEpubReaderState.DocumentData.Page?
+            guard let (item, annotationItems, rawPage) = loadItemAnnotationsAndPage(in: viewModel) else { return }
 
-            switch viewModel.state.documentFile.ext.lowercased() {
-            case "epub":
-                type = "epub"
-                page = .epub(cfi: rawPage)
-
-            case "html", "htm":
-                type = "snapshot"
-                if let scrollYPercent = Double(rawPage) {
-                    page = .html(scrollYPercent: scrollYPercent)
-                } else {
-                    DDLogError("HtmlEPubReaderActionHandler: incompatible lastIndexPage stored for \(viewModel.state.key) - \(rawPage)")
-                    page = nil
-                }
-
-            default:
-                throw HtmlEpubReaderState.Error.incompatibleDocument
+            if checkWhetherMd5Changed(forItem: item, andUpdateViewModel: viewModel, handler: self) {
+                return
             }
 
+            let (sortedKeys, annotations, json) = processAnnotations(items: annotationItems)
+            let (type, page) = try loadTypeAndPage(from: viewModel.state.documentFile, rawPage: rawPage)
             let documentData = HtmlEpubReaderState.DocumentData(type: type, url: viewModel.state.documentFile.createUrl(), annotationsJson: json, page: page)
+
+            let (library, libraryToken) = try viewModel.state.library.identifier.observe(in: dbStorage, changes: { [weak self, weak viewModel] library in
+                guard let self, let viewModel else { return }
+                observe(library: library, viewModel: viewModel, handler: self)
+            })
+            let itemToken = observe(item: item, viewModel: viewModel)
+            let annotationsToken = observe(items: annotationItems, viewModel: viewModel)
+
             update(viewModel: viewModel) { state in
                 state.sortedKeys = sortedKeys
                 state.annotations = annotations
+                state.library = library
                 state.documentData = documentData
-                state.notificationToken = token
+                state.itemToken = itemToken
+                state.annotationsToken = annotationsToken
+                state.libraryToken = libraryToken
                 state.changes = .annotations
             }
         } catch let error {
             DDLogError("HtmlEpubReaderActionHandler: could not load document - \(error)")
         }
-    }
 
-    private func loadAnnotationsAndJson(in viewModel: ViewModel<HtmlEpubReaderActionHandler>) -> ([String], [String: HtmlEpubAnnotation], String, NotificationToken?, String) {
-        do {
-            let pageIndexRequest = ReadDocumentDataDbRequest(attachmentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
-            let pageIndex = try dbStorage.perform(request: pageIndexRequest, on: .main)
-            let annotationsRequest = ReadAnnotationsDbRequest(attachmentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
-            let items = try dbStorage.perform(request: annotationsRequest, on: .main)
+        func loadItemAnnotationsAndPage(in viewModel: ViewModel<HtmlEpubReaderActionHandler>) -> (RItem, Results<RItem>, String)? {
+            do {
+                let itemRequest = ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: viewModel.state.key)
+                let item = try dbStorage.perform(request: itemRequest, on: .main)
+                let pageIndexRequest = ReadDocumentDataDbRequest(attachmentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
+                let pageIndex = try dbStorage.perform(request: pageIndexRequest, on: .main)
+                let annotationsRequest = ReadAnnotationsDbRequest(attachmentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
+                let items = try dbStorage.perform(request: annotationsRequest, on: .main)
+                return (item, items, pageIndex)
+            } catch let error {
+                DDLogError("HtmlEpubReaderActionHandler: can't load annotations - \(error)")
+                return nil
+            }
+        }
+
+        func processAnnotations(items: Results<RItem>) -> ([String], [String: HtmlEpubAnnotation], String) {
             var sortedKeys: [String] = []
             var annotations: [String: HtmlEpubAnnotation] = [:]
             var jsons: [[String: Any]] = []
-
             for item in items {
                 guard let (annotation, json) = item.htmlEpubAnnotation else { continue }
                 jsons.append(json)
                 sortedKeys.append(annotation.key)
                 annotations[item.key] = annotation
             }
-
             let jsonString = WebViewEncoder.encodeAsJSONForJavascript(jsons)
+            return (sortedKeys, annotations, jsonString)
+        }
 
-            let token = items.observe { [weak self, weak viewModel] change in
+        func loadTypeAndPage(from file: File, rawPage: String) throws -> (String, HtmlEpubReaderState.DocumentData.Page?) {
+            switch viewModel.state.documentFile.ext.lowercased() {
+            case "epub":
+                return ("epub", .epub(cfi: rawPage))
+
+            case "html", "htm":
+                if let scrollYPercent = Double(rawPage) {
+                    return ("snapshot", .html(scrollYPercent: scrollYPercent))
+                } else {
+                    DDLogError("HtmlEPubReaderActionHandler: incompatible lastIndexPage stored for \(viewModel.state.key) - \(rawPage)")
+                    return ("snapshot", nil)
+                }
+
+            default:
+                throw HtmlEpubReaderState.Error.incompatibleDocument
+            }
+        }
+
+        func observe(library: Library, viewModel: ViewModel<HtmlEpubReaderActionHandler>, handler: HtmlEpubReaderActionHandler) {
+            handler.update(viewModel: viewModel) { state in
+                if state.selectedAnnotationKey != nil {
+                    state.selectedAnnotationKey = nil
+                    state.changes = [.selection]
+                }
+                state.library = library
+                state.changes.insert(.library)
+            }
+        }
+
+        func observe(items: Results<RItem>, viewModel: ViewModel<HtmlEpubReaderActionHandler>) -> NotificationToken {
+            return items.observe { [weak self, weak viewModel] change in
                 guard let self, let viewModel else { return }
                 switch change {
                 case .update(let objects, let deletions, let insertions, let modifications):
                     update(objects: objects, deletions: deletions, insertions: insertions, modifications: modifications, viewModel: viewModel)
 
-                case .error, .initial: break
+                case .error, .initial:
+                    break
                 }
             }
+        }
 
-            return (sortedKeys, annotations, jsonString, token, pageIndex)
-        } catch let error {
-            DDLogError("HtmlEpubReaderActionHandler: can't load annotations - \(error)")
-            return ([], [:], "[]", nil, "")
+        func observe(item: RItem, viewModel: ViewModel<HtmlEpubReaderActionHandler>) -> NotificationToken {
+            return item.observe(keyPaths: ["fields"], on: .main) { [weak self, weak viewModel] (change: ObjectChange<RItem>) in
+                guard let self, let viewModel else { return }
+                switch change {
+                case .change(let item, _):
+                    checkWhetherMd5Changed(forItem: item, andUpdateViewModel: viewModel, handler: self)
+
+                case .deleted, .error:
+                    break
+                }
+            }
+        }
+
+        @discardableResult
+        func checkWhetherMd5Changed(forItem item: RItem, andUpdateViewModel viewModel: ViewModel<HtmlEpubReaderActionHandler>, handler: HtmlEpubReaderActionHandler) -> Bool {
+            guard let md5 = cachedMD5(from: viewModel.state.originalFile.createUrl(), using: fileStorage.fileManager), !item.backendMd5.isEmpty, item.backendMd5 != md5 else { return false }
+            handler.update(viewModel: viewModel) { state in
+                state.changes = .md5
+            }
+            return true
         }
     }
 

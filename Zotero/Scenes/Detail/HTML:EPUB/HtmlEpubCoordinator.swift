@@ -14,6 +14,7 @@ import RxSwift
 protocol HtmlEpubReaderCoordinatorDelegate: AnyObject {
     func show(error: HtmlEpubReaderState.Error)
     func showToolSettings(tool: AnnotationTool, colorHex: String?, sizeValue: Float?, sender: SourceView, userInterfaceStyle: UIUserInterfaceStyle, valueChanged: @escaping (String?, Float?) -> Void)
+    func showDocumentChangedAlert(completed: @escaping () -> Void)
 }
 
 protocol HtmlEpubSidebarCoordinatorDelegate: AnyObject {
@@ -170,6 +171,12 @@ extension HtmlEpubCoordinator: HtmlEpubReaderCoordinatorDelegate {
             navigationController.overrideUserInterfaceStyle = userInterfaceStyle
             self.navigationController?.present(navigationController, animated: true, completion: nil)
         }
+    }
+
+    func showDocumentChangedAlert(completed: @escaping () -> Void) {
+        let controller = UIAlertController(title: L10n.warning, message: L10n.Errors.Pdf.documentChanged, preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: { _ in completed() }))
+        navigationController?.present(controller, animated: true)
     }
 }
 
