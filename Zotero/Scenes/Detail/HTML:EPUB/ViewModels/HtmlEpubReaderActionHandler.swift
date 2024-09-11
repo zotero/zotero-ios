@@ -723,9 +723,15 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
         func observe(library: Library, viewModel: ViewModel<HtmlEpubReaderActionHandler>, handler: HtmlEpubReaderActionHandler) {
             handler.update(viewModel: viewModel) { state in
-                if state.selectedAnnotationKey != nil {
-                    state.selectedAnnotationKey = nil
-                    state.changes = [.selection]
+                if !library.metadataEditable {
+                    if state.selectedAnnotationKey != nil {
+                        state.selectedAnnotationKey = nil
+                        state.changes = [.selection]
+                    }
+                    if state.activeTool != nil {
+                        state.activeTool = nil
+                        state.changes.insert(.activeTool)
+                    }
                 }
                 state.library = library
                 state.changes.insert(.library)

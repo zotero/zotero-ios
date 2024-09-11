@@ -32,7 +32,9 @@ struct AttachmentCreator {
 
                 case .file(_, _, _, let linkType, _) where linkType == .importedFile || linkType == .importedUrl:
                     return attachment
-                default: break
+
+                default:
+                    break
                 }
             }
             return nil
@@ -59,8 +61,14 @@ struct AttachmentCreator {
         return attachments.filter({ attachment in
             switch attachment.type {
             case .file(_, let contentType, _, _, _):
-                return contentType == "application/pdf"
-                
+                switch contentType {
+                case "application/pdf", "text/html", "application/epub+zip":
+                    return true
+
+                default:
+                    return false
+                }
+
             default:
                 return false
             }
@@ -117,11 +125,23 @@ struct AttachmentCreator {
 
     private static func priority(for contentType: String) -> Int {
         switch contentType {
-        case "application/pdf": return 0
-        case "text/html": return 1
-        case "image/gif", "image/jpeg", "image/png": return 2
-        case "text/plain": return 3
-        default: return 4
+        case "application/pdf":
+            return 0
+
+        case "application/epub+zip":
+            return 1
+
+        case "text/html":
+            return 2
+
+        case "image/gif", "image/jpeg", "image/png":
+            return 3
+
+        case "text/plain":
+            return 4
+
+        default:
+            return 5
         }
     }
 
