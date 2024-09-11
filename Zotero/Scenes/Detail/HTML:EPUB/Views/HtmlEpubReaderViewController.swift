@@ -108,7 +108,7 @@ class HtmlEpubReaderViewController: UIViewController, ParentWithSidebarControlle
         setupSearch()
         setupViews()
         navigationController?.overrideUserInterfaceStyle = viewModel.state.settings.appearance.userInterfaceStyle
-        navigationItem.rightBarButtonItems = [settingsButton, toolbarButton]
+        navigationItem.rightBarButtonItems = createRightBarButtonItems()
 
         func observeViewModel() {
             viewModel.stateObservable
@@ -301,9 +301,6 @@ class HtmlEpubReaderViewController: UIViewController, ParentWithSidebarControlle
 
         if state.changes.contains(.library) {
             let hidden = !state.library.metadataEditable || !toolbarState.visible
-            if !state.library.metadataEditable {
-                documentController?.disableAnnotationTools()
-            }
             annotationToolbarHandler?.set(hidden: hidden, animated: true)
             (toolbarButton.customView as? CheckboxButton)?.isSelected = toolbarState.visible
             navigationItem.rightBarButtonItems = createRightBarButtonItems()
@@ -404,6 +401,14 @@ class HtmlEpubReaderViewController: UIViewController, ParentWithSidebarControlle
     private func close() {
         viewModel.process(action: .changeIdleTimerDisabled(false))
         navigationController?.presentingViewController?.dismiss(animated: true)
+    }
+
+    private func createRightBarButtonItems() -> [UIBarButtonItem] {
+        var buttons = [settingsButton]
+        if viewModel.state.library.metadataEditable {
+            buttons.append(toolbarButton)
+        }
+        return buttons
     }
 }
 
