@@ -80,10 +80,6 @@ class HtmlEpubDocumentViewController: UIViewController {
         }
     }
 
-    deinit {
-        viewModel.process(action: .deinitialiseReader)
-    }
-
     // MARK: - Actions
 
     private func process(state: HtmlEpubReaderState) {
