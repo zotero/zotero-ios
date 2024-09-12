@@ -246,6 +246,7 @@ class HtmlEpubReaderViewController: UIViewController, ParentWithSidebarControlle
     }
 
     deinit {
+        viewModel.process(action: .deinitialiseReader)
         DDLogInfo("HtmlEpubReaderViewController deinitialized")
     }
 
