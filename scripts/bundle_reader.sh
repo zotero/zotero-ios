@@ -12,7 +12,7 @@ HASH_FILE="$READER_DIR/reader_hash.txt"
 CURRENT_HASH=`git ls-tree --object-only HEAD "$READER_SUBMODULE_DIR"`
 
 if [ -d "$READER_DIR" ]; then
-    if [ -d "$HASH_FILE" ]; then
+    if [ -f "$HASH_FILE" ]; then
         CACHED_HASH=`cat "$HASH_FILE"`
     else
         CACHED_HASH=0
