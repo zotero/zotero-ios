@@ -64,6 +64,7 @@ struct CreateHtmlEpubAnnotationsDbRequest: DbRequest {
 
         // We need to submit tags on creation even if they are empty, so we need to mark them as changed
         addFields(for: annotation, to: item, database: database)
+        addTags(for: annotation, to: item, database: database)
         let changes: RItemChanges = [.parent, .fields, .type, .tags]
         item.changes.append(RObjectChange.create(changes: changes))
     }
