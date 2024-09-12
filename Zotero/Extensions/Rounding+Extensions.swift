@@ -33,9 +33,13 @@ extension Decimal {
     func rounded(to places: Int, mode: NSDecimalNumber.RoundingMode = .bankers) -> Decimal {
         guard self.isFinite else { return Decimal(0) }
 
-        var original = self
-        var result: Decimal = 0
-        NSDecimalRound(&result, &original, places, mode)
-        return result
+        // TODO: Remove Objective-C bridging when issue is fixed
+        // https://forums.developer.apple.com/forums/thread/762711
+        // https://developer.apple.com/documentation/xcode-release-notes/xcode-16-release-notes#Foundation
+//        var original = self
+//        var result: Decimal = 0
+//        NSDecimalRound(&result, &original, places, mode)
+//        return result
+        return NSDecimalNumber.roundedDecimal(self, toPlaces: places, mode: mode)
     }
 }

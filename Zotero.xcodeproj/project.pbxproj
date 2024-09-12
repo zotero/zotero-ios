@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		61099E6E2C91BAF300EDD92C /* NSDecimalNumber+Rounding.m in Sources */ = {isa = PBXBuildFile; fileRef = 61099E6D2C91BAF300EDD92C /* NSDecimalNumber+Rounding.m */; };
+		61099E6F2C91BAF300EDD92C /* NSDecimalNumber+Rounding.m in Sources */ = {isa = PBXBuildFile; fileRef = 61099E6D2C91BAF300EDD92C /* NSDecimalNumber+Rounding.m */; };
 		6135EF9A2C2ABCD7008DA17B /* SquareAnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6135EF992C2ABCD7008DA17B /* SquareAnnotationView.swift */; };
 		6135EF9C2C2ABDD1008DA17B /* AnnotationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6135EF9B2C2ABDD1008DA17B /* AnnotationManager.swift */; };
 		61391B7E2B3C6ED9003B314A /* CopyBibliographyAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61391B7D2B3C6ED9003B314A /* CopyBibliographyAction.swift */; };
@@ -1272,6 +1274,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		61099E6A2C91BAF300EDD92C /* Zotero-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Zotero-Bridging-Header.h"; sourceTree = "<group>"; };
+		61099E6B2C91BAF300EDD92C /* ZShare-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "ZShare-Bridging-Header.h"; sourceTree = "<group>"; };
+		61099E6C2C91BAF300EDD92C /* NSDecimalNumber+Rounding.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSDecimalNumber+Rounding.h"; sourceTree = "<group>"; };
+		61099E6D2C91BAF300EDD92C /* NSDecimalNumber+Rounding.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "NSDecimalNumber+Rounding.m"; sourceTree = "<group>"; };
 		611486502A9CD511002EEBEF /* ci_post_xcodebuild.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ci_post_xcodebuild.sh; sourceTree = "<group>"; };
 		6135EF992C2ABCD7008DA17B /* SquareAnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquareAnnotationView.swift; sourceTree = "<group>"; };
 		6135EF9B2C2ABDD1008DA17B /* AnnotationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationManager.swift; sourceTree = "<group>"; };
@@ -2620,6 +2626,8 @@
 				B3DEAAA628AD01CA00F72D90 /* URLSession+Extensions.swift */,
 				B305650C23FC051E003304F2 /* UserDefault+Extensions.swift */,
 				B3B78C45266FAF8500E91D02 /* WKWebView+Extensions.swift */,
+				61099E6C2C91BAF300EDD92C /* NSDecimalNumber+Rounding.h */,
+				61099E6D2C91BAF300EDD92C /* NSDecimalNumber+Rounding.m */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -2840,6 +2848,7 @@
 				B39EE32A223A5E3500302E29 /* TestAppDelegate.swift */,
 				B3F3A6A922F97D4300E3A09C /* Zotero.entitlements */,
 				618D83E62BAAC88C00E7966B /* PrivacyInfo.xcprivacy */,
+				61099E6A2C91BAF300EDD92C /* Zotero-Bridging-Header.h */,
 			);
 			path = Zotero;
 			sourceTree = "<group>";
@@ -2898,6 +2907,7 @@
 				B311B3232386A39800BCF592 /* Info.plist */,
 				B311B3202386A39800BCF592 /* MainInterface.storyboard */,
 				B3B8166723880DC900529605 /* ZShare.entitlements */,
+				61099E6B2C91BAF300EDD92C /* ZShare-Bridging-Header.h */,
 			);
 			path = ZShare;
 			sourceTree = "<group>";
@@ -4351,12 +4361,12 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastSwiftUpdateCheck = 1120;
-				LastUpgradeCheck = 1500;
+				LastUpgradeCheck = 1610;
 				ORGANIZATIONNAME = "Corporation for Digital Scholarship";
 				TargetAttributes = {
 					B30D59542206F60400884C4A = {
 						CreatedOnToolsVersion = 10.1;
-						LastSwiftMigration = 1120;
+						LastSwiftMigration = 1610;
 						SystemCapabilities = {
 							com.apple.Keychain = {
 								enabled = 0;
@@ -4378,6 +4388,7 @@
 					};
 					B311B31B2386A39800BCF592 = {
 						CreatedOnToolsVersion = 11.2.1;
+						LastSwiftMigration = 1610;
 					};
 				};
 			};
@@ -5069,6 +5080,7 @@
 				61E24DCC2ABB385E00D75F50 /* OpenItemsController.swift in Sources */,
 				B305679023FC1D9B003304F2 /* CollectionDifference+Separated.swift in Sources */,
 				B3F6AA3A2AB30663005BC22E /* AnnotationTool.swift in Sources */,
+				61099E6F2C91BAF300EDD92C /* NSDecimalNumber+Rounding.m in Sources */,
 				B34ACC7A2514EAAB00040C17 /* AnnotationColorGenerator.swift in Sources */,
 				B3ADAE4F2833BEDC00D46271 /* LookupState.swift in Sources */,
 				B3FC7431272181E500F55531 /* WebDavWriteRequest.swift in Sources */,
@@ -5648,6 +5660,7 @@
 				B305672F23FC091F003304F2 /* StoreVersionSyncAction.swift in Sources */,
 				B33E8A4D27B6AAE600CBC7DE /* CollectionCellContentView.swift in Sources */,
 				B3D58D7025EE43E700D8FA31 /* CircularProgressView.swift in Sources */,
+				61099E6E2C91BAF300EDD92C /* NSDecimalNumber+Rounding.m in Sources */,
 				B36459E3264411F300A0C2C0 /* TagColorGenerator.swift in Sources */,
 				B3DF9AD32747AAD9007933CB /* ApiRequest.swift in Sources */,
 				B305673023FC0921003304F2 /* SubmitDeletionSyncAction.swift in Sources */,
@@ -6006,7 +6019,6 @@
 		B30D59802206F60500884C4A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
@@ -6034,6 +6046,7 @@
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) MAINAPP";
+				SWIFT_OBJC_BRIDGING_HEADER = "Zotero/Zotero-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_PRECOMPILE_BRIDGING_HEADER = YES;
 				SWIFT_VERSION = 5.0;
@@ -6044,7 +6057,6 @@
 		B30D59812206F60500884C4A /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
@@ -6071,6 +6083,7 @@
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) MAINAPP";
+				SWIFT_OBJC_BRIDGING_HEADER = "Zotero/Zotero-Bridging-Header.h";
 				SWIFT_PRECOMPILE_BRIDGING_HEADER = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -6080,7 +6093,6 @@
 		B30D59832206F60500884C4A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
@@ -6112,7 +6124,6 @@
 		B30D59842206F60500884C4A /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
@@ -6139,7 +6150,6 @@
 		B30D59862206F60500884C4A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
@@ -6165,7 +6175,6 @@
 		B30D59872206F60500884C4A /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
@@ -6191,6 +6200,7 @@
 		B311B3282386A39800BCF592 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = ZShare/ZShare.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
@@ -6214,6 +6224,8 @@
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
 				SUPPORTS_MACCATALYST = NO;
+				SWIFT_OBJC_BRIDGING_HEADER = "ZShare/ZShare-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -6222,6 +6234,7 @@
 		B311B32A2386A39800BCF592 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = ZShare/ZShare.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
@@ -6245,6 +6258,7 @@
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
 				SUPPORTS_MACCATALYST = NO;
+				SWIFT_OBJC_BRIDGING_HEADER = "ZShare/ZShare-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -6318,7 +6332,6 @@
 		B3B74F862B9086B800D966EC /* Test */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
@@ -6346,6 +6359,7 @@
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) MAINAPP TESTING";
+				SWIFT_OBJC_BRIDGING_HEADER = "Zotero/Zotero-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_PRECOMPILE_BRIDGING_HEADER = YES;
 				SWIFT_VERSION = 5.0;
@@ -6356,7 +6370,6 @@
 		B3B74F872B9086B800D966EC /* Test */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
@@ -6388,7 +6401,6 @@
 		B3B74F882B9086B800D966EC /* Test */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
@@ -6414,6 +6426,7 @@
 		B3B74F892B9086B800D966EC /* Test */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = ZShare/ZShare.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
@@ -6437,6 +6450,8 @@
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
 				SUPPORTS_MACCATALYST = NO;
+				SWIFT_OBJC_BRIDGING_HEADER = "ZShare/ZShare-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
