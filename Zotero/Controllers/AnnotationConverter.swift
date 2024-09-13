@@ -243,7 +243,7 @@ struct AnnotationConverter {
     ) -> PSPDFKit.Annotation {
         let (color, alpha, blendMode) = AnnotationColorGenerator.color(
             from: UIColor(hex: zoteroAnnotation.color),
-            isHighlight: (zoteroAnnotation.type == .highlight),
+            type: zoteroAnnotation.type,
             userInterfaceStyle: interfaceStyle
         )
         let annotation: PSPDFKit.Annotation

@@ -162,8 +162,19 @@ final class PDFDocumentViewController: UIViewController {
 
         stateManager.setState(annotationTool, variant: nil)
 
-        if let color = color {
-            let (_color, _, blendMode) = AnnotationColorGenerator.color(from: color, isHighlight: (annotationTool == .highlight), userInterfaceStyle: self.viewModel.state.interfaceStyle)
+        if let color {
+            let type: AnnotationType?
+            switch annotationTool {
+            case .highlight:
+                type = .highlight
+
+            case .underline:
+                type = .underline
+
+            default:
+                type = nil
+            }
+            let (_color, _, blendMode) = AnnotationColorGenerator.color(from: color, type: type, userInterfaceStyle: viewModel.state.interfaceStyle)
             stateManager.drawColor = _color
             stateManager.blendMode = blendMode ?? .normal
         }
@@ -420,7 +431,18 @@ final class PDFDocumentViewController: UIViewController {
     }
 
     private func set(color: UIColor, for tool: PSPDFKit.Annotation.Tool, in stateManager: AnnotationStateManager) {
-        let toolColor = tool == .highlight ? AnnotationColorGenerator.color(from: color, isHighlight: true, userInterfaceStyle: self.viewModel.state.interfaceStyle).color : color
+        let type: AnnotationType?
+        switch tool {
+        case .highlight:
+            type = .highlight
+
+        case .underline:
+            type = .underline
+
+        default:
+            type = nil
+        }
+        let toolColor = AnnotationColorGenerator.color(from: color, type: type, userInterfaceStyle: viewModel.state.interfaceStyle).color
         stateManager.setLastUsedColor(toolColor, annotationString: tool)
         if stateManager.state == tool {
             stateManager.drawColor = toolColor
