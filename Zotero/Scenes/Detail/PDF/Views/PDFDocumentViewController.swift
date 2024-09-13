@@ -94,9 +94,9 @@ final class PDFDocumentViewController: UIViewController {
         guard self.viewIfLoaded != nil else { return }
 
         coordinator.animate(alongsideTransition: { _ in
-            // Update highlight selection if needed
-            if let annotation = self.viewModel.state.selectedAnnotation, let pageIndex = self.pdfController?.pageIndex, let pageView = self.pdfController?.pageViewForPage(at: pageIndex) {
-                self.updateSelection(on: pageView, annotation: annotation)
+            // Update highlight/underline selection if needed
+            if let annotation = self.viewModel.state.selectedAnnotation, let pdfController = self.pdfController {
+                self.updateSelectionOnVisiblePages(of: pdfController, annotation: annotation)
             }
         }, completion: nil)
     }
@@ -505,11 +505,9 @@ final class PDFDocumentViewController: UIViewController {
     /// - parameter pageIndex: Page index of page where (de)selection should happen.
     /// - parameter document: Active `Document` instance.
     private func select(annotation: PDFAnnotation?, pageIndex: PageIndex, document: PSPDFKit.Document) {
-        guard let pageView = self.pdfController?.pageViewForPage(at: pageIndex) else { return }
+        guard let pdfController, let pageView = updateSelectionOnVisiblePages(of: pdfController, annotation: annotation) ?? pdfController.pageViewForPage(at: pageIndex) else { return }
 
-        self.updateSelection(on: pageView, annotation: annotation)
-
-        if let annotation = annotation, let pdfAnnotation = document.annotation(on: Int(pageIndex), with: annotation.key) {
+        if let annotation, let pdfAnnotation = document.annotation(on: Int(pageView.pageIndex), with: annotation.key) {
             if !pageView.selectedAnnotations.contains(pdfAnnotation) {
                 pageView.selectedAnnotations = [pdfAnnotation]
             }
@@ -528,21 +526,25 @@ final class PDFDocumentViewController: UIViewController {
         }
     }
 
-    /// Updates `SelectionView` for `PDFPageView` based on selected annotation.
-    /// - parameter pageView: `PDFPageView` instance for given page.
-    /// - parameter selectedAnnotation: Selected annotation or `nil` if there is no selection.
-    private func updateSelection(on pageView: PDFPageView, annotation: PDFAnnotation?) {
-        // Delete existing custom highlight selection view
-        if let view = self.selectionView {
-            view.removeFromSuperview()
-        }
+    /// Updates `SelectionView` for visible `PDFPageView`s of `PDFViewController` based on selected annotation.
+    /// - parameter pdfController: `PDFViewController` instance for given PDF view controller.
+    /// - parameter selectedAnnotation: `PDFAnnotation` Selected annotation or `nil` if there is no selection.
+    /// - returns: Returns the affected`PDFPageView` if a `SelectionView` was added, otherwise `nil`
+    @discardableResult
+    private func updateSelectionOnVisiblePages(of pdfController: PDFViewController, annotation: PDFAnnotation?) -> PDFPageView? {
+        // Delete existing custom highlight/underline selection view
+        selectionView?.removeFromSuperview()
 
-        guard let selection = annotation, (selection.type == .highlight || selection.type == .underline) && selection.page == Int(pageView.pageIndex) else { return }
-        // Add custom highlight selection view if needed
+        guard let selection = annotation,
+              selection.type == .highlight || selection.type == .underline,
+              let pageView = pdfController.visiblePageViews.first(where: { $0.pageIndex == PageIndex(selection.page) })
+        else { return nil }
+        // Add custom highlight/underline selection view if needed
         let frame = pageView.convert(selection.boundingBox(boundingBoxConverter: self), from: pageView.pdfCoordinateSpace)
         let selectionView = SelectionView(frame: frame)
         pageView.annotationContainerView.addSubview(selectionView)
         self.selectionView = selectionView
+        return pageView
     }
 
     // MARK: - Setups
