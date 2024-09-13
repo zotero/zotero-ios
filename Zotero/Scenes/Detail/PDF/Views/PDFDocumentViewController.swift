@@ -303,6 +303,12 @@ final class PDFDocumentViewController: UIViewController {
         case .ink:
             return .ink
 
+        case .underline:
+            return .underline
+
+        case .freeText:
+            return .freeText
+
         default:
             return nil
         }
@@ -957,9 +963,8 @@ extension PDFDocumentViewController: UIPencilInteractionDelegate {
 
 extension PDFDocumentViewController: UIPopoverPresentationControllerDelegate {
     func popoverPresentationControllerDidDismissPopover(_ popoverPresentationController: UIPopoverPresentationController) {
-        if self.viewModel.state.selectedAnnotation?.type == .highlight {
-            self.viewModel.process(action: .deselectSelectedAnnotation)
-        }
+        guard let type = viewModel.state.selectedAnnotation?.type, type == .highlight || type == .underline else { return }
+        viewModel.process(action: .deselectSelectedAnnotation)
     }
 }
 

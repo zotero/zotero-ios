@@ -200,6 +200,8 @@ final class Defaults {
         self.squareColorHex = AnnotationsConfig.defaultActiveColor
         self.noteColorHex = AnnotationsConfig.defaultActiveColor
         self.highlightColorHex = AnnotationsConfig.defaultActiveColor
+        self.underlineColorHex = AnnotationsConfig.defaultActiveColor
+        self.textColorHex = AnnotationsConfig.defaultActiveColor
         self.pdfSettings = PDFSettings.default
         #endif
     }
