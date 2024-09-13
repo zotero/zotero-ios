@@ -1187,7 +1187,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
     private func addHighlightOrUnderline(isHighlight: Bool, onPage pageIndex: PageIndex, rects: [CGRect], in viewModel: ViewModel<PDFReaderActionHandler>) {
         guard let activeColor = viewModel.state.toolColors[tool(from: isHighlight ? .highlight : .underline)] else { return }
-        let (color, alpha, blendMode) = AnnotationColorGenerator.color(from: activeColor, isHighlight: true, userInterfaceStyle: viewModel.state.interfaceStyle)
+        let (color, alpha, blendMode) = AnnotationColorGenerator.color(from: activeColor, isHighlight: isHighlight, userInterfaceStyle: viewModel.state.interfaceStyle)
 
         let annotation = isHighlight ? HighlightAnnotation() : UnderlineAnnotation()
         annotation.rects = rects
