@@ -582,10 +582,9 @@ final class PDFDocumentViewController: UIViewController {
             builder.showForwardActionButton = false
             builder.contentMenuConfiguration = ContentMenuConfiguration {
                 $0.annotationToolChoices = { _, _, _, _ in
-                    return [.highlight]
+                    return [.highlight, .underline]
                 }
             }
-            builder.freeTextAccessoryViewEnabled = false
             builder.scrubberBarType = .horizontal
 //            builder.thumbnailBarMode = .scrubberBar
             builder.markupAnnotationMergeBehavior = .never
@@ -785,11 +784,16 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
                     }
 
                 case .PSPDFKit.annotate:
-                    let actions = [
-                        action.replacing(title: L10n.Pdf.highlight, handler: createHighlightActionHandler(for: pageView, in: viewModel)),
-                        UIAction(title: L10n.Pdf.underline, identifier: .underline, handler: createUnderlineActionHandler(for: pageView, in: viewModel))
-                    ]
-                    return UIMenu(options: [.displayInline], children: actions)
+                    switch action.identifier {
+                    case .pspdfkitAnnotationToolHighlight:
+                        return action.replacing(title: L10n.Pdf.highlight, handler: createHighlightActionHandler(for: pageView, in: viewModel))
+
+                    case .pspdfkitAnnotationToolUnderline:
+                        return action.replacing(title: L10n.Pdf.underline, handler: createUnderlineActionHandler(for: pageView, in: viewModel))
+
+                    default:
+                        return action
+                    }
 
                 default:
                     return action
@@ -799,8 +803,8 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
                 switch menu.identifier {
                 case .PSPDFKit.annotate:
                     return [
-                        UIAction(title: L10n.Pdf.highlight, handler: createHighlightActionHandler(for: pageView, in: viewModel)),
-                        UIAction(title: L10n.Pdf.underline, identifier: .underline, handler: createUnderlineActionHandler(for: pageView, in: viewModel))
+                        UIAction(title: L10n.Pdf.highlight, identifier: .pspdfkitAnnotationToolHighlight, handler: createHighlightActionHandler(for: pageView, in: viewModel)),
+                        UIAction(title: L10n.Pdf.underline, identifier: .pspdfkitAnnotationToolUnderline, handler: createUnderlineActionHandler(for: pageView, in: viewModel))
                     ]
 
                 default:
@@ -1122,5 +1126,6 @@ extension UIAction {
 }
 
 extension UIAction.Identifier {
-    fileprivate static let underline = UIAction.Identifier(rawValue: "org.zotero.menu")
+    fileprivate static let pspdfkitAnnotationToolHighlight = UIAction.Identifier(rawValue: "com.pspdfkit.action.annotation-tool-Highlight")
+    fileprivate static let pspdfkitAnnotationToolUnderline = UIAction.Identifier(rawValue: "com.pspdfkit.action.annotation-tool-Underline")
 }
