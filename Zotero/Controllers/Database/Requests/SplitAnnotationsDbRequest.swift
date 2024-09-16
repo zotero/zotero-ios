@@ -38,7 +38,7 @@ struct SplitAnnotationsDbRequest: DbRequest {
         guard let annotationType = item.fields.filter(.key(FieldKeys.Item.Annotation.type)).first.flatMap({ AnnotationType(rawValue: $0.value) }) else { return }
 
         switch annotationType {
-        case .highlight:
+        case .highlight, .underline:
             let rects = item.rects.map({ CGRect(x: $0.minX, y: $0.minY, width: ($0.maxX - $0.minY), height: ($0.maxY - $0.minY)) })
             
             guard let splitRects = AnnotationSplitter.splitRectsIfNeeded(rects: Array(rects)) else { return }

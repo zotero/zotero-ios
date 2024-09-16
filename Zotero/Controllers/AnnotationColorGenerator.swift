@@ -11,12 +11,35 @@ import UIKit
 struct AnnotationColorGenerator {
     private static let highlightOpacity: CGFloat = 0.5
     private static let highlightDarkOpacity: CGFloat = 0.5
+    private static let underlineOpacity: CGFloat = 1
+    private static let underlineDarkOpacity: CGFloat = 1
 
-    static func color(from color: UIColor, isHighlight: Bool, userInterfaceStyle: UIUserInterfaceStyle) -> (color: UIColor, alpha: CGFloat, blendMode: CGBlendMode?) {
-        if !isHighlight {
+    static func color(from color: UIColor, type: AnnotationType?, userInterfaceStyle: UIUserInterfaceStyle) -> (color: UIColor, alpha: CGFloat, blendMode: CGBlendMode?) {
+        let opacity: CGFloat
+        switch type {
+        case .none, .note, .image, .ink, .freeText:
             return (color, 1, nil)
+
+        case .highlight:
+            switch userInterfaceStyle {
+            case .dark:
+                opacity = Self.highlightDarkOpacity
+
+            default:
+                opacity = Self.highlightOpacity
+            }
+
+        case .underline:
+            switch userInterfaceStyle {
+            case .dark:
+                opacity = Self.underlineDarkOpacity
+
+            default:
+                opacity = Self.underlineOpacity
+            }
         }
 
+        let adjustedColor: UIColor
         switch userInterfaceStyle {
         case .dark:
             var hue: CGFloat = 0
@@ -27,17 +50,28 @@ struct AnnotationColorGenerator {
             color.getHue(&hue, saturation: &sat, brightness: &brg, alpha: &alpha)
 
             let adjustedSat = min(1, (sat * 1.2))
-            let adjustedColor = UIColor(hue: hue, saturation: adjustedSat, brightness: brg, alpha: AnnotationColorGenerator.highlightDarkOpacity)
-            return (adjustedColor, AnnotationColorGenerator.highlightDarkOpacity, .lighten)
+            adjustedColor = UIColor(hue: hue, saturation: adjustedSat, brightness: brg, alpha: opacity)
 
         default:
-            let adjustedColor = color.withAlphaComponent(AnnotationColorGenerator.highlightOpacity)
-            return (adjustedColor, AnnotationColorGenerator.highlightOpacity, .multiply)
+            adjustedColor = color.withAlphaComponent(opacity)
         }
+
+        return (adjustedColor, opacity, Self.blendMode(for: userInterfaceStyle, type: type))
     }
 
-    static func blendMode(for userInterfaceStyle: UIUserInterfaceStyle, isHighlight: Bool) -> CGBlendMode? {
-        guard isHighlight else { return nil }
-        return userInterfaceStyle == .dark ? .lighten : .multiply
+    static func blendMode(for userInterfaceStyle: UIUserInterfaceStyle, type: AnnotationType?) -> CGBlendMode? {
+        switch type {
+        case .none, .note, .image, .ink, .freeText:
+            return nil
+
+        case .highlight, .underline:
+            switch userInterfaceStyle {
+            case .dark:
+                return .lighten
+
+            default:
+                return .multiply
+            }
+        }
     }
 }

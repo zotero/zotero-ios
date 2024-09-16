@@ -279,7 +279,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 let baseColor = annotation.baseColor
                 let (color, alpha, blendMode) = AnnotationColorGenerator.color(
                     from: UIColor(hex: baseColor),
-                    isHighlight: (annotation is PSPDFKit.HighlightAnnotation),
+                    type: annotation.type.annotationType,
                     userInterfaceStyle: interfaceStyle
                 )
                 annotation.color = color
@@ -1155,7 +1155,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
     private func addImage(onPage pageIndex: PageIndex, origin: CGPoint, in viewModel: ViewModel<PDFReaderActionHandler>) {
         guard let activeColor = viewModel.state.toolColors[tool(from: .image)] else { return }
-        let color = AnnotationColorGenerator.color(from: activeColor, isHighlight: false, userInterfaceStyle: viewModel.state.interfaceStyle).color
+        let color = AnnotationColorGenerator.color(from: activeColor, type: .image, userInterfaceStyle: viewModel.state.interfaceStyle).color
         let rect = CGRect(origin: origin, size: CGSize(width: 100, height: 100))
 
         let square = SquareAnnotation()
@@ -1171,7 +1171,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
     private func addNote(onPage pageIndex: PageIndex, origin: CGPoint, in viewModel: ViewModel<PDFReaderActionHandler>) {
         guard let activeColor = viewModel.state.toolColors[tool(from: .note)] else { return }
-        let color = AnnotationColorGenerator.color(from: activeColor, isHighlight: false, userInterfaceStyle: viewModel.state.interfaceStyle).color
+        let color = AnnotationColorGenerator.color(from: activeColor, type: .note, userInterfaceStyle: viewModel.state.interfaceStyle).color
         let rect = CGRect(origin: origin, size: AnnotationsConfig.noteAnnotationSize)
 
         let note = NoteAnnotation(contents: "")
@@ -1187,7 +1187,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
     private func addHighlightOrUnderline(isHighlight: Bool, onPage pageIndex: PageIndex, rects: [CGRect], in viewModel: ViewModel<PDFReaderActionHandler>) {
         guard let activeColor = viewModel.state.toolColors[tool(from: isHighlight ? .highlight : .underline)] else { return }
-        let (color, alpha, blendMode) = AnnotationColorGenerator.color(from: activeColor, isHighlight: true, userInterfaceStyle: viewModel.state.interfaceStyle)
+        let (color, alpha, blendMode) = AnnotationColorGenerator.color(from: activeColor, type: isHighlight ? .highlight : .underline, userInterfaceStyle: viewModel.state.interfaceStyle)
 
         let annotation = isHighlight ? HighlightAnnotation() : UnderlineAnnotation()
         annotation.rects = rects
@@ -1350,7 +1350,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             }
 
             if changes.contains(.color), let (color, interfaceStyle) = color {
-                let (_color, alpha, blendMode) = AnnotationColorGenerator.color(from: UIColor(hex: color), isHighlight: (annotation.type == .highlight), userInterfaceStyle: interfaceStyle)
+                let (_color, alpha, blendMode) = AnnotationColorGenerator.color(from: UIColor(hex: color), type: annotation.type, userInterfaceStyle: interfaceStyle)
                 pdfAnnotation.color = _color
                 pdfAnnotation.alpha = alpha
                 if let blendMode {
@@ -1458,7 +1458,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             for annotation in annotations {
                 guard let tool = tool(from: annotation), let activeColor = state.toolColors[tool] else { continue }
                 // `AnnotationStateManager` doesn't apply the `blendMode` to created annotations, so it needs to be applied to newly created annotations here.
-                let (_, _, blendMode) = AnnotationColorGenerator.color(from: activeColor, isHighlight: (annotation is PSPDFKit.HighlightAnnotation), userInterfaceStyle: state.interfaceStyle)
+                let (_, _, blendMode) = AnnotationColorGenerator.color(from: activeColor, type: annotation.type.annotationType, userInterfaceStyle: state.interfaceStyle)
                 annotation.blendMode = blendMode ?? .normal
 
                 // Either annotation is new (key not assigned) or the user used undo/redo and we check whether the annotation exists in DB
@@ -1468,11 +1468,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 }
                 var workingAnnotation = annotation
 
-                if let transformedHighlightAnnotation = transformHighlightRectsIfNeeded(annotation: annotation) {
-                    DDLogInfo("PDFReaderActionHandler: did transform highlight annotation rects")
+                if let transformedAnnotation = transformHighlightOrUnderlineRectsIfNeeded(annotation: annotation) {
+                    DDLogInfo("PDFReaderActionHandler: did transform highlight/underline annotation rects")
                     toRemove.append(annotation)
-                    toAdd.append(transformedHighlightAnnotation)
-                    workingAnnotation = transformedHighlightAnnotation
+                    toAdd.append(transformedAnnotation)
+                    workingAnnotation = transformedAnnotation
                 }
 
                 let splitAnnotations = splitIfNeeded(annotation: workingAnnotation)
@@ -1495,22 +1495,25 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             return (keptAsIs, toRemove, toAdd)
 
             // TODO: Remove if issues are fixed in PSPDFKit
-            /// Transforms highlight annotation if needed.
+            /// Transforms highlight/underline annotation if needed.
             /// (a) Merges rects that are in the same text line.
-            /// (b) Trims different line rects that overlap.
-            /// If not a higlight annotation, or transformations are not needed, it returns nil.
+            /// (b) Trims different line rects that overlap. (only for highlight annotations)
+            /// If not a higlight/underline annotation, or transformations are not needed, it returns nil.
             /// Issue appeared in PSPDFKit 13.5.0
             /// - parameter annotation: Annotation to be transformed if needed
-            func transformHighlightRectsIfNeeded(annotation: PSPDFKit.Annotation) -> PSPDFKit.Annotation? {
-                guard annotation is HighlightAnnotation, let rects = annotation.rects, rects.count > 1 else { return nil }
+            func transformHighlightOrUnderlineRectsIfNeeded(annotation: PSPDFKit.Annotation) -> PSPDFKit.Annotation? {
+                guard annotation is HighlightAnnotation || annotation is UnderlineAnnotation, let rects = annotation.rects, rects.count > 1 else { return nil }
+                let isHighlight = annotation is HighlightAnnotation
                 var workingRects = rects
-                workingRects = mergeHighlightRectsIfNeeded(workingRects)
-                workingRects = trimOverlappingHighlightRectsIfNeeded(workingRects)
+                workingRects = mergeHighlightOrUnderlineRectsIfNeeded(workingRects)
+                if isHighlight {
+                    workingRects = trimOverlappingHighlightRectsIfNeeded(workingRects)
+                }
                 guard workingRects != rects else { return nil }
-                return copyHighlightAnnotation(from: annotation, with: workingRects)
+                return copyHighlightOrUnderlineAnnotation(isHighlight: isHighlight, from: annotation, with: workingRects)
 
-                func mergeHighlightRectsIfNeeded(_ rects: [CGRect]) -> [CGRect] {
-                    // Check if there are gaps for sequential highlight rects on the same line, and if so transform the annotation to eliminate them.
+                func mergeHighlightOrUnderlineRectsIfNeeded(_ rects: [CGRect]) -> [CGRect] {
+                    // Check if there are gaps for sequential highlight/underline rects on the same line, and if so transform the annotation to eliminate them.
                     var mergedRects: [CGRect] = []
                     for rect in rects {
                         guard let previousRect = mergedRects.last, rect.minY == previousRect.minY, rect.height == previousRect.height else {
@@ -1547,8 +1550,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                     return trimmedRects
                 }
 
-                func copyHighlightAnnotation(from annotation: PSPDFKit.Annotation, with rects: [CGRect]) -> HighlightAnnotation {
-                    let newAnnotation = HighlightAnnotation()
+                func copyHighlightOrUnderlineAnnotation(isHighlight: Bool, from annotation: PSPDFKit.Annotation, with rects: [CGRect]) -> Annotation {
+                    let newAnnotation = isHighlight ? HighlightAnnotation() : UnderlineAnnotation()
                     newAnnotation.rects = rects
                     newAnnotation.boundingBox = AnnotationBoundingBoxCalculator.boundingBox(from: rects)
                     newAnnotation.alpha = annotation.alpha
@@ -1564,20 +1567,21 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             /// - parameter annotation: Annotation to split
             /// - returns: Array with original annotation if limit was not exceeded. Otherwise array of new split annotations.
             func splitIfNeeded(annotation: PSPDFKit.Annotation) -> [PSPDFKit.Annotation] {
-                if let annotation = annotation as? HighlightAnnotation, let rects = annotation.rects, let splitRects = AnnotationSplitter.splitRectsIfNeeded(rects: rects) {
-                    return createAnnotations(from: splitRects, original: annotation)
+                if annotation is HighlightAnnotation || annotation is UnderlineAnnotation, let rects = annotation.rects, let splitRects = AnnotationSplitter.splitRectsIfNeeded(rects: rects) {
+                    let isHighlight = annotation is HighlightAnnotation
+                    return createHighlightOrUnderlineAnnotations(isHighlight: isHighlight, from: splitRects, original: annotation)
                 }
 
                 if let annotation = annotation as? InkAnnotation, let paths = annotation.lines, let splitPaths = AnnotationSplitter.splitPathsIfNeeded(paths: paths) {
-                    return createAnnotations(from: splitPaths, original: annotation)
+                    return createInkAnnotations(from: splitPaths, original: annotation)
                 }
 
                 return [annotation]
 
-                func createAnnotations(from splitRects: [[CGRect]], original: HighlightAnnotation) -> [HighlightAnnotation] {
+                func createHighlightOrUnderlineAnnotations(isHighlight: Bool, from splitRects: [[CGRect]], original: Annotation) -> [Annotation] {
                     guard splitRects.count > 1 else { return [original] }
-                    return splitRects.map { rects -> HighlightAnnotation in
-                        let new = HighlightAnnotation()
+                    return splitRects.map { rects -> Annotation in
+                        let new = isHighlight ? HighlightAnnotation() : UnderlineAnnotation()
                         new.rects = rects
                         new.boundingBox = AnnotationBoundingBoxCalculator.boundingBox(from: rects)
                         new.alpha = original.alpha
@@ -1589,7 +1593,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                     }
                 }
 
-                func createAnnotations(from splitPaths: [[[DrawingPoint]]], original: InkAnnotation) -> [InkAnnotation] {
+                func createInkAnnotations(from splitPaths: [[[DrawingPoint]]], original: InkAnnotation) -> [InkAnnotation] {
                     guard splitPaths.count > 1 else { return [original] }
                     return splitPaths.map { paths in
                         let new = InkAnnotation(lines: paths)
@@ -2352,7 +2356,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         if pdfAnnotation.baseColor != annotation.color {
             let hexColor = annotation.color
 
-            let (color, alpha, blendMode) = AnnotationColorGenerator.color(from: UIColor(hex: hexColor), isHighlight: (annotation.type == .highlight), userInterfaceStyle: interfaceStyle)
+            let (color, alpha, blendMode) = AnnotationColorGenerator.color(from: UIColor(hex: hexColor), type: annotation.type, userInterfaceStyle: interfaceStyle)
             pdfAnnotation.color = color
             pdfAnnotation.alpha = alpha
             if let blendMode {

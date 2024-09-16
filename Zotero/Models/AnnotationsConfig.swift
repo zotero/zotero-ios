@@ -13,6 +13,8 @@ import PSPDFKit
 struct AnnotationsConfig {
     static let defaultActiveColor = "#ffd400"
     static let allColors: [String] = ["#ffd400", "#ff6666", "#5fb236", "#2ea8e5", "#a28ae5", "#e56eee", "#f19837", "#aaaaaa", "#000000"]
+    static let typesWithColorVariation: [AnnotationType?] = [.none, .highlight, .underline]
+    static let userInterfaceStylesWithVarition: [UIUserInterfaceStyle] = [.light, .dark]
     static let colorNames: [String: String] = [
         "#ffd400": "Yellow",
         "#ff6666": "Red",
@@ -53,16 +55,14 @@ struct AnnotationsConfig {
 
     private static func createColorVariationMap() -> [String: String] {
         var map: [String: String] = [:]
-        for hexBaseColor in self.allColors {
+        for hexBaseColor in allColors {
             let baseColor = UIColor(hex: hexBaseColor)
-            let color1 = AnnotationColorGenerator.color(from: baseColor, isHighlight: false, userInterfaceStyle: .light).color
-            map[color1.hexString] = hexBaseColor
-            let color2 = AnnotationColorGenerator.color(from: baseColor, isHighlight: false, userInterfaceStyle: .dark).color
-            map[color2.hexString] = hexBaseColor
-            let color3 = AnnotationColorGenerator.color(from: baseColor, isHighlight: true, userInterfaceStyle: .light).color
-            map[color3.hexString] = hexBaseColor
-            let color4 = AnnotationColorGenerator.color(from: baseColor, isHighlight: true, userInterfaceStyle: .dark).color
-            map[color4.hexString] = hexBaseColor
+            for type in typesWithColorVariation {
+                for userInterfaceStyle in userInterfaceStylesWithVarition {
+                    let variation = AnnotationColorGenerator.color(from: baseColor, type: type, userInterfaceStyle: userInterfaceStyle).color
+                    map[variation.hexString] = hexBaseColor
+                }
+            }
         }
         return map
     }

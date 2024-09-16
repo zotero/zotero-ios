@@ -26,7 +26,7 @@ struct AnnotationConverter {
     /// - returns: Sort index (5 places for page, 6 places for character offset, 5 places for y position)
     static func sortIndex(from annotation: PSPDFKit.Annotation, boundingBoxConverter: AnnotationBoundingBoxConverter?) -> String {
         let rect: CGRect
-        if annotation is PSPDFKit.HighlightAnnotation {
+        if annotation is PSPDFKit.HighlightAnnotation || annotation is PSPDFKit.UnderlineAnnotation {
             rect = annotation.rects?.first ?? annotation.boundingBox
         } else {
             rect = annotation.boundingBox
@@ -243,7 +243,7 @@ struct AnnotationConverter {
     ) -> PSPDFKit.Annotation {
         let (color, alpha, blendMode) = AnnotationColorGenerator.color(
             from: UIColor(hex: zoteroAnnotation.color),
-            isHighlight: (zoteroAnnotation.type == .highlight),
+            type: zoteroAnnotation.type,
             userInterfaceStyle: interfaceStyle
         )
         let annotation: PSPDFKit.Annotation

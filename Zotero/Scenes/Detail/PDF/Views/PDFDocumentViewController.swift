@@ -94,9 +94,9 @@ final class PDFDocumentViewController: UIViewController {
         guard self.viewIfLoaded != nil else { return }
 
         coordinator.animate(alongsideTransition: { _ in
-            // Update highlight selection if needed
-            if let annotation = self.viewModel.state.selectedAnnotation, let pageIndex = self.pdfController?.pageIndex, let pageView = self.pdfController?.pageViewForPage(at: pageIndex) {
-                self.updateSelection(on: pageView, annotation: annotation)
+            // Update highlight/underline selection if needed
+            if let annotation = self.viewModel.state.selectedAnnotation, let pdfController = self.pdfController {
+                self.updateSelectionOnVisiblePages(of: pdfController, annotation: annotation)
             }
         }, completion: nil)
     }
@@ -162,8 +162,19 @@ final class PDFDocumentViewController: UIViewController {
 
         stateManager.setState(annotationTool, variant: nil)
 
-        if let color = color {
-            let (_color, _, blendMode) = AnnotationColorGenerator.color(from: color, isHighlight: (annotationTool == .highlight), userInterfaceStyle: self.viewModel.state.interfaceStyle)
+        if let color {
+            let type: AnnotationType?
+            switch annotationTool {
+            case .highlight:
+                type = .highlight
+
+            case .underline:
+                type = .underline
+
+            default:
+                type = nil
+            }
+            let (_color, _, blendMode) = AnnotationColorGenerator.color(from: color, type: type, userInterfaceStyle: viewModel.state.interfaceStyle)
             stateManager.drawColor = _color
             stateManager.blendMode = blendMode ?? .normal
         }
@@ -291,6 +302,12 @@ final class PDFDocumentViewController: UIViewController {
 
         case .ink:
             return .ink
+
+        case .underline:
+            return .underline
+
+        case .freeText:
+            return .freeText
 
         default:
             return nil
@@ -420,7 +437,18 @@ final class PDFDocumentViewController: UIViewController {
     }
 
     private func set(color: UIColor, for tool: PSPDFKit.Annotation.Tool, in stateManager: AnnotationStateManager) {
-        let toolColor = tool == .highlight ? AnnotationColorGenerator.color(from: color, isHighlight: true, userInterfaceStyle: self.viewModel.state.interfaceStyle).color : color
+        let type: AnnotationType?
+        switch tool {
+        case .highlight:
+            type = .highlight
+
+        case .underline:
+            type = .underline
+
+        default:
+            type = nil
+        }
+        let toolColor = AnnotationColorGenerator.color(from: color, type: type, userInterfaceStyle: viewModel.state.interfaceStyle).color
         stateManager.setLastUsedColor(toolColor, annotationString: tool)
         if stateManager.state == tool {
             stateManager.drawColor = toolColor
@@ -477,11 +505,9 @@ final class PDFDocumentViewController: UIViewController {
     /// - parameter pageIndex: Page index of page where (de)selection should happen.
     /// - parameter document: Active `Document` instance.
     private func select(annotation: PDFAnnotation?, pageIndex: PageIndex, document: PSPDFKit.Document) {
-        guard let pageView = self.pdfController?.pageViewForPage(at: pageIndex) else { return }
+        guard let pdfController, let pageView = updateSelectionOnVisiblePages(of: pdfController, annotation: annotation) ?? pdfController.pageViewForPage(at: pageIndex) else { return }
 
-        self.updateSelection(on: pageView, annotation: annotation)
-
-        if let annotation = annotation, let pdfAnnotation = document.annotation(on: Int(pageIndex), with: annotation.key) {
+        if let annotation, let pdfAnnotation = document.annotation(on: Int(pageView.pageIndex), with: annotation.key) {
             if !pageView.selectedAnnotations.contains(pdfAnnotation) {
                 pageView.selectedAnnotations = [pdfAnnotation]
             }
@@ -500,21 +526,25 @@ final class PDFDocumentViewController: UIViewController {
         }
     }
 
-    /// Updates `SelectionView` for `PDFPageView` based on selected annotation.
-    /// - parameter pageView: `PDFPageView` instance for given page.
-    /// - parameter selectedAnnotation: Selected annotation or `nil` if there is no selection.
-    private func updateSelection(on pageView: PDFPageView, annotation: PDFAnnotation?) {
-        // Delete existing custom highlight selection view
-        if let view = self.selectionView {
-            view.removeFromSuperview()
-        }
+    /// Updates `SelectionView` for visible `PDFPageView`s of `PDFViewController` based on selected annotation.
+    /// - parameter pdfController: `PDFViewController` instance for given PDF view controller.
+    /// - parameter selectedAnnotation: `PDFAnnotation` Selected annotation or `nil` if there is no selection.
+    /// - returns: Returns the affected`PDFPageView` if a `SelectionView` was added, otherwise `nil`
+    @discardableResult
+    private func updateSelectionOnVisiblePages(of pdfController: PDFViewController, annotation: PDFAnnotation?) -> PDFPageView? {
+        // Delete existing custom highlight/underline selection view
+        selectionView?.removeFromSuperview()
 
-        guard let selection = annotation, (selection.type == .highlight || selection.type == .underline) && selection.page == Int(pageView.pageIndex) else { return }
-        // Add custom highlight selection view if needed
+        guard let selection = annotation,
+              selection.type == .highlight || selection.type == .underline,
+              let pageView = pdfController.visiblePageViews.first(where: { $0.pageIndex == PageIndex(selection.page) })
+        else { return nil }
+        // Add custom highlight/underline selection view if needed
         let frame = pageView.convert(selection.boundingBox(boundingBoxConverter: self), from: pageView.pdfCoordinateSpace)
         let selectionView = SelectionView(frame: frame)
         pageView.annotationContainerView.addSubview(selectionView)
         self.selectionView = selectionView
+        return pageView
     }
 
     // MARK: - Setups
@@ -582,10 +612,9 @@ final class PDFDocumentViewController: UIViewController {
             builder.showForwardActionButton = false
             builder.contentMenuConfiguration = ContentMenuConfiguration {
                 $0.annotationToolChoices = { _, _, _, _ in
-                    return [.highlight]
+                    return [.highlight, .underline]
                 }
             }
-            builder.freeTextAccessoryViewEnabled = false
             builder.scrubberBarType = .horizontal
 //            builder.thumbnailBarMode = .scrubberBar
             builder.markupAnnotationMergeBehavior = .never
@@ -785,11 +814,16 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
                     }
 
                 case .PSPDFKit.annotate:
-                    let actions = [
-                        action.replacing(title: L10n.Pdf.highlight, handler: createHighlightActionHandler(for: pageView, in: viewModel)),
-                        UIAction(title: L10n.Pdf.underline, identifier: .underline, handler: createUnderlineActionHandler(for: pageView, in: viewModel))
-                    ]
-                    return UIMenu(options: [.displayInline], children: actions)
+                    switch action.identifier {
+                    case .pspdfkitAnnotationToolHighlight:
+                        return action.replacing(title: L10n.Pdf.highlight, handler: createHighlightActionHandler(for: pageView, in: viewModel))
+
+                    case .pspdfkitAnnotationToolUnderline:
+                        return action.replacing(title: L10n.Pdf.underline, handler: createUnderlineActionHandler(for: pageView, in: viewModel))
+
+                    default:
+                        return action
+                    }
 
                 default:
                     return action
@@ -799,8 +833,8 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
                 switch menu.identifier {
                 case .PSPDFKit.annotate:
                     return [
-                        UIAction(title: L10n.Pdf.highlight, handler: createHighlightActionHandler(for: pageView, in: viewModel)),
-                        UIAction(title: L10n.Pdf.underline, identifier: .underline, handler: createUnderlineActionHandler(for: pageView, in: viewModel))
+                        UIAction(title: L10n.Pdf.highlight, identifier: .pspdfkitAnnotationToolHighlight, handler: createHighlightActionHandler(for: pageView, in: viewModel)),
+                        UIAction(title: L10n.Pdf.underline, identifier: .pspdfkitAnnotationToolUnderline, handler: createUnderlineActionHandler(for: pageView, in: viewModel))
                     ]
 
                 default:
@@ -931,9 +965,8 @@ extension PDFDocumentViewController: UIPencilInteractionDelegate {
 
 extension PDFDocumentViewController: UIPopoverPresentationControllerDelegate {
     func popoverPresentationControllerDidDismissPopover(_ popoverPresentationController: UIPopoverPresentationController) {
-        if self.viewModel.state.selectedAnnotation?.type == .highlight {
-            self.viewModel.process(action: .deselectSelectedAnnotation)
-        }
+        guard let type = viewModel.state.selectedAnnotation?.type, type == .highlight || type == .underline else { return }
+        viewModel.process(action: .deselectSelectedAnnotation)
     }
 }
 
@@ -1122,5 +1155,6 @@ extension UIAction {
 }
 
 extension UIAction.Identifier {
-    fileprivate static let underline = UIAction.Identifier(rawValue: "org.zotero.menu")
+    fileprivate static let pspdfkitAnnotationToolHighlight = UIAction.Identifier(rawValue: "com.pspdfkit.action.annotation-tool-Highlight")
+    fileprivate static let pspdfkitAnnotationToolUnderline = UIAction.Identifier(rawValue: "com.pspdfkit.action.annotation-tool-Underline")
 }
