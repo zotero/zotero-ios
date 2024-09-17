@@ -499,7 +499,6 @@ final class ItemsViewController: UIViewController {
             var image: UIImage?
             var title: String?
             let primaryAction: UIAction?
-            var menu: UIMenu?
             let accessibilityLabel: String
             
             switch type {
@@ -548,7 +547,7 @@ final class ItemsViewController: UIViewController {
                 }
             }
             
-            let item = UIBarButtonItem(title: title, image: image, primaryAction: primaryAction, menu: menu)
+            let item = UIBarButtonItem(title: title, image: image, primaryAction: primaryAction)
             item.tag = type.rawValue
             item.accessibilityLabel = accessibilityLabel
             return item

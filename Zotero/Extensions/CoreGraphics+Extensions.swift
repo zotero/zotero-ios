@@ -59,7 +59,7 @@ extension CGPoint {
     }
 }
 
-extension CGSize: Hashable {
+extension CGSize: @retroactive Hashable {
     public func hash(into hasher: inout Hasher) {
         hasher.combine(width)
         hasher.combine(height)

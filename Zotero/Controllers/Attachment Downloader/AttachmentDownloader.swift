@@ -158,11 +158,7 @@ final class AttachmentDownloader: NSObject {
             .disposed(by: disposeBag)
 
         func resumeDownloads(tasks: [URLSessionTask], downloader: AttachmentDownloader) {
-            var taskIds: Set<Int> = []
-            for task in tasks {
-                taskIds.insert(task.taskIdentifier)
-            }
-
+            let taskIds: Set<Int> = Set(tasks.map { $0.taskIdentifier })
             downloader.dbQueue.async { [weak downloader] in
                 guard let downloader else { return }
                 let (cancelledTaskIds, activeDownloads, downloadsToRestore) = loadDatabaseDownloads(
@@ -216,7 +212,7 @@ final class AttachmentDownloader: NSObject {
                 }
             }
 
-            func loadDatabaseDownloads(existingTaskIds: Set<Int>, dbStorage: DbStorage, dbQueue: DispatchQueue, fileStorage: FileStorage) -> (Set<Int>, [(Int, EnqueuedDownload)], [EnqueuedDownload]) {
+            @Sendable func loadDatabaseDownloads(existingTaskIds: Set<Int>, dbStorage: DbStorage, dbQueue: DispatchQueue, fileStorage: FileStorage) -> (Set<Int>, [(Int, EnqueuedDownload)], [EnqueuedDownload]) {
                 var cancelledTaskIds: Set<Int> = []
                 var activeDownloads: [(Int, EnqueuedDownload)] = []
                 var downloadsToRestore: [EnqueuedDownload] = []
@@ -258,7 +254,7 @@ final class AttachmentDownloader: NSObject {
                 return (cancelledTaskIds, activeDownloads, downloadsToRestore)
             }
 
-            func storeDownloadData(for downloads: [(Int, EnqueuedDownload)], downloader: AttachmentDownloader) -> [(Download, Swift.Error)] {
+            @Sendable func storeDownloadData(for downloads: [(Int, EnqueuedDownload)], downloader: AttachmentDownloader) -> [(Download, Swift.Error)] {
                 var failed: [(Download, Swift.Error)] = []
                 for (taskId, enqueuedDownload) in downloads {
                     DDLogInfo("AttachmentDownloader: cached \(taskId); \(enqueuedDownload.download.key); (\(enqueuedDownload.download.parentKey ?? "-")); \(enqueuedDownload.download.libraryId)")
@@ -445,8 +441,8 @@ final class AttachmentDownloader: NSObject {
     func downloadIfNeeded(attachment: Attachment, parentKey: String?, scheduler: SchedulerType = MainScheduler.instance, completion: @escaping (Result<(), Swift.Error>) -> Void) {
         observable
             .observe(on: scheduler)
-            .subscribe(onNext: { [weak self] update in
-                guard let self, update.libraryId == attachment.libraryId && update.key == attachment.key else { return }
+            .subscribe(onNext: { update in
+                guard update.libraryId == attachment.libraryId && update.key == attachment.key else { return }
                 switch update.kind {
                 case .ready:
                     completion(.success(()))

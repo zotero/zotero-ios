@@ -525,7 +525,7 @@ final class IdentifierLookupController {
                 }
             }
 
-            func cleanup(completion: @escaping (Bool) -> Void) {
+            @Sendable func cleanup(completion: @escaping (Bool) -> Void) {
                 lookupData = [:]
                 lookupSavedCount = 0
                 lookupFailedCount = 0

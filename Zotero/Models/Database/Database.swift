@@ -101,7 +101,7 @@ struct Database {
                   let fields = oldObject["fields"] as? List<MigrationObject>,
                   let index = fields.firstIndex(where: { $0["key"] as? String == FieldKeys.Item.Annotation.color }),
                   let color = fields[index]["value"] as? String,
-                  let newColor = AnnotationsConfig.colorVariationMap[color],
+                  let newColor = colorVariationMap[color],
                   color != newColor
             else { return }
 

@@ -12,7 +12,7 @@ import Alamofire
 import RxSwift
 import CocoaLumberjackSwift
 
-class RemoteAttachmentDownloadOperation: AsynchronousOperation {
+class RemoteAttachmentDownloadOperation: AsynchronousOperation, @unchecked Sendable {
     private enum State {
         case downloading, done
     }
