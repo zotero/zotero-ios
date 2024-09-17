@@ -118,67 +118,100 @@ final class DetailCoordinator: Coordinator {
     func start(animated: Bool) {
         guard let userControllers = controllers.userControllers else { return }
         DDLogInfo("DetailCoordinator: show items for \(collection.id); \(libraryId)")
-        let controller = createItemsViewController(
-            collection: collection,
-            libraryId: libraryId,
-            dbStorage: userControllers.dbStorage,
-            fileDownloader: userControllers.fileDownloader,
-            remoteFileDownloader: userControllers.remoteFileDownloader,
-            identifierLookupController: userControllers.identifierLookupController,
-            syncScheduler: userControllers.syncScheduler,
-            citationController: userControllers.citationController,
-            fileCleanupController: userControllers.fileCleanupController,
-            itemsTagFilterDelegate: itemsTagFilterDelegate,
-            htmlAttributedStringConverter: controllers.htmlAttributedStringConverter
-        )
+
+        let controller: UIViewController
+        switch collection.identifier {
+        case .custom(let type):
+            switch type {
+            case .trash:
+                controller = createTrashViewController(libraryId: libraryId, dbStorage: userControllers.dbStorage, fileStorage: controllers.fileStorage, urlDetector: controllers.urlDetector)
+
+            case .all, .publications, .unfiled:
+                controller = createItemsViewController(
+                    collection: collection,
+                    libraryId: libraryId,
+                    dbStorage: userControllers.dbStorage,
+                    fileDownloader: userControllers.fileDownloader,
+                    remoteFileDownloader: userControllers.remoteFileDownloader,
+                    identifierLookupController: userControllers.identifierLookupController,
+                    syncScheduler: userControllers.syncScheduler,
+                    citationController: userControllers.citationController,
+                    fileCleanupController: userControllers.fileCleanupController,
+                    itemsTagFilterDelegate: itemsTagFilterDelegate,
+                    htmlAttributedStringConverter: controllers.htmlAttributedStringConverter
+                )
+            }
+
+        case .collection, .search:
+            controller = createItemsViewController(
+                collection: collection,
+                libraryId: libraryId,
+                dbStorage: userControllers.dbStorage,
+                fileDownloader: userControllers.fileDownloader,
+                remoteFileDownloader: userControllers.remoteFileDownloader,
+                identifierLookupController: userControllers.identifierLookupController,
+                syncScheduler: userControllers.syncScheduler,
+                citationController: userControllers.citationController,
+                fileCleanupController: userControllers.fileCleanupController,
+                itemsTagFilterDelegate: itemsTagFilterDelegate,
+                htmlAttributedStringConverter: controllers.htmlAttributedStringConverter
+            )
+        }
+
         navigationController?.setViewControllers([controller], animated: animated)
-    }
 
-    private func createItemsViewController(
-        collection: Collection,
-        libraryId: LibraryIdentifier,
-        dbStorage: DbStorage,
-        fileDownloader: AttachmentDownloader,
-        remoteFileDownloader: RemoteAttachmentDownloader,
-        identifierLookupController: IdentifierLookupController,
-        syncScheduler: SynchronizationScheduler,
-        citationController: CitationController,
-        fileCleanupController: AttachmentFileCleanupController,
-        itemsTagFilterDelegate: ItemsTagFilterDelegate?,
-        htmlAttributedStringConverter: HtmlAttributedStringConverter
-    ) -> ItemsViewController {
-        itemsTagFilterDelegate?.clearSelection()
+        func createTrashViewController(libraryId: LibraryIdentifier, dbStorage: DbStorage, fileStorage: FileStorage, urlDetector: UrlDetector) -> TrashViewController {
+            let state = TrashState(libraryId: libraryId)
+            let handler = TrashActionHandler(dbStorage: dbStorage, fileStorage: fileStorage, urlDetector: urlDetector)
+            return TrashViewController(viewModel: ViewModel(initialState: state, handler: handler))
+        }
 
-        let searchTerm = self.searchItemKeys?.joined(separator: " ")
-        let downloadBatchData = ItemsState.DownloadBatchData(batchData: fileDownloader.batchData)
-        let remoteDownloadBatchData = ItemsState.DownloadBatchData(batchData: remoteFileDownloader.batchData)
-        let identifierLookupBatchData = ItemsState.IdentifierLookupBatchData(batchData: identifierLookupController.batchData)
-        let state = ItemsState(
-            collection: collection,
-            libraryId: libraryId,
-            sortType: .default,
-            searchTerm: searchTerm,
-            filters: [],
-            downloadBatchData: downloadBatchData,
-            remoteDownloadBatchData: remoteDownloadBatchData,
-            identifierLookupBatchData: identifierLookupBatchData,
-            error: nil
-        )
-        let handler = ItemsActionHandler(
-            dbStorage: dbStorage,
-            fileStorage: self.controllers.fileStorage,
-            schemaController: self.controllers.schemaController,
-            urlDetector: self.controllers.urlDetector,
-            fileDownloader: fileDownloader,
-            citationController: citationController,
-            fileCleanupController: fileCleanupController,
-            syncScheduler: syncScheduler,
-            htmlAttributedStringConverter: htmlAttributedStringConverter
-        )
-        let controller = ItemsViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: self.controllers, coordinatorDelegate: self)
-        controller.tagFilterDelegate = itemsTagFilterDelegate
-        itemsTagFilterDelegate?.delegate = controller
-        return controller
+        func createItemsViewController(
+            collection: Collection,
+            libraryId: LibraryIdentifier,
+            dbStorage: DbStorage,
+            fileDownloader: AttachmentDownloader,
+            remoteFileDownloader: RemoteAttachmentDownloader,
+            identifierLookupController: IdentifierLookupController,
+            syncScheduler: SynchronizationScheduler,
+            citationController: CitationController,
+            fileCleanupController: AttachmentFileCleanupController,
+            itemsTagFilterDelegate: ItemsTagFilterDelegate?,
+            htmlAttributedStringConverter: HtmlAttributedStringConverter
+        ) -> ItemsViewController {
+            itemsTagFilterDelegate?.clearSelection()
+
+            let searchTerm = self.searchItemKeys?.joined(separator: " ")
+            let downloadBatchData = ItemsState.DownloadBatchData(batchData: fileDownloader.batchData)
+            let remoteDownloadBatchData = ItemsState.DownloadBatchData(batchData: remoteFileDownloader.batchData)
+            let identifierLookupBatchData = ItemsState.IdentifierLookupBatchData(batchData: identifierLookupController.batchData)
+            let state = ItemsState(
+                collection: collection,
+                libraryId: libraryId,
+                sortType: .default,
+                searchTerm: searchTerm,
+                filters: [],
+                downloadBatchData: downloadBatchData,
+                remoteDownloadBatchData: remoteDownloadBatchData,
+                identifierLookupBatchData: identifierLookupBatchData,
+                error: nil
+            )
+            let handler = ItemsActionHandler(
+                dbStorage: dbStorage,
+                fileStorage: self.controllers.fileStorage,
+                schemaController: self.controllers.schemaController,
+                urlDetector: self.controllers.urlDetector,
+                fileDownloader: fileDownloader,
+                citationController: citationController,
+                fileCleanupController: fileCleanupController,
+                syncScheduler: syncScheduler,
+                htmlAttributedStringConverter: htmlAttributedStringConverter
+            )
+            let controller = ItemsViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: self.controllers, coordinatorDelegate: self)
+            controller.tagFilterDelegate = itemsTagFilterDelegate
+            itemsTagFilterDelegate?.delegate = controller
+            return controller
+        }
     }
 
     func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier) {
