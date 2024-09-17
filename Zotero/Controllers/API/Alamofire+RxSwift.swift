@@ -12,7 +12,7 @@ import Alamofire
 import CocoaLumberjackSwift
 import RxSwift
 
-struct AFResponseError: Error {
+struct AFResponseError: Error, @unchecked Sendable {
     let url: URL?
     let httpMethod: String?
     let error: AFError
@@ -114,7 +114,7 @@ extension DataRequest {
     }
 }
 
-extension Request: ReactiveCompatible {}
+extension Request: @retroactive ReactiveCompatible {}
 
 extension Reactive where Base: DataRequest {
     func loggedResponseDataWithResponseError(queue: DispatchQueue, encoding: ApiParameterEncoding, logParams: ApiLogParameters) -> Observable<(Data?, HTTPURLResponse)> {

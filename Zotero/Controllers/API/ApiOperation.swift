@@ -10,7 +10,7 @@ import Foundation
 
 import RxSwift
 
-class ApiOperation: AsynchronousOperation {
+class ApiOperation: AsynchronousOperation, @unchecked Sendable {
     private let apiRequest: ApiRequest
     private let responseQueue: DispatchQueue
     private let completion: (Swift.Result<(Data?, HTTPURLResponse), Error>) -> Void

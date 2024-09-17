@@ -146,7 +146,7 @@ final class RemoteAttachmentDownloader {
 
             return (download, operation)
             
-            func finish(download: Download, file: File, attachment: Attachment, parentKey: String, result: Result<(), Swift.Error>) {
+            @Sendable func finish(download: Download, file: File, attachment: Attachment, parentKey: String, result: Result<(), Swift.Error>) {
                 operations[download] = nil
                 progressObservers[download] = nil
                 resetBatchDataIfNeeded()
@@ -171,7 +171,7 @@ final class RemoteAttachmentDownloader {
                 }
             }
             
-            func observe(progress: Progress, attachment: Attachment, download: Download) {
+            @Sendable func observe(progress: Progress, attachment: Attachment, download: Download) {
                 let observer = progress.observe(\.fractionCompleted) { [weak self] progress, _ in
                     self?.observable.on(.next(Update(download: download, kind: .progress(CGFloat(progress.fractionCompleted)))))
                 }

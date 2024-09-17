@@ -953,12 +953,14 @@ extension PDFDocumentViewController: UIPencilInteractionDelegate {
             let color = viewModel.state.toolColors[previous]
             toggle(annotationTool: previous, color: color, tappedWithStylus: true)
 
-        case .showColorPalette, .showInkAttributes:
+        case .showColorPalette, .showInkAttributes, .showContextualPalette:
             self.parentDelegate?.showToolOptions()
 
-        case .ignore: break
+        case .runSystemShortcut, .ignore:
+            break
 
-        @unknown default: break
+        @unknown default:
+            break
         }
     }
 }
