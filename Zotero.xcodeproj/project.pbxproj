@@ -858,7 +858,6 @@
 		B398A917270C6A5B00968EE8 /* WebDavSessionStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B398A916270C6A5B00968EE8 /* WebDavSessionStorage.swift */; };
 		B398D6C02A77F9C60049A296 /* FontSizeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B398D6BF2A77F9C60049A296 /* FontSizeView.swift */; };
 		B39ADE712C4AAB090006FA79 /* OrderedDictionary+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39ADE702C4AAB030006FA79 /* OrderedDictionary+Utils.swift */; };
-		B39ADE722C4AAB090006FA79 /* OrderedDictionary+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39ADE702C4AAB030006FA79 /* OrderedDictionary+Utils.swift */; };
 		B39AF554290033CD001F400F /* TableOfContentsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39AF553290033CD001F400F /* TableOfContentsViewController.swift */; };
 		B39B18E8223947050019F467 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39B18E7223947050019F467 /* main.swift */; };
 		B39C9AB7252B589F00462D27 /* Threading+Extras.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650423FC051E003304F2 /* Threading+Extras.swift */; };
@@ -5764,7 +5763,6 @@
 				B353F1FC242E23680062EE24 /* ResetTranslatorsDbRequest.swift in Sources */,
 				B37080532AA7216E006F56B9 /* Localizable.swift in Sources */,
 				B3AB43A927E8A81D006F3E4E /* Dictionary+Extensions.swift in Sources */,
-				B39ADE722C4AAB090006FA79 /* OrderedDictionary+Utils.swift in Sources */,
 				B36459E0264411AC00A0C2C0 /* ViewModel.swift in Sources */,
 				B32EBFC3276A892E0003897E /* BackgroundUploader.swift in Sources */,
 				B3902DE62480DBB7007EE48E /* DateParser.swift in Sources */,

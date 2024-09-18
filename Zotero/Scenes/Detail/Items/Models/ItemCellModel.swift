@@ -40,6 +40,26 @@ struct ItemCellModel {
         self.tagEmojis = emojis
     }
 
+    init(item: RItem, typeName: String, title: NSAttributedString, accessory: ItemAccessory?, fileDownloader: AttachmentDownloader?) {
+        self.init(item: item, typeName: typeName, title: title, accessory: Self.createAccessory(from: accessory, fileDownloader: fileDownloader))
+    }
+
+    static func createAccessory(from accessory: ItemAccessory?, fileDownloader: AttachmentDownloader?) -> ItemCellModel.Accessory? {
+        return accessory.flatMap({ accessory -> ItemCellModel.Accessory in
+            switch accessory {
+            case .attachment(let attachment, let parentKey):
+                let (progress, error) = fileDownloader?.data(for: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId) ?? (nil, nil)
+                return .attachment(.stateFrom(type: attachment.type, progress: progress, error: error))
+
+            case .doi:
+                return .doi
+
+            case .url:
+                return .url
+            }
+        })
+    }
+
     static func hasNote(item: RItem) -> Bool {
         return !item.children
             .filter(.items(type: ItemTypes.note, notSyncState: .dirty))
