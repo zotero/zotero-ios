@@ -63,7 +63,6 @@ final class TrashViewController: UIViewController {
     }
 
     private func update(state: TrashState) {
-
     }
 }
 
@@ -72,43 +71,20 @@ extension TrashViewController: ItemsTableViewHandlerDelegate {
         return view.window != nil
     }
     
+    var collectionKey: String? {
+        return nil
+    }
+    
     var library: Library {
         return viewModel.state.library
     }
     
-    var selectedItems: Set<String> {
-        return []
+    func process(action: ItemAction.Kind, at index: Int, completionAction: ((Bool) -> Void)?) {
     }
     
-    func model(for item: RItem) -> ItemCellModel {
-        // Create and cache attachment if needed
-//        viewModel.process(action: .cacheItemAccessory(item: item))
-
-//        let title: NSAttributedString
-//        if let _title = viewModel.state.itemTitles[item.key] {
-//            title = _title
-//        } else {
-//            viewModel.process(action: .cacheItemTitle(key: item.key, title: item.displayTitle))
-//            title = viewModel.state.itemTitles[item.key, default: NSAttributedString()]
-//        }
-
-//        let accessory = viewModel.state.itemAccessories[item.key]
-        let tmpTitle = NSAttributedString(string: item.displayTitle)
-        let typeName = controllers.schemaController.localized(itemType: item.rawType) ?? item.rawType
-        return ItemCellModel(item: item, typeName: typeName, title: tmpTitle, accessory: nil, fileDownloader: controllers.userControllers?.fileDownloader)
+    func process(tapAction action: ItemsTableViewHandler.TapAction) {
     }
     
-    func accessory(forKey key: String) -> ItemAccessory? {
-        return nil
-    }
-    
-    func process(tapAction: ItemsTableViewHandler.TapAction) {
-    }
-    
-    func process(action: ItemAction.Kind, for item: RItem, completionAction: ((Bool) -> Void)?) {
-    }
-    
-    func createContextMenuActions(for item: RItem) -> [ItemAction] {
-        return []
+    func process(dragAndDropAction action: ItemsTableViewHandler.DragAndDropAction) {
     }
 }
