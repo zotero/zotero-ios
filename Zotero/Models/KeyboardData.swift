@@ -15,7 +15,10 @@ struct KeyboardData {
     let animationOptions: UIView.AnimationOptions
 
     var visibleHeight: CGFloat {
-        return UIScreen.main.bounds.height - self.endFrame.minY
+        // endFrame.height might be 0 for a floating keyboard that is hiding, so return 0 for this case.
+        // Additionally, floating keyboard will not reach the end of the screen, therefore we can ignore it.
+        guard endFrame.height > 0, endFrame.maxY >= UIScreen.main.bounds.height else { return 0 }
+        return UIScreen.main.bounds.height - endFrame.minY
     }
 
     init?(userInfo: [AnyHashable: Any]) {
