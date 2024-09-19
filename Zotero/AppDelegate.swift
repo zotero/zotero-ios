@@ -58,44 +58,6 @@ final class AppDelegate: UIResponder {
         UserDefaults.standard.removeObject(forKey: "ItemsSortType")
     }
 
-    /// This migration was created to move from "old" file structure (before build 120) to "new" one, where items are stored with their proper filenames.
-    /// In `DidMigrateFileStructure` all downloaded items were moved. Items which were up for upload were forgotten, so `DidMigrateFileStructure2` was added to migrate also these items.
-    /// TODO: - Remove after beta
-    private func migrateFileStructure(queue: DispatchQueue) {
-        let didMigrateFileStructure = UserDefaults.standard.bool(forKey: "DidMigrateFileStructure")
-        let didMigrateFileStructure2 = UserDefaults.standard.bool(forKey: "DidMigrateFileStructure2")
-
-        guard !didMigrateFileStructure || !didMigrateFileStructure2 else { return }
-
-        guard let dbStorage = self.controllers.userControllers?.dbStorage else {
-            // If user is logget out, no need to migrate, DB is empty and files should be gone.
-            UserDefaults.standard.setValue(true, forKey: "DidMigrateFileStructure")
-            UserDefaults.standard.setValue(true, forKey: "DidMigrateFileStructure2")
-            return
-        }
-
-        // Migrate file structure
-        if !didMigrateFileStructure && !didMigrateFileStructure2 {
-            if let items = try? self.readAttachmentTypes(for: ReadAllDownloadedAndForUploadItemsDbRequest(), dbStorage: dbStorage, queue: queue) {
-                self.migrateFileStructure(for: items)
-            }
-            UserDefaults.standard.setValue(true, forKey: "DidMigrateFileStructure")
-            UserDefaults.standard.setValue(true, forKey: "DidMigrateFileStructure2")
-        } else if !didMigrateFileStructure {
-            if let items = try? self.readAttachmentTypes(for: ReadAllDownloadedItemsDbRequest(), dbStorage: dbStorage, queue: queue) {
-                self.migrateFileStructure(for: items)
-            }
-            UserDefaults.standard.setValue(true, forKey: "DidMigrateFileStructure")
-        } else if !didMigrateFileStructure2 {
-            if let items = try? self.readAttachmentTypes(for: ReadAllItemsForUploadDbRequest(), dbStorage: dbStorage, queue: queue) {
-                self.migrateFileStructure(for: items)
-            }
-            UserDefaults.standard.setValue(true, forKey: "DidMigrateFileStructure2")
-        }
-
-        NotificationCenter.default.post(name: .forceReloadItems, object: nil)
-    }
-
     private func readAttachmentTypes<Request: DbResponseRequest>(for request: Request, dbStorage: DbStorage, queue: DispatchQueue) throws -> [(String, LibraryIdentifier, Attachment.Kind)] where Request.Response == Results<RItem> {
         var types: [(String, LibraryIdentifier, Attachment.Kind)] = []
 
@@ -111,28 +73,6 @@ final class AppDelegate: UIResponder {
         })
 
         return types
-    }
-
-    private func migrateFileStructure(for items: [(String, LibraryIdentifier, Attachment.Kind)]) {
-        for (key, libraryId, type) in items {
-            switch type {
-            case .url: break
-            case .file(_, _, _, let linkType, _) where (linkType == .embeddedImage || linkType == .linkedFile): break // Embedded images and linked files don't need to be checked.
-            case .file(let filename, let contentType, _, let linkType, _):
-                // Snapshots were stored based on new structure, no need to do anything.
-                guard linkType != .importedUrl || contentType != "text/html" else { continue }
-
-                let filenameParts = filename.split(separator: ".")
-                let oldFile: File
-                if filenameParts.count > 1, let ext = filenameParts.last.flatMap(String.init) {
-                    oldFile = FileData(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName], name: key, ext: ext)
-                } else {
-                    oldFile = FileData(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName], name: key, contentType: contentType)
-                }
-                let newFile = Files.attachmentFile(in: libraryId, key: key, filename: filename, contentType: contentType)
-                try? self.controllers.fileStorage.move(from: oldFile, to: newFile)
-            }
-        }
     }
 
     private func removeFinishedUploadFiles(queue: DispatchQueue) {
@@ -287,7 +227,6 @@ extension AppDelegate: UIApplicationDelegate {
 
         let queue = DispatchQueue(label: "org.zotero.AppDelegateMigration", qos: .userInitiated)
         queue.async {
-            self.migrateFileStructure(queue: queue)
             self.removeFinishedUploadFiles(queue: queue)
             self.updateCreatorSummaryFormat(queue: queue)
         }

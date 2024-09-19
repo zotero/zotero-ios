@@ -163,7 +163,7 @@ final class DetailCoordinator: Coordinator {
         func createTrashViewController(libraryId: LibraryIdentifier, dbStorage: DbStorage, fileStorage: FileStorage, urlDetector: UrlDetector) -> TrashViewController {
             let state = TrashState(libraryId: libraryId)
             let handler = TrashActionHandler(dbStorage: dbStorage, fileStorage: fileStorage, urlDetector: urlDetector)
-            return TrashViewController(viewModel: ViewModel(initialState: state, handler: handler))
+            return TrashViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: controllers)
         }
 
         func createItemsViewController(

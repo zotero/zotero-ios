@@ -31,6 +31,7 @@ final class ItemsViewController: UIViewController {
     private unowned let controllers: Controllers
     private let disposeBag: DisposeBag
 
+    private var tableViewDataSource: RItemsTableViewDataSource!
     private var tableViewHandler: ItemsTableViewHandler!
     private var toolbarController: ItemsToolbarController!
     private var resultsToken: NotificationToken?
@@ -58,7 +59,8 @@ final class ItemsViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        tableViewHandler = ItemsTableViewHandler(tableView: tableView, delegate: self, dragDropController: controllers.dragDropController)
+        tableViewDataSource = RItemsTableViewDataSource(viewModel: viewModel, fileDownloader: controllers.userControllers?.fileDownloader, schemaController: controllers.schemaController)
+        tableViewHandler = ItemsTableViewHandler(tableView: tableView, delegate: self, dataSource: tableViewDataSource, dragDropController: controllers.dragDropController)
         self.toolbarController = ItemsToolbarController(viewController: self, initialState: self.viewModel.state, delegate: self)
         self.navigationController?.toolbar.barTintColor = UIColor(dynamicProvider: { traitCollection in
             return traitCollection.userInterfaceStyle == .dark ? .black : .white
@@ -127,7 +129,7 @@ final class ItemsViewController: UIViewController {
         if state.changes.contains(.results), let results = state.results {
             self.startObserving(results: results)
         } else if state.changes.contains(.attachmentsRemoved) {
-            self.tableViewHandler.reloadAllAttachments()
+            tableViewHandler.attachmentAccessoriesChanged()
         } else if let key = state.updateItemKey {
             let accessory = state.itemAccessories[key].flatMap({ ItemCellModel.createAccessory(from: $0, fileDownloader: controllers.userControllers?.fileDownloader) })
             self.tableViewHandler.updateCell(key: key, withAccessory: accessory)
@@ -181,9 +183,11 @@ final class ItemsViewController: UIViewController {
         switch error {
         case .itemMove, .deletion, .deletionFromCollection:
             if let snapshot = state.results {
-                self.tableViewHandler.reloadAll(snapshot: snapshot.freeze())
+                tableViewDataSource.apply(snapshot: snapshot.freeze())
             }
-        case .dataLoading, .collectionAssignment, .noteSaving, .attachmentAdding, .duplicationLoading: break
+
+        case .dataLoading, .collectionAssignment, .noteSaving, .attachmentAdding, .duplicationLoading:
+            break
         }
 
         // Show appropriate message
@@ -274,25 +278,24 @@ final class ItemsViewController: UIViewController {
     }
 
     private func startObserving(results: Results<RItem>) {
-        self.resultsToken = results.observe(keyPaths: RItem.observableKeypathsForItemList, { [weak self] changes in
+        resultsToken = results.observe(keyPaths: RItem.observableKeypathsForItemList, { [weak self] changes in
             guard let self else { return }
-
             switch changes {
             case .initial(let results):
-                self.tableViewHandler.reloadAll(snapshot: results.freeze())
-                self.updateTagFilter(with: self.viewModel.state)
+                tableViewDataSource.apply(snapshot: results.freeze())
+                updateTagFilter(with: self.viewModel.state)
 
             case .update(let results, let deletions, let insertions, let modifications):
                 let correctedModifications = Database.correctedModifications(from: modifications, insertions: insertions, deletions: deletions)
-                self.viewModel.process(action: .updateKeys(items: results, deletions: deletions, insertions: insertions, modifications: correctedModifications))
-                self.tableViewHandler.reload(snapshot: results.freeze(), modifications: modifications, insertions: insertions, deletions: deletions) {
+                viewModel.process(action: .updateKeys(items: results, deletions: deletions, insertions: insertions, modifications: correctedModifications))
+                tableViewDataSource.apply(snapshot: results.freeze(), modifications: modifications, insertions: insertions, deletions: deletions) {
                     self.updateTagFilter(with: self.viewModel.state)
                 }
-                self.updateEmptyTrashButton(toEnabled: viewModel.state.library.metadataEditable && !results.isEmpty)
+                updateEmptyTrashButton(toEnabled: viewModel.state.library.metadataEditable && !results.isEmpty)
 
             case .error(let error):
                 DDLogError("ItemsViewController: could not load results - \(error)")
-                self.viewModel.process(action: .observingFailed)
+                viewModel.process(action: .observingFailed)
             }
         })
     }
@@ -528,10 +531,6 @@ final class ItemsViewController: UIViewController {
 }
 
 extension ItemsViewController: ItemsTableViewHandlerDelegate {
-    var isTrash: Bool {
-        return false
-    }
-    
     var collectionKey: String? {
         return viewModel.state.collection.identifier.key
     }
@@ -543,90 +542,13 @@ extension ItemsViewController: ItemsTableViewHandlerDelegate {
     var library: Library {
         viewModel.state.library
     }
-    
-    var selectedItems: Set<String> {
-        viewModel.state.selectedItems
-    }
-    
-    func model(for item: RItem) -> ItemCellModel {
-        // Create and cache attachment if needed
-        viewModel.process(action: .cacheItemAccessory(item: item))
-
-        let title: NSAttributedString
-        if let _title = viewModel.state.itemTitles[item.key] {
-            title = _title
-        } else {
-            viewModel.process(action: .cacheItemTitle(key: item.key, title: item.displayTitle))
-            title = viewModel.state.itemTitles[item.key, default: NSAttributedString()]
-        }
-
-        let accessory = viewModel.state.itemAccessories[item.key]
-        let typeName = controllers.schemaController.localized(itemType: item.rawType) ?? item.rawType
-        return ItemCellModel(item: item, typeName: typeName, title: title, accessory: accessory, fileDownloader: controllers.userControllers?.fileDownloader)
-    }
-    
-    func accessory(forKey key: String) -> ItemAccessory? {
-        viewModel.state.itemAccessories[key]
-    }
-    
-    func createContextMenuActions(for item: RItem) -> [ItemAction] {
-        if viewModel.state.collection.identifier.isTrash {
-            return [ItemAction(type: .restore), ItemAction(type: .delete)]
-        }
-
-        var actions: [ItemAction] = []
-
-        // Add citation for valid types
-        if !CitationController.invalidItemTypes.contains(item.rawType) {
-            actions.append(contentsOf: [ItemAction(type: .copyCitation), ItemAction(type: .copyBibliography), ItemAction(type: .share)])
-        }
-
-        // Add parent creation for standalone attachments
-        if item.rawType == ItemTypes.attachment, item.parent == nil {
-            actions.append(ItemAction(type: .createParent))
-        }
-
-        // Add download/remove downloaded option for attachments
-        if let accessory = viewModel.state.itemAccessories[item.key], let location = accessory.attachment?.location {
-            switch location {
-            case .local:
-                actions.append(ItemAction(type: .removeDownload))
-
-            case .remote:
-                actions.append(ItemAction(type: .download))
-
-            case .localAndChangedRemotely:
-                actions.append(ItemAction(type: .download))
-                actions.append(ItemAction(type: .removeDownload))
-
-            case .remoteMissing:
-                break
-            }
-        }
-
-        guard viewModel.state.library.metadataEditable else { return actions }
-
-        actions.append(ItemAction(type: .addToCollection))
-
-        // Add removing from collection only if item is in current collection.
-        if case .collection(let key) = viewModel.state.collection.identifier, item.collections.filter(.key(key)).first != nil {
-            actions.append(ItemAction(type: .removeFromCollection))
-        }
-
-        if item.rawType != ItemTypes.note && item.rawType != ItemTypes.attachment {
-            actions.append(ItemAction(type: .duplicate))
-        }
-        actions.append(ItemAction(type: .trash))
-
-        return actions
-    }
 
     func process(tapAction: ItemsTableViewHandler.TapAction) {
         resetActiveSearch()
 
         switch tapAction {
-        case .metadata(let item):
-            coordinatorDelegate?.showItemDetail(for: .preview(key: item.key), libraryId: viewModel.state.library.identifier, scrolledToKey: nil, animated: true)
+        case .metadata(let object):
+            coordinatorDelegate?.showItemDetail(for: .preview(key: object.key), libraryId: viewModel.state.library.identifier, scrolledToKey: nil, animated: true)
 
         case .attachment(let attachment, let parentKey):
             viewModel.process(action: .openAttachment(attachment: attachment, parentKey: parentKey))
@@ -643,8 +565,8 @@ extension ItemsViewController: ItemsTableViewHandlerDelegate {
         case .deselectItem(let key):
             viewModel.process(action: .deselectItem(key))
 
-        case .note(let item):
-            guard let note = Note(item: item) else { return }
+        case .note(let object):
+            guard let item = object as? RItem, let note = Note(item: item) else { return }
             let tags = Array(item.tags.map({ Tag(tag: $0) }))
             coordinatorDelegate?.showNote(library: viewModel.state.library, kind: .edit(key: note.key), text: note.text, tags: tags, parentTitleData: nil, title: note.title, saveCallback: nil)
         }
@@ -655,8 +577,9 @@ extension ItemsViewController: ItemsTableViewHandlerDelegate {
         }
     }
 
-    func process(action: ItemAction.Kind, for item: RItem, completionAction: ((Bool) -> Void)?) {
-        process(action: action, for: [item.key], button: nil, completionAction: completionAction)
+    func process(action: ItemAction.Kind, at index: Int, completionAction: ((Bool) -> Void)?) {
+        guard let object = tableViewDataSource.object(at: index) else { return }
+        process(action: action, for: [object.key], button: nil, completionAction: completionAction)
     }
 
     func process(dragAndDropAction action: ItemsTableViewHandler.DragAndDropAction) {
