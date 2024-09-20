@@ -18,13 +18,15 @@ struct TrashActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
     typealias Action = TrashAction
 
     unowned let dbStorage: DbStorage
+    private unowned let schemaController: SchemaController
     private unowned let fileStorage: FileStorage
     private unowned let urlDetector: UrlDetector
 
     var backgroundQueue: DispatchQueue
 
-    init(dbStorage: DbStorage, fileStorage: FileStorage, urlDetector: UrlDetector) {
+    init(dbStorage: DbStorage, schemaController: SchemaController, fileStorage: FileStorage, urlDetector: UrlDetector) {
         self.dbStorage = dbStorage
+        self.schemaController = schemaController
         self.fileStorage = fileStorage
         self.urlDetector = urlDetector
         backgroundQueue = DispatchQueue(label: "org.zotero.Zotero.TrashActionHandler.queue", qos: .userInteractive)
@@ -172,7 +174,10 @@ struct TrashActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
             let creatorSummary = ItemCellModel.creatorSummary(for: item)
             let (tagColors, tagEmojis) = ItemCellModel.tagData(item: item)
             let hasNote = ItemCellModel.hasNote(item: item)
+            let typeName = schemaController.localized(itemType: item.rawType) ?? item.rawType
             let cellData = TrashObject.ItemCellData(
+                attributedTitle: NSAttributedString(string: item.displayTitle),
+                localizedTypeName: typeName,
                 typeIconName: ItemCellModel.typeIconName(for: item),
                 subtitle: creatorSummary,
                 accessory: accessory,

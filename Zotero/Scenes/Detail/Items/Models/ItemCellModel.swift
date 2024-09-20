@@ -44,6 +44,32 @@ struct ItemCellModel {
         self.init(item: item, typeName: typeName, title: title, accessory: Self.createAccessory(from: accessory, fileDownloader: fileDownloader))
     }
 
+    init(object: TrashObject) {
+        key = object.key
+
+        switch object.type {
+        case .collection:
+            typeIconName = "collection"
+            subtitle = ""
+            hasNote = false
+            tagColors = []
+            tagEmojis = []
+            accessory = nil
+            typeName = "Collection"
+            title = NSAttributedString(string: object.title)
+
+        case .item(let cellData, _):
+            typeIconName = cellData.typeIconName
+            subtitle = cellData.subtitle
+            hasNote = cellData.hasNote
+            tagColors = cellData.tagColors
+            tagEmojis = cellData.tagEmojis
+            accessory = cellData.accessory
+            typeName = cellData.localizedTypeName
+            title = cellData.attributedTitle
+        }
+    }
+
     static func createAccessory(from accessory: ItemAccessory?, fileDownloader: AttachmentDownloader?) -> ItemCellModel.Accessory? {
         return accessory.flatMap({ accessory -> ItemCellModel.Accessory in
             switch accessory {

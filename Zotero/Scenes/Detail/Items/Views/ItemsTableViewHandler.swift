@@ -301,14 +301,14 @@ extension ItemsTableViewHandler: UITableViewDelegate {
 
 extension ItemsTableViewHandler: UITableViewDragDelegate {
     func tableView(_ tableView: UITableView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem] {
-        guard let item = dataSource.object(at: indexPath.row)?.item else { return [] }
+        guard let item = dataSource.object(at: indexPath.row) as? RItem else { return [] }
         return [self.dragDropController.dragItem(from: item)]
     }
 }
 
 extension ItemsTableViewHandler: UITableViewDropDelegate {
     func tableView(_ tableView: UITableView, performDropWith coordinator: UITableViewDropCoordinator) {
-        guard let object = coordinator.destinationIndexPath.flatMap({ dataSource.object(at: $0.row) }), let libraryId = object.libraryId else { return }
+        guard let object = coordinator.destinationIndexPath.flatMap({ dataSource.object(at: $0.row) }) else { return }
 
         switch coordinator.proposal.operation {
         case .copy:
@@ -319,7 +319,7 @@ extension ItemsTableViewHandler: UITableViewDropDelegate {
                 if localObject is RItem {
                     delegate.process(dragAndDropAction: .moveItems(keys: keys, toKey: key))
                 } else if localObject is RTag {
-                    delegate.process(dragAndDropAction: .tagItem(key: key, libraryId: libraryId, tags: keys))
+                    delegate.process(dragAndDropAction: .tagItem(key: key, libraryId: object.libraryIdentifier, tags: keys))
                 }
             }
         default: break
@@ -345,7 +345,7 @@ extension ItemsTableViewHandler: UITableViewDropDelegate {
         }
         let dragItemsLibraryId = session.items.compactMap({ $0.localObject as? RItem }).compactMap({ $0.libraryId }).first
 
-        if dragItemsLibraryId != object.libraryId ||                                        // allow dropping only to the same library
+        if dragItemsLibraryId != object.libraryIdentifier ||                                // allow dropping only to the same library
            object.isNote || object.isAttachment ||                                          // allow dropping only to non-standalone items
            session.items.compactMap({ self.dragDropController.item(from: $0) })             // allow drops of only standalone items
                         .contains(where: { $0.rawType != ItemTypes.attachment && $0.rawType != ItemTypes.note }) {

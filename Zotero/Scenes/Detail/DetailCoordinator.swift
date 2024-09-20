@@ -124,7 +124,13 @@ final class DetailCoordinator: Coordinator {
         case .custom(let type):
             switch type {
             case .trash:
-                controller = createTrashViewController(libraryId: libraryId, dbStorage: userControllers.dbStorage, fileStorage: controllers.fileStorage, urlDetector: controllers.urlDetector)
+                controller = createTrashViewController(
+                    libraryId: libraryId,
+                    dbStorage: userControllers.dbStorage,
+                    schemaController: controllers.schemaController,
+                    fileStorage: controllers.fileStorage,
+                    urlDetector: controllers.urlDetector
+                )
 
             case .all, .publications, .unfiled:
                 controller = createItemsViewController(
@@ -160,10 +166,16 @@ final class DetailCoordinator: Coordinator {
 
         navigationController?.setViewControllers([controller], animated: animated)
 
-        func createTrashViewController(libraryId: LibraryIdentifier, dbStorage: DbStorage, fileStorage: FileStorage, urlDetector: UrlDetector) -> TrashViewController {
+        func createTrashViewController(
+            libraryId: LibraryIdentifier,
+            dbStorage: DbStorage,
+            schemaController: SchemaController,
+            fileStorage: FileStorage,
+            urlDetector: UrlDetector
+        ) -> TrashViewController {
             let state = TrashState(libraryId: libraryId)
-            let handler = TrashActionHandler(dbStorage: dbStorage, fileStorage: fileStorage, urlDetector: urlDetector)
-            return TrashViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: controllers)
+            let handler = TrashActionHandler(dbStorage: dbStorage, schemaController: schemaController, fileStorage: fileStorage, urlDetector: urlDetector)
+            return TrashViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: controllers, coordinatorDelegate: self)
         }
 
         func createItemsViewController(

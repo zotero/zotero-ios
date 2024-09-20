@@ -10,21 +10,17 @@ import UIKit
 
 import RxSwift
 
-final class TrashViewController: UIViewController {
+final class TrashViewController: BaseItemsViewController {
     private let viewModel: ViewModel<TrashActionHandler>
-    private unowned let controllers: Controllers
-    private let disposeBag: DisposeBag
 
-    private weak var tableView: UITableView!
-    private var tableViewHandler: ItemsTableViewHandler!
+    private var dataSource: TrashTableViewDataSource!
+    override var toolbarData: ItemsToolbarController.Data {
+        return toolbarData(from: viewModel.state)
+    }
 
-    init(viewModel: ViewModel<TrashActionHandler>, controllers: Controllers) {
+    init(viewModel: ViewModel<TrashActionHandler>, controllers: Controllers, coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)) {
         self.viewModel = viewModel
-        self.controllers = controllers
-        disposeBag = DisposeBag()
-
-        super.init(nibName: nil, bundle: nil)
-
+        super.init(controllers: controllers, coordinatorDelegate: coordinatorDelegate)
         viewModel.process(action: .loadData)
     }
     
@@ -35,8 +31,11 @@ final class TrashViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        createTableView()
-        tableViewHandler = ItemsTableViewHandler(tableView: tableView, delegate: self, dragDropController: controllers.dragDropController)
+        dataSource = TrashTableViewDataSource(viewModel: viewModel)
+        handler = ItemsTableViewHandler(tableView: tableView, delegate: self, dataSource: dataSource, dragDropController: controllers.dragDropController)
+        toolbarController = ItemsToolbarController(viewController: self, data: toolbarData, collection: collection, library: library, delegate: self)
+        setupRightBarButtonItems(expectedItems: rightBarButtonItemTypes(for: viewModel.state))
+        dataSource.apply(snapshot: viewModel.state.objects)
 
         viewModel
             .stateObservable
@@ -45,24 +44,170 @@ final class TrashViewController: UIViewController {
                 self?.update(state: state)
             })
             .disposed(by: self.disposeBag)
+    }
 
-        func createTableView() {
-            let tableView = UITableView()
-            tableView.translatesAutoresizingMaskIntoConstraints = false
-            view.addSubview(tableView)
+    // MARK: - Actions
 
-            NSLayoutConstraint.activate([
-                tableView.topAnchor.constraint(equalTo: view.topAnchor),
-                tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-                tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-                tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
-            ])
+    private func update(state: TrashState) {
+    }
 
-            self.tableView = tableView
+    override func search(for term: String) {
+//        self.viewModel.process(action: .search(term))
+    }
+
+    override func process(action: ItemAction.Kind, for selectedKeys: Set<String>, button: UIBarButtonItem?, completionAction: ((Bool) -> Void)?) {
+        switch action {
+        case .addToCollection:
+            guard !selectedKeys.isEmpty else { return }
+            coordinatorDelegate?.showCollectionsPicker(in: library, completed: { [weak self] collections in
+//                self?.viewModel.process(action: .assignItemsToCollections(items: selectedKeys, collections: collections))
+                completionAction?(true)
+            })
+
+        case .createParent:
+//            guard let key = selectedKeys.first, case .attachment(let attachment, _) = viewModel.state.itemAccessories[key] else { return }
+//            let collectionKey = collection.identifier.key
+//            coordinatorDelegate?.showItemDetail(
+//                for: .creation(type: ItemTypes.document, child: attachment, collectionKey: collectionKey),
+//                libraryId: library.identifier,
+//                scrolledToKey: nil,
+//                animated: true
+//            )
+            break
+
+        case .delete:
+            guard !selectedKeys.isEmpty else { return }
+            coordinatorDelegate?.showDeletionQuestion(
+                count: 0,//viewModel.state.selectedItems.count,
+                confirmAction: { [weak self] in
+//                    self?.viewModel.process(action: .deleteItems(selectedKeys))
+                },
+                cancelAction: {
+                    completionAction?(false)
+                }
+            )
+
+        case .duplicate:
+//            guard let key = selectedKeys.first else { return }
+//            viewModel.process(action: .loadItemToDuplicate(key))
+            break
+
+        case .removeFromCollection:
+            guard !selectedKeys.isEmpty else { return }
+            coordinatorDelegate?.showRemoveFromCollectionQuestion(
+                count: viewModel.state.objects.count
+            ) { [weak self] in
+//                self?.viewModel.process(action: .deleteItemsFromCollection(selectedKeys))
+                completionAction?(true)
+            }
+
+        case .restore:
+            guard !selectedKeys.isEmpty else { return }
+//            viewModel.process(action: .restoreItems(selectedKeys))
+            completionAction?(true)
+
+        case .trash:
+            guard !selectedKeys.isEmpty else { return }
+//            viewModel.process(action: .trashItems(selectedKeys))
+            break
+
+        case .filter:
+            guard let button else { return }
+//            coordinatorDelegate?.showFilters(viewModel: viewModel, itemsController: self, button: button)
+            break
+
+        case .sort:
+            guard let button else { return }
+//            coordinatorDelegate?.showSortActions(viewModel: viewModel, button: button)
+            break
+
+        case .share:
+            guard !selectedKeys.isEmpty else { return }
+            coordinatorDelegate?.showCiteExport(for: selectedKeys, libraryId: library.identifier)
+
+        case .copyBibliography:
+            var presenter: UIViewController = self
+            if let searchController = navigationItem.searchController, searchController.isActive {
+                presenter = searchController
+            }
+            coordinatorDelegate?.copyBibliography(using: presenter, for: selectedKeys, libraryId: library.identifier, delegate: nil)
+
+        case .copyCitation:
+            coordinatorDelegate?.showCitation(using: nil, for: selectedKeys, libraryId: library.identifier, delegate: nil)
+
+        case .download:
+//            viewModel.process(action: .download(selectedKeys))
+            break
+
+        case .removeDownload:
+//            viewModel.process(action: .removeDownloads(selectedKeys))
+            break
         }
     }
 
-    private func update(state: TrashState) {
+    override func process(barButtonItemAction: BaseItemsViewController.RightBarButtonItem, sender: UIBarButtonItem) {
+        switch barButtonItemAction {
+        case .add:
+//            coordinatorDelegate?.showAddActions(viewModel: viewModel, button: sender)
+            break
+
+        case .deselectAll, .selectAll:
+//            viewModel.process(action: .toggleSelectionState)
+            break
+
+        case .done:
+//            viewModel.process(action: .stopEditing)
+            break
+
+        case .emptyTrash:
+            break
+
+        case .select:
+//            viewModel.process(action: .startEditing)
+            break
+        }
+    }
+
+    // MARK: - Helpers
+
+    private func toolbarData(from state: TrashState) -> ItemsToolbarController.Data {
+        return .init(
+            isEditing: false,
+            selectedItems: [],
+            filters: [],
+            downloadBatchData: nil,
+            remoteDownloadBatchData: nil,
+            identifierLookupBatchData: .init(saved: 0, total: 0),
+            itemCount: state.objects.count
+        )
+    }
+
+    private func rightBarButtonItemTypes(for state: TrashState) -> [RightBarButtonItem] {
+        let selectItems = rightBarButtonSelectItemTypes(for: state)
+        return selectItems + [.emptyTrash]
+
+        func rightBarButtonSelectItemTypes(for state: TrashState) -> [RightBarButtonItem] {
+            return [.select]
+//            if !state.isEditing {
+//                return [.select]
+//            }
+//            if state.selectedItems.count == (state.results?.count ?? 0) {
+//                return [.deselectAll, .done]
+//            }
+//            return [.selectAll, .done]
+        }
+    }
+
+    // MARK: - Tag filter delegate
+
+    override func tagSelectionDidChange(selected: Set<String>) {
+//        if selected.isEmpty {
+//            if let tags = viewModel.state.tagsFilter {
+//                viewModel.process(action: .disableFilter(.tags(tags)))
+//            }
+//        } else {
+//            viewModel.process(action: .enableFilter(.tags(selected)))
+//        }
     }
 }
 
@@ -73,10 +218,6 @@ extension TrashViewController: ItemsTableViewHandlerDelegate {
     
     var collectionKey: String? {
         return nil
-    }
-    
-    var library: Library {
-        return viewModel.state.library
     }
     
     func process(action: ItemAction.Kind, at index: Int, completionAction: ((Bool) -> Void)?) {
