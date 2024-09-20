@@ -31,6 +31,8 @@ struct TrashObject {
     }
 
     struct ItemCellData {
+        let attributedTitle: NSAttributedString
+        let localizedTypeName: String
         let typeIconName: String
         let subtitle: String
         let accessory: ItemCellModel.Accessory?

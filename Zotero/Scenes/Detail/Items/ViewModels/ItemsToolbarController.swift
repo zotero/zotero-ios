@@ -17,6 +17,16 @@ protocol ItemsToolbarControllerDelegate: UITraitEnvironment {
 }
 
 final class ItemsToolbarController {
+    struct Data {
+        let isEditing: Bool
+        let selectedItems: Set<String>
+        let filters: [ItemsFilter]
+        let downloadBatchData: ItemsState.DownloadBatchData?
+        let remoteDownloadBatchData: ItemsState.DownloadBatchData?
+        let identifierLookupBatchData: ItemsState.IdentifierLookupBatchData
+        let itemCount: Int
+    }
+
     enum ToolbarItem: Int {
         case empty = 1
         case single
@@ -34,25 +44,25 @@ final class ItemsToolbarController {
 
     private weak var delegate: ItemsToolbarControllerDelegate?
 
-    init(viewController: UIViewController, initialState: ItemsState, delegate: ItemsToolbarControllerDelegate) {
+    init(viewController: UIViewController, data: Data, collection: Collection, library: Library, delegate: ItemsToolbarControllerDelegate) {
         self.viewController = viewController
         self.delegate = delegate
-        editingActions = createEditingActions(for: initialState)
+        editingActions = createEditingActions(collection: collection, library: library)
         disposeBag = DisposeBag()
 
-        createToolbarItems(for: initialState)
+        createToolbarItems(data: data)
 
-        func createEditingActions(for state: ItemsState) -> [ItemAction] {
+        func createEditingActions(collection: Collection, library: Library) -> [ItemAction] {
             var types: [ItemAction.Kind] = []
-            if state.collection.identifier.isTrash && state.library.metadataEditable {
+            if collection.identifier.isTrash && library.metadataEditable {
                 types.append(contentsOf: [.restore, .delete, .download, .removeDownload])
             } else {
-                if state.library.metadataEditable {
+                if library.metadataEditable {
                     types.append(contentsOf: [.addToCollection, .trash])
                 }
-                switch state.collection.identifier {
+                switch collection.identifier {
                 case .collection:
-                    if state.library.metadataEditable {
+                    if library.metadataEditable {
                         types.insert(.removeFromCollection, at: 1)
                     }
 
@@ -71,19 +81,19 @@ final class ItemsToolbarController {
 
     // MARK: - Actions
 
-    func createToolbarItems(for state: ItemsState) {
-        if state.isEditing {
+    func createToolbarItems(data: Data) {
+        if data.isEditing {
             viewController.toolbarItems = createEditingToolbarItems(from: editingActions)
-            updateEditingToolbarItems(for: state.selectedItems, results: state.results)
+            updateEditingToolbarItems(for: data.selectedItems)
         } else {
-            let filters = sizeClassSpecificFilters(from: state.filters)
-            viewController.toolbarItems = createNormalToolbarItems(for: filters)
+            let filters = sizeClassSpecificFilters(from: data.filters)
+            viewController.toolbarItems = createNormalToolbarItems(for: data.filters)
             updateNormalToolbarItems(
-                for: filters,
-                downloadBatchData: state.downloadBatchData,
-                remoteDownloadBatchData: state.remoteDownloadBatchData,
-                identifierLookupBatchData: state.identifierLookupBatchData,
-                results: state.results
+                for: data.filters,
+                downloadBatchData: data.downloadBatchData,
+                remoteDownloadBatchData: data.remoteDownloadBatchData,
+                identifierLookupBatchData: data.identifierLookupBatchData,
+                itemCount: data.itemCount
             )
         }
 
@@ -191,16 +201,16 @@ final class ItemsToolbarController {
         }
     }
 
-    func reloadToolbarItems(for state: ItemsState) {
-        if state.isEditing {
-            updateEditingToolbarItems(for: state.selectedItems, results: state.results)
+    func reloadToolbarItems(for data: Data) {
+        if data.isEditing {
+            updateEditingToolbarItems(for: data.selectedItems)
         } else {
             updateNormalToolbarItems(
-                for: sizeClassSpecificFilters(from: state.filters),
-                downloadBatchData: state.downloadBatchData,
-                remoteDownloadBatchData: state.remoteDownloadBatchData,
-                identifierLookupBatchData: state.identifierLookupBatchData,
-                results: state.results
+                for: sizeClassSpecificFilters(from: data.filters),
+                downloadBatchData: data.downloadBatchData,
+                remoteDownloadBatchData: data.remoteDownloadBatchData,
+                identifierLookupBatchData: data.identifierLookupBatchData,
+                itemCount: data.itemCount
             )
         }
     }
@@ -225,7 +235,7 @@ final class ItemsToolbarController {
 
     // MARK: - Helpers
 
-    private func updateEditingToolbarItems(for selectedItems: Set<String>, results: Results<RItem>?) {
+    private func updateEditingToolbarItems(for selectedItems: Set<String>) {
         viewController.toolbarItems?.forEach({ item in
             switch ToolbarItem(rawValue: item.tag) {
             case .empty:
@@ -245,7 +255,7 @@ final class ItemsToolbarController {
         downloadBatchData: ItemsState.DownloadBatchData?,
         remoteDownloadBatchData: ItemsState.DownloadBatchData?,
         identifierLookupBatchData: ItemsState.IdentifierLookupBatchData,
-        results: Results<RItem>?
+        itemCount: Int
     ) {
         if let item = viewController.toolbarItems?.first(where: { $0.tag == ToolbarItem.filter.tag }) {
             let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease.circle" : "line.horizontal.3.decrease.circle.fill"
@@ -255,7 +265,6 @@ final class ItemsToolbarController {
         if let item = viewController.toolbarItems?.first(where: { $0.tag == ToolbarItem.title.tag }),
            let stackView = item.customView as? UIStackView {
             if let filterLabel = stackView.subviews.first as? UILabel {
-                let itemCount = results?.count ?? 0
                 filterLabel.isHidden = filters.isEmpty
 
                 if !filterLabel.isHidden {

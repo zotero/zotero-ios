@@ -12,5 +12,5 @@ protocol ItemsTableViewObject {
     var key: String { get }
     var isNote: Bool { get }
     var isAttachment: Bool { get }
-    var libraryId: LibraryIdentifier? { get }
+    var libraryIdentifier: LibraryIdentifier { get }
 }
