@@ -12,6 +12,10 @@ import CocoaLumberjackSwift
 import RealmSwift
 
 extension RItem: ItemsTableViewObject {
+    var libraryIdentifier: LibraryIdentifier {
+        return libraryId ?? .custom(.myLibrary)
+    }
+    
     var isNote: Bool {
         switch rawType {
         case ItemTypes.note:
@@ -195,7 +199,7 @@ extension RItemsTableViewDataSource {
         let cell = tableView.dequeueReusableCell(withIdentifier: ItemsTableViewHandler.cellId, for: indexPath)
 
         guard let item = item(at: indexPath.row) else {
-            DDLogError("ItemsTableViewHandler: indexPath.row (\(indexPath.row)) out of bounds (\(count))")
+            DDLogError("RItemsTableViewDataSource: indexPath.row (\(indexPath.row)) out of bounds (\(count))")
             return cell
         }
 
