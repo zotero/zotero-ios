@@ -12,13 +12,6 @@ import CocoaLumberjackSwift
 import RealmSwift
 import RxSwift
 
-protocol TagFilterDelegate: AnyObject {
-    var currentLibrary: Library { get }
-
-    func tagSelectionDidChange(selected: Set<String>)
-    func tagOptionsDidChange()
-}
-
 class TagFilterViewController: UIViewController {
     private(set) weak var searchBar: UISearchBar!
     private weak var collectionView: UICollectionView!

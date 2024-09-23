@@ -32,8 +32,8 @@ extension TrashTableViewDataSource {
         return snapshot?.count ?? 0
     }
 
-    var selectedItems: Set<String> {
-        return []
+    var selectedItems: Set<AnyHashable> {
+        return viewModel.state.selectedItems
     }
 
     func object(at index: Int) -> ItemsTableViewObject? {
@@ -45,20 +45,42 @@ extension TrashTableViewDataSource {
         return snapshot.values[index]
     }
 
-    func accessory(forKey key: String) -> ItemAccessory? {
-        return nil
-    }
-
     func tapAction(for indexPath: IndexPath) -> ItemsTableViewHandler.TapAction? {
-        return nil
+        guard let object = trashObject(at: indexPath.row) else { return nil }
+
+        if viewModel.state.isEditing {
+            return .selectItem(object)
+        }
+
+        guard let accessory = object.itemAccessory else {
+            guard case .item(_, let sortData, _) = object.type else { return nil }
+            switch sortData.type {
+            case ItemTypes.note:
+                return .note(object)
+
+            default:
+                return .metadata(object)
+            }
+        }
+
+        switch accessory {
+        case .attachment(let attachment, let parentKey):
+            return .attachment(attachment: attachment, parentKey: parentKey)
+
+        case .doi(let doi):
+            return .doi(doi)
+
+        case .url(let url):
+            return .url(url)
+        }
     }
 
     func createTrailingCellActions(at index: Int) -> [ItemAction]? {
-        return nil
+        return [ItemAction(type: .delete), ItemAction(type: .restore)]
     }
 
     func createContextMenuActions(at index: Int) -> [ItemAction] {
-        return []
+        return [ItemAction(type: .restore), ItemAction(type: .delete)]
     }
 }
 
@@ -97,7 +119,7 @@ extension TrashTableViewDataSource {
 extension TrashObject: ItemsTableViewObject {
     var isNote: Bool {
         switch type {
-        case .item(_, let sortData):
+        case .item(_, let sortData, _):
             return sortData.type == ItemTypes.note
 
         case .collection:
@@ -107,7 +129,7 @@ extension TrashObject: ItemsTableViewObject {
     
     var isAttachment: Bool {
         switch type {
-        case .item(_, let sortData):
+        case .item(_, let sortData, _):
             return sortData.type == ItemTypes.attachment
 
         case .collection:

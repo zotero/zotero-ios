@@ -72,6 +72,10 @@ final class RItemsTableViewDataSource: NSObject {
             completion: completion
         )
     }
+
+    private func accessory(forKey key: String) -> ItemAccessory? {
+        return viewModel.state.itemAccessories[key]
+    }
 }
 
 extension RItemsTableViewDataSource: ItemsTableViewDataSource {
@@ -79,7 +83,7 @@ extension RItemsTableViewDataSource: ItemsTableViewDataSource {
         return snapshot?.count ?? 0
     }
 
-    var selectedItems: Set<String> {
+    var selectedItems: Set<AnyHashable> {
         return viewModel.state.selectedItems
     }
 
@@ -92,15 +96,11 @@ extension RItemsTableViewDataSource: ItemsTableViewDataSource {
         return snapshot?[index]
     }
 
-    func accessory(forKey key: String) -> ItemAccessory? {
-        return viewModel.state.itemAccessories[key]
-    }
-
     func tapAction(for indexPath: IndexPath) -> ItemsTableViewHandler.TapAction? {
         guard let item = item(at: indexPath.row) else { return nil }
 
         if viewModel.state.isEditing {
-            return .selectItem(item.key)
+            return .selectItem(item)
         }
 
         guard let accessory = accessory(forKey: item.key) else {

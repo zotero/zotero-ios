@@ -143,6 +143,9 @@ final class ItemsViewController: BaseItemsViewController {
 
     override func process(action: ItemAction.Kind, for selectedKeys: Set<String>, button: UIBarButtonItem?, completionAction: ((Bool) -> Void)?) {
         switch action {
+        case .delete, .restore:
+            break
+
         case .addToCollection:
             guard !selectedKeys.isEmpty else { return }
             coordinatorDelegate?.showCollectionsPicker(in: library, completed: { [weak self] collections in
@@ -160,18 +163,6 @@ final class ItemsViewController: BaseItemsViewController {
                 animated: true
             )
 
-        case .delete:
-            guard !selectedKeys.isEmpty else { return }
-            coordinatorDelegate?.showDeletionQuestion(
-                count: viewModel.state.selectedItems.count,
-                confirmAction: { [weak self] in
-                    self?.viewModel.process(action: .deleteItems(selectedKeys))
-                },
-                cancelAction: {
-                    completionAction?(false)
-                }
-            )
-
         case .duplicate:
             guard let key = selectedKeys.first else { return }
             viewModel.process(action: .loadItemToDuplicate(key))
@@ -185,18 +176,13 @@ final class ItemsViewController: BaseItemsViewController {
                 completionAction?(true)
             }
 
-        case .restore:
-            guard !selectedKeys.isEmpty else { return }
-            viewModel.process(action: .restoreItems(selectedKeys))
-            completionAction?(true)
-
         case .trash:
             guard !selectedKeys.isEmpty else { return }
             viewModel.process(action: .trashItems(selectedKeys))
 
         case .filter:
             guard let button else { return }
-            coordinatorDelegate?.showFilters(viewModel: viewModel, itemsController: self, button: button)
+            coordinatorDelegate?.showFilters(filters: viewModel.state.filters, filtersDelegate: self, button: button)
 
         case .sort:
             guard let button else { return }
@@ -270,11 +256,19 @@ final class ItemsViewController: BaseItemsViewController {
 
     override func tagSelectionDidChange(selected: Set<String>) {
         if selected.isEmpty {
-            if let tags = viewModel.state.tagsFilter {
+            if let tags = viewModel.state.filters.compactMap({ $0.tags }).first {
                 viewModel.process(action: .disableFilter(.tags(tags)))
             }
         } else {
             viewModel.process(action: .enableFilter(.tags(selected)))
+        }
+    }
+
+    override func downloadsFilterDidChange(enabled: Bool) {
+        if enabled {
+            viewModel.process(action: .enableFilter(.downloadedFiles))
+        } else {
+            viewModel.process(action: .disableFilter(.downloadedFiles))
         }
     }
 
@@ -410,11 +404,11 @@ extension ItemsViewController: ItemsTableViewHandlerDelegate {
         case .url(let url):
             coordinatorDelegate?.show(url: url)
 
-        case .selectItem(let key):
-            viewModel.process(action: .selectItem(key))
+        case .selectItem(let object):
+            viewModel.process(action: .selectItem(object.key))
 
-        case .deselectItem(let key):
-            viewModel.process(action: .deselectItem(key))
+        case .deselectItem(let object):
+            viewModel.process(action: .deselectItem(object.key))
 
         case .note(let object):
             guard let item = object as? RItem, let note = Note(item: item) else { return }

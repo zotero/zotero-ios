@@ -526,6 +526,7 @@
 		B33E8A4D27B6AAE600CBC7DE /* CollectionCellContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34673CE27B14F0D00444C96 /* CollectionCellContentView.swift */; };
 		B33E8A4E27B6AAF000CBC7DE /* CollectionCellContentView.xib in Resources */ = {isa = PBXBuildFile; fileRef = B37D8E6324DC21D300F526C5 /* CollectionCellContentView.xib */; };
 		B33EB2BA2B076657003255DA /* Localizable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37080512AA72135006F56B9 /* Localizable.swift */; };
+		B33F47732CA1656E00278240 /* BaseItemsActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33F47722CA1656A00278240 /* BaseItemsActionHandler.swift */; };
 		B3401D572567D8F700BB8D6E /* AnnotationPopoverViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3401D552567D8F700BB8D6E /* AnnotationPopoverViewController.swift */; };
 		B3401D5B2567DAAE00BB8D6E /* AnnotationPopoverCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3401D5A2567DAAE00BB8D6E /* AnnotationPopoverCoordinator.swift */; };
 		B3401D612568047D00BB8D6E /* AnnotationViewTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3401D602568047D00BB8D6E /* AnnotationViewTextView.swift */; };
@@ -1623,6 +1624,7 @@
 		B33E8A4527B69FFE00CBC7DE /* AllCollectionPickerState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllCollectionPickerState.swift; sourceTree = "<group>"; };
 		B33E8A4727B6A07100CBC7DE /* AllCollectionPickerAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllCollectionPickerAction.swift; sourceTree = "<group>"; };
 		B33E8A4927B6A1D000CBC7DE /* AllCollectionPickerViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AllCollectionPickerViewController.swift; sourceTree = "<group>"; };
+		B33F47722CA1656A00278240 /* BaseItemsActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseItemsActionHandler.swift; sourceTree = "<group>"; };
 		B3401D552567D8F700BB8D6E /* AnnotationPopoverViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnnotationPopoverViewController.swift; sourceTree = "<group>"; };
 		B3401D5A2567DAAE00BB8D6E /* AnnotationPopoverCoordinator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnnotationPopoverCoordinator.swift; sourceTree = "<group>"; };
 		B3401D602568047D00BB8D6E /* AnnotationViewTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationViewTextView.swift; sourceTree = "<group>"; };
@@ -3331,6 +3333,7 @@
 		B3593EE8241A61C700760E20 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
+				B33F47722CA1656A00278240 /* BaseItemsActionHandler.swift */,
 				B3593EE9241A61C700760E20 /* ItemsActionHandler.swift */,
 				B37673FA262DB25700C3BFAF /* ItemsToolbarController.swift */,
 			);
@@ -4961,6 +4964,7 @@
 				B3830CF625545EE400910FE0 /* TagPickerCell.swift in Sources */,
 				B30565C623FC051E003304F2 /* ReadDeletedObjectsDbRequest.swift in Sources */,
 				B30566AF23FC051F003304F2 /* LibraryResponse.swift in Sources */,
+				B33F47732CA1656E00278240 /* BaseItemsActionHandler.swift in Sources */,
 				B3868537270D90640068A022 /* RawDataEncoding.swift in Sources */,
 				B37C5B6D26453C58009A37E5 /* NoteEditorAction.swift in Sources */,
 				B30566C223FC051F003304F2 /* LibraryData.swift in Sources */,

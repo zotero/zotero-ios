@@ -41,7 +41,7 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showSortActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
     func show(url: URL)
     func show(doi: String)
-    func showFilters(viewModel: ViewModel<ItemsActionHandler>, itemsController: ItemsViewController, button: UIBarButtonItem)
+    func showFilters(filters: [ItemsFilter], filtersDelegate: BaseItemsViewController, button: UIBarButtonItem)
     func showDeletionQuestion(count: Int, confirmAction: @escaping () -> Void, cancelAction: @escaping () -> Void)
     func showRemoveFromCollectionQuestion(count: Int, confirmAction: @escaping () -> Void)
     func showCitation(using presenter: UIViewController?, for itemIds: Set<String>, libraryId: LibraryIdentifier, delegate: DetailCitationCoordinatorDelegate?)
@@ -72,7 +72,7 @@ protocol DetailNoteEditorCoordinatorDelegate: AnyObject {
 }
 
 protocol ItemsTagFilterDelegate: AnyObject {
-    var delegate: TagFilterDelegate? { get set }
+    var delegate: FiltersDelegate? { get set }
 
     func clearSelection()
     func itemsDidChange(filters: [ItemsFilter], collectionId: CollectionIdentifier, libraryId: LibraryIdentifier)
@@ -129,7 +129,8 @@ final class DetailCoordinator: Coordinator {
                     dbStorage: userControllers.dbStorage,
                     schemaController: controllers.schemaController,
                     fileStorage: controllers.fileStorage,
-                    urlDetector: controllers.urlDetector
+                    urlDetector: controllers.urlDetector,
+                    htmlAttributedStringConverter: controllers.htmlAttributedStringConverter
                 )
 
             case .all, .publications, .unfiled:
@@ -171,10 +172,18 @@ final class DetailCoordinator: Coordinator {
             dbStorage: DbStorage,
             schemaController: SchemaController,
             fileStorage: FileStorage,
-            urlDetector: UrlDetector
+            urlDetector: UrlDetector,
+            htmlAttributedStringConverter: HtmlAttributedStringConverter
         ) -> TrashViewController {
             let state = TrashState(libraryId: libraryId)
-            let handler = TrashActionHandler(dbStorage: dbStorage, schemaController: schemaController, fileStorage: fileStorage, urlDetector: urlDetector)
+            let handler = TrashActionHandler(
+                dbStorage: dbStorage,
+                schemaController: schemaController,
+                fileStorage: fileStorage,
+                fileDownloader: userControllers.fileDownloader,
+                urlDetector: urlDetector,
+                htmlAttributedStringConverter: htmlAttributedStringConverter
+            )
             return TrashViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: controllers, coordinatorDelegate: self)
         }
 
@@ -619,16 +628,16 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         self.navigationController?.present(navigationController, animated: true, completion: nil)
     }
 
-    func showFilters(viewModel: ViewModel<ItemsActionHandler>, itemsController: ItemsViewController, button: UIBarButtonItem) {
+    func showFilters(filters: [ItemsFilter], filtersDelegate: BaseItemsViewController, button: UIBarButtonItem) {
         DDLogInfo("DetailCoordinator: show item filters")
 
         let navigationController = NavigationViewController()
         navigationController.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
         navigationController.popoverPresentationController?.barButtonItem = button
 
-        let coordinator = ItemsFilterCoordinator(viewModel: viewModel, itemsController: itemsController, navigationController: navigationController, controllers: self.controllers)
+        let coordinator = ItemsFilterCoordinator(filters: filters, filtersDelegate: filtersDelegate, navigationController: navigationController, controllers: controllers)
         coordinator.parentCoordinator = self
-        self.childCoordinators.append(coordinator)
+        childCoordinators.append(coordinator)
         coordinator.start(animated: false)
 
         self.navigationController?.present(navigationController, animated: true, completion: nil)

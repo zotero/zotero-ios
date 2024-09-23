@@ -19,22 +19,15 @@ class ItemsFilterViewController: UIViewController {
     @IBOutlet private weak var tagFilterControllerContainer: UIView!
 
     private static let width: CGFloat = 320
-    private let viewModel: ViewModel<ItemsActionHandler>
     private let tagFilterController: TagFilterViewController
     private let disposeBag: DisposeBag
 
     weak var coordinatorDelegate: ItemsFilterCoordinatorDelegate?
-    private var downloadsFilterEnabled: Bool {
-        return self.viewModel.state.filters.contains(where: { filter in
-            switch filter {
-            case .downloadedFiles: return true
-            default: return false
-            }
-        })
-    }
+    private var downloadsFilterEnabled: Bool
+    weak var delegate: TagFilterDelegate?
 
-    init(viewModel: ViewModel<ItemsActionHandler>, tagFilterController: TagFilterViewController) {
-        self.viewModel = viewModel
+    init(downloadsFilterEnabled: Bool, tagFilterController: TagFilterViewController) {
+        self.downloadsFilterEnabled = downloadsFilterEnabled
         self.tagFilterController = tagFilterController
         self.disposeBag = DisposeBag()
         super.init(nibName: "ItemsFilterViewController", bundle: nil)
@@ -49,13 +42,6 @@ class ItemsFilterViewController: UIViewController {
 
         self.setupNavigationBar()
         self.setupUI()
-
-        self.viewModel.stateObservable
-                      .observe(on: MainScheduler.instance)
-                      .subscribe(with: self, onNext: { `self`, state in
-                          self.update(state: state)
-                      })
-                      .disposed(by: self.disposeBag)
         
         parent?.presentationController?.delegate = self
     }
@@ -71,15 +57,8 @@ class ItemsFilterViewController: UIViewController {
 
     // MARK: - Actions
 
-    private func update(state: ItemsState) {
-    }
-
     @IBAction private func toggleDownloads(sender: UISwitch) {
-        if sender.isOn {
-            self.viewModel.process(action: .enableFilter(.downloadedFiles))
-        } else {
-            self.viewModel.process(action: .disableFilter(.downloadedFiles))
-        }
+        delegate?.downloadsFilterDidChange(enabled: sender.isOn)
     }
 
     @objc private func done() {

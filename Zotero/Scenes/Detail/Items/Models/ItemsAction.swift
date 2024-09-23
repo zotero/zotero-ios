@@ -17,7 +17,6 @@ enum ItemsAction {
     case cacheItemTitle(key: String, title: String)
     case clearTitleCache
     case deleteItemsFromCollection(Set<String>)
-    case deleteItems(Set<String>)
     case deselectItem(String)
     case download(Set<String>)
     case enableFilter(ItemsFilter)
@@ -27,7 +26,6 @@ enum ItemsAction {
     case moveItems(keys: Set<String>, toItemKey: String)
     case observingFailed
     case removeDownloads(Set<String>)
-    case restoreItems(Set<String>)
     case search(String)
     case selectItem(String)
     case setSortField(ItemsSortType.Field)
@@ -45,5 +43,4 @@ enum ItemsAction {
     case openAttachment(attachment: Attachment, parentKey: String?)
     case attachmentOpened(String)
     case updateKeys(items: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int])
-    case emptyTrash
 }
