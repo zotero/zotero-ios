@@ -170,7 +170,7 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
                 DDLogInfo("AppCoordinator: Preprocessing restored state - \(data)")
                 Defaults.shared.selectedLibrary = data.libraryId
                 Defaults.shared.selectedCollectionId = data.collectionId
-                controllers.userControllers?.openItemsController.setItems(data.openItems, for: session.persistentIdentifier, validate: true)
+                controllers.userControllers?.openItemsController.set(items: data.openItems, for: session.persistentIdentifier, validate: true)
             }
             return (urlContext, data)
         }
@@ -213,7 +213,9 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
                 mainController.showItems(for: collection, in: data.libraryId)
                 guard data.restoreMostRecentlyOpenedItem else { return }
                 openItemsController.restoreMostRecentlyOpenedItem(using: self, sessionIdentifier: sessionIdentifier) { item in
-                    if item == nil {
+                    if let item {
+                        DDLogInfo("AppCoordinator: restored open item - \(item)")
+                    } else {
                         DDLogInfo("AppCoordinator: no open item to restore")
                     }
                 }
@@ -349,7 +351,7 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
 
     func showMainScreen(with data: RestoredStateData, session: UISceneSession) -> Bool {
         guard let window, let mainController = window.rootViewController as? MainViewController else { return false }
-        controllers.userControllers?.openItemsController.setItems(data.openItems, for: session.persistentIdentifier, validate: true)
+        controllers.userControllers?.openItemsController.set(items: data.openItems, for: session.persistentIdentifier, validate: true)
         mainController.dismiss(animated: false) {
             mainController.masterCoordinator?.showCollections(for: data.libraryId, preselectedCollection: data.collectionId, animated: false)
         }
@@ -360,7 +362,9 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
         guard userActivity.activityType == NSUserActivity.contentContainerId, let window, let mainController = window.rootViewController as? MainViewController else { return }
         mainController.getDetailCoordinator { [weak self] coordinator in
             self?.controllers.userControllers?.openItemsController.restoreMostRecentlyOpenedItem(using: coordinator, sessionIdentifier: sessionIdentifier) { item in
-                if item == nil {
+                if let item {
+                    DDLogInfo("AppCoordinator: restored open item for continued user activity - \(item)")
+                } else {
                     DDLogInfo("AppCoordinator: no open item to restore for continued user activity")
                 }
             }
