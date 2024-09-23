@@ -136,7 +136,7 @@ final class OpenItemsController {
         itemsBySessionIdentifier[sessionIdentifier, default: []]
     }
 
-    func setItems(_ items: [Item], for sessionIdentifier: String, validate: Bool) {
+    func set(items: [Item], for sessionIdentifier: String, validate: Bool) {
         DDLogInfo("OpenItemsController: setting items \(items) for \(sessionIdentifier)")
         let existingItems = getItems(for: sessionIdentifier)
         let newItems = validate ? filterValidItems(items) : items
@@ -179,7 +179,7 @@ final class OpenItemsController {
                         if !deletions.isEmpty, let self {
                             // Observed items have been deleted, call setItems to validate and register new observer.
                             let existingItems = getItems(for: sessionIdentifier)
-                            setItems(existingItems, for: sessionIdentifier, validate: true)
+                            set(items: existingItems, for: sessionIdentifier, validate: true)
                         }
 
                     case .error(let error):
@@ -198,7 +198,7 @@ final class OpenItemsController {
         for i in 0..<newItems.count {
             newItems[i].userIndex = i
         }
-        setItems(newItems, for: sessionIdentifier, validate: validate)
+        set(items: newItems, for: sessionIdentifier, validate: validate)
     }
 
     func sessionIdentifier(for kind: Item.Kind) -> String? {
@@ -219,7 +219,7 @@ final class OpenItemsController {
             let item = Item(kind: kind, userIndex: existingItems.count)
             let newItems = existingItems + [item]
             // setItems will produce next observable event
-            setItems(newItems, for: sessionIdentifier, validate: false)
+            set(items: newItems, for: sessionIdentifier, validate: false)
         }
     }
 
@@ -270,7 +270,7 @@ final class OpenItemsController {
                     existingItems.removeAll(where: { $0 == item })
                 }
                 // setItems will produce next observable event
-                setItems(existingItems, for: sessionIdentifier, validate: false)
+                set(items: existingItems, for: sessionIdentifier, validate: false)
             }
             if let presenter {
                 presenter.showItem(with: presentation)
@@ -348,7 +348,7 @@ final class OpenItemsController {
                     if itemsCount > 1 {
                         let closeOtherAction = UIAction(title: L10n.Accessibility.Pdf.closeOtherOpenItems, image: .init(systemName: "checkmark.circle.badge.xmark")) { [weak self] _ in
                             guard let self else { return }
-                            setItems([item], for: sessionIdentifier, validate: false)
+                            set(items: [item], for: sessionIdentifier, validate: false)
                             completion(false, true)
                         }
                         currentItemActions.append(closeOtherAction)
@@ -369,7 +369,7 @@ final class OpenItemsController {
 
             let closeAllAction = UIAction(title: L10n.Accessibility.Pdf.closeAllOpenItems, image: .init(systemName: "xmark.square")) { [weak self] _ in
                 guard let self else { return }
-                setItems([], for: sessionIdentifier, validate: false)
+                set(items: [], for: sessionIdentifier, validate: false)
                 openItemPresenterProvider()?.showItem(with: nil)
                 completion(true, true)
             }
@@ -507,10 +507,7 @@ final class OpenItemsController {
 
 extension OpenItemsController {
     func openItemsUserActivity(for sessionIdentifier: String?, libraryId: LibraryIdentifier, collectionId: CollectionIdentifier? = nil) -> NSUserActivity {
-        var items: [Item] = []
-        if let sessionIdentifier {
-            items = getItems(for: sessionIdentifier)
-        }
+        let items = sessionIdentifier.flatMap({ getItems(for: $0) }) ?? []
         return items.isEmpty ? .mainActivity(with: []) : .contentActivity(with: items, libraryId: libraryId, collectionId: collectionId ?? Defaults.shared.selectedCollectionId)
     }
 
