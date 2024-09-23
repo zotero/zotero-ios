@@ -112,18 +112,6 @@ struct ItemsState: ViewModelState {
         return UIFont.preferredFont(for: .headline, weight: .regular)
     }
 
-    var tagsFilter: Set<String>? {
-        let tagFilter = self.filters.first(where: { filter in
-            switch filter {
-            case .tags: return true
-            default: return false
-            }
-        })
-
-        guard let tagFilter = tagFilter, case .tags(let tags) = tagFilter else { return nil }
-        return tags
-    }
-
     init(
         collection: Collection,
         libraryId: LibraryIdentifier,

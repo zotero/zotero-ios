@@ -12,6 +12,26 @@ enum ItemsFilter: Equatable {
     case downloadedFiles
     case tags(Set<String>)
 
+    var tags: Set<String>? {
+        switch self {
+        case .tags(let tags):
+            return tags
+
+        case .downloadedFiles:
+            return nil
+        }
+    }
+
+    var isDownloadedFilesFilter: Bool {
+        switch self {
+        case .tags:
+            return false
+
+        case .downloadedFiles:
+            return true
+        }
+    }
+
     static func == (lhs: ItemsFilter, rhs: ItemsFilter) -> Bool {
         switch (lhs, rhs) {
         case (.downloadedFiles, .downloadedFiles):

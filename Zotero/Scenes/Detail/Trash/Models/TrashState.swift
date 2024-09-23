@@ -6,12 +6,24 @@
 //  Copyright © 2024 Corporation for Digital Scholarship. All rights reserved.
 //
 
-import Foundation
+import UIKit
 import OrderedCollections
 
 import RealmSwift
 
 struct TrashState: ViewModelState {
+    struct Changes: OptionSet {
+        typealias RawValue = UInt8
+
+        let rawValue: UInt8
+
+        static let objects = Changes(rawValue: 1 << 0)
+        static let editing = Changes(rawValue: 1 << 1)
+        static let selection = Changes(rawValue: 1 << 2)
+        static let selectAll = Changes(rawValue: 1 << 3)
+        static let filters = Changes(rawValue: 1 << 4)
+    }
+
     enum Error: Swift.Error {
         case dataLoading
     }
@@ -23,10 +35,21 @@ struct TrashState: ViewModelState {
     var collectionResults: Results<RCollection>?
     var collectionsToken: NotificationToken?
     var objects: OrderedDictionary<TrashKey, TrashObject>
-    var error: Error?
+    var filters: [ItemsFilter]
+    var isEditing: Bool
+    var selectedItems: Set<TrashKey>
+    var changes: Changes
+    var error: ItemsError?
+    var titleFont: UIFont {
+        return UIFont.preferredFont(for: .headline, weight: .regular)
+    }
 
     init(libraryId: LibraryIdentifier) {
         objects = [:]
+        filters = []
+        isEditing = false
+        changes = []
+        selectedItems = []
 
         switch libraryId {
         case .custom:
@@ -39,5 +62,6 @@ struct TrashState: ViewModelState {
 
     mutating func cleanup() {
         error = nil
+        changes = []
     }
 }

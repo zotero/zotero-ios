@@ -9,5 +9,19 @@
 import Foundation
 
 enum TrashAction {
+    case assignItemsToCollections(items: Set<String>, collections: Set<String>)
+    case deleteItems(Set<String>)
+    case deleteItemsFromCollection(Set<String>)
+    case deselectItem(TrashKey)
+    case disableFilter(ItemsFilter)
+    case emptyTrash
+    case enableFilter(ItemsFilter)
     case loadData
+    case moveItems(keys: Set<String>, toItemKey: String)
+    case restoreItems(Set<String>)
+    case selectItem(TrashKey)
+    case startEditing
+    case stopEditing
+    case tagItem(itemKey: String, libraryId: LibraryIdentifier, tagNames: Set<String>)
+    case toggleSelectionState
 }

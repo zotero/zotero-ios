@@ -162,6 +162,8 @@ class BaseItemsViewController: UIViewController {
 
     func process(barButtonItemAction: RightBarButtonItem, sender: UIBarButtonItem) {}
 
+    func downloadsFilterDidChange(enabled: Bool) {}
+
     // MARK: - Setups
 
     func setupTitle() {
@@ -244,7 +246,7 @@ extension BaseItemsViewController: ItemsToolbarControllerDelegate {
     }
 }
 
-extension BaseItemsViewController: TagFilterDelegate {
+extension BaseItemsViewController: FiltersDelegate {
     var currentLibrary: Library {
         return library
     }

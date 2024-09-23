@@ -14,11 +14,10 @@ import CocoaLumberjackSwift
 import RealmSwift
 import RxSwift
 
-struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionHandler {
+final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
     typealias State = ItemsState
     typealias Action = ItemsAction
 
-    unowned let dbStorage: DbStorage
     private unowned let fileStorage: FileStorage
     private unowned let schemaController: SchemaController
     private unowned let urlDetector: UrlDetector
@@ -27,7 +26,6 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
     private unowned let fileCleanupController: AttachmentFileCleanupController
     private unowned let syncScheduler: SynchronizationScheduler
     private unowned let htmlAttributedStringConverter: HtmlAttributedStringConverter
-    let backgroundQueue: DispatchQueue
     private let disposeBag: DisposeBag
     private let quotationExpression: NSRegularExpression?
 
@@ -42,8 +40,6 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
         syncScheduler: SynchronizationScheduler,
         htmlAttributedStringConverter: HtmlAttributedStringConverter
     ) {
-        self.backgroundQueue = DispatchQueue(label: "org.zotero.ItemsActionHandler.backgroundProcessing", qos: .userInitiated)
-        self.dbStorage = dbStorage
         self.fileStorage = fileStorage
         self.schemaController = schemaController
         self.urlDetector = urlDetector
@@ -60,18 +56,33 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
             DDLogError("ItemsActionHandler: can't create quotation expression - \(error)")
             self.quotationExpression = nil
         }
+
+        super.init(dbStorage: dbStorage)
     }
 
     func process(action: ItemsAction, in viewModel: ViewModel<ItemsActionHandler>) {
+        let handleBaseActionResult: (Result<Void, ItemsError>) -> Void = { [weak self, weak viewModel] result in
+            guard let self, let viewModel else { return }
+            switch result {
+            case .failure(let error):
+                update(viewModel: viewModel) { state in
+                    state.error = error
+                }
+
+            case .success:
+                break
+            }
+        }
+
         switch action {
         case .addAttachments(let urls):
             self.addAttachments(urls: urls, in: viewModel)
 
         case .assignItemsToCollections(let items, let collections):
-            self.add(items: items, to: collections, in: viewModel)
+            add(items: items, to: collections, libraryId: viewModel.state.library.identifier, completion: handleBaseActionResult)
 
         case .deleteItemsFromCollection(let keys):
-            self.deleteItemsFromCollection(keys: keys, in: viewModel)
+            deleteItemsFromCollection(keys: keys, collectionId: viewModel.state.collection.identifier, libraryId: viewModel.state.library.identifier, completion: handleBaseActionResult)
 
         case .deselectItem(let key):
             self.update(viewModel: viewModel) { state in
@@ -89,7 +100,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
             self.loadItemForDuplication(key: key, in: viewModel)
 
         case .moveItems(let fromKeys, let toKey):
-            self.moveItems(from: fromKeys, to: toKey, in: viewModel)
+            moveItems(from: fromKeys, to: toKey, libraryId: viewModel.state.library.identifier, completion: handleBaseActionResult)
 
         case .observingFailed:
             self.update(viewModel: viewModel) { state in
@@ -119,13 +130,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
             self.changeSortType(to: sortType, in: viewModel)
 
         case .trashItems(let keys):
-            self.set(trashed: true, to: keys, in: viewModel)
-
-        case .restoreItems(let keys):
-            self.set(trashed: false, to: keys, in: viewModel)
-
-        case .deleteItems(let keys):
-            self.delete(items: keys, in: viewModel)
+            set(trashed: true, to: keys, libraryId: viewModel.state.library.identifier, completion: handleBaseActionResult)
 
         case .loadInitialState:
             self.loadInitialState(in: viewModel)
@@ -168,10 +173,10 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
             self.updateDeletedAttachments(notification, in: viewModel)
 
         case .enableFilter(let filter):
-            self.enable(filter: filter, in: viewModel)
+            self.filter(with: add(filter: filter, to: viewModel.state.filters), in: viewModel)
 
         case .disableFilter(let filter):
-            self.disable(filter: filter, in: viewModel)
+            self.filter(with: remove(filter: filter, from: viewModel.state.filters), in: viewModel)
 
         case .download(let keys):
             self.downloadAttachments(for: keys, in: viewModel)
@@ -179,11 +184,8 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
         case .removeDownloads(let ids):
             self.fileCleanupController.delete(.allForItems(ids, viewModel.state.library.identifier))
 
-        case .emptyTrash:
-            self.emptyTrash(in: viewModel)
-
         case .tagItem(let itemKey, let libraryId, let tagNames):
-            self.tagItem(key: itemKey, libraryId: libraryId, with: tagNames, in: viewModel)
+            tagItem(key: itemKey, libraryId: libraryId, with: tagNames)
 
         case .cacheItemTitle(let key, let title):
             self.update(viewModel: viewModel) { state in
@@ -197,28 +199,11 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
         }
     }
 
-    private func tagItem(key: String, libraryId: LibraryIdentifier, with names: Set<String>, in viewModel: ViewModel<ItemsActionHandler>) {
-        let request = AddTagsToItemDbRequest(key: key, libraryId: libraryId, tagNames: names)
-        self.perform(request: request) { error in
-            guard let error = error else { return }
-            // TODO: - show error
-            DDLogError("ItemsActionHandler: can't add tags - \(error)")
-        }
-    }
-
-    private func emptyTrash(in viewModel: ViewModel<ItemsActionHandler>) {
-        self.perform(request: EmptyTrashDbRequest(libraryId: viewModel.state.library.identifier)) { error in
-            guard let error = error else { return }
-            // TODO: - show error
-            DDLogError("ItemsActionHandler: can't empty trash - \(error)")
-        }
-    }
-
     private func loadInitialState(in viewModel: ViewModel<ItemsActionHandler>) {
         do {
             let sortType = Defaults.shared.itemsSortType
-            let (library, libraryToken) = try viewModel.state.library.identifier.observe(in: dbStorage, changes: { [weak viewModel] library in
-                guard let viewModel else { return }
+            let (library, libraryToken) = try viewModel.state.library.identifier.observe(in: dbStorage, changes: { [weak self, weak viewModel] library in
+                guard let self, let viewModel else { return }
                 update(viewModel: viewModel) { state in
                     state.library = library
                     state.changes = .library
@@ -398,66 +383,7 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
         }
     }
 
-    // MARK: - Drag & Drop
-
-    private func moveItems(from keys: Set<String>, to key: String, in viewModel: ViewModel<ItemsActionHandler>) {
-        let request = MoveItemsToParentDbRequest(itemKeys: keys, parentKey: key, libraryId: viewModel.state.library.identifier)
-        self.perform(request: request) { [weak viewModel] error in
-            guard let viewModel = viewModel, let error = error else { return }
-            DDLogError("ItemsStore: can't move items to parent: \(error)")
-            self.update(viewModel: viewModel) { state in
-                state.error = .itemMove
-            }
-        }
-    }
-
-    private func add(items itemKeys: Set<String>, to collectionKeys: Set<String>, in viewModel: ViewModel<ItemsActionHandler>) {
-        let request = AssignItemsToCollectionsDbRequest(collectionKeys: collectionKeys, itemKeys: itemKeys, libraryId: viewModel.state.library.identifier)
-        self.perform(request: request) { [weak viewModel] error in
-            guard let viewModel = viewModel, let error = error else { return }
-            DDLogError("ItemsStore: can't assign collections to items - \(error)")
-            self.update(viewModel: viewModel) { state in
-                state.error = .collectionAssignment
-            }
-        }
-    }
-
     // MARK: - Toolbar actions
-
-    private func deleteItemsFromCollection(keys: Set<String>, in viewModel: ViewModel<ItemsActionHandler>) {
-        guard case .collection(let key) = viewModel.state.collection.identifier else { return }
-
-        let request = DeleteItemsFromCollectionDbRequest(collectionKey: key, itemKeys: keys, libraryId: viewModel.state.library.identifier)
-        self.perform(request: request) { [weak viewModel] error in
-            guard let viewModel = viewModel, let error = error else { return }
-            DDLogError("ItemsStore: can't delete items - \(error)")
-            self.update(viewModel: viewModel) { state in
-                state.error = .deletionFromCollection
-            }
-        }
-    }
-
-    private func delete(items keys: Set<String>, in viewModel: ViewModel<ItemsActionHandler>) {
-        let request = MarkObjectsAsDeletedDbRequest<RItem>(keys: Array(keys), libraryId: viewModel.state.library.identifier)
-        self.perform(request: request) { [weak viewModel] error in
-            guard let viewModel = viewModel, let error = error else { return }
-            DDLogError("ItemsStore: can't delete items - \(error)")
-            self.update(viewModel: viewModel) { state in
-                state.error = .deletion
-            }
-        }
-    }
-
-    private func set(trashed: Bool, to keys: Set<String>, in viewModel: ViewModel<ItemsActionHandler>) {
-        let request = MarkItemsAsTrashedDbRequest(keys: Array(keys), libraryId: viewModel.state.library.identifier, trashed: trashed)
-        self.perform(request: request) { [weak viewModel] error in
-            guard let viewModel = viewModel, let error = error else { return }
-            DDLogError("ItemsStore: can't trash items - \(error)")
-            self.update(viewModel: viewModel) { state in
-                state.error = .deletion
-            }
-        }
-    }
 
     /// Loads item which was selected for duplication from DB. When `itemDuplication` is set, appropriate screen with loaded item is opened.
     /// - parameter key: Key of item for duplication.
@@ -544,19 +470,19 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
         let type = self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""
         let request = CreateAttachmentsDbRequest(attachments: attachments, parentKey: nil, localizedType: type, collections: collections)
 
-        self.perform(request: request, invalidateRealm: true) { [weak viewModel] result in
-            guard let viewModel = viewModel else { return }
+        self.perform(request: request, invalidateRealm: true) { [weak self, weak viewModel] result in
+            guard let self, let viewModel else { return }
 
             switch result {
             case .success(let failed):
                 guard !failed.isEmpty else { return }
-                self.update(viewModel: viewModel) { state in
+                update(viewModel: viewModel) { state in
                     state.error = .attachmentAdding(.someFailed(failed.map({ $0.1 })))
                 }
 
             case .failure(let error):
                 DDLogError("ItemsActionHandler: can't add attachment: \(error)")
-                self.update(viewModel: viewModel) { state in
+                update(viewModel: viewModel) { state in
                     state.error = .attachmentAdding(.couldNotSave)
                 }
             }
@@ -564,37 +490,6 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
     }
 
     // MARK: - Searching & Filtering
-
-    private func enable(filter: ItemsFilter, in viewModel: ViewModel<ItemsActionHandler>) {
-        var filters = viewModel.state.filters
-
-        guard !filters.contains(filter) else { return }
-
-        let modificationIndex = filters.firstIndex(where: { existing in
-            switch (existing, filter) {
-            // Update array inside existing `tags` filter
-            case (.tags, .tags): return true
-            default: return false
-            }
-        })
-
-        if let index = modificationIndex {
-            filters[index] = filter
-        } else {
-            filters.append(filter)
-        }
-
-        self.filter(with: filters, in: viewModel)
-    }
-
-    private func disable(filter: ItemsFilter, in viewModel: ViewModel<ItemsActionHandler>) {
-        var filters = viewModel.state.filters
-
-        guard let index = filters.firstIndex(of: filter) else { return }
-
-        filters.remove(at: index)
-        self.filter(with: filters, in: viewModel)
-    }
 
     private func filter(with filters: [ItemsFilter], in viewModel: ViewModel<ItemsActionHandler>) {
         guard filters != viewModel.state.filters else { return }

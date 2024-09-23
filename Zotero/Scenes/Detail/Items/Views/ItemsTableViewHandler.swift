@@ -25,11 +25,10 @@ protocol ItemsTableViewHandlerDelegate: AnyObject {
 
 protocol ItemsTableViewDataSource: UITableViewDataSource {
     var count: Int { get }
-    var selectedItems: Set<String> { get }
+    var selectedItems: Set<AnyHashable> { get }
     var handler: ItemsTableViewHandler? { get set }
 
     func object(at index: Int) -> ItemsTableViewObject?
-    func accessory(forKey key: String) -> ItemAccessory?
     func tapAction(for indexPath: IndexPath) -> ItemsTableViewHandler.TapAction?
     func createTrailingCellActions(at index: Int) -> [ItemAction]?
     func createContextMenuActions(at index: Int) -> [ItemAction]
@@ -42,8 +41,8 @@ final class ItemsTableViewHandler: NSObject {
         case attachment(attachment: Attachment, parentKey: String?)
         case doi(String)
         case url(URL)
-        case selectItem(String)
-        case deselectItem(String)
+        case selectItem(ItemsTableViewObject)
+        case deselectItem(ItemsTableViewObject)
     }
 
     enum DragAndDropAction {
@@ -280,7 +279,7 @@ extension ItemsTableViewHandler: UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
         guard delegate.isEditing, let object = dataSource.object(at: indexPath.row) else { return }
-        delegate.process(tapAction: .deselectItem(object.key))
+        delegate.process(tapAction: .deselectItem(object))
     }
 
     func tableView(_ tableView: UITableView, shouldBeginMultipleSelectionInteractionAt indexPath: IndexPath) -> Bool {

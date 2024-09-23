@@ -12,21 +12,29 @@ protocol ItemsFilterCoordinatorDelegate: AnyObject {
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
 }
 
+protocol FiltersDelegate: AnyObject {
+    var currentLibrary: Library { get }
+
+    func downloadsFilterDidChange(enabled: Bool)
+    func tagSelectionDidChange(selected: Set<String>)
+    func tagOptionsDidChange()
+}
+
 final class ItemsFilterCoordinator: NSObject, Coordinator {
     weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
     weak var navigationController: UINavigationController?
 
-    private unowned let viewModel: ViewModel<ItemsActionHandler>
+    private let filters: [ItemsFilter]
     private unowned let controllers: Controllers
-    private weak var itemsController: ItemsViewController?
+    private weak var filtersDelegate: BaseItemsViewController?
 
-    init(viewModel: ViewModel<ItemsActionHandler>, itemsController: ItemsViewController, navigationController: NavigationViewController, controllers: Controllers) {
-        self.viewModel = viewModel
+    init(filters: [ItemsFilter], filtersDelegate: BaseItemsViewController, navigationController: NavigationViewController, controllers: Controllers) {
+        self.filters = filters
         self.navigationController = navigationController
         self.controllers = controllers
-        self.itemsController = itemsController
-        self.childCoordinators = []
+        self.filtersDelegate = filtersDelegate
+        childCoordinators = []
 
         super.init()
 
@@ -37,30 +45,30 @@ final class ItemsFilterCoordinator: NSObject, Coordinator {
     }
 
     func start(animated: Bool) {
-        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
-
-        let selected = self.viewModel.state.tagsFilter ?? []
-        let state = TagFilterState(selectedTags: selected, showAutomatic: Defaults.shared.tagPickerShowAutomaticTags, displayAll: Defaults.shared.tagPickerDisplayAllTags)
+        guard let dbStorage = controllers.userControllers?.dbStorage else { return }
+        let tags = filters.compactMap({ $0.tags }).first
+        let state = TagFilterState(selectedTags: tags ?? [], showAutomatic: Defaults.shared.tagPickerShowAutomaticTags, displayAll: Defaults.shared.tagPickerDisplayAllTags)
         let handler = TagFilterActionHandler(dbStorage: dbStorage)
-        let tagController = TagFilterViewController(viewModel: ViewModel(initialState: state, handler: handler), dragDropController: self.controllers.dragDropController)
+        let tagController = TagFilterViewController(viewModel: ViewModel(initialState: state, handler: handler), dragDropController: controllers.dragDropController)
         tagController.view.translatesAutoresizingMaskIntoConstraints = false
-        tagController.delegate = self.itemsController
-        self.itemsController?.tagFilterDelegate = tagController
+        tagController.delegate = filtersDelegate
+        filtersDelegate?.tagFilterDelegate = tagController
 
-        let controller = ItemsFilterViewController(viewModel: self.viewModel, tagFilterController: tagController)
+        let downloadsFilterEnabled = filters.contains(where: { $0.isDownloadedFilesFilter })
+        let controller = ItemsFilterViewController(downloadsFilterEnabled: downloadsFilterEnabled, tagFilterController: tagController)
+        controller.delegate = filtersDelegate
         controller.coordinatorDelegate = self
-        self.navigationController?.setViewControllers([controller], animated: animated)
+        navigationController?.setViewControllers([controller], animated: animated)
     }
 }
 
 extension ItemsFilterCoordinator: ItemsFilterCoordinatorDelegate {
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void) {
-        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
-
+        guard let dbStorage = controllers.userControllers?.dbStorage else { return }
         let state = TagPickerState(libraryId: libraryId, selectedTags: selected)
         let handler = TagPickerActionHandler(dbStorage: dbStorage)
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = TagPickerViewController(viewModel: viewModel, saveAction: picked)
-        self.navigationController?.pushViewController(controller, animated: true)
+        navigationController?.pushViewController(controller, animated: true)
     }
 }
