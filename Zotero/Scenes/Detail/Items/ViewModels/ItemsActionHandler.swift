@@ -194,6 +194,14 @@ struct ItemsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionH
             self.update(viewModel: viewModel) { state in
                 state.itemTitles = [:]
             }
+            
+        case .updateOpenItems(let items):
+            update(viewModel: viewModel) { state in
+                if state.openItemsCount != items.count {
+                    state.openItemsCount = items.count
+                    state.changes = .openItems
+                }
+            }
         }
     }
 
