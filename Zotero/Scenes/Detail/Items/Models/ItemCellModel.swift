@@ -46,6 +46,7 @@ struct ItemCellModel {
 
     init(object: TrashObject) {
         key = object.key
+        title = object.title
 
         switch object.type {
         case .collection:
@@ -56,9 +57,8 @@ struct ItemCellModel {
             tagEmojis = []
             accessory = nil
             typeName = "Collection"
-            title = NSAttributedString(string: object.title)
 
-        case .item(let cellData, _):
+        case .item(let cellData, _, _):
             typeIconName = cellData.typeIconName
             subtitle = cellData.subtitle
             hasNote = cellData.hasNote
@@ -66,7 +66,6 @@ struct ItemCellModel {
             tagEmojis = cellData.tagEmojis
             accessory = cellData.accessory
             typeName = cellData.localizedTypeName
-            title = cellData.attributedTitle
         }
     }
 

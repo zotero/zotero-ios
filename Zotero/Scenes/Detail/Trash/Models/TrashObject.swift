@@ -31,7 +31,6 @@ struct TrashObject {
     }
 
     struct ItemCellData {
-        let attributedTitle: NSAttributedString
         let localizedTypeName: String
         let typeIconName: String
         let subtitle: String
@@ -43,13 +42,13 @@ struct TrashObject {
 
     enum Kind {
         case collection
-        case item(cellData: ItemCellData, sortData: ItemSortData)
+        case item(cellData: ItemCellData, sortData: ItemSortData, accessory: ItemAccessory?)
     }
 
     let type: Kind
     let key: String
     let libraryId: LibraryIdentifier
-    let title: String
+    let title: NSAttributedString
     let dateModified: Date
 
     var trashKey: TrashKey {
@@ -67,16 +66,16 @@ struct TrashObject {
     var sortTitle: String {
         switch type {
         case .collection:
-            return title
+            return title.string
 
-        case .item(_, let sortData):
+        case .item(_, let sortData, _):
             return sortData.title
         }
     }
 
     var sortType: String? {
         switch type {
-        case .item(_, let sortData):
+        case .item(_, let sortData, _):
             return sortData.type
 
         case .collection:
@@ -86,7 +85,7 @@ struct TrashObject {
 
     var creatorSummary: String? {
         switch type {
-        case .item(_, let sortData):
+        case .item(_, let sortData, _):
             return sortData.creatorSummary
 
         case .collection:
@@ -96,7 +95,7 @@ struct TrashObject {
 
     var publisher: String? {
         switch type {
-        case .item(_, let sortData):
+        case .item(_, let sortData, _):
             return sortData.publisher
 
         case .collection:
@@ -106,7 +105,7 @@ struct TrashObject {
 
     var publicationTitle: String? {
         switch type {
-        case .item(_, let sortData):
+        case .item(_, let sortData, _):
             return sortData.publicationTitle
 
         case .collection:
@@ -116,7 +115,7 @@ struct TrashObject {
 
     var year: Int? {
         switch type {
-        case .item(_, let sortData):
+        case .item(_, let sortData, _):
             return sortData.year
 
         case .collection:
@@ -126,7 +125,7 @@ struct TrashObject {
 
     var date: Date? {
         switch type {
-        case .item(_, let sortData):
+        case .item(_, let sortData, _):
             return sortData.date
 
         case .collection:
@@ -136,8 +135,18 @@ struct TrashObject {
 
     var dateAdded: Date? {
         switch type {
-        case .item(_, let sortData):
+        case .item(_, let sortData, _):
             return sortData.dateAdded
+
+        case .collection:
+            return nil
+        }
+    }
+
+    var itemAccessory: ItemAccessory? {
+        switch type {
+        case .item(_, _, let accessory):
+            return accessory
 
         case .collection:
             return nil

@@ -57,83 +57,50 @@ final class TrashViewController: BaseItemsViewController {
 
     override func process(action: ItemAction.Kind, for selectedKeys: Set<String>, button: UIBarButtonItem?, completionAction: ((Bool) -> Void)?) {
         switch action {
+        case .createParent, .duplicate, .trash, .copyBibliography, .copyCitation, .share:
+            // These actions are not available in trash collection
+            break
+
         case .addToCollection:
             guard !selectedKeys.isEmpty else { return }
             coordinatorDelegate?.showCollectionsPicker(in: library, completed: { [weak self] collections in
-//                self?.viewModel.process(action: .assignItemsToCollections(items: selectedKeys, collections: collections))
+                self?.viewModel.process(action: .assignItemsToCollections(items: selectedKeys, collections: collections))
                 completionAction?(true)
             })
-
-        case .createParent:
-//            guard let key = selectedKeys.first, case .attachment(let attachment, _) = viewModel.state.itemAccessories[key] else { return }
-//            let collectionKey = collection.identifier.key
-//            coordinatorDelegate?.showItemDetail(
-//                for: .creation(type: ItemTypes.document, child: attachment, collectionKey: collectionKey),
-//                libraryId: library.identifier,
-//                scrolledToKey: nil,
-//                animated: true
-//            )
-            break
 
         case .delete:
             guard !selectedKeys.isEmpty else { return }
             coordinatorDelegate?.showDeletionQuestion(
-                count: 0,//viewModel.state.selectedItems.count,
+                count: selectedKeys.count,
                 confirmAction: { [weak self] in
-//                    self?.viewModel.process(action: .deleteItems(selectedKeys))
+                    self?.viewModel.process(action: .deleteItems(selectedKeys))
                 },
                 cancelAction: {
                     completionAction?(false)
                 }
             )
 
-        case .duplicate:
-//            guard let key = selectedKeys.first else { return }
-//            viewModel.process(action: .loadItemToDuplicate(key))
-            break
-
         case .removeFromCollection:
             guard !selectedKeys.isEmpty else { return }
             coordinatorDelegate?.showRemoveFromCollectionQuestion(
                 count: viewModel.state.objects.count
             ) { [weak self] in
-//                self?.viewModel.process(action: .deleteItemsFromCollection(selectedKeys))
+                self?.viewModel.process(action: .deleteItemsFromCollection(selectedKeys))
                 completionAction?(true)
             }
 
         case .restore:
             guard !selectedKeys.isEmpty else { return }
-//            viewModel.process(action: .restoreItems(selectedKeys))
+            viewModel.process(action: .restoreItems(selectedKeys))
             completionAction?(true)
-
-        case .trash:
-            guard !selectedKeys.isEmpty else { return }
-//            viewModel.process(action: .trashItems(selectedKeys))
-            break
 
         case .filter:
             guard let button else { return }
-//            coordinatorDelegate?.showFilters(viewModel: viewModel, itemsController: self, button: button)
-            break
+            coordinatorDelegate?.showFilters(filters: viewModel.state.filters, filtersDelegate: self, button: button)
 
         case .sort:
             guard let button else { return }
 //            coordinatorDelegate?.showSortActions(viewModel: viewModel, button: button)
-            break
-
-        case .share:
-            guard !selectedKeys.isEmpty else { return }
-            coordinatorDelegate?.showCiteExport(for: selectedKeys, libraryId: library.identifier)
-
-        case .copyBibliography:
-            var presenter: UIViewController = self
-            if let searchController = navigationItem.searchController, searchController.isActive {
-                presenter = searchController
-            }
-            coordinatorDelegate?.copyBibliography(using: presenter, for: selectedKeys, libraryId: library.identifier, delegate: nil)
-
-        case .copyCitation:
-            coordinatorDelegate?.showCitation(using: nil, for: selectedKeys, libraryId: library.identifier, delegate: nil)
 
         case .download:
 //            viewModel.process(action: .download(selectedKeys))
@@ -148,23 +115,19 @@ final class TrashViewController: BaseItemsViewController {
     override func process(barButtonItemAction: BaseItemsViewController.RightBarButtonItem, sender: UIBarButtonItem) {
         switch barButtonItemAction {
         case .add:
-//            coordinatorDelegate?.showAddActions(viewModel: viewModel, button: sender)
             break
 
         case .deselectAll, .selectAll:
-//            viewModel.process(action: .toggleSelectionState)
-            break
+            viewModel.process(action: .toggleSelectionState)
 
         case .done:
-//            viewModel.process(action: .stopEditing)
-            break
+            viewModel.process(action: .stopEditing)
 
         case .emptyTrash:
-            break
+            viewModel.process(action: .emptyTrash)
 
         case .select:
-//            viewModel.process(action: .startEditing)
-            break
+            viewModel.process(action: .startEditing)
         }
     }
 
@@ -187,27 +150,26 @@ final class TrashViewController: BaseItemsViewController {
         return selectItems + [.emptyTrash]
 
         func rightBarButtonSelectItemTypes(for state: TrashState) -> [RightBarButtonItem] {
-            return [.select]
-//            if !state.isEditing {
-//                return [.select]
-//            }
-//            if state.selectedItems.count == (state.results?.count ?? 0) {
-//                return [.deselectAll, .done]
-//            }
-//            return [.selectAll, .done]
+            if !state.isEditing {
+                return [.select]
+            }
+            if state.selectedItems.count == state.objects.count {
+                return [.deselectAll, .done]
+            }
+            return [.selectAll, .done]
         }
     }
 
     // MARK: - Tag filter delegate
 
     override func tagSelectionDidChange(selected: Set<String>) {
-//        if selected.isEmpty {
-//            if let tags = viewModel.state.tagsFilter {
-//                viewModel.process(action: .disableFilter(.tags(tags)))
-//            }
-//        } else {
-//            viewModel.process(action: .enableFilter(.tags(selected)))
-//        }
+        if selected.isEmpty {
+            if let tags = viewModel.state.filters.compactMap({ $0.tags }).first {
+                viewModel.process(action: .disableFilter(.tags(tags)))
+            }
+        } else {
+            viewModel.process(action: .enableFilter(.tags(selected)))
+        }
     }
 }
 
@@ -221,11 +183,54 @@ extension TrashViewController: ItemsTableViewHandlerDelegate {
     }
     
     func process(action: ItemAction.Kind, at index: Int, completionAction: ((Bool) -> Void)?) {
+        guard let object = dataSource.object(at: index) else { return }
+        process(action: action, for: [object.key], button: nil, completionAction: completionAction)
     }
     
     func process(tapAction action: ItemsTableViewHandler.TapAction) {
+        resetActiveSearch()
+
+        switch action {
+        case .metadata(let object):
+            coordinatorDelegate?.showItemDetail(for: .preview(key: object.key), libraryId: viewModel.state.library.identifier, scrolledToKey: nil, animated: true)
+
+        case .attachment(let attachment, let parentKey):
+//            viewModel.process(action: .openAttachment(attachment: attachment, parentKey: parentKey))
+            break
+
+        case .doi(let doi):
+            coordinatorDelegate?.show(doi: doi)
+
+        case .url(let url):
+            coordinatorDelegate?.show(url: url)
+
+        case .selectItem(let object):
+            guard let trashObject = object as? TrashObject else { return }
+            viewModel.process(action: .selectItem(trashObject.trashKey))
+
+        case .deselectItem(let object):
+            guard let trashObject = object as? TrashObject else { return }
+            viewModel.process(action: .deselectItem(trashObject.trashKey))
+
+        case .note(let object):
+            guard let item = object as? RItem, let note = Note(item: item) else { return }
+            let tags = Array(item.tags.map({ Tag(tag: $0) }))
+            coordinatorDelegate?.showNote(library: viewModel.state.library, kind: .edit(key: note.key), text: note.text, tags: tags, parentTitleData: nil, title: note.title, saveCallback: nil)
+        }
+
+        func resetActiveSearch() {
+            guard let searchBar = navigationItem.searchController?.searchBar else { return }
+            searchBar.resignFirstResponder()
+        }
     }
     
     func process(dragAndDropAction action: ItemsTableViewHandler.DragAndDropAction) {
+        switch action {
+        case .moveItems(let keys, let toKey):
+            viewModel.process(action: .moveItems(keys: keys, toItemKey: toKey))
+
+        case .tagItem(let key, let libraryId, let tags):
+            viewModel.process(action: .tagItem(itemKey: key, libraryId: libraryId, tagNames: tags))
+        }
     }
 }
