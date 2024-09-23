@@ -416,65 +416,65 @@ final class OpenItemsController {
     }
 
     private func loadPresentation(for item: Item, completion: @escaping (Presentation?) -> Void) {
-        switch item.kind {
-        case .pdf(let libraryId, let key):
-            loadPDFPresentation(key: key, libraryId: libraryId, completion: completion)
+        do {
+            try dbStorage.perform(on: .main) { coordinator in
+                switch item.kind {
+                case .pdf(let libraryId, let key):
+                    try loadPDFPresentation(key: key, libraryId: libraryId, coordinator: coordinator, completion: completion)
 
-        case .note(let libraryId, let key):
-            loadNotePresentation(key: key, libraryId: libraryId, completion: completion)
+                case .note(let libraryId, let key):
+                    try loadNotePresentation(key: key, libraryId: libraryId, coordinator: coordinator, completion: completion)
+                }
+            }
+        } catch let error {
+            DDLogError("OpenItemsController: can't load item \(item) - \(error)")
+            completion(nil)
         }
 
-        func loadPDFPresentation(key: String, libraryId: LibraryIdentifier, completion: @escaping (Presentation?) -> Void) {
-            do {
-                try dbStorage.perform(on: .main) { coordinator in
-                    let library: Library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
-                    let rItem = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
-                    let parentKey = rItem.parent?.key
-                    guard let attachment = AttachmentCreator.attachment(for: rItem, fileStorage: fileStorage, urlDetector: nil) else {
-                        completion(nil)
-                        return
-                    }
-                    switch attachment.type {
-                    case .file(let filename, let contentType, let location, _, _):
-                        switch location {
-                        case .local:
-                            completion(createPDFPresentation(key: key, parentKey: parentKey, library: library, filename: filename, contentType: contentType))
+        func loadPDFPresentation(key: String, libraryId: LibraryIdentifier, coordinator: DbCoordinator, completion: @escaping (Presentation?) -> Void) throws {
+            let library: Library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
+            let rItem = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
+            let parentKey = rItem.parent?.key
+            guard let attachment = AttachmentCreator.attachment(for: rItem, fileStorage: fileStorage, urlDetector: nil) else {
+                completion(nil)
+                return
+            }
+            switch attachment.type {
+            case .file(let filename, let contentType, let location, _, _):
+                switch location {
+                case .local:
+                    completion(createPDFPresentation(key: key, parentKey: parentKey, library: library, filename: filename, contentType: contentType))
 
-                        case .localAndChangedRemotely, .remote:
-                            let disposeBag = DisposeBag()
-                            attachmentDownloader.observable
-                                .observe(on: MainScheduler.instance)
-                                .subscribe(onNext: { [weak self] update in
-                                    guard let self, update.libraryId == attachment.libraryId, update.key == attachment.key else { return }
-                                    switch update.kind {
-                                    case .ready:
-                                        completion(createPDFPresentation(key: key, parentKey: parentKey, library: library, filename: filename, contentType: contentType))
-                                        downloadDisposeBag = nil
+                case .localAndChangedRemotely, .remote:
+                    let disposeBag = DisposeBag()
+                    attachmentDownloader.observable
+                        .observe(on: MainScheduler.instance)
+                        .subscribe(onNext: { [weak self] update in
+                            guard let self, update.libraryId == attachment.libraryId, update.key == attachment.key else { return }
+                            switch update.kind {
+                            case .ready:
+                                completion(createPDFPresentation(key: key, parentKey: parentKey, library: library, filename: filename, contentType: contentType))
+                                downloadDisposeBag = nil
 
-                                    case .cancelled, .failed:
-                                        completion(nil)
-                                        downloadDisposeBag = nil
+                            case .cancelled, .failed:
+                                completion(nil)
+                                downloadDisposeBag = nil
 
-                                    case .progress:
-                                        break
-                                    }
-                                })
-                                .disposed(by: disposeBag)
-                            downloadDisposeBag = disposeBag
-                            attachmentDownloader.downloadIfNeeded(attachment: attachment, parentKey: parentKey)
+                            case .progress:
+                                break
+                            }
+                        })
+                        .disposed(by: disposeBag)
+                    downloadDisposeBag = disposeBag
+                    attachmentDownloader.downloadIfNeeded(attachment: attachment, parentKey: parentKey)
 
-                        case .remoteMissing:
-                            DDLogError("OpenItemsController: can't load PDF item (key: \(key), library: \(libraryId)) - remote missing")
-                            completion(nil)
-                        }
-
-                    case .url:
-                        DDLogError("OpenItemsController: can't load PDF item (key: \(key), library: \(libraryId)) - not a file attachment")
-                        completion(nil)
-                    }
+                case .remoteMissing:
+                    DDLogError("OpenItemsController: can't load PDF item (key: \(key), library: \(libraryId)) - remote missing")
+                    completion(nil)
                 }
-            } catch let error {
-                DDLogError("OpenItemsController: can't load PDF item (key: \(key), library: \(libraryId)) - \(error)")
+
+            case .url:
+                DDLogError("OpenItemsController: can't load PDF item (key: \(key), library: \(libraryId)) - not a file attachment")
                 completion(nil)
             }
 
@@ -485,22 +485,15 @@ final class OpenItemsController {
             }
         }
 
-        func loadNotePresentation(key: String, libraryId: LibraryIdentifier, completion: @escaping (Presentation?) -> Void) {
-            do {
-                try dbStorage.perform(on: .main) { coordinator in
-                    let library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
-                    let rItem = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
-                    guard let note = Note(item: rItem) else {
-                        completion(nil)
-                        return
-                    }
-                    let parentTitleData: NoteEditorState.TitleData? = rItem.parent.flatMap { .init(type: $0.rawType, title: $0.displayTitle) }
-                    completion(.note(library: library, key: note.key, text: note.text, tags: note.tags, parentTitleData: parentTitleData, title: note.title))
-                }
-            } catch let error {
-                DDLogError("OpenItemsController: can't load note item (key: \(key), library: \(libraryId)) - \(error)")
+        func loadNotePresentation(key: String, libraryId: LibraryIdentifier, coordinator: DbCoordinator, completion: @escaping (Presentation?) -> Void) throws {
+            let library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
+            let rItem = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
+            guard let note = Note(item: rItem) else {
                 completion(nil)
+                return
             }
+            let parentTitleData: NoteEditorState.TitleData? = rItem.parent.flatMap { .init(type: $0.rawType, title: $0.displayTitle) }
+            completion(.note(library: library, key: note.key, text: note.text, tags: note.tags, parentTitleData: parentTitleData, title: note.title))
         }
     }
 }
