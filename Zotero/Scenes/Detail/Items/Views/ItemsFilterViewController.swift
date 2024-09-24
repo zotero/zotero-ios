@@ -24,7 +24,7 @@ class ItemsFilterViewController: UIViewController {
 
     weak var coordinatorDelegate: ItemsFilterCoordinatorDelegate?
     private var downloadsFilterEnabled: Bool
-    weak var delegate: TagFilterDelegate?
+    weak var delegate: FiltersDelegate?
 
     init(downloadsFilterEnabled: Bool, tagFilterController: TagFilterViewController) {
         self.downloadsFilterEnabled = downloadsFilterEnabled

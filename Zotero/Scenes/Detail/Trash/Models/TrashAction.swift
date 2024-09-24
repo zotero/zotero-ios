@@ -19,6 +19,9 @@ enum TrashAction {
     case loadData
     case moveItems(keys: Set<String>, toItemKey: String)
     case restoreItems(Set<String>)
+    case search(String)
+    case setSortField(ItemsSortType.Field)
+    case setSortOrder(Bool)
     case selectItem(TrashKey)
     case startEditing
     case stopEditing
