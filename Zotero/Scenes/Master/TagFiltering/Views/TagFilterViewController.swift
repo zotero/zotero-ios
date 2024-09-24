@@ -17,7 +17,7 @@ class TagFilterViewController: UIViewController {
     private weak var collectionView: UICollectionView!
     private weak var searchBarTopConstraint: NSLayoutConstraint!
     private weak var optionsButton: UIButton!
-    weak var delegate: TagFilterDelegate?
+    weak var delegate: FiltersDelegate?
     private var searchBarScrollEnabled: Bool
     private var didAppear: Bool
 

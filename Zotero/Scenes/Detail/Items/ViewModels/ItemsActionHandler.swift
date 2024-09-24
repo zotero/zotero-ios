@@ -27,7 +27,6 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
     private unowned let syncScheduler: SynchronizationScheduler
     private unowned let htmlAttributedStringConverter: HtmlAttributedStringConverter
     private let disposeBag: DisposeBag
-    private let quotationExpression: NSRegularExpression?
 
     init(
         dbStorage: DbStorage,
@@ -49,14 +48,6 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
         self.syncScheduler = syncScheduler
         self.htmlAttributedStringConverter = htmlAttributedStringConverter
         self.disposeBag = DisposeBag()
-
-        do {
-            self.quotationExpression = try NSRegularExpression(pattern: #"("[^"]+"?)"#)
-        } catch let error {
-            DDLogError("ItemsActionHandler: can't create quotation expression - \(error)")
-            self.quotationExpression = nil
-        }
-
         super.init(dbStorage: dbStorage)
     }
 
@@ -111,10 +102,7 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
             self.search(for: (text.isEmpty ? nil : text), ignoreOriginal: false, in: viewModel)
 
         case .setSortField(let field):
-            var sortType = viewModel.state.sortType
-            sortType.field = field
-            sortType.ascending = field.defaultOrderAscending
-            self.changeSortType(to: sortType, in: viewModel)
+            changeSortType(to: ItemsSortType(field: field, ascending: field.defaultOrderAscending), in: viewModel)
 
         case .startEditing:
             self.startEditing(in: viewModel)
@@ -127,7 +115,7 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
         case .setSortOrder(let ascending):
             var sortType = viewModel.state.sortType
             sortType.ascending = ascending
-            self.changeSortType(to: sortType, in: viewModel)
+            changeSortType(to: sortType, in: viewModel)
 
         case .trashItems(let keys):
             set(trashed: true, to: keys, libraryId: viewModel.state.library.identifier, completion: handleBaseActionResult)
@@ -528,49 +516,10 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
     private func results(for searchText: String?, filters: [ItemsFilter], collectionId: CollectionIdentifier, sortType: ItemsSortType, libraryId: LibraryIdentifier) throws -> Results<RItem> {
         var searchComponents: [String] = []
         if let text = searchText, !text.isEmpty {
-            searchComponents = self.createComponents(from: text)
+            searchComponents = createComponents(from: text)
         }
         let request = ReadItemsDbRequest(collectionId: collectionId, libraryId: libraryId, filters: filters, sortType: sortType, searchTextComponents: searchComponents)
         return try self.dbStorage.perform(request: request, on: .main)
-    }
-
-    private func createComponents(from searchTerm: String) -> [String] {
-        guard let expression = self.quotationExpression else { return [searchTerm] }
-
-        let normalizedSearchTerm = searchTerm.replacingOccurrences(of: #"“"#, with: "\"")
-                                             .replacingOccurrences(of: #"”"#, with: "\"")
-
-        let matches = expression.matches(in: normalizedSearchTerm, options: [], range: NSRange(normalizedSearchTerm.startIndex..., in: normalizedSearchTerm))
-
-        guard !matches.isEmpty else {
-            return self.separateComponents(from: normalizedSearchTerm)
-        }
-
-        var components: [String] = []
-        for (idx, match) in matches.enumerated() {
-            if match.range.lowerBound > 0 {
-                let lowerBound = idx == 0 ? 0 : matches[idx - 1].range.upperBound
-                let precedingRange = normalizedSearchTerm.index(normalizedSearchTerm.startIndex, offsetBy: lowerBound)..<normalizedSearchTerm.index(normalizedSearchTerm.startIndex, offsetBy: match.range.lowerBound)
-                let precedingComponents = self.separateComponents(from: String(normalizedSearchTerm[precedingRange]))
-                components.append(contentsOf: precedingComponents)
-            }
-
-            let upperBound = normalizedSearchTerm[normalizedSearchTerm.index(normalizedSearchTerm.startIndex, offsetBy: (match.range.upperBound - 1))] == "\"" ? match.range.upperBound - 1 : match.range.upperBound
-            let range = normalizedSearchTerm.index(normalizedSearchTerm.startIndex, offsetBy: (match.range.lowerBound + 1))..<normalizedSearchTerm.index(normalizedSearchTerm.startIndex, offsetBy: upperBound)
-            components.append(String(normalizedSearchTerm[range]))
-        }
-
-        if let match = matches.last, match.range.upperBound != (normalizedSearchTerm.count - 1) {
-            let lastRange = normalizedSearchTerm.index(normalizedSearchTerm.startIndex, offsetBy: match.range.upperBound)..<normalizedSearchTerm.endIndex
-            let lastComponents = self.separateComponents(from: String(normalizedSearchTerm[lastRange]))
-            components.append(contentsOf: lastComponents)
-        }
-
-        return components
-    }
-
-    private func separateComponents(from string: String) -> [String] {
-        return string.components(separatedBy: " ").filter({ !$0.isEmpty })
     }
 
     // MARK: - Helpers
