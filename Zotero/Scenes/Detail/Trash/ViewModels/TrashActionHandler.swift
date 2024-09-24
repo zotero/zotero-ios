@@ -90,6 +90,17 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
         case .disableFilter(let filter):
             self.filter(with: remove(filter: filter, from: viewModel.state.filters), in: viewModel)
 
+        case .search(let term):
+            search(with: term, in: viewModel)
+
+        case .setSortField(let field):
+            changeSortType(to: ItemsSortType(field: field, ascending: field.defaultOrderAscending), in: viewModel)
+
+        case .setSortOrder(let ascending):
+            var type = viewModel.state.sortType
+            type.ascending = ascending
+            changeSortType(to: type, in: viewModel)
+
         case .toggleSelectionState:
             update(viewModel: viewModel) { state in
                 if state.selectedItems.count != state.objects.count {
@@ -116,112 +127,24 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
 
     private func loadData(in viewModel: ViewModel<TrashActionHandler>) {
         do {
-            let sortType = Defaults.shared.itemsSortType
-            let items = try dbStorage.perform(request: ReadItemsDbRequest(collectionId: .custom(.trash), libraryId: viewModel.state.library.identifier, sortType: sortType), on: .main)
+            let items = try dbStorage.perform(request: ReadItemsDbRequest(collectionId: .custom(.trash), libraryId: viewModel.state.library.identifier, sortType: viewModel.state.sortType), on: .main)
             let collectionsRequest = ReadCollectionsDbRequest(libraryId: viewModel.state.library.identifier, trash: true)
-            let collections = (try dbStorage.perform(request: collectionsRequest, on: .main)).sorted(by: collectionSortDescriptor(for: sortType))
-
-            var objects: OrderedDictionary<TrashKey, TrashObject> = [:]
-            for object in items.compactMap({ trashObject(from: $0, titleFont: viewModel.state.titleFont) }) {
-                objects[object.trashKey] = object
-            }
-            for collection in collections {
-                guard let object = trashObject(from: collection, titleFont: viewModel.state.titleFont) else { continue }
-                let index = objects.index(of: object, sortedBy: { areInIncreasingOrder(lObject: $0, rObject: $1, sortType: sortType) })
-                objects.updateValue(object, forKey: object.trashKey, insertingAt: index)
-            }
-
+            let collections = (try dbStorage.perform(request: collectionsRequest, on: .main)).sorted(by: collectionSortDescriptor(for: viewModel.state.sortType))
+            let results = results(
+                fromItems: items,
+                collections: collections,
+                sortType: viewModel.state.sortType,
+                filters: viewModel.state.filters,
+                searchTerm: viewModel.state.searchTerm,
+                titleFont: viewModel.state.titleFont
+            )
             update(viewModel: viewModel) { state in
-                state.objects = objects
+                state.objects = results
             }
         } catch let error {
             DDLogInfo("TrashActionHandler: can't load initial data - \(error)")
             update(viewModel: viewModel) { state in
                 state.error = .dataLoading
-            }
-        }
-
-        func areInIncreasingOrder(lObject: TrashObject, rObject: TrashObject, sortType: ItemsSortType) -> Bool {
-            let initialResult: ComparisonResult
-
-            switch sortType.field {
-            case .creator:
-                initialResult = compare(lValue: lObject.creatorSummary, rValue: rObject.creatorSummary)
-
-            case .date:
-                initialResult = compare(lValue: lObject.date, rValue: rObject.date)
-
-            case .dateAdded:
-                initialResult = compare(lValue: lObject.dateAdded, rValue: rObject.dateAdded)
-
-            case .dateModified:
-                initialResult = compare(lValue: lObject.dateModified, rValue: rObject.dateModified)
-
-            case .itemType:
-                initialResult = compare(lValue: lObject.sortType, rValue: rObject.sortType)
-
-            case .publicationTitle:
-                initialResult = compare(lValue: lObject.publicationTitle, rValue: rObject.publicationTitle)
-
-            case .publisher:
-                initialResult = compare(lValue: lObject.publisher, rValue: rObject.publisher)
-
-            case .year:
-                initialResult = compare(lValue: lObject.year, rValue: rObject.year)
-
-            case .title:
-                return isInIncreasingOrder(result: compare(lValue: lObject.sortTitle, rValue: rObject.sortTitle), ascending: sortType.ascending, comparedSame: nil)
-            }
-
-            return isInIncreasingOrder(result: initialResult, ascending: sortType.ascending, comparedSame: { compare(lValue: lObject.sortTitle, rValue: rObject.sortTitle) })
-
-            func isInIncreasingOrder(result: ComparisonResult, ascending: Bool, comparedSame: (() -> ComparisonResult)?) -> Bool {
-                switch result {
-                case .orderedSame:
-                    if let result = comparedSame?() {
-                        return ascending ? result == .orderedAscending : result == .orderedDescending
-                    }
-                    return true
-
-                case .orderedAscending:
-                    return ascending
-
-                case .orderedDescending:
-                    return !ascending
-                }
-            }
-
-            func compare(lValue: String?, rValue: String?) -> ComparisonResult {
-                if let lValue, let rValue {
-                    return lValue.compare(rValue, options: [.numeric], locale: Locale.autoupdatingCurrent)
-                }
-                if lValue != nil {
-                    return .orderedAscending
-                }
-                return .orderedDescending
-            }
-
-            func compare(lValue: Int?, rValue: Int?) -> ComparisonResult {
-                if let lValue, let rValue {
-                    if lValue == rValue {
-                        return .orderedSame
-                    }
-                    return lValue < rValue ? .orderedAscending : .orderedDescending
-                }
-                if lValue != nil {
-                    return .orderedAscending
-                }
-                return .orderedDescending
-            }
-
-            func compare(lValue: Date?, rValue: Date?) -> ComparisonResult {
-                if let lValue, let rValue {
-                    return lValue.compare(rValue)
-                }
-                if lValue != nil {
-                    return .orderedAscending
-                }
-                return .orderedDescending
             }
         }
 
@@ -236,6 +159,26 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
             case .title, .creator, .date, .dateAdded, .itemType, .publisher, .publicationTitle, .year:
                 return [SortDescriptor(keyPath: "name", ascending: sortType.ascending)]
             }
+        }
+
+        func results(
+            fromItems items: Results<RItem>,
+            collections: Results<RCollection>,
+            sortType: ItemsSortType,
+            filters: [ItemsFilter],
+            searchTerm: String?,
+            titleFont: UIFont
+        ) -> OrderedDictionary<TrashKey, TrashObject> {
+            var objects: OrderedDictionary<TrashKey, TrashObject> = [:]
+            for object in items.compactMap({ trashObject(from: $0, titleFont: titleFont) }) {
+                objects[object.trashKey] = object
+            }
+            for collection in collections {
+                guard let object = trashObject(from: collection, titleFont: titleFont) else { continue }
+                let index = objects.index(of: object, sortedBy: { areInIncreasingOrder(lObject: $0, rObject: $1, sortType: sortType) })
+                objects.updateValue(object, forKey: object.trashKey, insertingAt: index)
+            }
+            return objects
         }
 
         func trashObject(from collection: RCollection, titleFont: UIFont) -> TrashObject? {
@@ -273,6 +216,181 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
                 dateAdded: item.dateAdded
             )
             return TrashObject(type: .item(cellData: cellData, sortData: sortData, accessory: itemAccessory), key: item.key, libraryId: libraryId, title: attributedTitle, dateModified: item.dateModified)
+        }
+    }
+
+    private func results(
+        fromOriginal original: OrderedDictionary<TrashKey, TrashObject>,
+        sortType: ItemsSortType,
+        filters: [ItemsFilter],
+        searchTerm: String?
+    ) -> OrderedDictionary<TrashKey, TrashObject> {
+        var results: OrderedDictionary<TrashKey, TrashObject> = [:]
+        for (key, value) in original {
+            guard object(value, containsTerm: searchTerm) && object(value, satisfiesFilters: filters) else { continue }
+            let index = results.index(of: value, sortedBy: { areInIncreasingOrder(lObject: $0, rObject: $1, sortType: sortType) })
+            results.updateValue(value, forKey: key, insertingAt: index)
+        }
+        return original
+
+        func object(_ object: TrashObject, satisfiesFilters filters: [ItemsFilter]) -> Bool {
+            guard !filters.isEmpty else { return true }
+
+            for filter in filters {
+                switch object.type {
+                case .collection:
+                    // Collections don't have tags or can be "downloaded", so they fail automatically
+                    return false
+
+                case .item(let cellData, let sortData, let accessory):
+                    switch filter {
+                    case .downloadedFiles:
+                        continue
+
+                    case .tags(let tagNames):
+                        continue
+                    }
+                }
+            }
+
+            return true
+        }
+
+        func object(_ object: TrashObject, containsTerm term: String?) -> Bool {
+            guard let term else { return true }
+            let components = createComponents(from: term)
+            guard !components.isEmpty else { return true }
+            for component in components {
+                // If object contains component somewhere, return true, otherwise continue
+//                let keyPredicate = NSPredicate(format: "key == %@", text)
+//                let childrenKeyPredicate = NSPredicate(format: "any children.key == %@", text)
+//                // TODO: - ideally change back to "==" if Realm issue is fixed
+//                let childrenChildrenKeyPredicate = NSPredicate(format: "any children.children.key contains %@", text)
+//                let contentPredicate = NSPredicate(format: "htmlFreeContent contains[c] %@", text)
+//                let childrenContentPredicate = NSPredicate(format: "any children.htmlFreeContent contains[c] %@", text)
+//                let childrenChildrenContentPredicate = NSPredicate(format: "any children.children.htmlFreeContent contains[c] %@", text)
+//                let titlePredicate = NSPredicate(format: "sortTitle contains[c] %@", text)
+//                let childrenTitlePredicate = NSPredicate(format: "any children.sortTitle contains[c] %@", text)
+//                let creatorFullNamePredicate = NSPredicate(format: "any creators.name contains[c] %@", text)
+//                let creatorFirstNamePredicate = NSPredicate(format: "any creators.firstName contains[c] %@", text)
+//                let creatorLastNamePredicate = NSPredicate(format: "any creators.lastName contains[c] %@", text)
+//                let tagPredicate = NSPredicate(format: "any tags.tag.name contains[c] %@", text)
+//                let childrenTagPredicate = NSPredicate(format: "any children.tags.tag.name contains[c] %@", text)
+//                let childrenChildrenTagPredicate = NSPredicate(format: "any children.children.tags.tag.name contains[c] %@", text)
+//                let fieldsPredicate = NSPredicate(format: "any fields.value contains[c] %@", text)
+//                let childrenFieldsPredicate = NSPredicate(format: "any children.fields.value contains[c] %@", text)
+//                let childrenChildrenFieldsPredicate = NSPredicate(format: "any children.children.fields.value contains[c] %@", text)
+//
+//                var predicates = [
+//                    keyPredicate,
+//                    titlePredicate,
+//                    contentPredicate,
+//                    creatorFullNamePredicate,
+//                    creatorFirstNamePredicate,
+//                    creatorLastNamePredicate,
+//                    tagPredicate,
+//                    childrenKeyPredicate,
+//                    childrenTitlePredicate,
+//                    childrenContentPredicate,
+//                    childrenTagPredicate,
+//                    childrenChildrenKeyPredicate,
+//                    childrenChildrenContentPredicate,
+//                    childrenChildrenTagPredicate,
+//                    fieldsPredicate,
+//                    childrenFieldsPredicate,
+//                    childrenChildrenFieldsPredicate
+//                ]
+//
+//                if let int = Int(text) {
+//                    let yearPredicate = NSPredicate(format: "parsedYear == %d", int)
+//                    predicates.insert(yearPredicate, at: 3)
+//                }
+            }
+            return false
+        }
+    }
+
+    private func areInIncreasingOrder(lObject: TrashObject, rObject: TrashObject, sortType: ItemsSortType) -> Bool {
+        let initialResult: ComparisonResult
+
+        switch sortType.field {
+        case .creator:
+            initialResult = compare(lValue: lObject.creatorSummary, rValue: rObject.creatorSummary)
+
+        case .date:
+            initialResult = compare(lValue: lObject.date, rValue: rObject.date)
+
+        case .dateAdded:
+            initialResult = compare(lValue: lObject.dateAdded, rValue: rObject.dateAdded)
+
+        case .dateModified:
+            initialResult = compare(lValue: lObject.dateModified, rValue: rObject.dateModified)
+
+        case .itemType:
+            initialResult = compare(lValue: lObject.sortType, rValue: rObject.sortType)
+
+        case .publicationTitle:
+            initialResult = compare(lValue: lObject.publicationTitle, rValue: rObject.publicationTitle)
+
+        case .publisher:
+            initialResult = compare(lValue: lObject.publisher, rValue: rObject.publisher)
+
+        case .year:
+            initialResult = compare(lValue: lObject.year, rValue: rObject.year)
+
+        case .title:
+            return isInIncreasingOrder(result: compare(lValue: lObject.sortTitle, rValue: rObject.sortTitle), ascending: sortType.ascending, comparedSame: nil)
+        }
+
+        return isInIncreasingOrder(result: initialResult, ascending: sortType.ascending, comparedSame: { compare(lValue: lObject.sortTitle, rValue: rObject.sortTitle) })
+
+        func isInIncreasingOrder(result: ComparisonResult, ascending: Bool, comparedSame: (() -> ComparisonResult)?) -> Bool {
+            switch result {
+            case .orderedSame:
+                if let result = comparedSame?() {
+                    return ascending ? result == .orderedAscending : result == .orderedDescending
+                }
+                return true
+
+            case .orderedAscending:
+                return ascending
+
+            case .orderedDescending:
+                return !ascending
+            }
+        }
+
+        func compare(lValue: String?, rValue: String?) -> ComparisonResult {
+            if let lValue, let rValue {
+                return lValue.compare(rValue, options: [.numeric], locale: Locale.autoupdatingCurrent)
+            }
+            if lValue != nil {
+                return .orderedAscending
+            }
+            return .orderedDescending
+        }
+
+        func compare(lValue: Int?, rValue: Int?) -> ComparisonResult {
+            if let lValue, let rValue {
+                if lValue == rValue {
+                    return .orderedSame
+                }
+                return lValue < rValue ? .orderedAscending : .orderedDescending
+            }
+            if lValue != nil {
+                return .orderedAscending
+            }
+            return .orderedDescending
+        }
+
+        func compare(lValue: Date?, rValue: Date?) -> ComparisonResult {
+            if let lValue, let rValue {
+                return lValue.compare(rValue)
+            }
+            if lValue != nil {
+                return .orderedAscending
+            }
+            return .orderedDescending
         }
     }
 
@@ -314,20 +432,53 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
 
     // MARK: - Searching & Filtering
 
+    private func search(with term: String?, in viewModel: ViewModel<TrashActionHandler>) {
+        guard term != viewModel.state.searchTerm else { return }
+        let results = results(
+            fromOriginal: viewModel.state.snapshot ?? viewModel.state.objects,
+            sortType: viewModel.state.sortType,
+            filters: viewModel.state.filters,
+            searchTerm: term
+        )
+        updateState(withResults: results, in: viewModel) { state in
+            state.searchTerm = term
+        }
+    }
+
     private func filter(with filters: [ItemsFilter], in viewModel: ViewModel<TrashActionHandler>) {
         guard filters != viewModel.state.filters else { return }
-
-//        let results = try? results(
-//            for: viewModel.state.searchTerm,
-//            filters: filters,
-//            collectionId: viewModel.state.collection.identifier,
-//            sortType: viewModel.state.sortType,
-//            libraryId: viewModel.state.library.identifier
-//        )
-        update(viewModel: viewModel) { state in
+        let results = results(
+            fromOriginal: viewModel.state.snapshot ?? viewModel.state.objects,
+            sortType: viewModel.state.sortType,
+            filters: filters,
+            searchTerm: viewModel.state.searchTerm
+        )
+        updateState(withResults: results, in: viewModel) { state in
             state.filters = filters
-//            state.results = results
-            state.changes = [.objects, .filters]
+            state.changes.insert(.filters)
+        }
+    }
+
+    private func changeSortType(to sortType: ItemsSortType, in viewModel: ViewModel<TrashActionHandler>) {
+        var ordered: OrderedDictionary<TrashKey, TrashObject> = [:]
+        for object in viewModel.state.objects {
+            let index = ordered.index(of: object.value, sortedBy: { areInIncreasingOrder(lObject: $0, rObject: $1, sortType: sortType) })
+            ordered.updateValue(object.value, forKey: object.key, insertingAt: index)
+        }
+        updateState(withResults: ordered, in: viewModel) { state in
+            state.sortType = sortType
+        }
+        Defaults.shared.itemsSortType = sortType
+    }
+
+    private func updateState(withResults results: OrderedDictionary<TrashKey, TrashObject>, in viewModel: ViewModel<TrashActionHandler>, additionalStateUpdate: (inout TrashState) -> Void) {
+        update(viewModel: viewModel) { state in
+            if state.snapshot == nil {
+                state.snapshot = state.objects
+            }
+            state.objects = results
+            state.changes = [.objects]
+            additionalStateUpdate(&state)
         }
     }
 }

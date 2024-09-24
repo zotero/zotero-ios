@@ -56,7 +56,6 @@ class BaseItemsViewController: UIViewController {
         self.controllers = controllers
         self.coordinatorDelegate = coordinatorDelegate
         self.disposeBag = DisposeBag()
-
         super.init(nibName: nil, bundle: nil)
     }
 

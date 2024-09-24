@@ -35,6 +35,9 @@ struct TrashState: ViewModelState {
     var collectionResults: Results<RCollection>?
     var collectionsToken: NotificationToken?
     var objects: OrderedDictionary<TrashKey, TrashObject>
+    var snapshot: OrderedDictionary<TrashKey, TrashObject>?
+    var sortType: ItemsSortType
+    var searchTerm: String?
     var filters: [ItemsFilter]
     var isEditing: Bool
     var selectedItems: Set<TrashKey>
@@ -44,9 +47,11 @@ struct TrashState: ViewModelState {
         return UIFont.preferredFont(for: .headline, weight: .regular)
     }
 
-    init(libraryId: LibraryIdentifier) {
+    init(libraryId: LibraryIdentifier, sortType: ItemsSortType, searchTerm: String?, filters: [ItemsFilter]) {
         objects = [:]
-        filters = []
+        self.sortType = sortType
+        self.filters = filters
+        self.searchTerm = searchTerm
         isEditing = false
         changes = []
         selectedItems = []
