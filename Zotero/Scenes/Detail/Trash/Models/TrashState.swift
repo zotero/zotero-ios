@@ -22,6 +22,7 @@ struct TrashState: ViewModelState {
         static let selection = Changes(rawValue: 1 << 2)
         static let selectAll = Changes(rawValue: 1 << 3)
         static let filters = Changes(rawValue: 1 << 4)
+        static let batchData = Changes(rawValue: 1 << 5)
     }
 
     enum Error: Swift.Error {
@@ -41,13 +42,17 @@ struct TrashState: ViewModelState {
     var filters: [ItemsFilter]
     var isEditing: Bool
     var selectedItems: Set<TrashKey>
+    var attachmentToOpen: String?
+    var downloadBatchData: ItemsState.DownloadBatchData?
+    // Used to indicate which row should update it's attachment view. The update is done directly to cell instead of tableView reload.
+    var updateItemKey: TrashKey?
     var changes: Changes
     var error: ItemsError?
     var titleFont: UIFont {
         return UIFont.preferredFont(for: .headline, weight: .regular)
     }
 
-    init(libraryId: LibraryIdentifier, sortType: ItemsSortType, searchTerm: String?, filters: [ItemsFilter]) {
+    init(libraryId: LibraryIdentifier, sortType: ItemsSortType, searchTerm: String?, filters: [ItemsFilter], downloadBatchData: ItemsState.DownloadBatchData?) {
         objects = [:]
         self.sortType = sortType
         self.filters = filters
@@ -55,6 +60,7 @@ struct TrashState: ViewModelState {
         isEditing = false
         changes = []
         selectedItems = []
+        self.downloadBatchData = downloadBatchData
 
         switch libraryId {
         case .custom:
@@ -68,5 +74,6 @@ struct TrashState: ViewModelState {
     mutating func cleanup() {
         error = nil
         changes = []
+        updateItemKey = nil
     }
 }

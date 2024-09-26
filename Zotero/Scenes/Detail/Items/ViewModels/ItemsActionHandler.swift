@@ -101,8 +101,8 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
         case .search(let text):
             self.search(for: (text.isEmpty ? nil : text), ignoreOriginal: false, in: viewModel)
 
-        case .setSortField(let field):
-            changeSortType(to: ItemsSortType(field: field, ascending: field.defaultOrderAscending), in: viewModel)
+        case .setSortType(let type):
+            changeSortType(to: type, in: viewModel)
 
         case .startEditing:
             self.startEditing(in: viewModel)
@@ -111,11 +111,6 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 self.stopEditing(in: &state)
             }
-
-        case .setSortOrder(let ascending):
-            var sortType = viewModel.state.sortType
-            sortType.ascending = ascending
-            changeSortType(to: sortType, in: viewModel)
 
         case .trashItems(let keys):
             set(trashed: true, to: keys, libraryId: viewModel.state.library.identifier, completion: handleBaseActionResult)
@@ -189,7 +184,6 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
 
     private func loadInitialState(in viewModel: ViewModel<ItemsActionHandler>) {
         do {
-            let sortType = Defaults.shared.itemsSortType
             let (library, libraryToken) = try viewModel.state.library.identifier.observe(in: dbStorage, changes: { [weak self, weak viewModel] library in
                 guard let self, let viewModel else { return }
                 update(viewModel: viewModel) { state in
@@ -201,7 +195,7 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
                 for: viewModel.state.searchTerm,
                 filters: viewModel.state.filters,
                 collectionId: viewModel.state.collection.identifier,
-                sortType: sortType,
+                sortType: viewModel.state.sortType,
                 libraryId: viewModel.state.library.identifier
             )
 
@@ -209,7 +203,6 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
                 state.results = results
                 state.library = library
                 state.libraryToken = libraryToken
-                state.sortType = sortType
             }
         } catch let error {
             update(viewModel: viewModel) { state in
@@ -371,6 +364,26 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
         }
     }
 
+    // MARK: - Drag & Drop
+
+    private func moveItems(from keys: Set<String>, to key: String, libraryId: LibraryIdentifier, completion: @escaping (Result<Void, ItemsError>) -> Void) {
+        let request = MoveItemsToParentDbRequest(itemKeys: keys, parentKey: key, libraryId: libraryId)
+        perform(request: request) { error in
+            guard let error else { return }
+            DDLogError("BaseItemsActionHandler: can't move items to parent: \(error)")
+            completion(.failure(.itemMove))
+        }
+    }
+
+    private func add(items itemKeys: Set<String>, to collectionKeys: Set<String>, libraryId: LibraryIdentifier, completion: @escaping (Result<Void, ItemsError>) -> Void) {
+        let request = AssignItemsToCollectionsDbRequest(collectionKeys: collectionKeys, itemKeys: itemKeys, libraryId: libraryId)
+        perform(request: request) { error in
+            guard let error else { return }
+            DDLogError("BaseItemsActionHandler: can't assign collections to items - \(error)")
+            completion(.failure(.collectionAssignment))
+        }
+    }
+
     // MARK: - Toolbar actions
 
     /// Loads item which was selected for duplication from DB. When `itemDuplication` is set, appropriate screen with loaded item is opened.
@@ -392,9 +405,30 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
         }
     }
 
+    private func deleteItemsFromCollection(keys: Set<String>, collectionId: CollectionIdentifier, libraryId: LibraryIdentifier, completion: @escaping (Result<Void, ItemsError>) -> Void) {
+        guard let key = collectionId.key else { return }
+        let request = DeleteItemsFromCollectionDbRequest(collectionKey: key, itemKeys: keys, libraryId: libraryId)
+        perform(request: request) { error in
+            guard let error else { return }
+            DDLogError("BaseItemsActionHandler: can't delete items - \(error)")
+            completion(.failure(.deletionFromCollection))
+        }
+    }
+
+    private func set(trashed: Bool, to keys: Set<String>, libraryId: LibraryIdentifier, completion: @escaping (Result<Void, ItemsError>) -> Void) {
+        let request = MarkItemsAsTrashedDbRequest(keys: Array(keys), libraryId: libraryId, trashed: trashed)
+        perform(request: request) { error in
+            guard let error else { return }
+            DDLogError("BaseItemsActionHandler: can't trash items - \(error)")
+            completion(.failure(.deletion))
+        }
+    }
+
     // MARK: - Overlay actions
 
     private func changeSortType(to sortType: ItemsSortType, in viewModel: ViewModel<ItemsActionHandler>) {
+        guard sortType != viewModel.state.sortType else { return }
+
         let results = try? results(
             for: viewModel.state.searchTerm,
             filters: viewModel.state.filters,

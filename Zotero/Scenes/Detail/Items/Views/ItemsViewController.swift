@@ -6,7 +6,9 @@
 //  Copyright © 2024 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import Combine
 import UIKit
+import SwiftUI
 
 import CocoaLumberjackSwift
 import RealmSwift
@@ -19,7 +21,6 @@ final class ItemsViewController: BaseItemsViewController {
     private var dataSource: RItemsTableViewDataSource!
     private var resultsToken: NotificationToken?
     private var libraryToken: NotificationToken?
-
     override var library: Library {
         return viewModel.state.library
     }
@@ -141,7 +142,7 @@ final class ItemsViewController: BaseItemsViewController {
         self.viewModel.process(action: .search(term))
     }
 
-    override func process(action: ItemAction.Kind, for selectedKeys: Set<String>, button: UIBarButtonItem?, completionAction: ((Bool) -> Void)?) {
+    private func process(action: ItemAction.Kind, for selectedKeys: Set<String>, button: UIBarButtonItem?, completionAction: ((Bool) -> Void)?) {
         switch action {
         case .delete, .restore:
             break
@@ -186,7 +187,13 @@ final class ItemsViewController: BaseItemsViewController {
 
         case .sort:
             guard let button else { return }
-            coordinatorDelegate?.showSortActions(viewModel: viewModel, button: button)
+            coordinatorDelegate?.showSortActions(
+                sortType: viewModel.state.sortType,
+                button: button,
+                changed: { [weak self] newValue in
+                    self?.viewModel.process(action: .setSortType(newValue))
+                }
+            )
 
         case .share:
             guard !selectedKeys.isEmpty else { return }
@@ -317,28 +324,17 @@ final class ItemsViewController: BaseItemsViewController {
             .observe(on: MainScheduler.asyncInstance)
             .subscribe(onNext: { [weak self, weak downloader] update in
                 guard let self else { return }
-
-                if let downloader {
-                    let batchData = ItemsState.DownloadBatchData(batchData: downloader.batchData)
-                    viewModel.process(action: .updateDownload(update: update, batchData: batchData))
-                }
-
-                if case .progress = update.kind { return }
-
-                guard viewModel.state.attachmentToOpen == update.key else { return }
-
-                viewModel.process(action: .attachmentOpened(update.key))
-
-                switch update.kind {
-                case .ready:
-                    coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId)
-
-                case .failed(let error):
-                    coordinatorDelegate?.showAttachmentError(error)
-
-                default:
-                    break
-                }
+                process(
+                    downloadUpdate: update,
+                    toOpen: viewModel.state.attachmentToOpen,
+                    downloader: downloader,
+                    dataUpdate: { batchData in
+                        self.viewModel.process(action: .updateDownload(update: update, batchData: batchData))
+                    },
+                    attachmentWillOpen: { update in
+                        self.viewModel.process(action: .attachmentOpened(update.key))
+                    }
+                )
             })
             .disposed(by: disposeBag)
 
@@ -435,6 +431,16 @@ extension ItemsViewController: ItemsTableViewHandlerDelegate {
         case .tagItem(let key, let libraryId, let tags):
             viewModel.process(action: .tagItem(itemKey: key, libraryId: libraryId, tagNames: tags))
         }
+    }
+}
+
+extension ItemsViewController: ItemsToolbarControllerDelegate {
+    func process(action: ItemAction.Kind, button: UIBarButtonItem) {
+        process(action: action, for: viewModel.state.selectedItems, button: button, completionAction: nil)
+    }
+    
+    func showLookup() {
+        coordinatorDelegate?.showLookup()
     }
 }
 

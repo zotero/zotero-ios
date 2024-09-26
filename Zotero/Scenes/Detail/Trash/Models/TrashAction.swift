@@ -9,22 +9,22 @@
 import Foundation
 
 enum TrashAction {
-    case assignItemsToCollections(items: Set<String>, collections: Set<String>)
-    case deleteItems(Set<String>)
-    case deleteItemsFromCollection(Set<String>)
+    case attachmentOpened(String)
+    case deleteObjects(Set<TrashKey>)
     case deselectItem(TrashKey)
     case disableFilter(ItemsFilter)
+    case download(Set<String>)
     case emptyTrash
     case enableFilter(ItemsFilter)
     case loadData
-    case moveItems(keys: Set<String>, toItemKey: String)
-    case restoreItems(Set<String>)
+    case openAttachment(attachment: Attachment, parentKey: String?)
+    case restoreItems(Set<TrashKey>)
     case search(String)
-    case setSortField(ItemsSortType.Field)
-    case setSortOrder(Bool)
+    case setSortType(ItemsSortType)
     case selectItem(TrashKey)
     case startEditing
     case stopEditing
     case tagItem(itemKey: String, libraryId: LibraryIdentifier, tagNames: Set<String>)
     case toggleSelectionState
+    case updateDownload(update: AttachmentDownloader.Update, batchData: ItemsState.DownloadBatchData?)
 }

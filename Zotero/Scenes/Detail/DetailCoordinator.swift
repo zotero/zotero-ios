@@ -38,7 +38,7 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showItemDetail(for type: ItemDetailState.DetailType, libraryId: LibraryIdentifier, scrolledToKey childKey: String?, animated: Bool)
     func showAttachmentError(_ error: Error)
     func showAddActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
-    func showSortActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
+    func showSortActions(sortType: ItemsSortType, button: UIBarButtonItem, changed: @escaping (ItemsSortType) -> Void)
     func show(url: URL)
     func show(doi: String)
     func showFilters(filters: [ItemsFilter], filtersDelegate: BaseItemsViewController, button: UIBarButtonItem)
@@ -130,6 +130,7 @@ final class DetailCoordinator: Coordinator {
                     schemaController: controllers.schemaController,
                     fileStorage: controllers.fileStorage,
                     urlDetector: controllers.urlDetector,
+                    itemsTagFilterDelegate: itemsTagFilterDelegate,
                     htmlAttributedStringConverter: controllers.htmlAttributedStringConverter
                 )
 
@@ -173,9 +174,14 @@ final class DetailCoordinator: Coordinator {
             schemaController: SchemaController,
             fileStorage: FileStorage,
             urlDetector: UrlDetector,
+            itemsTagFilterDelegate: ItemsTagFilterDelegate?,
             htmlAttributedStringConverter: HtmlAttributedStringConverter
         ) -> TrashViewController {
-            let state = TrashState(libraryId: libraryId)
+            itemsTagFilterDelegate?.clearSelection()
+
+            let searchTerm = searchItemKeys?.joined(separator: " ")
+            let sortType = Defaults.shared.itemsSortType
+            let state = TrashState(libraryId: libraryId, sortType: sortType, searchTerm: searchTerm, filters: [])
             let handler = TrashActionHandler(
                 dbStorage: dbStorage,
                 schemaController: schemaController,
@@ -202,14 +208,15 @@ final class DetailCoordinator: Coordinator {
         ) -> ItemsViewController {
             itemsTagFilterDelegate?.clearSelection()
 
-            let searchTerm = self.searchItemKeys?.joined(separator: " ")
+            let searchTerm = searchItemKeys?.joined(separator: " ")
             let downloadBatchData = ItemsState.DownloadBatchData(batchData: fileDownloader.batchData)
             let remoteDownloadBatchData = ItemsState.DownloadBatchData(batchData: remoteFileDownloader.batchData)
             let identifierLookupBatchData = ItemsState.IdentifierLookupBatchData(batchData: identifierLookupController.batchData)
+            let sortType = Defaults.shared.itemsSortType
             let state = ItemsState(
                 collection: collection,
                 libraryId: libraryId,
-                sortType: .default,
+                sortType: sortType,
                 searchTerm: searchTerm,
                 filters: [],
                 downloadBatchData: downloadBatchData,
@@ -479,56 +486,59 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         self.navigationController?.present(controller, animated: true, completion: nil)
     }
 
-    func showSortActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem) {
+    func showSortActions(sortType: ItemsSortType, button: UIBarButtonItem, changed: @escaping (ItemsSortType) -> Void) {
         DDLogInfo("DetailCoordinator: show item sort popup")
 
-        let navigationController = UINavigationController()
-        navigationController.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
-        navigationController.popoverPresentationController?.barButtonItem = button
-
-        let sortByBinding = viewModel.binding(keyPath: \.sortType.field, action: { .setSortField($0) })
-
-        let view = ItemSortingView(viewModel: viewModel, showPickerAction: { [weak self, weak navigationController] in
-            guard let self = self, let navigationController = navigationController else { return }
-            self.showSortTypePicker(sortBy: sortByBinding, in: navigationController)
-        })
-
-        let controller = DisappearActionHostingController(rootView: view)
-
-        var size: CGSize?
-        controller.willAppear = { [weak controller, weak navigationController] in
-            guard let `controller` = controller else { return }
-            let _size = size ?? controller.view.systemLayoutSizeFitting(CGSize(width: 400.0, height: .greatestFiniteMagnitude))
-            size = _size
-            controller.preferredContentSize = _size
-            navigationController?.preferredContentSize = _size
-        }
-
-        if UIDevice.current.userInterfaceIdiom == .phone {
-            controller.didLoad = { [weak self] viewController in
-                guard let self = self else { return }
-                let doneButton = UIBarButtonItem(title: L10n.done, style: .done, target: nil, action: nil)
-                doneButton.rx.tap.subscribe({ [weak self] _ in
-                    self?.navigationController?.dismiss(animated: true)
-                }).disposed(by: self.disposeBag)
-                viewController.navigationItem.rightBarButtonItem = doneButton
+        let sortNavigationController = UINavigationController()
+        sortNavigationController.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
+        sortNavigationController.popoverPresentationController?.barButtonItem = button
+        let view = ItemSortingView(
+            sortType: sortType,
+            changed: changed,
+            showPicker: { [weak sortNavigationController] view in
+                guard let sortNavigationController else { return }
+                showPicker(view: view, navigationController: sortNavigationController)
+            },
+            closePicker: { [weak sortNavigationController] in
+                sortNavigationController?.popViewController(animated: true)
             }
+        )
+        let controller = createItemSortingController(for: view, navigationController: sortNavigationController)
+        sortNavigationController.setViewControllers([controller], animated: false)
+        navigationController?.present(sortNavigationController, animated: true, completion: nil)
+
+        func createItemSortingController(for view: ItemSortingView, navigationController: UINavigationController) -> UIHostingController<ItemSortingView> {
+            let controller = DisappearActionHostingController(rootView: view)
+            var size: CGSize?
+            controller.willAppear = { [weak controller, weak navigationController] in
+                guard let controller else { return }
+                let _size = size ?? controller.view.systemLayoutSizeFitting(CGSize(width: 400.0, height: .greatestFiniteMagnitude))
+                size = _size
+                controller.preferredContentSize = _size
+                navigationController?.preferredContentSize = _size
+            }
+
+            if UIDevice.current.userInterfaceIdiom == .phone {
+                controller.didLoad = { [weak self] viewController in
+                    guard let self else { return }
+                    let doneButton = UIBarButtonItem(title: L10n.done, style: .done, target: nil, action: nil)
+                    doneButton.rx.tap
+                        .subscribe({ [weak self] _ in
+                            self?.navigationController?.dismiss(animated: true)
+                        })
+                        .disposed(by: disposeBag)
+                    viewController.navigationItem.rightBarButtonItem = doneButton
+                }
+            }
+            return controller
         }
 
-        navigationController.setViewControllers([controller], animated: false)
-
-        self.navigationController?.present(navigationController, animated: true, completion: nil)
-    }
-
-    func showSortTypePicker(sortBy: Binding<ItemsSortType.Field>, in navigationController: UINavigationController) {
-        let view = ItemSortTypePickerView(sortBy: sortBy,
-                                          closeAction: { [weak navigationController] in
-                                              navigationController?.popViewController(animated: true)
-                                          })
-        let controller = UIHostingController(rootView: view)
-        controller.preferredContentSize = CGSize(width: 400, height: 600)
-        navigationController.preferredContentSize = controller.preferredContentSize
-        navigationController.pushViewController(controller, animated: true)
+        func showPicker(view: ItemSortTypePickerView, navigationController: UINavigationController) {
+            let controller = UIHostingController(rootView: view)
+            controller.preferredContentSize = CGSize(width: 400, height: 600)
+            navigationController.preferredContentSize = controller.preferredContentSize
+            navigationController.pushViewController(controller, animated: true)
+        }
     }
 
     private func sortButtonTitles(for sortType: ItemsSortType) -> (field: String, order: String) {

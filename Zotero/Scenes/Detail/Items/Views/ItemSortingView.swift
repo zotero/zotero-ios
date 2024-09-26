@@ -9,17 +9,19 @@
 import SwiftUI
 
 struct ItemSortingView: View {
-    @ObservedObject var viewModel: ViewModel<ItemsActionHandler>
+    @State var sortType: ItemsSortType
 
-    var showPickerAction: () -> Void
+    let changed: (ItemsSortType) -> Void
+    let showPicker: (ItemSortTypePickerView) -> Void
+    let closePicker: () -> Void
 
     var body: some View {
         VStack(spacing: 20) {
             Button {
-                self.showPickerAction()
+                showPicker(ItemSortTypePickerView(sortType: $sortType, closeAction: closePicker))
             } label: {
                 HStack {
-                    Text("\(L10n.Items.sortBy): \(self.viewModel.state.sortType.field.title)")
+                    Text("\(L10n.Items.sortBy): \(sortType.field.title)")
                         .foregroundColor(Color(UIColor.label))
 
                     Spacer()
@@ -34,7 +36,7 @@ struct ItemSortingView: View {
 
             Divider()
 
-            Picker(L10n.Items.sortOrder, selection: self.viewModel.binding(get: \.sortType.ascending, action: { .setSortOrder($0) })) {
+            Picker(L10n.Items.sortOrder, selection: $sortType.ascending) {
                 Text("Ascending").tag(true)
                 Text("Descending").tag(false)
             }
@@ -46,5 +48,8 @@ struct ItemSortingView: View {
             }
         }
         .padding(EdgeInsets(top: 20, leading: 0, bottom: 20, trailing: 0))
+        .onChange(of: sortType) { newValue in
+            self.changed(newValue)
+        }
     }
 }

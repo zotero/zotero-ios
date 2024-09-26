@@ -19,7 +19,7 @@ protocol ItemsToolbarControllerDelegate: UITraitEnvironment {
 final class ItemsToolbarController {
     struct Data {
         let isEditing: Bool
-        let selectedItems: Set<String>
+        let selectedItems: Set<AnyHashable>
         let filters: [ItemsFilter]
         let downloadBatchData: ItemsState.DownloadBatchData?
         let remoteDownloadBatchData: ItemsState.DownloadBatchData?
@@ -87,9 +87,9 @@ final class ItemsToolbarController {
             updateEditingToolbarItems(for: data.selectedItems)
         } else {
             let filters = sizeClassSpecificFilters(from: data.filters)
-            viewController.toolbarItems = createNormalToolbarItems(for: data.filters)
+            viewController.toolbarItems = createNormalToolbarItems(for: filters)
             updateNormalToolbarItems(
-                for: data.filters,
+                for: filters,
                 downloadBatchData: data.downloadBatchData,
                 remoteDownloadBatchData: data.remoteDownloadBatchData,
                 identifierLookupBatchData: data.identifierLookupBatchData,
@@ -235,7 +235,7 @@ final class ItemsToolbarController {
 
     // MARK: - Helpers
 
-    private func updateEditingToolbarItems(for selectedItems: Set<String>) {
+    private func updateEditingToolbarItems(for selectedItems: Set<AnyHashable>) {
         viewController.toolbarItems?.forEach({ item in
             switch ToolbarItem(rawValue: item.tag) {
             case .empty:
