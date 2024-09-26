@@ -57,23 +57,17 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
         case .loadData:
             loadData(in: viewModel)
 
-        case .deleteItems(let keys):
-            delete(items: keys, viewModel: viewModel)
+        case .deleteObjects(let keys):
+            delete(objects: keys, viewModel: viewModel)
+
+        case .download(let keys):
+            downloadAttachments(for: keys, in: viewModel)
 
         case .emptyTrash:
             emptyTrash(in: viewModel)
 
         case .tagItem(let itemKey, let libraryId, let tagNames):
             tagItem(key: itemKey, libraryId: libraryId, with: tagNames)
-
-        case .assignItemsToCollections(let items, let collections):
-            add(items: items, to: collections, libraryId: viewModel.state.library.identifier, completion: handleBaseActionResult)
-
-        case .deleteItemsFromCollection(let keys):
-            deleteItemsFromCollection(keys: keys, collectionId: .custom(.trash), libraryId: viewModel.state.library.identifier, completion: handleBaseActionResult)
-
-        case .moveItems(let keys, let toItemKey):
-            moveItems(from: keys, to: toItemKey, libraryId: viewModel.state.library.identifier, completion: handleBaseActionResult)
 
         case .restoreItems(let keys):
             set(trashed: false, to: keys, libraryId: viewModel.state.library.identifier, completion: handleBaseActionResult)
@@ -93,12 +87,7 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
         case .search(let term):
             search(with: term, in: viewModel)
 
-        case .setSortField(let field):
-            changeSortType(to: ItemsSortType(field: field, ascending: field.defaultOrderAscending), in: viewModel)
-
-        case .setSortOrder(let ascending):
-            var type = viewModel.state.sortType
-            type.ascending = ascending
+        case .setSortType(let type):
             changeSortType(to: type, in: viewModel)
 
         case .toggleSelectionState:
@@ -121,6 +110,18 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 state.selectedItems.insert(key)
                 state.changes.insert(.selection)
+            }
+
+        case .updateDownload(let update, let batchData):
+            process(downloadUpdate: update, batchData: batchData, in: viewModel)
+
+        case .openAttachment(let attachment, let parentKey):
+            open(attachment: attachment, parentKey: parentKey, in: viewModel)
+
+        case .attachmentOpened(let key):
+            guard viewModel.state.attachmentToOpen == key else { return }
+            self.update(viewModel: viewModel) { state in
+                state.attachmentToOpen = nil
             }
         }
     }
@@ -187,35 +188,65 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
             return TrashObject(type: .collection, key: collection.key, libraryId: libraryId, title: attributedTitle, dateModified: collection.dateModified)
         }
 
-        func trashObject(from item: RItem, titleFont: UIFont) -> TrashObject? {
-            guard let libraryId = item.libraryId else { return nil }
-            let itemAccessory = ItemAccessory.create(from: item, fileStorage: fileStorage, urlDetector: urlDetector)
+        func trashObject(from rItem: RItem, titleFont: UIFont) -> TrashObject? {
+            guard let libraryId = rItem.libraryId else { return nil }
+            let itemAccessory = ItemAccessory.create(from: rItem, fileStorage: fileStorage, urlDetector: urlDetector)
             let cellAccessory = itemAccessory.flatMap({ ItemCellModel.createAccessory(from: $0, fileDownloader: fileDownloader) })
-            let creatorSummary = ItemCellModel.creatorSummary(for: item)
-            let (tagColors, tagEmojis) = ItemCellModel.tagData(item: item)
-            let hasNote = ItemCellModel.hasNote(item: item)
-            let typeName = schemaController.localized(itemType: item.rawType) ?? item.rawType
-            let attributedTitle = htmlAttributedStringConverter.convert(text: item.displayTitle, baseAttributes: [.font: titleFont])
-            let cellData = TrashObject.ItemCellData(
+            let creatorSummary = ItemCellModel.creatorSummary(for: rItem)
+            let (tagColors, tagEmojis) = ItemCellModel.tagData(item: rItem)
+            let hasNote = ItemCellModel.hasNote(item: rItem)
+            let typeName = schemaController.localized(itemType: rItem.rawType) ?? rItem.rawType
+            let attributedTitle = htmlAttributedStringConverter.convert(text: rItem.displayTitle, baseAttributes: [.font: titleFont])
+            let item = TrashObject.Item(
+                sortTitle: rItem.sortTitle,
+                type: rItem.rawType,
                 localizedTypeName: typeName,
-                typeIconName: ItemCellModel.typeIconName(for: item),
-                subtitle: creatorSummary,
-                accessory: cellAccessory,
+                typeIconName: ItemCellModel.typeIconName(for: rItem),
+                creatorSummary: creatorSummary,
+                publisher: rItem.publisher,
+                publicationTitle: rItem.publicationTitle,
+                year: rItem.hasParsedYear ? rItem.parsedYear : nil,
+                date: rItem.parsedDate,
+                dateAdded: rItem.dateAdded,
+                tagNames: Set(rItem.tags.compactMap({ $0.tag?.name })),
                 tagColors: tagColors,
                 tagEmojis: tagEmojis,
-                hasNote: hasNote
+                hasNote: hasNote,
+                itemAccessory: itemAccessory,
+                cellAccessory: cellAccessory,
+                isMainAttachmentDownloaded: rItem.fileDownloaded,
+                searchStrings: searchStrings(from: rItem)
             )
-            let sortData = TrashObject.ItemSortData(
-                title: item.sortTitle,
-                type: item.localizedType,
-                creatorSummary: creatorSummary,
-                publisher: item.publisher,
-                publicationTitle: item.publicationTitle,
-                year: item.hasParsedYear ? item.parsedYear : nil,
-                date: item.parsedDate,
-                dateAdded: item.dateAdded
-            )
-            return TrashObject(type: .item(cellData: cellData, sortData: sortData, accessory: itemAccessory), key: item.key, libraryId: libraryId, title: attributedTitle, dateModified: item.dateModified)
+            return TrashObject(type: .item(item: item), key: rItem.key, libraryId: libraryId, title: attributedTitle, dateModified: rItem.dateModified)
+
+            func searchStrings(from item: RItem) -> Set<String> {
+                var strings: Set<String> = [item.key, item.sortTitle]
+                if let value = item.htmlFreeContent {
+                    strings.insert(value)
+                }
+                for creator in item.creators {
+                    if !creator.name.isEmpty {
+                        strings.insert(creator.name)
+                    }
+                    if !creator.firstName.isEmpty {
+                        strings.insert(creator.firstName)
+                    }
+                    if !creator.lastName.isEmpty {
+                        strings.insert(creator.lastName)
+                    }
+                }
+                for tag in item.tags {
+                    guard let name = tag.tag?.name else { continue }
+                    strings.insert(name)
+                }
+                for field in item.fields {
+                    strings.insert(field.value)
+                }
+                for child in item.children {
+                    strings.formUnion(searchStrings(from: child))
+                }
+                return strings
+            }
         }
     }
 
@@ -242,13 +273,17 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
                     // Collections don't have tags or can be "downloaded", so they fail automatically
                     return false
 
-                case .item(let cellData, let sortData, let accessory):
+                case .item(let item):
                     switch filter {
                     case .downloadedFiles:
-                        continue
+                        if !item.isMainAttachmentDownloaded {
+                            return false
+                        }
 
                     case .tags(let tagNames):
-                        continue
+                        if item.tagNames.intersection(tagNames).isEmpty {
+                            return false
+                        }
                     }
                 }
             }
@@ -261,50 +296,25 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
             let components = createComponents(from: term)
             guard !components.isEmpty else { return true }
             for component in components {
-                // If object contains component somewhere, return true, otherwise continue
-//                let keyPredicate = NSPredicate(format: "key == %@", text)
-//                let childrenKeyPredicate = NSPredicate(format: "any children.key == %@", text)
-//                // TODO: - ideally change back to "==" if Realm issue is fixed
-//                let childrenChildrenKeyPredicate = NSPredicate(format: "any children.children.key contains %@", text)
-//                let contentPredicate = NSPredicate(format: "htmlFreeContent contains[c] %@", text)
-//                let childrenContentPredicate = NSPredicate(format: "any children.htmlFreeContent contains[c] %@", text)
-//                let childrenChildrenContentPredicate = NSPredicate(format: "any children.children.htmlFreeContent contains[c] %@", text)
-//                let titlePredicate = NSPredicate(format: "sortTitle contains[c] %@", text)
-//                let childrenTitlePredicate = NSPredicate(format: "any children.sortTitle contains[c] %@", text)
-//                let creatorFullNamePredicate = NSPredicate(format: "any creators.name contains[c] %@", text)
-//                let creatorFirstNamePredicate = NSPredicate(format: "any creators.firstName contains[c] %@", text)
-//                let creatorLastNamePredicate = NSPredicate(format: "any creators.lastName contains[c] %@", text)
-//                let tagPredicate = NSPredicate(format: "any tags.tag.name contains[c] %@", text)
-//                let childrenTagPredicate = NSPredicate(format: "any children.tags.tag.name contains[c] %@", text)
-//                let childrenChildrenTagPredicate = NSPredicate(format: "any children.children.tags.tag.name contains[c] %@", text)
-//                let fieldsPredicate = NSPredicate(format: "any fields.value contains[c] %@", text)
-//                let childrenFieldsPredicate = NSPredicate(format: "any children.fields.value contains[c] %@", text)
-//                let childrenChildrenFieldsPredicate = NSPredicate(format: "any children.children.fields.value contains[c] %@", text)
-//
-//                var predicates = [
-//                    keyPredicate,
-//                    titlePredicate,
-//                    contentPredicate,
-//                    creatorFullNamePredicate,
-//                    creatorFirstNamePredicate,
-//                    creatorLastNamePredicate,
-//                    tagPredicate,
-//                    childrenKeyPredicate,
-//                    childrenTitlePredicate,
-//                    childrenContentPredicate,
-//                    childrenTagPredicate,
-//                    childrenChildrenKeyPredicate,
-//                    childrenChildrenContentPredicate,
-//                    childrenChildrenTagPredicate,
-//                    fieldsPredicate,
-//                    childrenFieldsPredicate,
-//                    childrenChildrenFieldsPredicate
-//                ]
-//
-//                if let int = Int(text) {
-//                    let yearPredicate = NSPredicate(format: "parsedYear == %d", int)
-//                    predicates.insert(yearPredicate, at: 3)
-//                }
+                switch object.type {
+                case .item(let item):
+                    for string in item.searchStrings {
+                        if string == component || string.localizedCaseInsensitiveContains(component) {
+                            return true
+                        }
+                    }
+
+                case .collection:
+                    if component.lowercased() == "collection" {
+                        return true
+                    }
+                    if object.key == component {
+                        return true
+                    }
+                    if object.title.string.localizedCaseInsensitiveContains(component) {
+                        return true
+                    }
+                }
             }
             return false
         }
@@ -404,15 +414,54 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
         }
     }
 
-    private func delete(items keys: Set<String>, viewModel: ViewModel<TrashActionHandler>) {
-        let request = MarkObjectsAsDeletedDbRequest<RItem>(keys: Array(keys), libraryId: viewModel.state.library.identifier)
-        self.perform(request: request) { [weak self, weak viewModel] error in
+    private func delete(objects keys: Set<TrashKey>, viewModel: ViewModel<TrashActionHandler>) {
+        let (items, collections) = split(keys: keys)
+        var requests: [DbRequest] = []
+        if !items.isEmpty {
+            requests.append(MarkObjectsAsDeletedDbRequest<RItem>(keys: items, libraryId: viewModel.state.library.identifier))
+        }
+        if !collections.isEmpty {
+            requests.append(MarkObjectsAsDeletedDbRequest<RCollection>(keys: collections, libraryId: viewModel.state.library.identifier))
+        }
+
+        perform(writeRequests: requests) { [weak self, weak viewModel] error in
             guard let self, let viewModel, let error else { return }
-            DDLogError("BaseItemsActionHandler: can't delete items - \(error)")
+            DDLogError("TrashActionHandler: can't delete objects - \(error)")
             update(viewModel: viewModel) { state in
                 state.error = .deletion
             }
         }
+    }
+
+    private func set(trashed: Bool, to keys: Set<TrashKey>, libraryId: LibraryIdentifier, completion: @escaping (Result<Void, ItemsError>) -> Void) {
+        let (items, collections) = split(keys: keys)
+        var requests: [DbRequest] = []
+        if !items.isEmpty {
+            requests.append(MarkItemsAsTrashedDbRequest(keys: items, libraryId: libraryId, trashed: trashed))
+        }
+        if !collections.isEmpty {
+            requests.append(MarkCollectionsAsTrashedDbRequest(keys: collections, libraryId: libraryId, trashed: trashed))
+        }
+        perform(writeRequests: requests) { error in
+            guard let error else { return }
+            DDLogError("TrashActionHandler: can't trash objects - \(error)")
+            completion(.failure(.deletion))
+        }
+    }
+
+    private func split(keys: Set<TrashKey>) -> (items: [String], collections: [String]) {
+        var items: [String] = []
+        var collections: [String] = []
+        for key in keys {
+            switch key.type {
+            case .collection:
+                collections.append(key.key)
+
+            case .item:
+                items.append(key.key)
+            }
+        }
+        return (items, collections)
     }
 
     private func startEditing(in viewModel: ViewModel<TrashActionHandler>) {
@@ -427,6 +476,80 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
             state.isEditing = false
             state.selectedItems.removeAll()
             state.changes.insert(.editing)
+        }
+    }
+
+    // MARK: - Downloads
+
+    private func downloadAttachments(for keys: Set<String>, in viewModel: ViewModel<TrashActionHandler>) {
+        var attachments: [(Attachment, String?)] = []
+        for key in keys {
+            guard let attachment = viewModel.state.objects[TrashKey(type: .item, key: key)]?.itemAccessory?.attachment else { continue }
+            let parentKey = attachment.key == key ? nil : key
+            attachments.append((attachment, parentKey))
+        }
+        fileDownloader.batchDownload(attachments: attachments)
+    }
+
+    private func process(downloadUpdate: AttachmentDownloader.Update, batchData: ItemsState.DownloadBatchData?, in viewModel: ViewModel<TrashActionHandler>) {
+        let updateKey = TrashKey(type: .item, key: downloadUpdate.parentKey ?? downloadUpdate.key)
+        guard let accessory = viewModel.state.objects[updateKey]?.itemAccessory, let attachment = accessory.attachment else {
+            updateViewModel()
+            return
+        }
+
+        switch downloadUpdate.kind {
+        case .ready(let compressed):
+            DDLogInfo("TrashActionHandler: download update \(attachment.key); \(attachment.libraryId); kind \(downloadUpdate.kind)")
+            guard let updatedAttachment = attachment.changed(location: .local, compressed: compressed) else { return }
+            updateViewModel { state in
+                state.itemAccessories[updateKey] = .attachment(attachment: updatedAttachment, parentKey: downloadUpdate.parentKey)
+                state.updateItemKey = updateKey
+            }
+
+        case .progress:
+            // If file is being extracted, the extraction is usually very quick and sends multiple quick progress updates, due to switching between queues and small delays those updates are then
+            // received here, but the file downloader is already done and we're unnecessarily reloading the table view with the same progress. So we're filtering out those unnecessary updates
+            guard let currentProgress = fileDownloader.data(for: downloadUpdate.key, parentKey: downloadUpdate.parentKey, libraryId: downloadUpdate.libraryId).progress, currentProgress < 1
+            else { return }
+            updateViewModel { state in
+                state.updateItemKey = updateKey
+            }
+
+        case .cancelled, .failed:
+            DDLogInfo("TrashActionHandler: download update \(attachment.key); \(attachment.libraryId); kind \(downloadUpdate.kind)")
+            updateViewModel { state in
+                state.updateItemKey = updateKey
+            }
+        }
+
+        func updateViewModel(additional: ((inout TrashState) -> Void)? = nil) {
+            update(viewModel: viewModel) { state in
+                if state.downloadBatchData != batchData {
+                    state.downloadBatchData = batchData
+                    state.changes = .batchData
+                }
+
+                additional?(&state)
+            }
+        }
+    }
+
+    private func open(attachment: Attachment, parentKey: String?, in viewModel: ViewModel<TrashActionHandler>) {
+        let (progress, _) = fileDownloader.data(for: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId)
+        if progress != nil {
+            if viewModel.state.attachmentToOpen == attachment.key {
+                self.update(viewModel: viewModel) { state in
+                    state.attachmentToOpen = nil
+                }
+            }
+
+            fileDownloader.cancel(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId)
+        } else {
+            update(viewModel: viewModel) { state in
+                state.attachmentToOpen = attachment.key
+            }
+            fileDownloader.downloadIfNeeded(attachment: attachment, parentKey: parentKey)
         }
     }
 
@@ -460,6 +583,7 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
     }
 
     private func changeSortType(to sortType: ItemsSortType, in viewModel: ViewModel<TrashActionHandler>) {
+        guard sortType != viewModel.state.sortType else { return }
         var ordered: OrderedDictionary<TrashKey, TrashObject> = [:]
         for object in viewModel.state.objects {
             let index = ordered.index(of: object.value, sortedBy: { areInIncreasingOrder(lObject: $0, rObject: $1, sortType: sortType) })

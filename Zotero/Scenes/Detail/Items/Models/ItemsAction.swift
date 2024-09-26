@@ -28,8 +28,7 @@ enum ItemsAction {
     case removeDownloads(Set<String>)
     case search(String)
     case selectItem(String)
-    case setSortField(ItemsSortType.Field)
-    case setSortOrder(Bool)
+    case setSortType(ItemsSortType)
     case startEditing
     case stopEditing
     case tagItem(itemKey: String, libraryId: LibraryIdentifier, tagNames: Set<String>)

@@ -19,30 +19,30 @@ struct TrashKey: Hashable {
 }
 
 struct TrashObject {
-    struct ItemSortData {
-        let title: String
+    struct Item {
+        let sortTitle: String
         let type: String
+        let localizedTypeName: String
+        let typeIconName: String
         let creatorSummary: String
         let publisher: String?
         let publicationTitle: String?
         let year: Int?
         let date: Date?
         let dateAdded: Date
-    }
-
-    struct ItemCellData {
-        let localizedTypeName: String
-        let typeIconName: String
-        let subtitle: String
-        let accessory: ItemCellModel.Accessory?
+        let tagNames: Set<String>
         let tagColors: [UIColor]
         let tagEmojis: [String]
         let hasNote: Bool
+        let itemAccessory: ItemAccessory?
+        let cellAccessory: ItemCellModel.Accessory?
+        let isMainAttachmentDownloaded: Bool
+        let searchStrings: Set<String>
     }
 
     enum Kind {
         case collection
-        case item(cellData: ItemCellData, sortData: ItemSortData, accessory: ItemAccessory?)
+        case item(item: Item)
     }
 
     let type: Kind
@@ -68,15 +68,15 @@ struct TrashObject {
         case .collection:
             return title.string
 
-        case .item(_, let sortData, _):
-            return sortData.title
+        case .item(let item):
+            return item.sortTitle
         }
     }
 
     var sortType: String? {
         switch type {
-        case .item(_, let sortData, _):
-            return sortData.type
+        case .item(let item):
+            return item.type
 
         case .collection:
             return nil
@@ -85,8 +85,8 @@ struct TrashObject {
 
     var creatorSummary: String? {
         switch type {
-        case .item(_, let sortData, _):
-            return sortData.creatorSummary
+        case .item(let item):
+            return item.creatorSummary
 
         case .collection:
             return nil
@@ -95,8 +95,8 @@ struct TrashObject {
 
     var publisher: String? {
         switch type {
-        case .item(_, let sortData, _):
-            return sortData.publisher
+        case .item(let item):
+            return item.publisher
 
         case .collection:
             return nil
@@ -105,8 +105,8 @@ struct TrashObject {
 
     var publicationTitle: String? {
         switch type {
-        case .item(_, let sortData, _):
-            return sortData.publicationTitle
+        case .item(let item):
+            return item.publicationTitle
 
         case .collection:
             return nil
@@ -115,8 +115,8 @@ struct TrashObject {
 
     var year: Int? {
         switch type {
-        case .item(_, let sortData, _):
-            return sortData.year
+        case .item(let item):
+            return item.year
 
         case .collection:
             return nil
@@ -125,8 +125,8 @@ struct TrashObject {
 
     var date: Date? {
         switch type {
-        case .item(_, let sortData, _):
-            return sortData.date
+        case .item(let item):
+            return item.date
 
         case .collection:
             return nil
@@ -135,18 +135,18 @@ struct TrashObject {
 
     var dateAdded: Date? {
         switch type {
-        case .item(_, let sortData, _):
-            return sortData.dateAdded
+        case .item(let item):
+            return item.dateAdded
 
         case .collection:
-            return nil
+            return dateModified
         }
     }
 
     var itemAccessory: ItemAccessory? {
         switch type {
-        case .item(_, _, let accessory):
-            return accessory
+        case .item(let item):
+            return item.itemAccessory
 
         case .collection:
             return nil

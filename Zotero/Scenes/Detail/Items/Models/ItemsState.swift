@@ -149,9 +149,9 @@ struct ItemsState: ViewModelState {
     }
 
     mutating func cleanup() {
-        self.error = nil
-        self.changes = []
-        self.itemKeyToDuplicate = nil
-        self.updateItemKey = nil
+        error = nil
+        changes = []
+        itemKeyToDuplicate = nil
+        updateItemKey = nil
     }
 }

@@ -10,7 +10,7 @@ import Foundation
 
 import RealmSwift
 
-struct ItemsSortType: Codable {
+struct ItemsSortType: Codable, Equatable {
     enum Field: Int, CaseIterable, Identifiable, Codable {
         case creator, date, dateAdded, dateModified, itemType, publicationTitle, publisher, title, year
 

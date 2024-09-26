@@ -58,14 +58,14 @@ struct ItemCellModel {
             accessory = nil
             typeName = "Collection"
 
-        case .item(let cellData, _, _):
-            typeIconName = cellData.typeIconName
-            subtitle = cellData.subtitle
-            hasNote = cellData.hasNote
-            tagColors = cellData.tagColors
-            tagEmojis = cellData.tagEmojis
-            accessory = cellData.accessory
-            typeName = cellData.localizedTypeName
+        case .item(let item):
+            typeIconName = item.typeIconName
+            subtitle = item.creatorSummary
+            hasNote = item.hasNote
+            tagColors = item.tagColors
+            tagEmojis = item.tagEmojis
+            accessory = item.cellAccessory
+            typeName = item.localizedTypeName
         }
     }
 
