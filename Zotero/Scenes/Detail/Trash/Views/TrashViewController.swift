@@ -14,6 +14,12 @@ final class TrashViewController: BaseItemsViewController {
     private let viewModel: ViewModel<TrashActionHandler>
 
     private var dataSource: TrashTableViewDataSource!
+    override var library: Library {
+        return viewModel.state.library
+    }
+    override var collection: Collection {
+        return .init(custom: .trash)
+    }
     override var toolbarData: ItemsToolbarController.Data {
         return toolbarData(from: viewModel.state)
     }
@@ -35,6 +41,7 @@ final class TrashViewController: BaseItemsViewController {
         handler = ItemsTableViewHandler(tableView: tableView, delegate: self, dataSource: dataSource, dragDropController: controllers.dragDropController)
         toolbarController = ItemsToolbarController(viewController: self, data: toolbarData, collection: collection, library: library, delegate: self)
         setupRightBarButtonItems(expectedItems: rightBarButtonItemTypes(for: viewModel.state))
+        setupDownloadObserver()
         dataSource.apply(snapshot: viewModel.state.objects)
 
         viewModel
@@ -44,50 +51,106 @@ final class TrashViewController: BaseItemsViewController {
                 self?.update(state: state)
             })
             .disposed(by: self.disposeBag)
+
+        func setupDownloadObserver() {
+            let downloader = controllers.userControllers?.fileDownloader
+            downloader?.observable
+                .observe(on: MainScheduler.asyncInstance)
+                .subscribe(onNext: { [weak self, weak downloader] update in
+                    guard let self else { return }
+                    process(
+                        downloadUpdate: update,
+                        toOpen: viewModel.state.attachmentToOpen,
+                        downloader: downloader,
+                        dataUpdate: { batchData in
+                            self.viewModel.process(action: .updateDownload(update: update, batchData: batchData))
+                        },
+                        attachmentWillOpen: { update in
+                            self.viewModel.process(action: .attachmentOpened(update.key))
+                        }
+                    )
+                })
+                .disposed(by: disposeBag)
+        }
     }
 
     // MARK: - Actions
 
     private func update(state: TrashState) {
+        if state.changes.contains(.objects) {
+            dataSource.apply(snapshot: state.objects)
+            updateTagFilter(filters: state.filters, collectionId: .custom(.trash), libraryId: state.library.identifier)
+        }
+//        else if state.changes.contains(.attachmentsRemoved) {
+//            handler?.attachmentAccessoriesChanged()
+//        } else if let key = state.updateItemKey {
+//            let accessory = state.itemAccessories[key].flatMap({ ItemCellModel.createAccessory(from: $0, fileDownloader: controllers.userControllers?.fileDownloader) })
+//            handler?.updateCell(key: key, withAccessory: accessory)
+//        }
+
+        if state.changes.contains(.editing) {
+            handler?.set(editing: state.isEditing, animated: true)
+            setupRightBarButtonItems(expectedItems: rightBarButtonItemTypes(for: state))
+            toolbarController?.createToolbarItems(data: toolbarData(from: state))
+        }
+
+        if state.changes.contains(.selectAll) {
+            if state.selectedItems.isEmpty {
+                handler?.deselectAll()
+            } else {
+                handler?.selectAll()
+            }
+        }
+
+        if state.changes.contains(.selection) {// || state.changes.contains(.library) {
+            setupRightBarButtonItems(expectedItems: rightBarButtonItemTypes(for: state))
+            toolbarController?.reloadToolbarItems(for: toolbarData(from: state))
+        }
+
+        if state.changes.contains(.filters) {// || state.changes.contains(.batchData) {
+            toolbarController?.reloadToolbarItems(for: toolbarData(from: state))
+        }
+
+        if let error = state.error {
+            process(error: error, state: state)
+        }
+
+        func process(error: ItemsError, state: TrashState) {
+            // Perform additional actions for individual errors if needed
+            switch error {
+            case .itemMove, .deletion, .deletionFromCollection:
+                dataSource.apply(snapshot: state.objects)
+
+            case .dataLoading, .collectionAssignment, .noteSaving, .attachmentAdding, .duplicationLoading:
+                break
+            }
+
+            // Show appropriate message
+            coordinatorDelegate?.show(error: error)
+        }
     }
 
     override func search(for term: String) {
-//        self.viewModel.process(action: .search(term))
+        viewModel.process(action: .search(term))
     }
 
-    override func process(action: ItemAction.Kind, for selectedKeys: Set<String>, button: UIBarButtonItem?, completionAction: ((Bool) -> Void)?) {
+    private func process(action: ItemAction.Kind, for selectedKeys: Set<TrashKey>, button: UIBarButtonItem?, completionAction: ((Bool) -> Void)?) {
         switch action {
-        case .createParent, .duplicate, .trash, .copyBibliography, .copyCitation, .share:
+        case .createParent, .duplicate, .trash, .copyBibliography, .copyCitation, .share, .addToCollection, .removeFromCollection:
             // These actions are not available in trash collection
             break
-
-        case .addToCollection:
-            guard !selectedKeys.isEmpty else { return }
-            coordinatorDelegate?.showCollectionsPicker(in: library, completed: { [weak self] collections in
-                self?.viewModel.process(action: .assignItemsToCollections(items: selectedKeys, collections: collections))
-                completionAction?(true)
-            })
 
         case .delete:
             guard !selectedKeys.isEmpty else { return }
             coordinatorDelegate?.showDeletionQuestion(
                 count: selectedKeys.count,
                 confirmAction: { [weak self] in
-                    self?.viewModel.process(action: .deleteItems(selectedKeys))
+                    self?.viewModel.process(action: .deleteObjects(selectedKeys))
                 },
                 cancelAction: {
                     completionAction?(false)
                 }
             )
-
-        case .removeFromCollection:
-            guard !selectedKeys.isEmpty else { return }
-            coordinatorDelegate?.showRemoveFromCollectionQuestion(
-                count: viewModel.state.objects.count
-            ) { [weak self] in
-                self?.viewModel.process(action: .deleteItemsFromCollection(selectedKeys))
-                completionAction?(true)
-            }
 
         case .restore:
             guard !selectedKeys.isEmpty else { return }
@@ -100,7 +163,13 @@ final class TrashViewController: BaseItemsViewController {
 
         case .sort:
             guard let button else { return }
-//            coordinatorDelegate?.showSortActions(viewModel: viewModel, button: button)
+            coordinatorDelegate?.showSortActions(
+                sortType: viewModel.state.sortType,
+                button: button,
+                changed: { [weak self] newValue in
+                    self?.viewModel.process(action: .setSortType(newValue))
+                }
+            )
 
         case .download:
 //            viewModel.process(action: .download(selectedKeys))
@@ -135,9 +204,9 @@ final class TrashViewController: BaseItemsViewController {
 
     private func toolbarData(from state: TrashState) -> ItemsToolbarController.Data {
         return .init(
-            isEditing: false,
-            selectedItems: [],
-            filters: [],
+            isEditing: state.isEditing,
+            selectedItems: state.selectedItems,
+            filters: state.filters,
             downloadBatchData: nil,
             remoteDownloadBatchData: nil,
             identifierLookupBatchData: .init(saved: 0, total: 0),
@@ -183,8 +252,8 @@ extension TrashViewController: ItemsTableViewHandlerDelegate {
     }
     
     func process(action: ItemAction.Kind, at index: Int, completionAction: ((Bool) -> Void)?) {
-        guard let object = dataSource.object(at: index) else { return }
-        process(action: action, for: [object.key], button: nil, completionAction: completionAction)
+        guard let key = dataSource.key(at: index) else { return }
+        process(action: action, for: [key], button: nil, completionAction: completionAction)
     }
     
     func process(tapAction action: ItemsTableViewHandler.TapAction) {
@@ -226,11 +295,22 @@ extension TrashViewController: ItemsTableViewHandlerDelegate {
     
     func process(dragAndDropAction action: ItemsTableViewHandler.DragAndDropAction) {
         switch action {
-        case .moveItems(let keys, let toKey):
-            viewModel.process(action: .moveItems(keys: keys, toItemKey: toKey))
+        case .moveItems:
+            // Action not supported in trash
+            break
 
         case .tagItem(let key, let libraryId, let tags):
             viewModel.process(action: .tagItem(itemKey: key, libraryId: libraryId, tagNames: tags))
         }
+    }
+}
+
+extension TrashViewController: ItemsToolbarControllerDelegate {
+    func process(action: ItemAction.Kind, button: UIBarButtonItem) {
+        process(action: action, for: viewModel.state.selectedItems, button: button, completionAction: nil)
+    }
+
+    func showLookup() {
+        coordinatorDelegate?.showLookup()
     }
 }

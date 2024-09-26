@@ -36,6 +36,11 @@ extension TrashTableViewDataSource {
         return viewModel.state.selectedItems
     }
 
+    func key(at index: Int) -> TrashKey? {
+        guard let snapshot, index < snapshot.keys.count else { return nil }
+        return snapshot.keys[index]
+    }
+
     func object(at index: Int) -> ItemsTableViewObject? {
         return trashObject(at: index)
     }
@@ -53,8 +58,8 @@ extension TrashTableViewDataSource {
         }
 
         guard let accessory = object.itemAccessory else {
-            guard case .item(_, let sortData, _) = object.type else { return nil }
-            switch sortData.type {
+            guard case .item(let item) = object.type else { return nil }
+            switch item.type {
             case ItemTypes.note:
                 return .note(object)
 
@@ -119,8 +124,8 @@ extension TrashTableViewDataSource {
 extension TrashObject: ItemsTableViewObject {
     var isNote: Bool {
         switch type {
-        case .item(_, let sortData, _):
-            return sortData.type == ItemTypes.note
+        case .item(let item):
+            return item.type == ItemTypes.note
 
         case .collection:
             return false
@@ -129,8 +134,8 @@ extension TrashObject: ItemsTableViewObject {
     
     var isAttachment: Bool {
         switch type {
-        case .item(_, let sortData, _):
-            return sortData.type == ItemTypes.attachment
+        case .item(let item):
+            return item.type == ItemTypes.attachment
 
         case .collection:
             return false

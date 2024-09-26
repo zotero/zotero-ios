@@ -32,24 +32,6 @@ class BaseItemsViewController: UIViewController {
     var refreshController: SyncRefreshController?
     var handler: ItemsTableViewHandler?
     weak var tagFilterDelegate: ItemsTagFilterDelegate?
-    var library: Library {
-        return Library(identifier: .custom(.myLibrary), name: "", metadataEditable: false, filesEditable: false)
-    }
-    var collection: Collection {
-        return .init(custom: .all)
-    }
-    var toolbarData: ItemsToolbarController.Data {
-        return .init(
-            isEditing: false,
-            selectedItems: [],
-            filters: [],
-            downloadBatchData: nil,
-            remoteDownloadBatchData: nil,
-            identifierLookupBatchData: ItemsState.IdentifierLookupBatchData(saved: 0, total: 0),
-            itemCount: 0
-        )
-    }
-
     weak var coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)?
 
     init(controllers: Controllers, coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)) {
@@ -151,13 +133,53 @@ class BaseItemsViewController: UIViewController {
             .disposed(by: disposeBag)
     }
 
+    func process(downloadUpdate update: AttachmentDownloader.Update, toOpen: String?, downloader: AttachmentDownloader?, dataUpdate: (ItemsState.DownloadBatchData?) -> Void, attachmentWillOpen: (AttachmentDownloader.Update) -> Void) {
+        if let downloader {
+            let batchData = ItemsState.DownloadBatchData(batchData: downloader.batchData)
+            dataUpdate(batchData)
+        }
+
+        guard !update.kind.isProgress && toOpen == update.key else { return }
+
+        attachmentWillOpen(update)
+
+        switch update.kind {
+        case .ready:
+            coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId)
+
+        case .failed(let error):
+            coordinatorDelegate?.showAttachmentError(error)
+
+        case .progress, .cancelled:
+            break
+        }
+    }
+
     // MARK: - To override
+
+    var library: Library {
+        return Library(identifier: .custom(.myLibrary), name: "", metadataEditable: false, filesEditable: false)
+    }
+    
+    var collection: Collection {
+        return .init(custom: .all)
+    }
+
+    var toolbarData: ItemsToolbarController.Data {
+        return .init(
+            isEditing: false,
+            selectedItems: [],
+            filters: [],
+            downloadBatchData: nil,
+            remoteDownloadBatchData: nil,
+            identifierLookupBatchData: ItemsState.IdentifierLookupBatchData(saved: 0, total: 0),
+            itemCount: 0
+        )
+    }
 
     func search(for term: String) {}
 
     func tagSelectionDidChange(selected: Set<String>) {}
-
-    func process(action: ItemAction.Kind, for selectedKeys: Set<String>, button: UIBarButtonItem?, completionAction: ((Bool) -> Void)?) {}
 
     func process(barButtonItemAction: RightBarButtonItem, sender: UIBarButtonItem) {}
 
@@ -232,16 +254,6 @@ class BaseItemsViewController: UIViewController {
             item.accessibilityLabel = accessibilityLabel
             return item
         }
-    }
-}
-
-extension BaseItemsViewController: ItemsToolbarControllerDelegate {
-    func process(action: ItemAction.Kind, button: UIBarButtonItem) {
-        process(action: action, for: toolbarData.selectedItems, button: button, completionAction: nil)
-    }
-    
-    func showLookup() {
-        coordinatorDelegate?.showLookup()
     }
 }
 
