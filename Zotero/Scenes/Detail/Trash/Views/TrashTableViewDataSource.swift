@@ -13,12 +13,14 @@ import CocoaLumberjackSwift
 
 final class TrashTableViewDataSource: NSObject, ItemsTableViewDataSource {
     private let viewModel: ViewModel<TrashActionHandler>
+    private unowned let fileDownloader: AttachmentDownloader?
 
     weak var handler: ItemsTableViewHandler?
     private var snapshot: OrderedDictionary<TrashKey, TrashObject>?
 
-    init(viewModel: ViewModel<TrashActionHandler>) {
+    init(viewModel: ViewModel<TrashActionHandler>, fileDownloader: AttachmentDownloader?) {
         self.viewModel = viewModel
+        self.fileDownloader = fileDownloader
     }
 
     func apply(snapshot: OrderedDictionary<TrashKey, TrashObject>) {
@@ -85,7 +87,27 @@ extension TrashTableViewDataSource {
     }
 
     func createContextMenuActions(at index: Int) -> [ItemAction] {
-        return [ItemAction(type: .restore), ItemAction(type: .delete)]
+        var actions = [ItemAction(type: .restore), ItemAction(type: .delete)]
+
+        // Add download/remove downloaded option for attachments
+        if let accessory = trashObject(at: index)?.itemAccessory, let location = accessory.attachment?.location {
+            switch location {
+            case .local:
+                actions.append(ItemAction(type: .removeDownload))
+
+            case .remote:
+                actions.append(ItemAction(type: .download))
+
+            case .localAndChangedRemotely:
+                actions.append(ItemAction(type: .download))
+                actions.append(ItemAction(type: .removeDownload))
+
+            case .remoteMissing:
+                break
+            }
+        }
+
+        return actions
     }
 }
 
@@ -107,7 +129,7 @@ extension TrashTableViewDataSource {
         }
 
         if let cell = cell as? ItemCell {
-            cell.set(item: ItemCellModel(object: object))
+            cell.set(item: ItemCellModel(object: object, fileDownloader: fileDownloader))
 
             let openInfoAction = UIAccessibilityCustomAction(name: L10n.Accessibility.Items.openItem, actionHandler: { [weak self] _ in
                 guard let self else { return false }

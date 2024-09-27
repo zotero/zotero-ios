@@ -41,8 +41,6 @@ final class ItemCell: UITableViewCell {
     override func awakeFromNib() {
         super.awakeFromNib()
 
-        self.accessoryType = .detailButton
-
         self.titleLabelsToContainerBottom.constant = 12 + ItemDetailLayout.separatorHeight // + bottom separator
         self.fileView.contentInsets = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
         self.tagCircles.borderColor = self.tagBorderColor
@@ -96,7 +94,9 @@ final class ItemCell: UITableViewCell {
     func set(item: ItemCellModel) {
         self.key = item.key
 
-        self.typeImageView.image = UIImage(named: item.typeIconName)
+        self.accessoryType = item.hasDetailButton ? .detailButton : .none
+        self.typeImageView.image = UIImage(named: item.typeIconName)?.withRenderingMode(item.iconRenderingMode)
+        self.typeImageView.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
         if item.title.string.isEmpty {
             self.titleLabel.text = " "
         } else {

@@ -13,11 +13,12 @@ enum TrashAction {
     case deleteObjects(Set<TrashKey>)
     case deselectItem(TrashKey)
     case disableFilter(ItemsFilter)
-    case download(Set<String>)
+    case download(Set<TrashKey>)
     case emptyTrash
     case enableFilter(ItemsFilter)
     case loadData
     case openAttachment(attachment: Attachment, parentKey: String?)
+    case removeDownloads(Set<TrashKey>)
     case restoreItems(Set<TrashKey>)
     case search(String)
     case setSortType(ItemsSortType)
@@ -26,5 +27,6 @@ enum TrashAction {
     case stopEditing
     case tagItem(itemKey: String, libraryId: LibraryIdentifier, tagNames: Set<String>)
     case toggleSelectionState
+    case updateAttachments(AttachmentFileDeletedNotification)
     case updateDownload(update: AttachmentDownloader.Update, batchData: ItemsState.DownloadBatchData?)
 }

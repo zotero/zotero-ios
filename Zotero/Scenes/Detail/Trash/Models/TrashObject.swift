@@ -35,9 +35,30 @@ struct TrashObject {
         let tagEmojis: [String]
         let hasNote: Bool
         let itemAccessory: ItemAccessory?
-        let cellAccessory: ItemCellModel.Accessory?
         let isMainAttachmentDownloaded: Bool
         let searchStrings: Set<String>
+
+        func copy(itemAccessory: ItemAccessory?) -> Item {
+            return .init(
+                sortTitle: sortTitle,
+                type: type,
+                localizedTypeName: localizedTypeName,
+                typeIconName: typeIconName,
+                creatorSummary: creatorSummary,
+                publisher: publisher,
+                publicationTitle: publicationTitle,
+                year: year,
+                date: date,
+                dateAdded: dateAdded,
+                tagNames: tagNames,
+                tagColors: tagColors,
+                tagEmojis: tagEmojis,
+                hasNote: hasNote,
+                itemAccessory: itemAccessory,
+                isMainAttachmentDownloaded: isMainAttachmentDownloaded,
+                searchStrings: searchStrings
+            )
+        }
     }
 
     enum Kind {
@@ -150,6 +171,22 @@ struct TrashObject {
 
         case .collection:
             return nil
+        }
+    }
+
+    func updated(itemAccessory: ItemAccessory) -> TrashObject? {
+        switch type {
+        case .collection:
+            return nil
+
+        case .item(let item):
+            return TrashObject(
+                type: .item(item: item.copy(itemAccessory: itemAccessory)),
+                key: key,
+                libraryId: libraryId,
+                title: title,
+                dateModified: dateModified
+            )
         }
     }
 }
