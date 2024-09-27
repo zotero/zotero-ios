@@ -37,7 +37,7 @@ final class TrashViewController: BaseItemsViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        dataSource = TrashTableViewDataSource(viewModel: viewModel)
+        dataSource = TrashTableViewDataSource(viewModel: viewModel, fileDownloader: controllers.userControllers?.fileDownloader)
         handler = ItemsTableViewHandler(tableView: tableView, delegate: self, dataSource: dataSource, dragDropController: controllers.dragDropController)
         toolbarController = ItemsToolbarController(viewController: self, data: toolbarData, collection: collection, library: library, delegate: self)
         setupRightBarButtonItems(expectedItems: rightBarButtonItemTypes(for: viewModel.state))
@@ -71,6 +71,17 @@ final class TrashViewController: BaseItemsViewController {
                     )
                 })
                 .disposed(by: disposeBag)
+
+            NotificationCenter.default
+                .rx
+                .notification(.attachmentFileDeleted)
+                .observe(on: MainScheduler.instance)
+                .subscribe(onNext: { [weak self] notification in
+                    if let notification = notification.object as? AttachmentFileDeletedNotification {
+                        self?.viewModel.process(action: .updateAttachments(notification))
+                    }
+                })
+                .disposed(by: self.disposeBag)
         }
     }
 
@@ -80,13 +91,12 @@ final class TrashViewController: BaseItemsViewController {
         if state.changes.contains(.objects) {
             dataSource.apply(snapshot: state.objects)
             updateTagFilter(filters: state.filters, collectionId: .custom(.trash), libraryId: state.library.identifier)
+        } else if let key = state.updateItemKey, let object = state.objects[key] {
+            let accessory = ItemCellModel.createAccessory(from: object.itemAccessory, fileDownloader: controllers.userControllers?.fileDownloader)
+            handler?.updateCell(key: key.key, withAccessory: accessory)
+        } else if state.changes.contains(.attachmentsRemoved) {
+            handler?.attachmentAccessoriesChanged()
         }
-//        else if state.changes.contains(.attachmentsRemoved) {
-//            handler?.attachmentAccessoriesChanged()
-//        } else if let key = state.updateItemKey {
-//            let accessory = state.itemAccessories[key].flatMap({ ItemCellModel.createAccessory(from: $0, fileDownloader: controllers.userControllers?.fileDownloader) })
-//            handler?.updateCell(key: key, withAccessory: accessory)
-//        }
 
         if state.changes.contains(.editing) {
             handler?.set(editing: state.isEditing, animated: true)
@@ -172,12 +182,10 @@ final class TrashViewController: BaseItemsViewController {
             )
 
         case .download:
-//            viewModel.process(action: .download(selectedKeys))
-            break
+            viewModel.process(action: .download(selectedKeys))
 
         case .removeDownload:
-//            viewModel.process(action: .removeDownloads(selectedKeys))
-            break
+            viewModel.process(action: .removeDownloads(selectedKeys))
         }
     }
 
@@ -264,8 +272,7 @@ extension TrashViewController: ItemsTableViewHandlerDelegate {
             coordinatorDelegate?.showItemDetail(for: .preview(key: object.key), libraryId: viewModel.state.library.identifier, scrolledToKey: nil, animated: true)
 
         case .attachment(let attachment, let parentKey):
-//            viewModel.process(action: .openAttachment(attachment: attachment, parentKey: parentKey))
-            break
+            viewModel.process(action: .openAttachment(attachment: attachment, parentKey: parentKey))
 
         case .doi(let doi):
             coordinatorDelegate?.show(doi: doi)

@@ -23,6 +23,7 @@ struct TrashState: ViewModelState {
         static let selectAll = Changes(rawValue: 1 << 3)
         static let filters = Changes(rawValue: 1 << 4)
         static let batchData = Changes(rawValue: 1 << 5)
+        static let attachmentsRemoved = Changes(rawValue: 1 << 6)
     }
 
     enum Error: Swift.Error {

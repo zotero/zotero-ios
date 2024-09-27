@@ -127,6 +127,7 @@ final class DetailCoordinator: Coordinator {
                 controller = createTrashViewController(
                     libraryId: libraryId,
                     dbStorage: userControllers.dbStorage,
+                    fileDownloader: userControllers.fileDownloader,
                     schemaController: controllers.schemaController,
                     fileStorage: controllers.fileStorage,
                     urlDetector: controllers.urlDetector,
@@ -171,6 +172,7 @@ final class DetailCoordinator: Coordinator {
         func createTrashViewController(
             libraryId: LibraryIdentifier,
             dbStorage: DbStorage,
+            fileDownloader: AttachmentDownloader,
             schemaController: SchemaController,
             fileStorage: FileStorage,
             urlDetector: UrlDetector,
@@ -181,14 +183,16 @@ final class DetailCoordinator: Coordinator {
 
             let searchTerm = searchItemKeys?.joined(separator: " ")
             let sortType = Defaults.shared.itemsSortType
-            let state = TrashState(libraryId: libraryId, sortType: sortType, searchTerm: searchTerm, filters: [])
+            let downloadBatchData = ItemsState.DownloadBatchData(batchData: fileDownloader.batchData)
+            let state = TrashState(libraryId: libraryId, sortType: sortType, searchTerm: searchTerm, filters: [], downloadBatchData: downloadBatchData)
             let handler = TrashActionHandler(
                 dbStorage: dbStorage,
                 schemaController: schemaController,
                 fileStorage: fileStorage,
                 fileDownloader: userControllers.fileDownloader,
                 urlDetector: urlDetector,
-                htmlAttributedStringConverter: htmlAttributedStringConverter
+                htmlAttributedStringConverter: htmlAttributedStringConverter,
+                fileCleanupController: userControllers.fileCleanupController
             )
             return TrashViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: controllers, coordinatorDelegate: self)
         }

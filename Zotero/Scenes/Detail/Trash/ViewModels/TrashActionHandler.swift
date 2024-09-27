@@ -22,6 +22,7 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
     private unowned let fileDownloader: AttachmentDownloader
     private unowned let urlDetector: UrlDetector
     private unowned let htmlAttributedStringConverter: HtmlAttributedStringConverter
+    private unowned let fileCleanupController: AttachmentFileCleanupController
 
     init(
         dbStorage: DbStorage,
@@ -29,13 +30,15 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
         fileStorage: FileStorage,
         fileDownloader: AttachmentDownloader,
         urlDetector: UrlDetector,
-        htmlAttributedStringConverter: HtmlAttributedStringConverter
+        htmlAttributedStringConverter: HtmlAttributedStringConverter,
+        fileCleanupController: AttachmentFileCleanupController
     ) {
         self.schemaController = schemaController
         self.fileStorage = fileStorage
         self.fileDownloader = fileDownloader
         self.urlDetector = urlDetector
         self.htmlAttributedStringConverter = htmlAttributedStringConverter
+        self.fileCleanupController = fileCleanupController
         super.init(dbStorage: dbStorage)
     }
 
@@ -62,6 +65,14 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
 
         case .download(let keys):
             downloadAttachments(for: keys, in: viewModel)
+
+        case .removeDownloads(let keys):
+            var items: Set<String> = []
+            for key in keys {
+                guard key.type == .item else { continue }
+                items.insert(key.key)
+            }
+            fileCleanupController.delete(.allForItems(items, viewModel.state.library.identifier))
 
         case .emptyTrash:
             emptyTrash(in: viewModel)
@@ -114,6 +125,9 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
 
         case .updateDownload(let update, let batchData):
             process(downloadUpdate: update, batchData: batchData, in: viewModel)
+
+        case .updateAttachments(let notification):
+            processAttachmentDeletion(notification: notification, in: viewModel)
 
         case .openAttachment(let attachment, let parentKey):
             open(attachment: attachment, parentKey: parentKey, in: viewModel)
@@ -191,7 +205,6 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
         func trashObject(from rItem: RItem, titleFont: UIFont) -> TrashObject? {
             guard let libraryId = rItem.libraryId else { return nil }
             let itemAccessory = ItemAccessory.create(from: rItem, fileStorage: fileStorage, urlDetector: urlDetector)
-            let cellAccessory = itemAccessory.flatMap({ ItemCellModel.createAccessory(from: $0, fileDownloader: fileDownloader) })
             let creatorSummary = ItemCellModel.creatorSummary(for: rItem)
             let (tagColors, tagEmojis) = ItemCellModel.tagData(item: rItem)
             let hasNote = ItemCellModel.hasNote(item: rItem)
@@ -213,7 +226,6 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
                 tagEmojis: tagEmojis,
                 hasNote: hasNote,
                 itemAccessory: itemAccessory,
-                cellAccessory: cellAccessory,
                 isMainAttachmentDownloaded: rItem.fileDownloaded,
                 searchStrings: searchStrings(from: rItem)
             )
@@ -481,11 +493,11 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
 
     // MARK: - Downloads
 
-    private func downloadAttachments(for keys: Set<String>, in viewModel: ViewModel<TrashActionHandler>) {
+    private func downloadAttachments(for keys: Set<TrashKey>, in viewModel: ViewModel<TrashActionHandler>) {
         var attachments: [(Attachment, String?)] = []
         for key in keys {
-            guard let attachment = viewModel.state.objects[TrashKey(type: .item, key: key)]?.itemAccessory?.attachment else { continue }
-            let parentKey = attachment.key == key ? nil : key
+            guard let attachment = viewModel.state.objects[key]?.itemAccessory?.attachment else { continue }
+            let parentKey = attachment.key == key.key ? nil : key.key
             attachments.append((attachment, parentKey))
         }
         fileDownloader.batchDownload(attachments: attachments)
@@ -503,14 +515,18 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
             DDLogInfo("TrashActionHandler: download update \(attachment.key); \(attachment.libraryId); kind \(downloadUpdate.kind)")
             guard let updatedAttachment = attachment.changed(location: .local, compressed: compressed) else { return }
             updateViewModel { state in
-                state.itemAccessories[updateKey] = .attachment(attachment: updatedAttachment, parentKey: downloadUpdate.parentKey)
+                if let object = state.objects[updateKey] {
+                    state.objects[updateKey] = object.updated(itemAccessory: .attachment(attachment: updatedAttachment, parentKey: downloadUpdate.parentKey))
+                }
                 state.updateItemKey = updateKey
             }
 
         case .progress:
             // If file is being extracted, the extraction is usually very quick and sends multiple quick progress updates, due to switching between queues and small delays those updates are then
             // received here, but the file downloader is already done and we're unnecessarily reloading the table view with the same progress. So we're filtering out those unnecessary updates
-            guard let currentProgress = fileDownloader.data(for: downloadUpdate.key, parentKey: downloadUpdate.parentKey, libraryId: downloadUpdate.libraryId).progress, currentProgress < 1
+            guard
+                let currentProgress = fileDownloader.data(for: downloadUpdate.key, parentKey: downloadUpdate.parentKey, libraryId: downloadUpdate.libraryId).progress,
+                currentProgress < 1
             else { return }
             updateViewModel { state in
                 state.updateItemKey = updateKey
@@ -529,8 +545,65 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
                     state.downloadBatchData = batchData
                     state.changes = .batchData
                 }
-
                 additional?(&state)
+            }
+        }
+    }
+
+    private func processAttachmentDeletion(notification: AttachmentFileDeletedNotification, in viewModel: ViewModel<TrashActionHandler>) {
+        switch notification {
+        case .all:
+            // Update all attachment locations to `.remote`.
+            self.update(viewModel: viewModel) { state in
+                changeAttachmentsToRemoteLocation(in: &state)
+                state.changes = .attachmentsRemoved
+            }
+
+        case .library(let libraryId):
+            // Check whether files in this library have been deleted.
+            guard viewModel.state.library.identifier == libraryId else { return }
+            // Update all attachment locations to `.remote`.
+            self.update(viewModel: viewModel) { state in
+                changeAttachmentsToRemoteLocation(in: &state)
+                state.changes = .attachmentsRemoved
+            }
+
+        case .allForItems(let keys, let libraryId):
+            // Check whether files in this library have been deleted.
+            guard viewModel.state.library.identifier == libraryId else { return }
+            update(viewModel: viewModel) { state in
+                changeAttachmentsToRemoteLocation(for: keys, in: &state)
+                state.changes = .attachmentsRemoved
+            }
+
+        case .individual(let key, let parentKey, let libraryId):
+            let updateKey = parentKey ?? key
+            let trashKey = TrashKey(type: .item, key: updateKey)
+            // Check whether the deleted file was in this library and there is a cached object for it.
+            guard viewModel.state.library.identifier == libraryId && viewModel.state.objects[trashKey] != nil else { return }
+            update(viewModel: viewModel) { state in
+                changeAttachmentsToRemoteLocation(for: [updateKey], in: &state)
+                state.updateItemKey = trashKey
+            }
+        }
+
+        func changeAttachmentsToRemoteLocation(for keys: Set<String>? = nil, in state: inout TrashState) {
+            if let keys {
+                for key in keys {
+                    let trashKey = TrashKey(type: .item, key: key)
+                    guard let object = state.objects[trashKey] else { continue }
+                    update(key: trashKey, object: object, in: &state)
+                }
+            } else {
+                for (key, object) in state.objects {
+                    guard key.type == .item else { continue }
+                    update(key: key, object: object, in: &state)
+                }
+            }
+
+            func update(key: TrashKey, object: TrashObject, in state: inout TrashState) {
+                guard let acccessory = object.itemAccessory?.updatedAttachment(update: { attachment in attachment.changed(location: .remote, condition: { $0 == .local }) }) else { return }
+                state.objects[key] = object.updated(itemAccessory: acccessory)
             }
         }
     }

@@ -188,7 +188,10 @@ final class ItemsTableViewHandler: NSObject {
     }
 
     func performTapAction(forIndexPath indexPath: IndexPath) {
-        guard let action = dataSource.tapAction(for: indexPath) else { return }
+        guard let action = dataSource.tapAction(for: indexPath) else {
+            tableView.deselectRow(at: indexPath, animated: true)
+            return
+        }
         switch action {
         case .attachment, .doi, .metadata, .note, .url:
             tableView.deselectRow(at: indexPath, animated: true)

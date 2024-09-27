@@ -19,6 +19,7 @@ struct ItemCellModel {
 
     let key: String
     let typeIconName: String
+    let iconRenderingMode: UIImage.RenderingMode
     let typeName: String
     let title: NSAttributedString
     let subtitle: String
@@ -26,46 +27,53 @@ struct ItemCellModel {
     let tagColors: [UIColor]
     let tagEmojis: [String]
     let accessory: Accessory?
+    let hasDetailButton: Bool
 
     init(item: RItem, typeName: String, title: NSAttributedString, accessory: Accessory?) {
-        self.key = item.key
-        self.typeIconName = Self.typeIconName(for: item)
+        key = item.key
+        typeIconName = Self.typeIconName(for: item)
+        iconRenderingMode = .alwaysOriginal
         self.typeName = typeName
         self.title = title
-        self.subtitle = Self.creatorSummary(for: item)
-        self.hasNote = Self.hasNote(item: item)
+        subtitle = Self.creatorSummary(for: item)
+        hasNote = Self.hasNote(item: item)
         self.accessory = accessory
         let (colors, emojis) = Self.tagData(item: item)
-        self.tagColors = colors
-        self.tagEmojis = emojis
+        tagColors = colors
+        tagEmojis = emojis
+        hasDetailButton = true
     }
 
     init(item: RItem, typeName: String, title: NSAttributedString, accessory: ItemAccessory?, fileDownloader: AttachmentDownloader?) {
         self.init(item: item, typeName: typeName, title: title, accessory: Self.createAccessory(from: accessory, fileDownloader: fileDownloader))
     }
 
-    init(object: TrashObject) {
+    init(object: TrashObject, fileDownloader: AttachmentDownloader?) {
         key = object.key
         title = object.title
 
         switch object.type {
         case .collection:
-            typeIconName = "collection"
+            typeIconName = Asset.Images.Cells.collection.name
+            iconRenderingMode = .alwaysTemplate
             subtitle = ""
             hasNote = false
             tagColors = []
             tagEmojis = []
             accessory = nil
-            typeName = "Collection"
+            typeName = L10n.Accessibility.Items.collection
+            hasDetailButton = false
 
         case .item(let item):
             typeIconName = item.typeIconName
+            iconRenderingMode = .alwaysOriginal
             subtitle = item.creatorSummary
             hasNote = item.hasNote
             tagColors = item.tagColors
             tagEmojis = item.tagEmojis
-            accessory = item.cellAccessory
+            accessory = Self.createAccessory(from: item.itemAccessory, fileDownloader: fileDownloader)
             typeName = item.localizedTypeName
+            hasDetailButton = true
         }
     }
 
