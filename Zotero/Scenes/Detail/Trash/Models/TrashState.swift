@@ -24,6 +24,7 @@ struct TrashState: ViewModelState {
         static let filters = Changes(rawValue: 1 << 4)
         static let batchData = Changes(rawValue: 1 << 5)
         static let attachmentsRemoved = Changes(rawValue: 1 << 6)
+        static let library = Changes(rawValue: 1 << 7)
     }
 
     enum Error: Swift.Error {
@@ -34,8 +35,12 @@ struct TrashState: ViewModelState {
     var libraryToken: NotificationToken?
     var itemResults: Results<RItem>?
     var itemsToken: NotificationToken?
+    // Keys for all items are stored so that when a deletion comes in it can be determined which keys were deleted
+    var itemKeys: [String]
     var collectionResults: Results<RCollection>?
     var collectionsToken: NotificationToken?
+    // Keys for all collecitons are stored so that when a deletion comes in it can be determined which keys were deleted
+    var collectionKeys: [String]
     var objects: OrderedDictionary<TrashKey, TrashObject>
     var snapshot: OrderedDictionary<TrashKey, TrashObject>?
     var sortType: ItemsSortType
@@ -61,6 +66,8 @@ struct TrashState: ViewModelState {
         isEditing = false
         changes = []
         selectedItems = []
+        itemKeys = []
+        collectionKeys = []
         self.downloadBatchData = downloadBatchData
 
         switch libraryId {

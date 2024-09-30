@@ -27,6 +27,18 @@ final class TrashTableViewDataSource: NSObject, ItemsTableViewDataSource {
         self.snapshot = snapshot
         handler?.reloadAll()
     }
+
+    func updateCellAccessory(key: TrashKey, snapshot: OrderedDictionary<TrashKey, TrashObject>) {
+        self.snapshot = snapshot
+        guard let itemAccessory = snapshot[key]?.itemAccessory else { return }
+        let accessory = ItemCellModel.createAccessory(from: itemAccessory, fileDownloader: fileDownloader)
+        handler?.updateCell(key: key.key, withAccessory: accessory)
+    }
+
+    func updateAttachmentAccessories(snapshot: OrderedDictionary<TrashKey, TrashObject>) {
+        self.snapshot = snapshot
+        handler?.attachmentAccessoriesChanged()
+    }
 }
 
 extension TrashTableViewDataSource {

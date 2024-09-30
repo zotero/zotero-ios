@@ -91,11 +91,10 @@ final class TrashViewController: BaseItemsViewController {
         if state.changes.contains(.objects) {
             dataSource.apply(snapshot: state.objects)
             updateTagFilter(filters: state.filters, collectionId: .custom(.trash), libraryId: state.library.identifier)
-        } else if let key = state.updateItemKey, let object = state.objects[key] {
-            let accessory = ItemCellModel.createAccessory(from: object.itemAccessory, fileDownloader: controllers.userControllers?.fileDownloader)
-            handler?.updateCell(key: key.key, withAccessory: accessory)
+        } else if let key = state.updateItemKey {
+            dataSource.updateCellAccessory(key: key, snapshot: state.objects)
         } else if state.changes.contains(.attachmentsRemoved) {
-            handler?.attachmentAccessoriesChanged()
+            dataSource.updateAttachmentAccessories(snapshot: state.objects)
         }
 
         if state.changes.contains(.editing) {
@@ -112,12 +111,12 @@ final class TrashViewController: BaseItemsViewController {
             }
         }
 
-        if state.changes.contains(.selection) {// || state.changes.contains(.library) {
+        if state.changes.contains(.selection) || state.changes.contains(.library) {
             setupRightBarButtonItems(expectedItems: rightBarButtonItemTypes(for: state))
             toolbarController?.reloadToolbarItems(for: toolbarData(from: state))
         }
 
-        if state.changes.contains(.filters) {// || state.changes.contains(.batchData) {
+        if state.changes.contains(.filters) || state.changes.contains(.batchData) {
             toolbarController?.reloadToolbarItems(for: toolbarData(from: state))
         }
 
