@@ -231,7 +231,8 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
                 var trashItemCount = 0
                 var itemsToken: NotificationToken?
                 var unfiledToken: NotificationToken?
-                var trashToken: NotificationToken?
+                var trashItemsToken: NotificationToken?
+                var trashCollectionsToken: NotificationToken?
 
                 if includeItemCounts {
                     let allItems = try coordinator.perform(request: ReadItemsDbRequest(collectionId: .custom(.all), libraryId: libraryId))
@@ -241,11 +242,13 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
                     unfiledItemCount = unfiledItems.count
 
                     let trashItems = try coordinator.perform(request: ReadItemsDbRequest(collectionId: .custom(.trash), libraryId: libraryId))
-                    trashItemCount = trashItems.count
+                    let trashCollections = try coordinator.perform(request: ReadCollectionsDbRequest(libraryId: libraryId, trash: true))
+                    trashItemCount = trashItems.count + trashCollections.count
 
-                    itemsToken = self.observeItemCount(in: allItems, for: .all, in: viewModel)
-                    unfiledToken = self.observeItemCount(in: unfiledItems, for: .unfiled, in: viewModel)
-                    trashToken = self.observeItemCount(in: trashItems, for: .trash, in: viewModel)
+                    itemsToken = observeItemCount(in: allItems, for: .all, in: viewModel)
+                    unfiledToken = observeItemCount(in: unfiledItems, for: .unfiled, in: viewModel)
+                    trashItemsToken = observeItemCount(in: trashItems, for: .trash, in: viewModel)
+                    trashCollectionsToken = observeTrashedCollectionCount(in: trashCollections, in: viewModel)
                 }
 
                 let collectionTree = CollectionTreeBuilder.collections(from: collections, libraryId: libraryId, includeItemCounts: includeItemCounts)
@@ -254,11 +257,13 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
                 collectionTree.append(collection: Collection(custom: .trash, itemCount: trashItemCount))
 
                 let collectionsToken = collections.observe(keyPaths: RCollection.observableKeypathsForList, { [weak viewModel] changes in
-                    guard let viewModel = viewModel else { return }
+                    guard let viewModel else { return }
                     switch changes {
-                    case .update(let objects, _, _, _): self.update(collections: objects, includeItemCounts: includeItemCounts, viewModel: viewModel)
-                    case .initial: break
-                    case .error: break
+                    case .update(let objects, _, _, _):
+                        update(collections: objects, includeItemCounts: includeItemCounts, viewModel: viewModel)
+
+                    case .initial, .error:
+                        break
                     }
                 })
 
@@ -269,13 +274,90 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
                     state.collectionsToken = collectionsToken
                     state.itemsToken = itemsToken
                     state.unfiledToken = unfiledToken
-                    state.trashToken = trashToken
+                    state.trashItemsToken = trashItemsToken
+                    state.trashCollectionsToken = trashCollectionsToken
                 }
             })
         } catch let error {
             DDLogError("CollectionsActionHandlers: can't load data - \(error)")
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.error = .dataLoading
+            }
+        }
+
+        func observeItemCount(in results: Results<RItem>, for customType: CollectionIdentifier.CustomType, in viewModel: ViewModel<CollectionsActionHandler>) -> NotificationToken {
+            return results.observe({ [weak viewModel] changes in
+                guard let viewModel else { return }
+                switch changes {
+                case .update(let objects, _, _, _):
+                    switch customType {
+                    case .trash:
+                        updateTrashCount(itemsCount: objects.count, collectionsCount: nil, in: viewModel)
+
+                    case .all, .publications, .unfiled:
+                        updateItemsCount(objects.count, for: customType, in: viewModel)
+                    }
+
+                case .initial:
+                    break
+
+                case .error:
+                    break
+                }
+            })
+        }
+
+        func observeTrashedCollectionCount(in results: Results<RCollection>, in viewModel: ViewModel<CollectionsActionHandler>) -> NotificationToken {
+            return results.observe({ [weak viewModel] changes in
+                guard let viewModel else { return }
+                switch changes {
+                case .update(let objects, _, _, _):
+                    updateTrashCount(itemsCount: nil, collectionsCount: objects.count, in: viewModel)
+
+                case .initial:
+                    break
+
+                case .error:
+                    break
+                }
+            })
+        }
+
+        func updateItemsCount(_ count: Int, for customType: CollectionIdentifier.CustomType, in viewModel: ViewModel<CollectionsActionHandler>) {
+            self.update(viewModel: viewModel) { state in
+                state.collectionTree.update(collection: Collection(custom: customType, itemCount: count))
+
+                switch customType {
+                case .all:
+                    state.changes = .allItemCount
+
+                case .unfiled:
+                    state.changes = .unfiledItemCount
+
+                case .trash:
+                    state.changes = .trashItemCount
+
+                case .publications:
+                    break
+                }
+            }
+        }
+
+        func updateTrashCount(itemsCount: Int?, collectionsCount: Int?, in viewModel: ViewModel<CollectionsActionHandler>) {
+            var count = 0
+            if let itemsCount {
+                count += itemsCount
+            } else {
+                count += (try? dbStorage.perform(request: ReadItemsDbRequest(collectionId: .custom(.trash), libraryId: libraryId), on: .main))?.count ?? 0
+            }
+            if let collectionsCount {
+                count += collectionsCount
+            } else {
+                count += (try? dbStorage.perform(request: ReadCollectionsDbRequest(libraryId: libraryId, trash: true), on: .main))?.count ?? 0
+            }
+            update(viewModel: viewModel) { state in
+                state.collectionTree.update(collection: Collection(custom: .trash, itemCount: count))
+                state.changes = .trashItemCount
             }
         }
     }
@@ -340,36 +422,6 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
 
         self.update(viewModel: viewModel) { state in
             state.editingData = (key, name, parent)
-        }
-    }
-
-    private func observeItemCount(in results: Results<RItem>, for customType: CollectionIdentifier.CustomType, in viewModel: ViewModel<CollectionsActionHandler>) -> NotificationToken {
-        return results.observe({ [weak viewModel] changes in
-            guard let viewModel = viewModel else { return }
-            switch changes {
-            case .update(let objects, _, _, _):
-                self.update(itemsCount: objects.count, for: customType, in: viewModel)
-            case .initial: break
-            case .error: break
-            }
-        })
-    }
-
-    private func update(itemsCount: Int, for customType: CollectionIdentifier.CustomType, in viewModel: ViewModel<CollectionsActionHandler>) {
-        self.update(viewModel: viewModel) { state in
-            state.collectionTree.update(collection: Collection(custom: customType, itemCount: itemsCount))
-
-            switch customType {
-            case .all:
-                state.changes = .allItemCount
-
-            case .unfiled:
-                state.changes = .unfiledItemCount
-
-            case .trash:
-                state.changes = .trashItemCount
-            case .publications: break
-            }
         }
     }
 
