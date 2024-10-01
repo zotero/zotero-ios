@@ -194,7 +194,10 @@ final class DetailCoordinator: Coordinator {
                 htmlAttributedStringConverter: htmlAttributedStringConverter,
                 fileCleanupController: userControllers.fileCleanupController
             )
-            return TrashViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: controllers, coordinatorDelegate: self)
+            let controller = TrashViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: controllers, coordinatorDelegate: self)
+            controller.tagFilterDelegate = itemsTagFilterDelegate
+            itemsTagFilterDelegate?.delegate = controller
+            return controller
         }
 
         func createItemsViewController(

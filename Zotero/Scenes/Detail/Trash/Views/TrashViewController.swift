@@ -43,6 +43,7 @@ final class TrashViewController: BaseItemsViewController {
         setupRightBarButtonItems(expectedItems: rightBarButtonItemTypes(for: viewModel.state))
         setupDownloadObserver()
         dataSource.apply(snapshot: viewModel.state.objects)
+        updateTagFilter(filters: viewModel.state.filters, collectionId: .custom(.trash), libraryId: viewModel.state.library.identifier)
 
         viewModel
             .stateObservable
