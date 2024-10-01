@@ -380,9 +380,7 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
         let request = MarkCollectionsAsTrashedDbRequest(keys: keys, libraryId: viewModel.state.library.identifier, trashed: true)
         self.perform(request: request) { [weak viewModel] error in
             guard let error = error, let viewModel = viewModel else { return }
-
             DDLogError("CollectionsActionHandler: can't delete object - \(error)")
-
             self.update(viewModel: viewModel) { state in
                 state.error = .deletion
             }

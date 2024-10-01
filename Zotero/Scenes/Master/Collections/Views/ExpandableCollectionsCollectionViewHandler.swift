@@ -122,7 +122,7 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
             actions.append(createBibliography)
 
             if viewModel.state.library.metadataEditable {
-                let delete = UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak viewModel] _ in
+                let delete = UIAction(title: L10n.moveToTrash, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak viewModel] _ in
                     viewModel?.process(action: .deleteCollection(key))
                 }
                 actions.append(delete)
