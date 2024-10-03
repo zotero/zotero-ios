@@ -20,7 +20,7 @@ struct AttachmentCreator {
         case `extension`(String)
     }
 
-    private static let mainAttachmentContentTypes: Set<String> = ["text/html", "application/pdf", "image/png", "image/jpeg", "image/gif", "text/plain"]
+    private static let mainAttachmentContentTypes: Set<String> = ["text/html", "application/pdf", "image/png", "image/jpeg", "image/gif", "text/plain", "application/epub+zip"]
 
     static func mainAttachment(for item: RItem, fileStorage: FileStorage) -> Attachment? {
         if item.rawType == ItemTypes.attachment {
@@ -62,7 +62,7 @@ struct AttachmentCreator {
             switch attachment.type {
             case .file(_, let contentType, _, _, _):
                 switch contentType {
-                case "application/pdf", "text/html", "application/epub+zip":
+                case "application/pdf":
                     return true
 
                 default:
