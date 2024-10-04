@@ -226,8 +226,11 @@ final class FileAttachmentView: UIView {
 
     private func badgeBorderWidth(for style: Style) -> CGFloat {
         switch style {
-        case .detail, .shareExtension, .lookup: return FileAttachmentView.badgeDetailBorderWidth
-        case .list: return FileAttachmentView.badgeListBorderWidth
+        case .detail, .shareExtension, .lookup:
+            return FileAttachmentView.badgeDetailBorderWidth
+
+        case .list:
+            return FileAttachmentView.badgeListBorderWidth
         }
     }
 
@@ -240,15 +243,22 @@ final class FileAttachmentView: UIView {
             switch type {
             case .file(_, _, let location, _, _):
                 switch location {
-                case .local: return .image(asset: self.mainAsset(for: type, style: style))
-                case .remoteMissing: return .imageWithBadge(main: self.mainAsset(for: type, style: style), badge: self.badge(for: .missing, style: style))
-                case .remote, .localAndChangedRemotely: return .imageWithBadge(main: self.mainAsset(for: type, style: style), badge: self.badge(for: .download, style: style))
+                case .local:
+                    return .image(asset: self.mainAsset(for: type, style: style))
+
+                case .remoteMissing:
+                    return .imageWithBadge(main: self.mainAsset(for: type, style: style), badge: self.badge(for: .missing, style: style))
+
+                case .remote, .localAndChangedRemotely:
+                    return .imageWithBadge(main: self.mainAsset(for: type, style: style), badge: self.badge(for: .download, style: style))
                 }
 
-            case .url: return .image(asset: self.mainAsset(for: type, style: style))
+            case .url:
+                return .image(asset: self.mainAsset(for: type, style: style))
             }
 
-        case .failed(let type, _): return .imageWithBadge(main: self.mainAsset(for: type, style: style), badge: self.badge(for: .failed, style: style))
+        case .failed(let type, _):
+            return .imageWithBadge(main: self.mainAsset(for: type, style: style), badge: self.badge(for: .failed, style: style))
         }
     }
 
@@ -256,21 +266,32 @@ final class FileAttachmentView: UIView {
         switch type {
         case .download:
             switch style {
-            case .detail, .shareExtension, .lookup: return Asset.Images.Attachments.badgeDetailDownload
-            case .list: return Asset.Images.Attachments.badgeListDownload
+            case .detail, .shareExtension, .lookup:
+                return Asset.Images.Attachments.badgeDetailDownload
+
+            case .list:
+                return Asset.Images.Attachments.badgeListDownload
             }
 
         case .failed:
             switch style {
-            case .detail, .lookup: return Asset.Images.Attachments.badgeDetailFailed
-            case .shareExtension: return Asset.Images.Attachments.badgeShareextFailed
-            case .list: return Asset.Images.Attachments.badgeListFailed
+            case .detail, .lookup:
+                return Asset.Images.Attachments.badgeDetailFailed
+
+            case .shareExtension:
+                return Asset.Images.Attachments.badgeShareextFailed
+
+            case .list:
+                return Asset.Images.Attachments.badgeListFailed
             }
 
         case .missing:
             switch style {
-            case .detail, .shareExtension, .lookup: return Asset.Images.Attachments.badgeDetailMissing
-            case .list: return Asset.Images.Attachments.badgeListMissing
+            case .detail, .shareExtension, .lookup:
+                return Asset.Images.Attachments.badgeDetailMissing
+
+            case .list:
+                return Asset.Images.Attachments.badgeListMissing
             }
         }
     }
@@ -279,54 +300,90 @@ final class FileAttachmentView: UIView {
         switch attachmentType {
         case .url:
             switch style {
-            case .detail, .shareExtension, .lookup: return Asset.Images.Attachments.detailLinkedUrl
-            case .list: return Asset.Images.Attachments.listLink
+            case .detail, .shareExtension, .lookup:
+                return Asset.Images.ItemTypes.webPageLinked
+
+            case .list:
+                return Asset.Images.Attachments.listLink
             }
 
         case .file(_, let contentType, _, let linkType, _):
             switch linkType {
             case .embeddedImage:
                 switch style {
-                case .detail, .shareExtension, .lookup: return Asset.Images.Attachments.detailImage
-                case .list: return Asset.Images.Attachments.listImage
+                case .detail, .shareExtension, .lookup:
+                    return Asset.Images.Attachments.detailImage
+
+                case .list:
+                    return Asset.Images.Attachments.listImage
                 }
 
             case .linkedFile:
                 switch style {
                 case .detail, .shareExtension, .lookup:
                     switch contentType {
-                    case "application/pdf": return Asset.Images.Attachments.detailLinkedPdf
-                    default: return Asset.Images.Attachments.detailLinkedDocument
+                    case "application/pdf":
+                        return Asset.Images.ItemTypes.pdfLinked
+
+                    case "text/html":
+                        return Asset.Images.ItemTypes.webPageLinked
+
+                    case "application/epub+zip":
+                        return Asset.Images.ItemTypes.epubLinked
+
+                    default:
+                        return Asset.Images.ItemTypes.documentLinked
                     }
 
                 case .list:
                     return Asset.Images.Attachments.listLink
-                }
-                
-            case .importedUrl where contentType == "text/html":
-                switch style {
-                case .list: return Asset.Images.Attachments.listWebPageSnapshot
-                case .detail, .shareExtension, .lookup: return Asset.Images.Attachments.detailWebpageSnapshot
                 }
 
             case .importedFile, .importedUrl:
                 switch contentType {
                 case "image/png", "image/jpeg", "image/gif":
                     switch style {
-                    case .detail, .shareExtension, .lookup: return Asset.Images.Attachments.detailImage
-                    case .list: return Asset.Images.Attachments.listImage
+                    case .detail, .shareExtension, .lookup:
+                        return Asset.Images.Attachments.detailImage
+
+                    case .list:
+                        return Asset.Images.Attachments.listImage
                     }
                     
                 case "application/pdf":
                     switch style {
-                    case .detail, .shareExtension, .lookup: return Asset.Images.Attachments.detailPdf
-                    case .list: return Asset.Images.Attachments.listPdf
+                    case .detail, .shareExtension, .lookup:
+                        return Asset.Images.ItemTypes.pdf
+
+                    case .list:
+                        return Asset.Images.Attachments.listPdf
+                    }
+
+                case "text/html":
+                    switch style {
+                    case .detail, .shareExtension, .lookup:
+                        return Asset.Images.ItemTypes.webPageSnapshot
+
+                    case .list:
+                        return Asset.Images.Attachments.listWebPageSnapshot
+                    }
+
+                case "application/epub+zip":
+                    switch style {
+                    case .detail, .shareExtension, .lookup:
+                        return Asset.Images.ItemTypes.epub
+
+                    case .list:
+                        return Asset.Images.Attachments.listEpub
                     }
 
                 default:
                     switch style {
-                    case .detail, .shareExtension, .lookup: return Asset.Images.Attachments.detailDocument
-                    case .list: return Asset.Images.Attachments.listDocument
+                    case .detail, .shareExtension, .lookup:
+                        return Asset.Images.ItemTypes.document
+
+                    case .list:
+                        return Asset.Images.Attachments.listDocument
                     }
                 }
             }
