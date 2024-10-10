@@ -22,11 +22,11 @@ struct SettingsListButtonRow: View {
 
             if let text = self.detailText {
                 Text(text)
-                    .foregroundColor(Color(self.textColor))
+                    .foregroundColor(Color(UIColor.systemGray))
             }
 
             Image(systemName: "chevron.right")
-                .foregroundColor(Color(UIColor.systemGray2))
+                .foregroundColor(Color(UIColor.systemGray))
                 .font(.body.weight(.semibold))
                 .imageScale(.small)
                 .opacity(0.7)
