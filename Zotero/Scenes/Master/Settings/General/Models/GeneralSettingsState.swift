@@ -39,5 +39,15 @@ struct GeneralSettingsState: ViewModelState {
         }
     }
 
+    var autoEmptyTrashThreshold: Int {
+        get {
+            return Defaults.shared.trashAutoEmptyThreshold
+        }
+
+        set {
+            Defaults.shared.trashAutoEmptyThreshold = newValue
+        }
+    }
+
     func cleanup() {}
 }

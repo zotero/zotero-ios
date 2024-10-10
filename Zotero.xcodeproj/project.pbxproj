@@ -1018,6 +1018,7 @@
 		B3D32A4D286C77850075C6D7 /* ItemSortingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D32A4C286C77850075C6D7 /* ItemSortingView.swift */; };
 		B3D3FCA9267762EC008E243A /* ExportLocaleReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D3FCA8267762EC008E243A /* ExportLocaleReader.swift */; };
 		B3D4159E2948B3DA004ABB3E /* FixNotesWithEmptyTitlesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D4159D2948B3DA004ABB3E /* FixNotesWithEmptyTitlesDbRequest.swift */; };
+		B3D427D62CB67EFC0058453A /* AutoEmptyTrashController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D427D52CB67EEA0058453A /* AutoEmptyTrashController.swift */; };
 		B3D58D5625ED856F00D8FA31 /* DebugLogUploadRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D58D5525ED856F00D8FA31 /* DebugLogUploadRequest.swift */; };
 		B3D58D5B25ED861500D8FA31 /* DebugLogUploadRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D58D5525ED856F00D8FA31 /* DebugLogUploadRequest.swift */; };
 		B3D58D6225EE26A600D8FA31 /* DebugResponseParserDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D58D6125EE26A600D8FA31 /* DebugResponseParserDelegate.swift */; };
@@ -2008,6 +2009,7 @@
 		B3D32A4C286C77850075C6D7 /* ItemSortingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemSortingView.swift; sourceTree = "<group>"; };
 		B3D3FCA8267762EC008E243A /* ExportLocaleReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportLocaleReader.swift; sourceTree = "<group>"; };
 		B3D4159D2948B3DA004ABB3E /* FixNotesWithEmptyTitlesDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FixNotesWithEmptyTitlesDbRequest.swift; sourceTree = "<group>"; };
+		B3D427D52CB67EEA0058453A /* AutoEmptyTrashController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoEmptyTrashController.swift; sourceTree = "<group>"; };
 		B3D58D5525ED856F00D8FA31 /* DebugLogUploadRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLogUploadRequest.swift; sourceTree = "<group>"; };
 		B3D58D6125EE26A600D8FA31 /* DebugResponseParserDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugResponseParserDelegate.swift; sourceTree = "<group>"; };
 		B3D58D6A25EE437700D8FA31 /* CircularProgressView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CircularProgressView.swift; sourceTree = "<group>"; };
@@ -2296,6 +2298,7 @@
 				B30B40642491222000FAAF6D /* AttachmentCreator.swift */,
 				B377F2A4249373F300022943 /* AttachmentFileCleanupController.swift */,
 				B30BA03D297ED50B0005021B /* AttributedTagStringGenerator.swift */,
+				B3D427D52CB67EEA0058453A /* AutoEmptyTrashController.swift */,
 				B31D4A712767840800E22DCC /* BackgroundTaskController.swift */,
 				B3BD2BB225C98D2900275EF9 /* BackgroundTimer.swift */,
 				B3C8DD8127B502960084E1AD /* CollectionTreeBuilder.swift */,
@@ -2310,19 +2313,20 @@
 				B305648123FC051E003304F2 /* Formatter.swift */,
 				B379D9312BB30E6600AF5025 /* FullSyncDebugger.swift */,
 				B367330C24ACB63300E0CDA8 /* HtmlAttributedStringConverter.swift */,
+				618404252A4456A9005AAF22 /* IdentifierLookupController.swift */,
 				B307A2722704A87D005986B3 /* IdleTimerController.swift */,
 				61639F842AE03B8500026003 /* InstantPresenter.swift */,
-				B30564B923FC051E003304F2 /* ItemTitleFormatter.swift */,
 				B39649172869B0D0000BCB6C /* ISBNParser.swift */,
+				B30564B923FC051E003304F2 /* ItemTitleFormatter.swift */,
 				B305648023FC051E003304F2 /* KeyGenerator.swift */,
 				B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */,
 				B305649E23FC051E003304F2 /* Licenses.swift */,
 				B3A17D1827FC33B800322CAD /* LowPowerModeController.swift */,
 				B3C43C1F28589F300007076D /* NotePreviewGenerator.swift */,
 				B305646C23FC051E003304F2 /* ObjectUserChangeObserver.swift */,
+				61E24DCB2ABB385E00D75F50 /* OpenItemsController.swift */,
 				B34A9F6325BF1ABB007C9A4A /* PDFDocumentExporter.swift */,
 				B32B8A562B18A08900A9A741 /* PDFThumbnailController.swift */,
-				61E24DCB2ABB385E00D75F50 /* OpenItemsController.swift */,
 				B3C6D551261C9F2E0068B9FE /* PlaceholderTextViewDelegate.swift */,
 				B378F4CC242CD45700B88A05 /* RepoParserDelegate.swift */,
 				B305646A23FC051E003304F2 /* RItemLocaleController.swift */,
@@ -2337,7 +2341,6 @@
 				B36A988C2428E059005D5790 /* TranslatorsAndStylesController.swift */,
 				B3972688247D403200A8B469 /* UrlDetector.swift */,
 				B324276C25C81F2000567504 /* WebSocketController.swift */,
-				618404252A4456A9005AAF22 /* IdentifierLookupController.swift */,
 				B3F9A4CA2B04F28400684030 /* WebViewEncoder.swift */,
 				B3B557152C884DD200BD6325 /* ZoteroURIConverter.swift */,
 			);
@@ -5069,6 +5072,7 @@
 				B30565E623FC051E003304F2 /* SchemaController.swift in Sources */,
 				B339459126DE6C2A00E59A02 /* AttachmentFileDeletedNotification.swift in Sources */,
 				B3593F62241A62DD00760E20 /* DetailCoordinator.swift in Sources */,
+				B3D427D62CB67EFC0058453A /* AutoEmptyTrashController.swift in Sources */,
 				B30565EB23FC051E003304F2 /* Controllers.swift in Sources */,
 				B3A351E12715784A002E597A /* WebDavDownloadRequest.swift in Sources */,
 				B305CEBB29E6E67600B9E2B4 /* AssignItemsToTagDbRequest.swift in Sources */,

@@ -69,6 +69,12 @@ final class Defaults {
     @UserDefault(key: "QuickCopyAsHtml", defaultValue: false, defaults: .standard)
     var quickCopyAsHtml: Bool
 
+    @UserDefault(key: "TrashAutoEmptyDayThreshold", defaultValue: 30, defaults: .standard)
+    var trashAutoEmptyThreshold: Int
+
+    @UserDefault(key: "TrashLastAutoEmptyDate", defaultValue: .distantPast, defaults: .standard)
+    var lastAutoEmptyDate: Date
+
     // MARK: - Selection
 
     @CodableUserDefault(key: "SelectedRawLibraryKey", defaultValue: LibraryIdentifier.custom(.myLibrary), encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
@@ -172,37 +178,38 @@ final class Defaults {
     // MARK: - Actions
 
     func reset() {
-        self.askForSyncPermission = false
-        self.username = ""
-        self.displayName = ""
-        self.userId = 0
-        self.shareExtensionIncludeTags = true
-        self.shareExtensionIncludeAttachment = true
-        self.selectedLibrary = .custom(.myLibrary)
-        self.selectedCollectionId = .custom(.all)
-        self.webDavUrl = nil
-        self.webDavScheme = .https
-        self.webDavEnabled = false
-        self.webDavUsername = nil
-        self.webDavVerified = false
-        self.quickCopyLocaleId = "en-US"
-        self.quickCopyAsHtml = false
-        self.quickCopyStyleId = "http://www.zotero.org/styles/chicago-note-bibliography"
-        self.showSubcollectionItems = false
+        askForSyncPermission = false
+        username = ""
+        displayName = ""
+        userId = 0
+        shareExtensionIncludeTags = true
+        shareExtensionIncludeAttachment = true
+        selectedLibrary = .custom(.myLibrary)
+        selectedCollectionId = .custom(.all)
+        webDavUrl = nil
+        webDavScheme = .https
+        webDavEnabled = false
+        webDavUsername = nil
+        webDavVerified = false
+        quickCopyLocaleId = "en-US"
+        quickCopyAsHtml = false
+        quickCopyStyleId = "http://www.zotero.org/styles/chicago-note-bibliography"
+        showSubcollectionItems = false
+        trashAutoEmptyThreshold = 30
+        lastAutoEmptyDate = .distantPast
 
         #if MAINAPP
-        self.itemsSortType = .default
-        self.exportOutputMethod = .copy
-        self.exportOutputMode = .bibliography
-
-        self.activeLineWidth = 1
-        self.inkColorHex = AnnotationsConfig.defaultActiveColor
-        self.squareColorHex = AnnotationsConfig.defaultActiveColor
-        self.noteColorHex = AnnotationsConfig.defaultActiveColor
-        self.highlightColorHex = AnnotationsConfig.defaultActiveColor
-        self.underlineColorHex = AnnotationsConfig.defaultActiveColor
-        self.textColorHex = AnnotationsConfig.defaultActiveColor
-        self.pdfSettings = PDFSettings.default
+        itemsSortType = .default
+        exportOutputMethod = .copy
+        exportOutputMode = .bibliography
+        activeLineWidth = 1
+        inkColorHex = AnnotationsConfig.defaultActiveColor
+        squareColorHex = AnnotationsConfig.defaultActiveColor
+        noteColorHex = AnnotationsConfig.defaultActiveColor
+        highlightColorHex = AnnotationsConfig.defaultActiveColor
+        underlineColorHex = AnnotationsConfig.defaultActiveColor
+        textColorHex = AnnotationsConfig.defaultActiveColor
+        pdfSettings = PDFSettings.default
         #endif
     }
 }

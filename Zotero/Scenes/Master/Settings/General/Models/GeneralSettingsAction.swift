@@ -12,4 +12,5 @@ enum GeneralSettingsAction {
     case setShowSubcollectionItems(Bool)
     case setShowCollectionItemCounts(Bool)
     case setOpenLinksInExternalBrowser(Bool)
+    case setAutoEmptyTrashThreshold(Int)
 }
