@@ -291,6 +291,10 @@
 "settings.general.show_subcollections_title" = "Show Items from Subcollections";
 "settings.general.show_collection_item_counts" = "Show collection sizes";
 "settings.general.open_links_in_external_browser" = "Open links in external browser";
+"settings.general.autoempty_title" = "Delete Items in Trash";
+"settings.general.after_one_day" = "After 1 Day";
+"settings.general.never" = "Never";
+"settings.general.after_x_days" = "After %d Days";
 "settings.item_count" = "Item count";
 "settings.item_count_subtitle" = "Show item count for all collections.";
 "settings.sync.title" = "Account";

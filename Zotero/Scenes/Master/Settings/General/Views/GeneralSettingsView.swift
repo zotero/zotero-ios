@@ -32,17 +32,17 @@ struct GeneralSettingsView: View {
             )
 
             HStack {
-                Text("Delete Items in Trash")
+                Text(L10n.Settings.General.autoemptyTitle)
                     .foregroundColor(Color(UIColor.label))
 
                 Spacer()
 
                 Menu(thresholdString(for: viewModel.state.autoEmptyTrashThreshold)) {
-                    Button("After 1 Day", action: { viewModel.process(action: .setAutoEmptyTrashThreshold(1)) })
-                    Button("After 7 Days", action: { viewModel.process(action: .setAutoEmptyTrashThreshold(7)) })
-                    Button("After 15 Days", action: { viewModel.process(action: .setAutoEmptyTrashThreshold(15)) })
-                    Button("After 30 Days", action: { viewModel.process(action: .setAutoEmptyTrashThreshold(30)) })
-                    Button("Never", action: { viewModel.process(action: .setAutoEmptyTrashThreshold(0)) })
+                    Button(L10n.Settings.General.afterOneDay, action: { viewModel.process(action: .setAutoEmptyTrashThreshold(1)) })
+                    Button(L10n.Settings.General.afterXDays(7), action: { viewModel.process(action: .setAutoEmptyTrashThreshold(7)) })
+                    Button(L10n.Settings.General.afterXDays(15), action: { viewModel.process(action: .setAutoEmptyTrashThreshold(15)) })
+                    Button(L10n.Settings.General.afterXDays(30), action: { viewModel.process(action: .setAutoEmptyTrashThreshold(30)) })
+                    Button(L10n.Settings.General.never, action: { viewModel.process(action: .setAutoEmptyTrashThreshold(0)) })
                 }
                 .foregroundColor(Color(UIColor.systemGray))
 
@@ -59,22 +59,13 @@ struct GeneralSettingsView: View {
     private func thresholdString(for threshold: Int) -> String {
         switch threshold {
         case 0:
-            return "Never"
+            return L10n.Settings.General.never
 
         case 1:
-            return "After 1 Day"
-
-        case 7:
-            return "After 7 Days"
-
-        case 15:
-            return "After 15 Days"
-
-        case 30:
-            return "After 30 Days"
+            return L10n.Settings.General.afterOneDay
 
         default:
-            return ""
+            return L10n.Settings.General.afterXDays(threshold)
         }
     }
 }
