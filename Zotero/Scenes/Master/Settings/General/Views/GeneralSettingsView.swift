@@ -31,26 +31,12 @@ struct GeneralSettingsView: View {
                 value: viewModel.binding(keyPath: \.openLinksInExternalBrowser, action: { .setOpenLinksInExternalBrowser($0) })
             )
 
-            HStack {
-                Text(L10n.Settings.General.autoemptyTitle)
-                    .foregroundColor(Color(UIColor.label))
-
-                Spacer()
-
-                Menu(thresholdString(for: viewModel.state.autoEmptyTrashThreshold)) {
-                    Button(L10n.Settings.General.afterOneDay, action: { viewModel.process(action: .setAutoEmptyTrashThreshold(1)) })
-                    Button(L10n.Settings.General.afterXDays(7), action: { viewModel.process(action: .setAutoEmptyTrashThreshold(7)) })
-                    Button(L10n.Settings.General.afterXDays(15), action: { viewModel.process(action: .setAutoEmptyTrashThreshold(15)) })
-                    Button(L10n.Settings.General.afterXDays(30), action: { viewModel.process(action: .setAutoEmptyTrashThreshold(30)) })
-                    Button(L10n.Settings.General.never, action: { viewModel.process(action: .setAutoEmptyTrashThreshold(0)) })
-                }
-                .foregroundColor(Color(UIColor.systemGray))
-
-                Image(systemName: "chevron.right")
-                    .foregroundColor(Color(UIColor.systemGray))
-                    .font(.body.weight(.semibold))
-                    .imageScale(.small)
-                    .opacity(0.7)
+            Picker(L10n.Settings.General.autoemptyTitle, selection: viewModel.binding(get: \.autoEmptyTrashThreshold, action: { .setAutoEmptyTrashThreshold($0) })) {
+                Text(L10n.Settings.General.afterOneDay).tag(1)
+                Text(L10n.Settings.General.afterXDays(7)).tag(7)
+                Text(L10n.Settings.General.afterXDays(15)).tag(15)
+                Text(L10n.Settings.General.afterXDays(30)).tag(30)
+                Text(L10n.Settings.General.never).tag(0)
             }
         }
         .navigationBarTitle(L10n.Settings.General.title)
