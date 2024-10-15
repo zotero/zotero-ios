@@ -23,15 +23,15 @@ final class AutoEmptyTrashController {
             return
         }
 
-        let daysSinceLastEmpty = Int(Date.now.timeIntervalSince(Defaults.shared.lastAutoEmptyDate) / 86400)
-        DDLogInfo("AutoEmptyTrashController: days since last auto empty - \(daysSinceLastEmpty) (\(Defaults.shared.lastAutoEmptyDate.timeIntervalSince1970))")
+        let daysSinceLastEmpty = Int(Date.now.timeIntervalSince(Defaults.shared.trashLastAutoEmptyDate) / 86400)
+        DDLogInfo("AutoEmptyTrashController: days since last auto empty - \(daysSinceLastEmpty) (\(Defaults.shared.trashLastAutoEmptyDate.timeIntervalSince1970))")
         guard daysSinceLastEmpty >= Defaults.shared.trashAutoEmptyThreshold else { return }
 
         queue.asyncAfter(deadline: .now() + .seconds(1)) { [weak self] in
             guard let self else { return }
             do {
                 try dbStorage.perform(request: EmptyTrashDbRequest(libraryId: .custom(.myLibrary)), on: queue)
-                Defaults.shared.lastAutoEmptyDate = .now
+                Defaults.shared.trashLastAutoEmptyDate = .now
             } catch let error {
                 DDLogError("AutoEmptyTrashController: can't empty trash - \(error)")
             }

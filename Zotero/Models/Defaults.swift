@@ -73,7 +73,7 @@ final class Defaults {
     var trashAutoEmptyThreshold: Int
 
     @UserDefault(key: "TrashLastAutoEmptyDate", defaultValue: .distantPast, defaults: .standard)
-    var lastAutoEmptyDate: Date
+    var trashLastAutoEmptyDate: Date
 
     // MARK: - Selection
 
@@ -196,7 +196,7 @@ final class Defaults {
         quickCopyStyleId = "http://www.zotero.org/styles/chicago-note-bibliography"
         showSubcollectionItems = false
         trashAutoEmptyThreshold = 30
-        lastAutoEmptyDate = .distantPast
+        trashLastAutoEmptyDate = .distantPast
 
         #if MAINAPP
         itemsSortType = .default
