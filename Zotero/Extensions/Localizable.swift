@@ -1240,11 +1240,9 @@ internal enum L10n {
       internal static let start = L10n.tr("Localizable", "settings.full_sync.start", fallback: "Start Full Sync Debugging")
     }
     internal enum General {
-      /// After 1 Day
-      internal static let afterOneDay = L10n.tr("Localizable", "settings.general.after_one_day", fallback: "After 1 Day")
-      /// After %d Days
+      /// Plural format key: "%#@after_x_days@"
       internal static func afterXDays(_ p1: Int) -> String {
-        return L10n.tr("Localizable", "settings.general.after_x_days", p1, fallback: "After %d Days")
+        return L10n.tr("Localizable", "settings.general.after_x_days", p1, fallback: "Plural format key: \"%#@after_x_days@\"")
       }
       /// Delete Items in Trash
       internal static let autoemptyTitle = L10n.tr("Localizable", "settings.general.autoempty_title", fallback: "Delete Items in Trash")
