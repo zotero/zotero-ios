@@ -41,19 +41,6 @@ struct GeneralSettingsView: View {
         }
         .navigationBarTitle(L10n.Settings.General.title)
     }
-
-    private func thresholdString(for threshold: Int) -> String {
-        switch threshold {
-        case 0:
-            return L10n.Settings.General.never
-
-        case 1:
-            return L10n.Settings.General.afterOneDay
-
-        default:
-            return L10n.Settings.General.afterXDays(threshold)
-        }
-    }
 }
 
 struct GeneralSettingsView_Previews: PreviewProvider {
