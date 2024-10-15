@@ -93,8 +93,12 @@ struct MarkCollectionAsSyncedAndUpdateDbRequest: DbRequest {
         }
 
         collection.version = response.version
-        collection.trash = response.data.isTrash
         collection.changeType = .syncResponse
+
+        if !localChanges.contains(.trash) {
+            collection.trash = response.data.isTrash
+            collection.trashDate = response.data.isTrash ? Date.now : nil
+        }
 
         if !localChanges.contains(.name) {
             collection.name = response.data.name
@@ -152,6 +156,7 @@ struct MarkItemAsSyncedAndUpdateDbRequest: DbRequest {
         
         if !localChanges.contains(.trash) {
             item.trash = response.isTrash
+            item.trashDate = response.isTrash ? Date.now : nil
         }
         
         if !localChanges.contains(.parent) && item.parent?.key != response.parentKey {

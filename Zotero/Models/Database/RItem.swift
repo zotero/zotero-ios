@@ -77,6 +77,8 @@ final class RItem: Object {
     @Persisted var changes: List<RObjectChange>
     /// Indicates whether `SyncController` should try to sync `changes`
     @Persisted var changesSyncPaused: Bool
+    /// Date indicating when this item was moved to trash
+    @Persisted var trashDate: Date?
 
     // MARK: - Attachment data
     @Persisted var backendMd5: String

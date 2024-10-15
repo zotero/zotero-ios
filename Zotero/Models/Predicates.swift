@@ -215,6 +215,11 @@ extension NSPredicate {
         return NSPredicate(format: "trash = %@", NSNumber(booleanLiteral: trash))
     }
 
+    static func trashedCollections(in libraryId: LibraryIdentifier) -> NSPredicate {
+        let predicates: [NSPredicate] = [.library(with: libraryId), .deleted(false), .isTrash(true), .notSyncState(.dirty)]
+        return NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
+    }
+
     private static func baseItemPredicates(isTrash: Bool, libraryId: LibraryIdentifier) -> [NSPredicate] {
         var predicates: [NSPredicate] = [.library(with: libraryId), .notSyncState(.dirty), .deleted(false), .isTrash(isTrash)]
         if !isTrash {

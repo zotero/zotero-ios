@@ -37,6 +37,7 @@ struct StoreCollectionsDbRequest: DbRequest {
         if collection.deleted {
             for item in collection.items {
                 item.trash = false
+                item.trashDate = nil
                 item.deleted = false
             }
         }
@@ -56,7 +57,10 @@ struct StoreCollectionsDbRequest: DbRequest {
         collection.lastSyncDate = Date(timeIntervalSince1970: 0)
         collection.changeType = .sync
         collection.libraryId = libraryId
-        collection.trash = response.data.isTrash
+        if collection.trash != response.data.isTrash {
+            collection.trash = response.data.isTrash
+            collection.trashDate = collection.trash ? Date.now : nil
+        }
 
         self.sync(parentCollection: response.data.parentCollection, libraryId: libraryId, collection: collection, database: database)
     }

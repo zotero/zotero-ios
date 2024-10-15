@@ -588,6 +588,8 @@
 		B3501F5425139B40007961DB /* Rounding+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340692124A60D6A009ECE48 /* Rounding+Extensions.swift */; };
 		B3518DA72AEBCB5E00D983B4 /* SettingsResponseSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3518DA62AEBCB5E00D983B4 /* SettingsResponseSpec.swift */; };
 		B351BD0E25EF7E78000451E2 /* ItemAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B351BD0D25EF7E78000451E2 /* ItemAction.swift */; };
+		B352FFCC2CBE944400D0887B /* AutoEmptyTrashDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B352FFCB2CBE943B00D0887B /* AutoEmptyTrashDbRequest.swift */; };
+		B352FFCD2CBE944400D0887B /* AutoEmptyTrashDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B352FFCB2CBE943B00D0887B /* AutoEmptyTrashDbRequest.swift */; };
 		B353F1FB242E21880062EE24 /* ResetTranslatorsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B353F1FA242E21880062EE24 /* ResetTranslatorsDbRequest.swift */; };
 		B353F1FC242E23680062EE24 /* ResetTranslatorsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B353F1FA242E21880062EE24 /* ResetTranslatorsDbRequest.swift */; };
 		B353F204242E52610062EE24 /* Database.swift in Sources */ = {isa = PBXBuildFile; fileRef = B353F202242E52610062EE24 /* Database.swift */; };
@@ -1666,6 +1668,7 @@
 		B34F9FA423743C42004ED34C /* ItemTitleFormatterSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemTitleFormatterSpec.swift; sourceTree = "<group>"; };
 		B3518DA62AEBCB5E00D983B4 /* SettingsResponseSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsResponseSpec.swift; sourceTree = "<group>"; };
 		B351BD0D25EF7E78000451E2 /* ItemAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemAction.swift; sourceTree = "<group>"; };
+		B352FFCB2CBE943B00D0887B /* AutoEmptyTrashDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoEmptyTrashDbRequest.swift; sourceTree = "<group>"; };
 		B353F1FA242E21880062EE24 /* ResetTranslatorsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResetTranslatorsDbRequest.swift; sourceTree = "<group>"; };
 		B353F202242E52610062EE24 /* Database.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Database.swift; sourceTree = "<group>"; };
 		B355B12B2850B6C400BAE2C5 /* TableViewDiffableDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableViewDiffableDataSource.swift; sourceTree = "<group>"; };
@@ -2363,6 +2366,7 @@
 				B310FA4429E5765800FA2F15 /* AddTagsToItemDbRequest.swift */,
 				B305646123FC051E003304F2 /* AssignItemsToCollectionsDbRequest.swift */,
 				B305CEBA29E6E67600B9E2B4 /* AssignItemsToTagDbRequest.swift */,
+				B352FFCB2CBE943B00D0887B /* AutoEmptyTrashDbRequest.swift */,
 				B37D21352AD6D8AB004A6496 /* CancelParentCreationDbRequest.swift */,
 				B358D3B3279590C200A67054 /* CheckAnyItemIsInTrashDbRequest.swift */,
 				B305644423FC051E003304F2 /* CheckItemIsChangedDbRequest.swift */,
@@ -4771,6 +4775,7 @@
 				B3B1C5842664E23A00883597 /* ReadItemsForUploadDbRequest.swift in Sources */,
 				B39649182869B0D0000BCB6C /* ISBNParser.swift in Sources */,
 				B305662123FC051F003304F2 /* SubmitDeletionSyncAction.swift in Sources */,
+				B352FFCD2CBE944400D0887B /* AutoEmptyTrashDbRequest.swift in Sources */,
 				B305661B23FC051E003304F2 /* SyncVersionsSyncAction.swift in Sources */,
 				B3593F49241A61C700760E20 /* LibrariesAction.swift in Sources */,
 				B3E8FE032714292E00F51458 /* StorageSettingsState.swift in Sources */,
@@ -5622,6 +5627,7 @@
 				B3E8B25027DA39B0001825F8 /* SplitAnnotationsDbRequest.swift in Sources */,
 				B37D8E6A24DC2BF300F526C5 /* CollectionRow.swift in Sources */,
 				B3868541270DC3AA0068A022 /* WebDavScheme.swift in Sources */,
+				B352FFCC2CBE944400D0887B /* AutoEmptyTrashDbRequest.swift in Sources */,
 				B331F9AF2653CEA00099F6A6 /* ReadGroupDbRequest.swift in Sources */,
 				B33E8A4B27B6A39100CBC7DE /* CollectionCell.swift in Sources */,
 				B3DDC0CC2667825E00B2DFD1 /* RegularExpression+Extensions.swift in Sources */,

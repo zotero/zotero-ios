@@ -19,8 +19,11 @@ struct MarkItemsAsTrashedDbRequest: DbRequest {
 
     func process(in database: Realm) throws {
         let items = database.objects(RItem.self).filter(.keys(self.keys, in: self.libraryId))
+        let now = Date.now
         items.forEach { item in
-            item.trash = self.trashed
+            item.trash = trashed
+            item.trashDate = trashed ? now : nil
+            item.dateModified = now
             item.changeType = .user
             item.changes.append(RObjectChange.create(changes: RItemChanges.trash))
         }

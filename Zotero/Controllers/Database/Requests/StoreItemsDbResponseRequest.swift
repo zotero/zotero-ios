@@ -132,7 +132,10 @@ struct StoreItemDbRequest: DbResponseRequest {
         item.localizedType = schemaController.localized(itemType: response.rawType) ?? ""
         item.inPublications = response.inPublications
         item.version = response.version
-        item.trash = response.isTrash
+        if item.trash != response.isTrash {
+            item.trash = response.isTrash
+            item.trashDate = item.trash ? Date.now : nil
+        }
         item.dateModified = response.dateModified
         item.dateAdded = response.dateAdded
         item.syncState = .synced
