@@ -42,10 +42,3 @@ struct GeneralSettingsView: View {
         .navigationBarTitle(L10n.Settings.General.title)
     }
 }
-
-struct GeneralSettingsView_Previews: PreviewProvider {
-    static var previews: some View {
-        GeneralSettingsView()
-    }
-}
- 
