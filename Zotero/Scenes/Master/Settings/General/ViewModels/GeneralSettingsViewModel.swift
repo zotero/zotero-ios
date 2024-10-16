@@ -28,6 +28,11 @@ struct GeneralSettingsActionHandler: ViewModelActionHandler {
             update(viewModel: viewModel) { state in
                 state.openLinksInExternalBrowser = value
             }
+
+        case .setAutoEmptyTrashThreshold(let value):
+            update(viewModel: viewModel) { state in
+                state.autoEmptyTrashThreshold = value
+            }
         }
     }
 }

@@ -299,6 +299,7 @@ final class Controllers {
 
 /// Global controllers for logged in user
 final class UserControllers {
+    let autoEmptyController: AutoEmptyTrashController
     let syncScheduler: (SynchronizationScheduler & WebSocketScheduler)
     let changeObserver: ObjectUserChangeObserver
     let dbStorage: DbStorage
@@ -376,16 +377,17 @@ final class UserControllers {
             }
         })
 
+        autoEmptyController = AutoEmptyTrashController(dbStorage: dbStorage)
         self.isFirstLaunch = isFirstLaunch
         self.dbStorage = dbStorage
-        self.syncScheduler = SyncScheduler(controller: syncController, retryIntervals: DelayIntervals.retry)
+        syncScheduler = SyncScheduler(controller: syncController, retryIntervals: DelayIntervals.retry)
         self.webDavController = webDavController
-        self.changeObserver = RealmObjectUserChangeObserver(dbStorage: dbStorage)
-        self.itemLocaleController = RItemLocaleController(schemaController: controllers.schemaController, dbStorage: dbStorage)
+        changeObserver = RealmObjectUserChangeObserver(dbStorage: dbStorage)
+        itemLocaleController = RItemLocaleController(schemaController: controllers.schemaController, dbStorage: dbStorage)
         self.backgroundUploadObserver = backgroundUploadObserver
         self.fileDownloader = fileDownloader
-        self.remoteFileDownloader = RemoteAttachmentDownloader(apiClient: controllers.apiClient, fileStorage: controllers.fileStorage)
-        self.identifierLookupController = IdentifierLookupController(
+        remoteFileDownloader = RemoteAttachmentDownloader(apiClient: controllers.apiClient, fileStorage: controllers.fileStorage)
+        identifierLookupController = IdentifierLookupController(
             dbStorage: dbStorage,
             fileStorage: controllers.fileStorage,
             translatorsController: controllers.translatorsAndStylesController,
@@ -395,23 +397,24 @@ final class UserControllers {
         )
         self.webSocketController = webSocketController
         self.fileCleanupController = fileCleanupController
-        self.citationController = CitationController(
+        citationController = CitationController(
             stylesController: controllers.translatorsAndStylesController,
             fileStorage: controllers.fileStorage,
             dbStorage: dbStorage,
             bundledDataStorage: controllers.bundledDataStorage
         )
-        self.translatorsAndStylesController = controllers.translatorsAndStylesController
+        translatorsAndStylesController = controllers.translatorsAndStylesController
         fullSyncDebugger = FullSyncDebugger(syncScheduler: syncScheduler, debugLogging: controllers.debugLogging, sessionController: controllers.sessionController)
-        self.idleTimerController = controllers.idleTimerController
-        self.customUrlController = CustomURLController(dbStorage: dbStorage, fileStorage: controllers.fileStorage)
-        self.lastBuildNumber = controllers.lastBuildNumber
-        self.disposeBag = DisposeBag()
+        idleTimerController = controllers.idleTimerController
+        customUrlController = CustomURLController(dbStorage: dbStorage, fileStorage: controllers.fileStorage)
+        lastBuildNumber = controllers.lastBuildNumber
+        disposeBag = DisposeBag()
     }
 
     /// Connects to websocket to monitor changes and performs initial sync.
     fileprivate func enableSync(apiKey: String) {
-        self.itemLocaleController.loadLocale()
+        itemLocaleController.loadLocale()
+        autoEmptyController.autoEmptyIfNeeded()
 
         // Enable idleTimerController before syncScheduler inProgress observation starts
         idleTimerController.enable()
@@ -443,7 +446,7 @@ final class UserControllers {
             .disposed(by: disposeBag)
 
         // Observe local changes to start sync
-        self.changeObserver.observable
+        changeObserver.observable
             .debounce(.seconds(3), scheduler: MainScheduler.instance)
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] changedLibraries in
@@ -452,7 +455,7 @@ final class UserControllers {
             .disposed(by: self.disposeBag)
 
         // Observe remote changes to start sync/translator update
-        self.webSocketController.observable
+        webSocketController.observable
             .debounce(.seconds(3), scheduler: MainScheduler.instance)
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] change in
@@ -467,7 +470,7 @@ final class UserControllers {
             .disposed(by: self.disposeBag)
 
         // Connect to websockets and start sync
-        self.webSocketController.connect(apiKey: apiKey, completed: { [weak self] in
+        webSocketController.connect(apiKey: apiKey, completed: { [weak self] in
             guard let self = self else { return }
             // Call this before sync so that background uploads are updated and taken care of by sync if needed.
             self.backgroundUploadObserver.updateSessions()

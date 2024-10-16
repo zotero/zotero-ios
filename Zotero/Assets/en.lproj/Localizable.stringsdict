@@ -195,5 +195,21 @@
             <string>Could not delete %d files from your WebDAV server</string>
         </dict>
     </dict>
+    <key>settings.general.after_x_days</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@after_x_days@</string>
+        <key>after_x_days</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>After 1 Day</string>
+            <key>other</key>
+            <string>After %d Days</string>
+        </dict>
+    </dict>
   </dict>
 </plist>

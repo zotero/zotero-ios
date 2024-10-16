@@ -13,7 +13,7 @@ import RealmSwift
 import Network
 
 struct Database {
-    private static let schemaVersion: UInt64 = 46
+    private static let schemaVersion: UInt64 = 47
 
     static func mainConfiguration(url: URL, fileStorage: FileStorage) -> Realm.Configuration {
         var config = Realm.Configuration(
@@ -88,6 +88,23 @@ struct Database {
             }
             if schemaVersion < 46 {
                 correctAnnotationColors(migration: migration)
+            }
+            if schemaVersion < 47 {
+                setTrashDates(migration: migration)
+            }
+        }
+    }
+
+    private static func setTrashDates(migration: Migration) {
+        let now = Date.now
+        migration.enumerateObjects(ofType: RItem.className()) { oldObject, newObject in
+            if let isTrashed = oldObject?["trash"] as? Bool, isTrashed {
+                newObject?["trashDate"] = now
+            }
+        }
+        migration.enumerateObjects(ofType: RCollection.className()) { oldObject, newObject in
+            if let isTrashed = oldObject?["trash"] as? Bool, isTrashed {
+                newObject?["trashDate"] = now
             }
         }
     }

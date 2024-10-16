@@ -1240,6 +1240,14 @@ internal enum L10n {
       internal static let start = L10n.tr("Localizable", "settings.full_sync.start", fallback: "Start Full Sync Debugging")
     }
     internal enum General {
+      /// Plural format key: "%#@after_x_days@"
+      internal static func afterXDays(_ p1: Int) -> String {
+        return L10n.tr("Localizable", "settings.general.after_x_days", p1, fallback: "Plural format key: \"%#@after_x_days@\"")
+      }
+      /// Delete Items in Trash
+      internal static let autoemptyTitle = L10n.tr("Localizable", "settings.general.autoempty_title", fallback: "Delete Items in Trash")
+      /// Never
+      internal static let never = L10n.tr("Localizable", "settings.general.never", fallback: "Never")
       /// Open links in external browser
       internal static let openLinksInExternalBrowser = L10n.tr("Localizable", "settings.general.open_links_in_external_browser", fallback: "Open links in external browser")
       /// Show collection sizes
