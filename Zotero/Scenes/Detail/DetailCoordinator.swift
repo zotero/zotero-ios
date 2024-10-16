@@ -121,37 +121,19 @@ final class DetailCoordinator: Coordinator {
 
         let controller: UIViewController
         switch collection.identifier {
-        case .custom(let type):
-            switch type {
-            case .trash:
-                controller = createTrashViewController(
-                    libraryId: libraryId,
-                    dbStorage: userControllers.dbStorage,
-                    fileDownloader: userControllers.fileDownloader,
-                    schemaController: controllers.schemaController,
-                    fileStorage: controllers.fileStorage,
-                    urlDetector: controllers.urlDetector,
-                    itemsTagFilterDelegate: itemsTagFilterDelegate,
-                    htmlAttributedStringConverter: controllers.htmlAttributedStringConverter
-                )
+        case .custom(let type) where type == .trash:
+            controller = createTrashViewController(
+                libraryId: libraryId,
+                dbStorage: userControllers.dbStorage,
+                fileDownloader: userControllers.fileDownloader,
+                schemaController: controllers.schemaController,
+                fileStorage: controllers.fileStorage,
+                urlDetector: controllers.urlDetector,
+                itemsTagFilterDelegate: itemsTagFilterDelegate,
+                htmlAttributedStringConverter: controllers.htmlAttributedStringConverter
+            )
 
-            case .all, .publications, .unfiled:
-                controller = createItemsViewController(
-                    collection: collection,
-                    libraryId: libraryId,
-                    dbStorage: userControllers.dbStorage,
-                    fileDownloader: userControllers.fileDownloader,
-                    remoteFileDownloader: userControllers.remoteFileDownloader,
-                    identifierLookupController: userControllers.identifierLookupController,
-                    syncScheduler: userControllers.syncScheduler,
-                    citationController: userControllers.citationController,
-                    fileCleanupController: userControllers.fileCleanupController,
-                    itemsTagFilterDelegate: itemsTagFilterDelegate,
-                    htmlAttributedStringConverter: controllers.htmlAttributedStringConverter
-                )
-            }
-
-        case .collection, .search:
+        case .collection, .search, .custom:
             controller = createItemsViewController(
                 collection: collection,
                 libraryId: libraryId,
