@@ -1,5 +1,5 @@
 //
-//  RItemsViewController.swift
+//  ItemsViewController.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 20.09.2024.
