@@ -186,7 +186,7 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
                 let collectionsToken = collections.observe(keyPaths: RCollection.observableKeypathsForList, { [weak self, weak viewModel] changes in
                     guard let self, let viewModel else { return }
                     switch changes {
-                    case .update(let items, let deletions, let insertions, let modifications):
+                    case .update(let collections, let deletions, let insertions, let modifications):
                         updateCollections(collections, deletions: deletions, insertions: insertions, modifications: modifications, viewModel: viewModel, handler: self)
 
                     case .error(let error):
@@ -392,7 +392,7 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
                 let items = try? dbStorage.perform(request: ReadItemsDbRequest(collectionId: .custom(.trash), libraryId: viewModel.state.library.identifier, sortType: viewModel.state.sortType), on: .main)
                 var itemKeys: [String] = []
                 if let items {
-                    itemKeys = collections.map({ $0.key })
+                    itemKeys = items.map({ $0.key })
                 }
                 let results = results(
                     fromItems: items,
