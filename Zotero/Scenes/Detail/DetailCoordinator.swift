@@ -171,7 +171,7 @@ final class DetailCoordinator: Coordinator {
                 dbStorage: dbStorage,
                 schemaController: schemaController,
                 fileStorage: fileStorage,
-                fileDownloader: userControllers.fileDownloader,
+                fileDownloader: fileDownloader,
                 urlDetector: urlDetector,
                 htmlAttributedStringConverter: htmlAttributedStringConverter,
                 fileCleanupController: userControllers.fileCleanupController
