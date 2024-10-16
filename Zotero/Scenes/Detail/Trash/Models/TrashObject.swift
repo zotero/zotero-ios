@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  TrashObject.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 18.07.2024.
