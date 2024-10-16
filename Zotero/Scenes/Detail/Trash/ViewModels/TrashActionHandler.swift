@@ -202,6 +202,7 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
 
                 update(viewModel: viewModel) { state in
                     state.library = library
+                    state.libraryToken = libraryToken
                     state.objects = results
                     state.itemKeys = itemKeys
                     state.itemsToken = itemsToken
