@@ -12,19 +12,12 @@ import CocoaLumberjackSwift
 import RealmSwift
 import RxSwift
 
-protocol TagFilterDelegate: AnyObject {
-    var currentLibrary: Library { get }
-
-    func tagSelectionDidChange(selected: Set<String>)
-    func tagOptionsDidChange()
-}
-
 class TagFilterViewController: UIViewController {
     private(set) weak var searchBar: UISearchBar!
     private weak var collectionView: UICollectionView!
     private weak var searchBarTopConstraint: NSLayoutConstraint!
     private weak var optionsButton: UIButton!
-    weak var delegate: TagFilterDelegate?
+    weak var delegate: FiltersDelegate?
     private var searchBarScrollEnabled: Bool
     private var didAppear: Bool
 

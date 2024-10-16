@@ -177,7 +177,7 @@ final class IdentifierLookupController {
         
         setupObservers()
     }
-    
+
     // MARK: Actions
     func initialize(libraryId: LibraryIdentifier, collectionKeys: Set<String>, completion: @escaping ([LookupData]?) -> Void) {
         accessQueue.async(flags: .barrier) { [weak self] in
