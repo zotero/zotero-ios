@@ -948,3 +948,26 @@ extension AttachmentDownloader: URLSessionDelegate {
         }
     }
 }
+
+extension AttachmentDownloader: URLSessionTaskDelegate {
+    func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        didReceive challenge: URLAuthenticationChallenge,
+        completionHandler: @escaping @Sendable (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+    ) {
+        let sessionStorage = webDavController.sessionStorage
+        let protectionSpace = challenge.protectionSpace
+        guard sessionStorage.isEnabled,
+              sessionStorage.isVerified,
+              protectionSpace.authenticationMethod == NSURLAuthenticationMethodHTTPBasic || protectionSpace.authenticationMethod == NSURLAuthenticationMethodHTTPDigest,
+              protectionSpace.host == sessionStorage.host,
+              protectionSpace.port == sessionStorage.port,
+              protectionSpace.protocol == sessionStorage.scheme.rawValue
+        else {
+            completionHandler(.performDefaultHandling, nil)
+            return
+        }
+        completionHandler(.useCredential, URLCredential(user: sessionStorage.username, password: sessionStorage.password, persistence: .permanent))
+    }
+}
