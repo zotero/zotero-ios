@@ -91,7 +91,7 @@ final class MasterCoordinator: NSObject, Coordinator {
         let handler = CollectionsActionHandler(dbStorage: dbStorage, fileStorage: controllers.fileStorage, attachmentDownloader: attachmentDownloader, fileCleanupController: fileCleanupController)
         let state = CollectionsState(libraryId: libraryId, selectedCollectionId: selectedCollectionId)
         let viewModel = ViewModel(initialState: state, handler: handler)
-        return CollectionsViewController(viewModel: viewModel, dragDropController: controllers.dragDropController, syncScheduler: syncScheduler, coordinatorDelegate: self)
+        return CollectionsViewController(viewModel: viewModel, dbStorage: dbStorage, dragDropController: controllers.dragDropController, syncScheduler: syncScheduler, coordinatorDelegate: self)
     }
 
     private func storeIfNeeded(libraryId: LibraryIdentifier, preselectedCollection collectionId: CollectionIdentifier? = nil) -> CollectionIdentifier {
