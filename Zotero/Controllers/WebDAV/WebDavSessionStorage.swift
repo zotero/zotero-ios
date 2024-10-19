@@ -20,6 +20,16 @@ protocol WebDavSessionStorage: AnyObject {
     var password: String { get set }
 }
 
+extension WebDavSessionStorage {
+    var host: String {
+        return url.split(separator: ":", maxSplits: 2).first.flatMap { String($0) } ?? ""
+    }
+
+    var port: Int {
+        url.split(separator: ":", maxSplits: 2).last.flatMap { Int($0) } ?? 80
+    }
+}
+
 final class SecureWebDavSessionStorage: WebDavSessionStorage {
     private unowned let secureStorage: SecureStorage
 
@@ -65,14 +75,6 @@ final class SecureWebDavSessionStorage: WebDavSessionStorage {
         set {
             Defaults.shared.webDavUrl = newValue.isEmpty ? nil : newValue
         }
-    }
-
-    var host: String {
-        return url.split(separator: ":", maxSplits: 2).first.flatMap { String($0) } ?? ""
-    }
-
-    var port: Int {
-        url.split(separator: ":", maxSplits: 2).last.flatMap { Int($0) } ?? 80
     }
 
     var scheme: WebDavScheme {
