@@ -19,6 +19,7 @@ protocol SplitControllerDelegate: AnyObject {
 
 final class CollectionsViewController: UICollectionViewController {
     let viewModel: ViewModel<CollectionsActionHandler>
+    private unowned let dbStorage: DbStorage
     private unowned let syncScheduler: SynchronizationScheduler
     private unowned let dragDropController: DragDropController
     private let disposeBag: DisposeBag
@@ -30,8 +31,15 @@ final class CollectionsViewController: UICollectionViewController {
         return self.viewModel.state.selectedCollectionId
     }
 
-    init(viewModel: ViewModel<CollectionsActionHandler>, dragDropController: DragDropController, syncScheduler: SynchronizationScheduler, coordinatorDelegate: MasterCollectionsCoordinatorDelegate) {
+    init(
+        viewModel: ViewModel<CollectionsActionHandler>,
+        dbStorage: DbStorage,
+        dragDropController: DragDropController,
+        syncScheduler: SynchronizationScheduler,
+        coordinatorDelegate: MasterCollectionsCoordinatorDelegate
+    ) {
         self.viewModel = viewModel
+        self.dbStorage = dbStorage
         self.syncScheduler = syncScheduler
         self.dragDropController = dragDropController
         self.coordinatorDelegate = coordinatorDelegate
@@ -64,6 +72,7 @@ final class CollectionsViewController: UICollectionViewController {
 
         self.collectionViewHandler = ExpandableCollectionsCollectionViewHandler(
             collectionView: self.collectionView,
+            dbStorage: dbStorage,
             dragDropController: self.dragDropController,
             viewModel: self.viewModel,
             splitDelegate: self

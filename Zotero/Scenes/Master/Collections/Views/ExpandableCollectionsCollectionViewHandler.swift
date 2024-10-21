@@ -11,6 +11,7 @@ import UIKit
 final class ExpandableCollectionsCollectionViewHandler: NSObject {
     private let collectionsSection: Int = 0
     private unowned let collectionView: UICollectionView
+    private unowned let dbStorage: DbStorage
     private unowned let dragDropController: DragDropController
     private unowned let viewModel: ViewModel<CollectionsActionHandler>
 
@@ -31,8 +32,9 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
         return self.dataSource.snapshot(for: self.collectionsSection).rootItems.contains(where: { $0.identifier == self.viewModel.state.selectedCollectionId })
     }
 
-    init(collectionView: UICollectionView, dragDropController: DragDropController, viewModel: ViewModel<CollectionsActionHandler>, splitDelegate: SplitControllerDelegate?) {
+    init(collectionView: UICollectionView, dbStorage: DbStorage, dragDropController: DragDropController, viewModel: ViewModel<CollectionsActionHandler>, splitDelegate: SplitControllerDelegate?) {
         self.collectionView = collectionView
+        self.dbStorage = dbStorage
         self.dragDropController = dragDropController
         self.viewModel = viewModel
         self.splitDelegate = splitDelegate
@@ -126,12 +128,12 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
                 actions.append(delete)
             }
 
-            if collection.itemCount > 0 {
+            if !isCollectionEmpty(collection, dbStorage: dbStorage) {
                 actions.insert(contentsOf: [downloadAttachmentsAction(for: collection.identifier, in: viewModel), removeDownloadsAction(for: collection.identifier, in: viewModel)], at: 0)
             }
 
         case .custom(let type):
-            guard collection.itemCount > 0 else { break }
+            guard !isCollectionEmpty(collection, dbStorage: dbStorage) else { break }
             actions.append(removeDownloadsAction(for: collection.identifier, in: viewModel))
 
             switch type {
@@ -153,6 +155,21 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
 
         guard !actions.isEmpty else { return nil }
         return UIMenu(children: actions)
+
+        func isCollectionEmpty(_ collection: Collection, dbStorage: DbStorage) -> Bool {
+            if Defaults.shared.showCollectionItemCounts {
+                return collection.itemCount == 0
+            }
+
+            switch collection.identifier {
+            case .collection, .custom:
+                let libraryId = viewModel.state.library.identifier
+                return (try? dbStorage.perform(request: ReadItemsDbRequest(collectionId: collection.identifier, libraryId: libraryId), on: .main))?.isEmpty ?? true
+
+            case .search:
+                return false
+            }
+        }
 
         func downloadAttachmentsAction(for identifier: CollectionIdentifier, in viewModel: ViewModel<CollectionsActionHandler>) -> UIAction {
             UIAction(title: L10n.Collections.downloadAttachments, image: UIImage(systemName: "arrow.down.to.line.compact")) { [weak viewModel] _ in
