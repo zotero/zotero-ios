@@ -533,7 +533,7 @@ final class IdentifierLookupController {
                 let keys = lookupWebViewHandlersByLookupSettings.keys
                 for key in keys {
                     guard let webView = lookupWebViewHandlersByLookupSettings.removeValue(forKey: key)?.webViewHandler.webView else { continue }
-                    inMainThread {
+                    DispatchQueue.main.async {
                         webView.removeFromSuperview()
                     }
                 }
