@@ -29,8 +29,13 @@ struct ItemCellModel {
 
     init(item: RItem, typeName: String, title: NSAttributedString, accessory: Accessory?) {
         self.key = item.key
-        let contentType: String? = item.rawType == ItemTypes.attachment ? item.fields.filter(.key(FieldKeys.Item.Attachment.contentType)).first?.value : nil
-        self.typeIconName = ItemTypes.iconName(for: item.rawType, contentType: contentType)
+        var data: ItemTypes.AttachmentData?
+        if item.rawType == ItemTypes.attachment,
+           let contentType = item.fields.filter(.key(FieldKeys.Item.Attachment.contentType)).first?.value,
+           let linkMode = item.fields.filter(.key(FieldKeys.Item.Attachment.linkMode)).first.flatMap({ LinkMode(rawValue: $0.value) }) {
+            data = .init(contentType: contentType, linked: linkMode == .linkedFile)
+        }
+        self.typeIconName = ItemTypes.iconName(for: item.rawType, attachmentData: data)
         self.typeName = typeName
         self.title = title
         self.subtitle = ItemCellModel.subtitle(for: item)
