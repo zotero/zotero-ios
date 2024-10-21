@@ -748,7 +748,7 @@ final class SyncActionsSpec: QuickSpec {
     }
 }
 
-extension SyncActionError: Equatable {
+extension SyncActionError: @retroactive Equatable {
     public static func == (lhs: SyncActionError, rhs: SyncActionError) -> Bool {
         switch (lhs, rhs) {
         case (.attachmentItemNotSubmitted, .attachmentItemNotSubmitted), (.attachmentAlreadyUploaded, .attachmentAlreadyUploaded), (.submitUpdateFailures, .submitUpdateFailures):

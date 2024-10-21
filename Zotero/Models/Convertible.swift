@@ -10,7 +10,7 @@ import Foundation
 
 import Alamofire
 
-struct Convertible {
+struct Convertible: @unchecked Sendable {
     let url: URL
     private let token: String?
     private let httpMethod: ApiHttpMethod
