@@ -14,8 +14,20 @@ protocol WebDavSessionStorage: AnyObject {
     var isVerified: Bool { get set }
     var username: String { get set }
     var url: String { get set }
+    var host: String { get }
+    var port: Int { get }
     var scheme: WebDavScheme { get set }
     var password: String { get set }
+}
+
+extension WebDavSessionStorage {
+    var host: String {
+        return url.split(separator: ":", maxSplits: 2).first.flatMap { String($0) } ?? ""
+    }
+
+    var port: Int {
+        url.split(separator: ":", maxSplits: 2).last.flatMap { Int($0) } ?? 80
+    }
 }
 
 final class SecureWebDavSessionStorage: WebDavSessionStorage {
