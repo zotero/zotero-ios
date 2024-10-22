@@ -2,191 +2,81 @@
 //  TrashObject.swift
 //  Zotero
 //
-//  Created by Michal Rentka on 18.07.2024.
+//  Created by Michal Rentka on 21.10.2024.
 //  Copyright © 2024 Corporation for Digital Scholarship. All rights reserved.
 //
 
-import UIKit
+import Foundation
 
-struct TrashKey: Hashable {
-    enum Kind: Hashable {
-        case collection
-        case item
-    }
+import RealmSwift
 
-    let type: Kind
-    let key: String
+protocol TrashObject: AnyObject {
+    var key: String { get }
+    var libraryId: LibraryIdentifier? { get }
+    var dateAdded: Date { get }
+    var dateModified: Date { get }
+    var date: Date? { get }
+    var sortTitle: String { get }
+    var sortType: String? { get }
+    var creatorSummary: String? { get }
+    var publisher: String? { get }
+    var publicationTitle: String? { get }
+    var year: Int? { get }
+    var isMainAttachmentDownloaded: Bool { get }
 }
 
-struct TrashObject {
-    struct Item {
-        let sortTitle: String
-        let type: String
-        let localizedTypeName: String
-        let typeIconName: String
-        let creatorSummary: String
-        let publisher: String?
-        let publicationTitle: String?
-        let year: Int?
-        let date: Date?
-        let dateAdded: Date
-        let tagNames: Set<String>
-        let tagColors: [UIColor]
-        let tagEmojis: [String]
-        let hasNote: Bool
-        let itemAccessory: ItemAccessory?
-        let isMainAttachmentDownloaded: Bool
-        let searchStrings: Set<String>
-
-        func copy(itemAccessory: ItemAccessory?) -> Item {
-            return .init(
-                sortTitle: sortTitle,
-                type: type,
-                localizedTypeName: localizedTypeName,
-                typeIconName: typeIconName,
-                creatorSummary: creatorSummary,
-                publisher: publisher,
-                publicationTitle: publicationTitle,
-                year: year,
-                date: date,
-                dateAdded: dateAdded,
-                tagNames: tagNames,
-                tagColors: tagColors,
-                tagEmojis: tagEmojis,
-                hasNote: hasNote,
-                itemAccessory: itemAccessory,
-                isMainAttachmentDownloaded: isMainAttachmentDownloaded,
-                searchStrings: searchStrings
-            )
-        }
-    }
-
-    enum Kind {
-        case collection
-        case item(item: Item)
-    }
-
-    let type: Kind
-    let key: String
-    let libraryId: LibraryIdentifier
-    let title: NSAttributedString
-    let dateModified: Date
-
-    var trashKey: TrashKey {
-        let keyType: TrashKey.Kind
-        switch type {
-        case .collection:
-            keyType = .collection
-
-        case .item:
-            keyType = .item
-        }
-        return TrashKey(type: keyType, key: key)
-    }
-
-    var sortTitle: String {
-        switch type {
-        case .collection:
-            return title.string
-
-        case .item(let item):
-            return item.sortTitle
-        }
-    }
-
-    var sortType: String? {
-        switch type {
-        case .item(let item):
-            return item.type
-
-        case .collection:
-            return nil
-        }
-    }
-
-    var creatorSummary: String? {
-        switch type {
-        case .item(let item):
-            return item.creatorSummary
-
-        case .collection:
-            return nil
-        }
-    }
-
-    var publisher: String? {
-        switch type {
-        case .item(let item):
-            return item.publisher
-
-        case .collection:
-            return nil
-        }
-    }
-
-    var publicationTitle: String? {
-        switch type {
-        case .item(let item):
-            return item.publicationTitle
-
-        case .collection:
-            return nil
-        }
-    }
-
-    var year: Int? {
-        switch type {
-        case .item(let item):
-            return item.year
-
-        case .collection:
-            return nil
-        }
-    }
-
+extension RItem: TrashObject {
     var date: Date? {
-        switch type {
-        case .item(let item):
-            return item.date
-
-        case .collection:
-            return nil
-        }
+        return parsedDate
     }
-
-    var dateAdded: Date? {
-        switch type {
-        case .item(let item):
-            return item.dateAdded
-
-        case .collection:
-            return dateModified
-        }
+    
+    var sortType: String? {
+        return localizedType
     }
-
-    var itemAccessory: ItemAccessory? {
-        switch type {
-        case .item(let item):
-            return item.itemAccessory
-
-        case .collection:
-            return nil
-        }
+    
+    var year: Int? {
+        return parsedYear
     }
+    
+    var isMainAttachmentDownloaded: Bool {
+        return fileDownloaded
+    }
+}
 
-    func updated(itemAccessory: ItemAccessory) -> TrashObject? {
-        switch type {
-        case .collection:
-            return nil
-
-        case .item(let item):
-            return TrashObject(
-                type: .item(item: item.copy(itemAccessory: itemAccessory)),
-                key: key,
-                libraryId: libraryId,
-                title: title,
-                dateModified: dateModified
-            )
-        }
+extension RCollection: TrashObject {
+    var dateAdded: Date {
+        return .distantPast
+    }
+    
+    var date: Date? {
+        return nil
+    }
+    
+    var sortTitle: String {
+        return name
+    }
+    
+    var sortType: String? {
+        return nil
+    }
+    
+    var creatorSummary: String? {
+        return nil
+    }
+    
+    var publisher: String? {
+        return nil
+    }
+    
+    var publicationTitle: String? {
+        return nil
+    }
+    
+    var year: Int? {
+        return nil
+    }
+    
+    var isMainAttachmentDownloaded: Bool {
+        return false
     }
 }

@@ -857,6 +857,8 @@
 		B398A915270C6A4300968EE8 /* WebDavController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B398A914270C6A4300968EE8 /* WebDavController.swift */; };
 		B398A917270C6A5B00968EE8 /* WebDavSessionStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B398A916270C6A5B00968EE8 /* WebDavSessionStorage.swift */; };
 		B398D6C02A77F9C60049A296 /* FontSizeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B398D6BF2A77F9C60049A296 /* FontSizeView.swift */; };
+		B399A9172CC67F1600731B21 /* TrashKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = B399A9162CC67F1400731B21 /* TrashKey.swift */; };
+		B399A9192CC6803000731B21 /* TrashObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = B399A9182CC6802E00731B21 /* TrashObject.swift */; };
 		B39ADE712C4AAB090006FA79 /* OrderedDictionary+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39ADE702C4AAB030006FA79 /* OrderedDictionary+Utils.swift */; };
 		B39AF554290033CD001F400F /* TableOfContentsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39AF553290033CD001F400F /* TableOfContentsViewController.swift */; };
 		B39B18E8223947050019F467 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39B18E7223947050019F467 /* main.swift */; };
@@ -984,7 +986,6 @@
 		B3C3EC2C2C492A970062705A /* TrashActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C3EC2B2C492A970062705A /* TrashActionHandler.swift */; };
 		B3C3EC2E2C492A9F0062705A /* TrashState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C3EC2D2C492A9F0062705A /* TrashState.swift */; };
 		B3C3EC302C492AAC0062705A /* TrashAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C3EC2F2C492AAC0062705A /* TrashAction.swift */; };
-		B3C3EC322C492CEA0062705A /* TrashObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C3EC312C492CEA0062705A /* TrashObject.swift */; };
 		B3C43C2028589F300007076D /* NotePreviewGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C43C1F28589F300007076D /* NotePreviewGenerator.swift */; };
 		B3C43C212858A84A0007076D /* NotePreviewGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C43C1F28589F300007076D /* NotePreviewGenerator.swift */; };
 		B3C6AB28248E1B720009AC96 /* SyncBatchProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C6AB27248E1B720009AC96 /* SyncBatchProcessor.swift */; };
@@ -1883,6 +1884,8 @@
 		B398A914270C6A4300968EE8 /* WebDavController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebDavController.swift; sourceTree = "<group>"; };
 		B398A916270C6A5B00968EE8 /* WebDavSessionStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavSessionStorage.swift; sourceTree = "<group>"; };
 		B398D6BF2A77F9C60049A296 /* FontSizeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontSizeView.swift; sourceTree = "<group>"; };
+		B399A9162CC67F1400731B21 /* TrashKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrashKey.swift; sourceTree = "<group>"; };
+		B399A9182CC6802E00731B21 /* TrashObject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrashObject.swift; sourceTree = "<group>"; };
 		B39ADE702C4AAB030006FA79 /* OrderedDictionary+Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OrderedDictionary+Utils.swift"; sourceTree = "<group>"; };
 		B39AF553290033CD001F400F /* TableOfContentsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableOfContentsViewController.swift; sourceTree = "<group>"; };
 		B39B18E7223947050019F467 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
@@ -1996,7 +1999,6 @@
 		B3C3EC2B2C492A970062705A /* TrashActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrashActionHandler.swift; sourceTree = "<group>"; };
 		B3C3EC2D2C492A9F0062705A /* TrashState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrashState.swift; sourceTree = "<group>"; };
 		B3C3EC2F2C492AAC0062705A /* TrashAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrashAction.swift; sourceTree = "<group>"; };
-		B3C3EC312C492CEA0062705A /* TrashObject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrashObject.swift; sourceTree = "<group>"; };
 		B3C43C1F28589F300007076D /* NotePreviewGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotePreviewGenerator.swift; sourceTree = "<group>"; };
 		B3C6AB27248E1B720009AC96 /* SyncBatchProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncBatchProcessor.swift; sourceTree = "<group>"; };
 		B3C6AB2A248E3EB90009AC96 /* ApiOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiOperation.swift; sourceTree = "<group>"; };
@@ -3812,8 +3814,9 @@
 			isa = PBXGroup;
 			children = (
 				B3C3EC2F2C492AAC0062705A /* TrashAction.swift */,
+				B399A9162CC67F1400731B21 /* TrashKey.swift */,
+				B399A9182CC6802E00731B21 /* TrashObject.swift */,
 				B3C3EC2D2C492A9F0062705A /* TrashState.swift */,
-				B3C3EC312C492CEA0062705A /* TrashObject.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -4889,7 +4892,6 @@
 				B3593F28241A61C700760E20 /* ItemDetailFieldCell.swift in Sources */,
 				B361A3012511F98700271173 /* LinkMode.swift in Sources */,
 				B3429B8124BDE73A008359FC /* UIDevice+Extensions.swift in Sources */,
-				B3C3EC322C492CEA0062705A /* TrashObject.swift in Sources */,
 				B3229FD128C0A07500DAF3B7 /* EditAnnotationRectsDbRequest.swift in Sources */,
 				B3DF9AD22747AAD2007933CB /* ApiRequest.swift in Sources */,
 				B3DCDF0E240912500039ED0D /* SinglePickerActionHandler.swift in Sources */,
@@ -5106,6 +5108,7 @@
 				61BD13952A5831EF008A0704 /* TextKit1TextView.swift in Sources */,
 				B3B8800525FB546300904235 /* DeviceInfoProvider.swift in Sources */,
 				B3B41F192848E5A90017CA4B /* AnnotationsFilterState.swift in Sources */,
+				B399A9192CC6803000731B21 /* TrashObject.swift in Sources */,
 				B36E9D4925E51B0E00CD1109 /* AnnotationPosition.swift in Sources */,
 				B3F9A4C42B04D0D900684030 /* ReaderSettingsState.swift in Sources */,
 				B3C9D60824DA9D40003EA1EE /* CollectionsSearchState.swift in Sources */,
@@ -5320,6 +5323,7 @@
 				B3B41F1A2848E5A90017CA4B /* AnnotationsFilterAction.swift in Sources */,
 				B305667623FC051F003304F2 /* UIColor+Custom.swift in Sources */,
 				B30565B823FC051E003304F2 /* ReadUserChangedObjectsDbRequest.swift in Sources */,
+				B399A9172CC67F1600731B21 /* TrashKey.swift in Sources */,
 				B3593F54241A61C700760E20 /* CollectionsError.swift in Sources */,
 				B30565B523FC051E003304F2 /* MarkObjectsAsSyncedDbRequest.swift in Sources */,
 				B30565DE23FC051E003304F2 /* SyncVersionsDbRequest.swift in Sources */,

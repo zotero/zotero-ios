@@ -105,8 +105,8 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
 
         case .toggleSelectionState:
             update(viewModel: viewModel) { state in
-                if state.selectedItems.count != state.objects.count {
-                    state.selectedItems = Set(state.objects.keys)
+                if state.selectedItems.count != state.snapshot.count {
+                    state.selectedItems = Set(state.snapshot.sortedKeys)
                 } else {
                     state.selectedItems = []
                 }
@@ -144,7 +144,9 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
 
     private func loadData(in viewModel: ViewModel<TrashActionHandler>) {
         do {
-            try dbStorage.perform(on: .main) { coordinator in
+            try dbStorage.perform(on: .main) { [weak self, weak viewModel] coordinator in
+                guard let self, let viewModel else { return }
+
                 let (library, libraryToken) = try viewModel.state.library.identifier.observe(in: coordinator, changes: { [weak self, weak viewModel] library in
                     guard let self, let viewModel else { return }
                     update(viewModel: viewModel) { state in
@@ -152,25 +154,20 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
                         state.changes = .library
                     }
                 })
-                let items = try coordinator.perform(request: ReadItemsDbRequest(collectionId: .custom(.trash), libraryId: viewModel.state.library.identifier, sortType: viewModel.state.sortType))
-                let itemKeys = Array(items.map({ $0.key }))
-                let collectionsRequest = ReadCollectionsDbRequest(libraryId: viewModel.state.library.identifier, trash: true)
-                let collections = (try coordinator.perform(request: collectionsRequest)).sorted(by: collectionSortDescriptor(for: viewModel.state.sortType))
-                let collectionKeys = Array(collections.map({ $0.key }))
-                let results = results(
-                    fromItems: items,
-                    collections: collections,
+                let (snapshot, items, collections) = try createSnapshot(
+                    libraryId: viewModel.state.library.identifier,
                     sortType: viewModel.state.sortType,
                     filters: viewModel.state.filters,
                     searchTerm: viewModel.state.searchTerm,
-                    titleFont: viewModel.state.titleFont
+                    titleFont: viewModel.state.titleFont,
+                    coordinator: coordinator
                 )
 
                 let itemsToken = items.observe(keyPaths: RItem.observableKeypathsForItemList, { [weak self, weak viewModel] changes in
                     guard let self, let viewModel else { return }
                     switch changes {
-                    case .update(let items, let deletions, let insertions, let modifications):
-                        updateItems(items, deletions: deletions, insertions: insertions, modifications: modifications, viewModel: viewModel, handler: self)
+                    case .update(let items, _, _, _):
+                        updateItems(items, viewModel: viewModel, handler: self)
 
                     case .error(let error):
                         DDLogError("TrashActionHandler: could not load items - \(error)")
@@ -183,11 +180,11 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
                     }
                 })
 
-                let collectionsToken = collections.observe(keyPaths: RCollection.observableKeypathsForList, { [weak self, weak viewModel] changes in
+                let collectionsToken = collections?.observe(keyPaths: RCollection.observableKeypathsForList, { [weak self, weak viewModel] changes in
                     guard let self, let viewModel else { return }
                     switch changes {
-                    case .update(let collections, let deletions, let insertions, let modifications):
-                        updateCollections(collections, deletions: deletions, insertions: insertions, modifications: modifications, viewModel: viewModel, handler: self)
+                    case .update(let collections, _, _, _):
+                        updateCollections(collections, viewModel: viewModel, handler: self)
 
                     case .error(let error):
                         DDLogError("TrashActionHandler: could not load collections - \(error)")
@@ -203,11 +200,12 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
                 update(viewModel: viewModel) { state in
                     state.library = library
                     state.libraryToken = libraryToken
-                    state.objects = results
-                    state.itemKeys = itemKeys
+                    state.itemResults = items.freeze()
                     state.itemsToken = itemsToken
-                    state.collectionKeys = collectionKeys
+                    state.collectionResults = collections?.freeze()
                     state.collectionsToken = collectionsToken
+                    state.snapshot = snapshot
+                    state.changes = .objects
                 }
             }
         } catch let error {
@@ -216,6 +214,45 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
                 state.error = .dataLoading
             }
         }
+
+        func updateItems(_ items: Results<RItem>, viewModel: ViewModel<TrashActionHandler>, handler: TrashActionHandler) {
+            let snapshot = createSnapshot(fromItems: items, collections: viewModel.state.collectionResults, sortType: viewModel.state.sortType)
+            handler.update(viewModel: viewModel) { state in
+                state.itemResults = items.freeze()
+                state.snapshot = snapshot
+                state.changes = .objects
+            }
+        }
+
+        func updateCollections(_ collections: Results<RCollection>, viewModel: ViewModel<TrashActionHandler>, handler: TrashActionHandler) {
+            let snapshot = createSnapshot(fromItems: viewModel.state.itemResults, collections: collections, sortType: viewModel.state.sortType)
+            handler.update(viewModel: viewModel) { state in
+                state.collectionResults = collections.freeze()
+                state.snapshot = snapshot
+                state.changes = .objects
+            }
+        }
+    }
+
+    private func createSnapshot(
+        libraryId: LibraryIdentifier,
+        sortType: ItemsSortType,
+        filters: [ItemsFilter],
+        searchTerm: String?,
+        titleFont: UIFont,
+        coordinator: DbCoordinator
+    ) throws -> (TrashState.Snapshot, Results<RItem>, Results<RCollection>?) {
+        let searchComponents = searchTerm.flatMap({ createComponents(from: $0) }) ?? []
+        let itemsRequest = ReadItemsDbRequest(collectionId: .custom(.trash), libraryId: libraryId, filters: filters, sortType: sortType, searchTextComponents: searchComponents)
+        let items = try coordinator.perform(request: itemsRequest)
+        if filters.isEmpty {
+            let snapshot = createSnapshot(fromItems: items, collections: nil, sortType: sortType)
+            return (snapshot, items, nil)
+        }
+        let collectionsRequest = ReadCollectionsDbRequest(libraryId: libraryId, trash: true, searchTextComponents: searchComponents)
+        let collections = (try coordinator.perform(request: collectionsRequest)).sorted(by: collectionSortDescriptor(for: sortType))
+        let snapshot = createSnapshot(fromItems: items, collections: collections, sortType: sortType)
+        return (snapshot, items, collections)
 
         func collectionSortDescriptor(for sortType: ItemsSortType) -> [RealmSwift.SortDescriptor] {
             switch sortType.field {
@@ -229,323 +266,47 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
                 return [SortDescriptor(keyPath: "name", ascending: sortType.ascending)]
             }
         }
-
-        func results(
-            fromItems items: Results<RItem>?,
-            collections: Results<RCollection>?,
-            sortType: ItemsSortType,
-            filters: [ItemsFilter],
-            searchTerm: String?,
-            titleFont: UIFont
-        ) -> OrderedDictionary<TrashKey, TrashObject> {
-            var objects: OrderedDictionary<TrashKey, TrashObject> = [:]
-            if let items {
-                for object in items.compactMap({ trashObject(from: $0, titleFont: titleFont) }) {
-                    objects[object.trashKey] = object
-                }
-            }
-            if let collections {
-                for collection in collections {
-                    guard let object = trashObject(from: collection, titleFont: titleFont) else { continue }
-                    let index = objects.index(of: object, sortedBy: { areInIncreasingOrder(lObject: $0, rObject: $1, sortType: sortType) })
-                    objects.updateValue(object, forKey: object.trashKey, insertingAt: index)
-                }
-            }
-            return objects
-        }
-
-        func updateObjects<RObject: SyncableObject>(
-            _ results: Results<RObject>,
-            deletions: [Int],
-            insertions: [Int],
-            modifications: [Int],
-            trashKeyType: TrashKey.Kind,
-            viewModel: ViewModel<TrashActionHandler>,
-            handler: TrashActionHandler,
-            createObject: (RObject) -> TrashObject?,
-            rebuildData: () -> Void
-        ) {
-            var keys = trashKeyType == .item ? viewModel.state.itemKeys : viewModel.state.collectionKeys
-            var objects = viewModel.state.objects
-            var selectedItems = viewModel.state.selectedItems
-            var changes: TrashState.Changes = []
-            var rebuildObjects = false
-
-            for index in deletions {
-                guard index < keys.count else {
-                    rebuildObjects = true
-                    break
-                }
-                let key = keys.remove(at: index)
-                let trashKey = TrashKey(type: trashKeyType, key: key)
-                objects[trashKey] = nil
-                if selectedItems.remove(trashKey) != nil {
-                    changes.insert(.selection)
-                }
-            }
-
-            if rebuildObjects {
-                rebuildData()
-                return
-            }
-
-            for index in modifications {
-                let result = results[index]
-                let trashKey = TrashKey(type: trashKeyType, key: result.key)
-                objects[trashKey] = createObject(result)
-            }
-
-            for index in insertions {
-                let result = results[index]
-                let trashKey = TrashKey(type: trashKeyType, key: result.key)
-                guard let object = createObject(result), index < keys.count else {
-                    rebuildObjects = true
-                    break
-                }
-                keys.insert(result.key, at: index)
-                objects.updateValue(object, forKey: trashKey, insertingAt: index)
-            }
-
-            if rebuildObjects {
-                rebuildData()
-                return
-            }
-
-            changes.insert(.objects)
-
-            handler.update(viewModel: viewModel) { state in
-                switch trashKeyType {
-                case .collection:
-                    state.collectionKeys = keys
-
-                case .item:
-                    state.itemKeys = keys
-                }
-                state.objects = objects
-                state.selectedItems = selectedItems
-                state.changes = changes
-            }
-        }
-
-        func updateItems(_ items: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int], viewModel: ViewModel<TrashActionHandler>, handler: TrashActionHandler) {
-            updateObjects(
-                items,
-                deletions: deletions,
-                insertions: insertions,
-                modifications: modifications,
-                trashKeyType: .item,
-                viewModel: viewModel,
-                handler: handler,
-                createObject: { item in
-                    return trashObject(from: item, titleFont: viewModel.state.titleFont)
-                },
-                rebuildData: {
-                    rebuild(items: items, viewModel: viewModel, handler: handler)
-                }
-            )
-
-            func rebuild(items: Results<RItem>, viewModel: ViewModel<TrashActionHandler>, handler: TrashActionHandler) {
-                let itemKeys = Array(items.map({ $0.key }))
-                let collectionsRequest = ReadCollectionsDbRequest(libraryId: viewModel.state.library.identifier, trash: true)
-                let collections = (try? handler.dbStorage.perform(request: collectionsRequest, on: .main))?.sorted(by: collectionSortDescriptor(for: viewModel.state.sortType))
-                var collectionKeys: [String] = []
-                if let collections {
-                    collectionKeys = collections.map({ $0.key })
-                }
-                let results = results(
-                    fromItems: items,
-                    collections: collections,
-                    sortType: viewModel.state.sortType,
-                    filters: viewModel.state.filters,
-                    searchTerm: viewModel.state.searchTerm,
-                    titleFont: viewModel.state.titleFont
-                )
-                handler.update(viewModel: viewModel) { state in
-                    state.objects = results
-                    state.itemKeys = itemKeys
-                    state.collectionKeys = collectionKeys
-                    state.selectedItems = []
-                    state.changes = .objects
-                }
-            }
-        }
-
-        func updateCollections(_ collections: Results<RCollection>, deletions: [Int], insertions: [Int], modifications: [Int], viewModel: ViewModel<TrashActionHandler>, handler: TrashActionHandler) {
-            updateObjects(
-                collections,
-                deletions: deletions,
-                insertions: insertions,
-                modifications: modifications,
-                trashKeyType: .collection,
-                viewModel: viewModel,
-                handler: handler,
-                createObject: { item in
-                    return trashObject(from: item, titleFont: viewModel.state.titleFont)
-                },
-                rebuildData: {
-                    rebuild(collections: collections, viewModel: viewModel, handler: handler)
-                }
-            )
-
-            func rebuild(collections: Results<RCollection>, viewModel: ViewModel<TrashActionHandler>, handler: TrashActionHandler) {
-                let collectionKeys = Array(collections.map({ $0.key }))
-                let items = try? dbStorage.perform(request: ReadItemsDbRequest(collectionId: .custom(.trash), libraryId: viewModel.state.library.identifier, sortType: viewModel.state.sortType), on: .main)
-                var itemKeys: [String] = []
-                if let items {
-                    itemKeys = items.map({ $0.key })
-                }
-                let results = results(
-                    fromItems: items,
-                    collections: collections,
-                    sortType: viewModel.state.sortType,
-                    filters: viewModel.state.filters,
-                    searchTerm: viewModel.state.searchTerm,
-                    titleFont: viewModel.state.titleFont
-                )
-                handler.update(viewModel: viewModel) { state in
-                    state.objects = results
-                    state.itemKeys = itemKeys
-                    state.collectionKeys = collectionKeys
-                    state.selectedItems = []
-                    state.changes = .objects
-                }
-            }
-        }
-
-        func trashObject(from collection: RCollection, titleFont: UIFont) -> TrashObject? {
-            guard let libraryId = collection.libraryId else { return nil }
-            let attributedTitle = htmlAttributedStringConverter.convert(text: collection.name, baseAttributes: [.font: titleFont])
-            return TrashObject(type: .collection, key: collection.key, libraryId: libraryId, title: attributedTitle, dateModified: collection.dateModified)
-        }
-
-        func trashObject(from rItem: RItem, titleFont: UIFont) -> TrashObject? {
-            guard let libraryId = rItem.libraryId else { return nil }
-            let itemAccessory = ItemAccessory.create(from: rItem, fileStorage: fileStorage, urlDetector: urlDetector)
-            let creatorSummary = ItemCellModel.creatorSummary(for: rItem)
-            let (tagColors, tagEmojis) = ItemCellModel.tagData(item: rItem)
-            let hasNote = ItemCellModel.hasNote(item: rItem)
-            let typeName = schemaController.localized(itemType: rItem.rawType) ?? rItem.rawType
-            let attributedTitle = htmlAttributedStringConverter.convert(text: rItem.displayTitle, baseAttributes: [.font: titleFont])
-            let item = TrashObject.Item(
-                sortTitle: rItem.sortTitle,
-                type: rItem.rawType,
-                localizedTypeName: typeName,
-                typeIconName: ItemCellModel.typeIconName(for: rItem),
-                creatorSummary: creatorSummary,
-                publisher: rItem.publisher,
-                publicationTitle: rItem.publicationTitle,
-                year: rItem.hasParsedYear ? rItem.parsedYear : nil,
-                date: rItem.parsedDate,
-                dateAdded: rItem.dateAdded,
-                tagNames: Set(rItem.tags.compactMap({ $0.tag?.name })),
-                tagColors: tagColors,
-                tagEmojis: tagEmojis,
-                hasNote: hasNote,
-                itemAccessory: itemAccessory,
-                isMainAttachmentDownloaded: rItem.fileDownloaded,
-                searchStrings: searchStrings(from: rItem)
-            )
-            return TrashObject(type: .item(item: item), key: rItem.key, libraryId: libraryId, title: attributedTitle, dateModified: rItem.dateModified)
-
-            func searchStrings(from item: RItem) -> Set<String> {
-                var strings: Set<String> = [item.key, item.sortTitle]
-                if let value = item.htmlFreeContent {
-                    strings.insert(value)
-                }
-                for creator in item.creators {
-                    if !creator.name.isEmpty {
-                        strings.insert(creator.name)
-                    }
-                    if !creator.firstName.isEmpty {
-                        strings.insert(creator.firstName)
-                    }
-                    if !creator.lastName.isEmpty {
-                        strings.insert(creator.lastName)
-                    }
-                }
-                for tag in item.tags {
-                    guard let name = tag.tag?.name else { continue }
-                    strings.insert(name)
-                }
-                for field in item.fields {
-                    strings.insert(field.value)
-                }
-                for child in item.children {
-                    strings.formUnion(searchStrings(from: child))
-                }
-                return strings
-            }
-        }
     }
 
-    private func results(
-        fromOriginal original: OrderedDictionary<TrashKey, TrashObject>,
-        sortType: ItemsSortType,
-        filters: [ItemsFilter],
-        searchTerm: String?
-    ) -> OrderedDictionary<TrashKey, TrashObject> {
-        var results: OrderedDictionary<TrashKey, TrashObject> = [:]
-        for (key, value) in original {
-            guard object(value, containsTerm: searchTerm) && object(value, satisfiesFilters: filters) else { continue }
-            let index = results.index(of: value, sortedBy: { areInIncreasingOrder(lObject: $0, rObject: $1, sortType: sortType) })
-            results.updateValue(value, forKey: key, insertingAt: index)
-        }
-        return original
-
-        func object(_ object: TrashObject, satisfiesFilters filters: [ItemsFilter]) -> Bool {
-            guard !filters.isEmpty else { return true }
-
-            for filter in filters {
-                switch object.type {
-                case .collection:
-                    // Collections don't have tags or can be "downloaded", so they fail automatically
-                    return false
-
-                case .item(let item):
-                    switch filter {
-                    case .downloadedFiles:
-                        if !item.isMainAttachmentDownloaded {
-                            return false
-                        }
-
-                    case .tags(let tagNames):
-                        if item.tagNames.intersection(tagNames).isEmpty {
-                            return false
-                        }
-                    }
+    private func createSnapshot(fromItems items: Results<RItem>?, collections: Results<RCollection>?, sortType: ItemsSortType) -> TrashState.Snapshot {
+        var itemsIdx = 0
+        var collectionsIdx = 0
+        var keys: [TrashKey] = []
+        var keyToIdx: [TrashKey: Int] = [:]
+        if let collections, let items {
+            while itemsIdx < items.count && collectionsIdx < collections.count {
+                let item = items[itemsIdx]
+                let collection = collections[collectionsIdx]
+                if areInIncreasingOrder(lObject: item, rObject: collection, sortType: sortType) {
+                    keys.append(TrashKey(type: .item, key: item.key))
+                    keyToIdx[keys.last!] = itemsIdx
+                    itemsIdx += 1
+                } else {
+                    keys.append(TrashKey(type: .item, key: collection.key))
+                    keyToIdx[keys.last!] = collectionsIdx
+                    collectionsIdx += 1
                 }
             }
-
-            return true
         }
-
-        func object(_ object: TrashObject, containsTerm term: String?) -> Bool {
-            guard let term else { return true }
-            let components = createComponents(from: term)
-            guard !components.isEmpty else { return true }
-            for component in components {
-                switch object.type {
-                case .item(let item):
-                    for string in item.searchStrings {
-                        if string == component || string.localizedCaseInsensitiveContains(component) {
-                            return true
-                        }
-                    }
-
-                case .collection:
-                    if component.lowercased() == "collection" {
-                        return true
-                    }
-                    if object.key == component {
-                        return true
-                    }
-                    if object.title.string.localizedCaseInsensitiveContains(component) {
-                        return true
-                    }
+        if let collections {
+            if collectionsIdx < collections.count {
+                while collectionsIdx < collections.count {
+                    keys.append(TrashKey(type: .collection, key: collections[collectionsIdx].key))
+                    keyToIdx[keys.last!] = collectionsIdx
+                    collectionsIdx += 1
                 }
             }
-            return false
         }
+        if let items {
+            if itemsIdx < items.count {
+                while itemsIdx < items.count {
+                    keys.append(TrashKey(type: .item, key: items[itemsIdx].key))
+                    keyToIdx[keys.last!] = itemsIdx
+                    itemsIdx += 1
+                }
+            }
+        }
+        return TrashState.Snapshot(sortedKeys: keys, keyToIdx: keyToIdx)
     }
 
     private func areInIncreasingOrder(lObject: TrashObject, rObject: TrashObject, sortType: ItemsSortType) -> Bool {
@@ -634,6 +395,21 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
 
     // MARK: - Actions
 
+    private func split(keys: Set<TrashKey>) -> (items: [String], collections: [String]) {
+        var items: [String] = []
+        var collections: [String] = []
+        for key in keys {
+            switch key.type {
+            case .collection:
+                collections.append(key.key)
+
+            case .item:
+                items.append(key.key)
+            }
+        }
+        return (items, collections)
+    }
+
     private func emptyTrash(in viewModel: ViewModel<TrashActionHandler>) {
         self.perform(request: EmptyTrashDbRequest(libraryId: viewModel.state.library.identifier)) { error in
             guard let error = error else { return }
@@ -677,21 +453,6 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
         }
     }
 
-    private func split(keys: Set<TrashKey>) -> (items: [String], collections: [String]) {
-        var items: [String] = []
-        var collections: [String] = []
-        for key in keys {
-            switch key.type {
-            case .collection:
-                collections.append(key.key)
-
-            case .item:
-                items.append(key.key)
-            }
-        }
-        return (items, collections)
-    }
-
     private func startEditing(in viewModel: ViewModel<TrashActionHandler>) {
         update(viewModel: viewModel) { state in
             state.isEditing = true
@@ -712,7 +473,7 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
     private func downloadAttachments(for keys: Set<TrashKey>, in viewModel: ViewModel<TrashActionHandler>) {
         var attachments: [(Attachment, String?)] = []
         for key in keys {
-            guard let attachment = viewModel.state.objects[key]?.itemAccessory?.attachment else { continue }
+            guard let attachment = viewModel.state.itemAccessories[key]?.attachment else { continue }
             let parentKey = attachment.key == key.key ? nil : key.key
             attachments.append((attachment, parentKey))
         }

@@ -12,6 +12,19 @@ import OrderedCollections
 import RealmSwift
 
 struct TrashState: ViewModelState {
+    struct Snapshot {
+        let sortedKeys: [TrashKey]
+        let keyToIdx: [TrashKey: Int]
+
+        static var empty: Snapshot {
+            return Snapshot(sortedKeys: [], keyToIdx: [:])
+        }
+
+        var count: Int {
+            return sortedKeys.count
+        }
+    }
+
     struct Changes: OptionSet {
         typealias RawValue = UInt8
 
@@ -35,14 +48,11 @@ struct TrashState: ViewModelState {
     var libraryToken: NotificationToken?
     var itemResults: Results<RItem>?
     var itemsToken: NotificationToken?
-    // Keys for all items are stored so that when a deletion comes in it can be determined which keys were deleted
-    var itemKeys: [String]
     var collectionResults: Results<RCollection>?
     var collectionsToken: NotificationToken?
-    // Keys for all collecitons are stored so that when a deletion comes in it can be determined which keys were deleted
-    var collectionKeys: [String]
-    var objects: OrderedDictionary<TrashKey, TrashObject>
-    var snapshot: OrderedDictionary<TrashKey, TrashObject>?
+    var snapshot: Snapshot
+    // Cache of item accessories (attachment, doi, url) so that they don't need to be re-fetched in tableView. The key is key of parent item, or item if it's a standalone attachment.
+    var itemAccessories: [TrashKey: ItemAccessory]
     var sortType: ItemsSortType
     var searchTerm: String?
     var filters: [ItemsFilter]
@@ -50,8 +60,6 @@ struct TrashState: ViewModelState {
     var selectedItems: Set<TrashKey>
     var attachmentToOpen: String?
     var downloadBatchData: ItemsState.DownloadBatchData?
-    // Used to indicate which row should update it's attachment view. The update is done directly to cell instead of tableView reload.
-    var updateItemKey: TrashKey?
     var changes: Changes
     var error: ItemsError?
     var titleFont: UIFont {
@@ -59,15 +67,14 @@ struct TrashState: ViewModelState {
     }
 
     init(libraryId: LibraryIdentifier, sortType: ItemsSortType, searchTerm: String?, filters: [ItemsFilter], downloadBatchData: ItemsState.DownloadBatchData?) {
-        objects = [:]
+        snapshot = .empty
+        itemAccessories = [:]
         self.sortType = sortType
         self.filters = filters
         self.searchTerm = searchTerm
         isEditing = false
         changes = []
         selectedItems = []
-        itemKeys = []
-        collectionKeys = []
         self.downloadBatchData = downloadBatchData
 
         switch libraryId {
@@ -82,6 +89,5 @@ struct TrashState: ViewModelState {
     mutating func cleanup() {
         error = nil
         changes = []
-        updateItemKey = nil
     }
 }
