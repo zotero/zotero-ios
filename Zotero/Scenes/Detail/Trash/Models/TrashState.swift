@@ -15,6 +15,10 @@ struct TrashState: ViewModelState {
     struct Snapshot {
         let sortedKeys: [TrashKey]
         let keyToIdx: [TrashKey: Int]
+        var itemResults: Results<RItem>?
+        var itemsToken: NotificationToken?
+        var collectionResults: Results<RCollection>?
+        var collectionsToken: NotificationToken?
 
         static var empty: Snapshot {
             return Snapshot(sortedKeys: [], keyToIdx: [:])
@@ -22,6 +26,45 @@ struct TrashState: ViewModelState {
 
         var count: Int {
             return sortedKeys.count
+        }
+
+        func key(for index: Int) -> TrashKey? {
+            guard index < sortedKeys.count else { return nil }
+            return sortedKeys[index]
+        }
+
+        func object(for key: TrashKey) -> TrashObject? {
+            guard let idx = keyToIdx[key] else { return nil }
+            switch key.type {
+            case .item:
+                guard idx < (itemResults?.count ?? 0) else { return nil }
+                return itemResults?[idx]
+
+            case .collection:
+                guard idx < (collectionResults?.count ?? 0) else { return nil }
+                return collectionResults?[idx]
+            }
+        }
+        
+        func updated(sortedKeys: [TrashKey], keyToIdx: [TrashKey: Int], items: Results<RItem>) -> Snapshot {
+            return Snapshot(sortedKeys: sortedKeys, keyToIdx: keyToIdx, itemResults: items, itemsToken: itemsToken, collectionResults: collectionResults, collectionsToken: collectionsToken)
+        }
+
+        func updated(sortedKeys: [TrashKey], keyToIdx: [TrashKey: Int], collections: Results<RCollection>) -> Snapshot {
+            return Snapshot(sortedKeys: sortedKeys, keyToIdx: keyToIdx, itemResults: itemResults, itemsToken: itemsToken, collectionResults: collections, collectionsToken: collectionsToken)
+        }
+    }
+
+    struct ItemData {
+        let title: NSAttributedString?
+        let accessory: ItemAccessory?
+
+        func copy(with title: NSAttributedString?) -> ItemData {
+            return ItemData(title: title, accessory: accessory)
+        }
+
+        func copy(with accessory: ItemAccessory?) -> ItemData {
+            return ItemData(title: title, accessory: accessory)
         }
     }
 
@@ -46,13 +89,10 @@ struct TrashState: ViewModelState {
 
     var library: Library
     var libraryToken: NotificationToken?
-    var itemResults: Results<RItem>?
-    var itemsToken: NotificationToken?
-    var collectionResults: Results<RCollection>?
-    var collectionsToken: NotificationToken?
     var snapshot: Snapshot
-    // Cache of item accessories (attachment, doi, url) so that they don't need to be re-fetched in tableView. The key is key of parent item, or item if it's a standalone attachment.
-    var itemAccessories: [TrashKey: ItemAccessory]
+    // Cache of item data (accessory, title) so that they don't need to be re-fetched in tableView.
+    var itemDataCache: [TrashKey: ItemData]
+    var updateItemKey: TrashKey?
     var sortType: ItemsSortType
     var searchTerm: String?
     var filters: [ItemsFilter]
@@ -68,7 +108,7 @@ struct TrashState: ViewModelState {
 
     init(libraryId: LibraryIdentifier, sortType: ItemsSortType, searchTerm: String?, filters: [ItemsFilter], downloadBatchData: ItemsState.DownloadBatchData?) {
         snapshot = .empty
-        itemAccessories = [:]
+        itemDataCache = [:]
         self.sortType = sortType
         self.filters = filters
         self.searchTerm = searchTerm
@@ -89,5 +129,6 @@ struct TrashState: ViewModelState {
     mutating func cleanup() {
         error = nil
         changes = []
+        updateItemKey = nil
     }
 }

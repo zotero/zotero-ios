@@ -8,7 +8,7 @@
 
 import Foundation
 
-protocol ItemsTableViewObject {
+protocol ItemsTableViewObject: AnyObject {
     var key: String { get }
     var isNote: Bool { get }
     var isAttachment: Bool { get }

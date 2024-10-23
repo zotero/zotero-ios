@@ -35,10 +35,6 @@ extension RItem: ItemsTableViewObject {
             return false
         }
     }
-
-    var item: RItem? {
-        return self
-    }
 }
 
 final class RItemsTableViewDataSource: NSObject {

@@ -10,6 +10,7 @@ import Foundation
 
 enum TrashAction {
     case attachmentOpened(String)
+    case cacheItemDataIfNeeded(TrashKey)
     case deleteObjects(Set<TrashKey>)
     case deselectItem(TrashKey)
     case disableFilter(ItemsFilter)

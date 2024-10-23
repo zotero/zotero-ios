@@ -13,30 +13,29 @@ import CocoaLumberjackSwift
 
 final class TrashTableViewDataSource: NSObject, ItemsTableViewDataSource {
     private let viewModel: ViewModel<TrashActionHandler>
+    private unowned let schemaController: SchemaController
     private unowned let fileDownloader: AttachmentDownloader?
 
     weak var handler: ItemsTableViewHandler?
-    private var snapshot: OrderedDictionary<TrashKey, TrashObject>?
+    private var snapshot: TrashState.Snapshot?
 
-    init(viewModel: ViewModel<TrashActionHandler>, fileDownloader: AttachmentDownloader?) {
+    init(viewModel: ViewModel<TrashActionHandler>, schemaController: SchemaController, fileDownloader: AttachmentDownloader?) {
         self.viewModel = viewModel
+        self.schemaController = schemaController
         self.fileDownloader = fileDownloader
     }
 
-    func apply(snapshot: OrderedDictionary<TrashKey, TrashObject>) {
+    func apply(snapshot: TrashState.Snapshot) {
         self.snapshot = snapshot
         handler?.reloadAll()
     }
 
-    func updateCellAccessory(key: TrashKey, snapshot: OrderedDictionary<TrashKey, TrashObject>) {
-        self.snapshot = snapshot
-        guard let itemAccessory = snapshot[key]?.itemAccessory else { return }
+    func updateCellAccessory(key: TrashKey, itemAccessory: ItemAccessory) {
         let accessory = ItemCellModel.createAccessory(from: itemAccessory, fileDownloader: fileDownloader)
         handler?.updateCell(key: key.key, withAccessory: accessory)
     }
 
-    func updateAttachmentAccessories(snapshot: OrderedDictionary<TrashKey, TrashObject>) {
-        self.snapshot = snapshot
+    func updateAttachmentAccessories() {
         handler?.attachmentAccessoriesChanged()
     }
 }
@@ -51,8 +50,7 @@ extension TrashTableViewDataSource {
     }
 
     func key(at index: Int) -> TrashKey? {
-        guard let snapshot, index < snapshot.keys.count else { return nil }
-        return snapshot.keys[index]
+        return snapshot?.key(for: index)
     }
 
     func object(at index: Int) -> ItemsTableViewObject? {
@@ -60,25 +58,23 @@ extension TrashTableViewDataSource {
     }
 
     private func trashObject(at index: Int) -> TrashObject? {
-        guard let snapshot, index < snapshot.keys.count else { return nil }
-        return snapshot.values[index]
+        return snapshot?.key(for: index).flatMap({ snapshot?.object(for: $0) })
     }
 
     func tapAction(for indexPath: IndexPath) -> ItemsTableViewHandler.TapAction? {
-        guard let object = trashObject(at: indexPath.row) else { return nil }
+        guard let item = trashObject(at: indexPath.row) as? RItem else { return nil }
 
         if viewModel.state.isEditing {
-            return .selectItem(object)
+            return .selectItem(item)
         }
 
-        guard let accessory = object.itemAccessory else {
-            guard case .item(let item) = object.type else { return nil }
-            switch item.type {
+        guard let accessory = viewModel.state.itemDataCache[TrashKey(type: .item, key: item.key)]?.accessory else {
+            switch item.rawType {
             case ItemTypes.note:
-                return .note(object)
+                return .note(item)
 
             default:
-                return .metadata(object)
+                return .metadata(item)
             }
         }
 
@@ -102,7 +98,7 @@ extension TrashTableViewDataSource {
         var actions = [ItemAction(type: .restore), ItemAction(type: .delete)]
 
         // Add download/remove downloaded option for attachments
-        if let accessory = trashObject(at: index)?.itemAccessory, let location = accessory.attachment?.location {
+        if let key = snapshot?.key(for: index), let accessory = viewModel.state.itemDataCache[key]?.accessory, let location = accessory.attachment?.location {
             switch location {
             case .local:
                 actions.append(ItemAction(type: .removeDownload))
@@ -135,13 +131,13 @@ extension TrashTableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: ItemsTableViewHandler.cellId, for: indexPath)
 
-        guard let object = trashObject(at: indexPath.row) else {
+        guard let key = key(at: indexPath.row), let object = trashObject(at: indexPath.row) else {
             DDLogError("TrashTableViewDataSource: indexPath.row (\(indexPath.row)) out of bounds (\(count))")
             return cell
         }
 
-        if let cell = cell as? ItemCell {
-            cell.set(item: ItemCellModel(object: object, fileDownloader: fileDownloader))
+        if let cell = cell as? ItemCell, let model = model(for: object, key: key) {
+            cell.set(item: model)
 
             let openInfoAction = UIAccessibilityCustomAction(name: L10n.Accessibility.Items.openItem, actionHandler: { [weak self] _ in
                 guard let self else { return false }
@@ -152,31 +148,30 @@ extension TrashTableViewDataSource {
         }
 
         return cell
+
+        func model(for object: TrashObject, key: TrashKey) -> ItemCellModel? {
+            viewModel.process(action: .cacheItemDataIfNeeded(key))
+            let data = viewModel.state.itemDataCache[key]
+            if let item = object as? RItem {
+                let typeName = schemaController.localized(itemType: item.rawType) ?? item.rawType
+                return ItemCellModel(item: item, typeName: typeName, title: data?.title ?? NSAttributedString(), accessory: data?.accessory, fileDownloader: fileDownloader)
+            } else {
+                return ItemCellModel(collectionWithKey: object.key, title: data?.title ?? NSAttributedString())
+            }
+        }
     }
 }
 
-extension TrashObject: ItemsTableViewObject {
+extension RCollection: ItemsTableViewObject {
     var isNote: Bool {
-        switch type {
-        case .item(let item):
-            return item.type == ItemTypes.note
-
-        case .collection:
-            return false
-        }
+        return false
     }
     
     var isAttachment: Bool {
-        switch type {
-        case .item(let item):
-            return item.type == ItemTypes.attachment
-
-        case .collection:
-            return false
-        }
+        return false
     }
 
     var libraryIdentifier: LibraryIdentifier {
-        return libraryId
+        return libraryId ?? .custom(.myLibrary)
     }
 }

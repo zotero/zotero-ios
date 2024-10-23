@@ -48,33 +48,18 @@ struct ItemCellModel {
         self.init(item: item, typeName: typeName, title: title, accessory: Self.createAccessory(from: accessory, fileDownloader: fileDownloader))
     }
 
-    init(object: TrashObject, fileDownloader: AttachmentDownloader?) {
-        key = object.key
-        title = object.title
-
-        switch object.type {
-        case .collection:
-            typeIconName = Asset.Images.Cells.collection.name
-            iconRenderingMode = .alwaysTemplate
-            subtitle = ""
-            hasNote = false
-            tagColors = []
-            tagEmojis = []
-            accessory = nil
-            typeName = L10n.Accessibility.Items.collection
-            hasDetailButton = false
-
-        case .item(let item):
-            typeIconName = item.typeIconName
-            iconRenderingMode = .alwaysOriginal
-            subtitle = item.creatorSummary
-            hasNote = item.hasNote
-            tagColors = item.tagColors
-            tagEmojis = item.tagEmojis
-            accessory = Self.createAccessory(from: item.itemAccessory, fileDownloader: fileDownloader)
-            typeName = item.localizedTypeName
-            hasDetailButton = true
-        }
+    init(collectionWithKey key: String, title: NSAttributedString) {
+        self.key = key
+        self.title = title
+        accessory = nil
+        typeIconName = Asset.Images.Cells.collection.name
+        iconRenderingMode = .alwaysTemplate
+        subtitle = ""
+        hasNote = false
+        tagColors = []
+        tagEmojis = []
+        typeName = L10n.Accessibility.Items.collection
+        hasDetailButton = false
     }
 
     static func createAccessory(from accessory: ItemAccessory?, fileDownloader: AttachmentDownloader?) -> ItemCellModel.Accessory? {

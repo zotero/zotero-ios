@@ -10,12 +10,13 @@ import Foundation
 
 import RealmSwift
 
-protocol TrashObject: AnyObject {
+protocol TrashObject: ItemsTableViewObject {
     var key: String { get }
     var libraryId: LibraryIdentifier? { get }
     var dateAdded: Date { get }
     var dateModified: Date { get }
     var date: Date? { get }
+    var displayTitle: String { get }
     var sortTitle: String { get }
     var sortType: String? { get }
     var creatorSummary: String? { get }
@@ -51,7 +52,11 @@ extension RCollection: TrashObject {
     var date: Date? {
         return nil
     }
-    
+
+    var displayTitle: String {
+        return name
+    }
+
     var sortTitle: String {
         return name
     }

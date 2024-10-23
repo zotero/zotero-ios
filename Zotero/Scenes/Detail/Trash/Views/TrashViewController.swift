@@ -37,12 +37,12 @@ final class TrashViewController: BaseItemsViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        dataSource = TrashTableViewDataSource(viewModel: viewModel, fileDownloader: controllers.userControllers?.fileDownloader)
+        dataSource = TrashTableViewDataSource(viewModel: viewModel, schemaController: controllers.schemaController, fileDownloader: controllers.userControllers?.fileDownloader)
         handler = ItemsTableViewHandler(tableView: tableView, delegate: self, dataSource: dataSource, dragDropController: controllers.dragDropController)
         toolbarController = ItemsToolbarController(viewController: self, data: toolbarData, collection: collection, library: library, delegate: self)
         setupRightBarButtonItems(expectedItems: rightBarButtonItemTypes(for: viewModel.state))
         setupDownloadObserver()
-        dataSource.apply(snapshot: viewModel.state.objects)
+        dataSource.apply(snapshot: viewModel.state.snapshot)
         updateTagFilter(filters: viewModel.state.filters, collectionId: .custom(.trash), libraryId: viewModel.state.library.identifier)
 
         viewModel
@@ -90,12 +90,12 @@ final class TrashViewController: BaseItemsViewController {
 
     private func update(state: TrashState) {
         if state.changes.contains(.objects) {
-            dataSource.apply(snapshot: state.objects)
+            dataSource.apply(snapshot: state.snapshot)
             updateTagFilter(filters: state.filters, collectionId: .custom(.trash), libraryId: state.library.identifier)
-        } else if let key = state.updateItemKey {
-            dataSource.updateCellAccessory(key: key, snapshot: state.objects)
+        } else if let key = state.updateItemKey, let accessory = state.itemDataCache[key]?.accessory {
+            dataSource.updateCellAccessory(key: key, itemAccessory: accessory)
         } else if state.changes.contains(.attachmentsRemoved) {
-            dataSource.updateAttachmentAccessories(snapshot: state.objects)
+            dataSource.updateAttachmentAccessories()
         }
 
         if state.changes.contains(.editing) {
@@ -129,7 +129,7 @@ final class TrashViewController: BaseItemsViewController {
             // Perform additional actions for individual errors if needed
             switch error {
             case .itemMove, .deletion, .deletionFromCollection:
-                dataSource.apply(snapshot: state.objects)
+                dataSource.apply(snapshot: state.snapshot)
 
             case .dataLoading, .collectionAssignment, .noteSaving, .attachmentAdding, .duplicationLoading:
                 break
@@ -218,7 +218,7 @@ final class TrashViewController: BaseItemsViewController {
             downloadBatchData: nil,
             remoteDownloadBatchData: nil,
             identifierLookupBatchData: .init(saved: 0, total: 0),
-            itemCount: state.objects.count
+            itemCount: state.snapshot.count
         )
     }
 
@@ -230,7 +230,7 @@ final class TrashViewController: BaseItemsViewController {
             if !state.isEditing {
                 return [.select]
             }
-            if state.selectedItems.count == state.objects.count {
+            if state.selectedItems.count == state.snapshot.count {
                 return [.deselectAll, .done]
             }
             return [.selectAll, .done]
@@ -281,12 +281,10 @@ extension TrashViewController: ItemsTableViewHandlerDelegate {
             coordinatorDelegate?.show(url: url)
 
         case .selectItem(let object):
-            guard let trashObject = object as? TrashObject else { return }
-            viewModel.process(action: .selectItem(trashObject.trashKey))
+            viewModel.process(action: .selectItem(TrashKey(type: .item, key: object.key)))
 
         case .deselectItem(let object):
-            guard let trashObject = object as? TrashObject else { return }
-            viewModel.process(action: .deselectItem(trashObject.trashKey))
+            viewModel.process(action: .deselectItem(TrashKey(type: .item, key: object.key)))
 
         case .note(let object):
             guard let item = object as? RItem, let note = Note(item: item) else { return }
