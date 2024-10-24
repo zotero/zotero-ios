@@ -248,6 +248,14 @@ final class TrashViewController: BaseItemsViewController {
             viewModel.process(action: .enableFilter(.tags(selected)))
         }
     }
+
+    override func downloadsFilterDidChange(enabled: Bool) {
+        if enabled {
+            viewModel.process(action: .enableFilter(.downloadedFiles))
+        } else {
+            viewModel.process(action: .disableFilter(.downloadedFiles))
+        }
+    }
 }
 
 extension TrashViewController: ItemsTableViewHandlerDelegate {
