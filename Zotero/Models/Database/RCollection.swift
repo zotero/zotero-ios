@@ -32,6 +32,7 @@ final class RCollection: Object {
 
     @Persisted(indexed: true) var key: String
     @Persisted var name: String
+    @Persisted var sortName: String
     @Persisted var dateModified: Date
     @Persisted var parentKey: String?
     @Persisted var collapsed: Bool = true
@@ -59,6 +60,17 @@ final class RCollection: Object {
     @Persisted var deleted: Bool
     /// Indicates whether the object is trashed locally and needs to be synced with backend
     @Persisted var trash: Bool
+
+    static func sortName(from name: String) -> String {
+        return name.folding(options: .diacriticInsensitive, locale: .current).trimmingCharacters(in: CharacterSet(charactersIn: "[]'\"")).lowercased()
+    }
+
+    func updateSortName() {
+        let newName = RCollection.sortName(from: name)
+        if newName != sortName {
+            sortName = newName
+        }
+    }
 
     // MARK: - Sync properties
 

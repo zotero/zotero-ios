@@ -28,6 +28,16 @@ final class AttachmentDownloader: NSObject {
             case ready(compressed: Bool?)
             case failed(Swift.Error)
             case cancelled
+
+            var isProgress: Bool {
+                switch self {
+                case .progress:
+                    return true
+
+                case .ready, .failed, .cancelled:
+                    return false
+                }
+            }
         }
 
         let key: String

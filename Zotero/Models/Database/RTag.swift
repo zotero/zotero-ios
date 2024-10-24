@@ -39,7 +39,7 @@ final class RTag: Object {
     }
 
     static func sortName(from name: String) -> String {
-        return name.trimmingCharacters(in: CharacterSet(charactersIn: "[]'\"")).lowercased()
+        return name.folding(options: .diacriticInsensitive, locale: .current).trimmingCharacters(in: CharacterSet(charactersIn: "[]'\"")).lowercased()
     }
 
     static func create(name: String, color: String? = nil, libraryId: LibraryIdentifier, order: Int? = nil) -> RTag {

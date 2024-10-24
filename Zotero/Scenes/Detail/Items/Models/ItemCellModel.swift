@@ -19,6 +19,7 @@ struct ItemCellModel {
 
     let key: String
     let typeIconName: String
+    let iconRenderingMode: UIImage.RenderingMode
     let typeName: String
     let title: NSAttributedString
     let subtitle: String
@@ -26,29 +27,70 @@ struct ItemCellModel {
     let tagColors: [UIColor]
     let tagEmojis: [String]
     let accessory: Accessory?
+    let hasDetailButton: Bool
 
     init(item: RItem, typeName: String, title: NSAttributedString, accessory: Accessory?) {
-        self.key = item.key
-        let contentType: String? = item.rawType == ItemTypes.attachment ? item.fields.filter(.key(FieldKeys.Item.Attachment.contentType)).first?.value : nil
-        self.typeIconName = ItemTypes.iconName(for: item.rawType, contentType: contentType)
+        key = item.key
+        typeIconName = Self.typeIconName(for: item)
+        iconRenderingMode = .alwaysOriginal
         self.typeName = typeName
         self.title = title
-        self.subtitle = ItemCellModel.subtitle(for: item)
-        self.hasNote = ItemCellModel.hasNote(item: item)
+        subtitle = Self.creatorSummary(for: item)
+        hasNote = Self.hasNote(item: item)
         self.accessory = accessory
-        let (colors, emojis) = ItemCellModel.tagData(item: item)
-        self.tagColors = colors
-        self.tagEmojis = emojis
+        let (colors, emojis) = Self.tagData(item: item)
+        tagColors = colors
+        tagEmojis = emojis
+        hasDetailButton = true
     }
 
-    fileprivate static func hasNote(item: RItem) -> Bool {
+    init(item: RItem, typeName: String, title: NSAttributedString, accessory: ItemAccessory?, fileDownloader: AttachmentDownloader?) {
+        self.init(item: item, typeName: typeName, title: title, accessory: Self.createAccessory(from: accessory, fileDownloader: fileDownloader))
+    }
+
+    init(collectionWithKey key: String, title: NSAttributedString) {
+        self.key = key
+        self.title = title
+        accessory = nil
+        typeIconName = Asset.Images.Cells.collection.name
+        iconRenderingMode = .alwaysTemplate
+        subtitle = ""
+        hasNote = false
+        tagColors = []
+        tagEmojis = []
+        typeName = L10n.Accessibility.Items.collection
+        hasDetailButton = false
+    }
+
+    static func createAccessory(from accessory: ItemAccessory?, fileDownloader: AttachmentDownloader?) -> ItemCellModel.Accessory? {
+        return accessory.flatMap({ accessory -> ItemCellModel.Accessory in
+            switch accessory {
+            case .attachment(let attachment, let parentKey):
+                let (progress, error) = fileDownloader?.data(for: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId) ?? (nil, nil)
+                return .attachment(.stateFrom(type: attachment.type, progress: progress, error: error))
+
+            case .doi:
+                return .doi
+
+            case .url:
+                return .url
+            }
+        })
+    }
+
+    static func hasNote(item: RItem) -> Bool {
         return !item.children
             .filter(.items(type: ItemTypes.note, notSyncState: .dirty))
             .filter(.isTrash(false))
             .isEmpty
     }
 
-    fileprivate static func tagData(item: RItem) -> ([UIColor], [String]) {
+    static func typeIconName(for item: RItem) -> String {
+        let contentType: String? = item.rawType == ItemTypes.attachment ? item.fields.filter(.key(FieldKeys.Item.Attachment.contentType)).first?.value : nil
+        return ItemTypes.iconName(for: item.rawType, contentType: contentType)
+    }
+
+    static func tagData(item: RItem) -> ([UIColor], [String]) {
         var colors: [UIColor] = []
         var emojis: [String] = []
         for tag in item.tags {
@@ -65,7 +107,7 @@ struct ItemCellModel {
         return (colors, emojis)
     }
 
-    private static func subtitle(for item: RItem) -> String {
+    static func creatorSummary(for item: RItem) -> String {
         guard item.creatorSummary != nil || item.parsedYear != 0 else { return "" }
         var result = item.creatorSummary ?? ""
         if !result.isEmpty {

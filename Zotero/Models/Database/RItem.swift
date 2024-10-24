@@ -191,10 +191,14 @@ final class RItem: Object {
         self.updateSortTitle()
     }
 
+    static func sortTitle(from title: String) -> String {
+        return title.strippedRichTextTags.folding(options: .diacriticInsensitive, locale: .current).trimmingCharacters(in: CharacterSet(charactersIn: "[]'\"")).lowercased()
+    }
+
     private func updateSortTitle() {
-        let newTitle = self.displayTitle.strippedRichTextTags.trimmingCharacters(in: CharacterSet(charactersIn: "[]'\"")).lowercased()
-        if newTitle != self.sortTitle {
-            self.sortTitle = newTitle
+        let newTitle = RItem.sortTitle(from: displayTitle)
+        if newTitle != sortTitle {
+            sortTitle = newTitle
         }
     }
 

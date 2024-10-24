@@ -25,6 +25,7 @@ struct EditCollectionDbRequest: DbRequest {
 
         if collection.name != self.name {
             collection.name = self.name
+            collection.updateSortName()
             changes.insert(.name)
         }
 

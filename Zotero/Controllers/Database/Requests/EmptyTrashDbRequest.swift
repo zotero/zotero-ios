@@ -16,7 +16,11 @@ struct EmptyTrashDbRequest: DbRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
-        database.objects(RItem.self).filter(.items(for: .custom(.trash), libraryId: self.libraryId)).forEach {
+        database.objects(RItem.self).filter(.items(for: .custom(.trash), libraryId: libraryId)).forEach {
+            $0.deleted = true
+            $0.changeType = .user
+        }
+        database.objects(RCollection.self).filter(.trashedCollections(in: libraryId)).forEach {
             $0.deleted = true
             $0.changeType = .user
         }

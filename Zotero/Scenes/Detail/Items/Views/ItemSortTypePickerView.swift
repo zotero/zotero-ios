@@ -9,19 +9,21 @@
 import SwiftUI
 
 struct ItemSortTypePickerView: View {
-    @Binding var sortBy: ItemsSortType.Field
+    @Binding var sortType: ItemsSortType
 
     let closeAction: () -> Void
 
     var body: some View {
         List {
-            ForEach(ItemsSortType.Field.allCases) { sortType in
+            ForEach(ItemsSortType.Field.allCases) { field in
                 Button {
-                    self.sortBy = sortType
+                    var new = sortType
+                    new.field = field
+                    new.ascending = field.defaultOrderAscending
+                    sortType = new
                     self.closeAction()
                 } label: {
-                    SortTypeRow(title: sortType.title,
-                                isSelected: (self.sortBy == sortType))
+                    SortTypeRow(title: field.title, isSelected: (sortType.field == field))
                 }
                 .foregroundColor(Color(.label))
             }
@@ -50,6 +52,6 @@ private struct SortTypeRow: View {
 
 struct ItemSortTypePickerView_Previews: PreviewProvider {
     static var previews: some View {
-        ItemSortTypePickerView(sortBy: .constant(.title), closeAction: {})
+        ItemSortTypePickerView(sortType: .constant(ItemsSortType(field: .creator, ascending: false)), closeAction: {})
     }
 }
