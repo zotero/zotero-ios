@@ -208,11 +208,11 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
             case .dateModified:
                 return [
                     SortDescriptor(keyPath: "dateModified", ascending: sortType.ascending),
-                    SortDescriptor(keyPath: "name", ascending: sortType.ascending)
+                    SortDescriptor(keyPath: "sortName", ascending: sortType.ascending)
                 ]
 
             case .title, .creator, .date, .dateAdded, .itemType, .publisher, .publicationTitle, .year:
-                return [SortDescriptor(keyPath: "name", ascending: sortType.ascending)]
+                return [SortDescriptor(keyPath: "sortName", ascending: sortType.ascending)]
             }
         }
     }
@@ -231,28 +231,24 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
                     keyToIdx[keys.last!] = itemsIdx
                     itemsIdx += 1
                 } else {
-                    keys.append(TrashKey(type: .item, key: collection.key))
+                    keys.append(TrashKey(type: .collection, key: collection.key))
                     keyToIdx[keys.last!] = collectionsIdx
                     collectionsIdx += 1
                 }
             }
         }
-        if let collections {
-            if collectionsIdx < collections.count {
-                while collectionsIdx < collections.count {
-                    keys.append(TrashKey(type: .collection, key: collections[collectionsIdx].key))
-                    keyToIdx[keys.last!] = collectionsIdx
-                    collectionsIdx += 1
-                }
+        if let collections, collectionsIdx < collections.count {
+            while collectionsIdx < collections.count {
+                keys.append(TrashKey(type: .collection, key: collections[collectionsIdx].key))
+                keyToIdx[keys.last!] = collectionsIdx
+                collectionsIdx += 1
             }
         }
-        if let items {
-            if itemsIdx < items.count {
-                while itemsIdx < items.count {
-                    keys.append(TrashKey(type: .item, key: items[itemsIdx].key))
-                    keyToIdx[keys.last!] = itemsIdx
-                    itemsIdx += 1
-                }
+        if let items, itemsIdx < items.count {
+            while itemsIdx < items.count {
+                keys.append(TrashKey(type: .item, key: items[itemsIdx].key))
+                keyToIdx[keys.last!] = itemsIdx
+                itemsIdx += 1
             }
         }
         return (keys, keyToIdx)
@@ -281,6 +277,7 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
             initialResult = compare(lValue: lObject.publicationTitle, rValue: rObject.publicationTitle)
 
         case .publisher:
+            DDLogInfo("LPublisher: \(lObject.key); '\(lObject.publisher ?? "nil")' - \(rObject.key); '\(rObject.publisher ?? "nil")'")
             initialResult = compare(lValue: lObject.publisher, rValue: rObject.publisher)
 
         case .year:
@@ -308,9 +305,12 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
             }
         }
 
-        func compare(lValue: String?, rValue: String?) -> ComparisonResult {
+        func compare<Val>(lValue: Val?, rValue: Val?, nonNilCompare: (Val, Val) -> ComparisonResult) -> ComparisonResult {
             if let lValue, let rValue {
-                return lValue.compare(rValue, options: [.numeric], locale: Locale.autoupdatingCurrent)
+                return nonNilCompare(lValue, rValue)
+            }
+            if lValue == nil && rValue == nil {
+                return .orderedSame
             }
             if lValue != nil {
                 return .orderedAscending
@@ -318,27 +318,21 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
             return .orderedDescending
         }
 
+        func compare(lValue: String?, rValue: String?) -> ComparisonResult {
+            return compare(lValue: lValue, rValue: rValue, nonNilCompare: { $0.compare($1, options: [.numeric], locale: Locale.autoupdatingCurrent) })
+        }
+
         func compare(lValue: Int?, rValue: Int?) -> ComparisonResult {
-            if let lValue, let rValue {
+            compare(lValue: lValue, rValue: rValue) { lValue, rValue in
                 if lValue == rValue {
                     return .orderedSame
                 }
                 return lValue < rValue ? .orderedAscending : .orderedDescending
             }
-            if lValue != nil {
-                return .orderedAscending
-            }
-            return .orderedDescending
         }
 
         func compare(lValue: Date?, rValue: Date?) -> ComparisonResult {
-            if let lValue, let rValue {
-                return lValue.compare(rValue)
-            }
-            if lValue != nil {
-                return .orderedAscending
-            }
-            return .orderedDescending
+            return compare(lValue: lValue, rValue: rValue, nonNilCompare: { $0.compare($1) })
         }
     }
 

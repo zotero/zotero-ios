@@ -24,6 +24,7 @@ struct CreateCollectionDbRequest: DbRequest {
         collection.name = self.name
         collection.syncState = .synced
         collection.libraryId = self.libraryId
+        collection.updateSortName()
 
         var changes: RCollectionChanges = .name
 

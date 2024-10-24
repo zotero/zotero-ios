@@ -62,19 +62,20 @@ extension TrashTableViewDataSource {
     }
 
     func tapAction(for indexPath: IndexPath) -> ItemsTableViewHandler.TapAction? {
-        guard let item = trashObject(at: indexPath.row) as? RItem else { return nil }
+        guard let object = trashObject(at: indexPath.row) else { return nil }
 
         if viewModel.state.isEditing {
-            return .selectItem(item)
+            return .selectItem(object)
         }
 
-        guard let accessory = viewModel.state.itemDataCache[TrashKey(type: .item, key: item.key)]?.accessory else {
-            switch item.rawType {
+        guard let accessory = viewModel.state.itemDataCache[TrashKey(type: .item, key: object.key)]?.accessory else {
+            let itemType = (object as? RItem)?.rawType ?? ""
+            switch itemType {
             case ItemTypes.note:
-                return .note(item)
+                return .note(object)
 
             default:
-                return .metadata(item)
+                return .metadata(object)
             }
         }
 

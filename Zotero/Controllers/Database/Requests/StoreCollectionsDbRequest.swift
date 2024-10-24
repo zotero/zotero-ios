@@ -61,6 +61,7 @@ struct StoreCollectionsDbRequest: DbRequest {
             collection.trash = response.data.isTrash
             collection.trashDate = collection.trash ? Date.now : nil
         }
+        collection.updateSortName()
 
         self.sync(parentCollection: response.data.parentCollection, libraryId: libraryId, collection: collection, database: database)
     }

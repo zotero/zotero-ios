@@ -29,7 +29,7 @@ final class TrashViewController: BaseItemsViewController {
         super.init(controllers: controllers, coordinatorDelegate: coordinatorDelegate)
         viewModel.process(action: .loadData)
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
@@ -254,21 +254,22 @@ extension TrashViewController: ItemsTableViewHandlerDelegate {
     var isInViewHierarchy: Bool {
         return view.window != nil
     }
-    
+
     var collectionKey: String? {
         return nil
     }
-    
+
     func process(action: ItemAction.Kind, at index: Int, completionAction: ((Bool) -> Void)?) {
         guard let key = dataSource.key(at: index) else { return }
         process(action: action, for: [key], button: nil, completionAction: completionAction)
     }
-    
+
     func process(tapAction action: ItemsTableViewHandler.TapAction) {
         resetActiveSearch()
 
         switch action {
         case .metadata(let object):
+            guard object is RItem else { return }
             coordinatorDelegate?.showItemDetail(for: .preview(key: object.key), libraryId: viewModel.state.library.identifier, scrolledToKey: nil, animated: true)
 
         case .attachment(let attachment, let parentKey):
@@ -297,7 +298,7 @@ extension TrashViewController: ItemsTableViewHandlerDelegate {
             searchBar.resignFirstResponder()
         }
     }
-    
+
     func process(dragAndDropAction action: ItemsTableViewHandler.DragAndDropAction) {
         switch action {
         case .moveItems:
@@ -317,5 +318,16 @@ extension TrashViewController: ItemsToolbarControllerDelegate {
 
     func showLookup() {
         coordinatorDelegate?.showLookup()
+    }
+}
+
+extension TrashViewController: DetailCoordinatorAttachmentProvider {
+    func attachment(for key: String, parentKey: String?, libraryId: LibraryIdentifier) -> (Attachment, UIView, CGRect?)? {
+        guard
+            let accessory = viewModel.state.itemDataCache[TrashKey(type: .item, key: parentKey ?? key)]?.accessory,
+            let attachment = accessory.attachment,
+            let (sourceView, sourceRect) = handler?.sourceDataForCell(for: (parentKey ?? key))
+        else { return nil }
+        return (attachment, sourceView, sourceRect)
     }
 }
