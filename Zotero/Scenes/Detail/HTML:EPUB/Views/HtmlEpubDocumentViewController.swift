@@ -171,7 +171,7 @@ class HtmlEpubDocumentViewController: UIViewController {
 
         func load(documentData data: HtmlEpubReaderState.DocumentData) {
             DDLogInfo("HtmlEpubDocumentViewController: try creating view for \(data.type); page = \(String(describing: data.page))")
-            var javascript = "createView({ type: '\(data.type)', url: '\(data.url.absoluteString)', annotations: \(data.annotationsJson)"
+            var javascript = "createView({ type: '\(data.type)', url: '\(data.url.absoluteString.replacingOccurrences(of: "'", with: #"\'"#))', annotations: \(data.annotationsJson)"
             if let page = data.page {
                 switch page {
                 case .html(let scrollYPercent):
