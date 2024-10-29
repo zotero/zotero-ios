@@ -237,14 +237,14 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
                 }
             }
         }
-        if let collections, collectionsIdx < collections.count {
+        if let collections {
             while collectionsIdx < collections.count {
                 keys.append(TrashKey(type: .collection, key: collections[collectionsIdx].key))
                 keyToIdx[keys.last!] = collectionsIdx
                 collectionsIdx += 1
             }
         }
-        if let items, itemsIdx < items.count {
+        if let items {
             while itemsIdx < items.count {
                 keys.append(TrashKey(type: .item, key: items[itemsIdx].key))
                 keyToIdx[keys.last!] = itemsIdx
