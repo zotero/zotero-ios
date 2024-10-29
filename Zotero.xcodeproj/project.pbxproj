@@ -859,7 +859,6 @@
 		B398D6C02A77F9C60049A296 /* FontSizeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B398D6BF2A77F9C60049A296 /* FontSizeView.swift */; };
 		B399A9172CC67F1600731B21 /* TrashKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = B399A9162CC67F1400731B21 /* TrashKey.swift */; };
 		B399A9192CC6803000731B21 /* TrashObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = B399A9182CC6802E00731B21 /* TrashObject.swift */; };
-		B39ADE712C4AAB090006FA79 /* OrderedDictionary+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39ADE702C4AAB030006FA79 /* OrderedDictionary+Utils.swift */; };
 		B39AF554290033CD001F400F /* TableOfContentsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39AF553290033CD001F400F /* TableOfContentsViewController.swift */; };
 		B39B18E8223947050019F467 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39B18E7223947050019F467 /* main.swift */; };
 		B39C9AB7252B589F00462D27 /* Threading+Extras.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650423FC051E003304F2 /* Threading+Extras.swift */; };
@@ -1886,7 +1885,6 @@
 		B398D6BF2A77F9C60049A296 /* FontSizeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontSizeView.swift; sourceTree = "<group>"; };
 		B399A9162CC67F1400731B21 /* TrashKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrashKey.swift; sourceTree = "<group>"; };
 		B399A9182CC6802E00731B21 /* TrashObject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrashObject.swift; sourceTree = "<group>"; };
-		B39ADE702C4AAB030006FA79 /* OrderedDictionary+Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OrderedDictionary+Utils.swift"; sourceTree = "<group>"; };
 		B39AF553290033CD001F400F /* TableOfContentsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableOfContentsViewController.swift; sourceTree = "<group>"; };
 		B39B18E7223947050019F467 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		B39C7BDD251237D600C2CCF1 /* ReadUpdatedItemUpdateParametersSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadUpdatedItemUpdateParametersSpec.swift; sourceTree = "<group>"; };
@@ -2621,7 +2619,6 @@
 		B305650223FC051E003304F2 /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
-				B39ADE702C4AAB030006FA79 /* OrderedDictionary+Utils.swift */,
 				B305651123FC051E003304F2 /* Array+Utils.swift */,
 				B30B550A24B85CC900F94B59 /* Assets.swift */,
 				B30B550F24B8646E00F94B59 /* Assets+SwiftUI.swift */,
@@ -5447,7 +5444,6 @@
 				B3BC1F60254322D200BA3388 /* ItemDetailAbstractEditCell.swift in Sources */,
 				B3422F44289A9F2400C53DD2 /* ItemDetailAttachmentContentView.swift in Sources */,
 				B30566C523FC051F003304F2 /* Tag.swift in Sources */,
-				B39ADE712C4AAB090006FA79 /* OrderedDictionary+Utils.swift in Sources */,
 				B31EEE5724EBCAF100E3B3AD /* RRect.swift in Sources */,
 				B3E8FE562714320900F51458 /* SavingSettingsState.swift in Sources */,
 				B30565B423FC051E003304F2 /* MarkForResyncDbAction.swift in Sources */,
