@@ -168,6 +168,8 @@ internal enum L10n {
     internal enum Items {
       /// Add selected items to collection
       internal static let addToCollection = L10n.tr("Localizable", "accessibility.items.add_to_collection", fallback: "Add selected items to collection")
+      /// Collection
+      internal static let collection = L10n.tr("Localizable", "accessibility.items.collection", fallback: "Collection")
       /// Delete selected items
       internal static let delete = L10n.tr("Localizable", "accessibility.items.delete", fallback: "Delete selected items")
       /// Deselect All Items

@@ -50,7 +50,10 @@ struct StoreCollectionsDbRequest: DbRequest {
 
     static func update(collection: RCollection, response: CollectionResponse, libraryId: LibraryIdentifier, database: Realm) {
         collection.key = response.key
-        collection.name = response.data.name
+        if collection.name != response.data.name {
+            collection.name = response.data.name
+            collection.updateSortName()
+        }
         collection.version = response.version
         collection.syncState = .synced
         collection.syncRetries = 0
