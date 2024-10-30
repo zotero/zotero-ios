@@ -15,6 +15,8 @@ protocol HtmlEpubReaderContainerDelegate: AnyObject {
     var statusBarHeight: CGFloat { get }
     var navigationBarHeight: CGFloat { get }
     var isSidebarVisible: Bool { get }
+
+    func show(url: URL)
 }
 
 class HtmlEpubReaderViewController: UIViewController, ParentWithSidebarController {
@@ -532,7 +534,11 @@ extension HtmlEpubReaderViewController: UIPopoverPresentationControllerDelegate 
     }
 }
 
-extension HtmlEpubReaderViewController: HtmlEpubReaderContainerDelegate {}
+extension HtmlEpubReaderViewController: HtmlEpubReaderContainerDelegate {
+    func show(url: URL) {
+        coordinatorDelegate?.show(url: url)
+    }
+}
 
 extension HtmlEpubReaderViewController: HtmlEpubAnnotationsDelegate {
     func parseAndCacheIfNeededAttributedText(for annotation: HtmlEpubAnnotation, with font: UIFont) -> NSAttributedString? {

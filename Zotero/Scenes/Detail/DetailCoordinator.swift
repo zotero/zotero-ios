@@ -408,10 +408,10 @@ final class DetailCoordinator: Coordinator {
         let controller = SFSafariViewController(url: url.withHttpSchemeIfMissing)
         controller.modalPresentationStyle = .fullScreen
         // Changes transition to normal modal transition instead of push from right.
-        self.transitionDelegate = EmptyTransitioningDelegate()
-        controller.transitioningDelegate = self.transitionDelegate
-        self.transitionDelegate = nil
-        self.navigationController?.present(controller, animated: true, completion: nil)
+        transitionDelegate = EmptyTransitioningDelegate()
+        controller.transitioningDelegate = transitionDelegate
+        transitionDelegate = nil
+        (navigationController?.presentedViewController ?? navigationController)?.present(controller, animated: true, completion: nil)
     }
 
     private func showSettings(using presenter: UINavigationController, initialScreen: SettingsCoordinator.InitialScreen? = nil) {

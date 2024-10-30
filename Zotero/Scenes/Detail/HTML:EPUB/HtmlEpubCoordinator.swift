@@ -15,6 +15,7 @@ protocol HtmlEpubReaderCoordinatorDelegate: AnyObject {
     func show(error: HtmlEpubReaderState.Error)
     func showToolSettings(tool: AnnotationTool, colorHex: String?, sizeValue: Float?, sender: SourceView, userInterfaceStyle: UIUserInterfaceStyle, valueChanged: @escaping (String?, Float?) -> Void)
     func showDocumentChangedAlert(completed: @escaping () -> Void)
+    func show(url: URL)
 }
 
 protocol HtmlEpubSidebarCoordinatorDelegate: AnyObject {
@@ -343,5 +344,9 @@ extension HtmlEpubCoordinator: HtmlEpubSidebarCoordinatorDelegate {
         navigationController?.present(controller, animated: true, completion: nil)
 
         return viewModel
+    }
+
+    func show(url: URL) {
+        (parentCoordinator as? DetailCoordinator)?.show(url: url)
     }
 }
