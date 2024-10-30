@@ -89,9 +89,7 @@ class HtmlEpubDocumentViewController: UIViewController {
         }
 
         if let data = state.documentData {
-            DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(5)) {
-                load(documentData: data)
-            }
+            load(documentData: data)
             return
         }
 
@@ -257,6 +255,13 @@ class HtmlEpubDocumentViewController: UIViewController {
                     return
                 }
                 viewModel.process(action: .setViewState(params))
+
+            case "onOpenLink":
+                guard let params = data["params"] as? [String: Any], let urlString = params["url"] as? String, let url = URL(string: urlString) else {
+                    DDLogWarn("HtmlEpubDocumentViewController: event \(event) missing params - \(message)")
+                    return
+                }
+                parentDelegate?.show(url: url)
 
             default:
                 break
