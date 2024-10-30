@@ -89,7 +89,9 @@ class HtmlEpubDocumentViewController: UIViewController {
         }
 
         if let data = state.documentData {
-            load(documentData: data)
+            DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(5)) {
+                load(documentData: data)
+            }
             return
         }
 
@@ -171,6 +173,7 @@ class HtmlEpubDocumentViewController: UIViewController {
 
         func load(documentData data: HtmlEpubReaderState.DocumentData) {
             DDLogInfo("HtmlEpubDocumentViewController: try creating view for \(data.type); page = \(String(describing: data.page))")
+            DDLogInfo("URL: \(data.url.absoluteString)")
             var javascript = "createView({ type: '\(data.type)', url: '\(data.url.absoluteString.replacingOccurrences(of: "'", with: #"\'"#))', annotations: \(data.annotationsJson)"
             if let page = data.page {
                 switch page {
