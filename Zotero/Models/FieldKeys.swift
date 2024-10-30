@@ -159,18 +159,14 @@ struct FieldKeys {
                             KeyBaseKeyPair(key: Annotation.color, baseKey: nil),
                             KeyBaseKeyPair(key: Annotation.pageLabel, baseKey: nil),
                             KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.text, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.Position.htmlEpubType, baseKey: Annotation.position),
-                            KeyBaseKeyPair(key: Annotation.Position.htmlEpubValue, baseKey: Annotation.position)]
+                            KeyBaseKeyPair(key: Annotation.text, baseKey: nil)]
 
                 case .note:
                     return [KeyBaseKeyPair(key: Annotation.type, baseKey: nil),
                             KeyBaseKeyPair(key: Annotation.comment, baseKey: nil),
                             KeyBaseKeyPair(key: Annotation.color, baseKey: nil),
                             KeyBaseKeyPair(key: Annotation.pageLabel, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.Position.htmlEpubType, baseKey: Annotation.position),
-                            KeyBaseKeyPair(key: Annotation.Position.htmlEpubValue, baseKey: Annotation.position)]
+                            KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil)]
 
                 case .ink, .image, .freeText:
                     return []

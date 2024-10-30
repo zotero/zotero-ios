@@ -70,6 +70,7 @@ struct CreateHtmlEpubAnnotationsDbRequest: DbRequest {
     }
 
     private func addFields(for annotation: HtmlEpubAnnotation, to item: RItem, database: Realm) {
+        // Create basic fields
         for field in FieldKeys.Item.Annotation.allHtmlEpubFields(for: annotation.type) {
             let rField = RItemField()
             rField.key = field.key
@@ -96,17 +97,19 @@ struct CreateHtmlEpubAnnotationsDbRequest: DbRequest {
             case (FieldKeys.Item.Annotation.text, nil):
                 rField.value = annotation.text ?? ""
 
-            case (FieldKeys.Item.Annotation.Position.htmlEpubType, FieldKeys.Item.Annotation.position):
-                guard let value = annotation.position[FieldKeys.Item.Annotation.Position.htmlEpubType] as? String else { continue }
-                rField.value = value
-
-            case (FieldKeys.Item.Annotation.Position.htmlEpubValue, FieldKeys.Item.Annotation.position):
-                guard let value = annotation.position[FieldKeys.Item.Annotation.Position.htmlEpubValue] as? String else { continue }
-                rField.value = value
-
             default: break
             }
 
+            item.fields.append(rField)
+        }
+
+        // Create position fields
+        for (key, value) in annotation.position {
+            let rField = RItemField()
+            rField.key = key
+            rField.value = (value as? String) ?? "\(value)"
+            rField.baseKey = FieldKeys.Item.Annotation.position
+            rField.changed = true
             item.fields.append(rField)
         }
     }
