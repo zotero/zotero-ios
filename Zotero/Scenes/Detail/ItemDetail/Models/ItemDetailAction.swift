@@ -17,7 +17,7 @@ enum ItemDetailAction {
     case deleteAttachmentFile(Attachment)
     case deleteAttachment(Attachment)
     case deleteCreator(String)
-    case deleteNote(Note)
+    case deleteNote(key: String)
     case deleteTag(Tag)
     case endEditing
     case loadInitialData

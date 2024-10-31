@@ -19,11 +19,11 @@ class ItemDetailNoteContentView: UIView {
         self.heightAnchor.constraint(greaterThanOrEqualToConstant: ItemDetailLayout.minCellHeight).isActive = true
     }
 
-    func setup(with note: Note, isProcessing: Bool) {
+    func setup(with title: String, isProcessing: Bool) {
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.minimumLineHeight = ItemDetailLayout.lineHeight
         paragraphStyle.maximumLineHeight = ItemDetailLayout.lineHeight
-        let attributedString = NSAttributedString(string: note.title, attributes: [.font: UIFont.preferredFont(forTextStyle: .body), .paragraphStyle: paragraphStyle])
+        let attributedString = NSAttributedString(string: title, attributes: [.font: UIFont.preferredFont(forTextStyle: .body), .paragraphStyle: paragraphStyle])
         self.label.attributedText = attributedString
         self.label.textColor = isProcessing ? .systemGray2 : .label
 

@@ -139,8 +139,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         case .deleteTag(let tag):
             self.delete(tag: tag, in: viewModel)
 
-        case .deleteNote(let note):
-            self.delete(note: note, in: viewModel)
+        case .deleteNote(let key):
+            self.deleteNote(key: key, in: viewModel)
 
         case .deleteAttachment(let attachment):
             self.delete(attachment: attachment, in: viewModel)
@@ -370,10 +370,10 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         }
     }
 
-    private func delete(note: Note, in viewModel: ViewModel<ItemDetailActionHandler>) {
-        guard viewModel.state.notes.contains(note) else { return }
-        self.trashItem(key: note.key, reloadType: .section(.notes), in: viewModel) { state in
-            guard let index = viewModel.state.notes.firstIndex(of: note) else { return }
+    private func deleteNote(key: String, in viewModel: ViewModel<ItemDetailActionHandler>) {
+        guard viewModel.state.notes.contains(where: { $0.key == key }) else { return }
+        trashItem(key: key, reloadType: .section(.notes), in: viewModel) { state in
+            guard let index = viewModel.state.notes.firstIndex(where: { $0.key == key }) else { return }
             state.notes.remove(at: index)
         }
     }

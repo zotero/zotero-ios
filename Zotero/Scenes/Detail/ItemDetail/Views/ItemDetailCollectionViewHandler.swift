@@ -22,7 +22,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
     enum Action {
         case openCreatorCreation
         case openCreatorEditor(ItemDetailState.Creator)
-        case openNoteEditor(Note?)
+        case openNoteEditor(key: String?)
         case openTagPicker
         case openTypePicker
         case openFilePicker
@@ -61,7 +61,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
         case dateAdded(Date)
         case dateModified(Date)
         case field(key: String, multiline: Bool)
-        case note(note: Note, isProcessing: Bool)
+        case note(key: String, title: String, isProcessing: Bool)
         case tag(id: UUID, tag: Tag, isProcessing: Bool)
         case title
         case type(String)
@@ -227,8 +227,8 @@ final class ItemDetailCollectionViewHandler: NSObject {
                     }
                     return collectionView.dequeueConfiguredReusableCell(using: fieldEditRegistration, for: indexPath, item: (field, titleWidth))
 
-                case .note(let note, let isProcessing):
-                    return collectionView.dequeueConfiguredReusableCell(using: noteRegistration, for: indexPath, item: (note, isProcessing))
+                case .note(let key, let title, let isProcessing):
+                    return collectionView.dequeueConfiguredReusableCell(using: noteRegistration, for: indexPath, item: (key, title, isProcessing))
 
                 case .tag(_, let tag, let isProcessing):
                     return collectionView.dequeueConfiguredReusableCell(using: tagRegistration, for: indexPath, item: (tag, isProcessing))
@@ -356,7 +356,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
                         case .attachment(_, let type) where type != .disabled:
                             title = L10n.moveToTrash
 
-                        case .note(_, let isProcessing) where !isProcessing:
+                        case .note(_, _, let isProcessing) where !isProcessing:
                             title = L10n.moveToTrash
 
                         case .tag(_, _, let isProcessing) where !isProcessing:
@@ -389,8 +389,8 @@ final class ItemDetailCollectionViewHandler: NSObject {
                         case .attachment(let attachment, _):
                             self.viewModel.process(action: .deleteAttachment(attachment))
 
-                        case .note(let note, _):
-                            self.viewModel.process(action: .deleteNote(note))
+                        case .note(let key, _, _):
+                            self.viewModel.process(action: .deleteNote(key: key))
 
                         case .title, .abstract, .addAttachment, .addCreator, .addNote, .addTag, .dateAdded, .dateModified, .type, .field:
                             break
@@ -620,7 +620,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
         for _row in dataSource.snapshot().itemIdentifiers {
             switch _row {
-            case .note(let note, _) where note.key == itemKey:
+            case .note(let key, _, _) where key == itemKey:
                 row = _row
 
             case .attachment(let attachment, _) where attachment.key == itemKey:
@@ -674,7 +674,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
         case .notes:
             let notes: [Row] = state.notes.map({ note in
                 let isProcessing = state.backgroundProcessedItems.contains(note.key)
-                return .note(note: note, isProcessing: isProcessing)
+                return .note(key: note.key, title: note.title, isProcessing: isProcessing)
             })
             if state.library.metadataEditable {
                 return notes + [.addNote]
@@ -836,10 +836,10 @@ final class ItemDetailCollectionViewHandler: NSObject {
         }
     }()
 
-    private lazy var noteRegistration: UICollectionView.CellRegistration<ItemDetailNoteCell, (Note, Bool)> = {
+    private lazy var noteRegistration: UICollectionView.CellRegistration<ItemDetailNoteCell, (key: String, title: String, isProcessing: Bool)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
             guard let self else { return }
-            cell.contentConfiguration = ItemDetailNoteCell.ContentConfiguration(note: data.0, isProcessing: data.1, layoutMargins: layoutMargins(for: indexPath, self: self))
+            cell.contentConfiguration = ItemDetailNoteCell.ContentConfiguration(title: data.title, isProcessing: data.isProcessing, layoutMargins: layoutMargins(for: indexPath, self: self))
         }
     }()
 
@@ -878,7 +878,7 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
 
         switch row {
         case .addNote:
-            observer.on(.next(.openNoteEditor(nil)))
+            observer.on(.next(.openNoteEditor(key: nil)))
 
         case .addAttachment:
             observer.on(.next(.openFilePicker))
@@ -901,9 +901,9 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
             guard viewModel.state.isEditing else { return }
             observer.on(.next(.openCreatorEditor(creator)))
 
-        case .note(let note, let isProcessing):
+        case .note(let key, let title, let isProcessing):
             guard !isProcessing else { return }
-            observer.on(.next(.openNoteEditor(note)))
+            observer.on(.next(.openNoteEditor(key: key)))
 
         case .type:
             guard viewModel.state.isEditing && !viewModel.state.data.isAttachment else { return }
@@ -964,8 +964,8 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
         case .tag(_, let tag, _):
             menu = createContextMenu(for: tag)
 
-        case .note(let note, _):
-            menu = createContextMenu(for: note)
+        case .note(let key, _, _):
+            menu = createContextMenuForNote(key: key)
 
         default:
             return nil
@@ -995,10 +995,10 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
             return UIMenu(title: "", children: actions)
         }
 
-        func createContextMenu(for note: Note) -> UIMenu? {
+        func createContextMenuForNote(key: String) -> UIMenu? {
             var actions: [UIAction] = []
             actions.append(UIAction(title: L10n.moveToTrash, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
-                self?.viewModel.process(action: .deleteNote(note))
+                self?.viewModel.process(action: .deleteNote(key: key))
             })
             return UIMenu(title: "", children: actions)
         }

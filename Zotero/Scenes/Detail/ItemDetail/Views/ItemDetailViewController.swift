@@ -175,14 +175,14 @@ final class ItemDetailViewController: UIViewController {
                 self?.viewModel.process(action: .addAttachments(urls))
             })
 
-        case .openNoteEditor(let note):
+        case .openNoteEditor(let key):
             let library = viewModel.state.library
             var kind: NoteEditorKind = .itemCreation(parentKey: viewModel.state.key)
             var text: String = ""
             var tags: [Tag] = []
             var title: String?
             let parentTitleData = NoteEditorState.TitleData(type: viewModel.state.data.type, title: viewModel.state.data.title)
-            if let note {
+            if let note = viewModel.state.notes.first(where: { $0.key == key }) {
                 if library.metadataEditable {
                     kind = .edit(key: note.key)
                 } else {
