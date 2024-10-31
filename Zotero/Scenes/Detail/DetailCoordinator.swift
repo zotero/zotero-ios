@@ -409,8 +409,8 @@ final class DetailCoordinator: Coordinator {
 
 extension DetailCoordinator: DetailItemsCoordinatorDelegate {
     var displayTitle: String {
-            collection.name
-        }
+        collection.name
+    }
 
     func showAddActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem) {
         let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
