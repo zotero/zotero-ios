@@ -976,7 +976,11 @@ extension RItem {
         for field in fields {
             switch (field.key, field.baseKey) {
             case (_, FieldKeys.Item.Annotation.position):
-                position[field.key] = field.value
+                if field.value.first == "{", let json = field.value.data(using: .utf8).flatMap({ try? JSONSerialization.jsonObject(with: $0) }) {
+                    position[field.key] = json
+                } else {
+                    position[field.key] = field.value
+                }
 
             case (FieldKeys.Item.Annotation.type, nil):
                 type = AnnotationType(rawValue: field.value)
