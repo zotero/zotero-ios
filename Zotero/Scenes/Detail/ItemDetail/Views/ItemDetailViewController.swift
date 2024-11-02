@@ -108,7 +108,6 @@ final class ItemDetailViewController: UIViewController {
 
                     guard viewModel.state.attachmentToOpen == update.key else { return }
 
-                    // 🍎 check logic of processes
                     switch update.kind {
                     case .ready:
                         viewModel.process(action: .attachmentOpened(update.key))
@@ -125,7 +124,7 @@ final class ItemDetailViewController: UIViewController {
                         return
                     }
                 })
-                .disposed(by: self.disposeBag)
+                .disposed(by: disposeBag)
         }
     }
 
@@ -136,7 +135,6 @@ final class ItemDetailViewController: UIViewController {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        // 🍎 move to is appearing? check where this `preScrolledChildKey` is set, only during start? we can probably lose clear action
         guard let key = viewModel.state.preScrolledChildKey, collectionViewHandler.hasRows else { return }
         collectionViewHandler.scrollTo(itemKey: key, animated: false)
         viewModel.process(action: .clearPreScrolledItemKey)
@@ -231,7 +229,6 @@ final class ItemDetailViewController: UIViewController {
         }
 
         if state.changes.contains(.item) {
-            // 🍎 check why this is done
             // Another viewModel state update is made inside `subscribe(onNext:)`, to avoid reentrancy process it later on main queue.
             DispatchQueue.main.async { [weak self] in
                 guard let self else { return }
@@ -249,7 +246,6 @@ final class ItemDetailViewController: UIViewController {
 
         if state.changes.contains(.reloadedData) {
             let wasHidden = collectionView.isHidden
-            print("🍎 changes = .reloadedData - wasHidden: \(wasHidden)")
             collectionView.isHidden = state.isLoadingData
             activityIndicator.isHidden = !state.isLoadingData
 
