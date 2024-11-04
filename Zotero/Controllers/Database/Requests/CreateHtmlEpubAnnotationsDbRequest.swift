@@ -107,10 +107,20 @@ struct CreateHtmlEpubAnnotationsDbRequest: DbRequest {
         for (key, value) in annotation.position {
             let rField = RItemField()
             rField.key = key
-            rField.value = (value as? String) ?? "\(value)"
+            rField.value = positionValueToString(value)
             rField.baseKey = FieldKeys.Item.Annotation.position
             rField.changed = true
             item.fields.append(rField)
+        }
+
+        func positionValueToString(_ value: Any) -> String {
+            if let string = value as? String {
+                return string
+            }
+            if let dictionary = value as? [AnyHashable: Any] {
+                return (try? JSONSerialization.data(withJSONObject: dictionary)).flatMap({ String(data: $0, encoding: .utf8) }) ?? ""
+            }
+            return "\(value)"
         }
     }
 
