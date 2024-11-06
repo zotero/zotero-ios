@@ -79,6 +79,8 @@ final class ItemDetailViewController: UIViewController {
             })
             .disposed(by: disposeBag)
 
+        viewModel.process(action: .loadInitialData)
+
         func setupFileObservers() {
             NotificationCenter.default.rx
                 .notification(.attachmentFileDeleted)
@@ -126,11 +128,6 @@ final class ItemDetailViewController: UIViewController {
                 })
                 .disposed(by: disposeBag)
         }
-    }
-
-    override func viewIsAppearing(_ animated: Bool) {
-        super.viewIsAppearing(animated)
-        viewModel.process(action: .loadInitialData)
     }
 
     override func viewDidLayoutSubviews() {
@@ -251,7 +248,7 @@ final class ItemDetailViewController: UIViewController {
 
             setNavigationBarButtons(to: state)
             collectionViewHandler.recalculateTitleWidth(from: state.data)
-            collectionViewHandler.reloadAll(to: state, animated: (!wasHidden))
+            collectionViewHandler.reloadAll(to: state, animated: !wasHidden)
 
             return
         }
