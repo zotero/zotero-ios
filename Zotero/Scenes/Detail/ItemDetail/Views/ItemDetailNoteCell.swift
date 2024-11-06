@@ -10,7 +10,7 @@ import UIKit
 
 final class ItemDetailNoteCell: UICollectionViewListCell {
     struct ContentConfiguration: UIContentConfiguration {
-        let note: Note
+        let title: String
         let isProcessing: Bool
         let layoutMargins: UIEdgeInsets
 
@@ -51,7 +51,7 @@ final class ItemDetailNoteCell: UICollectionViewListCell {
 
         private func apply(configuration: ContentConfiguration) {
             self.contentView.layoutMargins = configuration.layoutMargins
-            self.contentView.setup(with: configuration.note, isProcessing: configuration.isProcessing)
+            self.contentView.setup(with: configuration.title, isProcessing: configuration.isProcessing)
         }
     }
 }
