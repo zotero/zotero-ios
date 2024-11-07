@@ -516,11 +516,6 @@ extension HtmlEpubReaderViewController: AnnotationToolbarDelegate {
         }
     }
 
-    func closeAnnotationToolbar() {
-        (toolbarButton.customView as? CheckboxButton)?.isSelected = false
-        annotationToolbarHandler?.set(hidden: true, animated: true)
-    }
-
     func performUndo() {
     }
 

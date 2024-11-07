@@ -10,8 +10,12 @@ import UIKit
 
 import RxSwift
 
+protocol ParentWithSidebarDocumentController: UIViewController {
+    func disableAnnotationTools()
+}
+
 protocol ParentWithSidebarController: UIViewController {
-    associatedtype DocumentController: UIViewController
+    associatedtype DocumentController: ParentWithSidebarDocumentController
     associatedtype SidebarController: UIViewController
 
     var toolbarButton: UIBarButtonItem { get }
@@ -44,7 +48,6 @@ extension ParentWithSidebarController {
     }
 
     func createToolbarButton() -> UIBarButtonItem {
-        var configuration = UIButton.Configuration.plain()
         let image = UIImage(systemName: "pencil.and.outline")?.applyingSymbolConfiguration(.init(scale: .large))
         let checkbox = CheckboxButton(image: image!, contentInsets: NSDirectionalEdgeInsets(top: 11, leading: 6, bottom: 9, trailing: 6))
         checkbox.scalesLargeContentImage = true
@@ -71,6 +74,7 @@ extension ParentWithSidebarController {
     func closeAnnotationToolbar() {
         (toolbarButton.customView as? CheckboxButton)?.isSelected = false
         annotationToolbarHandler?.set(hidden: true, animated: true)
+        documentController?.disableAnnotationTools()
     }
 
     func toggleSidebar(animated: Bool, sidebarButtonTag: Int) {
