@@ -73,8 +73,6 @@ final class AnnotationToolbarHandler: NSObject {
     private weak var toolbarTrailingPreview: DashedView!
     private weak var toolbarTrailingPreviewHeight: NSLayoutConstraint!
 
-    var didHide: (() -> Void)?
-
     init(controller: AnnotationToolbarViewController, delegate: AnnotationToolbarHandlerDelegate) {
         self.controller = controller
         self.delegate = delegate
@@ -332,7 +330,6 @@ final class AnnotationToolbarHandler: NSObject {
         }, completion: { [weak self] finished in
             guard let self, finished else { return }
             controller.view.isHidden = true
-            didHide?()
             if !statusBarVisible {
                 delegate.setNavigationBar(hidden: true, animated: false)
             }
