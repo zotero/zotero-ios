@@ -116,29 +116,6 @@ class HtmlEpubDocumentViewController: UIViewController {
             }
         }
 
-        func set(tool data: (AnnotationTool, UIColor)?) {
-            guard let (tool, color) = data else {
-                webViewHandler.call(javascript: "clearTool();").subscribe().disposed(by: disposeBag)
-                return
-            }
-
-            let toolName: String
-            switch tool {
-            case .highlight:
-                toolName = "highlight"
-
-            case .note:
-                toolName = "note"
-
-            case .underline:
-                toolName = "underline"
-
-            case .eraser, .image, .ink, .freeText:
-                return
-            }
-            webViewHandler.call(javascript: "setTool({ type: '\(toolName)', color: '\(color.hexString)' });").subscribe().disposed(by: disposeBag)
-        }
-
         func search(term: String) {
             webViewHandler.call(javascript: "search({ term: \(WebViewEncoder.encodeForJavascript(term.data(using: .utf8))) });")
                 .observe(on: MainScheduler.instance)
@@ -191,6 +168,29 @@ class HtmlEpubDocumentViewController: UIViewController {
                 })
                 .disposed(by: disposeBag)
         }
+    }
+
+    private func set(tool data: (AnnotationTool, UIColor)?) {
+        guard let (tool, color) = data else {
+            webViewHandler.call(javascript: "clearTool();").subscribe().disposed(by: disposeBag)
+            return
+        }
+
+        let toolName: String
+        switch tool {
+        case .highlight:
+            toolName = "highlight"
+
+        case .note:
+            toolName = "note"
+
+        case .underline:
+            toolName = "underline"
+
+        case .eraser, .image, .ink, .freeText:
+            return
+        }
+        webViewHandler.call(javascript: "setTool({ type: '\(toolName)', color: '\(color.hexString)' });").subscribe().disposed(by: disposeBag)
     }
 
     private func process(handler: String, message: Any) {
@@ -270,5 +270,11 @@ class HtmlEpubDocumentViewController: UIViewController {
         default:
             break
         }
+    }
+}
+
+extension HtmlEpubDocumentViewController: ParentWithSidebarDocumentController {
+    func disableAnnotationTools() {
+        set(tool: nil)
     }
 }
