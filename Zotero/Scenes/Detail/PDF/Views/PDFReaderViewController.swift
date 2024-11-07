@@ -277,9 +277,6 @@ class PDFReaderViewController: UIViewController, ParentWithSidebarController {
             annotationToolbarController = annotationToolbar
 
             annotationToolbarHandler = AnnotationToolbarHandler(controller: annotationToolbar, delegate: self)
-            annotationToolbarHandler!.didHide = { [weak self] in
-                self?.documentController?.disableAnnotationTools()
-            }
             annotationToolbarHandler!.performInitialLayout()
 
             func add(controller: UIViewController) {
