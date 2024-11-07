@@ -106,7 +106,7 @@ final class AnnotationViewHeader: UIView {
     ) {
         self.typeImageView.image = self.image(for: type)?.withRenderingMode(.alwaysTemplate)
         self.typeImageView.tintColor = color
-        self.pageLabel.text = L10n.page + " " + pageLabel
+        self.pageLabel.text = pageLabel.isEmpty ? " " : L10n.page + " " + pageLabel
         self.authorLabel.text = author
         
         if let shareMenu {
