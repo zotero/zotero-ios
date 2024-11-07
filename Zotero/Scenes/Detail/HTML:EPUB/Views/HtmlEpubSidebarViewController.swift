@@ -195,6 +195,11 @@ class HtmlEpubSidebarViewController: UIViewController {
                 )
             }
 
+            if let key = state.focusSidebarKey, let indexPath = dataSource.indexPath(for: key) {
+                let isVisible = parentDelegate?.isSidebarVisible ?? false
+                tableView.selectRow(at: indexPath, animated: isVisible, scrollPosition: .middle)
+            }
+
             if state.changes.contains(.sidebarEditingSelection) {
                 deleteBarButton?.isEnabled = state.deletionEnabled
             }
