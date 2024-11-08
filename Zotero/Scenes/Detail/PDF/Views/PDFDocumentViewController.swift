@@ -248,7 +248,7 @@ final class PDFDocumentViewController: UIViewController {
                 }
             } else {
                 // Otherwise remove selection if needed
-                self.select(annotation: nil, pageIndex: pdfController.pageIndex, document: state.document)
+                deselectAnnotation()
             }
 
             self.showPopupAnnotationIfNeeded(state: state)
@@ -280,7 +280,9 @@ final class PDFDocumentViewController: UIViewController {
 
         if state.changes.contains(.initialDataLoaded) {
             pdfController.setPageIndex(PageIndex(state.visiblePage), animated: false)
-            select(annotation: state.selectedAnnotation, pageIndex: pdfController.pageIndex, document: state.document)
+            if let annotation = state.selectedAnnotation {
+                select(annotation: annotation, pageIndex: pdfController.pageIndex, document: state.document)
+            }
             if let previewRects = state.previewRects {
                 DispatchQueue.main.async {
                     self.show(previewRects: previewRects, pageIndex: pdfController.pageIndex, document: state.document)
@@ -500,22 +502,25 @@ final class PDFDocumentViewController: UIViewController {
         }
     }
 
-    /// (De)Selects given annotation in document.
-    /// - parameter annotation: Annotation to select. Existing selection will be deselected if set to `nil`.
-    /// - parameter pageIndex: Page index of page where (de)selection should happen.
+    /// Selects given annotation in document.
+    /// - parameter annotation: Annotation to select.
+    /// - parameter pageIndex: Page index of page where selection should happen.
     /// - parameter document: Active `Document` instance.
-    private func select(annotation: PDFAnnotation?, pageIndex: PageIndex, document: PSPDFKit.Document) {
-        guard let pdfController, let pageView = updateSelectionOnVisiblePages(of: pdfController, annotation: annotation) ?? pdfController.pageViewForPage(at: pageIndex) else { return }
+    private func select(annotation: PDFAnnotation, pageIndex: PageIndex, document: PSPDFKit.Document) {
+        guard let pdfController,
+              let pageView = updateSelectionOnVisiblePages(of: pdfController, annotation: annotation) ?? pdfController.pageViewForPage(at: pageIndex),
+              let pdfAnnotation = document.annotation(on: Int(pageView.pageIndex), with: annotation.key),
+              pageView.selectedAnnotations.contains(pdfAnnotation)
+        else { return }
+        pageView.selectedAnnotations = [pdfAnnotation]
+    }
 
-        if let annotation, let pdfAnnotation = document.annotation(on: Int(pageView.pageIndex), with: annotation.key) {
-            if !pageView.selectedAnnotations.contains(pdfAnnotation) {
-                pageView.selectedAnnotations = [pdfAnnotation]
-            }
-        } else {
-            if !pageView.selectedAnnotations.isEmpty {
-                pageView.selectedAnnotations = []
-            }
-        }
+    private func deselectAnnotation() {
+        guard let pdfController else { return }
+        updateSelectionOnVisiblePages(of: pdfController, annotation: nil)
+        // We don't know the deselection page, as pdfController.pageIndex may be the one of last annotation addition.
+        // To overcome this we discard selection in all visible page views.
+        pdfController.visiblePageViews.forEach({ $0.discardSelection(animated: false) })
     }
 
     /// Focuses given annotation and selects it if it's not selected yet.
@@ -533,17 +538,19 @@ final class PDFDocumentViewController: UIViewController {
     @discardableResult
     private func updateSelectionOnVisiblePages(of pdfController: PDFViewController, annotation: PDFAnnotation?) -> PDFPageView? {
         // Delete existing custom highlight/underline selection view
-        selectionView?.removeFromSuperview()
+        if selectionView != nil {
+            selectionView?.removeFromSuperview()
+            selectionView = nil
+        }
 
-        guard let selection = annotation,
-              selection.type == .highlight || selection.type == .underline,
-              let pageView = pdfController.visiblePageViews.first(where: { $0.pageIndex == PageIndex(selection.page) })
-        else { return nil }
-        // Add custom highlight/underline selection view if needed
-        let frame = pageView.convert(selection.boundingBox(boundingBoxConverter: self), from: pageView.pdfCoordinateSpace)
-        let selectionView = SelectionView(frame: frame)
-        pageView.annotationContainerView.addSubview(selectionView)
-        self.selectionView = selectionView
+        guard let selection = annotation, let pageView = pdfController.visiblePageViews.first(where: { $0.pageIndex == PageIndex(selection.page) }) else { return nil }
+        if selection.type == .highlight || selection.type == .underline {
+            // Add custom highlight/underline selection view if needed
+            let frame = pageView.convert(selection.boundingBox(boundingBoxConverter: self), from: pageView.pdfCoordinateSpace)
+            let selectionView = SelectionView(frame: frame)
+            pageView.annotationContainerView.addSubview(selectionView)
+            self.selectionView = selectionView
+        }
         return pageView
     }
 
