@@ -196,7 +196,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         DDLogInfo("PDFCoordinator: show annotation popover")
 
         if let coordinator = childCoordinators.last, coordinator is AnnotationPopoverCoordinator {
-            return nil
+            DDLogWarn("PDFCoordinator: another annotation popover is already showing, ignoring")
         }
 
         let navigationController = NavigationViewController()

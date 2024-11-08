@@ -29,6 +29,7 @@ final class AnnotationPopoverCoordinator: NSObject, Coordinator {
     weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
     weak var navigationController: UINavigationController?
+    private var finishing: Bool
 
     var viewModelObservable: PublishSubject<AnnotationPopoverState>? {
         return (navigationController?.viewControllers.first as? AnnotationPopoverViewController)?.viewModel.stateObservable
@@ -44,12 +45,13 @@ final class AnnotationPopoverCoordinator: NSObject, Coordinator {
         self.controllers = controllers
         self.childCoordinators = []
         self.disposeBag = DisposeBag()
+        finishing = false
 
         super.init()
 
         navigationController.delegate = self
-        navigationController.dismissHandler = {
-            self.parentCoordinator?.childDidFinish(self)
+        navigationController.dismissHandler = { [weak self] in
+            self?.didFinish()
         }
     }
 
@@ -105,7 +107,9 @@ extension AnnotationPopoverCoordinator: AnnotationPopoverAnnotationCoordinatorDe
     }
 
     func didFinish() {
-        self.parentCoordinator?.childDidFinish(self)
+        guard !finishing else { return }
+        finishing = true
+        parentCoordinator?.childDidFinish(self)
     }
 }
 

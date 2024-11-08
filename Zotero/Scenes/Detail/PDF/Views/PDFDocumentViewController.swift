@@ -965,12 +965,7 @@ extension PDFDocumentViewController: UIPencilInteractionDelegate {
     }
 }
 
-extension PDFDocumentViewController: UIPopoverPresentationControllerDelegate {
-    func popoverPresentationControllerDidDismissPopover(_ popoverPresentationController: UIPopoverPresentationController) {
-        guard let type = viewModel.state.selectedAnnotation?.type, type == .highlight || type == .underline else { return }
-        viewModel.process(action: .deselectSelectedAnnotation)
-    }
-}
+extension PDFDocumentViewController: UIPopoverPresentationControllerDelegate { }
 
 extension PDFDocumentViewController: AnnotationBoundingBoxConverter {
     /// Converts from database to PSPDFKit rect. Database stores rects in RAW PDF Coordinate space. PSPDFKit works with Normalized PDF Coordinate Space.
