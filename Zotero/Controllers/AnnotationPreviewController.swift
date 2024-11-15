@@ -306,15 +306,17 @@ extension AnnotationPreviewController {
     }
 
     private func cache(image: UIImage, key: String, pdfKey: String, libraryId: LibraryIdentifier, isDark: Bool) {
-        guard let data = image.pngData() else {
-            DDLogError("AnnotationPreviewController: can't create data from image")
-            return
-        }
-
-        do {
-            try fileStorage.write(data, to: Files.annotationPreview(annotationKey: key, pdfKey: pdfKey, libraryId: libraryId, isDark: isDark), options: .atomicWrite)
-        } catch let error {
-            DDLogError("AnnotationPreviewController: can't store preview - \(error)")
+        autoreleasepool {
+            guard let data = image.pngData() else {
+                DDLogError("AnnotationPreviewController: can't create data from image")
+                return
+            }
+            
+            do {
+                try fileStorage.write(data, to: Files.annotationPreview(annotationKey: key, pdfKey: pdfKey, libraryId: libraryId, isDark: isDark), options: .atomicWrite)
+            } catch let error {
+                DDLogError("AnnotationPreviewController: can't store preview - \(error)")
+            }
         }
     }
 }

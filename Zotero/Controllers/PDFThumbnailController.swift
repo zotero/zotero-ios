@@ -149,14 +149,16 @@ extension PDFThumbnailController {
         }
 
         func cache(image: UIImage, page: UInt, key: String, libraryId: LibraryIdentifier, isDark: Bool) {
-            guard let data = image.pngData() else {
-                DDLogError("PdfThumbnailController: can't create data from image")
-                return
-            }
-            do {
-                try fileStorage.write(data, to: Files.pageThumbnail(pageIndex: page, key: key, libraryId: libraryId, isDark: isDark), options: .atomicWrite)
-            } catch let error {
-                DDLogError("PdfThumbnailController: can't store preview - \(error)")
+            autoreleasepool {
+                guard let data = image.pngData() else {
+                    DDLogError("PdfThumbnailController: can't create data from image")
+                    return
+                }
+                do {
+                    try fileStorage.write(data, to: Files.pageThumbnail(pageIndex: page, key: key, libraryId: libraryId, isDark: isDark), options: .atomicWrite)
+                } catch let error {
+                    DDLogError("PdfThumbnailController: can't store preview - \(error)")
+                }
             }
         }
     }
