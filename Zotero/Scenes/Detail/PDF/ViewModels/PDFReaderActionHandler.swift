@@ -1833,7 +1833,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
 
         func observe(items: Results<RItem>, viewModel: ViewModel<PDFReaderActionHandler>, handler: PDFReaderActionHandler) -> NotificationToken {
-            return items.observe { [weak handler, weak viewModel] change in
+            return items.observe(keyPaths: [\RItem.changeType]) { [weak handler, weak viewModel] change in
                 guard let handler, let viewModel else { return }
                 switch change {
                 case .update(let objects, let deletions, let insertions, let modifications):
