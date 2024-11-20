@@ -392,7 +392,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
 
         controller.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
         controller.popoverPresentationController?.barButtonItem = sender
-        controller.preferredContentSize = CGSize(width: 480, height: 350)
+        controller.preferredContentSize = CGSize(width: 480, height: 308)
         controller.overrideUserInterfaceStyle = settings.appearanceMode.userInterfaceStyle
         self.navigationController?.present(controller, animated: true, completion: nil)
 
