@@ -1040,8 +1040,6 @@ internal enum L10n {
       internal static let title = L10n.tr("Localizable", "pdf.search.title", fallback: "Search in Document")
     }
     internal enum Settings {
-      /// Allow device to sleep
-      internal static let idleTimerTitle = L10n.tr("Localizable", "pdf.settings.idle_timer_title", fallback: "Allow device to sleep")
       internal enum Appearance {
         /// Automatic
         internal static let auto = L10n.tr("Localizable", "pdf.settings.appearance.auto", fallback: "Automatic")

@@ -253,7 +253,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             update(settings: settings, parentInterfaceStyle: userInterfaceStyle, in: viewModel)
 
         case .changeIdleTimerDisabled(let disabled):
-            changeIdleTimer(disabled: disabled, in: viewModel)
+            changeIdleTimer(disabled: disabled)
 
         case .setSidebarEditingEnabled(let enabled):
             setSidebar(editing: enabled, in: viewModel)
@@ -473,32 +473,15 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
     }
 
-    private func changeIdleTimer(disabled: Bool, in viewModel: ViewModel<PDFReaderActionHandler>) {
-        guard viewModel.state.settings.idleTimerDisabled != disabled else { return }
-        var settings = viewModel.state.settings
-        settings.idleTimerDisabled = disabled
-
-        update(viewModel: viewModel) { state in
-            state.settings = settings
-            // Don't need to assign `changes` or update Defaults.shared.pdfSettings, this setting is not stored and doesn't change anything else
-        }
-
-        if settings.idleTimerDisabled {
-            idleTimerController.disable()
+    private func changeIdleTimer(disabled: Bool) {
+        if disabled {
+            idleTimerController.startCustomIdleTimer()
         } else {
-            idleTimerController.enable()
+            idleTimerController.stopCustomIdleTimer()
         }
     }
 
     private func update(settings: PDFSettings, parentInterfaceStyle: UIUserInterfaceStyle, in viewModel: ViewModel<PDFReaderActionHandler>) {
-        if viewModel.state.settings.idleTimerDisabled != settings.idleTimerDisabled {
-            if settings.idleTimerDisabled {
-                idleTimerController.disable()
-            } else {
-                idleTimerController.enable()
-            }
-        }
-
         // Update local state
         update(viewModel: viewModel) { state in
             state.settings = settings

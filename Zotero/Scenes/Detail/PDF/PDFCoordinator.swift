@@ -381,7 +381,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
 
         let state = ReaderSettingsState(settings: settings)
         let viewModel = ViewModel(initialState: state, handler: ReaderSettingsActionHandler())
-        let baseController = ReaderSettingsViewController(rows: [.pageTransition, .pageMode, .pageSpreads, .scrollDirection, .pageFitting, .appearance, .sleep], viewModel: viewModel)
+        let baseController = ReaderSettingsViewController(rows: [.pageTransition, .pageMode, .pageSpreads, .scrollDirection, .pageFitting, .appearance], viewModel: viewModel)
 
         let controller: UIViewController
         if UIDevice.current.userInterfaceIdiom == .pad {

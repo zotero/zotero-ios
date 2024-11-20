@@ -17,7 +17,6 @@ final class ReaderSettingsViewController: UICollectionViewController {
         case pageMode
         case scrollDirection
         case pageFitting
-        case sleep
         case appearance
         case pageSpreads
     }
@@ -70,16 +69,9 @@ final class ReaderSettingsViewController: UICollectionViewController {
     // MARK: - Data Source
 
     private func createDataSource(for collectionView: UICollectionView) -> UICollectionViewDiffableDataSource<Int, Row> {
-        let switchRegistration = self.switchRegistration
         let segmentedRegistration = self.segmentedRegistration
         return UICollectionViewDiffableDataSource<Int, Row>(collectionView: collectionView, cellProvider: { collectionView, indexPath, row in
-            switch row {
-            case .sleep:
-                return collectionView.dequeueConfiguredReusableCell(using: switchRegistration, for: indexPath, item: ())
-
-            default:
-                return collectionView.dequeueConfiguredReusableCell(using: segmentedRegistration, for: indexPath, item: row)
-            }
+            return collectionView.dequeueConfiguredReusableCell(using: segmentedRegistration, for: indexPath, item: row)
         })
     }
 
@@ -91,23 +83,6 @@ final class ReaderSettingsViewController: UICollectionViewController {
     }
 
     // MARK: - Collection View
-
-    private lazy var switchRegistration: UICollectionView.CellRegistration<UICollectionViewListCell, ()> = {
-        return UICollectionView.CellRegistration<UICollectionViewListCell, ()> { [weak self] cell, _, _ in
-            guard let self else { return }
-
-            var configuration = cell.defaultContentConfiguration()
-            configuration.text = L10n.Pdf.Settings.idleTimerTitle
-            cell.contentConfiguration = configuration
-
-            let toggle = UISwitch()
-            toggle.setOn(!viewModel.state.idleTimerDisabled, animated: false)
-            toggle.addAction(UIAction(handler: { [weak self, weak toggle] _ in self?.viewModel.process(action: .setIdleTimerDisabled(!(toggle?.isOn ?? false))) }), for: .valueChanged)
-
-            let customConfiguration = UICellAccessory.CustomViewConfiguration(customView: toggle, placement: .trailing(displayed: .always))
-            cell.accessories = [.customView(configuration: customConfiguration)]
-        }
-    }()
 
     private lazy var segmentedRegistration: UICollectionView.CellRegistration<ReaderSettingsSegmentedCell, Row> = {
         return UICollectionView.CellRegistration<ReaderSettingsSegmentedCell, Row> { [weak self] cell, _, row in
@@ -174,9 +149,6 @@ final class ReaderSettingsViewController: UICollectionViewController {
                 actions = [UIAction(title: L10n.Pdf.Settings.Appearance.lightMode, handler: { [weak self] _ in self?.viewModel.process(action: .setAppearance(.light)) }),
                            UIAction(title: L10n.Pdf.Settings.Appearance.darkMode, handler: { [weak self] _ in self?.viewModel.process(action: .setAppearance(.dark)) }),
                            UIAction(title: L10n.Pdf.Settings.Appearance.auto, handler: { [weak self] _ in self?.viewModel.process(action: .setAppearance(.automatic)) })]
-
-            case .sleep:
-                return
             }
 
             let configuration = ReaderSettingsSegmentedCell.ContentConfiguration(title: title, actions: actions, getSelectedIndex: getSelectedIndex)

@@ -365,6 +365,7 @@
 		B307A2732704A87D005986B3 /* IdleTimerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B307A2722704A87D005986B3 /* IdleTimerController.swift */; };
 		B30A44A629B8799600332B4E /* MasterContainerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30A44A529B8799600332B4E /* MasterContainerViewController.swift */; };
 		B30A44AE29B88E7200332B4E /* TagFilterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30A44AD29B88E7200332B4E /* TagFilterViewController.swift */; };
+		B30A6C7E2CEE0AD500E7174B /* EventObservableWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30A6C7D2CEE0AD000E7174B /* EventObservableWindow.swift */; };
 		B30A8C672582690900EC56FB /* HighlightAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30A8C662582690900EC56FB /* HighlightAnnotation.swift */; };
 		B30B405F2490CAFC00FAAF6D /* ItemCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B30B405E2490CAFC00FAAF6D /* ItemCell.xib */; };
 		B30B40612490D84300FAAF6D /* ItemCellModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30B40602490D84300FAAF6D /* ItemCellModel.swift */; };
@@ -1487,6 +1488,7 @@
 		B307E55D22D4A87B00592B3C /* SyncActionsSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncActionsSpec.swift; sourceTree = "<group>"; };
 		B30A44A529B8799600332B4E /* MasterContainerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterContainerViewController.swift; sourceTree = "<group>"; };
 		B30A44AD29B88E7200332B4E /* TagFilterViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagFilterViewController.swift; sourceTree = "<group>"; };
+		B30A6C7D2CEE0AD000E7174B /* EventObservableWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventObservableWindow.swift; sourceTree = "<group>"; };
 		B30A8C662582690900EC56FB /* HighlightAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighlightAnnotation.swift; sourceTree = "<group>"; };
 		B30B405E2490CAFC00FAAF6D /* ItemCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ItemCell.xib; sourceTree = "<group>"; };
 		B30B40602490D84300FAAF6D /* ItemCellModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemCellModel.swift; sourceTree = "<group>"; };
@@ -2872,13 +2874,14 @@
 				B305652B23FC051E003304F2 /* Models */,
 				B305651323FC051E003304F2 /* Scenes */,
 				B30D59582206F60400884C4A /* AppDelegate.swift */,
+				B30A6C7D2CEE0AD000E7174B /* EventObservableWindow.swift */,
 				B30D59662206F60500884C4A /* Info.plist */,
 				B30D59632206F60500884C4A /* LaunchScreen.storyboard */,
 				B39B18E7223947050019F467 /* main.swift */,
+				618D83E62BAAC88C00E7966B /* PrivacyInfo.xcprivacy */,
 				B3231333243F0F0000F1905A /* SceneDelegate.swift */,
 				B39EE32A223A5E3500302E29 /* TestAppDelegate.swift */,
 				B3F3A6A922F97D4300E3A09C /* Zotero.entitlements */,
-				618D83E62BAAC88C00E7966B /* PrivacyInfo.xcprivacy */,
 				61099E6A2C91BAF300EDD92C /* Zotero-Bridging-Header.h */,
 			);
 			path = Zotero;
@@ -5092,6 +5095,7 @@
 				B37AA28C289960FF00A1C643 /* ItemDetailNoteContentView.swift in Sources */,
 				B30BE127297AAD9E000AED6A /* AnnotationToolOptionsActionHandler.swift in Sources */,
 				B338E820273AA9B20003DECD /* DisappearActionHostingController.swift in Sources */,
+				B30A6C7E2CEE0AD500E7174B /* EventObservableWindow.swift in Sources */,
 				B305667423FC051F003304F2 /* MD5+Url.swift in Sources */,
 				B31FACCA25DBC71200DD5F14 /* ConflictReceiverAlertHandler.swift in Sources */,
 				B398A917270C6A5B00968EE8 /* WebDavSessionStorage.swift in Sources */,

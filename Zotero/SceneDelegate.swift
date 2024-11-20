@@ -27,7 +27,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // Assign activity counter
         activityCounter = delegate
         // Create window for scene
-        let window = UIWindow(frame: frame)
+        let window = EventObservableWindow(frame: frame)
         self.window = window
         window.windowScene = windowScene
         window.makeKeyAndVisible()
