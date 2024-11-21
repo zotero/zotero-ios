@@ -21,7 +21,18 @@ final class IdleTimerController {
 
     init() {
         disposeBag = DisposeBag()
+        observeOrientationChange()
         observeLowPowerMode()
+
+        func observeOrientationChange() {
+            NotificationCenter.default.rx
+                .notification(UIDevice.orientationDidChangeNotification)
+                .observe(on: MainScheduler.instance)
+                .subscribe(onNext: { [weak self] _ in
+                    self?.resetCustomTimer()
+                })
+                .disposed(by: disposeBag)
+        }
 
         func observeLowPowerMode() {
             NotificationCenter.default.rx
@@ -54,6 +65,7 @@ final class IdleTimerController {
             guard activeTimer == nil else { return }
             set(disabled: true)
             startTimer(controller: self)
+            UIDevice.current.beginGeneratingDeviceOrientationNotifications()
         }
 
         func startTimer(controller: IdleTimerController) {
@@ -91,6 +103,7 @@ final class IdleTimerController {
              */
             activeTimer?.resume()
             activeTimer = nil
+            UIDevice.current.endGeneratingDeviceOrientationNotifications()
         }
     }
 
