@@ -252,7 +252,6 @@
 "pdf.locked.locked" = "Locked";
 "pdf.locked.enter_password" = "Please enter the password to open this PDF.";
 "pdf.locked.failed" = "Incorrect password. Please try again.";
-"pdf.settings.idle_timer_title" = "Allow device to sleep";
 "pdf.settings.scroll_direction.title" = "Scroll Direction";
 "pdf.settings.scroll_direction.horizontal" = "Horizontal";
 "pdf.settings.scroll_direction.vertical" = "Vertical";

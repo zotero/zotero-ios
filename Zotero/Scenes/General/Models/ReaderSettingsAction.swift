@@ -19,5 +19,4 @@ enum ReaderSettingsAction {
     case setPageSpreads(isFirstPageAlwaysSingle: Bool)
     // General
     case setAppearance(ReaderSettingsState.Appearance)
-    case setIdleTimerDisabled(Bool)
 }

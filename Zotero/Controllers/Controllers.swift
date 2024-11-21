@@ -416,8 +416,6 @@ final class UserControllers {
         itemLocaleController.loadLocale()
         autoEmptyController.autoEmptyIfNeeded()
 
-        // Enable idleTimerController before syncScheduler inProgress observation starts
-        idleTimerController.enable()
         // Reset Defaults.shared.didPerformFullSyncFix if needed
         DDLogInfo("Controllers: performFullSyncGuard: \(Defaults.shared.performFullSyncGuard); currentPerformFullSyncGuard: \(Defaults.currentPerformFullSyncGuard)")
         if Defaults.shared.performFullSyncGuard < Defaults.currentPerformFullSyncGuard {
@@ -432,15 +430,26 @@ final class UserControllers {
         syncScheduler.inProgress
             .skip(1)
             .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { [weak self] inProgress in
-                if inProgress {
-                    self?.idleTimerController.disable()
-                } else {
-                    self?.idleTimerController.enable()
-                    if !Defaults.shared.didPerformFullSyncFix {
-                        Defaults.shared.didPerformFullSyncFix = true
-                        DDLogInfo("Controllers: didPerformFullSyncFix: \(Defaults.shared.didPerformFullSyncFix)")
-                    }
+            .subscribe(onNext: { inProgress in
+                if !inProgress && !Defaults.shared.didPerformFullSyncFix {
+                    Defaults.shared.didPerformFullSyncFix = true
+                    DDLogInfo("Controllers: didPerformFullSyncFix: \(Defaults.shared.didPerformFullSyncFix)")
+                }
+            })
+            .disposed(by: disposeBag)
+        syncScheduler.syncController.progressObservable
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] progress in
+                guard let self else { return }
+                switch progress {
+                case .starting:
+                    idleTimerController.startCustomIdleTimer()
+
+                case .finished, .aborted:
+                    idleTimerController.stopCustomIdleTimer()
+
+                default:
+                    idleTimerController.resetCustomTimer()
                 }
             })
             .disposed(by: disposeBag)

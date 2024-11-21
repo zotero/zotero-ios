@@ -16,7 +16,6 @@ struct PDFSettings {
     var direction: ScrollDirection
     var pageFitting: PDFConfiguration.SpreadFitting
     var appearanceMode: ReaderSettingsState.Appearance
-    var idleTimerDisabled: Bool
     var isFirstPageAlwaysSingle: Bool
 
     static var `default`: PDFSettings {
@@ -26,7 +25,6 @@ struct PDFSettings {
             direction: .horizontal,
             pageFitting: .adaptive,
             appearanceMode: .automatic,
-            idleTimerDisabled: false,
             isFirstPageAlwaysSingle: true
         )
     }
@@ -52,8 +50,6 @@ extension PDFSettings: Codable {
         self.pageMode = PageMode(rawValue: modeRaw) ?? .automatic
         self.pageFitting = PDFConfiguration.SpreadFitting(rawValue: fittingRaw) ?? .adaptive
         self.isFirstPageAlwaysSingle = isFirstPageAlwaysSingle
-        // This setting is not persisted, always defaults to false
-        self.idleTimerDisabled = false
     }
 
     func encode(to encoder: Encoder) throws {

@@ -212,6 +212,7 @@ class PDFReaderViewController: UIViewController {
         set(userActivity: .contentActivity(with: [openItem], libraryId: viewModel.state.library.identifier, collectionId: Defaults.shared.selectedCollectionId)
             .set(title: viewModel.state.title)
         )
+        viewModel.process(action: .changeIdleTimerDisabled(true))
         view.backgroundColor = .systemGray6
         // Create intraDocumentNavigationHandler before setting up views, as it may be called by a child view controller, before view has finished loading.
         intraDocumentNavigationHandler = IntraDocumentNavigationButtonsHandler(
@@ -381,6 +382,7 @@ class PDFReaderViewController: UIViewController {
     }
 
     deinit {
+        viewModel.process(action: .changeIdleTimerDisabled(false))
         DDLogInfo("PDFReaderViewController deinitialized")
     }
 
@@ -651,7 +653,6 @@ class PDFReaderViewController: UIViewController {
                     direction: state.scrollDirection,
                     pageFitting: state.pageFitting,
                     appearanceMode: state.appearance,
-                    idleTimerDisabled: state.idleTimerDisabled,
                     isFirstPageAlwaysSingle: state.isFirstPageAlwaysSingle
                 )
                 viewModel.process(action: .setSettings(settings: settings, parentUserInterfaceStyle: interfaceStyle))
@@ -663,7 +664,6 @@ class PDFReaderViewController: UIViewController {
         if let page = documentController?.pdfController?.pageIndex {
             viewModel.process(action: .submitPendingPage(Int(page)))
         }
-        viewModel.process(action: .changeIdleTimerDisabled(false))
         viewModel.process(action: .clearTmpData)
         navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
     }

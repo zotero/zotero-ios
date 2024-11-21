@@ -41,11 +41,6 @@ struct ReaderSettingsActionHandler: ViewModelActionHandler {
                 state.appearance = appearance
             }
 
-        case .setIdleTimerDisabled(let disabled):
-            update(viewModel: viewModel) { state in
-                state.idleTimerDisabled = disabled
-            }
-
         case .setPageSpreads(let isFirstPageAlwaysSingle):
             update(viewModel: viewModel) { state in
                 state.isFirstPageAlwaysSingle = isFirstPageAlwaysSingle
