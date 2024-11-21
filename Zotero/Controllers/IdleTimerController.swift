@@ -13,7 +13,7 @@ import CocoaLumberjackSwift
 import RxSwift
 
 final class IdleTimerController {
-    private static let customIdleTimerTimemout = 1200
+    private static let customIdleTimerTimeout: DispatchTimeInterval = .seconds(1200)
     private let disposeBag: DisposeBag
     /// Processes which require idle timer disabled
     private var activeProcesses: Int = 0
@@ -40,7 +40,7 @@ final class IdleTimerController {
             guard let activeTimer = self?.activeTimer else { return }
             DDLogInfo("IdleTimerController: reset idle timer")
             activeTimer.suspend()
-            activeTimer.schedule(deadline: .now() + DispatchTimeInterval.seconds(Self.customIdleTimerTimemout))
+            activeTimer.schedule(deadline: .now() + Self.customIdleTimerTimeout)
             activeTimer.resume()
         }
     }
@@ -58,7 +58,7 @@ final class IdleTimerController {
 
         func startTimer(controller: IdleTimerController) {
             let timer = DispatchSource.makeTimerSource(flags: [], queue: .main)
-            timer.schedule(deadline: .now() + DispatchTimeInterval.seconds(Self.customIdleTimerTimemout))
+            timer.schedule(deadline: .now() + Self.customIdleTimerTimeout)
             timer.setEventHandler(handler: { [weak controller] in
                 controller?.forceStopIdleTimer()
             })
@@ -69,15 +69,18 @@ final class IdleTimerController {
 
     func stopCustomIdleTimer() {
         inMainThread { [weak self] in
-            guard let self, activeProcesses > 0 else {
-                DDLogWarn("IdleTimerController: tried to enable idle timer with no active processes")
-                return
-            }
-            activeProcesses -= 1
+            guard let self else { return }
 
-            DDLogInfo("IdleTimerController: enable idle timer \(activeProcesses)")
+            if activeProcesses > 0 {
+                activeProcesses -= 1
+                DDLogInfo("IdleTimerController: enable idle timer \(activeProcesses)")
+            } else {
+                DDLogWarn("IdleTimerController: tried to enable idle timer with no active processes")
+                activeProcesses = 0
+            }
 
             guard activeProcesses == 0 else { return }
+
             set(disabled: false)
             activeTimer?.suspend()
             activeTimer?.setEventHandler(handler: nil)
@@ -97,7 +100,7 @@ final class IdleTimerController {
 
     private func forceStopIdleTimer() {
         DDLogInfo("IdleTimerController: force stop timer")
-        activeProcesses = 0
+        activeProcesses = 1
         stopCustomIdleTimer()
     }
 }
