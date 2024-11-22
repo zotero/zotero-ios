@@ -1,5 +1,5 @@
 //
-//  CustomFreeTextAnnotationView.swift
+//  FreeTextAnnotationView.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 02.08.2023.
@@ -23,7 +23,7 @@ protocol FreeTextInputDelegate: AnyObject {
     func getTags(for key: PDFReaderState.AnnotationKey) -> [Tag]?
 }
 
-final class CustomFreeTextAnnotationView: FreeTextAnnotationView {
+final class FreeTextAnnotationView: PSPDFKitUI.FreeTextAnnotationView {
     var annotationKey: PDFReaderState.AnnotationKey?
     weak var delegate: FreeTextInputDelegate?
 

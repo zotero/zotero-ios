@@ -629,8 +629,9 @@ final class PDFDocumentViewController: UIViewController {
             builder.overrideClass(PSPDFKit.NoteAnnotation.self, with: NoteAnnotation.self)
             builder.overrideClass(PSPDFKit.SquareAnnotation.self, with: SquareAnnotation.self)
             builder.overrideClass(PSPDFKit.UnderlineAnnotation.self, with: UnderlineAnnotation.self)
-            builder.overrideClass(FreeTextAnnotationView.self, with: CustomFreeTextAnnotationView.self)
             builder.overrideClass(PSPDFKit.AnnotationManager.self, with: AnnotationManager.self)
+            builder.overrideClass(PSPDFKitUI.FreeTextAnnotationView.self, with: FreeTextAnnotationView.self)
+            builder.propertiesForAnnotations = [.freeText: []]
         }
 
         let controller = PDFViewController(document: document, configuration: pdfConfiguration)
@@ -736,7 +737,7 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
     ) -> UIMenu {
         guard let annotation = annotations.first,
               annotation.type == .freeText,
-              let annotationView = pageView.visibleAnnotationViews.first(where: { $0.annotation == annotation }) as? CustomFreeTextAnnotationView
+              let annotationView = pageView.visibleAnnotationViews.first(where: { $0.annotation == annotation }) as? FreeTextAnnotationView
         else { return UIMenu(children: []) }
 
         annotationView.delegate = self
@@ -744,7 +745,7 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
 
         if annotation.key != nil && self.selectedAnnotationWasSelectedBefore {
             // Focus only if Zotero annotation is selected, if annotation popup is dismissed and this annotation has been already selected
-            annotationView.beginEditing()
+            _ = annotationView.beginEditing()
         }
 
         self.selectedAnnotationWasSelectedBefore = false
