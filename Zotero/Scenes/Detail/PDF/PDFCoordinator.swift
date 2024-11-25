@@ -120,6 +120,13 @@ final class PDFCoordinator: Coordinator {
         else { return }
 
         let settings = Defaults.shared.pdfSettings
+        let displayName = Defaults.shared.displayName
+        if userId == 0 {
+            DDLogWarn("PDFCoordinator: userId is not initialized")
+        }
+        if displayName.isEmpty {
+            DDLogWarn("PDFCoordinator: displayName is empty")
+        }
         let handler = PDFReaderActionHandler(
             dbStorage: dbStorage,
             annotationPreviewController: self.controllers.annotationPreviewController,
@@ -142,7 +149,7 @@ final class PDFCoordinator: Coordinator {
             settings: settings,
             userId: userId,
             username: username,
-            displayName: Defaults.shared.displayName,
+            displayName: displayName,
             interfaceStyle: settings.appearanceMode == .automatic ? parentNavigationController.view.traitCollection.userInterfaceStyle : settings.appearanceMode.userInterfaceStyle
         )
         let controller = PDFReaderViewController(
