@@ -66,7 +66,7 @@ struct CreatePDFAnnotationsDbRequest: DbRequest {
             let user = database.object(ofType: RUser.self, forPrimaryKey: userId)
             item.createdBy = user
             if user == nil {
-                DDLogWarn("CreatePDFAnnotationsDbRequest: user not found for \(userId == 0 ? "not initialized" : "provided") userId")
+                DDLogWarn("CreatePDFAnnotationsDbRequest: user not found for userId \(userId)")
             }
         }
 
