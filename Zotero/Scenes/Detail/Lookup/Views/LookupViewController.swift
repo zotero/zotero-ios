@@ -54,6 +54,7 @@ class LookupViewController: UIViewController {
     private unowned let remoteFileDownloader: RemoteAttachmentDownloader
     private unowned let schemaController: SchemaController
     private let disposeBag: DisposeBag
+    private let updateQueue: DispatchQueue
 
     init(
         viewModel: ViewModel<LookupActionHandler>,
@@ -65,6 +66,7 @@ class LookupViewController: UIViewController {
         self.remoteFileDownloader = remoteFileDownloader
         self.schemaController = schemaController
         self.disposeBag = DisposeBag()
+        updateQueue = DispatchQueue(label: "org.zotero.LookupViewController.UpdateQueue")
         super.init(nibName: "LookupViewController", bundle: nil)
         self.setupAttachmentObserving(observer: remoteDownloadObserver)
     }
@@ -100,124 +102,139 @@ class LookupViewController: UIViewController {
     private func update(state: LookupState) {
         switch state.lookupState {
         case .failed(let error):
-            self.tableView.isHidden = true
-            self.activityIndicator.stopAnimating()
-            self.activityIndicator.isHidden = true
-            self.errorLabel.text = error.localizedDescription
-            self.errorLabel.isHidden = false
+            tableView.isHidden = true
+            activityIndicator.stopAnimating()
+            activityIndicator.isHidden = true
+            errorLabel.text = error.localizedDescription
+            errorLabel.isHidden = false
 
         case .waitingInput:
-            self.tableView.isHidden = true
-            self.errorLabel.isHidden = true
-            self.activityIndicator.stopAnimating()
-            self.activityIndicator.isHidden = true
+            tableView.isHidden = true
+            errorLabel.isHidden = true
+            activityIndicator.stopAnimating()
+            activityIndicator.isHidden = true
 
         case .loadingIdentifiers:
-            self.tableView.isHidden = true
-            self.errorLabel.isHidden = true
-            self.activityIndicator.isHidden = false
-            self.activityIndicator.startAnimating()
+            tableView.isHidden = true
+            errorLabel.isHidden = true
+            activityIndicator.isHidden = false
+            activityIndicator.startAnimating()
 
         case .lookup(let data):
             // It takes a little while for the `contentSize` observer notification to come, so all the content is hidden after the notification arrives, so that there is not an empty screen while
             // waiting for it.
-            self.show(data: data) { [weak self] in
-                guard let self = self else { return }
-                self.activityIndicator.stopAnimating()
-                self.activityIndicator.isHidden = true
-                self.errorLabel.isHidden = true
-                self.tableView.isHidden = false
-
-                self.dataReloaded?()
-
-                self.closeAfterUpdateIfNeeded()
+            show(data: data) { [weak self] in
+                guard let self else { return }
+                activityIndicator.stopAnimating()
+                activityIndicator.isHidden = true
+                errorLabel.isHidden = true
+                tableView.isHidden = false
+                dataReloaded?()
+                closeAfterUpdateIfNeeded()
             }
         }
     }
 
     private func show(data: [LookupState.LookupData], completion: @escaping () -> Void) {
-        var snapshot = NSDiffableDataSourceSnapshot<Int, Row>()
-        snapshot.appendSections([0])
+        tableView.isHidden = false
 
-        for lookup in data {
-            switch lookup.state {
-            case .translated(let translationData):
-                let title: String
-                if let _title = translationData.response.fields[KeyBaseKeyPair(key: FieldKeys.Item.title, baseKey: nil)] {
-                    title = _title
-                } else {
-                    let _title = translationData.response.fields.first(where: { self.schemaController.baseKey(for: translationData.response.rawType, field: $0.key.key) == FieldKeys.Item.title })?.value
-                    title = _title ?? ""
+        updateQueue.async { [weak self] in
+            guard let self else { return }
+
+            let snapshot = createSnapshot(from: data, schemaController: schemaController, remoteFileDownloader: remoteFileDownloader)
+            dataSource.apply(snapshot, animatingDifferences: false)
+
+            guard contentSizeObserver == nil else {
+                inMainThread {
+                    completion()
                 }
-                let itemData = Row.Item(type: translationData.response.rawType, title: title)
+                return
+            }
 
-                snapshot.appendItems([.item(itemData)], toSection: 0)
-
-                let attachments = translationData.attachments.map({ attachment -> Row in
-                    let (progress, error) = self.remoteFileDownloader.data(for: attachment.0.key, parentKey: translationData.response.key, libraryId: attachment.0.libraryId)
-                    let updateKind: RemoteAttachmentDownloader.Update.Kind
-                    if error != nil {
-                        updateKind = .failed
-                    } else if let progress = progress {
-                        updateKind = .progress(progress)
-                    } else {
-                        updateKind = .ready(attachment.0)
+            // For some reason, the observer subscription has to be here, doesn't work if it's in `viewDidLoad`.
+            contentSizeObserver = tableView.observe(\.contentSize, options: [.new]) { [weak self] _, change in
+                inMainThread { [weak self] in
+                    guard let self, let value = change.newValue, value.height != tableViewHeight.constant else { return }
+                    tableViewHeight.constant = value.height
+                    if value.height >= self.tableView.frame.height, !tableView.isScrollEnabled {
+                        tableView.isScrollEnabled = true
                     }
-                    return .attachment(attachment.0, updateKind)
-                })
-                snapshot.appendItems(attachments, toSection: 0)
-
-            case .failed:
-                snapshot.appendItems([.identifier(identifier: lookup.identifier, state: .failed)])
-
-            case .inProgress:
-                snapshot.appendItems([.identifier(identifier: lookup.identifier, state: .inProgress)])
-
-            case .enqueued:
-                snapshot.appendItems([.identifier(identifier: lookup.identifier, state: .enqueued)])
+                    completion()
+                }
             }
         }
 
-        self.tableView.isHidden = false
-        self.dataSource.apply(snapshot, animatingDifferences: false)
+        func createSnapshot(from data: [LookupState.LookupData], schemaController: SchemaController, remoteFileDownloader: RemoteAttachmentDownloader) -> NSDiffableDataSourceSnapshot<Int, Row> {
+            var snapshot = NSDiffableDataSourceSnapshot<Int, Row>()
+            snapshot.appendSections([0])
 
-        guard self.contentSizeObserver == nil else {
-            completion()
-            return
-        }
-        // For some reason, the observer subscription has to be here, doesn't work if it's in `viewDidLoad`.
-        self.contentSizeObserver = self.tableView.observe(\.contentSize, options: [.new]) { [weak self] _, change in
-            guard let self = self, let value = change.newValue, value.height != self.tableViewHeight.constant else { return }
+            for lookup in data {
+                switch lookup.state {
+                case .translated(let translationData):
+                    let title: String
+                    if let _title = translationData.response.fields[KeyBaseKeyPair(key: FieldKeys.Item.title, baseKey: nil)] {
+                        title = _title
+                    } else {
+                        let _title = translationData.response.fields.first(where: { schemaController.baseKey(for: translationData.response.rawType, field: $0.key.key) == FieldKeys.Item.title })?.value
+                        title = _title ?? ""
+                    }
+                    let itemData = Row.Item(type: translationData.response.rawType, title: title)
 
-            self.tableViewHeight.constant = value.height
+                    snapshot.appendItems([.item(itemData)], toSection: 0)
 
-            if value.height >= self.tableView.frame.height, !self.tableView.isScrollEnabled {
-                self.tableView.isScrollEnabled = true
+                    let attachments = translationData.attachments.map({ attachment -> Row in
+                        let (progress, error) = remoteFileDownloader.data(for: attachment.0.key, parentKey: translationData.response.key, libraryId: attachment.0.libraryId)
+                        let updateKind: RemoteAttachmentDownloader.Update.Kind
+                        if error != nil {
+                            updateKind = .failed
+                        } else if let progress = progress {
+                            updateKind = .progress(progress)
+                        } else {
+                            updateKind = .ready(attachment.0)
+                        }
+                        return .attachment(attachment.0, updateKind)
+                    })
+                    snapshot.appendItems(attachments, toSection: 0)
+
+                case .failed:
+                    snapshot.appendItems([.identifier(identifier: lookup.identifier, state: .failed)])
+
+                case .inProgress:
+                    snapshot.appendItems([.identifier(identifier: lookup.identifier, state: .inProgress)])
+
+                case .enqueued:
+                    snapshot.appendItems([.identifier(identifier: lookup.identifier, state: .enqueued)])
+                }
             }
 
-            completion()
+            return snapshot
         }
     }
 
-    private func process(update: RemoteAttachmentDownloader.Update) {
-        guard update.download.libraryId == self.viewModel.state.libraryId, var snapshot = self.dataSource?.snapshot(), !snapshot.sectionIdentifiers.isEmpty else { return }
+    private func process(update: RemoteAttachmentDownloader.Update, completed: @escaping () -> Void) {
+        guard update.download.libraryId == viewModel.state.libraryId, var snapshot = dataSource?.snapshot(), !snapshot.sectionIdentifiers.isEmpty else { return }
 
-        var rows = snapshot.itemIdentifiers(inSection: 0)
+        updateQueue.async { [weak self] in
+            guard let self else { return }
 
-        guard let index = rows.firstIndex(where: { $0.isAttachment(withKey: update.download.key, libraryId: update.download.libraryId) }) else { return }
+            var rows = snapshot.itemIdentifiers(inSection: 0)
+            guard let index = rows.firstIndex(where: { $0.isAttachment(withKey: update.download.key, libraryId: update.download.libraryId) }) else { return }
+            snapshot.deleteItems(rows)
+            let row = rows[index]
+            switch row {
+            case .attachment(let attachment, _):
+                rows[index] = .attachment(attachment, update.kind)
 
-        snapshot.deleteItems(rows)
+            case .item, .identifier:
+                break
+            }
+            snapshot.appendItems(rows, toSection: 0)
+            dataSource.apply(snapshot, animatingDifferences: false)
 
-        let row = rows[index]
-        switch row {
-        case .attachment(let attachment, _):
-            rows[index] = .attachment(attachment, update.kind)
-        case .item, .identifier: break
+            inMainThread {
+                completed()
+            }
         }
-
-        snapshot.appendItems(rows, toSection: 0)
-
-        self.dataSource.apply(snapshot, animatingDifferences: false)
     }
 
     private func closeAfterUpdateIfNeeded() {
@@ -300,9 +317,10 @@ class LookupViewController: UIViewController {
 
     private func setupAttachmentObserving(observer: PublishSubject<RemoteAttachmentDownloader.Update>) {
         observer.observe(on: MainScheduler.instance)
-                .subscribe(with: self, onNext: { `self`, update in
-                    self.process(update: update)
-                    self.closeAfterUpdateIfNeeded()
+                .subscribe(onNext: { [weak self] update in
+                    self?.process(update: update) { [weak self] in
+                        self?.closeAfterUpdateIfNeeded()
+                    }
                 })
                 .disposed(by: self.disposeBag)
     }
