@@ -8,6 +8,7 @@
 
 import UIKit
 
+import CocoaLumberjackSwift
 import RealmSwift
 
 struct CreatePDFAnnotationsDbRequest: DbRequest {
@@ -62,7 +63,11 @@ struct CreatePDFAnnotationsDbRequest: DbRequest {
         item.parent = parent
 
         if annotation.isAuthor {
-            item.createdBy = database.object(ofType: RUser.self, forPrimaryKey: self.userId)
+            let user = database.object(ofType: RUser.self, forPrimaryKey: userId)
+            item.createdBy = user
+            if user == nil {
+                DDLogWarn("CreatePDFAnnotationsDbRequest: user not found for userId \(userId)")
+            }
         }
 
         // We need to submit tags on creation even if they are empty, so we need to mark them as changed
