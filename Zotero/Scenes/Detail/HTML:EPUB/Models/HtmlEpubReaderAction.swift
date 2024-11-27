@@ -14,7 +14,6 @@ enum HtmlEpubReaderAction {
     case deinitialiseReader
     case deselectAnnotationDuringEditing(String)
     case deselectSelectedAnnotation
-    case hideAnnotationPopover
     case initialiseReader
     case loadDocument
     case parseAndCacheComment(key: String, comment: String)

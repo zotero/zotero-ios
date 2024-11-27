@@ -85,13 +85,6 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
                 state.changes.insert(.popover)
             }
 
-        case .hideAnnotationPopover:
-            update(viewModel: viewModel) { state in
-                state.annotationPopoverKey = nil
-                state.annotationPopoverRect = nil
-                state.changes.insert(.popover)
-            }
-
         case .setComment(let key, let comment):
             set(comment: comment, key: key, viewModel: viewModel)
 
@@ -928,6 +921,9 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             // Update selection
             if selectionDeleted {
                 _select(key: nil, didSelectInDocument: true, state: &state)
+                state.annotationPopoverKey = nil
+                state.annotationPopoverRect = nil
+                state.changes.insert(.popover)
             }
 
             // Disable sidebar editing if there are no results
