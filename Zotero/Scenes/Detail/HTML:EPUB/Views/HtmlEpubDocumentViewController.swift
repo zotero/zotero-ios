@@ -225,7 +225,6 @@ class HtmlEpubDocumentViewController: UIViewController {
                 }
                 
                 if params.isEmpty {
-                    viewModel.process(action: .hideAnnotationPopover)
                     return
                 }
 
