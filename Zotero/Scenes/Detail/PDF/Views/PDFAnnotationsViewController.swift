@@ -23,6 +23,7 @@ protocol AnnotationsDelegate: AnyObject {
 final class PDFAnnotationsViewController: UIViewController {
     private static let cellId = "AnnotationCell"
     private unowned let viewModel: ViewModel<PDFReaderActionHandler>
+    private let updateQueue: DispatchQueue
     private let disposeBag: DisposeBag
 
     private weak var emptyLabel: UILabel!
@@ -44,7 +45,8 @@ final class PDFAnnotationsViewController: UIViewController {
 
     init(viewModel: ViewModel<PDFReaderActionHandler>) {
         self.viewModel = viewModel
-        self.disposeBag = DisposeBag()
+        disposeBag = DisposeBag()
+        updateQueue = DispatchQueue(label: "org.zotero.PDFAnnotationsViewController.UpdateQueue")
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -66,13 +68,18 @@ final class PDFAnnotationsViewController: UIViewController {
     override func viewIsAppearing(_ animated: Bool) {
         super.viewIsAppearing(animated)
 
-        var snapshot = NSDiffableDataSourceSnapshot<Int, PDFReaderState.AnnotationKey>()
-        snapshot.appendSections([0])
-        snapshot.appendItems(viewModel.state.sortedKeys)
         tableView.setEditing(viewModel.state.sidebarEditingEnabled, animated: false)
-        dataSource.apply(snapshot, animatingDifferences: false)
-        if let key = viewModel.state.focusSidebarKey, let indexPath = dataSource.indexPath(for: key) {
-            tableView.selectRow(at: indexPath, animated: false, scrollPosition: .middle)
+        updateQueue.async { [weak self] in
+            guard let self else { return }
+            var snapshot = NSDiffableDataSourceSnapshot<Int, PDFReaderState.AnnotationKey>()
+            snapshot.appendSections([0])
+            snapshot.appendItems(viewModel.state.sortedKeys)
+            dataSource.apply(snapshot, animatingDifferences: false)
+            if let key = viewModel.state.focusSidebarKey, let indexPath = dataSource.indexPath(for: key) {
+                inMainThread { [weak self] in
+                    self?.tableView.selectRow(at: indexPath, animated: false, scrollPosition: .middle)
+                }
+            }
         }
 
         viewModel.stateObservable
@@ -155,7 +162,7 @@ final class PDFAnnotationsViewController: UIViewController {
             emptyLabel.isHidden = !tableView.isHidden
         }
 
-        self.reloadIfNeeded(for: state) { [weak self] in
+        reloadIfNeeded(for: state) { [weak self] in
             guard let self else { return }
 
             if let keys = state.loadedPreviewImageAnnotationKeys {
@@ -202,33 +209,40 @@ final class PDFAnnotationsViewController: UIViewController {
         let isVisible = parentDelegate?.isSidebarVisible ?? false
 
         if state.changes.contains(.annotations) {
-            var snapshot = NSDiffableDataSourceSnapshot<Int, PDFReaderState.AnnotationKey>()
-            snapshot.appendSections([0])
-            snapshot.appendItems(state.sortedKeys)
-            if let keys = state.updatedAnnotationKeys {
-                snapshot.reloadItems(keys)
-            }
-
             if state.changes.contains(.sidebarEditing) {
-                tableView.setEditing(state.sidebarEditingEnabled, animated: isVisible)
+                tableView.setEditing(state.sidebarEditingEnabled, animated: false)
             }
-            dataSource.apply(snapshot, animatingDifferences: isVisible, completion: completion)
+            updateQueue.async { [weak self] in
+                guard let self else { return }
+                var snapshot = NSDiffableDataSourceSnapshot<Int, PDFReaderState.AnnotationKey>()
+                snapshot.appendSections([0])
+                snapshot.appendItems(state.sortedKeys)
+                if let keys = state.updatedAnnotationKeys {
+                    snapshot.reloadItems(keys)
+                }
+                dataSource.apply(snapshot, animatingDifferences: isVisible, completion: completion)
+            }
             return
         }
 
         if state.changes.contains(.interfaceStyle) {
-            var snapshot = dataSource.snapshot()
-            guard !snapshot.sectionIdentifiers.isEmpty else { return }
-            snapshot.reloadSections([0])
-            dataSource.apply(snapshot, animatingDifferences: false, completion: completion)
+            updateQueue.async { [weak self] in
+                guard let self else { return }
+                var snapshot = dataSource.snapshot()
+                guard !snapshot.sectionIdentifiers.isEmpty else { return }
+                snapshot.reloadSections([0])
+                dataSource.apply(snapshot, animatingDifferences: false, completion: completion)
+            }
             return
         }
 
         if state.changes.contains(.selection) || state.changes.contains(.activeComment) {
             if let keys = state.updatedAnnotationKeys {
-                var snapshot = dataSource.snapshot()
-                snapshot.reloadItems(keys)
-                dataSource.apply(snapshot, animatingDifferences: false)
+                updateQueue.sync { [unowned self] in
+                    var snapshot = dataSource.snapshot()
+                    snapshot.reloadItems(keys)
+                    dataSource.apply(snapshot, animatingDifferences: false)
+                }
             }
 
             updateCellHeight()
