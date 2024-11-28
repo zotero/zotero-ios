@@ -14,6 +14,7 @@ class PDFThumbnailsViewController: UICollectionViewController {
     private static var cellId: String = "CellId"
 
     private let viewModel: ViewModel<PDFThumbnailsActionHandler>
+    private let updateQueue: DispatchQueue
     private let disposeBag: DisposeBag
 
     private var dataSource: UICollectionViewDiffableDataSource<Int, PDFThumbnailsState.Page>!
@@ -31,6 +32,7 @@ class PDFThumbnailsViewController: UICollectionViewController {
     init(viewModel: ViewModel<PDFThumbnailsActionHandler>) {
         self.viewModel = viewModel
         self.disposeBag = DisposeBag()
+        updateQueue = DispatchQueue(label: "org.zotero.PDFThumbnailsViewController.UpdateQueue")
 
         let layout = UICollectionViewCompositionalLayout { _, environment in
             var configuration = UICollectionLayoutListConfiguration(appearance: .insetGrouped)
@@ -89,23 +91,31 @@ class PDFThumbnailsViewController: UICollectionViewController {
 
     private func update(state: PDFThumbnailsState) {
         if state.changes.contains(.pages) && !state.pages.isEmpty {
-            var snapshot = NSDiffableDataSourceSnapshot<Int, PDFThumbnailsState.Page>()
-            snapshot.appendSections([0])
-            snapshot.appendItems(state.pages)
-            dataSource.apply(snapshot, animatingDifferences: false)
+            updateQueue.async { [weak self] in
+                guard let self else { return }
+                var snapshot = NSDiffableDataSourceSnapshot<Int, PDFThumbnailsState.Page>()
+                snapshot.appendSections([0])
+                snapshot.appendItems(state.pages)
+                dataSource.apply(snapshot, animatingDifferences: false)
 
-            let indexPath = IndexPath(row: viewModel.state.selectedPageIndex, section: 0)
-            // Without .main.async the collection view cell is not actually selected, the collection view only scrolls to correct position. It doesn't help to have it in completion handler.
-            DispatchQueue.main.async {
-                self.collectionView.selectItem(at: indexPath, animated: false, scrollPosition: .centeredVertically)
+                let indexPath = IndexPath(row: viewModel.state.selectedPageIndex, section: 0)
+                // Without .main.async the collection view cell is not actually selected, the collection view only scrolls to correct position. It doesn't help to have it in completion handler.
+                DispatchQueue.main.async { [weak self] in
+                    self?.collectionView.selectItem(at: indexPath, animated: false, scrollPosition: .centeredVertically)
+                }
             }
+            return
         }
 
         if let index = state.loadedThumbnail, index < dataSource.snapshot().itemIdentifiers.count {
-            var snapshot = dataSource.snapshot()
-            let label = dataSource.snapshot().itemIdentifiers[index]
-            snapshot.reloadItems([label])
-            dataSource.apply(snapshot)
+            updateQueue.async { [weak self] in
+                guard let self else { return }
+                var snapshot = dataSource.snapshot()
+                let label = dataSource.snapshot().itemIdentifiers[index]
+                snapshot.reloadItems([label])
+                dataSource.apply(snapshot)
+            }
+            return
         }
 
         // The following updates should be ignored if the collection hasn't loaded yet for the first time.
@@ -113,8 +123,10 @@ class PDFThumbnailsViewController: UICollectionViewController {
         guard snapshot.numberOfSections > 0 else { return }
 
         if state.changes.contains(.userInterface) || state.changes.contains(.reload) {
-            snapshot.reloadSections([0])
-            dataSource.apply(snapshot)
+            updateQueue.sync { [weak self] in
+                snapshot.reloadSections([0])
+                self?.dataSource.apply(snapshot)
+            }
         }
 
         if state.changes.contains(.scrollToSelection) {
