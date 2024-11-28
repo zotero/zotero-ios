@@ -509,8 +509,7 @@ final class PDFDocumentViewController: UIViewController {
     private func select(annotation: PDFAnnotation, pageIndex: PageIndex, document: PSPDFKit.Document) {
         guard let pdfController,
               let pageView = updateSelectionOnVisiblePages(of: pdfController, annotation: annotation) ?? pdfController.pageViewForPage(at: pageIndex),
-              let pdfAnnotation = document.annotation(on: Int(pageView.pageIndex), with: annotation.key),
-              pageView.selectedAnnotations.contains(pdfAnnotation)
+              let pdfAnnotation = document.annotation(on: Int(pageView.pageIndex), with: annotation.key)
         else { return }
         pageView.selectedAnnotations = [pdfAnnotation]
     }
@@ -958,7 +957,16 @@ extension PDFDocumentViewController: UIPencilInteractionDelegate {
     }
 }
 
-extension PDFDocumentViewController: UIPopoverPresentationControllerDelegate { }
+extension PDFDocumentViewController: UIPopoverPresentationControllerDelegate {
+    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+        guard let presentedNavigationController = presentationController.presentedViewController as? NavigationViewController,
+              (presentedNavigationController.children.first as? AnnotationPopoverViewController) != nil,
+              let type = viewModel.state.selectedAnnotation?.type,
+              type == .highlight || type == .underline
+        else { return }
+        viewModel.process(action: .deselectSelectedAnnotation)
+    }
+}
 
 extension PDFDocumentViewController: AnnotationBoundingBoxConverter {
     /// Converts from database to PSPDFKit rect. Database stores rects in RAW PDF Coordinate space. PSPDFKit works with Normalized PDF Coordinate Space.
