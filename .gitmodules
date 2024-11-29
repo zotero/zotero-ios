@@ -14,5 +14,5 @@
 	path = note-editor
 	url = https://github.com/zotero/note-editor
 [submodule "reader"]
-	path = reader
-	url = https://github.com/zotero/reader
+ 	path = reader
+ 	url = https://github.com/zotero/reader
