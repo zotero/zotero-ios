@@ -140,7 +140,11 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             set(settings: settings, in: viewModel)
 
         case .changeIdleTimerDisabled(let disabled):
-            changeIdleTimer(disabled: disabled, in: viewModel)
+            if disabled {
+                idleTimerController.startCustomIdleTimer()
+            } else {
+                idleTimerController.stopCustomIdleTimer()
+            }
         }
     }
 
@@ -155,37 +159,11 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         }
     }
 
-    private func changeIdleTimer(disabled: Bool, in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
-        guard viewModel.state.settings.idleTimerDisabled != disabled else { return }
-        var settings = viewModel.state.settings
-        settings.idleTimerDisabled = disabled
-
-        update(viewModel: viewModel) { state in
-            state.settings = settings
-            // Don't need to assign `changes` or update Defaults.shared.htmlEpubSettings, this setting is not stored and doesn't change anything else
-        }
-
-        if settings.idleTimerDisabled {
-            idleTimerController.disable()
-        } else {
-            idleTimerController.enable()
-        }
-    }
-
     private func set(settings: HtmlEpubSettings, in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
-        if viewModel.state.settings.idleTimerDisabled != settings.idleTimerDisabled {
-            if settings.idleTimerDisabled {
-                idleTimerController.disable()
-            } else {
-                idleTimerController.enable()
-            }
-        }
-
         update(viewModel: viewModel) { state in
             state.settings = settings
             state.changes = .settings
         }
-
         Defaults.shared.htmlEpubSettings = settings
     }
 

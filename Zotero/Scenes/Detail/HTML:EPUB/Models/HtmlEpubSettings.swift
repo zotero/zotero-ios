@@ -10,10 +10,9 @@ import UIKit
 
 struct HtmlEpubSettings {
     var appearance: ReaderSettingsState.Appearance
-    var idleTimerDisabled: Bool
 
     static var `default`: HtmlEpubSettings {
-        return HtmlEpubSettings(appearance: .automatic, idleTimerDisabled: false)
+        return HtmlEpubSettings(appearance: .automatic)
     }
 }
 
@@ -26,8 +25,6 @@ extension HtmlEpubSettings: Codable {
         let container = try decoder.container(keyedBy: Keys.self)
         let appearanceRaw = try container.decode(UInt.self, forKey: .appearance)
         appearance = ReaderSettingsState.Appearance(rawValue: appearanceRaw) ?? .automatic
-        // This setting is not persisted, always defaults to false
-        idleTimerDisabled = false
     }
 
     func encode(to encoder: Encoder) throws {

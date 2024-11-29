@@ -104,6 +104,7 @@ class HtmlEpubReaderViewController: UIViewController, ParentWithSidebarControlle
         super.viewDidLoad()
 
         setActivity()
+        viewModel.process(action: .changeIdleTimerDisabled(true))
         view.backgroundColor = .systemBackground
         observeViewModel()
         setupNavigationBar()
@@ -248,6 +249,7 @@ class HtmlEpubReaderViewController: UIViewController, ParentWithSidebarControlle
     }
 
     deinit {
+        viewModel.process(action: .changeIdleTimerDisabled(false))
         viewModel.process(action: .deinitialiseReader)
         DDLogInfo("HtmlEpubReaderViewController deinitialized")
     }
@@ -395,14 +397,13 @@ class HtmlEpubReaderViewController: UIViewController, ParentWithSidebarControlle
         viewModel.stateObservable
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] state in
-                let settings = HtmlEpubSettings(appearance: state.appearance, idleTimerDisabled: state.idleTimerDisabled)
+                let settings = HtmlEpubSettings(appearance: state.appearance)
                 self?.viewModel.process(action: .setSettings(settings))
             })
             .disposed(by: disposeBag)
     }
 
     private func close() {
-        viewModel.process(action: .changeIdleTimerDisabled(false))
         navigationController?.presentingViewController?.dismiss(animated: true)
     }
 

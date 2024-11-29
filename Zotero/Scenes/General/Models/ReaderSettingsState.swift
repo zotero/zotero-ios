@@ -52,7 +52,6 @@ struct ReaderSettingsState: ViewModelState {
 
     init(settings: HtmlEpubSettings) {
         appearance = settings.appearance
-        idleTimerDisabled = settings.idleTimerDisabled
         // These don't apply to HTML/Epub, assign random values
         transition = .curl
         pageMode = .automatic
