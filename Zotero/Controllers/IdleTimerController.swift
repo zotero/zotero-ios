@@ -49,7 +49,6 @@ final class IdleTimerController {
     func resetCustomTimer() {
         inMainThread { [weak self] in
             guard let activeTimer = self?.activeTimer else { return }
-            DDLogInfo("IdleTimerController: reset idle timer")
             activeTimer.suspend()
             activeTimer.schedule(deadline: .now() + Self.customIdleTimerTimeout)
             activeTimer.resume()
