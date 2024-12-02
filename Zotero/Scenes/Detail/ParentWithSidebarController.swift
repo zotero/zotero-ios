@@ -59,8 +59,7 @@ extension ParentWithSidebarController {
         checkbox.rx.controlEvent(.touchUpInside)
             .subscribe(onNext: { [weak self, weak checkbox] _ in
                 guard let self, let checkbox else { return }
-                checkbox.isSelected = !checkbox.isSelected
-                annotationToolbarHandler?.set(hidden: !checkbox.isSelected, animated: true)
+                setAnnotationToolbar(hidden: checkbox.isSelected)
             })
             .disposed(by: disposeBag)
         let barButton = UIBarButtonItem(customView: checkbox)
@@ -71,10 +70,16 @@ extension ParentWithSidebarController {
         return barButton
     }
 
+    private func setAnnotationToolbar(hidden: Bool) {
+        (toolbarButton.customView as? CheckboxButton)?.isSelected = !hidden
+        annotationToolbarHandler?.set(hidden: hidden, animated: true)
+        if hidden {
+            documentController?.disableAnnotationTools()
+        }
+    }
+
     func closeAnnotationToolbar() {
-        (toolbarButton.customView as? CheckboxButton)?.isSelected = false
-        annotationToolbarHandler?.set(hidden: true, animated: true)
-        documentController?.disableAnnotationTools()
+        setAnnotationToolbar(hidden: true)
     }
 
     func toggleSidebar(animated: Bool, sidebarButtonTag: Int) {
