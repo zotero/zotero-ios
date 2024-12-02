@@ -274,6 +274,7 @@ class HtmlEpubDocumentViewController: UIViewController {
 
 extension HtmlEpubDocumentViewController: ParentWithSidebarDocumentController {
     func disableAnnotationTools() {
-        set(tool: nil)
+        guard let tool = viewModel.state.activeTool else { return }
+        viewModel.process(action: .toggleTool(tool))
     }
 }
