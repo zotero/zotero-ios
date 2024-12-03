@@ -294,6 +294,12 @@ final class ItemDetailViewController: UIViewController {
             }
         }
 
+        if state.attachmentToOpen == nil {
+            // Reset this flag in case the attachment has been opened already (happens when attachment was already downloaded, this is set to true when trying to open, but is not set to false when
+            // it opens without download).
+            downloadingViaNavigationBar = false
+        }
+
         /// Updates navigation bar with appropriate buttons based on editing state.
         /// - parameter isEditing: Current editing state of tableView.
         func setNavigationBarButtons(to state: ItemDetailState) {
