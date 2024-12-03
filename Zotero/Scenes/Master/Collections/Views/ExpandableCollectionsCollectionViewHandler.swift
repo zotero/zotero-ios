@@ -105,18 +105,11 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
 
     func update(with tree: CollectionTree, selectedId: CollectionIdentifier, animated: Bool, completion: (() -> Void)? = nil) {
         let newSnapshot = tree.createSnapshot(selectedId: selectedId)
-        let mainThreadCompletion: (() -> Void)? = completion.flatMap { action in
-            return {
-                inMainThread {
-                    action()
-                }
-            }
-        }
 
         if dataSource.snapshot(for: collectionsSection).items.count == newSnapshot.items.count {
             updateQueue.async { [weak self] in
                 guard let self else { return }
-                dataSource.apply(newSnapshot, to: collectionsSection, animatingDifferences: animated, completion: mainThreadCompletion)
+                dataSource.apply(newSnapshot, to: collectionsSection, animatingDifferences: animated, completion: completion)
             }
             return
         }
@@ -129,7 +122,7 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
             var snapshot = NSDiffableDataSourceSnapshot<Int, Collection>()
             snapshot.appendSections([collectionsSection])
             dataSource.apply(snapshot, animatingDifferences: animated)
-            dataSource.apply(newSnapshot, to: collectionsSection, animatingDifferences: animated, completion: mainThreadCompletion)
+            dataSource.apply(newSnapshot, to: collectionsSection, animatingDifferences: animated, completion: completion)
         }
     }
 
