@@ -59,7 +59,15 @@ struct PDFDatabaseAnnotation {
     }
 
     func isAuthor(currentUserId: Int) -> Bool {
-        return item.libraryId == .custom(.myLibrary) ? true : item.createdBy?.identifier == currentUserId
+        if item.libraryId == .custom(.myLibrary) {
+            return true
+        }
+        guard let user = item.createdBy else {
+            DDLogWarn("PDFDatabaseAnnotation: isAuthor for currentUserId: \(currentUserId) encountered nil user")
+            return false
+        }
+        DDLogInfo("PDFDatabaseAnnotation: isAuthor for currentUserId: \(currentUserId) compared to \(user.identifier)")
+        return user.identifier == currentUserId
     }
 
     func author(displayName: String, username: String) -> String {
