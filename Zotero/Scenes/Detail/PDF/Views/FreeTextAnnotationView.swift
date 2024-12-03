@@ -1,5 +1,5 @@
 //
-//  CustomFreeTextAnnotationView.swift
+//  FreeTextAnnotationView.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 02.08.2023.
@@ -23,7 +23,7 @@ protocol FreeTextInputDelegate: AnyObject {
     func getTags(for key: PDFReaderState.AnnotationKey) -> [Tag]?
 }
 
-final class CustomFreeTextAnnotationView: FreeTextAnnotationView {
+final class FreeTextAnnotationView: PSPDFKitUI.FreeTextAnnotationView {
     var annotationKey: PDFReaderState.AnnotationKey?
     weak var delegate: FreeTextInputDelegate?
 
@@ -34,6 +34,22 @@ final class CustomFreeTextAnnotationView: FreeTextAnnotationView {
             textView.inputAccessoryView = view
         }
         return textView
+    }
+}
+
+extension FreeTextAnnotationView {
+    override func textViewDidEndEditing(_ textView: UITextView) {
+        guard let annotation = annotation as? FreeTextAnnotation else { return }
+        let previousTextBoundingBox = annotation.textBoundingBox
+        super.textViewDidEndEditing(textView)
+        annotation.sizeToFit()
+        var newTextBoundingBox = annotation.textBoundingBox
+        let minX = min(previousTextBoundingBox.minX, newTextBoundingBox.minX)
+        let maxX = max(previousTextBoundingBox.maxX, newTextBoundingBox.maxX)
+        let minY = min(previousTextBoundingBox.minY, newTextBoundingBox.minY)
+        let maxY = max(previousTextBoundingBox.maxY, newTextBoundingBox.maxY)
+        annotation.textBoundingBox = CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
+        NotificationCenter.default.post(name: .PSPDFAnnotationChanged, object: annotation, userInfo: [PSPDFAnnotationChangedNotificationKeyPathKey: ["boundingBox", "fontSize"]])
     }
 }
 
