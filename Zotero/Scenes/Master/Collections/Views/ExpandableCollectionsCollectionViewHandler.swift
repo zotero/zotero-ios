@@ -87,9 +87,7 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
         if !snapshot.visibleItems.contains(where: { $0.identifier == collectionId }) {
             // Selection is collapsed, we need to expand and select it then
             update(with: tree, selectedId: collectionId, animated: false) { [weak self] in
-                inMainThread { [weak self] in
-                    self?.selectIfNeeded(collectionId: collectionId, tree: tree, scrollToPosition: scrollToPosition)
-                }
+                self?.selectIfNeeded(collectionId: collectionId, tree: tree, scrollToPosition: scrollToPosition)
             }
             return
         }
