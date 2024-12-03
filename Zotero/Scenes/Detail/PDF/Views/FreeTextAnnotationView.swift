@@ -37,6 +37,22 @@ final class FreeTextAnnotationView: PSPDFKitUI.FreeTextAnnotationView {
     }
 }
 
+extension FreeTextAnnotationView {
+    override func textViewDidEndEditing(_ textView: UITextView) {
+        guard let annotation = annotation as? FreeTextAnnotation else { return }
+        let previousTextBoundingBox = annotation.textBoundingBox
+        super.textViewDidEndEditing(textView)
+        annotation.sizeToFit()
+        var newTextBoundingBox = annotation.textBoundingBox
+        let minX = min(previousTextBoundingBox.minX, newTextBoundingBox.minX)
+        let maxX = max(previousTextBoundingBox.maxX, newTextBoundingBox.maxX)
+        let minY = min(previousTextBoundingBox.minY, newTextBoundingBox.minY)
+        let maxY = max(previousTextBoundingBox.maxY, newTextBoundingBox.maxY)
+        annotation.textBoundingBox = CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
+        NotificationCenter.default.post(name: .PSPDFAnnotationChanged, object: annotation, userInfo: [PSPDFAnnotationChangedNotificationKeyPathKey: ["boundingBox", "fontSize"]])
+    }
+}
+
 final class FreeTextInputAccessory: UIView {
     private weak var delegate: FreeTextInputDelegate?
     private weak var sizePicker: FontSizeView?
