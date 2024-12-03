@@ -133,9 +133,7 @@ class CollectionsPickerViewController: UICollectionViewController {
             guard let self else { return }
             dataSource.apply(state.collectionTree.createSnapshot(collapseState: .expandedAll), to: 0, animatingDifferences: animated) { [weak self] in
                 guard let self, multipleSelectionAllowed else { return }
-                inMainThread { [weak self] in
-                    self?.select(selected: state.selected, tree: state.collectionTree)
-                }
+                select(selected: state.selected, tree: state.collectionTree)
             }
         }
     }

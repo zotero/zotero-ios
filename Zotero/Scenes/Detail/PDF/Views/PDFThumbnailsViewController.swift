@@ -112,7 +112,7 @@ class PDFThumbnailsViewController: UICollectionViewController {
                 guard let self else { return }
                 var snapshot = dataSource.snapshot()
                 let label = dataSource.snapshot().itemIdentifiers[index]
-                snapshot.reloadItems([label])
+                snapshot.reconfigureItems([label])
                 dataSource.apply(snapshot)
             }
             return

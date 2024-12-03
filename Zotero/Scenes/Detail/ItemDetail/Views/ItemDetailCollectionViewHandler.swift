@@ -535,7 +535,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
             let toReload = rowsToReload(from: oldRows, to: newRows, in: section)
             if !toReload.isEmpty {
-                snapshot.reloadItems(toReload)
+                snapshot.reconfigureItems(toReload)
             }
 
             dataSource.apply(snapshot, animatingDifferences: animated)

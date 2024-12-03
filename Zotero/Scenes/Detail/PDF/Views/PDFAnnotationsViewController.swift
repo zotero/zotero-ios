@@ -74,11 +74,9 @@ final class PDFAnnotationsViewController: UIViewController {
             var snapshot = NSDiffableDataSourceSnapshot<Int, PDFReaderState.AnnotationKey>()
             snapshot.appendSections([0])
             snapshot.appendItems(viewModel.state.sortedKeys)
-            dataSource.apply(snapshot, animatingDifferences: false)
-            if let key = viewModel.state.focusSidebarKey, let indexPath = dataSource.indexPath(for: key) {
-                inMainThread { [weak self] in
-                    self?.tableView.selectRow(at: indexPath, animated: false, scrollPosition: .middle)
-                }
+            dataSource.apply(snapshot, animatingDifferences: false) { [weak self] in
+                guard let self, let key = viewModel.state.focusSidebarKey, let indexPath = dataSource.indexPath(for: key) else { return }
+                tableView.selectRow(at: indexPath, animated: false, scrollPosition: .middle)
             }
         }
 
