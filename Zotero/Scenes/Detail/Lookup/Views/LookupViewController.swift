@@ -142,18 +142,14 @@ class LookupViewController: UIViewController {
             guard let self else { return }
 
             let snapshot = createSnapshot(from: data, schemaController: schemaController, remoteFileDownloader: remoteFileDownloader)
-            dataSource.apply(snapshot, animatingDifferences: false)
-
-            guard contentSizeObserver == nil else {
-                inMainThread {
+            dataSource.apply(snapshot, animatingDifferences: false) { [weak self] in
+                guard let self, contentSizeObserver == nil else {
                     completion()
+                    return
                 }
-                return
-            }
 
-            // For some reason, the observer subscription has to be here, doesn't work if it's in `viewDidLoad`.
-            contentSizeObserver = tableView.observe(\.contentSize, options: [.new]) { [weak self] _, change in
-                inMainThread { [weak self] in
+                // For some reason, the observer subscription has to be here, doesn't work if it's in `viewDidLoad`.
+                contentSizeObserver = tableView.observe(\.contentSize, options: [.new]) { [weak self] _, change in
                     guard let self, let value = change.newValue, value.height != tableViewHeight.constant else { return }
                     tableViewHeight.constant = value.height
                     if value.height >= self.tableView.frame.height, !tableView.isScrollEnabled {
@@ -211,7 +207,7 @@ class LookupViewController: UIViewController {
         }
     }
 
-    private func process(update: RemoteAttachmentDownloader.Update, completed: @escaping () -> Void) {
+    private func process(update: RemoteAttachmentDownloader.Update, completion: @escaping () -> Void) {
         guard update.download.libraryId == viewModel.state.libraryId, var snapshot = dataSource?.snapshot(), !snapshot.sectionIdentifiers.isEmpty else { return }
 
         updateQueue.async { [weak self] in
@@ -229,11 +225,7 @@ class LookupViewController: UIViewController {
                 break
             }
             snapshot.appendItems(rows, toSection: 0)
-            dataSource.apply(snapshot, animatingDifferences: false)
-
-            inMainThread {
-                completed()
-            }
+            dataSource.apply(snapshot, animatingDifferences: false, completion: completion)
         }
     }
 
