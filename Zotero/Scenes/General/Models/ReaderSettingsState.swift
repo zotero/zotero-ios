@@ -41,5 +41,15 @@ struct ReaderSettingsState: ViewModelState {
         isFirstPageAlwaysSingle = settings.isFirstPageAlwaysSingle
     }
 
+    init(settings: HtmlEpubSettings) {
+        appearance = settings.appearance
+        // These don't apply to HTML/Epub, assign random values
+        transition = .curl
+        pageMode = .automatic
+        scrollDirection = .horizontal
+        pageFitting = .adaptive
+        isFirstPageAlwaysSingle = true
+    }
+
     func cleanup() {}
 }

@@ -20,19 +20,21 @@ final class OpenItemsController {
     struct Item: Hashable, Equatable, Codable {
         enum Kind: Hashable, Equatable, Codable {
             case pdf(libraryId: LibraryIdentifier, key: String)
+            case html(libraryId: LibraryIdentifier, key: String)
+            case epub(libraryId: LibraryIdentifier, key: String)
             case note(libraryId: LibraryIdentifier, key: String)
 
             // MARK: Properties
             var libraryId: LibraryIdentifier {
                 switch self {
-                case .pdf(let libraryId, _), .note(let libraryId, _):
+                case .pdf(let libraryId, _), .note(let libraryId, _), .html(let libraryId, _), .epub(let libraryId, _):
                     return libraryId
                 }
             }
 
             var key: String {
                 switch self {
-                case .pdf(_, let key), .note(_, let key):
+                case .pdf(_, let key), .note(_, let key), .html(_, let key), .epub(_, let key):
                     return key
                 }
             }
@@ -41,6 +43,12 @@ final class OpenItemsController {
                 switch self {
                 case .pdf:
                     return Asset.Images.ItemTypes.pdf.image
+
+                case .html:
+                    return Asset.Images.ItemTypes.webPageSnapshot.image
+
+                case .epub:
+                    return Asset.Images.ItemTypes.document.image
 
                 case .note:
                     return Asset.Images.ItemTypes.note.image
@@ -51,6 +59,8 @@ final class OpenItemsController {
             enum CodingKeys: CodingKey {
                 case pdfKind
                 case noteKind
+                case epubKind
+                case htmlKind
                 case libraryId
                 case key
             }
@@ -60,6 +70,12 @@ final class OpenItemsController {
                 switch self {
                 case .pdf:
                     try container.encode(true, forKey: .pdfKind)
+
+                case .epub:
+                    try container.encode(true, forKey: .epubKind)
+
+                case .html:
+                    try container.encode(true, forKey: .htmlKind)
 
                 case .note:
                     try container.encode(true, forKey: .noteKind)
@@ -77,6 +93,10 @@ final class OpenItemsController {
                     self = .pdf(libraryId: libraryId, key: key)
                 } else if (try? container.decode(Bool.self, forKey: .noteKind)) == true {
                     self = .note(libraryId: libraryId, key: key)
+                } else if (try? container.decode(Bool.self, forKey: .epubKind)) == true {
+                    self = .epub(libraryId: libraryId, key: key)
+                } else if (try? container.decode(Bool.self, forKey: .htmlKind)) == true {
+                    self = .html(libraryId: libraryId, key: key)
                 } else {
                     throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: [CodingKeys.pdfKind, CodingKeys.noteKind], debugDescription: "Item kind key not found"))
                 }
@@ -96,6 +116,7 @@ final class OpenItemsController {
 
     enum Presentation {
         case pdf(library: Library, key: String, parentKey: String?, url: URL)
+        case htmlEpub(library: Library, key: String, parentKey: String?, url: URL)
         case note(library: Library, key: String, text: String, tags: [Tag], parentTitleData: NoteEditorState.TitleData?, title: String)
     }
 }
