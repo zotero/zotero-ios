@@ -19,13 +19,15 @@ final class CollectionsSearchViewController: UIViewController {
     private let viewModel: ViewModel<CollectionsSearchActionHandler>
     private let selectAction: (Collection) -> Void
     private let disposeBag: DisposeBag
+    private let updateQueue: DispatchQueue
 
     private var dataSource: UICollectionViewDiffableDataSource<Int, SearchableCollection>!
 
     init(viewModel: ViewModel<CollectionsSearchActionHandler>, selectAction: @escaping (Collection) -> Void) {
         self.viewModel = viewModel
         self.selectAction = selectAction
-        self.disposeBag = DisposeBag()
+        disposeBag = DisposeBag()
+        updateQueue = DispatchQueue(label: "org.zotero.CollectionsSearchViewController.UpdateQueue")
         super.init(nibName: "CollectionsSearchViewController", bundle: nil)
     }
 
@@ -36,31 +38,33 @@ final class CollectionsSearchViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.searchBarSeparatorHeight.constant = 1 / UIScreen.main.scale
-        self.setupSearchBar()
-        self.setupCollectionView()
-        self.setupKeyboardObserving()
-        self.setupDataSource()
+        searchBarSeparatorHeight.constant = 1 / UIScreen.main.scale
+        setupSearchBar()
+        setupCollectionView()
+        setupKeyboardObserving()
+        setupDataSource()
 
-        self.viewModel.stateObservable
-                      .observe(on: MainScheduler.instance)
-                      .subscribe(onNext: { [weak self] state in
-                          self?.update(to: state)
-                      })
-                      .disposed(by: self.disposeBag)
+        viewModel.stateObservable
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] state in
+                self?.update(to: state)
+            })
+            .disposed(by: disposeBag)
     }
 
     // MARK: - UI state
 
     private func update(to state: CollectionsSearchState) {
-        self.dataSource.apply(state.collectionTree.createSearchSnapshot(), to: 0, animatingDifferences: true)
+        updateQueue.async { [weak self] in
+            self?.dataSource.apply(state.collectionTree.createSearchSnapshot(), to: 0, animatingDifferences: true)
+        }
     }
 
     private lazy var cellRegistration: UICollectionView.CellRegistration<CollectionCell, SearchableCollection> = {
         return UICollectionView.CellRegistration<CollectionCell, SearchableCollection> { [weak self] cell, _, searchable in
-            guard let self = self else { return }
+            guard let self else { return }
 
-            let snapshot = self.dataSource.snapshot(for: self.collectionsSection)
+            let snapshot = dataSource.snapshot(for: collectionsSection)
             let hasChildren = !snapshot.snapshot(of: searchable, includingParent: false).items.isEmpty
             let configuration = CollectionCell.SearchContentConfiguration(collection: searchable.collection, hasChildren: hasChildren, isActive: searchable.isActive, accessories: [.badge])
 
@@ -72,31 +76,31 @@ final class CollectionsSearchViewController: UIViewController {
    // MARK: - Setups
 
     private func setupSearchBar() {
-        self.searchBar.placeholder = L10n.Collections.searchTitle
+        searchBar.placeholder = L10n.Collections.searchTitle
 
-        self.searchBar.rx.text
-                         .observe(on: MainScheduler.instance)
-                         .skip(1)
-                         .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
-                         .subscribe(onNext: { [weak self] text in
-                            self?.viewModel.process(action: .search(text ?? ""))
-                         })
-                         .disposed(by: self.disposeBag)
+        searchBar.rx.text
+            .observe(on: MainScheduler.instance)
+            .skip(1)
+            .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] text in
+                self?.viewModel.process(action: .search(text ?? ""))
+            })
+            .disposed(by: disposeBag)
 
-        self.searchBar.rx.cancelButtonClicked
-                         .observe(on: MainScheduler.instance)
-                         .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
-                         .subscribe(onNext: { [weak self] _ in
-                             self?.dismiss(animated: true, completion: nil)
-                         })
-                         .disposed(by: self.disposeBag)
+        searchBar.rx.cancelButtonClicked
+            .observe(on: MainScheduler.instance)
+            .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] _ in
+                self?.dismiss(animated: true, completion: nil)
+            })
+            .disposed(by: disposeBag)
 
-        self.searchBar.becomeFirstResponder()
+        searchBar.becomeFirstResponder()
     }
 
     private func setupCollectionView() {
-        self.collectionView.delegate = self
-        self.collectionView.collectionViewLayout = UICollectionViewCompositionalLayout { _, environment in
+        collectionView.delegate = self
+        collectionView.collectionViewLayout = UICollectionViewCompositionalLayout { _, environment in
             var configuration = UICollectionLayoutListConfiguration(appearance: .plain)
             configuration.showsSeparators = false
             return NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)
@@ -104,54 +108,56 @@ final class CollectionsSearchViewController: UIViewController {
     }
 
     private func setupDataSource() {
-        let registration = self.cellRegistration
+        let registration = cellRegistration
 
         let dataSource = UICollectionViewDiffableDataSource<Int, SearchableCollection>(collectionView: collectionView, cellProvider: { collectionView, indexPath, searchable in
             return collectionView.dequeueConfiguredReusableCell(using: registration, for: indexPath, item: searchable)
         })
         self.dataSource = dataSource
 
-        var snapshot = NSDiffableDataSourceSnapshot<Int, SearchableCollection>()
-        snapshot.appendSections([0])
-        dataSource.apply(snapshot, animatingDifferences: false)
+        updateQueue.async { [weak self] in
+            var snapshot = NSDiffableDataSourceSnapshot<Int, SearchableCollection>()
+            snapshot.appendSections([0])
+            self?.dataSource.apply(snapshot, animatingDifferences: false)
+        }
     }
 
     private func setupCollectionView(with keyboardData: KeyboardData) {
-        var insets = self.collectionView.contentInset
+        var insets = collectionView.contentInset
         insets.bottom = keyboardData.visibleHeight
-        self.collectionView.contentInset = insets
+        collectionView.contentInset = insets
     }
 
     private func setupKeyboardObserving() {
         NotificationCenter.default
-                          .keyboardWillShow
-                          .observe(on: MainScheduler.instance)
-                          .subscribe(onNext: { [weak self] notification in
-                              if let data = notification.keyboardData {
-                                  self?.setupCollectionView(with: data)
-                              }
-                          })
-                          .disposed(by: self.disposeBag)
+            .keyboardWillShow
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] notification in
+                if let data = notification.keyboardData {
+                    self?.setupCollectionView(with: data)
+                }
+            })
+            .disposed(by: disposeBag)
 
         NotificationCenter.default
-                          .keyboardWillHide
-                          .observe(on: MainScheduler.instance)
-                          .subscribe(onNext: { [weak self] notification in
-                              if let data = notification.keyboardData {
-                                  self?.setupCollectionView(with: data)
-                              }
-                          })
-                          .disposed(by: self.disposeBag)
+            .keyboardWillHide
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] notification in
+                if let data = notification.keyboardData {
+                    self?.setupCollectionView(with: data)
+                }
+            })
+            .disposed(by: disposeBag)
     }
 }
 
 extension CollectionsSearchViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        guard let searchable = self.dataSource.itemIdentifier(for: indexPath), searchable.isActive else {
+        guard let searchable = dataSource.itemIdentifier(for: indexPath), searchable.isActive else {
             collectionView.deselectItem(at: indexPath, animated: false)
             return
         }
-        self.selectAction(searchable.collection)
-        self.dismiss(animated: true, completion: nil)
+        selectAction(searchable.collection)
+        dismiss(animated: true, completion: nil)
     }
 }
