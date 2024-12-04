@@ -36,6 +36,6 @@ final class WebDavPropParserDelegate: NSObject, XMLParserDelegate {
     }
 
     func parser(_ parser: XMLParser, foundCharacters string: String) {
-        self.currentValue += string
+        self.currentValue += string.replacingOccurrences(of: "\\s", with: "", options: .regularExpression)
     }
 }
