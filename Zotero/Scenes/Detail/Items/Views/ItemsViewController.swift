@@ -31,9 +31,14 @@ final class ItemsViewController: BaseItemsViewController {
         return toolbarData(from: viewModel.state)
     }
 
-    init(viewModel: ViewModel<ItemsActionHandler>, controllers: Controllers, coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)) {
+    init(
+        viewModel: ViewModel<ItemsActionHandler>,
+        controllers: Controllers,
+        coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate),
+        presenter: OpenItemsPresenter
+    ) {
         self.viewModel = viewModel
-        super.init(controllers: controllers, coordinatorDelegate: coordinatorDelegate)
+        super.init(controllers: controllers, coordinatorDelegate: coordinatorDelegate, presenter: presenter)
         viewModel.process(action: .loadInitialState)
     }
 
@@ -50,6 +55,7 @@ final class ItemsViewController: BaseItemsViewController {
         setupRightBarButtonItems(expectedItems: rightBarButtonItemTypes(for: viewModel.state))
         setupFileObservers()
         setupAppStateObserver()
+        setupOpenItemsObserving()
 
         if let term = viewModel.state.searchTerm, !term.isEmpty {
             navigationItem.searchController?.searchBar.text = term
@@ -65,6 +71,16 @@ final class ItemsViewController: BaseItemsViewController {
                 self?.update(state: state)
             })
             .disposed(by: disposeBag)
+
+        func setupOpenItemsObserving() {
+            guard let controller = controllers.userControllers?.openItemsController, let sessionIdentifier else { return }
+            controller.observable(for: sessionIdentifier)
+                .observe(on: MainScheduler.instance)
+                .subscribe(onNext: { [weak self] items in
+                    self?.viewModel.process(action: .updateOpenItems(items: items))
+                })
+                .disposed(by: disposeBag)
+        }
     }
 
     deinit {
@@ -104,6 +120,10 @@ final class ItemsViewController: BaseItemsViewController {
 
         if state.changes.contains(.filters) || state.changes.contains(.batchData) {
             toolbarController?.reloadToolbarItems(for: toolbarData(from: state))
+        }
+        
+        if state.changes.contains(.openItems) {
+            setupRightBarButtonItems(expectedItems: rightBarButtonItemTypes(for: state))
         }
 
         if let key = state.itemKeyToDuplicate {
@@ -233,6 +253,9 @@ final class ItemsViewController: BaseItemsViewController {
 
         case .select:
             viewModel.process(action: .startEditing)
+
+        case .restoreOpenItems:
+            super.process(barButtonItemAction: barButtonItemAction, sender: sender)
         }
     }
 
@@ -359,9 +382,27 @@ final class ItemsViewController: BaseItemsViewController {
             .disposed(by: disposeBag)
     }
 
+    override func setupRightBarButtonItems(expectedItems: [RightBarButtonItem]) {
+        defer {
+            updateRestoreOpenItemsButton(withCount: viewModel.state.openItemsCount)
+        }
+        super.setupRightBarButtonItems(expectedItems: expectedItems)
+
+        func updateRestoreOpenItemsButton(withCount count: Int) {
+            guard let item = navigationItem.rightBarButtonItems?.first(where: { button in RightBarButtonItem(rawValue: button.tag) == .restoreOpenItems }) else { return }
+            item.image = .openItemsImage(count: count)
+        }
+    }
+
     private func rightBarButtonItemTypes(for state: ItemsState) -> [RightBarButtonItem] {
-        let selectItems = rightBarButtonSelectItemTypes(for: state)
-        return state.library.metadataEditable ? [.add] + selectItems : selectItems
+        var items = rightBarButtonSelectItemTypes(for: state)
+        if state.library.metadataEditable {
+            items = [.add] + items
+        }
+        if state.openItemsCount > 0 {
+            items = [.restoreOpenItems] + items
+        }
+        return items
 
         func rightBarButtonSelectItemTypes(for state: ItemsState) -> [RightBarButtonItem] {
             if !state.isEditing {

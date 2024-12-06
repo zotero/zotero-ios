@@ -19,6 +19,7 @@ protocol AppDelegateCoordinatorDelegate: AnyObject {
     func didRotate(to size: CGSize)
     func show(customUrl: CustomURLController.Kind, animated: Bool)
     func showMainScreen(with data: RestoredStateData, session: UISceneSession) -> Bool
+    func continueUserActivity(_ userActivity: NSUserActivity, for sessionIdentifier: String)
 }
 
 protocol AppOnboardingCoordinatorDelegate: AnyObject {
@@ -138,7 +139,7 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
 
         DDLogInfo("AppCoordinator: show main screen logged \(isLoggedIn ? "in" : "out"); animated=\(animated)")
         show(viewController: viewController, in: window, animated: animated) {
-            process(urlContext: urlContext, data: data)
+            process(urlContext: urlContext, data: data, sessionIdentifier: session.persistentIdentifier)
         }
 
         func show(viewController: UIViewController?, in window: UIWindow, animated: Bool = false, completion: @escaping () -> Void) {
@@ -157,8 +158,9 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
             var userActivity: NSUserActivity?
             var data: RestoredStateData?
             if connectionOptions.shortcutItem?.type == NSUserActivity.mainId {
-                userActivity = .mainActivity()
-                data = .myLibrary()
+                let openItems: [OpenItem] = session.stateRestorationActivity?.restoredStateData?.openItems ?? []
+                userActivity = .mainActivity(with: openItems)
+                data = .myLibrary(openItems: openItems)
             } else {
                 userActivity = connectionOptions.userActivities.first ?? session.stateRestorationActivity
                 data = userActivity?.restoredStateData
@@ -168,11 +170,12 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
                 DDLogInfo("AppCoordinator: Preprocessing restored state - \(data)")
                 Defaults.shared.selectedLibrary = data.libraryId
                 Defaults.shared.selectedCollectionId = data.collectionId
+                controllers.userControllers?.openItemsController.set(items: data.openItems, for: session.persistentIdentifier, validate: true)
             }
             return (urlContext, data)
         }
 
-        func process(urlContext: UIOpenURLContext?, data: RestoredStateData?) {
+        func process(urlContext: UIOpenURLContext?, data: RestoredStateData?, sessionIdentifier: String) {
             if let urlContext, let urlController = controllers.userControllers?.customUrlController {
                 // If scene was started from custom URL
                 let sourceApp = urlContext.options.sourceApplication ?? "unknown"
@@ -187,10 +190,11 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
             if let data {
                 DDLogInfo("AppCoordinator: Processing restored state - \(data)")
                 // If scene had state stored, restore state
-                showRestoredState(for: data)
+                showRestoredState(for: data, sessionIdentifier: sessionIdentifier)
             }
 
-            func showRestoredState(for data: RestoredStateData) {
+            func showRestoredState(for data: RestoredStateData, sessionIdentifier: String) {
+                guard let openItemsController = controllers.userControllers?.openItemsController else { return }
                 DDLogInfo("AppCoordinator: show restored state")
                 guard let mainController = window.rootViewController as? MainViewController else {
                     DDLogWarn("AppCoordinator: show restored state aborted - invalid root view controller")
@@ -207,8 +211,14 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
                     collection = Collection(custom: .all)
                 }
                 mainController.showItems(for: collection, in: data.libraryId)
-                guard data.restoreMostRecentlyOpenedItem, let item = data.openItems.first else { return }
-                restoreMostRecentlyOpenedItem(using: self, item: item)
+                guard data.restoreMostRecentlyOpenedItem else { return }
+                openItemsController.restoreMostRecentlyOpenedItem(using: self, sessionIdentifier: sessionIdentifier) { item in
+                    if let item {
+                        DDLogInfo("AppCoordinator: restored open item - \(item)")
+                    } else {
+                        DDLogInfo("AppCoordinator: no open item to restore")
+                    }
+                }
 
                 func loadRestoredStateData(libraryId: LibraryIdentifier, collectionId: CollectionIdentifier) -> Collection? {
                     guard let dbStorage = controllers.userControllers?.dbStorage else { return nil }
@@ -223,63 +233,6 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
                     }
 
                     return collection
-                }
-
-                func restoreMostRecentlyOpenedItem(using presenter: OpenItemsPresenter, item: OpenItem) {
-                    guard let presentation = loadPresentation(for: item) else { return }
-                    presenter.showItem(with: presentation)
-
-                    func loadPresentation(for item: OpenItem) -> ItemPresentation? {
-                        guard let dbStorage = controllers.userControllers?.dbStorage else { return nil }
-                            var presentation: ItemPresentation?
-                        do {
-                            try dbStorage.perform(on: .main) { coordinator in
-                                switch item.kind {
-                                case .pdf(let libraryId, let key):
-                                    presentation = try loadPDFPresentation(key: key, libraryId: libraryId, coordinator: coordinator)
-
-                                case .note(let libraryId, let key):
-                                    presentation = try loadNotePresentation(key: key, libraryId: libraryId, coordinator: coordinator)
-                                }
-                            }
-                        } catch let error {
-                            DDLogError("OpenItemsController: can't load item \(item) - \(error)")
-                        }
-                        return presentation
-
-                        func loadPDFPresentation(key: String, libraryId: LibraryIdentifier, coordinator: DbCoordinator) throws -> ItemPresentation? {
-                            let library: Library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
-                            let rItem = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
-                            let parentKey = rItem.parent?.key
-                            guard let attachment = AttachmentCreator.attachment(for: rItem, fileStorage: controllers.fileStorage, urlDetector: nil) else { return nil }
-                            var url: URL?
-                            switch attachment.type {
-                            case .file(let filename, let contentType, let location, _, _):
-                                switch location {
-                                case .local, .localAndChangedRemotely:
-                                    let file = Files.attachmentFile(in: libraryId, key: key, filename: filename, contentType: contentType)
-                                    url = file.createUrl()
-
-                                case .remote, .remoteMissing:
-                                    break
-                                }
-
-                            case .url:
-                                break
-                            }
-                            guard let url else { return nil }
-                            return .pdf(library: library, key: key, parentKey: parentKey, url: url)
-                        }
-
-                        func loadNotePresentation(key: String, libraryId: LibraryIdentifier, coordinator: DbCoordinator) throws -> ItemPresentation? {
-                            let library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
-                            let rItem = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
-                            let note = Note(item: rItem)
-                            let parentTitleData: NoteEditorState.TitleData? = rItem.parent.flatMap { .init(type: $0.rawType, title: $0.displayTitle) }
-                            guard let note else { return nil }
-                            return .note(library: library, key: note.key, text: note.text, tags: note.tags, parentTitleData: parentTitleData, title: note.title)
-                        }
-                    }
                 }
             }
         }
@@ -398,10 +351,24 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
 
     func showMainScreen(with data: RestoredStateData, session: UISceneSession) -> Bool {
         guard let window, let mainController = window.rootViewController as? MainViewController else { return false }
+        controllers.userControllers?.openItemsController.set(items: data.openItems, for: session.persistentIdentifier, validate: true)
         mainController.dismiss(animated: false) {
             mainController.masterCoordinator?.showCollections(for: data.libraryId, preselectedCollection: data.collectionId, animated: false)
         }
         return true
+    }
+
+    func continueUserActivity(_ userActivity: NSUserActivity, for sessionIdentifier: String) {
+        guard userActivity.activityType == NSUserActivity.contentContainerId, let window, let mainController = window.rootViewController as? MainViewController else { return }
+        mainController.getDetailCoordinator { [weak self] coordinator in
+            self?.controllers.userControllers?.openItemsController.restoreMostRecentlyOpenedItem(using: coordinator, sessionIdentifier: sessionIdentifier) { item in
+                if let item {
+                    DDLogInfo("AppCoordinator: restored open item for continued user activity - \(item)")
+                } else {
+                    DDLogInfo("AppCoordinator: no open item to restore for continued user activity")
+                }
+            }
+        }
     }
 }
 
