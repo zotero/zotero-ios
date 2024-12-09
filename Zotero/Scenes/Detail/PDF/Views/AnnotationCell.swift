@@ -103,6 +103,7 @@ final class AnnotationCell: UITableViewCell {
             annotationView.resignFirstResponder()
         }
 
+        let reconfiguringForSameAnnotation = key == annotation.key
         key = annotation.key
         selectionView.layer.borderWidth = selected ? PDFReaderLayout.cellSelectionLineWidth : 0
         let availableWidth = availableWidth - (PDFReaderLayout.annotationLayout.horizontalInset * 2)
@@ -121,6 +122,10 @@ final class AnnotationCell: UITableViewCell {
             pdfAnnotationsCoordinatorDelegate: pdfAnnotationsCoordinatorDelegate,
             state: state
         )
+        if !reconfiguringForSameAnnotation {
+            annotationView.setupObserving()
+        }
+        // Otherwise, reconfigured cells do not have their prepareForReuse method called, so observing is already set up.
 
         setupAccessibility(
             isAuthor: annotation.isAuthor(currentUserId: currentUserId),
