@@ -145,7 +145,6 @@ final class AnnotationView: UIView {
         )
         setup(comment: comment, canEdit: canEdit)
         setup(tags: annotation.tags, canEdit: canEdit, accessibilityEnabled: selected)
-        setupObserving()
 
         let commentButtonIsHidden = commentTextView.isHidden
         let highlightContentIsHidden = highlightContent?.isHidden ?? true
@@ -283,7 +282,7 @@ final class AnnotationView: UIView {
         header.menuTap.flatMap({ Observable.just(Action.options($0)) }).bind(to: actionPublisher)
     }
     
-    private func setupObserving() {
+    func setupObserving() {
         var disposables: [Disposable] = buildDisposables()
         if let doneTap = header.doneTap {
             disposables.append(doneTap.flatMap({ Observable.just(Action.done) }).bind(to: actionPublisher))

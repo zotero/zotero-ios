@@ -69,15 +69,9 @@ final class PDFAnnotationsViewController: UIViewController {
         super.viewIsAppearing(animated)
 
         tableView.setEditing(viewModel.state.sidebarEditingEnabled, animated: false)
-        updateQueue.async { [weak self] in
-            guard let self else { return }
-            var snapshot = NSDiffableDataSourceSnapshot<Int, PDFReaderState.AnnotationKey>()
-            snapshot.appendSections([0])
-            snapshot.appendItems(viewModel.state.sortedKeys)
-            dataSource.apply(snapshot, animatingDifferences: false) { [weak self] in
-                guard let self, let key = viewModel.state.focusSidebarKey, let indexPath = dataSource.indexPath(for: key) else { return }
-                tableView.selectRow(at: indexPath, animated: false, scrollPosition: .middle)
-            }
+        updateUI(state: viewModel.state, animatedDifferences: false) { [weak self] in
+            guard let self, let key = viewModel.state.focusSidebarKey, let indexPath = dataSource.indexPath(for: key) else { return }
+            tableView.selectRow(at: indexPath, animated: false, scrollPosition: .middle)
         }
 
         viewModel.stateObservable
@@ -153,6 +147,19 @@ final class PDFAnnotationsViewController: UIViewController {
         }
     }
 
+    private func updateUI(state: PDFReaderState, animatedDifferences: Bool = true, completion: (() -> Void)? = nil) {
+        updateQueue.async { [weak self] in
+            guard let self else { return }
+            var snapshot = NSDiffableDataSourceSnapshot<Int, PDFReaderState.AnnotationKey>()
+            snapshot.appendSections([0])
+            snapshot.appendItems(state.sortedKeys)
+            if let keys = state.updatedAnnotationKeys {
+                snapshot.reloadItems(keys)
+            }
+            dataSource.apply(snapshot, animatingDifferences: animatedDifferences, completion: completion)
+        }
+    }
+
     private func update(state: PDFReaderState) {
         if state.changes.contains(.annotations) {
             tableView.isHidden = (state.snapshotKeys ?? state.sortedKeys).isEmpty
@@ -164,7 +171,7 @@ final class PDFAnnotationsViewController: UIViewController {
             guard let self else { return }
 
             if let keys = state.loadedPreviewImageAnnotationKeys {
-                updatePreviewsIfVisible(for: keys)
+                updatePreviewsIfVisible(state: state, tableView: tableView, for: keys)
             }
 
             if let key = state.focusSidebarKey, let indexPath = dataSource.indexPath(for: key) {
@@ -181,96 +188,98 @@ final class PDFAnnotationsViewController: UIViewController {
                 setupToolbar(to: state)
             }
         }
-    }
 
-    /// Updates `UIImage` of `SquareAnnotation` preview if the cell is currently on screen.
-    /// - parameter keys: Set of keys to update.
-    private func updatePreviewsIfVisible(for keys: Set<String>) {
-        let cells = tableView.visibleCells.compactMap({ $0 as? AnnotationCell }).filter({ keys.contains($0.key) })
-
-        for cell in cells {
-            let image = viewModel.state.previewCache.object(forKey: (cell.key as NSString))
-            cell.updatePreview(image: image)
-        }
-    }
-
-    /// Reloads tableView if needed, based on new state. Calls completion either when reloading finished or when there was no reload.
-    /// - parameter state: Current state.
-    /// - parameter completion: Called after reload was performed or even if there was no reload.
-    private func reloadIfNeeded(for state: PDFReaderState, completion: @escaping () -> Void) {
-        if state.document.pageCount == 0 {
-            DDLogWarn("AnnotationsViewController: trying to reload empty document")
-            completion()
-            return
-        }
-
-        let isVisible = parentDelegate?.isSidebarVisible ?? false
-
-        if state.changes.contains(.annotations) {
-            if state.changes.contains(.sidebarEditing) {
-                tableView.setEditing(state.sidebarEditingEnabled, animated: false)
+        /// Reloads tableView if needed, based on new state. Calls completion either when reloading finished or when there was no reload.
+        /// - parameter state: Current state.
+        /// - parameter completion: Called after reload was performed or even if there was no reload.
+        func reloadIfNeeded(for state: PDFReaderState, completion: @escaping () -> Void) {
+            if state.document.pageCount == 0 {
+                DDLogWarn("AnnotationsViewController: trying to reload empty document")
+                completion()
+                return
             }
-            updateQueue.async { [weak self] in
-                guard let self else { return }
-                var snapshot = NSDiffableDataSourceSnapshot<Int, PDFReaderState.AnnotationKey>()
-                snapshot.appendSections([0])
-                snapshot.appendItems(state.sortedKeys)
-                if let keys = state.updatedAnnotationKeys {
-                    snapshot.reloadItems(keys)
+
+            let isVisible = parentDelegate?.isSidebarVisible ?? false
+
+            if state.changes.contains(.annotations) {
+                if state.changes.contains(.sidebarEditing) {
+                    tableView.setEditing(state.sidebarEditingEnabled, animated: false)
                 }
-                dataSource.apply(snapshot, animatingDifferences: isVisible, completion: completion)
+                updateUI(state: state, animatedDifferences: isVisible, completion: completion)
+                return
             }
-            return
-        }
 
-        if state.changes.contains(.interfaceStyle) {
-            updateQueue.async { [weak self] in
-                guard let self else { return }
-                var snapshot = dataSource.snapshot()
-                guard !snapshot.sectionIdentifiers.isEmpty else { return }
-                snapshot.reloadSections([0])
-                dataSource.apply(snapshot, animatingDifferences: false, completion: completion)
+            if state.changes.contains(.interfaceStyle) {
+                if dataSource.snapshot().numberOfItems > 0 {
+                    updateQueue.async { [weak self] in
+                        guard let self else { return }
+                        var snapshot = dataSource.snapshot()
+                        snapshot.reconfigureItems(snapshot.itemIdentifiers)
+                        dataSource.apply(snapshot, animatingDifferences: false, completion: completion)
+                    }
+                } else {
+                    completion()
+                }
+                return
             }
-            return
-        }
 
-        if state.changes.contains(.selection) || state.changes.contains(.activeComment) {
-            if let keys = state.updatedAnnotationKeys {
-                updateQueue.sync { [unowned self] in
+            if state.changes.contains(.selection) || state.changes.contains(.activeComment) {
+                updateQueue.async { [weak self] in
+                    guard let self else { return }
                     var snapshot = dataSource.snapshot()
-                    snapshot.reloadItems(keys)
-                    dataSource.apply(snapshot, animatingDifferences: false)
+                    let itemIdentifiers = snapshot.itemIdentifiers
+                    snapshot.reconfigureItems(itemIdentifiers)
+                    if let keys = state.updatedAnnotationKeys {
+                        snapshot.reloadItems(keys)
+                    }
+                    dataSource.apply(snapshot, animatingDifferences: false) { [weak self] in
+                        guard let self else { return }
+                        focusSelectedCell()
+                        if state.changes.contains(.sidebarEditing) {
+                            tableView.setEditing(state.sidebarEditingEnabled, animated: isVisible)
+                        }
+                        completion()
+                    }
                 }
+                return
             }
 
-            updateCellHeight()
-            focusSelectedCell()
-
-            if state.changes.contains(.sidebarEditing) {
-                tableView.setEditing(state.sidebarEditingEnabled, animated: isVisible)
+            let reloadCompletion = { [weak self] in
+                guard let self else { return }
+                if state.changes.contains(.sidebarEditing) {
+                    tableView.setEditing(state.sidebarEditingEnabled, animated: true)
+                }
+                completion()
             }
-
-            completion()
-            return
+            if state.changes.contains(.library) {
+                updateUI(state: state, completion: reloadCompletion)
+            } else {
+                reloadCompletion()
+            }
         }
 
-        if state.changes.contains(.library) {
-            tableView.reloadData()
+        /// Updates `UIImage` of `SquareAnnotation` preview if the cell is currently on screen.
+        /// - parameter state: Current state.
+        /// - parameter tableView: Table view
+        /// - parameter keys: Set of keys to update.
+        func updatePreviewsIfVisible(state: PDFReaderState, tableView: UITableView, for keys: Set<String>) {
+            let cells = tableView.visibleCells.compactMap({ $0 as? AnnotationCell }).filter({ keys.contains($0.key) })
+            for cell in cells {
+                let image = state.previewCache.object(forKey: (cell.key as NSString))
+                cell.updatePreview(image: image)
+            }
         }
-
-        if state.changes.contains(.sidebarEditing) {
-            tableView.setEditing(state.sidebarEditingEnabled, animated: true)
-        }
-
-        completion()
     }
 
     /// Updates tableView layout in case any cell changed height.
     private func updateCellHeight() {
-        UIView.setAnimationsEnabled(false)
-        tableView.beginUpdates()
-        tableView.endUpdates()
-        UIView.setAnimationsEnabled(true)
+        updateQueue.async { [weak self] in
+            guard let self else { return }
+            var snapshot = dataSource.snapshot()
+            let itemIdentifiers = snapshot.itemIdentifiers
+            snapshot.reconfigureItems(itemIdentifiers)
+            dataSource.apply(snapshot, animatingDifferences: false)
+        }
     }
 
     /// Scrolls to selected cell if it's not visible.
@@ -323,6 +332,7 @@ final class PDFAnnotationsViewController: UIViewController {
         }
 
         guard let boundingBoxConverter, let pdfAnnotationsCoordinatorDelegate = coordinatorDelegate else { return }
+        let reconfiguringForSameAnnotation = annotation.key == cell.key
         cell.setup(
             with: annotation,
             text: text,
@@ -339,10 +349,13 @@ final class PDFAnnotationsViewController: UIViewController {
             pdfAnnotationsCoordinatorDelegate: pdfAnnotationsCoordinatorDelegate,
             state: state
         )
-        let actionSubscription = cell.actionPublisher.subscribe(onNext: { [weak self] action in
-            self?.perform(action: action, annotation: annotation)
-        })
-        _ = cell.disposeBag?.insert(actionSubscription)
+        if !reconfiguringForSameAnnotation {
+            let actionSubscription = cell.actionPublisher.subscribe(onNext: { [weak self] action in
+                self?.perform(action: action, annotation: annotation)
+            })
+            _ = cell.disposeBag?.insert(actionSubscription)
+        }
+        // Otherwise, reconfigured cells do not have their prepareForReuse method called, so observing is already set up.
 
         func loadPreview(for annotation: PDFAnnotation, state: PDFReaderState) -> UIImage? {
             let preview = state.previewCache.object(forKey: (annotation.key as NSString))
