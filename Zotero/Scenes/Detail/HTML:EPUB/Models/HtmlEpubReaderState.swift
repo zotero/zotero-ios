@@ -49,12 +49,38 @@ struct HtmlEpubReaderState: ViewModelState {
         let modifications: [[String: Any]]
     }
 
-    enum Error: Swift.Error {
+    enum Error: ReaderError {
         case cantDeleteAnnotation
         case cantAddAnnotations
         case cantUpdateAnnotation
         case incompatibleDocument
         case unknown
+
+        var title: String {
+            switch self {
+            case .cantDeleteAnnotation, .cantAddAnnotations, .cantUpdateAnnotation, .incompatibleDocument, .unknown:
+                return L10n.error
+            }
+        }
+
+        var message: String {
+            switch self {
+            case .cantDeleteAnnotation:
+                return L10n.Errors.Pdf.cantDeleteAnnotations
+
+            case .cantAddAnnotations:
+                return L10n.Errors.Pdf.cantAddAnnotations
+
+            case .cantUpdateAnnotation:
+                return L10n.Errors.Pdf.cantUpdateAnnotation
+
+            case .incompatibleDocument:
+                return L10n.Errors.Pdf.cantUpdateAnnotation
+
+            case .unknown:
+                return L10n.Errors.unknown
+            }
+        }
     }
 
     let originalFile: File
@@ -65,8 +91,6 @@ struct HtmlEpubReaderState: ViewModelState {
     let title: String?
     let userId: Int
     let username: String
-    let commentFont: UIFont
-    let textFont: UIFont
 
     var library: Library
     var documentData: DocumentData?
@@ -115,8 +139,6 @@ struct HtmlEpubReaderState: ViewModelState {
         self.settings = settings
         self.userId = userId
         self.username = username
-        commentFont = PDFReaderLayout.annotationLayout.font
-        textFont = PDFReaderLayout.annotationLayout.font
         sortedKeys = []
         annotations = [:]
         comments = [:]
@@ -149,5 +171,11 @@ struct HtmlEpubReaderState: ViewModelState {
         focusSidebarKey = nil
         focusDocumentKey = nil
         updatedAnnotationKeys = nil
+    }
+}
+
+extension HtmlEpubReaderState: ReaderState {
+    var selectedReaderAnnotation: ReaderAnnotation? {
+        return annotationPopoverKey.flatMap({ annotations[$0] })
     }
 }
