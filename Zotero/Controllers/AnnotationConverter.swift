@@ -71,6 +71,8 @@ struct AnnotationConverter {
         let comment = annotation.contents.flatMap({ $0.trimmingCharacters(in: .whitespacesAndNewlines) }) ?? ""
         let sortIndex = self.sortIndex(from: annotation, boundingBoxConverter: boundingBoxConverter)
         let date = Date()
+        let dateAdded = annotation.creationDate ?? date
+        let dateModified = annotation.lastModified ?? date
 
         let author: String
         if isAuthor {
@@ -137,7 +139,8 @@ struct AnnotationConverter {
             fontSize: fontSize,
             rotation: rotation,
             sortIndex: sortIndex,
-            dateModified: date
+            dateAdded: dateAdded,
+            dateModified: dateModified
         )
     }
 
