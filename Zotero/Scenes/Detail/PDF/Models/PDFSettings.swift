@@ -30,6 +30,20 @@ struct PDFSettings {
     }
 }
 
+extension PDFSettings: ReaderSettings {
+    var appearance: ReaderSettingsState.Appearance {
+        return appearanceMode
+    }
+    
+    var preferredContentSize: CGSize {
+        return CGSize(width: 480, height: 308)
+    }
+
+    var rows: [ReaderSettingsViewController.Row] {
+        return [.pageTransition, .pageMode, .pageSpreads, .scrollDirection, .pageFitting, .appearance]
+    }
+}
+
 extension PDFSettings: Codable {
     enum Keys: String, CodingKey {
         case direction, transition, appearanceMode, pageMode, pageFitting, isFirstPageAlwaysSingle

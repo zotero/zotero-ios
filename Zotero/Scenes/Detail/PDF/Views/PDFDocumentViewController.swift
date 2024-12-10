@@ -363,7 +363,7 @@ final class PDFDocumentViewController: UIViewController {
         var frame = view.convert(annotation.boundingBox(boundingBoxConverter: self), from: pageView.pdfCoordinateSpace)
         frame.origin.y += parentDelegate?.documentTopOffset ?? 0
         let observable = coordinatorDelegate?.showAnnotationPopover(
-            viewModel: viewModel,
+            state: state,
             sourceRect: frame,
             popoverDelegate: self,
             userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle
