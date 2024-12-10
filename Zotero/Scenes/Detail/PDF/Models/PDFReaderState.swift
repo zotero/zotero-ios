@@ -54,7 +54,7 @@ struct PDFReaderState: ViewModelState {
         static let appearance = Changes(rawValue: 1 << 17)
     }
 
-    enum Error: Swift.Error {
+    enum Error: ReaderError {
         case cantDeleteAnnotation
         case cantAddAnnotations
         case cantUpdateAnnotation
@@ -62,6 +62,41 @@ struct PDFReaderState: ViewModelState {
         case pageNotInt
         case unknown
         case documentEmpty
+
+        var title: String {
+            switch self {
+            case .cantDeleteAnnotation, .cantAddAnnotations, .cantUpdateAnnotation, .pageNotInt, .unknown, .documentEmpty:
+                return L10n.error
+
+            case .mergeTooBig:
+                return L10n.Errors.Pdf.mergeTooBigTitle
+            }
+        }
+
+        var message: String {
+            switch self {
+            case .cantDeleteAnnotation:
+                return L10n.Errors.Pdf.cantDeleteAnnotations
+
+            case .cantAddAnnotations:
+                return L10n.Errors.Pdf.cantAddAnnotations
+
+            case .cantUpdateAnnotation:
+                return L10n.Errors.Pdf.cantUpdateAnnotation
+
+            case .mergeTooBig:
+                return L10n.Errors.Pdf.mergeTooBig
+
+            case .pageNotInt:
+                return L10n.Errors.Pdf.pageIndexNotInt
+
+            case .unknown:
+                return L10n.Errors.unknown
+
+            case .documentEmpty:
+                return L10n.Errors.Pdf.emptyDocument
+            }
+        }
     }
 
     let key: String
@@ -69,12 +104,8 @@ struct PDFReaderState: ViewModelState {
     let document: PSPDFKit.Document
     let title: String?
     let previewCache: NSCache<NSString, UIImage>
-    let textFont: UIFont
-    let textEditorFont: UIFont
-    let commentFont: UIFont
     let userId: Int
     let username: String
-    let displayName: String
 
     var library: Library
     var libraryToken: NotificationToken?
@@ -141,7 +172,6 @@ struct PDFReaderState: ViewModelState {
         settings: PDFSettings,
         userId: Int,
         username: String,
-        displayName: String,
         interfaceStyle: UIUserInterfaceStyle
     ) {
         self.key = key
@@ -150,12 +180,8 @@ struct PDFReaderState: ViewModelState {
         document.overrideClass(PSPDFKit.AnnotationManager.self, with: AnnotationManager.self)
         self.title = title
         self.previewCache = NSCache()
-        self.textFont = PDFReaderLayout.annotationLayout.font
-        self.textEditorFont = AnnotationPopoverLayout.annotationLayout.font
-        self.commentFont = PDFReaderLayout.annotationLayout.font
         self.userId = userId
         self.username = username
-        self.displayName = displayName
         self.sortedKeys = []
         self.documentAnnotations = [:]
         self.texts = [:]
@@ -226,5 +252,11 @@ struct PDFReaderState: ViewModelState {
         self.pdfNotification = nil
         self.changedColorForTool = nil
         self.unlockSuccessful = nil
+    }
+}
+
+extension PDFReaderState: ReaderState {
+    var selectedReaderAnnotation: (any ReaderAnnotation)? {
+        return selectedAnnotation
     }
 }

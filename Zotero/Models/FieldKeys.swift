@@ -75,98 +75,57 @@ struct FieldKeys {
             }
 
             static func mandatoryApiFields(for type: AnnotationType) -> [KeyBaseKeyPair] {
+                let fields: [KeyBaseKeyPair] = [
+                    KeyBaseKeyPair(key: Annotation.type, baseKey: nil),
+                    KeyBaseKeyPair(key: Annotation.comment, baseKey: nil),
+                    KeyBaseKeyPair(key: Annotation.color, baseKey: nil),
+                    KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil)
+                    ]
+
+                switch type {
+                case .highlight, .underline:
+                    return fields + [KeyBaseKeyPair(key: Annotation.text, baseKey: nil)]
+
+                case .ink, .note, .image, .freeText:
+                    return fields
+                }
+            }
+
+            static func extraPDFFields(for type: AnnotationType) -> [KeyBaseKeyPair] {
                 switch type {
                 case .highlight, .underline:
                     return [
-                        KeyBaseKeyPair(key: Annotation.type, baseKey: nil),
-                        KeyBaseKeyPair(key: Annotation.comment, baseKey: nil),
-                        KeyBaseKeyPair(key: Annotation.color, baseKey: nil),
-                        KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil),
-                        KeyBaseKeyPair(key: Annotation.text, baseKey: nil)
+                        KeyBaseKeyPair(key: Annotation.pageLabel, baseKey: nil),
+                        KeyBaseKeyPair(key: Annotation.Position.pageIndex, baseKey: Annotation.position)
                     ]
 
                 case .ink:
                     return [
-                        KeyBaseKeyPair(key: Annotation.type, baseKey: nil),
-                        KeyBaseKeyPair(key: Annotation.comment, baseKey: nil),
-                        KeyBaseKeyPair(key: Annotation.color, baseKey: nil),
-                        KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil)
+                        KeyBaseKeyPair(key: Annotation.pageLabel, baseKey: nil),
+                        KeyBaseKeyPair(key: Annotation.Position.pageIndex, baseKey: Annotation.position),
+                        KeyBaseKeyPair(key: Annotation.Position.lineWidth, baseKey: Annotation.position)
                     ]
 
                 case .note, .image:
                     return [
-                        KeyBaseKeyPair(key: Annotation.type, baseKey: nil),
-                        KeyBaseKeyPair(key: Annotation.comment, baseKey: nil),
-                        KeyBaseKeyPair(key: Annotation.color, baseKey: nil),
-                        KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil)
+                        KeyBaseKeyPair(key: Annotation.pageLabel, baseKey: nil),
+                        KeyBaseKeyPair(key: Annotation.Position.pageIndex, baseKey: Annotation.position)
                     ]
 
                 case .freeText:
                     return [
-                        KeyBaseKeyPair(key: Annotation.type, baseKey: nil),
-                        KeyBaseKeyPair(key: Annotation.comment, baseKey: nil),
-                        KeyBaseKeyPair(key: Annotation.color, baseKey: nil),
-                        KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil)
+                        KeyBaseKeyPair(key: Annotation.pageLabel, baseKey: nil),
+                        KeyBaseKeyPair(key: Annotation.Position.pageIndex, baseKey: Annotation.position),
+                        KeyBaseKeyPair(key: Annotation.Position.fontSize, baseKey: Annotation.position),
+                        KeyBaseKeyPair(key: Annotation.Position.rotation, baseKey: Annotation.position)
                     ]
                 }
             }
 
-            static func allPDFFields(for type: AnnotationType) -> [KeyBaseKeyPair] {
+            static func extraHtmlEpubFields(for type: AnnotationType) -> [KeyBaseKeyPair] {
                 switch type {
-                case .highlight, .underline:
-                    return [KeyBaseKeyPair(key: Annotation.type, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.comment, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.color, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.pageLabel, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.text, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.Position.pageIndex, baseKey: Annotation.position)]
-
-                case .ink:
-                    return [KeyBaseKeyPair(key: Annotation.type, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.comment, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.color, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.pageLabel, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.Position.pageIndex, baseKey: Annotation.position),
-                            KeyBaseKeyPair(key: Annotation.Position.lineWidth, baseKey: Annotation.position)]
-
-                case .note, .image:
-                    return [KeyBaseKeyPair(key: Annotation.type, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.comment, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.color, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.pageLabel, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.Position.pageIndex, baseKey: Annotation.position)]
-
-                case .freeText:
-                    return [KeyBaseKeyPair(key: Annotation.type, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.comment, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.color, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.pageLabel, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.Position.pageIndex, baseKey: Annotation.position),
-                            KeyBaseKeyPair(key: Annotation.Position.fontSize, baseKey: Annotation.position),
-                            KeyBaseKeyPair(key: Annotation.Position.rotation, baseKey: Annotation.position)]
-                }
-            }
-
-            static func allHtmlEpubFields(for type: AnnotationType) -> [KeyBaseKeyPair] {
-                switch type {
-                case .highlight, .underline:
-                    return [KeyBaseKeyPair(key: Annotation.type, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.comment, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.color, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.pageLabel, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.text, baseKey: nil)]
-
-                case .note:
-                    return [KeyBaseKeyPair(key: Annotation.type, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.comment, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.color, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.pageLabel, baseKey: nil),
-                            KeyBaseKeyPair(key: Annotation.sortIndex, baseKey: nil)]
+                case .highlight, .underline, .note:
+                    return [KeyBaseKeyPair(key: Annotation.pageLabel, baseKey: nil)]
 
                 case .ink, .image, .freeText:
                     return []
