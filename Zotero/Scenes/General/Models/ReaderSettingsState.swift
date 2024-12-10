@@ -10,6 +10,18 @@ import UIKit
 
 import PSPDFKitUI
 
+protocol ReaderSettings {
+    var transition: PSPDFKitUI.PageTransition { get }
+    var pageMode: PSPDFKitUI.PageMode { get }
+    var direction: PSPDFKitUI.ScrollDirection { get }
+    var pageFitting: PSPDFKitUI.PDFConfiguration.SpreadFitting { get }
+    var appearance: ReaderSettingsState.Appearance { get }
+    var isFirstPageAlwaysSingle: Bool { get }
+    var preferredContentSize: CGSize { get }
+
+    var rows: [ReaderSettingsViewController.Row] { get }
+}
+
 struct ReaderSettingsState: ViewModelState {
     enum Appearance: UInt {
         case light
@@ -41,23 +53,13 @@ struct ReaderSettingsState: ViewModelState {
     var appearance: ReaderSettingsState.Appearance
     var isFirstPageAlwaysSingle: Bool
 
-    init(settings: PDFSettings) {
+    init(settings: ReaderSettings) {
         transition = settings.transition
         pageMode = settings.pageMode
         scrollDirection = settings.direction
         pageFitting = settings.pageFitting
-        appearance = settings.appearanceMode
-        isFirstPageAlwaysSingle = settings.isFirstPageAlwaysSingle
-    }
-
-    init(settings: HtmlEpubSettings) {
         appearance = settings.appearance
-        // These don't apply to HTML/Epub, assign random values
-        transition = .curl
-        pageMode = .automatic
-        scrollDirection = .horizontal
-        pageFitting = .adaptive
-        isFirstPageAlwaysSingle = true
+        isFirstPageAlwaysSingle = settings.isFirstPageAlwaysSingle
     }
 
     func cleanup() {}

@@ -14,55 +14,26 @@ import PSPDFKit
 import PSPDFKitUI
 import RxSwift
 
-protocol PdfReaderCoordinatorDelegate: AnyObject {
-    func showToolSettings(tool: AnnotationTool, colorHex: String?, sizeValue: Float?, sender: SourceView, userInterfaceStyle: UIUserInterfaceStyle, valueChanged: @escaping (String?, Float?) -> Void)
+protocol PdfReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarCoordinatorDelegate {
     func showSearch(pdfController: PDFViewController, text: String?, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle, delegate: PDFSearchDelegate)
-    func showAnnotationPopover(
-        viewModel: ViewModel<PDFReaderActionHandler>,
-        sourceRect: CGRect,
-        popoverDelegate: UIPopoverPresentationControllerDelegate,
-        userInterfaceStyle: UIUserInterfaceStyle
-    ) -> PublishSubject<AnnotationPopoverState>?
-    func show(error: PDFReaderState.Error)
     func show(error: PDFDocumentExporter.Error)
     func share(url: URL, barButton: UIBarButtonItem)
     func share(text: String, rect: CGRect, view: UIView, userInterfaceStyle: UIUserInterfaceStyle)
     func showDeletedAlertForPdf(completion: @escaping (Bool) -> Void)
-    func showSettings(with settings: PDFSettings, sender: UIBarButtonItem) -> ViewModel<ReaderSettingsActionHandler>
     func showReader(document: Document, userInterfaceStyle: UIUserInterfaceStyle)
     func showCitation(for itemId: String, libraryId: LibraryIdentifier)
     func copyBibliography(using presenter: UIViewController, for itemId: String, libraryId: LibraryIdentifier)
     func showFontSizePicker(sender: UIView, picked: @escaping (CGFloat) -> Void)
     func showDeleteAlertForAnnotation(sender: UIView, delete: @escaping () -> Void)
-    func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, userInterfaceStyle: UIUserInterfaceStyle?, picked: @escaping ([Tag]) -> Void)
     func showDocumentChangedAlert(completed: @escaping () -> Void)
 }
 
-protocol PdfAnnotationsCoordinatorDelegate: AnyObject {
+protocol PdfAnnotationsCoordinatorDelegate: ReaderSidebarCoordinatorDelegate {
     func createShareAnnotationMenu(state: PDFReaderState, annotation: PDFAnnotation, sender: UIButton) -> UIMenu?
     func shareAnnotationImage(state: PDFReaderState, annotation: PDFAnnotation, scale: CGFloat, sender: UIButton )
-    func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, userInterfaceStyle: UIUserInterfaceStyle?, picked: @escaping ([Tag]) -> Void)
-    func showCellOptions(
-        for annotation: PDFAnnotation,
-        highlightFont: UIFont,
-        userId: Int,
-        library: Library,
-        sender: UIButton,
-        userInterfaceStyle: UIUserInterfaceStyle,
-        saveAction: @escaping AnnotationEditSaveAction,
-        deleteAction: @escaping AnnotationEditDeleteAction
-    )
-    func showFilterPopup(
-        from barButton: UIBarButtonItem,
-        filter: AnnotationsFilter?,
-        availableColors: [String],
-        availableTags: [Tag],
-        userInterfaceStyle: UIUserInterfaceStyle,
-        completed: @escaping (AnnotationsFilter?) -> Void
-    )
 }
 
-final class PDFCoordinator: Coordinator {
+final class PDFCoordinator: ReaderCoordinator {
     weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
     private var pdfSearchController: PDFSearchViewController?
@@ -75,7 +46,7 @@ final class PDFCoordinator: Coordinator {
     private let page: Int?
     private let preselectedAnnotationKey: String?
     private let previewRects: [CGRect]?
-    private unowned let controllers: Controllers
+    internal unowned let controllers: Controllers
     private let disposeBag: DisposeBag
 
     init(
@@ -149,7 +120,6 @@ final class PDFCoordinator: Coordinator {
             settings: settings,
             userId: userId,
             username: username,
-            displayName: displayName,
             interfaceStyle: settings.appearanceMode == .automatic ? parentNavigationController.view.traitCollection.userInterfaceStyle : settings.appearanceMode.userInterfaceStyle
         )
         let controller = PDFReaderViewController(
@@ -164,89 +134,6 @@ final class PDFCoordinator: Coordinator {
 }
 
 extension PDFCoordinator: PdfReaderCoordinatorDelegate {
-    func showToolSettings(tool: AnnotationTool, colorHex: String?, sizeValue: Float?, sender: SourceView, userInterfaceStyle: UIUserInterfaceStyle, valueChanged: @escaping (String?, Float?) -> Void) {
-        DDLogInfo("PDFCoordinator: show tool settings for \(tool)")
-        let state = AnnotationToolOptionsState(tool: tool, colorHex: colorHex, size: sizeValue)
-        let handler = AnnotationToolOptionsActionHandler()
-        let controller = AnnotationToolOptionsViewController(viewModel: ViewModel(initialState: state, handler: handler), valueChanged: valueChanged)
-
-        switch UIDevice.current.userInterfaceIdiom {
-        case .pad:
-            controller.overrideUserInterfaceStyle = userInterfaceStyle
-            controller.modalPresentationStyle = .popover
-            switch sender {
-            case .view(let view, _):
-                controller.popoverPresentationController?.sourceView = view
-
-            case .item(let item):
-                controller.popoverPresentationController?.barButtonItem = item
-            }
-            self.navigationController?.present(controller, animated: true, completion: nil)
-
-        default:
-            let navigationController = UINavigationController(rootViewController: controller)
-            navigationController.modalPresentationStyle = .formSheet
-            navigationController.overrideUserInterfaceStyle = userInterfaceStyle
-            self.navigationController?.present(navigationController, animated: true, completion: nil)
-        }
-    }
-
-    func showAnnotationPopover(
-        viewModel: ViewModel<PDFReaderActionHandler>,
-        sourceRect: CGRect,
-        popoverDelegate: UIPopoverPresentationControllerDelegate,
-        userInterfaceStyle: UIUserInterfaceStyle
-    ) -> PublishSubject<AnnotationPopoverState>? {
-        guard let currentNavigationController = navigationController, let annotation = viewModel.state.selectedAnnotation else { return nil }
-
-        DDLogInfo("PDFCoordinator: show annotation popover")
-
-        if let coordinator = childCoordinators.last, coordinator is AnnotationPopoverCoordinator {
-            DDLogWarn("PDFCoordinator: another annotation popover is already showing, ignoring")
-        }
-
-        let navigationController = NavigationViewController()
-        navigationController.overrideUserInterfaceStyle = userInterfaceStyle
-
-        let author = viewModel.state.library.identifier == .custom(.myLibrary) ? "" : annotation.author(displayName: viewModel.state.displayName, username: viewModel.state.username)
-        let comment: NSAttributedString = (self.navigationController?.viewControllers.first as? PDFAnnotationsDelegate)?.parseAndCacheIfNeededAttributedComment(for: annotation) ?? .init(string: "")
-        let highlightFont = viewModel.state.textEditorFont
-        let highlightText: NSAttributedString = (self.navigationController?.viewControllers.first as? PDFAnnotationsDelegate)?
-            .parseAndCacheIfNeededAttributedText(for: annotation, with: highlightFont) ?? .init(string: "")
-        let editability = annotation.editability(currentUserId: viewModel.state.userId, library: viewModel.state.library)
-
-        let data = AnnotationPopoverState.Data(
-            libraryId: viewModel.state.library.identifier,
-            type: annotation.type,
-            isEditable: editability == .editable,
-            author: author,
-            comment: comment,
-            color: annotation.color,
-            lineWidth: annotation.lineWidth ?? 0,
-            pageLabel: annotation.pageLabel,
-            highlightText: highlightText,
-            highlightFont: highlightFont,
-            tags: annotation.tags,
-            showsDeleteButton: editability != .notEditable
-        )
-        let coordinator = AnnotationPopoverCoordinator(data: data, navigationController: navigationController, controllers: controllers)
-        coordinator.parentCoordinator = self
-        childCoordinators.append(coordinator)
-        coordinator.start(animated: false)
-
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            navigationController.modalPresentationStyle = .popover
-            navigationController.popoverPresentationController?.sourceView = currentNavigationController.view
-            navigationController.popoverPresentationController?.sourceRect = sourceRect
-            navigationController.popoverPresentationController?.permittedArrowDirections = [.left, .right]
-            navigationController.popoverPresentationController?.delegate = popoverDelegate
-        }
-
-        currentNavigationController.present(navigationController, animated: true, completion: nil)
-
-        return coordinator.viewModelObservable
-    }
-
     func showSearch(pdfController: PDFViewController, text: String?, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle, delegate: PDFSearchDelegate) {
         DDLogInfo("PDFCoordinator: show search")
 
@@ -303,43 +190,16 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         self.share(item: text, sourceView: .view(view, rect), userInterfaceStyle: userInterfaceStyle)
     }
 
-    func show(error: PDFReaderState.Error) {
-        let title: String
-        let message: String
-
-        switch error {
-        case .mergeTooBig:
-            title = L10n.Errors.Pdf.mergeTooBigTitle
-            message = L10n.Errors.Pdf.mergeTooBig
-
-        case .cantAddAnnotations:
-            title = L10n.error
-            message = L10n.Errors.Pdf.cantAddAnnotations
-
-        case .cantDeleteAnnotation:
-            title = L10n.error
-            message = L10n.Errors.Pdf.cantDeleteAnnotations
-
-        case .cantUpdateAnnotation:
-            title = L10n.error
-            message = L10n.Errors.Pdf.cantUpdateAnnotation
-
-        case .pageNotInt:
-            title = L10n.error
-            message = L10n.Errors.Pdf.pageIndexNotInt
-
-        case .documentEmpty:
-            title = L10n.error
-            message = L10n.Errors.Pdf.emptyDocument
-
-        case .unknown:
-            title = L10n.error
-            message = L10n.Errors.unknown
-        }
-
-        let controller = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        controller.addAction(UIAlertAction(title: L10n.ok, style: .default))
-        self.navigationController?.present(controller, animated: true)
+    func lookup(text: String, rect: CGRect, view: UIView, userInterfaceStyle: UIUserInterfaceStyle) {
+        DDLogInfo("PDFCoordinator: show lookup")
+        // When presented as a popover, UIReferenceLibraryViewController ignores overrideUserInterfaceStyle, so we wrap it in a navigation controller to force it.
+        let controller = UINavigationController(rootViewController: UIReferenceLibraryViewController(term: text))
+        controller.setNavigationBarHidden(true, animated: false)
+        controller.overrideUserInterfaceStyle = userInterfaceStyle
+        controller.modalPresentationStyle = .popover
+        controller.popoverPresentationController?.sourceView = view
+        controller.popoverPresentationController?.sourceRect = rect
+        self.navigationController?.present(controller, animated: true, completion: nil)
     }
 
     func show(error: PDFDocumentExporter.Error) {
@@ -381,29 +241,6 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
             delete()
         }))
         self.navigationController?.present(controller, animated: true, completion: nil)
-    }
-
-    func showSettings(with settings: PDFSettings, sender: UIBarButtonItem) -> ViewModel<ReaderSettingsActionHandler> {
-        DDLogInfo("PDFCoordinator: show settings")
-
-        let state = ReaderSettingsState(settings: settings)
-        let viewModel = ViewModel(initialState: state, handler: ReaderSettingsActionHandler())
-        let baseController = ReaderSettingsViewController(rows: [.pageTransition, .pageMode, .pageSpreads, .scrollDirection, .pageFitting, .appearance], viewModel: viewModel)
-
-        let controller: UIViewController
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            controller = baseController
-        } else {
-            controller = UINavigationController(rootViewController: baseController)
-        }
-
-        controller.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
-        controller.popoverPresentationController?.barButtonItem = sender
-        controller.preferredContentSize = CGSize(width: 480, height: 308)
-        controller.overrideUserInterfaceStyle = settings.appearanceMode.userInterfaceStyle
-        self.navigationController?.present(controller, animated: true, completion: nil)
-
-        return viewModel
     }
 
     func showReader(document: Document, userInterfaceStyle: UIUserInterfaceStyle) {
@@ -561,95 +398,6 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
             // TODO: show error?
         }
         .disposed(by: disposeBag)
-    }
-    
-    func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, userInterfaceStyle: UIUserInterfaceStyle?, picked: @escaping ([Tag]) -> Void) {
-        guard let navigationController else { return }
-        (self.parentCoordinator as? DetailCoordinator)?.showTagPicker(
-            libraryId: libraryId,
-            selected: selected,
-            userInterfaceStyle: userInterfaceStyle,
-            navigationController: navigationController,
-            picked: picked
-        )
-    }
-
-    func showFilterPopup(
-        from barButton: UIBarButtonItem,
-        filter: AnnotationsFilter?,
-        availableColors: [String],
-        availableTags: [Tag],
-        userInterfaceStyle: UIUserInterfaceStyle,
-        completed: @escaping (AnnotationsFilter?) -> Void
-    ) {
-        DDLogInfo("PDFCoordinator: show annotations filter popup")
-
-        let navigationController = NavigationViewController()
-        navigationController.overrideUserInterfaceStyle = userInterfaceStyle
-
-        let coordinator = AnnotationsFilterPopoverCoordinator(
-            initialFilter: filter,
-            availableColors: availableColors,
-            availableTags: availableTags,
-            navigationController: navigationController,
-            controllers: self.controllers,
-            completionHandler: completed
-        )
-        coordinator.parentCoordinator = self
-        self.childCoordinators.append(coordinator)
-        coordinator.start(animated: false)
-
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            navigationController.modalPresentationStyle = .popover
-            navigationController.popoverPresentationController?.barButtonItem = barButton
-            navigationController.popoverPresentationController?.permittedArrowDirections = .down
-        }
-
-        self.navigationController?.present(navigationController, animated: true, completion: nil)
-    }
-
-    func showCellOptions(
-        for annotation: PDFAnnotation,
-        highlightFont: UIFont,
-        userId: Int,
-        library: Library,
-        sender: UIButton,
-        userInterfaceStyle: UIUserInterfaceStyle,
-        saveAction: @escaping AnnotationEditSaveAction,
-        deleteAction: @escaping AnnotationEditDeleteAction
-    ) {
-        let navigationController = NavigationViewController()
-        navigationController.overrideUserInterfaceStyle = userInterfaceStyle
-
-        let highlightText: NSAttributedString = (self.navigationController?.viewControllers.first as? PDFAnnotationsDelegate)?
-            .parseAndCacheIfNeededAttributedText(for: annotation, with: highlightFont) ?? .init(string: "")
-        let coordinator = AnnotationEditCoordinator(
-            data: AnnotationEditState.Data(
-                type: annotation.type,
-                isEditable: annotation.editability(currentUserId: userId, library: library) == .editable,
-                color: annotation.color,
-                lineWidth: annotation.lineWidth ?? 0,
-                pageLabel: annotation.pageLabel,
-                highlightText: highlightText,
-                highlightFont: highlightFont,
-                fontSize: annotation.fontSize
-            ),
-            saveAction: saveAction,
-            deleteAction: deleteAction,
-            navigationController: navigationController,
-            controllers: self.controllers
-        )
-        coordinator.parentCoordinator = self
-        self.childCoordinators.append(coordinator)
-        coordinator.start(animated: false)
-
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            navigationController.modalPresentationStyle = .popover
-            navigationController.popoverPresentationController?.sourceView = sender
-            navigationController.popoverPresentationController?.permittedArrowDirections = .left
-        }
-        
-        self.navigationController?.present(navigationController, animated: true, completion: nil)
     }
 }
 

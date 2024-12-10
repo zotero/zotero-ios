@@ -124,6 +124,10 @@ struct PDFDatabaseAnnotation {
         return item.annotationSortIndex
     }
 
+    var dateAdded: Date {
+        return item.dateAdded
+    }
+
     var dateModified: Date {
         return item.dateModified
     }

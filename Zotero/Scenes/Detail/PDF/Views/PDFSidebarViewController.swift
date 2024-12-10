@@ -47,7 +47,7 @@ class PDFSidebarViewController: UIViewController {
     private weak var controllerContainer: UIView!
     private weak var currentController: UIViewController?
     private var controllerDisposeBag: DisposeBag?
-    weak var parentDelegate: (PDFReaderContainerDelegate & SidebarDelegate & PDFAnnotationsDelegate)?
+    weak var parentDelegate: (PDFReaderContainerDelegate & SidebarDelegate & ReaderAnnotationsDelegate)?
     weak var coordinatorDelegate: PdfAnnotationsCoordinatorDelegate?
     weak var boundingBoxConverter: AnnotationBoundingBoxConverter?
 

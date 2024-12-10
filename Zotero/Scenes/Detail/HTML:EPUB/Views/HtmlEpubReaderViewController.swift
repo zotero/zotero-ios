@@ -42,7 +42,7 @@ class HtmlEpubReaderViewController: UIViewController, ParentWithSidebarControlle
     }
     private(set) var isCompactWidth: Bool
     var statusBarHeight: CGFloat
-    weak var coordinatorDelegate: (HtmlEpubReaderCoordinatorDelegate&HtmlEpubSidebarCoordinatorDelegate)?
+    weak var coordinatorDelegate: (HtmlEpubReaderCoordinatorDelegate & HtmlEpubSidebarCoordinatorDelegate)?
     @CodableUserDefault(
         key: "HtmlEpubReaderToolbarState",
         defaultValue: AnnotationToolbarHandler.State(position: .leading, visible: true),
@@ -338,7 +338,7 @@ class HtmlEpubReaderViewController: UIViewController, ParentWithSidebarControlle
         func showPopover(forKey key: String, rect: CGRect) {
             guard !isSidebarVisible else { return }
             let observable = coordinatorDelegate?.showAnnotationPopover(
-                viewModel: viewModel,
+                state: viewModel.state,
                 sourceRect: rect,
                 popoverDelegate: self,
                 userInterfaceStyle: viewModel.state.settings.appearance.userInterfaceStyle
@@ -536,8 +536,8 @@ extension HtmlEpubReaderViewController: HtmlEpubReaderContainerDelegate {
     }
 }
 
-extension HtmlEpubReaderViewController: HtmlEpubAnnotationsDelegate {
-    func parseAndCacheIfNeededAttributedText(for annotation: HtmlEpubAnnotation, with font: UIFont) -> NSAttributedString? {
+extension HtmlEpubReaderViewController: ReaderAnnotationsDelegate {
+    func parseAndCacheIfNeededAttributedText(for annotation: ReaderAnnotation, with font: UIFont) -> NSAttributedString? {
         guard let text = annotation.text, !text.isEmpty else { return nil }
 
         if let attributedText = viewModel.state.texts[annotation.key]?.1[font] {
@@ -548,7 +548,7 @@ extension HtmlEpubReaderViewController: HtmlEpubAnnotationsDelegate {
         return viewModel.state.texts[annotation.key]?.1[font]
     }
 
-    func parseAndCacheIfNeededAttributedComment(for annotation: HtmlEpubAnnotation) -> NSAttributedString? {
+    func parseAndCacheIfNeededAttributedComment(for annotation: ReaderAnnotation) -> NSAttributedString? {
         let comment = annotation.comment
         guard !comment.isEmpty else { return nil }
 

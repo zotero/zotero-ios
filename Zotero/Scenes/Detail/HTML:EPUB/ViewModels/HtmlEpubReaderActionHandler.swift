@@ -544,7 +544,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         func parse(annotations: [[String: Any]], author: String, isAuthor: Bool) -> [HtmlEpubAnnotation] {
             return annotations.compactMap { data -> HtmlEpubAnnotation? in
                 guard let id = data["id"] as? String,
-                      let dateCreated = (data["dateCreated"] as? String).flatMap({ DateFormatter.iso8601WithFractionalSeconds.date(from: $0) }),
+                      let dateAdded = (data["dateCreated"] as? String).flatMap({ DateFormatter.iso8601WithFractionalSeconds.date(from: $0) }),
                       let dateModified = (data["dateModified"] as? String).flatMap({ DateFormatter.iso8601WithFractionalSeconds.date(from: $0) }),
                       let color = data["color"] as? String,
                       let comment = data["comment"] as? String,
@@ -572,8 +572,8 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
                     comment: comment,
                     text: text,
                     sortIndex: sortIndex,
+                    dateAdded: dateAdded,
                     dateModified: dateModified,
-                    dateCreated: dateCreated,
                     tags: tags
                 )
             }
@@ -1021,8 +1021,8 @@ extension RItem {
             comment: comment ?? "",
             text: text,
             sortIndex: sortIndex,
+            dateAdded: dateAdded,
             dateModified: dateModified,
-            dateCreated: dateAdded,
             tags: tags
         )
 
