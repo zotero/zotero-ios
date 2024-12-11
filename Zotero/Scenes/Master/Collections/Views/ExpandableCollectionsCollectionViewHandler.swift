@@ -47,21 +47,18 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
         collectionView.delegate = self
         collectionView.dropDelegate = self
         dataSource = createDataSource(for: collectionView)
+        updateQueue.async { [weak self] in
+            guard let self else { return }
+            var snapshot = NSDiffableDataSourceSnapshot<Int, Collection>()
+            snapshot.appendSections([collectionsSection])
+            dataSource.apply(snapshot, animatingDifferences: false)
+        }
 
         func createDataSource(for collectionView: UICollectionView) -> UICollectionViewDiffableDataSource<Int, Collection> {
             let registration = cellRegistration
-
-            let dataSource = UICollectionViewDiffableDataSource<Int, Collection>(collectionView: collectionView, cellProvider: { collectionView, indexPath, collection in
+            return UICollectionViewDiffableDataSource<Int, Collection>(collectionView: collectionView, cellProvider: { collectionView, indexPath, collection in
                 return collectionView.dequeueConfiguredReusableCell(using: registration, for: indexPath, item: collection)
             })
-
-            updateQueue.sync {
-                var snapshot = NSDiffableDataSourceSnapshot<Int, Collection>()
-                snapshot.appendSections([collectionsSection])
-                dataSource.apply(snapshot, animatingDifferences: false)
-            }
-
-            return dataSource
         }
     }
 

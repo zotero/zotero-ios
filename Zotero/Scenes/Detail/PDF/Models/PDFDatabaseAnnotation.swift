@@ -142,7 +142,7 @@ struct PDFDatabaseAnnotation {
             if !library.metadataEditable {
                 return .notEditable
             }
-            return isAuthor(currentUserId: currentUserId) ? .editable : .deletable
+            return isAuthor(currentUserId: currentUserId) ? .editable : .notEditable
         }
     }
 
