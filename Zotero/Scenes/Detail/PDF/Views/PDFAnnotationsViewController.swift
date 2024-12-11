@@ -137,21 +137,24 @@ final class PDFAnnotationsViewController: UIViewController {
             viewModel.process(action: .setComment(key: annotation.key, comment: comment))
 
         case .reloadHeight:
-            if let key = viewModel.state.selectedAnnotationKey {
-                updateQueue.async { [weak self] in
-                    guard let self else { return }
-                    var snapshot = dataSource.snapshot()
-                    snapshot.reconfigureItems([key])
-                    dataSource.apply(snapshot, animatingDifferences: false) { [weak self] in
-                        self?.focusSelectedCell()
-                    }
-                }
-            }
+            reconfigureSelectedCellIfAny()
 
         case .setCommentActive(let isActive):
             viewModel.process(action: .setCommentActive(isActive))
 
         case .done: break // Done button doesn't appear here
+        }
+
+        func reconfigureSelectedCellIfAny() {
+            guard let key = viewModel.state.selectedAnnotationKey else { return }
+            updateQueue.async { [weak self] in
+                guard let self else { return }
+                var snapshot = dataSource.snapshot()
+                snapshot.reconfigureItems([key])
+                dataSource.apply(snapshot, animatingDifferences: false) { [weak self] in
+                    self?.focusSelectedCell()
+                }
+            }
         }
     }
 
