@@ -157,15 +157,13 @@ final class PDFAnnotationsViewController: UIViewController {
         }
     }
 
-    private func updateUI(state: PDFReaderState, forceReload: Bool = false, animatedDifferences: Bool = true, completion: (() -> Void)? = nil) {
+    private func updateUI(state: PDFReaderState, animatedDifferences: Bool = true, completion: (() -> Void)? = nil) {
         updateQueue.async { [weak self] in
             guard let self else { return }
             var snapshot = NSDiffableDataSourceSnapshot<Int, PDFReaderState.AnnotationKey>()
             snapshot.appendSections([0])
             snapshot.appendItems(state.sortedKeys)
-            if forceReload {
-                snapshot.reloadSections([0])
-            } else if let keys = state.updatedAnnotationKeys {
+            if let keys = state.updatedAnnotationKeys {
                 snapshot.reconfigureItems(keys)
             }
             dataSource.apply(snapshot, animatingDifferences: animatedDifferences, completion: completion)
@@ -179,19 +177,16 @@ final class PDFAnnotationsViewController: UIViewController {
             emptyLabel.isHidden = !tableView.isHidden
         }
 
-        reloadIfNeeded(for: state) { [weak self] in
+        let isVisible = parentDelegate?.isSidebarVisible ?? false
+        reloadIfNeeded(for: state, isVisible: isVisible) { [weak self] in
             guard let self else { return }
 
             if let keys = state.loadedPreviewImageAnnotationKeys {
                 updatePreviewsIfVisible(state: state, tableView: tableView, for: keys)
             }
 
-            let isVisible = parentDelegate?.isSidebarVisible ?? false
             if let key = state.focusSidebarKey, let indexPath = dataSource.indexPath(for: key) {
                 tableView.selectRow(at: indexPath, animated: isVisible, scrollPosition: .middle)
-            }
-            if state.changes.contains(.sidebarEditing) {
-                tableView.setEditing(state.sidebarEditingEnabled, animated: isVisible)
             }
             if state.changes.contains(.sidebarEditingSelection) {
                 deleteBarButton?.isEnabled = state.deletionEnabled
@@ -205,39 +200,43 @@ final class PDFAnnotationsViewController: UIViewController {
         /// Reloads tableView if needed, based on new state. Calls completion either when reloading finished or when there was no reload.
         /// - parameter state: Current state.
         /// - parameter completion: Called after reload was performed or even if there was no reload.
-        func reloadIfNeeded(for state: PDFReaderState, completion: @escaping () -> Void) {
+        func reloadIfNeeded(for state: PDFReaderState, isVisible: Bool, completion: @escaping () -> Void) {
             if state.document.pageCount == 0 {
                 DDLogWarn("AnnotationsViewController: trying to reload empty document")
                 completion()
                 return
             }
 
-            let isVisible = parentDelegate?.isSidebarVisible ?? false
+            if state.changes.contains(.sidebarEditing) {
+                tableView.setEditing(state.sidebarEditingEnabled, animated: isVisible)
+            }
 
             if state.changes.contains(.library) {
-                updateUI(state: state, forceReload: true, animatedDifferences: isVisible, completion: completion)
+                updateQueue.async { [weak self] in
+                    guard let self else { return }
+                    var snapshot = NSDiffableDataSourceSnapshot<Int, PDFReaderState.AnnotationKey>()
+                    snapshot.reloadSections([0])
+                    dataSource.apply(snapshot, animatingDifferences: isVisible, completion: completion)
+                }
                 return
             }
 
             if state.changes.contains(.annotations) {
-                if state.changes.contains(.sidebarEditing) {
-                    tableView.setEditing(state.sidebarEditingEnabled, animated: false)
-                }
                 updateUI(state: state, animatedDifferences: isVisible, completion: completion)
                 return
             }
 
-            if state.changes.contains(.interfaceStyle) {
-                if dataSource.snapshot().numberOfItems > 0 {
-                    updateQueue.async { [weak self] in
-                        guard let self else { return }
-                        var snapshot = dataSource.snapshot()
-                        snapshot.reconfigureItems(snapshot.itemIdentifiers)
-                        dataSource.apply(snapshot, animatingDifferences: false, completion: completion)
-                    }
-                    return
+            if state.changes.contains(.interfaceStyle) && dataSource.snapshot().numberOfItems > 0 {
+                updateQueue.async { [weak self] in
+                    guard let self else { return }
+                    var snapshot = dataSource.snapshot()
+                    snapshot.reconfigureItems(snapshot.itemIdentifiers)
+                    dataSource.apply(snapshot, animatingDifferences: false, completion: completion)
                 }
-            } else if state.changes.contains(.selection) || state.changes.contains(.activeComment) {
+                return
+            }
+
+            if state.changes.contains(.selection) || state.changes.contains(.activeComment) {
                 var keys = state.updatedAnnotationKeys ?? []
                 if let key = state.selectedAnnotationKey, !keys.contains(key) {
                     keys.append(key)
@@ -253,8 +252,10 @@ final class PDFAnnotationsViewController: UIViewController {
                             completion()
                         }
                     }
-                    return
+                } else {
+                    completion()
                 }
+                return
             }
 
             completion()
