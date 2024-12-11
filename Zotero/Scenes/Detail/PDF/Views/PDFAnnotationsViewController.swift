@@ -146,8 +146,6 @@ final class PDFAnnotationsViewController: UIViewController {
                         self?.focusSelectedCell()
                     }
                 }
-            } else {
-                focusSelectedCell()
             }
 
         case .setCommentActive(let isActive):
@@ -252,10 +250,8 @@ final class PDFAnnotationsViewController: UIViewController {
                             completion()
                         }
                     }
-                } else {
-                    completion()
+                    return
                 }
-                return
             }
 
             completion()
