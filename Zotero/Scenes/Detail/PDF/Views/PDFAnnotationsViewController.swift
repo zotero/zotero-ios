@@ -137,8 +137,18 @@ final class PDFAnnotationsViewController: UIViewController {
             viewModel.process(action: .setComment(key: annotation.key, comment: comment))
 
         case .reloadHeight:
-            updateCellHeight()
-            focusSelectedCell()
+            if let key = viewModel.state.selectedAnnotationKey {
+                updateQueue.async { [weak self] in
+                    guard let self else { return }
+                    var snapshot = dataSource.snapshot()
+                    snapshot.reconfigureItems([key])
+                    dataSource.apply(snapshot, animatingDifferences: false) { [weak self] in
+                        self?.focusSelectedCell()
+                    }
+                }
+            } else {
+                focusSelectedCell()
+            }
 
         case .setCommentActive(let isActive):
             viewModel.process(action: .setCommentActive(isActive))
@@ -260,17 +270,6 @@ final class PDFAnnotationsViewController: UIViewController {
                 let image = state.previewCache.object(forKey: (cell.key as NSString))
                 cell.updatePreview(image: image)
             }
-        }
-    }
-
-    /// Updates tableView layout in case any cell changed height.
-    private func updateCellHeight() {
-        updateQueue.async { [weak self] in
-            guard let self else { return }
-            var snapshot = dataSource.snapshot()
-            let itemIdentifiers = snapshot.itemIdentifiers
-            snapshot.reconfigureItems(itemIdentifiers)
-            dataSource.apply(snapshot, animatingDifferences: false)
         }
     }
 
