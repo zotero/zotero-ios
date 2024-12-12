@@ -397,7 +397,7 @@ struct ItemResponse {
                 value = "\(_value.rounded(to: 3))"
             } else if let _value = object.value as? Bool {
                 value = "\(_value)"
-            } else if let data = try? JSONSerialization.dataWithRoundedDecimals(withJSONObject: object.value), let _value = String(data: data, encoding: .utf8) {
+            } else if let data = try? JSONSerialization.dataWithRoundedDecimals(withJSONObject: object.value, options: .fragmentsAllowed), let _value = String(data: data, encoding: .utf8) {
                 // If `object.value` is not a basic type (string or number) convert it to JSON and store JSON string
                 value = _value
             } else {
