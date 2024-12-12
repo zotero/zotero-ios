@@ -301,12 +301,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     private func storeAnnotationPreviewsIfNeeded(isDark: Bool, in viewModel: ViewModel<PDFReaderActionHandler>) {
         let libraryId = viewModel.state.library.identifier
 
-        // Load area annotations if needed.
+        // Load annotation previews if needed.
         for (_, annotations) in viewModel.state.document.allAnnotations(of: [.square, .ink, .freeText]) {
             for annotation in annotations {
-                guard annotation.shouldRenderPreview && annotation.isZoteroAnnotation &&
-                      !annotationPreviewController.hasPreview(for: annotation.previewId, parentKey: viewModel.state.key, libraryId: libraryId, isDark: isDark)
-                else { continue }
+                guard !annotationPreviewController.hasPreview(for: annotation.previewId, parentKey: viewModel.state.key, libraryId: libraryId, isDark: isDark) else { continue }
                 annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key, libraryId: libraryId, isDark: isDark)
             }
         }
