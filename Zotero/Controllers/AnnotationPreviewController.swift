@@ -54,7 +54,7 @@ final class AnnotationPreviewController: NSObject {
         }
 
         init?(annotation: PSPDFKit.Annotation, parentKey: String, libraryId: LibraryIdentifier, imageSize: CGSize, imageScale: CGFloat, isDark: Bool, type: PreviewType) {
-            guard annotation.shouldRenderPreview && annotation.isZoteroAnnotation, let document = annotation.document else { return nil }
+            guard annotation.shouldRenderPreview, let document = annotation.document else { return nil }
             key = annotation.previewId
             self.parentKey = parentKey
             self.libraryId = libraryId
