@@ -66,7 +66,6 @@ struct PDFDatabaseAnnotation {
             DDLogWarn("PDFDatabaseAnnotation: isAuthor for currentUserId: \(currentUserId) encountered nil user")
             return false
         }
-        DDLogInfo("PDFDatabaseAnnotation: isAuthor for currentUserId: \(currentUserId) compared to \(user.identifier)")
         return user.identifier == currentUserId
     }
 
