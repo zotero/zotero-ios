@@ -1369,7 +1369,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         let finalAnnotations = keptAsIs + toAdd
         for annotation in finalAnnotations {
             if annotation.key == nil {
-                annotation.user = viewModel.state.displayName
+                // We use the displayName, but if this is empty we use the username, which is what would be presented anyway.
+                // Since a username cannot be empty, we guarantee an non-empty annotation.user field.
+                annotation.user = viewModel.state.displayName.isEmpty ? viewModel.state.username : viewModel.state.displayName
                 annotation.customData = [AnnotationsConfig.keyKey: KeyGenerator.newKey]
             }
         }
@@ -1393,6 +1395,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                     document.remove(annotations: needRemove, options: [.suppressNotifications: true])
                 }
                 // Transformed annotations need to be added, before they are converted, otherwise their document property is nil.
+                // Caution, if an annotation is added this way, with any empty string user, its user field will be converted to nil!
                 document.add(annotations: finalAnnotations, options: [.suppressNotifications: true])
             }
         }
