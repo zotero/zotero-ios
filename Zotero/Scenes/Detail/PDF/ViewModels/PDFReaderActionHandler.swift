@@ -1370,7 +1370,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         for annotation in finalAnnotations {
             if annotation.key == nil {
                 // We use the displayName, but if this is empty we use the username, which is what would be presented anyway.
-                // Since a username cannot be empty, we guarranty an non-empty annotation.user field.
+                // Since a username cannot be empty, we guarantee an non-empty annotation.user field.
                 annotation.user = viewModel.state.displayName.isEmpty ? viewModel.state.username : viewModel.state.displayName
                 annotation.customData = [AnnotationsConfig.keyKey: KeyGenerator.newKey]
             }
