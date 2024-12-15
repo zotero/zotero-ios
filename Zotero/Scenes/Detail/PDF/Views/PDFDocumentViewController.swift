@@ -131,11 +131,6 @@ final class PDFDocumentViewController: UIViewController {
         }
     }
 
-    func disableAnnotationTools() {
-        guard let tool = self.pdfController?.annotationStateManager.state else { return }
-        self.toggle(annotationTool: tool, color: nil, tappedWithStylus: false)
-    }
-
     func toggle(annotationTool: PSPDFKit.Annotation.Tool, color: UIColor?, tappedWithStylus: Bool, resetPencilManager: Bool = true) {
         guard let stateManager = self.pdfController?.annotationStateManager else { return }
 
@@ -704,6 +699,13 @@ final class PDFDocumentViewController: UIViewController {
                           self?.update(state: state)
                       })
                       .disposed(by: self.disposeBag)
+    }
+}
+
+extension PDFDocumentViewController: ParentWithSidebarDocumentController {
+    func disableAnnotationTools() {
+        guard let tool = self.pdfController?.annotationStateManager.state else { return }
+        self.toggle(annotationTool: tool, color: nil, tappedWithStylus: false)
     }
 }
 
