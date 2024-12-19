@@ -4325,6 +4325,7 @@
 				B3593F142668D37900FA4BB2 /* Bundle Styles */,
 				B34A85AC243CB1E4003D5638 /* Bundle Translators */,
 				B3A1D03D2BA321B30040FEE9 /* Bundle Note Editor */,
+				61BDE15F2D1458D200100612 /* Bundle PDF Worker */,
 				B337A5AD244F229400AFD13D /* SwiftGen */,
 				B30D59512206F60400884C4A /* Sources */,
 				B30D59522206F60400884C4A /* Frameworks */,
@@ -4654,6 +4655,26 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "swiftlint\n";
+		};
+		61BDE15F2D1458D200100612 /* Bundle PDF Worker */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/scripts/bundle_pdf_worker.sh",
+			);
+			name = "Bundle PDF Worker";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "sh \"$SCRIPT_INPUT_FILE_0\"\n";
 		};
 		B3087B87245190F500FF05ED /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
