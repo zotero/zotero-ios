@@ -4413,6 +4413,7 @@
 				6185A1A82D9C266100285385 /* Bundle Utilities */,
 				B3A1D03D2BA321B30040FEE9 /* Bundle Note Editor */,
 				B3052A912C412E12008C8596 /* Bundle Reader */,
+				61BDE15F2D1458D200100612 /* Bundle PDF Worker */,
 				B30D59512206F60400884C4A /* Sources */,
 				B30D59522206F60400884C4A /* Frameworks */,
 				B30D59532206F60400884C4A /* Resources */,
@@ -4795,6 +4796,26 @@
 				"$(SRCROOT)/scripts/bundle_reader.sh",
 			);
 			name = "Bundle Reader";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "sh \"$SCRIPT_INPUT_FILE_0\"\n";
+		};
+		61BDE15F2D1458D200100612 /* Bundle PDF Worker */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/scripts/bundle_pdf_worker.sh",
+			);
+			name = "Bundle PDF Worker";
 			outputFileListPaths = (
 			);
 			outputPaths = (

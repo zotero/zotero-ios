@@ -19,3 +19,6 @@
 [submodule "reader"]
 	path = reader
 	url = https://github.com/zotero/reader.git
+[submodule "pdf-worker"]
+	path = pdf-worker
+	url = https://github.com/zotero/pdf-worker
