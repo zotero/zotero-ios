@@ -51,8 +51,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Quick/Nimble",
       "state" : {
-        "revision" : "f3bedd7c2a858f4513e7d004def200a69238db2f",
-        "version" : "13.6.2"
+        "revision" : "7795df4fff1a9cd231fe4867ae54f4dc5f5734f9",
+        "version" : "13.7.1"
       }
     },
     {
@@ -78,8 +78,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/PSPDFKit/PSPDFKit-SP",
       "state" : {
-        "revision" : "3cdcac00ee7bce16b96d7aafcdc56b5837773d55",
-        "version" : "14.2.0"
+        "revision" : "ef3a12718e273fe0b0fee1cf664b6de077d66a69",
+        "version" : "14.3.0"
       }
     },
     {
@@ -96,8 +96,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/realm/realm-cocoa",
       "state" : {
-        "revision" : "5553cfd1c789efdb3d6daf7f0cc0733cfe601846",
-        "version" : "10.54.1"
+        "revision" : "a3abcdf95a3176f5ad990239920aad4ef86e00de",
+        "version" : "10.54.2"
       }
     },
     {
