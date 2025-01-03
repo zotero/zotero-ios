@@ -329,7 +329,7 @@ final class NoteEditorViewController: UIViewController {
             }
         }
 
-        attributedString.addAttribute(.font, value: UIFont.preferredFont(forTextStyle: .body), range: NSRange(location: 0, length: attributedString.string.count))
+        attributedString.addAttribute(.font, value: UIFont.preferredFont(forTextStyle: .body), range: NSRange(location: 0, length: attributedString.length))
         tagsLabel.attributedText = attributedString
     }
 
