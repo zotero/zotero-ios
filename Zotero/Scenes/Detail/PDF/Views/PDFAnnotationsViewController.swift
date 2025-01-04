@@ -242,10 +242,12 @@ final class PDFAnnotationsViewController: UIViewController {
                 if let key = state.selectedAnnotationKey, !keys.contains(key) {
                     keys.append(key)
                 }
+                var snapshot = dataSource.snapshot()
+                // Filter any items identifiers not existing already in the snapshot. These will be added in a subsequent update.
+                keys = keys.filter({ snapshot.itemIdentifiers.contains($0) })
                 if !keys.isEmpty {
                     updateQueue.async { [weak self] in
                         guard let self else { return }
-                        var snapshot = dataSource.snapshot()
                         snapshot.reconfigureItems(keys)
                         dataSource.apply(snapshot, animatingDifferences: false) { [weak self] in
                             guard let self else { return }
