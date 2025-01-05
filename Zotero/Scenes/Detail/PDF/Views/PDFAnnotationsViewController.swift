@@ -147,9 +147,10 @@ final class PDFAnnotationsViewController: UIViewController {
 
         func reconfigureSelectedCellIfAny() {
             guard let key = viewModel.state.selectedAnnotationKey else { return }
+            var snapshot = dataSource.snapshot()
+            guard snapshot.itemIdentifiers.contains(where: { $0 == key }) else { return }
             updateQueue.async { [weak self] in
                 guard let self else { return }
-                var snapshot = dataSource.snapshot()
                 snapshot.reconfigureItems([key])
                 dataSource.apply(snapshot, animatingDifferences: false) { [weak self] in
                     self?.focusSelectedCell()
@@ -164,7 +165,7 @@ final class PDFAnnotationsViewController: UIViewController {
             var snapshot = NSDiffableDataSourceSnapshot<Int, PDFReaderState.AnnotationKey>()
             snapshot.appendSections([0])
             snapshot.appendItems(state.sortedKeys)
-            if let keys = state.updatedAnnotationKeys {
+            if let keys = state.updatedAnnotationKeys?.filter({ snapshot.itemIdentifiers.contains($0) }), !keys.isEmpty {
                 snapshot.reconfigureItems(keys)
             }
             dataSource.apply(snapshot, animatingDifferences: animatedDifferences, completion: completion)

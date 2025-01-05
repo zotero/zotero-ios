@@ -107,10 +107,10 @@ class PDFThumbnailsViewController: UICollectionViewController {
             return
         }
 
-        if let index = state.loadedThumbnail, index < dataSource.snapshot().itemIdentifiers.count {
+        var snapshot = dataSource.snapshot()
+        if let index = state.loadedThumbnail, index < snapshot.itemIdentifiers.count {
             updateQueue.async { [weak self] in
                 guard let self else { return }
-                var snapshot = dataSource.snapshot()
                 let label = dataSource.snapshot().itemIdentifiers[index]
                 snapshot.reconfigureItems([label])
                 dataSource.apply(snapshot)
@@ -119,7 +119,6 @@ class PDFThumbnailsViewController: UICollectionViewController {
         }
 
         // The following updates should be ignored if the collection hasn't loaded yet for the first time.
-        var snapshot = dataSource.snapshot()
         guard snapshot.numberOfSections > 0 else { return }
 
         if state.changes.contains(.userInterface) || state.changes.contains(.reload) {
