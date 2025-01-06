@@ -47,6 +47,7 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
         collectionView.delegate = self
         collectionView.dropDelegate = self
         dataSource = createDataSource(for: collectionView)
+        collectionView.dataSource = dataSource
         updateQueue.async { [weak self] in
             guard let self else { return }
             var snapshot = NSDiffableDataSourceSnapshot<Int, Collection>()
@@ -74,6 +75,7 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
             }
         }
 
+        guard let dataSource = dataSource else { return }
         let snapshot = dataSource.snapshot(for: collectionsSection)
 
         if !snapshot.items.contains(where: { $0.identifier == collectionId }) {
@@ -89,7 +91,7 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
             return
         }
 
-        if let index = dataSource.snapshot(for: collectionsSection).visibleItems.firstIndex(where: { $0.identifier == collectionId }) {
+        if let index = snapshot.visibleItems.firstIndex(where: { $0.identifier == collectionId }) {
             let indexPath = IndexPath(item: index, section: 0)
             guard selectedIndexPaths.first != indexPath else { return }
             collectionView.selectItem(at: indexPath, animated: false, scrollPosition: scrollToPosition ? .centeredVertically : [])
@@ -99,6 +101,7 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
     }
 
     func update(with tree: CollectionTree, selectedId: CollectionIdentifier, animated: Bool, completion: (() -> Void)? = nil) {
+        guard let dataSource = dataSource else { return }
         let newSnapshot = tree.createSnapshot(selectedId: selectedId)
 
         if dataSource.snapshot(for: collectionsSection).items.count == newSnapshot.items.count {
