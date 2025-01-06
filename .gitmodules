@@ -17,5 +17,5 @@
 	path = utilities
 	url = https://github.com/zotero/utilities.git
 [submodule "reader"]
- 	path = reader
- 	url = https://github.com/zotero/reader
+	path = reader
+	url = https://github.com/zotero/reader.git
