@@ -14,4 +14,5 @@ enum AnnotationEditAction {
     case setPageLabel(String, Bool)
     case setHighlight(NSAttributedString)
     case setFontSize(CGFloat)
+    case convertBetweenHighlightAndUnderline
 }

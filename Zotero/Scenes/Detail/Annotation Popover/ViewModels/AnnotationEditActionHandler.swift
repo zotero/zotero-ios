@@ -15,31 +15,47 @@ struct AnnotationEditActionHandler: ViewModelActionHandler {
     func process(action: AnnotationEditAction, in viewModel: ViewModel<AnnotationEditActionHandler>) {
         switch action {
         case .setColor(let hexString):
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.color = hexString
                 state.changes = .color
             }
 
         case .setLineWidth(let width):
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.lineWidth = width
             }
             
         case .setPageLabel(let label, let updateSubsequentPages):
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.pageLabel = label
                 state.updateSubsequentLabels = updateSubsequentPages
                 state.changes = .pageLabel
             }
 
         case .setHighlight(let text):
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.highlightText = text
             }
 
         case .setFontSize(let size):
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.fontSize = size
+            }
+
+        case .convertBetweenHighlightAndUnderline:
+            update(viewModel: viewModel) { state in
+                switch state.type {
+                case .highlight:
+                    state.type = .underline
+                    state.changes = .type
+
+                case .underline:
+                    state.type = .highlight
+                    state.changes = .type
+
+                case .freeText, .image, .ink, .note:
+                    break
+                }
             }
         }
     }

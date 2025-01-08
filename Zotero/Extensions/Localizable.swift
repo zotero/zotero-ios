@@ -956,6 +956,10 @@ internal enum L10n {
     /// Underline
     internal static let underline = L10n.tr("Localizable", "pdf.underline", fallback: "Underline")
     internal enum AnnotationPopover {
+      /// Convert to Highlight
+      internal static let convertToHighlight = L10n.tr("Localizable", "pdf.annotation_popover.convert_to_highlight", fallback: "Convert to Highlight")
+      /// Convert to Underline
+      internal static let convertToUnderline = L10n.tr("Localizable", "pdf.annotation_popover.convert_to_underline", fallback: "Convert to Underline")
       /// Delete Annotation
       internal static let delete = L10n.tr("Localizable", "pdf.annotation_popover.delete", fallback: "Delete Annotation")
       /// Width

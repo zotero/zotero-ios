@@ -50,12 +50,17 @@ struct AnnotationPopoverActionHandler: ViewModelActionHandler {
                 state.changes = .deletion
             }
 
-        case .setProperties(pageLabel: let pageLabel, updateSubsequentLabels: let updateSubsequentLabels, highlightText: let highlightText):
+        case .setProperties(let type, let pageLabel, let updateSubsequentLabels, let highlightText):
             update(viewModel: viewModel) { state in
+                if state.type != type {
+                    state.type = type
+                    state.changes.insert(.type)
+                }
+
                 if state.pageLabel != pageLabel {
                     state.pageLabel = pageLabel
                     state.updateSubsequentLabels = updateSubsequentLabels
-                    state.changes = .pageLabel
+                    state.changes.insert(.pageLabel)
                 }
 
                 if state.highlightText != highlightText {

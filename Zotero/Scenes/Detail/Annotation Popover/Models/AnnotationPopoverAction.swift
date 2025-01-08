@@ -15,5 +15,5 @@ enum AnnotationPopoverAction {
     case setTags([Tag])
     case setComment(NSAttributedString)
     case delete
-    case setProperties(pageLabel: String, updateSubsequentLabels: Bool, highlightText: NSAttributedString)
+    case setProperties(type: AnnotationType, pageLabel: String, updateSubsequentLabels: Bool, highlightText: NSAttributedString)
 }

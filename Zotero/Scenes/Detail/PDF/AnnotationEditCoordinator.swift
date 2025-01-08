@@ -52,10 +52,9 @@ final class AnnotationEditCoordinator: Coordinator {
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = AnnotationEditViewController(
             viewModel: viewModel,
-            includeColorPicker: true,
-            includeFontPicker: data.type == .freeText,
-            saveAction: self.saveAction,
-            deleteAction: self.deleteAction
+            properties: AnnotationEditViewController.PropertyRow.from(type: data.type, isAdditionalSettings: false),
+            saveAction: saveAction,
+            deleteAction: deleteAction
         )
         controller.coordinatorDelegate = self
         self.navigationController?.setViewControllers([controller], animated: false)
