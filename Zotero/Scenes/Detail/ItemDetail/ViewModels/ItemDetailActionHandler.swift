@@ -249,7 +249,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 self.itemChanged(change, in: viewModel)
             }
 
-            var (data, attachments, notes, tags) = try ItemDetailDataCreator.createData(
+            let (data, attachments, notes, tags) = try ItemDetailDataCreator.createData(
                 from: .existing(item: item, ignoreChildren: false),
                 schemaController: self.schemaController,
                 dateParser: self.dateParser,
@@ -260,43 +260,43 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 doiDetector: FieldKeys.Item.isDoi
             )
 
-            if !canEdit {
-                data.fieldIds = ItemDetailDataCreator.filteredFieldKeys(from: data.fieldIds, fields: data.fields)
-            }
-
-            self.saveReloaded(data: data, attachments: attachments, notes: notes, tags: tags, isEditing: canEdit, library: library, token: token, in: viewModel)
+            saveReloaded(data: data, attachments: attachments, notes: notes, tags: tags, isEditing: canEdit, library: library, token: token, in: viewModel)
         } catch let error {
             DDLogError("ItemDetailActionHandler: can't load data - \(error)")
             self.update(viewModel: viewModel) { state in
                 state.error = .cantCreateData
             }
         }
-    }
 
-    private func saveReloaded(
-        data: ItemDetailState.Data,
-        attachments: [Attachment],
-        notes: [Note],
-        tags: [Tag],
-        isEditing: Bool,
-        library: Library,
-        token: NotificationToken,
-        in viewModel: ViewModel<ItemDetailActionHandler>
-    ) {
-        self.update(viewModel: viewModel) { state in
-            state.data = data
-            if state.snapshot != nil || isEditing {
-                state.snapshot = data
-                state.snapshot?.fieldIds = ItemDetailDataCreator.filteredFieldKeys(from: data.fieldIds, fields: data.fields)
+        func saveReloaded(
+            data: ItemDetailState.Data,
+            attachments: [Attachment],
+            notes: [Note],
+            tags: [Tag],
+            isEditing: Bool,
+            library: Library,
+            token: NotificationToken,
+            in viewModel: ViewModel<ItemDetailActionHandler>
+        ) {
+            update(viewModel: viewModel) { state in
+                state.data = data
+                if state.snapshot != nil || isEditing {
+                    state.snapshot = data
+                }
+                if isEditing && !data.isAttachment {
+                    state.presentedFieldIds = data.fields.keys
+                } else {
+                    state.presentedFieldIds = ItemDetailDataCreator.filteredFieldKeys(from: data.fields)
+                }
+                state.attachments = attachments
+                state.notes = notes
+                state.tags = tags
+                state.library = library
+                state.isLoadingData = false
+                state.isEditing = isEditing
+                state.observationToken = token
+                state.changes.insert(.reloadedData)
             }
-            state.attachments = attachments
-            state.notes = notes
-            state.tags = tags
-            state.library = library
-            state.isLoadingData = false
-            state.isEditing = isEditing
-            state.observationToken = token
-            state.changes.insert(.reloadedData)
         }
     }
 
@@ -648,16 +648,28 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
     private func startEditing(in viewModel: ViewModel<ItemDetailActionHandler>) {
         self.update(viewModel: viewModel) { state in
             state.snapshot = state.data
-            state.data.fieldIds = ItemDetailDataCreator.allFieldKeys(for: state.data.type, schemaController: self.schemaController)
+            if !state.data.isAttachment {
+                state.presentedFieldIds = ItemDetailDataCreator.allFieldKeys(for: state.data.type, schemaController: schemaController)
+            }
             state.isEditing = true
             state.changes.insert(.editing)
         }
     }
 
     private func endEditing(in viewModel: ViewModel<ItemDetailActionHandler>) {
-        guard viewModel.state.snapshot != viewModel.state.data else { return }
+        guard viewModel.state.snapshot != viewModel.state.data else {
+            update(viewModel: viewModel) { state in
+                state.snapshot = nil
+                state.presentedFieldIds = ItemDetailDataCreator.filteredFieldKeys(from: state.data.fields)
+                state.isEditing = false
+                state.type = .preview(key: state.key)
+                state.isSaving = false
+                state.changes.insert(.editing)
+            }
+            return
+        }
 
-        self.update(viewModel: viewModel) { state in
+        update(viewModel: viewModel) { state in
             state.isSaving = true
         }
 
@@ -708,7 +720,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
 
                     newState.data.dateModified = Date()
                     newState.snapshot = nil
-                    newState.data.fieldIds = ItemDetailDataCreator.filteredFieldKeys(from: newState.data.fieldIds, fields: newState.data.fields)
+                    newState.presentedFieldIds = ItemDetailDataCreator.filteredFieldKeys(from: newState.data.fields)
                     newState.isEditing = false
                     newState.type = .preview(key: newState.key)
                     newState.changes.insert(.editing)
@@ -835,6 +847,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         self.update(viewModel: viewModel) { state in
             if droppedFields.isEmpty {
                 state.data = itemData
+                state.presentedFieldIds = ItemDetailDataCreator.allFieldKeys(for: state.data.type, schemaController: schemaController)
                 state.changes.insert(.type)
             } else {
                 // Notify the user, that some fields with values will be dropped
@@ -862,7 +875,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 throw ItemDetailError.typeNotSupported(type)
             }
 
-            let (fieldIds, fields, hasAbstract) = try ItemDetailDataCreator.fieldData(
+            let (fields, hasAbstract) = try ItemDetailDataCreator.fieldData(
                 for: type,
                 schemaController: self.schemaController,
                 dateParser: self.dateParser,
@@ -884,7 +897,6 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             data.isAttachment = type == ItemTypes.attachment
             data.localizedType = localizedType
             data.fields = fields
-            data.fieldIds = fieldIds
             data.abstract = hasAbstract ? (originalData.abstract ?? "") : nil
             data.creators = try creators(for: type, from: originalData.creators)
             data.creatorIds = originalData.creatorIds

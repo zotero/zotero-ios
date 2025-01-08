@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import OrderedCollections
 
 import CocoaLumberjackSwift
 import RealmSwift
@@ -177,8 +178,7 @@ struct ItemDetailState: ViewModelState {
         var localizedType: String
         var creators: [String: Creator]
         var creatorIds: [String]
-        var fields: [String: Field]
-        var fieldIds: [String]
+        var fields: OrderedDictionary<String, Field>
         var abstract: String?
 
         var dateModified: Date
@@ -222,7 +222,6 @@ struct ItemDetailState: ViewModelState {
                 creators: [:],
                 creatorIds: [],
                 fields: [:],
-                fieldIds: [],
                 abstract: nil,
                 dateModified: date,
                 dateAdded: date,
@@ -248,6 +247,7 @@ struct ItemDetailState: ViewModelState {
     var data: Data
     var snapshot: Data?
     var promptSnapshot: Data?
+    var presentedFieldIds: OrderedSet<String>
     var notes: [Note]
     var attachments: [Attachment]
     var tags: [Tag]
@@ -291,6 +291,7 @@ struct ItemDetailState: ViewModelState {
         self.userId = userId
         self.changes = []
         self.data = .empty
+        self.presentedFieldIds = []
         self.attachments = []
         self.notes = []
         self.tags = []

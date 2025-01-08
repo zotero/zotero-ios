@@ -457,7 +457,8 @@ final class ItemDetailCollectionViewHandler: NSObject {
             guard let self else { return }
             // Assign new id to all sections, just reload everything
             let id = UUID().uuidString
-            let sections = sections(for: state.data, isEditing: state.isEditing, library: state.library).map({ SectionType(identifier: id, section: $0) })
+            let sections = sections(for: state.data, hasPresentedFields: !state.presentedFieldIds.isEmpty, isEditing: state.isEditing, library: state.library)
+                .map({ SectionType(identifier: id, section: $0) })
             var snapshot = NSDiffableDataSourceSnapshot<SectionType, Row>()
             snapshot.appendSections(sections)
             for section in sections {
@@ -473,23 +474,29 @@ final class ItemDetailCollectionViewHandler: NSObject {
         /// - parameter data: New data.
         /// - parameter isEditing: Current editing table view state.
         /// - returns: Array of visible sections.
-        func sections(for data: ItemDetailState.Data, isEditing: Bool, library: Library) -> [Section] {
+        func sections(for data: ItemDetailState.Data, hasPresentedFields: Bool, isEditing: Bool, library: Library) -> [Section] {
+            // Title and item type are always visible.
+            var sections: [Section] = [.title, .type]
+
             if isEditing {
                 // Only "metadata" sections are visible during editing.
-                if data.isAttachment {
-                    return [.title, .type, .fields, .dates]
-                } else {
-                    return [.title, .type, .creators, .fields, .dates, .abstract]
+                if !data.isAttachment {
+                    sections.append(.creators)
                 }
+                if hasPresentedFields {
+                    sections.append(.fields)
+                }
+                sections.append(.dates)
+                if !data.isAttachment {
+                    sections.append(.abstract)
+                }
+                return sections
             }
 
-            var sections: [Section] = [.title]
-            // Item type is always visible
-            sections.append(.type)
             if !data.creators.isEmpty {
                 sections.append(.creators)
             }
-            if !data.fieldIds.isEmpty {
+            if hasPresentedFields {
                 sections.append(.fields)
             }
             sections.append(.dates)
@@ -667,7 +674,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
             return [.dateAdded(state.data.dateAdded), .dateModified(state.data.dateModified)]
 
         case .fields:
-            return state.data.fieldIds.compactMap({ fieldId in
+            return state.presentedFieldIds.compactMap({ fieldId in
                 return .field(key: fieldId, multiline: (fieldId == FieldKeys.Item.extra))
             })
 

@@ -103,7 +103,6 @@ final class SyncActionsSpec: QuickSpec {
                         creators: [:],
                         creatorIds: [],
                         fields: [:],
-                        fieldIds: [],
                         abstract: "New abstract",
                         dateModified: Date(),
                         dateAdded: Date()
@@ -117,7 +116,6 @@ final class SyncActionsSpec: QuickSpec {
                         creators: [:],
                         creatorIds: [],
                         fields: [:],
-                        fieldIds: [],
                         abstract: "Some note",
                         dateModified: Date(),
                         dateAdded: Date()
@@ -368,7 +366,6 @@ final class SyncActionsSpec: QuickSpec {
                         creators: [:],
                         creatorIds: [],
                         fields: [:],
-                        fieldIds: [],
                         abstract: "New abstract",
                         dateModified: Date(),
                         dateAdded: Date()
@@ -382,7 +379,6 @@ final class SyncActionsSpec: QuickSpec {
                         creators: [:],
                         creatorIds: [],
                         fields: [:],
-                        fieldIds: [],
                         abstract: "Some note",
                         dateModified: Date(),
                         dateAdded: Date()
