@@ -10,7 +10,7 @@ import UIKit
 
 final class ExpandableCollectionsCollectionViewHandler: NSObject {
     private let collectionsSection: Int = 0
-    private unowned let collectionView: UICollectionView
+    private weak var collectionView: UICollectionView?
     private unowned let dbStorage: DbStorage
     private unowned let dragDropController: DragDropController
     private unowned let viewModel: ViewModel<CollectionsActionHandler>
@@ -66,6 +66,7 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
     // MARK: - Scrolling
 
     func selectIfNeeded(collectionId: CollectionIdentifier, tree: CollectionTree, scrollToPosition: Bool) {
+        guard let collectionView, let dataSource else { return }
         let selectedIndexPaths = collectionView.indexPathsForSelectedItems ?? []
 
         if selectedIndexPaths.count > 1 {
@@ -75,7 +76,6 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
             }
         }
 
-        guard let dataSource = dataSource else { return }
         let snapshot = dataSource.snapshot(for: collectionsSection)
 
         if !snapshot.items.contains(where: { $0.identifier == collectionId }) {
@@ -101,7 +101,7 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
     }
 
     func update(with tree: CollectionTree, selectedId: CollectionIdentifier, animated: Bool, completion: (() -> Void)? = nil) {
-        guard let dataSource = dataSource else { return }
+        guard let collectionView, let dataSource else { return }
         let newSnapshot = tree.createSnapshot(selectedId: selectedId)
 
         if dataSource.snapshot(for: collectionsSection).items.count == newSnapshot.items.count {
