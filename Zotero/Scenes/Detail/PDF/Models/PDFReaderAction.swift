@@ -30,6 +30,7 @@ enum PDFReaderAction {
     case setLineWidth(key: String, width: CGFloat)
     case updateAnnotationProperties(
         key: String,
+        type: AnnotationType,
         color: String,
         lineWidth: CGFloat,
         fontSize: CGFloat,
