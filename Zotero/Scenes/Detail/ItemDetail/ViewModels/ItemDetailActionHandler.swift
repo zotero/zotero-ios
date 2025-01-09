@@ -712,13 +712,19 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                         newState.data.fields[updated.key] = updated
                     }
 
-                    var requests: [DbRequest] = [EndItemDetailEditingDbRequest(libraryId: state.library.identifier, itemKey: state.key)]
-                    if !updatedFields.isEmpty {
-                        requests.insert(EditItemFieldsDbRequest(key: state.key, libraryId: state.library.identifier, fieldValues: updatedFields, dateParser: dateParser), at: 0)
+                    let endEditingRequest = EndItemDetailEditingDbRequest(libraryId: state.library.identifier, itemKey: state.key)
+                    var dateModified: Date?
+                    try dbStorage.perform(on: queue) { coordinator in
+                        if !updatedFields.isEmpty {
+                            let request = EditItemFieldsDbResponseRequest(key: state.key, libraryId: state.library.identifier, fieldValues: updatedFields, dateParser: dateParser)
+                            dateModified = try coordinator.perform(request: request)
+                        }
+                        try coordinator.perform(request: endEditingRequest)
                     }
-                    try self.dbStorage.perform(writeRequests: requests, on: queue)
 
-                    newState.data.dateModified = Date()
+                    if let dateModified {
+                        newState.data.dateModified = dateModified
+                    }
                     newState.snapshot = nil
                     newState.presentedFieldIds = ItemDetailDataCreator.filteredFieldKeys(from: newState.data.fields)
                     newState.isEditing = false
@@ -967,10 +973,19 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         }
 
         let keyPair = KeyBaseKeyPair(key: key, baseKey: (key != FieldKeys.Item.title ? FieldKeys.Item.title : nil))
-        let request = EditItemFieldsDbRequest(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, fieldValues: [keyPair: viewModel.state.data.title], dateParser: dateParser)
-        self.perform(request: request) { error in
-            guard let error else { return }
-            DDLogError("ItemDetailActionHandler: can't store title - \(error)")
+        let request = EditItemFieldsDbResponseRequest(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, fieldValues: [keyPair: viewModel.state.data.title], dateParser: dateParser)
+        perform(request: request, invalidateRealm: false) { [weak viewModel] result in
+            switch result {
+            case .success(let dateModified):
+                guard let viewModel, let dateModified else { return }
+                update(viewModel: viewModel) { state in
+                    state.data.dateModified = dateModified
+                    state.reload = .section(.dates)
+                }
+
+            case .failure(let error):
+                DDLogError("ItemDetailActionHandler: can't store title - \(error)")
+            }
         }
     }
 
@@ -980,15 +995,24 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             state.reload = .row(.abstract)
         }
 
-        let request = EditItemFieldsDbRequest(
+        let request = EditItemFieldsDbResponseRequest(
             key: viewModel.state.key,
             libraryId: viewModel.state.library.identifier,
             fieldValues: [KeyBaseKeyPair(key: FieldKeys.Item.abstract, baseKey: nil): abstract],
             dateParser: dateParser
         )
-        self.perform(request: request) { error in
-            guard let error else { return }
-            DDLogError("ItemDetailActionHandler: can't store abstract - \(error)")
+        perform(request: request, invalidateRealm: false) { [weak viewModel] result in
+            switch result {
+            case .success(let dateModified):
+                guard let viewModel, let dateModified else { return }
+                update(viewModel: viewModel) { state in
+                    state.data.dateModified = dateModified
+                    state.reload = .section(.dates)
+                }
+
+            case .failure(let error):
+                DDLogError("ItemDetailActionHandler: can't store abstract - \(error)")
+            }
         }
     }
 
@@ -1011,15 +1035,24 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             state.reload = .row(.field(key: field.key, multiline: (field.id == FieldKeys.Item.extra)))
         }
 
-        let request = EditItemFieldsDbRequest(
+        let request = EditItemFieldsDbResponseRequest(
             key: viewModel.state.key,
             libraryId: viewModel.state.library.identifier,
             fieldValues: [KeyBaseKeyPair(key: field.key, baseKey: field.baseField): field.value],
             dateParser: dateParser
         )
-        self.perform(request: request) { error in
-            guard let error else { return }
-            DDLogError("ItemDetailActionHandler: can't store field \(error)")
+        perform(request: request, invalidateRealm: false) { [weak viewModel] result in
+            switch result {
+            case .success(let dateModified):
+                guard let viewModel, let dateModified else { return }
+                update(viewModel: viewModel) { state in
+                    state.data.dateModified = dateModified
+                    state.reload = .section(.dates)
+                }
+
+            case .failure(let error):
+                DDLogError("ItemDetailActionHandler: can't store field - \(error)")
+            }
         }
     }
 

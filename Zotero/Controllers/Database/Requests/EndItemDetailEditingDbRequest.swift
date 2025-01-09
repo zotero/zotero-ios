@@ -19,7 +19,6 @@ struct EndItemDetailEditingDbRequest: DbRequest {
 
     func process(in database: Realm) throws {
         guard let item = database.objects(RItem.self).uniqueObject(key: itemKey, libraryId: libraryId) else { return }
-        item.dateModified = Date()
         item.changesSyncPaused = false
         item.changeType = .user
     }
