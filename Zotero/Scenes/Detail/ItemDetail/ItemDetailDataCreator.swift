@@ -260,8 +260,8 @@ struct ItemDetailDataCreator {
         return fieldKeys
     }
 
-    /// Returns filtered, ordered set of keys for fields that have non-empty values.
-    static func filteredFieldKeys(from fields: OrderedDictionary<String, ItemDetailState.Field>) -> OrderedSet<String> {
+    /// Returns ordered set of keys for fields that have non-empty values.
+    static func nonEmptyFieldKeys(from fields: OrderedDictionary<String, ItemDetailState.Field>) -> OrderedSet<String> {
         return fields.filter({ !$0.value.value.isEmpty }).keys
     }
 

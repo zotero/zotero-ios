@@ -286,7 +286,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 if isEditing && !data.isAttachment {
                     state.presentedFieldIds = data.fields.keys
                 } else {
-                    state.presentedFieldIds = ItemDetailDataCreator.filteredFieldKeys(from: data.fields)
+                    state.presentedFieldIds = ItemDetailDataCreator.nonEmptyFieldKeys(from: data.fields)
                 }
                 state.attachments = attachments
                 state.notes = notes
@@ -660,7 +660,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         guard viewModel.state.snapshot != viewModel.state.data else {
             update(viewModel: viewModel) { state in
                 state.snapshot = nil
-                state.presentedFieldIds = ItemDetailDataCreator.filteredFieldKeys(from: state.data.fields)
+                state.presentedFieldIds = ItemDetailDataCreator.nonEmptyFieldKeys(from: state.data.fields)
                 state.isEditing = false
                 state.type = .preview(key: state.key)
                 state.isSaving = false
@@ -726,7 +726,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                         newState.data.dateModified = dateModified
                     }
                     newState.snapshot = nil
-                    newState.presentedFieldIds = ItemDetailDataCreator.filteredFieldKeys(from: newState.data.fields)
+                    newState.presentedFieldIds = ItemDetailDataCreator.nonEmptyFieldKeys(from: newState.data.fields)
                     newState.isEditing = false
                     newState.type = .preview(key: newState.key)
                     newState.changes.insert(.editing)

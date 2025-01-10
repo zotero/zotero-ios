@@ -908,7 +908,7 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
             guard viewModel.state.isEditing else { return }
             observer.on(.next(.openCreatorEditor(creator)))
 
-        case .note(let key, let title, let isProcessing):
+        case .note(let key, _, let isProcessing):
             guard !isProcessing else { return }
             observer.on(.next(.openNoteEditor(key: key)))
 
