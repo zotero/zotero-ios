@@ -199,7 +199,7 @@ struct ItemDetailDataCreator {
     /// - parameter doiDetector: DOI detector.
     /// - parameter getExistingData: Closure for getting available data for given field. It passes the field key and baseField and receives existing
     ///                              field name and value if available.
-    /// - returns: Tuple with 3 values: field keys of new fields, actual fields, `Bool` indicating whether this item type contains an abstract.
+    /// - returns: Tuple with 2 values: orderered dictionary of fields by field key, `Bool` indicating whether this item type contains an abstract.
     static func fieldData(
         for itemType: String,
         schemaController: SchemaController,
@@ -208,12 +208,13 @@ struct ItemDetailDataCreator {
         doiDetector: (String) -> Bool,
         getExistingData: ((String, String?) -> (String?, String?))? = nil
     ) throws -> (OrderedDictionary<String, ItemDetailState.Field>, Bool) {
-        guard var fieldSchemas = schemaController.fields(for: itemType) else {
+        guard let fieldSchemas = schemaController.fields(for: itemType) else {
             throw ItemDetailError.typeNotSupported(itemType)
         }
 
         var hasAbstract: Bool = false
         let titleKey = schemaController.titleKey(for: itemType)
+        let isEditable = itemType != ItemTypes.attachment
         var fields: OrderedDictionary<String, ItemDetailState.Field> = [:]
         for schema in fieldSchemas {
             let key = schema.field
@@ -242,27 +243,29 @@ struct ItemDetailDataCreator {
                 additionalInfo = [.formattedDate: Formatter.dateAndTime.string(from: date), .formattedEditDate: Formatter.sqlFormat.string(from: date)]
             }
 
-            fields[key] = ItemDetailState.Field(key: key, baseField: baseField, name: name, value: value, isTitle: false, isTappable: isTappable, additionalInfo: additionalInfo)
+            fields[key] = ItemDetailState.Field(
+                key: key,
+                baseField: baseField,
+                name: name,
+                value: value,
+                isTitle: false,
+                isEditable: isEditable,
+                isTappable: isTappable,
+                additionalInfo: additionalInfo
+            )
         }
 
         return (fields, hasAbstract)
     }
 
-    /// Returns all field keys for given item type, except those that should not appear as fields in item detail.
-    static func allFieldKeys(for itemType: String, schemaController: SchemaController) -> OrderedSet<String> {
-        guard let fieldSchemas = schemaController.fields(for: itemType) else { return [] }
-        var fieldKeys: OrderedSet<String> = OrderedSet(fieldSchemas.map({ $0.field }))
-        // Remove title and abstract keys, those 2 are used separately in Data struct.
-        fieldKeys.remove(FieldKeys.Item.abstract)
-        if let titleKey = schemaController.titleKey(for: itemType) {
-            fieldKeys.remove(titleKey)
-        }
-        return fieldKeys
-    }
-
     /// Returns ordered set of keys for fields that have non-empty values.
     static func nonEmptyFieldKeys(from fields: OrderedDictionary<String, ItemDetailState.Field>) -> OrderedSet<String> {
         return fields.filter({ !$0.value.value.isEmpty }).keys
+    }
+
+    /// Returns ordered set of keys for fields that are either editable or have non-empty values.
+    static func editableOrNonEmptyFieldKeys(from fields: OrderedDictionary<String, ItemDetailState.Field>) -> OrderedSet<String> {
+        return fields.filter({ $0.value.isEditable || !$0.value.value.isEmpty }).keys
     }
 
     /// Checks whether field is tappable based on its key and value.

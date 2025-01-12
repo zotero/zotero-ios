@@ -47,6 +47,7 @@ struct ItemDetailState: ViewModelState {
         var name: String
         var value: String
         let isTitle: Bool
+        let isEditable: Bool
         var isTappable: Bool
         var additionalInfo: [AdditionalInfoKey: String]?
 
@@ -188,24 +189,30 @@ struct ItemDetailState: ViewModelState {
         var maxNonemptyFieldTitleWidth: CGFloat = 0
 
         func databaseFields(schemaController: SchemaController) -> [Field] {
-            var allFields = Array(self.fields.values)
+            var allFields = Array(fields.values)
 
-            if let titleKey = schemaController.titleKey(for: self.type) {
-                allFields.append(Field(key: titleKey,
-                                       baseField: (titleKey != FieldKeys.Item.title ? FieldKeys.Item.title : nil),
-                                       name: "",
-                                       value: self.title,
-                                       isTitle: true,
-                                       isTappable: false))
+            if let titleKey = schemaController.titleKey(for: type) {
+                allFields.append(Field(
+                    key: titleKey,
+                    baseField: (titleKey != FieldKeys.Item.title ? FieldKeys.Item.title : nil),
+                    name: "",
+                    value: title,
+                    isTitle: true,
+                    isEditable: !isAttachment,
+                    isTappable: false
+                ))
             }
 
-            if let abstract = self.abstract {
-                allFields.append(Field(key: FieldKeys.Item.abstract,
-                                       baseField: nil,
-                                       name: "",
-                                       value: abstract,
-                                       isTitle: false,
-                                       isTappable: false))
+            if let abstract {
+                allFields.append(Field(
+                    key: FieldKeys.Item.abstract,
+                    baseField: nil,
+                    name: "",
+                    value: abstract,
+                    isTitle: false,
+                    isEditable: isAttachment,
+                    isTappable: false
+                ))
             }
 
             return allFields

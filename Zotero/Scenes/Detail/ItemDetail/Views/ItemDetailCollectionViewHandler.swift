@@ -219,7 +219,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
                 case .field(let key, let multiline):
                     guard let field = viewModel.state.data.fields[key] else { return collectionView.dequeueConfiguredReusableCell(using: emptyRegistration, for: indexPath, item: ()) }
-                    if !isEditing || viewModel.state.data.isAttachment {
+                    if !isEditing || !field.isEditable {
                         return collectionView.dequeueConfiguredReusableCell(using: fieldRegistration, for: indexPath, item: (.field(field), titleWidth))
                     }
                     if multiline {
@@ -917,8 +917,8 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
             observer.on(.next(.openTypePicker))
 
         case .field(let fieldId, _):
-            // Tappable fields should be only tappable when not in editing mode, in case of attachment, URL is not editable, so keep it tappable even while editing.
-            guard !viewModel.state.isEditing || (viewModel.state.data.type == ItemTypes.attachment), let field = viewModel.state.data.fields[fieldId], field.isTappable else { return }
+            // Tappable fields should be only tappable when not in editing mode, or field is not editable. E.g. in case of attachment, URL is not editable, so keep it tappable even while editing.
+            guard let field = viewModel.state.data.fields[fieldId], field.isTappable, !viewModel.state.isEditing || !field.isEditable else { return }
             switch field.key {
             case FieldKeys.Item.Attachment.url:
                 observer.on(.next(.openUrl(field.value)))

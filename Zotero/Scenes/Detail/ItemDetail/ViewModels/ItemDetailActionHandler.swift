@@ -283,9 +283,11 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 if state.snapshot != nil || isEditing {
                     state.snapshot = data
                 }
-                if isEditing && !data.isAttachment {
-                    state.presentedFieldIds = data.fields.keys
+                if isEditing {
+                    // During editing present only editable fields or non-empty, non-editable ones.
+                    state.presentedFieldIds = ItemDetailDataCreator.editableOrNonEmptyFieldKeys(from: data.fields)
                 } else {
+                    // Otherwise present only non-empty fields.
                     state.presentedFieldIds = ItemDetailDataCreator.nonEmptyFieldKeys(from: data.fields)
                 }
                 state.attachments = attachments
@@ -648,9 +650,9 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
     private func startEditing(in viewModel: ViewModel<ItemDetailActionHandler>) {
         self.update(viewModel: viewModel) { state in
             state.snapshot = state.data
-            if !state.data.isAttachment {
-                state.presentedFieldIds = ItemDetailDataCreator.allFieldKeys(for: state.data.type, schemaController: schemaController)
-            }
+            // state.data.fields has all available fields for this state.data.type,
+            // so we present only those that are editable or non-empty.
+            state.presentedFieldIds = ItemDetailDataCreator.editableOrNonEmptyFieldKeys(from: state.data.fields)
             state.isEditing = true
             state.changes.insert(.editing)
         }
@@ -853,7 +855,9 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         self.update(viewModel: viewModel) { state in
             if droppedFields.isEmpty {
                 state.data = itemData
-                state.presentedFieldIds = ItemDetailDataCreator.allFieldKeys(for: state.data.type, schemaController: schemaController)
+                // state.data.fields has all available fields for the changed state.data.type,
+                // so we present only those that are editable or non-empty.
+                state.presentedFieldIds = ItemDetailDataCreator.editableOrNonEmptyFieldKeys(from: state.data.fields)
                 state.changes.insert(.type)
             } else {
                 // Notify the user, that some fields with values will be dropped
