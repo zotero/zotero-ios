@@ -58,9 +58,7 @@ struct CreateItemFromDetailDbRequest: DbResponseRequest {
 
         // Create creators
 
-        for (offset, creatorId) in self.data.creatorIds.enumerated() {
-            guard let creator = self.data.creators[creatorId] else { continue }
-
+        for (offset, (_, creator)) in data.creators.enumerated() {
             let rCreator = RCreator()
             rCreator.uuid = UUID().uuidString
             rCreator.rawType = creator.type

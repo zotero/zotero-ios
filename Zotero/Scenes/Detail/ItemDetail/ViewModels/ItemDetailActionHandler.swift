@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import OrderedCollections
 
 import Alamofire
 import CocoaLumberjackSwift
@@ -909,12 +910,11 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             data.fields = fields
             data.abstract = hasAbstract ? (originalData.abstract ?? "") : nil
             data.creators = try creators(for: type, from: originalData.creators)
-            data.creatorIds = originalData.creatorIds
             return data
         }
 
-        func creators(for type: String, from originalData: [String: ItemDetailState.Creator]) throws -> [String: ItemDetailState.Creator] {
-            guard let schemas = self.schemaController.creators(for: type), let primary = schemas.first(where: { $0.primary }) else { throw ItemDetailError.typeNotSupported(type) }
+        func creators(for type: String, from originalData: OrderedDictionary<String, ItemDetailState.Creator>) throws -> OrderedDictionary<String, ItemDetailState.Creator> {
+            guard let schemas = schemaController.creators(for: type), let primary = schemas.first(where: { $0.primary }) else { throw ItemDetailError.typeNotSupported(type) }
 
             var creators = originalData
             for (key, originalCreator) in originalData {
@@ -927,7 +927,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 } else {
                     creator.type = "contributor"
                 }
-                creator.localizedType = self.schemaController.localized(creator: creator.type) ?? ""
+                creator.localizedType = schemaController.localized(creator: creator.type) ?? ""
 
                 creators[key] = creator
             }
@@ -953,7 +953,6 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             libraryId: viewModel.state.library.identifier,
             type: viewModel.state.data.type,
             fields: viewModel.state.data.databaseFields(schemaController: schemaController),
-            creatorIds: viewModel.state.data.creatorIds,
             creators: viewModel.state.data.creators,
             dateParser: dateParser
         )
@@ -1061,10 +1060,9 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
     }
 
     private func deleteCreator(with id: String, in viewModel: ViewModel<ItemDetailActionHandler>) {
-        guard let index = viewModel.state.data.creatorIds.firstIndex(of: id) else { return }
-        
+        guard viewModel.state.data.creators[id] != nil else { return }
+
         self.update(viewModel: viewModel) { state in
-            state.data.creatorIds.remove(at: index)
             state.data.creators[id] = nil
             state.reload = .section(.creators)
         }
@@ -1078,14 +1076,11 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
 
     private func save(creator: State.Creator, in viewModel: ViewModel<ItemDetailActionHandler>) {
         self.update(viewModel: viewModel) { state in
-            if !state.data.creatorIds.contains(creator.id) {
-                state.data.creatorIds.append(creator.id)
-            }
             state.data.creators[creator.id] = creator
             state.reload = .section(.creators)
         }
 
-        guard let orderId = viewModel.state.data.creatorIds.firstIndex(of: creator.id) else { return }
+        guard let orderId = viewModel.state.data.creators.index(forKey: creator.id) else { return }
         let request = EditCreatorItemDetailDbRequest(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, creator: creator, orderId: orderId)
         self.perform(request: request) { error in
             guard let error else { return }
@@ -1094,11 +1089,15 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
     }
 
     private func moveCreators(diff: CollectionDifference<String>, in viewModel: ViewModel<ItemDetailActionHandler>) {
-        self.update(viewModel: viewModel) { state in
-            state.data.creatorIds = state.data.creatorIds.applying(diff) ?? []
+        update(viewModel: viewModel) { state in
+            var movedCreators: OrderedDictionary<String, ItemDetailState.Creator> = [:]
+            (state.data.creators.keys.applying(diff) ?? []).forEach {
+                movedCreators[$0] = state.data.creators[$0]
+            }
+            state.data.creators = movedCreators
         }
         
-        let request = ReorderCreatorsItemDetailDbRequest(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, ids: viewModel.state.data.creatorIds)
+        let request = ReorderCreatorsItemDetailDbRequest(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, ids: Array(viewModel.state.data.creators.keys))
         self.perform(request: request) { error in
             guard let error else { return }
             DDLogError("ItemDetailActionHandler: can't reorder creators \(error)")

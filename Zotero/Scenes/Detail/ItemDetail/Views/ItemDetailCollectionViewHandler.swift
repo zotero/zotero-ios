@@ -661,10 +661,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
             return attachments
 
         case .creators:
-            let creators: [Row] = state.data.creatorIds.compactMap({ creatorId in
-                guard let creator = state.data.creators[creatorId] else { return nil }
-                return .creator(creator)
-            })
+            let creators: [Row] = state.data.creators.values.map({ .creator($0) })
             if state.isEditing {
                 return creators + [.addCreator]
             }

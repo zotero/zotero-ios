@@ -78,7 +78,6 @@ struct ItemDetailDataCreator {
             isAttachment: (itemType == ItemTypes.attachment),
             localizedType: localizedType,
             creators: [:],
-            creatorIds: [],
             fields: fields,
             abstract: (hasAbstract ? "" : nil),
             dateModified: date,
@@ -129,8 +128,7 @@ struct ItemDetailDataCreator {
             return (nil, values[key])
         }
 
-        var creatorIds: [String] = []
-        var creators: [String: ItemDetailState.Creator] = [:]
+        var creators: OrderedDictionary<String, ItemDetailState.Creator> = [:]
         for creator in item.creators.sorted(byKeyPath: "orderId") {
             guard let localizedType = schemaController.localized(creator: creator.rawType) else { continue }
 
@@ -143,7 +141,6 @@ struct ItemDetailDataCreator {
                 primary: schemaController.creatorIsPrimary(creator.rawType, itemType: item.rawType),
                 localizedType: localizedType
             )
-            creatorIds.append(creator.id)
             creators[creator.id] = creator
         }
 
@@ -182,7 +179,6 @@ struct ItemDetailDataCreator {
             isAttachment: (item.rawType == ItemTypes.attachment),
             localizedType: localizedType,
             creators: creators,
-            creatorIds: creatorIds,
             fields: fields,
             abstract: abstract,
             dateModified: item.dateModified,

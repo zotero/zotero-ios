@@ -177,8 +177,7 @@ struct ItemDetailState: ViewModelState {
         var type: String
         var isAttachment: Bool
         var localizedType: String
-        var creators: [String: Creator]
-        var creatorIds: [String]
+        var creators: OrderedDictionary<String, Creator>
         var fields: OrderedDictionary<String, Field>
         var abstract: String?
 
@@ -227,7 +226,6 @@ struct ItemDetailState: ViewModelState {
                 isAttachment: false,
                 localizedType: "",
                 creators: [:],
-                creatorIds: [],
                 fields: [:],
                 abstract: nil,
                 dateModified: date,
