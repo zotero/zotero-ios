@@ -236,11 +236,19 @@ struct ItemDetailDataCreator {
             let isTappable = ItemDetailDataCreator.isTappable(key: key, value: value, urlDetector: urlDetector, doiDetector: doiDetector)
             var additionalInfo: [ItemDetailState.Field.AdditionalInfoKey: String]?
 
-            if key == FieldKeys.Item.date || baseField == FieldKeys.Item.date, let order = dateParser.parse(string: value)?.orderWithSpaces {
-                additionalInfo = [.dateOrder: order]
-            }
-            if key == FieldKeys.Item.accessDate, let date = Formatter.iso8601.date(from: value) {
-                additionalInfo = [.formattedDate: Formatter.dateAndTime.string(from: date), .formattedEditDate: Formatter.sqlFormat.string(from: date)]
+            switch (key, baseField) {
+            case (FieldKeys.Item.date, _), (_, FieldKeys.Item.date):
+                if let order = dateParser.parse(string: value)?.orderWithSpaces {
+                    additionalInfo = [.dateOrder: order]
+                }
+
+            case (FieldKeys.Item.accessDate, _):
+                if let date = Formatter.iso8601.date(from: value) {
+                    additionalInfo = [.formattedDate: Formatter.dateAndTime.string(from: date), .formattedEditDate: Formatter.sqlFormat.string(from: date)]
+                }
+
+            default:
+                break
             }
 
             fields[key] = ItemDetailState.Field(
