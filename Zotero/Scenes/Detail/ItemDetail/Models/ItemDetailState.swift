@@ -254,7 +254,7 @@ struct ItemDetailState: ViewModelState {
     var data: Data
     var snapshot: Data?
     var promptSnapshot: Data?
-    var presentedFieldIds: OrderedSet<String>
+    var visibleFieldIds: OrderedSet<String>
     var notes: [Note]
     var attachments: [Attachment]
     var tags: [Tag]
@@ -298,7 +298,7 @@ struct ItemDetailState: ViewModelState {
         self.userId = userId
         self.changes = []
         self.data = .empty
-        self.presentedFieldIds = []
+        self.visibleFieldIds = []
         self.attachments = []
         self.notes = []
         self.tags = []

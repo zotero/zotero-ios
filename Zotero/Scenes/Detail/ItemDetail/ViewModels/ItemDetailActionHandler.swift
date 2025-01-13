@@ -284,11 +284,11 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                     state.snapshot = data
                 }
                 if isEditing {
-                    // During editing present only editable fields or non-empty, non-editable ones.
-                    state.presentedFieldIds = ItemDetailDataCreator.editableOrNonEmptyFieldKeys(from: data.fields)
+                    // During editing show only editable fields or non-empty, non-editable ones.
+                    state.visibleFieldIds = ItemDetailDataCreator.editableOrNonEmptyFieldKeys(from: data.fields)
                 } else {
-                    // Otherwise present only non-empty fields.
-                    state.presentedFieldIds = ItemDetailDataCreator.nonEmptyFieldKeys(from: data.fields)
+                    // Otherwise show only non-empty fields.
+                    state.visibleFieldIds = ItemDetailDataCreator.nonEmptyFieldKeys(from: data.fields)
                 }
                 state.attachments = attachments
                 state.notes = notes
@@ -651,8 +651,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         self.update(viewModel: viewModel) { state in
             state.snapshot = state.data
             // state.data.fields has all available fields for this state.data.type,
-            // so we present only those that are editable or non-empty.
-            state.presentedFieldIds = ItemDetailDataCreator.editableOrNonEmptyFieldKeys(from: state.data.fields)
+            // so we show only those that are editable or non-empty.
+            state.visibleFieldIds = ItemDetailDataCreator.editableOrNonEmptyFieldKeys(from: state.data.fields)
             state.isEditing = true
             state.changes.insert(.editing)
         }
@@ -662,7 +662,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         guard viewModel.state.snapshot != viewModel.state.data else {
             update(viewModel: viewModel) { state in
                 state.snapshot = nil
-                state.presentedFieldIds = ItemDetailDataCreator.nonEmptyFieldKeys(from: state.data.fields)
+                state.visibleFieldIds = ItemDetailDataCreator.nonEmptyFieldKeys(from: state.data.fields)
                 state.isEditing = false
                 state.type = .preview(key: state.key)
                 state.isSaving = false
@@ -728,7 +728,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                         newState.data.dateModified = dateModified
                     }
                     newState.snapshot = nil
-                    newState.presentedFieldIds = ItemDetailDataCreator.nonEmptyFieldKeys(from: newState.data.fields)
+                    newState.visibleFieldIds = ItemDetailDataCreator.nonEmptyFieldKeys(from: newState.data.fields)
                     newState.isEditing = false
                     newState.type = .preview(key: newState.key)
                     newState.changes.insert(.editing)
@@ -856,8 +856,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             if droppedFields.isEmpty {
                 state.data = itemData
                 // state.data.fields has all available fields for the changed state.data.type,
-                // so we present only those that are editable or non-empty.
-                state.presentedFieldIds = ItemDetailDataCreator.editableOrNonEmptyFieldKeys(from: state.data.fields)
+                // so we show only those that are editable or non-empty.
+                state.visibleFieldIds = ItemDetailDataCreator.editableOrNonEmptyFieldKeys(from: state.data.fields)
                 state.changes.insert(.type)
             } else {
                 // Notify the user, that some fields with values will be dropped
