@@ -281,10 +281,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         ) {
             update(viewModel: viewModel) { state in
                 state.data = data
-                if state.snapshot != nil || isEditing {
-                    state.snapshot = data
-                }
                 if isEditing {
+                    state.snapshot = data
                     // During editing show only editable fields or non-empty, non-editable ones.
                     state.visibleFieldIds = ItemDetailDataCreator.editableOrNonEmptyFieldKeys(from: data.fields)
                 } else {
