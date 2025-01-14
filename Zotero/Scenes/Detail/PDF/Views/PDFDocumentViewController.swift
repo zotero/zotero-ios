@@ -782,6 +782,9 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
                         return action
                     }
 
+                case .PSPDFKit.accessibility:
+                    return action
+
                 case .share:
                     guard action.identifier == .PSPDFKit.share else { return nil }
                     return action.replacing(handler: { [weak self] _ in
@@ -796,6 +799,17 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
 
                 case .pspdfkitActions:
                     switch action.identifier {
+                    case .PSPDFKit.define:
+                        return action.replacing(title: L10n.lookUp, handler: { [weak self] _ in
+                            guard let self else { return }
+                            coordinatorDelegate?.lookup(
+                                text: glyphs.text,
+                                rect: pageView.convert(glyphs.boundingBox, from: pageView.pdfCoordinateSpace),
+                                view: pageView,
+                                userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle
+                            )
+                        })
+
                     case .PSPDFKit.searchDocument:
                         return action.replacing(handler: { [weak self] _ in
                             guard let self, let pdfController else { return }
