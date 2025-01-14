@@ -154,7 +154,7 @@ final class AnnotationEditViewController: UIViewController {
             tableView.register(ColorPickerCell.self, forCellReuseIdentifier: Section.properties.cellId(index: 0, propertyRows: [.colorPicker]))
             tableView.register(LineWidthCell.self, forCellReuseIdentifier: Section.properties.cellId(index: 0, propertyRows: [.lineWidth]))
             tableView.register(FontSizeCell.self, forCellReuseIdentifier: Section.properties.cellId(index: 0, propertyRows: [.fontSize]))
-            tableView.register(UITableViewCell.self, forCellReuseIdentifier: Section.properties.cellId(index: 0, propertyRows: [.highlightUnderlineSwitch]))
+            tableView.register(SegmentedControlCell.self, forCellReuseIdentifier: Section.properties.cellId(index: 0, propertyRows: [.highlightUnderlineSwitch]))
             tableView.register(TextContentEditCell.self, forCellReuseIdentifier: Section.textContent.cellId(index: 0, propertyRows: []))
             tableView.register(UITableViewCell.self, forCellReuseIdentifier: Section.actions.cellId(index: 0, propertyRows: []))
             tableView.register(UITableViewCell.self, forCellReuseIdentifier: Section.pageLabel.cellId(index: 0, propertyRows: []))
@@ -173,9 +173,6 @@ final class AnnotationEditViewController: UIViewController {
     private func update(to state: AnnotationEditState) {
         if state.changes.contains(.color) {
             reload(sections: [.properties, .textContent])
-        }
-        if state.changes.contains(.type) {
-            reload(sections: [.properties])
         }
         if state.changes.contains(.pageLabel) {
             reload(sections: [.pageLabel])
@@ -257,18 +254,15 @@ extension AnnotationEditViewController: UITableViewDataSource {
                 .disposed(by: cell.disposeBag)
             } else if let cell = cell as? LineWidthCell {
                 cell.set(value: Float(viewModel.state.lineWidth))
-                cell.valueObservable.subscribe(onNext: { value in self.viewModel.process(action: .setLineWidth(CGFloat(value))) }).disposed(by: cell.disposeBag)
+                cell.valueObservable.subscribe(onNext: { [weak viewModel] value in viewModel?.process(action: .setLineWidth(CGFloat(value))) }).disposed(by: cell.disposeBag)
             } else if let cell = cell as? FontSizeCell {
                 cell.set(value: viewModel.state.fontSize)
-                cell.valueObservable.subscribe(onNext: { value in self.viewModel.process(action: .setFontSize(value)) }).disposed(by: cell.disposeBag)
-            } else {
-                if viewModel.state.type == .highlight {
-                    cell.textLabel?.text = L10n.Pdf.AnnotationPopover.convertToUnderline
-                } else {
-                    cell.textLabel?.text = L10n.Pdf.AnnotationPopover.convertToHighlight
+                cell.valueObservable.subscribe(onNext: { [weak viewModel] value in viewModel?.process(action: .setFontSize(value)) }).disposed(by: cell.disposeBag)
+            } else if let cell = cell as? SegmentedControlCell {
+                let selected = viewModel.state.type == .highlight ? 0 : 1
+                cell.setup(selected: selected, segments: [L10n.Pdf.highlight, L10n.Pdf.underline]) { [weak viewModel] selected in
+                    viewModel?.process(action: .setAnnotationType(selected == 0 ? .highlight : .underline))
                 }
-                cell.textLabel?.textColor = Asset.Colors.zoteroBlueWithDarkMode.color
-                cell.accessoryType = .none
             }
 
         case .textContent:
@@ -329,7 +323,7 @@ extension AnnotationEditViewController: UITableViewDelegate {
         case .properties:
             guard indexPath.row < propertyRows.count else { return }
             switch propertyRows[indexPath.row] {
-            case .colorPicker, .lineWidth:
+            case .colorPicker, .lineWidth, .highlightUnderlineSwitch:
                 break
 
             case .fontSize:
@@ -337,10 +331,6 @@ extension AnnotationEditViewController: UITableViewDelegate {
                     self?.viewModel.process(action: .setFontSize(newSize))
                     tableView?.reloadRows(at: [indexPath], with: .none)
                 })
-
-            case .highlightUnderlineSwitch:
-                guard viewModel.state.isEditable else { return }
-                viewModel.process(action: .convertBetweenHighlightAndUnderline)
             }
 
         case .actions:

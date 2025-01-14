@@ -234,8 +234,6 @@
 "pdf.annotation_popover.no_comment" = "No comment";
 "pdf.annotation_popover.line_width" = "Width";
 "pdf.annotation_popover.size" = "Size";
-"pdf.annotation_popover.convert_to_underline" = "Convert to Underline";
-"pdf.annotation_popover.convert_to_highlight" = "Convert to Highlight";
 "pdf.deleted_title" = "Deleted";
 "pdf.deleted_message" = "This document has been deleted. Do you want to restore it?";
 "pdf.line_width_point" = "%0.1f pt";

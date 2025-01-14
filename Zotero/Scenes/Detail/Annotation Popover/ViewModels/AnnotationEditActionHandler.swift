@@ -42,20 +42,10 @@ struct AnnotationEditActionHandler: ViewModelActionHandler {
                 state.fontSize = size
             }
 
-        case .convertBetweenHighlightAndUnderline:
+        case .setAnnotationType(let type):
             update(viewModel: viewModel) { state in
-                switch state.type {
-                case .highlight:
-                    state.type = .underline
-                    state.changes = .type
-
-                case .underline:
-                    state.type = .highlight
-                    state.changes = .type
-
-                case .freeText, .image, .ink, .note:
-                    break
-                }
+                state.type = type
+                state.changes = .type
             }
         }
     }

@@ -889,6 +889,7 @@
 		B3A17D1927FC33B800322CAD /* LowPowerModeController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A17D1827FC33B800322CAD /* LowPowerModeController.swift */; };
 		B3A27ACD25BEE91A00DE0BB2 /* TranslationWebViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A27ACC25BEE91A00DE0BB2 /* TranslationWebViewHandler.swift */; };
 		B3A27AD125BEE93400DE0BB2 /* FilenameFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A27AD025BEE93400DE0BB2 /* FilenameFormatter.swift */; };
+		B3A297B72D366B23008AD19D /* SegmentedControlCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A297B62D366B23008AD19D /* SegmentedControlCell.swift */; };
 		B3A2AECC26552248004BF3A4 /* SettingsCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A2AECB26552248004BF3A4 /* SettingsCoordinator.swift */; };
 		B3A2AECE26553DD8004BF3A4 /* NavigationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A2AECD26553DD8004BF3A4 /* NavigationViewController.swift */; };
 		B3A2AEDC2656511D004BF3A4 /* StylesRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A2AEDB2656511D004BF3A4 /* StylesRequest.swift */; };
@@ -1913,6 +1914,7 @@
 		B3A17D1827FC33B800322CAD /* LowPowerModeController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LowPowerModeController.swift; sourceTree = "<group>"; };
 		B3A27ACC25BEE91A00DE0BB2 /* TranslationWebViewHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TranslationWebViewHandler.swift; sourceTree = "<group>"; };
 		B3A27AD025BEE93400DE0BB2 /* FilenameFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilenameFormatter.swift; sourceTree = "<group>"; };
+		B3A297B62D366B23008AD19D /* SegmentedControlCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentedControlCell.swift; sourceTree = "<group>"; };
 		B3A2AECB26552248004BF3A4 /* SettingsCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsCoordinator.swift; sourceTree = "<group>"; };
 		B3A2AECD26553DD8004BF3A4 /* NavigationViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NavigationViewController.swift; sourceTree = "<group>"; };
 		B3A2AEDB2656511D004BF3A4 /* StylesRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StylesRequest.swift; sourceTree = "<group>"; };
@@ -3137,6 +3139,7 @@
 				B398D6BF2A77F9C60049A296 /* FontSizeView.swift */,
 				B34A4B7126E65FC200B3E993 /* LineWidthCell.swift */,
 				B34A4B6F26E63C9900B3E993 /* LineWidthView.swift */,
+				B3A297B62D366B23008AD19D /* SegmentedControlCell.swift */,
 				B34DF1BB2576956F0019CCD1 /* SwitchCell.swift */,
 				B34DF1BC2576956F0019CCD1 /* SwitchCell.xib */,
 				B398142C257A649D002C755C /* TextContentEditCell.swift */,
@@ -4972,6 +4975,7 @@
 				B30566AF23FC051F003304F2 /* LibraryResponse.swift in Sources */,
 				B33F47732CA1656E00278240 /* BaseItemsActionHandler.swift in Sources */,
 				B3868537270D90640068A022 /* RawDataEncoding.swift in Sources */,
+				B3A297B72D366B23008AD19D /* SegmentedControlCell.swift in Sources */,
 				B37C5B6D26453C58009A37E5 /* NoteEditorAction.swift in Sources */,
 				B30566C223FC051F003304F2 /* LibraryData.swift in Sources */,
 				B391480726D9093E0016B7B2 /* UIPasteboard+Extensions.swift in Sources */,
