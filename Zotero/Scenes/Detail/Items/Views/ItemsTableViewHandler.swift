@@ -16,7 +16,6 @@ protocol ItemsTableViewHandlerDelegate: AnyObject {
     var isInViewHierarchy: Bool { get }
     var collectionKey: String? { get }
     var library: Library { get }
-    var isEditing: Bool { get }
 
     func process(action: ItemAction.Kind, at index: Int, completionAction: ((Bool) -> Void)?)
     func process(tapAction action: ItemsTableViewHandler.TapAction)
@@ -84,7 +83,7 @@ final class ItemsTableViewHandler: NSObject {
     }
 
     func attachmentAccessoriesChanged() {
-        if delegate.isEditing && !dataSource.selectedItems.isEmpty {
+        if tableView.isEditing, !dataSource.selectedItems.isEmpty {
             // Accessories changed by user, reload only selected items
             reloadSelected()
         } else {
@@ -281,7 +280,7 @@ extension ItemsTableViewHandler: UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
-        guard delegate.isEditing, let object = dataSource.object(at: indexPath.row) else { return }
+        guard tableView.isEditing, let object = dataSource.object(at: indexPath.row) else { return }
         delegate.process(tapAction: .deselectItem(object))
     }
 
