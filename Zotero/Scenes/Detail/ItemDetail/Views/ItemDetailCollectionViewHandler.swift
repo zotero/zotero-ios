@@ -586,7 +586,11 @@ final class ItemDetailCollectionViewHandler: NSObject {
         guard let indexPath = dataSource.indexPath(for: row), let cellFrame = collectionView.cellForItem(at: indexPath)?.frame else { return }
         updateQueue.async { [weak self] in
             guard let self else { return }
-            let snapshot = dataSource.snapshot()
+            var snapshot = dataSource.snapshot()
+            // Reconfigure the item, otherwise the collection view will use the previously cached cells, if it needs to layout again.
+            // E.g. if you press the command key in an external keyboard, while editing, you'll see edited fields revert to their initial value,
+            // but only visually, view model hasn't changed!
+            snapshot.reconfigureItems([row])
             dataSource.apply(snapshot, animatingDifferences: false) { [weak self] in
                 guard let self else { return }
                 let cellBottom = cellFrame.maxY - collectionView.contentOffset.y
@@ -600,6 +604,15 @@ final class ItemDetailCollectionViewHandler: NSObject {
                     collectionView.scrollToItem(at: indexPath, at: position, animated: false)
                 }
             }
+        }
+    }
+
+    func updateRows(rows: [Row], state: ItemDetailState) {
+        updateQueue.async { [weak self] in
+            guard let self else { return }
+            var snapshot = dataSource.snapshot()
+            snapshot.reconfigureItems(rows)
+            dataSource.apply(snapshot, animatingDifferences: false)
         }
     }
 
@@ -793,7 +806,6 @@ final class ItemDetailCollectionViewHandler: NSObject {
             guard let self else { return }
             let configuration = ItemDetailFieldEditCell.ContentConfiguration(field: data.0, titleWidth: data.1, layoutMargins: layoutMargins(for: indexPath, self: self))
             let disposable = configuration.textObservable
-                .debounce(.milliseconds(500), scheduler: MainScheduler.instance)
                 .subscribe(onNext: { [weak self] text in
                     self?.viewModel.process(action: .setFieldValue(id: data.0.key, value: text))
                 })
@@ -807,7 +819,6 @@ final class ItemDetailCollectionViewHandler: NSObject {
             guard let self else { return }
             let configuration = ItemDetailFieldMultilineEditCell.ContentConfiguration(field: data.0, titleWidth: data.1, layoutMargins: layoutMargins(for: indexPath, self: self))
             let disposable = configuration.textObservable
-                .debounce(.milliseconds(500), scheduler: MainScheduler.instance)
                 .subscribe(onNext: { [weak self] text in
                     self?.viewModel.process(action: .setFieldValue(id: data.0.key, value: text))
                 })

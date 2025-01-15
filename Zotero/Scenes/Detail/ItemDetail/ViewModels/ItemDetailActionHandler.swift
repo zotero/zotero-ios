@@ -15,7 +15,7 @@ import RealmSwift
 import RxSwift
 import ZIPFoundation
 
-struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionHandler {
+final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionHandler {
     typealias State = ItemDetailState
     typealias Action = ItemDetailAction
 
@@ -163,8 +163,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
 
         do {
             let libraryToken: NotificationToken?
-            (library, libraryToken) = try viewModel.state.library.identifier.observe(in: dbStorage, changes: { [weak viewModel] library in
-                guard let viewModel else { return }
+            (library, libraryToken) = try viewModel.state.library.identifier.observe(in: dbStorage, changes: { [weak self, weak viewModel] library in
+                guard let self, let viewModel else { return }
                 reloadData(isEditing: viewModel.state.isEditing, library: library, in: viewModel)
             })
 
@@ -694,38 +694,13 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             .disposed(by: self.disposeBag)
 
         func endEditing(state: ItemDetailState, queue: DispatchQueue) -> Single<ItemDetailState> {
-            return Single.create { subscriber -> Disposable in
+            return Single.create { [weak self] subscriber -> Disposable in
                 do {
                     var newState = state
 
-                    var updatedFields: [KeyBaseKeyPair: String] = [:]
-                    if let field = state.data.fields[FieldKeys.Item.accessDate] {
-                        let updated = updated(accessDateField: field, originalField: state.snapshot?.fields[FieldKeys.Item.accessDate])
-                        if updated.value != field.value {
-                            updatedFields[KeyBaseKeyPair(key: updated.key, baseKey: updated.baseField)] = updated.value
-                            newState.data.fields[updated.key] = updated
-                        }
-                    }
-                    if let field = state.data.fields.values.first(where: { $0.baseField == FieldKeys.Item.date || $0.key == FieldKeys.Item.date }),
-                        let updated = updated(dateField: field),
-                        updated.value != field.value {
-                        updatedFields[KeyBaseKeyPair(key: updated.key, baseKey: updated.baseField)] = updated.value
-                        newState.data.fields[updated.key] = updated
-                    }
-
                     let endEditingRequest = EndItemDetailEditingDbRequest(libraryId: state.library.identifier, itemKey: state.key)
-                    var dateModified: Date?
-                    try dbStorage.perform(on: queue) { coordinator in
-                        if !updatedFields.isEmpty {
-                            let request = EditItemFieldsDbResponseRequest(key: state.key, libraryId: state.library.identifier, fieldValues: updatedFields, dateParser: dateParser)
-                            dateModified = try coordinator.perform(request: request)
-                        }
-                        try coordinator.perform(request: endEditingRequest)
-                    }
+                    try self?.dbStorage.perform(request: endEditingRequest, on: queue)
 
-                    if let dateModified {
-                        newState.data.dateModified = dateModified
-                    }
                     newState.snapshot = nil
                     newState.visibleFieldIds = ItemDetailDataCreator.nonEmptyFieldKeys(from: newState.data.fields)
                     newState.isEditing = false
@@ -737,58 +712,6 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                     subscriber(.failure(error))
                 }
                 return Disposables.create()
-            }
-        }
-
-        func updated(accessDateField: ItemDetailState.Field, originalField: ItemDetailState.Field?) -> ItemDetailState.Field {
-            var field = accessDateField
-
-            var date: Date?
-            if let _date = parseDateSpecialValue(from: field.value) {
-                date = _date
-            } else if let _date = Formatter.sqlFormat.date(from: field.value) {
-                date = _date
-            }
-
-            if let date = date {
-                field.value = Formatter.iso8601.string(from: date)
-                field.additionalInfo = [.formattedDate: Formatter.dateAndTime.string(from: date), .formattedEditDate: Formatter.sqlFormat.string(from: date)]
-            } else {
-                if let originalField {
-                    field = originalField
-                } else {
-                    field.value = ""
-                    field.additionalInfo = [:]
-                }
-            }
-
-            return field
-        }
-
-        func updated(dateField: ItemDetailState.Field) -> ItemDetailState.Field? {
-            guard let date = parseDateSpecialValue(from: dateField.value) else { return nil }
-            var field = dateField
-            field.value = Formatter.dateWithDashes.string(from: date)
-            if let order = self.dateParser.parse(string: field.value)?.orderWithSpaces {
-                field.additionalInfo?[.dateOrder] = order
-            }
-            return field
-        }
-
-        func parseDateSpecialValue(from value: String) -> Date? {
-            // TODO: - check for current localization
-            switch value.lowercased() {
-            case "tomorrow":
-                return Calendar.current.date(byAdding: .day, value: 1, to: Date())
-
-            case "today":
-                return Date()
-                
-            case "yesterday":
-                return Calendar.current.date(byAdding: .day, value: -1, to: Date())
-
-            default:
-                return nil
             }
         }
     }
@@ -961,100 +884,61 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
     }
 
     private func set(title: NSAttributedString, in viewModel: ViewModel<ItemDetailActionHandler>) {
-        guard let key = self.schemaController.titleKey(for: viewModel.state.data.type) else {
+        guard let key = schemaController.titleKey(for: viewModel.state.data.type) else {
             DDLogError("ItemDetailActionHandler: schema controller doesn't contain title key for item type \(viewModel.state.data.type)")
             return
         }
         guard title != viewModel.state.data.attributedTitle else { return }
 
-        self.update(viewModel: viewModel) { state in
+        update(viewModel: viewModel) { state in
             state.data.attributedTitle = title
             state.data.title = htmlAttributedStringConverter.convert(attributedString: title)
             state.reload = .row(.title)
         }
 
         let keyPair = KeyBaseKeyPair(key: key, baseKey: (key != FieldKeys.Item.title ? FieldKeys.Item.title : nil))
-        let request = EditItemFieldsDbResponseRequest(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, fieldValues: [keyPair: viewModel.state.data.title], dateParser: dateParser)
-        perform(request: request, invalidateRealm: false) { [weak viewModel] result in
-            switch result {
-            case .success(let dateModified):
-                guard let viewModel, let dateModified else { return }
-                update(viewModel: viewModel) { state in
-                    state.data.dateModified = dateModified
-                    state.reload = .section(.dates)
-                }
-
-            case .failure(let error):
-                DDLogError("ItemDetailActionHandler: can't store title - \(error)")
-            }
-        }
+        delayItemFieldsEdit(fieldValues: [keyPair: viewModel.state.data.title], in: viewModel)
     }
 
     private func set(abstract: String, in viewModel: ViewModel<ItemDetailActionHandler>) {
-        self.update(viewModel: viewModel) { state in
+        update(viewModel: viewModel) { state in
             state.data.abstract = abstract
             state.reload = .row(.abstract)
         }
 
-        let request = EditItemFieldsDbResponseRequest(
-            key: viewModel.state.key,
-            libraryId: viewModel.state.library.identifier,
-            fieldValues: [KeyBaseKeyPair(key: FieldKeys.Item.abstract, baseKey: nil): abstract],
-            dateParser: dateParser
-        )
-        perform(request: request, invalidateRealm: false) { [weak viewModel] result in
-            switch result {
-            case .success(let dateModified):
-                guard let viewModel, let dateModified else { return }
-                update(viewModel: viewModel) { state in
-                    state.data.dateModified = dateModified
-                    state.reload = .section(.dates)
-                }
-
-            case .failure(let error):
-                DDLogError("ItemDetailActionHandler: can't store abstract - \(error)")
-            }
-        }
+        delayItemFieldsEdit(fieldValues: [KeyBaseKeyPair(key: FieldKeys.Item.abstract, baseKey: nil): abstract], in: viewModel)
     }
 
     private func setField(value: String, for id: String, in viewModel: ViewModel<ItemDetailActionHandler>) {
-        guard var field = viewModel.state.data.fields[id] else { return }
-
+        guard let previousField = viewModel.state.data.fields[id] else { return }
+        var field = previousField
         field.value = value
-        field.isTappable = ItemDetailDataCreator.isTappable(key: field.key, value: field.value, urlDetector: self.urlDetector, doiDetector: FieldKeys.Item.isDoi)
+        field.isTappable = ItemDetailDataCreator.isTappable(key: field.key, value: field.value, urlDetector: urlDetector, doiDetector: FieldKeys.Item.isDoi)
 
-        if field.key == FieldKeys.Item.date || field.baseField == FieldKeys.Item.date, let order = self.dateParser.parse(string: value)?.orderWithSpaces {
-            var info = field.additionalInfo ?? [:]
-            info[.dateOrder] = order
-            field.additionalInfo = info
-        } else if field.additionalInfo != nil {
-            field.additionalInfo = nil
+        // If a date field has it's value edited, update only additional info here, as the user may still be typing.
+        // Modify data & accessed date field values just before storing.
+        switch (field.key, field.baseField) {
+        case (FieldKeys.Item.date, _), (_, FieldKeys.Item.date):
+            if let order = dateParser.parse(string: field.value)?.orderWithSpaces {
+                var info = field.additionalInfo ?? [:]
+                info[.dateOrder] = order
+                field.additionalInfo = info
+            } else {
+                field.additionalInfo = nil
+            }
+
+        default:
+            break
         }
 
-        self.update(viewModel: viewModel) { state in
+        guard previousField != field else { return }
+        
+        update(viewModel: viewModel) { state in
             state.data.fields[id] = field
             state.reload = .row(.field(key: field.key, multiline: (field.id == FieldKeys.Item.extra)))
         }
 
-        let request = EditItemFieldsDbResponseRequest(
-            key: viewModel.state.key,
-            libraryId: viewModel.state.library.identifier,
-            fieldValues: [KeyBaseKeyPair(key: field.key, baseKey: field.baseField): field.value],
-            dateParser: dateParser
-        )
-        perform(request: request, invalidateRealm: false) { [weak viewModel] result in
-            switch result {
-            case .success(let dateModified):
-                guard let viewModel, let dateModified else { return }
-                update(viewModel: viewModel) { state in
-                    state.data.dateModified = dateModified
-                    state.reload = .section(.dates)
-                }
-
-            case .failure(let error):
-                DDLogError("ItemDetailActionHandler: can't store field - \(error)")
-            }
-        }
+        delayItemFieldsEdit(fieldValues: [KeyBaseKeyPair(key: field.key, baseKey: field.baseField): field.value], in: viewModel)
     }
 
     private func deleteCreator(with id: String, in viewModel: ViewModel<ItemDetailActionHandler>) {
@@ -1099,6 +983,142 @@ struct ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         self.perform(request: request) { error in
             guard let error else { return }
             DDLogError("ItemDetailActionHandler: can't reorder creators \(error)")
+        }
+    }
+
+    private var pendingFieldValues: [KeyBaseKeyPair: String] = [:]
+    private var delayTimer: BackgroundTimer?
+    static private let delay: DispatchTimeInterval = .milliseconds(500)
+    private func delayItemFieldsEdit(fieldValues: [KeyBaseKeyPair: String], in viewModel: ViewModel<ItemDetailActionHandler>) {
+        // First suspend delayTimer in case it's running.
+        delayTimer?.suspend()
+        if let delayTimer {
+            // If there is a delay timer, it is now suspended.
+            // Add or replace pending field values.
+            for (key, value) in fieldValues {
+                pendingFieldValues[key] = value
+            }
+            if let startTime = delayTimer.startTime, startTime + Self.delay > .now() {
+                // If deadline wasn't reached, resume timer.
+                delayTimer.resume()
+            } else {
+                // Deadline has been reached, process pending field values, and free the timer.
+                // TODO: implement processing
+                storeItemFieldsEdit(fieldValues: pendingFieldValues, in: viewModel)
+                pendingFieldValues = [:]
+                self.delayTimer = nil
+            }
+        } else {
+            // Create new timer, and delay processing of pending field values.
+            pendingFieldValues = fieldValues
+            delayTimer = BackgroundTimer(timeInterval: Self.delay, queue: .main)
+            delayTimer?.eventHandler = { [weak self] in
+                guard let self else { return }
+                // Deadline has been reached, process pending field values, and free the timer.
+                // TODO: move to nested function call?
+                storeItemFieldsEdit(fieldValues: pendingFieldValues, in: viewModel)
+                pendingFieldValues = [:]
+                delayTimer = nil
+            }
+            delayTimer?.resume()
+        }
+
+        func storeItemFieldsEdit(fieldValues: [KeyBaseKeyPair: String], in viewModel: ViewModel<ItemDetailActionHandler>) {
+            guard !fieldValues.isEmpty else { return }
+            var updatedFieldValues = fieldValues
+
+            var updatedState = viewModel.state
+            var updatedRows: [ItemDetailCollectionViewHandler.Row] = []
+            // Just before storing, modify date & access date values if needed. If so update state.
+            if let (key, _) = updatedFieldValues.first(where: { $0.key.key == FieldKeys.Item.accessDate }), let field = updatedState.data.fields[key.key] {
+                let updated = updated(accessDateField: field, originalField: viewModel.state.snapshot?.fields[FieldKeys.Item.accessDate])
+                if updated.value != field.value {
+                    updatedFieldValues[key] = updated.value
+                    updatedState.data.fields[updated.key] = updated
+                    updatedRows.append(.field(key: updated.key, multiline: false))
+                }
+            }
+            if let (key, _) = updatedFieldValues.first(where: { $0.key.baseKey == FieldKeys.Item.date || $0.key.key == FieldKeys.Item.date }),
+               let field = updatedState.data.fields[key.key],
+               let updated = updated(dateField: field),
+               updated.value != field.value {
+                updatedFieldValues[key] = updated.value
+                updatedState.data.fields[updated.key] = updated
+                updatedRows.append(.field(key: updated.key, multiline: false))
+            }
+            if !updatedRows.isEmpty {
+                update(viewModel: viewModel) { state in
+                    state = updatedState
+                    state.reload = .rows(updatedRows)
+                }
+            }
+
+            let request = EditItemFieldsDbResponseRequest(
+                key: viewModel.state.key,
+                libraryId: viewModel.state.library.identifier,
+                fieldValues: updatedFieldValues,
+                dateParser: dateParser
+            )
+            perform(request: request, invalidateRealm: false) { [weak self, weak viewModel] result in
+                switch result {
+                case .success(let dateModified):
+                    guard let self, let viewModel, let dateModified else { return }
+                    update(viewModel: viewModel) { state in
+                        state.data.dateModified = dateModified
+                        state.reload = .section(.dates)
+                    }
+
+                case .failure(let error):
+                    DDLogError("ItemDetailActionHandler: can't store item fields edit - \(error)")
+                }
+            }
+
+            func updated(accessDateField: ItemDetailState.Field, originalField: ItemDetailState.Field?) -> ItemDetailState.Field {
+                var field = accessDateField
+
+                if let date = parseDateSpecialValue(from: field.value) ?? Formatter.sqlFormat.date(from: field.value) {
+                    field.value = Formatter.iso8601.string(from: date)
+                    field.additionalInfo = [.formattedDate: Formatter.dateAndTime.string(from: date), .formattedEditDate: Formatter.sqlFormat.string(from: date)]
+                } else {
+                    if let originalField {
+                        field = originalField
+                    } else {
+                        field.value = ""
+                        field.additionalInfo = [:]
+                    }
+                }
+
+                return field
+            }
+
+            func updated(dateField: ItemDetailState.Field) -> ItemDetailState.Field? {
+                guard let date = parseDateSpecialValue(from: dateField.value) else { return nil }
+                var field = dateField
+                field.value = Formatter.dateWithDashes.string(from: date)
+                if let order = dateParser.parse(string: field.value)?.orderWithSpaces {
+                    var info = field.additionalInfo ?? [:]
+                    info[.dateOrder] = order
+                    field.additionalInfo = info
+                }
+                return field
+            }
+
+            func parseDateSpecialValue(from value: String) -> Date? {
+                // TODO: - check for current localization
+                switch value.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) {
+                case "tomorrow":
+                    return Calendar.current.date(byAdding: .day, value: 1, to: Date())
+
+                case "today":
+                    return Date()
+
+                case "yesterday":
+                    return Calendar.current.date(byAdding: .day, value: -1, to: Date())
+
+                default:
+                    return nil
+                }
+            }
         }
     }
 }
