@@ -210,7 +210,9 @@ extension AppDelegate: SceneActivityCounter {
 extension AppDelegate: UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         if let key = Licenses.shared.pspdfkitKey {
-            PSPDFKit.SDK.setLicenseKey(key)
+            let additionalFontDirectory = Bundle.main.bundleURL.appendingPathComponent("fonts", isDirectory: true).path
+            let options: [SDK.Setting: Any] = [.additionalFontDirectories: [additionalFontDirectory]]
+            PSPDFKit.SDK.setLicenseKey(key, options: options)
         }
         PSPDFKit.SDK.shared.styleManager.setLastUsedValue(AnnotationsConfig.imageAnnotationLineWidth,
                                                           forProperty: "lineWidth",

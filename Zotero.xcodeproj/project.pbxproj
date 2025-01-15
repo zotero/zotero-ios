@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 54;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -2184,6 +2184,10 @@
 		B3FE4B9B268DDE6100CE123F /* CitationBibliographyExportCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CitationBibliographyExportCoordinator.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		B30D46102D3823F7000C1170 /* fonts */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = fonts; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
+
 /* Begin PBXFrameworksBuildPhase section */
 		B30D59522206F60400884C4A /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
@@ -2843,6 +2847,7 @@
 			isa = PBXGroup;
 			children = (
 				B3F6415E2A28B1EF00A78CB0 /* ci_scripts */,
+				B30D46102D3823F7000C1170 /* fonts */,
 				B30BA8C3255D415600361D25 /* Bundled */,
 				B32A495A2A44730C00080945 /* licenses */,
 				B30D59572206F60400884C4A /* Zotero */,
@@ -4329,6 +4334,9 @@
 			);
 			dependencies = (
 				B311B3252386A39800BCF592 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				B30D46102D3823F7000C1170 /* fonts */,
 			);
 			name = Zotero;
 			packageProductDependencies = (
