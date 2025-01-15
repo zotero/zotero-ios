@@ -6127,7 +6127,7 @@
 				);
 				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited)";
 				INFOPLIST_FILE = Zotero/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -6164,7 +6164,7 @@
 				);
 				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited)";
 				INFOPLIST_FILE = Zotero/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -6197,7 +6197,7 @@
 					"TESTING=1",
 				);
 				INFOPLIST_FILE = ZoteroTests/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -6223,7 +6223,7 @@
 				COPY_PHASE_STRIP = YES;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				INFOPLIST_FILE = ZoteroTests/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -6248,7 +6248,7 @@
 				COPY_PHASE_STRIP = YES;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				INFOPLIST_FILE = ZoteroUITests/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -6273,7 +6273,7 @@
 				COPY_PHASE_STRIP = YES;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				INFOPLIST_FILE = ZoteroUITests/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -6304,7 +6304,7 @@
 					"$(PROJECT_DIR)",
 				);
 				INFOPLIST_FILE = ZShare/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -6338,7 +6338,7 @@
 					"$(PROJECT_DIR)",
 				);
 				INFOPLIST_FILE = ZShare/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -6440,7 +6440,7 @@
 				);
 				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited)";
 				INFOPLIST_FILE = Zotero/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -6474,7 +6474,7 @@
 					"TESTING=1",
 				);
 				INFOPLIST_FILE = ZoteroTests/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -6499,7 +6499,7 @@
 				COPY_PHASE_STRIP = YES;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				INFOPLIST_FILE = ZoteroUITests/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -6530,7 +6530,7 @@
 					"$(PROJECT_DIR)",
 				);
 				INFOPLIST_FILE = ZShare/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -6714,7 +6714,7 @@
 			repositoryURL = "https://github.com/PSPDFKit/PSPDFKit-SP";
 			requirement = {
 				kind = exactVersion;
-				version = 14.1.1;
+				version = 14.3.0;
 			};
 		};
 		B3D84BEE27919FDE005DDD7C /* XCRemoteSwiftPackageReference "Starscream" */ = {

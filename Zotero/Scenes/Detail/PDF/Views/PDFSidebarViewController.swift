@@ -72,13 +72,6 @@ class PDFSidebarViewController: UIViewController {
         select(tab: .annotations)
     }
 
-    override func viewIsAppearing(_ animated: Bool) {
-        if #unavailable(iOS 16.0) {
-            children.forEach { $0.viewIsAppearing(animated) }
-        }
-        super.viewIsAppearing(animated)
-    }
-
     private func select(tab: Tab) {
         guard let index = Tab.sortedTabs.firstIndex(of: tab) else { return }
         picker.selectedSegmentIndex = index
