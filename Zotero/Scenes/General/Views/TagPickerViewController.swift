@@ -134,9 +134,7 @@ final class TagPickerViewController: UIViewController {
                         .disposed(by: self.disposeBag)
 
         self.navigationItem.searchController = searchController
-        if #available(iOS 16.0, *) {
-            self.navigationItem.preferredSearchBarPlacement = .stacked
-        }
+        self.navigationItem.preferredSearchBarPlacement = .stacked
         self.navigationItem.hidesSearchBarWhenScrolling = false
     }
 

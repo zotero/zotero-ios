@@ -369,9 +369,6 @@ class PDFReaderViewController: UIViewController {
     }
 
     override func viewIsAppearing(_ animated: Bool) {
-        if #unavailable(iOS 16.0) {
-            children.forEach { $0.viewIsAppearing(animated) }
-        }
         super.viewIsAppearing(animated)
         let editingEnabled = viewModel.state.library.metadataEditable && !viewModel.state.document.isLocked
         annotationToolbarHandler.viewIsAppearing(editingEnabled: editingEnabled)

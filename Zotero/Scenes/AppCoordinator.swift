@@ -819,11 +819,7 @@ extension AppCoordinator: ConflictReceiver {
                             domainName = "zotero.org"
                         } else {
                             let url = URL(string: webDavController.sessionStorage.url)
-                            if #available(iOS 16.0, *) {
-                                domainName = url?.host() ?? ""
-                            } else {
-                                domainName = url?.host ?? ""
-                            }
+                            domainName = url?.host() ?? ""
                         }
 
                         let actions = [UIAlertAction(title: L10n.Errors.Sync.resetGroupFiles, style: .cancel, handler: { _ in
