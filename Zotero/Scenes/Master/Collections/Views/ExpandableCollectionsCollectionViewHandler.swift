@@ -101,26 +101,25 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
     }
 
     func update(with tree: CollectionTree, selectedId: CollectionIdentifier, animated: Bool, completion: (() -> Void)? = nil) {
-        guard let collectionView, let dataSource else { return }
-        let newSnapshot = tree.createSnapshot(selectedId: selectedId)
-
-        if dataSource.snapshot(for: collectionsSection).items.count == newSnapshot.items.count {
-            updateQueue.async { [weak self] in
-                guard let self else { return }
-                dataSource.apply(newSnapshot, to: collectionsSection, animatingDifferences: animated, completion: completion)
-            }
-            return
-        }
-
-        // TODO: - iOS bug, applying a section snapshot to section where a new child row is added, parent row doesn't show a collapse button
-        // It works fine if a completely new snapshot is applied, which breaks animations though.
-
         updateQueue.async { [weak self] in
-            guard let self else { return }
+            guard let self, let dataSource else { return }
+            let newSnapshot = tree.createSnapshot(selectedId: selectedId)
+            if dataSource.snapshot(for: collectionsSection).items.count == newSnapshot.items.count {
+                dataSource.apply(newSnapshot, to: collectionsSection, animatingDifferences: animated, completion: completion)
+                return
+            }
+
+            // TODO: - iOS bug, applying a section snapshot to section where a new child row is added, parent row doesn't show a collapse button
+            // It works fine if a completely new snapshot is applied, which breaks animations though.
             var snapshot = NSDiffableDataSourceSnapshot<Int, Collection>()
             snapshot.appendSections([collectionsSection])
-            dataSource.apply(snapshot, animatingDifferences: animated)
-            dataSource.apply(newSnapshot, to: collectionsSection, animatingDifferences: animated, completion: completion)
+            dataSource.apply(snapshot, animatingDifferences: animated) { [weak self] in
+                guard let self else { return }
+                updateQueue.async { [weak self] in
+                    guard let self else { return }
+                    dataSource.apply(newSnapshot, to: collectionsSection, animatingDifferences: animated, completion: completion)
+                }
+            }
         }
     }
 
