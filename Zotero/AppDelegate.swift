@@ -214,6 +214,12 @@ extension AppDelegate: UIApplicationDelegate {
             let options: [SDK.Setting: Any] = [.additionalFontDirectories: [additionalFontDirectory]]
             PSPDFKit.SDK.setLicenseKey(key, options: options)
         }
+        DDLogInfo("AppDelegate: clearPSPDFKitCacheGuard: \(Defaults.shared.clearPSPDFKitCacheGuard); currentClearPSPDFKitCacheGuard: \(Defaults.currentClearPSPDFKitCacheGuard)")
+        if Defaults.shared.clearPSPDFKitCacheGuard < Defaults.currentClearPSPDFKitCacheGuard {
+            PSPDFKit.SDK.shared.cache.clear()
+            DDLogInfo("AppDelegate: did clear PSPDFKit cache")
+            Defaults.shared.clearPSPDFKitCacheGuard = Defaults.currentClearPSPDFKitCacheGuard
+        }
         PSPDFKit.SDK.shared.styleManager.setLastUsedValue(AnnotationsConfig.imageAnnotationLineWidth,
                                                           forProperty: "lineWidth",
                                                           forKey: PSPDFKit.Annotation.ToolVariantID(tool: .square))
