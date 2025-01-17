@@ -10,7 +10,7 @@ set -euo pipefail
 
 # Download missing fonts (remove if fixed in PSPDFKit)
 font_url="https://raw.githubusercontent.com/notofonts/noto-cjk/refs/heads/main/google-fonts/NotoSansSC%5Bwght%5D.ttf"
-output_directory="../fonts"
+output_directory="../bundled/fonts"
 mkdir -p $output_directory
 output_filename="NotoSansSC[wght].ttf"
 output_path="$output_directory/$output_filename"
