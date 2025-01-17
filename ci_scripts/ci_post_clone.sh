@@ -8,22 +8,6 @@
 
 set -euo pipefail
 
-# Download missing fonts (remove if fixed in PSPDFKit)
-font_url="https://raw.githubusercontent.com/notofonts/noto-cjk/refs/heads/main/google-fonts/NotoSansSC%5Bwght%5D.ttf"
-output_directory="../bundled/fonts"
-mkdir -p $output_directory
-output_filename="NotoSansSC[wght].ttf"
-output_path="$output_directory/$output_filename"
-curl -fL -o "$output_path" $font_url || { echo "Font download failed"; exit 1; }
-echo "Verifying downloaded font file..."
-if file "$output_path" | grep -q "TrueType Font data"; then
-    echo "Font file verification passed: $output_path is a TTF file."
-else
-    echo "Font file verification failed: $output_path is not a TTF file."
-    rm -f "$output_path"
-    exit 1
-fi
-
 which swiftgen || HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew install swiftgen
 which swiftlint || HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew install swiftlint
 which openssl || HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew install openssl

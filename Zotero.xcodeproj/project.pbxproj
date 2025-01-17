@@ -4318,6 +4318,7 @@
 				B3593F142668D37900FA4BB2 /* Bundle Styles */,
 				B34A85AC243CB1E4003D5638 /* Bundle Translators */,
 				B3A1D03D2BA321B30040FEE9 /* Bundle Note Editor */,
+				61975C432D3A84F5005BB41A /* Fetch Bundled Fonts */,
 				B337A5AD244F229400AFD13D /* SwiftGen */,
 				B30D59512206F60400884C4A /* Sources */,
 				B30D59522206F60400884C4A /* Frameworks */,
@@ -4629,6 +4630,26 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		61975C432D3A84F5005BB41A /* Fetch Bundled Fonts */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/scripts/fetch_bundled_fonts.sh",
+			);
+			name = "Fetch Bundled Fonts";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "sh \"$SCRIPT_INPUT_FILE_0\"\n";
+		};
 		61AE2F282A2619E50072571D /* SwiftLint */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -4727,6 +4748,7 @@
 		};
 		B3A1D03D2BA321B30040FEE9 /* Bundle Note Editor */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
