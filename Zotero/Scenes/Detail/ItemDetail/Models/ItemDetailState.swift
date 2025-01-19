@@ -183,9 +183,6 @@ struct ItemDetailState: ViewModelState {
         var dateModified: Date
         let dateAdded: Date
 
-        var maxFieldTitleWidth: CGFloat = 0
-        var maxNonemptyFieldTitleWidth: CGFloat = 0
-
         var isAttachment: Bool {
             return type == ItemTypes.attachment
         }
@@ -231,9 +228,7 @@ struct ItemDetailState: ViewModelState {
                 fields: [:],
                 abstract: nil,
                 dateModified: date,
-                dateAdded: date,
-                maxFieldTitleWidth: 0,
-                maxNonemptyFieldTitleWidth: 0
+                dateAdded: date
             )
         }
     }
