@@ -826,7 +826,6 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
 
             var data = originalData
             data.type = type
-            data.isAttachment = type == ItemTypes.attachment
             data.localizedType = localizedType
             data.fields = fields
             data.abstract = hasAbstract ? (originalData.abstract ?? "") : nil
@@ -1003,7 +1002,6 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
                 delayTimer.resume()
             } else {
                 // Deadline has been reached, process pending field values, and free the timer.
-                // TODO: implement processing
                 storeItemFieldsEdit(fieldValues: pendingFieldValues, in: viewModel)
                 pendingFieldValues = [:]
                 self.delayTimer = nil
@@ -1015,7 +1013,6 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
             delayTimer?.eventHandler = { [weak self] in
                 guard let self else { return }
                 // Deadline has been reached, process pending field values, and free the timer.
-                // TODO: move to nested function call?
                 storeItemFieldsEdit(fieldValues: pendingFieldValues, in: viewModel)
                 pendingFieldValues = [:]
                 delayTimer = nil

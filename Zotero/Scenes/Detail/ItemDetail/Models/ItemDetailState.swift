@@ -175,7 +175,6 @@ struct ItemDetailState: ViewModelState {
         var title: String
         var attributedTitle: NSAttributedString
         var type: String
-        var isAttachment: Bool
         var localizedType: String
         var creators: OrderedDictionary<String, Creator>
         var fields: OrderedDictionary<String, Field>
@@ -186,6 +185,10 @@ struct ItemDetailState: ViewModelState {
 
         var maxFieldTitleWidth: CGFloat = 0
         var maxNonemptyFieldTitleWidth: CGFloat = 0
+
+        var isAttachment: Bool {
+            return type == ItemTypes.attachment
+        }
 
         func databaseFields(schemaController: SchemaController) -> [Field] {
             var allFields = Array(fields.values)
@@ -223,7 +226,6 @@ struct ItemDetailState: ViewModelState {
                 title: "",
                 attributedTitle: .init(string: ""),
                 type: "",
-                isAttachment: false,
                 localizedType: "",
                 creators: [:],
                 fields: [:],
