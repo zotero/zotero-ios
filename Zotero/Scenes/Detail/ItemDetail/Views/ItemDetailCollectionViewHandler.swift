@@ -98,6 +98,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
     private var maxNonemptyTitleWidth: CGFloat = 0
     private var dataSource: UICollectionViewDiffableDataSource<SectionType, Row>!
     private let updateQueue: DispatchQueue
+    private unowned let htmlAttributedStringConverter: HtmlAttributedStringConverter
     private weak var fileDownloader: AttachmentDownloader?
     weak var delegate: ItemDetailCollectionViewHandlerDelegate?
 
@@ -111,9 +112,16 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
     // MARK: - Lifecycle
 
-    init(collectionView: UICollectionView, containerWidth: CGFloat, viewModel: ViewModel<ItemDetailActionHandler>, fileDownloader: AttachmentDownloader?) {
+    init(
+        collectionView: UICollectionView,
+        containerWidth: CGFloat,
+        viewModel: ViewModel<ItemDetailActionHandler>,
+        htmlAttributedStringConverter: HtmlAttributedStringConverter,
+        fileDownloader: AttachmentDownloader?
+    ) {
         self.collectionView = collectionView
         self.viewModel = viewModel
+        self.htmlAttributedStringConverter = htmlAttributedStringConverter
         self.fileDownloader = fileDownloader
         observer = PublishSubject()
         disposeBag = DisposeBag()
@@ -180,8 +188,8 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
                 switch row {
                 case .title:
-                    let title = viewModel.state.data.attributedTitle
-                    return collectionView.dequeueConfiguredReusableCell(using: titleRegistration, for: indexPath, item: (title, isEditing))
+                    let attributedTitle = htmlAttributedStringConverter.convert(text: viewModel.state.data.title, baseAttributes: [.font: viewModel.state.titleFont])
+                    return collectionView.dequeueConfiguredReusableCell(using: titleRegistration, for: indexPath, item: (attributedTitle, isEditing))
 
                 case .creator(let creator):
                     return collectionView.dequeueConfiguredReusableCell(using: fieldRegistration, for: indexPath, item: (.creator(creator), titleWidth))

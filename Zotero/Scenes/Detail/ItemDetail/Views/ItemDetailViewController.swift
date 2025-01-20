@@ -35,6 +35,7 @@ final class ItemDetailViewController: UIViewController {
             collectionView: collectionView,
             containerWidth: width,
             viewModel: viewModel,
+            htmlAttributedStringConverter: controllers.htmlAttributedStringConverter,
             fileDownloader: controllers.userControllers?.fileDownloader
         )
         collectionViewHandler.delegate = self

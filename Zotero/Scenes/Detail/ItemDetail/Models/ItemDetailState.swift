@@ -173,7 +173,6 @@ struct ItemDetailState: ViewModelState {
 
     struct Data: Equatable {
         var title: String
-        var attributedTitle: NSAttributedString
         var type: String
         var localizedType: String
         var creators: OrderedDictionary<String, Creator>
@@ -221,7 +220,6 @@ struct ItemDetailState: ViewModelState {
             let date = Date()
             return Data(
                 title: "",
-                attributedTitle: .init(string: ""),
                 type: "",
                 localizedType: "",
                 creators: [:],

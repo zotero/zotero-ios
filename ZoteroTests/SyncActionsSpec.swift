@@ -96,7 +96,6 @@ final class SyncActionsSpec: QuickSpec {
                     try! dbStorage.perform(request: EditCollectionDbRequest(libraryId: .group(1234123), key: "BBBBBBBB", name: "New name", parentKey: nil), on: .main)
                     let data = ItemDetailState.Data(
                         title: "New title",
-                        attributedTitle: .init(string: "New title"),
                         type: "magazineArticle",
                         localizedType: "Magazine Article",
                         creators: [:],
@@ -107,7 +106,6 @@ final class SyncActionsSpec: QuickSpec {
                     )
                     let snapshot = ItemDetailState.Data(
                         title: "Bachelor thesis",
-                        attributedTitle: .init(string: "Bachelor thesis"),
                         type: "thesis",
                         localizedType: "Thesis",
                         creators: [:],
@@ -355,7 +353,6 @@ final class SyncActionsSpec: QuickSpec {
                     try! dbStorage.perform(request: EditCollectionDbRequest(libraryId: .group(1234123), key: "BBBBBBBB", name: "New name", parentKey: nil), on: .main)
                     let data = ItemDetailState.Data(
                         title: "New title",
-                        attributedTitle: .init(string: "New title"),
                         type: "magazineArticle",
                         localizedType: "Magazine Article",
                         creators: [:],
@@ -366,7 +363,6 @@ final class SyncActionsSpec: QuickSpec {
                     )
                     let snapshot = ItemDetailState.Data(
                         title: "Bachelor thesis",
-                        attributedTitle: .init(string: "Bachelor thesis"),
                         type: "thesis",
                         localizedType: "Thesis",
                         creators: [:],

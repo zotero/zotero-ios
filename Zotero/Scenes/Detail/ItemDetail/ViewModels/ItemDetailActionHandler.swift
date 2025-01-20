@@ -182,7 +182,6 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
                     fileStorage: self.fileStorage,
                     urlDetector: self.urlDetector,
                     htmlAttributedStringConverter: htmlAttributedStringConverter,
-                    titleFont: viewModel.state.titleFont,
                     doiDetector: FieldKeys.Item.isDoi
                 )
 
@@ -196,7 +195,6 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
                     fileStorage: self.fileStorage,
                     urlDetector: self.urlDetector,
                     htmlAttributedStringConverter: htmlAttributedStringConverter,
-                    titleFont: viewModel.state.titleFont,
                     doiDetector: FieldKeys.Item.isDoi
                 )
 
@@ -257,7 +255,6 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
                 fileStorage: self.fileStorage,
                 urlDetector: self.urlDetector,
                 htmlAttributedStringConverter: htmlAttributedStringConverter,
-                titleFont: viewModel.state.titleFont,
                 doiDetector: FieldKeys.Item.isDoi
             )
 
@@ -887,11 +884,11 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
             DDLogError("ItemDetailActionHandler: schema controller doesn't contain title key for item type \(viewModel.state.data.type)")
             return
         }
-        guard title != viewModel.state.data.attributedTitle else { return }
+        let htmlTitle = htmlAttributedStringConverter.convert(attributedString: title)
+        guard htmlTitle != viewModel.state.data.title else { return }
 
         update(viewModel: viewModel) { state in
-            state.data.attributedTitle = title
-            state.data.title = htmlAttributedStringConverter.convert(attributedString: title)
+            state.data.title = htmlTitle
             state.reload = .row(.title)
         }
 

@@ -32,7 +32,6 @@ struct ItemDetailDataCreator {
         fileStorage: FileStorage,
         urlDetector: UrlDetector,
         htmlAttributedStringConverter: HtmlAttributedStringConverter,
-        titleFont: UIFont,
         doiDetector: (String) -> Bool
     ) throws -> (ItemDetailState.Data, [Attachment], [Note], [Tag]) {
         switch type {
@@ -48,7 +47,6 @@ struct ItemDetailDataCreator {
                 fileStorage: fileStorage,
                 urlDetector: urlDetector,
                 htmlAttributedStringConverter: htmlAttributedStringConverter,
-                titleFont: titleFont,
                 doiDetector: doiDetector
             )
         }
@@ -73,7 +71,6 @@ struct ItemDetailDataCreator {
         let attachments: [Attachment] = child.flatMap({ [$0] }) ?? []
         let data = ItemDetailState.Data(
             title: "",
-            attributedTitle: .init(string: ""),
             type: itemType,
             localizedType: localizedType,
             creators: [:],
@@ -103,7 +100,6 @@ struct ItemDetailDataCreator {
         fileStorage: FileStorage,
         urlDetector: UrlDetector,
         htmlAttributedStringConverter: HtmlAttributedStringConverter,
-        titleFont: UIFont,
         doiDetector: (String) -> Bool
     ) throws -> (ItemDetailState.Data, [Attachment], [Note], [Tag]) {
         guard let localizedType = schemaController.localized(itemType: item.rawType) else {
@@ -173,7 +169,6 @@ struct ItemDetailDataCreator {
         let tags = item.tags.sorted(byKeyPath: "tag.name").map(Tag.init)
         let data = ItemDetailState.Data(
             title: item.baseTitle,
-            attributedTitle: htmlAttributedStringConverter.convert(text: item.baseTitle, baseAttributes: [.font: titleFont]),
             type: item.rawType,
             localizedType: localizedType,
             creators: creators,
