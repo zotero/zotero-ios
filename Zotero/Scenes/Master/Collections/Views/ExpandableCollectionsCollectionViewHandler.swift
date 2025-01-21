@@ -14,7 +14,6 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
     private unowned let dbStorage: DbStorage
     private unowned let dragDropController: DragDropController
     private unowned let viewModel: ViewModel<CollectionsActionHandler>
-    private let updateQueue: DispatchQueue
 
     private var dataSource: UICollectionViewDiffableDataSource<Int, Collection>!
     private weak var splitDelegate: SplitControllerDelegate?
@@ -39,7 +38,6 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
         self.dragDropController = dragDropController
         self.viewModel = viewModel
         self.splitDelegate = splitDelegate
-        updateQueue = DispatchQueue(label: "org.zotero.ExpandableCollectionsCollectionViewHandler.UpdateQueue")
 
         super.init()
 
@@ -48,12 +46,10 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
         collectionView.dropDelegate = self
         dataSource = createDataSource(for: collectionView)
         collectionView.dataSource = dataSource
-        updateQueue.async { [weak self] in
-            guard let self else { return }
-            var snapshot = NSDiffableDataSourceSnapshot<Int, Collection>()
-            snapshot.appendSections([collectionsSection])
-            dataSource.apply(snapshot, animatingDifferences: false)
-        }
+
+        var snapshot = NSDiffableDataSourceSnapshot<Int, Collection>()
+        snapshot.appendSections([collectionsSection])
+        dataSource.apply(snapshot, animatingDifferences: false)
 
         func createDataSource(for collectionView: UICollectionView) -> UICollectionViewDiffableDataSource<Int, Collection> {
             let registration = cellRegistration
@@ -101,25 +97,20 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
     }
 
     func update(with tree: CollectionTree, selectedId: CollectionIdentifier, animated: Bool, completion: (() -> Void)? = nil) {
-        updateQueue.async { [weak self] in
-            guard let self, let dataSource else { return }
-            let newSnapshot = tree.createSnapshot(selectedId: selectedId)
-            if dataSource.snapshot(for: collectionsSection).items.count == newSnapshot.items.count {
-                dataSource.apply(newSnapshot, to: collectionsSection, animatingDifferences: animated, completion: completion)
-                return
-            }
+        guard let dataSource else { return }
+        let newSnapshot = tree.createSnapshot(selectedId: selectedId)
+        if dataSource.snapshot(for: collectionsSection).items.count == newSnapshot.items.count {
+            dataSource.apply(newSnapshot, to: collectionsSection, animatingDifferences: animated, completion: completion)
+            return
+        }
 
-            // TODO: - iOS bug, applying a section snapshot to section where a new child row is added, parent row doesn't show a collapse button
-            // It works fine if a completely new snapshot is applied, which breaks animations though.
-            var snapshot = NSDiffableDataSourceSnapshot<Int, Collection>()
-            snapshot.appendSections([collectionsSection])
-            dataSource.apply(snapshot, animatingDifferences: animated) { [weak self] in
-                guard let self else { return }
-                updateQueue.async { [weak self] in
-                    guard let self else { return }
-                    dataSource.apply(newSnapshot, to: collectionsSection, animatingDifferences: animated, completion: completion)
-                }
-            }
+        // TODO: - iOS bug, applying a section snapshot to section where a new child row is added, parent row doesn't show a collapse button
+        // It works fine if a completely new snapshot is applied, which breaks animations though.
+        var snapshot = NSDiffableDataSourceSnapshot<Int, Collection>()
+        snapshot.appendSections([collectionsSection])
+        dataSource.apply(snapshot, animatingDifferences: animated) { [weak self] in
+            guard let self else { return }
+            dataSource.apply(newSnapshot, to: collectionsSection, animatingDifferences: animated, completion: completion)
         }
     }
 
