@@ -27,11 +27,12 @@ struct AnnotationEditState: ViewModelState {
 
         static let color = Changes(rawValue: 1 << 0)
         static let pageLabel = Changes(rawValue: 1 << 1)
+        static let type = Changes(rawValue: 1 << 2)
     }
 
-    let type: AnnotationType
     let isEditable: Bool
 
+    var type: AnnotationType
     var color: String
     var lineWidth: CGFloat
     var pageLabel: String

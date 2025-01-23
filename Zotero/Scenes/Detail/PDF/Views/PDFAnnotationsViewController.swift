@@ -119,6 +119,7 @@ final class PDFAnnotationsViewController: UIViewController {
                     guard let viewModel else { return }
                     viewModel.process(action: .updateAnnotationProperties(
                         key: key.key,
+                        type: data.type,
                         color: data.color,
                         lineWidth: data.lineWidth,
                         fontSize: data.fontSize ?? 0,

@@ -448,7 +448,7 @@ class PDFReaderViewController: UIViewController {
 
         if state.changes.contains(.selectionDeletion) {
             // Hide popover if annotation has been deleted
-            if (presentedViewController as? UINavigationController)?.viewControllers.first is AnnotationPopover {
+            if let navigationController = presentedViewController as? UINavigationController, navigationController.viewControllers.first is AnnotationPopover, !navigationController.isBeingDismissed {
                 dismiss(animated: true, completion: nil)
             }
         }

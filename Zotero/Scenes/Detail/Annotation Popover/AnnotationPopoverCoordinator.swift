@@ -74,7 +74,7 @@ extension AnnotationPopoverCoordinator: AnnotationPopoverAnnotationCoordinatorDe
     func createShareAnnotationMenu(sender: UIButton) -> UIMenu? {
         return (parentCoordinator as? PDFCoordinator)?.createShareAnnotationMenuForSelectedAnnotation(sender: sender)
     }
-    
+
     func showEdit(state: AnnotationPopoverState, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction) {
         let data = AnnotationEditState.Data(
             type: state.type,
@@ -89,7 +89,12 @@ extension AnnotationPopoverCoordinator: AnnotationPopoverAnnotationCoordinatorDe
         let state = AnnotationEditState(data: data)
         let handler = AnnotationEditActionHandler()
         let viewModel = ViewModel(initialState: state, handler: handler)
-        let controller = AnnotationEditViewController(viewModel: viewModel, includeColorPicker: false, includeFontPicker: false, saveAction: saveAction, deleteAction: deleteAction)
+        let controller = AnnotationEditViewController(
+            viewModel: viewModel,
+            properties: AnnotationEditViewController.PropertyRow.from(type: state.type, isAdditionalSettings: true),
+            saveAction: saveAction,
+            deleteAction: deleteAction
+        )
         controller.coordinatorDelegate = self
         self.navigationController?.pushViewController(controller, animated: true)
     }

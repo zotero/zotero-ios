@@ -36,14 +36,15 @@ struct AnnotationPopoverState: ViewModelState {
         static let highlight = Changes(rawValue: 1 << 4)
         static let tags = Changes(rawValue: 1 << 5)
         static let deletion = Changes(rawValue: 1 << 6)
+        static let type = Changes(rawValue: 1 << 7)
     }
 
     let libraryId: LibraryIdentifier
-    let type: AnnotationType
     let isEditable: Bool
     let author: String
     let showsDeleteButton: Bool
 
+    var type: AnnotationType
     var comment: NSAttributedString
     var color: String
     var lineWidth: CGFloat

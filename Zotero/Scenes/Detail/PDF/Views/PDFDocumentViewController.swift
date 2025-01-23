@@ -377,6 +377,7 @@ final class PDFDocumentViewController: UIViewController {
         guard let observable else { return }
         observable.subscribe(onNext: { [weak viewModel] state in
             guard let viewModel else { return }
+            // These are `AnnotationPopoverViewController` properties updated individually
             if state.changes.contains(.color) {
                 viewModel.process(action: .setColor(key: key.key, color: state.color))
             }
@@ -392,13 +393,19 @@ final class PDFDocumentViewController: UIViewController {
             if state.changes.contains(.tags) {
                 viewModel.process(action: .setTags(key: key.key, tags: state.tags))
             }
-            if state.changes.contains(.pageLabel) || state.changes.contains(.highlight) {
-                // TODO: - fix font size
+            // These are `AnnotationEditViewController` properties updated all at once with Save button
+            if state.changes.contains(.pageLabel) || state.changes.contains(.highlight) || state.changes.contains(.type) {
+                var fontSize: CGFloat = 0
+                if state.type == .freeText, let annotation = viewModel.state.annotation(for: key) {
+                    // We should never actually get here, because Annotation Popup is not shown for Free Text Annotations. But in case we do get here, let's fetch current font size and pass it along.
+                    fontSize = annotation.fontSize ?? 0
+                }
                 viewModel.process(action: .updateAnnotationProperties(
                     key: key.key,
+                    type: state.type,
                     color: state.color,
                     lineWidth: state.lineWidth,
-                    fontSize: 0,
+                    fontSize: fontSize,
                     pageLabel: state.pageLabel,
                     updateSubsequentLabels: state.updateSubsequentLabels,
                     highlightText: state.highlightText,
