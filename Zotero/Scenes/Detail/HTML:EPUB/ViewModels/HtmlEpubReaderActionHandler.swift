@@ -516,11 +516,12 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             return
         }
 
-        // Disable annotation tool
-        if annotations.contains(where: { $0.type == .note }) {
+        // Disable annotation tool & select annotation
+        if let annotation = annotations.first(where: { $0.type == .note }) {
             update(viewModel: viewModel) { state in
                 state.activeTool = nil
                 state.changes = .activeTool
+                _select(key: annotation.key, didSelectInDocument: true, state: &state)
             }
         }
 
