@@ -98,8 +98,9 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
 
     func update(with tree: CollectionTree, selectedId: CollectionIdentifier, animated: Bool, completion: (() -> Void)? = nil) {
         guard let dataSource else { return }
+        let currentSnapshotItemsCount = dataSource.snapshot(for: collectionsSection).items.count
         let newSnapshot = tree.createSnapshot(selectedId: selectedId)
-        if dataSource.snapshot(for: collectionsSection).items.count == newSnapshot.items.count {
+        if (currentSnapshotItemsCount == 0) || (currentSnapshotItemsCount == newSnapshot.items.count) {
             dataSource.apply(newSnapshot, to: collectionsSection, animatingDifferences: animated, completion: completion)
             return
         }
@@ -108,10 +109,9 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
         // It works fine if a completely new snapshot is applied, which breaks animations though.
         var snapshot = NSDiffableDataSourceSnapshot<Int, Collection>()
         snapshot.appendSections([collectionsSection])
-        dataSource.apply(snapshot, animatingDifferences: animated) { [weak self] in
-            guard let self else { return }
-            dataSource.apply(newSnapshot, to: collectionsSection, animatingDifferences: animated, completion: completion)
-        }
+        // The sequential applications work with a smoother animation, because the first applications is that of an empty snapshot, and then only the section snapshot is applied.
+        dataSource.apply(snapshot, animatingDifferences: animated)
+        dataSource.apply(newSnapshot, to: collectionsSection, animatingDifferences: animated, completion: completion)
     }
 
     // MARK: - Data Source
