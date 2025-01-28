@@ -98,8 +98,9 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
 
     func update(with tree: CollectionTree, selectedId: CollectionIdentifier, animated: Bool, completion: (() -> Void)? = nil) {
         guard let dataSource else { return }
+        let currentSnapshotItemsCount = dataSource.snapshot(for: collectionsSection).items.count
         let newSnapshot = tree.createSnapshot(selectedId: selectedId)
-        if dataSource.snapshot(for: collectionsSection).items.count == newSnapshot.items.count {
+        if (currentSnapshotItemsCount == 0) || (currentSnapshotItemsCount == newSnapshot.items.count) {
             dataSource.apply(newSnapshot, to: collectionsSection, animatingDifferences: animated, completion: completion)
             return
         }
