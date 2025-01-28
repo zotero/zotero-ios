@@ -59,7 +59,9 @@ final class MasterCoordinator: NSObject, Coordinator {
         let librariesController = self.createLibrariesViewController(
             dbStorage: userControllers.dbStorage,
             syncScheduler: userControllers.syncScheduler,
-            identifierLookupController: userControllers.identifierLookupController
+            identifierLookupController: userControllers.identifierLookupController,
+            pdfWorkerController: userControllers.pdfWorkerController,
+            recognizerController: userControllers.recognizerController
         )
         let collectionsController = self.createCollectionsViewController(
             libraryId: self.visibleLibraryId,
@@ -72,9 +74,21 @@ final class MasterCoordinator: NSObject, Coordinator {
         self.navigationController?.setViewControllers([librariesController, collectionsController], animated: animated)
     }
 
-    private func createLibrariesViewController(dbStorage: DbStorage, syncScheduler: SynchronizationScheduler, identifierLookupController: IdentifierLookupController) -> UIViewController {
+    private func createLibrariesViewController(
+        dbStorage: DbStorage,
+        syncScheduler: SynchronizationScheduler,
+        identifierLookupController: IdentifierLookupController,
+        pdfWorkerController: PDFWorkerController,
+        recognizerController: RecognizerController
+    ) -> UIViewController {
         let viewModel = ViewModel(initialState: LibrariesState(), handler: LibrariesActionHandler(dbStorage: dbStorage))
-        let controller = LibrariesViewController(viewModel: viewModel, syncScheduler: syncScheduler, identifierLookupController: identifierLookupController)
+        let controller = LibrariesViewController(
+            viewModel: viewModel,
+            syncScheduler: syncScheduler,
+            identifierLookupController: identifierLookupController,
+            pdfWorkerController: pdfWorkerController,
+            recognizerController: recognizerController
+        )
         controller.coordinatorDelegate = self
         return controller
     }

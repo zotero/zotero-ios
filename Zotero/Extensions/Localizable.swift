@@ -874,6 +874,8 @@ internal enum L10n {
       internal static let removeDownload = L10n.tr("Localizable", "items.action.remove_download", fallback: "Remove Download")
       /// Remove from Collection
       internal static let removeFromCollection = L10n.tr("Localizable", "items.action.remove_from_collection", fallback: "Remove from Collection")
+      /// Retrieve Metadata
+      internal static let retrieveMetadata = L10n.tr("Localizable", "items.action.retrieve_metadata", fallback: "Retrieve Metadata")
     }
     internal enum CreatorSummary {
       /// %@ and %@
