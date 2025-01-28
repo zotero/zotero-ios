@@ -141,27 +141,37 @@ extension RItemsTableViewDataSource: ItemsTableViewDataSource {
             actions.append(contentsOf: [ItemAction(type: .copyCitation), ItemAction(type: .copyBibliography), ItemAction(type: .share)])
         }
 
+        let attachment = accessory(forKey: item.key)?.attachment
+        let location = attachment?.location
+
         // Add parent creation for standalone attachments
         if item.rawType == ItemTypes.attachment && item.parent == nil {
             actions.append(ItemAction(type: .createParent))
+            if attachment?.file?.mimeType == "application/pdf" {
+                switch location {
+                case .local, .localAndChangedRemotely:
+                    actions.append(ItemAction(type: .retrieveMetadata))
+                    
+                case .none, .remote, .remoteMissing:
+                    break
+                }
+            }
         }
 
         // Add download/remove downloaded option for attachments
-        if let accessory = accessory(forKey: item.key), let location = accessory.attachment?.location {
-            switch location {
-            case .local:
-                actions.append(ItemAction(type: .removeDownload))
+        switch location {
+        case .local:
+            actions.append(ItemAction(type: .removeDownload))
 
-            case .remote:
-                actions.append(ItemAction(type: .download))
+        case .remote:
+            actions.append(ItemAction(type: .download))
 
-            case .localAndChangedRemotely:
-                actions.append(ItemAction(type: .download))
-                actions.append(ItemAction(type: .removeDownload))
+        case .localAndChangedRemotely:
+            actions.append(ItemAction(type: .download))
+            actions.append(ItemAction(type: .removeDownload))
 
-            case .remoteMissing:
-                break
-            }
+        case .none, .remoteMissing:
+            break
         }
 
         guard viewModel.state.library.metadataEditable else { return actions }

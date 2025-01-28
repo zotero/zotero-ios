@@ -12,6 +12,10 @@ import WebKit
 import CocoaLumberjackSwift
 import RxSwift
 
+protocol WebViewProvider: AnyObject {
+    func addWebView(configuration: WKWebViewConfiguration?) -> WKWebView
+}
+
 final class WebViewHandler: NSObject {
     enum Error: Swift.Error {
         case webViewMissing
@@ -51,6 +55,10 @@ final class WebViewHandler: NSObject {
         javascriptHandlers?.forEach { handler in
             webView.configuration.userContentController.add(self, name: handler)
         }
+
+#if DEBUG
+        webView.isInspectable = true
+#endif
     }
 
     // MARK: - Actions
@@ -67,6 +75,15 @@ final class WebViewHandler: NSObject {
             return .error(Error.webViewMissing)
         }
         webView.loadFileURL(fileUrl, allowingReadAccessTo: fileUrl.deletingLastPathComponent())
+        return createWebLoadedSingle()
+    }
+
+    func loadHTMLString(_ string: String, baseURL: URL?) -> Single<()> {
+        guard let webView else {
+            DDLogError("WebViewHandler: web view is nil")
+            return .error(Error.webViewMissing)
+        }
+        webView.loadHTMLString(string, baseURL: baseURL)
         return createWebLoadedSingle()
     }
 
