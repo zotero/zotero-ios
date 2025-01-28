@@ -13,10 +13,6 @@ import OrderedCollections
 import CocoaLumberjackSwift
 import RxSwift
 
-protocol IdentifierLookupWebViewProvider: AnyObject {
-    func addWebView() -> WKWebView
-}
-
 protocol IdentifierLookupPresenter: AnyObject {
     func isPresenting() -> Bool
 }
@@ -143,7 +139,7 @@ final class IdentifierLookupController {
         return (savedCount, failedCount, totalCount)
     }
 
-    internal weak var webViewProvider: IdentifierLookupWebViewProvider?
+    internal weak var webViewProvider: WebViewProvider?
     internal weak var presenter: IdentifierLookupPresenter? {
         didSet {
             guard presenter == nil, oldValue != nil else { return }
@@ -198,7 +194,7 @@ final class IdentifierLookupController {
             }
             var lookupWebViewHandler: LookupWebViewHandler?
             inMainThread(sync: true) {
-                if let webView = self.webViewProvider?.addWebView() {
+                if let webView = self.webViewProvider?.addWebView(configuration: nil) {
                     lookupWebViewHandler = LookupWebViewHandler(webView: webView, translatorsController: self.translatorsController)
                 }
             }
