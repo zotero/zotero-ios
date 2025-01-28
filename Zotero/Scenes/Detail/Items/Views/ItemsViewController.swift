@@ -163,6 +163,23 @@ final class ItemsViewController: BaseItemsViewController {
                 animated: true
             )
 
+        case .retrieveMetadata:
+            guard let key = selectedKeys.first,
+                  case .attachment(let attachment, let parentKey) = viewModel.state.itemAccessories[key],
+                  parentKey == nil,
+                  let file = attachment.file as? FileData,
+                  file.mimeType == "application/pdf",
+                  let recognizerController = controllers.userControllers?.recognizerController
+            else { return }
+            recognizerController.queue(task: RecognizerController.RecognizerTask(file: file)) { [weak self] observable in
+                guard let self else { return }
+                observable?.subscribe { update in
+                    // TODO: Implement
+                    print("Recognizer controller update: \(update)")
+                }
+                .disposed(by: disposeBag)
+            }
+
         case .duplicate:
             guard let key = selectedKeys.first else { return }
             viewModel.process(action: .loadItemToDuplicate(key))

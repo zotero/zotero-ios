@@ -139,6 +139,7 @@
 "items.action.create_parent" = "Create Parent Item";
 "items.action.download" = "Download";
 "items.action.remove_download" = "Remove Download";
+"items.action.retrieve_metadata" = "Retrieve Metadata";
 "items.filters.title" = "Filters";
 "items.filters.downloads" = "Downloaded Files";
 "items.filters.tags" = "Tags";

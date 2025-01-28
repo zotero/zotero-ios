@@ -132,6 +132,15 @@ class WebViewHandler: NSObject {
         return createWebLoadedSingle()
     }
 
+    func loadHTMLString(_ string: String, baseURL: URL?) -> Single<()> {
+        guard let webView else {
+            DDLogError("WebViewHandler: web view is nil")
+            return .error(Error.webViewMissing)
+        }
+        webView.loadHTMLString(string, baseURL: baseURL)
+        return createWebLoadedSingle()
+    }
+
     func load(webUrl: URL) -> Single<()> {
         guard let webView else {
             DDLogError("WebViewHandler: web view is nil")
