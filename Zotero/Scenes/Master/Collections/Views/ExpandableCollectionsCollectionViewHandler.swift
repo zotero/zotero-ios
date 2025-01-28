@@ -108,10 +108,9 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
         // It works fine if a completely new snapshot is applied, which breaks animations though.
         var snapshot = NSDiffableDataSourceSnapshot<Int, Collection>()
         snapshot.appendSections([collectionsSection])
-        dataSource.apply(snapshot, animatingDifferences: animated) { [weak self] in
-            guard let self else { return }
-            dataSource.apply(newSnapshot, to: collectionsSection, animatingDifferences: animated, completion: completion)
-        }
+        // The sequential applications work with a smoother animation, because the first applications is that of an empty snapshot, and then only the section snapshot is applied.
+        dataSource.apply(snapshot, animatingDifferences: animated)
+        dataSource.apply(newSnapshot, to: collectionsSection, animatingDifferences: animated, completion: completion)
     }
 
     // MARK: - Data Source
