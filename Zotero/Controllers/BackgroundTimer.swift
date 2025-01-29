@@ -30,7 +30,15 @@ final class BackgroundTimer {
     }
 
     deinit {
-        invalidate()
+        guard let timer else { return }
+        timer.setEventHandler {}
+        timer.cancel()
+        /*
+         If the timer is suspended, calling cancel without resuming
+         triggers a crash. This is documented here https://forums.developer.apple.com/thread/15902
+         */
+        resume()
+        eventHandler = nil
     }
 
     func resume() {
@@ -45,18 +53,6 @@ final class BackgroundTimer {
         guard let timer, state != .suspended else { return }
         state = .suspended
         timer.suspend()
-    }
-
-    func invalidate() {
-        guard let timer else { return }
-        timer.setEventHandler {}
-        timer.cancel()
-        /*
-         If the timer is suspended, calling cancel without resuming
-         triggers a crash. This is documented here https://forums.developer.apple.com/thread/15902
-         */
-        resume()
-        eventHandler = nil
     }
 
     private func createTimer() -> DispatchSourceTimer {
