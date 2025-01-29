@@ -277,6 +277,9 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
             in viewModel: ViewModel<ItemDetailActionHandler>
         ) {
             update(viewModel: viewModel) { state in
+                if state.data.title != data.title {
+                    state.attributedTitle = htmlAttributedStringConverter.convert(text: data.title, baseAttributes: [.font: state.titleFont])
+                }
                 state.data = data
                 if isEditing {
                     state.snapshot = data
@@ -773,6 +776,9 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
         let droppedFields = droppedFields(from: viewModel.state.data, to: itemData)
         self.update(viewModel: viewModel) { state in
             if droppedFields.isEmpty {
+                if state.data.title != itemData.title {
+                    state.attributedTitle = htmlAttributedStringConverter.convert(text: itemData.title, baseAttributes: [.font: state.titleFont])
+                }
                 state.data = itemData
                 // state.data.fields has all available fields for the changed state.data.type,
                 // so we show only those that are editable or non-empty.
@@ -856,6 +862,9 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
     private func acceptPrompt(in viewModel: ViewModel<ItemDetailActionHandler>) {
         self.update(viewModel: viewModel) { state in
             guard let snapshot = state.promptSnapshot else { return }
+            if state.data.title != snapshot.title {
+                state.attributedTitle = htmlAttributedStringConverter.convert(text: snapshot.title, baseAttributes: [.font: state.titleFont])
+            }
             state.data = snapshot
             state.changes.insert(.type)
             state.promptSnapshot = nil
@@ -884,10 +893,12 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
             DDLogError("ItemDetailActionHandler: schema controller doesn't contain title key for item type \(viewModel.state.data.type)")
             return
         }
+        guard title != viewModel.state.attributedTitle else { return }
         let htmlTitle = htmlAttributedStringConverter.convert(attributedString: title)
         guard htmlTitle != viewModel.state.data.title else { return }
 
         update(viewModel: viewModel) { state in
+            state.attributedTitle = title
             state.data.title = htmlTitle
             state.reload = .row(.title)
         }

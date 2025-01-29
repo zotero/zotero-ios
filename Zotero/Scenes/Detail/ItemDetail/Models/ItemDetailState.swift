@@ -268,6 +268,7 @@ struct ItemDetailState: ViewModelState {
     var titleFont: UIFont {
         return .preferredFont(forTextStyle: .title1)
     }
+    var attributedTitle: NSAttributedString
 
     @UserDefault(key: "ItemDetailAbstractCollapsedKey", defaultValue: false)
     var abstractCollapsed: Bool
@@ -292,6 +293,7 @@ struct ItemDetailState: ViewModelState {
         self.userId = userId
         self.changes = []
         self.data = .empty
+        self.attributedTitle = NSAttributedString(string: "")
         self.visibleFieldIds = []
         self.attachments = []
         self.notes = []
