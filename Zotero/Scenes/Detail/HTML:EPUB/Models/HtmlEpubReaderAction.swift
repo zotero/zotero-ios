@@ -11,6 +11,7 @@ import UIKit
 enum HtmlEpubReaderAction {
     case changeFilter(AnnotationsFilter?)
     case changeIdleTimerDisabled(Bool)
+    case createAnnotationFromSelection(AnnotationType)
     case deinitialiseReader
     case deselectAnnotationDuringEditing(String)
     case deselectSelectedAnnotation
@@ -29,6 +30,7 @@ enum HtmlEpubReaderAction {
     case setColor(key: String, color: String)
     case setComment(key: String, comment: NSAttributedString)
     case setCommentActive(Bool)
+    case setSelectedTextParams([String: Any])
     case setSettings(HtmlEpubSettings)
     case setSidebarEditingEnabled(Bool)
     case setTags(key: String, tags: [Tag])

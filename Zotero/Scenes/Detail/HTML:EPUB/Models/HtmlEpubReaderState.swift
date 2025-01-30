@@ -106,6 +106,8 @@ struct HtmlEpubReaderState: ViewModelState {
     var selectedAnnotationCommentActive: Bool
     /// Selected annotations when annotations are being edited in sidebar
     var selectedAnnotationsDuringEditing: Set<String>
+    /// Temporary params of selected text, used to create highlight/underline with UIMenu buttons
+    var selectedTextParams: [String: Any]?
     var annotationPopoverKey: String?
     var annotationPopoverRect: CGRect?
     var documentSearchTerm: String?
