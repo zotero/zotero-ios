@@ -23,3 +23,18 @@ struct EndItemCreationDbRequest: DbRequest {
         item.changeType = .user
     }
 }
+
+struct EndPendingItemCreationsDbRequest: DbRequest {
+    var needsWrite: Bool { return true }
+
+    func process(in database: Realm) throws {
+        let pendingItems = database.objects(RItem.self).filter("changesSyncPaused == true")
+        guard !pendingItems.isEmpty else { return }
+        DDLogInfo("EndPendingItemCreationsDbRequest: ending creation for \(pendingItems.count) pending items")
+        for item in pendingItems {
+            guard !item.isInvalidated else { continue }
+            item.changesSyncPaused = false
+            item.changeType = .user
+        }
+    }
+}

@@ -145,6 +145,16 @@ final class AppDelegate: UIResponder {
         }
     }
 
+    private func endPendingItemCreations(queue: DispatchQueue) {
+        guard let dbStorage = controllers.userControllers?.dbStorage else { return }
+        try? dbStorage.perform(request: EndPendingItemCreationsDbRequest(), on: queue)
+        do {
+            try dbStorage.perform(request: EndPendingItemCreationsDbRequest(), on: queue)
+        } catch let error {
+            DDLogError("AppDelegate: can't ending creation for pending items - \(error)")
+        }
+    }
+
     // MARK: - Setups
 
     private func setupLogs() {
@@ -234,9 +244,12 @@ extension AppDelegate: UIApplicationDelegate {
         self.migrateItemsSortType()
 
         let queue = DispatchQueue(label: "org.zotero.AppDelegateMigration", qos: .userInitiated)
-        queue.async {
-            self.removeFinishedUploadFiles(queue: queue)
-            self.updateCreatorSummaryFormat(queue: queue)
+        DispatchQueue.main.async {
+            queue.async {
+                self.removeFinishedUploadFiles(queue: queue)
+                self.updateCreatorSummaryFormat(queue: queue)
+                self.endPendingItemCreations(queue: queue)
+            }
         }
 
         return true
