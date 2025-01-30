@@ -145,6 +145,14 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             } else {
                 idleTimerController.stopCustomIdleTimer()
             }
+
+        case .setSelectedTextParams(let params):
+            update(viewModel: viewModel) { state in
+                state.selectedTextParams = params
+            }
+
+        case .createAnnotationFromSelection(let type):
+            saveAnnotationFromSelection(type: type, in: viewModel)
         }
     }
 
@@ -503,6 +511,48 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         return hasTag && hasColor
     }
 
+    private func saveAnnotationFromSelection(type: AnnotationType, in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
+        guard let textParams = viewModel.state.selectedTextParams?["annotation"] as? [String: Any], let params = params(fromTextParams: textParams, type: type) else {
+            return
+        }
+        let annotations = parse(annotations: [params], author: viewModel.state.username, isAuthor: true)
+        update(viewModel: viewModel) { state in
+            state.selectedTextParams = nil
+
+            for annotation in annotations {
+                state.annotations[annotation.key] = annotation
+            }
+            state.documentUpdate = HtmlEpubReaderState.DocumentUpdate(deletions: [], insertions: [params], modifications: [])
+        }
+        createDatabaseAnnotations(annotations: annotations, in: viewModel)
+
+        func params(fromTextParams textParams: [String: Any], type: AnnotationType) -> [String: Any]? {
+            let color: String
+            switch type {
+            case .highlight:
+                color = viewModel.state.toolColors[.highlight]?.hexString ?? Defaults.shared.highlightColorHex
+
+            case .underline:
+                color = viewModel.state.toolColors[.underline]?.hexString ?? Defaults.shared.underlineColorHex
+
+            case .freeText, .image, .ink, .note:
+                return nil
+            }
+
+            let date = Date()
+            var params: [String: Any] = textParams
+            params["id"] = KeyGenerator.newKey
+            params["type"] = type.rawValue
+            params["color"] = color
+            params["dateModified"] = DateFormatter.iso8601WithFractionalSeconds.string(from: date)
+            params["dateCreated"] = DateFormatter.iso8601WithFractionalSeconds.string(from: date)
+            params["tags"] = []
+            params["pageLabel"] = ""
+            params["comment"] = ""
+            return params
+        }
+    }
+
     private func saveAnnotations(params: [String: Any], in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
         guard let rawAnnotations = params["annotations"] as? [[String: Any]], !rawAnnotations.isEmpty else {
             DDLogError("HtmlEpubReaderActionHandler: annotations missing or empty - \(params["annotations"] ?? [])")
@@ -525,6 +575,10 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             }
         }
 
+        createDatabaseAnnotations(annotations: annotations, in: viewModel)
+    }
+
+    private func createDatabaseAnnotations(annotations: [HtmlEpubAnnotation], in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
         let request = CreateHtmlEpubAnnotationsDbRequest(
             attachmentKey: viewModel.state.key,
             libraryId: viewModel.state.library.identifier,
@@ -541,43 +595,43 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
                 state.error = .cantAddAnnotations
             }
         }
+    }
 
-        func parse(annotations: [[String: Any]], author: String, isAuthor: Bool) -> [HtmlEpubAnnotation] {
-            return annotations.compactMap { data -> HtmlEpubAnnotation? in
-                guard let id = data["id"] as? String,
-                      let dateAdded = (data["dateCreated"] as? String).flatMap({ DateFormatter.iso8601WithFractionalSeconds.date(from: $0) }),
-                      let dateModified = (data["dateModified"] as? String).flatMap({ DateFormatter.iso8601WithFractionalSeconds.date(from: $0) }),
-                      let color = data["color"] as? String,
-                      let comment = data["comment"] as? String,
-                      let pageLabel = data["pageLabel"] as? String,
-                      let position = data["position"] as? [String: Any],
-                      let sortIndex = data["sortIndex"] as? String,
-                      let text = data["text"] as? String,
-                      let type = (data["type"] as? String).flatMap(AnnotationType.init),
-                      let rawTags = data["tags"] as? [[String: Any]]
+    private func parse(annotations: [[String: Any]], author: String, isAuthor: Bool) -> [HtmlEpubAnnotation] {
+        return annotations.compactMap { data -> HtmlEpubAnnotation? in
+            guard let id = data["id"] as? String,
+                  let dateAdded = (data["dateCreated"] as? String).flatMap({ DateFormatter.iso8601WithFractionalSeconds.date(from: $0) }),
+                  let dateModified = (data["dateModified"] as? String).flatMap({ DateFormatter.iso8601WithFractionalSeconds.date(from: $0) }),
+                  let color = data["color"] as? String,
+                  let comment = data["comment"] as? String,
+                  let pageLabel = data["pageLabel"] as? String,
+                  let position = data["position"] as? [String: Any],
+                  let sortIndex = data["sortIndex"] as? String,
+                  let text = data["text"] as? String,
+                  let type = (data["type"] as? String).flatMap(AnnotationType.init),
+                  let rawTags = data["tags"] as? [[String: Any]]
+            else { return nil }
+            let tags = rawTags.compactMap({ data -> Tag? in
+                guard let name = data["name"] as? String,
+                      let color = data["color"] as? String
                 else { return nil }
-                let tags = rawTags.compactMap({ data -> Tag? in
-                    guard let name = data["name"] as? String,
-                          let color = data["color"] as? String
-                    else { return nil }
-                    return Tag(name: name, color: color)
-                })
-                return HtmlEpubAnnotation(
-                    key: id,
-                    type: type,
-                    pageLabel: pageLabel,
-                    position: position,
-                    author: author,
-                    isAuthor: isAuthor,
-                    color: color,
-                    comment: comment,
-                    text: text,
-                    sortIndex: sortIndex,
-                    dateAdded: dateAdded,
-                    dateModified: dateModified,
-                    tags: tags
-                )
-            }
+                return Tag(name: name, color: color)
+            })
+            return HtmlEpubAnnotation(
+                key: id,
+                type: type,
+                pageLabel: pageLabel,
+                position: position,
+                author: author,
+                isAuthor: isAuthor,
+                color: color,
+                comment: comment,
+                text: text,
+                sortIndex: sortIndex,
+                dateAdded: dateAdded,
+                dateModified: dateModified,
+                tags: tags
+            )
         }
     }
 
