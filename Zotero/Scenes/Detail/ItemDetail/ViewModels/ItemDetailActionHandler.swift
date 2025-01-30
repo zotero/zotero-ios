@@ -923,7 +923,7 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
         field.isTappable = ItemDetailDataCreator.isTappable(key: field.key, value: field.value, urlDetector: urlDetector, doiDetector: FieldKeys.Item.isDoi)
 
         // If a date field has it's value edited, update only additional info here, as the user may still be typing.
-        // Modify data & accessed date field values just before storing.
+        // Date and accessed date field values may be modified when the delayed items field edit takes place.
         switch (field.key, field.baseField) {
         case (FieldKeys.Item.date, _), (_, FieldKeys.Item.date):
             if let order = dateParser.parse(string: field.value)?.orderWithSpaces {
