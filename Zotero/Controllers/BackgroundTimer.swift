@@ -17,6 +17,7 @@ final class BackgroundTimer {
     }
 
     private let timeInterval: DispatchTimeInterval
+    private let fireIfResumedAfterInterval: Bool
     private let queue: DispatchQueue
     private var timer: DispatchSourceTimer?
     private(set) var startTime: DispatchTime?
@@ -24,8 +25,9 @@ final class BackgroundTimer {
     var eventHandler: (() -> Void)?
     private(set) var state: State = .suspended
 
-    init(timeInterval: DispatchTimeInterval, queue: DispatchQueue) {
+    init(timeInterval: DispatchTimeInterval, fireIfResumedAfterInterval: Bool = false, queue: DispatchQueue = .main) {
         self.timeInterval = timeInterval
+        self.fireIfResumedAfterInterval = fireIfResumedAfterInterval
         self.queue = queue
     }
 
@@ -37,16 +39,22 @@ final class BackgroundTimer {
          If the timer is suspended, calling cancel without resuming
          triggers a crash. This is documented here https://forums.developer.apple.com/thread/15902
          */
-        resume()
+        if state == .suspended {
+            state = .resumed
+            timer.resume()
+        }
         eventHandler = nil
     }
 
     func resume() {
         guard state != .resumed else { return }
-        state = .resumed
-        timer = timer ?? createTimer()
-        
-        timer?.resume()
+        if let startTime, startTime + timeInterval <= .now(), fireIfResumedAfterInterval {
+            eventHandler?()
+        } else {
+            state = .resumed
+            timer = timer ?? createTimer()
+            timer?.resume()
+        }
     }
 
     func suspend() {

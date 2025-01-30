@@ -997,27 +997,18 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
     private var delayTimer: BackgroundTimer?
     static private let delay: DispatchTimeInterval = .milliseconds(500)
     private func delayItemFieldsEdit(fieldValues: [KeyBaseKeyPair: String], in viewModel: ViewModel<ItemDetailActionHandler>) {
-        // First suspend delayTimer in case it's running.
+        // First suspend delay timer in case it's running.
         delayTimer?.suspend()
         if let delayTimer {
-            // If there is a delay timer, it is now suspended.
+            // Since there is an existing delay timer, it is now suspended.
             // Add or replace pending field values.
             for (key, value) in fieldValues {
                 pendingFieldValues[key] = value
             }
-            if let startTime = delayTimer.startTime, startTime + Self.delay > .now() {
-                // If deadline wasn't reached, resume timer.
-                delayTimer.resume()
-            } else {
-                // Deadline has been reached, process pending field values, and free the timer.
-                storeItemFieldsEdit(fieldValues: pendingFieldValues, in: viewModel)
-                pendingFieldValues = [:]
-                self.delayTimer = nil
-            }
         } else {
             // Create new timer, and delay processing of pending field values.
             pendingFieldValues = fieldValues
-            delayTimer = BackgroundTimer(timeInterval: Self.delay, queue: .main)
+            delayTimer = BackgroundTimer(timeInterval: Self.delay, fireIfResumedAfterInterval: true, queue: .main)
             delayTimer?.eventHandler = { [weak self] in
                 guard let self else { return }
                 // Deadline has been reached, process pending field values, and free the timer.
@@ -1025,8 +1016,8 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
                 pendingFieldValues = [:]
                 delayTimer = nil
             }
-            delayTimer?.resume()
         }
+        delayTimer?.resume()
 
         func storeItemFieldsEdit(fieldValues: [KeyBaseKeyPair: String], in viewModel: ViewModel<ItemDetailActionHandler>) {
             guard !fieldValues.isEmpty else { return }
