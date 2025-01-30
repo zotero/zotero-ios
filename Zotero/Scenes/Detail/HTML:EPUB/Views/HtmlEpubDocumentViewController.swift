@@ -57,9 +57,16 @@ class HtmlEpubDocumentViewController: UIViewController {
         }
 
         func setupWebView() {
+            let highlightAction = UIAction(title: L10n.Pdf.highlight) { [weak self] _ in
+                self?.viewModel.process(action: .createAnnotationFromSelection(.highlight))
+            }
+            let underlineAction = UIAction(title: L10n.Pdf.underline) { [weak self] _ in
+                self?.viewModel.process(action: .createAnnotationFromSelection(.underline))
+            }
+
             let configuration = WKWebViewConfiguration()
             configuration.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
-            let webView = WKWebView(frame: .zero, configuration: configuration)
+            let webView = HtmlEpubWebView(customMenuActions: [highlightAction, underlineAction], configuration: configuration)
             webView.translatesAutoresizingMaskIntoConstraints = false
             if #available(iOS 16.4, *) {
                 webView.isInspectable = true
@@ -247,6 +254,12 @@ class HtmlEpubDocumentViewController: UIViewController {
                 } else {
                     viewModel.process(action: .deselectSelectedAnnotation)
                 }
+
+            case "onSetSelectionPopup":
+                guard let params = data["params"] as? [String: Any] else {
+                    return
+                }
+                viewModel.process(action: .setSelectedTextParams(params))
 
             case "onChangeViewState":
                 guard let params = data["params"] as? [String: Any] else {
