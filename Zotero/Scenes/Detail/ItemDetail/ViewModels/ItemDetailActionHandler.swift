@@ -1008,7 +1008,7 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
         } else {
             // Create new timer, and delay processing of pending field values.
             pendingFieldValues = fieldValues
-            delayTimer = BackgroundTimer(timeInterval: Self.delay, fireIfResumedAfterInterval: true, queue: .main)
+            delayTimer = BackgroundTimer(timeInterval: Self.delay, queue: .main)
             delayTimer?.eventHandler = { [weak self] in
                 guard let self else { return }
                 // Deadline has been reached, process pending field values, and free the timer.

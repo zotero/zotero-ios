@@ -17,7 +17,6 @@ final class BackgroundTimer {
     }
 
     private let timeInterval: DispatchTimeInterval
-    private let fireIfResumedAfterInterval: Bool
     private let queue: DispatchQueue
     private var timer: DispatchSourceTimer?
     private(set) var startTime: DispatchTime?
@@ -25,9 +24,8 @@ final class BackgroundTimer {
     var eventHandler: (() -> Void)?
     private(set) var state: State = .suspended
 
-    init(timeInterval: DispatchTimeInterval, fireIfResumedAfterInterval: Bool = false, queue: DispatchQueue = .main) {
+    init(timeInterval: DispatchTimeInterval, queue: DispatchQueue = .main) {
         self.timeInterval = timeInterval
-        self.fireIfResumedAfterInterval = fireIfResumedAfterInterval
         self.queue = queue
     }
 
@@ -48,7 +46,7 @@ final class BackgroundTimer {
 
     func resume() {
         guard state != .resumed else { return }
-        if let startTime, startTime + timeInterval <= .now(), fireIfResumedAfterInterval {
+        if let startTime, startTime + timeInterval <= .now() {
             eventHandler?()
         } else {
             state = .resumed
