@@ -692,7 +692,6 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
                 state.isSaving = isSaving
                 state.changes.insert(.editing)
             }
-            return
         }
 
         func endCreation(state: ItemDetailState, queue: DispatchQueue) -> Single<()> {
@@ -992,7 +991,7 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
     private func delayItemFieldsEdit(fieldValues: [KeyBaseKeyPair: String], in viewModel: ViewModel<ItemDetailActionHandler>) {
         // First suspend delay timer in case it's running.
         delayTimer?.suspend()
-        if let delayTimer {
+        if delayTimer != nil {
             // Since there is an existing delay timer, it is now suspended.
             // Add or replace pending field values.
             for (key, value) in fieldValues {

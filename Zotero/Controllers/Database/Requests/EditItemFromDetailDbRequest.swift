@@ -8,7 +8,6 @@
 
 import Foundation
 
-import CocoaLumberjackSwift
 import RealmSwift
 
 struct EditItemFromDetailDbRequest: DbRequest {
