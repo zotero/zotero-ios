@@ -69,4 +69,8 @@ extension UIViewController {
         // Parent also didn't return a scene. Trying presenting view controller.
         return presentingViewController?.scene
     }
+
+    var sessionIdentifier: String? {
+        scene?.session.persistentIdentifier
+    }
 }
