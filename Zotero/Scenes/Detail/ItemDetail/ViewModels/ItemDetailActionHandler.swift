@@ -658,56 +658,49 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
     }
 
     private func endEditing(in viewModel: ViewModel<ItemDetailActionHandler>) {
-        guard viewModel.state.snapshot != viewModel.state.data else {
+        switch viewModel.state.type {
+        case .creation, .duplication:
+            endEditing(state: viewModel.state, isSaving: true)
+            endCreation(state: viewModel.state, queue: backgroundQueue)
+                .subscribe(on: backgroundScheduler)
+                .observe(on: MainScheduler.instance)
+                .subscribe(onSuccess: { [weak self, weak viewModel] _ in
+                    guard let self, let viewModel else { return }
+                    update(viewModel: viewModel) { state in
+                        state.isSaving = false
+                    }
+                }, onFailure: { [weak self, weak viewModel] error in
+                    DDLogError("ItemDetailStore: can't end changes - \(error)")
+                    guard let self, let viewModel else { return }
+                    update(viewModel: viewModel) { state in
+                        state.error = (error as? ItemDetailError) ?? .cantStoreChanges
+                        state.isSaving = false
+                    }
+                })
+                .disposed(by: disposeBag)
+
+        case .preview:
+            endEditing(state: viewModel.state, isSaving: false)
+        }
+
+        func endEditing(state: ItemDetailState, isSaving: Bool) {
             update(viewModel: viewModel) { state in
                 state.snapshot = nil
                 state.visibleFieldIds = ItemDetailDataCreator.nonEmptyFieldKeys(from: state.data.fields)
                 state.isEditing = false
                 state.type = .preview(key: state.key)
-                state.isSaving = false
+                state.isSaving = isSaving
                 state.changes.insert(.editing)
             }
             return
         }
 
-        update(viewModel: viewModel) { state in
-            state.isSaving = true
-        }
-
-        endEditing(state: viewModel.state, queue: self.backgroundQueue)
-            .subscribe(on: self.backgroundScheduler)
-            .observe(on: MainScheduler.instance)
-            .subscribe(onSuccess: { [weak viewModel] newState in
-                guard let viewModel = viewModel else { return }
-                self.update(viewModel: viewModel) { state in
-                    state = newState
-                    state.isSaving = false
-                }
-            }, onFailure: { [weak viewModel] error in
-                DDLogError("ItemDetailStore: can't store changes - \(error)")
-                guard let viewModel = viewModel else { return }
-                self.update(viewModel: viewModel) { state in
-                    state.error = (error as? ItemDetailError) ?? .cantStoreChanges
-                    state.isSaving = false
-                }
-            })
-            .disposed(by: self.disposeBag)
-
-        func endEditing(state: ItemDetailState, queue: DispatchQueue) -> Single<ItemDetailState> {
+        func endCreation(state: ItemDetailState, queue: DispatchQueue) -> Single<()> {
             return Single.create { [weak self] subscriber -> Disposable in
                 do {
-                    var newState = state
-
-                    let endEditingRequest = EndItemDetailEditingDbRequest(libraryId: state.library.identifier, itemKey: state.key)
-                    try self?.dbStorage.perform(request: endEditingRequest, on: queue)
-
-                    newState.snapshot = nil
-                    newState.visibleFieldIds = ItemDetailDataCreator.nonEmptyFieldKeys(from: newState.data.fields)
-                    newState.isEditing = false
-                    newState.type = .preview(key: newState.key)
-                    newState.changes.insert(.editing)
-
-                    subscriber(.success(newState))
+                    let endCreationRequest = EndItemCreationDbRequest(libraryId: state.library.identifier, itemKey: state.key)
+                    try self?.dbStorage.perform(request: endCreationRequest, on: queue)
+                    subscriber(.success(()))
                 } catch let error {
                     subscriber(.failure(error))
                 }

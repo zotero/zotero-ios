@@ -1,5 +1,5 @@
 //
-//  EndItemDetailEditingDbRequest.swift
+//  EndItemCreationDbRequest.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 12.10.2023.
@@ -11,7 +11,7 @@ import Foundation
 import CocoaLumberjackSwift
 import RealmSwift
 
-struct EndItemDetailEditingDbRequest: DbRequest {
+struct EndItemCreationDbRequest: DbRequest {
     var needsWrite: Bool { return true }
 
     let libraryId: LibraryIdentifier
