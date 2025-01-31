@@ -13,7 +13,7 @@ import CocoaLumberjackSwift
 import RxSwift
 
 final class IdleTimerController {
-    private static let customIdleTimerTimeout: DispatchTimeInterval = .seconds(1200)
+    private static let customIdleTimerTimeout: DispatchTimeInterval = .seconds(300)
     private let disposeBag: DisposeBag
     /// Processes which require idle timer disabled
     private var activeProcesses: Int = 0
