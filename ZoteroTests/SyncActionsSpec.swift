@@ -96,28 +96,20 @@ final class SyncActionsSpec: QuickSpec {
                     try! dbStorage.perform(request: EditCollectionDbRequest(libraryId: .group(1234123), key: "BBBBBBBB", name: "New name", parentKey: nil), on: .main)
                     let data = ItemDetailState.Data(
                         title: "New title",
-                        attributedTitle: .init(string: "New title"),
                         type: "magazineArticle",
-                        isAttachment: false,
                         localizedType: "Magazine Article",
                         creators: [:],
-                        creatorIds: [],
                         fields: [:],
-                        fieldIds: [],
                         abstract: "New abstract",
                         dateModified: Date(),
                         dateAdded: Date()
                     )
                     let snapshot = ItemDetailState.Data(
                         title: "Bachelor thesis",
-                        attributedTitle: .init(string: "Bachelor thesis"),
                         type: "thesis",
-                        isAttachment: false,
                         localizedType: "Thesis",
                         creators: [:],
-                        creatorIds: [],
                         fields: [:],
-                        fieldIds: [],
                         abstract: "Some note",
                         dateModified: Date(),
                         dateAdded: Date()
@@ -361,28 +353,20 @@ final class SyncActionsSpec: QuickSpec {
                     try! dbStorage.perform(request: EditCollectionDbRequest(libraryId: .group(1234123), key: "BBBBBBBB", name: "New name", parentKey: nil), on: .main)
                     let data = ItemDetailState.Data(
                         title: "New title",
-                        attributedTitle: .init(string: "New title"),
                         type: "magazineArticle",
-                        isAttachment: false,
                         localizedType: "Magazine Article",
                         creators: [:],
-                        creatorIds: [],
                         fields: [:],
-                        fieldIds: [],
                         abstract: "New abstract",
                         dateModified: Date(),
                         dateAdded: Date()
                     )
                     let snapshot = ItemDetailState.Data(
                         title: "Bachelor thesis",
-                        attributedTitle: .init(string: "Bachelor thesis"),
                         type: "thesis",
-                        isAttachment: false,
                         localizedType: "Thesis",
                         creators: [:],
-                        creatorIds: [],
                         fields: [:],
-                        fieldIds: [],
                         abstract: "Some note",
                         dateModified: Date(),
                         dateAdded: Date()

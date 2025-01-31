@@ -272,6 +272,9 @@ final class ItemDetailViewController: UIViewController {
             case .row(let row):
                 collectionViewHandler.updateHeightAndScrollToUpdated(row: row, state: state)
 
+            case .rows(let rows):
+                collectionViewHandler.updateRows(rows: rows, state: state)
+
             case .section(let section):
                 collectionViewHandler.reload(section: section, state: state, animated: true)
             }

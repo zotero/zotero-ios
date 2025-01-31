@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import OrderedCollections
 
 import RealmSwift
 
@@ -15,8 +16,7 @@ struct EditTypeItemDetailDbRequest: DbRequest {
     let libraryId: LibraryIdentifier
     let type: String
     var fields: [ItemDetailState.Field]
-    let creatorIds: [String]
-    let creators: [String: ItemDetailState.Creator]
+    let creators: OrderedDictionary<String, ItemDetailState.Creator>
     let dateParser: DateParser
 
     var needsWrite: Bool { return true }
@@ -28,7 +28,7 @@ struct EditTypeItemDetailDbRequest: DbRequest {
 
         var changes: RItemChanges = [.type]
         update(fields: fields, item: item, changes: &changes, database: database)
-        update(creatorIds: creatorIds, creators: creators, item: item, changes: &changes, database: database)
+        update(creators: creators, item: item, changes: &changes, database: database)
         item.changes.append(RObjectChange.create(changes: changes))
     }
 
@@ -92,17 +92,17 @@ struct EditTypeItemDetailDbRequest: DbRequest {
         }
     }
 
-    private func update(creatorIds: [String], creators: [String: ItemDetailState.Creator], item: RItem, changes: inout RItemChanges, database: Realm) {
+    private func update(creators: OrderedDictionary<String, ItemDetailState.Creator>, item: RItem, changes: inout RItemChanges, database: Realm) {
         // Remove creator types which don't exist for this item type
-        let toRemove = item.creators.filter("not uuid in %@", creatorIds)
+        let toRemove = item.creators.filter("not uuid in %@", creators.keys)
         if !toRemove.isEmpty {
             changes.insert(.creators)
         }
         database.delete(toRemove)
 
-        for creatorId in creatorIds {
+        for (creatorId, creator) in creators {
             // When changing item type, only thing that can change for creator is it's type
-            guard let creator = creators[creatorId], let rCreator = item.creators.filter("uuid == %@", creatorId).first, rCreator.rawType != creator.type else { continue }
+            guard let rCreator = item.creators.filter("uuid == %@", creatorId).first, rCreator.rawType != creator.type else { continue }
             rCreator.rawType = creator.type
             changes.insert(.creators)
         }

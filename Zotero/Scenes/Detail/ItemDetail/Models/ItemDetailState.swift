@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import OrderedCollections
 
 import CocoaLumberjackSwift
 import RealmSwift
@@ -46,6 +47,7 @@ struct ItemDetailState: ViewModelState {
         var name: String
         var value: String
         let isTitle: Bool
+        let isEditable: Bool
         var isTappable: Bool
         var additionalInfo: [AdditionalInfoKey: String]?
 
@@ -171,41 +173,44 @@ struct ItemDetailState: ViewModelState {
 
     struct Data: Equatable {
         var title: String
-        var attributedTitle: NSAttributedString
         var type: String
-        var isAttachment: Bool
         var localizedType: String
-        var creators: [String: Creator]
-        var creatorIds: [String]
-        var fields: [String: Field]
-        var fieldIds: [String]
+        var creators: OrderedDictionary<String, Creator>
+        var fields: OrderedDictionary<String, Field>
         var abstract: String?
 
         var dateModified: Date
         let dateAdded: Date
 
-        var maxFieldTitleWidth: CGFloat = 0
-        var maxNonemptyFieldTitleWidth: CGFloat = 0
+        var isAttachment: Bool {
+            return type == ItemTypes.attachment
+        }
 
         func databaseFields(schemaController: SchemaController) -> [Field] {
-            var allFields = Array(self.fields.values)
+            var allFields = Array(fields.values)
 
-            if let titleKey = schemaController.titleKey(for: self.type) {
-                allFields.append(Field(key: titleKey,
-                                       baseField: (titleKey != FieldKeys.Item.title ? FieldKeys.Item.title : nil),
-                                       name: "",
-                                       value: self.title,
-                                       isTitle: true,
-                                       isTappable: false))
+            if let titleKey = schemaController.titleKey(for: type) {
+                allFields.append(Field(
+                    key: titleKey,
+                    baseField: (titleKey != FieldKeys.Item.title ? FieldKeys.Item.title : nil),
+                    name: "",
+                    value: title,
+                    isTitle: true,
+                    isEditable: !isAttachment,
+                    isTappable: false
+                ))
             }
 
-            if let abstract = self.abstract {
-                allFields.append(Field(key: FieldKeys.Item.abstract,
-                                       baseField: nil,
-                                       name: "",
-                                       value: abstract,
-                                       isTitle: false,
-                                       isTappable: false))
+            if let abstract {
+                allFields.append(Field(
+                    key: FieldKeys.Item.abstract,
+                    baseField: nil,
+                    name: "",
+                    value: abstract,
+                    isTitle: false,
+                    isEditable: isAttachment,
+                    isTappable: false
+                ))
             }
 
             return allFields
@@ -215,25 +220,20 @@ struct ItemDetailState: ViewModelState {
             let date = Date()
             return Data(
                 title: "",
-                attributedTitle: .init(string: ""),
                 type: "",
-                isAttachment: false,
                 localizedType: "",
                 creators: [:],
-                creatorIds: [],
                 fields: [:],
-                fieldIds: [],
                 abstract: nil,
                 dateModified: date,
-                dateAdded: date,
-                maxFieldTitleWidth: 0,
-                maxNonemptyFieldTitleWidth: 0
+                dateAdded: date
             )
         }
     }
 
     enum TableViewReloadType {
         case row(ItemDetailCollectionViewHandler.Row)
+        case rows([ItemDetailCollectionViewHandler.Row])
         case section(ItemDetailCollectionViewHandler.Section)
     }
 
@@ -248,6 +248,7 @@ struct ItemDetailState: ViewModelState {
     var data: Data
     var snapshot: Data?
     var promptSnapshot: Data?
+    var visibleFieldIds: OrderedSet<String>
     var notes: [Note]
     var attachments: [Attachment]
     var tags: [Tag]
@@ -267,6 +268,7 @@ struct ItemDetailState: ViewModelState {
     var titleFont: UIFont {
         return .preferredFont(forTextStyle: .title1)
     }
+    var attributedTitle: NSAttributedString
 
     @UserDefault(key: "ItemDetailAbstractCollapsedKey", defaultValue: false)
     var abstractCollapsed: Bool
@@ -291,6 +293,8 @@ struct ItemDetailState: ViewModelState {
         self.userId = userId
         self.changes = []
         self.data = .empty
+        self.attributedTitle = NSAttributedString(string: "")
+        self.visibleFieldIds = []
         self.attachments = []
         self.notes = []
         self.tags = []

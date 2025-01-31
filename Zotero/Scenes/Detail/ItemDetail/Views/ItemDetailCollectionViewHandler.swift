@@ -180,8 +180,8 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
                 switch row {
                 case .title:
-                    let title = viewModel.state.data.attributedTitle
-                    return collectionView.dequeueConfiguredReusableCell(using: titleRegistration, for: indexPath, item: (title, isEditing))
+                    let attributedTitle = viewModel.state.attributedTitle
+                    return collectionView.dequeueConfiguredReusableCell(using: titleRegistration, for: indexPath, item: (attributedTitle, isEditing))
 
                 case .creator(let creator):
                     return collectionView.dequeueConfiguredReusableCell(using: fieldRegistration, for: indexPath, item: (.creator(creator), titleWidth))
@@ -219,7 +219,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
                 case .field(let key, let multiline):
                     guard let field = viewModel.state.data.fields[key] else { return collectionView.dequeueConfiguredReusableCell(using: emptyRegistration, for: indexPath, item: ()) }
-                    if !isEditing || viewModel.state.data.isAttachment {
+                    if !isEditing || !field.isEditable {
                         return collectionView.dequeueConfiguredReusableCell(using: fieldRegistration, for: indexPath, item: (.field(field), titleWidth))
                     }
                     if multiline {
@@ -457,7 +457,8 @@ final class ItemDetailCollectionViewHandler: NSObject {
             guard let self else { return }
             // Assign new id to all sections, just reload everything
             let id = UUID().uuidString
-            let sections = sections(for: state.data, isEditing: state.isEditing, library: state.library).map({ SectionType(identifier: id, section: $0) })
+            let sections = sections(for: state.data, hasVisibleFields: !state.visibleFieldIds.isEmpty, isEditing: state.isEditing, library: state.library)
+                .map({ SectionType(identifier: id, section: $0) })
             var snapshot = NSDiffableDataSourceSnapshot<SectionType, Row>()
             snapshot.appendSections(sections)
             for section in sections {
@@ -473,23 +474,29 @@ final class ItemDetailCollectionViewHandler: NSObject {
         /// - parameter data: New data.
         /// - parameter isEditing: Current editing table view state.
         /// - returns: Array of visible sections.
-        func sections(for data: ItemDetailState.Data, isEditing: Bool, library: Library) -> [Section] {
+        func sections(for data: ItemDetailState.Data, hasVisibleFields: Bool, isEditing: Bool, library: Library) -> [Section] {
+            // Title and item type are always visible.
+            var sections: [Section] = [.title, .type]
+
             if isEditing {
                 // Only "metadata" sections are visible during editing.
-                if data.isAttachment {
-                    return [.title, .type, .fields, .dates]
-                } else {
-                    return [.title, .type, .creators, .fields, .dates, .abstract]
+                if !data.isAttachment {
+                    sections.append(.creators)
                 }
+                if hasVisibleFields {
+                    sections.append(.fields)
+                }
+                sections.append(.dates)
+                if !data.isAttachment {
+                    sections.append(.abstract)
+                }
+                return sections
             }
 
-            var sections: [Section] = [.title]
-            // Item type is always visible
-            sections.append(.type)
             if !data.creators.isEmpty {
                 sections.append(.creators)
             }
-            if !data.fieldIds.isEmpty {
+            if hasVisibleFields {
                 sections.append(.fields)
             }
             sections.append(.dates)
@@ -579,7 +586,11 @@ final class ItemDetailCollectionViewHandler: NSObject {
         guard let indexPath = dataSource.indexPath(for: row), let cellFrame = collectionView.cellForItem(at: indexPath)?.frame else { return }
         updateQueue.async { [weak self] in
             guard let self else { return }
-            let snapshot = dataSource.snapshot()
+            var snapshot = dataSource.snapshot()
+            // Reconfigure the item, otherwise the collection view will use the previously cached cells, if it needs to layout again.
+            // E.g. if you press the command key in an external keyboard, while editing, you'll see edited fields revert to their initial value,
+            // but only visually, view model hasn't changed!
+            snapshot.reconfigureItems([row])
             dataSource.apply(snapshot, animatingDifferences: false) { [weak self] in
                 guard let self else { return }
                 let cellBottom = cellFrame.maxY - collectionView.contentOffset.y
@@ -593,6 +604,15 @@ final class ItemDetailCollectionViewHandler: NSObject {
                     collectionView.scrollToItem(at: indexPath, at: position, animated: false)
                 }
             }
+        }
+    }
+
+    func updateRows(rows: [Row], state: ItemDetailState) {
+        updateQueue.async { [weak self] in
+            guard let self else { return }
+            var snapshot = dataSource.snapshot()
+            snapshot.reconfigureItems(rows)
+            dataSource.apply(snapshot, animatingDifferences: false)
         }
     }
 
@@ -654,10 +674,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
             return attachments
 
         case .creators:
-            let creators: [Row] = state.data.creatorIds.compactMap({ creatorId in
-                guard let creator = state.data.creators[creatorId] else { return nil }
-                return .creator(creator)
-            })
+            let creators: [Row] = state.data.creators.values.map({ .creator($0) })
             if state.isEditing {
                 return creators + [.addCreator]
             }
@@ -667,7 +684,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
             return [.dateAdded(state.data.dateAdded), .dateModified(state.data.dateModified)]
 
         case .fields:
-            return state.data.fieldIds.compactMap({ fieldId in
+            return state.visibleFieldIds.compactMap({ fieldId in
                 return .field(key: fieldId, multiline: (fieldId == FieldKeys.Item.extra))
             })
 
@@ -789,7 +806,6 @@ final class ItemDetailCollectionViewHandler: NSObject {
             guard let self else { return }
             let configuration = ItemDetailFieldEditCell.ContentConfiguration(field: data.0, titleWidth: data.1, layoutMargins: layoutMargins(for: indexPath, self: self))
             let disposable = configuration.textObservable
-                .debounce(.milliseconds(500), scheduler: MainScheduler.instance)
                 .subscribe(onNext: { [weak self] text in
                     self?.viewModel.process(action: .setFieldValue(id: data.0.key, value: text))
                 })
@@ -803,7 +819,6 @@ final class ItemDetailCollectionViewHandler: NSObject {
             guard let self else { return }
             let configuration = ItemDetailFieldMultilineEditCell.ContentConfiguration(field: data.0, titleWidth: data.1, layoutMargins: layoutMargins(for: indexPath, self: self))
             let disposable = configuration.textObservable
-                .debounce(.milliseconds(500), scheduler: MainScheduler.instance)
                 .subscribe(onNext: { [weak self] text in
                     self?.viewModel.process(action: .setFieldValue(id: data.0.key, value: text))
                 })
@@ -901,7 +916,7 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
             guard viewModel.state.isEditing else { return }
             observer.on(.next(.openCreatorEditor(creator)))
 
-        case .note(let key, let title, let isProcessing):
+        case .note(let key, _, let isProcessing):
             guard !isProcessing else { return }
             observer.on(.next(.openNoteEditor(key: key)))
 
@@ -910,8 +925,8 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
             observer.on(.next(.openTypePicker))
 
         case .field(let fieldId, _):
-            // Tappable fields should be only tappable when not in editing mode, in case of attachment, URL is not editable, so keep it tappable even while editing.
-            guard !viewModel.state.isEditing || (viewModel.state.data.type == ItemTypes.attachment), let field = viewModel.state.data.fields[fieldId], field.isTappable else { return }
+            // Tappable fields should be only tappable when not in editing mode, or field is not editable. E.g. in case of attachment, URL is not editable, so keep it tappable even while editing.
+            guard let field = viewModel.state.data.fields[fieldId], field.isTappable, !viewModel.state.isEditing || !field.isEditable else { return }
             switch field.key {
             case FieldKeys.Item.Attachment.url:
                 observer.on(.next(.openUrl(field.value)))

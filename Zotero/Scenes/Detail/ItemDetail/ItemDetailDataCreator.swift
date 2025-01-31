@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import OrderedCollections
 
 import CocoaLumberjackSwift
 
@@ -31,7 +32,6 @@ struct ItemDetailDataCreator {
         fileStorage: FileStorage,
         urlDetector: UrlDetector,
         htmlAttributedStringConverter: HtmlAttributedStringConverter,
-        titleFont: UIFont,
         doiDetector: (String) -> Bool
     ) throws -> (ItemDetailState.Data, [Attachment], [Note], [Tag]) {
         switch type {
@@ -47,7 +47,6 @@ struct ItemDetailDataCreator {
                 fileStorage: fileStorage,
                 urlDetector: urlDetector,
                 htmlAttributedStringConverter: htmlAttributedStringConverter,
-                titleFont: titleFont,
                 doiDetector: doiDetector
             )
         }
@@ -67,19 +66,15 @@ struct ItemDetailDataCreator {
             throw ItemDetailError.cantCreateData
         }
 
-        let (fieldIds, fields, hasAbstract) = try fieldData(for: itemType, schemaController: schemaController, dateParser: dateParser, urlDetector: urlDetector, doiDetector: doiDetector)
+        let (fields, hasAbstract) = try fieldData(for: itemType, schemaController: schemaController, dateParser: dateParser, urlDetector: urlDetector, doiDetector: doiDetector)
         let date = Date()
         let attachments: [Attachment] = child.flatMap({ [$0] }) ?? []
         let data = ItemDetailState.Data(
             title: "",
-            attributedTitle: .init(string: ""),
             type: itemType,
-            isAttachment: (itemType == ItemTypes.attachment),
             localizedType: localizedType,
             creators: [:],
-            creatorIds: [],
             fields: fields,
-            fieldIds: fieldIds,
             abstract: (hasAbstract ? "" : nil),
             dateModified: date,
             dateAdded: date
@@ -105,7 +100,6 @@ struct ItemDetailDataCreator {
         fileStorage: FileStorage,
         urlDetector: UrlDetector,
         htmlAttributedStringConverter: HtmlAttributedStringConverter,
-        titleFont: UIFont,
         doiDetector: (String) -> Bool
     ) throws -> (ItemDetailState.Data, [Attachment], [Note], [Tag]) {
         guard let localizedType = schemaController.localized(itemType: item.rawType) else {
@@ -125,13 +119,11 @@ struct ItemDetailDataCreator {
             }
         }
 
-        let (fieldIds, fields, _) = try fieldData(for: item.rawType, schemaController: schemaController, dateParser: dateParser,
-                                                  urlDetector: urlDetector, doiDetector: doiDetector, getExistingData: { key, _ in
+        let (fields, _) = try fieldData(for: item.rawType, schemaController: schemaController, dateParser: dateParser, urlDetector: urlDetector, doiDetector: doiDetector) { key, _ in
             return (nil, values[key])
-        })
+        }
 
-        var creatorIds: [String] = []
-        var creators: [String: ItemDetailState.Creator] = [:]
+        var creators: OrderedDictionary<String, ItemDetailState.Creator> = [:]
         for creator in item.creators.sorted(byKeyPath: "orderId") {
             guard let localizedType = schemaController.localized(creator: creator.rawType) else { continue }
 
@@ -144,7 +136,6 @@ struct ItemDetailDataCreator {
                 primary: schemaController.creatorIsPrimary(creator.rawType, itemType: item.rawType),
                 localizedType: localizedType
             )
-            creatorIds.append(creator.id)
             creators[creator.id] = creator
         }
 
@@ -178,14 +169,10 @@ struct ItemDetailDataCreator {
         let tags = item.tags.sorted(byKeyPath: "tag.name").map(Tag.init)
         let data = ItemDetailState.Data(
             title: item.baseTitle,
-            attributedTitle: htmlAttributedStringConverter.convert(text: item.baseTitle, baseAttributes: [.font: titleFont]),
             type: item.rawType,
-            isAttachment: (item.rawType == ItemTypes.attachment),
             localizedType: localizedType,
             creators: creators,
-            creatorIds: creatorIds,
             fields: fields,
-            fieldIds: fieldIds,
             abstract: abstract,
             dateModified: item.dateModified,
             dateAdded: item.dateAdded
@@ -201,7 +188,7 @@ struct ItemDetailDataCreator {
     /// - parameter doiDetector: DOI detector.
     /// - parameter getExistingData: Closure for getting available data for given field. It passes the field key and baseField and receives existing
     ///                              field name and value if available.
-    /// - returns: Tuple with 3 values: field keys of new fields, actual fields, `Bool` indicating whether this item type contains an abstract.
+    /// - returns: Tuple with 2 values: orderered dictionary of fields by field key, `Bool` indicating whether this item type contains an abstract.
     static func fieldData(
         for itemType: String,
         schemaController: SchemaController,
@@ -209,27 +196,28 @@ struct ItemDetailDataCreator {
         urlDetector: UrlDetector,
         doiDetector: (String) -> Bool,
         getExistingData: ((String, String?) -> (String?, String?))? = nil
-    ) throws -> ([String], [String: ItemDetailState.Field], Bool) {
-        guard var fieldSchemas = schemaController.fields(for: itemType) else {
+    ) throws -> (OrderedDictionary<String, ItemDetailState.Field>, Bool) {
+        guard let fieldSchemas = schemaController.fields(for: itemType) else {
             throw ItemDetailError.typeNotSupported(itemType)
         }
 
-        var fieldKeys = fieldSchemas.map({ $0.field })
-        let abstractIndex = fieldKeys.firstIndex(of: FieldKeys.Item.abstract)
+        var hasAbstract: Bool = false
+        let titleKey = schemaController.titleKey(for: itemType)
+        let isEditable = itemType != ItemTypes.attachment
+        var fields: OrderedDictionary<String, ItemDetailState.Field> = [:]
+        for schema in fieldSchemas {
+            let key = schema.field
+            // Remove title and abstract keys, those 2 are used separately in Data struct.
+            if key == FieldKeys.Item.abstract {
+                hasAbstract = true
+                continue
+            }
 
-        // Remove title and abstract keys, those 2 are used separately in Data struct
-        if let index = abstractIndex {
-            fieldKeys.remove(at: index)
-            fieldSchemas.remove(at: index)
-        }
-        if let key = schemaController.titleKey(for: itemType), let index = fieldKeys.firstIndex(of: key) {
-            fieldKeys.remove(at: index)
-            fieldSchemas.remove(at: index)
-        }
+            if key == titleKey {
+                continue
+            }
 
-        var fields: [String: ItemDetailState.Field] = [:]
-        for (offset, key) in fieldKeys.enumerated() {
-            let baseField = fieldSchemas[offset].baseField
+            let baseField = schema.baseField
             let (existingName, existingValue) = (getExistingData?(key, baseField) ?? (nil, nil))
 
             let name = existingName ?? schemaController.localized(field: key) ?? ""
@@ -237,49 +225,44 @@ struct ItemDetailDataCreator {
             let isTappable = ItemDetailDataCreator.isTappable(key: key, value: value, urlDetector: urlDetector, doiDetector: doiDetector)
             var additionalInfo: [ItemDetailState.Field.AdditionalInfoKey: String]?
 
-            if key == FieldKeys.Item.date || baseField == FieldKeys.Item.date, let order = dateParser.parse(string: value)?.orderWithSpaces {
-                additionalInfo = [.dateOrder: order]
-            }
-            if key == FieldKeys.Item.accessDate, let date = Formatter.iso8601.date(from: value) {
-                additionalInfo = [.formattedDate: Formatter.dateAndTime.string(from: date),
-                                  .formattedEditDate: Formatter.sqlFormat.string(from: date)]
+            switch (key, baseField) {
+            case (FieldKeys.Item.date, _), (_, FieldKeys.Item.date):
+                if let order = dateParser.parse(string: value)?.orderWithSpaces {
+                    additionalInfo = [.dateOrder: order]
+                }
+
+            case (FieldKeys.Item.accessDate, _):
+                if let date = Formatter.iso8601.date(from: value) {
+                    additionalInfo = [.formattedDate: Formatter.dateAndTime.string(from: date), .formattedEditDate: Formatter.sqlFormat.string(from: date)]
+                }
+
+            default:
+                break
             }
 
-            fields[key] = ItemDetailState.Field(key: key,
-                                                baseField: baseField,
-                                                name: name,
-                                                value: value,
-                                                isTitle: false,
-                                                isTappable: isTappable,
-                                                additionalInfo: additionalInfo)
+            fields[key] = ItemDetailState.Field(
+                key: key,
+                baseField: baseField,
+                name: name,
+                value: value,
+                isTitle: false,
+                isEditable: isEditable,
+                isTappable: isTappable,
+                additionalInfo: additionalInfo
+            )
         }
 
-        return (fieldKeys, fields, (abstractIndex != nil))
+        return (fields, hasAbstract)
     }
 
-    /// Returns all field keys for given item type, except those that should not appear as fields in item detail.
-    static func allFieldKeys(for itemType: String, schemaController: SchemaController) -> [String] {
-        guard let fieldSchemas = schemaController.fields(for: itemType) else { return [] }
-        var fieldKeys = fieldSchemas.map({ $0.field })
-        // Remove title and abstract keys, those 2 are used separately in Data struct
-        if let index = fieldKeys.firstIndex(of: FieldKeys.Item.abstract) {
-            fieldKeys.remove(at: index)
-        }
-        if let key = schemaController.titleKey(for: itemType), let index = fieldKeys.firstIndex(of: key) {
-            fieldKeys.remove(at: index)
-        }
-        return fieldKeys
+    /// Returns ordered set of keys for fields that have non-empty values.
+    static func nonEmptyFieldKeys(from fields: OrderedDictionary<String, ItemDetailState.Field>) -> OrderedSet<String> {
+        return fields.filter({ !$0.value.value.isEmpty }).keys
     }
 
-    /// Returns filtered, sorted array of keys for fields that have non-empty values.
-    static func filteredFieldKeys(from fieldKeys: [String], fields: [String: ItemDetailState.Field]) -> [String] {
-        var newFieldKeys: [String] = []
-        fieldKeys.forEach { key in
-            if !(fields[key]?.value ?? "").isEmpty {
-                newFieldKeys.append(key)
-            }
-        }
-        return newFieldKeys
+    /// Returns ordered set of keys for fields that are either editable or have non-empty values.
+    static func editableOrNonEmptyFieldKeys(from fields: OrderedDictionary<String, ItemDetailState.Field>) -> OrderedSet<String> {
+        return fields.filter({ $0.value.isEditable || !$0.value.value.isEmpty }).keys
     }
 
     /// Checks whether field is tappable based on its key and value.

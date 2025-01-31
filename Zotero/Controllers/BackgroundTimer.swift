@@ -11,51 +11,65 @@
 import Foundation
 
 final class BackgroundTimer {
-    private enum State {
+    enum State {
         case suspended
         case resumed
     }
 
     private let timeInterval: DispatchTimeInterval
     private let queue: DispatchQueue
+    private var timer: DispatchSourceTimer?
+    private(set) var startTime: DispatchTime?
 
     var eventHandler: (() -> Void)?
-    private var state: State = .suspended
-    private lazy var timer: DispatchSourceTimer = {
-        let t = DispatchSource.makeTimerSource(flags: [], queue: self.queue)
-        t.schedule(deadline: .now() + self.timeInterval, repeating: 0)
-        t.setEventHandler(handler: { [weak self] in
-            self?.eventHandler?()
-            self?.suspend()
-        })
-        return t
-    }()
+    private(set) var state: State = .suspended
 
-    init(timeInterval: DispatchTimeInterval, queue: DispatchQueue) {
+    init(timeInterval: DispatchTimeInterval, queue: DispatchQueue = .main) {
         self.timeInterval = timeInterval
         self.queue = queue
     }
 
     deinit {
-        self.timer.setEventHandler {}
-        self.timer.cancel()
+        guard let timer else { return }
+        timer.setEventHandler {}
+        timer.cancel()
         /*
          If the timer is suspended, calling cancel without resuming
          triggers a crash. This is documented here https://forums.developer.apple.com/thread/15902
          */
-        self.resume()
-        self.eventHandler = nil
+        if state == .suspended {
+            state = .resumed
+            timer.resume()
+        }
+        eventHandler = nil
     }
 
     func resume() {
-        guard self.state != .resumed else { return }
-        self.state = .resumed
-        self.timer.resume()
+        guard state != .resumed else { return }
+        if let startTime, startTime + timeInterval <= .now() {
+            eventHandler?()
+        } else {
+            state = .resumed
+            timer = timer ?? createTimer()
+            timer?.resume()
+        }
     }
 
     func suspend() {
-        guard self.state != .suspended else { return }
-        self.state = .suspended
-        self.timer.suspend()
+        guard let timer, state != .suspended else { return }
+        state = .suspended
+        timer.suspend()
+    }
+
+    private func createTimer() -> DispatchSourceTimer {
+        let timer = DispatchSource.makeTimerSource(flags: [], queue: queue)
+        let now = DispatchTime.now()
+        startTime = now
+        timer.schedule(deadline: now + timeInterval, repeating: 0)
+        timer.setEventHandler(handler: { [weak self] in
+            self?.eventHandler?()
+            self?.suspend()
+        })
+        return timer
     }
 }

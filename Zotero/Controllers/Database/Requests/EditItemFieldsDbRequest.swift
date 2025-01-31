@@ -10,16 +10,18 @@ import Foundation
 
 import RealmSwift
 
-struct EditItemFieldsDbRequest: DbRequest {
-    let key: String
-    let libraryId: LibraryIdentifier
-    let fieldValues: [KeyBaseKeyPair: String]
-    let dateParser: DateParser
+protocol EditItemFieldsBaseRequest {
+    var key: String { get }
+    var libraryId: LibraryIdentifier { get }
+    var fieldValues: [KeyBaseKeyPair: String] { get }
+    var dateParser: DateParser { get }
 
-    var needsWrite: Bool { return true }
+    func processAndReturnResponse(in database: Realm) throws -> Date?
+}
 
-    func process(in database: Realm) throws {
-        guard !fieldValues.isEmpty, let item = database.objects(RItem.self).uniqueObject(key: key, libraryId: libraryId) else { return }
+extension EditItemFieldsBaseRequest {
+    func processAndReturnResponse(in database: Realm) throws -> Date? {
+        guard !fieldValues.isEmpty, let item = database.objects(RItem.self).uniqueObject(key: key, libraryId: libraryId) else { return nil }
 
         var didChange = false
 
@@ -60,6 +62,37 @@ struct EditItemFieldsDbRequest: DbRequest {
             item.changes.append(RObjectChange.create(changes: RItemChanges.fields))
             item.changeType = .user
             item.dateModified = Date()
+            return item.dateModified
         }
+
+        return nil
+    }
+}
+
+struct EditItemFieldsDbRequest: EditItemFieldsBaseRequest, DbRequest {
+    let key: String
+    let libraryId: LibraryIdentifier
+    let fieldValues: [KeyBaseKeyPair: String]
+    let dateParser: DateParser
+
+    var needsWrite: Bool { return true }
+
+    func process(in database: Realm) throws {
+        _ = try processAndReturnResponse(in: database)
+    }
+}
+
+struct EditItemFieldsDbResponseRequest: EditItemFieldsBaseRequest, DbResponseRequest {
+    typealias Response = Date?
+
+    let key: String
+    let libraryId: LibraryIdentifier
+    let fieldValues: [KeyBaseKeyPair: String]
+    let dateParser: DateParser
+
+    var needsWrite: Bool { return true }
+
+    func process(in database: Realm) throws -> Date? {
+        return try processAndReturnResponse(in: database)
     }
 }
