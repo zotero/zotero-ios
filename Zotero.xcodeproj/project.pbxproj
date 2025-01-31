@@ -4493,7 +4493,7 @@
 				B356A3942524A6D5003F1943 /* XCRemoteSwiftPackageReference "OHHTTPStubs" */,
 				B356A39C2524A703003F1943 /* XCRemoteSwiftPackageReference "CocoaLumberjack" */,
 				B3A6C59D252CA08200F24CBE /* XCRemoteSwiftPackageReference "PSPDFKit-SP" */,
-				B35C9C042642A0BC0004C47E /* XCRemoteSwiftPackageReference "realm-cocoa" */,
+				B35C9C042642A0BC0004C47E /* XCRemoteSwiftPackageReference "realm-swift" */,
 				B3445F4426EF5EE9007D4009 /* XCRemoteSwiftPackageReference "plcrashreporter" */,
 				B3D84BEE27919FDE005DDD7C /* XCRemoteSwiftPackageReference "Starscream" */,
 				614D65852A8030C9007CF449 /* XCRemoteSwiftPackageReference "swift-collections" */,
@@ -6719,9 +6719,9 @@
 				version = 3.8.5;
 			};
 		};
-		B35C9C042642A0BC0004C47E /* XCRemoteSwiftPackageReference "realm-cocoa" */ = {
+		B35C9C042642A0BC0004C47E /* XCRemoteSwiftPackageReference "realm-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/realm/realm-cocoa";
+			repositoryURL = "https://github.com/realm/realm-swift";
 			requirement = {
 				kind = exactVersion;
 				version = 10.54.2;
@@ -6740,7 +6740,7 @@
 			repositoryURL = "https://github.com/PSPDFKit/PSPDFKit-SP";
 			requirement = {
 				kind = exactVersion;
-				version = 14.3.0;
+				version = 14.4.0;
 			};
 		};
 		B3D84BEE27919FDE005DDD7C /* XCRemoteSwiftPackageReference "Starscream" */ = {
@@ -6756,7 +6756,7 @@
 /* Begin XCSwiftPackageProductDependency section */
 		61457F562BEA2F53000AE230 /* RealmSwift */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B35C9C042642A0BC0004C47E /* XCRemoteSwiftPackageReference "realm-cocoa" */;
+			package = B35C9C042642A0BC0004C47E /* XCRemoteSwiftPackageReference "realm-swift" */;
 			productName = RealmSwift;
 		};
 		614D65862A8030C9007CF449 /* OrderedCollections */ = {
@@ -6846,12 +6846,12 @@
 		};
 		B35C9C072642A0BC0004C47E /* RealmSwift */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B35C9C042642A0BC0004C47E /* XCRemoteSwiftPackageReference "realm-cocoa" */;
+			package = B35C9C042642A0BC0004C47E /* XCRemoteSwiftPackageReference "realm-swift" */;
 			productName = RealmSwift;
 		};
 		B35C9C0B2642A0E40004C47E /* RealmSwift */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B35C9C042642A0BC0004C47E /* XCRemoteSwiftPackageReference "realm-cocoa" */;
+			package = B35C9C042642A0BC0004C47E /* XCRemoteSwiftPackageReference "realm-swift" */;
 			productName = RealmSwift;
 		};
 		B35E4B8C25248B3C000EA134 /* RxSwift */ = {
