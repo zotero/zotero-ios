@@ -1,5 +1,5 @@
 {
-  "originHash" : "d7734533c379a878d05771141b2ed0c27e035fa73e9e851e790761996bd05c83",
+  "originHash" : "3adb935da63831a73c8b40f5ec78d5f2feeda8bdda61230e910e7e5fa1dd8621",
   "pins" : [
     {
       "identity" : "alamofire",
@@ -78,8 +78,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/PSPDFKit/PSPDFKit-SP",
       "state" : {
-        "revision" : "ef3a12718e273fe0b0fee1cf664b6de077d66a69",
-        "version" : "14.3.0"
+        "revision" : "63d63a932acca943551f1774e04c14ab4777c974",
+        "version" : "14.4.0"
       }
     },
     {
@@ -92,21 +92,21 @@
       }
     },
     {
-      "identity" : "realm-cocoa",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/realm/realm-cocoa",
-      "state" : {
-        "revision" : "a3abcdf95a3176f5ad990239920aad4ef86e00de",
-        "version" : "10.54.2"
-      }
-    },
-    {
       "identity" : "realm-core",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/realm/realm-core.git",
       "state" : {
         "revision" : "85eeca41654cc9070ad81a21a4b1d153ad467c33",
         "version" : "14.13.1"
+      }
+    },
+    {
+      "identity" : "realm-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/realm/realm-swift",
+      "state" : {
+        "revision" : "a3abcdf95a3176f5ad990239920aad4ef86e00de",
+        "version" : "10.54.2"
       }
     },
     {
