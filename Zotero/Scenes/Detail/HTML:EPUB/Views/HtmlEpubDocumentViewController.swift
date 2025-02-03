@@ -59,9 +59,11 @@ class HtmlEpubDocumentViewController: UIViewController {
         func setupWebView() {
             let highlightAction = UIAction(title: L10n.Pdf.highlight) { [weak self] _ in
                 self?.viewModel.process(action: .createAnnotationFromSelection(.highlight))
+                self?.deselectText()
             }
             let underlineAction = UIAction(title: L10n.Pdf.underline) { [weak self] _ in
                 self?.viewModel.process(action: .createAnnotationFromSelection(.underline))
+                self?.deselectText()
             }
 
             let configuration = WKWebViewConfiguration()
@@ -88,6 +90,10 @@ class HtmlEpubDocumentViewController: UIViewController {
     }
 
     // MARK: - Actions
+
+    private func deselectText() {
+        webViewHandler.call(javascript: "window._view.selectAnnotations([]);").subscribe().disposed(by: disposeBag)
+    }
 
     private func process(state: HtmlEpubReaderState) {
         if state.changes.contains(.readerInitialised) {
