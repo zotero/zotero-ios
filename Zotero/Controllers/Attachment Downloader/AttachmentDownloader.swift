@@ -397,7 +397,7 @@ final class AttachmentDownloader: NSObject {
                 case .local:
                     if compressed {
                         let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
-                        extract(zipFile: file.copyWithExt("zip"), toFile: file, download: Download(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId))
+                        extract(zipFile: file.copy(withExt: "zip"), toFile: file, download: Download(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId))
                     } else {
                         DDLogInfo("AttachmentDownloader: open local file \(attachment.key)")
                         observable.on(.next(Update(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, kind: .ready(compressed: false))))
@@ -865,7 +865,7 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
             isCompressed = isCompressed || _isCompressed
         }
         if isCompressed {
-            zipFile = activeDownload.file.copyWithExt("zip")
+            zipFile = activeDownload.file.copy(withExt: "zip")
         } else {
             shouldExtractAfterDownload = false
         }

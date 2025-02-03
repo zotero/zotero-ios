@@ -8,26 +8,12 @@
 
 import UIKit
 
-protocol PDFAnnotation {
-    var key: String { get }
+protocol PDFAnnotation: ReaderAnnotation {
     var readerKey: PDFReaderState.AnnotationKey { get }
-    var type: AnnotationType { get }
     var page: Int { get }
-    var pageLabel: String { get }
-    var lineWidth: CGFloat? { get }
-    var color: String { get }
-    var comment: String { get }
-    var text: String? { get }
-    var fontSize: CGFloat? { get }
     var rotation: UInt? { get }
-    var sortIndex: String { get }
-    var dateModified: Date { get }
     var isSyncable: Bool { get }
-    var tags: [Tag] { get }
 
-    func isAuthor(currentUserId: Int) -> Bool
-    func author(displayName: String, username: String) -> String
-    func editability(currentUserId: Int, library: Library) -> AnnotationEditability
     func rects(boundingBoxConverter: AnnotationBoundingBoxConverter) -> [CGRect]
     func paths(boundingBoxConverter: AnnotationBoundingBoxConverter) -> [[CGPoint]]
 }
