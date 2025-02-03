@@ -94,7 +94,7 @@ struct EditTypeItemDetailDbRequest: DbRequest {
 
     private func update(creators: OrderedDictionary<String, ItemDetailState.Creator>, item: RItem, changes: inout RItemChanges, database: Realm) {
         // Remove creator types which don't exist for this item type
-        let toRemove = item.creators.filter("not uuid in %@", creators.keys)
+        let toRemove = item.creators.filter("not uuid in %@", Array(creators.keys))
         if !toRemove.isEmpty {
             changes.insert(.creators)
         }
