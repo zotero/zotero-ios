@@ -75,6 +75,7 @@ final class PDFCoordinator: Coordinator {
     private let page: Int?
     private let preselectedAnnotationKey: String?
     private let previewRects: [CGRect]?
+    private let sessionIdentifier: String
     private unowned let controllers: Controllers
     private let disposeBag: DisposeBag
 
@@ -87,6 +88,7 @@ final class PDFCoordinator: Coordinator {
         preselectedAnnotationKey: String?,
         previewRects: [CGRect]?,
         navigationController: NavigationViewController,
+        sessionIdentifier: String,
         controllers: Controllers
     ) {
         self.key = key
@@ -97,6 +99,7 @@ final class PDFCoordinator: Coordinator {
         self.preselectedAnnotationKey = preselectedAnnotationKey
         self.previewRects = previewRects
         self.navigationController = navigationController
+        self.sessionIdentifier = sessionIdentifier
         self.controllers = controllers
         self.childCoordinators = []
         self.disposeBag = DisposeBag()
@@ -116,7 +119,8 @@ final class PDFCoordinator: Coordinator {
         guard let dbStorage = self.controllers.userControllers?.dbStorage,
               let userId = self.controllers.sessionController.sessionData?.userId,
               !username.isEmpty,
-              let parentNavigationController = self.parentCoordinator?.navigationController
+              let parentNavigationController = self.parentCoordinator?.navigationController,
+              let openItemsController = controllers.userControllers?.openItemsController
         else { return }
 
         let settings = Defaults.shared.pdfSettings
@@ -150,11 +154,13 @@ final class PDFCoordinator: Coordinator {
             userId: userId,
             username: username,
             displayName: displayName,
-            interfaceStyle: settings.appearanceMode == .automatic ? parentNavigationController.view.traitCollection.userInterfaceStyle : settings.appearanceMode.userInterfaceStyle
+            interfaceStyle: settings.appearanceMode == .automatic ? parentNavigationController.view.traitCollection.userInterfaceStyle : settings.appearanceMode.userInterfaceStyle,
+            openItemsCount: openItemsController.getItems(for: sessionIdentifier).count
         )
         let controller = PDFReaderViewController(
             viewModel: ViewModel(initialState: state, handler: handler),
-            compactSize: UIDevice.current.isCompactWidth(size: parentNavigationController.view.frame.size)
+            compactSize: UIDevice.current.isCompactWidth(size: parentNavigationController.view.frame.size),
+            openItemsController: openItemsController
         )
         controller.coordinatorDelegate = self
         handler.delegate = controller
@@ -666,3 +672,9 @@ extension PDFCoordinator: DetailCitationCoordinatorDelegate {
 }
 
 extension PDFCoordinator: DetailCopyBibliographyCoordinatorDelegate { }
+
+extension PDFCoordinator: OpenItemsPresenter {
+    func showItem(with presentation: ItemPresentation?) {
+        (parentCoordinator as? OpenItemsPresenter)?.showItem(with: presentation)
+    }
+}
