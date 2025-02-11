@@ -14,11 +14,6 @@ import RxCocoa
 import RxSwift
 
 final class LookupWebViewHandler {
-    struct LookupSettings: Hashable {
-        let libraryIdentifier: LibraryIdentifier
-        let collectionKeys: Set<String>
-    }
-
     /// Handlers for communication with JS in `webView`
     enum JSHandlers: String, CaseIterable {
         /// Handler used for reporting new items.
@@ -51,7 +46,6 @@ final class LookupWebViewHandler {
         case failed(Swift.Error)
     }
 
-    let lookupSettings: LookupSettings
     let webViewHandler: WebViewHandler
     private let translatorsController: TranslatorsAndStylesController
     private let disposeBag: DisposeBag
@@ -59,134 +53,132 @@ final class LookupWebViewHandler {
 
     private var isLoading: BehaviorRelay<InitializationResult>
 
-    init(lookupSettings: LookupSettings, webView: WKWebView, translatorsController: TranslatorsAndStylesController) {
-        self.lookupSettings = lookupSettings
+    init(webView: WKWebView, translatorsController: TranslatorsAndStylesController) {
         self.translatorsController = translatorsController
-        self.webViewHandler = WebViewHandler(webView: webView, javascriptHandlers: JSHandlers.allCases.map({ $0.rawValue }))
-        self.observable = PublishSubject()
-        self.disposeBag = DisposeBag()
-        self.isLoading = BehaviorRelay(value: .inProgress)
+        webViewHandler = WebViewHandler(webView: webView, javascriptHandlers: JSHandlers.allCases.map({ $0.rawValue }))
+        observable = PublishSubject()
+        disposeBag = DisposeBag()
+        isLoading = BehaviorRelay(value: .inProgress)
 
-        self.webViewHandler.receivedMessageHandler = { [weak self] name, body in
+        webViewHandler.receivedMessageHandler = { [weak self] name, body in
             self?.receiveMessage(name: name, body: body)
         }
 
-        self.initialize()
+        initialize()
             .subscribe(on: MainScheduler.instance)
             .observe(on: MainScheduler.instance)
-            .subscribe(with: self, onSuccess: { `self`, _ in
+            .subscribe(onSuccess: { [weak self] _ in
                 DDLogInfo("LookupWebViewHandler: initialization succeeded")
-                self.isLoading.accept(.initialized)
-            }, onFailure: { `self`, error in
+                self?.isLoading.accept(.initialized)
+            }, onFailure: { [weak self] error in
                 DDLogInfo("LookupWebViewHandler: initialization failed - \(error)")
-                self.isLoading.accept(.failed(error))
+                self?.isLoading.accept(.failed(error))
             })
-            .disposed(by: self.disposeBag)
-    }
-    
-    convenience init(libraryIdentifier: LibraryIdentifier, collectionKeys: Set<String>, webView: WKWebView, translatorsController: TranslatorsAndStylesController) {
-        let lookupSettings = LookupSettings(libraryIdentifier: libraryIdentifier, collectionKeys: collectionKeys)
-        self.init(lookupSettings: lookupSettings, webView: webView, translatorsController: translatorsController)
+            .disposed(by: disposeBag)
+
+        func initialize() -> Single<Any> {
+            DDLogInfo("LookupWebViewHandler: initialize web view")
+            return loadIndex()
+                .flatMap { _ -> Single<(String, String)> in
+                    DDLogInfo("LookupWebViewHandler: load bundled files")
+                    return loadBundledFiles()
+                }
+                .flatMap { encodedSchema, encodedDateFormats -> Single<Any> in
+                    DDLogInfo("LookupWebViewHandler: init schema and date formats")
+                    return self.webViewHandler.call(javascript: "initSchemaAndDateFormats(\(encodedSchema), \(encodedDateFormats));")
+                }
+                .flatMap { _ -> Single<[RawTranslator]> in
+                    DDLogInfo("LookupWebViewHandler: load translators")
+                    return translatorsController.translators()
+                }
+                .flatMap { translators -> Single<Any> in
+                    DDLogInfo("LookupWebViewHandler: encode translators")
+                    let encodedTranslators = WebViewEncoder.encodeAsJSONForJavascript(translators)
+                    return self.webViewHandler.call(javascript: "initTranslators(\(encodedTranslators));")
+                }
+
+            func loadIndex() -> Single<()> {
+                guard let indexUrl = Bundle.main.url(forResource: "lookup", withExtension: "html", subdirectory: "translation") else {
+                    return .error(Error.cantFindFile)
+                }
+                return webViewHandler.load(fileUrl: indexUrl)
+            }
+
+            func loadBundledFiles() -> Single<(String, String)> {
+                return .create { subscriber in
+                    guard let schemaUrl = Bundle.main.url(forResource: "schema", withExtension: "json", subdirectory: "Bundled"), let schemaData = try? Data(contentsOf: schemaUrl) else {
+                        DDLogError("WebViewHandler: can't load schema json")
+                        subscriber(.failure(Error.cantFindFile))
+                        return Disposables.create()
+                    }
+
+                    guard let dateFormatsUrl = Bundle.main.url(forResource: "dateFormats", withExtension: "json", subdirectory: "translation/translate/modules/utilities/resource"),
+                          let dateFormatData = try? Data(contentsOf: dateFormatsUrl)
+                    else {
+                        DDLogError("WebViewHandler: can't load dateFormats json")
+                        subscriber(.failure(Error.cantFindFile))
+                        return Disposables.create()
+                    }
+
+                    let encodedSchema = WebViewEncoder.encodeForJavascript(schemaData)
+                    let encodedFormats = WebViewEncoder.encodeForJavascript(dateFormatData)
+
+                    DDLogInfo("WebViewHandler: loaded bundled files")
+
+                    subscriber(.success((encodedSchema, encodedFormats)))
+
+                    return Disposables.create()
+                }
+            }
+        }
     }
 
     func lookUp(identifier: String) {
-        switch self.isLoading.value {
+        switch isLoading.value {
         case .failed(let error):
-            self.observable.on(.next(.failure(error)))
+            observable.on(.next(.failure(error)))
 
         case .initialized:
-            self._lookUp(identifier: identifier)
+            performLookUp(for: identifier)
 
         case .inProgress:
-            self.isLoading.filter { result in
+            isLoading.filter { result in
                 switch result {
-                case .inProgress: return false
-                case .initialized, .failed: return true
+                case .inProgress:
+                    return false
+
+                case .initialized, .failed:
+                    return true
                 }
             }
             .first()
-            .subscribe(with: self, onSuccess: { `self`, result in
-                guard let result = result else { return }
+            .subscribe(onSuccess: { [weak self] result in
+                guard let self, let result else { return }
                 switch result {
                 case .failed(let error):
-                    self.observable.on(.next(.failure(error)))
+                    observable.on(.next(.failure(error)))
 
                 case .initialized:
-                    self._lookUp(identifier: identifier)
+                    performLookUp(for: identifier)
 
-                case .inProgress: break
+                case .inProgress:
+                    break
                 }
             })
-            .disposed(by: self.disposeBag)
+            .disposed(by: disposeBag)
         }
-    }
 
-    private func _lookUp(identifier: String) {
-        DDLogInfo("LookupWebViewHandler: call translate js")
-        let encodedIdentifiers = WebViewEncoder.encodeForJavascript(identifier.data(using: .utf8))
-        return self.webViewHandler.call(javascript: "lookup(\(encodedIdentifiers));")
-                   .subscribe(on: MainScheduler.instance)
-                   .observe(on: MainScheduler.instance)
-                   .subscribe(onFailure: { [weak self] error in
-                       DDLogError("WebViewHandler: translation failed - \(error)")
-                       self?.observable.on(.next(.failure(error)))
-                   })
-                   .disposed(by: self.disposeBag)
-    }
-
-    private func initialize() -> Single<Any> {
-        DDLogInfo("LookupWebViewHandler: initialize web view")
-        return self.loadIndex()
-                   .flatMap { _ -> Single<(String, String)> in
-                       DDLogInfo("LookupWebViewHandler: load bundled files")
-                       return self.loadBundledFiles()
-                   }
-                   .flatMap { encodedSchema, encodedDateFormats -> Single<Any> in
-                       DDLogInfo("LookupWebViewHandler: init schema and date formats")
-                       return self.webViewHandler.call(javascript: "initSchemaAndDateFormats(\(encodedSchema), \(encodedDateFormats));")
-                   }
-                   .flatMap { _ -> Single<[RawTranslator]> in
-                       DDLogInfo("LookupWebViewHandler: load translators")
-                       return self.translatorsController.translators()
-                   }
-                   .flatMap { translators -> Single<Any> in
-                       DDLogInfo("LookupWebViewHandler: encode translators")
-                       let encodedTranslators = WebViewEncoder.encodeAsJSONForJavascript(translators)
-                       return self.webViewHandler.call(javascript: "initTranslators(\(encodedTranslators));")
-                   }
-    }
-
-    private func loadIndex() -> Single<()> {
-        guard let indexUrl = Bundle.main.url(forResource: "lookup", withExtension: "html", subdirectory: "translation") else {
-            return Single.error(Error.cantFindFile)
-        }
-        return self.webViewHandler.load(fileUrl: indexUrl)
-    }
-
-    private func loadBundledFiles() -> Single<(String, String)> {
-        return Single.create { subscriber in
-            guard let schemaUrl = Bundle.main.url(forResource: "schema", withExtension: "json", subdirectory: "Bundled"),
-                  let schemaData = try? Data(contentsOf: schemaUrl) else {
-                DDLogError("WebViewHandler: can't load schema json")
-                subscriber(.failure(Error.cantFindFile))
-                return Disposables.create()
-            }
-
-            guard let dateFormatsUrl = Bundle.main.url(forResource: "dateFormats", withExtension: "json", subdirectory: "translation/translate/modules/utilities/resource"),
-                  let dateFormatData = try? Data(contentsOf: dateFormatsUrl) else {
-                DDLogError("WebViewHandler: can't load dateFormats json")
-                subscriber(.failure(Error.cantFindFile))
-                return Disposables.create()
-            }
-
-            let encodedSchema = WebViewEncoder.encodeForJavascript(schemaData)
-            let encodedFormats = WebViewEncoder.encodeForJavascript(dateFormatData)
-
-            DDLogInfo("WebViewHandler: loaded bundled files")
-
-            subscriber(.success((encodedSchema, encodedFormats)))
-
-            return Disposables.create()
+        func performLookUp(for identifier: String) {
+            DDLogInfo("LookupWebViewHandler: call translate js")
+            let encodedIdentifiers = WebViewEncoder.encodeForJavascript(identifier.data(using: .utf8))
+            return webViewHandler.call(javascript: "lookup(\(encodedIdentifiers));")
+                .subscribe(on: MainScheduler.instance)
+                .observe(on: MainScheduler.instance)
+                .subscribe(onFailure: { [weak self] error in
+                    DDLogError("LookupWebViewHandler: translation failed - \(error)")
+                    self?.observable.on(.next(.failure(error)))
+                })
+                .disposed(by: disposeBag)
         }
     }
 
@@ -200,22 +192,22 @@ final class LookupWebViewHandler {
             guard let errorNumber = body as? Int else { return }
             switch errorNumber {
             case 0:
-                self.observable.on(.next(.failure(Error.invalidIdentifiers)))
+                observable.on(.next(.failure(Error.invalidIdentifiers)))
 
             case 1:
-                self.observable.on(.next(.failure(Error.noSuccessfulTranslators)))
+                observable.on(.next(.failure(Error.noSuccessfulTranslators)))
 
             default:
-                self.observable.on(.next(.failure(Error.lookupFailed)))
+                observable.on(.next(.failure(Error.lookupFailed)))
             }
 
         case .items:
             guard let rawData = body as? [String: Any] else { return }
-            self.observable.on(.next(.success(.item(rawData))))
+            observable.on(.next(.success(.item(rawData))))
 
         case .identifiers:
             guard let rawData = body as? [[String: String]] else { return }
-            self.observable.on(.next(.success(.identifiers(rawData))))
+            observable.on(.next(.success(.identifiers(rawData))))
 
         case .log:
             DDLogInfo("JSLOG: \(body)")
@@ -223,20 +215,20 @@ final class LookupWebViewHandler {
         case .request:
             guard let body = body as? [String: Any],
                   let messageId = body["messageId"] as? Int else {
-                DDLogError("TranslationWebViewHandler: request missing body - \(body)")
+                DDLogError("LookupWebViewHandler: request missing body - \(body)")
                 return
             }
 
             if let options = body["payload"] as? [String: Any] {
                 do {
-                    try self.webViewHandler.sendRequest(with: options, for: messageId)
+                    try webViewHandler.sendRequest(with: options, for: messageId)
                 } catch let error {
-                    DDLogError("TranslationWebViewHandler: send request error \(error)")
-                    self.webViewHandler.sendMessaging(error: "Could not create request", for: messageId)
+                    DDLogError("LookupWebViewHandler: send request error \(error)")
+                    webViewHandler.sendMessaging(error: "Could not create request", for: messageId)
                 }
             } else {
-                DDLogError("TranslationWebViewHandler: request missing payload - \(body)")
-                self.webViewHandler.sendMessaging(error: "HTTP request missing payload", for: messageId)
+                DDLogError("LookupWebViewHandler: request missing payload - \(body)")
+                webViewHandler.sendMessaging(error: "HTTP request missing payload", for: messageId)
             }
         }
     }

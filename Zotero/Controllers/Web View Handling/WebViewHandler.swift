@@ -30,7 +30,7 @@ final class WebViewHandler: NSObject {
 
     // MARK: - Lifecycle
 
-    init(webView: WKWebView, javascriptHandlers: [String]?, userAgent: String? = nil) {
+    init(webView: WKWebView, javascriptHandlers: [String]?) {
         let storage = HTTPCookieStorage.sharedCookieStorage(forGroupContainerIdentifier: AppGroup.identifier)
         storage.cookieAcceptPolicy = .always
 
@@ -39,7 +39,7 @@ final class WebViewHandler: NSObject {
         configuration.httpShouldSetCookies = true
         configuration.httpCookieAcceptPolicy = .always
 
-        self.session = URLSession(configuration: configuration)
+        session = URLSession(configuration: configuration)
         self.webView = webView
 
         super.init()
@@ -48,10 +48,8 @@ final class WebViewHandler: NSObject {
         let userAgent = webView.value(forKey: "userAgent") ?? ""
         webView.customUserAgent = "\(userAgent) Zotero_iOS/\(DeviceInfoProvider.versionString ?? "")-\(DeviceInfoProvider.buildString ?? "")"
 
-        if let handlers = javascriptHandlers {
-            handlers.forEach { handler in
-                webView.configuration.userContentController.add(self, name: handler)
-            }
+        javascriptHandlers?.forEach { handler in
+            webView.configuration.userContentController.add(self, name: handler)
         }
     }
 
@@ -64,31 +62,31 @@ final class WebViewHandler: NSObject {
     }
 
     func load(fileUrl: URL) -> Single<()> {
-        guard let webView = self.webView else {
+        guard let webView else {
             DDLogError("WebViewHandler: web view is nil")
-            return Single.error(Error.webViewMissing)
+            return .error(Error.webViewMissing)
         }
         webView.loadFileURL(fileUrl, allowingReadAccessTo: fileUrl.deletingLastPathComponent())
-        return self.createWebLoadedSingle()
+        return createWebLoadedSingle()
     }
 
     func load(webUrl: URL) -> Single<()> {
-        guard let webView = self.webView else {
+        guard let webView else {
             DDLogError("WebViewHandler: web view is nil")
-            return Single.error(Error.webViewMissing)
+            return .error(Error.webViewMissing)
         }
         let request = URLRequest(url: webUrl)
         // Share extension started crashing when `load()` was called immediately, a little delay fixed the crash (##616)
         DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
             webView.load(request)
         }
-        return self.createWebLoadedSingle()
+        return createWebLoadedSingle()
     }
 
     func call(javascript: String) -> Single<Any> {
-        guard let webView = self.webView else {
+        guard let webView else {
             DDLogError("WebViewHandler: web view is nil")
-            return Single.error(Error.webViewMissing)
+            return .error(Error.webViewMissing)
         }
         return webView.call(javascript: javascript)
     }
@@ -111,16 +109,16 @@ final class WebViewHandler: NSObject {
             payload = ["error": ["status": statusCode, "responseText": responseText] as [String: Any]]
         }
 
-        self.sendMessaging(response: payload, for: messageId)
+        sendMessaging(response: payload, for: messageId)
     }
 
     func sendMessaging(error: String, for messageId: Int) {
-        self.sendMessaging(response: ["error": ["message": error]], for: messageId)
+        sendMessaging(response: ["error": ["message": error]], for: messageId)
     }
 
     /// Create single which is fired when webview loads a resource or fails.
     private func createWebLoadedSingle() -> Single<()> {
-        return Single.create { [weak self] subscriber -> Disposable in
+        return .create { [weak self] subscriber -> Disposable in
             self?.webDidLoad = subscriber
             return Disposables.create {
                 self?.webDidLoad = nil
@@ -140,7 +138,7 @@ final class WebViewHandler: NSObject {
             DDLogInfo("\(options)")
 
             let data = "Incorrect URL request from javascript".data(using: .utf8)
-            self.sendHttpResponse(data: data, statusCode: -1, url: nil, successCodes: [200], headers: [:], for: messageId)
+            sendHttpResponse(data: data, statusCode: -1, url: nil, successCodes: [200], headers: [:], for: messageId)
             return
         }
 
@@ -158,7 +156,7 @@ final class WebViewHandler: NSObject {
 
         DDLogInfo("WebViewHandler: send request to \(url.absoluteString)")
 
-        self.session.set(cookies: self.cookies, domain: url.host ?? "")
+        session.set(cookies: cookies, domain: url.host ?? "")
 
         var request = URLRequest(url: url)
         request.httpMethod = method
@@ -174,14 +172,14 @@ final class WebViewHandler: NSObject {
         request.httpBody = body?.data(using: .utf8)
         request.timeoutInterval = timeout
 
-        let task = self.session.dataTask(with: request) { [weak self] data, response, error in
-            guard let self = self else { return }
+        let task = session.dataTask(with: request) { [weak self] data, response, error in
+            guard let self else { return }
             if let response = response as? HTTPURLResponse {
-                self.sendHttpResponse(data: data, statusCode: response.statusCode, url: response.url, successCodes: successCodes, headers: response.allHeaderFields, for: messageId)
-            } else if let error = error {
-                self.sendHttpResponse(data: error.localizedDescription.data(using: .utf8), statusCode: -1, url: nil, successCodes: successCodes, headers: [:], for: messageId)
+                sendHttpResponse(data: data, statusCode: response.statusCode, url: response.url, successCodes: successCodes, headers: response.allHeaderFields, for: messageId)
+            } else if let error {
+                sendHttpResponse(data: error.localizedDescription.data(using: .utf8), statusCode: -1, url: nil, successCodes: successCodes, headers: [:], for: messageId)
             } else {
-                self.sendHttpResponse(data: "unknown error".data(using: .utf8), statusCode: -1, url: nil, successCodes: successCodes, headers: [:], for: messageId)
+                sendHttpResponse(data: "unknown error".data(using: .utf8), statusCode: -1, url: nil, successCodes: successCodes, headers: [:], for: messageId)
             }
         }
         task.resume()
@@ -198,7 +196,7 @@ extension WebViewHandler: WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Swift.Error) {
         DDLogError("WebViewHandler: did fail - \(error)")
-        self.webDidLoad?(.failure(error))
+        webDidLoad?(.failure(error))
     }
 }
 

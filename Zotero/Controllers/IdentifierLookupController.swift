@@ -23,6 +23,11 @@ protocol IdentifierLookupPresenter: AnyObject {
 
 final class IdentifierLookupController {
     // MARK: Types
+    struct LookupSettings: Hashable {
+        let libraryIdentifier: LibraryIdentifier
+        let collectionKeys: Set<String>
+    }
+
     struct Update {
         enum Kind {
             case lookupError(error: Swift.Error)
@@ -148,7 +153,7 @@ final class IdentifierLookupController {
             }
         }
     }
-    private var lookupWebViewHandlersByLookupSettings: [LookupWebViewHandler.LookupSettings: LookupWebViewHandler] = [:]
+    private var lookupWebViewHandlersByLookupSettings: [LookupSettings: LookupWebViewHandler] = [:]
     
     // MARK: Object Lifecycle
     init(
@@ -186,7 +191,7 @@ final class IdentifierLookupController {
                 completion(lookupData)
             }
             guard let self else { return }
-            let lookupSettings = LookupWebViewHandler.LookupSettings(libraryIdentifier: libraryId, collectionKeys: collectionKeys)
+            let lookupSettings = LookupSettings(libraryIdentifier: libraryId, collectionKeys: collectionKeys)
             if lookupWebViewHandlersByLookupSettings[lookupSettings] != nil {
                 lookupData = Array(self.lookupData.values)
                 return
@@ -194,7 +199,7 @@ final class IdentifierLookupController {
             var lookupWebViewHandler: LookupWebViewHandler?
             inMainThread(sync: true) {
                 if let webView = self.webViewProvider?.addWebView() {
-                    lookupWebViewHandler = LookupWebViewHandler(lookupSettings: lookupSettings, webView: webView, translatorsController: self.translatorsController)
+                    lookupWebViewHandler = LookupWebViewHandler(webView: webView, translatorsController: self.translatorsController)
                 }
             }
             guard let lookupWebViewHandler else {
@@ -202,13 +207,13 @@ final class IdentifierLookupController {
                 return
             }
             lookupWebViewHandlersByLookupSettings[lookupSettings] = lookupWebViewHandler
-            setupObserver(for: lookupWebViewHandler)
+            setupObserver(for: lookupWebViewHandler, libraryId: libraryId, collectionKeys: collectionKeys)
             lookupData = Array(self.lookupData.values)
         }
     }
     
     func lookUp(libraryId: LibraryIdentifier, collectionKeys: Set<String>, identifier: String) {
-        let lookupSettings = LookupWebViewHandler.LookupSettings(libraryIdentifier: libraryId, collectionKeys: collectionKeys)
+        let lookupSettings = LookupSettings(libraryIdentifier: libraryId, collectionKeys: collectionKeys)
         guard let lookupWebViewHandler = lookupWebViewHandlersByLookupSettings[lookupSettings] else {
             DDLogError("IdentifierLookupController: can't find lookup web view handler for settings - \(lookupSettings)")
             return
@@ -300,7 +305,7 @@ final class IdentifierLookupController {
         }
     }
     
-    private func setupObserver(for lookupWebViewHandler: LookupWebViewHandler) {
+    private func setupObserver(for lookupWebViewHandler: LookupWebViewHandler, libraryId: LibraryIdentifier, collectionKeys: Set<String>) {
         lookupWebViewHandler.observable
             .subscribe { result in
                 process(result: result)
@@ -373,8 +378,6 @@ final class IdentifierLookupController {
                         return
                     }
 
-                    let libraryId = lookupWebViewHandler.lookupSettings.libraryIdentifier
-                    let collectionKeys = lookupWebViewHandler.lookupSettings.collectionKeys
                     guard let itemData = data["data"] as? [[String: Any]],
                           let item = itemData.first,
                           let (response, attachments) = parse(item, libraryId: libraryId, collectionKeys: collectionKeys, schemaController: schemaController, dateParser: dateParser)
