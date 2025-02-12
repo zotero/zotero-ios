@@ -281,6 +281,9 @@ class HtmlEpubDocumentViewController: UIViewController {
                 }
                 parentDelegate?.show(url: url)
 
+            case "onSetOutline":
+                viewModel.process(action: .parseOutline(data: data))
+
             default:
                 break
             }
