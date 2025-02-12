@@ -91,6 +91,10 @@ class HtmlEpubDocumentViewController: UIViewController {
 
     // MARK: - Actions
 
+    func show(location: [String: Any]) {
+        webViewHandler.call(javascript: "navigate({ location: \(WebViewEncoder.encodeAsJSONForJavascript(location)) });").subscribe().disposed(by: disposeBag)
+    }
+
     private func deselectText() {
         webViewHandler.call(javascript: "window._view.selectAnnotations([]);").subscribe().disposed(by: disposeBag)
     }
