@@ -153,6 +153,28 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
         case .createAnnotationFromSelection(let type):
             saveAnnotationFromSelection(type: type, in: viewModel)
+
+        case .parseOutline(let data):
+            parse(outline: data, viewModel: viewModel)
+        }
+    }
+
+    private func parse(outline data: [String: Any], viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
+        guard let params = data["params"] as? [String: Any], let outline = params["outline"] as? [[String: Any]] else { return }
+        var outlines: [HtmlEpubReaderState.Outline] = []
+        for item in outline {
+            guard let outline = parseOutline(from: item) else { continue }
+            outlines.append(outline)
+        }
+        update(viewModel: viewModel) { state in
+            state.outlines = outlines
+            state.changes = .outline
+        }
+
+        func parseOutline(from data: [String: Any]) -> HtmlEpubReaderState.Outline? {
+            guard let title = data["title"] as? String, let location = data["location"] as? [String: Any], let rawChildren = data["items"] as? [[String: Any]] else { return nil }
+            let children = rawChildren.compactMap({ parseOutline(from: $0) })
+            return HtmlEpubReaderState.Outline(title: title, location: location, children: children)
         }
     }
 

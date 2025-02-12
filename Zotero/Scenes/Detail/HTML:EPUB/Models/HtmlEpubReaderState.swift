@@ -29,6 +29,7 @@ struct HtmlEpubReaderState: ViewModelState {
         static let popover = Changes(rawValue: 1 << 10)
         static let md5 = Changes(rawValue: 1 << 11)
         static let library = Changes(rawValue: 1 << 12)
+        static let outline = Changes(rawValue: 1 << 13)
     }
 
     struct DocumentData {
@@ -47,6 +48,12 @@ struct HtmlEpubReaderState: ViewModelState {
         let deletions: [String]
         let insertions: [[String: Any]]
         let modifications: [[String: Any]]
+    }
+
+    struct Outline {
+        let title: String
+        let location: [String: Any]
+        let children: [Outline]
     }
 
     enum Error: ReaderError {
@@ -128,6 +135,8 @@ struct HtmlEpubReaderState: ViewModelState {
     var annotationsToken: NotificationToken?
     var libraryToken: NotificationToken?
     var deletionEnabled: Bool
+    var outlines: [Outline]
+    var outlineSearch: String
 
     init(url: URL, key: String, parentKey: String?, title: String?, settings: HtmlEpubSettings, libraryId: LibraryIdentifier, userId: Int, username: String) {
         let originalFile = Files.file(from: url)
@@ -155,6 +164,8 @@ struct HtmlEpubReaderState: ViewModelState {
         changes = []
         deletionEnabled = false
         selectedAnnotationsDuringEditing = []
+        outlines = []
+        outlineSearch = ""
 
         switch libraryId {
         case .custom:
