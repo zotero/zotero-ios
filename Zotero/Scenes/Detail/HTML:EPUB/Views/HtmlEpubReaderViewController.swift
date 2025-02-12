@@ -563,6 +563,6 @@ extension HtmlEpubReaderViewController: ReaderAnnotationsDelegate {
 
 extension HtmlEpubReaderViewController: HtmlEpubSidebarDelegate {
     func tableOfContentsSelected(location: [String: Any]) {
-        return
+        documentController?.show(location: location)
     }
 }
