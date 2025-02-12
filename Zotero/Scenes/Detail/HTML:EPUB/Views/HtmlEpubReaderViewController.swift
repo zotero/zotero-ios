@@ -560,3 +560,9 @@ extension HtmlEpubReaderViewController: ReaderAnnotationsDelegate {
         return viewModel.state.comments[annotation.key]
     }
 }
+
+extension HtmlEpubReaderViewController: HtmlEpubSidebarDelegate {
+    func tableOfContentsSelected(location: [String: Any]) {
+        return
+    }
+}

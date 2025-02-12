@@ -32,7 +32,7 @@ final class PDFAnnotationsViewController: UIViewController {
     private var dataSource: TableViewDiffableDataSource<Int, PDFReaderState.AnnotationKey>!
     private var searchController: UISearchController!
 
-    weak var parentDelegate: (PDFReaderContainerDelegate & SidebarDelegate & ReaderAnnotationsDelegate)?
+    weak var parentDelegate: (PDFReaderContainerDelegate & PDFSidebarDelegate & ReaderAnnotationsDelegate)?
     weak var coordinatorDelegate: PdfAnnotationsCoordinatorDelegate?
     weak var boundingBoxConverter: AnnotationBoundingBoxConverter?
 
