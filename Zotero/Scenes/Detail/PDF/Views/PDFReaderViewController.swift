@@ -820,7 +820,7 @@ extension PDFReaderViewController: AnnotationToolbarDelegate {
     }
 }
 
-extension PDFReaderViewController: SidebarDelegate {
+extension PDFReaderViewController: PDFSidebarDelegate {
     func tableOfContentsSelected(page: UInt) {
         documentController?.focus(page: page)
         if UIDevice.current.userInterfaceIdiom == .phone {
