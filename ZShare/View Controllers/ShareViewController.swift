@@ -67,6 +67,7 @@ final class ShareViewController: UIViewController {
     private var fileStorage: FileStorage!
     private var debugLogging: DebugLogging!
     private var schemaController: SchemaController!
+    private var pdfWorkerController: PDFWorkerController!
     private var secureStorage: KeychainSecureStorage!
     private var viewModel: ExtensionViewModel!
     private var storeCancellable: AnyCancellable?
@@ -721,15 +722,18 @@ final class ShareViewController: UIViewController {
         let translatorsController = TranslatorsAndStylesController(apiClient: apiClient, bundledDataStorage: bundledDataStorage, fileStorage: fileStorage)
         let secureStorage = KeychainSecureStorage()
         let webDavController = WebDavControllerImpl(dbStorage: dbStorage, fileStorage: fileStorage, sessionStorage: SecureWebDavSessionStorage(secureStorage: secureStorage))
+        let pdfWorkerController = PDFWorkerController()
 
         apiClient.set(authToken: ("Bearer " + session.apiToken))
         translatorsController.updateFromRepo(type: .shareExtension)
+        pdfWorkerController.webViewProvider = self
 
         self.fileStorage = fileStorage
         self.schemaController = schemaController
         self.dbStorage = dbStorage
         self.bundledDataStorage = bundledDataStorage
         self.translatorsController = translatorsController
+        self.pdfWorkerController = pdfWorkerController
         self.secureStorage = secureStorage
 
         self.viewModel = self.createViewModel(for: session.userId, dbStorage: dbStorage, apiClient: apiClient, schemaController: schemaController, fileStorage: fileStorage,
@@ -748,9 +752,37 @@ final class ShareViewController: UIViewController {
         let attachmentDownloader = AttachmentDownloader(userId: userId, apiClient: apiClient, fileStorage: fileStorage, dbStorage: dbStorage, webDavController: webDavController)
         let syncController = SyncController(userId: userId, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage, schemaController: schemaController, dateParser: dateParser,
                                             backgroundUploaderContext: backgroundUploadContext, webDavController: webDavController, attachmentDownloader: attachmentDownloader, syncDelayIntervals: DelayIntervals.sync, maxRetryCount: DelayIntervals.retry.count)
+        let recognizerController = RecognizerController(
+            pdfWorkerController: pdfWorkerController,
+            apiClient: apiClient,
+            translatorsController: translatorsController,
+            schemaController: schemaController
+        )
+        recognizerController.webViewProvider = self
 
-        return ExtensionViewModel(webView: self.webView, apiClient: apiClient, attachmentDownloader: attachmentDownloader, backgroundUploader: backgroundUploader, backgroundUploadObserver: backgroundUploadObserver, dbStorage: dbStorage,
-                                  schemaController: schemaController, webDavController: webDavController, dateParser: dateParser, fileStorage: fileStorage, syncController: syncController,
-                                  translatorsController: translatorsController)
+        return ExtensionViewModel(
+            webView: webView,
+            apiClient: apiClient,
+            attachmentDownloader: attachmentDownloader,
+            backgroundUploader: backgroundUploader,
+            backgroundUploadObserver: backgroundUploadObserver,
+            dbStorage: dbStorage,
+            schemaController: schemaController,
+            webDavController: webDavController,
+            dateParser: dateParser,
+            fileStorage: fileStorage,
+            syncController: syncController,
+            translatorsController: translatorsController,
+            recognizerController: recognizerController
+        )
+    }
+}
+
+extension ShareViewController: WebViewProvider {
+    func addWebView(configuration: WKWebViewConfiguration?) -> WKWebView {
+        let webView: WKWebView = configuration.flatMap({ WKWebView(frame: .zero, configuration: $0) }) ?? WKWebView()
+        webView.isHidden = true
+        view.insertSubview(webView, at: 0)
+        return webView
     }
 }
