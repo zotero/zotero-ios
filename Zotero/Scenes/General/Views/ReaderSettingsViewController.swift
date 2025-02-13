@@ -148,6 +148,7 @@ final class ReaderSettingsViewController: UICollectionViewController {
                 }
                 actions = [UIAction(title: L10n.Pdf.Settings.Appearance.lightMode, handler: { [weak self] _ in self?.viewModel.process(action: .setAppearance(.light)) }),
                            UIAction(title: L10n.Pdf.Settings.Appearance.darkMode, handler: { [weak self] _ in self?.viewModel.process(action: .setAppearance(.dark)) }),
+                           UIAction(title: L10n.Pdf.Settings.Appearance.sepiaMode, handler: { [weak self] _ in self?.viewModel.process(action: .setAppearance(.sepia)) }),
                            UIAction(title: L10n.Pdf.Settings.Appearance.auto, handler: { [weak self] _ in self?.viewModel.process(action: .setAppearance(.automatic)) })]
             }
 

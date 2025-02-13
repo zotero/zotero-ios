@@ -52,6 +52,7 @@ struct PDFReaderState: ViewModelState {
         static let activeFontSize = Changes(rawValue: 1 << 15)
         static let library = Changes(rawValue: 1 << 16)
         static let md5 = Changes(rawValue: 1 << 17)
+        static let appearanceMode = Changes(rawValue: 1 << 18)
     }
 
     enum Error: Swift.Error {

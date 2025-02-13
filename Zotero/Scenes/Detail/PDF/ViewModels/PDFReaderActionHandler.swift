@@ -483,8 +483,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     private func update(settings: PDFSettings, parentInterfaceStyle: UIUserInterfaceStyle, in viewModel: ViewModel<PDFReaderActionHandler>) {
         // Update local state
         update(viewModel: viewModel) { state in
+            if state.settings.appearanceMode != settings.appearanceMode {
+                state.changes = .appearanceMode
+            }
             state.settings = settings
-            state.changes = .settings
+            state.changes.insert(.settings)
         }
         // Store new settings to defaults
         Defaults.shared.pdfSettings = settings
@@ -495,7 +498,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         case .dark:
             settingsInterfaceStyle = .dark
 
-        case .light:
+        case .light, .sepia:
             settingsInterfaceStyle = .light
 
         case .automatic:

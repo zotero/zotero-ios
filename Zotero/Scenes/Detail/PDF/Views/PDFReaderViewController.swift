@@ -526,7 +526,7 @@ class PDFReaderViewController: UIViewController {
         case .automatic:
             navigationController?.overrideUserInterfaceStyle = .unspecified
 
-        case .light:
+        case .light, .sepia:
             navigationController?.overrideUserInterfaceStyle = .light
 
         case .dark:

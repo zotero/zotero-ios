@@ -1047,6 +1047,8 @@ internal enum L10n {
         internal static let darkMode = L10n.tr("Localizable", "pdf.settings.appearance.dark_mode", fallback: "Dark")
         /// Light
         internal static let lightMode = L10n.tr("Localizable", "pdf.settings.appearance.light_mode", fallback: "Light")
+        /// Sepia
+        internal static let sepiaMode = L10n.tr("Localizable", "pdf.settings.appearance.sepia_mode", fallback: "Sepia")
         /// Appearance
         internal static let title = L10n.tr("Localizable", "pdf.settings.appearance.title", fallback: "Appearance")
       }

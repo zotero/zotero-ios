@@ -262,6 +262,7 @@
 "pdf.settings.appearance.auto" = "Automatic";
 "pdf.settings.appearance.light_mode" = "Light";
 "pdf.settings.appearance.dark_mode" = "Dark";
+"pdf.settings.appearance.sepia_mode" = "Sepia";
 "pdf.settings.page_mode.title" = "Page Mode";
 "pdf.settings.page_mode.single" = "Single";
 "pdf.settings.page_mode.double" = "Double";
