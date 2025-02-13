@@ -315,6 +315,7 @@ final class ExtensionViewModel {
     private let backgroundUploadObserver: BackgroundUploadObserver
     private let backgroundQueue: DispatchQueue
     private let backgroundScheduler: SerialDispatchQueueScheduler
+    private let recognizerController: RecognizerController
     private let disposeBag: DisposeBag
     // Custom `URLSession` has to be used for downloading, instead of existing `apiClient`, so that we can include original cookies in download requests.
     private let downloadUrlSession: URLSession
@@ -325,8 +326,21 @@ final class ExtensionViewModel {
         let mtime: Int
     }
 
-    init(webView: WKWebView, apiClient: ApiClient, attachmentDownloader: AttachmentDownloader, backgroundUploader: BackgroundUploader, backgroundUploadObserver: BackgroundUploadObserver, dbStorage: DbStorage, schemaController: SchemaController,
-         webDavController: WebDavController, dateParser: DateParser, fileStorage: FileStorage, syncController: SyncController, translatorsController: TranslatorsAndStylesController) {
+    init(
+        webView: WKWebView,
+        apiClient: ApiClient,
+        attachmentDownloader: AttachmentDownloader,
+        backgroundUploader: BackgroundUploader,
+        backgroundUploadObserver: BackgroundUploadObserver,
+        dbStorage: DbStorage,
+        schemaController: SchemaController,
+        webDavController: WebDavController,
+        dateParser: DateParser,
+        fileStorage: FileStorage,
+        syncController: SyncController,
+        translatorsController: TranslatorsAndStylesController,
+        recognizerController: RecognizerController
+    ) {
         let queue = DispatchQueue(label: "org.zotero.ZShare.BackgroundQueue", qos: .userInteractive)
 
         let storage = HTTPCookieStorage.sharedCookieStorage(forGroupContainerIdentifier: AppGroup.identifier)
@@ -355,6 +369,7 @@ final class ExtensionViewModel {
         self.translationHandler = TranslationWebViewHandler(webView: webView, translatorsController: translatorsController)
         self.backgroundQueue = queue
         self.backgroundScheduler = SerialDispatchQueueScheduler(queue: queue, internalSerialQueueName: "org.zotero.ZShare.BackgroundScheduler")
+        self.recognizerController = recognizerController
         self.state = State()
         self.disposeBag = DisposeBag()
 
@@ -501,17 +516,56 @@ final class ExtensionViewModel {
         let filename = url.lastPathComponent
         let tmpFile = Files.temporaryFile(ext: url.pathExtension)
 
-        self.copyFile(from: url.path, to: tmpFile)
-            .subscribe(with: self, onSuccess: { `self`, _ in
-                var state = self.state
-                state.processedAttachment = .file(file: tmpFile, filename: filename)
-                state.expectedAttachment = (filename, tmpFile)
-                state.attachmentState = .processed
-                self.state = state
-            }, onFailure: { `self`, _ in
-                self.state.attachmentState = .failed(.fileMissing)
+        copyFile(from: url.path, to: tmpFile)
+            .subscribe(onSuccess: { [weak self] _ in
+                guard let self else { return }
+                guard fileStorage.isPdf(file: tmpFile), let file = tmpFile as? FileData else {
+                    updateState(with: .processed)
+                    return
+                }
+                recognize(file: file)
+            }, onFailure: { [weak self] _ in
+                self?.state.attachmentState = .failed(.fileMissing)
             })
-            .disposed(by: self.disposeBag)
+            .disposed(by: disposeBag)
+
+        func updateState(with attachmentState: State.AttachmentState) {
+            var state = self.state
+            state.processedAttachment = .file(file: tmpFile, filename: filename)
+            state.expectedAttachment = (filename, tmpFile)
+            state.attachmentState = attachmentState
+            self.state = state
+        }
+
+        func recognize(file: FileData) {
+            recognizerController.queue(task: RecognizerController.RecognizerTask(file: file)) { [weak self] observable in
+                guard let self else { return }
+                observable?.subscribe { [weak self] update in
+                    guard let self else { return }
+                    switch update.kind {
+                    case .failed(let error):
+                        DDLogError("ExtensionViewModel: could not recognize shared file - \(error)")
+                        updateState(with: .processed)
+
+                    case .cancelled:
+                        updateState(with: .processed)
+
+                    case .recognitionInProgress, .remoteRecognitionInProgress, .identifierLookupInProgress:
+                        updateState(with: .decoding)
+
+                    case .translated(item: let item):
+                        var state = self.state
+                        state.expectedItem = item
+                        state.expectedAttachment = (filename, tmpFile)
+                        state.attachmentState = .processed
+                        // attachment is only used to get an optional URL, so we can safely pass an empty dictionary
+                        state.processedAttachment = .itemWithAttachment(item: item, attachment: [:], attachmentFile: file)
+                        self.state = state
+                    }
+                }
+                .disposed(by: disposeBag)
+            }
+        }
     }
 
     private func process(remoteFileUrl url: URL, contentType: String, cookies: String, userAgent: String, referrer: String) {

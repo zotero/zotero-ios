@@ -41,6 +41,10 @@
 		615FD8772C8B475A00808C1D /* ReaderCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 615FD8762C8B475A00808C1D /* ReaderCoordinator.swift */; };
 		6162F2512D076A990096FEEE /* ReaderAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6162F2502D076A990096FEEE /* ReaderAnnotation.swift */; };
 		615C10E12D5BA17A001F1E8E /* RecognizerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 615C10E02D5BA17A001F1E8E /* RecognizerController.swift */; };
+		615C10E22D5E22F1001F1E8E /* RecognizerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 615C10E02D5BA17A001F1E8E /* RecognizerController.swift */; };
+		615C10E32D5E230D001F1E8E /* PDFWorkerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61168F602D50D4B6005495E8 /* PDFWorkerController.swift */; };
+		615C10E42D5E3229001F1E8E /* LookupWebViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B323703F2C0DC65600170779 /* LookupWebViewHandler.swift */; };
+		615C10E62D5E329F001F1E8E /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 615C10E52D5E329F001F1E8E /* OrderedCollections */; };
 		61639F852AE03B8500026003 /* InstantPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61639F842AE03B8500026003 /* InstantPresenter.swift */; };
 		618404262A4456A9005AAF22 /* IdentifierLookupController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 618404252A4456A9005AAF22 /* IdentifierLookupController.swift */; };
 		618D83E72BAAC88C00E7966B /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 618D83E62BAAC88C00E7966B /* PrivacyInfo.xcprivacy */; };
@@ -2280,6 +2284,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				615C10E62D5E329F001F1E8E /* OrderedCollections in Frameworks */,
 				B35C9C0C2642A0E40004C47E /* RealmSwift in Frameworks */,
 				B356A33725248C9E003F1943 /* RxRelay in Frameworks */,
 				B3F7B06A2524A78F00E51377 /* CocoaLumberjackSwift in Frameworks */,
@@ -4532,6 +4537,7 @@
 				B3F7B0722524A8D500E51377 /* KeychainSwift */,
 				B3F7B0742524A8D800E51377 /* ZIPFoundation */,
 				B35C9C0B2642A0E40004C47E /* RealmSwift */,
+				615C10E52D5E329F001F1E8E /* OrderedCollections */,
 			);
 			productName = ZShare;
 			productReference = B311B31C2386A39800BCF592 /* ZShare.appex */;
@@ -5814,6 +5820,7 @@
 				B305676823FC0A0B003304F2 /* Predicates.swift in Sources */,
 				B305676923FC0A0B003304F2 /* SortType.swift in Sources */,
 				B305676A23FC0A0B003304F2 /* SyncableObject.swift in Sources */,
+				615C10E32D5E230D001F1E8E /* PDFWorkerController.swift in Sources */,
 				B3748D2026566F4800ED05F8 /* ContainerViewController.swift in Sources */,
 				B305676B23FC0A0B003304F2 /* Tag.swift in Sources */,
 				B305676C23FC0A0B003304F2 /* UpdatableObject.swift in Sources */,
@@ -5841,6 +5848,7 @@
 				B3F0FDCB2888185D00949BC9 /* MarkFileAsDownloadedDbRequest.swift in Sources */,
 				B305674623FC09AF003304F2 /* SearchesResponse.swift in Sources */,
 				B305674723FC09AF003304F2 /* SchemaResponse.swift in Sources */,
+				615C10E22D5E22F1001F1E8E /* RecognizerController.swift in Sources */,
 				B300B3362429234C00C1FE1E /* TranslatorMetadata.swift in Sources */,
 				B305674923FC09AF003304F2 /* RTag.swift in Sources */,
 				B39C9AB7252B589F00462D27 /* Threading+Extras.swift in Sources */,
@@ -5886,6 +5894,7 @@
 				B305671B23FC08DC003304F2 /* StoreSearchesDbRequest.swift in Sources */,
 				B30566FE23FC0867003304F2 /* MarkGroupAsLocalOnlyDbRequest.swift in Sources */,
 				B3AB38A9238EC060008A1ABB /* AllCollectionPickerActionHandler.swift in Sources */,
+				615C10E42D5E3229001F1E8E /* LookupWebViewHandler.swift in Sources */,
 				B305673923FC0936003304F2 /* SyncProgressHandler.swift in Sources */,
 				B33E8A4427B6769A00CBC7DE /* CollectionTree.swift in Sources */,
 				B305672323FC08F6003304F2 /* FileStorage.swift in Sources */,
@@ -6931,6 +6940,11 @@
 			productName = RealmSwift;
 		};
 		614D65862A8030C9007CF449 /* OrderedCollections */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 614D65852A8030C9007CF449 /* XCRemoteSwiftPackageReference "swift-collections" */;
+			productName = OrderedCollections;
+		};
+		615C10E52D5E329F001F1E8E /* OrderedCollections */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 614D65852A8030C9007CF449 /* XCRemoteSwiftPackageReference "swift-collections" */;
 			productName = OrderedCollections;
