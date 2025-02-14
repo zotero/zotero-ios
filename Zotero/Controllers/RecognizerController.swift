@@ -15,6 +15,39 @@ import RxSwift
 
 final class RecognizerController {
     // MARK: Types
+    enum RemoteRecognizerIdentifier {
+        case arXiv(String)
+        case doi(String)
+        case isbn(String)
+        case title(String)
+
+        var identifierWithPrefix: String {
+            switch self {
+            case .arXiv(let identifier):
+                return "arXiv: \(identifier)"
+
+            case .doi(let identifier):
+                return "DOI: \(identifier)"
+
+            case .isbn(let identifier):
+                return "ISBN: \(identifier)"
+
+            case .title(let identifier):
+                return identifier
+            }
+        }
+
+        var copyTagsAsAutomatic: Bool {
+            switch self {
+            case .isbn:
+                return true
+
+            case .arXiv, .doi, .title:
+                return false
+            }
+        }
+    }
+
     struct RemoteRecognizerResponse: Decodable {
         struct Author: Decodable {
             let firstName, lastName: String?
@@ -48,10 +81,8 @@ final class RecognizerController {
         case pdfWorkerError
         case recognizerFailed
         case remoteRecognizerFailed
-        case cantCreateLookupWebViewHandler
-        case identifierNotAccepted
-        case lookupFailed
-        case parseFailed
+        case noRemainingIdentifiersForLookup
+        case unexpectedState
     }
 
     struct Update {
@@ -60,7 +91,7 @@ final class RecognizerController {
             case cancelled
             case recognitionInProgress
             case remoteRecognitionInProgress(data: [String: Any])
-            case identifierLookupInProgress(response: RemoteRecognizerResponse)
+            case identifierLookupInProgress(response: RemoteRecognizerResponse, identifier: String)
             case translated(item: ItemResponse)
         }
 
@@ -71,8 +102,8 @@ final class RecognizerController {
     enum RecognizerTaskState {
         case enqueued
         case recognitionInProgress
-        case remoteRecognitionInProgress
-        case identifierLookupInProgress
+        case remoteRecognitionInProgress(data: [String: Any])
+        case identifiersLookupInProgress(response: RemoteRecognizerResponse, currentIdentifier: RemoteRecognizerIdentifier, pendingIdentifiers: [RemoteRecognizerIdentifier])
     }
 
     // MARK: Properties
@@ -126,8 +157,16 @@ final class RecognizerController {
     }
 
     private func startRecognitionIfNeeded() {
-        let recognitionInProgressCount = queue.filter({ $0.value.state == .recognitionInProgress }).count
-        guard recognitionInProgressCount < Self.maxConcurrentRecognizerTasks else { return }
+        let runningRecognizerTasksCount = queue.filter({
+            switch $0.value.state {
+            case .enqueued:
+                return false
+
+            case .recognitionInProgress, .remoteRecognitionInProgress, .identifiersLookupInProgress:
+                return true
+            }
+        }).count
+        guard runningRecognizerTasksCount < Self.maxConcurrentRecognizerTasks else { return }
         let tasks = queue.keys
         for task in tasks {
             guard let (state, observable) = queue[task] else { continue }
@@ -137,7 +176,7 @@ final class RecognizerController {
                 startRecognitionIfNeeded()
                 return
 
-            case .recognitionInProgress, .remoteRecognitionInProgress, .identifierLookupInProgress:
+            case .recognitionInProgress, .remoteRecognitionInProgress, .identifiersLookupInProgress:
                 break
             }
         }
@@ -149,7 +188,7 @@ final class RecognizerController {
             pdfWorkerController.queue(work: PDFWorkerController.PDFWork(file: task.file, kind: .recognizer)) { [weak self] pdfWorkerObservable in
                 guard let self else { return }
                 guard let pdfWorkerObservable else {
-                    DDLogError("RecognizerController: can't create start PDF worker")
+                    DDLogError("RecognizerController: \(task) - can't create start PDF worker")
                     cleanupTask(for: task) { observable in
                         observable?.on(.next(Update(task: task, kind: .failed(.cantStartPDFWorker))))
                     }
@@ -163,7 +202,7 @@ final class RecognizerController {
             func process(update: PDFWorkerController.Update) {
                 switch update.kind {
                 case .failed:
-                    DDLogError("RecognizerController: recognizer failed")
+                    DDLogError("RecognizerController: \(task) - recognizer failed")
                     cleanupTask(for: task) { observable in
                         observable?.on(.next(Update(task: task, kind: .failed(.recognizerFailed))))
                     }
@@ -177,11 +216,11 @@ final class RecognizerController {
                     break
 
                 case .extractedRecognizerData(data: let data):
-                    DDLogInfo("RecognizerController: extracted recognizer data")
+                    DDLogInfo("RecognizerController: \(task) - extracted recognizer data")
                     startRemoteRecognition(for: task, with: data)
 
                 case .extractedFullText:
-                    DDLogError("RecognizerController: PDF worker error")
+                    DDLogError("RecognizerController: \(task) - PDF worker error")
                     cleanupTask(for: task) { observable in
                         observable?.on(.next(Update(task: task, kind: .failed(.pdfWorkerError))))
                     }
@@ -197,17 +236,16 @@ final class RecognizerController {
                 startRecognitionIfNeeded()
                 return
             }
-            queue[task] = (.remoteRecognitionInProgress, observable)
+            queue[task] = (.remoteRecognitionInProgress(data: data), observable)
             observable.on(.next(Update(task: task, kind: .remoteRecognitionInProgress(data: data))))
 
             apiClient.send(request: RecognizerRequest(parameters: data)).subscribe(
-                onSuccess: { [weak self] (response: (RemoteRecognizerResponse, HTTPURLResponse)) in
-                    DDLogInfo("RecognizerController: remote recognizer response received")
-                    guard let self else { return }
+                onSuccess: { (response: (RemoteRecognizerResponse, HTTPURLResponse)) in
+                    DDLogInfo("RecognizerController: \(task) - remote recognizer response received")
                     process(response: response.0)
                 },
                 onFailure: { [weak self] error in
-                    DDLogError("RecognizerController: remote recognizer request failed: \(error)")
+                    DDLogError("RecognizerController: \(task) - remote recognizer request failed: \(error)")
                     self?.cleanupTask(for: task) { observable in
                         observable?.on(.next(Update(task: task, kind: .failed(error as! Error))))
                     }
@@ -217,163 +255,223 @@ final class RecognizerController {
         }
 
         func process(response: RemoteRecognizerResponse) {
-            var identifier: String?
-            var copyTagsAsAutomatic = false
-            if let arxiv = response.arxiv {
-                identifier = "arXiv: \(arxiv)"
-            } else if let doi = response.doi {
-                identifier = "DOI: \(doi)"
-            } else if let isbn = response.isbn {
-                identifier = "ISBN: \(isbn)"
-                copyTagsAsAutomatic = true
+            var identifiers: [RemoteRecognizerIdentifier] = []
+            if let identifier = response.arxiv {
+                identifiers.append(.arXiv(identifier))
             }
-            if let identifier {
-                startIdentifierLookup(for: task, with: identifier, response: response, copyTagsAsAutomatic: copyTagsAsAutomatic)
-                return
+            if let identifier = response.doi {
+                identifiers.append(.doi(identifier))
             }
-            if let title = response.title {
-                let creators = response.authors.map({ CreatorResponse(creatorType: "author", firstName: $0.firstName, lastName: $0.lastName) })
-                var fields: [KeyBaseKeyPair: String] = [:]
-                fields[KeyBaseKeyPair(key: FieldKeys.Item.title, baseKey: nil)] = title
-                fields[KeyBaseKeyPair(key: FieldKeys.Item.abstract, baseKey: nil)] = response.abstract
-                fields[KeyBaseKeyPair(key: FieldKeys.Item.date, baseKey: nil)] = response.year
-                fields[KeyBaseKeyPair(key: FieldKeys.Item.pages, baseKey: nil)] = response.pages
-                fields[KeyBaseKeyPair(key: FieldKeys.Item.volume, baseKey: nil)] = response.volume
-                fields[KeyBaseKeyPair(key: FieldKeys.Item.url, baseKey: nil)] = response.url
-                fields[KeyBaseKeyPair(key: FieldKeys.Item.language, baseKey: nil)] = response.language
-                let rawType: String
-                if response.type == "book-chapter" {
-                    rawType = "bookSection"
-                    fields[KeyBaseKeyPair(key: FieldKeys.Item.bookTitle, baseKey: nil)] = response.container
-                    fields[KeyBaseKeyPair(key: FieldKeys.Item.publisher, baseKey: nil)] = response.publisher
-                } else {
-                    rawType = "journalArticle"
-                    fields[KeyBaseKeyPair(key: FieldKeys.Item.issue, baseKey: nil)] = response.issue
-                    fields[KeyBaseKeyPair(key: FieldKeys.Item.issn, baseKey: nil)] = response.issn
-                    fields[KeyBaseKeyPair(key: FieldKeys.Item.publicationTitle, baseKey: nil)] = response.container
-                }
-                let accessDate = Date()
-
-                let itemResponse = ItemResponse(
-                    rawType: rawType,
-                    key: KeyGenerator.newKey,
-                    library: LibraryResponse(id: 0, name: "", type: "", links: nil),
-                    parentKey: nil,
-                    collectionKeys: [],
-                    links: nil,
-                    parsedDate: nil,
-                    isTrash: false,
-                    version: 0,
-                    dateModified: accessDate,
-                    dateAdded: accessDate,
-                    fields: fields,
-                    tags: [],
-                    creators: creators,
-                    relations: [:],
-                    createdBy: nil,
-                    lastModifiedBy: nil,
-                    rects: nil,
-                    paths: nil
-                )
+            if let identifier = response.isbn {
+                identifiers.append(.isbn(identifier))
+            }
+            if let identifier = response.title {
+                identifiers.append(.title(identifier))
+            }
+            guard !identifiers.isEmpty else {
                 cleanupTask(for: task) { observable in
-                    observable?.on(.next(Update(task: task, kind: .translated(item: itemResponse))))
+                    observable?.on(.next(Update(task: task, kind: .failed(.remoteRecognizerFailed))))
                 }
                 return
             }
-            cleanupTask(for: task) { observable in
-                observable?.on(.next(Update(task: task, kind: .failed(.remoteRecognizerFailed))))
-            }
+            startIdentifiersLookup(for: task, with: response, pendingIdentifiers: identifiers)
         }
     }
 
-    private func startIdentifierLookup(for task: RecognizerTask, with identifier: String, response: RemoteRecognizerResponse, copyTagsAsAutomatic: Bool) {
+    private func startIdentifiersLookup(for task: RecognizerTask, with response: RemoteRecognizerResponse, pendingIdentifiers: [RemoteRecognizerIdentifier]) {
         accessQueue.async(flags: .barrier) { [weak self] in
-            DDLogInfo("RecognizerController: starting identifier lookup - \(identifier)")
             guard let self else { return }
-            guard let (_, observable) = queue[task] else {
+            guard let (state, _) = queue[task] else {
                 startRecognitionIfNeeded()
                 return
             }
-            var lookupWebViewHandler = lookupWebViewHandlersByRecognizerTask[task]
-            if lookupWebViewHandler == nil {
-                DispatchQueue.main.sync { [weak webViewProvider] in
-                    guard let webViewProvider else { return }
-                    let webView = webViewProvider.addWebView(configuration: nil)
-                    lookupWebViewHandler = LookupWebViewHandler(webView: webView, translatorsController: self.translatorsController)
-                }
-            }
-            guard let lookupWebViewHandler else {
-                DDLogError("RecognizerController: can't create LookupWebViewHandler instance")
+            guard case .remoteRecognitionInProgress = state else {
                 cleanupTask(for: task) { observable in
-                    observable?.on(.next(Update(task: task, kind: .failed(.cantCreateLookupWebViewHandler))))
+                    observable?.on(.next(Update(task: task, kind: .failed(.unexpectedState))))
                 }
                 return
             }
-            lookupWebViewHandlersByRecognizerTask[task] = lookupWebViewHandler
-            setupObserver(for: lookupWebViewHandler)
-            queue[task] = (.identifierLookupInProgress, observable)
-            observable.on(.next(Update(task: task, kind: .identifierLookupInProgress(response: response))))
+            lookupNextIdentifier(for: task, with: response, pendingIdentifiers: pendingIdentifiers)
+        }
+    }
+
+    private func enqueueNextIdentifierLookup(for task: RecognizerTask) {
+        if DispatchQueue.getSpecific(key: dispatchSpecificKey) == accessQueueLabel {
+            _enqueueNextIdentifierLookup(for: task)
+        } else {
+            accessQueue.async(flags: .barrier) {
+                _enqueueNextIdentifierLookup(for: task)
+            }
+        }
+
+        func _enqueueNextIdentifierLookup(for task: RecognizerTask) {
+            guard let (state, _) = queue[task] else {
+                startRecognitionIfNeeded()
+                return
+            }
+            guard case .identifiersLookupInProgress(let response, _, let pendingIdentifiers) = state else {
+                cleanupTask(for: task) { observable in
+                    observable?.on(.next(Update(task: task, kind: .failed(.unexpectedState))))
+                }
+                return
+            }
+            lookupNextIdentifier(for: task, with: response, pendingIdentifiers: pendingIdentifiers)
+        }
+    }
+
+    private func lookupNextIdentifier(for task: RecognizerTask, with response: RemoteRecognizerResponse, pendingIdentifiers: [RemoteRecognizerIdentifier]) {
+        DDLogInfo("RecognizerController: \(task) - looking up next identifier from \(pendingIdentifiers)")
+        guard let (_, observable) = queue[task] else {
+            startRecognitionIfNeeded()
+            return
+        }
+        guard !pendingIdentifiers.isEmpty else {
+            cleanupTask(for: task) { observable in
+                observable?.on(.next(Update(task: task, kind: .failed(.noRemainingIdentifiersForLookup))))
+            }
+            return
+        }
+        var remainingIdentifiers = pendingIdentifiers
+        let identifier = remainingIdentifiers.removeFirst()
+        queue[task] = (.identifiersLookupInProgress(response: response, currentIdentifier: identifier, pendingIdentifiers: remainingIdentifiers), observable)
+
+        switch identifier {
+        case .arXiv, .doi, .isbn:
+            lookup(identifier: identifier.identifierWithPrefix, copyTagsAsAutomatic: identifier.copyTagsAsAutomatic, remainingIdentifiers: remainingIdentifiers)
+
+        case .title(let title):
+            use(title: title, with: response)
+        }
+
+        func lookup(identifier: String, copyTagsAsAutomatic: Bool, remainingIdentifiers: [RemoteRecognizerIdentifier]) {
+            DDLogInfo("RecognizerController: \(task) - looking up identifier \(identifier)")
+            guard let lookupWebViewHandler = getLookupWebViewHandler(for: task) else {
+                enqueueNextIdentifierLookup(for: task)
+                return
+            }
+            observable.on(.next(Update(task: task, kind: .identifierLookupInProgress(response: response, identifier: identifier))))
             lookupWebViewHandler.lookUp(identifier: identifier)
 
-            func setupObserver(for lookupWebViewHandler: LookupWebViewHandler) {
-                lookupWebViewHandler.observable
-                    .subscribe(onNext: { process(result: $0) })
-                    .disposed(by: disposeBag)
+            func getLookupWebViewHandler(for task: RecognizerTask) -> LookupWebViewHandler? {
+                if let lookupWebViewHandler = lookupWebViewHandlersByRecognizerTask[task] {
+                    return lookupWebViewHandler
+                }
+                var lookupWebViewHandler: LookupWebViewHandler?
+                DispatchQueue.main.sync { [weak self, weak webViewProvider] in
+                    guard let self, let webViewProvider else { return }
+                    let webView = webViewProvider.addWebView(configuration: nil)
+                    lookupWebViewHandler = LookupWebViewHandler(webView: webView, translatorsController: translatorsController)
+                }
+                guard let lookupWebViewHandler else {
+                    DDLogWarn("RecognizerController: \(task) - can't create LookupWebViewHandler instance")
+                    return nil
+                }
+                lookupWebViewHandlersByRecognizerTask[task] = lookupWebViewHandler
+                setupObserver(for: lookupWebViewHandler)
+                return lookupWebViewHandler
 
-                func process(result: Result<LookupWebViewHandler.LookupData, Swift.Error>) {
-                    switch result {
-                    case .success(let data):
-                        switch data {
-                        case .identifiers(let identifiers):
-                            if identifiers.isEmpty {
-                                DDLogError("RecognizerController: identifier not accepted by LookupWebViewHandler")
+                func setupObserver(for lookupWebViewHandler: LookupWebViewHandler) {
+                    lookupWebViewHandler.observable
+                        .subscribe(onNext: { process(result: $0) })
+                        .disposed(by: disposeBag)
+
+                    func process(result: Result<LookupWebViewHandler.LookupData, Swift.Error>) {
+                        switch result {
+                        case .success(let data):
+                            switch data {
+                            case .identifiers(let identifiers):
+                                if identifiers.isEmpty {
+                                    DDLogWarn("RecognizerController: \(task) - identifier not accepted by LookupWebViewHandler")
+                                    enqueueNextIdentifierLookup(for: task)
+                                }
+
+                            case .item(let data):
+                                guard data["identifier"] as? [String: String] != nil else {
+                                    DDLogWarn("RecognizerController: \(task) - lookup item data don't contain identifier")
+                                    return
+                                }
+                                guard data.count > 1 else { return }
+                                if let error = data["error"] {
+                                    DDLogWarn("RecognizerController: \(task) - lookup failed - \(error)")
+                                    enqueueNextIdentifierLookup(for: task)
+                                    return
+                                }
+                                guard let itemData = data["data"] as? [[String: Any]],
+                                      let item = itemData.first.flatMap({
+                                          var item = $0
+                                          item[FieldKeys.Item.abstract] = item[FieldKeys.Item.abstract] ?? response.abstract
+                                          item[FieldKeys.Item.language] = item[FieldKeys.Item.language] ?? response.language
+                                          return item
+                                      }),
+                                      var itemResponse = try? ItemResponse(translatorResponse: item, schemaController: schemaController)
+                                else {
+                                    DDLogWarn("RecognizerController: \(task) - parse failed")
+                                    enqueueNextIdentifierLookup(for: task)
+                                    return
+                                }
+                                if copyTagsAsAutomatic, !itemResponse.tags.isEmpty {
+                                    itemResponse = itemResponse.copyWithAutomaticTags
+                                }
                                 cleanupTask(for: task) { observable in
-                                    observable?.on(.next(Update(task: task, kind: .failed(.identifierNotAccepted))))
+                                    observable?.on(.next(Update(task: task, kind: .translated(item: itemResponse))))
                                 }
                             }
 
-                        case .item(let data):
-                            guard data["identifier"] as? [String: String] != nil else {
-                                DDLogWarn("RecognizerController: lookup item data don't contain identifier")
-                                return
-                            }
-                            guard data.count > 1 else { return }
-                            if let error = data["error"] {
-                                DDLogError("RecognizerController: lookup failed - \(error)")
-                                cleanupTask(for: task) { observable in
-                                    observable?.on(.next(Update(task: task, kind: .failed(.lookupFailed))))
-                                }
-                                return
-                            }
-                            guard let itemData = data["data"] as? [[String: Any]],
-                                  let item = itemData.first.flatMap({
-                                      var item = $0
-                                      item[FieldKeys.Item.abstract] = item[FieldKeys.Item.abstract] ?? response.abstract
-                                      item[FieldKeys.Item.language] = item[FieldKeys.Item.language] ?? response.language
-                                      return item
-                                  }),
-                                  var itemResponse = try? ItemResponse(translatorResponse: item, schemaController: schemaController)
-                            else {
-                                cleanupTask(for: task) { observable in
-                                    observable?.on(.next(Update(task: task, kind: .failed(.parseFailed))))
-                                }
-                                return
-                            }
-                            if copyTagsAsAutomatic, !itemResponse.tags.isEmpty {
-                                itemResponse = itemResponse.copyWithAutomaticTags
-                            }
-                            cleanupTask(for: task) { observable in
-                                observable?.on(.next(Update(task: task, kind: .translated(item: itemResponse))))
-                            }
-                        }
-
-                    case .failure(let error):
-                        DDLogError("RecognizerController: identifier lookup failed - \(error)")
-                        cleanupTask(for: task) { observable in
-                            observable?.on(.next(Update(task: task, kind: .failed(error as! RecognizerController.Error))))
+                        case .failure(let error):
+                            DDLogError("RecognizerController: \(task) - identifier lookup failed - \(error)")
+                            enqueueNextIdentifierLookup(for: task)
                         }
                     }
                 }
+            }
+        }
+
+        func use(title: String, with response: RemoteRecognizerResponse) {
+            let creators = response.authors.map({ CreatorResponse(creatorType: "author", firstName: $0.firstName, lastName: $0.lastName) })
+            var fields: [KeyBaseKeyPair: String] = [:]
+            fields[KeyBaseKeyPair(key: FieldKeys.Item.title, baseKey: nil)] = title
+            fields[KeyBaseKeyPair(key: FieldKeys.Item.abstract, baseKey: nil)] = response.abstract
+            fields[KeyBaseKeyPair(key: FieldKeys.Item.date, baseKey: nil)] = response.year
+            fields[KeyBaseKeyPair(key: FieldKeys.Item.pages, baseKey: nil)] = response.pages
+            fields[KeyBaseKeyPair(key: FieldKeys.Item.volume, baseKey: nil)] = response.volume
+            fields[KeyBaseKeyPair(key: FieldKeys.Item.url, baseKey: nil)] = response.url
+            fields[KeyBaseKeyPair(key: FieldKeys.Item.language, baseKey: nil)] = response.language
+            let rawType: String
+            if response.type == "book-chapter" {
+                rawType = "bookSection"
+                fields[KeyBaseKeyPair(key: FieldKeys.Item.bookTitle, baseKey: nil)] = response.container
+                fields[KeyBaseKeyPair(key: FieldKeys.Item.publisher, baseKey: nil)] = response.publisher
+            } else {
+                rawType = "journalArticle"
+                fields[KeyBaseKeyPair(key: FieldKeys.Item.issue, baseKey: nil)] = response.issue
+                fields[KeyBaseKeyPair(key: FieldKeys.Item.issn, baseKey: nil)] = response.issn
+                fields[KeyBaseKeyPair(key: FieldKeys.Item.publicationTitle, baseKey: nil)] = response.container
+            }
+            let accessDate = Date()
+
+            let itemResponse = ItemResponse(
+                rawType: rawType,
+                key: KeyGenerator.newKey,
+                library: LibraryResponse(id: 0, name: "", type: "", links: nil),
+                parentKey: nil,
+                collectionKeys: [],
+                links: nil,
+                parsedDate: nil,
+                isTrash: false,
+                version: 0,
+                dateModified: accessDate,
+                dateAdded: accessDate,
+                fields: fields,
+                tags: [],
+                creators: creators,
+                relations: [:],
+                createdBy: nil,
+                lastModifiedBy: nil,
+                rects: nil,
+                paths: nil
+            )
+            cleanupTask(for: task) { observable in
+                observable?.on(.next(Update(task: task, kind: .translated(item: itemResponse))))
             }
         }
     }
@@ -389,7 +487,7 @@ final class RecognizerController {
 
         func cleanup(for task: RecognizerTask, completion: @escaping (_ observable: PublishSubject<Update>?) -> Void) {
             let observable = queue.removeValue(forKey: task).flatMap({ $0.observable })
-            DDLogInfo("RecognizerController: cleaned up for \(task)")
+            DDLogInfo("RecognizerController: \(task) - cleaned up")
             lookupWebViewHandlersByRecognizerTask.removeValue(forKey: task)?.removeFromSuperviewAsynchronously()
             completion(observable)
             startRecognitionIfNeeded()
