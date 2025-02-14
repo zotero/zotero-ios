@@ -22,7 +22,7 @@ final class PDFThumbnailController: NSObject {
         let libraryId: LibraryIdentifier
         let page: UInt
         let size: CGSize
-        let isDark: Bool
+        let appearance: Appearance
     }
 
     private let queue: DispatchQueue
@@ -47,18 +47,18 @@ extension PDFThumbnailController {
     /// Start rendering process of multiple thumbnails per document.
     /// - parameter pages: Page indices which should be rendered.
     /// - parameter 
-    func cache(pages: [UInt], key: String, libraryId: LibraryIdentifier, document: Document, imageSize: CGSize, isDark: Bool) -> Observable<()> {
+    func cache(pages: [UInt], key: String, libraryId: LibraryIdentifier, document: Document, imageSize: CGSize, appearance: Appearance) -> Observable<()> {
         let observables = pages.map({
-            cache(page: $0, key: key, libraryId: libraryId, document: document, imageSize: imageSize, isDark: isDark).flatMap({ _ in return Single.just(()) }).asObservable()
+            cache(page: $0, key: key, libraryId: libraryId, document: document, imageSize: imageSize, appearance: appearance).flatMap({ _ in return Single.just(()) }).asObservable()
         })
         return Observable.merge(observables).subscribe(on: scheduler)
     }
 
-    func cache(page: UInt, key: String, libraryId: LibraryIdentifier, document: Document, imageSize: CGSize, isDark: Bool) -> Single<UIImage> {
+    func cache(page: UInt, key: String, libraryId: LibraryIdentifier, document: Document, imageSize: CGSize, appearance: Appearance) -> Single<UIImage> {
         return Single.create { [weak self] subscriber -> Disposable in
             guard let self else { return Disposables.create() }
             dispatchPrecondition(condition: .onQueue(queue))
-            let subscriberKey = SubscriberKey(key: key, libraryId: libraryId, page: page, size: imageSize, isDark: isDark)
+            let subscriberKey = SubscriberKey(key: key, libraryId: libraryId, page: page, size: imageSize, appearance: appearance)
             subscribers[subscriberKey] = subscriber
             enqueue(subscriberKey: subscriberKey, document: document, imageSize: imageSize)
             return Disposables.create()
@@ -81,8 +81,8 @@ extension PDFThumbnailController {
     /// - parameter libraryId: Library identifier of item.
     /// - parameter isDark: `true` if dark mode is on, `false` otherwise.
     /// - returns: `true` if thumbnail is available, `false` otherwise.
-    func hasThumbnail(page: UInt, key: String, libraryId: LibraryIdentifier, isDark: Bool) -> Bool {
-        return fileStorage.has(Files.pageThumbnail(pageIndex: page, key: key, libraryId: libraryId, isDark: isDark))
+    func hasThumbnail(page: UInt, key: String, libraryId: LibraryIdentifier, appearance: Appearance) -> Bool {
+        return fileStorage.has(Files.pageThumbnail(pageIndex: page, key: key, libraryId: libraryId, appearance: appearance))
     }
 
     /// Loads thumbnail from cached file
@@ -91,9 +91,9 @@ extension PDFThumbnailController {
     /// - parameter libraryId: Library identifier of item.
     /// - parameter isDark: `true` if dark mode is on, `false` otherwise.
     /// - returns: UIImage of given page thumbnail.
-    func thumbnail(page: UInt, key: String, libraryId: LibraryIdentifier, isDark: Bool) -> UIImage? {
+    func thumbnail(page: UInt, key: String, libraryId: LibraryIdentifier, appearance: Appearance) -> UIImage? {
         do {
-            let data = try fileStorage.read(Files.pageThumbnail(pageIndex: page, key: key, libraryId: libraryId, isDark: isDark))
+            let data = try fileStorage.read(Files.pageThumbnail(pageIndex: page, key: key, libraryId: libraryId, appearance: appearance))
             return try UIImage(imageData: data)
         } catch let error {
             DDLogError("PdfThumbnailController: can't load thumbnail - \(error)")
@@ -107,9 +107,16 @@ extension PDFThumbnailController {
     /// - parameter imageSize: Size of rendered image.
     private func enqueue(subscriberKey: SubscriberKey, document: Document, imageSize: CGSize) {
         let options = RenderOptions()
-        if subscriberKey.isDark {
+        switch subscriberKey.appearance {
+        case .dark:
             options.invertRenderColor = true
             options.filters = [.colorCorrectInverted]
+
+        case .sepia:
+            options.filters = [.sepia]
+
+        case .light:
+            break
         }
 
         let request = MutableRenderRequest(document: document)
@@ -136,7 +143,7 @@ extension PDFThumbnailController {
         switch result {
         case .success(let image):
             perform(event: .success(image), subscriberKey: subscriberKey)
-            cache(image: image, page: subscriberKey.page, key: subscriberKey.key, libraryId: subscriberKey.libraryId, isDark: subscriberKey.isDark)
+            cache(image: image, page: subscriberKey.page, key: subscriberKey.key, libraryId: subscriberKey.libraryId, appearance: subscriberKey.appearance)
 
         case .failure(let error):
             DDLogError("PdfThumbnailController: could not generate image - \(error)")
@@ -148,14 +155,14 @@ extension PDFThumbnailController {
             subscribers[subscriberKey] = nil
         }
 
-        func cache(image: UIImage, page: UInt, key: String, libraryId: LibraryIdentifier, isDark: Bool) {
+        func cache(image: UIImage, page: UInt, key: String, libraryId: LibraryIdentifier, appearance: Appearance) {
             autoreleasepool {
                 guard let data = image.pngData() else {
                     DDLogError("PdfThumbnailController: can't create data from image")
                     return
                 }
                 do {
-                    try fileStorage.write(data, to: Files.pageThumbnail(pageIndex: page, key: key, libraryId: libraryId, isDark: isDark), options: .atomicWrite)
+                    try fileStorage.write(data, to: Files.pageThumbnail(pageIndex: page, key: key, libraryId: libraryId, appearance: appearance), options: .atomicWrite)
                 } catch let error {
                     DDLogError("PdfThumbnailController: can't store preview - \(error)")
                 }

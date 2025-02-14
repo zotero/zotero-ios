@@ -137,7 +137,7 @@ class PDFSidebarViewController: UIViewController {
                 libraryId: viewModel.state.library.identifier,
                 document: viewModel.state.document,
                 selectedPageIndex: viewModel.state.visiblePage,
-                isDark: viewModel.state.interfaceStyle == .dark
+                appearance: .from(appearanceMode: viewModel.state.settings.appearanceMode, interfaceStyle: viewModel.state.interfaceStyle)
             )
             let thumbnailsViewModel = ViewModel(initialState: thumbnailsState, handler: PDFThumbnailsActionHandler(thumbnailController: viewModel.handler.pdfThumbnailController))
             let thumbnailsController = PDFThumbnailsViewController(viewModel: thumbnailsViewModel)
@@ -153,6 +153,9 @@ class PDFSidebarViewController: UIViewController {
                     }
                     if state.changes.contains(.annotations) {
                         thumbnailsViewModel.process(action: .reloadThumbnails)
+                    }
+                    if state.changes.contains(.appearance) {
+                        thumbnailsViewModel.process(action: .setAppearance(.from(appearanceMode: state.settings.appearanceMode, interfaceStyle: state.interfaceStyle)))
                     }
                 })
                 .disposed(by: disposeBag)

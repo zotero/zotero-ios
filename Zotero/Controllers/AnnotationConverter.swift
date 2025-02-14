@@ -204,7 +204,7 @@ struct AnnotationConverter {
     static func annotations(
         from items: Results<RItem>,
         type: Kind = .zotero,
-        interfaceStyle: UIUserInterfaceStyle,
+        appearance: Appearance,
         currentUserId: Int,
         library: Library,
         displayName: String,
@@ -221,7 +221,7 @@ struct AnnotationConverter {
             return annotation(
                 from: dbAnnotation,
                 type: type,
-                interfaceStyle: interfaceStyle,
+                appearance: appearance,
                 currentUserId: currentUserId,
                 library: library,
                 displayName: displayName,
@@ -234,7 +234,7 @@ struct AnnotationConverter {
     static func annotation(
         from zoteroAnnotation: PDFDatabaseAnnotation,
         type: Kind,
-        interfaceStyle: UIUserInterfaceStyle,
+        appearance: Appearance,
         currentUserId: Int,
         library: Library,
         displayName: String,
@@ -244,7 +244,7 @@ struct AnnotationConverter {
         let (color, alpha, blendMode) = AnnotationColorGenerator.color(
             from: UIColor(hex: zoteroAnnotation.color),
             type: zoteroAnnotation.type,
-            userInterfaceStyle: interfaceStyle
+            appearance: appearance
         )
         let annotation: PSPDFKit.Annotation
 

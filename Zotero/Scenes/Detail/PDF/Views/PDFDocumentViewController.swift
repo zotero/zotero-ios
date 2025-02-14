@@ -174,7 +174,8 @@ final class PDFDocumentViewController: UIViewController {
             default:
                 type = nil
             }
-            let (_color, _, blendMode) = AnnotationColorGenerator.color(from: color, type: type, userInterfaceStyle: viewModel.state.interfaceStyle)
+            let appearance = Appearance.from(appearanceMode: viewModel.state.settings.appearanceMode, interfaceStyle: viewModel.state.interfaceStyle)
+            let (_color, _, blendMode) = AnnotationColorGenerator.color(from: color, type: type, appearance: appearance)
             stateManager.drawColor = _color
             stateManager.blendMode = blendMode ?? .normal
         }
@@ -216,7 +217,7 @@ final class PDFDocumentViewController: UIViewController {
     }
 
     private func update(state: PDFReaderState, pdfController: PDFViewController) {
-        if state.changes.contains(.interfaceStyle) || state.changes.contains(.appearanceMode) {
+        if state.changes.contains(.appearance) {
             updateInterface(to: state.settings.appearanceMode, userInterfaceStyle: state.interfaceStyle)
         }
 
@@ -343,8 +344,8 @@ final class PDFDocumentViewController: UIViewController {
         switch appearanceMode {
         case .automatic:
             self.pdfController?.appearanceModeManager.appearanceMode = userInterfaceStyle == .dark ? .night : []
-            self.pdfController?.overrideUserInterfaceStyle = .unspecified
-            self.unlockController?.overrideUserInterfaceStyle = .unspecified
+            self.pdfController?.overrideUserInterfaceStyle = userInterfaceStyle
+            self.unlockController?.overrideUserInterfaceStyle = userInterfaceStyle
 
         case .light:
             self.pdfController?.appearanceModeManager.appearanceMode = []
@@ -462,7 +463,8 @@ final class PDFDocumentViewController: UIViewController {
         default:
             type = nil
         }
-        let toolColor = AnnotationColorGenerator.color(from: color, type: type, userInterfaceStyle: viewModel.state.interfaceStyle).color
+        let appearance = Appearance.from(appearanceMode: viewModel.state.settings.appearanceMode, interfaceStyle: viewModel.state.interfaceStyle)
+        let toolColor = AnnotationColorGenerator.color(from: color, type: type, appearance: appearance).color
         stateManager.setLastUsedColor(toolColor, annotationString: tool)
         if stateManager.state == tool {
             stateManager.drawColor = toolColor

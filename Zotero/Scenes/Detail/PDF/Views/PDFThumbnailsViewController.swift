@@ -79,12 +79,6 @@ class PDFThumbnailsViewController: UICollectionViewController {
         viewModel.process(action: .loadPages)
     }
 
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-        guard traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) else { return }
-        self.viewModel.process(action: .setUserInterface(isDark: traitCollection.userInterfaceStyle == .dark))
-    }
-
     func set(visiblePage: Int) {
         viewModel.process(action: .setSelectedPage(pageIndex: visiblePage, type: .fromDocument))
     }
@@ -121,10 +115,12 @@ class PDFThumbnailsViewController: UICollectionViewController {
         // The following updates should be ignored if the collection hasn't loaded yet for the first time.
         guard snapshot.numberOfSections > 0 else { return }
 
-        if state.changes.contains(.userInterface) || state.changes.contains(.reload) {
+        if state.changes.contains(.appearance) || state.changes.contains(.reload) {
             updateQueue.sync { [weak self] in
-                snapshot.reloadSections([0])
-                self?.dataSource.apply(snapshot)
+                guard let self else { return }
+                var snapshot = dataSource.snapshot()
+                snapshot.reconfigureItems(snapshot.itemIdentifiers)
+                dataSource.apply(snapshot, animatingDifferences: false, completion: nil)
             }
         }
 

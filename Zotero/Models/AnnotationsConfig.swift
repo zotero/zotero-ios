@@ -14,7 +14,7 @@ struct AnnotationsConfig {
     static let defaultActiveColor = "#ffd400"
     static let allColors: [String] = ["#ffd400", "#ff6666", "#5fb236", "#2ea8e5", "#a28ae5", "#e56eee", "#f19837", "#aaaaaa", "#000000"]
     static let typesWithColorVariation: [AnnotationType?] = [.none, .highlight, .underline]
-    static let userInterfaceStylesWithVarition: [UIUserInterfaceStyle] = [.light, .dark]
+    static let appearancesWithVarition: [Appearance] = [.light, .dark, .sepia]
     static let colorNames: [String: String] = [
         "#ffd400": "Yellow",
         "#ff6666": "Red",
@@ -58,8 +58,8 @@ struct AnnotationsConfig {
         for hexBaseColor in allColors {
             let baseColor = UIColor(hex: hexBaseColor)
             for type in typesWithColorVariation {
-                for userInterfaceStyle in userInterfaceStylesWithVarition {
-                    let variation = AnnotationColorGenerator.color(from: baseColor, type: type, userInterfaceStyle: userInterfaceStyle).color
+                for appearance in appearancesWithVarition {
+                    let variation = AnnotationColorGenerator.color(from: baseColor, type: type, appearance: appearance).color
                     map[variation.hexString] = hexBaseColor
                 }
             }

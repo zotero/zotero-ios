@@ -14,33 +14,33 @@ struct AnnotationColorGenerator {
     private static let underlineOpacity: CGFloat = 1
     private static let underlineDarkOpacity: CGFloat = 1
 
-    static func color(from color: UIColor, type: AnnotationType?, userInterfaceStyle: UIUserInterfaceStyle) -> (color: UIColor, alpha: CGFloat, blendMode: CGBlendMode?) {
+    static func color(from color: UIColor, type: AnnotationType?, appearance: Appearance) -> (color: UIColor, alpha: CGFloat, blendMode: CGBlendMode?) {
         let opacity: CGFloat
         switch type {
         case .none, .note, .image, .ink, .freeText:
             return (color, 1, nil)
 
         case .highlight:
-            switch userInterfaceStyle {
+            switch appearance {
             case .dark:
                 opacity = Self.highlightDarkOpacity
 
-            default:
+            case .light, .sepia:
                 opacity = Self.highlightOpacity
             }
 
         case .underline:
-            switch userInterfaceStyle {
+            switch appearance {
             case .dark:
                 opacity = Self.underlineDarkOpacity
 
-            default:
+            case .light, .sepia:
                 opacity = Self.underlineOpacity
             }
         }
 
         let adjustedColor: UIColor
-        switch userInterfaceStyle {
+        switch appearance {
         case .dark:
             var hue: CGFloat = 0
             var sat: CGFloat = 0
@@ -52,24 +52,24 @@ struct AnnotationColorGenerator {
             let adjustedSat = min(1, (sat * 1.2))
             adjustedColor = UIColor(hue: hue, saturation: adjustedSat, brightness: brg, alpha: opacity)
 
-        default:
+        case .light, .sepia:
             adjustedColor = color.withAlphaComponent(opacity)
         }
 
-        return (adjustedColor, opacity, Self.blendMode(for: userInterfaceStyle, type: type))
+        return (adjustedColor, opacity, Self.blendMode(for: appearance, type: type))
     }
 
-    static func blendMode(for userInterfaceStyle: UIUserInterfaceStyle, type: AnnotationType?) -> CGBlendMode? {
+    static func blendMode(for appearance: Appearance, type: AnnotationType?) -> CGBlendMode? {
         switch type {
         case .none, .note, .image, .ink, .freeText:
             return nil
 
         case .highlight, .underline:
-            switch userInterfaceStyle {
+            switch appearance {
             case .dark:
                 return .lighten
 
-            default:
+            case .light, .sepia:
                 return .multiply
             }
         }

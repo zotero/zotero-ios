@@ -11,7 +11,7 @@ import Foundation
 enum PDFThumbnailsAction {
     case prefetch([UInt])
     case load(UInt)
-    case setUserInterface(isDark: Bool)
+    case setAppearance(Appearance)
     case loadPages
     case setSelectedPage(pageIndex: Int, type: PDFThumbnailsState.SelectionType)
     case reloadThumbnails

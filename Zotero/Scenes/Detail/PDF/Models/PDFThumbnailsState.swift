@@ -16,7 +16,7 @@ struct PDFThumbnailsState: ViewModelState {
 
         let rawValue: UInt8
 
-        static let userInterface = Changes(rawValue: 1 << 0)
+        static let appearance = Changes(rawValue: 1 << 0)
         static let pages = Changes(rawValue: 1 << 1)
         static let selection = Changes(rawValue: 1 << 2)
         static let scrollToSelection = Changes(rawValue: 1 << 3)
@@ -45,12 +45,12 @@ struct PDFThumbnailsState: ViewModelState {
 
     let cache: NSCache<NSNumber, UIImage>
     var pages: [Page]
-    var isDark: Bool
+    var appearance: Appearance
     var loadedThumbnail: Int?
     var selectedPageIndex: Int
     var changes: Changes
 
-    init(key: String, libraryId: LibraryIdentifier, document: Document, selectedPageIndex: Int, isDark: Bool) {
+    init(key: String, libraryId: LibraryIdentifier, document: Document, selectedPageIndex: Int, appearance: Appearance) {
         let cache = NSCache<NSNumber, UIImage>()
         cache.totalCostLimit = 1024 * 1024 * 5 // Cache object limit - 5 MB
         self.cache = cache
@@ -59,12 +59,13 @@ struct PDFThumbnailsState: ViewModelState {
         self.libraryId = libraryId
         self.document = document
         self.selectedPageIndex = selectedPageIndex
-        self.isDark = isDark
+        self.appearance = appearance
         self.changes = []
         self.pages = []
     }
 
     mutating func cleanup() {
-        self.changes = []
+        changes = []
+        loadedThumbnail = nil
     }
 }
