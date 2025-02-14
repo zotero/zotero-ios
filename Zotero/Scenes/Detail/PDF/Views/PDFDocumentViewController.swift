@@ -216,7 +216,7 @@ final class PDFDocumentViewController: UIViewController {
     }
 
     private func update(state: PDFReaderState, pdfController: PDFViewController) {
-        if state.changes.contains(.appearanceMode) {
+        if state.changes.contains(.interfaceStyle) || state.changes.contains(.appearanceMode) {
             updateInterface(to: state.settings.appearanceMode, userInterfaceStyle: state.interfaceStyle)
         }
 
