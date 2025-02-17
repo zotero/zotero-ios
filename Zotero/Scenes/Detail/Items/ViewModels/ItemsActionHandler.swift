@@ -26,6 +26,7 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
     private unowned let fileCleanupController: AttachmentFileCleanupController
     private unowned let syncScheduler: SynchronizationScheduler
     private unowned let htmlAttributedStringConverter: HtmlAttributedStringConverter
+    private unowned let recognizerController: RecognizerController
     private let disposeBag: DisposeBag
 
     init(
@@ -37,7 +38,8 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
         citationController: CitationController,
         fileCleanupController: AttachmentFileCleanupController,
         syncScheduler: SynchronizationScheduler,
-        htmlAttributedStringConverter: HtmlAttributedStringConverter
+        htmlAttributedStringConverter: HtmlAttributedStringConverter,
+        recognizerController: RecognizerController
     ) {
         self.fileStorage = fileStorage
         self.schemaController = schemaController
@@ -47,6 +49,7 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
         self.fileCleanupController = fileCleanupController
         self.syncScheduler = syncScheduler
         self.htmlAttributedStringConverter = htmlAttributedStringConverter
+        self.recognizerController = recognizerController
         self.disposeBag = DisposeBag()
         super.init(dbStorage: dbStorage)
     }
@@ -496,7 +499,19 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
             guard let self, let viewModel else { return }
 
             switch result {
-            case .success(let failed):
+            case .success(let (succeeded, failed)):
+                for attachment in succeeded {
+                    if let file = attachment.file as? FileData, file.mimeType == "application/pdf" {
+                        let task = RecognizerController.RecognizerTask(file: file, kind: .createParentForItem(libraryId: libraryId, key: attachment.key))
+                        recognizerController.queue(task: task) { [weak self] observable in
+                            guard let self else { return }
+                            observable?.subscribe { _ in
+                                // TODO: Implement update of UI according to updates
+                            }
+                            .disposed(by: disposeBag)
+                        }
+                    }
+                }
                 guard !failed.isEmpty else { return }
                 update(viewModel: viewModel) { state in
                     state.error = .attachmentAdding(.someFailed(failed.map({ $0.1 })))
