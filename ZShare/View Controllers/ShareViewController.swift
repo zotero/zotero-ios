@@ -749,7 +749,9 @@ final class ShareViewController: UIViewController {
             pdfWorkerController: pdfWorkerController,
             apiClient: apiClient,
             translatorsController: translatorsController,
-            schemaController: schemaController
+            schemaController: schemaController,
+            dbStorage: dbStorage,
+            dateParser: dateParser
         )
         recognizerController.webViewProvider = self
 
