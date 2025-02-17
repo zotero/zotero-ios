@@ -30,8 +30,15 @@ struct MoveItemsToParentDbRequest: DbRequest {
 
             if !item.collections.isEmpty {
                 for collection in item.collections {
-                    guard let index = collection.items.index(of: item) else { continue }
-                    collection.items.remove(at: index)
+                    // Remove item from this collection, if needed.
+                    if let index = collection.items.index(of: item) {
+                        collection.items.remove(at: index)
+                    }
+                    // Append parent to this collection, if needed.
+                    if collection.items.filter(.key(parent.key)).first == nil {
+                        collection.items.append(parent)
+                        parent.changes.append(RObjectChange.create(changes: RItemChanges.collections))
+                    }
                 }
                 changes.insert(.collections)
             }
