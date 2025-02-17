@@ -73,7 +73,13 @@ final class RecognizerController {
     }
 
     struct RecognizerTask: Hashable {
+        enum Kind: Hashable {
+            case simple
+            case createParentForItem(libraryId: LibraryIdentifier, key: String)
+        }
+
         let file: FileData
+        let kind: Kind
     }
 
     enum Error: Swift.Error {
@@ -83,6 +89,7 @@ final class RecognizerController {
         case remoteRecognizerFailed
         case noRemainingIdentifiersForLookup
         case unexpectedState
+        case cantCreateParentForItem
     }
 
     struct Update {
@@ -93,6 +100,7 @@ final class RecognizerController {
             case remoteRecognitionInProgress(data: [String: Any])
             case identifierLookupInProgress(response: RemoteRecognizerResponse, identifier: String)
             case translated(item: ItemResponse)
+            case createdParent(key: String)
         }
 
         let task: RecognizerTask
@@ -111,9 +119,12 @@ final class RecognizerController {
     private unowned let apiClient: ApiClient
     private unowned let translatorsController: TranslatorsAndStylesController
     private unowned let schemaController: SchemaController
+    private unowned let dbStorage: DbStorage
+    private unowned let dateParser: DateParser
     private let dispatchSpecificKey: DispatchSpecificKey<String>
     private let accessQueueLabel: String
     private let accessQueue: DispatchQueue
+    private let backgroundQueue: DispatchQueue
     private let disposeBag: DisposeBag
 
     internal weak var webViewProvider: WebViewProvider?
@@ -124,15 +135,26 @@ final class RecognizerController {
     private var lookupWebViewHandlersByRecognizerTask: [RecognizerTask: LookupWebViewHandler] = [:]
 
     // MARK: Object Lifecycle
-    init(pdfWorkerController: PDFWorkerController, apiClient: ApiClient, translatorsController: TranslatorsAndStylesController, schemaController: SchemaController) {
+    init(
+        pdfWorkerController: PDFWorkerController,
+        apiClient: ApiClient,
+        translatorsController: TranslatorsAndStylesController,
+        schemaController: SchemaController,
+        dbStorage: DbStorage,
+        dateParser: DateParser
+    ) {
         self.pdfWorkerController = pdfWorkerController
         self.apiClient = apiClient
         self.translatorsController = translatorsController
         self.schemaController = schemaController
+        self.dbStorage = dbStorage
+        self.dateParser = dateParser
         dispatchSpecificKey = DispatchSpecificKey<String>()
         accessQueueLabel = "org.zotero.RecognizerController.accessQueue"
         accessQueue = DispatchQueue(label: accessQueueLabel, qos: .userInteractive, attributes: .concurrent)
         accessQueue.setSpecific(key: dispatchSpecificKey, value: accessQueueLabel)
+        backgroundQueue = DispatchQueue(label: "org.zotero.RecognizerController.backgroundQueue", qos: .userInitiated)
+
         disposeBag = DisposeBag()
     }
 
@@ -412,9 +434,7 @@ final class RecognizerController {
                                 if copyTagsAsAutomatic, !itemResponse.tags.isEmpty {
                                     itemResponse = itemResponse.copyWithAutomaticTags
                                 }
-                                cleanupTask(for: task) { observable in
-                                    observable?.on(.next(Update(task: task, kind: .translated(item: itemResponse))))
-                                }
+                                createParentIfNeeded(for: task, with: itemResponse, schemaController: schemaController, dateParser: dateParser)
                             }
 
                         case .failure(let error):
@@ -470,8 +490,42 @@ final class RecognizerController {
                 rects: nil,
                 paths: nil
             )
-            cleanupTask(for: task) { observable in
-                observable?.on(.next(Update(task: task, kind: .translated(item: itemResponse))))
+            createParentIfNeeded(for: task, with: itemResponse, schemaController: schemaController, dateParser: dateParser)
+        }
+
+        func createParentIfNeeded(for task: RecognizerTask, with itemResponse: ItemResponse, schemaController: SchemaController, dateParser: DateParser) {
+            switch task.kind {
+            case .simple:
+                cleanupTask(for: task) { observable in
+                    observable?.on(.next(Update(task: task, kind: .translated(item: itemResponse))))
+                }
+
+            case .createParentForItem(let libraryId, let key):
+                backgroundQueue.async { [weak self] in
+                    guard let self else { return }
+                    let response = itemResponse.copy(libraryId: libraryId, collectionKeys: [], tags: [])
+                    var update: Update?
+                    do {
+                        try dbStorage.perform(on: backgroundQueue) { coordinator in
+                            let items = try coordinator.perform(request: CreateTranslatedItemsDbRequest(responses: [response], schemaController: schemaController, dateParser: dateParser))
+                            guard let parent = items.first else {
+                                update = Update(task: task, kind: .failed(.cantCreateParentForItem))
+                                return
+                            }
+                            try coordinator.perform(request: MoveItemsToParentDbRequest(itemKeys: [key], parentKey: parent.key, libraryId: libraryId))
+                            update = Update(task: task, kind: .createdParent(key: parent.key))
+                            coordinator.invalidate()
+                        }
+                    } catch let error {
+                        DDLogError("RecognizerController: can't create parent for item - \(error)")
+                        update = Update(task: task, kind: .failed(error as! Error))
+                    }
+                    cleanupTask(for: task) { observable in
+                        if let update {
+                            observable?.on(.next(update))
+                        }
+                    }
+                }
             }
         }
     }
