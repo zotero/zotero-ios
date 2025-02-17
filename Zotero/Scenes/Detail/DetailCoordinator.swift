@@ -192,7 +192,8 @@ final class DetailCoordinator: Coordinator {
                 citationController: userControllers.citationController,
                 fileCleanupController: userControllers.fileCleanupController,
                 syncScheduler: userControllers.syncScheduler,
-                htmlAttributedStringConverter: controllers.htmlAttributedStringConverter
+                htmlAttributedStringConverter: controllers.htmlAttributedStringConverter,
+                recognizerController: userControllers.recognizerController
             )
             let controller = ItemsViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: controllers, coordinatorDelegate: self)
             controller.tagFilterDelegate = itemsTagFilterDelegate
