@@ -117,7 +117,7 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         DDLogInfo("NoteEditorActionHandler: submit \(images.count) images")
 
         do {
-            let failedKeys = try dbStorage.perform(request: request, on: backgroundQueue).map({ $0.0 })
+            let failedKeys = try dbStorage.perform(request: request, on: backgroundQueue).1.map({ $0.0 })
             let successfulImages = images.filter({ !failedKeys.contains($0.1.key) }).map({ NoteEditorState.CreatedImage(nodeId: $0.0, key: $0.1.key) })
             DDLogInfo("NoteEditorActionHandler: successfully created \(successfulImages)")
             update(viewModel: viewModel) { state in
