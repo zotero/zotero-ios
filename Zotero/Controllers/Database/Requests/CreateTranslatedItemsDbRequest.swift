@@ -11,14 +11,17 @@ import Foundation
 import CocoaLumberjackSwift
 import RealmSwift
 
-struct CreateTranslatedItemsDbRequest: DbRequest {
+struct CreateTranslatedItemsDbRequest: DbResponseRequest {
+    typealias Response = [RItem]
+
     let responses: [ItemResponse]
     unowned let schemaController: SchemaController
     unowned let dateParser: DateParser
 
     var needsWrite: Bool { return true }
 
-    func process(in database: Realm) throws {
+    func process(in database: Realm) throws -> [RItem] {
+        var items: [RItem] = []
         for response in self.responses {
             let (item, _) = try StoreItemDbRequest(
                 response: response,
@@ -48,6 +51,9 @@ struct CreateTranslatedItemsDbRequest: DbRequest {
                 changes.insert(.tags)
             }
             item.changes.append(RObjectChange.create(changes: changes))
+
+            items.append(item)
         }
+        return items
     }
 }

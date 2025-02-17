@@ -459,7 +459,7 @@ final class IdentifierLookupController {
                     
                     func storeDataAndDownloadAttachmentIfNecessary(identifier: String, response: ItemResponse, attachments: [(Attachment, URL)]) throws {
                         let request = CreateTranslatedItemsDbRequest(responses: [response], schemaController: schemaController, dateParser: dateParser)
-                        try dbStorage.perform(request: request, on: backgroundQueue)
+                        _ = try dbStorage.perform(request: request, on: backgroundQueue)
                         changeLookup(
                             for: identifier,
                             to: .translated(.init(response: response, attachments: attachments, libraryId: libraryId, collectionKeys: collectionKeys))
