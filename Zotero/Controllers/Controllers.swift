@@ -389,7 +389,9 @@ final class UserControllers {
             pdfWorkerController: pdfWorkerController,
             apiClient: controllers.apiClient,
             translatorsController: controllers.translatorsAndStylesController,
-            schemaController: controllers.schemaController
+            schemaController: controllers.schemaController,
+            dbStorage: dbStorage,
+            dateParser: controllers.dateParser
         )
         self.webSocketController = webSocketController
         self.fileCleanupController = fileCleanupController

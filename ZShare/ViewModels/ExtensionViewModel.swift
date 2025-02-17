@@ -538,7 +538,7 @@ final class ExtensionViewModel {
         }
 
         func recognize(file: FileData) {
-            recognizerController.queue(task: RecognizerController.RecognizerTask(file: file)) { [weak self] observable in
+            recognizerController.queue(task: RecognizerController.RecognizerTask(file: file, kind: .simple)) { [weak self] observable in
                 guard let self else { return }
                 observable?.subscribe { [weak self] update in
                     guard let self else { return }
@@ -561,6 +561,9 @@ final class ExtensionViewModel {
                         // attachment is only used to get an optional URL, so we can safely pass an empty dictionary
                         state.processedAttachment = .itemWithAttachment(item: item, attachment: [:], attachmentFile: file)
                         self.state = state
+
+                    case .createdParent:
+                        break
                     }
                 }
                 .disposed(by: disposeBag)

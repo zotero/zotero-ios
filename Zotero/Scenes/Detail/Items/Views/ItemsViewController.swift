@@ -171,11 +171,10 @@ final class ItemsViewController: BaseItemsViewController {
                   file.mimeType == "application/pdf",
                   let recognizerController = controllers.userControllers?.recognizerController
             else { return }
-            recognizerController.queue(task: RecognizerController.RecognizerTask(file: file)) { [weak self] observable in
+            recognizerController.queue(task: RecognizerController.RecognizerTask(file: file, kind: .createParentForItem(libraryId: library.identifier, key: key))) { [weak self] observable in
                 guard let self else { return }
-                observable?.subscribe { update in
-                    // TODO: Implement
-                    print("Recognizer controller update: \(update)")
+                observable?.subscribe { _ in
+                    // TODO: Implement update of UI according to updates
                 }
                 .disposed(by: disposeBag)
             }
