@@ -20,7 +20,7 @@ struct CreateItemFromDetailDbRequest: DbResponseRequest {
 
     let key: String
     let libraryId: LibraryIdentifier
-    let collectionKey: String?
+    let collectionsSource: ItemDetailState.DetailType.CollectionsSource?
     let data: ItemDetailState.Data
     let attachments: [Attachment]
     let notes: [Note]
@@ -50,10 +50,21 @@ struct CreateItemFromDetailDbRequest: DbResponseRequest {
 
         var changes: RItemChanges = [.type, .fields]
 
-        if let key = self.collectionKey,
-           let collection = database.objects(RCollection.self).uniqueObject(key: key, libraryId: libraryId) {
-            collection.items.append(item)
-            changes.insert(.collections)
+        var useCollectionsFromChildren = false
+        switch collectionsSource {
+        case .collectionKeys(let keys):
+            for key in keys {
+                if let collection = database.objects(RCollection.self).uniqueObject(key: key, libraryId: libraryId) {
+                    collection.items.append(item)
+                    changes.insert(.collections)
+                }
+            }
+
+        case .fromChildren:
+            useCollectionsFromChildren = true
+
+        case .none:
+            break
         }
 
         // Create creators
@@ -118,6 +129,21 @@ struct CreateItemFromDetailDbRequest: DbResponseRequest {
                 rAttachment.parent = item
                 rAttachment.changes.append(RObjectChange.create(changes: RItemChanges.parent))
                 rAttachment.changeType = .user
+                if useCollectionsFromChildren, !rAttachment.collections.isEmpty {
+                    for collection in rAttachment.collections {
+                        // Remove attachment from this collection, if needed.
+                        if let index = collection.items.index(of: rAttachment) {
+                            collection.items.remove(at: index)
+                            rAttachment.changes.append(RObjectChange.create(changes: RItemChanges.collections))
+                        }
+                        // Append parent to this collection, if needed.
+                        if collection.items.filter(.key(key)).first == nil {
+                            collection.items.append(item)
+                            changes.insert(.collections)
+                        }
+                    }
+                }
+
                 rAttachment.changesSyncPaused = true
             } else {
                 let rAttachment = try CreateAttachmentDbRequest(

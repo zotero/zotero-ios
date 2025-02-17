@@ -158,7 +158,7 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
 
     private func loadInitialData(in viewModel: ViewModel<ItemDetailActionHandler>) {
         let library: Library
-        var collectionKey: String?
+        var collectionsSource: ItemDetailState.DetailType.CollectionsSource?
         var data: (data: ItemDetailState.Data, attachments: [Attachment], notes: [Note], tags: [Tag])
 
         do {
@@ -173,8 +173,8 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
             }
 
             switch viewModel.state.type {
-            case .creation(let itemType, let child, let _collectionKey):
-                collectionKey = _collectionKey
+            case .creation(let itemType, let child, let _collectionsSource):
+                collectionsSource = _collectionsSource
                 data = try ItemDetailDataCreator.createData(
                     from: .new(itemType: itemType, child: child),
                     schemaController: self.schemaController,
@@ -185,8 +185,8 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
                     doiDetector: FieldKeys.Item.isDoi
                 )
 
-            case .duplication(let itemKey, let _collectionKey):
-                collectionKey = _collectionKey
+            case .duplication(let itemKey, let collectionKey):
+                collectionsSource = collectionKey.flatMap({ .collectionKeys([$0]) })
                 let item = try self.dbStorage.perform(request: ReadItemDbRequest(libraryId: library.identifier, key: itemKey), on: .main)
                 data = try ItemDetailDataCreator.createData(
                     from: .existing(item: item, ignoreChildren: true),
@@ -213,7 +213,7 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
         let request = CreateItemFromDetailDbRequest(
             key: viewModel.state.key,
             libraryId: library.identifier,
-            collectionKey: collectionKey,
+            collectionsSource: collectionsSource,
             data: data.data,
             attachments: data.attachments,
             notes: data.notes,
