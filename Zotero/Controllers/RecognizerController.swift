@@ -99,8 +99,8 @@ final class RecognizerController {
             case recognitionInProgress
             case remoteRecognitionInProgress(data: [String: Any])
             case identifierLookupInProgress(response: RemoteRecognizerResponse, identifier: String)
-            case translated(item: ItemResponse)
-            case createdParent(key: String)
+            case translated(itemResponse: ItemResponse)
+            case createdParent(item: RItem)
         }
 
         let task: RecognizerTask
@@ -125,6 +125,10 @@ final class RecognizerController {
     private let accessQueueLabel: String
     private let accessQueue: DispatchQueue
     private let backgroundQueue: DispatchQueue
+    private let updatesSubject: PublishSubject<Update>
+    var updates: Observable<Update> {
+        updatesSubject.asObservable()
+    }
     private let disposeBag: DisposeBag
 
     internal weak var webViewProvider: WebViewProvider?
@@ -154,25 +158,28 @@ final class RecognizerController {
         accessQueue = DispatchQueue(label: accessQueueLabel, qos: .userInteractive, attributes: .concurrent)
         accessQueue.setSpecific(key: dispatchSpecificKey, value: accessQueueLabel)
         backgroundQueue = DispatchQueue(label: "org.zotero.RecognizerController.backgroundQueue", qos: .userInitiated)
-
+        updatesSubject = PublishSubject()
         disposeBag = DisposeBag()
     }
 
     // MARK: Actions
-    func queue(task: RecognizerTask, completion: @escaping (_ observable: PublishSubject<Update>?) -> Void) {
+    func queue(task: RecognizerTask, completion: @escaping (_ observable: Observable<Update>?) -> Void) {
         accessQueue.async(flags: .barrier) { [weak self] in
             guard let self else {
                 completion(nil)
                 return
             }
             if let (_, observable) = queue[task] {
-                completion(observable)
+                completion(observable.asObservable())
                 return
             }
             let state: RecognizerTaskState = .enqueued
             let observable: PublishSubject<Update> = PublishSubject()
             queue[task] = (state, observable)
-            completion(observable)
+            completion(observable.asObservable())
+            observable.subscribe(onNext: { [weak self] update in
+                self?.updatesSubject.on(.next(update))
+            }).disposed(by: disposeBag)
 
             startRecognitionIfNeeded()
         }
@@ -497,7 +504,7 @@ final class RecognizerController {
             switch task.kind {
             case .simple:
                 cleanupTask(for: task) { observable in
-                    observable?.on(.next(Update(task: task, kind: .translated(item: itemResponse))))
+                    observable?.on(.next(Update(task: task, kind: .translated(itemResponse: itemResponse))))
                 }
 
             case .createParentForItem(let libraryId, let key):
@@ -513,7 +520,7 @@ final class RecognizerController {
                                 return
                             }
                             try coordinator.perform(request: MoveItemsToParentDbRequest(itemKeys: [key], parentKey: parent.key, libraryId: libraryId))
-                            update = Update(task: task, kind: .createdParent(key: parent.key))
+                            update = Update(task: task, kind: .createdParent(item: parent))
                             coordinator.invalidate()
                         }
                     } catch let error {
