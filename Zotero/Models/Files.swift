@@ -125,8 +125,19 @@ struct Files {
         return FileData(rootPath: Files.cachesRootPath, relativeComponents: ["Zotero", "sharing", key], name: name, ext: ext)
     }
 
-    static func pageThumbnail(pageIndex: UInt, key: String, libraryId: LibraryIdentifier, isDark: Bool) -> File {
-        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["thumbnails", libraryId.folderName, key], name: "\(pageIndex)" + (isDark ? "_dark" : ""), contentType: "png")
+    static func pageThumbnail(pageIndex: UInt, key: String, libraryId: LibraryIdentifier, appearance: Appearance) -> File {
+        let nameSuffix: String
+        switch appearance {
+        case .dark:
+            nameSuffix = "_dark"
+
+        case .sepia:
+            nameSuffix = "_sepia"
+
+        case .light:
+            nameSuffix = ""
+        }
+        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["thumbnails", libraryId.folderName, key], name: "\(pageIndex)" + nameSuffix, contentType: "png")
     }
 
     static func pageThumbnails(for key: String, libraryId: LibraryIdentifier) -> File {
@@ -143,11 +154,22 @@ struct Files {
 
     // MARK: - Annotations
 
-    static func annotationPreview(annotationKey: String, pdfKey: String, libraryId: LibraryIdentifier, isDark: Bool) -> File {
+    static func annotationPreview(annotationKey: String, pdfKey: String, libraryId: LibraryIdentifier, appearance: Appearance) -> File {
+        let nameSuffix: String
+        switch appearance {
+        case .dark:
+            nameSuffix = "_dark"
+
+        case .sepia:
+            nameSuffix = "_sepia"
+
+        case .light:
+            nameSuffix = ""
+        }
         return FileData(
             rootPath: Files.appGroupPath,
             relativeComponents: ["annotations", libraryId.folderName, pdfKey],
-            name: annotationKey + (isDark ? "_dark" : ""),
+            name: annotationKey + nameSuffix,
             ext: "png"
         )
     }

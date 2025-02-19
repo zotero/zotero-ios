@@ -33,8 +33,8 @@ struct PDFThumbnailsActionHandler: ViewModelActionHandler {
         case .prefetch(let pageIndices):
             prefetch(pageIndices: pageIndices, in: viewModel)
 
-        case .setUserInterface(let isDark):
-            setUserInteraface(isDark: isDark, in: viewModel)
+        case .setAppearance(let appearance):
+            setAppearance(appearance: appearance, in: viewModel)
 
         case .loadPages:
             loadPages(viewModel: viewModel)
@@ -84,7 +84,7 @@ struct PDFThumbnailsActionHandler: ViewModelActionHandler {
 
     private func prefetch(pageIndices: [UInt], in viewModel: ViewModel<PDFThumbnailsActionHandler>) {
         let toFetch = pageIndices.compactMap { pageIndex in
-            let hasImage = thumbnailController.hasThumbnail(page: pageIndex, key: viewModel.state.key, libraryId: viewModel.state.libraryId, isDark: viewModel.state.isDark)
+            let hasImage = thumbnailController.hasThumbnail(page: pageIndex, key: viewModel.state.key, libraryId: viewModel.state.libraryId, appearance: viewModel.state.appearance)
             return hasImage ? nil : pageIndex
         }
         thumbnailController.cache(
@@ -93,14 +93,14 @@ struct PDFThumbnailsActionHandler: ViewModelActionHandler {
             libraryId: viewModel.state.libraryId,
             document: viewModel.state.document,
             imageSize: viewModel.state.thumbnailSize,
-            isDark: viewModel.state.isDark
+            appearance: viewModel.state.appearance
         )
         .subscribe()
         .disposed(by: disposeBag)
     }
 
     private func load(pageIndex: UInt, in viewModel: ViewModel<PDFThumbnailsActionHandler>) {
-        if thumbnailController.hasThumbnail(page: pageIndex, key: viewModel.state.key, libraryId: viewModel.state.libraryId, isDark: viewModel.state.isDark) {
+        if thumbnailController.hasThumbnail(page: pageIndex, key: viewModel.state.key, libraryId: viewModel.state.libraryId, appearance: viewModel.state.appearance) {
             loadCachedThumbnailAsync()
         } else {
             loadAndCacheThumbnailAsync()
@@ -110,7 +110,7 @@ struct PDFThumbnailsActionHandler: ViewModelActionHandler {
             queue.async { [weak thumbnailController, weak viewModel] in
                 guard let thumbnailController,
                       let viewModel,
-                      let image = thumbnailController.thumbnail(page: pageIndex, key: viewModel.state.key, libraryId: viewModel.state.libraryId, isDark: viewModel.state.isDark)
+                      let image = thumbnailController.thumbnail(page: pageIndex, key: viewModel.state.key, libraryId: viewModel.state.libraryId, appearance: viewModel.state.appearance)
                 else { return }
                 DispatchQueue.main.async { [weak viewModel] in
                     guard let viewModel else { return }
@@ -126,7 +126,7 @@ struct PDFThumbnailsActionHandler: ViewModelActionHandler {
                 libraryId: viewModel.state.libraryId,
                 document: viewModel.state.document,
                 imageSize: viewModel.state.thumbnailSize,
-                isDark: viewModel.state.isDark
+                appearance: viewModel.state.appearance
             )
             .observe(on: MainScheduler.instance)
             .subscribe(with: viewModel) { viewModel, image in
@@ -143,11 +143,11 @@ struct PDFThumbnailsActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func setUserInteraface(isDark: Bool, in viewModel: ViewModel<PDFThumbnailsActionHandler>) {
+    private func setAppearance(appearance: Appearance, in viewModel: ViewModel<PDFThumbnailsActionHandler>) {
         viewModel.state.cache.removeAllObjects()
         update(viewModel: viewModel) { state in
-            state.isDark = isDark
-            state.changes = .userInterface
+            state.appearance = appearance
+            state.changes = .appearance
         }
     }
 }

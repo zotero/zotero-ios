@@ -229,7 +229,7 @@ final class PDFAnnotationsViewController: UIViewController {
                 return
             }
 
-            if state.changes.contains(.interfaceStyle) && dataSource.snapshot().numberOfItems > 0 {
+            if state.changes.contains(.appearance) && dataSource.snapshot().numberOfItems > 0 {
                 updateQueue.async { [weak self] in
                     guard let self else { return }
                     var snapshot = dataSource.snapshot()

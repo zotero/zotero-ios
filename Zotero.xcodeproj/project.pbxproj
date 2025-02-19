@@ -756,6 +756,10 @@
 		B36FD9AF2A78FB13002D77E8 /* EditAnnotationFontSizeDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36FD9AE2A78FB13002D77E8 /* EditAnnotationFontSizeDbRequest.swift */; };
 		B36FD9B12A7924CB002D77E8 /* FontSizePickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36FD9B02A7924CB002D77E8 /* FontSizePickerViewController.swift */; };
 		B36FD9B32A7929C8002D77E8 /* FontSizeCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36FD9B22A7929C8002D77E8 /* FontSizeCell.swift */; };
+		B370625E2D5F407100E1722B /* ReaderSettingsState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F9A4C22B04D0D800684030 /* ReaderSettingsState.swift */; };
+		B370625F2D5F595600E1722B /* PDFSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35B473B25F11BCD0023B6F4 /* PDFSettings.swift */; };
+		B37062612D5F75E200E1722B /* Appearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37062602D5F75DF00E1722B /* Appearance.swift */; };
+		B37062622D5F75E200E1722B /* Appearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37062602D5F75DF00E1722B /* Appearance.swift */; };
 		B37080532AA7216E006F56B9 /* Localizable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37080512AA72135006F56B9 /* Localizable.swift */; };
 		B371494C25D585EA00D6391E /* RestoreDeletionsSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340868825D574D6000F4446 /* RestoreDeletionsSyncAction.swift */; };
 		B371494F25D585EF00D6391E /* MarkObjectsAsChangedByUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340868C25D579C9000F4446 /* MarkObjectsAsChangedByUser.swift */; };
@@ -1805,6 +1809,7 @@
 		B36FD9AE2A78FB13002D77E8 /* EditAnnotationFontSizeDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditAnnotationFontSizeDbRequest.swift; sourceTree = "<group>"; };
 		B36FD9B02A7924CB002D77E8 /* FontSizePickerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontSizePickerViewController.swift; sourceTree = "<group>"; };
 		B36FD9B22A7929C8002D77E8 /* FontSizeCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontSizeCell.swift; sourceTree = "<group>"; };
+		B37062602D5F75DF00E1722B /* Appearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Appearance.swift; sourceTree = "<group>"; };
 		B37080512AA72135006F56B9 /* Localizable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localizable.swift; sourceTree = "<group>"; };
 		B372CEDF2486504600B423AE /* GroupVersionsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupVersionsRequest.swift; sourceTree = "<group>"; };
 		B372CEE22486512500B423AE /* GroupRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupRequest.swift; sourceTree = "<group>"; };
@@ -2692,6 +2697,7 @@
 				B3B557122C884B7D00BD6325 /* AnnotationPreview.swift */,
 				B3F6AA392AB30663005BC22E /* AnnotationTool.swift */,
 				B311737A2AFCF004007D9741 /* AnnotationType.swift */,
+				B37062602D5F75DF00E1722B /* Appearance.swift */,
 				B305656123FC051E003304F2 /* AppGroup.swift */,
 				B305653A23FC051E003304F2 /* Attachment.swift */,
 				B339459026DE6C2900E59A02 /* AttachmentFileDeletedNotification.swift */,
@@ -5180,6 +5186,7 @@
 				B3D427D62CB67EFC0058453A /* AutoEmptyTrashController.swift in Sources */,
 				B30565EB23FC051E003304F2 /* Controllers.swift in Sources */,
 				B3A351E12715784A002E597A /* WebDavDownloadRequest.swift in Sources */,
+				B37062612D5F75E200E1722B /* Appearance.swift in Sources */,
 				B305CEBB29E6E67600B9E2B4 /* AssignItemsToTagDbRequest.swift in Sources */,
 				B39AF554290033CD001F400F /* TableOfContentsViewController.swift in Sources */,
 				B3593F78241A76E600760E20 /* CollectionEditError.swift in Sources */,
@@ -5736,6 +5743,7 @@
 				B3868541270DC3AA0068A022 /* WebDavScheme.swift in Sources */,
 				B352FFCC2CBE944400D0887B /* AutoEmptyTrashDbRequest.swift in Sources */,
 				B331F9AF2653CEA00099F6A6 /* ReadGroupDbRequest.swift in Sources */,
+				B370625F2D5F595600E1722B /* PDFSettings.swift in Sources */,
 				B33E8A4B27B6A39100CBC7DE /* CollectionCell.swift in Sources */,
 				B3DDC0CC2667825E00B2DFD1 /* RegularExpression+Extensions.swift in Sources */,
 				B30566EB23FC082A003304F2 /* ObjectsRequest.swift in Sources */,
@@ -5754,6 +5762,7 @@
 				B30566F123FC0845003304F2 /* CheckItemIsChangedDbRequest.swift in Sources */,
 				B3AFB83D2A0CF1EE008C2374 /* EmptyDecodable.swift in Sources */,
 				B36459E42644120D00A0C2C0 /* Color+Extension.swift in Sources */,
+				B370625E2D5F407100E1722B /* ReaderSettingsState.swift in Sources */,
 				B34ACC7F2514EB6100040C17 /* AnnotationColorGenerator.swift in Sources */,
 				B3FE79E42B333030009FBDBD /* DeleteDownloadDbRequest.swift in Sources */,
 				B305670423FC08A6003304F2 /* ReadAllCustomLibrariesDbRequest.swift in Sources */,
@@ -5902,6 +5911,7 @@
 				B3B557182C8860E600BD6325 /* CitationMetadata.swift in Sources */,
 				B305677023FC0A58003304F2 /* Alamofire+RxSwift.swift in Sources */,
 				B330261225DEAD9A00742025 /* RPageIndex.swift in Sources */,
+				B37062622D5F75E200E1722B /* Appearance.swift in Sources */,
 				B305670023FC086B003304F2 /* MarkObjectsAsDeletedDbRequest.swift in Sources */,
 				B34341B7260A49C300093E63 /* ReadCollectionAndLibraryDbRequest.swift in Sources */,
 				B305671023FC08C3003304F2 /* ReadSearchesDbRequest.swift in Sources */,

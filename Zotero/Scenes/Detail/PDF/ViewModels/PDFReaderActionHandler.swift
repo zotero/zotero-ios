@@ -215,7 +215,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             userInterfaceChanged(interfaceStyle: interfaceStyle, in: viewModel)
 
         case .updateAnnotationPreviews:
-            storeAnnotationPreviewsIfNeeded(isDark: viewModel.state.interfaceStyle == .dark, in: viewModel)
+            storeAnnotationPreviewsIfNeeded(appearance: .from(appearanceMode: viewModel.state.settings.appearanceMode, interfaceStyle: viewModel.state.interfaceStyle), in: viewModel)
 
         case .setToolOptions(let hex, let size, let tool):
             setToolOptions(hex: hex, size: size, tool: tool, in: viewModel)
@@ -270,18 +270,33 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
     }
 
-    // MARK: - Dark mode changes
+    // MARK: - Appearance changes
 
     private func userInterfaceChanged(interfaceStyle: UIUserInterfaceStyle, in viewModel: ViewModel<PDFReaderActionHandler>) {
-        viewModel.state.previewCache.removeAllObjects()
+        guard viewModel.state.settings.appearanceMode == .automatic else { return }
+        updateAnnotations(to: .from(appearanceMode: .automatic, interfaceStyle: interfaceStyle), in: viewModel)
+        update(viewModel: viewModel) { state in
+            state.interfaceStyle = interfaceStyle
+            state.changes = .appearance
+        }
+    }
 
+    private func appearanceChanged(appearanceMode: ReaderSettingsState.Appearance, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        updateAnnotations(to: .from(appearanceMode: appearanceMode, interfaceStyle: viewModel.state.interfaceStyle), in: viewModel)
+        update(viewModel: viewModel) { state in
+            state.changes = .appearance
+        }
+    }
+
+    private func updateAnnotations(to appearance: Appearance, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        viewModel.state.previewCache.removeAllObjects()
         for (_, annotations) in viewModel.state.document.allAnnotations(of: AnnotationsConfig.supported) {
             for annotation in annotations {
                 let baseColor = annotation.baseColor
                 let (color, alpha, blendMode) = AnnotationColorGenerator.color(
                     from: UIColor(hex: baseColor),
                     type: annotation.type.annotationType,
-                    userInterfaceStyle: interfaceStyle
+                    appearance: appearance
                 )
                 annotation.color = color
                 annotation.alpha = alpha
@@ -290,23 +305,16 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 }
             }
         }
-
-        storeAnnotationPreviewsIfNeeded(isDark: interfaceStyle == .dark, in: viewModel)
-
-        update(viewModel: viewModel) { state in
-            state.interfaceStyle = interfaceStyle
-            state.changes = .interfaceStyle
-        }
+        storeAnnotationPreviewsIfNeeded(appearance: appearance, in: viewModel)
     }
 
-    private func storeAnnotationPreviewsIfNeeded(isDark: Bool, in viewModel: ViewModel<PDFReaderActionHandler>) {
+    private func storeAnnotationPreviewsIfNeeded(appearance: Appearance, in viewModel: ViewModel<PDFReaderActionHandler>) {
         let libraryId = viewModel.state.library.identifier
-
         // Load annotation previews if needed.
         for (_, annotations) in viewModel.state.document.allAnnotations(of: [.square, .ink, .freeText]) {
             for annotation in annotations {
-                guard !annotationPreviewController.hasPreview(for: annotation.previewId, parentKey: viewModel.state.key, libraryId: libraryId, isDark: isDark) else { continue }
-                annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key, libraryId: libraryId, isDark: isDark)
+                guard !annotationPreviewController.hasPreview(for: annotation.previewId, parentKey: viewModel.state.key, libraryId: libraryId, appearance: appearance) else { continue }
+                annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key, libraryId: libraryId, appearance: appearance)
             }
         }
     }
@@ -481,6 +489,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     }
 
     private func update(settings: PDFSettings, parentInterfaceStyle: UIUserInterfaceStyle, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        let appearanceDidChange = settings.appearanceMode != viewModel.state.settings.appearanceMode
         // Update local state
         update(viewModel: viewModel) { state in
             state.settings = settings
@@ -488,22 +497,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
         // Store new settings to defaults
         Defaults.shared.pdfSettings = settings
-
-        // Check whether interfaceStyle changed and update if needed
-        let settingsInterfaceStyle: UIUserInterfaceStyle
-        switch settings.appearanceMode {
-        case .dark:
-            settingsInterfaceStyle = .dark
-
-        case .light:
-            settingsInterfaceStyle = .light
-
-        case .automatic:
-            settingsInterfaceStyle = parentInterfaceStyle
-        }
-
-        guard settingsInterfaceStyle != viewModel.state.interfaceStyle else { return }
-        userInterfaceChanged(interfaceStyle: settingsInterfaceStyle, in: viewModel)
+        guard appearanceDidChange else { return }
+        appearanceChanged(appearanceMode: settings.appearanceMode, in: viewModel)
     }
 
     private func set(page: Int, userActionFromDocument: Bool, fromThumbnailList: Bool, in viewModel: ViewModel<PDFReaderActionHandler>) {
@@ -556,7 +551,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             annotations = AnnotationConverter.annotations(
                 from: viewModel.state.databaseAnnotations,
                 type: .export,
-                interfaceStyle: .light,
+                appearance: .light,
                 currentUserId: viewModel.state.userId,
                 library: viewModel.state.library,
                 displayName: viewModel.state.displayName,
@@ -1082,7 +1077,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         guard !keys.isEmpty else { return }
 
         let group = DispatchGroup()
-        let isDark = viewModel.state.interfaceStyle == .dark
+        let appearance = Appearance.from(appearanceMode: viewModel.state.settings.appearanceMode, interfaceStyle: viewModel.state.interfaceStyle)
         let libraryId = viewModel.state.library.identifier
 
         var loadedKeys: Set<String> = []
@@ -1092,7 +1087,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             guard viewModel.state.previewCache.object(forKey: nsKey) == nil else { continue }
 
             group.enter()
-            annotationPreviewController.preview(for: key, parentKey: viewModel.state.key, libraryId: libraryId, isDark: isDark) { [weak viewModel] image in
+            annotationPreviewController.preview(for: key, parentKey: viewModel.state.key, libraryId: libraryId, appearance: appearance) { [weak viewModel] image in
                 if let image = image {
                     viewModel?.state.previewCache.setObject(image, forKey: nsKey)
                     loadedKeys.insert(key)
@@ -1137,7 +1132,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
     private func addImage(onPage pageIndex: PageIndex, origin: CGPoint, in viewModel: ViewModel<PDFReaderActionHandler>) {
         guard let activeColor = viewModel.state.toolColors[tool(from: .image)] else { return }
-        let color = AnnotationColorGenerator.color(from: activeColor, type: .image, userInterfaceStyle: viewModel.state.interfaceStyle).color
+        let appearance = Appearance.from(appearanceMode: viewModel.state.settings.appearanceMode, interfaceStyle: viewModel.state.interfaceStyle)
+        let color = AnnotationColorGenerator.color(from: activeColor, type: .image, appearance: appearance).color
         let rect = CGRect(origin: origin, size: CGSize(width: 100, height: 100))
 
         let square = SquareAnnotation()
@@ -1153,7 +1149,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
     private func addNote(onPage pageIndex: PageIndex, origin: CGPoint, in viewModel: ViewModel<PDFReaderActionHandler>) {
         guard let activeColor = viewModel.state.toolColors[tool(from: .note)] else { return }
-        let color = AnnotationColorGenerator.color(from: activeColor, type: .note, userInterfaceStyle: viewModel.state.interfaceStyle).color
+        let appearance = Appearance.from(appearanceMode: viewModel.state.settings.appearanceMode, interfaceStyle: viewModel.state.interfaceStyle)
+        let color = AnnotationColorGenerator.color(from: activeColor, type: .note, appearance: appearance).color
         let rect = CGRect(origin: origin, size: AnnotationsConfig.noteAnnotationSize)
 
         let note = NoteAnnotation(contents: "")
@@ -1169,7 +1166,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
     private func addHighlightOrUnderline(isHighlight: Bool, onPage pageIndex: PageIndex, rects: [CGRect], in viewModel: ViewModel<PDFReaderActionHandler>) {
         guard let activeColor = viewModel.state.toolColors[tool(from: isHighlight ? .highlight : .underline)] else { return }
-        let (color, alpha, blendMode) = AnnotationColorGenerator.color(from: activeColor, type: isHighlight ? .highlight : .underline, userInterfaceStyle: viewModel.state.interfaceStyle)
+        let appearance = Appearance.from(appearanceMode: viewModel.state.settings.appearanceMode, interfaceStyle: viewModel.state.interfaceStyle)
+        let (color, alpha, blendMode) = AnnotationColorGenerator.color(from: activeColor, type: isHighlight ? .highlight : .underline, appearance: appearance)
 
         let annotation = isHighlight ? HighlightAnnotation() : UnderlineAnnotation()
         annotation.rects = rects
@@ -1238,7 +1236,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
     private func set(color: String, key: String, viewModel: ViewModel<PDFReaderActionHandler>) {
         guard let annotation = viewModel.state.annotation(for: PDFReaderState.AnnotationKey(key: key, type: .database)) else { return }
-        update(annotation: annotation, color: (color, viewModel.state.interfaceStyle), in: viewModel)
+        let appearance = Appearance.from(appearanceMode: viewModel.state.settings.appearanceMode, interfaceStyle: viewModel.state.interfaceStyle)
+        update(annotation: annotation, color: (color, appearance), in: viewModel)
     }
 
     private func set(comment: NSAttributedString, key: String, viewModel: ViewModel<PDFReaderActionHandler>) {
@@ -1280,7 +1279,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     ) {
         // `type`, `lineWidth`, `fontSize` and `color` is stored in `Document`, update document, which will trigger a notification wich will update the DB
         guard let annotation = viewModel.state.annotation(for: PDFReaderState.AnnotationKey(key: key, type: .database)) else { return }
-        update(annotation: annotation, type: type, color: (color, viewModel.state.interfaceStyle), lineWidth: lineWidth, fontSize: fontSize, in: viewModel)
+        let appearance = Appearance.from(appearanceMode: viewModel.state.settings.appearanceMode, interfaceStyle: viewModel.state.interfaceStyle)
+        update(annotation: annotation, type: type, color: (color, appearance), lineWidth: lineWidth, fontSize: fontSize, in: viewModel)
 
         // Update remaining values directly
         let text = htmlAttributedStringConverter.convert(attributedString: highlightText)
@@ -1306,7 +1306,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     private func update(
         annotation: PDFAnnotation,
         type: AnnotationType? = nil,
-        color: (String, UIUserInterfaceStyle)? = nil,
+        color: (String, Appearance)? = nil,
         lineWidth: CGFloat? = nil,
         fontSize: CGFloat? = nil,
         contents: String? = nil,
@@ -1335,8 +1335,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 return
             }
 
-            if let (color, interfaceStyle) = color, color != annotation.color {
-                let (_color, alpha, blendMode) = AnnotationColorGenerator.color(from: UIColor(hex: color), type: type, userInterfaceStyle: interfaceStyle)
+            if let (color, appearance) = color, color != annotation.color {
+                let (_color, alpha, blendMode) = AnnotationColorGenerator.color(from: UIColor(hex: color), type: type, appearance: appearance)
                 newAnnotation.color = _color
                 newAnnotation.alpha = alpha
                 if let blendMode {
@@ -1387,8 +1387,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                     inkAnnotation.lineWidth = lineWidth.rounded(to: 3)
                 }
 
-                if changes.contains(.color), let (color, interfaceStyle) = color {
-                    let (_color, alpha, blendMode) = AnnotationColorGenerator.color(from: UIColor(hex: color), type: annotation.type, userInterfaceStyle: interfaceStyle)
+                if changes.contains(.color), let (color, appearance) = color {
+                    let (_color, alpha, blendMode) = AnnotationColorGenerator.color(from: UIColor(hex: color), type: annotation.type, appearance: appearance)
                     pdfAnnotation.color = _color
                     pdfAnnotation.alpha = alpha
                     if let blendMode {
@@ -1459,6 +1459,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
 
         guard !finalAnnotations.isEmpty else { return }
+        let appearance = Appearance.from(appearanceMode: viewModel.state.settings.appearanceMode, interfaceStyle: viewModel.state.interfaceStyle)
         let documentAnnotations: [PDFDocumentAnnotation] = finalAnnotations.compactMap { annotation in
             let documentAnnotation = AnnotationConverter.annotation(
                 from: annotation,
@@ -1470,7 +1471,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             )
             guard let documentAnnotation else { return nil }
             // Only create preview for annotations that will be added in the database.
-            annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, isDark: (viewModel.state.interfaceStyle == .dark))
+            annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, appearance: appearance)
             return documentAnnotation
         }
 
@@ -1496,11 +1497,12 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             var keptAsIs: [PSPDFKit.Annotation] = []
             var toRemove: [PSPDFKit.Annotation] = []
             var toAdd: [PSPDFKit.Annotation] = []
+            let appearance = Appearance.from(appearanceMode: state.settings.appearanceMode, interfaceStyle: state.interfaceStyle)
 
             for annotation in annotations {
                 guard let tool = tool(from: annotation), let activeColor = state.toolColors[tool] else { continue }
                 // `AnnotationStateManager` doesn't apply the `blendMode` to created annotations, so it needs to be applied to newly created annotations here.
-                let (_, _, blendMode) = AnnotationColorGenerator.color(from: activeColor, type: annotation.type.annotationType, userInterfaceStyle: state.interfaceStyle)
+                let (_, _, blendMode) = AnnotationColorGenerator.color(from: activeColor, type: annotation.type.annotationType, appearance: appearance)
                 annotation.blendMode = blendMode ?? .normal
 
                 // Either annotation is new (key not assigned) or the user used undo/redo and we check whether the annotation exists in DB
@@ -1677,7 +1679,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     private func change(annotation: PSPDFKit.Annotation, with changes: [String], in viewModel: ViewModel<PDFReaderActionHandler>) {
         guard !changes.isEmpty, let key = annotation.key, let boundingBoxConverter = delegate else { return }
 
-        annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, isDark: (viewModel.state.interfaceStyle == .dark))
+        let appearance = Appearance.from(appearanceMode: viewModel.state.settings.appearanceMode, interfaceStyle: viewModel.state.interfaceStyle)
+        annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, appearance: appearance)
 
         let hasChanges: (PdfAnnotationChanges) -> Bool = { pdfChanges in
             let rawPdfChanges = PdfAnnotationChanges.stringValues(from: pdfChanges)
@@ -1786,7 +1789,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             let startTime = CFAbsoluteTimeGetCurrent()
 
             let key = viewModel.state.key
-            let isDark = viewModel.state.interfaceStyle == .dark
+            let appearance = Appearance.from(appearanceMode: viewModel.state.settings.appearanceMode, interfaceStyle: viewModel.state.interfaceStyle)
             let (item, liveAnnotations, storedPage) = try loadItemAnnotationsAndPage(for: key, libraryId: viewModel.state.library.identifier)
 
             if checkWhetherMd5Changed(forItem: item, andUpdateViewModel: viewModel, handler: self) {
@@ -1808,13 +1811,13 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 library: library,
                 username: viewModel.state.username,
                 displayName: viewModel.state.displayName,
-                isDark: isDark
+                appearance: appearance
             )
 
             let convertDbAnnotationsStartTime = CFAbsoluteTimeGetCurrent()
             let dbToPdfAnnotations = AnnotationConverter.annotations(
                 from: databaseAnnotations,
-                interfaceStyle: viewModel.state.interfaceStyle,
+                appearance: appearance,
                 currentUserId: viewModel.state.userId,
                 library: library,
                 displayName: viewModel.state.displayName,
@@ -1831,7 +1834,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             viewModel.state.document.add(annotations: dbToPdfAnnotations, options: [.suppressNotifications: true])
             let endTime = CFAbsoluteTimeGetCurrent()
 
-            annotationPreviewController.store(annotations: dbToPdfAnnotations, parentKey: key, libraryId: library.identifier, isDark: isDark)
+            annotationPreviewController.store(annotations: dbToPdfAnnotations, parentKey: key, libraryId: library.identifier, appearance: appearance)
 
             update(viewModel: viewModel) { state in
                 state.library = library
@@ -2116,10 +2119,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         library: Library,
         username: String,
         displayName: String,
-        isDark: Bool
+        appearance: Appearance
     ) -> [String: PDFDocumentAnnotation] {
         let documentAnnotations = document.allAnnotations(of: PSPDFKit.Annotation.Kind.all).values.flatMap({ $0 })
-        annotationPreviewController.store(annotations: documentAnnotations, parentKey: key, libraryId: library.identifier, isDark: isDark)
+        annotationPreviewController.store(annotations: documentAnnotations, parentKey: key, libraryId: library.identifier, appearance: appearance)
 
         var annotations: [String: PDFDocumentAnnotation] = [:]
         for pdfAnnotation in documentAnnotations {
@@ -2161,6 +2164,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         var comments = viewModel.state.comments
         var selectKey: PDFReaderState.AnnotationKey?
         var selectionDeleted = false
+        let appearance = Appearance.from(appearanceMode: viewModel.state.settings.appearanceMode, interfaceStyle: viewModel.state.interfaceStyle)
         // Update database keys based on realm notification
         var updatedKeys: [PDFReaderState.AnnotationKey] = []
         // Collect modified, deleted and inserted annotations to update the `Document`
@@ -2284,7 +2288,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 let pdfAnnotation = AnnotationConverter.annotation(
                     from: annotation,
                     type: .zotero,
-                    interfaceStyle: viewModel.state.interfaceStyle,
+                    appearance: appearance,
                     currentUserId: viewModel.state.userId,
                     library: viewModel.state.library,
                     displayName: viewModel.state.displayName,
@@ -2307,7 +2311,13 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         pdfDisposeBag = DisposeBag()
         // Update annotations in `Document`
         for (pdfAnnotation, annotation) in updatedPdfAnnotations {
-            update(pdfAnnotation: pdfAnnotation, with: annotation, parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, interfaceStyle: viewModel.state.interfaceStyle)
+            update(
+                pdfAnnotation: pdfAnnotation,
+                with: annotation,
+                parentKey: viewModel.state.key,
+                libraryId: viewModel.state.library.identifier,
+                appearance: appearance
+            )
         }
         // Remove annotations from `Document`
         if !deletedPdfAnnotations.isEmpty {
@@ -2326,7 +2336,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 annotations: insertedPdfAnnotations,
                 parentKey: viewModel.state.key,
                 libraryId: viewModel.state.library.identifier,
-                isDark: (viewModel.state.interfaceStyle == .dark)
+                appearance: appearance
             )
         }
         observeDocument(in: viewModel)
@@ -2390,7 +2400,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
     }
 
-    private func update(pdfAnnotation: PSPDFKit.Annotation, with annotation: PDFDatabaseAnnotation, parentKey: String, libraryId: LibraryIdentifier, interfaceStyle: UIUserInterfaceStyle) {
+    private func update(pdfAnnotation: PSPDFKit.Annotation, with annotation: PDFDatabaseAnnotation, parentKey: String, libraryId: LibraryIdentifier, appearance: Appearance) {
         guard let boundingBoxConverter = delegate else { return }
 
         var changes: PdfAnnotationChanges = []
@@ -2398,7 +2408,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         if pdfAnnotation.baseColor != annotation.color {
             let hexColor = annotation.color
 
-            let (color, alpha, blendMode) = AnnotationColorGenerator.color(from: UIColor(hex: hexColor), type: annotation.type, userInterfaceStyle: interfaceStyle)
+            let (color, alpha, blendMode) = AnnotationColorGenerator.color(from: UIColor(hex: hexColor), type: annotation.type, appearance: appearance)
             pdfAnnotation.color = color
             pdfAnnotation.alpha = alpha
             if let blendMode {
@@ -2462,7 +2472,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         guard !changes.isEmpty else { return }
 
-        annotationPreviewController.store(for: pdfAnnotation, parentKey: parentKey, libraryId: libraryId, isDark: (interfaceStyle == .dark))
+        annotationPreviewController.store(for: pdfAnnotation, parentKey: parentKey, libraryId: libraryId, appearance: appearance)
 
         NotificationCenter.default.post(
             name: NSNotification.Name.PSPDFAnnotationChanged,

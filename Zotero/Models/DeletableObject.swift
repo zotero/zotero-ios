@@ -90,14 +90,15 @@ extension RItem: Deletable {
     }
 
     private func cleanupAnnotationFiles() {
-        guard let parentKey = self.parent?.key,
-              let libraryId = self.libraryId else { return }
+        guard let parentKey = parent?.key, let libraryId = libraryId else { return }
 
-        let light = Files.annotationPreview(annotationKey: self.key, pdfKey: parentKey, libraryId: libraryId, isDark: false)
-        let dark = Files.annotationPreview(annotationKey: self.key, pdfKey: parentKey, libraryId: libraryId, isDark: true)
+        let light = Files.annotationPreview(annotationKey: key, pdfKey: parentKey, libraryId: libraryId, appearance: .light)
+        let dark = Files.annotationPreview(annotationKey: key, pdfKey: parentKey, libraryId: libraryId, appearance: .dark)
+        let sepia = Files.annotationPreview(annotationKey: key, pdfKey: parentKey, libraryId: libraryId, appearance: .sepia)
 
         NotificationCenter.default.post(name: .attachmentDeleted, object: light)
         NotificationCenter.default.post(name: .attachmentDeleted, object: dark)
+        NotificationCenter.default.post(name: .attachmentDeleted, object: sepia)
     }
 
     private func cleanupAttachmentFiles() {

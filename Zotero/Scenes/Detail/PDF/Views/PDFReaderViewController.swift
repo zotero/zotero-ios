@@ -453,7 +453,7 @@ class PDFReaderViewController: UIViewController {
             }
         }
 
-        if state.changes.contains(.interfaceStyle) {
+        if state.changes.contains(.appearance) {
             updateInterface(to: state.settings)
         }
 
@@ -526,7 +526,7 @@ class PDFReaderViewController: UIViewController {
         case .automatic:
             navigationController?.overrideUserInterfaceStyle = .unspecified
 
-        case .light:
+        case .light, .sepia:
             navigationController?.overrideUserInterfaceStyle = .light
 
         case .dark:
@@ -624,7 +624,7 @@ class PDFReaderViewController: UIViewController {
     }
 
     private func updateUserInterfaceStyleIfNeeded(previousTraitCollection: UITraitCollection?) {
-        guard traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) && viewModel.state.settings.appearanceMode == .automatic else { return }
+        guard traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) else { return }
         viewModel.process(action: .userInterfaceStyleChanged(traitCollection.userInterfaceStyle))
     }
 

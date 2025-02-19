@@ -14,13 +14,22 @@ struct ReaderSettingsState: ViewModelState {
     enum Appearance: UInt {
         case light
         case dark
+        case sepia
         case automatic
 
         var userInterfaceStyle: UIUserInterfaceStyle {
             switch self {
-            case .automatic: return .unspecified
-            case .dark: return .dark
-            case .light: return .light
+            case .automatic:
+                return .unspecified
+
+            case .dark:
+                return .dark
+
+            case .light:
+                return .light
+
+            case .sepia:
+                return .light
             }
         }
     }
