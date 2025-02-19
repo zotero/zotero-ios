@@ -216,8 +216,8 @@ final class PDFAnnotationsViewController: UIViewController {
 
             if state.changes.contains(.library) {
                 updateQueue.async { [weak self] in
-                    guard let self else { return }
-                    var snapshot = NSDiffableDataSourceSnapshot<Int, PDFReaderState.AnnotationKey>()
+                    guard let self, !dataSource.snapshot().sectionIdentifiers.isEmpty else { return }
+                    var snapshot = dataSource.snapshot()
                     snapshot.reloadSections([0])
                     dataSource.apply(snapshot, animatingDifferences: isVisible, completion: completion)
                 }
