@@ -553,7 +553,7 @@ final class ExtensionViewModel {
                     case .recognitionInProgress, .remoteRecognitionInProgress, .identifierLookupInProgress:
                         updateState(with: .decoding)
 
-                    case .translated(item: let item):
+                    case .translated(let item):
                         var state = self.state
                         state.expectedItem = item
                         state.expectedAttachment = (filename, tmpFile)
@@ -562,7 +562,7 @@ final class ExtensionViewModel {
                         state.processedAttachment = .itemWithAttachment(item: item, attachment: [:], attachmentFile: file)
                         self.state = state
 
-                    case .createdParent:
+                    case .enqueued, .createdParent:
                         break
                     }
                 }
