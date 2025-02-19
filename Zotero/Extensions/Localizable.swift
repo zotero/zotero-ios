@@ -841,6 +841,8 @@ internal enum L10n {
     }
     /// Remove from Collection
     internal static let removeFromCollectionTitle = L10n.tr("Localizable", "items.remove_from_collection_title", fallback: "Remove from Collection")
+    /// Retrieving Metadata
+    internal static let retrievingMetadata = L10n.tr("Localizable", "items.retrieving_metadata", fallback: "Retrieving Metadata")
     /// Search Items
     internal static let searchTitle = L10n.tr("Localizable", "items.search_title", fallback: "Search Items")
     /// Select All
