@@ -143,6 +143,9 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
         case .updateRemoteDownload(let update, let batchData):
             self.process(remoteDownloadUpdate: update, batchData: batchData, in: viewModel)
 
+        case .updateMetadataRetrieval(let itemKey, let update):
+            process(metadataRetrievalUpdate: update, itemKey: itemKey, in: viewModel)
+
         case .openAttachment(let attachment, let parentKey):
             self.open(attachment: attachment, parentKey: parentKey, in: viewModel)
 
@@ -263,7 +266,7 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
                   let updatedAccessory = accessory.updatedAttachment(update: { attachment in attachment.changed(location: .remote, condition: { $0 == .local }) }) else { return }
             self.update(viewModel: viewModel) { state in
                 state.itemAccessories[updateKey] = updatedAccessory
-                state.updateItemKey = updateKey
+                state.updateItem = ItemsState.ItemUpdate(key: updateKey, kind: .accessory)
             }
         }
     }
@@ -307,7 +310,7 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
             guard let updatedAttachment = attachment.changed(location: .local, compressed: compressed) else { return }
             updateViewModel { state in
                 state.itemAccessories[updateKey] = .attachment(attachment: updatedAttachment, parentKey: downloadUpdate.parentKey)
-                state.updateItemKey = updateKey
+                state.updateItem = ItemsState.ItemUpdate(key: updateKey, kind: .accessory)
             }
 
         case .progress:
@@ -316,13 +319,13 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
             guard let currentProgress = fileDownloader.data(for: downloadUpdate.key, parentKey: downloadUpdate.parentKey, libraryId: downloadUpdate.libraryId).progress, currentProgress < 1
             else { return }
             updateViewModel { state in
-                state.updateItemKey = updateKey
+                state.updateItem = ItemsState.ItemUpdate(key: updateKey, kind: .accessory)
             }
 
         case .cancelled, .failed:
             DDLogInfo("ItemsActionHandler: download update \(attachment.key); \(attachment.libraryId); kind \(downloadUpdate.kind)")
             updateViewModel { state in
-                state.updateItemKey = updateKey
+                state.updateItem = ItemsState.ItemUpdate(key: updateKey, kind: .accessory)
             }
         }
 
@@ -353,6 +356,13 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
                 state.remoteDownloadBatchData = batchData
                 state.changes = .batchData
             }
+        }
+    }
+
+    private func process(metadataRetrievalUpdate: RecognizerController.Update.Kind, itemKey: String, in viewModel: ViewModel<ItemsActionHandler>) {
+        guard let item = viewModel.state.results?.filter("key == %@", itemKey).first else { return }
+        update(viewModel: viewModel) { state in
+            state.updateItem = ItemsState.ItemUpdate(key: itemKey, kind: .subtitle(ItemCellModel.createSubtitle(for: item, update: metadataRetrievalUpdate)))
         }
     }
 

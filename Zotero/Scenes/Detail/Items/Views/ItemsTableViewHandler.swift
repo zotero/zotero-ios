@@ -186,6 +186,11 @@ final class ItemsTableViewHandler: NSObject {
         cell.set(accessory: accessory)
     }
 
+    func updateCell(key: String, withSubtitle subtitle: ItemCellModel.Subtitle?) {
+        guard let cell = tableView.visibleCells.first(where: { ($0 as? ItemCell)?.key == key }) as? ItemCell else { return }
+        cell.set(subtitle: subtitle)
+    }
+
     func performTapAction(forIndexPath indexPath: IndexPath) {
         guard let action = dataSource.tapAction(for: indexPath) else {
             tableView.deselectRow(at: indexPath, animated: true)
