@@ -90,6 +90,7 @@ extension RItem: Deletable {
     }
 
     private func cleanupAnnotationFiles() {
+        #if MAINAPP
         guard let parentKey = parent?.key, let libraryId = libraryId else { return }
 
         let light = Files.annotationPreview(annotationKey: key, pdfKey: parentKey, libraryId: libraryId, appearance: .light)
@@ -99,6 +100,7 @@ extension RItem: Deletable {
         NotificationCenter.default.post(name: .attachmentDeleted, object: light)
         NotificationCenter.default.post(name: .attachmentDeleted, object: dark)
         NotificationCenter.default.post(name: .attachmentDeleted, object: sepia)
+        #endif
     }
 
     private func cleanupAttachmentFiles() {
@@ -114,10 +116,12 @@ extension RItem: Deletable {
             // Delete attachment directory
             NotificationCenter.default.post(name: .attachmentDeleted, object: Files.attachmentDirectory(in: libraryId, key: self.key))
 
+            #if MAINAPP
             if contentType == "application/pdf" {
                 // This is a PDF file, remove all annotations and thumbnails.
                 NotificationCenter.default.post(name: .attachmentDeleted, object: Files.annotationPreviews(for: self.key, libraryId: libraryId))
             }
+            #endif
         }
     }
 }
