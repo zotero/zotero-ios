@@ -118,6 +118,8 @@ struct Files {
         return FileData(rootPath: Files.appGroupPath, relativeComponents: ["styles"], name: name, ext: "csl")
     }
 
+    #if MAINAPP
+
     // MARK: - PDF
 
     static func pdfToShare(filename: String, key: String) -> File {
@@ -185,6 +187,8 @@ struct Files {
     static var annotationPreviews: File {
         return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["annotations"])
     }
+
+    #endif
 
     // MARK: - Share extension
 
