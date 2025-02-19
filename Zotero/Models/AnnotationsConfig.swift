@@ -8,9 +8,13 @@
 
 import UIKit
 
+#if MAINAPP
 import PSPDFKit
+#endif
 
 struct AnnotationsConfig {
+    static let positionSizeLimit = 65000
+    #if MAINAPP
     static let defaultActiveColor = "#ffd400"
     static let allColors: [String] = ["#ffd400", "#ff6666", "#5fb236", "#2ea8e5", "#a28ae5", "#e56eee", "#f19837", "#aaaaaa", "#000000"]
     static let typesWithColorVariation: [AnnotationType?] = [.none, .highlight, .underline]
@@ -40,7 +44,6 @@ struct AnnotationsConfig {
     }
     // Size of note annotation in PDF document.
     static let noteAnnotationSize: CGSize = CGSize(width: 22, height: 22)
-    static let positionSizeLimit = 65000
     static let supported: PSPDFKit.Annotation.Kind = [.note, .highlight, .square, .ink, .underline, .freeText]
 
     static func colors(for type: AnnotationType) -> [String] {
@@ -66,4 +69,5 @@ struct AnnotationsConfig {
         }
         return map
     }
+    #endif
 }
