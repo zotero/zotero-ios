@@ -156,9 +156,8 @@ final class ItemsViewController: BaseItemsViewController {
 
         case .createParent:
             guard let key = selectedKeys.first, case .attachment(let attachment, _) = viewModel.state.itemAccessories[key] else { return }
-            let collectionKey = collection.identifier.key
             coordinatorDelegate?.showItemDetail(
-                for: .creation(type: ItemTypes.document, child: attachment, collectionKey: collectionKey),
+                for: .creation(type: ItemTypes.document, child: attachment, collectionsSource: .fromChildren),
                 libraryId: library.identifier,
                 scrolledToKey: nil,
                 animated: true

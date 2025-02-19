@@ -414,16 +414,16 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
 
         controller.addAction(UIAlertAction(title: L10n.Items.new, style: .default, handler: { [weak self, weak viewModel] _ in
             guard let self, let viewModel else { return }
-            let collectionKey: String?
+            let collectionsSource: ItemDetailState.DetailType.CollectionsSource?
             switch viewModel.state.collection.identifier {
             case .collection(let key):
-                collectionKey = key
+                collectionsSource = .collectionKeys([key])
 
             case .search, .custom:
-                collectionKey = nil
+                collectionsSource = nil
             }
             showTypePicker(selected: "") { [weak self] type in
-                self?.showItemDetail(for: .creation(type: type, child: nil, collectionKey: collectionKey), libraryId: viewModel.state.library.identifier, scrolledToKey: nil, animated: true)
+                self?.showItemDetail(for: .creation(type: type, child: nil, collectionsSource: collectionsSource), libraryId: viewModel.state.library.identifier, scrolledToKey: nil, animated: true)
             }
         }))
 

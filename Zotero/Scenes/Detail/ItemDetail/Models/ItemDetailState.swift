@@ -25,7 +25,12 @@ struct ItemDetailState: ViewModelState {
     }
 
     enum DetailType {
-        case creation(type: String, child: Attachment?, collectionKey: String?)
+        enum CollectionsSource {
+            case collectionKeys([String])
+            case fromChildren
+        }
+
+        case creation(type: String, child: Attachment?, collectionsSource: CollectionsSource?)
         case duplication(itemKey: String, collectionKey: String?)
         case preview(key: String)
 
