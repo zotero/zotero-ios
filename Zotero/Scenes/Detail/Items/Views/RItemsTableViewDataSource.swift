@@ -41,13 +41,15 @@ final class RItemsTableViewDataSource: NSObject {
     private unowned let viewModel: ViewModel<ItemsActionHandler>
     private unowned let schemaController: SchemaController
     private unowned let fileDownloader: AttachmentDownloader?
+    private unowned let recognizerController: RecognizerController?
 
     private var snapshot: Results<RItem>?
     weak var handler: ItemsTableViewHandler?
 
-    init(viewModel: ViewModel<ItemsActionHandler>, fileDownloader: AttachmentDownloader?, schemaController: SchemaController) {
+    init(viewModel: ViewModel<ItemsActionHandler>, fileDownloader: AttachmentDownloader?, recognizerController: RecognizerController?, schemaController: SchemaController) {
         self.viewModel = viewModel
         self.fileDownloader = fileDownloader
+        self.recognizerController = recognizerController
         self.schemaController = schemaController
     }
 
@@ -229,7 +231,7 @@ extension RItemsTableViewDataSource {
             let title = createTitleIfNeeded()
             let accessory = accessory(forKey: item.key)
             let typeName = schemaController.localized(itemType: item.rawType) ?? item.rawType
-            return ItemCellModel(item: item, typeName: typeName, title: title, accessory: accessory, fileDownloader: fileDownloader)
+            return ItemCellModel(item: item, typeName: typeName, title: title, accessory: accessory, fileDownloader: fileDownloader, recognizerController: recognizerController)
 
             func createTitleIfNeeded() -> NSAttributedString {
                 if let title = viewModel.state.itemTitles[item.key] {
