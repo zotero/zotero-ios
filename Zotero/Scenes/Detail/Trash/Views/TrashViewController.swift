@@ -82,7 +82,7 @@ final class TrashViewController: BaseItemsViewController {
                         self?.viewModel.process(action: .updateAttachments(notification))
                     }
                 })
-                .disposed(by: self.disposeBag)
+                .disposed(by: disposeBag)
         }
     }
 

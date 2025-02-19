@@ -155,7 +155,7 @@ extension TrashTableViewDataSource {
             let data = viewModel.state.itemDataCache[key]
             if let item = object as? RItem {
                 let typeName = schemaController.localized(itemType: item.rawType) ?? item.rawType
-                return ItemCellModel(item: item, typeName: typeName, title: data?.title ?? NSAttributedString(), accessory: data?.accessory, fileDownloader: fileDownloader)
+                return ItemCellModel(item: item, typeName: typeName, title: data?.title ?? NSAttributedString(), accessory: data?.accessory, fileDownloader: fileDownloader, recognizerController: nil)
             } else {
                 return ItemCellModel(collectionWithKey: object.key, title: data?.title ?? NSAttributedString())
             }
