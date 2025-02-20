@@ -220,9 +220,7 @@ extension AppDelegate: SceneActivityCounter {
 extension AppDelegate: UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         if let key = Licenses.shared.pspdfkitKey {
-            let additionalFontDirectory = Bundle.main.bundleURL.appendingPathComponent("Bundled/fonts", isDirectory: true).path
-            let options: [SDK.Setting: Any] = [.additionalFontDirectories: [additionalFontDirectory]]
-            PSPDFKit.SDK.setLicenseKey(key, options: options)
+            PSPDFKit.SDK.setLicenseKey(key)
         }
         DDLogInfo("AppDelegate: clearPSPDFKitCacheGuard: \(Defaults.shared.clearPSPDFKitCacheGuard); currentClearPSPDFKitCacheGuard: \(Defaults.currentClearPSPDFKitCacheGuard)")
         if Defaults.shared.clearPSPDFKitCacheGuard < Defaults.currentClearPSPDFKitCacheGuard {
