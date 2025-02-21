@@ -139,6 +139,9 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         case .setSettings(let settings):
             set(settings: settings, in: viewModel)
 
+        case .userInterfaceStyleChanged(let userInterface):
+            userInterfaceChanged(interfaceStyle: userInterface, in: viewModel)
+
         case .changeIdleTimerDisabled(let disabled):
             if disabled {
                 idleTimerController.startCustomIdleTimer()
@@ -191,10 +194,24 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
     private func set(settings: HtmlEpubSettings, in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
         update(viewModel: viewModel) { state in
+            if state.settings.appearance != settings.appearance {
+                state.changes = .appearance
+            }
             state.settings = settings
-            state.changes = .settings
+            state.changes.insert(.settings)
         }
         Defaults.shared.htmlEpubSettings = settings
+    }
+
+    private func userInterfaceChanged(interfaceStyle: UIUserInterfaceStyle, in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
+        // Always update interface style so that we have current value when `automatic` is selected
+        update(viewModel: viewModel) { state in
+            state.interfaceStyle = interfaceStyle
+        }
+        guard viewModel.state.settings.appearance == .automatic else { return }
+        update(viewModel: viewModel) { state in
+            state.changes = .appearance
+        }
     }
 
     private func removeAnnotation(key: String, in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {

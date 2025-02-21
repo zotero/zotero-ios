@@ -30,6 +30,7 @@ struct HtmlEpubReaderState: ViewModelState {
         static let md5 = Changes(rawValue: 1 << 11)
         static let library = Changes(rawValue: 1 << 12)
         static let outline = Changes(rawValue: 1 << 13)
+        static let appearance = Changes(rawValue: 1 << 14)
     }
 
     struct DocumentData {
@@ -137,8 +138,9 @@ struct HtmlEpubReaderState: ViewModelState {
     var deletionEnabled: Bool
     var outlines: [Outline]
     var outlineSearch: String
+    var interfaceStyle: UIUserInterfaceStyle
 
-    init(url: URL, key: String, parentKey: String?, title: String?, settings: HtmlEpubSettings, libraryId: LibraryIdentifier, userId: Int, username: String) {
+    init(url: URL, key: String, parentKey: String?, title: String?, settings: HtmlEpubSettings, libraryId: LibraryIdentifier, userId: Int, username: String, interfaceStyle: UIUserInterfaceStyle) {
         let originalFile = Files.file(from: url)
         let temporaryDirectory = Files.tmpReaderDirectory
         self.originalFile = originalFile
@@ -150,6 +152,7 @@ struct HtmlEpubReaderState: ViewModelState {
         self.settings = settings
         self.userId = userId
         self.username = username
+        self.interfaceStyle = interfaceStyle
         sortedKeys = []
         annotations = [:]
         comments = [:]

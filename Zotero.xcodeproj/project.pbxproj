@@ -4412,7 +4412,6 @@
 				B34A85AC243CB1E4003D5638 /* Bundle Translators */,
 				6185A1A82D9C266100285385 /* Bundle Utilities */,
 				B3A1D03D2BA321B30040FEE9 /* Bundle Note Editor */,
-				61975C432D3A84F5005BB41A /* Fetch Bundled Fonts */,
 				B3052A912C412E12008C8596 /* Bundle Reader */,
 				B337A5AD244F229400AFD13D /* SwiftGen */,
 				B30D59512206F60400884C4A /* Sources */,

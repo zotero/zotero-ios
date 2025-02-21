@@ -110,7 +110,7 @@ class HtmlEpubReaderViewController: UIViewController, ParentWithSidebarControlle
         setupNavigationBar()
         setupSearch()
         setupViews()
-        navigationController?.overrideUserInterfaceStyle = viewModel.state.settings.appearance.userInterfaceStyle
+        updateInterface(to: viewModel.state.settings)
         navigationItem.rightBarButtonItems = createRightBarButtonItems()
 
         func observeViewModel() {
@@ -293,8 +293,8 @@ class HtmlEpubReaderViewController: UIViewController, ParentWithSidebarControlle
             select(activeTool: state.activeTool)
         }
 
-        if state.changes.contains(.settings) {
-            navigationController?.overrideUserInterfaceStyle = state.settings.appearance.userInterfaceStyle
+        if state.changes.contains(.appearance) {
+            updateInterface(to: state.settings)
         }
 
         if state.changes.contains(.md5) {
@@ -387,6 +387,19 @@ class HtmlEpubReaderViewController: UIViewController, ParentWithSidebarControlle
     }
 
     // MARK: - Actions
+
+    private func updateInterface(to settings: HtmlEpubSettings) {
+        switch settings.appearance {
+        case .automatic:
+            navigationController?.overrideUserInterfaceStyle = .unspecified
+
+        case .light, .sepia:
+            navigationController?.overrideUserInterfaceStyle = .light
+
+        case .dark:
+            navigationController?.overrideUserInterfaceStyle = .dark
+        }
+    }
 
     private func toggleSidebar(animated: Bool) {
         toggleSidebar(animated: animated, sidebarButtonTag: NavigationBarButton.sidebar.rawValue)

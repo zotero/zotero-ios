@@ -34,4 +34,17 @@ enum Appearance {
             return .sepia
         }
     }
+
+    var htmlEpubValue: String {
+        switch self {
+        case .dark:
+            return "dark"
+
+        case .light:
+            return "light"
+
+        case .sepia:
+            return "sepia"
+        }
+    }
 }

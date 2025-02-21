@@ -65,6 +65,7 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
               let parentNavigationController = parentCoordinator?.navigationController
         else { return }
 
+        let settings = Defaults.shared.htmlEpubSettings
         let handler = HtmlEpubReaderActionHandler(
             dbStorage: dbStorage,
             schemaController: controllers.schemaController,
@@ -81,7 +82,8 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
             settings: Defaults.shared.htmlEpubSettings,
             libraryId: libraryId,
             userId: userId,
-            username: username
+            username: username,
+            interfaceStyle: settings.appearance == .automatic ? parentNavigationController.view.traitCollection.userInterfaceStyle : settings.appearance.userInterfaceStyle
         )
         let controller = HtmlEpubReaderViewController(
             viewModel: ViewModel(initialState: state, handler: handler),
