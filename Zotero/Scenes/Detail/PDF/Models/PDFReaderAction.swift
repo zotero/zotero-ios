@@ -55,7 +55,7 @@ enum PDFReaderAction {
     case export(includeAnnotations: Bool)
     case clearTmpData
     case setSidebarEditingEnabled(Bool)
-    case setSettings(settings: PDFSettings, parentUserInterfaceStyle: UIUserInterfaceStyle)
+    case setSettings(settings: PDFSettings)
     case changeIdleTimerDisabled(Bool)
     case changeFilter(AnnotationsFilter?)
     case submitPendingPage(Int)

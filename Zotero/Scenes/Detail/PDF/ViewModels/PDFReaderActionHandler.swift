@@ -250,8 +250,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             // Clear page thumbnails
             pdfThumbnailController.deleteAll(forKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
 
-        case .setSettings(let settings, let userInterfaceStyle):
-            update(settings: settings, parentInterfaceStyle: userInterfaceStyle, in: viewModel)
+        case .setSettings(let settings):
+            update(settings: settings, in: viewModel)
 
         case .changeIdleTimerDisabled(let disabled):
             changeIdleTimer(disabled: disabled)
@@ -273,10 +273,13 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     // MARK: - Appearance changes
 
     private func userInterfaceChanged(interfaceStyle: UIUserInterfaceStyle, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        // Always update interface style so that we have current value when `automatic` is selected
+        update(viewModel: viewModel) { state in
+            state.interfaceStyle = interfaceStyle
+        }
         guard viewModel.state.settings.appearanceMode == .automatic else { return }
         updateAnnotations(to: .from(appearanceMode: .automatic, interfaceStyle: interfaceStyle), in: viewModel)
         update(viewModel: viewModel) { state in
-            state.interfaceStyle = interfaceStyle
             state.changes = .appearance
         }
     }
@@ -488,7 +491,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
     }
 
-    private func update(settings: PDFSettings, parentInterfaceStyle: UIUserInterfaceStyle, in viewModel: ViewModel<PDFReaderActionHandler>) {
+    private func update(settings: PDFSettings, in viewModel: ViewModel<PDFReaderActionHandler>) {
         let appearanceDidChange = settings.appearanceMode != viewModel.state.settings.appearanceMode
         // Update local state
         update(viewModel: viewModel) { state in
