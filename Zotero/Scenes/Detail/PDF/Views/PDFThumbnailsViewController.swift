@@ -116,12 +116,13 @@ class PDFThumbnailsViewController: UICollectionViewController {
         guard snapshot.numberOfSections > 0 else { return }
 
         if state.changes.contains(.appearance) || state.changes.contains(.reload) {
-            updateQueue.sync { [weak self] in
+            updateQueue.async { [weak self] in
                 guard let self else { return }
                 var snapshot = dataSource.snapshot()
                 snapshot.reconfigureItems(snapshot.itemIdentifiers)
                 dataSource.apply(snapshot, animatingDifferences: false, completion: nil)
             }
+            return
         }
 
         if state.changes.contains(.scrollToSelection) {
