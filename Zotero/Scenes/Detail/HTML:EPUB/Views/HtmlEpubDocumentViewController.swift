@@ -133,6 +133,10 @@ class HtmlEpubDocumentViewController: UIViewController {
             }
         }
 
+        if state.changes.contains(.appearance) {
+            updateInterface(to: state.settings.appearance, userInterfaceStyle: state.interfaceStyle)
+        }
+
         func search(term: String) {
             webViewHandler.call(javascript: "search({ term: \(WebViewEncoder.encodeForJavascript(term.data(using: .utf8))) });")
                 .observe(on: MainScheduler.instance)
@@ -185,6 +189,21 @@ class HtmlEpubDocumentViewController: UIViewController {
                 })
                 .disposed(by: disposeBag)
         }
+    }
+
+    private func updateInterface(to appearanceMode: ReaderSettingsState.Appearance, userInterfaceStyle: UIUserInterfaceStyle) {
+        switch appearanceMode {
+        case .automatic:
+            webView.overrideUserInterfaceStyle = userInterfaceStyle
+
+        case .light, .sepia:
+            webView.overrideUserInterfaceStyle = .light
+
+        case .dark:
+            webView.overrideUserInterfaceStyle = .dark
+        }
+        let appearanceString = Appearance.from(appearanceMode: appearanceMode, interfaceStyle: userInterfaceStyle).htmlEpubValue
+        webView.call(javascript: "window._view.setColorScheme('\(appearanceString)');").subscribe().disposed(by: disposeBag)
     }
 
     private func set(tool data: (AnnotationTool, UIColor)?) {
