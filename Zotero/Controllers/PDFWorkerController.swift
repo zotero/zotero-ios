@@ -66,20 +66,20 @@ final class PDFWorkerController {
     }
 
     // MARK: Actions
-    func queue(work: PDFWork, completion: @escaping (_ observable: PublishSubject<Update>?) -> Void) {
+    func queue(work: PDFWork, completion: @escaping (_ observable: Observable<Update>?) -> Void) {
         accessQueue.async(flags: .barrier) { [weak self] in
             guard let self else {
                 completion(nil)
                 return
             }
             if let (_, observable) = queue[work] {
-                completion(observable)
+                completion(observable.asObservable())
                 return
             }
             let state: PDFWorkState = .enqueued
             let observable: PublishSubject<Update> = PublishSubject()
             queue[work] = (state, observable)
-            completion(observable)
+            completion(observable.asObservable())
 
             startWorkIfNeeded()
         }
