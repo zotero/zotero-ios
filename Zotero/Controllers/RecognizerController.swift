@@ -257,14 +257,17 @@ final class RecognizerController {
                 case .inProgress:
                     break
 
-                case .extractedRecognizerData(data: let data):
-                    DDLogInfo("RecognizerController: \(task) - extracted recognizer data")
-                    startRemoteRecognition(for: task, with: data)
+                case .extractedData(let data):
+                    switch update.work.kind {
+                    case .recognizer:
+                        DDLogInfo("RecognizerController: \(task) - extracted recognizer data")
+                        startRemoteRecognition(for: task, with: data)
 
-                case .extractedFullText:
-                    DDLogError("RecognizerController: \(task) - PDF worker error")
-                    cleanupTask(for: task) { observable in
-                        observable?.on(.next(Update(task: task, kind: .failed(.pdfWorkerError))))
+                    case .fullText:
+                        DDLogError("RecognizerController: \(task) - PDF worker error")
+                        cleanupTask(for: task) { observable in
+                            observable?.on(.next(Update(task: task, kind: .failed(.pdfWorkerError))))
+                        }
                     }
                 }
             }
