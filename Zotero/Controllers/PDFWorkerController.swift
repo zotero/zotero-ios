@@ -30,8 +30,7 @@ final class PDFWorkerController {
             case failed
             case cancelled
             case inProgress
-            case extractedRecognizerData(data: [String: Any])
-            case extractedFullText(data: [String: Any])
+            case extractedData(data: [String: Any])
         }
 
         let work: PDFWork
@@ -140,14 +139,9 @@ final class PDFWorkerController {
                     switch result {
                     case .success(let data):
                         switch data {
-                        case .recognizerData(let data):
+                        case .recognizerData(let data), .fullText(let data):
                             cleanupPDFWorker(for: work) { observable in
-                                observable?.on(.next(Update(work: work, kind: .extractedRecognizerData(data: data))))
-                            }
-
-                        case .fullText(let data):
-                            cleanupPDFWorker(for: work) { observable in
-                                observable?.on(.next(Update(work: work, kind: .extractedFullText(data: data))))
+                                observable?.on(.next(Update(work: work, kind: .extractedData(data: data))))
                             }
                         }
 

@@ -65,7 +65,7 @@ final class PDFWorkerControllerSpec: QuickSpec {
                                 expect(update.work).to(equal(work))
                                 emittedUpdates.append(update.kind)
                                 switch update.kind {
-                                case .failed, .cancelled, .extractedRecognizerData, .extractedFullText:
+                                case .failed, .cancelled, .extractedData:
                                     completion()
 
                                 case .inProgress:
@@ -82,7 +82,7 @@ final class PDFWorkerControllerSpec: QuickSpec {
                         case .inProgress:
                             expect(index).to(equal(0))
 
-                        case .extractedRecognizerData(let data):
+                        case .extractedData(let data):
                             expect(index).to(equal(1))
                             let recognizerDataURL = Bundle(for: Self.self).url(forResource: "bitcoin_pdf_recognizer_data", withExtension: "json")!
                             let recognizerData = try! Data(contentsOf: recognizerDataURL)
@@ -107,7 +107,7 @@ final class PDFWorkerControllerSpec: QuickSpec {
                                 expect(update.work).to(equal(work))
                                 emittedUpdates.append(update.kind)
                                 switch update.kind {
-                                case .failed, .cancelled, .extractedRecognizerData, .extractedFullText:
+                                case .failed, .cancelled, .extractedData:
                                     completion()
 
                                 case .inProgress:
@@ -124,7 +124,7 @@ final class PDFWorkerControllerSpec: QuickSpec {
                         case .inProgress:
                             expect(index).to(equal(0))
 
-                        case .extractedRecognizerData(let data):
+                        case .extractedData(let data):
                             expect(index).to(equal(1))
                             let fullTextURL = Bundle(for: Self.self).url(forResource: "bitcoin_pdf_full_text", withExtension: "json")!
                             let fullTextData = try! Data(contentsOf: fullTextURL)
