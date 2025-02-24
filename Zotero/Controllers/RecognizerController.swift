@@ -15,7 +15,7 @@ import RxSwift
 
 final class RecognizerController {
     // MARK: Types
-    enum RemoteRecognizerIdentifier {
+    enum RecognizerIdentifier {
         case arXiv(String)
         case doi(String)
         case isbn(String)
@@ -48,7 +48,7 @@ final class RecognizerController {
         }
     }
 
-    struct RecognizerTask: Hashable {
+    struct Task: Hashable {
         enum Kind: Hashable {
             case simple
             case createParentForItem(libraryId: LibraryIdentifier, key: String)
@@ -80,15 +80,15 @@ final class RecognizerController {
             case createdParent(item: RItem)
         }
 
-        let task: RecognizerTask
+        let task: Task
         let kind: Kind
     }
 
-    enum RecognizerTaskState {
+    enum TaskState {
         case enqueued
         case recognitionInProgress
         case remoteRecognitionInProgress(data: [String: Any])
-        case identifiersLookupInProgress(response: RemoteRecognizerResponse, currentIdentifier: RemoteRecognizerIdentifier, pendingIdentifiers: [RemoteRecognizerIdentifier])
+        case identifiersLookupInProgress(response: RemoteRecognizerResponse, currentIdentifier: RecognizerIdentifier, pendingIdentifiers: [RecognizerIdentifier])
     }
 
     // MARK: Properties
@@ -111,10 +111,10 @@ final class RecognizerController {
     internal weak var webViewProvider: WebViewProvider?
 
     // Accessed only via accessQueue
-    private static let maxConcurrentRecognizerTasks: Int = 1
-    private var queue: OrderedDictionary<RecognizerTask, (state: RecognizerTaskState, observable: PublishSubject<Update>)> = [:]
+    private static let maxConcurrentTasks: Int = 1
+    private var queue: OrderedDictionary<Task, (state: TaskState, observable: PublishSubject<Update>)> = [:]
     private var latestUpdates: [LibraryIdentifier: [String: Update.Kind]] = [:]
-    private var lookupWebViewHandlersByRecognizerTask: [RecognizerTask: LookupWebViewHandler] = [:]
+    private var lookupWebViewHandlersByTask: [Task: LookupWebViewHandler] = [:]
 
     // MARK: Object Lifecycle
     init(
@@ -141,7 +141,7 @@ final class RecognizerController {
     }
 
     // MARK: Actions
-    func queue(task: RecognizerTask, completion: ((_ observable: Observable<Update>?) -> Void)? = nil) {
+    func queue(task: Task, completion: ((_ observable: Observable<Update>?) -> Void)? = nil) {
         accessQueue.async(flags: .barrier) { [weak self] in
             guard let self else {
                 completion?(nil)
@@ -151,7 +151,7 @@ final class RecognizerController {
                 completion?(observable.asObservable())
                 return
             }
-            let state: RecognizerTaskState = .enqueued
+            let state: TaskState = .enqueued
             let observable: PublishSubject<Update> = PublishSubject()
             queue[task] = (state, observable)
             completion?(observable.asObservable())
@@ -164,7 +164,7 @@ final class RecognizerController {
         }
     }
 
-    private func emmitUpdate(for task: RecognizerTask, observable: PublishSubject<Update>, kind: Update.Kind) {
+    private func emmitUpdate(for task: Task, observable: PublishSubject<Update>, kind: Update.Kind) {
         let update = Update(task: task, kind: kind)
         if case .createParentForItem(let libraryId, let key) = task.kind {
             var libraryLatestUpdates = latestUpdates[libraryId, default: [:]]
@@ -175,7 +175,7 @@ final class RecognizerController {
     }
 
     private func startRecognitionIfNeeded() {
-        let runningRecognizerTasksCount = queue.filter({
+        let runningTasksCount = queue.filter({
             switch $0.value.state {
             case .enqueued:
                 return false
@@ -184,7 +184,7 @@ final class RecognizerController {
                 return true
             }
         }).count
-        guard runningRecognizerTasksCount < Self.maxConcurrentRecognizerTasks else { return }
+        guard runningTasksCount < Self.maxConcurrentTasks else { return }
         let tasks = queue.keys
         for task in tasks {
             guard let (state, observable) = queue[task] else { continue }
@@ -199,7 +199,7 @@ final class RecognizerController {
             }
         }
 
-        func start(task: RecognizerTask, observable: PublishSubject<Update>) {
+        func start(task: Task, observable: PublishSubject<Update>) {
             queue[task] = (.recognitionInProgress, observable)
             emmitUpdate(for: task, observable: observable, kind: .recognitionInProgress)
 
@@ -250,7 +250,7 @@ final class RecognizerController {
         }
     }
 
-    private func startRemoteRecognition(for task: RecognizerTask, with data: [String: Any]) {
+    private func startRemoteRecognition(for task: Task, with data: [String: Any]) {
         accessQueue.async(flags: .barrier) { [weak self] in
             guard let self else { return }
             guard let (_, observable) = queue[task] else {
@@ -276,7 +276,7 @@ final class RecognizerController {
         }
 
         func process(response: RemoteRecognizerResponse) {
-            var identifiers: [RemoteRecognizerIdentifier] = []
+            var identifiers: [RecognizerIdentifier] = []
             if let identifier = response.arxiv {
                 identifiers.append(.arXiv(identifier))
             }
@@ -299,7 +299,7 @@ final class RecognizerController {
         }
     }
 
-    private func startIdentifiersLookup(for task: RecognizerTask, with response: RemoteRecognizerResponse, pendingIdentifiers: [RemoteRecognizerIdentifier]) {
+    private func startIdentifiersLookup(for task: Task, with response: RemoteRecognizerResponse, pendingIdentifiers: [RecognizerIdentifier]) {
         accessQueue.async(flags: .barrier) { [weak self] in
             guard let self else { return }
             guard let (state, _) = queue[task] else {
@@ -316,7 +316,7 @@ final class RecognizerController {
         }
     }
 
-    private func enqueueNextIdentifierLookup(for task: RecognizerTask) {
+    private func enqueueNextIdentifierLookup(for task: Task) {
         if DispatchQueue.getSpecific(key: dispatchSpecificKey) == accessQueueLabel {
             _enqueueNextIdentifierLookup(for: task)
         } else {
@@ -325,7 +325,7 @@ final class RecognizerController {
             }
         }
 
-        func _enqueueNextIdentifierLookup(for task: RecognizerTask) {
+        func _enqueueNextIdentifierLookup(for task: Task) {
             guard let (state, _) = queue[task] else {
                 startRecognitionIfNeeded()
                 return
@@ -340,7 +340,7 @@ final class RecognizerController {
         }
     }
 
-    private func lookupNextIdentifier(for task: RecognizerTask, with response: RemoteRecognizerResponse, pendingIdentifiers: [RemoteRecognizerIdentifier]) {
+    private func lookupNextIdentifier(for task: Task, with response: RemoteRecognizerResponse, pendingIdentifiers: [RecognizerIdentifier]) {
         DDLogInfo("RecognizerController: \(task) - looking up next identifier from \(pendingIdentifiers)")
         guard let (_, observable) = queue[task] else {
             startRecognitionIfNeeded()
@@ -364,7 +364,7 @@ final class RecognizerController {
             use(title: title, with: response)
         }
 
-        func lookup(identifier: String, copyTagsAsAutomatic: Bool, remainingIdentifiers: [RemoteRecognizerIdentifier]) {
+        func lookup(identifier: String, copyTagsAsAutomatic: Bool, remainingIdentifiers: [RecognizerIdentifier]) {
             DDLogInfo("RecognizerController: \(task) - looking up identifier \(identifier)")
             guard let lookupWebViewHandler = getLookupWebViewHandler(for: task) else {
                 enqueueNextIdentifierLookup(for: task)
@@ -373,8 +373,8 @@ final class RecognizerController {
             emmitUpdate(for: task, observable: observable, kind: .identifierLookupInProgress(response: response, identifier: identifier))
             lookupWebViewHandler.lookUp(identifier: identifier)
 
-            func getLookupWebViewHandler(for task: RecognizerTask) -> LookupWebViewHandler? {
-                if let lookupWebViewHandler = lookupWebViewHandlersByRecognizerTask[task] {
+            func getLookupWebViewHandler(for task: Task) -> LookupWebViewHandler? {
+                if let lookupWebViewHandler = lookupWebViewHandlersByTask[task] {
                     return lookupWebViewHandler
                 }
                 var lookupWebViewHandler: LookupWebViewHandler?
@@ -387,7 +387,7 @@ final class RecognizerController {
                     DDLogWarn("RecognizerController: \(task) - can't create LookupWebViewHandler instance")
                     return nil
                 }
-                lookupWebViewHandlersByRecognizerTask[task] = lookupWebViewHandler
+                lookupWebViewHandlersByTask[task] = lookupWebViewHandler
                 setupObserver(for: lookupWebViewHandler)
                 return lookupWebViewHandler
 
@@ -492,7 +492,7 @@ final class RecognizerController {
             createParentIfNeeded(for: task, with: itemResponse, schemaController: schemaController, dateParser: dateParser)
         }
 
-        func createParentIfNeeded(for task: RecognizerTask, with itemResponse: ItemResponse, schemaController: SchemaController, dateParser: DateParser) {
+        func createParentIfNeeded(for task: Task, with itemResponse: ItemResponse, schemaController: SchemaController, dateParser: DateParser) {
             switch task.kind {
             case .simple:
                 cleanupTask(for: task) { observable in
@@ -529,7 +529,7 @@ final class RecognizerController {
         }
     }
 
-    func cancel(task: RecognizerTask) {
+    func cancel(task: Task) {
         cleanupTask(for: task) { observable in
             DDLogInfo("RecognizerController: cancelled \(task)")
             observable?.on(.next(Update(task: task, kind: .cancelled)))
@@ -541,9 +541,9 @@ final class RecognizerController {
             guard let self else { return }
             DDLogInfo("RecognizerController: cancel all tasks")
             // Immediatelly release all lookup web views.
-            let keys = lookupWebViewHandlersByRecognizerTask.keys
+            let keys = lookupWebViewHandlersByTask.keys
             for key in keys {
-                lookupWebViewHandlersByRecognizerTask.removeValue(forKey: key)?.removeFromSuperviewAsynchronously()
+                lookupWebViewHandlersByTask.removeValue(forKey: key)?.removeFromSuperviewAsynchronously()
             }
             // Then cancel actual tasks, and send cancelled event for each queued task.
             let tasks = queue.keys
@@ -553,7 +553,7 @@ final class RecognizerController {
         }
     }
 
-    private func cleanupTask(for task: RecognizerTask, completion: @escaping (_ observable: PublishSubject<Update>?) -> Void) {
+    private func cleanupTask(for task: Task, completion: @escaping (_ observable: PublishSubject<Update>?) -> Void) {
         if DispatchQueue.getSpecific(key: dispatchSpecificKey) == accessQueueLabel {
             cleanup(for: task, completion: completion)
         } else {
@@ -562,14 +562,14 @@ final class RecognizerController {
             }
         }
 
-        func cleanup(for task: RecognizerTask, completion: @escaping (_ observable: PublishSubject<Update>?) -> Void) {
+        func cleanup(for task: Task, completion: @escaping (_ observable: PublishSubject<Update>?) -> Void) {
             let observable = queue.removeValue(forKey: task).flatMap({ $0.observable })
             if case .createParentForItem(let libraryId, let key) = task.kind, var libraryLatestUpdates = latestUpdates[libraryId] {
                 libraryLatestUpdates[key] = nil
                 latestUpdates[libraryId] = libraryLatestUpdates
             }
             DDLogInfo("RecognizerController: \(task) - cleaned up")
-            lookupWebViewHandlersByRecognizerTask.removeValue(forKey: task)?.removeFromSuperviewAsynchronously()
+            lookupWebViewHandlersByTask.removeValue(forKey: task)?.removeFromSuperviewAsynchronously()
             completion(observable)
             startRecognitionIfNeeded()
         }
