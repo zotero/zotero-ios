@@ -259,7 +259,7 @@ final class ItemsViewController: BaseItemsViewController {
                   file.mimeType == "application/pdf",
                   let recognizerController = controllers.userControllers?.recognizerController
             else { return }
-            recognizerController.queue(task: RecognizerController.Task(file: file, kind: .createParentForItem(libraryId: library.identifier, key: key)))
+            _ = recognizerController.queue(task: RecognizerController.Task(file: file, kind: .createParentForItem(libraryId: library.identifier, key: key)))
 
         case .duplicate:
             guard let key = selectedKeys.first else { return }

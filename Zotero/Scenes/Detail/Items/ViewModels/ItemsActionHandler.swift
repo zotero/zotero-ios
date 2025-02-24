@@ -510,13 +510,7 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
                 for attachment in succeeded {
                     if let file = attachment.file as? FileData, file.mimeType == "application/pdf" {
                         let task = RecognizerController.Task(file: file, kind: .createParentForItem(libraryId: libraryId, key: attachment.key))
-                        recognizerController.queue(task: task) { [weak self] observable in
-                            guard let self else { return }
-                            observable?.subscribe { _ in
-                                // TODO: Implement update of UI according to updates
-                            }
-                            .disposed(by: disposeBag)
-                        }
+                        _ = recognizerController.queue(task: task)
                     }
                 }
                 guard !failed.isEmpty else { return }

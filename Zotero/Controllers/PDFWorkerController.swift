@@ -65,22 +65,25 @@ final class PDFWorkerController {
     }
 
     // MARK: Actions
-    func queue(work: PDFWork, completion: @escaping (_ observable: Observable<Update>?) -> Void) {
-        accessQueue.async(flags: .barrier) { [weak self] in
-            guard let self else {
-                completion(nil)
-                return
-            }
-            if let (_, observable) = queue[work] {
-                completion(observable.asObservable())
-                return
-            }
-            let state: PDFWorkState = .enqueued
-            let observable: PublishSubject<Update> = PublishSubject()
-            queue[work] = (state, observable)
-            completion(observable.asObservable())
+    func queue(work: PDFWork) -> Observable<Update> {
+        return Observable.create { [weak self] subscriber in
+            guard let self else { return Disposables.create() }
+            accessQueue.async(flags: .barrier) { [weak self] in
+                guard let self else { return }
+                if let subject = queue[work]?.1 {
+                    subject.subscribe(subscriber)
+                        .disposed(by: disposeBag)
+                    return
+                }
+                let state: PDFWorkState = .enqueued
+                let subject: PublishSubject<Update> = PublishSubject()
+                queue[work] = (state, subject)
+                subject.subscribe(subscriber)
+                    .disposed(by: disposeBag)
 
-            startWorkIfNeeded()
+                startWorkIfNeeded()
+            }
+            return Disposables.create()
         }
     }
 

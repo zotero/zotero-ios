@@ -538,9 +538,8 @@ final class ExtensionViewModel {
         }
 
         func recognize(file: FileData) {
-            recognizerController.queue(task: .init(file: file, kind: .simple)) { [weak self] observable in
-                guard let self else { return }
-                observable?.subscribe { [weak self] update in
+            recognizerController.queue(task: .init(file: file, kind: .simple))
+                .subscribe { [weak self] update in
                     guard let self else { return }
                     switch update.kind {
                     case .failed(let error):
@@ -567,7 +566,6 @@ final class ExtensionViewModel {
                     }
                 }
                 .disposed(by: disposeBag)
-            }
         }
     }
 
