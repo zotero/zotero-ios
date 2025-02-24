@@ -262,6 +262,8 @@ final class Controllers {
         userControllers?.remoteFileDownloader.stop()
         // Cancel all background uploads
         userControllers?.backgroundUploadObserver.cancelAllUploads()
+        // Cancel all Recognizer Tasks
+        userControllers?.recognizerController.cancellAllTasks()
         // Cancel all PDF workers
         userControllers?.pdfWorkerController.cancellAllWorks()
         // Clear user controllers
