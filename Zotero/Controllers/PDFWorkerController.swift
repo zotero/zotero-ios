@@ -48,7 +48,7 @@ final class PDFWorkerController {
     private let accessQueue: DispatchQueue
     private let disposeBag: DisposeBag
 
-    internal weak var webViewProvider: WebViewProvider?
+    weak var webViewProvider: WebViewProvider?
 
     // Accessed only via accessQueue
     private static let maxConcurrentPDFWorkers: Int = 1
@@ -110,6 +110,7 @@ final class PDFWorkerController {
                     let webView = webViewProvider.addWebView(configuration: configuration)
                     pdfWorkerWebViewHandler = PDFWorkerWebViewHandler(webView: webView)
                 }
+                pdfWorkerWebViewHandlersByPDFWork[work] = pdfWorkerWebViewHandler
             }
             guard let pdfWorkerWebViewHandler else {
                 DDLogError("PDFWorkerController: can't create PDFWorkerWebViewHandler instance")
@@ -118,7 +119,7 @@ final class PDFWorkerController {
                 }
                 return
             }
-            pdfWorkerWebViewHandlersByPDFWork[work] = pdfWorkerWebViewHandler
+
             setupObserver(for: pdfWorkerWebViewHandler)
             queue[work] = (.inProgress, observable)
             observable.on(.next(Update(work: work, kind: .inProgress)))
@@ -132,7 +133,10 @@ final class PDFWorkerController {
 
             func setupObserver(for pdfWorkerWebViewHandler: PDFWorkerWebViewHandler) {
                 pdfWorkerWebViewHandler.observable
-                    .subscribe(onNext: { process(result: $0) })
+                    .subscribe(onNext: { [weak self] in
+                        guard let self else { return }
+                        process(result: $0)
+                    })
                     .disposed(by: disposeBag)
 
                 func process(result: Result<PDFWorkerWebViewHandler.PDFWorkerData, Error>) {
