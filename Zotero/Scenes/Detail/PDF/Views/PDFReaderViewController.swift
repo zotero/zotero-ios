@@ -643,7 +643,7 @@ class PDFReaderViewController: UIViewController {
         settingsViewModel.stateObservable
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] state in
-                guard let self, let interfaceStyle = presentingViewController?.traitCollection.userInterfaceStyle else { return }
+                guard let self else { return }
                 let settings = PDFSettings(
                     transition: state.transition,
                     pageMode: state.pageMode,
@@ -652,7 +652,7 @@ class PDFReaderViewController: UIViewController {
                     appearanceMode: state.appearance,
                     isFirstPageAlwaysSingle: state.isFirstPageAlwaysSingle
                 )
-                viewModel.process(action: .setSettings(settings: settings, parentUserInterfaceStyle: interfaceStyle))
+                viewModel.process(action: .setSettings(settings: settings))
             })
             .disposed(by: disposeBag)
     }
