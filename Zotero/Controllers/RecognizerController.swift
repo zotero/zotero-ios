@@ -48,30 +48,6 @@ final class RecognizerController {
         }
     }
 
-    struct RemoteRecognizerResponse: Decodable {
-        struct Author: Decodable {
-            let firstName, lastName: String?
-        }
-        let arxiv, doi, isbn: String?
-        let abstract, language: String?
-        let title, type, year, pages, volume, url, issue, issn, container, publisher: String?
-        let authors: [Author]
-    }
-
-    struct RecognizerRequest: ApiResponseRequest {
-        typealias Response = RemoteRecognizerResponse
-        let parameters: [String: Any]?
-
-        var endpoint: ApiEndpoint { .other(URL(string: "https://services.zotero.org/recognizer/recognize")!) }
-        var httpMethod: ApiHttpMethod { .post }
-        var encoding: ApiParameterEncoding { .json }
-        var headers: [String: String]? { nil }
-
-        init(parameters: [String: Any]) {
-            self.parameters = parameters
-        }
-    }
-
     struct RecognizerTask: Hashable {
         enum Kind: Hashable {
             case simple
