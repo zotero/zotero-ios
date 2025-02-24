@@ -538,7 +538,7 @@ final class ExtensionViewModel {
         }
 
         func recognize(file: FileData) {
-            recognizerController.queue(task: RecognizerController.RecognizerTask(file: file, kind: .simple)) { [weak self] observable in
+            recognizerController.queue(task: .init(file: file, kind: .simple)) { [weak self] observable in
                 guard let self else { return }
                 observable?.subscribe { [weak self] update in
                     guard let self else { return }
