@@ -59,7 +59,6 @@ final class RecognizerController {
     }
 
     enum Error: Swift.Error {
-        case cantStartPDFWorker
         case pdfWorkerError
         case recognizerFailed
         case remoteRecognizerFailed
@@ -141,26 +140,28 @@ final class RecognizerController {
     }
 
     // MARK: Actions
-    func queue(task: Task, completion: ((_ observable: Observable<Update>?) -> Void)? = nil) {
+    func queue(task: Task) -> Observable<Update> {
+        // Queue task regardless of any subscribers
         accessQueue.async(flags: .barrier) { [weak self] in
-            guard let self else {
-                completion?(nil)
-                return
-            }
-            if let (_, observable) = queue[task] {
-                completion?(observable.asObservable())
-                return
-            }
+            guard let self, queue[task] == nil else { return }
             let state: TaskState = .enqueued
             let observable: PublishSubject<Update> = PublishSubject()
             queue[task] = (state, observable)
-            completion?(observable.asObservable())
             observable.subscribe(onNext: { [weak self] update in
                 self?.updatesSubject.on(.next(update))
             }).disposed(by: disposeBag)
 
             emmitUpdate(for: task, observable: observable, kind: .enqueued)
             startRecognitionIfNeeded()
+        }
+        return Observable<Update>.create { [weak self] subscriber in
+            guard let self else { return Disposables.create() }
+            accessQueue.async(flags: .barrier) { [weak self] in
+                guard let self, let subject = queue[task]?.1 else { return }
+                subject.subscribe(subscriber)
+                    .disposed(by: disposeBag)
+            }
+            return Disposables.create()
         }
     }
 
@@ -203,19 +204,11 @@ final class RecognizerController {
             queue[task] = (.recognitionInProgress, observable)
             emmitUpdate(for: task, observable: observable, kind: .recognitionInProgress)
 
-            pdfWorkerController.queue(work: PDFWorkerController.PDFWork(file: task.file, kind: .recognizer)) { [weak self] pdfWorkerObservable in
-                guard let self else { return }
-                guard let pdfWorkerObservable else {
-                    DDLogError("RecognizerController: \(task) - can't create start PDF worker")
-                    cleanupTask(for: task) { observable in
-                        observable?.on(.next(Update(task: task, kind: .failed(.cantStartPDFWorker))))
-                    }
-                    return
-                }
-                pdfWorkerObservable
-                    .subscribe(onNext: { process(update: $0) })
-                    .disposed(by: disposeBag)
-            }
+            pdfWorkerController.queue(work: PDFWorkerController.PDFWork(file: task.file, kind: .recognizer))
+                .subscribe(onNext: { update in
+                    process(update: update)
+                })
+                .disposed(by: disposeBag)
 
             func process(update: PDFWorkerController.Update) {
                 switch update.kind {
