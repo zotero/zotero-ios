@@ -550,6 +550,33 @@ final class RecognizerController {
         }
     }
 
+    func cancel(task: RecognizerTask) {
+        cleanupTask(for: task) { observable in
+            DDLogInfo("RecognizerController: cancelled \(task)")
+            observable?.on(.next(Update(task: task, kind: .cancelled)))
+        }
+    }
+
+    func cancellAllTasks() {
+        accessQueue.async(flags: .barrier) { [weak self] in
+            guard let self else { return }
+            DDLogInfo("RecognizerController: cancel all tasks")
+            // Immediatelly release all lookup web views.
+            let keys = lookupWebViewHandlersByRecognizerTask.keys
+            for key in keys {
+                guard let webView = lookupWebViewHandlersByRecognizerTask.removeValue(forKey: key)?.webViewHandler.webView else { continue }
+                DispatchQueue.main.async {
+                    webView.removeFromSuperview()
+                }
+            }
+            // Then cancel actual tasks, and send cancelled event for each queued task.
+            let tasks = queue.keys
+            for task in tasks {
+                cancel(task: task)
+            }
+        }
+    }
+
     private func cleanupTask(for task: RecognizerTask, completion: @escaping (_ observable: PublishSubject<Update>?) -> Void) {
         if DispatchQueue.getSpecific(key: dispatchSpecificKey) == accessQueueLabel {
             cleanup(for: task, completion: completion)
