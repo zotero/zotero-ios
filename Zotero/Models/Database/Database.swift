@@ -131,6 +131,7 @@ struct Database {
     }
 
     private static func correctAnnotationColors(migration: Migration) {
+        #if MAINAPP
         let colorVariationMap = AnnotationsConfig.colorVariationMap
         migration.enumerateObjects(ofType: RItem.className()) { oldObject, newObject in
             guard let oldObject,
@@ -161,6 +162,7 @@ struct Database {
             }
             newObject["changes"] = newChanges
         }
+        #endif
     }
 
     private static func extractAnnotationTypeFromItems(migration: Migration) {
