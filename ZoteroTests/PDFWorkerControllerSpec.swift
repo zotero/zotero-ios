@@ -58,10 +58,8 @@ final class PDFWorkerControllerSpec: QuickSpec {
                     var emittedUpdates: [PDFWorkerController.Update.Kind] = []
 
                     waitUntil(timeout: .seconds(10)) { completion in
-                        pdfWorkerController.queue(work: work) { observable in
-                            expect(observable).toNot(beNil())
-                            guard let observable else { return }
-                            observable.subscribe(onNext: { update in
+                        pdfWorkerController.queue(work: work)
+                            .subscribe(onNext: { update in
                                 expect(update.work).to(equal(work))
                                 emittedUpdates.append(update.kind)
                                 switch update.kind {
@@ -73,7 +71,6 @@ final class PDFWorkerControllerSpec: QuickSpec {
                                 }
                             })
                             .disposed(by: disposeBag)
-                        }
                     }
 
                     expect(emittedUpdates.count).toEventually(equal(2), timeout: .seconds(20))
@@ -100,10 +97,8 @@ final class PDFWorkerControllerSpec: QuickSpec {
                     var emittedUpdates: [PDFWorkerController.Update.Kind] = []
 
                     waitUntil(timeout: .seconds(10)) { completion in
-                        pdfWorkerController.queue(work: work) { observable in
-                            expect(observable).toNot(beNil())
-                            guard let observable else { return }
-                            observable.subscribe(onNext: { update in
+                        pdfWorkerController.queue(work: work)
+                            .subscribe(onNext: { update in
                                 expect(update.work).to(equal(work))
                                 emittedUpdates.append(update.kind)
                                 switch update.kind {
@@ -115,7 +110,6 @@ final class PDFWorkerControllerSpec: QuickSpec {
                                 }
                             })
                             .disposed(by: disposeBag)
-                        }
                     }
 
                     expect(emittedUpdates.count).toEventually(equal(2), timeout: .seconds(20))
