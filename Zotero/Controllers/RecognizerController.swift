@@ -564,10 +564,7 @@ final class RecognizerController {
             // Immediatelly release all lookup web views.
             let keys = lookupWebViewHandlersByRecognizerTask.keys
             for key in keys {
-                guard let webView = lookupWebViewHandlersByRecognizerTask.removeValue(forKey: key)?.webViewHandler.webView else { continue }
-                DispatchQueue.main.async {
-                    webView.removeFromSuperview()
-                }
+                lookupWebViewHandlersByRecognizerTask.removeValue(forKey: key)?.webViewHandler.removeFromSuperviewAsynchronously()
             }
             // Then cancel actual tasks, and send cancelled event for each queued task.
             let tasks = queue.keys
@@ -593,11 +590,7 @@ final class RecognizerController {
                 latestUpdates[libraryId] = libraryLatestUpdates
             }
             DDLogInfo("RecognizerController: \(task) - cleaned up")
-            if let webView = lookupWebViewHandlersByRecognizerTask.removeValue(forKey: task)?.webViewHandler.webView {
-                DispatchQueue.main.async {
-                    webView.removeFromSuperview()
-                }
-            }
+            lookupWebViewHandlersByRecognizerTask.removeValue(forKey: task)?.webViewHandler.removeFromSuperviewAsynchronously()
             completion(observable)
             startRecognitionIfNeeded()
         }
