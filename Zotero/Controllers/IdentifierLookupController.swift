@@ -223,10 +223,7 @@ final class IdentifierLookupController {
             DDLogInfo("IdentifierLookupController: cancel all lookups")
             let keys = lookupWebViewHandlersByLookupSettings.keys
             for key in keys {
-                guard let webView = lookupWebViewHandlersByLookupSettings.removeValue(forKey: key)?.webViewHandler.webView else { continue }
-                inMainThread {
-                    webView.removeFromSuperview()
-                }
+                lookupWebViewHandlersByLookupSettings.removeValue(forKey: key)?.webViewHandler.removeFromSuperviewAsynchronously()
             }
             remoteFileDownloader.stop()
             let lookupData = self.lookupData
@@ -531,10 +528,7 @@ final class IdentifierLookupController {
                 DDLogInfo("IdentifierLookupController: cleaned up lookup data")
                 let keys = lookupWebViewHandlersByLookupSettings.keys
                 for key in keys {
-                    guard let webView = lookupWebViewHandlersByLookupSettings.removeValue(forKey: key)?.webViewHandler.webView else { continue }
-                    DispatchQueue.main.async {
-                        webView.removeFromSuperview()
-                    }
+                    lookupWebViewHandlersByLookupSettings.removeValue(forKey: key)?.webViewHandler.removeFromSuperviewAsynchronously()
                 }
                 completion(true)
             }

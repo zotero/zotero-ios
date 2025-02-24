@@ -176,10 +176,7 @@ final class PDFWorkerController {
             // Immediatelly release all PDFWorker web views.
             let keys = pdfWorkerWebViewHandlersByPDFWork.keys
             for key in keys {
-                guard let webView = pdfWorkerWebViewHandlersByPDFWork.removeValue(forKey: key)?.webViewHandler.webView else { continue }
-                DispatchQueue.main.async {
-                    webView.removeFromSuperview()
-                }
+                pdfWorkerWebViewHandlersByPDFWork.removeValue(forKey: key)?.webViewHandler.removeFromSuperviewAsynchronously()
             }
             // Then cancel actual works, and send cancelled event for each queued work.
             let works = queue.keys
@@ -201,11 +198,7 @@ final class PDFWorkerController {
         func cleanup(for work: PDFWork, completion: @escaping (_ observable: PublishSubject<Update>?) -> Void) {
             let observable = queue.removeValue(forKey: work).flatMap({ $0.observable })
             DDLogInfo("PDFWorkerController: cleaned up for \(work)")
-            if let webView = pdfWorkerWebViewHandlersByPDFWork.removeValue(forKey: work)?.webViewHandler.webView {
-                DispatchQueue.main.async {
-                    webView.removeFromSuperview()
-                }
-            }
+            pdfWorkerWebViewHandlersByPDFWork.removeValue(forKey: work)?.webViewHandler.removeFromSuperviewAsynchronously()
             completion(observable)
             startWorkIfNeeded()
         }
