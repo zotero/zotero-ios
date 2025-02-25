@@ -66,25 +66,20 @@ final class PDFWorkerController {
 
     // MARK: Actions
     func queue(work: PDFWork) -> Observable<Update> {
-        return Observable.create { [weak self] subscriber in
-            guard let self else { return Disposables.create() }
-            accessQueue.async(flags: .barrier) { [weak self] in
-                guard let self else { return }
-                if let subject = queue[work]?.1 {
-                    subject.subscribe(subscriber)
-                        .disposed(by: disposeBag)
-                    return
-                }
-                let state: PDFWorkState = .enqueued
-                let subject: PublishSubject<Update> = PublishSubject()
-                queue[work] = (state, subject)
-                subject.subscribe(subscriber)
+        let subject = PublishSubject<Update>()
+        accessQueue.async(flags: .barrier) { [weak self] in
+            guard let self else { return }
+            if let existingSubject = queue[work]?.1 {
+                existingSubject.subscribe(subject)
                     .disposed(by: disposeBag)
-
-                startWorkIfNeeded()
+                return
             }
-            return Disposables.create()
+            let state: PDFWorkState = .enqueued
+            queue[work] = (state, subject)
+
+            startWorkIfNeeded()
         }
+        return subject.asObservable()
     }
 
     private func startWorkIfNeeded() {
@@ -117,9 +112,8 @@ final class PDFWorkerController {
             }
             guard let pdfWorkerWebViewHandler else {
                 DDLogError("PDFWorkerController: can't create PDFWorkerWebViewHandler instance")
-                cleanupPDFWorker(for: work) { observable in
-                    observable?.on(.next(Update(work: work, kind: .failed)))
-                }
+                cleanupPDFWorker(for: work).subscribe(onSuccess: { $0.on(.next(Update(work: work, kind: .failed))) })
+                    .disposed(by: disposeBag)
                 return
             }
 
@@ -147,16 +141,14 @@ final class PDFWorkerController {
                     case .success(let data):
                         switch data {
                         case .recognizerData(let data), .fullText(let data):
-                            cleanupPDFWorker(for: work) { observable in
-                                observable?.on(.next(Update(work: work, kind: .extractedData(data: data))))
-                            }
+                            cleanupPDFWorker(for: work).subscribe(onSuccess: { $0.on(.next(Update(work: work, kind: .extractedData(data: data)))) })
+                                .disposed(by: disposeBag)
                         }
 
                     case .failure(let error):
                         DDLogError("PDFWorkerController: recognizer failed - \(error)")
-                        cleanupPDFWorker(for: work) { observable in
-                            observable?.on(.next(Update(work: work, kind: .failed)))
-                        }
+                        cleanupPDFWorker(for: work).subscribe(onSuccess: { $0.on(.next(Update(work: work, kind: .failed))) })
+                            .disposed(by: disposeBag)
                     }
                 }
             }
@@ -164,10 +156,9 @@ final class PDFWorkerController {
     }
 
     func cancel(work: PDFWork) {
-        cleanupPDFWorker(for: work) { observable in
-            DDLogInfo("PDFWorkerController: cancelled \(work)")
-            observable?.on(.next(Update(work: work, kind: .cancelled)))
-        }
+        DDLogInfo("PDFWorkerController: cancelled \(work)")
+        cleanupPDFWorker(for: work).subscribe(onSuccess: { $0.on(.next(Update(work: work, kind: .cancelled))) })
+            .disposed(by: disposeBag)
     }
 
     func cancellAllWorks() {
@@ -187,20 +178,31 @@ final class PDFWorkerController {
         }
     }
 
-    private func cleanupPDFWorker(for work: PDFWork, completion: @escaping (_ observable: PublishSubject<Update>?) -> Void) {
-        if DispatchQueue.getSpecific(key: dispatchSpecificKey) == accessQueueLabel {
-            cleanup(for: work, completion: completion)
-        } else {
-            accessQueue.async(flags: .barrier) {
-                cleanup(for: work, completion: completion)
+    private func cleanupPDFWorker(for work: PDFWork) -> Maybe<PublishSubject<Update>> {
+        return Maybe.create { [weak self] maybe in
+            guard let self else {
+                maybe(.completed)
+                return Disposables.create()
             }
+            if DispatchQueue.getSpecific(key: dispatchSpecificKey) == accessQueueLabel {
+                cleanup(for: work, maybe: maybe)
+            } else {
+                accessQueue.async(flags: .barrier) {
+                    cleanup(for: work, maybe: maybe)
+                }
+            }
+            return Disposables.create()
         }
 
-        func cleanup(for work: PDFWork, completion: @escaping (_ observable: PublishSubject<Update>?) -> Void) {
+        func cleanup(for work: PDFWork, maybe: (MaybeEvent<PublishSubject<Update>>) -> Void) {
             let observable = queue.removeValue(forKey: work).flatMap({ $0.observable })
             DDLogInfo("PDFWorkerController: cleaned up for \(work)")
             pdfWorkerWebViewHandlersByPDFWork.removeValue(forKey: work)?.removeFromSuperviewAsynchronously()
-            completion(observable)
+            if let observable {
+                maybe(.success(observable))
+            } else {
+                maybe(.completed)
+            }
             startWorkIfNeeded()
         }
     }
