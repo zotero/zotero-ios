@@ -280,31 +280,25 @@ final class RecognizerController {
                     .disposed(by: disposeBag)
                 return
             }
-            startIdentifiersLookup(for: task, with: response, pendingIdentifiers: identifiers)
+            enqueueNextIdentifierLookup(for: task) { state in
+                guard case .remoteRecognitionInProgress = state else { return nil }
+                return (response, identifiers)
+            }
         }
     }
 
-    private func startIdentifiersLookup(for task: Task, with response: RemoteRecognizerResponse, pendingIdentifiers: [RecognizerIdentifier]) {
-        accessQueue.async(flags: .barrier) { [weak self] in
-            guard let self else { return }
-            guard let (state, _) = queue[task] else {
-                startRecognitionIfNeeded()
-                return
-            }
-            guard case .remoteRecognitionInProgress = state else {
-                cleanupTask(for: task).subscribe(onSuccess: { $0.on(.next(Update(task: task, kind: .failed(.unexpectedState)))) })
-                    .disposed(by: disposeBag)
-                return
-            }
-            lookupNextIdentifier(for: task, with: response, pendingIdentifiers: pendingIdentifiers)
+    private func enqueueNextIdentifierLookup(
+        for task: Task,
+        getResponseAndIdentifiers: @escaping (TaskState) -> (RemoteRecognizerResponse, [RecognizerIdentifier])? = { state -> (RemoteRecognizerResponse, [RecognizerIdentifier])? in
+            guard case .identifiersLookupInProgress(let response, _, let pendingIdentifiers) = state else { return nil }
+            return (response, pendingIdentifiers)
         }
-    }
-
-    private func enqueueNextIdentifierLookup(for task: Task) {
+    ) {
         if DispatchQueue.getSpecific(key: dispatchSpecificKey) == accessQueueLabel {
             _enqueueNextIdentifierLookup(for: task)
         } else {
-            accessQueue.async(flags: .barrier) {
+            accessQueue.async(flags: .barrier) { [weak self] in
+                guard let self else { return }
                 _enqueueNextIdentifierLookup(for: task)
             }
         }
@@ -314,7 +308,7 @@ final class RecognizerController {
                 startRecognitionIfNeeded()
                 return
             }
-            guard case .identifiersLookupInProgress(let response, _, let pendingIdentifiers) = state else {
+            guard let (response, pendingIdentifiers) = getResponseAndIdentifiers(state) else {
                 cleanupTask(for: task).subscribe(onSuccess: { $0.on(.next(Update(task: task, kind: .failed(.unexpectedState)))) })
                     .disposed(by: disposeBag)
                 return
