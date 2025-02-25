@@ -13,6 +13,8 @@
 		6102D2B92D6CCDD300505E6A /* RemoteRecognizerResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6102D2B72D6CCDD300505E6A /* RemoteRecognizerResponse.swift */; };
 		6102D2BC2D6CCF7600505E6A /* RecognizerRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6102D2BB2D6CCF7600505E6A /* RecognizerRequest.swift */; };
 		6102D2BD2D6CCF7600505E6A /* RecognizerRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6102D2BB2D6CCF7600505E6A /* RecognizerRequest.swift */; };
+		6102D2BF2D6E23D100505E6A /* worker.html in Resources */ = {isa = PBXBuildFile; fileRef = 6102D2BE2D6E23C400505E6A /* worker.html */; };
+		6102D2C02D6E23D100505E6A /* worker.html in Resources */ = {isa = PBXBuildFile; fileRef = 6102D2BE2D6E23C400505E6A /* worker.html */; };
 		61099E6E2C91BAF300EDD92C /* NSDecimalNumber+Rounding.m in Sources */ = {isa = PBXBuildFile; fileRef = 61099E6D2C91BAF300EDD92C /* NSDecimalNumber+Rounding.m */; };
 		61099E6F2C91BAF300EDD92C /* NSDecimalNumber+Rounding.m in Sources */ = {isa = PBXBuildFile; fileRef = 61099E6D2C91BAF300EDD92C /* NSDecimalNumber+Rounding.m */; };
 		61168F612D50D4B6005495E8 /* PDFWorkerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61168F602D50D4B6005495E8 /* PDFWorkerController.swift */; };
@@ -1330,6 +1332,7 @@
 		6102D2B52D68B5DE00505E6A /* bitcoin_pdf_full_text.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = bitcoin_pdf_full_text.json; sourceTree = "<group>"; };
 		6102D2B72D6CCDD300505E6A /* RemoteRecognizerResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteRecognizerResponse.swift; sourceTree = "<group>"; };
 		6102D2BB2D6CCF7600505E6A /* RecognizerRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecognizerRequest.swift; sourceTree = "<group>"; };
+		6102D2BE2D6E23C400505E6A /* worker.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = worker.html; sourceTree = "<group>"; };
 		61099E6A2C91BAF300EDD92C /* Zotero-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Zotero-Bridging-Header.h"; sourceTree = "<group>"; };
 		61099E6B2C91BAF300EDD92C /* ZShare-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "ZShare-Bridging-Header.h"; sourceTree = "<group>"; };
 		61099E6C2C91BAF300EDD92C /* NSDecimalNumber+Rounding.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSDecimalNumber+Rounding.h"; sourceTree = "<group>"; };
@@ -3676,6 +3679,7 @@
 			isa = PBXGroup;
 			children = (
 				61E3CD4F2D9545DF00ACA004 /* CitationWebViewHandler.swift */,
+				6102D2BE2D6E23C400505E6A /* worker.html */,
 				B323703F2C0DC65600170779 /* LookupWebViewHandler.swift */,
 				612361062D439D6A007FA575 /* PDFWorkerWebViewHandler.swift */,
 				B39E0131283276830091CE4A /* WebViewHandler.swift */,
@@ -4674,6 +4678,7 @@
 				B37C5B6F26454130009A37E5 /* NoteEditorViewController.xib in Resources */,
 				B3593F27241A61C700760E20 /* ItemDetailFieldContentView.xib in Resources */,
 				B34DF1BE2576956F0019CCD1 /* SwitchCell.xib in Resources */,
+				6102D2C02D6E23D100505E6A /* worker.html in Resources */,
 				B30B550324B85A3A00F94B59 /* Colors.xcassets in Resources */,
 				B31CC57D286468C80055C114 /* ManualLookupViewController.xib in Resources */,
 				B35DC8E6261D9E7C00ED30F4 /* ItemDetailFieldMultilineEditContentView.xib in Resources */,
@@ -4742,6 +4747,7 @@
 				B36459DD2644118800A0C2C0 /* TagPickerCell.xib in Resources */,
 				B337A5AE244F35A900AFD13D /* Localizable.strings in Resources */,
 				B35F476A24F8F55600FE328D /* webview_extraction.js in Resources */,
+				6102D2BF2D6E23D100505E6A /* worker.html in Resources */,
 				B3AB38B8238ED023008A1ABB /* Assets.xcassets in Resources */,
 				B36459DE2644119100A0C2C0 /* TagPickerViewController.xib in Resources */,
 				618D83E82BAAC88C00E7966B /* PrivacyInfo.xcprivacy in Resources */,
