@@ -73,8 +73,7 @@ final class PDFWorkerController {
         accessQueue.async(flags: .barrier) { [weak self] in
             guard let self else { return }
             if let existingSubject = subjectsByPDFWork[work] {
-                existingSubject.subscribe(subject)
-                    .disposed(by: disposeBag)
+                existingSubject.bind(to: subject).disposed(by: disposeBag)
                 return
             }
             queue[work] = subject
