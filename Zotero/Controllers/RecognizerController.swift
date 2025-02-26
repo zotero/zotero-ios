@@ -72,9 +72,7 @@ final class RecognizerController {
             case failed(Error)
             case cancelled
             case enqueued
-            case recognitionInProgress
-            case remoteRecognitionInProgress(data: [String: Any])
-            case identifierLookupInProgress(response: RemoteRecognizerResponse, identifier: String)
+            case inProgress
             case translated(itemResponse: ItemResponse)
             case createdParent(item: RItem)
         }
@@ -179,7 +177,7 @@ final class RecognizerController {
         func start(task: Task, subject: PublishSubject<Update>) {
             subjectsByTask[task] = subject
             statesByTask[task] = .recognitionInProgress
-            emmitUpdate(for: task, subject: subject, kind: .recognitionInProgress)
+            emmitUpdate(for: task, subject: subject, kind: .inProgress)
 
             pdfWorkerController.queue(work: PDFWorkerController.PDFWork(file: task.file, kind: .recognizer))
                 .subscribe(onNext: { update in
@@ -225,7 +223,6 @@ final class RecognizerController {
                 return
             }
             statesByTask[task] = .remoteRecognitionInProgress(data: data)
-            emmitUpdate(for: task, subject: subject, kind: .remoteRecognitionInProgress(data: data))
 
             apiClient.send(request: RecognizerRequest(parameters: data)).subscribe(
                 onSuccess: { (response: (RemoteRecognizerResponse, HTTPURLResponse)) in
@@ -327,7 +324,6 @@ final class RecognizerController {
                 enqueueNextIdentifierLookup(for: task)
                 return
             }
-            emmitUpdate(for: task, subject: subject, kind: .identifierLookupInProgress(response: response, identifier: identifier))
             lookupWebViewHandler.lookUp(identifier: identifier)
 
             func getLookupWebViewHandler(for task: Task) -> LookupWebViewHandler? {
