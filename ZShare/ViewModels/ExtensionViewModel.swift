@@ -549,7 +549,7 @@ final class ExtensionViewModel {
                     case .cancelled:
                         updateState(with: .processed)
 
-                    case .recognitionInProgress, .remoteRecognitionInProgress, .identifierLookupInProgress:
+                    case .inProgress:
                         updateState(with: .decoding)
 
                     case .translated(let item):
