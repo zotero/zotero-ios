@@ -148,12 +148,12 @@ final class RecognizerController {
         accessQueue.async(flags: .barrier) { [weak self] in
             guard let self else { return }
             if let existingSubject = subjectsByTask[task] {
-                existingSubject.subscribe(subject)
-                    .disposed(by: disposeBag)
+                existingSubject.bind(to: subject).disposed(by: disposeBag)
                 return
             }
             queue[task] = subject
             statesByTask[task] = .enqueued
+            subject.bind(to: updatesSubject).disposed(by: disposeBag)
 
             emmitUpdate(for: task, subject: subject, kind: .enqueued)
             startRecognitionIfNeeded()
@@ -169,7 +169,6 @@ final class RecognizerController {
             latestUpdates[libraryId] = libraryLatestUpdates
         }
         subject.on(.next(update))
-        updatesSubject.on(.next(update))
     }
 
     private func startRecognitionIfNeeded() {
