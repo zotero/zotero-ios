@@ -52,8 +52,11 @@ final class PDFWorkerController {
 
     // Accessed only via accessQueue
     private static let maxConcurrentPDFWorkers: Int = 1
-    private var queue: OrderedDictionary<PDFWork, (state: PDFWorkState, observable: PublishSubject<Update>)> = [:]
+    // Using an OrderedDictionary instead of an Array, so we can O(1) when cancelling a work that is still queued.
+    private var queue: OrderedDictionary<PDFWork, PublishSubject<Update>> = [:]
+    private var subjectsByPDFWork: [PDFWork: PublishSubject<Update>] = [:]
     private var pdfWorkerWebViewHandlersByPDFWork: [PDFWork: PDFWorkerWebViewHandler] = [:]
+    private var statesByPDFWork: [PDFWork: PDFWorkState] = [:]
 
     // MARK: Object Lifecycle
     init() {
@@ -69,13 +72,14 @@ final class PDFWorkerController {
         let subject = PublishSubject<Update>()
         accessQueue.async(flags: .barrier) { [weak self] in
             guard let self else { return }
-            if let existingSubject = queue[work]?.1 {
+            if let existingSubject = subjectsByPDFWork[work] {
                 existingSubject.subscribe(subject)
                     .disposed(by: disposeBag)
                 return
             }
-            let state: PDFWorkState = .enqueued
-            queue[work] = (state, subject)
+            queue[work] = subject
+            subjectsByPDFWork[work] = subject
+            statesByPDFWork[work] = .enqueued
 
             startWorkIfNeeded()
         }
@@ -83,22 +87,12 @@ final class PDFWorkerController {
     }
 
     private func startWorkIfNeeded() {
-        guard pdfWorkerWebViewHandlersByPDFWork.count < Self.maxConcurrentPDFWorkers else { return }
-        let works = queue.keys
-        for work in works {
-            guard let (state, observable) = queue[work] else { continue }
-            switch state {
-            case .enqueued:
-                start(work: work, observable: observable)
-                startWorkIfNeeded()
-                return
+        guard pdfWorkerWebViewHandlersByPDFWork.count < Self.maxConcurrentPDFWorkers, !queue.isEmpty else { return }
+        let (work, subject) = queue.removeFirst()
+        start(work: work, subject: subject)
+        startWorkIfNeeded()
 
-            case .inProgress:
-                break
-            }
-        }
-
-        func start(work: PDFWork, observable: PublishSubject<Update>) {
+        func start(work: PDFWork, subject: PublishSubject<Update>) {
             var pdfWorkerWebViewHandler = pdfWorkerWebViewHandlersByPDFWork[work]
             if pdfWorkerWebViewHandler == nil {
                 DispatchQueue.main.sync { [weak webViewProvider] in
@@ -117,9 +111,9 @@ final class PDFWorkerController {
                 return
             }
 
+            statesByPDFWork[work] = .inProgress
             setupObserver(for: pdfWorkerWebViewHandler)
-            queue[work] = (.inProgress, observable)
-            observable.on(.next(Update(work: work, kind: .inProgress)))
+            subject.on(.next(Update(work: work, kind: .inProgress)))
             switch work.kind {
             case .recognizer:
                 pdfWorkerWebViewHandler.recognize(file: work.file)
@@ -166,12 +160,10 @@ final class PDFWorkerController {
             guard let self else { return }
             DDLogInfo("PDFWorkerController: cancel all works")
             // Immediatelly release all PDFWorker web views.
-            let keys = pdfWorkerWebViewHandlersByPDFWork.keys
-            for key in keys {
-                pdfWorkerWebViewHandlersByPDFWork.removeValue(forKey: key)?.removeFromSuperviewAsynchronously()
-            }
+            pdfWorkerWebViewHandlersByPDFWork.values.forEach { $0.removeFromSuperviewAsynchronously() }
+            pdfWorkerWebViewHandlersByPDFWork = [:]
             // Then cancel actual works, and send cancelled event for each queued work.
-            let works = queue.keys
+            let works = subjectsByPDFWork.keys + Array(queue.keys)
             for work in works {
                 cancel(work: work)
             }
@@ -195,11 +187,14 @@ final class PDFWorkerController {
         }
 
         func cleanup(for work: PDFWork, maybe: (MaybeEvent<PublishSubject<Update>>) -> Void) {
-            let observable = queue.removeValue(forKey: work).flatMap({ $0.observable })
+            let subject = queue[work] ?? subjectsByPDFWork[work]
+            queue[work] = nil
+            subjectsByPDFWork[work] = nil
+            statesByPDFWork[work] = nil
             DDLogInfo("PDFWorkerController: cleaned up for \(work)")
             pdfWorkerWebViewHandlersByPDFWork.removeValue(forKey: work)?.removeFromSuperviewAsynchronously()
-            if let observable {
-                maybe(.success(observable))
+            if let subject {
+                maybe(.success(subject))
             } else {
                 maybe(.completed)
             }
