@@ -151,9 +151,6 @@ final class RecognizerController {
             }
             let state: TaskState = .enqueued
             queue[task] = (state, subject)
-            subject.subscribe(onNext: { [weak self] update in
-                self?.updatesSubject.on(.next(update))
-            }).disposed(by: disposeBag)
 
             emmitUpdate(for: task, observable: subject, kind: .enqueued)
             startRecognitionIfNeeded()
@@ -169,6 +166,7 @@ final class RecognizerController {
             latestUpdates[libraryId] = libraryLatestUpdates
         }
         observable.on(.next(update))
+        updatesSubject.on(.next(update))
     }
 
     private func startRecognitionIfNeeded() {
