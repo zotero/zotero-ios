@@ -142,7 +142,7 @@ struct ItemCellModel {
             text = creatorSummary(for: item)
             animated = false
 
-        case .enqueued, .recognitionInProgress, .remoteRecognitionInProgress, .identifierLookupInProgress, .translated:
+        case .enqueued, .inProgress, .translated:
             text = L10n.Items.retrievingMetadata
             animated = true
         }
