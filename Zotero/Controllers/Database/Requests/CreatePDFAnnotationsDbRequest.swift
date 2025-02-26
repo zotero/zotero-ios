@@ -117,7 +117,9 @@ struct CreatePDFAnnotationsDbRequest: DbRequest {
             case FieldKeys.Item.Annotation.Position.fontSize where field.baseKey == FieldKeys.Item.Annotation.position:
                 rField.value = "\(annotation.fontSize ?? 0)"
 
-            default: break
+            default:
+                DDLogWarn("CreatePDFAnnotationsDbRequest: unknown field, assigning empty value - \(field.key)")
+                rField.value = ""
             }
 
             item.fields.append(rField)
