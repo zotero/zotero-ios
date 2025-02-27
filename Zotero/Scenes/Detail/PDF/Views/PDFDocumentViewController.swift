@@ -933,18 +933,16 @@ extension PDFDocumentViewController: AnnotationStateManagerDelegate {
 }
 
 extension PDFDocumentViewController: UIPencilInteractionDelegate {
-    func pencilInteractionDidTap(_ interaction: UIPencilInteraction) {
-        guard self.parentDelegate?.isToolbarVisible == true else { return }
-    
-        switch UIPencilInteraction.preferredTapAction {
+    private func process(action: UIPencilPreferredAction) {
+        switch action {
         case .switchEraser:
-            if let tool = self.pdfController?.annotationStateManager.state {
+            if let tool = pdfController?.annotationStateManager.state {
                 if tool != .eraser {
-                    self.toggle(annotationTool: .eraser, color: nil, tappedWithStylus: true)
+                    toggle(annotationTool: .eraser, color: nil, tappedWithStylus: true)
                 } else {
                     let previous = (PDFDocumentViewController.toolHistory.last(where: { $0 != .eraser }) ?? nil) ?? .ink
-                    let color = self.viewModel.state.toolColors[previous]
-                    self.toggle(annotationTool: previous, color: color, tappedWithStylus: true)
+                    let color = viewModel.state.toolColors[previous]
+                    toggle(annotationTool: previous, color: color, tappedWithStylus: true)
                 }
             }
 
@@ -961,7 +959,7 @@ extension PDFDocumentViewController: UIPencilInteractionDelegate {
             toggle(annotationTool: previous, color: color, tappedWithStylus: true)
 
         case .showColorPalette, .showInkAttributes, .showContextualPalette:
-            self.parentDelegate?.showToolOptions()
+            parentDelegate?.showToolOptions()
 
         case .runSystemShortcut, .ignore:
             break
@@ -969,6 +967,17 @@ extension PDFDocumentViewController: UIPencilInteractionDelegate {
         @unknown default:
             break
         }
+    }
+
+    func pencilInteractionDidTap(_ interaction: UIPencilInteraction) {
+        guard self.parentDelegate?.isToolbarVisible == true else { return }
+        process(action: UIPencilInteraction.preferredTapAction)
+    }
+
+    @available(iOS 17.5, *)
+    func pencilInteraction(_ interaction: UIPencilInteraction, didReceiveSqueeze squeeze: UIPencilInteraction.Squeeze) {
+        guard self.parentDelegate?.isToolbarVisible == true else { return }
+        process(action: UIPencilInteraction.preferredTapAction)
     }
 }
 
