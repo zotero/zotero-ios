@@ -81,6 +81,7 @@ struct TrashState: ViewModelState {
         static let batchData = Changes(rawValue: 1 << 5)
         static let attachmentsRemoved = Changes(rawValue: 1 << 6)
         static let library = Changes(rawValue: 1 << 7)
+        static let openItems = Changes(rawValue: 1 << 8)
     }
 
     enum Error: Swift.Error {
@@ -105,8 +106,9 @@ struct TrashState: ViewModelState {
     var titleFont: UIFont {
         return UIFont.preferredFont(for: .headline, weight: .regular)
     }
+    var openItemsCount: Int
 
-    init(libraryId: LibraryIdentifier, sortType: ItemsSortType, searchTerm: String?, filters: [ItemsFilter], downloadBatchData: ItemsState.DownloadBatchData?) {
+    init(libraryId: LibraryIdentifier, sortType: ItemsSortType, searchTerm: String?, filters: [ItemsFilter], downloadBatchData: ItemsState.DownloadBatchData?, openItemsCount: Int) {
         snapshot = .empty
         itemDataCache = [:]
         self.sortType = sortType
@@ -116,6 +118,7 @@ struct TrashState: ViewModelState {
         changes = []
         selectedItems = []
         self.downloadBatchData = downloadBatchData
+        self.openItemsCount = openItemsCount
 
         switch libraryId {
         case .custom:

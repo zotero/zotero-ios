@@ -67,6 +67,13 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 guard let viewModel else { return }
                 importImages(data: data, in: viewModel)
             }
+
+        case .updateOpenItems(let items):
+            guard viewModel.state.openItemsCount != items.count else { return }
+            update(viewModel: viewModel) { state in
+                state.openItemsCount = items.count
+                state.changes = .openItems
+            }
         }
     }
 
