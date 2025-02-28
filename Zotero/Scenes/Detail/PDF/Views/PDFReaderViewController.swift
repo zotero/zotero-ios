@@ -38,7 +38,7 @@ class PDFReaderViewController: UIViewController {
     private weak var annotationToolbarController: AnnotationToolbarViewController!
     private var documentTop: NSLayoutConstraint!
     private var annotationToolbarHandler: AnnotationToolbarHandler!
-    private var intraDocumentNavigationHandler: IntraDocumentNavigationButtonsHandler!
+    private var intraDocumentNavigationHandler: IntraDocumentNavigationButtonsHandler?
     private var selectedText: String?
     private(set) var isCompactWidth: Bool
     @CodableUserDefault(key: "PDFReaderToolbarState", defaultValue: AnnotationToolbarHandler.State(position: .leading, visible: true), encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
@@ -214,14 +214,13 @@ class PDFReaderViewController: UIViewController {
         )
         viewModel.process(action: .changeIdleTimerDisabled(true))
         view.backgroundColor = .systemGray6
-        // Create intraDocumentNavigationHandler before setting up views, as it may be called by a child view controller, before view has finished loading.
+        setupViews()
         intraDocumentNavigationHandler = IntraDocumentNavigationButtonsHandler(
-            parent: self,
+            parent: documentController,
             back: { [weak self] in
                 self?.documentController?.performBackAction()
             }
         )
-        setupViews()
         setupObserving()
 
         if !viewModel.state.document.isLocked {
@@ -230,7 +229,7 @@ class PDFReaderViewController: UIViewController {
 
         setupNavigationBar()
         updateInterface(to: viewModel.state.settings)
-        intraDocumentNavigationHandler.bringButtonToFront()
+        intraDocumentNavigationHandler?.bringButtonToFront()
 
         func setupViews() {
             let topSafeAreaSpacer = UIView()
