@@ -663,6 +663,7 @@ final class PDFDocumentViewController: UIViewController {
         self.setup(scrubberBar: controller.userInterfaceView.scrubberBar)
         self.setup(interactions: controller.interactions)
         controller.shouldResetAppearanceModeWhenViewDisappears = false
+        controller.documentViewController?.delegate = self
 
         return controller
     }
@@ -1170,4 +1171,19 @@ extension UIAction {
 extension UIAction.Identifier {
     fileprivate static let pspdfkitAnnotationToolHighlight = UIAction.Identifier(rawValue: "com.pspdfkit.action.annotation-tool-Highlight")
     fileprivate static let pspdfkitAnnotationToolUnderline = UIAction.Identifier(rawValue: "com.pspdfkit.action.annotation-tool-Underline")
+}
+
+extension PDFDocumentViewController: PDFDocumentViewControllerDelegate {
+    func documentViewController(_ documentViewController: PSPDFKitUI.PDFDocumentViewController, configureScrollView scrollView: UIScrollView) {
+        scrollView.delegate = self
+    }
+}
+
+extension PDFDocumentViewController: UIScrollViewDelegate {
+    func scrollViewShouldScrollToTop(_ scrollView: UIScrollView) -> Bool {
+        if let pdfController, pdfController.configuration.scrollDirection == .vertical, pdfController.pageIndex != 0 {
+            pdfController.backForwardList.register(PSPDFKit.GoToAction(pageIndex: pdfController.pageIndex))
+        }
+        return true
+    }
 }
