@@ -432,20 +432,23 @@ final class PDFDocumentViewController: UIViewController {
     /// - parameter animated: `true` if scrolling is animated, `false` otherwise.
     /// - parameter completion: Completion block called after scroll. Block is also called when scroll was not needed.
     private func scrollIfNeeded(to pageIndex: PageIndex, animated: Bool, completion: @escaping () -> Void) {
-        guard self.pdfController?.pageIndex != pageIndex else {
+        guard let pdfController, pdfController.pageIndex != pageIndex else {
             completion()
             return
         }
+        let currentPageIndex = pdfController.pageIndex
 
         if !animated {
-            self.pdfController?.setPageIndex(pageIndex, animated: false)
+            pdfController.setPageIndex(pageIndex, animated: false)
+            pdfController.backForwardList.register(PSPDFKit.GoToAction(pageIndex: currentPageIndex))
             completion()
             return
         }
 
         UIView.animate(withDuration: 0.25, animations: {
-            self.pdfController?.setPageIndex(pageIndex, animated: false)
+            pdfController.setPageIndex(pageIndex, animated: false)
         }, completion: { finished in
+            pdfController.backForwardList.register(PSPDFKit.GoToAction(pageIndex: currentPageIndex))
             guard finished else { return }
             completion()
         })
