@@ -33,7 +33,7 @@ final class PDFWorkerWebViewHandler {
         case fullText(data: [String: Any])
     }
 
-    private enum InitializationResult {
+    private enum InitializationState {
         case initialized
         case inProgress
         case failed(Swift.Error)
@@ -43,13 +43,13 @@ final class PDFWorkerWebViewHandler {
     private let disposeBag: DisposeBag
     let observable: PublishSubject<Result<PDFWorkerData, Swift.Error>>
 
-    private var isLoading: BehaviorRelay<InitializationResult>
+    private var initializationState: BehaviorRelay<InitializationState>
 
     init(webView: WKWebView) {
         webViewHandler = WebViewHandler(webView: webView, javascriptHandlers: JSHandlers.allCases.map({ $0.rawValue }))
         observable = PublishSubject()
         disposeBag = DisposeBag()
-        isLoading = BehaviorRelay(value: .inProgress)
+        initializationState = BehaviorRelay(value: .inProgress)
 
         webViewHandler.receivedMessageHandler = { [weak self] name, body in
             self?.receiveMessage(name: name, body: body)
@@ -60,19 +60,16 @@ final class PDFWorkerWebViewHandler {
             .observe(on: MainScheduler.instance)
             .subscribe(onSuccess: { [weak self] _ in
                 DDLogInfo("PDFWorkerWebViewHandler: initialization succeeded")
-                self?.isLoading.accept(.initialized)
+                self?.initializationState.accept(.initialized)
             }, onFailure: { [weak self] error in
                 DDLogInfo("PDFWorkerWebViewHandler: initialization failed - \(error)")
-                self?.isLoading.accept(.failed(error))
+                self?.initializationState.accept(.failed(error))
             })
             .disposed(by: disposeBag)
 
-        func initialize() -> Single<Any> {
+        func initialize() -> Single<()> {
             DDLogInfo("PDFWorkerWebViewHandler: initialize web view")
             return loadIndex()
-                .flatMap { _ in
-                    Single.just(Void())
-                }
 
             func loadIndex() -> Single<()> {
                 guard let indexUrl = Bundle.main.url(forResource: "worker", withExtension: "html") else {
@@ -84,7 +81,7 @@ final class PDFWorkerWebViewHandler {
     }
 
     private func performCall(completion: @escaping () -> Void) {
-        switch isLoading.value {
+        switch initializationState.value {
         case .failed(let error):
             observable.on(.next(.failure(error)))
 
@@ -92,7 +89,7 @@ final class PDFWorkerWebViewHandler {
             completion()
 
         case .inProgress:
-            isLoading.filter { result in
+            initializationState.filter { result in
                 switch result {
                 case .inProgress:
                     return false
@@ -121,11 +118,12 @@ final class PDFWorkerWebViewHandler {
 
     func recognize(file: FileData) {
         let filePath = file.createUrl().path
-        performCall {
-            performRecognize(for: filePath)
+        performCall { [weak self] in
+            guard let self else { return }
+            performRecognize(for: filePath, self: self)
         }
 
-        func performRecognize(for path: String) {
+        func performRecognize(for path: String, self: PDFWorkerWebViewHandler) {
             DDLogInfo("PDFWorkerWebViewHandler: call recognize js")
             return webViewHandler.call(javascript: "recognize('\(path)');")
                 .subscribe(on: MainScheduler.instance)
@@ -140,11 +138,12 @@ final class PDFWorkerWebViewHandler {
 
     func getFullText(file: FileData) {
         let filePath = file.createUrl().path
-        performCall {
-            performGetFullText(for: filePath)
+        performCall { [weak self] in
+            guard let self else { return }
+            performGetFullText(for: filePath, self: self)
         }
 
-        func performGetFullText(for path: String) {
+        func performGetFullText(for path: String, self: PDFWorkerWebViewHandler) {
             DDLogInfo("PDFWorkerWebViewHandler: call getFullText js")
             return webViewHandler.call(javascript: "getFullText('\(path)');")
                 .subscribe(on: MainScheduler.instance)
@@ -172,7 +171,7 @@ final class PDFWorkerWebViewHandler {
             observable.on(.next(.success(.recognizerData(data: data))))
 
         case .log:
-            DDLogInfo("JSLOG: \(body)")
+            DDLogInfo("PDFWorkerWebViewHandler: JSLOG - \(body)")
         }
     }
 }
