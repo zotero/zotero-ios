@@ -180,12 +180,13 @@ final class RecognizerController {
             emmitUpdate(for: task, subject: subject, kind: .inProgress)
 
             pdfWorkerController.queue(work: PDFWorkerController.PDFWork(file: task.file, kind: .recognizer))
-                .subscribe(onNext: { update in
-                    process(update: update)
+                .subscribe(onNext: { [weak self] update in
+                    guard let self else { return }
+                    process(update: update, self: self)
                 })
                 .disposed(by: disposeBag)
 
-            func process(update: PDFWorkerController.Update) {
+            func process(update: PDFWorkerController.Update, self: RecognizerController) {
                 switch update.kind {
                 case .failed:
                     DDLogError("RecognizerController: \(task) - recognizer failed")
@@ -218,16 +219,17 @@ final class RecognizerController {
     private func startRemoteRecognition(for task: Task, with data: [String: Any]) {
         accessQueue.async(flags: .barrier) { [weak self] in
             guard let self else { return }
-            guard let subject = subjectsByTask[task] else {
+            guard subjectsByTask[task] != nil else {
                 startRecognitionIfNeeded()
                 return
             }
             statesByTask[task] = .remoteRecognitionInProgress(data: data)
 
             apiClient.send(request: RecognizerRequest(parameters: data)).subscribe(
-                onSuccess: { (response: (RemoteRecognizerResponse, HTTPURLResponse)) in
+                onSuccess: { [weak self] (response: (RemoteRecognizerResponse, HTTPURLResponse)) in
+                    guard let self else { return }
                     DDLogInfo("RecognizerController: \(task) - remote recognizer response received")
-                    process(response: response.0)
+                    process(response: response.0, self: self)
                 },
                 onFailure: { [weak self] error in
                     guard let self else { return }
@@ -239,7 +241,7 @@ final class RecognizerController {
             .disposed(by: disposeBag)
         }
 
-        func process(response: RemoteRecognizerResponse) {
+        func process(response: RemoteRecognizerResponse, self: RecognizerController) {
             var identifiers: [RecognizerIdentifier] = []
             if let identifier = response.arxiv {
                 identifiers.append(.arXiv(identifier))
@@ -273,15 +275,15 @@ final class RecognizerController {
         }
     ) {
         if DispatchQueue.getSpecific(key: dispatchSpecificKey) == accessQueueLabel {
-            _enqueueNextIdentifierLookup(for: task)
+            _enqueueNextIdentifierLookup(for: task, self: self)
         } else {
             accessQueue.async(flags: .barrier) { [weak self] in
                 guard let self else { return }
-                _enqueueNextIdentifierLookup(for: task)
+                _enqueueNextIdentifierLookup(for: task, self: self)
             }
         }
 
-        func _enqueueNextIdentifierLookup(for task: Task) {
+        func _enqueueNextIdentifierLookup(for task: Task, self: RecognizerController) {
             guard let state = statesByTask[task] else {
                 startRecognitionIfNeeded()
                 return
@@ -297,7 +299,7 @@ final class RecognizerController {
 
     private func lookupNextIdentifier(for task: Task, with response: RemoteRecognizerResponse, pendingIdentifiers: [RecognizerIdentifier]) {
         DDLogInfo("RecognizerController: \(task) - looking up next identifier from \(pendingIdentifiers)")
-        guard let subject = subjectsByTask[task] else {
+        guard subjectsByTask[task] != nil else {
             startRecognitionIfNeeded()
             return
         }
@@ -346,10 +348,13 @@ final class RecognizerController {
 
                 func setupObserver(for lookupWebViewHandler: LookupWebViewHandler) {
                     lookupWebViewHandler.observable
-                        .subscribe(onNext: { process(result: $0) })
+                        .subscribe(onNext: { [weak self] in
+                            guard let self else { return }
+                            process(result: $0, self: self)
+                        })
                         .disposed(by: disposeBag)
 
-                    func process(result: Result<LookupWebViewHandler.LookupData, Swift.Error>) {
+                    func process(result: Result<LookupWebViewHandler.LookupData, Swift.Error>, self: RecognizerController) {
                         switch result {
                         case .success(let data):
                             switch data {
@@ -510,16 +515,17 @@ final class RecognizerController {
                 return Disposables.create()
             }
             if DispatchQueue.getSpecific(key: dispatchSpecificKey) == accessQueueLabel {
-                cleanup(for: task, maybe: maybe)
+                cleanup(for: task, maybe: maybe, self: self)
             } else {
-                accessQueue.async(flags: .barrier) {
-                    cleanup(for: task, maybe: maybe)
+                accessQueue.async(flags: .barrier) { [weak self] in
+                    guard let self else { return }
+                    cleanup(for: task, maybe: maybe, self: self)
                 }
             }
             return Disposables.create()
         }
 
-        func cleanup(for task: Task, maybe: (MaybeEvent<PublishSubject<Update>>) -> Void) {
+        func cleanup(for task: Task, maybe: (MaybeEvent<PublishSubject<Update>>) -> Void, self: RecognizerController) {
             let subject = queue[task] ?? subjectsByTask[task]
             queue[task] = nil
             subjectsByTask[task] = nil
