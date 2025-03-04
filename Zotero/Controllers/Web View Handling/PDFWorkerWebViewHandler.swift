@@ -62,38 +62,27 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
         }
     }
 
-    func recognize(file: FileData) {
+    private func performPDFWorkerOperation(file: FileData, operationName: String, jsFunction: String) {
         performAfterInitialization()
             .flatMap { [weak self] _ -> Single<Any> in
                 guard let self else { return .never() }
                 let filePath = file.createUrl().path
-                DDLogInfo("PDFWorkerWebViewHandler: call recognize js")
-                return call(javascript: "recognize('\(filePath)');")
+                DDLogInfo("PDFWorkerWebViewHandler: call \(operationName) js")
+                return call(javascript: "\(jsFunction)('\(filePath)');")
             }
-            .subscribe(on: MainScheduler.instance)
-            .observe(on: MainScheduler.instance)
             .subscribe(onFailure: { [weak self] error in
-                DDLogError("PDFWorkerWebViewHandler: recognize failed - \(error)")
+                DDLogError("PDFWorkerWebViewHandler: \(operationName) failed - \(error)")
                 self?.observable.on(.next(.failure(error)))
             })
             .disposed(by: disposeBag)
     }
 
+    func recognize(file: FileData) {
+        performPDFWorkerOperation(file: file, operationName: "recognize", jsFunction: "recognize")
+    }
+
     func getFullText(file: FileData) {
-        performAfterInitialization()
-            .flatMap { [weak self] _ -> Single<Any> in
-                guard let self else { return .never() }
-                let filePath = file.createUrl().path
-                DDLogInfo("PDFWorkerWebViewHandler: call getFullText js")
-                return call(javascript: "getFullText('\(filePath)');")
-            }
-            .subscribe(on: MainScheduler.instance)
-            .observe(on: MainScheduler.instance)
-            .subscribe(onFailure: { [weak self] error in
-                DDLogError("PDFWorkerWebViewHandler: getFullText failed - \(error)")
-                self?.observable.on(.next(.failure(error)))
-            })
-            .disposed(by: disposeBag)
+        performPDFWorkerOperation(file: file, operationName: "getFullText", jsFunction: "getFullText")
     }
 
     /// Communication with JS in `webView`. The `webView` sends a message through one of the registered `JSHandlers`, which is received here.
