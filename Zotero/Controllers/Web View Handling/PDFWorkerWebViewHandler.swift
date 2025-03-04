@@ -80,17 +80,17 @@ final class PDFWorkerWebViewHandler {
         }
     }
 
-    private func performCall(completion: @escaping () -> Void) {
+    private func performCall() -> Single<()> {
         switch initializationState.value {
         case .failed(let error):
-            observable.on(.next(.failure(error)))
+            return .error(error)
 
         case .initialized:
-            completion()
+            return .just(())
 
         case .inProgress:
-            initializationState.filter { result in
-                switch result {
+            return initializationState.filter { state in
+                switch state {
                 case .inProgress:
                     return false
 
@@ -99,29 +99,31 @@ final class PDFWorkerWebViewHandler {
                 }
             }
             .first()
-            .subscribe(onSuccess: { [weak self] result in
-                guard let self, let result else { return }
-                switch result {
+            .flatMap({ state -> Single<()> in
+                switch state {
                 case .failed(let error):
-                    observable.on(.next(.failure(error)))
+                    return .error(error)
 
                 case .initialized:
-                    completion()
+                    return .just(())
 
-                case .inProgress:
-                    break
+                case .inProgress, .none:
+                    // Should never happen.
+                    return .never()
                 }
             })
-            .disposed(by: disposeBag)
         }
     }
 
     func recognize(file: FileData) {
         let filePath = file.createUrl().path
-        performCall { [weak self] in
+        performCall().subscribe(onSuccess: { [weak self] in
             guard let self else { return }
             performRecognize(for: filePath, self: self)
-        }
+        }, onFailure: { [weak self] error in
+            self?.observable.on(.next(.failure(error)))
+        })
+        .disposed(by: disposeBag)
 
         func performRecognize(for path: String, self: PDFWorkerWebViewHandler) {
             DDLogInfo("PDFWorkerWebViewHandler: call recognize js")
@@ -138,10 +140,13 @@ final class PDFWorkerWebViewHandler {
 
     func getFullText(file: FileData) {
         let filePath = file.createUrl().path
-        performCall { [weak self] in
+        performCall().subscribe(onSuccess: { [weak self] in
             guard let self else { return }
             performGetFullText(for: filePath, self: self)
-        }
+        }, onFailure: { [weak self] error in
+            self?.observable.on(.next(.failure(error)))
+        })
+        .disposed(by: disposeBag)
 
         func performGetFullText(for path: String, self: PDFWorkerWebViewHandler) {
             DDLogInfo("PDFWorkerWebViewHandler: call getFullText js")
