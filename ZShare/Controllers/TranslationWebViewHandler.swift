@@ -269,7 +269,7 @@ final class TranslationWebViewHandler {
             self.observable.on(.error(Error.noSuccessfulTranslators))
 
         case .log:
-            DDLogInfo("JSLOG: \(body)")
+            DDLogInfo("TranslationWebViewHandler: JSLOG - \(body)")
         }
     }
 }
