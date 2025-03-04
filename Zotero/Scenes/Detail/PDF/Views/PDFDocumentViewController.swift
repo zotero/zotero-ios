@@ -260,7 +260,9 @@ final class PDFDocumentViewController: UIViewController {
         }
 
         if state.changes.contains(.visiblePageFromThumbnailList) {
+            let currentPageIndex = pdfController.pageIndex
             pdfController.setPageIndex(PageIndex(state.visiblePage), animated: false)
+            pdfController.backForwardList.register(PSPDFKit.GoToAction(pageIndex: currentPageIndex))
         }
 
         if let tool = state.changedColorForTool, let color = state.toolColors[tool] {
@@ -688,6 +690,7 @@ final class PDFDocumentViewController: UIViewController {
 
         scrubberBar.standardAppearance = appearance
         scrubberBar.compactAppearance = appearance
+        scrubberBar.delegate = self
     }
 
     private func setup(interactions: DocumentViewInteractions) {
@@ -1192,5 +1195,14 @@ extension PDFDocumentViewController: UIScrollViewDelegate {
             pdfController.backForwardList.register(PSPDFKit.GoToAction(pageIndex: pdfController.pageIndex))
         }
         return true
+    }
+}
+
+extension PDFDocumentViewController: PSPDFKitUI.ScrubberBarDelegate {
+    func scrubberBar(_ scrubberBar: ScrubberBar, didSelectPageAt pageIndex: PageIndex) {
+        guard let pdfController, pdfController.pageIndex != pageIndex else { return }
+        let currentPageIndex = pdfController.pageIndex
+        pdfController.userInterfaceView.scrubberBar(scrubberBar, didSelectPageAt: pageIndex)
+        pdfController.backForwardList.register(PSPDFKit.GoToAction(pageIndex: currentPageIndex))
     }
 }
