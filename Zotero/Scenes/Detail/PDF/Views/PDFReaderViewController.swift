@@ -38,7 +38,7 @@ class PDFReaderViewController: UIViewController {
     private weak var annotationToolbarController: AnnotationToolbarViewController!
     private var documentTop: NSLayoutConstraint!
     private var annotationToolbarHandler: AnnotationToolbarHandler!
-    private var intraDocumentNavigationHandler: IntraDocumentNavigationButtonsHandler!
+    private var intraDocumentNavigationHandler: IntraDocumentNavigationButtonsHandler?
     private var selectedText: String?
     private(set) var isCompactWidth: Bool
     @CodableUserDefault(key: "PDFReaderToolbarState", defaultValue: AnnotationToolbarHandler.State(position: .leading, visible: true), encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
@@ -169,6 +169,12 @@ class PDFReaderViewController: UIViewController {
                 .init(title: L10n.back, action: #selector(performBackAction), input: UIKeyCommand.inputLeftArrow, modifierFlags: [.command])
             ]
         }
+        if intraDocumentNavigationHandler?.showsForwardButton == true {
+            keyCommands += [
+                .init(title: L10n.back, action: #selector(performForwardAction), input: "]", modifierFlags: [.command]),
+                .init(title: L10n.back, action: #selector(performForwardAction), input: UIKeyCommand.inputRightArrow, modifierFlags: [.command])
+            ]
+        }
         return keyCommands
     }
 
@@ -178,7 +184,7 @@ class PDFReaderViewController: UIViewController {
             case #selector(UIResponderStandardEditActions.copy(_:)):
                 return selectedText != nil
 
-            case #selector(search), #selector(performBackAction):
+            case #selector(search), #selector(performBackAction), #selector(performForwardAction):
                 return true
 
             case #selector(undo(_:)):
@@ -214,14 +220,16 @@ class PDFReaderViewController: UIViewController {
         )
         viewModel.process(action: .changeIdleTimerDisabled(true))
         view.backgroundColor = .systemGray6
-        // Create intraDocumentNavigationHandler before setting up views, as it may be called by a child view controller, before view has finished loading.
+        setupViews()
         intraDocumentNavigationHandler = IntraDocumentNavigationButtonsHandler(
-            parent: self,
+            parent: documentController,
             back: { [weak self] in
                 self?.documentController?.performBackAction()
+            },
+            forward: { [weak self] in
+                self?.documentController?.performForwardAction()
             }
         )
-        setupViews()
         setupObserving()
 
         if !viewModel.state.document.isLocked {
@@ -230,7 +238,6 @@ class PDFReaderViewController: UIViewController {
 
         setupNavigationBar()
         updateInterface(to: viewModel.state.settings)
-        intraDocumentNavigationHandler.bringButtonToFront()
 
         func setupViews() {
             let topSafeAreaSpacer = UIView()
@@ -674,6 +681,10 @@ class PDFReaderViewController: UIViewController {
         documentController.performBackAction()
     }
 
+    @objc private func performForwardAction() {
+        documentController.performForwardAction()
+    }
+
     @objc private func undo(_ sender: Any?) {
         performUndo()
     }
@@ -928,8 +939,8 @@ extension PDFReaderViewController: PDFDocumentDelegate {
         }
     }
 
-    func backNavigationButtonChanged(visible: Bool) {
-        intraDocumentNavigationHandler?.set(backButtonVisible: visible)
+    func navigationButtonsChanged(backVisible: Bool, forwardVisible: Bool) {
+        intraDocumentNavigationHandler?.set(backButtonVisible: backVisible, forwardButtonVisible: forwardVisible)
     }
 
     func didSelectText(_ text: String) {

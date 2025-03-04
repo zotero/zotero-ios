@@ -25,7 +25,7 @@ protocol PDFDocumentDelegate: AnyObject {
     func didChange(undoState undoEnabled: Bool, redoState redoEnabled: Bool)
     func interfaceVisibilityDidChange(to isHidden: Bool)
     func showToolOptions()
-    func backNavigationButtonChanged(visible: Bool)
+    func navigationButtonsChanged(backVisible: Bool, forwardVisible: Bool)
     func didSelectText(_ text: String)
 }
 
@@ -109,6 +109,10 @@ final class PDFDocumentViewController: UIViewController {
 
     func performBackAction() {
         pdfController?.backForwardList.requestBack(animated: true)
+    }
+
+    func performForwardAction() {
+        pdfController?.backForwardList.requestForward(animated: true)
     }
 
     func focus(page: UInt) {
@@ -256,7 +260,9 @@ final class PDFDocumentViewController: UIViewController {
         }
 
         if state.changes.contains(.visiblePageFromThumbnailList) {
+            let currentPageIndex = pdfController.pageIndex
             pdfController.setPageIndex(PageIndex(state.visiblePage), animated: false)
+            pdfController.backForwardList.register(PSPDFKit.GoToAction(pageIndex: currentPageIndex))
         }
 
         if let tool = state.changedColorForTool, let color = state.toolColors[tool] {
@@ -432,20 +438,23 @@ final class PDFDocumentViewController: UIViewController {
     /// - parameter animated: `true` if scrolling is animated, `false` otherwise.
     /// - parameter completion: Completion block called after scroll. Block is also called when scroll was not needed.
     private func scrollIfNeeded(to pageIndex: PageIndex, animated: Bool, completion: @escaping () -> Void) {
-        guard self.pdfController?.pageIndex != pageIndex else {
+        guard let pdfController, pdfController.pageIndex != pageIndex else {
             completion()
             return
         }
+        let currentPageIndex = pdfController.pageIndex
 
         if !animated {
-            self.pdfController?.setPageIndex(pageIndex, animated: false)
+            pdfController.setPageIndex(pageIndex, animated: false)
+            pdfController.backForwardList.register(PSPDFKit.GoToAction(pageIndex: currentPageIndex))
             completion()
             return
         }
 
         UIView.animate(withDuration: 0.25, animations: {
-            self.pdfController?.setPageIndex(pageIndex, animated: false)
+            pdfController.setPageIndex(pageIndex, animated: false)
         }, completion: { finished in
+            pdfController.backForwardList.register(PSPDFKit.GoToAction(pageIndex: currentPageIndex))
             guard finished else { return }
             completion()
         })
@@ -663,6 +672,7 @@ final class PDFDocumentViewController: UIViewController {
         self.setup(scrubberBar: controller.userInterfaceView.scrubberBar)
         self.setup(interactions: controller.interactions)
         controller.shouldResetAppearanceModeWhenViewDisappears = false
+        controller.documentViewController?.delegate = self
 
         return controller
     }
@@ -680,6 +690,7 @@ final class PDFDocumentViewController: UIViewController {
 
         scrubberBar.standardAppearance = appearance
         scrubberBar.compactAppearance = appearance
+        scrubberBar.delegate = self
     }
 
     private func setup(interactions: DocumentViewInteractions) {
@@ -912,7 +923,7 @@ extension PDFDocumentViewController: BackForwardActionListDelegate {
 
     func backForwardListDidUpdate(_ list: BackForwardActionList) {
         pdfController?.backForwardListDidUpdate(list)
-        parentDelegate?.backNavigationButtonChanged(visible: list.backAction != nil)
+        parentDelegate?.navigationButtonsChanged(backVisible: list.backAction != nil, forwardVisible: list.forwardAction != nil)
     }
 }
 
@@ -1179,4 +1190,28 @@ extension UIAction {
 extension UIAction.Identifier {
     fileprivate static let pspdfkitAnnotationToolHighlight = UIAction.Identifier(rawValue: "com.pspdfkit.action.annotation-tool-Highlight")
     fileprivate static let pspdfkitAnnotationToolUnderline = UIAction.Identifier(rawValue: "com.pspdfkit.action.annotation-tool-Underline")
+}
+
+extension PDFDocumentViewController: PDFDocumentViewControllerDelegate {
+    func documentViewController(_ documentViewController: PSPDFKitUI.PDFDocumentViewController, configureScrollView scrollView: UIScrollView) {
+        scrollView.delegate = self
+    }
+}
+
+extension PDFDocumentViewController: UIScrollViewDelegate {
+    func scrollViewShouldScrollToTop(_ scrollView: UIScrollView) -> Bool {
+        if let pdfController, pdfController.configuration.scrollDirection == .vertical, pdfController.pageIndex != 0 {
+            pdfController.backForwardList.register(PSPDFKit.GoToAction(pageIndex: pdfController.pageIndex))
+        }
+        return true
+    }
+}
+
+extension PDFDocumentViewController: PSPDFKitUI.ScrubberBarDelegate {
+    func scrubberBar(_ scrubberBar: ScrubberBar, didSelectPageAt pageIndex: PageIndex) {
+        guard let pdfController, pdfController.pageIndex != pageIndex else { return }
+        let currentPageIndex = pdfController.pageIndex
+        pdfController.userInterfaceView.scrubberBar(scrubberBar, didSelectPageAt: pageIndex)
+        pdfController.backForwardList.register(PSPDFKit.GoToAction(pageIndex: currentPageIndex))
+    }
 }

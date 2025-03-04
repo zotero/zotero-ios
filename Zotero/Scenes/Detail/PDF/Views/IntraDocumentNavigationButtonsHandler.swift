@@ -10,11 +10,15 @@ import UIKit
 
 final class IntraDocumentNavigationButtonsHandler {
     private weak var backButton: UIButton!
+    private weak var forwardButton: UIButton!
     var showsBackButton: Bool {
         backButton?.isHidden == false
     }
+    var showsForwardButton: Bool {
+        forwardButton?.isHidden == false
+    }
 
-    init(parent: UIViewController, back: @escaping () -> Void) {
+    init(parent: UIViewController, back: @escaping () -> Void, forward: @escaping () -> Void) {
         var backConfiguration = UIButton.Configuration.plain()
         backConfiguration.title = L10n.back
         backConfiguration.image = UIImage(systemName: "chevron.left", withConfiguration: UIImage.SymbolConfiguration(scale: .small))
@@ -31,17 +35,35 @@ final class IntraDocumentNavigationButtonsHandler {
         parent.view.addSubview(backButton)
         self.backButton = backButton
 
+        var forwardConfiguration = UIButton.Configuration.plain()
+        forwardConfiguration.title = L10n.forward
+        forwardConfiguration.image = UIImage(systemName: "chevron.right", withConfiguration: UIImage.SymbolConfiguration(scale: .small))
+        forwardConfiguration.baseForegroundColor = Asset.Colors.zoteroBlueWithDarkMode.color
+        forwardConfiguration.background.backgroundColor = Asset.Colors.navbarBackground.color
+        forwardConfiguration.imagePadding = 8
+        forwardConfiguration.imagePlacement = .trailing
+        let forwardButton = UIButton(configuration: forwardConfiguration)
+        forwardButton.translatesAutoresizingMaskIntoConstraints = false
+        forwardButton.isHidden = true
+        forwardButton.addAction(
+            UIAction(handler: { _ in forward() }),
+            for: .touchUpInside
+        )
+        parent.view.addSubview(forwardButton)
+        self.forwardButton = forwardButton
+
         NSLayoutConstraint.activate([
             backButton.leadingAnchor.constraint(equalTo: parent.view.leadingAnchor, constant: 30),
-            parent.view.bottomAnchor.constraint(equalTo: backButton.bottomAnchor, constant: 80)
+            parent.view.bottomAnchor.constraint(equalTo: backButton.bottomAnchor, constant: 80),
+            forwardButton.trailingAnchor.constraint(equalTo: parent.view.trailingAnchor, constant: -30),
+            parent.view.bottomAnchor.constraint(equalTo: forwardButton.bottomAnchor, constant: 80)
         ])
     }
 
-    func bringButtonToFront() {
-        backButton.superview?.bringSubviewToFront(backButton)
-    }
-
-    func set(backButtonVisible: Bool) {
+    func set(backButtonVisible: Bool, forwardButtonVisible: Bool) {
         backButton.isHidden = !backButtonVisible
+        forwardButton.isHidden = !forwardButtonVisible
+        backButton.superview?.bringSubviewToFront(backButton)
+        forwardButton.superview?.bringSubviewToFront(forwardButton)
     }
 }
