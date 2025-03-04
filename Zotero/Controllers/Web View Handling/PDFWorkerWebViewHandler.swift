@@ -111,7 +111,7 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
             observable.on(.next(.success(.recognizerData(data: data))))
 
         case .log:
-            DDLogInfo("JSLOG: \(body)")
+            DDLogInfo("PDFWorkerWebViewHandler: JSLOG - \(body)")
         }
     }
 }
