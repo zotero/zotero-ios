@@ -190,12 +190,10 @@ final class RecognizerController {
                 switch update.kind {
                 case .failed:
                     DDLogError("RecognizerController: \(task) - recognizer failed")
-                    cleanupTask(for: task).subscribe(onSuccess: { $0.on(.next(Update(task: task, kind: .failed(.recognizerFailed)))) })
-                        .disposed(by: disposeBag)
+                    cleanupTask(for: task) { $0?.on(.next(Update(task: task, kind: .failed(.recognizerFailed)))) }
 
                 case .cancelled:
-                    cleanupTask(for: task).subscribe(onSuccess: { $0.on(.next(Update(task: task, kind: .cancelled))) })
-                        .disposed(by: disposeBag)
+                    cleanupTask(for: task) { $0?.on(.next(Update(task: task, kind: .cancelled))) }
 
                 case .inProgress:
                     break
@@ -208,8 +206,7 @@ final class RecognizerController {
 
                     case .fullText:
                         DDLogError("RecognizerController: \(task) - PDF worker error")
-                        cleanupTask(for: task).subscribe(onSuccess: { $0.on(.next(Update(task: task, kind: .failed(.pdfWorkerError)))) })
-                            .disposed(by: disposeBag)
+                        cleanupTask(for: task) { $0?.on(.next(Update(task: task, kind: .failed(.pdfWorkerError)))) }
                     }
                 }
             }
@@ -234,8 +231,7 @@ final class RecognizerController {
                 onFailure: { [weak self] error in
                     guard let self else { return }
                     DDLogError("RecognizerController: \(task) - remote recognizer request failed: \(error)")
-                    cleanupTask(for: task).subscribe(onSuccess: { $0.on(.next(Update(task: task, kind: .failed(error as! Error)))) })
-                        .disposed(by: disposeBag)
+                    cleanupTask(for: task) { $0?.on(.next(Update(task: task, kind: .failed(error as! Error)))) }
                 }
             )
             .disposed(by: disposeBag)
@@ -256,8 +252,7 @@ final class RecognizerController {
                 identifiers.append(.title(identifier))
             }
             guard !identifiers.isEmpty else {
-                cleanupTask(for: task).subscribe(onSuccess: { $0.on(.next(Update(task: task, kind: .failed(.remoteRecognizerFailed)))) })
-                    .disposed(by: disposeBag)
+                cleanupTask(for: task) { $0?.on(.next(Update(task: task, kind: .failed(.remoteRecognizerFailed)))) }
                 return
             }
             enqueueNextIdentifierLookup(for: task) { state in
@@ -289,8 +284,7 @@ final class RecognizerController {
                 return
             }
             guard let (response, pendingIdentifiers) = getResponseAndIdentifiers(state) else {
-                cleanupTask(for: task).subscribe(onSuccess: { $0.on(.next(Update(task: task, kind: .failed(.unexpectedState)))) })
-                    .disposed(by: disposeBag)
+                cleanupTask(for: task) { $0?.on(.next(Update(task: task, kind: .failed(.unexpectedState)))) }
                 return
             }
             lookupNextIdentifier(for: task, with: response, pendingIdentifiers: pendingIdentifiers)
@@ -304,8 +298,7 @@ final class RecognizerController {
             return
         }
         guard !pendingIdentifiers.isEmpty else {
-            cleanupTask(for: task).subscribe(onSuccess: { $0.on(.next(Update(task: task, kind: .failed(.noRemainingIdentifiersForLookup)))) })
-                .disposed(by: disposeBag)
+            cleanupTask(for: task) { $0?.on(.next(Update(task: task, kind: .failed(.noRemainingIdentifiersForLookup)))) }
             return
         }
         var remainingIdentifiers = pendingIdentifiers
@@ -453,8 +446,7 @@ final class RecognizerController {
         func createParentIfNeeded(for task: Task, with itemResponse: ItemResponse, schemaController: SchemaController, dateParser: DateParser) {
             switch task.kind {
             case .simple:
-                cleanupTask(for: task).subscribe(onSuccess: { $0.on(.next(Update(task: task, kind: .translated(itemResponse: itemResponse)))) })
-                    .disposed(by: disposeBag)
+                cleanupTask(for: task) { $0?.on(.next(Update(task: task, kind: .translated(itemResponse: itemResponse)))) }
 
             case .createParentForItem(let libraryId, let key):
                 backgroundQueue.async { [weak self] in
@@ -476,12 +468,11 @@ final class RecognizerController {
                         DDLogError("RecognizerController: can't create parent for item - \(error)")
                         update = Update(task: task, kind: .failed(error as! Error))
                     }
-                    cleanupTask(for: task).subscribe(onSuccess: {
+                    cleanupTask(for: task) {
                         if let update {
-                            $0.on(.next(update))
+                            $0?.on(.next(update))
                         }
-                    })
-                        .disposed(by: disposeBag)
+                    }
                 }
             }
         }
@@ -489,8 +480,7 @@ final class RecognizerController {
 
     func cancel(task: Task) {
         DDLogInfo("RecognizerController: cancelled \(task)")
-        cleanupTask(for: task).subscribe(onSuccess: { $0.on(.next(Update(task: task, kind: .cancelled))) })
-            .disposed(by: disposeBag)
+        cleanupTask(for: task) { $0?.on(.next(Update(task: task, kind: .cancelled))) }
     }
 
     func cancellAllTasks() {
@@ -508,24 +498,17 @@ final class RecognizerController {
         }
     }
 
-    private func cleanupTask(for task: Task) -> Maybe<PublishSubject<Update>> {
-        return Maybe.create { [weak self] maybe in
-            guard let self else {
-                maybe(.completed)
-                return Disposables.create()
+    private func cleanupTask(for task: Task, completion: ((_ subject: PublishSubject<Update>?) -> Void)?) {
+        if DispatchQueue.getSpecific(key: dispatchSpecificKey) == accessQueueLabel {
+            cleanup(for: task, completion: completion, self: self)
+        } else {
+            accessQueue.async(flags: .barrier) { [weak self] in
+                guard let self else { return }
+                cleanup(for: task, completion: completion, self: self)
             }
-            if DispatchQueue.getSpecific(key: dispatchSpecificKey) == accessQueueLabel {
-                cleanup(for: task, maybe: maybe, self: self)
-            } else {
-                accessQueue.async(flags: .barrier) { [weak self] in
-                    guard let self else { return }
-                    cleanup(for: task, maybe: maybe, self: self)
-                }
-            }
-            return Disposables.create()
         }
 
-        func cleanup(for task: Task, maybe: (MaybeEvent<PublishSubject<Update>>) -> Void, self: RecognizerController) {
+        func cleanup(for task: Task, completion: ((_ subject: PublishSubject<Update>?) -> Void)?, self: RecognizerController) {
             let subject = queue[task] ?? subjectsByTask[task]
             queue[task] = nil
             subjectsByTask[task] = nil
@@ -536,11 +519,7 @@ final class RecognizerController {
             }
             DDLogInfo("RecognizerController: \(task) - cleaned up")
             lookupWebViewHandlersByTask.removeValue(forKey: task)?.webViewHandler.removeFromSuperviewAsynchronously()
-            if let subject {
-                maybe(.success(subject))
-            } else {
-                maybe(.completed)
-            }
+            completion?(subject)
             startRecognitionIfNeeded()
         }
     }
