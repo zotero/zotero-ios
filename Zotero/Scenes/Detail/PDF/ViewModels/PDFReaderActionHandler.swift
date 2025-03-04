@@ -1329,10 +1329,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             let newAnnotation: PSPDFKit.Annotation
             switch (type, annotation.type) {
             case (.highlight, .underline):
-                newAnnotation = PSPDFKit.HighlightAnnotation()
+                newAnnotation = HighlightAnnotation()
 
             case (.underline, .highlight):
-                newAnnotation = PSPDFKit.UnderlineAnnotation()
+                newAnnotation = UnderlineAnnotation()
 
             default:
                 return
