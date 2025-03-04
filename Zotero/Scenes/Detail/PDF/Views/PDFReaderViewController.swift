@@ -169,6 +169,12 @@ class PDFReaderViewController: UIViewController {
                 .init(title: L10n.back, action: #selector(performBackAction), input: UIKeyCommand.inputLeftArrow, modifierFlags: [.command])
             ]
         }
+        if intraDocumentNavigationHandler?.showsForwardButton == true {
+            keyCommands += [
+                .init(title: L10n.back, action: #selector(performForwardAction), input: "]", modifierFlags: [.command]),
+                .init(title: L10n.back, action: #selector(performForwardAction), input: UIKeyCommand.inputRightArrow, modifierFlags: [.command])
+            ]
+        }
         return keyCommands
     }
 
@@ -178,7 +184,7 @@ class PDFReaderViewController: UIViewController {
             case #selector(UIResponderStandardEditActions.copy(_:)):
                 return selectedText != nil
 
-            case #selector(search), #selector(performBackAction):
+            case #selector(search), #selector(performBackAction), #selector(performForwardAction):
                 return true
 
             case #selector(undo(_:)):
@@ -219,6 +225,9 @@ class PDFReaderViewController: UIViewController {
             parent: documentController,
             back: { [weak self] in
                 self?.documentController?.performBackAction()
+            },
+            forward: { [weak self] in
+                self?.documentController?.performForwardAction()
             }
         )
         setupObserving()
@@ -229,7 +238,6 @@ class PDFReaderViewController: UIViewController {
 
         setupNavigationBar()
         updateInterface(to: viewModel.state.settings)
-        intraDocumentNavigationHandler?.bringButtonToFront()
 
         func setupViews() {
             let topSafeAreaSpacer = UIView()
@@ -673,6 +681,10 @@ class PDFReaderViewController: UIViewController {
         documentController.performBackAction()
     }
 
+    @objc private func performForwardAction() {
+        documentController.performForwardAction()
+    }
+
     @objc private func undo(_ sender: Any?) {
         performUndo()
     }
@@ -927,8 +939,8 @@ extension PDFReaderViewController: PDFDocumentDelegate {
         }
     }
 
-    func backNavigationButtonChanged(visible: Bool) {
-        intraDocumentNavigationHandler?.set(backButtonVisible: visible)
+    func navigationButtonsChanged(backVisible: Bool, forwardVisible: Bool) {
+        intraDocumentNavigationHandler?.set(backButtonVisible: backVisible, forwardButtonVisible: forwardVisible)
     }
 
     func didSelectText(_ text: String) {

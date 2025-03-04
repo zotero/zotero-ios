@@ -25,7 +25,7 @@ protocol PDFDocumentDelegate: AnyObject {
     func didChange(undoState undoEnabled: Bool, redoState redoEnabled: Bool)
     func interfaceVisibilityDidChange(to isHidden: Bool)
     func showToolOptions()
-    func backNavigationButtonChanged(visible: Bool)
+    func navigationButtonsChanged(backVisible: Bool, forwardVisible: Bool)
     func didSelectText(_ text: String)
 }
 
@@ -109,6 +109,10 @@ final class PDFDocumentViewController: UIViewController {
 
     func performBackAction() {
         pdfController?.backForwardList.requestBack(animated: true)
+    }
+
+    func performForwardAction() {
+        pdfController?.backForwardList.requestForward(animated: true)
     }
 
     func focus(page: UInt) {
@@ -916,7 +920,7 @@ extension PDFDocumentViewController: BackForwardActionListDelegate {
 
     func backForwardListDidUpdate(_ list: BackForwardActionList) {
         pdfController?.backForwardListDidUpdate(list)
-        parentDelegate?.backNavigationButtonChanged(visible: list.backAction != nil)
+        parentDelegate?.navigationButtonsChanged(backVisible: list.backAction != nil, forwardVisible: list.forwardAction != nil)
     }
 }
 
