@@ -134,39 +134,30 @@ final class LookupWebViewHandler {
     }
 
     func lookUp(identifier: String) {
-        switch initializationState.value {
-        case .failed(let error):
-            observable.on(.next(.failure(error)))
+        initializationState.filter { result in
+            switch result {
+            case .inProgress:
+                return false
 
-        case .initialized:
-            performLookUp(for: identifier)
-
-        case .inProgress:
-            initializationState.filter { result in
-                switch result {
-                case .inProgress:
-                    return false
-
-                case .initialized, .failed:
-                    return true
-                }
+            case .initialized, .failed:
+                return true
             }
-            .first()
-            .subscribe(onSuccess: { [weak self] result in
-                guard let self, let result else { return }
-                switch result {
-                case .failed(let error):
-                    observable.on(.next(.failure(error)))
-
-                case .initialized:
-                    performLookUp(for: identifier)
-
-                case .inProgress:
-                    break
-                }
-            })
-            .disposed(by: disposeBag)
         }
+        .first()
+        .subscribe(onSuccess: { [weak self] result in
+            guard let self, let result else { return }
+            switch result {
+            case .failed(let error):
+                observable.on(.next(.failure(error)))
+
+            case .initialized:
+                performLookUp(for: identifier)
+
+            case .inProgress:
+                break
+            }
+        })
+        .disposed(by: disposeBag)
 
         func performLookUp(for identifier: String) {
             DDLogInfo("LookupWebViewHandler: call translate js")
