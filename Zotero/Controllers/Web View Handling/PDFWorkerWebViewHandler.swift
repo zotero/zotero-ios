@@ -81,37 +81,28 @@ final class PDFWorkerWebViewHandler {
     }
 
     private func performCall() -> Single<()> {
-        switch initializationState.value {
-        case .failed(let error):
-            return .error(error)
+        return initializationState.filter { state in
+            switch state {
+            case .inProgress:
+                return false
 
-        case .initialized:
-            return .just(())
-
-        case .inProgress:
-            return initializationState.filter { state in
-                switch state {
-                case .inProgress:
-                    return false
-
-                case .initialized, .failed:
-                    return true
-                }
+            case .initialized, .failed:
+                return true
             }
-            .first()
-            .flatMap({ state -> Single<()> in
-                switch state {
-                case .failed(let error):
-                    return .error(error)
+        }
+        .first()
+        .flatMap { state -> Single<()> in
+            switch state {
+            case .failed(let error):
+                return .error(error)
 
-                case .initialized:
-                    return .just(())
+            case .initialized:
+                return .just(())
 
-                case .inProgress, .none:
-                    // Should never happen.
-                    return .never()
-                }
-            })
+            case .inProgress, .none:
+                // Should never happen.
+                return .never()
+            }
         }
     }
 
