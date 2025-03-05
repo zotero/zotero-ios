@@ -80,7 +80,7 @@ final class PDFWorkerWebViewHandler {
         }
     }
 
-    private func performCall() -> Single<()> {
+    private func performAfterInitialization() -> Single<()> {
         return initializationState.filter { state in
             switch state {
             case .inProgress:
@@ -106,50 +106,25 @@ final class PDFWorkerWebViewHandler {
         }
     }
 
-    func recognize(file: FileData) {
+    private func performPDFWorkerOperation(file: FileData, operationName: String, jsFunction: String) {
         let filePath = file.createUrl().path
-        performCall().subscribe(onSuccess: { [weak self] in
-            guard let self else { return }
-            performRecognize(for: filePath, self: self)
-        }, onFailure: { [weak self] error in
+        performAfterInitialization().flatMap({
+            DDLogInfo("PDFWorkerWebViewHandler: call \(operationName) js")
+            return self.webViewHandler.call(javascript: "\(jsFunction)('\(filePath)');")
+        })
+        .subscribe(onFailure: { [weak self] error in
+            DDLogError("PDFWorkerWebViewHandler: \(operationName) failed - \(error)")
             self?.observable.on(.next(.failure(error)))
         })
         .disposed(by: disposeBag)
+    }
 
-        func performRecognize(for path: String, self: PDFWorkerWebViewHandler) {
-            DDLogInfo("PDFWorkerWebViewHandler: call recognize js")
-            return webViewHandler.call(javascript: "recognize('\(path)');")
-                .subscribe(on: MainScheduler.instance)
-                .observe(on: MainScheduler.instance)
-                .subscribe(onFailure: { [weak self] error in
-                    DDLogError("PDFWorkerWebViewHandler: recognize failed - \(error)")
-                    self?.observable.on(.next(.failure(error)))
-                })
-                .disposed(by: disposeBag)
-        }
+    func recognize(file: FileData) {
+        performPDFWorkerOperation(file: file, operationName: "recognize", jsFunction: "recognize")
     }
 
     func getFullText(file: FileData) {
-        let filePath = file.createUrl().path
-        performCall().subscribe(onSuccess: { [weak self] in
-            guard let self else { return }
-            performGetFullText(for: filePath, self: self)
-        }, onFailure: { [weak self] error in
-            self?.observable.on(.next(.failure(error)))
-        })
-        .disposed(by: disposeBag)
-
-        func performGetFullText(for path: String, self: PDFWorkerWebViewHandler) {
-            DDLogInfo("PDFWorkerWebViewHandler: call getFullText js")
-            return webViewHandler.call(javascript: "getFullText('\(path)');")
-                .subscribe(on: MainScheduler.instance)
-                .observe(on: MainScheduler.instance)
-                .subscribe(onFailure: { [weak self] error in
-                    DDLogError("PDFWorkerWebViewHandler: getFullText failed - \(error)")
-                    self?.observable.on(.next(.failure(error)))
-                })
-                .disposed(by: disposeBag)
-        }
+        performPDFWorkerOperation(file: file, operationName: "getFullText", jsFunction: "getFullText")
     }
 
     /// Communication with JS in `webView`. The `webView` sends a message through one of the registered `JSHandlers`, which is received here.
