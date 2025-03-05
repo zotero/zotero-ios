@@ -285,7 +285,7 @@ class PDFReaderViewController: UIViewController {
                 sidebarController.view.widthAnchor.constraint(equalToConstant: PDFReaderLayout.sidebarWidth),
                 sidebarLeftConstraint,
                 separator.widthAnchor.constraint(equalToConstant: PDFReaderLayout.separatorWidth),
-                separator.leadingAnchor.constraint(equalTo: sidebarController.view.trailingAnchor),
+                separator.trailingAnchor.constraint(equalTo: sidebarController.view.trailingAnchor),
                 separator.topAnchor.constraint(equalTo: view.topAnchor),
                 separator.bottomAnchor.constraint(equalTo: view.bottomAnchor),
                 documentController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
