@@ -160,10 +160,10 @@ internal enum L10n {
       internal static let searchCollections = L10n.tr("Localizable", "accessibility.collections.search_collections", fallback: "Search collections")
     }
     internal enum ItemDetail {
-      /// Double tap to download and open
-      internal static let downloadAndOpen = L10n.tr("Localizable", "accessibility.item_detail.download_and_open", fallback: "Double tap to download and open")
-      /// Double tap to open
-      internal static let `open` = L10n.tr("Localizable", "accessibility.item_detail.open", fallback: "Double tap to open")
+      /// Double-tap to download and open
+      internal static let downloadAndOpen = L10n.tr("Localizable", "accessibility.item_detail.download_and_open", fallback: "Double-tap to download and open")
+      /// Double-tap to open
+      internal static let `open` = L10n.tr("Localizable", "accessibility.item_detail.open", fallback: "Double-tap to open")
     }
     internal enum Items {
       /// Add selected items to collection
@@ -200,8 +200,8 @@ internal enum L10n {
       internal static let trash = L10n.tr("Localizable", "accessibility.items.trash", fallback: "Move selected items to trash")
     }
     internal enum Pdf {
-      /// Double tap to select and edit
-      internal static let annotationHint = L10n.tr("Localizable", "accessibility.pdf.annotation_hint", fallback: "Double tap to select and edit")
+      /// Double-tap to select and edit
+      internal static let annotationHint = L10n.tr("Localizable", "accessibility.pdf.annotation_hint", fallback: "Double-tap to select and edit")
       /// Author
       internal static let author = L10n.tr("Localizable", "accessibility.pdf.author", fallback: "Author")
       /// Color picker
@@ -236,8 +236,8 @@ internal enum L10n {
       internal static let noteAnnotation = L10n.tr("Localizable", "accessibility.pdf.note_annotation", fallback: "Note annotation")
       /// Create note annotation
       internal static let noteAnnotationTool = L10n.tr("Localizable", "accessibility.pdf.note_annotation_tool", fallback: "Create note annotation")
-      /// Open text reader
-      internal static let openReader = L10n.tr("Localizable", "accessibility.pdf.open_reader", fallback: "Open text reader")
+      /// Open reading mode
+      internal static let openReader = L10n.tr("Localizable", "accessibility.pdf.open_reader", fallback: "Open reading mode")
       /// Redo
       internal static let redo = L10n.tr("Localizable", "accessibility.pdf.redo", fallback: "Redo")
       /// Search PDF
@@ -260,8 +260,8 @@ internal enum L10n {
       internal static let sidebarOpen = L10n.tr("Localizable", "accessibility.pdf.sidebar_open", fallback: "Open sidebar")
       /// Tags
       internal static let tags = L10n.tr("Localizable", "accessibility.pdf.tags", fallback: "Tags")
-      /// Double tap to edit tags
-      internal static let tagsHint = L10n.tr("Localizable", "accessibility.pdf.tags_hint", fallback: "Double tap to edit tags")
+      /// Double-tap to edit tags
+      internal static let tagsHint = L10n.tr("Localizable", "accessibility.pdf.tags_hint", fallback: "Double-tap to edit tags")
       /// Text annotation
       internal static let textAnnotation = L10n.tr("Localizable", "accessibility.pdf.text_annotation", fallback: "Text annotation")
       /// Create text annotation
@@ -420,9 +420,9 @@ internal enum L10n {
       internal static let cantOpenAttachment = L10n.tr("Localizable", "errors.attachments.cant_open_attachment", fallback: "The attached file could not be found.")
       /// Unable to unzip snapshot
       internal static let cantUnzipSnapshot = L10n.tr("Localizable", "errors.attachments.cant_unzip_snapshot", fallback: "Unable to unzip snapshot")
-      /// You don't have permission to access %@ on the WebDAV server.
+      /// You don’t have permission to access %@ on the WebDAV server.
       internal static func forbiddenWebdav(_ p1: Any) -> String {
-        return L10n.tr("Localizable", "errors.attachments.forbidden_webdav", String(describing: p1), fallback: "You don't have permission to access %@ on the WebDAV server.")
+        return L10n.tr("Localizable", "errors.attachments.forbidden_webdav", String(describing: p1), fallback: "You don’t have permission to access %@ on the WebDAV server.")
       }
       /// the file
       internal static let genericFilename = L10n.tr("Localizable", "errors.attachments.generic_filename", fallback: "the file")
@@ -546,12 +546,12 @@ internal enum L10n {
       internal static let noIdentifiersWithLookupData = L10n.tr("Localizable", "errors.lookup.no_identifiers_with_lookup_data", fallback: "Zotero could not find any new identifiers in your input, or they are already being added. Please verify your input and try again.")
     }
     internal enum Pdf {
-      /// Can't add annotations.
-      internal static let cantAddAnnotations = L10n.tr("Localizable", "errors.pdf.cant_add_annotations", fallback: "Can't add annotations.")
-      /// Can't delete annotations.
-      internal static let cantDeleteAnnotations = L10n.tr("Localizable", "errors.pdf.cant_delete_annotations", fallback: "Can't delete annotations.")
-      /// Can't update annotation.
-      internal static let cantUpdateAnnotation = L10n.tr("Localizable", "errors.pdf.cant_update_annotation", fallback: "Can't update annotation.")
+      /// Can’t add annotations.
+      internal static let cantAddAnnotations = L10n.tr("Localizable", "errors.pdf.cant_add_annotations", fallback: "Can’t add annotations.")
+      /// Can’t delete annotations.
+      internal static let cantDeleteAnnotations = L10n.tr("Localizable", "errors.pdf.cant_delete_annotations", fallback: "Can’t delete annotations.")
+      /// Can’t update annotation.
+      internal static let cantUpdateAnnotation = L10n.tr("Localizable", "errors.pdf.cant_update_annotation", fallback: "Can’t update annotation.")
       /// This document has been changed on another device. Please reopen it to continue editing.
       internal static let documentChanged = L10n.tr("Localizable", "errors.pdf.document_changed", fallback: "This document has been changed on another device. Please reopen it to continue editing.")
       /// This document is empty.
@@ -618,9 +618,9 @@ internal enum L10n {
       internal static let failedAdditional = L10n.tr("Localizable", "errors.shareext.failed_additional", fallback: "You can still save this page as a webpage item.")
       /// Unable to save PDF
       internal static let fileNotPdf = L10n.tr("Localizable", "errors.shareext.file_not_pdf", fallback: "Unable to save PDF")
-      /// You don't have necessary rights to submit this item to %@.
+      /// You don’t have necessary rights to submit this item to %@.
       internal static func forbidden(_ p1: Any) -> String {
-        return L10n.tr("Localizable", "errors.shareext.forbidden", String(describing: p1), fallback: "You don't have necessary rights to submit this item to %@.")
+        return L10n.tr("Localizable", "errors.shareext.forbidden", String(describing: p1), fallback: "You don’t have necessary rights to submit this item to %@.")
       }
       /// The group “%@” has reached its Zotero Storage quota, and the file could not be uploaded. The group owner can view their account settings for additional storage options.
       /// 
@@ -676,19 +676,19 @@ internal enum L10n {
       internal static let loading = L10n.tr("Localizable", "errors.styles_search.loading", fallback: "Could not load styles. Do you want to try again?")
     }
     internal enum Sync {
-      /// You no longer have file-editing access for the group ‘%@’, and files you’ve changed locally cannot be uploaded. If you continue, all group files will be reset to their state on %@.
+      /// You no longer have file-editing access for the group “%@”, and files you’ve changed locally cannot be uploaded. If you continue, all group files will be reset to their state on %@.
       /// 
       /// If you would like a chance to copy modified files elsewhere or to request file-editing access from a group administrator, you can skip syncing of the group now.
       internal static func fileWriteDenied(_ p1: Any, _ p2: Any) -> String {
-        return L10n.tr("Localizable", "errors.sync.file_write_denied", String(describing: p1), String(describing: p2), fallback: "You no longer have file-editing access for the group ‘%@’, and files you’ve changed locally cannot be uploaded. If you continue, all group files will be reset to their state on %@.\n\nIf you would like a chance to copy modified files elsewhere or to request file-editing access from a group administrator, you can skip syncing of the group now.")
+        return L10n.tr("Localizable", "errors.sync.file_write_denied", String(describing: p1), String(describing: p2), fallback: "You no longer have file-editing access for the group “%@”, and files you’ve changed locally cannot be uploaded. If you continue, all group files will be reset to their state on %@.\n\nIf you would like a chance to copy modified files elsewhere or to request file-editing access from a group administrator, you can skip syncing of the group now.")
       }
-      /// Group '%@' is no longer accessible. What would you like to do?
+      /// Group “%@” is no longer accessible. What would you like to do?
       internal static func groupRemoved(_ p1: Any) -> String {
-        return L10n.tr("Localizable", "errors.sync.group_removed", String(describing: p1), fallback: "Group '%@' is no longer accessible. What would you like to do?")
+        return L10n.tr("Localizable", "errors.sync.group_removed", String(describing: p1), fallback: "Group “%@” is no longer accessible. What would you like to do?")
       }
-      /// You can't write to group '%@' anymore. What would you like to do?
+      /// You can no longer write to the group “%@”. What would you like to do?
       internal static func metadataWriteDenied(_ p1: Any) -> String {
-        return L10n.tr("Localizable", "errors.sync.metadata_write_denied", String(describing: p1), fallback: "You can't write to group '%@' anymore. What would you like to do?")
+        return L10n.tr("Localizable", "errors.sync.metadata_write_denied", String(describing: p1), fallback: "You can no longer write to the group “%@”. What would you like to do?")
       }
       /// Reset Group Files and Sync
       internal static let resetGroupFiles = L10n.tr("Localizable", "errors.sync.reset_group_files", fallback: "Reset Group Files and Sync")
@@ -720,22 +720,24 @@ internal enum L10n {
       internal static let forbiddenMessage = L10n.tr("Localizable", "errors.sync_toolbar.forbidden_message", fallback: "The Zotero sync server did not accept your username and password.\n\nPlease log out and log in with correct login information.")
       /// You don’t have permission to edit groups.
       internal static let groupPermissions = L10n.tr("Localizable", "errors.sync_toolbar.group_permissions", fallback: "You don’t have permission to edit groups.")
-      /// The group “%@” has reached its Zotero File Storage quota. Some files were not uploaded. Other Zotero data will continue to sync to the server.
-      /// The group owner can increase the group's storage capacity from the storage settings section on zotero.org.
+      /// The group “%@” has reached its Zotero Storage quota. Some files were not uploaded. Other Zotero data will continue to sync.
+      /// 
+      /// The group owner can increase the group’s storage capacity from their storage settings on zotero.org.
       internal static func groupQuotaReached(_ p1: Any) -> String {
-        return L10n.tr("Localizable", "errors.sync_toolbar.group_quota_reached", String(describing: p1), fallback: "The group “%@” has reached its Zotero File Storage quota. Some files were not uploaded. Other Zotero data will continue to sync to the server.\nThe group owner can increase the group's storage capacity from the storage settings section on zotero.org.")
+        return L10n.tr("Localizable", "errors.sync_toolbar.group_quota_reached", String(describing: p1), fallback: "The group “%@” has reached its Zotero Storage quota. Some files were not uploaded. Other Zotero data will continue to sync.\n\nThe group owner can increase the group’s storage capacity from their storage settings on zotero.org.")
       }
       /// Could not sync groups. Please try again.
       internal static let groupsFailed = L10n.tr("Localizable", "errors.sync_toolbar.groups_failed", fallback: "Could not sync groups. Please try again.")
-      /// You have insufficient space on your server. Some files were not uploaded. Other Zotero data will continue to sync to our server.
-      internal static let insufficientSpace = L10n.tr("Localizable", "errors.sync_toolbar.insufficient_space", fallback: "You have insufficient space on your server. Some files were not uploaded. Other Zotero data will continue to sync to our server.")
+      /// You have insufficient space on your WebDAV server. Some files were not uploaded. Other Zotero data will continue to sync.
+      internal static let insufficientSpace = L10n.tr("Localizable", "errors.sync_toolbar.insufficient_space", fallback: "You have insufficient space on your WebDAV server. Some files were not uploaded. Other Zotero data will continue to sync.")
       /// Unable to connect to the network. Please try again.
       internal static let internetConnection = L10n.tr("Localizable", "errors.sync_toolbar.internet_connection", fallback: "Unable to connect to the network. Please try again.")
       /// No libraries found. Please sign out and back in again.
       internal static let librariesMissing = L10n.tr("Localizable", "errors.sync_toolbar.libraries_missing", fallback: "No libraries found. Please sign out and back in again.")
-      /// You have reached your Zotero File Storage quota. Some files were not uploaded. Other Zotero data will continue to sync to the server.
+      /// You have reached your Zotero Storage quota. Some files were not uploaded. Other Zotero data will continue to sync.
+      /// 
       /// See your zotero.org account settings for additional storage options.
-      internal static let personalQuotaReached = L10n.tr("Localizable", "errors.sync_toolbar.personal_quota_reached", fallback: "You have reached your Zotero File Storage quota. Some files were not uploaded. Other Zotero data will continue to sync to the server.\nSee your zotero.org account settings for additional storage options.")
+      internal static let personalQuotaReached = L10n.tr("Localizable", "errors.sync_toolbar.personal_quota_reached", fallback: "You have reached your Zotero Storage quota. Some files were not uploaded. Other Zotero data will continue to sync.\n\nSee your zotero.org account settings for additional storage options.")
       /// Quota Reached.
       internal static let quotaReachedShort = L10n.tr("Localizable", "errors.sync_toolbar.quota_reached_short", fallback: "Quota Reached.")
       /// Show Item
@@ -789,8 +791,8 @@ internal enum L10n {
     internal static let deletedTitle = L10n.tr("Localizable", "item_detail.deleted_title", fallback: "Deleted")
     /// Merge name
     internal static let mergeName = L10n.tr("Localizable", "item_detail.merge_name", fallback: "Merge name")
-    /// Move to Standalone Attachment
-    internal static let moveToStandaloneAttachment = L10n.tr("Localizable", "item_detail.move_to_standalone_attachment", fallback: "Move to Standalone Attachment")
+    /// Convert to Standalone Attachment
+    internal static let moveToStandaloneAttachment = L10n.tr("Localizable", "item_detail.move_to_standalone_attachment", fallback: "Convert to Standalone Attachment")
     /// Notes
     internal static let notes = L10n.tr("Localizable", "item_detail.notes", fallback: "Notes")
     /// Show less
@@ -893,9 +895,9 @@ internal enum L10n {
     }
   }
   internal enum Libraries {
-    /// Do you really want to delete "%@"?
+    /// Do you really want to delete “%@”?
     internal static func deleteQuestion(_ p1: Any) -> String {
-      return L10n.tr("Localizable", "libraries.delete_question", String(describing: p1), fallback: "Do you really want to delete \"%@\"?")
+      return L10n.tr("Localizable", "libraries.delete_question", String(describing: p1), fallback: "Do you really want to delete “%@”?")
     }
     /// Group Libraries
     internal static let groupLibraries = L10n.tr("Localizable", "libraries.group_libraries", fallback: "Group Libraries")
@@ -1214,9 +1216,9 @@ internal enum L10n {
       /// 
       /// Please post a message to the Zotero Forums (forums.zotero.org) with this Report ID and any steps necessary to reproduce the crash.
       /// 
-      /// If Zotero crashes repeatedly, please tap "Export Database" and send exported files to support@zotero.org.
+      /// If Zotero crashes repeatedly, please tap “Export Database” and send exported files to support@zotero.org.
       internal static func messageWithDb(_ p1: Any) -> String {
-        return L10n.tr("Localizable", "settings.crash_alert.message_with_db", String(describing: p1), fallback: "Your Report ID is %@.\n\nPlease post a message to the Zotero Forums (forums.zotero.org) with this Report ID and any steps necessary to reproduce the crash.\n\nIf Zotero crashes repeatedly, please tap \"Export Database\" and send exported files to support@zotero.org.")
+        return L10n.tr("Localizable", "settings.crash_alert.message_with_db", String(describing: p1), fallback: "Your Report ID is %@.\n\nPlease post a message to the Zotero Forums (forums.zotero.org) with this Report ID and any steps necessary to reproduce the crash.\n\nIf Zotero crashes repeatedly, please tap “Export Database” and send exported files to support@zotero.org.")
       }
       /// Submit to Zotero Forums
       internal static let submitForum = L10n.tr("Localizable", "settings.crash_alert.submit_forum", fallback: "Submit to Zotero Forums")
@@ -1234,8 +1236,8 @@ internal enum L10n {
       internal static let title = L10n.tr("Localizable", "settings.export.title", fallback: "Quick Copy")
     }
     internal enum FullSync {
-      /// Full sync is in progress. Wait for it to finish and submit Debug ID to Zotero Forums.
-      internal static let inProgress = L10n.tr("Localizable", "settings.full_sync.in_progress", fallback: "Full sync is in progress. Wait for it to finish and submit Debug ID to Zotero Forums.")
+      /// A full sync is in progress. Wait for it to finish and post the Debug ID to the Zotero Forums.
+      internal static let inProgress = L10n.tr("Localizable", "settings.full_sync.in_progress", fallback: "A full sync is in progress. Wait for it to finish and post the Debug ID to the Zotero Forums.")
       /// Sync is already in progress. Wait for it to finish.
       internal static let otherInProgress = L10n.tr("Localizable", "settings.full_sync.other_in_progress", fallback: "Sync is already in progress. Wait for it to finish.")
       /// Start Full Sync Debugging
