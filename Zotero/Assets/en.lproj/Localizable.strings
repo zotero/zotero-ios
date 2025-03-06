@@ -82,7 +82,7 @@
 
 "libraries.my_library" = "My Library";
 "libraries.group_libraries" = "Group Libraries";
-"libraries.delete_question" = "Do you really want to delete \"%@\"?";
+"libraries.delete_question" = "Do you really want to delete “%@”?";
 
 "collections.search_title" = "Find Collection";
 "collections.all_items" = "All Items";
@@ -199,7 +199,7 @@
 "item_detail.delete_attachment_file" = "Remove Download";
 "item_detail.deleted_title" = "Deleted";
 "item_detail.deleted_message" = "This item has been deleted. Do you want to restore it?";
-"item_detail.move_to_standalone_attachment" = "Move to Standalone Attachment";
+"item_detail.move_to_standalone_attachment" = "Convert to Standalone Attachment";
 
 "tag_picker.title" = "%d selected";
 "tag_picker.placeholder" = "Tag name";
@@ -330,7 +330,7 @@
 "settings.log_alert.message" = "Your Debug ID is %@";
 "settings.crash_alert.title" = "Crash Log Sent";
 "settings.crash_alert.message" = "Your Report ID is %@.\n\nPlease post a message to the Zotero Forums (forums.zotero.org) with this Report ID and any steps necessary to reproduce the crash.";
-"settings.crash_alert.message_with_db" = "Your Report ID is %@.\n\nPlease post a message to the Zotero Forums (forums.zotero.org) with this Report ID and any steps necessary to reproduce the crash.\n\nIf Zotero crashes repeatedly, please tap \"Export Database\" and send exported files to support@zotero.org.";
+"settings.crash_alert.message_with_db" = "Your Report ID is %@.\n\nPlease post a message to the Zotero Forums (forums.zotero.org) with this Report ID and any steps necessary to reproduce the crash.\n\nIf Zotero crashes repeatedly, please tap “Export Database” and send exported files to support@zotero.org.";
 "settings.crash_alert.submit_forum" = "Submit to Zotero Forums";
 "settings.crash_alert.export_db" = "Copy and Export Database";
 "settings.crash_alert.copy" = "Copy to Clipboard";
@@ -362,7 +362,7 @@
 "settings.full_sync_debug" = "Full Sync Debugging";
 "settings.full_sync.start" = "Start Full Sync Debugging";
 "settings.full_sync.other_in_progress" = "Sync is already in progress. Wait for it to finish.";
-"settings.full_sync.in_progress" = "Full sync is in progress. Wait for it to finish and submit Debug ID to Zotero Forums.";
+"settings.full_sync.in_progress" = "A full sync is in progress. Wait for it to finish and post the Debug ID to the Zotero Forums.";
 
 "shareext.save" = "Save to Zotero";
 "shareext.decoding_attachment" = "Searching for items";
@@ -392,7 +392,7 @@
 "errors.attachments.missing_webdav" = "The attached file is not available on the WebDAV server.";
 "errors.attachments.missing_additional" = "Please check that the file has synced on the device where it was added.";
 "errors.attachments.unauthorized_webdav" = "The WebDAV server did not accept the username and password you have saved in settings.";
-"errors.attachments.forbidden_webdav" = "You don't have permission to access %@ on the WebDAV server.";
+"errors.attachments.forbidden_webdav" = "You don’t have permission to access %@ on the WebDAV server.";
 "errors.attachments.generic_filename" = "the file";
 "errors.login.invalid_password" = "Invalid password";
 "errors.login.invalid_username" = "Invalid username";
@@ -401,10 +401,10 @@
 "errors.collections.empty_name" = "Please enter a collection name";
 "errors.collections.save_failed" = "Unable to save collection";
 "errors.collections.bibliography_failed" = "Could not load items for bibliography.";
-"errors.sync.group_removed" = "Group '%@' is no longer accessible. What would you like to do?";
-"errors.sync.metadata_write_denied" = "You can't write to group '%@' anymore. What would you like to do?";
+"errors.sync.group_removed" = "Group “%@” is no longer accessible. What would you like to do?";
+"errors.sync.metadata_write_denied" = "You can no longer write to the group “%@”. What would you like to do?";
 "errors.sync.revert_to_original" = "Revert to original";
-"errors.sync.file_write_denied" = "You no longer have file-editing access for the group ‘%@’, and files you’ve changed locally cannot be uploaded. If you continue, all group files will be reset to their state on %@.\n\nIf you would like a chance to copy modified files elsewhere or to request file-editing access from a group administrator, you can skip syncing of the group now.";
+"errors.sync.file_write_denied" = "You no longer have file-editing access for the group “%@”, and files you’ve changed locally cannot be uploaded. If you continue, all group files will be reset to their state on %@.\n\nIf you would like a chance to copy modified files elsewhere or to request file-editing access from a group administrator, you can skip syncing of the group now.";
 "errors.sync.reset_group_files" = "Reset Group Files and Sync";
 "errors.sync.skip_group" = "Skip Group";
 "errors.sync_toolbar.finished_with_errors" = "Finished sync (%@)";
@@ -414,9 +414,9 @@
 "errors.sync_toolbar.conflict_retry_limit" = "Remote sync in progress. Please try again in a few minutes.";
 "errors.sync_toolbar.group_permissions" = "You don’t have permission to edit groups.";
 "errors.sync_toolbar.internet_connection" = "Unable to connect to the network. Please try again.";
-"errors.sync_toolbar.personal_quota_reached" = "You have reached your Zotero File Storage quota. Some files were not uploaded. Other Zotero data will continue to sync to the server.\nSee your zotero.org account settings for additional storage options.";
-"errors.sync_toolbar.group_quota_reached" = "The group \“%@\” has reached its Zotero File Storage quota. Some files were not uploaded. Other Zotero data will continue to sync to the server.\nThe group owner can increase the group's storage capacity from the storage settings section on zotero.org.";
-"errors.sync_toolbar.insufficient_space" = "You have insufficient space on your server. Some files were not uploaded. Other Zotero data will continue to sync to our server.";
+"errors.sync_toolbar.personal_quota_reached" = "You have reached your Zotero Storage quota. Some files were not uploaded. Other Zotero data will continue to sync.\n\nSee your zotero.org account settings for additional storage options.";
+"errors.sync_toolbar.group_quota_reached" = "The group “%@” has reached its Zotero Storage quota. Some files were not uploaded. Other Zotero data will continue to sync.\n\nThe group owner can increase the group’s storage capacity from their storage settings on zotero.org.";
+"errors.sync_toolbar.insufficient_space" = "You have insufficient space on your server. Some files were not uploaded. Other Zotero data will continue to sync to the online library.";
 "errors.sync_toolbar.quota_reached_short" = "Quota Reached.";
 "errors.sync_toolbar.unavailable" = "Zotero services are temporarily unavailable. Please try again in a few minutes.";
 "errors.sync_toolbar.webdav_error" = "Could not delete files from your WebDAV server: \"%@\".";
@@ -482,8 +482,8 @@
 "errors.shareext.api_error" = "Error uploading item. The item was saved to your local library.";
 "errors.shareext.webdav_error" = "Error uploading attachment to WebDAV server";
 "errors.shareext.personal_quota_reached" = "You have reached your Zotero Storage quota, and the file could not be uploaded. See your account settings for additional storage options.\n\nThe file was saved to your local library.";
-"errors.shareext.group_quota_reached" = "The group \“%@\” has reached its Zotero Storage quota, and the file could not be uploaded. The group owner can view their account settings for additional storage options.\n\nThe file was saved to the local library.";
-"errors.shareext.forbidden" = "You don't have necessary rights to submit this item to %@.";
+"errors.shareext.group_quota_reached" = "The group “%@” has reached its Zotero Storage quota, and the file could not be uploaded. The group owner can view their account settings for additional storage options.\n\nThe file was saved to the local library.";
+"errors.shareext.forbidden" = "You don’t have necessary rights to submit this item to %@.";
 "errors.shareext.webdav_not_verified" = "WebDAV verification error";
 "errors.db_failure" = "Error creating database. Please try logging in again.";
 "errors.logging.title" = "Debugging Error";
@@ -507,9 +507,9 @@
 "errors.lookup.no_identifiers_with_lookup_data" = "Zotero could not find any new identifiers in your input, or they are already being added. Please verify your input and try again.";
 "errors.pdf.merge_too_big_title" = "Unable to merge annotations";
 "errors.pdf.merge_too_big" = "The combined annotation would be too large.";
-"errors.pdf.cant_update_annotation" = "Can't update annotation.";
-"errors.pdf.cant_add_annotations" = "Can't add annotations.";
-"errors.pdf.cant_delete_annotations" = "Can't delete annotations.";
+"errors.pdf.cant_update_annotation" = "Can’t update annotation.";
+"errors.pdf.cant_add_annotations" = "Can’t add annotations.";
+"errors.pdf.cant_delete_annotations" = "Can’t delete annotations.";
 "errors.pdf.incompatible_document" = "This document is not supported.";
 "errors.pdf.empty_document" = "This document is empty.";
 "errors.pdf.page_index_not_int" = "Incorrect format of page stored for this document.";
@@ -540,8 +540,8 @@
 "accessibility.items.download_attachments" = "Download attachments for selected items";
 "accessibility.items.remove_downloads" = "Remove downloads for selected items";
 "accessibility.items.collection" = "Collection";
-"accessibility.item_detail.download_and_open" = "Double tap to download and open";
-"accessibility.item_detail.open" = "Double tap to open";
+"accessibility.item_detail.download_and_open" = "Double-tap to download and open";
+"accessibility.item_detail.open" = "Double-tap to open";
 "accessibility.pdf.sidebar_open" = "Open sidebar";
 "accessibility.pdf.sidebar_close" = "Close sidebar";
 "accessibility.pdf.share" = "Share PDF";
@@ -571,10 +571,10 @@
 "accessibility.pdf.author" = "Author";
 "accessibility.pdf.comment" = "Comment";
 "accessibility.pdf.tags" = "Tags";
-"accessibility.pdf.annotation_hint" = "Double tap to select and edit";
-"accessibility.pdf.tags_hint" = "Double tap to edit tags";
+"accessibility.pdf.annotation_hint" = "Double-tap to select and edit";
+"accessibility.pdf.tags_hint" = "Double-tap to edit tags";
 "accessibility.pdf.selected" = "Selected";
-"accessibility.pdf.open_reader" = "Open text reader";
+"accessibility.pdf.open_reader" = "Open reading mode";
 "accessibility.pdf.search_pdf" = "Search PDF";
 "accessibility.pdf.redo" = "Redo";
 "accessibility.pdf.undo" = "Undo";
