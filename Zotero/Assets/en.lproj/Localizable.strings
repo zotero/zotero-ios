@@ -203,7 +203,7 @@
 
 "tag_picker.title" = "%d selected";
 "tag_picker.placeholder" = "Tag name";
-"tag_picker.create_tag" = "Create Tag \“%@\”";
+"tag_picker.create_tag" = "Create Tag “%@”";
 "tag_picker.confirm_deletion_question" = "Delete Automatic Tags";
 "tag_picker.search_placeholder" = "Search Tags";
 "tag_picker.deselect_all" = "Deselect All";
@@ -494,8 +494,8 @@
 "errors.logging.response_parsing" = "Unexpected response from server";
 "errors.translators.bundle_loading" = "Could not update translators from bundle. Would you like to try again?";
 "errors.translators.bundle_reset" = "Could not load bundled translators.";
-"errors.styles.addition" = "Could not add style \“%@\”.";
-"errors.styles.deletion" = "Could not delete style \“%@\”.";
+"errors.styles.addition" = "Could not add style “%@”.";
+"errors.styles.deletion" = "Could not delete style “%@”.";
 "errors.styles.loading" = "Could not load styles.";
 "errors.styles_search.loading" = "Could not load styles. Do you want to try again?";
 "errors.citation.generate_citation" = "Could not generate citation.";
