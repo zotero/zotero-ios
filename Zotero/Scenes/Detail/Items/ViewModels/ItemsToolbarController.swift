@@ -105,7 +105,7 @@ final class ItemsToolbarController {
                 case .addToCollection, .trash, .delete, .removeFromCollection, .restore, .share, .download, .removeDownload:
                     item.tag = ToolbarItem.empty.tag
 
-                case .sort, .filter, .createParent, .copyCitation, .copyBibliography, .duplicate:
+                case .sort, .filter, .createParent, .retrieveMetadata, .copyCitation, .copyBibliography, .duplicate:
                     break
                 }
                 switch action.type {
@@ -133,7 +133,7 @@ final class ItemsToolbarController {
                 case .removeDownload:
                     item.accessibilityLabel = L10n.Accessibility.Items.removeDownloads
 
-                case .sort, .filter, .createParent, .copyCitation, .copyBibliography, .duplicate:
+                case .sort, .filter, .createParent, .retrieveMetadata, .copyCitation, .copyBibliography, .duplicate:
                     break
                 }
                 item.rx.tap.subscribe(onNext: { [weak self] _ in

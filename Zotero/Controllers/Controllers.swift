@@ -274,6 +274,10 @@ final class Controllers {
         controllers?.remoteFileDownloader.stop()
         // Cancel all background uploads
         controllers?.backgroundUploadObserver.cancelAllUploads()
+        // Cancel all Recognizer Tasks
+        controllers?.recognizerController.cancellAllTasks()
+        // Cancel all PDF workers
+        controllers?.pdfWorkerController.cancellAllWorks()
         // Clear user controllers
         self.userControllers = nil
         // Clear API auth token
@@ -308,6 +312,8 @@ final class UserControllers {
     let fileDownloader: AttachmentDownloader
     let remoteFileDownloader: RemoteAttachmentDownloader
     let identifierLookupController: IdentifierLookupController
+    let pdfWorkerController: PDFWorkerController
+    let recognizerController: RecognizerController
     let webSocketController: WebSocketController
     let fileCleanupController: AttachmentFileCleanupController
     let citationController: CitationController
@@ -394,6 +400,15 @@ final class UserControllers {
             schemaController: controllers.schemaController,
             dateParser: controllers.dateParser,
             remoteFileDownloader: remoteFileDownloader
+        )
+        pdfWorkerController = PDFWorkerController()
+        recognizerController = RecognizerController(
+            pdfWorkerController: pdfWorkerController,
+            apiClient: controllers.apiClient,
+            translatorsController: controllers.translatorsAndStylesController,
+            schemaController: controllers.schemaController,
+            dbStorage: dbStorage,
+            dateParser: controllers.dateParser
         )
         self.webSocketController = webSocketController
         self.fileCleanupController = fileCleanupController
