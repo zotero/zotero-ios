@@ -416,7 +416,7 @@
 "errors.sync_toolbar.internet_connection" = "Unable to connect to the network. Please try again.";
 "errors.sync_toolbar.personal_quota_reached" = "You have reached your Zotero Storage quota. Some files were not uploaded. Other Zotero data will continue to sync.\n\nSee your zotero.org account settings for additional storage options.";
 "errors.sync_toolbar.group_quota_reached" = "The group “%@” has reached its Zotero Storage quota. Some files were not uploaded. Other Zotero data will continue to sync.\n\nThe group owner can increase the group’s storage capacity from their storage settings on zotero.org.";
-"errors.sync_toolbar.insufficient_space" = "You have insufficient space on your server. Some files were not uploaded. Other Zotero data will continue to sync to the online library.";
+"errors.sync_toolbar.insufficient_space" = "You have insufficient space on your WebDAV server. Some files were not uploaded. Other Zotero data will continue to sync.";
 "errors.sync_toolbar.quota_reached_short" = "Quota Reached.";
 "errors.sync_toolbar.unavailable" = "Zotero services are temporarily unavailable. Please try again in a few minutes.";
 "errors.sync_toolbar.webdav_error" = "Could not delete files from your WebDAV server: \"%@\".";
