@@ -75,6 +75,11 @@ fastlane/test_output
 # MacOS files
 .DS_Store
 
+# SwiftGen
+
+Zotero/Extensions/Assets.swift
+Zotero/Extensions/Localizable.swift
+
 # Bundled data
 
 bundled/translators

@@ -4325,7 +4325,6 @@
 				B3593F142668D37900FA4BB2 /* Bundle Styles */,
 				B34A85AC243CB1E4003D5638 /* Bundle Translators */,
 				B3A1D03D2BA321B30040FEE9 /* Bundle Note Editor */,
-				B337A5AD244F229400AFD13D /* SwiftGen */,
 				B30D59512206F60400884C4A /* Sources */,
 				B30D59522206F60400884C4A /* Frameworks */,
 				B30D59532206F60400884C4A /* Resources */,
@@ -4410,6 +4409,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = B311B32B2386A39800BCF592 /* Build configuration list for PBXNativeTarget "ZShare" */;
 			buildPhases = (
+				6179996F2D79F40B0051D35E /* SwiftGen */,
 				B311B3182386A39800BCF592 /* Sources */,
 				B311B3192386A39800BCF592 /* Frameworks */,
 				B311B31A2386A39800BCF592 /* Resources */,
@@ -4636,6 +4636,27 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		6179996F2D79F40B0051D35E /* SwiftGen */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = SwiftGen;
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(SRCROOT)/Zotero/Extensions/Assets.swift",
+				"$(SRCROOT)/Zotero/Extensions/Localizable.swift",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "swiftgen config lint\nswiftgen config run\n";
+		};
 		61AE2F282A2619E50072571D /* SwiftLint */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -4672,25 +4693,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "# translators file destination\nZOTERO_DIR=\"${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.appex/translation/translate\"\n#translation/translate/modules/utilities/test/runtests.sh\nif [ ! -d \"$ZOTERO_DIR\" ]; then\nexit\nfi\n\n# Remove scripts to avoid code-signing issues\nrm -r \"$ZOTERO_DIR/example\"\nrm -r \"$ZOTERO_DIR/modules/utilities/test\"\nrm -r \"$ZOTERO_DIR/modules/utilities/resource/schema/global\"\nrm -r \"$ZOTERO_DIR/testTranslators\"\n# Remove unused symlinks\nfind \"$ZOTERO_DIR\" -follow -type l -exec rm -f {} \\;\n";
-		};
-		B337A5AD244F229400AFD13D /* SwiftGen */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = SwiftGen;
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "swiftgen config lint\nswiftgen config run\n";
 		};
 		B34A85AC243CB1E4003D5638 /* Bundle Translators */ = {
 			isa = PBXShellScriptBuildPhase;
