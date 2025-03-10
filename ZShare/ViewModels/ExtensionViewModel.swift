@@ -204,14 +204,24 @@ final class ExtensionViewModel {
                 }
             }
 
-            init(item: ItemResponse, attachmentKey: String, attachmentData: [String: Any], attachmentFile: File, linkType: Attachment.FileLinkType, defaultTitle: String, libraryId: LibraryIdentifier,
-                 userId: Int, dateParser: DateParser) {
+            init(
+                item: ItemResponse,
+                attachmentTitle: String?,
+                attachmentKey: String,
+                attachmentData: [String: Any],
+                attachmentFile: File,
+                linkType: Attachment.FileLinkType,
+                defaultTitle: String,
+                libraryId: LibraryIdentifier,
+                userId: Int,
+                dateParser: DateParser
+            ) {
                 let url = attachmentData[FieldKeys.Item.url] as? String
                 let filename = FilenameFormatter.filename(from: item, defaultTitle: defaultTitle, ext: attachmentFile.ext, dateParser: dateParser)
                 let file = Files.attachmentFile(in: libraryId, key: attachmentKey, filename: filename, contentType: attachmentFile.mimeType)
                 let attachment = Attachment(
                     type: .file(filename: filename, contentType: attachmentFile.mimeType, location: .local, linkType: linkType, compressed: false),
-                    title: filename,
+                    title: attachmentTitle ?? filename,
                     url: url,
                     key: attachmentKey,
                     libraryId: libraryId
@@ -555,7 +565,7 @@ final class ExtensionViewModel {
                     case .translated(let item):
                         var state = self.state
                         state.expectedItem = item
-                        state.expectedAttachment = (filename, tmpFile)
+                        state.expectedAttachment = ("PDF", tmpFile)
                         state.attachmentState = .processed
                         // attachment is only used to get an optional URL, so we can safely pass an empty dictionary
                         state.processedAttachment = .itemWithAttachment(item: item, attachment: [:], attachmentFile: file)
@@ -1059,6 +1069,7 @@ final class ExtensionViewModel {
                 DDLogInfo("ExtensionViewModel: submit item with attachment")
                 let data = State.UploadData(
                     item: item,
+                    attachmentTitle: fileStorage.isPdf(file: attachmentFile) ? "PDF" : nil,
                     attachmentKey: self.state.attachmentKey,
                     attachmentData: attachmentData,
                     attachmentFile: attachmentFile,
