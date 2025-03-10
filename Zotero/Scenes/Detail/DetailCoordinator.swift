@@ -226,6 +226,7 @@ final class DetailCoordinator: Coordinator {
                 showPdf(at: url, key: attachment.key, parentKey: parentKey, libraryId: libraryId)
 
             case "text/html", "application/epub+zip":
+                if FeatureGa
                 DDLogInfo("DetailCoordinator: show HTML / EPUB \(attachment.key)")
                 showHtmlEpubReader(for: url, key: attachment.key, parentKey: parentKey, libraryId: libraryId)
 
