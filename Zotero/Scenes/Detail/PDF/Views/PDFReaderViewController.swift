@@ -205,7 +205,7 @@ class PDFReaderViewController: UIViewController, ParentWithSidebarController {
         view.backgroundColor = .systemGray6
         setupViews()
         intraDocumentNavigationHandler = IntraDocumentNavigationButtonsHandler(
-            parent: documentController,
+            parent: documentController!,
             back: { [weak self] in
                 self?.documentController?.performBackAction()
             },
@@ -639,7 +639,7 @@ class PDFReaderViewController: UIViewController, ParentWithSidebarController {
     }
 
     @objc private func performForwardAction() {
-        documentController.performForwardAction()
+        documentController?.performForwardAction()
     }
 
     @objc private func undo(_ sender: Any?) {
