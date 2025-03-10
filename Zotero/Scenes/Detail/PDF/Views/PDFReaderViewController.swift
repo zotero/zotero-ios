@@ -651,7 +651,7 @@ class PDFReaderViewController: UIViewController, ParentWithSidebarController {
     }
 
     @objc private func performForwardAction() {
-        documentController.performForwardAction()
+        documentController?.performForwardAction()
     }
 
     @objc private func undo(_ sender: Any?) {
