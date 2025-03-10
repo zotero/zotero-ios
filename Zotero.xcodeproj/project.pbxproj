@@ -874,6 +874,8 @@
 		B39D42D929C0B82F0035CDA9 /* TagFilterCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39D42D729C0B82F0035CDA9 /* TagFilterCell.swift */; };
 		B39D42DA29C0B82F0035CDA9 /* TagFilterCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B39D42D829C0B82F0035CDA9 /* TagFilterCell.xib */; };
 		B39D42DF29C0CE7D0035CDA9 /* TagsFlowLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39D42DE29C0CE7D0035CDA9 /* TagsFlowLayout.swift */; };
+		B39DBFF32D7EF2C600454486 /* FeatureGates.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39DBFF22D7EF2C600454486 /* FeatureGates.swift */; };
+		B39DBFF42D7EF2C600454486 /* FeatureGates.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39DBFF22D7EF2C600454486 /* FeatureGates.swift */; };
 		B39E0132283276830091CE4A /* WebViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39E0131283276830091CE4A /* WebViewHandler.swift */; };
 		B39E013328327CAC0091CE4A /* WebViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39E0131283276830091CE4A /* WebViewHandler.swift */; };
 		B39EE32B223A5E3500302E29 /* TestAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39EE32A223A5E3500302E29 /* TestAppDelegate.swift */; };
@@ -1903,6 +1905,7 @@
 		B39D42D729C0B82F0035CDA9 /* TagFilterCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagFilterCell.swift; sourceTree = "<group>"; };
 		B39D42D829C0B82F0035CDA9 /* TagFilterCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = TagFilterCell.xib; sourceTree = "<group>"; };
 		B39D42DE29C0CE7D0035CDA9 /* TagsFlowLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagsFlowLayout.swift; sourceTree = "<group>"; };
+		B39DBFF22D7EF2C600454486 /* FeatureGates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureGates.swift; sourceTree = "<group>"; };
 		B39E0131283276830091CE4A /* WebViewHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewHandler.swift; sourceTree = "<group>"; };
 		B39EE32A223A5E3500302E29 /* TestAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestAppDelegate.swift; sourceTree = "<group>"; };
 		B3A05E94261492150077CCCC /* UpdateCollectionLastUsedDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCollectionLastUsedDbRequest.swift; sourceTree = "<group>"; };
@@ -2715,6 +2718,7 @@
 				B305653F23FC051E003304F2 /* DelayIntervals.swift */,
 				B305652C23FC051E003304F2 /* DeletableObject.swift */,
 				B3AFB83B2A0CE82C008C2374 /* EmptyDecodable.swift */,
+				B39DBFF22D7EF2C600454486 /* FeatureGates.swift */,
 				B3BC6B1C250F797B006A8B9C /* FieldKeys.swift */,
 				B305654123FC051E003304F2 /* File.swift */,
 				B305653E23FC051E003304F2 /* Files.swift */,
@@ -5139,6 +5143,7 @@
 				B3F09AE829CAFF8D0084E4D8 /* TagFilterState.swift in Sources */,
 				B30565E723FC051E003304F2 /* ObjectUserChangeObserver.swift in Sources */,
 				B305669F23FC051F003304F2 /* RCustomLibrary.swift in Sources */,
+				B39DBFF32D7EF2C600454486 /* FeatureGates.swift in Sources */,
 				B379D92C2BB2EDF500AF5025 /* FullSyncDebuggingActionHandler.swift in Sources */,
 				B37AA28628994B7600A1C643 /* ItemDetailFieldContentView.swift in Sources */,
 				B305667323FC051F003304F2 /* FileManager+Utils.swift in Sources */,
@@ -5618,6 +5623,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B305675E23FC0A0B003304F2 /* Attachment.swift in Sources */,
+				B39DBFF42D7EF2C600454486 /* FeatureGates.swift in Sources */,
 				B305675F23FC0A0B003304F2 /* Collection.swift in Sources */,
 				B305676023FC0A0B003304F2 /* Convertible.swift in Sources */,
 				B305676123FC0A0B003304F2 /* Defaults.swift in Sources */,
