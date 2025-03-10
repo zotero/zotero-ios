@@ -226,9 +226,15 @@ final class DetailCoordinator: Coordinator {
                 showPdf(at: url, key: attachment.key, parentKey: parentKey, libraryId: libraryId)
 
             case "text/html", "application/epub+zip":
-                if FeatureGa
-                DDLogInfo("DetailCoordinator: show HTML / EPUB \(attachment.key)")
-                showHtmlEpubReader(for: url, key: attachment.key, parentKey: parentKey, libraryId: libraryId)
+                if FeatureGates.enabled.contains(.htmlEpubReader) {
+                    DDLogInfo("DetailCoordinator: show HTML / EPUB \(attachment.key)")
+                    showHtmlEpubReader(for: url, key: attachment.key, parentKey: parentKey, libraryId: libraryId)
+                } else if contentType == "text/html" {
+                    showWebView(for: url)
+                } else {
+                    DDLogInfo("DetailCoordinator: share attachment \(attachment.key)")
+                    share(item: file.createUrl(), sourceView: .view(sourceView, rect))
+                }
 
             case "text/plain":
                 let text = try? String(contentsOf: url, encoding: .utf8)
