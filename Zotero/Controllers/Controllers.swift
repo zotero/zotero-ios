@@ -121,13 +121,11 @@ final class Controllers {
     }
 
     func didEnterBackground() {
-        guard let userControllers else { return }
-        userControllers.disableSync(apiKey: nil)
+        userControllers?.disableSync(apiKey: nil)
     }
 
     func willTerminate() {
-        guard let userControllers else { return }
-        userControllers.disableSync(apiKey: nil)
+        userControllers?.disableSync(apiKey: nil)
     }
 
     // MARK: - Actions
@@ -198,7 +196,7 @@ final class Controllers {
     }
 
     private func update(with data: SessionData?, isLogin: Bool, debugLogging: DebugLogging) {
-        if let data = data {
+        if let data {
             set(sessionData: data, isLogin: isLogin, debugLogging: debugLogging)
             apiKey = data.apiToken
         } else {
