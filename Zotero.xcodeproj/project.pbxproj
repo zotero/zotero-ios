@@ -55,6 +55,8 @@
 		615C10E62D5E329F001F1E8E /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 615C10E52D5E329F001F1E8E /* OrderedCollections */; };
 		61639F852AE03B8500026003 /* InstantPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61639F842AE03B8500026003 /* InstantPresenter.swift */; };
 		617999702D8024000051D35E /* EditItemFieldsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32861E528BFACD4007B5A5C /* EditItemFieldsDbRequest.swift */; };
+		617999722D8089200051D35E /* RenameAttachmentFilenameDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 617999712D8089200051D35E /* RenameAttachmentFilenameDbRequest.swift */; };
+		617999732D8089200051D35E /* RenameAttachmentFilenameDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 617999712D8089200051D35E /* RenameAttachmentFilenameDbRequest.swift */; };
 		618404262A4456A9005AAF22 /* IdentifierLookupController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 618404252A4456A9005AAF22 /* IdentifierLookupController.swift */; };
 		618D83E72BAAC88C00E7966B /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 618D83E62BAAC88C00E7966B /* PrivacyInfo.xcprivacy */; };
 		618D83E82BAAC88C00E7966B /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 618D83E62BAAC88C00E7966B /* PrivacyInfo.xcprivacy */; };
@@ -1354,6 +1356,7 @@
 		6162F2502D076A990096FEEE /* ReaderAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderAnnotation.swift; sourceTree = "<group>"; };
 		615C10E02D5BA17A001F1E8E /* RecognizerController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecognizerController.swift; sourceTree = "<group>"; };
 		61639F842AE03B8500026003 /* InstantPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantPresenter.swift; sourceTree = "<group>"; };
+		617999712D8089200051D35E /* RenameAttachmentFilenameDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenameAttachmentFilenameDbRequest.swift; sourceTree = "<group>"; };
 		618404252A4456A9005AAF22 /* IdentifierLookupController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdentifierLookupController.swift; sourceTree = "<group>"; };
 		618D83E62BAAC88C00E7966B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		61A0C8462B8F669B0048FF92 /* PSPDFKitUI+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PSPDFKitUI+Extensions.swift"; sourceTree = "<group>"; };
@@ -2583,6 +2586,7 @@
 				B3D84BEC27917E3D005DDD7C /* UpdateCreatorSummaryFormatDbRequest.swift */,
 				B305644E23FC051E003304F2 /* UpdateItemLocaleDbRequest.swift */,
 				B305645F23FC051E003304F2 /* UpdateVersionsDbRequest.swift */,
+				617999712D8089200051D35E /* RenameAttachmentFilenameDbRequest.swift */,
 			);
 			path = Requests;
 			sourceTree = "<group>";
@@ -5782,6 +5786,7 @@
 				B30566B323FC051F003304F2 /* CollectionResponse.swift in Sources */,
 				B34341AB260A48A200093E63 /* ReadAllWritableGroupsDbRequest.swift in Sources */,
 				B3593F4B241A61C700760E20 /* LibrariesError.swift in Sources */,
+				617999732D8089200051D35E /* RenameAttachmentFilenameDbRequest.swift in Sources */,
 				B3242CCD246ABBAF00D8748F /* AnnotationsConfig.swift in Sources */,
 				B305669923FC051F003304F2 /* RCreator.swift in Sources */,
 				B3B557132C884B8300BD6325 /* AnnotationPreview.swift in Sources */,
@@ -5893,6 +5898,7 @@
 				B3F0FDC92888179100949BC9 /* CreateTranslatedItemsDbRequest.swift in Sources */,
 				B3BC6B21250FA50F006A8B9C /* SchemaError.swift in Sources */,
 				B305674C23FC09AF003304F2 /* RItem.swift in Sources */,
+				617999722D8089200051D35E /* RenameAttachmentFilenameDbRequest.swift in Sources */,
 				B305674D23FC09AF003304F2 /* RSearch.swift in Sources */,
 				B3C6AB2E248E42400009AC96 /* ApiOperation.swift in Sources */,
 				617999702D8024000051D35E /* EditItemFieldsDbRequest.swift in Sources */,

@@ -393,7 +393,8 @@ final class UserControllers {
             translatorsController: controllers.translatorsAndStylesController,
             schemaController: controllers.schemaController,
             dbStorage: dbStorage,
-            dateParser: controllers.dateParser
+            dateParser: controllers.dateParser,
+            fileStorage: controllers.fileStorage
         )
         self.webSocketController = webSocketController
         self.fileCleanupController = fileCleanupController
