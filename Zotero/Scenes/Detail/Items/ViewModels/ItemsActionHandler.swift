@@ -508,7 +508,7 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
             switch result {
             case .success(let (succeeded, failed)):
                 for attachment in succeeded {
-                    if let file = attachment.file as? FileData, file.mimeType == "application/pdf" {
+                    if FeatureGates.enabled.contains(.pdfWorker), let file = attachment.file as? FileData, file.mimeType == "application/pdf" {
                         let task = RecognizerController.Task(file: file, kind: .createParentForItem(libraryId: libraryId, key: attachment.key))
                         _ = recognizerController.queue(task: task)
                     }
