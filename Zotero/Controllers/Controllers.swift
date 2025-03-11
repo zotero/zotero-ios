@@ -65,23 +65,19 @@ final class Controllers {
         let schemaController = SchemaController()
         let fileStorage = FileStorageController()
         let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: Controllers.apiConfiguration(schemaVersion: schemaController.version))
-
         let crashReporter = CrashReporter(apiClient: apiClient)
         // Start crash reporter as soon as possible to catch all crashes.
         crashReporter.start()
         let debugLogging = DebugLogging(apiClient: apiClient, fileStorage: fileStorage)
         // Start logging as soon as possible to catch all errors/warnings.
         debugLogging.startLoggingOnLaunchIfNeeded()
-
         let urlDetector = UrlDetector()
         let secureStorage = KeychainSecureStorage()
         let sessionController = SessionController(secureStorage: secureStorage, defaults: Defaults.shared)
         let bundledDataConfiguration = Database.bundledDataConfiguration(fileStorage: fileStorage)
         let bundledDataStorage = RealmDbStorage(config: bundledDataConfiguration)
         let translatorsAndStylesController = TranslatorsAndStylesController(apiClient: apiClient, bundledDataStorage: bundledDataStorage, fileStorage: fileStorage)
-        let previewSize: CGSize
-
-        previewSize = CGSize(width: PDFReaderLayout.sidebarWidth, height: PDFReaderLayout.sidebarWidth)
+        let previewSize = CGSize(width: PDFReaderLayout.sidebarWidth, height: PDFReaderLayout.sidebarWidth)
 
         self.bundledDataStorage = bundledDataStorage
         self.sessionController = sessionController
@@ -89,22 +85,22 @@ final class Controllers {
         self.secureStorage = secureStorage
         self.fileStorage = fileStorage
         self.schemaController = schemaController
-        self.dragDropController = DragDropController()
+        dragDropController = DragDropController()
         self.crashReporter = crashReporter
         self.debugLogging = debugLogging
         self.translatorsAndStylesController = translatorsAndStylesController
-        self.annotationPreviewController = AnnotationPreviewController(previewSize: previewSize, fileStorage: fileStorage)
-        self.pdfThumbnailController = PDFThumbnailController(fileStorage: fileStorage)
+        annotationPreviewController = AnnotationPreviewController(previewSize: previewSize, fileStorage: fileStorage)
+        pdfThumbnailController = PDFThumbnailController(fileStorage: fileStorage)
         self.urlDetector = urlDetector
-        self.dateParser = DateParser()
-        self.htmlAttributedStringConverter = HtmlAttributedStringConverter()
-        self.userInitialized = PassthroughSubject()
-        self.lastBuildNumber = Defaults.shared.lastBuildNumber
-        self.idleTimerController = IdleTimerController()
-        self.backgroundTaskController = BackgroundTaskController()
-        self.lowPowerModeController = LowPowerModeController()
+        dateParser = DateParser()
+        htmlAttributedStringConverter = HtmlAttributedStringConverter()
+        userInitialized = PassthroughSubject()
+        lastBuildNumber = Defaults.shared.lastBuildNumber
+        idleTimerController = IdleTimerController()
+        backgroundTaskController = BackgroundTaskController()
+        lowPowerModeController = LowPowerModeController()
         uriConverter = ZoteroURIConverter()
-        self.didInitialize = false
+        didInitialize = false
 
         Defaults.shared.lastBuildNumber = DeviceInfoProvider.buildNumber
 
@@ -118,44 +114,44 @@ final class Controllers {
     // MARK: - App lifecycle
 
     func willEnterForeground() {
-        guard self.didInitialize else { return }
-        self.crashReporter.processPendingReports { [weak self] in
+        guard didInitialize else { return }
+        crashReporter.processPendingReports { [weak self] in
             self?.startApp()
         }
     }
 
     func didEnterBackground() {
-        guard let controllers = self.userControllers else { return }
-        controllers.disableSync(apiKey: nil)
+        guard let userControllers else { return }
+        userControllers.disableSync(apiKey: nil)
     }
 
     func willTerminate() {
-        guard let controllers = self.userControllers else { return }
-        controllers.disableSync(apiKey: nil)
+        guard let userControllers else { return }
+        userControllers.disableSync(apiKey: nil)
     }
 
     // MARK: - Actions
 
     private func startApp() {
-        self.translatorsAndStylesController.update()
-        guard let controllers = self.userControllers, let session = self.sessionController.sessionData else { return }
-        controllers.enableSync(apiKey: session.apiToken)
+        translatorsAndStylesController.update()
+        guard let userControllers, let session = sessionController.sessionData else { return }
+        userControllers.enableSync(apiKey: session.apiToken)
     }
 
     private func initializeSessionIfPossible(failOnError: Bool = false) {
         do {
             // Try to initialize session
-            try self.sessionController.initializeSession()
+            try sessionController.initializeSession()
             // Start with initialized session
-            self.update(with: self.sessionController.sessionData, isLogin: false, debugLogging: self.debugLogging)
+            update(with: sessionController.sessionData, isLogin: false, debugLogging: debugLogging)
             // Start observing further session changes
-            self.startObservingSession()
+            startObservingSession()
         } catch let error {
             if !failOnError {
                 // If this is first failure, start logging issues and wait for protected data
-                self.debugLogging.start(type: .immediate)
+                debugLogging.start(type: .immediate)
                 DDLogError("Controllers: session controller failed to initialize properly - \(error)")
-                self.waitForProtectedDataAvailability { [weak self] in
+                waitForProtectedDataAvailability { [weak self] in
                     self?.initializeSessionIfPossible(failOnError: true)
                 }
                 return
@@ -163,16 +159,16 @@ final class Controllers {
 
             // If we already tried to wait for protected data availability and failed, we'll just show login screen and report an error.
 
-            if self.debugLogging.isEnabled {
+            if debugLogging.isEnabled {
                 // Stop debug logging
                 DDLogError("Controllers: session controller failed to initialize properly - \(error)")
-                self.debugLogging.stop(ignoreEmptyLogs: true, userId: 0, customAlertMessage: { L10n.loginDebug($0) })
+                debugLogging.stop(ignoreEmptyLogs: true, userId: 0, customAlertMessage: { L10n.loginDebug($0) })
             }
 
             // Show login screen
-            self.update(with: nil, isLogin: false, debugLogging: self.debugLogging)
+            update(with: nil, isLogin: false, debugLogging: debugLogging)
             // Start observing further session changes so that user can log in
-            self.startObservingSession()
+            startObservingSession()
         }
     }
 
@@ -192,39 +188,37 @@ final class Controllers {
     }
 
     private func startObservingSession() {
-        self.sessionCancellable = self.sessionController.$sessionData
-                                                        .receive(on: DispatchQueue.main)
-                                                        .dropFirst()
-                                                        .sink { [weak self] data in
-                                                            guard let self = self else { return }
-                                                            self.update(with: data, isLogin: true, debugLogging: self.debugLogging)
-                                                        }
+        sessionCancellable = sessionController.$sessionData
+            .receive(on: DispatchQueue.main)
+            .dropFirst()
+            .sink { [weak self] data in
+                guard let self else { return }
+                update(with: data, isLogin: true, debugLogging: debugLogging)
+            }
     }
 
     private func update(with data: SessionData?, isLogin: Bool, debugLogging: DebugLogging) {
         if let data = data {
-            self.set(sessionData: data, isLogin: isLogin, debugLogging: debugLogging)
-            self.apiKey = data.apiToken
+            set(sessionData: data, isLogin: isLogin, debugLogging: debugLogging)
+            apiKey = data.apiToken
         } else {
-            self.clearSession()
-            self.apiKey = nil
+            clearSession()
+            apiKey = nil
         }
     }
 
     private func set(sessionData data: SessionData, isLogin: Bool, debugLogging: DebugLogging) {
         do {
             // Set API auth token
-            self.apiClient.set(authToken: ("Bearer " + data.apiToken))
-
+            apiClient.set(authToken: ("Bearer " + data.apiToken))
             // Start logging to catch user controller issues
             debugLogging.start(type: .immediate)
-
             // Initialize user controllers
             let controllers = try UserControllers(userId: data.userId, controllers: self)
             if isLogin {
                 controllers.enableSync(apiKey: data.apiToken)
             }
-            self.userControllers = controllers
+            userControllers = controllers
 
             if !debugLogging.didStartFromLaunch {
                 // If debug logging was started from launch by user, don't cancel ongoing logging. Otherwise cancel it, since nothing interesting happened during initialization.
@@ -232,20 +226,19 @@ final class Controllers {
             }
 
             // Show main screen
-            self.userInitialized.send(.success(true))
+            userInitialized.send(.success(true))
         } catch let error {
             DDLogError("Controllers: can't create UserControllers - \(error)")
 
             let userId = Defaults.shared.userId
-
             // Initialization failed, clear everything
-            self.apiClient.set(authToken: nil)
-            self.userControllers = nil
+            apiClient.set(authToken: nil)
+            userControllers = nil
             // Stop observing session so that we don't get another event after reset
-            self.sessionCancellable = nil
-            self.sessionController.reset()
+            sessionCancellable = nil
+            sessionController.reset()
             // Re-start session observing
-            self.startObservingSession()
+            startObservingSession()
 
             if let error = error as? Realm.Error, error.code == .fail {
                 // Fatal error, remove db and let user log in again.
@@ -255,45 +248,33 @@ final class Controllers {
 
             debugLogging.stop(ignoreEmptyLogs: true, userId: userId, customAlertMessage: { L10n.migrationDebug($0) })
 
-            self.userInitialized.send(.failure(error))
+            userInitialized.send(.failure(error))
         }
     }
 
     private func clearSession() {
-        let controllers = self.userControllers
-
         // `controllers.logout()` is called last so that the user is first redirected to login screen and then the DB is cleared. Otherwise the user would briefly see all data gone before being redirected.
-
         // Disable ongoing sync and unsubscribe from websocket
-        controllers?.disableSync(apiKey: self.apiKey)
+        userControllers?.disableSync(apiKey: apiKey)
         // Cancel all downloads
-        controllers?.fileDownloader.cancelAll(invalidateSession: true)
+        userControllers?.fileDownloader.cancelAll(invalidateSession: true)
         // Cancel all identifier lookups
-        controllers?.identifierLookupController.cancelAllLookups()
+        userControllers?.identifierLookupController.cancelAllLookups()
         // Cancel all remote downloads
-        controllers?.remoteFileDownloader.stop()
+        userControllers?.remoteFileDownloader.stop()
         // Cancel all background uploads
-        controllers?.backgroundUploadObserver.cancelAllUploads()
+        userControllers?.backgroundUploadObserver.cancelAllUploads()
         // Clear user controllers
-        self.userControllers = nil
+        let dbStorage = userControllers?.dbStorage
+        userControllers = nil
         // Clear API auth token
-        self.apiClient.set(authToken: nil)
+        apiClient.set(authToken: nil)
         // Remove cache files
-        try? self.fileStorage.remove(Files.cache)
-        // Remove cached item jsons
-        try? self.fileStorage.remove(Files.jsonCache)
-        // Remove annotation preview cache
-        try? self.fileStorage.remove(Files.annotationPreviews)
-        // Remove attachment page thumbnails
-        try? self.fileStorage.remove(Files.pageThumbnails)
-        // Remove interrupted upload files
-        try? self.fileStorage.remove(Files.uploads)
-        // Remove downloaded files
-        try? self.fileStorage.remove(Files.downloads)
+        fileStorage.clearCache()
         // Report user logged out and show login screen
-        self.userInitialized.send(.success(false))
+        userInitialized.send(.success(false))
         // Remove database
-        controllers?.dbStorage.clear()
+        dbStorage?.clear()
     }
 }
 
@@ -461,7 +442,7 @@ final class UserControllers {
             .subscribe(onNext: { [weak self] changedLibraries in
                 self?.syncScheduler.request(sync: .normal, libraries: .specific(changedLibraries))
             })
-            .disposed(by: self.disposeBag)
+            .disposed(by: disposeBag)
 
         // Observe remote changes to start sync/translator update
         webSocketController.observable
@@ -476,27 +457,27 @@ final class UserControllers {
                     self?.syncScheduler.webSocketUpdate(libraryId: libraryId)
                 }
             })
-            .disposed(by: self.disposeBag)
+            .disposed(by: disposeBag)
 
         // Connect to websockets and start sync
         webSocketController.connect(apiKey: apiKey, completed: { [weak self] in
-            guard let self = self else { return }
+            guard let self else { return }
             // Call this before sync so that background uploads are updated and taken care of by sync if needed.
-            self.backgroundUploadObserver.updateSessions()
+            backgroundUploadObserver.updateSessions()
 
             let type: SyncController.Kind = Defaults.shared.didPerformFullSyncFix ? .normal : .full
-            self.syncScheduler.request(sync: type, libraries: .all)
+            syncScheduler.request(sync: type, libraries: .all)
         })
     }
 
     /// Cancels ongoing sync and stops websocket connection.
     /// - parameter apiKey: If `apiKey` is provided, websocket sends and unsubscribe message before disconnecting.
     fileprivate func disableSync(apiKey: String?) {
-        self.syncScheduler.cancelSync()
-        self.webSocketController.disconnect(apiKey: apiKey)
-        self.disposeBag = DisposeBag()
-        self.itemLocaleController.storeLocale()
-        self.backgroundUploadObserver.stopObservingShareExtensionChanges()
+        syncScheduler.cancelSync()
+        webSocketController.disconnect(apiKey: apiKey)
+        disposeBag = DisposeBag()
+        itemLocaleController.storeLocale()
+        backgroundUploadObserver.stopObservingShareExtensionChanges()
     }
 
     // MARK: - Helpers
