@@ -95,6 +95,7 @@ final class RecognizerController {
     private unowned let schemaController: SchemaController
     private unowned let dbStorage: DbStorage
     private unowned let dateParser: DateParser
+    private unowned let fileStorage: FileStorage
     private let dispatchSpecificKey: DispatchSpecificKey<String>
     private let accessQueueLabel: String
     private let accessQueue: DispatchQueue
@@ -123,7 +124,8 @@ final class RecognizerController {
         translatorsController: TranslatorsAndStylesController,
         schemaController: SchemaController,
         dbStorage: DbStorage,
-        dateParser: DateParser
+        dateParser: DateParser,
+        fileStorage: FileStorage
     ) {
         self.pdfWorkerController = pdfWorkerController
         self.apiClient = apiClient
@@ -131,6 +133,7 @@ final class RecognizerController {
         self.schemaController = schemaController
         self.dbStorage = dbStorage
         self.dateParser = dateParser
+        self.fileStorage = fileStorage
         dispatchSpecificKey = DispatchSpecificKey<String>()
         accessQueueLabel = "org.zotero.RecognizerController.accessQueue"
         accessQueue = DispatchQueue(label: accessQueueLabel, qos: .userInteractive, attributes: .concurrent)
@@ -371,7 +374,7 @@ final class RecognizerController {
                                 if copyTagsAsAutomatic, !itemResponse.tags.isEmpty {
                                     itemResponse = itemResponse.copyWithAutomaticTags
                                 }
-                                createParentIfNeeded(for: task, with: itemResponse, schemaController: schemaController, dateParser: dateParser)
+                                createParentIfNeeded(for: task, with: itemResponse, schemaController: schemaController, dateParser: dateParser, fileStorage: fileStorage)
                             }
 
                         case .failure(let error):
@@ -428,10 +431,10 @@ final class RecognizerController {
                 rects: nil,
                 paths: nil
             )
-            createParentIfNeeded(for: task, with: itemResponse, schemaController: schemaController, dateParser: dateParser)
+            createParentIfNeeded(for: task, with: itemResponse, schemaController: schemaController, dateParser: dateParser, fileStorage: fileStorage)
         }
 
-        func createParentIfNeeded(for task: Task, with itemResponse: ItemResponse, schemaController: SchemaController, dateParser: DateParser) {
+        func createParentIfNeeded(for task: Task, with itemResponse: ItemResponse, schemaController: SchemaController, dateParser: DateParser, fileStorage: FileStorage) {
             switch task.kind {
             case .simple:
                 cleanupTask(for: task) { $0?.on(.next(Update(task: task, kind: .translated(itemResponse: itemResponse)))) }
@@ -453,6 +456,18 @@ final class RecognizerController {
                                 let keyPair = KeyBaseKeyPair(key: titleKey, baseKey: (titleKey != FieldKeys.Item.title ? FieldKeys.Item.title : nil))
                                 try coordinator.perform(request: EditItemFieldsDbRequest(key: key, libraryId: libraryId, fieldValues: [keyPair: "PDF"], dateParser: dateParser))
                             }
+
+                            let newFilename = FilenameFormatter.filename(from: response, defaultTitle: parent.baseTitle, ext: "pdf", dateParser: dateParser)
+                            if let change = try coordinator.perform(
+                                request: RenameAttachmentFilenameDbRequest(key: key, libraryId: libraryId, filename: newFilename, contentType: "application/pdf", schemaController: schemaController)
+                            ) {
+                                let oldFile = Files.attachmentFile(in: libraryId, key: change.key, filename: change.oldName, contentType: change.contentType)
+                                if fileStorage.has(oldFile) {
+                                    let newFile = Files.attachmentFile(in: libraryId, key: change.key, filename: change.newName, contentType: change.contentType)
+                                    try fileStorage.move(from: oldFile, to: newFile)
+                                }
+                            }
+
                             update = Update(task: task, kind: .createdParent(item: parent))
                             coordinator.invalidate()
                         }
