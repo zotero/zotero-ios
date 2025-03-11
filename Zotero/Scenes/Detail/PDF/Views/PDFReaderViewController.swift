@@ -43,6 +43,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
     var annotationToolbarHandler: AnnotationToolbarHandler?
     private var intraDocumentNavigationHandler: IntraDocumentNavigationButtonsHandler?
     private var selectedText: String?
+    private var speechManager: DocumentSpeechManager<PDFDocumentViewController>?
     private(set) var isCompactWidth: Bool
     @CodableUserDefault(key: "PDFReaderToolbarState", defaultValue: AnnotationToolbarHandler.State(position: .leading, visible: true), encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
     var toolbarState: AnnotationToolbarHandler.State
@@ -327,8 +328,27 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
                 })
                 .disposed(by: disposeBag)
 
-            navigationItem.leftBarButtonItems = [closeButton, sidebarButton, readerButton]
+            let speechButton = UIBarButtonItem(image: UIImage(systemName: "waveform.circle"), style: .plain, target: nil, action: nil)
+            speechButton.rx.tap
+                .subscribe(onNext: { [weak self] _ in
+                    guard let self else { return }
+                    startSpeech(controller: self)
+                })
+                .disposed(by: disposeBag)
+
+            navigationItem.leftBarButtonItems = [closeButton, sidebarButton, readerButton, speechButton]
             navigationItem.rightBarButtonItems = createRightBarButtonItems()
+
+            func startSpeech(controller: PDFReaderViewController) {
+                if let speechManager = controller.speechManager {
+                    speechManager.startOnCurrentPage()
+                    return
+                }
+
+                let speechManager = DocumentSpeechManager(delegate: controller.documentController)
+                speechManager.startOnCurrentPage()
+                controller.speechManager = speechManager
+            }
         }
 
         func setupObserving() {
