@@ -449,6 +449,10 @@ final class RecognizerController {
                                 return
                             }
                             try coordinator.perform(request: MoveItemsToParentDbRequest(itemKeys: [key], parentKey: parent.key, libraryId: libraryId))
+                            if let titleKey = schemaController.titleKey(for: ItemTypes.attachment) {
+                                let keyPair = KeyBaseKeyPair(key: titleKey, baseKey: (titleKey != FieldKeys.Item.title ? FieldKeys.Item.title : nil))
+                                try coordinator.perform(request: EditItemFieldsDbRequest(key: key, libraryId: libraryId, fieldValues: [keyPair: "PDF"], dateParser: dateParser))
+                            }
                             update = Update(task: task, kind: .createdParent(item: parent))
                             coordinator.invalidate()
                         }

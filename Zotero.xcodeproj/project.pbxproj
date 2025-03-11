@@ -54,6 +54,7 @@
 		615C10E42D5E3229001F1E8E /* LookupWebViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B323703F2C0DC65600170779 /* LookupWebViewHandler.swift */; };
 		615C10E62D5E329F001F1E8E /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 615C10E52D5E329F001F1E8E /* OrderedCollections */; };
 		61639F852AE03B8500026003 /* InstantPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61639F842AE03B8500026003 /* InstantPresenter.swift */; };
+		617999702D8024000051D35E /* EditItemFieldsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32861E528BFACD4007B5A5C /* EditItemFieldsDbRequest.swift */; };
 		618404262A4456A9005AAF22 /* IdentifierLookupController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 618404252A4456A9005AAF22 /* IdentifierLookupController.swift */; };
 		618D83E72BAAC88C00E7966B /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 618D83E62BAAC88C00E7966B /* PrivacyInfo.xcprivacy */; };
 		618D83E82BAAC88C00E7966B /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 618D83E62BAAC88C00E7966B /* PrivacyInfo.xcprivacy */; };
@@ -5894,6 +5895,7 @@
 				B305674C23FC09AF003304F2 /* RItem.swift in Sources */,
 				B305674D23FC09AF003304F2 /* RSearch.swift in Sources */,
 				B3C6AB2E248E42400009AC96 /* ApiOperation.swift in Sources */,
+				617999702D8024000051D35E /* EditItemFieldsDbRequest.swift in Sources */,
 				B391480826D909E40016B7B2 /* UIPasteboard+Extensions.swift in Sources */,
 				B305674E23FC09AF003304F2 /* RVersions.swift in Sources */,
 				B39DBFF12D7EEEBD00454486 /* FeatureGates.swift in Sources */,
