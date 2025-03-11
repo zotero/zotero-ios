@@ -152,8 +152,10 @@ extension RItemsTableViewDataSource: ItemsTableViewDataSource {
             if attachment?.file?.mimeType == "application/pdf" {
                 switch location {
                 case .local, .localAndChangedRemotely:
-                    actions.append(ItemAction(type: .retrieveMetadata))
-                    
+                    if FeatureGates.enabled.contains(.pdfWorker) {
+                        actions.append(ItemAction(type: .retrieveMetadata))
+                    }
+
                 case .none, .remote, .remoteMissing:
                     break
                 }
