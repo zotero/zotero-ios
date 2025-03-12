@@ -907,7 +907,6 @@
 		B39DBFF32D7EF2C600454486 /* FeatureGates.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39DBFF22D7EF2C600454486 /* FeatureGates.swift */; };
 		B39DBFF42D7EF2C600454486 /* FeatureGates.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39DBFF22D7EF2C600454486 /* FeatureGates.swift */; };
 		B39DBFF62D8036A000454486 /* SpeechManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39DBFF52D80369C00454486 /* SpeechManager.swift */; };
-		B39DBFF82D8058FE00454486 /* DocumentSpeechManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39DBFF72D8058F200454486 /* DocumentSpeechManager.swift */; };
 		B39E0132283276830091CE4A /* WebViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39E0131283276830091CE4A /* WebViewHandler.swift */; };
 		B39E013328327CAC0091CE4A /* WebViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39E0131283276830091CE4A /* WebViewHandler.swift */; };
 		B39EE32B223A5E3500302E29 /* TestAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39EE32A223A5E3500302E29 /* TestAppDelegate.swift */; };
@@ -1967,7 +1966,6 @@
 		B39D42DE29C0CE7D0035CDA9 /* TagsFlowLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagsFlowLayout.swift; sourceTree = "<group>"; };
 		B39DBFF22D7EF2C600454486 /* FeatureGates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureGates.swift; sourceTree = "<group>"; };
 		B39DBFF52D80369C00454486 /* SpeechManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechManager.swift; sourceTree = "<group>"; };
-		B39DBFF72D8058F200454486 /* DocumentSpeechManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentSpeechManager.swift; sourceTree = "<group>"; };
 		B39E0131283276830091CE4A /* WebViewHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewHandler.swift; sourceTree = "<group>"; };
 		B39EE32A223A5E3500302E29 /* TestAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestAppDelegate.swift; sourceTree = "<group>"; };
 		B3A05E94261492150077CCCC /* UpdateCollectionLastUsedDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCollectionLastUsedDbRequest.swift; sourceTree = "<group>"; };
@@ -2414,7 +2412,6 @@
 				B305646D23FC051E003304F2 /* CreatorSummaryFormatter.swift */,
 				B3DDACE828E6F52E0063407E /* CustomURLController.swift */,
 				B3BC25CC247E6BA000AC27B5 /* DateParser.swift */,
-				B39DBFF72D8058F200454486 /* DocumentSpeechManager.swift */,
 				B305647F23FC051E003304F2 /* DragDropController.swift */,
 				B3CAE1172B0E38BA0000F8CA /* EmojiExtractor.swift */,
 				B3D3FCA8267762EC008E243A /* ExportLocaleReader.swift */,
@@ -5251,7 +5248,6 @@
 				B3229FD328C0A09200DAF3B7 /* EditAnnotationPathsDbRequest.swift in Sources */,
 				B3231334243F0F0000F1905A /* SceneDelegate.swift in Sources */,
 				B37D8E6924DC2BEE00F526C5 /* CollectionRow.swift in Sources */,
-				B39DBFF82D8058FE00454486 /* DocumentSpeechManager.swift in Sources */,
 				B3593F56241A61C700760E20 /* CollectionCell.swift in Sources */,
 				B3B953C8245981A600FC96DB /* PDFReaderState.swift in Sources */,
 				B3D84BED27917E3D005DDD7C /* UpdateCreatorSummaryFormatDbRequest.swift in Sources */,
