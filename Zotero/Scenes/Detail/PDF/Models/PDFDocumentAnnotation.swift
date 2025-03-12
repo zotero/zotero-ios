@@ -24,6 +24,7 @@ struct PDFDocumentAnnotation {
     var fontSize: CGFloat?
     var rotation: UInt?
     let sortIndex: String
+    let dateAdded: Date
     let dateModified: Date
 }
 
