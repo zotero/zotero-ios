@@ -34,6 +34,7 @@ protocol FileStorage: AnyObject {
     func isZip(file: File) -> Bool
     func isPdf(file: File) -> Bool
     func isEmptyOrNotFoundResponse(file: File) -> Bool
+    func clearCache()
 }
 
 final class FileStorageController: FileStorage {
@@ -175,5 +176,20 @@ final class FileStorageController: FileStorage {
     func isEmptyOrNotFoundResponse(file: File) -> Bool {
         let size = size(of: file)
         return size == 0 || (size == 9 && (try? read(file)).flatMap({ String(data: $0, encoding: .utf8) })?.caseInsensitiveCompare("Not found") == .orderedSame)
+    }
+
+    func clearCache() {
+        // Remove general cache folder
+        try? remove(Files.cache)
+        // Remove cached item jsons
+        try? remove(Files.jsonCache)
+        // Remove annotation preview cache
+        try? remove(Files.annotationPreviews)
+        // Remove attachment page thumbnails
+        try? remove(Files.pageThumbnails)
+        // Remove interrupted upload files
+        try? remove(Files.uploads)
+        // Remove downloaded files
+        try? remove(Files.downloads)
     }
 }
