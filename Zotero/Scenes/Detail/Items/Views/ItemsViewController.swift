@@ -44,11 +44,17 @@ final class ItemsViewController: BaseItemsViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        dataSource = RItemsTableViewDataSource(viewModel: viewModel, fileDownloader: controllers.userControllers?.fileDownloader, schemaController: controllers.schemaController)
+        dataSource = RItemsTableViewDataSource(
+            viewModel: viewModel,
+            fileDownloader: controllers.userControllers?.fileDownloader,
+            recognizerController: controllers.userControllers?.recognizerController,
+            schemaController: controllers.schemaController
+        )
         handler = ItemsTableViewHandler(tableView: tableView, delegate: self, dataSource: dataSource, dragDropController: controllers.dragDropController)
         toolbarController = ItemsToolbarController(viewController: self, data: toolbarData, collection: collection, library: library, delegate: self)
         setupRightBarButtonItems(expectedItems: rightBarButtonItemTypes(for: viewModel.state))
         setupFileObservers()
+        setupRecognizerObserver()
         setupAppStateObserver()
 
         if let term = viewModel.state.searchTerm, !term.isEmpty {
@@ -65,6 +71,82 @@ final class ItemsViewController: BaseItemsViewController {
                 self?.update(state: state)
             })
             .disposed(by: disposeBag)
+
+        func setupFileObservers() {
+            NotificationCenter.default
+                .rx
+                .notification(.attachmentFileDeleted)
+                .observe(on: MainScheduler.instance)
+                .subscribe(onNext: { [weak self] notification in
+                    if let notification = notification.object as? AttachmentFileDeletedNotification {
+                        self?.viewModel.process(action: .updateAttachments(notification))
+                    }
+                })
+                .disposed(by: disposeBag)
+
+            let downloader = controllers.userControllers?.fileDownloader
+            downloader?.observable
+                .observe(on: MainScheduler.asyncInstance)
+                .subscribe(onNext: { [weak self, weak downloader] update in
+                    guard let self else { return }
+                    process(
+                        downloadUpdate: update,
+                        toOpen: viewModel.state.attachmentToOpen,
+                        downloader: downloader,
+                        dataUpdate: { batchData in
+                            self.viewModel.process(action: .updateDownload(update: update, batchData: batchData))
+                        },
+                        attachmentWillOpen: { update in
+                            self.viewModel.process(action: .attachmentOpened(update.key))
+                        }
+                    )
+                })
+                .disposed(by: disposeBag)
+
+            let identifierLookupController = controllers.userControllers?.identifierLookupController
+            identifierLookupController?.observable
+                .observe(on: MainScheduler.asyncInstance)
+                .subscribe(onNext: { [weak self, weak identifierLookupController] update in
+                    guard let self, let identifierLookupController else { return }
+                    let batchData = ItemsState.IdentifierLookupBatchData(batchData: identifierLookupController.batchData)
+                    viewModel.process(action: .updateIdentifierLookup(update: update, batchData: batchData))
+                })
+                .disposed(by: disposeBag)
+
+            let remoteDownloader = controllers.userControllers?.remoteFileDownloader
+            remoteDownloader?.observable
+                .observe(on: MainScheduler.asyncInstance)
+                .subscribe(onNext: { [weak self, weak remoteDownloader] update in
+                    guard let self, let remoteDownloader else { return }
+                    let batchData = ItemsState.DownloadBatchData(batchData: remoteDownloader.batchData)
+                    viewModel.process(action: .updateRemoteDownload(update: update, batchData: batchData))
+                })
+                .disposed(by: disposeBag)
+        }
+
+        func setupRecognizerObserver() {
+            let recognizerController = controllers.userControllers?.recognizerController
+            recognizerController?.updates
+                .observe(on: MainScheduler.asyncInstance)
+                .subscribe(onNext: { [weak viewModel] update in
+                    guard let viewModel, case .createParentForItem(let libraryId, let key) = update.task.kind, viewModel.state.library.identifier == libraryId else { return }
+                    viewModel.process(action: .updateMetadataRetrieval(itemKey: key, update: update.kind))
+                })
+                .disposed(by: disposeBag)
+        }
+
+        func setupAppStateObserver() {
+            NotificationCenter.default
+                .rx
+                .notification(UIContentSizeCategory.didChangeNotification)
+                .observe(on: MainScheduler.instance)
+                .subscribe(onNext: { [weak self] _ in
+                    guard let self else { return }
+                    viewModel.process(action: .clearTitleCache)
+                    handler?.reloadAll()
+                })
+                .disposed(by: disposeBag)
+        }
     }
 
     deinit {
@@ -78,9 +160,15 @@ final class ItemsViewController: BaseItemsViewController {
             self.startObserving(results: results)
         } else if state.changes.contains(.attachmentsRemoved) {
             handler?.attachmentAccessoriesChanged()
-        } else if let key = state.updateItemKey {
-            let accessory = state.itemAccessories[key].flatMap({ ItemCellModel.createAccessory(from: $0, fileDownloader: controllers.userControllers?.fileDownloader) })
-            handler?.updateCell(key: key, withAccessory: accessory)
+        } else if let itemUpdate = state.updateItem {
+            switch itemUpdate.kind {
+            case .accessory:
+                let accessory = state.itemAccessories[itemUpdate.key].flatMap({ ItemCellModel.createAccessory(from: $0, fileDownloader: controllers.userControllers?.fileDownloader) })
+                handler?.updateCell(key: itemUpdate.key, withAccessory: accessory)
+
+            case .subtitle(let subtitle):
+                handler?.updateCell(key: itemUpdate.key, withSubtitle: subtitle)
+            }
         }
 
         if state.changes.contains(.editing) {
@@ -162,6 +250,16 @@ final class ItemsViewController: BaseItemsViewController {
                 scrolledToKey: nil,
                 animated: true
             )
+
+        case .retrieveMetadata:
+            guard let key = selectedKeys.first,
+                  case .attachment(let attachment, let parentKey) = viewModel.state.itemAccessories[key],
+                  parentKey == nil,
+                  let file = attachment.file as? FileData,
+                  file.mimeType == "application/pdf",
+                  let recognizerController = controllers.userControllers?.recognizerController
+            else { return }
+            _ = recognizerController.queue(task: RecognizerController.Task(file: file, kind: .createParentForItem(libraryId: library.identifier, key: key)))
 
         case .duplicate:
             guard let key = selectedKeys.first else { return }
@@ -290,72 +388,6 @@ final class ItemsViewController: BaseItemsViewController {
             identifierLookupBatchData: state.identifierLookupBatchData,
             itemCount: state.results?.count ?? 0
         )
-    }
-
-    // MARK: - Setups
-
-    private func setupAppStateObserver() {
-        NotificationCenter.default
-            .rx
-            .notification(UIContentSizeCategory.didChangeNotification)
-            .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { [weak self] _ in
-                self?.viewModel.process(action: .clearTitleCache)
-                self?.handler?.reloadAll()
-            })
-            .disposed(by: disposeBag)
-    }
-
-    private func setupFileObservers() {
-        NotificationCenter.default
-            .rx
-            .notification(.attachmentFileDeleted)
-            .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { [weak self] notification in
-                if let notification = notification.object as? AttachmentFileDeletedNotification {
-                    self?.viewModel.process(action: .updateAttachments(notification))
-                }
-            })
-            .disposed(by: self.disposeBag)
-
-        let downloader = controllers.userControllers?.fileDownloader
-        downloader?.observable
-            .observe(on: MainScheduler.asyncInstance)
-            .subscribe(onNext: { [weak self, weak downloader] update in
-                guard let self else { return }
-                process(
-                    downloadUpdate: update,
-                    toOpen: viewModel.state.attachmentToOpen,
-                    downloader: downloader,
-                    dataUpdate: { batchData in
-                        self.viewModel.process(action: .updateDownload(update: update, batchData: batchData))
-                    },
-                    attachmentWillOpen: { update in
-                        self.viewModel.process(action: .attachmentOpened(update.key))
-                    }
-                )
-            })
-            .disposed(by: disposeBag)
-
-        let identifierLookupController = controllers.userControllers?.identifierLookupController
-        identifierLookupController?.observable
-            .observe(on: MainScheduler.asyncInstance)
-            .subscribe(onNext: { [weak self, weak identifierLookupController] update in
-                guard let self, let identifierLookupController else { return }
-                let batchData = ItemsState.IdentifierLookupBatchData(batchData: identifierLookupController.batchData)
-                viewModel.process(action: .updateIdentifierLookup(update: update, batchData: batchData))
-            })
-            .disposed(by: self.disposeBag)
-
-        let remoteDownloader = controllers.userControllers?.remoteFileDownloader
-        remoteDownloader?.observable
-            .observe(on: MainScheduler.asyncInstance)
-            .subscribe(onNext: { [weak self, weak remoteDownloader] update in
-                guard let self, let remoteDownloader else { return }
-                let batchData = ItemsState.DownloadBatchData(batchData: remoteDownloader.batchData)
-                viewModel.process(action: .updateRemoteDownload(update: update, batchData: batchData))
-            })
-            .disposed(by: disposeBag)
     }
 
     private func rightBarButtonItemTypes(for state: ItemsState) -> [RightBarButtonItem] {

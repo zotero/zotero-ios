@@ -20,6 +20,8 @@ final class LibrariesViewController: UIViewController {
     private let viewModel: ViewModel<LibrariesActionHandler>
     private unowned let syncScheduler: SynchronizationScheduler
     private unowned let identifierLookupController: IdentifierLookupController
+    private unowned let pdfWorkerController: PDFWorkerController
+    private unowned let recognizerController: RecognizerController
     private let disposeBag: DisposeBag
 
     private var refreshController: SyncRefreshController?
@@ -30,14 +32,24 @@ final class LibrariesViewController: UIViewController {
 
     // MARK: - Lifecycle
 
-    init(viewModel: ViewModel<LibrariesActionHandler>, syncScheduler: SynchronizationScheduler, identifierLookupController: IdentifierLookupController) {
+    init(
+        viewModel: ViewModel<LibrariesActionHandler>,
+        syncScheduler: SynchronizationScheduler,
+        identifierLookupController: IdentifierLookupController,
+        pdfWorkerController: PDFWorkerController,
+        recognizerController: RecognizerController
+    ) {
         self.viewModel = viewModel
         self.syncScheduler = syncScheduler
         self.identifierLookupController = identifierLookupController
+        self.pdfWorkerController = pdfWorkerController
+        self.recognizerController = recognizerController
         self.disposeBag = DisposeBag()
         super.init(nibName: "LibrariesViewController", bundle: nil)
         
         identifierLookupController.webViewProvider = self
+        pdfWorkerController.webViewProvider = self
+        recognizerController.webViewProvider = self
     }
 
     required init?(coder: NSCoder) {
@@ -232,9 +244,9 @@ extension LibrariesViewController: UITableViewDataSource, UITableViewDelegate {
 
 extension LibrariesViewController: BottomSheetObserver { }
 
-extension LibrariesViewController: IdentifierLookupWebViewProvider {
-    func addWebView() -> WKWebView {
-        let webView = WKWebView()
+extension LibrariesViewController: WebViewProvider {
+    func addWebView(configuration: WKWebViewConfiguration?) -> WKWebView {
+        let webView: WKWebView = configuration.flatMap({ WKWebView(frame: .zero, configuration: $0) }) ?? WKWebView()
         webView.isHidden = true
         view.insertSubview(webView, at: 0)
         return webView

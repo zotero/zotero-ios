@@ -82,7 +82,7 @@ final class TrashViewController: BaseItemsViewController {
                         self?.viewModel.process(action: .updateAttachments(notification))
                     }
                 })
-                .disposed(by: self.disposeBag)
+                .disposed(by: disposeBag)
         }
     }
 
@@ -146,7 +146,7 @@ final class TrashViewController: BaseItemsViewController {
 
     private func process(action: ItemAction.Kind, for selectedKeys: Set<TrashKey>, button: UIBarButtonItem?, completionAction: ((Bool) -> Void)?) {
         switch action {
-        case .createParent, .duplicate, .trash, .copyBibliography, .copyCitation, .share, .addToCollection, .removeFromCollection:
+        case .createParent, .retrieveMetadata, .duplicate, .trash, .copyBibliography, .copyCitation, .share, .addToCollection, .removeFromCollection:
             // These actions are not available in trash collection
             break
 
