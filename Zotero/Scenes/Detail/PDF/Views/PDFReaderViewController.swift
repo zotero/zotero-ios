@@ -221,15 +221,6 @@ class PDFReaderViewController: UIViewController {
         viewModel.process(action: .changeIdleTimerDisabled(true))
         view.backgroundColor = .systemGray6
         setupViews()
-        intraDocumentNavigationHandler = IntraDocumentNavigationButtonsHandler(
-            parent: documentController,
-            back: { [weak self] in
-                self?.documentController?.performBackAction()
-            },
-            forward: { [weak self] in
-                self?.documentController?.performForwardAction()
-            }
-        )
         setupObserving()
 
         if !viewModel.state.document.isLocked {
@@ -262,6 +253,17 @@ class PDFReaderViewController: UIViewController {
             let annotationToolbar = AnnotationToolbarViewController(tools: [.highlight, .underline, .note, .freeText, .image, .ink, .eraser], undoRedoEnabled: true, size: navigationBarHeight)
             annotationToolbar.delegate = self
 
+            let intraDocumentNavigationHandler = IntraDocumentNavigationButtonsHandler(
+                back: { [weak self] in
+                    self?.documentController?.performBackAction()
+                },
+                forward: { [weak self] in
+                    self?.documentController?.performForwardAction()
+                }
+            )
+            let backButton = intraDocumentNavigationHandler.backButton
+            let forwardButton = intraDocumentNavigationHandler.forwardButton
+
             add(controller: documentController)
             add(controller: sidebarController)
             add(controller: annotationToolbar)
@@ -270,10 +272,16 @@ class PDFReaderViewController: UIViewController {
             view.addSubview(sidebarController.view)
             view.addSubview(separator)
             view.addSubview(annotationToolbar.view)
+            view.addSubview(backButton)
+            view.addSubview(forwardButton)
 
             let documentLeftConstraint = documentController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor)
             let sidebarLeftConstraint = sidebarController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: -PDFReaderLayout.sidebarWidth)
             documentTop = documentController.view.topAnchor.constraint(equalTo: view.topAnchor)
+
+            // Lowering the priority for the button bottom constraint, so if the annotation toolbar is too high, it will be pushed down, by the other relevent constraint.
+            let backButtonBottomConstraint = documentController.view.bottomAnchor.constraint(equalTo: backButton.bottomAnchor, constant: 80)
+            backButtonBottomConstraint.priority = .defaultLow
 
             NSLayoutConstraint.activate([
                 topSafeAreaSpacer.topAnchor.constraint(equalTo: view.topAnchor),
@@ -291,7 +299,13 @@ class PDFReaderViewController: UIViewController {
                 documentController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
                 documentTop,
                 documentController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-                documentLeftConstraint
+                documentLeftConstraint,
+                backButton.leadingAnchor.constraint(equalTo: documentController.view.leadingAnchor, constant: 30),
+                backButtonBottomConstraint,
+                backButton.topAnchor.constraint(greaterThanOrEqualTo: annotationToolbar.view.bottomAnchor, constant: 5),
+                forwardButton.trailingAnchor.constraint(equalTo: documentController.view.trailingAnchor, constant: -30),
+                forwardButton.heightAnchor.constraint(equalTo: backButton.heightAnchor),
+                forwardButton.centerYAnchor.constraint(equalTo: backButton.centerYAnchor)
             ])
 
             self.documentController = documentController
@@ -299,6 +313,7 @@ class PDFReaderViewController: UIViewController {
             self.sidebarController = sidebarController
             sidebarControllerLeft = sidebarLeftConstraint
             annotationToolbarController = annotationToolbar
+            self.intraDocumentNavigationHandler = intraDocumentNavigationHandler
 
             annotationToolbarHandler = AnnotationToolbarHandler(controller: annotationToolbar, delegate: self)
             annotationToolbarHandler.didHide = { [weak self] in
