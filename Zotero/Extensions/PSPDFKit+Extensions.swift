@@ -49,6 +49,31 @@ extension PSPDFKit.Annotation {
     var previewId: String {
         return self.key ?? self.uuid
     }
+
+    var tool: PSPDFKit.Annotation.Tool? {
+        switch type {
+        case .highlight:
+            return .highlight
+
+        case .note:
+            return .note
+
+        case .square:
+            return .square
+
+        case .ink:
+            return .ink
+
+        case .underline:
+            return .underline
+
+        case .freeText:
+            return .freeText
+
+        default:
+            return nil
+        }
+    }
 }
 
 extension PSPDFKit.SquareAnnotation {
