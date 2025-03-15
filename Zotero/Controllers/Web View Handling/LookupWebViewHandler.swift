@@ -40,7 +40,7 @@ final class LookupWebViewHandler {
         case item([String: Any])
     }
 
-    private enum InitializationResult {
+    private enum InitializationState {
         case initialized
         case inProgress
         case failed(Swift.Error)
@@ -51,14 +51,14 @@ final class LookupWebViewHandler {
     private let disposeBag: DisposeBag
     let observable: PublishSubject<Result<LookupData, Swift.Error>>
 
-    private var isLoading: BehaviorRelay<InitializationResult>
+    private var initializationState: BehaviorRelay<InitializationState>
 
     init(webView: WKWebView, translatorsController: TranslatorsAndStylesController) {
         self.translatorsController = translatorsController
         webViewHandler = WebViewHandler(webView: webView, javascriptHandlers: JSHandlers.allCases.map({ $0.rawValue }))
         observable = PublishSubject()
         disposeBag = DisposeBag()
-        isLoading = BehaviorRelay(value: .inProgress)
+        initializationState = BehaviorRelay(value: .inProgress)
 
         webViewHandler.receivedMessageHandler = { [weak self] name, body in
             self?.receiveMessage(name: name, body: body)
@@ -69,10 +69,10 @@ final class LookupWebViewHandler {
             .observe(on: MainScheduler.instance)
             .subscribe(onSuccess: { [weak self] _ in
                 DDLogInfo("LookupWebViewHandler: initialization succeeded")
-                self?.isLoading.accept(.initialized)
+                self?.initializationState.accept(.initialized)
             }, onFailure: { [weak self] error in
                 DDLogInfo("LookupWebViewHandler: initialization failed - \(error)")
-                self?.isLoading.accept(.failed(error))
+                self?.initializationState.accept(.failed(error))
             })
             .disposed(by: disposeBag)
 
@@ -134,39 +134,30 @@ final class LookupWebViewHandler {
     }
 
     func lookUp(identifier: String) {
-        switch isLoading.value {
-        case .failed(let error):
-            observable.on(.next(.failure(error)))
+        initializationState.filter { result in
+            switch result {
+            case .inProgress:
+                return false
 
-        case .initialized:
-            performLookUp(for: identifier)
-
-        case .inProgress:
-            isLoading.filter { result in
-                switch result {
-                case .inProgress:
-                    return false
-
-                case .initialized, .failed:
-                    return true
-                }
+            case .initialized, .failed:
+                return true
             }
-            .first()
-            .subscribe(onSuccess: { [weak self] result in
-                guard let self, let result else { return }
-                switch result {
-                case .failed(let error):
-                    observable.on(.next(.failure(error)))
-
-                case .initialized:
-                    performLookUp(for: identifier)
-
-                case .inProgress:
-                    break
-                }
-            })
-            .disposed(by: disposeBag)
         }
+        .first()
+        .subscribe(onSuccess: { [weak self] result in
+            guard let self, let result else { return }
+            switch result {
+            case .failed(let error):
+                observable.on(.next(.failure(error)))
+
+            case .initialized:
+                performLookUp(for: identifier)
+
+            case .inProgress:
+                break
+            }
+        })
+        .disposed(by: disposeBag)
 
         func performLookUp(for identifier: String) {
             DDLogInfo("LookupWebViewHandler: call translate js")
@@ -210,7 +201,7 @@ final class LookupWebViewHandler {
             observable.on(.next(.success(.identifiers(rawData))))
 
         case .log:
-            DDLogInfo("JSLOG: \(body)")
+            DDLogInfo("LookupWebViewHandler: JSLOG - \(body)")
 
         case .request:
             guard let body = body as? [String: Any],

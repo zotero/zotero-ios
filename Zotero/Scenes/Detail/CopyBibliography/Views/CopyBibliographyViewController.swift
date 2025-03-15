@@ -84,7 +84,7 @@ class CopyBibliographyViewController: UIViewController {
             stackView.addArrangedSubview(overlayErrorIcon)
 
             let overlayText = UILabel()
-            overlayText.text = "Generating Bibliography"
+            overlayText.text = L10n.Items.generatingBib
             overlayText.textColor = .white
             overlayText.font = .preferredFont(forTextStyle: .body)
             overlayText.setContentCompressionResistancePriority(.required, for: .horizontal)

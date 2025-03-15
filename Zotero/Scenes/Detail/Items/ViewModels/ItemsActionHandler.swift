@@ -22,7 +22,6 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
     private unowned let schemaController: SchemaController
     private unowned let urlDetector: UrlDetector
     private unowned let fileDownloader: AttachmentDownloader
-    private unowned let citationController: CitationController
     private unowned let fileCleanupController: AttachmentFileCleanupController
     private unowned let syncScheduler: SynchronizationScheduler
     private unowned let htmlAttributedStringConverter: HtmlAttributedStringConverter
@@ -34,7 +33,6 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
         schemaController: SchemaController,
         urlDetector: UrlDetector,
         fileDownloader: AttachmentDownloader,
-        citationController: CitationController,
         fileCleanupController: AttachmentFileCleanupController,
         syncScheduler: SynchronizationScheduler,
         htmlAttributedStringConverter: HtmlAttributedStringConverter
@@ -43,7 +41,6 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
         self.schemaController = schemaController
         self.urlDetector = urlDetector
         self.fileDownloader = fileDownloader
-        self.citationController = citationController
         self.fileCleanupController = fileCleanupController
         self.syncScheduler = syncScheduler
         self.htmlAttributedStringConverter = htmlAttributedStringConverter
