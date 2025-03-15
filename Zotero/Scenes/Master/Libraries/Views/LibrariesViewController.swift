@@ -232,9 +232,9 @@ extension LibrariesViewController: UITableViewDataSource, UITableViewDelegate {
 
 extension LibrariesViewController: BottomSheetObserver { }
 
-extension LibrariesViewController: IdentifierLookupWebViewProvider {
-    func addWebView() -> WKWebView {
-        let webView = WKWebView()
+extension LibrariesViewController: WebViewProvider {
+    func addWebView(configuration: WKWebViewConfiguration?) -> WKWebView {
+        let webView: WKWebView = configuration.flatMap({ WKWebView(frame: .zero, configuration: $0) }) ?? WKWebView()
         webView.isHidden = true
         view.insertSubview(webView, at: 0)
         return webView

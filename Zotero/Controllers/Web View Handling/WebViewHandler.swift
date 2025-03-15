@@ -12,6 +12,10 @@ import WebKit
 import CocoaLumberjackSwift
 import RxSwift
 
+protocol WebViewProvider: AnyObject {
+    func addWebView(configuration: WKWebViewConfiguration?) -> WKWebView
+}
+
 final class WebViewHandler: NSObject {
     enum Error: Swift.Error {
         case webViewMissing
@@ -20,7 +24,7 @@ final class WebViewHandler: NSObject {
 
     private let session: URLSession
 
-    private(set) weak var webView: WKWebView?
+    private weak var webView: WKWebView?
     private var webDidLoad: ((SingleEvent<()>) -> Void)?
     var receivedMessageHandler: ((String, Any) -> Void)?
     // Cookies, User-Agent and Referrer from original website are stored and added to requests in `sendRequest(with:)`.
@@ -49,8 +53,13 @@ final class WebViewHandler: NSObject {
         webView.customUserAgent = "\(userAgent) Zotero_iOS/\(DeviceInfoProvider.versionString ?? "")-\(DeviceInfoProvider.buildString ?? "")"
 
         javascriptHandlers?.forEach { handler in
+            webView.configuration.userContentController.removeScriptMessageHandler(forName: handler)
             webView.configuration.userContentController.add(self, name: handler)
         }
+
+#if DEBUG
+        webView.isInspectable = true
+#endif
     }
 
     // MARK: - Actions
@@ -123,6 +132,12 @@ final class WebViewHandler: NSObject {
             return Disposables.create {
                 self?.webDidLoad = nil
             }
+        }
+    }
+
+    func removeFromSuperviewAsynchronously() {
+        DispatchQueue.main.async {
+            self.webView?.removeFromSuperview()
         }
     }
 
