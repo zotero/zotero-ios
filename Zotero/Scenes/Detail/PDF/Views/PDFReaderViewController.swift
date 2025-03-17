@@ -279,10 +279,6 @@ class PDFReaderViewController: UIViewController {
             let sidebarLeftConstraint = sidebarController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: -PDFReaderLayout.sidebarWidth)
             documentTop = documentController.view.topAnchor.constraint(equalTo: view.topAnchor)
 
-            // Lowering the priority for the button bottom constraint, so if the annotation toolbar is too high, it will be pushed down, by the other relevent constraint.
-            let backButtonBottomConstraint = documentController.view.bottomAnchor.constraint(equalTo: backButton.bottomAnchor, constant: 80)
-            backButtonBottomConstraint.priority = .defaultLow
-
             NSLayoutConstraint.activate([
                 topSafeAreaSpacer.topAnchor.constraint(equalTo: view.topAnchor),
                 topSafeAreaSpacer.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
@@ -300,10 +296,9 @@ class PDFReaderViewController: UIViewController {
                 documentTop,
                 documentController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
                 documentLeftConstraint,
-                backButton.leadingAnchor.constraint(equalTo: documentController.view.leadingAnchor, constant: 30),
-                backButtonBottomConstraint,
-                backButton.topAnchor.constraint(greaterThanOrEqualTo: annotationToolbar.view.bottomAnchor, constant: 5),
-                forwardButton.trailingAnchor.constraint(equalTo: documentController.view.trailingAnchor, constant: -30),
+                backButton.leadingAnchor.constraint(equalTo: documentController.view.leadingAnchor, constant: 20),
+                documentController.view.bottomAnchor.constraint(equalTo: backButton.bottomAnchor, constant: 40),
+                forwardButton.trailingAnchor.constraint(equalTo: documentController.view.trailingAnchor, constant: -20),
                 forwardButton.heightAnchor.constraint(equalTo: backButton.heightAnchor),
                 forwardButton.centerYAnchor.constraint(equalTo: backButton.centerYAnchor)
             ])
@@ -837,11 +832,16 @@ extension PDFReaderViewController: AnnotationToolbarDelegate {
 
         case .trailing, .leading:
             let interfaceIsHidden = navigationController?.isNavigationBarHidden ?? false
-            let documentAvailableHeight: CGFloat
+            var documentAvailableHeight = documentController.view.frame.height - documentController.view.safeAreaInsets.bottom
             if !interfaceIsHidden, let scrubberBarFrame = documentController.pdfController?.userInterfaceView.scrubberBar.frame {
-                documentAvailableHeight = scrubberBarFrame.minY
-            } else {
-                documentAvailableHeight = documentController.view.frame.height - documentController.view.safeAreaInsets.bottom
+                documentAvailableHeight = min(scrubberBarFrame.minY, documentAvailableHeight)
+            }
+            if let intraDocumentNavigationHandler {
+                if toolbarState.position == .leading, intraDocumentNavigationHandler.showsBackButton {
+                    documentAvailableHeight = min(intraDocumentNavigationHandler.backButton.frame.minY, documentAvailableHeight)
+                } else if toolbarState.position == .trailing, intraDocumentNavigationHandler.showsForwardButton {
+                    documentAvailableHeight = min(intraDocumentNavigationHandler.forwardButton.frame.minY, documentAvailableHeight)
+                }
             }
             return documentAvailableHeight - (2 * AnnotationToolbarHandler.toolbarCompactInset)
         }
