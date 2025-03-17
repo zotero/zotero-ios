@@ -57,6 +57,10 @@
 				<true/>
 			</dict>
 		</dict>
+		<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+		</dict>
 	</dict>
 	<key>NSCameraUsageDescription</key>
 	<string>Camera is used for barcode scanning.</string>
