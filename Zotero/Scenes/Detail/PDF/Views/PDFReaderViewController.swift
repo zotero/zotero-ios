@@ -259,7 +259,8 @@ class PDFReaderViewController: UIViewController {
                 },
                 forward: { [weak self] in
                     self?.documentController?.performForwardAction()
-                }
+                },
+                delegate: self
             )
             let backButton = intraDocumentNavigationHandler.backButton
             let forwardButton = intraDocumentNavigationHandler.forwardButton
@@ -431,6 +432,7 @@ class PDFReaderViewController: UIViewController {
         coordinator.animate { [weak self] _ in
             guard let self else { return }
             annotationToolbarHandler.viewWillTransitionToNewSize()
+            intraDocumentNavigationHandler?.containerViewWillTransitionToNewSize()
         }
     }
 
@@ -1009,3 +1011,5 @@ extension PDFReaderViewController: PDFSearchDelegate {
         documentController.highlightSelectedSearchResult(result)
     }
 }
+
+extension PDFReaderViewController: IntraDocumentNavigationButtonsHandlerDelegate { }

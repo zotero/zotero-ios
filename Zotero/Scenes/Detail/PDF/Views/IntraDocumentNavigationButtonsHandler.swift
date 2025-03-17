@@ -8,9 +8,15 @@
 
 import UIKit
 
+protocol IntraDocumentNavigationButtonsHandlerDelegate: AnyObject {
+    var isCompactWidth: Bool { get }
+}
+
 final class IntraDocumentNavigationButtonsHandler {
     let back: () -> Void
     let forward: () -> Void
+    private unowned let delegate: IntraDocumentNavigationButtonsHandlerDelegate
+
     lazy var backButton: UIButton = {
         return createButton(title: L10n.back, imageSystemName: "chevron.left", action: UIAction(handler: { [weak self] _ in self?.back() }))
     }()
@@ -24,9 +30,10 @@ final class IntraDocumentNavigationButtonsHandler {
         forwardButton.isHidden == false
     }
 
-    init(back: @escaping () -> Void, forward: @escaping () -> Void) {
+    init(back: @escaping () -> Void, forward: @escaping () -> Void, delegate: IntraDocumentNavigationButtonsHandlerDelegate) {
         self.back = back
         self.forward = forward
+        self.delegate = delegate
     }
 
     func set(backButtonVisible: Bool, forwardButtonVisible: Bool) {
@@ -36,14 +43,24 @@ final class IntraDocumentNavigationButtonsHandler {
         forwardButton.superview?.bringSubviewToFront(forwardButton)
     }
 
+    func containerViewWillTransitionToNewSize() {
+        backButton.setNeedsUpdateConfiguration()
+        forwardButton.setNeedsUpdateConfiguration()
+    }
+
     private func createButton(title: String, imageSystemName: String, action: UIAction) -> UIButton {
         var configuration = UIButton.Configuration.plain()
-        configuration.title = title
         configuration.image = UIImage(systemName: imageSystemName, withConfiguration: UIImage.SymbolConfiguration(scale: .small))
         configuration.baseForegroundColor = Asset.Colors.zoteroBlueWithDarkMode.color
         configuration.background.backgroundColor = Asset.Colors.navbarBackground.color
         configuration.imagePadding = 8
         let button = UIButton(configuration: configuration)
+        button.configurationUpdateHandler = { [weak self] button in
+            guard let self else { return }
+            var configuration = button.configuration
+            configuration?.title = delegate.isCompactWidth ? nil : title
+            button.configuration = configuration
+        }
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setContentHuggingPriority(.defaultHigh, for: .vertical)
         button.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
