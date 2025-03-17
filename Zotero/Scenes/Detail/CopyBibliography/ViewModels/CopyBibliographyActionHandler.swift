@@ -43,14 +43,12 @@ struct CopyBibliographyActionHandler: ViewModelActionHandler {
             let localeId = viewModel.state.localeId
             let exportAsHtml = viewModel.state.exportAsHtml
             citationController.prepare(webView: webView, for: itemIds, libraryId: libraryId, styleId: styleId, localeId: localeId)
-                .flatMap { [weak webView] _ -> Single<String> in
-                    guard let webView else { return Single.error(CitationController.Error.prepareNotCalled) }
-                    return citationController.bibliography(for: itemIds, format: .html, in: webView)
+                .flatMap { _ -> Single<String> in
+                    return citationController.bibliography(for: itemIds, format: .html)
                 }
-                .flatMap { [weak webView] html -> Single<(String, String?)> in
+                .flatMap { html -> Single<(String, String?)> in
                     if exportAsHtml { return Single.just((html, nil)) }
-                    guard let webView else { return Single.error(CitationController.Error.prepareNotCalled) }
-                    return citationController.bibliography(for: itemIds, format: .text, in: webView).flatMap({ Single.just((html, $0)) })
+                    return citationController.bibliography(for: itemIds, format: .text).flatMap({ Single.just((html, $0)) })
                 }
                 .subscribe(with: viewModel, onSuccess: { viewModel, data in
                     if let plaintext = data.1 {
