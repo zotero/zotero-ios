@@ -342,7 +342,7 @@ class PDFReaderViewController: UIViewController {
 
             func startSpeech(controller: PDFReaderViewController) {
                 if let speechManager = controller.speechManager {
-                    speechManager.start()
+                    speechManager.forward()
                     return
                 }
 
@@ -1007,25 +1007,25 @@ extension PDFReaderViewController: IntraDocumentNavigationButtonsHandlerDelegate
 extension PDFReaderViewController: ParentWithSidebarController {}
 
 extension PDFReaderViewController: SpeechmanagerDelegate {
-    func getCurrentPage() -> UInt {
+    func getCurrentPageIndex() -> UInt {
         return documentController?.currentPage ?? 0
     }
-
-    func getNextPage(from currentPage: UInt) -> UInt? {
-        guard currentPage + 1 < viewModel.state.document.pageCount else { return nil }
-        return currentPage + 1
+    
+    func getNextPageIndex(from currentPageIndex: UInt) -> UInt? {
+        guard currentPageIndex + 1 < viewModel.state.document.pageCount else { return nil }
+        return currentPageIndex + 1
+    }
+    
+    func getPreviousPageIndex(from currentPageIndex: UInt) -> UInt? {
+        guard currentPageIndex > 0 else { return nil }
+        return currentPageIndex - 1
     }
 
-    func getPreviousPage(from currentPage: UInt) -> UInt? {
-        guard currentPage > 0 else { return nil }
-        return currentPage - 1
+    func text(for pageIndex: UInt) -> String? {
+        return viewModel.state.document.textParserForPage(at: pageIndex)?.text
     }
 
-    func text(for page: UInt) -> String? {
-        return viewModel.state.document.textParserForPage(at: page)?.text
-    }
-
-    func moved(to page: UInt) {
-        documentController?.focus(page: page)
+    func moved(to pageIndex: UInt) {
+        documentController?.focus(page: pageIndex)
     }
 }
