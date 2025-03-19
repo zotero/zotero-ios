@@ -45,6 +45,12 @@ final class PDFDocumentViewController: UIViewController {
     private var searchResults: [SearchResult] = []
     private var pageIndexCancellable: AnyCancellable?
 
+    // PSPDFKit resets the forward actions list every time the page changes, similar to a web browser reseting forward navigation when the user goes to another page.
+    // However, it does so even when the page change is the result of a back action execution, which is a mistake.
+    // To overcome this, we maintain the forward list ourselves instead, and we use a flag to allow only proper forward list resets.
+    private var forwardList: [PSPDFKit.Action] = []
+    private var requestedBackForwardActionExecution: Bool = false
+
     weak var parentDelegate: (PDFReaderContainerDelegate & PDFDocumentDelegate)?
     weak var coordinatorDelegate: PdfReaderCoordinatorDelegate?
 
@@ -138,11 +144,17 @@ final class PDFDocumentViewController: UIViewController {
     // MARK: - Actions
 
     func performBackAction() {
-        pdfController?.backForwardList.requestBack(animated: true)
+        requestedBackForwardActionExecution = true
+        pdfController?.backForwardList.requestBack(animated: false)
+        requestedBackForwardActionExecution = false
     }
 
     func performForwardAction() {
-        pdfController?.backForwardList.requestForward(animated: true)
+        requestedBackForwardActionExecution = true
+        if let pdfController, let action = forwardList.popLast() {
+            backForwardList(pdfController.backForwardList, requestedForwardActionExecution: [action], animated: false)
+        }
+        requestedBackForwardActionExecution = false
     }
 
     func focus(page: UInt) {
@@ -875,7 +887,14 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
 
 extension PDFDocumentViewController: BackForwardActionListDelegate {
     func backForwardList(_ list: BackForwardActionList, requestedBackActionExecution actions: [Action], animated: Bool) {
-        pdfController?.backForwardList(list, requestedBackActionExecution: actions, animated: animated)
+        guard let pdfController else { return }
+        let currentPageIndex = pdfController.pageIndex
+        // This call resets the forward list.
+        pdfController.backForwardList(list, requestedBackActionExecution: actions, animated: animated)
+        // We add the page we left from to the local forward list instead.
+        forwardList.append(PSPDFKit.GoToAction(pageIndex: currentPageIndex))
+        // And we reset the actual forward list.
+        list.resetForwardList()
     }
 
     func backForwardList(_ list: BackForwardActionList, requestedForwardActionExecution actions: [Action], animated: Bool) {
@@ -884,7 +903,10 @@ extension PDFDocumentViewController: BackForwardActionListDelegate {
 
     func backForwardListDidUpdate(_ list: BackForwardActionList) {
         pdfController?.backForwardListDidUpdate(list)
-        parentDelegate?.navigationButtonsChanged(backVisible: list.backAction != nil, forwardVisible: list.forwardAction != nil)
+        if !requestedBackForwardActionExecution, list.forwardList.isEmpty {
+            forwardList.removeAll()
+        }
+        parentDelegate?.navigationButtonsChanged(backVisible: list.backAction != nil, forwardVisible: forwardList.first != nil)
     }
 }
 
