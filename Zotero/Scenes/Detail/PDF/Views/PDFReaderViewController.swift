@@ -221,15 +221,6 @@ class PDFReaderViewController: UIViewController {
         viewModel.process(action: .changeIdleTimerDisabled(true))
         view.backgroundColor = .systemGray6
         setupViews()
-        intraDocumentNavigationHandler = IntraDocumentNavigationButtonsHandler(
-            parent: documentController,
-            back: { [weak self] in
-                self?.documentController?.performBackAction()
-            },
-            forward: { [weak self] in
-                self?.documentController?.performForwardAction()
-            }
-        )
         setupObserving()
 
         if !viewModel.state.document.isLocked {
@@ -262,6 +253,18 @@ class PDFReaderViewController: UIViewController {
             let annotationToolbar = AnnotationToolbarViewController(tools: [.highlight, .underline, .note, .freeText, .image, .ink, .eraser], undoRedoEnabled: true, size: navigationBarHeight)
             annotationToolbar.delegate = self
 
+            let intraDocumentNavigationHandler = IntraDocumentNavigationButtonsHandler(
+                back: { [weak self] in
+                    self?.documentController?.performBackAction()
+                },
+                forward: { [weak self] in
+                    self?.documentController?.performForwardAction()
+                },
+                delegate: self
+            )
+            let backButton = intraDocumentNavigationHandler.backButton
+            let forwardButton = intraDocumentNavigationHandler.forwardButton
+
             add(controller: documentController)
             add(controller: sidebarController)
             add(controller: annotationToolbar)
@@ -270,6 +273,8 @@ class PDFReaderViewController: UIViewController {
             view.addSubview(sidebarController.view)
             view.addSubview(separator)
             view.addSubview(annotationToolbar.view)
+            view.addSubview(backButton)
+            view.addSubview(forwardButton)
 
             let documentLeftConstraint = documentController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor)
             let sidebarLeftConstraint = sidebarController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: -PDFReaderLayout.sidebarWidth)
@@ -291,7 +296,12 @@ class PDFReaderViewController: UIViewController {
                 documentController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
                 documentTop,
                 documentController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-                documentLeftConstraint
+                documentLeftConstraint,
+                backButton.leadingAnchor.constraint(equalTo: documentController.view.leadingAnchor, constant: 20),
+                documentController.view.bottomAnchor.constraint(equalTo: backButton.bottomAnchor, constant: 40),
+                forwardButton.trailingAnchor.constraint(equalTo: documentController.view.trailingAnchor, constant: -20),
+                forwardButton.heightAnchor.constraint(equalTo: backButton.heightAnchor),
+                forwardButton.centerYAnchor.constraint(equalTo: backButton.centerYAnchor)
             ])
 
             self.documentController = documentController
@@ -299,6 +309,7 @@ class PDFReaderViewController: UIViewController {
             self.sidebarController = sidebarController
             sidebarControllerLeft = sidebarLeftConstraint
             annotationToolbarController = annotationToolbar
+            self.intraDocumentNavigationHandler = intraDocumentNavigationHandler
 
             annotationToolbarHandler = AnnotationToolbarHandler(controller: annotationToolbar, delegate: self)
             annotationToolbarHandler.didHide = { [weak self] in
@@ -421,6 +432,7 @@ class PDFReaderViewController: UIViewController {
         coordinator.animate { [weak self] _ in
             guard let self else { return }
             annotationToolbarHandler.viewWillTransitionToNewSize()
+            intraDocumentNavigationHandler?.containerViewWillTransitionToNewSize()
         }
     }
 
@@ -822,11 +834,16 @@ extension PDFReaderViewController: AnnotationToolbarDelegate {
 
         case .trailing, .leading:
             let interfaceIsHidden = navigationController?.isNavigationBarHidden ?? false
-            let documentAvailableHeight: CGFloat
+            var documentAvailableHeight = documentController.view.frame.height - documentController.view.safeAreaInsets.bottom
             if !interfaceIsHidden, let scrubberBarFrame = documentController.pdfController?.userInterfaceView.scrubberBar.frame {
-                documentAvailableHeight = scrubberBarFrame.minY
-            } else {
-                documentAvailableHeight = documentController.view.frame.height - documentController.view.safeAreaInsets.bottom
+                documentAvailableHeight = min(scrubberBarFrame.minY, documentAvailableHeight)
+            }
+            if let intraDocumentNavigationHandler {
+                if toolbarState.position == .leading, intraDocumentNavigationHandler.showsBackButton {
+                    documentAvailableHeight = min(intraDocumentNavigationHandler.backButton.frame.minY, documentAvailableHeight)
+                } else if toolbarState.position == .trailing, intraDocumentNavigationHandler.showsForwardButton {
+                    documentAvailableHeight = min(intraDocumentNavigationHandler.forwardButton.frame.minY, documentAvailableHeight)
+                }
             }
             return documentAvailableHeight - (2 * AnnotationToolbarHandler.toolbarCompactInset)
         }
@@ -994,3 +1011,5 @@ extension PDFReaderViewController: PDFSearchDelegate {
         documentController.highlightSelectedSearchResult(result)
     }
 }
+
+extension PDFReaderViewController: IntraDocumentNavigationButtonsHandlerDelegate { }

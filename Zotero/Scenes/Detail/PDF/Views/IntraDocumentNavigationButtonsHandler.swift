@@ -8,56 +8,32 @@
 
 import UIKit
 
+protocol IntraDocumentNavigationButtonsHandlerDelegate: AnyObject {
+    var isCompactWidth: Bool { get }
+}
+
 final class IntraDocumentNavigationButtonsHandler {
-    private weak var backButton: UIButton!
-    private weak var forwardButton: UIButton!
+    let back: () -> Void
+    let forward: () -> Void
+    private unowned let delegate: IntraDocumentNavigationButtonsHandlerDelegate
+
+    lazy var backButton: UIButton = {
+        return createButton(title: L10n.back, imageSystemName: "chevron.left", action: UIAction(handler: { [weak self] _ in self?.back() }))
+    }()
+    lazy var forwardButton: UIButton = {
+        return createButton(title: L10n.forward, imageSystemName: "chevron.right", action: UIAction(handler: { [weak self] _ in self?.forward() }))
+    }()
     var showsBackButton: Bool {
-        backButton?.isHidden == false
+        backButton.isHidden == false
     }
     var showsForwardButton: Bool {
-        forwardButton?.isHidden == false
+        forwardButton.isHidden == false
     }
 
-    init(parent: UIViewController, back: @escaping () -> Void, forward: @escaping () -> Void) {
-        var backConfiguration = UIButton.Configuration.plain()
-        backConfiguration.title = L10n.back
-        backConfiguration.image = UIImage(systemName: "chevron.left", withConfiguration: UIImage.SymbolConfiguration(scale: .small))
-        backConfiguration.baseForegroundColor = Asset.Colors.zoteroBlueWithDarkMode.color
-        backConfiguration.background.backgroundColor = Asset.Colors.navbarBackground.color
-        backConfiguration.imagePadding = 8
-        let backButton = UIButton(configuration: backConfiguration)
-        backButton.translatesAutoresizingMaskIntoConstraints = false
-        backButton.isHidden = true
-        backButton.addAction(
-            UIAction(handler: { _ in back() }),
-            for: .touchUpInside
-        )
-        parent.view.addSubview(backButton)
-        self.backButton = backButton
-
-        var forwardConfiguration = UIButton.Configuration.plain()
-        forwardConfiguration.title = L10n.forward
-        forwardConfiguration.image = UIImage(systemName: "chevron.right", withConfiguration: UIImage.SymbolConfiguration(scale: .small))
-        forwardConfiguration.baseForegroundColor = Asset.Colors.zoteroBlueWithDarkMode.color
-        forwardConfiguration.background.backgroundColor = Asset.Colors.navbarBackground.color
-        forwardConfiguration.imagePadding = 8
-        forwardConfiguration.imagePlacement = .trailing
-        let forwardButton = UIButton(configuration: forwardConfiguration)
-        forwardButton.translatesAutoresizingMaskIntoConstraints = false
-        forwardButton.isHidden = true
-        forwardButton.addAction(
-            UIAction(handler: { _ in forward() }),
-            for: .touchUpInside
-        )
-        parent.view.addSubview(forwardButton)
-        self.forwardButton = forwardButton
-
-        NSLayoutConstraint.activate([
-            backButton.leadingAnchor.constraint(equalTo: parent.view.leadingAnchor, constant: 30),
-            parent.view.bottomAnchor.constraint(equalTo: backButton.bottomAnchor, constant: 80),
-            forwardButton.trailingAnchor.constraint(equalTo: parent.view.trailingAnchor, constant: -30),
-            parent.view.bottomAnchor.constraint(equalTo: forwardButton.bottomAnchor, constant: 80)
-        ])
+    init(back: @escaping () -> Void, forward: @escaping () -> Void, delegate: IntraDocumentNavigationButtonsHandlerDelegate) {
+        self.back = back
+        self.forward = forward
+        self.delegate = delegate
     }
 
     func set(backButtonVisible: Bool, forwardButtonVisible: Bool) {
@@ -65,5 +41,31 @@ final class IntraDocumentNavigationButtonsHandler {
         forwardButton.isHidden = !forwardButtonVisible
         backButton.superview?.bringSubviewToFront(backButton)
         forwardButton.superview?.bringSubviewToFront(forwardButton)
+    }
+
+    func containerViewWillTransitionToNewSize() {
+        backButton.setNeedsUpdateConfiguration()
+        forwardButton.setNeedsUpdateConfiguration()
+    }
+
+    private func createButton(title: String, imageSystemName: String, action: UIAction) -> UIButton {
+        var configuration = UIButton.Configuration.plain()
+        configuration.image = UIImage(systemName: imageSystemName, withConfiguration: UIImage.SymbolConfiguration(scale: .small))
+        configuration.baseForegroundColor = Asset.Colors.zoteroBlueWithDarkMode.color
+        configuration.background.backgroundColor = Asset.Colors.navbarBackground.color
+        configuration.imagePadding = 8
+        let button = UIButton(configuration: configuration)
+        button.configurationUpdateHandler = { [weak self] button in
+            guard let self else { return }
+            var configuration = button.configuration
+            configuration?.title = delegate.isCompactWidth ? nil : title
+            button.configuration = configuration
+        }
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setContentHuggingPriority(.defaultHigh, for: .vertical)
+        button.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
+        button.isHidden = true
+        button.addAction(action, for: .touchUpInside)
+        return button
     }
 }
