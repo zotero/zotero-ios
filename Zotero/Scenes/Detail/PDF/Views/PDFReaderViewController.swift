@@ -748,8 +748,10 @@ class PDFReaderViewController: UIViewController {
 
     private func createRightBarButtonItems(for state: PDFReaderState) -> [UIBarButtonItem] {
         var buttons = [settingsButton, shareButton, searchButton]
-        buttons.insert(openItemsButton, at: 1)
-        openItemsButton.image = .openItemsImage(count: state.openItemsCount)
+        if FeatureGates.enabled.contains(.multipleOpenItems) {
+            buttons.insert(openItemsButton, at: 1)
+            openItemsButton.image = .openItemsImage(count: state.openItemsCount)
+        }
 
         if state.library.metadataEditable {
             buttons.append(toolbarButton)

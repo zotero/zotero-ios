@@ -95,7 +95,11 @@ final class MainViewController: UISplitViewController {
         guard let detailCoordinator else { return }
         var openItems: [OpenItem] = []
         if let openItemsController = controllers.userControllers?.openItemsController, let sessionIdentifier {
-            openItems = openItemsController.getItems(for: sessionIdentifier)
+            if FeatureGates.enabled.contains(.multipleOpenItems) {
+                openItems = openItemsController.getItems(for: sessionIdentifier)
+            } else {
+                openItemsController.set(items: [], for: sessionIdentifier, validate: false)
+            }
         }
         set(userActivity: .mainActivity(with: openItems).set(title: detailCoordinator.displayTitle))
     }
