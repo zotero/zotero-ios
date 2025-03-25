@@ -259,7 +259,7 @@ final class TrashViewController: BaseItemsViewController {
 
     private func rightBarButtonItemTypes(for state: TrashState) -> [RightBarButtonItem] {
         var items = rightBarButtonSelectItemTypes(for: state) + [.emptyTrash]
-        if state.openItemsCount > 0 {
+        if FeatureGates.enabled.contains(.multipleOpenItems), state.openItemsCount > 0 {
             items = [.restoreOpenItems] + items
         }
         return items

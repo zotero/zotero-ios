@@ -398,7 +398,7 @@ final class ItemsViewController: BaseItemsViewController {
         if state.library.metadataEditable {
             items = [.add] + items
         }
-        if state.openItemsCount > 0 {
+        if FeatureGates.enabled.contains(.multipleOpenItems), state.openItemsCount > 0 {
             items = [.restoreOpenItems] + items
         }
         return items

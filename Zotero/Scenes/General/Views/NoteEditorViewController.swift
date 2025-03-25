@@ -155,7 +155,7 @@ final class NoteEditorViewController: UIViewController {
 
         func rightBarButtonItemTypes(for state: NoteEditorState, isClosing: Bool) -> [RightBarButtonItem] {
             var items: [RightBarButtonItem] = [isClosing ? .closing : .done]
-            if state.openItemsCount > 0 {
+            if FeatureGates.enabled.contains(.multipleOpenItems), state.openItemsCount > 0 {
                 items = [.restoreOpenItems] + items
             }
             return items

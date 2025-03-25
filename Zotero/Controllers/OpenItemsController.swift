@@ -139,7 +139,10 @@ final class OpenItemsController {
     func set(items: [Item], for sessionIdentifier: String, validate: Bool) {
         DDLogInfo("OpenItemsController: setting items \(items) for \(sessionIdentifier)")
         let existingItems = getItems(for: sessionIdentifier)
-        let newItems = validate ? filterValidItems(items) : items
+        var newItems = validate ? filterValidItems(items) : items
+        if !FeatureGates.enabled.contains(.multipleOpenItems), newItems.count > 1 {
+            newItems = Array(newItems[0..<1])
+        }
         guard newItems != existingItems else { return }
         // Invalidate previous observer first.
         itemsTokenBySessionIdentifier[sessionIdentifier]?.invalidate()
