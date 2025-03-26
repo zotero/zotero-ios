@@ -15,10 +15,11 @@ struct SingleCitationState: ViewModelState {
 
         let rawValue: UInt8
 
-        static let locator = Changes(rawValue: 1 << 0)
-        static let preview = Changes(rawValue: 1 << 1)
-        static let copied = Changes(rawValue: 1 << 2)
-        static let height = Changes(rawValue: 1 << 3)
+        static let webViewLoaded = Changes(rawValue: 1 << 0)
+        static let locator = Changes(rawValue: 1 << 1)
+        static let preview = Changes(rawValue: 1 << 2)
+        static let copied = Changes(rawValue: 1 << 3)
+        static let height = Changes(rawValue: 1 << 4)
     }
 
     enum Error: Swift.Error {
@@ -34,6 +35,7 @@ struct SingleCitationState: ViewModelState {
     let localeId: String
     let exportAsHtml: Bool
 
+    var citationSession: CitationController.Session?
     var loadingCopy: Bool
     var locator: String
     var locatorValue: String

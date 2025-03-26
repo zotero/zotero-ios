@@ -19,41 +19,39 @@ struct CitationBibliographyExportActionHandler: ViewModelActionHandler {
 
     private unowned let citationController: CitationController
     private unowned let fileStorage: FileStorage
-    private unowned let webView: WKWebView
     private let queue: DispatchQueue
     private let disposeBag: DisposeBag
 
     weak var coordinatorDelegate: CitationBibliographyExportCoordinatorDelegate?
 
-    init(citationController: CitationController, fileStorage: FileStorage, webView: WKWebView) {
+    init(citationController: CitationController, fileStorage: FileStorage) {
         self.citationController = citationController
         self.fileStorage = fileStorage
-        self.webView = webView
-        self.queue = DispatchQueue(label: "org.zotero.CitationBibliographyExportActionHandler", qos: .userInteractive)
-        self.disposeBag = DisposeBag()
+        queue = DispatchQueue(label: "org.zotero.CitationBibliographyExportActionHandler", qos: .userInteractive)
+        disposeBag = DisposeBag()
     }
 
     func process(action: CitationBibliographyExportAction, in viewModel: ViewModel<CitationBibliographyExportActionHandler>) {
         switch action {
         case .setMethod(let method):
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.method = method
                 Defaults.shared.exportOutputMethod = method
             }
 
         case .setMode(let mode):
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.mode = mode
                 Defaults.shared.exportOutputMode = mode
             }
 
         case .setType(let type):
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.type = type
             }
 
         case .setStyle(let style):
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.style = style
                 Defaults.shared.exportStyleId = style.identifier
 
@@ -69,87 +67,103 @@ struct CitationBibliographyExportActionHandler: ViewModelActionHandler {
             }
 
         case .setLocale(let id, let name):
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.localeId = id
                 state.localeName = name
                 Defaults.shared.exportLocaleId = id
             }
 
         case .process:
-            self.process(in: viewModel)
+            process(in: viewModel)
         }
     }
 
     private func process(in viewModel: ViewModel<CitationBibliographyExportActionHandler>) {
-        self.update(viewModel: viewModel) { state in
+        update(viewModel: viewModel) { state in
             state.isLoading = true
         }
 
         switch viewModel.state.method {
         case .copy:
-            self.loadForCopy(in: viewModel)
+            loadForCopy(in: viewModel)
                 .subscribe(with: viewModel, onSuccess: { viewModel, data in
-                    self.copy(html: data.0, plaintext: data.1, in: viewModel)
-                    self.citationController.finishCitation()
+                    copy(html: data.0, plaintext: data.1, in: viewModel)
                 }, onFailure: { viewModel, error in
                     DDLogError("CitationBibliographyExportActionHandler: can't create citation of bibliography - \(error)")
-                    self.handle(error: error, in: viewModel)
-                    self.citationController.finishCitation()
+                    handle(error: error, in: viewModel)
+                }, onDisposed: { viewModel in
+                    endCitationSession(in: viewModel)
                 })
-                .disposed(by: self.disposeBag)
+                .disposed(by: disposeBag)
 
         case .html:
-            self.loadForHtml(in: viewModel)
+            loadForHtml(in: viewModel)
                 .subscribe(with: viewModel, onSuccess: { viewModel, html in
-                    self.save(html: html, in: viewModel)
-                    self.citationController.finishCitation()
+                    save(html: html, in: viewModel)
                 }, onFailure: { viewModel, error in
                     DDLogError("CitationBibliographyExportActionHandler: can't create citation of bibliography - \(error)")
-                    self.handle(error: error, in: viewModel)
-                    self.citationController.finishCitation()
+                    handle(error: error, in: viewModel)
+                }, onDisposed: { viewModel in
+                    endCitationSession(in: viewModel)
                 })
-                .disposed(by: self.disposeBag)
+                .disposed(by: disposeBag)
+        }
+
+        func endCitationSession(in viewModel: ViewModel<CitationBibliographyExportActionHandler>) {
+            guard let session = viewModel.state.citationSession else { return }
+            citationController.endSession(session)
+            update(viewModel: viewModel) { state in
+                state.citationSession = nil
+            }
         }
     }
 
+    private func loadSession(in viewModel: ViewModel<CitationBibliographyExportActionHandler>) -> Single<CitationController.Session> {
+        let state = viewModel.state
+        if let session = state.citationSession {
+            return .just(session)
+        }
+        return citationController.startSession(for: state.itemIds, libraryId: state.libraryId, styleId: state.style.identifier, localeId: state.localeId)
+            .flatMap { session -> Single<CitationController.Session> in
+                update(viewModel: viewModel) { state in
+                    state.citationSession = session
+                }
+                return .just(session)
+            }
+    }
+
     private func loadForCopy(in viewModel: ViewModel<CitationBibliographyExportActionHandler>) -> Single<(String, String)> {
-        let itemIds = viewModel.state.itemIds
+        return loadSession(in: viewModel).flatMap { session in
+            return loadForHtml(in: viewModel)
+                .flatMap { html in
+                    switch viewModel.state.mode {
+                    case .citation:
+                        return citationController.citation(for: session, label: nil, locator: nil, omitAuthor: false, format: .text, showInWebView: false)
+                            .flatMap({ return .just((html, $0)) })
 
-        switch viewModel.state.mode {
-        case .citation:
-            return self.loadForHtml(in: viewModel)
-                       .flatMap { html -> Single<(String, String)> in
-                           return self.citationController.citation(for: itemIds, label: nil, locator: nil, omitAuthor: false, format: .text, showInWebView: false)
-                                                         .flatMap({ return Single.just((html, $0)) })
-                       }
-
-        case .bibliography:
-            return self.loadForHtml(in: viewModel)
-                       .flatMap { html -> Single<(String, String)> in
-                        return self.citationController.bibliography(for: itemIds, format: .text).flatMap({ return Single.just((html, $0)) })
-                       }
+                    case .bibliography:
+                        return citationController.bibliography(for: session, format: .html)
+                            .flatMap({ return .just((html, $0)) })
+                    }
+                }
         }
     }
 
     private func loadForHtml(in viewModel: ViewModel<CitationBibliographyExportActionHandler>) -> Single<String> {
-        let itemIds = viewModel.state.itemIds
-        let libraryId = viewModel.state.libraryId
+        return loadSession(in: viewModel).flatMap { session in
+            switch viewModel.state.mode {
+            case .citation:
+                return citationController.citation(for: session, label: nil, locator: nil, omitAuthor: false, format: .html, showInWebView: false)
 
-        let prepare: Single<()> = self.citationController.prepare(webView: self.webView, for: itemIds, libraryId: libraryId,
-                                                                  styleId: viewModel.state.style.identifier, localeId: viewModel.state.localeId)
-
-        switch viewModel.state.mode {
-        case .citation:
-            return prepare.flatMap { self.citationController.citation(for: itemIds, label: nil, locator: nil, omitAuthor: false, format: .html, showInWebView: false) }
-
-        case .bibliography:
-            return prepare.flatMap { self.citationController.bibliography(for: itemIds, format: .html) }
+            case .bibliography:
+                return citationController.bibliography(for: session, format: .html)
+            }
         }
     }
 
     private func copy(html: String, plaintext: String, in viewModel: ViewModel<CitationBibliographyExportActionHandler>) {
         UIPasteboard.general.copy(html: html, plaintext: plaintext)
-        self.update(viewModel: viewModel) { state in
+        update(viewModel: viewModel) { state in
             state.isLoading = false
             state.changes = .finished
         }
@@ -158,7 +172,7 @@ struct CitationBibliographyExportActionHandler: ViewModelActionHandler {
     private func save(html: String, in viewModel: ViewModel<CitationBibliographyExportActionHandler>) {
         let finish: (Result<File, Error>) -> Void = { result in
             DispatchQueue.main.async {
-                self.update(viewModel: viewModel) { state in
+                update(viewModel: viewModel) { state in
                     switch result {
                     case .success(let file):
                         state.outputFile = file
@@ -173,7 +187,7 @@ struct CitationBibliographyExportActionHandler: ViewModelActionHandler {
             }
         }
 
-        self.queue.async {
+        queue.async {
             guard let data = html.data(using: .utf8) else {
                 finish(.failure(CitationBibliographyExportState.Error.cantCreateData))
                 return
@@ -183,7 +197,7 @@ struct CitationBibliographyExportActionHandler: ViewModelActionHandler {
             let file = Files.file(from: url)
 
             do {
-                try self.fileStorage.write(data, to: file, options: [])
+                try fileStorage.write(data, to: file, options: [])
                 finish(.success(file))
             } catch let error {
                 finish(.failure(error))
@@ -192,11 +206,11 @@ struct CitationBibliographyExportActionHandler: ViewModelActionHandler {
     }
 
     private func handle(error: Error, in viewModel: ViewModel<CitationBibliographyExportActionHandler>) {
-        self.update(viewModel: viewModel) { state in
+        update(viewModel: viewModel) { state in
             state.isLoading = false
 
             if let error = error as? CitationController.Error, error == .styleOrLocaleMissing {
-                self.coordinatorDelegate?.showStylePicker(picked: { style in
+                coordinatorDelegate?.showStylePicker(picked: { style in
                     viewModel.process(action: .setStyle(style))
                 })
             } else {

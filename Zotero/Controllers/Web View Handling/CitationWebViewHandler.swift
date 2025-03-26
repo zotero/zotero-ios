@@ -130,21 +130,21 @@ final class CitationWebViewHandler {
         }
     }
 
-    func getItemsCsl(from jsons: String, schema: String, dateFormats: String) -> Single<String> {
+    func getItemsCSL(from jsons: String, schema: String, dateFormats: String) -> Single<String> {
         DDLogInfo("CitationWebViewHandler: call get items CSL js")
         return perform(javascript: "convertItemsToCSL(\(jsons), \(schema), \(dateFormats), 'msgid');")
     }
 
     /// Calls javascript in webView and waits for response.
     /// - returns: Single with citation response or error.
-    func getCitation(itemsCsl: String, itemsData: String, styleXml: String, localeId: String, localeXml: String, format: String, showInWebView: Bool) -> Single<String> {
-        return perform(javascript: "getCit(\(itemsCsl), \(itemsData), \(styleXml), '\(localeId)', \(localeXml), '\(format)', \(showInWebView), 'msgid');")
+    func getCitation(itemsCSL: String, itemsData: String, styleXML: String, localeId: String, localeXML: String, format: String, showInWebView: Bool) -> Single<String> {
+        return perform(javascript: "getCit(\(itemsCSL), \(itemsData), \(styleXML), '\(localeId)', \(localeXML), '\(format)', \(showInWebView), 'msgid');")
     }
 
     /// Calls javascript in webView and waits for response.
     /// - returns: Single with bibliography response or error.
-    func getBibliography(itemsCsl: String, styleXml: String, localeId: String, localeXml: String, format: String) -> Single<String> {
-        return perform(javascript: "getBib(\(itemsCsl), \(styleXml), '\(localeId)', \(localeXml), '\(format)', 'msgid');")
+    func getBibliography(itemsCSL: String, styleXML: String, localeId: String, localeXML: String, format: String) -> Single<String> {
+        return perform(javascript: "getBib(\(itemsCSL), \(styleXML), '\(localeId)', \(localeXML), '\(format)', 'msgid');")
     }
 
     /// Communication with JS in `webView`. The `webView` sends a message through one of the registered `JSHandlers`, which is received here.
