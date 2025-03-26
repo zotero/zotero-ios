@@ -211,18 +211,13 @@ final class SingleCitationViewController: UIViewController {
         }
     }
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        previewWebView.configuration.userContentController.add(self, name: "heightHandler")
-    }
-
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        previewWebView.configuration.userContentController.removeAllScriptMessageHandlers()
-    }
-
     // MARK: - Actions
     private func update(state: SingleCitationState) {
+        if state.changes.contains(.webViewLoaded) {
+            previewWebView.configuration.userContentController.add(self, name: "heightHandler")
+            return
+        }
+
         setupRightButtonItem(isLoading: state.loadingCopy)
         navigationItem.rightBarButtonItem?.isEnabled = state.preview != nil
 

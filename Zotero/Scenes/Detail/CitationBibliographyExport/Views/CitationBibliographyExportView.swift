@@ -247,7 +247,7 @@ struct CitationBibliographyExportView_Previews: PreviewProvider {
                           isNoteStyle: false, defaultLocale: nil)
         let state = CitationBibliographyExportState(itemIds: [], libraryId: .custom(.myLibrary), selectedStyle: style, selectedLocaleId: "en_US", languagePickerEnabled: true,
                                                     selectedMode: .bibliography, selectedMethod: .copy)
-        let handler = CitationBibliographyExportActionHandler(citationController: controllers.userControllers!.citationController, fileStorage: controllers.fileStorage, webView: WKWebView())
+        let handler = CitationBibliographyExportActionHandler(citationController: controllers.userControllers!.citationController, fileStorage: controllers.fileStorage)
         let viewModel = ViewModel(initialState: state, handler: handler)
         return CitationBibliographyExportView().environmentObject(viewModel)
     }
