@@ -19,7 +19,6 @@ final class LibrariesViewController: UIViewController {
     private static let groupLibrariesSection = 1
     private let viewModel: ViewModel<LibrariesActionHandler>
     private unowned let syncScheduler: SynchronizationScheduler
-    private unowned let identifierLookupController: IdentifierLookupController
     private let disposeBag: DisposeBag
 
     private var refreshController: SyncRefreshController?
@@ -30,14 +29,11 @@ final class LibrariesViewController: UIViewController {
 
     // MARK: - Lifecycle
 
-    init(viewModel: ViewModel<LibrariesActionHandler>, syncScheduler: SynchronizationScheduler, identifierLookupController: IdentifierLookupController) {
+    init(viewModel: ViewModel<LibrariesActionHandler>, syncScheduler: SynchronizationScheduler) {
         self.viewModel = viewModel
         self.syncScheduler = syncScheduler
-        self.identifierLookupController = identifierLookupController
         self.disposeBag = DisposeBag()
         super.init(nibName: "LibrariesViewController", bundle: nil)
-        
-        identifierLookupController.webViewProvider = self
     }
 
     required init?(coder: NSCoder) {

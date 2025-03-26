@@ -61,6 +61,7 @@ final class MasterCoordinator: NSObject, Coordinator {
             syncScheduler: userControllers.syncScheduler,
             identifierLookupController: userControllers.identifierLookupController
         )
+        userControllers.identifierLookupController.webViewProvider = librariesController
         let collectionsController = self.createCollectionsViewController(
             libraryId: self.visibleLibraryId,
             selectedCollectionId: Defaults.shared.selectedCollectionId,
@@ -72,9 +73,9 @@ final class MasterCoordinator: NSObject, Coordinator {
         self.navigationController?.setViewControllers([librariesController, collectionsController], animated: animated)
     }
 
-    private func createLibrariesViewController(dbStorage: DbStorage, syncScheduler: SynchronizationScheduler, identifierLookupController: IdentifierLookupController) -> UIViewController {
+    private func createLibrariesViewController(dbStorage: DbStorage, syncScheduler: SynchronizationScheduler, identifierLookupController: IdentifierLookupController) -> LibrariesViewController {
         let viewModel = ViewModel(initialState: LibrariesState(), handler: LibrariesActionHandler(dbStorage: dbStorage))
-        let controller = LibrariesViewController(viewModel: viewModel, syncScheduler: syncScheduler, identifierLookupController: identifierLookupController)
+        let controller = LibrariesViewController(viewModel: viewModel, syncScheduler: syncScheduler)
         controller.coordinatorDelegate = self
         return controller
     }
