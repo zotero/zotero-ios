@@ -143,11 +143,13 @@ struct SingleCitationActionHandler: ViewModelActionHandler {
     private func preload(webView: WKWebView, in viewModel: ViewModel<SingleCitationActionHandler>) {
         let state = viewModel.state
         citationController.startSession(for: state.itemIds, libraryId: state.libraryId, styleId: state.styleId, localeId: state.localeId, webView: webView)
-            .flatMap { session -> Single<String> in
+            .do(onSuccess: { session in
                 update(viewModel: viewModel) { state in
                     state.citationSession = session
                     state.changes = .webViewLoaded
                 }
+            })
+            .flatMap { session -> Single<String> in
                 return citationController.citation(for: session, label: state.locator, locator: state.locatorValue, omitAuthor: state.omitAuthor, format: .html, showInWebView: true)
             }
             .subscribe(

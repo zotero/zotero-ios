@@ -114,9 +114,11 @@ class CitationController: NSObject {
                     supportsBibliography: supportsBibliography,
                     itemsCSL: itemCSL
                 )
-                self.citationWebViewHandlerBySession[session] = citationWebViewHandler
                 return .just(session)
             }
+            .do(onSuccess: { [weak self] session in
+                self?.citationWebViewHandlerBySession[session] = citationWebViewHandler
+            })
 
         /// Loads style data.
         /// - parameter styleId: Identifier of style

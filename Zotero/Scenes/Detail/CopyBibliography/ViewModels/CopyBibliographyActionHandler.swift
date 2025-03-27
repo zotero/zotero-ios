@@ -43,10 +43,12 @@ struct CopyBibliographyActionHandler: ViewModelActionHandler {
 
             let state = viewModel.state
             citationController.startSession(for: state.itemIds, libraryId: state.libraryId, styleId: state.styleId, localeId: state.localeId)
-                .flatMap { session -> Single<(CitationController.Session, String)> in
+                .do(onSuccess: { session in
                     update(viewModel: viewModel) { state in
                         state.citationSession = session
                     }
+                })
+                .flatMap { session -> Single<(CitationController.Session, String)> in
                     return citationController.bibliography(for: session, format: .html).flatMap({ .just((session, $0)) })
                 }
                 .flatMap { session, html -> Single<(String, String?)> in

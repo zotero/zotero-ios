@@ -86,24 +86,30 @@ struct CitationBibliographyExportActionHandler: ViewModelActionHandler {
         switch viewModel.state.method {
         case .copy:
             loadForCopy(in: viewModel)
-                .subscribe(with: viewModel, onSuccess: { viewModel, data in
+                .subscribe(onSuccess: { [weak viewModel] data in
+                    guard let viewModel else { return }
                     copy(html: data.0, plaintext: data.1, in: viewModel)
-                }, onFailure: { viewModel, error in
+                }, onFailure: { [weak viewModel] error in
                     DDLogError("CitationBibliographyExportActionHandler: can't create citation of bibliography - \(error)")
+                    guard let viewModel else { return }
                     handle(error: error, in: viewModel)
-                }, onDisposed: { viewModel in
+                }, onDisposed: { [weak viewModel] in
+                    guard let viewModel else { return }
                     endCitationSession(in: viewModel)
                 })
                 .disposed(by: disposeBag)
 
         case .html:
             loadForHtml(in: viewModel)
-                .subscribe(with: viewModel, onSuccess: { viewModel, html in
+                .subscribe(onSuccess: { [weak viewModel] html in
+                    guard let viewModel else { return }
                     save(html: html, in: viewModel)
-                }, onFailure: { viewModel, error in
+                }, onFailure: { [weak viewModel] error in
                     DDLogError("CitationBibliographyExportActionHandler: can't create citation of bibliography - \(error)")
+                    guard let viewModel else { return }
                     handle(error: error, in: viewModel)
-                }, onDisposed: { viewModel in
+                }, onDisposed: { [weak viewModel] in
+                    guard let viewModel else { return }
                     endCitationSession(in: viewModel)
                 })
                 .disposed(by: disposeBag)
@@ -124,28 +130,27 @@ struct CitationBibliographyExportActionHandler: ViewModelActionHandler {
             return .just(session)
         }
         return citationController.startSession(for: state.itemIds, libraryId: state.libraryId, styleId: state.style.identifier, localeId: state.localeId)
-            .flatMap { session -> Single<CitationController.Session> in
+            .do(onSuccess: { session in
                 update(viewModel: viewModel) { state in
                     state.citationSession = session
                 }
-                return .just(session)
-            }
+            })
     }
 
     private func loadForCopy(in viewModel: ViewModel<CitationBibliographyExportActionHandler>) -> Single<(String, String)> {
         return loadSession(in: viewModel).flatMap { session in
-            return loadForHtml(in: viewModel)
-                .flatMap { html in
-                    switch viewModel.state.mode {
-                    case .citation:
-                        return citationController.citation(for: session, label: nil, locator: nil, omitAuthor: false, format: .text, showInWebView: false)
-                            .flatMap({ return .just((html, $0)) })
+            return loadForHtml(in: viewModel).flatMap({ return .just((session, $0)) })
+        }
+        .flatMap { session, html in
+            switch viewModel.state.mode {
+            case .citation:
+                return citationController.citation(for: session, label: nil, locator: nil, omitAuthor: false, format: .text, showInWebView: false)
+                    .flatMap({ return .just((html, $0)) })
 
-                    case .bibliography:
-                        return citationController.bibliography(for: session, format: .html)
-                            .flatMap({ return .just((html, $0)) })
-                    }
-                }
+            case .bibliography:
+                return citationController.bibliography(for: session, format: .html)
+                    .flatMap({ return .just((html, $0)) })
+            }
         }
     }
 
