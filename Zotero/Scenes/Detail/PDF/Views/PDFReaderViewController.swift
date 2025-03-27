@@ -337,12 +337,26 @@ class PDFReaderViewController: UIViewController {
                 })
                 .disposed(by: disposeBag)
 
-            navigationItem.leftBarButtonItems = [closeButton, sidebarButton, readerButton, speechButton]
+            let backSpeechButton = UIBarButtonItem(image: UIImage(systemName: "arrowshape.backward.fill"), style: .plain, target: nil, action: nil)
+            backSpeechButton.rx.tap
+                .subscribe(onNext: { [weak self] _ in
+                    self?.speechManager?.back()
+                })
+                .disposed(by: disposeBag)
+
+            let forwardSpeechButton = UIBarButtonItem(image: UIImage(systemName: "arrowshape.forward.fill"), style: .plain, target: nil, action: nil)
+            forwardSpeechButton.rx.tap
+                .subscribe(onNext: { [weak self] _ in
+                    self?.speechManager?.forward()
+                })
+                .disposed(by: disposeBag)
+
+            navigationItem.leftBarButtonItems = [closeButton, sidebarButton, readerButton, speechButton, backSpeechButton, forwardSpeechButton]
             navigationItem.rightBarButtonItems = createRightBarButtonItems()
 
             func startSpeech(controller: PDFReaderViewController) {
                 if let speechManager = controller.speechManager {
-                    speechManager.forward()
+                    speechManager.start()
                     return
                 }
 
