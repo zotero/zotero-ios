@@ -43,7 +43,8 @@ struct CopyBibliographyActionHandler: ViewModelActionHandler {
 
             let state = viewModel.state
             citationController.startSession(for: state.itemIds, libraryId: state.libraryId, styleId: state.styleId, localeId: state.localeId)
-                .do(onSuccess: { session in
+                .do(onSuccess: { [weak viewModel] session in
+                    guard let viewModel else { return }
                     update(viewModel: viewModel) { state in
                         state.citationSession = session
                     }

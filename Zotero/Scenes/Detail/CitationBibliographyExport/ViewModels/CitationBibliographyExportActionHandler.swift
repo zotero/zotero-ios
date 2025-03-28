@@ -130,7 +130,8 @@ struct CitationBibliographyExportActionHandler: ViewModelActionHandler {
             return .just(session)
         }
         return citationController.startSession(for: state.itemIds, libraryId: state.libraryId, styleId: state.style.identifier, localeId: state.localeId)
-            .do(onSuccess: { session in
+            .do(onSuccess: { [weak viewModel] session in
+                guard let viewModel else { return }
                 update(viewModel: viewModel) { state in
                     state.citationSession = session
                 }
