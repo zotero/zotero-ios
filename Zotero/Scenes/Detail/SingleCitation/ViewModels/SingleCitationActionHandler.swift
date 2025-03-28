@@ -143,7 +143,8 @@ struct SingleCitationActionHandler: ViewModelActionHandler {
     private func preload(webView: WKWebView, in viewModel: ViewModel<SingleCitationActionHandler>) {
         let state = viewModel.state
         citationController.startSession(for: state.itemIds, libraryId: state.libraryId, styleId: state.styleId, localeId: state.localeId, webView: webView)
-            .do(onSuccess: { session in
+            .do(onSuccess: { [weak viewModel] session in
+                guard let viewModel else { return }
                 update(viewModel: viewModel) { state in
                     state.citationSession = session
                     state.changes = .webViewLoaded
