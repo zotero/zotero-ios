@@ -49,6 +49,7 @@ class CitationController: NSObject {
         case invalidSession
         case cantFindFile
         case invalidItemTypes
+        case deinitialized
     }
 
     static let invalidItemTypes: Set<String> = [ItemTypes.attachment, ItemTypes.note]
@@ -86,18 +87,20 @@ class CitationController: NSObject {
             return .error(Error.webViewNotProvided)
         }
         let citationWebViewHandler = CitationWebViewHandler(webView: webView)
-        return loadStyleData(for: styleId)
+        return loadStyleData(controller: self, for: styleId)
             .subscribe(on: backgroundScheduler)
             .observe(on: backgroundScheduler)
-            .flatMap { styleData -> Single<(String, String, String, Bool)> in
+            .flatMap { [weak self] styleData -> Single<(String, String, String, Bool)> in
+                guard let self else { return .error(Error.deinitialized) }
                 let styleLocaleId = styleData.defaultLocaleId ?? localeId
-                return loadEncodedXmls(styleFilename: styleData.filename, localeId: styleLocaleId).flatMap { .just(($0.0, styleLocaleId, $0.1, styleData.supportsBibliography)) }
+                return loadEncodedXmls(controller: self, styleFilename: styleData.filename, localeId: styleLocaleId).flatMap { .just(($0.0, styleLocaleId, $0.1, styleData.supportsBibliography)) }
             }
             .flatMap { styleXML, styleLocaleId, localeXML, supportsBibliography -> Single<(String, String, String, Bool, String, String)> in
                 return loadBundledFiles().flatMap { .just((styleXML, styleLocaleId, localeXML, supportsBibliography, $0, $1)) }
             }
-            .flatMap { styleXML, styleLocaleId, localeXML, supportsBibliography, schema, dateFormats -> Single<(String, String, String, Bool, String, String, String)> in
-                return loadItemJsons(for: itemIds, libraryId: libraryId)
+            .flatMap { [weak self] styleXML, styleLocaleId, localeXML, supportsBibliography, schema, dateFormats -> Single<(String, String, String, Bool, String, String, String)> in
+                guard let self else { return .error(Error.deinitialized) }
+                return loadItemJsons(controller: self, for: itemIds, libraryId: libraryId)
                     .flatMap { .just((styleXML, styleLocaleId, localeXML, supportsBibliography, schema, dateFormats, $0)) }
             }
             .flatMap { styleXML, styleLocaleId, localeXML, supportsBibliography, schema, dateFormats, itemJsons -> Single<(String, String, String, Bool, String)> in
@@ -123,10 +126,11 @@ class CitationController: NSObject {
         /// Loads style data.
         /// - parameter styleId: Identifier of style
         /// - returns: Style data.
-        func loadStyleData(for styleId: String) -> Single<StyleData> {
-            return .create { subscriber in
+        func loadStyleData(controller: CitationController, for styleId: String) -> Single<StyleData> {
+            return .create { [weak controller] subscriber in
+                guard let controller else { return Disposables.create() }
                 do {
-                    let style = try self.bundledDataStorage.perform(request: ReadStyleDbRequest(identifier: styleId), on: self.backgroundQueue)
+                    let style = try controller.bundledDataStorage.perform(request: ReadStyleDbRequest(identifier: styleId), on: controller.backgroundQueue)
                     let data = StyleData(style: style)
                     style.realm?.invalidate()
                     subscriber(.success(data))
@@ -138,8 +142,9 @@ class CitationController: NSObject {
             }
         }
 
-        func loadEncodedXmls(styleFilename: String, localeId: String) -> Single<(String, String)> {
-            return .create { subscriber in
+        func loadEncodedXmls(controller: CitationController, styleFilename: String, localeId: String) -> Single<(String, String)> {
+            return .create { [weak controller] subscriber in
+                guard let controller else { return Disposables.create() }
                 guard let localeUrl = Bundle.main.url(forResource: "locales-\(localeId)", withExtension: "xml", subdirectory: "Bundled/locales") else {
                     DDLogError("CitationController: can't load locale xml")
                     subscriber(.failure(Error.styleOrLocaleMissing))
@@ -148,7 +153,7 @@ class CitationController: NSObject {
 
                 do {
                     let localeData = try Data(contentsOf: localeUrl)
-                    let styleData = try self.fileStorage.read(Files.style(filename: styleFilename))
+                    let styleData = try controller.fileStorage.read(Files.style(filename: styleFilename))
 
                     subscriber(.success((WebViewEncoder.encodeForJavascript(styleData), WebViewEncoder.encodeForJavascript(localeData))))
                 } catch let error {
@@ -182,10 +187,11 @@ class CitationController: NSObject {
             }
         }
 
-        func loadItemJsons(for keys: Set<String>, libraryId: LibraryIdentifier) -> Single<String> {
-            return .create { subscriber in
+        func loadItemJsons(controller: CitationController, for keys: Set<String>, libraryId: LibraryIdentifier) -> Single<String> {
+            return .create { [weak controller] subscriber in
+                guard let controller else { return Disposables.create() }
                 do {
-                    let items = try self.dbStorage.perform(request: ReadItemsWithKeysDbRequest(keys: keys, libraryId: libraryId), on: self.backgroundQueue)
+                    let items = try controller.dbStorage.perform(request: ReadItemsWithKeysDbRequest(keys: keys, libraryId: libraryId), on: controller.backgroundQueue)
                         .filter(.item(notTypeIn: CitationController.invalidItemTypes))
 
                     if items.isEmpty {
