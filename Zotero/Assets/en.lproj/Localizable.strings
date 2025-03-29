@@ -139,6 +139,7 @@
 "items.action.create_parent" = "Create Parent Item";
 "items.action.download" = "Download";
 "items.action.remove_download" = "Remove Download";
+"items.action.retrieve_metadata" = "Retrieve Metadata";
 "items.filters.title" = "Filters";
 "items.filters.downloads" = "Downloaded Files";
 "items.filters.tags" = "Tags";
@@ -147,6 +148,7 @@
 "items.generating_bib" = "Generating Bibliography";
 "items.creator_summary.and" = "%@ and %@";
 "items.creator_summary.etal" = "%@ et al.";
+"items.retrieving_metadata" = "Retrieving Metadata";
 
 "lookup.title" = "Enter ISBNs, DOls, PMIDs, arXiv IDs, or ADS Bibcodes to add to your library:";
 
