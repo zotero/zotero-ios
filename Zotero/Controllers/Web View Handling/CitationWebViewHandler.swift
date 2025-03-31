@@ -157,10 +157,7 @@ final class CitationWebViewHandler {
             return
         }
 
-        guard let body = body as? [String: Any],
-              let id = body["id"] as? String,
-              let jsResult = body["result"]
-        else {
+        guard let body = body as? [String: Any], let id = body["id"] as? String, let jsResult = body["result"] else {
             DDLogError("CitationWebViewHandler: unknown message body - \(body)")
             return
         }

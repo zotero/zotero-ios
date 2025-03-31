@@ -107,7 +107,7 @@ final class LookupWebViewHandler {
             func loadBundledFiles() -> Single<(String, String)> {
                 return .create { subscriber in
                     guard let schemaUrl = Bundle.main.url(forResource: "schema", withExtension: "json", subdirectory: "Bundled"), let schemaData = try? Data(contentsOf: schemaUrl) else {
-                        DDLogError("WebViewHandler: can't load schema json")
+                        DDLogError("LookupWebViewHandler: can't load schema json")
                         subscriber(.failure(Error.cantFindFile))
                         return Disposables.create()
                     }
@@ -115,7 +115,7 @@ final class LookupWebViewHandler {
                     guard let dateFormatsUrl = Bundle.main.url(forResource: "dateFormats", withExtension: "json", subdirectory: "translation/translate/modules/utilities/resource"),
                           let dateFormatData = try? Data(contentsOf: dateFormatsUrl)
                     else {
-                        DDLogError("WebViewHandler: can't load dateFormats json")
+                        DDLogError("LookupWebViewHandler: can't load dateFormats json")
                         subscriber(.failure(Error.cantFindFile))
                         return Disposables.create()
                     }
@@ -123,7 +123,7 @@ final class LookupWebViewHandler {
                     let encodedSchema = WebViewEncoder.encodeForJavascript(schemaData)
                     let encodedFormats = WebViewEncoder.encodeForJavascript(dateFormatData)
 
-                    DDLogInfo("WebViewHandler: loaded bundled files")
+                    DDLogInfo("LookupWebViewHandler: loaded bundled files")
 
                     subscriber(.success((encodedSchema, encodedFormats)))
 
@@ -204,8 +204,7 @@ final class LookupWebViewHandler {
             DDLogInfo("LookupWebViewHandler: JSLOG - \(body)")
 
         case .request:
-            guard let body = body as? [String: Any],
-                  let messageId = body["messageId"] as? Int else {
+            guard let body = body as? [String: Any], let messageId = body["messageId"] as? Int else {
                 DDLogError("LookupWebViewHandler: request missing body - \(body)")
                 return
             }
