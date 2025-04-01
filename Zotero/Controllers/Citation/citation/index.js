@@ -1,4 +1,14 @@
+function log(message) {
+  webkit.messageHandlers.logHandler.postMessage(message);
+}
+let collator = new Intl.Collator(['en-US'], {
+    numeric: true,
+    sensitivity: 'base'
+});
 var Zotero = {};
+Zotero.debug = (s) => log(s);
+Zotero.locale = "en-US";
+Zotero.localeCompare = (a, b) => collator.compare(a, b);
 
 async function getCit(encodedItemsCsl, encodedItemsData, encodedStyleXml, localeId, encodedLocaleXml, format, setToBody, messageId) {
     const styleXml = decodeBase64(encodedStyleXml);
@@ -21,9 +31,11 @@ async function getBib(encodedItemsCsl, encodedStyleXml, localeId, encodedLocaleX
     window.webkit.messageHandlers.bibliographyHandler.postMessage({result: bibliography, id: messageId});
 };
 
-async function convertItemsToCSL(encodedItemsJson, encodedSchemaJson, messageId) {
+async function convertItemsToCSL(encodedItemsJson, encodedSchemaJson, encodedDateFormatsJson, messageId) {
     let schemaJson = JSON.parse(decodeBase64(encodedSchemaJson));
     Zotero.Schema.init(schemaJson);
+    let dateFormatsJson = JSON.parse(decodeBase64(encodedDateFormatsJson));
+    Zotero.Date.init(dateFormatsJson)
 
     var itemsJson = JSON.parse(decodeBase64(encodedItemsJson));
     let csls = itemsJson.map(Zotero.Utilities.Item.itemToCSLJSON);

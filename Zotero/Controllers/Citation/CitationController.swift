@@ -49,7 +49,7 @@ class CitationController: NSObject {
         case missingResponse
         case styleOrLocaleMissing
         case prepareNotCalled
-        case cantFindSchema
+        case cantFindFile
         case invalidItemTypes
     }
 
@@ -111,23 +111,23 @@ class CitationController: NSObject {
                        self.localeXml = localeXml
                        self.supportsBibliography = supportsBibliography
                    })
-                   .flatMap({ _ -> Single<String> in
-                       return self.loadSchema()
+                   .flatMap({ _ -> Single<(String, String)> in
+                       return self.loadBundledFiles()
                    })
-                   .flatMap({ schema -> Single<(String, String)> in
-                       return self.loadItemJsons(for: itemIds, libraryId: libraryId).flatMap({ Single.just((schema, $0)) })
+                   .flatMap({ schema, dateFormats -> Single<(String, String, String)> in
+                       return self.loadItemJsons(for: itemIds, libraryId: libraryId).flatMap({ Single.just((schema, dateFormats, $0)) })
                    })
-                   .flatMap({ schema, itemJsons -> Single<(String, URL, String, String)> in
-                       return self.loadIndexHtml().flatMap({ Single.just(($0, $1, schema, itemJsons)) })
+                   .flatMap({ schema, dateFormats, itemJsons -> Single<(String, URL, String, String, String)> in
+                       return self.loadIndexHtml().flatMap({ Single.just(($0, $1, schema, dateFormats, itemJsons)) })
                    })
                    .observe(on: MainScheduler.instance)
-                   .flatMap({ [weak webView] html, url, schema, itemJsons -> Single<(String, String)> in
+                   .flatMap({ [weak webView] html, url, schema, dateFormats, itemJsons -> Single<(String, String, String)> in
                         guard let webView = webView else { return Single.error(Error.deinitialized) }
-                        return self.load(html: html, baseUrl: url, in: webView).flatMap({ _ in Single.just((schema, itemJsons)) })
+                        return self.load(html: html, baseUrl: url, in: webView).flatMap({ _ in Single.just((schema, dateFormats, itemJsons)) })
                    })
-                   .flatMap({ [weak webView] schema, itemJsons -> Single<String> in
+                   .flatMap({ [weak webView] schema, dateFormats, itemJsons -> Single<String> in
                        guard let webView = webView else { return Single.error(Error.deinitialized) }
-                       return self.getItemsCsl(from: itemJsons, schema: schema, webView: webView)
+                       return self.getItemsCsl(from: itemJsons, schema: schema, dateFormats: dateFormats, webView: webView)
                    })
                    .do(onSuccess: { itemsCsl in
                        self.itemsCsl = itemsCsl
@@ -294,16 +294,24 @@ class CitationController: NSObject {
         }
     }
 
-    private func loadSchema() -> Single<String> {
-        return Single.create { subscriber in
-            guard let schemaPath = Bundle.main.path(forResource: "Bundled/schema", ofType: "json"),
-                  let schemaData = try? Data(contentsOf: URL(fileURLWithPath: schemaPath)) else {
-                subscriber(.failure(Error.cantFindSchema))
+    private func loadBundledFiles() -> Single<(String, String)> {
+        return .create { subscriber in
+            guard let schemaPath = Bundle.main.path(forResource: "citation/utilities/resource/schema/global/schema", ofType: "json"),
+                    let schemaData = try? Data(contentsOf: URL(fileURLWithPath: schemaPath))
+            else {
+                subscriber(.failure(Error.cantFindFile))
+                return Disposables.create()
+            }
+            guard let dateFormatsPath = Bundle.main.path(forResource: "citation/utilities/resource/dateFormats", ofType: "json"),
+                  let dateFormatsData = try? Data(contentsOf: URL(fileURLWithPath: dateFormatsPath))
+            else {
+                subscriber(.failure(Error.cantFindFile))
                 return Disposables.create()
             }
 
-            subscriber(.success(WebViewEncoder.encodeForJavascript(schemaData)))
-
+            let encodedSchema = WebViewEncoder.encodeForJavascript(schemaData)
+            let encodedFormats = WebViewEncoder.encodeForJavascript(dateFormatsData)
+            subscriber(.success((encodedSchema, encodedFormats)))
             return Disposables.create()
         }
     }
@@ -403,8 +411,8 @@ class CitationController: NSObject {
         return self.perform(javascript: "getBib(\(itemsCsl), \(styleXml), '\(localeId)', \(localeXml), '\(format)', 'msgid');", in: webView)
     }
 
-    private func getItemsCsl(from jsons: String, schema: String, webView: WKWebView) -> Single<String> {
-        return self.perform(javascript: "convertItemsToCSL(\(jsons), \(schema), 'msgid');", in: webView)
+    private func getItemsCsl(from jsons: String, schema: String, dateFormats: String, webView: WKWebView) -> Single<String> {
+        return self.perform(javascript: "convertItemsToCSL(\(jsons), \(schema), \(dateFormats), 'msgid');", in: webView)
     }
 
     /// Performs javascript script in web view, returns `Single` with registered response handler.
