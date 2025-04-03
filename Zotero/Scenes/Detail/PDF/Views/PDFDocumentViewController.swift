@@ -1177,10 +1177,7 @@ extension PDFDocumentViewController: PDFDocumentViewControllerDelegate {
 
 extension PDFDocumentViewController: UIScrollViewDelegate {
     func scrollViewShouldScrollToTop(_ scrollView: UIScrollView) -> Bool {
-        if let pdfController, pdfController.configuration.scrollDirection == .vertical, pdfController.pageIndex != 0 {
-            pdfController.backForwardList.register(PSPDFKit.GoToAction(pageIndex: pdfController.pageIndex))
-        }
-        return true
+        return false
     }
 }
 
