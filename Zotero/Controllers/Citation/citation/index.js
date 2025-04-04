@@ -7,7 +7,7 @@ let collator = new Intl.Collator(['en-US'], {
 });
 var Zotero = {};
 Zotero.debug = (s) => log(s);
-Zotero.locale = "en-US";
+Zotero.locale = navigator.language;
 Zotero.localeCompare = (a, b) => collator.compare(a, b);
 
 async function getCit(encodedItemsCsl, encodedItemsData, encodedStyleXml, localeId, encodedLocaleXml, format, setToBody, messageId) {
