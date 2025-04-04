@@ -40,7 +40,7 @@ final class SingleCitationViewController: UIViewController {
                 value: data.1,
                 locatorChanged: { [weak self] newLocator in
                     guard let self else { return }
-                    viewModel.process(action: .setLocator(locator: newLocator, webView: previewWebView))
+                    viewModel.process(action: .setLocator(locator: newLocator))
                 }
             )
             if let valueObservable = cell.valueObservable {
@@ -48,7 +48,7 @@ final class SingleCitationViewController: UIViewController {
                     .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
                     .subscribe(onNext: { [weak self] newValue in
                         guard let self else { return }
-                        viewModel.process(action: .setLocatorValue(value: newValue, webView: previewWebView))
+                        viewModel.process(action: .setLocatorValue(value: newValue))
                     })
                     .disposed(by: cell.disposeBag)
             }
@@ -58,7 +58,7 @@ final class SingleCitationViewController: UIViewController {
         return UICollectionView.CellRegistration<CitationAuthorCell, Bool> { [weak self] cell, _, omitAuthor in
             cell.contentConfiguration = CitationAuthorCell.ContentConfiguration(omitAuthor: omitAuthor, omitAuthorChanged: { [weak self] newOmitAuthor in
                 guard let self else { return }
-                viewModel.process(action: .setOmitAuthor(omitAuthor: newOmitAuthor, webView: previewWebView))
+                viewModel.process(action: .setOmitAuthor(omitAuthor: newOmitAuthor))
             })
         }
     }()
@@ -211,18 +211,13 @@ final class SingleCitationViewController: UIViewController {
         }
     }
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        previewWebView.configuration.userContentController.add(self, name: "heightHandler")
-    }
-
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        previewWebView.configuration.userContentController.removeAllScriptMessageHandlers()
-    }
-
     // MARK: - Actions
     private func update(state: SingleCitationState) {
+        if state.changes.contains(.webViewLoaded) {
+            previewWebView.configuration.userContentController.add(self, name: "heightHandler")
+            return
+        }
+
         setupRightButtonItem(isLoading: state.loadingCopy)
         navigationItem.rightBarButtonItem?.isEnabled = state.preview != nil
 
@@ -262,7 +257,7 @@ final class SingleCitationViewController: UIViewController {
             let copy = UIBarButtonItem(title: L10n.copy, style: .done, target: nil, action: nil)
             copy.rx.tap.subscribe(onNext: { [weak self] in
                 guard let self else { return }
-                viewModel.process(action: .copy(webView: previewWebView))
+                viewModel.process(action: .copy)
             })
             .disposed(by: disposeBag)
             navigationItem.rightBarButtonItem = copy

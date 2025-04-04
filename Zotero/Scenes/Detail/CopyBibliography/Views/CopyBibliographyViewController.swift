@@ -24,7 +24,6 @@ class CopyBibliographyViewController: UIViewController {
     private weak var overlayActivityIndicator: UIActivityIndicatorView!
     private weak var overlayErrorIcon: UIImageView!
     private weak var overlayText: UILabel!
-    private weak var webView: WKWebView!
 
     private let viewModel: ViewModel<CopyBibliographyActionHandler>
     private let disposeBag = DisposeBag()
@@ -53,7 +52,7 @@ class CopyBibliographyViewController: UIViewController {
         view.alpha = 0
         setupView()
         setupObserving()
-        viewModel.process(action: .preload(webView))
+        viewModel.process(action: .preload)
 
         func setupView() {
             let overlayBody = UIView()
@@ -84,18 +83,13 @@ class CopyBibliographyViewController: UIViewController {
             stackView.addArrangedSubview(overlayErrorIcon)
 
             let overlayText = UILabel()
-            overlayText.text = "Generating Bibliography"
+            overlayText.text = L10n.Items.generatingBib
             overlayText.textColor = .white
             overlayText.font = .preferredFont(forTextStyle: .body)
             overlayText.setContentCompressionResistancePriority(.required, for: .horizontal)
             overlayText.setContentCompressionResistancePriority(.required, for: .vertical)
             self.overlayText = overlayText
             stackView.addArrangedSubview(overlayText)
-
-            let webView = WKWebView()
-            webView.isHidden = true
-            view.insertSubview(webView, at: 0)
-            self.webView = webView
 
             NSLayoutConstraint.activate([
                 overlayBody.centerXAnchor.constraint(equalTo: view.centerXAnchor),

@@ -51,6 +51,7 @@ struct CitationBibliographyExportState: ViewModelState {
     var outputFile: File?
 
     // Cite
+    var citationSession: CitationController.Session?
     var localeId: String
     var localeName: String
     var languagePickerEnabled: Bool

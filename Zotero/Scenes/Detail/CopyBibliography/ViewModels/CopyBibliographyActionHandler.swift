@@ -25,32 +25,36 @@ struct CopyBibliographyActionHandler: ViewModelActionHandler {
 
     func process(action: CopyBibliographyAction, in viewModel: ViewModel<CopyBibliographyActionHandler>) {
         switch action {
-        case .preload(let webView):
-            preload(webView: webView, in: viewModel)
+        case .preload:
+            preload(in: viewModel)
 
         case .cleanup:
-            citationController.finishCitation()
+            guard let session = viewModel.state.citationSession else { return }
+            citationController.endSession(session)
+            update(viewModel: viewModel) { state in
+                state.citationSession = nil
+            }
         }
 
-        func preload(webView: WKWebView, in viewModel: ViewModel<CopyBibliographyActionHandler>) {
+        func preload(in viewModel: ViewModel<CopyBibliographyActionHandler>) {
             update(viewModel: viewModel) { state in
                 state.processingBibliography = true
             }
 
-            let itemIds = viewModel.state.itemIds
-            let libraryId = viewModel.state.libraryId
-            let styleId = viewModel.state.styleId
-            let localeId = viewModel.state.localeId
-            let exportAsHtml = viewModel.state.exportAsHtml
-            citationController.prepare(webView: webView, for: itemIds, libraryId: libraryId, styleId: styleId, localeId: localeId)
-                .flatMap { [weak webView] _ -> Single<String> in
-                    guard let webView else { return Single.error(CitationController.Error.prepareNotCalled) }
-                    return citationController.bibliography(for: itemIds, format: .html, in: webView)
+            let state = viewModel.state
+            citationController.startSession(for: state.itemIds, libraryId: state.libraryId, styleId: state.styleId, localeId: state.localeId)
+                .do(onSuccess: { [weak viewModel] session in
+                    guard let viewModel else { return }
+                    update(viewModel: viewModel) { state in
+                        state.citationSession = session
+                    }
+                })
+                .flatMap { session -> Single<(CitationController.Session, String)> in
+                    return citationController.bibliography(for: session, format: .html).flatMap({ .just((session, $0)) })
                 }
-                .flatMap { [weak webView] html -> Single<(String, String?)> in
-                    if exportAsHtml { return Single.just((html, nil)) }
-                    guard let webView else { return Single.error(CitationController.Error.prepareNotCalled) }
-                    return citationController.bibliography(for: itemIds, format: .text, in: webView).flatMap({ Single.just((html, $0)) })
+                .flatMap { session, html -> Single<(String, String?)> in
+                    if state.exportAsHtml { return Single.just((html, nil)) }
+                    return citationController.bibliography(for: session, format: .text).flatMap({ Single.just((html, $0)) })
                 }
                 .subscribe(with: viewModel, onSuccess: { viewModel, data in
                     if let plaintext = data.1 {
