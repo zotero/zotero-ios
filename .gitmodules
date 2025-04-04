@@ -13,3 +13,6 @@
 [submodule "note-editor"]
 	path = note-editor
 	url = https://github.com/zotero/note-editor
+[submodule "utilities"]
+	path = utilities
+	url = https://github.com/zotero/utilities.git

@@ -4331,6 +4331,7 @@
 				B3CF8840266E0FE6009CFC20 /* Bundle Locales */,
 				B3593F142668D37900FA4BB2 /* Bundle Styles */,
 				B34A85AC243CB1E4003D5638 /* Bundle Translators */,
+				6185A1A82D9C266100285385 /* Bundle Utilities */,
 				B3A1D03D2BA321B30040FEE9 /* Bundle Note Editor */,
 				B30D59512206F60400884C4A /* Sources */,
 				B30D59522206F60400884C4A /* Frameworks */,
@@ -4663,6 +4664,26 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "swiftgen config lint\nswiftgen config run\n";
+		};
+		6185A1A82D9C266100285385 /* Bundle Utilities */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/scripts/bundle_utilities.sh",
+			);
+			name = "Bundle Utilities";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "sh \"$SCRIPT_INPUT_FILE_0\"\n";
 		};
 		61AE2F282A2619E50072571D /* SwiftLint */ = {
 			isa = PBXShellScriptBuildPhase;
