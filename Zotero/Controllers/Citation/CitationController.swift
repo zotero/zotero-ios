@@ -272,7 +272,7 @@ class CitationController: NSObject {
 
     /// Cleans up after citeproc-js is finished. Should be called when all requests are called.
     func endSession(_ session: Session) {
-        citationWebViewHandlerBySession.removeValue(forKey: session)?.webViewHandler.removeFromSuperviewAsynchronously()
+        citationWebViewHandlerBySession.removeValue(forKey: session)?.removeFromSuperviewAsynchronously()
     }
 
     /// Generates citation preview for given citation session, in given format. Has to be called after session has started.

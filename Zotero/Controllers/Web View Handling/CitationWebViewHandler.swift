@@ -13,7 +13,7 @@ import CocoaLumberjackSwift
 import RxCocoa
 import RxSwift
 
-final class CitationWebViewHandler {
+final class CitationWebViewHandler: WebViewHandler {
     /// Handlers for communication with JS in `webView`
     enum JSHandlers: String, CaseIterable {
         case citation = "citationHandler"
@@ -29,105 +29,56 @@ final class CitationWebViewHandler {
         case missingResponse
     }
 
-    private enum InitializationState {
-        case initialized
-        case inProgress
-        case failed(Swift.Error)
-    }
-
-    let webViewHandler: WebViewHandler
-    private let disposeBag: DisposeBag
-
-    private var initializationState: BehaviorRelay<InitializationState>
-
     init(webView: WKWebView) {
-        webViewHandler = WebViewHandler(webView: webView, javascriptHandlers: JSHandlers.allCases.map({ $0.rawValue }))
-        disposeBag = DisposeBag()
-        initializationState = BehaviorRelay(value: .inProgress)
+        super.init(webView: webView, javascriptHandlers: JSHandlers.allCases.map({ $0.rawValue }))
 
-        webViewHandler.receivedMessageHandler = { [weak self] name, body in
+        receivedMessageHandler = { [weak self] name, body in
             self?.receiveMessage(name: name, body: body)
-        }
-
-        initialize()
-            .subscribe(on: MainScheduler.instance)
-            .observe(on: MainScheduler.instance)
-            .subscribe(onSuccess: { [weak self] _ in
-                DDLogInfo("CitationWebViewHandler: initialization succeeded")
-                self?.initializationState.accept(.initialized)
-            }, onFailure: { [weak self] error in
-                DDLogInfo("CitationWebViewHandler: initialization failed - \(error)")
-                self?.initializationState.accept(.failed(error))
-            })
-            .disposed(by: disposeBag)
-
-        func initialize() -> Single<()> {
-            DDLogInfo("CitationWebViewHandler: initialize web view")
-            return loadIndex()
-
-            func loadIndex() -> Single<()> {
-                guard let indexUrl = Bundle.main.url(forResource: "index", withExtension: "html", subdirectory: "citation") else {
-                    return .error(Error.cantFindFile)
-                }
-                return webViewHandler.load(fileUrl: indexUrl)
-            }
         }
     }
 
     private var responseHandlers: [String: (SingleEvent<String>) -> Void] = [:]
 
-    private func performAfterInitialization() -> Single<()> {
-        return initializationState.filter { state in
-            switch state {
-            case .inProgress:
-                return false
+    override func initializeWebView() -> Single<()> {
+        DDLogInfo("CitationWebViewHandler: initialize web view")
+        return loadIndex()
 
-            case .initialized, .failed:
-                return true
+        func loadIndex() -> Single<()> {
+            guard let indexUrl = Bundle.main.url(forResource: "index", withExtension: "html", subdirectory: "citation") else {
+                return .error(Error.cantFindFile)
             }
-        }
-        .first()
-        .flatMap { state -> Single<()> in
-            switch state {
-            case .failed(let error):
-                return .error(error)
-
-            case .initialized:
-                return .just(())
-
-            case .inProgress, .none:
-                // Should never happen.
-                return .never()
-            }
+            return load(fileUrl: indexUrl)
         }
     }
 
     /// Performs javascript script, returns `Single` with registered response handler.
     private func perform(javascript: String) -> Single<String> {
-        performAfterInitialization().flatMap { _ in
-            return .create { [weak self] subscriber -> Disposable in
-                guard let self else {
-                    subscriber(.failure(Error.deinitialized))
-                    return Disposables.create()
-                }
-                let id = UUID().uuidString
-                let javascriptWithId = javascript.replacingOccurrences(of: "msgid", with: id)
-                responseHandlers[id] = subscriber
-                webViewHandler.call(javascript: javascriptWithId)
-                    .subscribe(on: MainScheduler.instance)
-                    .observe(on: MainScheduler.instance)
-                    .subscribe(onFailure: { [weak self] error in
-                        guard let self else { return }
-                        DDLogError("CitationWebViewHandler: javascript call failed - \(error)")
-                        responseHandlers[id]?(.failure(error))
-                    })
-                    .disposed(by: disposeBag)
-                
-                return Disposables.create { [weak self] in
-                    self?.responseHandlers[id] = nil
+        performAfterInitialization()
+            .flatMap { [weak self] _ -> Single<String> in
+                guard let self else { return .error(Error.deinitialized) }
+                return .create { [weak self] subscriber -> Disposable in
+                    guard let self else {
+                        subscriber(.failure(Error.deinitialized))
+                        return Disposables.create()
+                    }
+                    let id = UUID().uuidString
+                    let javascriptWithId = javascript.replacingOccurrences(of: "msgid", with: id)
+                    responseHandlers[id] = subscriber
+                    let disposable = call(javascript: javascriptWithId)
+                        .subscribe(on: MainScheduler.instance)
+                        .observe(on: MainScheduler.instance)
+                        .subscribe(onFailure: { [weak self] error in
+                            guard let self else { return }
+                            DDLogError("CitationWebViewHandler: javascript call failed - \(error)")
+                            responseHandlers[id]?(.failure(error))
+                        })
+
+                    return Disposables.create { [weak self] in
+                        self?.responseHandlers[id] = nil
+                        disposable.dispose()
+                    }
                 }
             }
-        }
     }
 
     func getItemsCSL(from jsons: String, schema: String, dateFormats: String) -> Single<String> {
