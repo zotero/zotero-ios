@@ -12,7 +12,7 @@ final class ReaderSettingsSegmentedCell: UICollectionViewListCell {
     struct ContentConfiguration: UIContentConfiguration {
         let title: String
         let actions: [UIAction]
-        let getSelectedIndex: () -> Int
+        let selectedIndex: Int
 
         func makeContentView() -> UIView & UIContentView {
             return ContentView(configuration: self)
@@ -48,7 +48,7 @@ final class ReaderSettingsSegmentedCell: UICollectionViewListCell {
         }
 
         private func apply(configuration: ContentConfiguration) {
-            self.contentView?.setup(title: configuration.title, actions: configuration.actions, selectedIndex: configuration.getSelectedIndex())
+            self.contentView?.setup(title: configuration.title, actions: configuration.actions, selectedIndex: configuration.selectedIndex)
         }
 
         private func setup(view: ReaderSettingsSegmentedCellContentView) {
