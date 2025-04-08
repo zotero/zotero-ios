@@ -68,6 +68,9 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
     private var enqueuedPreviousPage: PageData?
     private var ignoreFinishCallCount = 0
     private weak var delegate: Delegate?
+    private lazy var paragraphRegex: NSRegularExpression? = {
+        return try? NSRegularExpression(pattern: "(?:[^\r\n]+(?:\r?\n(?!\r?\n))*)")
+    }()
     var isSpeaking: Bool {
         return synthetizer.isSpeaking
     }
@@ -84,6 +87,7 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
 
     func start() {
         guard let page = delegate?.getCurrentPageIndex(), let (text, voice) = getData(for: page) else { return }
+        DDLogInfo("SpeechManager: start \(text)")
         go(to: PageData(index: page, text: text, voice: voice), reportPageChange: false)
 
         func getData(for page: Delegate.Index) -> (String, AVSpeechSynthesisVoice)? {
@@ -110,6 +114,7 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
 
     private func skip(to index: Int, on page: PageData) {
         DDLogInfo("SpeechManager: SKIP TO \(index) ON \(page.index)")
+        DDLogInfo("SpeechManager: TEXT \"\(page.text[page.text.index(page.text.startIndex, offsetBy: index)..<page.text.endIndex])\"")
         speech = SpeechData(startIndex: index, speakingRange: NSRange(location: 0, length: 0))
         let text = page.text[page.text.index(page.text.startIndex, offsetBy: index)..<page.text.endIndex]
         speechSynthesizer(synthetizer, willSpeakRangeOfSpeechString: NSRange(location: 0, length: 0), utterance: AVSpeechUtterance())
@@ -147,14 +152,21 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
         let globalRange = speech.globalRange
         let start = globalRange.location + globalRange.length + 50
 
-        if start < page.text.count {
+        if let index = findNextIndex() {
             DDLogInfo("SpeechManager: FORWARD TO \(start); \(speech.startIndex); \(speech.speakingRange.location); \(speech.speakingRange.length)")
-            skip(to: start, on: page)
+            skip(to: index, on: page)
         } else if let enqueuedNextPage {
             go(to: enqueuedNextPage)
             self.enqueuedNextPage = nil
         } else {
             stop()
+        }
+
+        func findNextIndex() -> Int? {
+            guard let paragraphRegex else { return nil }
+            let matches = paragraphRegex.matches(in: page.text, range: NSRange(page.text.index(page.text.startIndex, offsetBy: globalRange.location)..., in: page.text))
+            guard let range = matches.first?.range else { return nil }
+            return range.location + range.length
         }
     }
 
@@ -168,6 +180,13 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
             skip(to: start, on: page)
         } else if let previousIndex = delegate?.getPreviousPageIndex(from: page.index), let text = delegate?.text(for: previousIndex) {
             go(to: .init(index: previousIndex, text: text, voice: page.voice))
+        }
+
+        func findPreviousIndex() -> Int? {
+            guard let paragraphRegex else { return nil }
+            let matches = paragraphRegex.matches(in: page.text, range: NSRange(page.text.startIndex..<page.text.index(page.text.startIndex, offsetBy: globalRange.location), in: page.text))
+            guard let range = matches.first?.range else { return nil }
+            return range.location + range.length
         }
     }
 
