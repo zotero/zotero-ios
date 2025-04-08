@@ -60,6 +60,9 @@ final class ReaderSettingsViewController: UICollectionViewController {
 
     private func update(state: ReaderSettingsState) {
         (navigationController ?? self).overrideUserInterfaceStyle = state.appearance.userInterfaceStyle
+        var snapshot = dataSource.snapshot()
+        snapshot.reconfigureItems(snapshot.itemIdentifiers)
+        dataSource.apply(snapshot)
     }
 
     @objc private func done() {
@@ -90,69 +93,127 @@ final class ReaderSettingsViewController: UICollectionViewController {
 
             let title: String
             let actions: [UIAction]
-            let getSelectedIndex: () -> Int
+            let selectedIndex: Int
 
             switch row {
             case .pageTransition:
                 title = L10n.Pdf.Settings.PageTransition.title
-                getSelectedIndex = { [weak self] in
-                    guard let self else { return 0 }
-                    return Int(viewModel.state.transition.rawValue)
-                }
-                actions = [UIAction(title: L10n.Pdf.Settings.PageTransition.jump, handler: { [weak self] _ in self?.viewModel.process(action: .setTransition(.scrollPerSpread)) }),
-                           UIAction(title: L10n.Pdf.Settings.PageTransition.continuous, handler: { [weak self] _ in self?.viewModel.process(action: .setTransition(.scrollContinuous)) })]
+                selectedIndex = Int(viewModel.state.transition.rawValue)
+                actions = [
+                    UIAction(
+                        title: L10n.Pdf.Settings.PageTransition.jump,
+                        state: viewModel.state.transition == .scrollPerSpread ? .on : .off,
+                        handler: { [weak self] _ in self?.viewModel.process(action: .setTransition(.scrollPerSpread)) }
+                    ),
+                    UIAction(
+                        title: L10n.Pdf.Settings.PageTransition.continuous,
+                        state: viewModel.state.transition == .scrollContinuous ? .on : .off,
+                        handler: { [weak self] _ in self?.viewModel.process(action: .setTransition(.scrollContinuous)) }
+                    )
+                ]
 
             case .pageMode:
                 title = L10n.Pdf.Settings.PageMode.title
-                getSelectedIndex = { [weak self] in
-                    guard let self else { return 0 }
-                    return Int(viewModel.state.pageMode.rawValue)
-                }
-                actions = [UIAction(title: L10n.Pdf.Settings.PageMode.single, handler: { [weak self] _ in self?.viewModel.process(action: .setPageMode(.single)) }),
-                           UIAction(title: L10n.Pdf.Settings.PageMode.double, handler: { [weak self] _ in self?.viewModel.process(action: .setPageMode(.double)) }),
-                           UIAction(title: L10n.Pdf.Settings.PageMode.automatic, handler: { [weak self] _ in self?.viewModel.process(action: .setPageMode(.automatic)) })]
+                selectedIndex = Int(viewModel.state.pageMode.rawValue)
+                actions = [
+                    UIAction(
+                        title: L10n.Pdf.Settings.PageMode.single,
+                        state: viewModel.state.pageMode == .single ? .on : .off,
+                        handler: { [weak self] _ in self?.viewModel.process(action: .setPageMode(.single)) }
+                    ),
+                    UIAction(
+                        title: L10n.Pdf.Settings.PageMode.double,
+                        state: viewModel.state.pageMode == .double ? .on : .off,
+                        handler: { [weak self] _ in self?.viewModel.process(action: .setPageMode(.double)) }
+                    ),
+                    UIAction(
+                        title: L10n.Pdf.Settings.PageMode.automatic,
+                        state: viewModel.state.pageMode == .automatic ? .on : .off,
+                        handler: { [weak self] _ in self?.viewModel.process(action: .setPageMode(.automatic)) }
+                    )
+                ]
 
             case .scrollDirection:
                 title = L10n.Pdf.Settings.ScrollDirection.title
-                getSelectedIndex = { [weak self] in
-                    guard let self else { return 0 }
-                    return Int(viewModel.state.scrollDirection.rawValue)
-                }
-                actions = [UIAction(title: L10n.Pdf.Settings.ScrollDirection.horizontal, handler: { [weak self] _ in self?.viewModel.process(action: .setDirection(.horizontal)) }),
-                           UIAction(title: L10n.Pdf.Settings.ScrollDirection.vertical, handler: { [weak self] _ in self?.viewModel.process(action: .setDirection(.vertical)) })]
+                selectedIndex = Int(viewModel.state.scrollDirection.rawValue)
+                actions = [
+                    UIAction(
+                        title: L10n.Pdf.Settings.ScrollDirection.horizontal,
+                        state: viewModel.state.scrollDirection == .horizontal ? .on : .off,
+                        handler: { [weak self] _ in self?.viewModel.process(action: .setDirection(.horizontal)) }
+                    ),
+                    UIAction(
+                        title: L10n.Pdf.Settings.ScrollDirection.vertical,
+                        state: viewModel.state.scrollDirection == .vertical ? .on : .off,
+                        handler: { [weak self] _ in self?.viewModel.process(action: .setDirection(.vertical)) }
+                    )
+                ]
 
             case .pageFitting:
                 title = L10n.Pdf.Settings.PageFitting.title
-                getSelectedIndex = { [weak self] in
-                    guard let self else { return 0 }
-                    return viewModel.state.pageFitting.rawValue
-                }
-                actions = [UIAction(title: L10n.Pdf.Settings.PageFitting.fit, handler: { [weak self] _ in self?.viewModel.process(action: .setPageFitting(.fit)) }),
-                           UIAction(title: L10n.Pdf.Settings.PageFitting.fill, handler: { [weak self] _ in self?.viewModel.process(action: .setPageFitting(.fill)) }),
-                           UIAction(title: L10n.Pdf.Settings.PageFitting.automatic, handler: { [weak self] _ in self?.viewModel.process(action: .setPageFitting(.adaptive)) })]
+                selectedIndex = viewModel.state.pageFitting.rawValue
+                actions = [
+                    UIAction(
+                        title: L10n.Pdf.Settings.PageFitting.fit,
+                        state: viewModel.state.pageFitting == .fit ? .on : .off,
+                        handler: { [weak self] _ in self?.viewModel.process(action: .setPageFitting(.fit)) }
+                    ),
+                    UIAction(
+                        title: L10n.Pdf.Settings.PageFitting.fill,
+                        state: viewModel.state.pageFitting == .fill ? .on : .off,
+                        handler: { [weak self] _ in self?.viewModel.process(action: .setPageFitting(.fill)) }
+                    ),
+                    UIAction(
+                        title: L10n.Pdf.Settings.PageFitting.automatic,
+                        state: viewModel.state.pageFitting == .adaptive ? .on : .off,
+                        handler: { [weak self] _ in self?.viewModel.process(action: .setPageFitting(.adaptive)) }
+                    )
+                ]
 
             case .pageSpreads:
                 title = L10n.Pdf.Settings.PageSpreads.title
-                getSelectedIndex = { [weak self] in
-                    guard let self else { return 0 }
-                    return viewModel.state.isFirstPageAlwaysSingle ? 1 : 0
-                }
-                actions = [UIAction(title: L10n.Pdf.Settings.PageSpreads.odd, handler: { [weak self] _ in self?.viewModel.process(action: .setPageSpreads(isFirstPageAlwaysSingle: false)) }),
-                           UIAction(title: L10n.Pdf.Settings.PageSpreads.even, handler: { [weak self] _ in self?.viewModel.process(action: .setPageSpreads(isFirstPageAlwaysSingle: true)) })]
+                selectedIndex = viewModel.state.isFirstPageAlwaysSingle ? 1 : 0
+                actions = [
+                    UIAction(
+                        title: L10n.Pdf.Settings.PageSpreads.odd,
+                        state: !viewModel.state.isFirstPageAlwaysSingle ? .on : .off,
+                        handler: { [weak self] _ in self?.viewModel.process(action: .setPageSpreads(isFirstPageAlwaysSingle: false)) }
+                    ),
+                    UIAction(
+                        title: L10n.Pdf.Settings.PageSpreads.even,
+                        state: viewModel.state.isFirstPageAlwaysSingle ? .on : .off,
+                        handler: { [weak self] _ in self?.viewModel.process(action: .setPageSpreads(isFirstPageAlwaysSingle: true)) }
+                    )
+                ]
 
             case .appearance:
                 title = L10n.Pdf.Settings.Appearance.title
-                getSelectedIndex = { [weak self] in
-                    guard let self else { return 0 }
-                    return Int(viewModel.state.appearance.rawValue)
-                }
-                actions = [UIAction(title: L10n.Pdf.Settings.Appearance.lightMode, handler: { [weak self] _ in self?.viewModel.process(action: .setAppearance(.light)) }),
-                           UIAction(title: L10n.Pdf.Settings.Appearance.darkMode, handler: { [weak self] _ in self?.viewModel.process(action: .setAppearance(.dark)) }),
-                           UIAction(title: L10n.Pdf.Settings.Appearance.sepiaMode, handler: { [weak self] _ in self?.viewModel.process(action: .setAppearance(.sepia)) }),
-                           UIAction(title: L10n.Pdf.Settings.Appearance.auto, handler: { [weak self] _ in self?.viewModel.process(action: .setAppearance(.automatic)) })]
+                selectedIndex = Int(viewModel.state.appearance.rawValue)
+                actions = [
+                    UIAction(
+                        title: L10n.Pdf.Settings.Appearance.lightMode,
+                        state: viewModel.state.appearance == .light ? .on : .off,
+                        handler: { [weak self] _ in self?.viewModel.process(action: .setAppearance(.light)) }
+                    ),
+                    UIAction(
+                        title: L10n.Pdf.Settings.Appearance.darkMode,
+                        state: viewModel.state.appearance == .dark ? .on : .off,
+                        handler: { [weak self] _ in self?.viewModel.process(action: .setAppearance(.dark)) }
+                    ),
+                    UIAction(
+                        title: L10n.Pdf.Settings.Appearance.sepiaMode,
+                        state: viewModel.state.appearance == .sepia ? .on : .off,
+                        handler: { [weak self] _ in self?.viewModel.process(action: .setAppearance(.sepia)) }
+                    ),
+                    UIAction(
+                        title: L10n.Pdf.Settings.Appearance.auto,
+                        state: viewModel.state.appearance == .automatic ? .on : .off,
+                        handler: { [weak self] _ in self?.viewModel.process(action: .setAppearance(.automatic)) }
+                    )
+                ]
             }
 
-            let configuration = ReaderSettingsSegmentedCell.ContentConfiguration(title: title, actions: actions, getSelectedIndex: getSelectedIndex)
+            let configuration = ReaderSettingsSegmentedCell.ContentConfiguration(title: title, actions: actions, selectedIndex: selectedIndex)
             cell.contentConfiguration = configuration
         }
     }()

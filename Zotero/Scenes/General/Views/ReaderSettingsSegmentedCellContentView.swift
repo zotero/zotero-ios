@@ -11,13 +11,46 @@ import UIKit
 class ReaderSettingsSegmentedCellContentView: UIView {
     @IBOutlet private weak var titleLabel: UILabel!
     @IBOutlet private weak var segmentedControl: UISegmentedControl!
+    @IBOutlet private weak var button: UIButton!
 
     func setup(title: String, actions: [UIAction], selectedIndex: Int) {
-        self.titleLabel.text = title
-        self.segmentedControl.removeAllSegments()
+        button.menu = UIMenu(children: actions)
+        button.showsMenuAsPrimaryAction = true
+        button.contentHorizontalAlignment = .fill
+
+        var configuration = UIButton.Configuration.plain()
+        configuration.baseForegroundColor = .label
+        configuration.title = title
+        configuration.titleAlignment = .leading
+        configuration.image = UIImage(systemName: "chevron.right", withConfiguration: UIImage.SymbolConfiguration(scale: .small))
+        configuration.imagePlacement = .trailing
+        button.configuration = configuration
+
+        titleLabel.text = title
+        segmentedControl.removeAllSegments()
         for (idx, action) in actions.enumerated() {
-            self.segmentedControl.insertSegment(action: action, at: idx, animated: false)
+            segmentedControl.insertSegment(action: action, at: idx, animated: false)
         }
-        self.segmentedControl.selectedSegmentIndex = selectedIndex
+        segmentedControl.selectedSegmentIndex = selectedIndex
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+
+        let isTruncated = isTextTruncated()
+        button.isHidden = !isTruncated
+        titleLabel.isHidden = isTruncated
+        segmentedControl.isHidden = isTruncated
+
+        func isTextTruncated() -> Bool {
+            guard let text = titleLabel.text, let font = titleLabel.font else { return false }
+            let size = (text as NSString).boundingRect(
+                with: CGSize(width: CGFloat.greatestFiniteMagnitude, height: titleLabel.bounds.height),
+                options: [.usesLineFragmentOrigin, .usesFontLeading],
+                attributes: [.font: font],
+                context: nil
+            ).size
+            return size.width > titleLabel.bounds.width
+        }
     }
 }

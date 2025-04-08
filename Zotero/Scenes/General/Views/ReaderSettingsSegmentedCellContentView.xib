@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="22155" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="23727" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22131"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23721"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -15,34 +15,47 @@
             <rect key="frame" x="0.0" y="0.0" width="414" height="158"/>
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             <subviews>
-                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="t7h-2s-nwI">
-                    <rect key="frame" x="20" y="64" width="42" height="44"/>
+                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" horizontalCompressionResistancePriority="250" ambiguous="YES" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="t7h-2s-nwI">
+                    <rect key="frame" x="12" y="112" width="42" height="20.5"/>
                     <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                     <nil key="textColor"/>
                     <nil key="highlightedColor"/>
                 </label>
-                <segmentedControl opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="top" segmentControlStyle="plain" selectedSegmentIndex="0" translatesAutoresizingMaskIntoConstraints="NO" id="HNc-B0-tj2">
-                    <rect key="frame" x="271" y="70.5" width="131" height="32"/>
+                <segmentedControl opaque="NO" contentMode="scaleToFill" horizontalCompressionResistancePriority="1000" ambiguous="YES" contentHorizontalAlignment="left" contentVerticalAlignment="top" segmentControlStyle="plain" selectedSegmentIndex="0" translatesAutoresizingMaskIntoConstraints="NO" id="HNc-B0-tj2">
+                    <rect key="frame" x="279" y="107" width="131" height="32"/>
                     <segments>
                         <segment title="First"/>
                         <segment title="Second"/>
                     </segments>
                 </segmentedControl>
+                <button opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="1" verticalHuggingPriority="1" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" contentHorizontalAlignment="leading" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="bmj-FC-ICc">
+                    <rect key="frame" x="0.0" y="0.0" width="414" height="158"/>
+                    <state key="normal" title="Button"/>
+                    <buttonConfiguration key="configuration" style="plain" title="Button">
+                        <fontDescription key="titleFontDescription" style="UICTFontTextStyleBody"/>
+                        <color key="baseForegroundColor" systemColor="labelColor"/>
+                    </buttonConfiguration>
+                </button>
             </subviews>
             <viewLayoutGuide key="safeArea" id="vUN-kp-3ea"/>
             <color key="backgroundColor" systemColor="systemBackgroundColor"/>
             <constraints>
                 <constraint firstItem="t7h-2s-nwI" firstAttribute="top" secondItem="vUN-kp-3ea" secondAttribute="top" constant="16" id="AM3-vs-tfM"/>
-                <constraint firstItem="vUN-kp-3ea" firstAttribute="right" secondItem="HNc-B0-tj2" secondAttribute="rightMargin" constant="20" id="BIh-ta-dc3"/>
+                <constraint firstItem="vUN-kp-3ea" firstAttribute="right" secondItem="HNc-B0-tj2" secondAttribute="rightMargin" constant="12" id="BIh-ta-dc3"/>
                 <constraint firstItem="HNc-B0-tj2" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="t7h-2s-nwI" secondAttribute="trailing" id="Hk6-wg-bXz"/>
                 <constraint firstItem="t7h-2s-nwI" firstAttribute="centerY" secondItem="HNc-B0-tj2" secondAttribute="centerY" id="J9d-Pl-PQZ"/>
-                <constraint firstItem="t7h-2s-nwI" firstAttribute="leading" secondItem="vUN-kp-3ea" secondAttribute="leading" constant="20" id="Ntf-av-ZRM"/>
+                <constraint firstItem="t7h-2s-nwI" firstAttribute="leading" secondItem="vUN-kp-3ea" secondAttribute="leading" constant="12" id="Ntf-av-ZRM"/>
+                <constraint firstItem="bmj-FC-ICc" firstAttribute="leading" secondItem="vUN-kp-3ea" secondAttribute="leading" id="YB9-TM-SW2"/>
                 <constraint firstItem="HNc-B0-tj2" firstAttribute="top" relation="greaterThanOrEqual" secondItem="vUN-kp-3ea" secondAttribute="top" id="ZAy-kV-pae"/>
+                <constraint firstItem="bmj-FC-ICc" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" id="Zgu-Ak-7MJ"/>
                 <constraint firstItem="vUN-kp-3ea" firstAttribute="bottom" secondItem="t7h-2s-nwI" secondAttribute="bottom" constant="16" id="d5R-He-EJN"/>
                 <constraint firstItem="vUN-kp-3ea" firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="HNc-B0-tj2" secondAttribute="bottom" id="gqb-8V-uEi"/>
+                <constraint firstItem="bmj-FC-ICc" firstAttribute="trailing" secondItem="vUN-kp-3ea" secondAttribute="trailing" id="jI1-cj-9GG"/>
+                <constraint firstAttribute="bottom" secondItem="bmj-FC-ICc" secondAttribute="bottom" id="t03-ig-XNM"/>
             </constraints>
             <freeformSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
             <connections>
+                <outlet property="button" destination="bmj-FC-ICc" id="Ojw-qo-Q0u"/>
                 <outlet property="segmentedControl" destination="HNc-B0-tj2" id="ahX-PZ-gtb"/>
                 <outlet property="titleLabel" destination="t7h-2s-nwI" id="2et-bx-8dS"/>
             </connections>
@@ -50,6 +63,9 @@
         </view>
     </objects>
     <resources>
+        <systemColor name="labelColor">
+            <color white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>
