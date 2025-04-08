@@ -1040,7 +1040,56 @@ extension PDFReaderViewController: SpeechmanagerDelegate {
     }
 
     func text(for pageIndex: UInt) -> String? {
-        return viewModel.state.document.textParserForPage(at: pageIndex)?.text
+        guard let textParser = viewModel.state.document.textParserForPage(at: pageIndex) else { return nil }
+
+        let sortedByX = textParser.textBlocks.sorted { $0.frame.minX > $1.frame.minX }
+        DDLogInfo("!!! TEST !!!")
+        for block in sortedByX {
+            DDLogInfo("\(block.frame.minX) - \"\(block.content)\"")
+        }
+
+        let sorted = textParser.textBlocks.sorted(by: { $0.frame.minY > $1.frame.minY })
+        let lineHeight = calculateLineHeight(for: sorted)
+        return createText(from: sorted, lineHeight: lineHeight)
+
+        func createText(from blocks: [TextBlock], lineHeight: CGFloat) -> String {
+            var text: String = ""
+            var paragraph: String = ""
+            for (idx, block) in blocks.enumerated() {
+                if idx == 0 {
+                    paragraph = block.content
+                    continue
+                }
+
+                let previousBlock = sorted[idx - 1]
+                let currentLineHeight = previousBlock.frame.minY - block.frame.minY
+                if currentLineHeight <= lineHeight {
+                    paragraph += " " + block.content
+                } else {
+                    text += paragraph + "\n\n"
+                    paragraph = block.content
+                }
+            }
+            text += paragraph
+            return text
+        }
+
+        func calculateLineHeight(for blocks: [TextBlock]) -> CGFloat {
+            var lineHeight: CGFloat = .infinity
+            for (idx, block) in blocks.enumerated() {
+                guard idx > 0 else { continue }
+                let currentLineHeight = sorted[idx - 1].frame.minY - block.frame.minY
+                if idx == 1 {
+                    lineHeight = currentLineHeight
+                    continue
+                }
+                // Filter out same-line blocks or very small differences (due to different font sizes)
+                if currentLineHeight < lineHeight && currentLineHeight > lineHeight * 0.2 {
+                    lineHeight = currentLineHeight
+                }
+            }
+            return round(lineHeight * 1.15)
+        }
     }
 
     func moved(to pageIndex: UInt) {
