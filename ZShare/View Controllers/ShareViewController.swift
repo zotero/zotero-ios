@@ -240,6 +240,13 @@ final class ShareViewController: UIViewController {
         self.update(attachmentState: state.attachmentState, itemState: state.itemPickerState, hasItem: hasItem, isSubmitting: state.isSubmitting)
         self.update(collectionPicker: state.collectionPickerState, recents: state.recents)
         self.update(itemPicker: state.itemPickerState, hasExpectedItem: (state.expectedItem != nil || state.expectedAttachment != nil))
+        switch state.processedAttachment {
+        case .none, .file:
+            tagPickerStackContainer.isHidden = true
+
+        case .item, .itemWithAttachment:
+            tagPickerStackContainer.isHidden = false
+        }
         self.updateTagPicker(with: state.tags)
 
         if self.viewIsVisible {
