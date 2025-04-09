@@ -21,6 +21,7 @@ class ReaderSettingsSegmentedCellContentView: UIView {
         var configuration = UIButton.Configuration.plain()
         configuration.baseForegroundColor = .label
         configuration.title = title
+        configuration.subtitle = actions.first(where: { $0.state == .on })?.title
         configuration.titleAlignment = .leading
         configuration.image = UIImage(systemName: "chevron.right", withConfiguration: UIImage.SymbolConfiguration(scale: .small))
         configuration.imagePlacement = .trailing
