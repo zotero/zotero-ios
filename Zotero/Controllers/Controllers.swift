@@ -105,9 +105,12 @@ final class Controllers {
         Defaults.shared.lastBuildNumber = DeviceInfoProvider.buildNumber
 
         crashReporter.processPendingReports { [weak self] in
-            self?.initializeSessionIfPossible()
-            self?.startApp()
-            self?.didInitialize = true
+            self?.initializeSessionIfPossible { success in
+                if success {
+                    self?.startApp()
+                }
+                self?.didInitialize = true
+            }
         }
     }
 
@@ -136,7 +139,7 @@ final class Controllers {
         userControllers.enableSync(apiKey: session.apiToken)
     }
 
-    private func initializeSessionIfPossible(failOnError: Bool = false) {
+    private func initializeSessionIfPossible(failOnError: Bool = false, completion: @escaping (Bool) -> Void) {
         do {
             // Try to initialize session
             try sessionController.initializeSession()
@@ -144,13 +147,14 @@ final class Controllers {
             update(with: sessionController.sessionData, isLogin: false, debugLogging: debugLogging)
             // Start observing further session changes
             startObservingSession()
+            completion(true)
         } catch let error {
             if !failOnError {
                 // If this is first failure, start logging issues and wait for protected data
                 debugLogging.start(type: .immediate)
                 DDLogError("Controllers: session controller failed to initialize properly - \(error)")
                 waitForProtectedDataAvailability { [weak self] in
-                    self?.initializeSessionIfPossible(failOnError: true)
+                    self?.initializeSessionIfPossible(failOnError: true, completion: completion)
                 }
                 return
             }
@@ -167,6 +171,7 @@ final class Controllers {
             update(with: nil, isLogin: false, debugLogging: debugLogging)
             // Start observing further session changes so that user can log in
             startObservingSession()
+            completion(false)
         }
     }
 
