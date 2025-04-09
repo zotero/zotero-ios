@@ -17,7 +17,7 @@ protocol WebViewProvider: AnyObject {
     func addWebView(configuration: WKWebViewConfiguration?) -> WKWebView
 }
 
-open class WebViewHandler: NSObject {
+class WebViewHandler: NSObject {
     enum Error: Swift.Error {
         case webViewMissing
         case urlMissingTranslators

@@ -77,7 +77,7 @@ final class LookupWebViewHandler: WebViewHandler {
                 return self.call(javascript: "initTranslators(\(encodedTranslators));")
             }
             .flatMap { _ -> Single<()> in
-                    .just(())
+                return .just(())
             }
 
         func loadIndex() -> Single<()> {
