@@ -56,13 +56,11 @@ final class MasterCoordinator: NSObject, Coordinator {
 
     func start(animated: Bool) {
         guard let userControllers = self.controllers.userControllers else { return }
-        let librariesController = self.createLibrariesViewController(
-            dbStorage: userControllers.dbStorage,
-            syncScheduler: userControllers.syncScheduler,
-            identifierLookupController: userControllers.identifierLookupController
-        )
+        let librariesController = self.createLibrariesViewController(dbStorage: userControllers.dbStorage, syncScheduler: userControllers.syncScheduler)
         userControllers.identifierLookupController.webViewProvider = librariesController
         userControllers.citationController.webViewProvider = librariesController
+        userControllers.pdfWorkerController.webViewProvider = librariesController
+        userControllers.recognizerController.webViewProvider = librariesController
         let collectionsController = self.createCollectionsViewController(
             libraryId: self.visibleLibraryId,
             selectedCollectionId: Defaults.shared.selectedCollectionId,
@@ -74,7 +72,7 @@ final class MasterCoordinator: NSObject, Coordinator {
         self.navigationController?.setViewControllers([librariesController, collectionsController], animated: animated)
     }
 
-    private func createLibrariesViewController(dbStorage: DbStorage, syncScheduler: SynchronizationScheduler, identifierLookupController: IdentifierLookupController) -> LibrariesViewController {
+    private func createLibrariesViewController(dbStorage: DbStorage, syncScheduler: SynchronizationScheduler) -> LibrariesViewController {
         let viewModel = ViewModel(initialState: LibrariesState(), handler: LibrariesActionHandler(dbStorage: dbStorage))
         let controller = LibrariesViewController(viewModel: viewModel, syncScheduler: syncScheduler)
         controller.coordinatorDelegate = self
