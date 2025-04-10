@@ -40,9 +40,8 @@ final class ItemCell: UITableViewCell {
     override func prepareForReuse() {
         super.prepareForReuse()
         self.key = ""
-        subtitleAnimator = nil
         subtitlePrefix = ""
-        subtitleAnimationSuffixDotCount = 0
+        stopAnimatingSubtitle()
     }
 
     override func awakeFromNib() {
