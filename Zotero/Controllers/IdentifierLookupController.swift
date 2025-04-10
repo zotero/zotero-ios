@@ -13,10 +13,6 @@ import OrderedCollections
 import CocoaLumberjackSwift
 import RxSwift
 
-protocol IdentifierLookupWebViewProvider: AnyObject {
-    func addWebView() -> WKWebView
-}
-
 protocol IdentifierLookupPresenter: AnyObject {
     func isPresenting() -> Bool
 }
@@ -143,7 +139,7 @@ final class IdentifierLookupController {
         return (savedCount, failedCount, totalCount)
     }
 
-    internal weak var webViewProvider: IdentifierLookupWebViewProvider?
+    internal weak var webViewProvider: WebViewProvider?
     internal weak var presenter: IdentifierLookupPresenter? {
         didSet {
             guard presenter == nil, oldValue != nil else { return }
@@ -198,7 +194,7 @@ final class IdentifierLookupController {
             }
             var lookupWebViewHandler: LookupWebViewHandler?
             inMainThread(sync: true) {
-                if let webView = self.webViewProvider?.addWebView() {
+                if let webView = self.webViewProvider?.addWebView(configuration: nil) {
                     lookupWebViewHandler = LookupWebViewHandler(webView: webView, translatorsController: self.translatorsController)
                 }
             }
@@ -227,10 +223,7 @@ final class IdentifierLookupController {
             DDLogInfo("IdentifierLookupController: cancel all lookups")
             let keys = lookupWebViewHandlersByLookupSettings.keys
             for key in keys {
-                guard let webView = lookupWebViewHandlersByLookupSettings.removeValue(forKey: key)?.webViewHandler.webView else { continue }
-                inMainThread {
-                    webView.removeFromSuperview()
-                }
+                lookupWebViewHandlersByLookupSettings.removeValue(forKey: key)?.removeFromSuperviewAsynchronously()
             }
             remoteFileDownloader.stop()
             let lookupData = self.lookupData
@@ -463,7 +456,7 @@ final class IdentifierLookupController {
                     
                     func storeDataAndDownloadAttachmentIfNecessary(identifier: String, response: ItemResponse, attachments: [(Attachment, URL)]) throws {
                         let request = CreateTranslatedItemsDbRequest(responses: [response], schemaController: schemaController, dateParser: dateParser)
-                        try dbStorage.perform(request: request, on: backgroundQueue)
+                        _ = try dbStorage.perform(request: request, on: backgroundQueue)
                         changeLookup(
                             for: identifier,
                             to: .translated(.init(response: response, attachments: attachments, libraryId: libraryId, collectionKeys: collectionKeys))
@@ -535,10 +528,7 @@ final class IdentifierLookupController {
                 DDLogInfo("IdentifierLookupController: cleaned up lookup data")
                 let keys = lookupWebViewHandlersByLookupSettings.keys
                 for key in keys {
-                    guard let webView = lookupWebViewHandlersByLookupSettings.removeValue(forKey: key)?.webViewHandler.webView else { continue }
-                    DispatchQueue.main.async {
-                        webView.removeFromSuperview()
-                    }
+                    lookupWebViewHandlersByLookupSettings.removeValue(forKey: key)?.removeFromSuperviewAsynchronously()
                 }
                 completion(true)
             }

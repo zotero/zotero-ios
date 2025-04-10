@@ -30,7 +30,7 @@ struct SingleCitationActionHandler: ViewModelActionHandler {
         case .preload(let webView):
             preload(webView: webView, in: viewModel)
 
-        case .setLocator(let locator, let webView):
+        case .setLocator(let locator):
             loadPreview(
                 locatorLabel: locator,
                 locatorValue: viewModel.state.locatorValue,
@@ -39,11 +39,10 @@ struct SingleCitationActionHandler: ViewModelActionHandler {
                     state.locator = locator
                     state.changes = [.preview, .locator]
                 },
-                webView: webView,
                 in: viewModel
             )
 
-        case .setLocatorValue(let value, let webView):
+        case .setLocatorValue(let value):
             loadPreview(
                 locatorLabel: viewModel.state.locator,
                 locatorValue: value,
@@ -52,11 +51,10 @@ struct SingleCitationActionHandler: ViewModelActionHandler {
                     state.locatorValue = value
                     state.changes = .preview
                 },
-                webView: webView,
                 in: viewModel
             )
 
-        case .setOmitAuthor(let omitAuthor, let webView):
+        case .setOmitAuthor(let omitAuthor):
             loadPreview(
                 locatorLabel: viewModel.state.locator,
                 locatorValue: viewModel.state.locatorValue,
@@ -65,7 +63,6 @@ struct SingleCitationActionHandler: ViewModelActionHandler {
                     state.omitAuthor = omitAuthor
                     state.changes = .preview
                 },
-                webView: webView,
                 in: viewModel
             )
 
@@ -76,14 +73,18 @@ struct SingleCitationActionHandler: ViewModelActionHandler {
             }
 
         case .cleanup:
-            citationController.finishCitation()
+            guard let session = viewModel.state.citationSession else { return }
+            citationController.endSession(session)
+            update(viewModel: viewModel) { state in
+                state.citationSession = nil
+            }
 
-        case .copy(let webView):
-            copy(webView: webView, in: viewModel)
+        case .copy:
+            copy(in: viewModel)
         }
     }
 
-    private func copy(webView: WKWebView, in viewModel: ViewModel<SingleCitationActionHandler>) {
+    private func copy(in viewModel: ViewModel<SingleCitationActionHandler>) {
         guard let preview = viewModel.state.preview else { return }
 
         if viewModel.state.exportAsHtml {
@@ -98,14 +99,14 @@ struct SingleCitationActionHandler: ViewModelActionHandler {
             state.loadingCopy = true
         }
 
+        guard let session = viewModel.state.citationSession else { return }
         citationController.citation(
-            for: viewModel.state.itemIds,
+            for: session,
             label: viewModel.state.locator,
             locator: viewModel.state.locatorValue,
             omitAuthor: viewModel.state.omitAuthor,
             format: .text,
-            showInWebView: false,
-            in: webView
+            showInWebView: false
         )
         .subscribe(onSuccess: { [weak viewModel] text in
             UIPasteboard.general.copy(html: preview, plaintext: text)
@@ -123,11 +124,11 @@ struct SingleCitationActionHandler: ViewModelActionHandler {
         locatorValue: String,
         omitAuthor: Bool,
         stateAction: @escaping (inout SingleCitationState) -> Void,
-        webView: WKWebView,
         in viewModel: ViewModel<SingleCitationActionHandler>
     ) {
+        guard let session = viewModel.state.citationSession else { return }
         citationController
-            .citation(for: viewModel.state.itemIds, label: locatorLabel, locator: locatorValue, omitAuthor: omitAuthor, format: .html, showInWebView: true, in: webView)
+            .citation(for: session, label: locatorLabel, locator: locatorValue, omitAuthor: omitAuthor, format: .html, showInWebView: true)
             .subscribe(onSuccess: { [weak viewModel] preview in
                 guard let viewModel else { return }
                 update(viewModel: viewModel) { state in
@@ -140,22 +141,18 @@ struct SingleCitationActionHandler: ViewModelActionHandler {
     }
 
     private func preload(webView: WKWebView, in viewModel: ViewModel<SingleCitationActionHandler>) {
-        let itemIds = viewModel.state.itemIds
-        let libraryId = viewModel.state.libraryId
-        citationController
-            .prepare(webView: webView, for: itemIds, libraryId: libraryId, styleId: viewModel.state.styleId, localeId: viewModel.state.localeId)
-            .flatMap({ [weak webView] _ -> Single<String> in
-                guard let webView else { return Single.error(CitationController.Error.prepareNotCalled) }
-                return citationController.citation(
-                    for: itemIds,
-                    label: viewModel.state.locator,
-                    locator: viewModel.state.locatorValue,
-                    omitAuthor: viewModel.state.omitAuthor,
-                    format: .html,
-                    showInWebView: true,
-                    in: webView
-                )
+        let state = viewModel.state
+        citationController.startSession(for: state.itemIds, libraryId: state.libraryId, styleId: state.styleId, localeId: state.localeId, webView: webView)
+            .do(onSuccess: { [weak viewModel] session in
+                guard let viewModel else { return }
+                update(viewModel: viewModel) { state in
+                    state.citationSession = session
+                    state.changes = .webViewLoaded
+                }
             })
+            .flatMap { session -> Single<String> in
+                return citationController.citation(for: session, label: state.locator, locator: state.locatorValue, omitAuthor: state.omitAuthor, format: .html, showInWebView: true)
+            }
             .subscribe(
                 onSuccess: { [weak viewModel] preview in
                     guard let viewModel else { return }
@@ -164,7 +161,7 @@ struct SingleCitationActionHandler: ViewModelActionHandler {
                         state.changes = .preview
                     }
                 }, onFailure: { [weak viewModel] error in
-                    DDLogError("CitationActionHandler: can't preload webView - \(error)")
+                    DDLogError("SingleCitationActionHandler: can't preload webView - \(error)")
                     guard let viewModel else { return }
                     update(viewModel: viewModel) { state in
                         if let error = error as? CitationController.Error, error == .styleOrLocaleMissing {

@@ -10,6 +10,6 @@ import UIKit
 import WebKit
 
 enum CopyBibliographyAction {
-    case preload(WKWebView)
+    case preload
     case cleanup
 }

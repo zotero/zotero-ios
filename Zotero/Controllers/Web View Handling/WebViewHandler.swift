@@ -10,23 +10,36 @@ import Foundation
 import WebKit
 
 import CocoaLumberjackSwift
+import RxCocoa
 import RxSwift
 
-final class WebViewHandler: NSObject {
+protocol WebViewProvider: AnyObject {
+    func addWebView(configuration: WKWebViewConfiguration?) -> WKWebView
+}
+
+class WebViewHandler: NSObject {
     enum Error: Swift.Error {
         case webViewMissing
         case urlMissingTranslators
     }
 
+    private enum InitializationState {
+        case initialized
+        case inProgress
+        case failed(Swift.Error)
+    }
+
     private let session: URLSession
 
-    private(set) weak var webView: WKWebView?
+    private weak var webView: WKWebView?
     private var webDidLoad: ((SingleEvent<()>) -> Void)?
     var receivedMessageHandler: ((String, Any) -> Void)?
     // Cookies, User-Agent and Referrer from original website are stored and added to requests in `sendRequest(with:)`.
     private(set) var cookies: String?
     private(set) var userAgent: String?
     private(set) var referer: String?
+    private var initializationState: BehaviorRelay<InitializationState>
+    private let disposeBag: DisposeBag
 
     // MARK: - Lifecycle
 
@@ -41,6 +54,8 @@ final class WebViewHandler: NSObject {
 
         session = URLSession(configuration: configuration)
         self.webView = webView
+        initializationState = BehaviorRelay(value: .inProgress)
+        disposeBag = DisposeBag()
 
         super.init()
 
@@ -49,11 +64,58 @@ final class WebViewHandler: NSObject {
         webView.customUserAgent = "\(userAgent) Zotero_iOS/\(DeviceInfoProvider.versionString ?? "")-\(DeviceInfoProvider.buildString ?? "")"
 
         javascriptHandlers?.forEach { handler in
+            webView.configuration.userContentController.removeScriptMessageHandler(forName: handler)
             webView.configuration.userContentController.add(self, name: handler)
         }
+
+#if DEBUG
+        webView.isInspectable = true
+#endif
+        initializeWebView()
+            .subscribe(on: MainScheduler.instance)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onSuccess: { [weak self] _ in
+                DDLogInfo("WebViewHandler: initialization succeeded")
+                self?.initializationState.accept(.initialized)
+            }, onFailure: { [weak self] error in
+                DDLogInfo("WebViewHandler: initialization failed - \(error)")
+                self?.initializationState.accept(.failed(error))
+            })
+            .disposed(by: disposeBag)
     }
 
     // MARK: - Actions
+
+    /// Method to be overriden by subclasses. Default implementation just assumes web view is already initialized.
+    func initializeWebView() -> Single<()> {
+        return .just(())
+    }
+
+    func performAfterInitialization() -> Single<()> {
+        return initializationState.filter { state in
+            switch state {
+            case .inProgress:
+                return false
+
+            case .initialized, .failed:
+                return true
+            }
+        }
+        .first()
+        .flatMap { state -> Single<()> in
+            switch state {
+            case .failed(let error):
+                return .error(error)
+
+            case .initialized:
+                return .just(())
+
+            case .inProgress, .none:
+                // Should never happen.
+                return .never()
+            }
+        }
+    }
 
     func set(cookies: String?, userAgent: String?, referrer: String?) {
         self.cookies = cookies
@@ -126,6 +188,12 @@ final class WebViewHandler: NSObject {
         }
     }
 
+    func removeFromSuperviewAsynchronously() {
+        DispatchQueue.main.async {
+            self.webView?.removeFromSuperview()
+        }
+    }
+
     // MARK: - HTTP Requests
 
     /// Sends HTTP request based on options. Sends back response with HTTP response to `webView`.
@@ -187,14 +255,14 @@ final class WebViewHandler: NSObject {
 }
 
 extension WebViewHandler: WKNavigationDelegate {
-    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+    public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         // Wait for javascript to load
         DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
             self.webDidLoad?(.success(()))
         }
     }
 
-    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Swift.Error) {
+    public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Swift.Error) {
         DDLogError("WebViewHandler: did fail - \(error)")
         webDidLoad?(.failure(error))
     }
@@ -203,7 +271,7 @@ extension WebViewHandler: WKNavigationDelegate {
 /// Communication with JS in `webView`. The `webView` sends a message through one of the registered `JSHandlers`, which is received here.
 /// Each message contains a `messageId` in the body, which is used to identify the message in case a response is expected.
 extension WebViewHandler: WKScriptMessageHandler {
-    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+    public func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         inMainThread {
             self.receivedMessageHandler?(message.name, message.body)
         }

@@ -189,7 +189,6 @@ final class DetailCoordinator: Coordinator {
                 schemaController: controllers.schemaController,
                 urlDetector: controllers.urlDetector,
                 fileDownloader: userControllers.fileDownloader,
-                citationController: userControllers.citationController,
                 fileCleanupController: userControllers.fileCleanupController,
                 syncScheduler: userControllers.syncScheduler,
                 htmlAttributedStringConverter: controllers.htmlAttributedStringConverter

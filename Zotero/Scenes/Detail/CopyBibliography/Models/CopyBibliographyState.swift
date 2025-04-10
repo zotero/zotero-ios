@@ -15,6 +15,7 @@ struct CopyBibliographyState: ViewModelState {
     let localeId: String
     let exportAsHtml: Bool
 
+    var citationSession: CitationController.Session?
     var processingBibliography = false
     var error: Error?
 

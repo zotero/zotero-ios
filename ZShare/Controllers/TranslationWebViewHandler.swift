@@ -12,7 +12,7 @@ import WebKit
 import CocoaLumberjackSwift
 import RxSwift
 
-final class TranslationWebViewHandler {
+final class TranslationWebViewHandler: WebViewHandler {
     /// Actions that can be returned by this handler.
     /// - loadedItems: Items have been translated.
     /// - selectItem: Multiple items have been found on this website and the user needs to choose one.
@@ -49,23 +49,22 @@ final class TranslationWebViewHandler {
         case webExtractionMissingData
     }
 
-    private let webViewHandler: WebViewHandler
-    let translatorsController: TranslatorsAndStylesController
+    private let translatorsController: TranslatorsAndStylesController
     private let disposeBag: DisposeBag
     let observable: PublishSubject<Action>
 
-    private var webDidLoad: ((SingleEvent<()>) -> Void)?
     private var itemSelectionMessageId: Int?
 
     // MARK: - Lifecycle
 
     init(webView: WKWebView, translatorsController: TranslatorsAndStylesController) {
-        self.webViewHandler = WebViewHandler(webView: webView, javascriptHandlers: JSHandlers.allCases.map({ $0.rawValue }))
-        self.disposeBag = DisposeBag()
+        disposeBag = DisposeBag()
         self.translatorsController = translatorsController
-        self.observable = PublishSubject()
+        observable = PublishSubject()
 
-        self.webViewHandler.receivedMessageHandler = { [weak self] name, body in
+        super.init(webView: webView, javascriptHandlers: JSHandlers.allCases.map({ $0.rawValue }))
+
+        receivedMessageHandler = { [weak self] name, body in
             self?.receiveMessage(name: name, body: body)
         }
     }
@@ -73,43 +72,42 @@ final class TranslationWebViewHandler {
     // MARK: - Actions
 
     func loadWebData(from url: URL) -> Single<ExtensionViewModel.State.RawAttachment> {
-        DDLogInfo("WebViewHandler: load web data")
+        DDLogInfo("TranslationWebViewHandler: load web data")
+        return performAfterInitialization()
+            .flatMap { _ -> Single<()> in
+                self.load(webUrl: url)
+            }
+            .flatMap { _ -> Single<Any> in
+                guard let url = Bundle.main.url(forResource: "webview_extraction", withExtension: "js"), let script = try? String(contentsOf: url) else {
+                    DDLogError("TranslationWebViewHandler: can't load extraction javascript")
+                    return .error(Error.webExtractionMissingJs)
+                }
+                DDLogInfo("TranslationWebViewHandler: call data extraction js")
+                return self.call(javascript: script)
+            }
+            .flatMap { data -> Single<ExtensionViewModel.State.RawAttachment> in
+                guard let payload = data as? [String: Any],
+                      let isFile = payload["isFile"] as? Bool,
+                      let cookies = payload["cookies"] as? String,
+                      let userAgent = payload["userAgent"] as? String,
+                      let referrer = payload["referrer"] as? String else {
+                    DDLogError("TranslationWebViewHandler: extracted data missing response")
+                    DDLogError("\(String(describing: data as? [String: Any]))")
+                    return .error(Error.webExtractionMissingData)
+                }
 
-        return self.webViewHandler.load(webUrl: url)
-                   .flatMap({ _ -> Single<Any> in
-                       guard let url = Bundle.main.url(forResource: "webview_extraction", withExtension: "js"),
-                             let script = try? String(contentsOf: url) else {
-                           DDLogError("WebViewHandler: can't load extraction javascript")
-                           return Single.error(Error.webExtractionMissingJs)
-                       }
-                       DDLogInfo("WebViewHandler: call data extraction js")
-                       return self.webViewHandler.call(javascript: script)
-                   })
-                   .flatMap({ data -> Single<ExtensionViewModel.State.RawAttachment> in
-                       guard let payload = data as? [String: Any],
-                             let isFile = payload["isFile"] as? Bool,
-                             let cookies = payload["cookies"] as? String,
-                             let userAgent = payload["userAgent"] as? String,
-                             let referrer = payload["referrer"] as? String else {
-                           DDLogError("WebViewHandler: extracted data missing response")
-                           DDLogError("\(String(describing: data as? [String: Any]))")
-                           return Single.error(Error.webExtractionMissingData)
-                       }
-
-                       if isFile, let contentType = payload["contentType"] as? String {
-                           DDLogInfo("WebViewHandler: extracted file")
-                           return Single.just(.remoteFileUrl(url: url, contentType: contentType, cookies: cookies, userAgent: userAgent, referrer: referrer))
-                       } else if let title = payload["title"] as? String,
-                                 let html = payload["html"] as? String,
-                                 let frames = payload["frames"] as? [String] {
-                           DDLogInfo("WebViewHandler: extracted html")
-                           return Single.just(.web(title: title, url: url, html: html, cookies: cookies, frames: frames, userAgent: userAgent, referrer: referrer))
-                       } else {
-                           DDLogError("WebViewHandler: extracted data incompatible")
-                           DDLogError("\(payload)")
-                           return Single.error(Error.webExtractionMissingData)
-                       }
-                   })
+                if isFile, let contentType = payload["contentType"] as? String {
+                    DDLogInfo("TranslationWebViewHandler: extracted file")
+                    return .just(.remoteFileUrl(url: url, contentType: contentType, cookies: cookies, userAgent: userAgent, referrer: referrer))
+                } else if let title = payload["title"] as? String, let html = payload["html"] as? String, let frames = payload["frames"] as? [String] {
+                    DDLogInfo("TranslationWebViewHandler: extracted html")
+                    return .just(.web(title: title, url: url, html: html, cookies: cookies, frames: frames, userAgent: userAgent, referrer: referrer))
+                } else {
+                    DDLogError("TranslationWebViewHandler: extracted data incompatible")
+                    DDLogError("\(payload)")
+                    return .error(Error.webExtractionMissingData)
+                }
+            }
     }
 
     /// Runs translation server against html content with cookies. Results are then provided through observable publisher.
@@ -119,81 +117,81 @@ final class TranslationWebViewHandler {
     /// - parameter cookies: Cookies string from shared website. Equals to javacsript "document.cookie".
     /// - parameter frames: HTML content of frames contained in initial HTML document.
     func translate(url: URL, title: String, html: String, cookies: String, frames: [String], userAgent: String, referrer: String) {
-        DDLogInfo("WebViewHandler: translate")
+        DDLogInfo("TranslationWebViewHandler: translate")
+        return performAfterInitialization().flatMap { _ -> Single<()> in
+            self.set(cookies: cookies, userAgent: userAgent, referrer: referrer)
+            return loadIndex()
+        }
+        .flatMap { _ -> Single<(String, String)> in
+            return loadBundledFiles()
+        }
+        .flatMap { encodedSchema, encodedDateFormats -> Single<Any> in
+            return self.call(javascript: "initSchemaAndDateFormats(\(encodedSchema), \(encodedDateFormats));")
+        }
+        .flatMap { _ -> Single<[RawTranslator]> in
+            DDLogInfo("TranslationWebViewHandler: load translators")
+            return self.translatorsController.translators(matching: url.absoluteString)
+        }
+        .flatMap { translators -> Single<Any> in
+            DDLogInfo("TranslationWebViewHandler: encode translators")
+            let encodedTranslators = WebViewEncoder.encodeAsJSONForJavascript(translators)
+            return self.call(javascript: "initTranslators(\(encodedTranslators));")
+        }
+        .flatMap({ _ -> Single<Any> in
+            DDLogInfo("TranslationWebViewHandler: call translate js")
+            let encodedHtml = WebViewEncoder.encodeForJavascript(html.data(using: .utf8))
+            let jsonFramesData = try? JSONSerialization.data(withJSONObject: frames, options: .fragmentsAllowed)
+            let encodedFrames = jsonFramesData.flatMap({ WebViewEncoder.encodeForJavascript($0) }) ?? "''"
+            return self.call(javascript: "translate('\(url.absoluteString)', \(encodedHtml), \(encodedFrames));")
+        })
+        .subscribe(onFailure: { [weak self] error in
+            DDLogError("TranslationWebViewHandler: translation failed - \(error)")
+            self?.observable.on(.error(error))
+        })
+        .disposed(by: disposeBag)
 
-        self.webViewHandler.set(cookies: cookies, userAgent: userAgent, referrer: referrer)
+        func loadIndex() -> Single<()> {
+            guard let indexUrl = Bundle.main.url(forResource: "index", withExtension: "html", subdirectory: "translation") else {
+                return .error(Error.cantFindFile)
+            }
+            return load(fileUrl: indexUrl)
+        }
 
-        return self.loadIndex()
-                   .flatMap { _ -> Single<(String, String)> in
-                       return self.loadBundledFiles()
-                   }
-                   .flatMap { encodedSchema, encodedDateFormats -> Single<Any> in
-                       return self.webViewHandler.call(javascript: "initSchemaAndDateFormats(\(encodedSchema), \(encodedDateFormats));")
-                   }
-                   .flatMap { _ -> Single<[RawTranslator]> in
-                       DDLogInfo("WebViewHandler: load translators")
-                       return self.translatorsController.translators(matching: url.absoluteString)
-                   }
-                   .flatMap { translators -> Single<Any> in
-                       DDLogInfo("WebViewHandler: encode translators")
-                       let encodedTranslators = WebViewEncoder.encodeAsJSONForJavascript(translators)
-                       return self.webViewHandler.call(javascript: "initTranslators(\(encodedTranslators));")
-                   }
-                   .flatMap({ _ -> Single<Any> in
-                       DDLogInfo("WebViewHandler: call translate js")
-                       let encodedHtml = WebViewEncoder.encodeForJavascript(html.data(using: .utf8))
-                       let jsonFramesData = try? JSONSerialization.data(withJSONObject: frames, options: .fragmentsAllowed)
-                       let encodedFrames = jsonFramesData.flatMap({ WebViewEncoder.encodeForJavascript($0) }) ?? "''"
-                       return self.webViewHandler.call(javascript: "translate('\(url.absoluteString)', \(encodedHtml), \(encodedFrames));")
-                   })
-                   .subscribe(onFailure: { [weak self] error in
-                       DDLogError("WebViewHandler: translation failed - \(error)")
-                       self?.observable.on(.error(error))
-                   })
-                   .disposed(by: self.disposeBag)
-    }
+        func loadBundledFiles() -> Single<(String, String)> {
+            return .create { subscriber in
+                guard let schemaUrl = Bundle.main.url(forResource: "schema", withExtension: "json", subdirectory: "Bundled"), let schemaData = try? Data(contentsOf: schemaUrl) else {
+                    DDLogError("TranslationWebViewHandler: can't load schema json")
+                    subscriber(.failure(Error.cantFindFile))
+                    return Disposables.create()
+                }
 
-    private func loadBundledFiles() -> Single<(String, String)> {
-        return Single.create { subscriber in
-            guard let schemaUrl = Bundle.main.url(forResource: "schema", withExtension: "json", subdirectory: "Bundled"),
-                  let schemaData = try? Data(contentsOf: schemaUrl) else {
-                DDLogError("WebViewHandler: can't load schema json")
-                subscriber(.failure(Error.cantFindFile))
+                guard let dateFormatsUrl = Bundle.main.url(forResource: "dateFormats", withExtension: "json", subdirectory: "translation/translate/modules/utilities/resource"),
+                      let dateFormatData = try? Data(contentsOf: dateFormatsUrl)
+                else {
+                    DDLogError("TranslationWebViewHandler: can't load dateFormats json")
+                    subscriber(.failure(Error.cantFindFile))
+                    return Disposables.create()
+                }
+
+                let encodedSchema = WebViewEncoder.encodeForJavascript(schemaData)
+                let encodedFormats = WebViewEncoder.encodeForJavascript(dateFormatData)
+
+                DDLogInfo("TranslationWebViewHandler: loaded bundled files")
+
+                subscriber(.success((encodedSchema, encodedFormats)))
+
                 return Disposables.create()
             }
-
-            guard let dateFormatsUrl = Bundle.main.url(forResource: "dateFormats", withExtension: "json", subdirectory: "translation/translate/modules/utilities/resource"),
-                  let dateFormatData = try? Data(contentsOf: dateFormatsUrl) else {
-                DDLogError("WebViewHandler: can't load dateFormats json")
-                subscriber(.failure(Error.cantFindFile))
-                return Disposables.create()
-            }
-
-            let encodedSchema = WebViewEncoder.encodeForJavascript(schemaData)
-            let encodedFormats = WebViewEncoder.encodeForJavascript(dateFormatData)
-
-            DDLogInfo("WebViewHandler: loaded bundled files")
-
-            subscriber(.success((encodedSchema, encodedFormats)))
-
-            return Disposables.create()
         }
     }
 
     /// Sends selected item back to `webView`.
     /// - parameter item: Selected item by the user.
     func selectItem(_ item: (String, String)) {
-        guard let messageId = self.itemSelectionMessageId else { return }
+        guard let messageId = itemSelectionMessageId else { return }
         let (key, value) = item
-        self.webViewHandler.sendMessaging(response: [key: value], for: messageId)
-        self.itemSelectionMessageId = nil
-    }
-
-    private func loadIndex() -> Single<()> {
-        guard let indexUrl = Bundle.main.url(forResource: "index", withExtension: "html", subdirectory: "translation") else {
-            return Single.error(Error.cantFindFile)
-        }
-        return self.webViewHandler.load(fileUrl: indexUrl)
+        sendMessaging(response: [key: value], for: messageId)
+        itemSelectionMessageId = nil
     }
 
     // MARK: - Messaging
@@ -205,33 +203,31 @@ final class TranslationWebViewHandler {
 
         switch handler {
         case .request:
-            guard let body = body as? [String: Any],
-                  let messageId = body["messageId"] as? Int else {
+            guard let body = body as? [String: Any], let messageId = body["messageId"] as? Int else {
                 DDLogError("TranslationWebViewHandler: request missing body - \(body)")
                 return
             }
 
             if let options = body["payload"] as? [String: Any] {
                 do {
-                    try self.webViewHandler.sendRequest(with: options, for: messageId)
+                    try sendRequest(with: options, for: messageId)
                 } catch let error {
                     DDLogError("TranslationWebViewHandler: send request error \(error)")
-                    self.observable.on(.error(Error.noSuccessfulTranslators))
+                    observable.on(.error(Error.noSuccessfulTranslators))
                 }
             } else {
                 DDLogError("TranslationWebViewHandler: request missing payload - \(body)")
-                self.webViewHandler.sendMessaging(error: "HTTP request missing payload", for: messageId)
+                sendMessaging(error: "HTTP request missing payload", for: messageId)
             }
 
         case .itemSelection:
-            guard let body = body as? [String: Any],
-                  let messageId = body["messageId"] as? Int else {
+            guard let body = body as? [String: Any], let messageId = body["messageId"] as? Int else {
                 DDLogError("TranslationWebViewHandler: item selection missing body - \(body)")
                 return
             }
 
             if let payload = body["payload"] as? [[String]] {
-                self.itemSelectionMessageId = messageId
+                itemSelectionMessageId = messageId
 
                 var sortedDictionary: [(String, String)] = []
                 for data in payload {
@@ -239,37 +235,37 @@ final class TranslationWebViewHandler {
                     sortedDictionary.append((data[0], data[1]))
                 }
 
-                self.observable.on(.next(.selectItem(sortedDictionary)))
+                observable.on(.next(.selectItem(sortedDictionary)))
             } else {
                 DDLogError("TranslationWebViewHandler: item selection missing payload - \(body)")
-                self.webViewHandler.sendMessaging(error: "Item selection missing payload", for: messageId)
+                sendMessaging(error: "Item selection missing payload", for: messageId)
             }
 
         case .item:
             if let info = body as? [[String: Any]] {
-                self.observable.on(.next(.loadedItems(data: info, cookies: self.webViewHandler.cookies, userAgent: self.webViewHandler.userAgent, referrer: self.webViewHandler.referer)))
+                observable.on(.next(.loadedItems(data: info, cookies: cookies, userAgent: userAgent, referrer: referer)))
             } else {
                 DDLogError("TranslationWebViewHandler: got incompatible body - \(body)")
-                self.observable.on(.error(Error.incompatibleItem))
+                observable.on(.error(Error.incompatibleItem))
             }
 
         case .progress:
             if let progress = body as? String {
                 if progress == "item_selection" {
-                    self.observable.on(.next(.reportProgress(L10n.Shareext.Translation.itemSelection)))
+                    observable.on(.next(.reportProgress(L10n.Shareext.Translation.itemSelection)))
                 } else if progress.starts(with: "translating_with_") {
                     let name = progress[progress.index(progress.startIndex, offsetBy: 17)..<progress.endIndex]
-                    self.observable.on(.next(.reportProgress(L10n.Shareext.Translation.translatingWith(name))))
+                    observable.on(.next(.reportProgress(L10n.Shareext.Translation.translatingWith(name))))
                 } else {
-                    self.observable.on(.next(.reportProgress(progress)))
+                    observable.on(.next(.reportProgress(progress)))
                 }
             }
 
         case .saveAsWeb:
-            self.observable.on(.error(Error.noSuccessfulTranslators))
+            observable.on(.error(Error.noSuccessfulTranslators))
 
         case .log:
-            DDLogInfo("JSLOG: \(body)")
+            DDLogInfo("TranslationWebViewHandler: JSLOG - \(body)")
         }
     }
 }
