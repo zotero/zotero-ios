@@ -396,10 +396,10 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
         guard let object = viewModel.state.snapshot.object(for: key) else { return }
         var data = viewModel.state.itemDataCache[key] ?? TrashState.ItemData(title: nil, accessory: nil)
         if data.title == nil {
-            data = data.copy(withTitle: htmlAttributedStringConverter.convert(text: object.displayTitle, baseAttributes: [.font: viewModel.state.titleFont]))
+            data = data.copyWithTitle(htmlAttributedStringConverter.convert(text: object.displayTitle, baseAttributes: [.font: viewModel.state.titleFont]))
         }
         if data.accessory == nil, let item = object as? RItem, let accessory = ItemAccessory.create(from: item, fileStorage: fileStorage, urlDetector: urlDetector) {
-            data = data.copy(withAccessory: accessory)
+            data = data.copyWithAccessory(accessory)
         }
         update(viewModel: viewModel) { state in
             state.itemDataCache[key] = data
@@ -503,7 +503,7 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
             DDLogInfo("TrashActionHandler: download update \(attachment.key); \(attachment.libraryId); kind \(downloadUpdate.kind)")
             guard let updatedAttachment = attachment.changed(location: .local, compressed: compressed) else { return }
             updateViewModel { state in
-                state.itemDataCache[updateKey] = itemData.copy(withAccessory: .attachment(attachment: updatedAttachment, parentKey: downloadUpdate.parentKey))
+                state.itemDataCache[updateKey] = itemData.copyWithAccessory(.attachment(attachment: updatedAttachment, parentKey: downloadUpdate.parentKey))
                 state.updateItemKey = updateKey
             }
 
@@ -581,7 +581,7 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
                         let data = state.itemDataCache[trashKey],
                         let newAccessory = data.accessory?.updatedAttachment(update: { attachment in attachment.changed(location: .remote, condition: { $0 == .local }) })
                     else { continue }
-                    state.itemDataCache[trashKey] = data.copy(withAccessory: newAccessory)
+                    state.itemDataCache[trashKey] = data.copyWithAccessory(newAccessory)
                 }
             } else {
                 for (key, data) in state.itemDataCache {
@@ -589,7 +589,7 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
                         key.type == .item,
                         let newAccessory = data.accessory?.updatedAttachment(update: { attachment in attachment.changed(location: .remote, condition: { $0 == .local }) })
                     else { continue }
-                    state.itemDataCache[key] = data.copy(withAccessory: newAccessory)
+                    state.itemDataCache[key] = data.copyWithAccessory(newAccessory)
                 }
             }
         }
