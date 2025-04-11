@@ -59,11 +59,11 @@ struct TrashState: ViewModelState {
         let title: NSAttributedString?
         let accessory: ItemAccessory?
 
-        func copy(with title: NSAttributedString?) -> ItemData {
+        func copy(withTitle title: NSAttributedString?) -> ItemData {
             return ItemData(title: title, accessory: accessory)
         }
 
-        func copy(with accessory: ItemAccessory?) -> ItemData {
+        func copy(withAccessory accessory: ItemAccessory?) -> ItemData {
             return ItemData(title: title, accessory: accessory)
         }
     }
