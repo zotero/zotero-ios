@@ -396,10 +396,12 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
         guard let object = viewModel.state.snapshot.object(for: key) else { return }
         var data = viewModel.state.itemDataCache[key] ?? TrashState.ItemData(title: nil, accessory: nil)
         if data.title == nil {
-            data = data.copyWithTitle(htmlAttributedStringConverter.convert(text: object.displayTitle, baseAttributes: [.font: viewModel.state.titleFont]))
+            let newData = data.copyWithTitle(htmlAttributedStringConverter.convert(text: object.displayTitle, baseAttributes: [.font: viewModel.state.titleFont]))
+            data = newData
         }
         if data.accessory == nil, let item = object as? RItem, let accessory = ItemAccessory.create(from: item, fileStorage: fileStorage, urlDetector: urlDetector) {
-            data = data.copyWithAccessory(accessory)
+            let newData = data.copyWithAccessory(accessory)
+            data = newData
         }
         update(viewModel: viewModel) { state in
             state.itemDataCache[key] = data
