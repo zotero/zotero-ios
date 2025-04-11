@@ -58,14 +58,6 @@ struct TrashState: ViewModelState {
     struct ItemData {
         let title: NSAttributedString?
         let accessory: ItemAccessory?
-
-        func copyWithTitle(_ title: NSAttributedString?) -> ItemData {
-            return ItemData(title: title, accessory: accessory)
-        }
-
-        func copyWithAccessory(_ accessory: ItemAccessory?) -> ItemData {
-            return ItemData(title: title, accessory: accessory)
-        }
     }
 
     struct Changes: OptionSet {
