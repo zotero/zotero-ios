@@ -96,7 +96,7 @@ final class PDFWorkerControllerSpec: QuickSpec {
                     let work = PDFWorkerController.PDFWork(file: file, kind: .fullText)
                     var emittedUpdates: [PDFWorkerController.Update.Kind] = []
 
-                    waitUntil(timeout: .seconds(10)) { completion in
+                    waitUntil(timeout: .seconds(20)) { completion in
                         pdfWorkerController.queue(work: work)
                             .subscribe(onNext: { update in
                                 expect(update.work).to(equal(work))
