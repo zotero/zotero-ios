@@ -118,9 +118,9 @@ struct Files {
         return FileData(rootPath: Files.appGroupPath, relativeComponents: ["styles"], name: name, ext: "csl")
     }
 
-    #if MAINAPP
-
     // MARK: - PDF
+
+    #if MAINAPP
 
     static func pdfToShare(filename: String, key: String) -> File {
         let (name, ext) = self.split(filename: filename)
@@ -150,11 +150,15 @@ struct Files {
         return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["thumbnails", libraryId.folderName])
     }
 
+    #endif
+
     static var pageThumbnails: File {
         return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["thumbnails"])
     }
 
     // MARK: - Annotations
+
+    #if MAINAPP
 
     static func annotationPreview(annotationKey: String, pdfKey: String, libraryId: LibraryIdentifier, appearance: Appearance) -> File {
         let nameSuffix: String
@@ -184,11 +188,11 @@ struct Files {
         return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["annotations", libraryId.folderName])
     }
 
+    #endif
+
     static var annotationPreviews: File {
         return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["annotations"])
     }
-
-    #endif
 
     // MARK: - Share extension
 

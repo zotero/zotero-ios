@@ -287,7 +287,7 @@ final class PDFDocumentViewController: UIViewController {
                 deselectAnnotation(pdfController: pdfController)
             }
 
-            showPopupAnnotationIfNeeded(state: state, pdfController: pdfController)
+            showPopupAnnotationIfNeeded(state: state)
         }
 
         if state.changes.contains(.visiblePageFromThumbnailList) {
@@ -1187,3 +1187,5 @@ extension PDFDocumentViewController: PSPDFKitUI.ScrubberBarDelegate {
         pdfController.backForwardList.register(PSPDFKit.GoToAction(pageIndex: currentPageIndex))
     }
 }
+
+extension PDFDocumentViewController: ParentWithSidebarDocumentController {}

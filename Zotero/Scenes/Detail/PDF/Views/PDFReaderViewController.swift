@@ -21,7 +21,7 @@ protocol PDFReaderContainerDelegate: AnyObject {
     func showSearch(pdfController: PDFViewController, text: String?)
 }
 
-class PDFReaderViewController: UIViewController, ParentWithSidebarController {
+class PDFReaderViewController: UIViewController {
     typealias DocumentController = PDFDocumentViewController
     typealias SidebarController = PDFSidebarViewController
 
@@ -962,3 +962,5 @@ extension PDFReaderViewController: PDFSearchDelegate {
 }
 
 extension PDFReaderViewController: IntraDocumentNavigationButtonsHandlerDelegate { }
+
+extension PDFReaderViewController: ParentWithSidebarController {}
