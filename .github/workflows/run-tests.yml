@@ -14,8 +14,8 @@ jobs:
     runs-on: macos-15
     strategy:
       matrix:
-        xcode: ["16.1"]
-        ios_version: ["18.1"]
+        xcode: ["16.3"]
+        ios_version: ["18.4"]
         device_name: ["iPhone 16"]
         
     steps:
@@ -29,6 +29,11 @@ jobs:
 
       - name: Install SwiftLint
         run: which swiftlint || HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew install swiftlint
+
+      - name: Install NVM
+        run: |
+          export NVM_DIR="$HOME/.nvm"
+          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.2/install.sh | bash
 
       - name: Select Xcode ${{ matrix.xcode }}
         uses: maxim-lobanov/setup-xcode@v1
