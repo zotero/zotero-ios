@@ -43,8 +43,9 @@ final class Controllers {
     private var didInitialize: Bool
     @UserDefault(key: "BaseKeyNeedsMigrationToPosition", defaultValue: true)
     fileprivate var needsBaseKeyMigration: Bool
-    @UserDefault(key: "ChildItemsNeedFixingCollections", defaultValue: true)
-    fileprivate var needsChildItemCollectionsFix: Bool
+    fileprivate static let childItemCollectionsFixVersion: Int = 1
+    @UserDefault(key: "ChildItemCollectionsFixCurrentVersion", defaultValue: 0)
+    fileprivate var childItemCollectionsFixCurrentVersion: Int
     @UserDefault(key: "EmptyNoteTitlesNeedFixing", defaultValue: true)
     fileprivate var needsEmptyNoteTitleFix: Bool
     @UserDefault(key: "SchemaDatasetFieldIssueFix", defaultValue: true)
@@ -343,9 +344,9 @@ final class UserControllers {
                 try coordinator.perform(request: MigrateBaseKeysToPositionFieldDbAction())
                 controllers?.needsBaseKeyMigration = false
             }
-            if controllers?.needsChildItemCollectionsFix == true {
+            if (controllers?.childItemCollectionsFixCurrentVersion ?? 0) < Controllers.childItemCollectionsFixVersion {
                 try coordinator.perform(request: FixChildItemsWithCollectionsDbRequest())
-                controllers?.needsChildItemCollectionsFix = false
+                controllers?.childItemCollectionsFixCurrentVersion = Controllers.childItemCollectionsFixVersion
             }
             if controllers?.needsEmptyNoteTitleFix == true {
                 try coordinator.perform(request: FixNotesWithEmptyTitlesDbRequest())
