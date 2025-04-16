@@ -171,8 +171,8 @@ class PDFReaderViewController: UIViewController {
         }
         if intraDocumentNavigationHandler?.showsForwardButton == true {
             keyCommands += [
-                .init(title: L10n.back, action: #selector(performForwardAction), input: "]", modifierFlags: [.command]),
-                .init(title: L10n.back, action: #selector(performForwardAction), input: UIKeyCommand.inputRightArrow, modifierFlags: [.command])
+                .init(title: L10n.forward, action: #selector(performForwardAction), input: "]", modifierFlags: [.command]),
+                .init(title: L10n.forward, action: #selector(performForwardAction), input: UIKeyCommand.inputRightArrow, modifierFlags: [.command])
             ]
         }
         return keyCommands
