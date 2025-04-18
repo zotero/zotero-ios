@@ -49,6 +49,10 @@ class HtmlEpubAnnotationsViewController: UIViewController {
             deletionEnabled: viewModel.state.deletionEnabled
         )
 
+        if !viewModel.state.annotations.isEmpty {
+            reloadAnnotations(for: viewModel.state)
+        }
+
         func setupObserving() {
             viewModel.stateObservable
                 .observe(on: MainScheduler.instance)
@@ -205,17 +209,7 @@ class HtmlEpubAnnotationsViewController: UIViewController {
         /// - parameter completion: Called after reload was performed or even if there was no reload.
         func reloadIfNeeded(for state: HtmlEpubReaderState, completion: @escaping () -> Void) {
             if state.changes.contains(.annotations) {
-                var snapshot = NSDiffableDataSourceSnapshot<Int, String>()
-                snapshot.appendSections([0])
-                snapshot.appendItems(state.sortedKeys)
-                if let keys = state.updatedAnnotationKeys {
-                    snapshot.reloadItems(keys)
-                }
-                let isVisible = parentDelegate?.isSidebarVisible ?? false
-                if state.changes.contains(.sidebarEditing) {
-                    tableView.setEditing(state.sidebarEditingEnabled, animated: isVisible)
-                }
-                dataSource.apply(snapshot, animatingDifferences: isVisible, completion: completion)
+                reloadAnnotations(for: state, completion: completion)
                 return
             }
 
@@ -252,6 +246,20 @@ class HtmlEpubAnnotationsViewController: UIViewController {
 
             completion()
         }
+    }
+
+    private func reloadAnnotations(for state: HtmlEpubReaderState, completion: (() -> Void)? = nil) {
+        var snapshot = NSDiffableDataSourceSnapshot<Int, String>()
+        snapshot.appendSections([0])
+        snapshot.appendItems(state.sortedKeys)
+        if let keys = state.updatedAnnotationKeys {
+            snapshot.reloadItems(keys)
+        }
+        let isVisible = parentDelegate?.isSidebarVisible ?? false
+        if state.changes.contains(.sidebarEditing) {
+            tableView.setEditing(state.sidebarEditingEnabled, animated: isVisible)
+        }
+        dataSource.apply(snapshot, animatingDifferences: isVisible, completion: completion)
     }
 
     func perform(action: AnnotationView.Action, annotation: HtmlEpubAnnotation) {
