@@ -331,7 +331,7 @@ final class ShareViewController: UIViewController {
 
     private func setItem(title: String, type: String) {
         self.itemTitleLabel.text = title
-        self.itemIcon.image = UIImage(named: ItemTypes.iconName(for: type, contentType: nil))
+        self.itemIcon.image = UIImage(named: ItemTypes.iconName(for: type))
     }
 
     private func setAttachment(title: String, file: File, state: ExtensionViewModel.State.AttachmentState) {
