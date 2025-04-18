@@ -16,3 +16,6 @@
 [submodule "utilities"]
 	path = utilities
 	url = https://github.com/zotero/utilities.git
+[submodule "pdf-worker"]
+	path = pdf-worker
+	url = https://github.com/zotero/pdf-worker

@@ -508,6 +508,13 @@ struct CreatorResponse {
     let lastName: String?
     let name: String?
 
+    init(creatorType: String, firstName: String? = nil, lastName: String? = nil, name: String? = nil) {
+        self.creatorType = creatorType
+        self.firstName = firstName
+        self.lastName = lastName
+        self.name = name
+    }
+
     init(response: [String: Any]) throws {
         self.creatorType = try response.apiGet(key: "creatorType", caller: Self.self)
         self.firstName = response["firstName"] as? String

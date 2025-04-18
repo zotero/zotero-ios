@@ -28,6 +28,12 @@ struct FieldKeys {
         static let url = "url"
         static let accessDate = "accessDate"
         static let extra = "extra"
+        static let language = "language"
+        static let pages = "pages"
+        static let volume = "volume"
+        static let issue = "issue"
+        static let issn = "issn"
+        static let bookTitle = "bookTitle"
 
         struct Attachment {
             static let linkMode = "linkMode"

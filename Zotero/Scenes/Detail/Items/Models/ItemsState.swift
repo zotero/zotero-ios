@@ -83,6 +83,16 @@ struct ItemsState: ViewModelState {
         }
     }
 
+    struct ItemUpdate {
+        enum Kind {
+            case accessory
+            case subtitle(ItemCellModel.Subtitle?)
+        }
+
+        let key: String
+        let kind: Kind
+    }
+
     let collection: Collection
 
     var library: Library
@@ -102,8 +112,8 @@ struct ItemsState: ViewModelState {
     var changes: Changes
     var error: ItemsError?
     var itemKeyToDuplicate: String?
-    // Used to indicate which row should update it's attachment view. The update is done directly to cell instead of tableView reload.
-    var updateItemKey: String?
+    // Used to indicate which row should update directly a cell element (e.g. attachment view). The update is done directly to cell instead of tableView reload.
+    var updateItem: ItemUpdate?
     var attachmentToOpen: String?
     var downloadBatchData: DownloadBatchData?
     var remoteDownloadBatchData: DownloadBatchData?
@@ -152,6 +162,6 @@ struct ItemsState: ViewModelState {
         error = nil
         changes = []
         itemKeyToDuplicate = nil
-        updateItemKey = nil
+        updateItem = nil
     }
 }
