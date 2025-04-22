@@ -948,7 +948,16 @@ extension PDFDocumentViewController: UIPencilInteractionDelegate {
 
     @available(iOS 17.5, *)
     func pencilInteraction(_ interaction: UIPencilInteraction, didReceiveSqueeze squeeze: UIPencilInteraction.Squeeze) {
-        process(action: UIPencilInteraction.preferredTapAction)
+        switch squeeze.phase {
+        case .ended:
+            process(action: UIPencilInteraction.preferredSqueezeAction)
+
+        case .began, .changed, .cancelled:
+            break
+
+        @unknown default:
+            break
+        }
     }
 }
 
