@@ -74,6 +74,7 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
             self.webDavController.resetVerification()
 
         case .verify:
+            trimURLIfNeeded(in: viewModel)
             self.verify(tryCreatingZoteroDir: false, in: viewModel)
 
         case .cancelVerification:
@@ -89,6 +90,9 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
             }
             self.observeSyncIssues(in: viewModel)
             self.syncScheduler.request(sync: .keysOnly, libraries: .all)
+
+        case .dismiss:
+            trimURLIfNeeded(in: viewModel)
         }
     }
 
@@ -274,5 +278,11 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
             state.webDavVerificationResult = .failure(error)
             state.isVerifyingWebDav = false
         }
+    }
+
+    private func trimURLIfNeeded(in viewModel: ViewModel<SyncSettingsActionHandler>) {
+        let trimmedURL = viewModel.state.url.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmedURL != viewModel.state.url else { return }
+        set(url: trimmedURL, in: viewModel)
     }
 }

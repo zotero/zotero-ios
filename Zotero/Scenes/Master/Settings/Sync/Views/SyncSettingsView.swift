@@ -53,6 +53,9 @@ struct SyncSettingsView: View {
             }
         }
         .navigationBarTitle(L10n.Settings.Sync.title)
+        .onDisappear {
+            viewModel.process(action: .dismiss)
+        }
     }
 
     private var fileSyncSection: some View {
