@@ -163,13 +163,13 @@ class PDFReaderViewController: UIViewController {
         var keyCommands: [UIKeyCommand] = [
             .init(title: L10n.Pdf.Search.title, action: #selector(search), input: "f", modifierFlags: [.command])
         ]
-        if intraDocumentNavigationHandler?.showsBackButton == true {
+        if intraDocumentNavigationHandler?.hasBackActions == true {
             keyCommands += [
                 .init(title: L10n.back, action: #selector(performBackAction), input: "[", modifierFlags: [.command]),
                 .init(title: L10n.back, action: #selector(performBackAction), input: UIKeyCommand.inputLeftArrow, modifierFlags: [.command])
             ]
         }
-        if intraDocumentNavigationHandler?.showsForwardButton == true {
+        if intraDocumentNavigationHandler?.hasForwardActions == true {
             keyCommands += [
                 .init(title: L10n.forward, action: #selector(performForwardAction), input: "]", modifierFlags: [.command]),
                 .init(title: L10n.forward, action: #selector(performForwardAction), input: UIKeyCommand.inputRightArrow, modifierFlags: [.command])
@@ -938,6 +938,7 @@ extension PDFReaderViewController: PDFDocumentDelegate {
         }
 
         statusBarVisible = !isHidden
+        intraDocumentNavigationHandler?.isHidden = isHidden
         annotationToolbarHandler.interfaceVisibilityDidChange()
 
         UIView.animate(withDuration: 0.15, animations: { [weak self] in
@@ -956,8 +957,8 @@ extension PDFReaderViewController: PDFDocumentDelegate {
         }
     }
 
-    func navigationButtonsChanged(backVisible: Bool, forwardVisible: Bool) {
-        intraDocumentNavigationHandler?.set(backButtonVisible: backVisible, forwardButtonVisible: forwardVisible)
+    func navigationButtonsChanged(hasBackActions: Bool, hasForwardActions: Bool) {
+        intraDocumentNavigationHandler?.set(hasBackActions: hasBackActions, hasForwardActions: hasForwardActions)
     }
 
     func didSelectText(_ text: String) {

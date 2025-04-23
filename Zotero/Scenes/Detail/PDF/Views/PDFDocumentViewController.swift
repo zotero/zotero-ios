@@ -25,7 +25,7 @@ protocol PDFDocumentDelegate: AnyObject {
     func didChange(undoState undoEnabled: Bool, redoState redoEnabled: Bool)
     func interfaceVisibilityDidChange(to isHidden: Bool)
     func showToolOptions()
-    func navigationButtonsChanged(backVisible: Bool, forwardVisible: Bool)
+    func navigationButtonsChanged(hasBackActions: Bool, hasForwardActions: Bool)
     func didSelectText(_ text: String)
 }
 
@@ -884,7 +884,7 @@ extension PDFDocumentViewController: BackForwardActionListDelegate {
 
     func backForwardListDidUpdate(_ list: PSPDFKit.BackForwardActionList) {
         pdfController?.backForwardListDidUpdate(list)
-        parentDelegate?.navigationButtonsChanged(backVisible: list.backAction != nil, forwardVisible: list.forwardAction != nil)
+        parentDelegate?.navigationButtonsChanged(hasBackActions: list.backAction != nil, hasForwardActions: list.forwardAction != nil)
     }
 }
 
