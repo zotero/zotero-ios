@@ -369,10 +369,11 @@ class HtmlEpubReaderViewController: UIViewController, ParentWithSidebarControlle
                 if state.changes.contains(.tags) {
                     viewModel.process(action: .setTags(key: key, tags: state.tags))
                 }
-                if state.changes.contains(.pageLabel) || state.changes.contains(.highlight) {
+                if state.changes.contains(.pageLabel) || state.changes.contains(.highlight) || state.changes.contains(.type) {
                     viewModel.process(action:
                         .updateAnnotationProperties(
                             key: key,
+                            type: state.type,
                             color: state.color,
                             lineWidth: state.lineWidth,
                             pageLabel: state.pageLabel,

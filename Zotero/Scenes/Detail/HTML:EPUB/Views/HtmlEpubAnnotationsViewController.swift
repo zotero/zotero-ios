@@ -294,6 +294,7 @@ class HtmlEpubAnnotationsViewController: UIViewController {
                     self?.viewModel.process(
                         action: .updateAnnotationProperties(
                             key: key,
+                            type: data.type,
                             color: data.color,
                             lineWidth: data.lineWidth,
                             pageLabel: data.pageLabel,

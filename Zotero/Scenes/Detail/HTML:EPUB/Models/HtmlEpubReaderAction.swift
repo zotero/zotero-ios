@@ -39,6 +39,6 @@ enum HtmlEpubReaderAction {
     case setViewState([String: Any])
     case showAnnotationPopover(key: String, rect: CGRect)
     case toggleTool(AnnotationTool)
-    case updateAnnotationProperties(key: String, color: String, lineWidth: CGFloat, pageLabel: String, updateSubsequentLabels: Bool, highlightText: NSAttributedString)
+    case updateAnnotationProperties(key: String, type: AnnotationType, color: String, lineWidth: CGFloat, pageLabel: String, updateSubsequentLabels: Bool, highlightText: NSAttributedString)
     case userInterfaceStyleChanged(UIUserInterfaceStyle)
 }

@@ -109,8 +109,8 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         case .parseAndCacheText(let key, let text, let font):
             updateTextCache(key: key, text: text, font: font, viewModel: viewModel)
 
-        case .updateAnnotationProperties(let key, let color, let lineWidth, let pageLabel, let updateSubsequentLabels, let highlightText):
-            set(color: color, lineWidth: lineWidth, pageLabel: pageLabel, updateSubsequentLabels: updateSubsequentLabels, highlightText: highlightText, key: key, viewModel: viewModel)
+        case .updateAnnotationProperties(let key, let type, let color, let lineWidth, let pageLabel, let updateSubsequentLabels, let highlightText):
+            set(type: type, color: color, lineWidth: lineWidth, pageLabel: pageLabel, updateSubsequentLabels: updateSubsequentLabels, highlightText: highlightText, key: key, viewModel: viewModel)
 
         case .setColor(key: let key, color: let color):
             set(color: color, key: key, viewModel: viewModel)
@@ -347,6 +347,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
     }
 
     private func set(
+        type: AnnotationType,
         color: String,
         lineWidth: CGFloat,
         pageLabel: String,
@@ -357,6 +358,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
     ) {
         let text = htmlAttributedStringConverter.convert(attributedString: highlightText)
         let values = [
+            KeyBaseKeyPair(key: FieldKeys.Item.Annotation.type, baseKey: nil): type.rawValue,
             KeyBaseKeyPair(key: FieldKeys.Item.Annotation.pageLabel, baseKey: nil): pageLabel,
             KeyBaseKeyPair(key: FieldKeys.Item.Annotation.text, baseKey: nil): text,
             KeyBaseKeyPair(key: FieldKeys.Item.Annotation.color, baseKey: nil): color,
