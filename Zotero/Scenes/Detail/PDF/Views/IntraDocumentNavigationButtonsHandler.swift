@@ -29,6 +29,13 @@ final class IntraDocumentNavigationButtonsHandler {
     var showsForwardButton: Bool {
         forwardButton.isHidden == false
     }
+    private(set) var hasBackActions: Bool = false
+    private(set) var hasForwardActions: Bool = false
+    var isHidden: Bool = true {
+        didSet {
+            updateVisibility()
+        }
+    }
 
     init(back: @escaping () -> Void, forward: @escaping () -> Void, delegate: IntraDocumentNavigationButtonsHandlerDelegate) {
         self.back = back
@@ -36,9 +43,15 @@ final class IntraDocumentNavigationButtonsHandler {
         self.delegate = delegate
     }
 
-    func set(backButtonVisible: Bool, forwardButtonVisible: Bool) {
-        backButton.isHidden = !backButtonVisible
-        forwardButton.isHidden = !forwardButtonVisible
+    func set(hasBackActions: Bool, hasForwardActions: Bool) {
+        self.hasBackActions = hasBackActions
+        self.hasForwardActions = hasForwardActions
+        updateVisibility()
+    }
+
+    private func updateVisibility() {
+        backButton.isHidden = isHidden || !hasBackActions
+        forwardButton.isHidden = isHidden || !hasForwardActions
         backButton.superview?.bringSubviewToFront(backButton)
         forwardButton.superview?.bringSubviewToFront(forwardButton)
     }
@@ -64,7 +77,7 @@ final class IntraDocumentNavigationButtonsHandler {
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setContentHuggingPriority(.defaultHigh, for: .vertical)
         button.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
-        button.isHidden = true
+        button.isHidden = isHidden
         button.addAction(action, for: .touchUpInside)
         return button
     }
