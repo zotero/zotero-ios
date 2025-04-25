@@ -6,6 +6,7 @@
 //  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import AVFoundation
 import AVKit
 import MobileCoreServices
 import UIKit
@@ -86,6 +87,7 @@ final class DetailCoordinator: Coordinator {
     private var transitionDelegate: EmptyTransitioningDelegate?
     weak var itemsTagFilterDelegate: ItemsTagFilterDelegate?
     weak var navigationController: UINavigationController?
+    private var tmpAudioDelegate: AVPlayerDelegate?
 
     let collection: Collection
     let libraryId: LibraryIdentifier
@@ -274,10 +276,26 @@ final class DetailCoordinator: Coordinator {
     }
 
     private func showVideo(for url: URL) {
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch let error {
+            DDLogError("DetailCoordinator: can't set audio session - \(error)")
+        }
+
+        let delegate = AVPlayerDelegate { [weak self] in
+            try? AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
+            self?.tmpAudioDelegate = nil
+        }
+        tmpAudioDelegate = delegate
+
         let player = AVPlayer(url: url)
         let controller = AVPlayerViewController()
+        controller.delegate = delegate
+        controller.allowsPictureInPicturePlayback = true
+        controller.canStartPictureInPictureAutomaticallyFromInline = true
         controller.player = player
-        self.navigationController?.present(controller, animated: true) {
+        navigationController?.present(controller, animated: true) {
             player.play()
         }
     }
@@ -1059,3 +1077,18 @@ extension DetailCoordinator: DetailCitationCoordinatorDelegate {
 }
 
 extension DetailCoordinator: DetailCopyBibliographyCoordinatorDelegate { }
+
+// swiftlint:disable private_over_fileprivate
+fileprivate class AVPlayerDelegate: NSObject, AVPlayerViewControllerDelegate {
+    private var dismissBlock: () -> Void
+
+    init(dismissBlock: @escaping () -> Void) {
+        self.dismissBlock = dismissBlock
+        super.init()
+    }
+
+    func playerViewController(_ playerViewController: AVPlayerViewController, willEndFullScreenPresentationWithAnimationCoordinator coordinator: any UIViewControllerTransitionCoordinator) {
+        dismissBlock()
+    }
+}
+// swiftlint:enable private_over_fileprivate
