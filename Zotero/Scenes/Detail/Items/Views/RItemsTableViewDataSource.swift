@@ -41,13 +41,15 @@ final class RItemsTableViewDataSource: NSObject {
     private unowned let viewModel: ViewModel<ItemsActionHandler>
     private unowned let schemaController: SchemaController
     private unowned let fileDownloader: AttachmentDownloader?
+    private unowned let recognizerController: RecognizerController?
 
     private var snapshot: Results<RItem>?
     weak var handler: ItemsTableViewHandler?
 
-    init(viewModel: ViewModel<ItemsActionHandler>, fileDownloader: AttachmentDownloader?, schemaController: SchemaController) {
+    init(viewModel: ViewModel<ItemsActionHandler>, fileDownloader: AttachmentDownloader?, recognizerController: RecognizerController?, schemaController: SchemaController) {
         self.viewModel = viewModel
         self.fileDownloader = fileDownloader
+        self.recognizerController = recognizerController
         self.schemaController = schemaController
     }
 
@@ -141,27 +143,39 @@ extension RItemsTableViewDataSource: ItemsTableViewDataSource {
             actions.append(contentsOf: [ItemAction(type: .copyCitation), ItemAction(type: .copyBibliography), ItemAction(type: .share)])
         }
 
+        let attachment = accessory(forKey: item.key)?.attachment
+        let location = attachment?.location
+
         // Add parent creation for standalone attachments
         if item.rawType == ItemTypes.attachment && item.parent == nil {
             actions.append(ItemAction(type: .createParent))
+            if attachment?.file?.mimeType == "application/pdf" {
+                switch location {
+                case .local, .localAndChangedRemotely:
+                    if FeatureGates.enabled.contains(.pdfWorker) {
+                        actions.append(ItemAction(type: .retrieveMetadata))
+                    }
+
+                case .none, .remote, .remoteMissing:
+                    break
+                }
+            }
         }
 
         // Add download/remove downloaded option for attachments
-        if let accessory = accessory(forKey: item.key), let location = accessory.attachment?.location {
-            switch location {
-            case .local:
-                actions.append(ItemAction(type: .removeDownload))
+        switch location {
+        case .local:
+            actions.append(ItemAction(type: .removeDownload))
 
-            case .remote:
-                actions.append(ItemAction(type: .download))
+        case .remote:
+            actions.append(ItemAction(type: .download))
 
-            case .localAndChangedRemotely:
-                actions.append(ItemAction(type: .download))
-                actions.append(ItemAction(type: .removeDownload))
+        case .localAndChangedRemotely:
+            actions.append(ItemAction(type: .download))
+            actions.append(ItemAction(type: .removeDownload))
 
-            case .remoteMissing:
-                break
-            }
+        case .none, .remoteMissing:
+            break
         }
 
         guard viewModel.state.library.metadataEditable else { return actions }
@@ -219,7 +233,7 @@ extension RItemsTableViewDataSource {
             let title = createTitleIfNeeded()
             let accessory = accessory(forKey: item.key)
             let typeName = schemaController.localized(itemType: item.rawType) ?? item.rawType
-            return ItemCellModel(item: item, typeName: typeName, title: title, accessory: accessory, fileDownloader: fileDownloader)
+            return ItemCellModel(item: item, typeName: typeName, title: title, accessory: accessory, fileDownloader: fileDownloader, recognizerController: recognizerController)
 
             func createTitleIfNeeded() -> NSAttributedString {
                 if let title = viewModel.state.itemTitles[item.key] {

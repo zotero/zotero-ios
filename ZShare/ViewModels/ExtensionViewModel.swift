@@ -204,14 +204,24 @@ final class ExtensionViewModel {
                 }
             }
 
-            init(item: ItemResponse, attachmentKey: String, attachmentData: [String: Any], attachmentFile: File, linkType: Attachment.FileLinkType, defaultTitle: String, libraryId: LibraryIdentifier,
-                 userId: Int, dateParser: DateParser) {
+            init(
+                item: ItemResponse,
+                attachmentTitle: String?,
+                attachmentKey: String,
+                attachmentData: [String: Any],
+                attachmentFile: File,
+                linkType: Attachment.FileLinkType,
+                defaultTitle: String,
+                libraryId: LibraryIdentifier,
+                userId: Int,
+                dateParser: DateParser
+            ) {
                 let url = attachmentData[FieldKeys.Item.url] as? String
                 let filename = FilenameFormatter.filename(from: item, defaultTitle: defaultTitle, ext: attachmentFile.ext, dateParser: dateParser)
                 let file = Files.attachmentFile(in: libraryId, key: attachmentKey, filename: filename, contentType: attachmentFile.mimeType)
                 let attachment = Attachment(
                     type: .file(filename: filename, contentType: attachmentFile.mimeType, location: .local, linkType: linkType, compressed: false),
-                    title: filename,
+                    title: attachmentTitle ?? filename,
                     url: url,
                     key: attachmentKey,
                     libraryId: libraryId
@@ -315,6 +325,7 @@ final class ExtensionViewModel {
     private let backgroundUploadObserver: BackgroundUploadObserver
     private let backgroundQueue: DispatchQueue
     private let backgroundScheduler: SerialDispatchQueueScheduler
+    private let recognizerController: RecognizerController
     private let disposeBag: DisposeBag
     // Custom `URLSession` has to be used for downloading, instead of existing `apiClient`, so that we can include original cookies in download requests.
     private let downloadUrlSession: URLSession
@@ -325,8 +336,21 @@ final class ExtensionViewModel {
         let mtime: Int
     }
 
-    init(webView: WKWebView, apiClient: ApiClient, attachmentDownloader: AttachmentDownloader, backgroundUploader: BackgroundUploader, backgroundUploadObserver: BackgroundUploadObserver, dbStorage: DbStorage, schemaController: SchemaController,
-         webDavController: WebDavController, dateParser: DateParser, fileStorage: FileStorage, syncController: SyncController, translatorsController: TranslatorsAndStylesController) {
+    init(
+        webView: WKWebView,
+        apiClient: ApiClient,
+        attachmentDownloader: AttachmentDownloader,
+        backgroundUploader: BackgroundUploader,
+        backgroundUploadObserver: BackgroundUploadObserver,
+        dbStorage: DbStorage,
+        schemaController: SchemaController,
+        webDavController: WebDavController,
+        dateParser: DateParser,
+        fileStorage: FileStorage,
+        syncController: SyncController,
+        translatorsController: TranslatorsAndStylesController,
+        recognizerController: RecognizerController
+    ) {
         let queue = DispatchQueue(label: "org.zotero.ZShare.BackgroundQueue", qos: .userInteractive)
 
         let storage = HTTPCookieStorage.sharedCookieStorage(forGroupContainerIdentifier: AppGroup.identifier)
@@ -355,6 +379,7 @@ final class ExtensionViewModel {
         self.translationHandler = TranslationWebViewHandler(webView: webView, translatorsController: translatorsController)
         self.backgroundQueue = queue
         self.backgroundScheduler = SerialDispatchQueueScheduler(queue: queue, internalSerialQueueName: "org.zotero.ZShare.BackgroundScheduler")
+        self.recognizerController = recognizerController
         self.state = State()
         self.disposeBag = DisposeBag()
 
@@ -501,17 +526,57 @@ final class ExtensionViewModel {
         let filename = url.lastPathComponent
         let tmpFile = Files.temporaryFile(ext: url.pathExtension)
 
-        self.copyFile(from: url.path, to: tmpFile)
-            .subscribe(with: self, onSuccess: { `self`, _ in
-                var state = self.state
-                state.processedAttachment = .file(file: tmpFile, filename: filename)
-                state.expectedAttachment = (filename, tmpFile)
-                state.attachmentState = .processed
-                self.state = state
-            }, onFailure: { `self`, _ in
-                self.state.attachmentState = .failed(.fileMissing)
+        copyFile(from: url.path, to: tmpFile)
+            .subscribe(onSuccess: { [weak self] _ in
+                guard let self else { return }
+                guard FeatureGates.enabled.contains(.pdfWorker), fileStorage.isPdf(file: tmpFile), let file = tmpFile as? FileData else {
+                    updateState(with: .processed)
+                    return
+                }
+                recognize(file: file)
+            }, onFailure: { [weak self] _ in
+                self?.state.attachmentState = .failed(.fileMissing)
             })
-            .disposed(by: self.disposeBag)
+            .disposed(by: disposeBag)
+
+        func updateState(with attachmentState: State.AttachmentState) {
+            var state = self.state
+            state.processedAttachment = .file(file: tmpFile, filename: filename)
+            state.expectedAttachment = (filename, tmpFile)
+            state.attachmentState = attachmentState
+            self.state = state
+        }
+
+        func recognize(file: FileData) {
+            recognizerController.queue(task: .init(file: file, kind: .simple))
+                .subscribe { [weak self] update in
+                    guard let self else { return }
+                    switch update.kind {
+                    case .failed(let error):
+                        DDLogError("ExtensionViewModel: could not recognize shared file - \(error)")
+                        updateState(with: .processed)
+
+                    case .cancelled:
+                        updateState(with: .processed)
+
+                    case .inProgress:
+                        updateState(with: .decoding)
+
+                    case .translated(let item):
+                        var state = self.state
+                        state.expectedItem = item
+                        state.expectedAttachment = ("PDF", tmpFile)
+                        state.attachmentState = .processed
+                        // attachment is only used to get an optional URL, so we can safely pass an empty dictionary
+                        state.processedAttachment = .itemWithAttachment(item: item, attachment: [:], attachmentFile: file)
+                        self.state = state
+
+                    case .enqueued, .createdParent:
+                        break
+                    }
+                }
+                .disposed(by: disposeBag)
+        }
     }
 
     private func process(remoteFileUrl url: URL, contentType: String, cookies: String, userAgent: String, referrer: String) {
@@ -1004,6 +1069,7 @@ final class ExtensionViewModel {
                 DDLogInfo("ExtensionViewModel: submit item with attachment")
                 let data = State.UploadData(
                     item: item,
+                    attachmentTitle: fileStorage.isPdf(file: attachmentFile) ? "PDF" : nil,
                     attachmentKey: self.state.attachmentKey,
                     attachmentData: attachmentData,
                     attachmentFile: attachmentFile,

@@ -17,25 +17,30 @@ struct ItemCellModel {
         case url
     }
 
+    struct Subtitle {
+        let text: String
+        let animated: Bool
+    }
+
     let key: String
     let typeIconName: String
     let iconRenderingMode: UIImage.RenderingMode
     let typeName: String
     let title: NSAttributedString
-    let subtitle: String
+    let subtitle: Subtitle?
     let hasNote: Bool
     let tagColors: [UIColor]
     let tagEmojis: [String]
     let accessory: Accessory?
     let hasDetailButton: Bool
 
-    init(item: RItem, typeName: String, title: NSAttributedString, accessory: Accessory?) {
+    init(item: RItem, typeName: String, title: NSAttributedString, subtitle: Subtitle?, accessory: Accessory?) {
         key = item.key
         typeIconName = Self.typeIconName(for: item)
         iconRenderingMode = .alwaysOriginal
         self.typeName = typeName
         self.title = title
-        subtitle = Self.creatorSummary(for: item)
+        self.subtitle = subtitle
         hasNote = Self.hasNote(item: item)
         self.accessory = accessory
         let (colors, emojis) = Self.tagData(item: item)
@@ -44,8 +49,14 @@ struct ItemCellModel {
         hasDetailButton = true
     }
 
-    init(item: RItem, typeName: String, title: NSAttributedString, accessory: ItemAccessory?, fileDownloader: AttachmentDownloader?) {
-        self.init(item: item, typeName: typeName, title: title, accessory: Self.createAccessory(from: accessory, fileDownloader: fileDownloader))
+    init(item: RItem, typeName: String, title: NSAttributedString, accessory: ItemAccessory?, fileDownloader: AttachmentDownloader?, recognizerController: RecognizerController?) {
+        self.init(
+            item: item,
+            typeName: typeName,
+            title: title,
+            subtitle: Self.createSubtitle(for: item, recognizerController: recognizerController),
+            accessory: Self.createAccessory(from: accessory, fileDownloader: fileDownloader)
+        )
     }
 
     init(collectionWithKey key: String, title: NSAttributedString) {
@@ -54,7 +65,7 @@ struct ItemCellModel {
         accessory = nil
         typeIconName = Asset.Images.Cells.collection.name
         iconRenderingMode = .alwaysTemplate
-        subtitle = ""
+        subtitle = nil
         hasNote = false
         tagColors = []
         tagEmojis = []
@@ -122,5 +133,32 @@ struct ItemCellModel {
             result += "(\(item.parsedYear))"
         }
         return result
+    }
+
+    static func createSubtitle(for item: RItem, update: RecognizerController.Update.Kind?) -> Subtitle? {
+        guard item.parent == nil, let update else {
+            return Subtitle(text: creatorSummary(for: item), animated: false)
+        }
+
+        let text: String
+        let animated: Bool
+        switch update {
+        case .failed, .cancelled, .createdParent:
+            text = creatorSummary(for: item)
+            animated = false
+
+        case .enqueued, .inProgress, .translated:
+            text = L10n.Items.retrievingMetadata
+            animated = true
+        }
+        return Subtitle(text: text, animated: animated)
+    }
+
+    static func createSubtitle(for item: RItem, recognizerController: RecognizerController?) -> Subtitle? {
+        guard item.parent == nil, let recognizerController else {
+            return Subtitle(text: creatorSummary(for: item), animated: false)
+        }
+        let update = recognizerController.latestUpdate(for: item.key, libraryId: item.libraryIdentifier)
+        return createSubtitle(for: item, update: update)
     }
 }

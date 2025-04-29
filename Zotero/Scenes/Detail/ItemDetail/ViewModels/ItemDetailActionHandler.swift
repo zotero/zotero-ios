@@ -528,7 +528,7 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
                         state.error = .cantAddAttachments(.allFailedCreation)
                         state.attachments.removeAll(where: { attachment in return attachments.contains(where: { $0.key == attachment.key }) })
 
-                    case .success(let failed):
+                    case .success(let (_, failed)):
                         guard !failed.isEmpty else { return }
                         state.error = .cantAddAttachments(.someFailedCreation(failed.map({ $0.1 })))
                         state.attachments.removeAll(where: { attachment in return failed.contains(where: { $0.0 == attachment.key }) })

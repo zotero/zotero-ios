@@ -10,23 +10,13 @@ import Foundation
 
 struct FilenameFormatter {
     static func filename(from item: ItemResponse, defaultTitle: String, ext: String, dateParser: DateParser) -> String {
-        var filename = ""
+        let filename = [
+            creators(for: item),
+            year(for: item, dateParser: dateParser),
+            String((item.fields[KeyBaseKeyPair(key: FieldKeys.Item.Attachment.title, baseKey: nil)] ?? defaultTitle).prefix(100))
+        ].compactMap({ $0 }).filter({ !$0.isEmpty }).joined(separator: " - ") + "." + ext
 
-        if let creators = self.creators(for: item) {
-            filename = creators
-        }
-
-        if let year = self.year(for: item, dateParser: dateParser) {
-            filename += " - " + year
-        }
-
-        let title = item.fields[KeyBaseKeyPair(key: FieldKeys.Item.Attachment.title, baseKey: nil)] ?? defaultTitle
-
-        if filename.isEmpty {
-            return title + "." + ext
-        }
-
-        return self.validate(filename: filename + " - " + title + "." + ext)
+        return validate(filename: filename)
     }
 
     static func validate(filename: String) -> String {

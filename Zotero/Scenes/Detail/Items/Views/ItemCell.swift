@@ -33,9 +33,15 @@ final class ItemCell: UITableViewCell {
                                 self.selectedBackgroundView?.backgroundColor
     }
 
+    private var subtitleAnimator: UIViewPropertyAnimator?
+    private var subtitlePrefix: String = ""
+    private var subtitleAnimationSuffixDotCount = 0
+
     override func prepareForReuse() {
         super.prepareForReuse()
         self.key = ""
+        subtitlePrefix = ""
+        stopAnimatingSubtitle()
     }
 
     override func awakeFromNib() {
@@ -103,12 +109,10 @@ final class ItemCell: UITableViewCell {
             self.titleLabel.attributedText = item.title
         }
         self.titleLabel.accessibilityLabel = self.titleAccessibilityLabel(for: item)
-        self.subtitleLabel.text = item.subtitle.isEmpty ? " " : item.subtitle
-        self.subtitleLabel.accessibilityLabel = item.subtitle
+        set(subtitle: item.subtitle)
         // The label adds extra horizontal spacing so there is a negative right inset so that the label ends where the text ends exactly.
         // The note icon is rectangular and has 1px white space on each side, so it needs an extra negative pixel when there are no tags.
         self.subtitleLabel.rightInset = item.tagColors.isEmpty ? -2 : -1
-        self.subtitleLabel.isHidden = item.subtitle.isEmpty && (item.hasNote || !item.tagColors.isEmpty)
         self.noteIcon.isHidden = !item.hasNote
         self.noteIcon.isAccessibilityElement = false
 
@@ -149,5 +153,58 @@ final class ItemCell: UITableViewCell {
     private func titleAccessibilityLabel(for item: ItemCellModel) -> String {
         let title = item.title.string.isEmpty ? L10n.Accessibility.untitled : item.title.string
         return item.typeName + ", " + title
+    }
+
+    func set(subtitle: ItemCellModel.Subtitle?) {
+        let text = subtitle?.text ?? ""
+        let animated = subtitle?.animated ?? false
+        subtitlePrefix = text
+        if let subtitleAnimator, subtitleAnimator.isRunning {
+            // Animator is already running.
+            if !animated {
+                // Stop animating subtitle, and the new subtitle prefix will be set in the label.
+                stopAnimatingSubtitle()
+            }
+            // Otherwise do nothing as the animation will use the new subtitle prefix.
+        } else {
+            // Animator is not running. First set new text.
+            subtitleLabel.text = text.isEmpty ? " " : text
+            subtitleLabel.accessibilityLabel = text
+            if !text.isEmpty, animated {
+                // Start animating if needed.
+                startAnimatingSubtitle()
+            }
+        }
+        subtitleLabel.isHidden = text.isEmpty && (!noteIcon.isHidden || !tagCircles.isHidden)
+    }
+
+    private func startAnimatingSubtitle() {
+        subtitleAnimator = UIViewPropertyAnimator(duration: 0.5, curve: .linear) { [weak self] in
+            guard let self else { return }
+            // Reduce subtitle label opacity to create a fade effect.
+            subtitleLabel.alpha = 0.9
+        }
+
+        subtitleAnimator?.addCompletion { [weak self] _ in
+            guard let self else { return }
+            subtitleAnimationSuffixDotCount = (subtitleAnimationSuffixDotCount + 1) % 3
+            subtitleLabel.text = subtitlePrefix + String(repeating: ".", count: subtitleAnimationSuffixDotCount + 1) + " "
+            subtitleLabel.accessibilityLabel = subtitlePrefix
+            // Restore opacity.
+            subtitleLabel.alpha = 1
+            // Repeat animation.
+            startAnimatingSubtitle()
+        }
+
+        subtitleAnimator?.startAnimation()
+    }
+
+    private func stopAnimatingSubtitle() {
+        subtitleAnimator?.stopAnimation(true)
+        subtitleAnimator = nil
+        subtitleAnimationSuffixDotCount = 0
+        subtitleLabel.text = subtitlePrefix.isEmpty ? " " : subtitlePrefix
+        subtitleLabel.accessibilityLabel = subtitlePrefix
+        subtitleLabel.alpha = 1
     }
 }
