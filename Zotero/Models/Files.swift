@@ -120,6 +120,8 @@ struct Files {
 
     // MARK: - PDF
 
+    #if MAINAPP
+
     static func pdfToShare(filename: String, key: String) -> File {
         let (name, ext) = self.split(filename: filename)
         return FileData(rootPath: Files.cachesRootPath, relativeComponents: ["Zotero", "sharing", key], name: name, ext: ext)
@@ -148,11 +150,15 @@ struct Files {
         return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["thumbnails", libraryId.folderName])
     }
 
+    #endif
+
     static var pageThumbnails: File {
         return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["thumbnails"])
     }
 
     // MARK: - Annotations
+
+    #if MAINAPP
 
     static func annotationPreview(annotationKey: String, pdfKey: String, libraryId: LibraryIdentifier, appearance: Appearance) -> File {
         let nameSuffix: String
@@ -182,6 +188,8 @@ struct Files {
         return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["annotations", libraryId.folderName])
     }
 
+    #endif
+
     static var annotationPreviews: File {
         return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["annotations"])
     }
@@ -194,6 +202,12 @@ struct Files {
 
     static func shareExtensionDownload(key: String, contentType: String) -> File {
         return FileData(rootPath: Files.cachesRootPath, relativeComponents: ["Zotero", "shareext", "downloads"], name: "item_\(key)", contentType: contentType)
+    }
+
+    // MARK: Epub/Html reader
+
+    static var tmpReaderDirectory: File {
+        return FileData.directory(rootPath: Files.cachesRootPath, relativeComponents: ["Zotero", UUID().uuidString])
     }
 
     // MARK: - Helper

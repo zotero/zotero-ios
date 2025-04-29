@@ -9,6 +9,11 @@
 import Foundation
 
 struct ItemTypes {
+    struct AttachmentData {
+        let contentType: String
+        let linked: Bool
+    }
+
     static let note = "note"
     static let attachment = "attachment"
     static let `case` = "case"
@@ -22,16 +27,28 @@ struct ItemTypes {
 }
 
 extension ItemTypes {
-    static func iconName(for rawType: String, contentType: String?) -> String {
+    static func iconName(for rawType: String, attachmentData: AttachmentData? = nil) -> String {
         switch rawType {
         case "artwork":
             return Asset.Images.ItemTypes.artwork.name
 
         case "attachment":
-            if contentType?.contains("pdf") == true {
-                return Asset.Images.ItemTypes.pdf.name
+            guard let attachmentData else {
+                return Asset.Images.ItemTypes.document.name
             }
-            return Asset.Images.ItemTypes.document.name
+            switch attachmentData.contentType {
+            case "pdf":
+                return attachmentData.linked ? Asset.Images.ItemTypes.pdfLinked.name : Asset.Images.ItemTypes.pdf.name
+
+            case "application/epub+zip":
+                return attachmentData.linked ? Asset.Images.ItemTypes.epubLinked.name : Asset.Images.ItemTypes.epub.name
+
+            case "text/html":
+                return ""
+
+            default:
+                return Asset.Images.ItemTypes.document.name
+            }
 
         case "audioRecording":
             return Asset.Images.ItemTypes.audioRecording.name
@@ -134,6 +151,12 @@ extension ItemTypes {
 
         case "webpage":
             return Asset.Images.ItemTypes.webPage.name
+
+        case "standard":
+            return Asset.Images.ItemTypes.standard.name
+
+        case "dataset":
+            return Asset.Images.ItemTypes.dataset.name
 
         default:
             return Asset.Images.ItemTypes.document.name

@@ -90,6 +90,49 @@ final class AnnotationView: UIView {
 
     // MARK: - Setups
 
+    func setup(with annotation: HtmlEpubAnnotation, text: NSAttributedString?, comment: Comment?, selected: Bool, availableWidth: CGFloat, library: Library, currentUserId: Int) {
+        let color = UIColor(hex: annotation.color)
+        let canEdit = library.metadataEditable && selected
+        let author = library.identifier == .custom(.myLibrary) ? "" : annotation.author
+
+        header.setup(
+            type: annotation.type,
+            authorName: author,
+            pageLabel: annotation.pageLabel,
+            colorHex: annotation.color,
+            shareMenuProvider: { _ in
+                return nil
+            },
+            isEditable: canEdit,
+            showsLock: !library.metadataEditable,
+            accessibilityType: .cell
+        )
+        setupContent(
+            type: annotation.type,
+            comment: annotation.comment,
+            text: text,
+            preview: nil,
+            color: color,
+            canEdit: canEdit,
+            selected: selected,
+            availableWidth: availableWidth,
+            accessibilityType: .cell,
+            getSize: { .zero }
+        )
+        setup(comment: comment, canEdit: canEdit)
+        setup(tags: annotation.tags, canEdit: canEdit, accessibilityEnabled: selected)
+        setupObserving()
+
+        let commentButtonIsHidden = commentTextView.isHidden
+        let highlightContentIsHidden = highlightContent?.isHidden ?? true
+        let imageContentIsHidden = imageContent?.isHidden ?? true
+
+        // Top separator is hidden only if there is only header visible and nothing else
+        topSeparator.isHidden = commentTextView.isHidden && commentButtonIsHidden && highlightContentIsHidden && imageContentIsHidden && tags.isHidden && tagsButton.isHidden
+        // Bottom separator is visible, when tags are showing (either actual tags or tags button) and there is something visible above them (other than header, either content or comments/comments button)
+        bottomSeparator.isHidden = (tags.isHidden && tagsButton.isHidden) || (commentTextView.isHidden && commentButtonIsHidden && highlightContentIsHidden && imageContentIsHidden)
+    }
+
     /// Setups up annotation view with given annotation and additional data.
     /// - parameter annotation: Annotation to show in view.
     /// - parameter text: Text to show. If nil, text field is not shown.
@@ -133,7 +176,8 @@ final class AnnotationView: UIView {
             accessibilityType: .cell
         )
         setupContent(
-            for: annotation,
+            type: annotation.type,
+            comment: annotation.comment,
             text: text,
             preview: preview,
             color: color,
@@ -141,7 +185,7 @@ final class AnnotationView: UIView {
             selected: selected,
             availableWidth: availableWidth,
             accessibilityType: .cell,
-            boundingBoxConverter: boundingBoxConverter
+            getSize: { annotation.previewBoundingBox(boundingBoxConverter: boundingBoxConverter).size }
         )
         setup(comment: comment, canEdit: canEdit)
         setup(tags: annotation.tags, canEdit: canEdit, accessibilityEnabled: selected)
@@ -157,7 +201,8 @@ final class AnnotationView: UIView {
     }
 
     private func setupContent(
-        for annotation: PDFAnnotation,
+        type: AnnotationType,
+        comment: String,
         text: NSAttributedString?,
         preview: UIImage?,
         color: UIColor,
@@ -165,19 +210,19 @@ final class AnnotationView: UIView {
         selected: Bool,
         availableWidth: CGFloat,
         accessibilityType: AccessibilityType,
-        boundingBoxConverter: AnnotationBoundingBoxConverter
+        getSize: () -> CGSize
     ) {
         guard let highlightContent, let imageContent else { return }
 
         highlightContent.isUserInteractionEnabled = false
 
-        switch annotation.type {
+        switch type {
         case .note:
             highlightContent.isHidden = true
             imageContent.isHidden = true
 
         case .highlight, .underline:
-            let bottomInset = inset(from: layout.highlightLineVerticalInsets, hasComment: !annotation.comment.isEmpty, selected: selected, canEdit: canEdit)
+            let bottomInset = inset(from: layout.highlightLineVerticalInsets, hasComment: !comment.isEmpty, selected: selected, canEdit: canEdit)
             highlightContent.isHidden = false
             imageContent.isHidden = true
             highlightContent.setup(with: color, text: text ?? .init(), bottomInset: bottomInset, accessibilityType: accessibilityType)
@@ -185,7 +230,7 @@ final class AnnotationView: UIView {
         case .image, .ink, .freeText:
             highlightContent.isHidden = true
             imageContent.isHidden = false
-            let size = annotation.previewBoundingBox(boundingBoxConverter: boundingBoxConverter).size
+            let size = getSize()
             let maxWidth = availableWidth - (layout.horizontalInset * 2)
             var maxHeight = ceil((size.height / size.width) * maxWidth)
             if maxHeight.isNaN || maxHeight.isInfinite {
@@ -193,7 +238,7 @@ final class AnnotationView: UIView {
             } else {
                 maxHeight = min((maxWidth * 2), maxHeight)
             }
-            let bottomInset = inset(from: layout.verticalSpacerHeight, hasComment: !annotation.comment.isEmpty, selected: selected, canEdit: canEdit)
+            let bottomInset = inset(from: layout.verticalSpacerHeight, hasComment: !comment.isEmpty, selected: selected, canEdit: canEdit)
             imageContent.setup(with: preview, height: maxHeight, bottomInset: bottomInset)
         }
     }
@@ -281,7 +326,7 @@ final class AnnotationView: UIView {
         tagsButton.rx.tap.flatMap({ Observable.just(Action.tags) }).bind(to: actionPublisher)
         header.menuTap.flatMap({ Observable.just(Action.options($0)) }).bind(to: actionPublisher)
     }
-    
+
     func setupObserving() {
         var disposables: [Disposable] = buildDisposables()
         if let doneTap = header.doneTap {

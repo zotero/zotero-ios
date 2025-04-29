@@ -20,7 +20,7 @@ struct AttachmentCreator {
         case `extension`(String)
     }
 
-    private static let mainAttachmentContentTypes: Set<String> = ["text/html", "application/pdf", "image/png", "image/jpeg", "image/gif", "text/plain"]
+    private static let mainAttachmentContentTypes: Set<String> = ["text/html", "application/pdf", "image/png", "image/jpeg", "image/gif", "text/plain", "application/epub+zip"]
 
     static func mainAttachment(for item: RItem, fileStorage: FileStorage) -> Attachment? {
         if item.rawType == ItemTypes.attachment {
@@ -32,7 +32,9 @@ struct AttachmentCreator {
 
                 case .file(_, _, _, let linkType, _) where linkType == .importedFile || linkType == .importedUrl:
                     return attachment
-                default: break
+
+                default:
+                    break
                 }
             }
             return nil
@@ -59,8 +61,14 @@ struct AttachmentCreator {
         return attachments.filter({ attachment in
             switch attachment.type {
             case .file(_, let contentType, _, _, _):
-                return contentType == "application/pdf"
-                
+                switch contentType {
+                case "application/pdf":
+                    return true
+
+                default:
+                    return false
+                }
+
             default:
                 return false
             }
@@ -117,11 +125,23 @@ struct AttachmentCreator {
 
     private static func priority(for contentType: String) -> Int {
         switch contentType {
-        case "application/pdf": return 0
-        case "text/html": return 1
-        case "image/gif", "image/jpeg", "image/png": return 2
-        case "text/plain": return 3
-        default: return 4
+        case "application/pdf":
+            return 0
+
+        case "application/epub+zip":
+            return 1
+
+        case "text/html":
+            return 2
+
+        case "image/gif", "image/jpeg", "image/png":
+            return 3
+
+        case "text/plain":
+            return 4
+
+        default:
+            return 5
         }
     }
 
@@ -254,7 +274,7 @@ struct AttachmentCreator {
 
         let webDavEnabled = Defaults.shared.webDavEnabled
 
-        if fileStorage.has(file) || (webDavEnabled && fileStorage.has(file.copyWithExt("zip"))) {
+        if fileStorage.has(file) || (webDavEnabled && fileStorage.has(file.copy(withExt: "zip"))) {
             if !item.backendMd5.isEmpty, let md5 = cachedMD5(from: file.createUrl(), using: fileStorage.fileManager), item.backendMd5 != md5 {
                 return .localAndChangedRemotely
             } else {

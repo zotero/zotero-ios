@@ -15,11 +15,6 @@ import RxSwift
 
 typealias AnnotationsViewControllerAction = (AnnotationView.Action, Annotation, UIButton) -> Void
 
-protocol AnnotationsDelegate: AnyObject {
-    func parseAndCacheIfNeededAttributedText(for annotation: PDFAnnotation, with font: UIFont) -> NSAttributedString?
-    func parseAndCacheIfNeededAttributedComment(for annotation: PDFAnnotation) -> NSAttributedString?
-}
-
 final class PDFAnnotationsViewController: UIViewController {
     private static let cellId = "AnnotationCell"
     private unowned let viewModel: ViewModel<PDFReaderActionHandler>
@@ -37,7 +32,7 @@ final class PDFAnnotationsViewController: UIViewController {
     private var dataSource: TableViewDiffableDataSource<Int, PDFReaderState.AnnotationKey>!
     private var searchController: UISearchController!
 
-    weak var parentDelegate: (PDFReaderContainerDelegate & SidebarDelegate & AnnotationsDelegate)?
+    weak var parentDelegate: (PDFReaderContainerDelegate & PDFSidebarDelegate & ReaderAnnotationsDelegate)?
     weak var coordinatorDelegate: PdfAnnotationsCoordinatorDelegate?
     weak var boundingBoxConverter: AnnotationBoundingBoxConverter?
 
@@ -110,9 +105,9 @@ final class PDFAnnotationsViewController: UIViewController {
             let key = annotation.readerKey
             coordinatorDelegate?.showCellOptions(
                 for: annotation,
-                highlightFont: viewModel.state.textEditorFont,
                 userId: viewModel.state.userId,
                 library: viewModel.state.library,
+                highlightFont: viewModel.state.textEditorFont,
                 sender: sender,
                 userInterfaceStyle: viewModel.state.interfaceStyle,
                 saveAction: { [weak viewModel] data, updateSubsequentLabels in

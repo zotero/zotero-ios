@@ -6,95 +6,36 @@
 //  Copyright © 2022 Corporation for Digital Scholarship. All rights reserved.
 //
 
-import UIKit
+import Foundation
 
 import CocoaLumberjackSwift
 import RealmSwift
 
-struct CreatePDFAnnotationsDbRequest: DbRequest {
-    let attachmentKey: String
-    let libraryId: LibraryIdentifier
-    let annotations: [PDFDocumentAnnotation]
-    let userId: Int
-
-    unowned let schemaController: SchemaController
+class CreatePDFAnnotationsDbRequest: CreateReaderAnnotationsDbRequest<PDFDocumentAnnotation> {
     unowned let boundingBoxConverter: AnnotationBoundingBoxConverter
 
-    var needsWrite: Bool { return true }
-
-    func process(in database: Realm) throws {
-        guard let parent = database.objects(RItem.self).uniqueObject(key: attachmentKey, libraryId: libraryId) else { return }
-
-        for annotation in annotations {
-            create(annotation: annotation, parent: parent, in: database)
-        }
+    init(
+        attachmentKey: String,
+        libraryId: LibraryIdentifier,
+        annotations: [PDFDocumentAnnotation],
+        userId: Int,
+        schemaController: SchemaController,
+        boundingBoxConverter: AnnotationBoundingBoxConverter
+    ) {
+        self.boundingBoxConverter = boundingBoxConverter
+        super.init(attachmentKey: attachmentKey, libraryId: libraryId, annotations: annotations, userId: userId, schemaController: schemaController)
     }
 
-    private func create(annotation: PDFDocumentAnnotation, parent: RItem, in database: Realm) {
-        var fromRestore = false
-        let item: RItem
+    override func addFields(for annotation: PDFDocumentAnnotation, to item: RItem, database: Realm) {
+        super.addFields(for: annotation, to: item, database: database)
 
-        if let _item = database.objects(RItem.self).uniqueObject(key: annotation.key, libraryId: libraryId) {
-            if !_item.deleted {
-                // If item exists and is not deleted locally, we can ignore this request
-                return
-            }
-
-            // If item exists and was already deleted locally and not yet synced, we re-add the item
-            item = _item
-            item.deleted = false
-            fromRestore = true
-        } else {
-            // If item didn't exist, create it
-            item = RItem()
-            item.key = annotation.key
-            item.rawType = ItemTypes.annotation
-            item.localizedType = schemaController.localized(itemType: ItemTypes.annotation) ?? ""
-            item.libraryId = libraryId
-            item.dateAdded = annotation.dateModified
-            database.add(item)
-        }
-
-        item.annotationType = annotation.type.rawValue
-        item.syncState = .synced
-        item.changeType = .user
-        item.htmlFreeContent = annotation.comment.isEmpty ? nil : annotation.comment.strippedRichTextTags
-        item.dateModified = annotation.dateModified
-        item.parent = parent
-
-        if annotation.isAuthor {
-            let user = database.object(ofType: RUser.self, forPrimaryKey: userId)
-            item.createdBy = user
-            if user == nil {
-                DDLogWarn("CreatePDFAnnotationsDbRequest: user not found for userId \(userId)")
-            }
-        }
-
-        // We need to submit tags on creation even if they are empty, so we need to mark them as changed
-        var changes: RItemChanges = [.parent, .fields, .type, .tags]
-        self.addFields(for: annotation, to: item, database: database)
-        self.add(rects: annotation.rects, fromRestore: fromRestore, to: item, changes: &changes, database: database)
-        self.add(paths: annotation.paths, fromRestore: fromRestore, to: item, changes: &changes, database: database)
-        item.changes.append(RObjectChange.create(changes: changes))
-    }
-
-    private func addFields(for annotation: PDFDocumentAnnotation, to item: RItem, database: Realm) {
-        for field in FieldKeys.Item.Annotation.allPDFFields(for: annotation.type) {
+        for field in FieldKeys.Item.Annotation.extraPDFFields(for: annotation.type) {
             let rField = RItemField()
             rField.key = field.key
             rField.baseKey = field.baseKey
             rField.changed = true
 
             switch field.key {
-            case FieldKeys.Item.Annotation.type:
-                rField.value = annotation.type.rawValue
-
-            case FieldKeys.Item.Annotation.color:
-                rField.value = annotation.color
-
-            case FieldKeys.Item.Annotation.comment:
-                rField.value = annotation.comment
-
             case FieldKeys.Item.Annotation.Position.pageIndex where field.baseKey == FieldKeys.Item.Annotation.position:
                 rField.value = "\(annotation.page)"
 
@@ -103,13 +44,6 @@ struct CreatePDFAnnotationsDbRequest: DbRequest {
 
             case FieldKeys.Item.Annotation.pageLabel:
                 rField.value = annotation.pageLabel
-
-            case FieldKeys.Item.Annotation.sortIndex:
-                rField.value = annotation.sortIndex
-                item.annotationSortIndex = annotation.sortIndex
-
-            case FieldKeys.Item.Annotation.text:
-                rField.value = annotation.text ?? ""
 
             case FieldKeys.Item.Annotation.Position.rotation where field.baseKey == FieldKeys.Item.Annotation.position:
                 rField.value = "\(annotation.rotation ?? 0)"
@@ -124,6 +58,11 @@ struct CreatePDFAnnotationsDbRequest: DbRequest {
 
             item.fields.append(rField)
         }
+    }
+
+    override func addAdditionalProperties(for annotation: PDFDocumentAnnotation, fromRestore: Bool, to item: RItem, changes: inout RItemChanges, database: Realm) {
+        add(rects: annotation.rects, fromRestore: fromRestore, to: item, changes: &changes, database: database)
+        add(paths: annotation.paths, fromRestore: fromRestore, to: item, changes: &changes, database: database)
     }
 
     private func add(rects: [CGRect], fromRestore: Bool, to item: RItem, changes: inout RItemChanges, database: Realm) {

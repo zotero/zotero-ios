@@ -18,5 +18,5 @@ struct FeatureGates: OptionSet {
     static let htmlEpubReader = FeatureGates(rawValue: 1 << 2)
     static let downloadFilesAtSync = FeatureGates(rawValue: 1 << 3)
 
-    static let enabled: FeatureGates = []
+    static let enabled: FeatureGates = [.htmlEpubReader]
 }

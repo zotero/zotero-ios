@@ -12,7 +12,7 @@ import PSPDFKit
 import PSPDFKitUI
 import RxSwift
 
-protocol SidebarDelegate: AnyObject {
+protocol PDFSidebarDelegate: AnyObject {
     func tableOfContentsSelected(page: UInt)
 }
 
@@ -47,7 +47,7 @@ class PDFSidebarViewController: UIViewController {
     private weak var controllerContainer: UIView!
     private weak var currentController: UIViewController?
     private var controllerDisposeBag: DisposeBag?
-    weak var parentDelegate: (PDFReaderContainerDelegate & SidebarDelegate & AnnotationsDelegate)?
+    weak var parentDelegate: (PDFReaderContainerDelegate & PDFSidebarDelegate & ReaderAnnotationsDelegate)?
     weak var coordinatorDelegate: PdfAnnotationsCoordinatorDelegate?
     weak var boundingBoxConverter: AnnotationBoundingBoxConverter?
 
@@ -124,10 +124,11 @@ class PDFSidebarViewController: UIViewController {
             return annotationsController
         }
 
-        func createToCController() -> TableOfContentsViewController {
-            let tocState = TableOfContentsState(document: viewModel.state.document)
-            return TableOfContentsViewController(viewModel: ViewModel(initialState: tocState, handler: TableOfContentsActionHandler()), selectionAction: { [weak self] page in
-                self?.parentDelegate?.tableOfContentsSelected(page: page)
+        func createToCController() -> TableOfContentsViewController<PDFOutline> {
+            let root = viewModel.state.document.outline.flatMap({ PDFOutline(element: $0) })
+            let tocState = TableOfContentsState<PDFOutline>(outlines: root?.children ?? [])
+            return TableOfContentsViewController<PDFOutline>(viewModel: ViewModel(initialState: tocState, handler: TableOfContentsActionHandler()), selectionAction: { [weak self] outline in
+                self?.parentDelegate?.tableOfContentsSelected(page: outline.page)
             })
         }
 

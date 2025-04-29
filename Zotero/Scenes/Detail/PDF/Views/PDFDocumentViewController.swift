@@ -287,7 +287,7 @@ final class PDFDocumentViewController: UIViewController {
                 deselectAnnotation(pdfController: pdfController)
             }
 
-            showPopupAnnotationIfNeeded(state: state, pdfController: pdfController)
+            showPopupAnnotationIfNeeded(state: state)
         }
 
         if state.changes.contains(.visiblePageFromThumbnailList) {
@@ -333,63 +333,6 @@ final class PDFDocumentViewController: UIViewController {
             // We don't know the deselection page, as pdfController.pageIndex may be the one of last annotation addition.
             // To overcome this we discard selection in all visible page views.
             pdfController.visiblePageViews.forEach({ $0.discardSelection(animated: false) })
-        }
-
-        func showPopupAnnotationIfNeeded(state: PDFReaderState, pdfController: PDFViewController) {
-            guard parentDelegate?.isSidebarVisible != true,
-                  let annotation = state.selectedAnnotation,
-                  annotation.type != .freeText,
-                  let pageView = pdfController.pageViewForPage(at: UInt(annotation.page))
-            else { return }
-
-            let key = annotation.readerKey
-            var frame = view.convert(annotation.boundingBox(boundingBoxConverter: self), from: pageView.pdfCoordinateSpace)
-            frame.origin.y += parentDelegate?.documentTopOffset ?? 0
-            coordinatorDelegate?.showAnnotationPopover(
-                viewModel: viewModel,
-                sourceRect: frame,
-                popoverDelegate: self,
-                userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle
-            )?.subscribe(onNext: { [weak viewModel] state in
-                guard let viewModel else { return }
-                // These are `AnnotationPopoverViewController` properties updated individually
-                if state.changes.contains(.color) {
-                    viewModel.process(action: .setColor(key: key.key, color: state.color))
-                }
-                if state.changes.contains(.comment) {
-                    viewModel.process(action: .setComment(key: key.key, comment: state.comment))
-                }
-                if state.changes.contains(.deletion) {
-                    viewModel.process(action: .removeAnnotation(key))
-                }
-                if state.changes.contains(.lineWidth) {
-                    viewModel.process(action: .setLineWidth(key: key.key, width: state.lineWidth))
-                }
-                if state.changes.contains(.tags) {
-                    viewModel.process(action: .setTags(key: key.key, tags: state.tags))
-                }
-                // These are `AnnotationEditViewController` properties updated all at once with Save button
-                if state.changes.contains(.pageLabel) || state.changes.contains(.highlight) || state.changes.contains(.type) {
-                    var fontSize: CGFloat = 0
-                    if state.type == .freeText, let annotation = viewModel.state.annotation(for: key) {
-                        // We should never actually get here, because Annotation Popup is not shown for Free Text Annotations.
-                        // But in case we do get here, let's fetch current font size and pass it along.
-                        fontSize = annotation.fontSize ?? 0
-                    }
-                    viewModel.process(action: .updateAnnotationProperties(
-                        key: key.key,
-                        type: state.type,
-                        color: state.color,
-                        lineWidth: state.lineWidth,
-                        fontSize: fontSize,
-                        pageLabel: state.pageLabel,
-                        updateSubsequentLabels: state.updateSubsequentLabels,
-                        highlightText: state.highlightText,
-                        higlightFont: state.highlightFont
-                    ))
-                }
-            })
-            .disposed(by: disposeBag)
         }
 
         func updatePDF(notification: Notification, state: PDFReaderState, pdfController: PDFViewController) {
@@ -457,6 +400,69 @@ final class PDFDocumentViewController: UIViewController {
             pdfController?.overrideUserInterfaceStyle = .dark
             unlockController?.overrideUserInterfaceStyle = .dark
         }
+    }
+
+    private func showPopupAnnotationIfNeeded(state: PDFReaderState) {
+        guard !(parentDelegate?.isSidebarVisible ?? false),
+              let annotation = state.selectedAnnotation,
+              annotation.type != .freeText,
+              let pageView = pdfController?.pageViewForPage(at: UInt(annotation.page)) else { return }
+
+        let key = annotation.readerKey
+        var frame = view.convert(annotation.boundingBox(boundingBoxConverter: self), from: pageView.pdfCoordinateSpace)
+        frame.origin.y += parentDelegate?.documentTopOffset ?? 0
+        let observable = coordinatorDelegate?.showAnnotationPopover(
+            state: state,
+            sourceRect: frame,
+            popoverDelegate: self,
+            userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle
+        )
+
+        guard let observable else { return }
+        observable.subscribe(onNext: { [weak viewModel] state in
+            guard let viewModel else { return }
+            // These are `AnnotationPopoverViewController` properties updated individually
+            if state.changes.contains(.color) {
+                viewModel.process(action: .setColor(key: key.key, color: state.color))
+            }
+            if state.changes.contains(.comment) {
+                viewModel.process(action: .setComment(key: key.key, comment: state.comment))
+            }
+            if state.changes.contains(.deletion) {
+                viewModel.process(action: .removeAnnotation(key))
+            }
+            if state.changes.contains(.lineWidth) {
+                viewModel.process(action: .setLineWidth(key: key.key, width: state.lineWidth))
+            }
+            if state.changes.contains(.tags) {
+                viewModel.process(action: .setTags(key: key.key, tags: state.tags))
+            }
+            // These are `AnnotationEditViewController` properties updated all at once with Save button
+            if state.changes.contains(.pageLabel) || state.changes.contains(.highlight) || state.changes.contains(.type) {
+                var fontSize: CGFloat = 0
+                if state.type == .freeText, let annotation = viewModel.state.annotation(for: key) {
+                    // We should never actually get here, because Annotation Popup is not shown for Free Text Annotations. But in case we do get here, let's fetch current font size and pass it along.
+                    fontSize = annotation.fontSize ?? 0
+                }
+                viewModel.process(action: .updateAnnotationProperties(
+                    key: key.key,
+                    type: state.type,
+                    color: state.color,
+                    lineWidth: state.lineWidth,
+                    fontSize: fontSize,
+                    pageLabel: state.pageLabel,
+                    updateSubsequentLabels: state.updateSubsequentLabels,
+                    highlightText: state.highlightText,
+                    higlightFont: state.highlightFont
+                ))
+            }
+        })
+        .disposed(by: disposeBag)
+    }
+
+    private func updatePencilSettingsIfNeeded() {
+        guard self.pdfController?.annotationStateManager.state == .ink else { return }
+        self.pdfController?.annotationStateManager.stylusMode = UIPencilInteraction.prefersPencilOnlyDrawing ? .stylus : .fromStylusManager
     }
 
     /// Scrolls to given page if needed.
@@ -1181,3 +1187,5 @@ extension PDFDocumentViewController: PSPDFKitUI.ScrubberBarDelegate {
         pdfController.backForwardList.register(PSPDFKit.GoToAction(pageIndex: currentPageIndex))
     }
 }
+
+extension PDFDocumentViewController: ParentWithSidebarDocumentController {}

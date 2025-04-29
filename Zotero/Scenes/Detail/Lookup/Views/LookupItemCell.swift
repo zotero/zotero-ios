@@ -30,7 +30,7 @@ class LookupItemCell: UITableViewCell {
 
         self.titleLabel.text = title
         self.titleLabel.textColor = hasDarkBackground ? .white : .label
-        self.typeImageView.image = UIImage(named: ItemTypes.iconName(for: type, contentType: nil))
+        self.typeImageView.image = UIImage(named: ItemTypes.iconName(for: type))
     }
 
     func set(title: String, attachmentType: Attachment.Kind, update: RemoteAttachmentDownloader.Update.Kind, hasDarkBackground: Bool) {

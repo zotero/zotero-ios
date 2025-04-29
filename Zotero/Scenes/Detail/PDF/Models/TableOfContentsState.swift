@@ -8,44 +8,32 @@
 
 import UIKit
 
-import PSPDFKit
+struct TableOfContentsChanges: OptionSet {
+    typealias RawValue = UInt16
 
-struct TableOfContentsState: ViewModelState {
-    struct Changes: OptionSet {
-        typealias RawValue = UInt16
+    let rawValue: UInt16
 
-        let rawValue: UInt16
+    static let snapshot = TableOfContentsChanges(rawValue: 1 << 0)
+}
 
-        static let snapshot = Changes(rawValue: 1 << 0)
+struct TableOfContentsState<O: Outline>: ViewModelState {
+    enum Row: Hashable {
+        case searchBar
+        case outline(outline: O, isActive: Bool)
     }
 
-    struct Outline: Hashable {
-        let id: UUID
-        let title: String
-        let page: UInt
-        let isActive: Bool
-
-        init(element: OutlineElement, isActive: Bool) {
-            self.id = UUID()
-            self.title = element.title ?? ""
-            self.page = element.pageIndex
-            self.isActive = isActive
-        }
-    }
-
-    let document: Document
-
+    var outlines: [O]
     var search: String
-    var changes: Changes
-    var outlineSnapshot: NSDiffableDataSourceSectionSnapshot<TableOfContentsViewController.Row>?
+    var changes: TableOfContentsChanges
+    var outlineSnapshot: NSDiffableDataSourceSectionSnapshot<Row>?
 
-    init(document: Document) {
-        self.document = document
-        self.search = ""
-        self.changes = []
+    init(outlines: [O]) {
+        self.outlines = outlines
+        search = ""
+        changes = []
     }
 
     mutating func cleanup() {
-        self.changes = []
+        changes = []
     }
 }

@@ -26,7 +26,7 @@ final class NoteEditorTitleView: UIStackView {
     // MARK: - Setups
 
     private func setup(type: String, title: String) {
-        let iconName = ItemTypes.iconName(for: type, contentType: nil)
+        let iconName = ItemTypes.iconName(for: type)
         let imageView = UIImageView(image: UIImage(named: iconName))
         imageView.contentMode = .scaleAspectFit
         imageView.translatesAutoresizingMaskIntoConstraints = false

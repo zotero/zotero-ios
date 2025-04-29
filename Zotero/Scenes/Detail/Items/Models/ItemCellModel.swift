@@ -86,8 +86,13 @@ struct ItemCellModel {
     }
 
     static func typeIconName(for item: RItem) -> String {
-        let contentType: String? = item.rawType == ItemTypes.attachment ? item.fields.filter(.key(FieldKeys.Item.Attachment.contentType)).first?.value : nil
-        return ItemTypes.iconName(for: item.rawType, contentType: contentType)
+        var data: ItemTypes.AttachmentData?
+        if item.rawType == ItemTypes.attachment,
+           let contentType = item.fields.filter(.key(FieldKeys.Item.Attachment.contentType)).first?.value,
+           let linkMode = item.fields.filter(.key(FieldKeys.Item.Attachment.linkMode)).first.flatMap({ LinkMode(rawValue: $0.value) }) {
+            data = .init(contentType: contentType, linked: linkMode == .linkedFile)
+        }
+        return ItemTypes.iconName(for: item.rawType, attachmentData: data)
     }
 
     static func tagData(item: RItem) -> ([UIColor], [String]) {
