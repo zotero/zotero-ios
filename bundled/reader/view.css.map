@@ -1,0 +1,1 @@
+{"version":3,"file":"view.css","mappings":"AAAA,UACC,yB","sources":["webpack://view/./src/common/stylesheets/view.scss"],"sourcesContent":["html, body {\n\toverscroll-behavior: none;\n}\n"],"names":[],"sourceRoot":""}

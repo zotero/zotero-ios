@@ -38,7 +38,6 @@ cd "$READER_SUBMODULE_DIR"
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 nvm install 21.7.3
-NODE_OPTIONS=--openssl-legacy-provider npm config set maxsockets 3
 NODE_OPTIONS=--openssl-legacy-provider npm ci
 NODE_OPTIONS=--openssl-legacy-provider npm run build:ios
 mv "$READER_SUBMODULE_DIR/build/ios" "$READER_DIR"

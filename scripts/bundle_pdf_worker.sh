@@ -38,7 +38,6 @@ cd "$WORKER_SUBMODULE_DIR"
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 nvm install 21.7.3
-npm config set maxsockets 3
 npm ci
 npm run build
 mv "$SCRIPT_DIR/../pdf-worker/build" "$WORKER_DIR"
