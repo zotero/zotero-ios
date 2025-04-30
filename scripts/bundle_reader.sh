@@ -8,19 +8,14 @@ realpath() {
 
 SCRIPT_PATH=`realpath "$0"`
 SCRIPT_DIR=`dirname "$SCRIPT_PATH"`
-READER_SUBMODULE_DIR="$SCRIPT_DIR/../reader"
-READER_DIR="$SCRIPT_DIR/../bundled/reader"
-HASH_FILE="$READER_DIR/reader_hash.txt"
-CURRENT_HASH=`git ls-tree --object-only HEAD "$READER_SUBMODULE_DIR"`
+SUBMODULE_DIR="$SCRIPT_DIR/../reader"
+DESTINATION_DIR="$SCRIPT_DIR/../bundled/reader"
+HASH_FILE="$DESTINATION_DIR/reader_hash.txt"
+CURRENT_HASH=`git ls-tree --object-only HEAD "$SUBMODULE_DIR"`
+DOWNLOAD_URL="https://zotero-download.s3.amazonaws.com/ci/client-reader/${CURRENT_HASH}.zip"
+BUILD_SOURCE_DIR="ios"
 
-# Check if the reader submodule is initialized
-if ! git -C "$SCRIPT_DIR" submodule status "$READER_SUBMODULE_DIR" | grep -qv '^-'; then
-    echo "Error: The reader submodule is not initialized. Run:"
-    echo "    git submodule update --init --recursive reader"
-    exit 1
-fi
-
-if [ -d "$READER_DIR" ]; then
+if [ -d "$DESTINATION_DIR" ]; then
     if [ -f "$HASH_FILE" ]; then
         CACHED_HASH=`cat "$HASH_FILE"`
     else
@@ -28,17 +23,33 @@ if [ -d "$READER_DIR" ]; then
     fi
 
     if [ "$CACHED_HASH" == "$CURRENT_HASH" ]; then
+        echo "Build already up to date."
         exit
     else
-        rm -rf "$READER_DIR"
+        rm -rf "$DESTINATION_DIR"
     fi
 fi
 
-cd "$READER_SUBMODULE_DIR"
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-nvm install 21.7.3
-NODE_OPTIONS=--openssl-legacy-provider npm ci
-NODE_OPTIONS=--openssl-legacy-provider npm run build:ios
-mv "$READER_SUBMODULE_DIR/build/ios" "$READER_DIR"
+TMP_DIR=$(mktemp -d)
+echo "Created temp dir: $TMP_DIR"
+
+echo "Downloading build from: $DOWNLOAD_URL"
+curl -L "$DOWNLOAD_URL" -o "$TMP_DIR/build.zip"
+
+echo "Unzipping..."
+unzip -q "$TMP_DIR/build.zip" -d "$TMP_DIR/build"
+
+if [ ! -d "$TMP_DIR/build/$BUILD_SOURCE_DIR" ]; then
+    echo "Error: $BUILD_SOURCE_DIR build not found in the archive."
+    exit 1
+fi
+
+mkdir -p "$DESTINATION_DIR"
+shopt -s dotglob
+cp -r "$TMP_DIR/build/$BUILD_SOURCE_DIR/"* "$DESTINATION_DIR"
+shopt -u dotglob
+
 echo "$CURRENT_HASH" > "$HASH_FILE"
+echo "Build $BUILD_SOURCE_DIR installed at $DESTINATION_DIR from hash $CURRENT_HASH"
+
+rm -rf "$TMP_DIR"
