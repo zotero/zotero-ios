@@ -170,7 +170,7 @@ ns_number_init_as_function_reference: error
 
 opening_brace:
   severity: error
-  allow_multiline_func: true
+  ignore_multiline_function_signatures: true
 
 operator_usage_whitespace:
   severity: error
@@ -195,7 +195,7 @@ private_over_fileprivate:
   severity: error
 
 private_unit_test:
-  warning: XCTestCase
+  severity: warning
 
 protocol_property_accessors_order: error
 

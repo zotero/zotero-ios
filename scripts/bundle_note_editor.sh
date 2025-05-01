@@ -1,32 +1,55 @@
 #!/bin/bash
 
+set -eo pipefail
+
 realpath() {
     [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
 }
 
 SCRIPT_PATH=`realpath "$0"`
 SCRIPT_DIR=`dirname "$SCRIPT_PATH"`
-EDITOR_SUBMODULE_DIR="$SCRIPT_DIR/../note-editor"
-EDITOR_DIR="$SCRIPT_DIR/../bundled/note_editor"
-HASH_FILE="$EDITOR_DIR/note_editor_hash.txt"
-CURRENT_HASH=`git ls-tree --object-only HEAD "$EDITOR_SUBMODULE_DIR"`
+SUBMODULE_DIR="$SCRIPT_DIR/../note-editor"
+DESTINATION_DIR="$SCRIPT_DIR/../bundled/note_editor"
+HASH_FILE="$DESTINATION_DIR/note_editor.txt"
+CURRENT_HASH=`git ls-tree --object-only HEAD "$SUBMODULE_DIR"`
+DOWNLOAD_URL="https://zotero-download.s3.amazonaws.com/ci/note-editor/${CURRENT_HASH}.zip"
+BUILD_SOURCE_DIR="ios"
 
-if [ -d "$EDITOR_DIR" ]; then
+if [ -d "$DESTINATION_DIR" ]; then
     if [ -f "$HASH_FILE" ]; then
         CACHED_HASH=`cat "$HASH_FILE"`
-    else 
+    else
         CACHED_HASH=0
     fi
 
-    if [ $CACHED_HASH == $CURRENT_HASH ]; then
+    if [ "$CACHED_HASH" == "$CURRENT_HASH" ]; then
+        echo "Build already up to date."
         exit
     else
-        rm -rf "$EDITOR_DIR"
+        rm -rf "$DESTINATION_DIR"
     fi
 fi
 
-cd "$EDITOR_SUBMODULE_DIR"
-npm ci
-npm run build:ios
-mv "$SCRIPT_DIR/../note-editor/build/ios" "$EDITOR_DIR"
+TMP_DIR=$(mktemp -d)
+echo "Created temp dir: $TMP_DIR"
+
+echo "Downloading build from: $DOWNLOAD_URL"
+curl -L "$DOWNLOAD_URL" -o "$TMP_DIR/build.zip"
+
+echo "Unzipping..."
+unzip -q "$TMP_DIR/build.zip" -d "$TMP_DIR/build"
+
+if [ ! -d "$TMP_DIR/build/$BUILD_SOURCE_DIR" ]; then
+    echo "Error: $BUILD_SOURCE_DIR build not found in the archive."
+    exit 1
+fi
+
+mkdir -p "$DESTINATION_DIR"
+shopt -s dotglob
+cp -r "$TMP_DIR/build/$BUILD_SOURCE_DIR/"* "$DESTINATION_DIR"
+shopt -u dotglob
+
 echo "$CURRENT_HASH" > "$HASH_FILE"
+echo "Build $BUILD_SOURCE_DIR installed at $DESTINATION_DIR from hash $CURRENT_HASH"
+
+rm -rf "$TMP_DIR"
