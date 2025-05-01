@@ -12,7 +12,7 @@ SUBMODULE_DIR="$SCRIPT_DIR/../pdf-worker"
 DESTINATION_DIR="$SCRIPT_DIR/../bundled/pdf_worker"
 HASH_FILE="$DESTINATION_DIR/pdf_worker_hash.txt"
 CURRENT_HASH=`git ls-tree --object-only HEAD "$SUBMODULE_DIR"`
-DOWNLOAD_URL="https://zotero-download.s3.amazonaws.com/ci/client-pdf-worker/${CURRENT_HASH}.zip"
+DOWNLOAD_URL="https://zotero-download.s3.amazonaws.com/ci/document-worker/${CURRENT_HASH}.zip"
 BUILD_SOURCE_DIR=""
 
 if [ -d "$DESTINATION_DIR" ]; then
