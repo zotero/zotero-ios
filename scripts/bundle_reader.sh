@@ -12,7 +12,7 @@ SUBMODULE_DIR="$SCRIPT_DIR/../reader"
 DESTINATION_DIR="$SCRIPT_DIR/../bundled/reader"
 HASH_FILE="$DESTINATION_DIR/reader_hash.txt"
 CURRENT_HASH=`git ls-tree --object-only HEAD "$SUBMODULE_DIR"`
-DOWNLOAD_URL="https://zotero-download.s3.amazonaws.com/ci/client-reader/${CURRENT_HASH}.zip"
+DOWNLOAD_URL="https://zotero-download.s3.amazonaws.com/ci/reader/${CURRENT_HASH}.zip"
 BUILD_SOURCE_DIR="ios"
 
 if [ -d "$DESTINATION_DIR" ]; then
