@@ -12,7 +12,7 @@ function log(message) {
 
 let promiseId = 0;
 let waitingPromises = {};
-let worker = new Worker('Bundled/pdf_worker/worker.js');
+let worker = new Worker('worker.js');
 
 async function query(action, data, transfer) {
   return new Promise(function (resolve) {

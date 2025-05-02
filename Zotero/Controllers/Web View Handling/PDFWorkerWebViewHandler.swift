@@ -34,9 +34,12 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
     }
 
     private let disposeBag: DisposeBag
+    private unowned let fileStorage: FileStorage
+    private var temporaryDirectory: File?
     let observable: PublishSubject<Result<PDFWorkerData, Swift.Error>>
 
-    init(webView: WKWebView) {
+    init(webView: WKWebView, fileStorage: FileStorage) {
+        self.fileStorage = fileStorage
         observable = PublishSubject()
         disposeBag = DisposeBag()
 
@@ -47,17 +50,53 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
         }
     }
 
+    deinit {
+        guard let temporaryDirectory else { return }
+        try? fileStorage.remove(temporaryDirectory)
+    }
+
     override func initializeWebView() -> Single<()> {
         DDLogInfo("PDFWorkerWebViewHandler: initialize web view")
-        return loadIndex()
+        return createTemporaryWorker()
             .flatMap { _ in
-                Single.just(Void())
+                return loadIndex()
             }
 
-        func loadIndex() -> Single<()> {
-            guard let indexUrl = Bundle.main.url(forResource: "worker", withExtension: "html") else {
+        func createTemporaryWorker() -> Single<()> {
+            guard let workerHtmlUrl = Bundle.main.url(forResource: "worker", withExtension: "html"),
+                  let workerJsUrl = Bundle.main.url(forResource: "worker", withExtension: "js", subdirectory: "Bundled/pdf_worker")
+//                    ,
+//                  let cmapsUrls = Bundle.main.urls(forResourcesWithExtension: nil, subdirectory: "Bundled/pdf_worker/cmaps"),
+//                  let standardFontsUrls = Bundle.main.urls(forResourcesWithExtension: nil, subdirectory: "Bundled/pdf_worker/standard_fonts")
+            else {
                 return .error(Error.cantFindFile)
             }
+            let temporaryDirectory = Files.tmpReaderDirectory
+            self.temporaryDirectory = temporaryDirectory
+            do {
+                try fileStorage.copy(from: workerHtmlUrl.path, to: temporaryDirectory.copy(withName: "worker", ext: "html"))
+                try fileStorage.copy(from: workerJsUrl.path, to: temporaryDirectory.copy(withName: "worker", ext: "js"))
+                let cmapsDictionary = Files.file(from: workerJsUrl).directory.appending(relativeComponent: "cmaps")
+                let cmapsFiles: [File] = try fileStorage.contentsOfDirectory(at: cmapsDictionary)
+                for file in cmapsFiles {
+                    try fileStorage.copy(from: file, to: temporaryDirectory.appending(relativeComponent: "cmaps").copy(withName: file.name, ext: file.ext))
+                }
+                let standardFontsDictionary = Files.file(from: workerJsUrl).directory.appending(relativeComponent: "standard_fonts")
+                let standardFontsFiles: [File] = try fileStorage.contentsOfDirectory(at: standardFontsDictionary)
+                for file in standardFontsFiles {
+                    try fileStorage.copy(from: file, to: temporaryDirectory.appending(relativeComponent: "standard_fonts").copy(withName: file.name, ext: file.ext))
+                }
+            } catch let error {
+                return .error(error)
+            }
+            return Single.just(Void())
+        }
+
+        func loadIndex() -> Single<()> {
+            guard let temporaryDirectory else {
+                return .error(Error.cantFindFile)
+            }
+            let indexUrl = temporaryDirectory.copy(withName: "worker", ext: "html").createUrl()
             return load(fileUrl: indexUrl)
         }
     }
@@ -65,10 +104,18 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
     private func performPDFWorkerOperation(file: FileData, operationName: String, jsFunction: String) {
         performAfterInitialization()
             .flatMap { [weak self] _ -> Single<Any> in
-                guard let self else { return .never() }
-                let filePath = file.createUrl().path
+                guard let self, let temporaryDirectory else { return .never() }
+                do {
+                    try fileStorage.copy(from: file.createUrl().path, to: temporaryDirectory.copy(withName: file.name, ext: file.ext))
+                } catch let error {
+                    return .error(error)
+                }
+                var fileName = file.name
+                if !file.ext.isEmpty {
+                    fileName += "." + file.ext
+                }
                 DDLogInfo("PDFWorkerWebViewHandler: call \(operationName) js")
-                return call(javascript: "\(jsFunction)('\(filePath)');")
+                return call(javascript: "\(jsFunction)('\(fileName)');")
             }
             .subscribe(onFailure: { [weak self] error in
                 DDLogError("PDFWorkerWebViewHandler: \(operationName) failed - \(error)")

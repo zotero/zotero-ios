@@ -112,7 +112,7 @@ final class FileStorageController: FileStorage {
     }
 
     func contentsOfDirectory(at file: File) throws -> [URL] {
-        return try self.fileManager.contentsOfDirectory(at: file.createUrl(), includingPropertiesForKeys: [], options: [.skipsHiddenFiles])
+        return try self.fileManager.contentsOfDirectory(at: file.createUrl(), includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles])
     }
 
     func contentsOfDirectory(at file: File) throws -> [File] {

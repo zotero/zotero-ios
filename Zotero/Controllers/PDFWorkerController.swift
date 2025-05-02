@@ -41,6 +41,7 @@ final class PDFWorkerController {
     private let dispatchSpecificKey: DispatchSpecificKey<String>
     private let accessQueueLabel: String
     private let accessQueue: DispatchQueue
+    private unowned let fileStorage: FileStorage
     private let disposeBag: DisposeBag
 
     weak var webViewProvider: WebViewProvider?
@@ -52,11 +53,12 @@ final class PDFWorkerController {
     private var pdfWorkerWebViewHandlersByPDFWork: [PDFWork: PDFWorkerWebViewHandler] = [:]
 
     // MARK: Object Lifecycle
-    init() {
+    init(fileStorage: FileStorage) {
         dispatchSpecificKey = DispatchSpecificKey<String>()
         accessQueueLabel = "org.zotero.PDFWorkerController.accessQueue"
         accessQueue = DispatchQueue(label: accessQueueLabel, qos: .userInteractive, attributes: .concurrent)
         accessQueue.setSpecific(key: dispatchSpecificKey, value: accessQueueLabel)
+        self.fileStorage = fileStorage
         disposeBag = DisposeBag()
     }
 
@@ -95,7 +97,7 @@ final class PDFWorkerController {
                     let configuration = WKWebViewConfiguration()
                     configuration.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
                     let webView = webViewProvider.addWebView(configuration: configuration)
-                    pdfWorkerWebViewHandler = PDFWorkerWebViewHandler(webView: webView)
+                    pdfWorkerWebViewHandler = PDFWorkerWebViewHandler(webView: webView, fileStorage: fileStorage)
                 }
                 pdfWorkerWebViewHandlersByPDFWork[work] = pdfWorkerWebViewHandler
             }
