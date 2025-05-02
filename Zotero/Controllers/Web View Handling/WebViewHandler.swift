@@ -189,8 +189,10 @@ class WebViewHandler: NSObject {
     }
 
     func removeFromSuperviewAsynchronously() {
-        DispatchQueue.main.async {
-            self.webView?.removeFromSuperview()
+        DispatchQueue.main.async { [weak self] in
+            guard let self, let webView else { return }
+            webView.configuration.userContentController.removeAllScriptMessageHandlers()
+            webView.removeFromSuperview()
         }
     }
 
