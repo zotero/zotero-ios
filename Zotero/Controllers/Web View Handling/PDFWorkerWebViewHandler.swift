@@ -73,16 +73,10 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
             do {
                 try fileStorage.copy(from: workerHtmlUrl.path, to: temporaryDirectory.copy(withName: "worker", ext: "html"))
                 try fileStorage.copy(from: workerJsUrl.path, to: temporaryDirectory.copy(withName: "worker", ext: "js"))
-                let cmapsDictionary = Files.file(from: workerJsUrl).directory.appending(relativeComponent: "cmaps")
-                let cmapsFiles: [File] = try fileStorage.contentsOfDirectory(at: cmapsDictionary)
-                for file in cmapsFiles {
-                    try fileStorage.copy(from: file, to: temporaryDirectory.appending(relativeComponent: "cmaps").copy(withName: file.name, ext: file.ext))
-                }
-                let standardFontsDictionary = Files.file(from: workerJsUrl).directory.appending(relativeComponent: "standard_fonts")
-                let standardFontsFiles: [File] = try fileStorage.contentsOfDirectory(at: standardFontsDictionary)
-                for file in standardFontsFiles {
-                    try fileStorage.copy(from: file, to: temporaryDirectory.appending(relativeComponent: "standard_fonts").copy(withName: file.name, ext: file.ext))
-                }
+                let cmapsDirectory = Files.file(from: workerJsUrl).directory.appending(relativeComponent: "cmaps")
+                try fileStorage.copyContents(of: cmapsDirectory, to: temporaryDirectory.appending(relativeComponent: "cmaps"))
+                let standardFontsDirectory = Files.file(from: workerJsUrl).directory.appending(relativeComponent: "standard_fonts")
+                try fileStorage.copyContents(of: standardFontsDirectory, to: temporaryDirectory.appending(relativeComponent: "standard_fonts"))
             } catch let error {
                 return .error(error)
             }

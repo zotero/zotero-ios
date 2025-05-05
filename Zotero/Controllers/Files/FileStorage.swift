@@ -20,6 +20,7 @@ protocol FileStorage: AnyObject {
     func remove(_ file: File) throws
     func copy(from path: String, to toFile: File) throws
     func copy(from fromFile: File, to toFile: File) throws
+    func copyContents(of sourceDictionary: File, to targetDictionary: File) throws
     func move(from path: String, to toFile: File) throws
     func move(from fromFile: File, to toFile: File) throws
     func has(_ file: File) -> Bool
@@ -75,6 +76,13 @@ final class FileStorageController: FileStorage {
     func copy(from fromFile: File, to toFile: File) throws {
         try createDirectories(for: toFile)
         try fileManager.copyItem(at: fromFile.createUrl(), to: toFile.createUrl())
+    }
+
+    func copyContents(of sourceDictionary: File, to targetDictionary: File) throws {
+        let files: [File] = try contentsOfDirectory(at: sourceDictionary)
+        for file in files {
+            try copy(from: file, to: targetDictionary.copy(withName: file.name, ext: file.ext))
+        }
     }
 
     func move(from fromFile: File, to toFile: File) throws {
