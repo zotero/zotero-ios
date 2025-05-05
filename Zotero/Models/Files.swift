@@ -220,10 +220,10 @@ struct Files {
         var (root, components) = self.rootAndComponents(from: url)
         if let resourceValues = try? url.resourceValues(forKeys: [.isDirectoryKey]) {
             if resourceValues.isDirectory == true {
-                return FileData(rootPath: root, relativeComponents: components, name: "", type: .directory)
+                return FileData.directory(rootPath: root, relativeComponents: components)
             }
         } else if url.pathExtension.isEmpty {
-            return FileData(rootPath: root, relativeComponents: components, name: "", type: .directory)
+            return FileData.directory(rootPath: root, relativeComponents: components)
         }
         var name = url.deletingPathExtension().lastPathComponent
         name = name.removingPercentEncoding ?? name

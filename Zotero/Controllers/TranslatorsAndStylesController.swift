@@ -571,7 +571,7 @@ final class TranslatorsAndStylesController {
                 DDLogInfo("TranslatorsAndStylesController: load raw translators for \(url ?? "all translators")")
 
                 var loadedUuids: Set<String> = []
-                let allUuids = try self.fileStorage.contentsOfDirectory(at: Files.translators).compactMap({ $0.name })
+                let allUuids = try self.fileStorage.contentsOfDirectory(at: Files.translators).compactMap({ $0.fileName })
                 let translators = self.loadTranslatorsWithDependencies(for: Set(allUuids), matching: url, loadedUuids: &loadedUuids)
 
                 DDLogInfo("TranslatorsAndStylesController: found \(translators.count) translators")

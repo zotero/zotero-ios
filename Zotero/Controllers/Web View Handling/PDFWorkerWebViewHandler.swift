@@ -65,9 +65,6 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
         func createTemporaryWorker() -> Single<()> {
             guard let workerHtmlUrl = Bundle.main.url(forResource: "worker", withExtension: "html"),
                   let workerJsUrl = Bundle.main.url(forResource: "worker", withExtension: "js", subdirectory: "Bundled/pdf_worker")
-//                    ,
-//                  let cmapsUrls = Bundle.main.urls(forResourcesWithExtension: nil, subdirectory: "Bundled/pdf_worker/cmaps"),
-//                  let standardFontsUrls = Bundle.main.urls(forResourcesWithExtension: nil, subdirectory: "Bundled/pdf_worker/standard_fonts")
             else {
                 return .error(Error.cantFindFile)
             }
@@ -110,12 +107,8 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
                 } catch let error {
                     return .error(error)
                 }
-                var fileName = file.name
-                if !file.ext.isEmpty {
-                    fileName += "." + file.ext
-                }
                 DDLogInfo("PDFWorkerWebViewHandler: call \(operationName) js")
-                return call(javascript: "\(jsFunction)('\(fileName)');")
+                return call(javascript: "\(jsFunction)('\(file.fileName)');")
             }
             .subscribe(onFailure: { [weak self] error in
                 DDLogError("PDFWorkerWebViewHandler: \(operationName) failed - \(error)")
