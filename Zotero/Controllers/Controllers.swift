@@ -386,7 +386,7 @@ final class UserControllers {
             dateParser: controllers.dateParser,
             remoteFileDownloader: remoteFileDownloader
         )
-        pdfWorkerController = PDFWorkerController()
+        pdfWorkerController = PDFWorkerController(fileStorage: controllers.fileStorage)
         recognizerController = RecognizerController(
             pdfWorkerController: pdfWorkerController,
             apiClient: controllers.apiClient,

@@ -32,6 +32,7 @@ final class SingleCitationViewController: UIViewController {
     private weak var previewWebView: WKWebView!
     private var dataSource: UICollectionViewDiffableDataSource<Section, Row>!
     weak var coordinatorDelegate: DetailCitationCoordinatorDelegate?
+    private weak var scriptMessageHandler: SingleCitationScriptMessageHandler?
 
     private lazy var locatorRegistration: UICollectionView.CellRegistration<CitationLocatorCell, (String, String)> = {
         return UICollectionView.CellRegistration<CitationLocatorCell, (String, String)> { [weak self] cell, _, data in
@@ -80,6 +81,7 @@ final class SingleCitationViewController: UIViewController {
     }
 
     deinit {
+        previewWebView.configuration.userContentController.removeAllScriptMessageHandlers()
         viewModel.process(action: .cleanup)
     }
 
@@ -214,7 +216,10 @@ final class SingleCitationViewController: UIViewController {
     // MARK: - Actions
     private func update(state: SingleCitationState) {
         if state.changes.contains(.webViewLoaded) {
-            previewWebView.configuration.userContentController.add(self, name: "heightHandler")
+            let scriptMessageHandler = SingleCitationScriptMessageHandler()
+            scriptMessageHandler.viewModel = viewModel
+            self.scriptMessageHandler = scriptMessageHandler
+            previewWebView.configuration.userContentController.add(scriptMessageHandler, name: "heightHandler")
             return
         }
 
@@ -275,6 +280,15 @@ final class SingleCitationViewController: UIViewController {
 extension SingleCitationViewController: WKScriptMessageHandler {
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         guard message.name == "heightHandler", let height = message.body as? CGFloat else { return }
+        viewModel.process(action: .setPreviewHeight(height))
+    }
+}
+
+private class SingleCitationScriptMessageHandler: NSObject, WKScriptMessageHandler {
+    weak var viewModel: ViewModel<SingleCitationActionHandler>?
+
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        guard message.name == "heightHandler", let height = message.body as? CGFloat, let viewModel else { return }
         viewModel.process(action: .setPreviewHeight(height))
     }
 }

@@ -35,7 +35,7 @@ final class PDFWorkerControllerSpec: QuickSpec {
         beforeSuite {
             webViewProviderViewController = WebViewProviderViewController()
             webViewProviderViewController.loadViewIfNeeded()
-            pdfWorkerController = PDFWorkerController()
+            pdfWorkerController = PDFWorkerController(fileStorage: TestControllers.fileStorage)
             pdfWorkerController.webViewProvider = webViewProviderViewController
             disposeBag = DisposeBag()
         }

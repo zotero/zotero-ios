@@ -218,20 +218,30 @@ struct Files {
 
     static func file(from url: URL) -> File {
         var (root, components) = self.rootAndComponents(from: url)
-        if url.pathExtension.isEmpty {
-            return FileData(rootPath: root, relativeComponents: components, name: "", type: .directory)
+        if let resourceValues = try? url.resourceValues(forKeys: [.isDirectoryKey]) {
+            if resourceValues.isDirectory == true {
+                return FileData.directory(rootPath: root, relativeComponents: components)
+            }
+        } else if url.pathExtension.isEmpty {
+            return FileData.directory(rootPath: root, relativeComponents: components)
         }
         var name = url.deletingPathExtension().lastPathComponent
-        name = name.removingPercentEncoding ?? name
         if components.last == name {
             components = components.dropLast()
         }
+        name = name.removingPercentEncoding ?? name
         return FileData(rootPath: root, relativeComponents: components, name: name, ext: url.pathExtension)
     }
 
     private static func rootAndComponents(from url: URL) -> (String, [String]) {
         var urlString: String
-        if url.pathExtension.isEmpty {
+        if let resourceValues = try? url.resourceValues(forKeys: [.isDirectoryKey]) {
+            if resourceValues.isDirectory == true {
+                urlString = url.relativeString
+            } else {
+                urlString = url.deletingLastPathComponent().relativeString
+            }
+        } else if url.pathExtension.isEmpty {
             urlString = url.relativeString
         } else {
             urlString = url.deletingLastPathComponent().relativeString

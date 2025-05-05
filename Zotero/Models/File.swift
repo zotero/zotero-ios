@@ -14,6 +14,7 @@ protocol File {
     var relativeComponents: [String] { get }
     var name: String { get }
     var ext: String { get }
+    var fileName: String { get }
     var mimeType: String { get }
     var directory: File { get }
 
@@ -26,26 +27,34 @@ protocol File {
 
 extension File {
     func createUrl() -> URL {
-        var url = self.createRelativeUrl()
-        if !self.name.isEmpty {
-            url = url.appendingPathComponent(self.name)
+        var url = createRelativeUrl()
+        if !name.isEmpty {
+            url = url.appendingPathComponent(name)
         }
-        if !self.ext.isEmpty {
-            url = url.appendingPathExtension(self.ext)
+        if !ext.isEmpty {
+            url = url.appendingPathExtension(ext)
         }
         return url
     }
 
     func createRelativeUrl() -> URL {
-        var url = URL(fileURLWithPath: self.rootPath)
-        self.relativeComponents.forEach { component in
+        var url = URL(fileURLWithPath: rootPath)
+        relativeComponents.forEach { component in
             url = url.appendingPathComponent(component)
         }
         return url
     }
 
+    var fileName: String {
+        var fileName = name
+        if !ext.isEmpty {
+            fileName += "." + ext
+        }
+        return fileName
+    }
+
     var directory: File {
-        return FileData.directory(rootPath: self.rootPath, relativeComponents: self.relativeComponents)
+        return FileData.directory(rootPath: rootPath, relativeComponents: relativeComponents)
     }
 
     func appending(relativeComponent: String) -> File {
@@ -81,16 +90,16 @@ struct FileData: File {
 
         switch type {
         case .contentType(let contentType):
-            self.mimeType = contentType
-            self.ext = contentType.extensionFromMimeType ?? ""
+            mimeType = contentType
+            ext = (!contentType.isEmpty ? contentType.extensionFromMimeType : nil) ?? ""
             
         case .ext(let ext):
-            self.mimeType = ext.mimeTypeFromExtension ?? "application/octet-stream"
+            mimeType = (!ext.isEmpty ? ext.mimeTypeFromExtension : nil) ?? "application/octet-stream"
             self.ext = ext
 
         case .directory:
-            self.mimeType = ""
-            self.ext = ""
+            mimeType = ""
+            ext = ""
         }
     }
 
