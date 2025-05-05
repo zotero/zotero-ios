@@ -284,7 +284,7 @@ extension SingleCitationViewController: WKScriptMessageHandler {
     }
 }
 
-class SingleCitationScriptMessageHandler: NSObject, WKScriptMessageHandler {
+private class SingleCitationScriptMessageHandler: NSObject, WKScriptMessageHandler {
     weak var viewModel: ViewModel<SingleCitationActionHandler>?
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
