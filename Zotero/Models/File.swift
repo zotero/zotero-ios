@@ -91,10 +91,10 @@ struct FileData: File {
         switch type {
         case .contentType(let contentType):
             mimeType = contentType
-            ext = contentType.extensionFromMimeType ?? ""
+            ext = (!contentType.isEmpty ? contentType.extensionFromMimeType : nil) ?? ""
             
         case .ext(let ext):
-            mimeType = ext.mimeTypeFromExtension ?? "application/octet-stream"
+            mimeType = (!ext.isEmpty ? ext.mimeTypeFromExtension : nil) ?? "application/octet-stream"
             self.ext = ext
 
         case .directory:
