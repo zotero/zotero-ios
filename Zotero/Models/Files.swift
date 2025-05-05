@@ -226,10 +226,10 @@ struct Files {
             return FileData.directory(rootPath: root, relativeComponents: components)
         }
         var name = url.deletingPathExtension().lastPathComponent
-        name = name.removingPercentEncoding ?? name
         if components.last == name {
             components = components.dropLast()
         }
+        name = name.removingPercentEncoding ?? name
         return FileData(rootPath: root, relativeComponents: components, name: name, ext: url.pathExtension)
     }
 
