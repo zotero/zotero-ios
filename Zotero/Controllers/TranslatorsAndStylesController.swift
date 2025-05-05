@@ -57,7 +57,7 @@ final class TranslatorsAndStylesController {
     private var lastStylesCommitHash: String
     private(set) var isLoading: BehaviorRelay<Bool>
     var lastUpdate: Date {
-        return Date(timeIntervalSince1970: Double(self.lastTimestamp))
+        return Date(timeIntervalSince1970: Double(lastTimestamp))
     }
     // Used to reset translators to bundled state due to parsing bug fix (#548)
     @UserDefault(key: "DidResetTranslatorsToBundleBugFix", defaultValue: false)
@@ -95,11 +95,11 @@ final class TranslatorsAndStylesController {
         self.bundle = bundle
         self.apiClient = apiClient
         self.fileStorage = fileStorage
-        self.dbStorage = bundledDataStorage
-        self.isLoading = BehaviorRelay(value: false)
-        self.disposeBag = DisposeBag()
+        dbStorage = bundledDataStorage
+        isLoading = BehaviorRelay(value: false)
+        disposeBag = DisposeBag()
         self.queue = queue
-        self.scheduler = ConcurrentDispatchQueueScheduler(queue: queue)
+        scheduler = ConcurrentDispatchQueueScheduler(queue: queue)
         self.dbQueue = dbQueue
     }
 
@@ -107,22 +107,22 @@ final class TranslatorsAndStylesController {
 
     /// Loads bundled translators if needed, then loads remote translators.
     func update() {
-        self.queue.async(flags: .barrier) { [weak self] in
-            guard let self = self else { return }
-            self._update(forceTranslatorBundleUpdate: !self.didResetTranslatorsToBundle)
+        queue.async(flags: .barrier) { [weak self] in
+            guard let self else { return }
+            _update(forceTranslatorBundleUpdate: !didResetTranslatorsToBundle)
         }
     }
 
     private func _update(forceTranslatorBundleUpdate: Bool) {
-        let type: UpdateType = self.lastTimestamp == 0 ? .initial : .startup
+        let type: UpdateType = lastTimestamp == 0 ? .initial : .startup
 
-        self.isLoading.accept(true)
+        isLoading.accept(true)
 
         DDLogInfo("TranslatorsAndStylesController: update translators and styles")
 
-        self.checkFolderIntegrity(type: type)
-            .subscribe(on: self.scheduler)
-            .observe(on: self.scheduler)
+        checkFolderIntegrity(type: type)
+            .subscribe(on: scheduler)
+            .observe(on: scheduler)
             .flatMap {
                 return self.updateFromBundle(forceTranslatorBundleUpdate: forceTranslatorBundleUpdate)
             }
@@ -138,23 +138,23 @@ final class TranslatorsAndStylesController {
             }, onFailure: { [weak self] error in
                 self?.process(error: error, updateType: type)
             })
-            .disposed(by: self.disposeBag)
+            .disposed(by: disposeBag)
     }
 
     private func checkFolderIntegrity(type: UpdateType) -> Single<()> {
         return Single.create { [weak self] subscriber in
-            guard let self = self else {
+            guard let self else {
                 subscriber(.failure(Error.bundleLoading(Error.expired)))
                 return Disposables.create()
             }
 
             do {
                 // Create translators folder if it's missing
-                if !self.fileStorage.has(Files.translators) {
+                if !fileStorage.has(Files.translators) {
                     if type != .initial {
                         DDLogError("TranslatorsAndStylesController: translators directory was missing!")
                     }
-                    try self.fileStorage.createDirectories(for: Files.translators)
+                    try fileStorage.createDirectories(for: Files.translators)
                 }
 
                 // This is first update, don't reset anything
@@ -163,7 +163,7 @@ final class TranslatorsAndStylesController {
                     return Disposables.create()
                 }
 
-                let fileCount = self.fileStorage.directoryData(for: [Files.translators]).fileCount
+                let fileCount = fileStorage.directoryData(for: [Files.translators]).fileCount
 
                 // There are translators available, don't reset anything
                 if fileCount != 0 {
@@ -172,10 +172,11 @@ final class TranslatorsAndStylesController {
                 }
 
                 // There was an issue and translators are missing, reset timestamp and hash so that they are re-loaded from bundle.
-                self.queue.async(flags: .barrier) { [weak self] in
-                    self?.lastTimestamp = 0
-                    self?.lastTranslatorCommitHash = ""
-                    self?.lastTranslatorDeleted = 0
+                queue.async(flags: .barrier) { [weak self] in
+                    guard let self else { return }
+                    lastTimestamp = 0
+                    lastTranslatorCommitHash = ""
+                    lastTranslatorDeleted = 0
                 }
             } catch let error {
                 DDLogError("TranslatorsAndStylesController: unable to restore folder integrity - \(error)")
@@ -189,23 +190,23 @@ final class TranslatorsAndStylesController {
     /// Update local assets with bundled assets if needed.
     private func updateFromBundle(forceTranslatorBundleUpdate: Bool) -> Single<()> {
         return Single.create { [weak self] subscriber -> Disposable in
-            guard let self = self else {
+            guard let self else {
                 subscriber(.failure(Error.bundleLoading(Error.expired)))
                 return Disposables.create()
             }
 
             do {
-                try self._updateTranslatorsFromBundle(forceUpdate: forceTranslatorBundleUpdate)
+                try _updateTranslatorsFromBundle(forceUpdate: forceTranslatorBundleUpdate)
 
                 if forceTranslatorBundleUpdate {
-                    self.didResetTranslatorsToBundle = true
+                    didResetTranslatorsToBundle = true
                 }
 
-                try self._updateStylesFromBundle()
+                try _updateStylesFromBundle()
 
-                let timestamp = try self.loadLastTimestamp()
-                if timestamp > self.lastTimestamp {
-                    self.queue.async(flags: .barrier) { [weak self] in
+                let timestamp = try loadLastTimestamp()
+                if timestamp > lastTimestamp {
+                    queue.async(flags: .barrier) { [weak self] in
                         self?.lastTimestamp = timestamp
                         subscriber(.success(()))
                     }
@@ -223,47 +224,48 @@ final class TranslatorsAndStylesController {
 
     /// Update local translators with bundled translators if needed.
     private func _updateTranslatorsFromBundle(forceUpdate: Bool) throws {
-        let hash = try self.loadLastTranslatorCommitHash()
+        let hash = try loadLastTranslatorCommitHash()
 
-        DDLogInfo("TranslatorsAndStylesController: should update translators from bundle, forceUpdate=\(forceUpdate); oldHash=\(self.lastTranslatorCommitHash); newHash=\(hash)")
+        DDLogInfo("TranslatorsAndStylesController: should update translators from bundle, forceUpdate=\(forceUpdate); oldHash=\(lastTranslatorCommitHash); newHash=\(hash)")
 
-        guard forceUpdate || self.lastTranslatorCommitHash != hash else { return }
+        guard forceUpdate || lastTranslatorCommitHash != hash else { return }
 
         DDLogInfo("TranslatorsAndStylesController: update translators from bundle")
 
-        let (deletedVersion, deletedIndices) = try self.loadDeleted()
-        try self.syncTranslatorsWithBundledData(deleteIndices: deletedIndices, forceUpdate: forceUpdate)
+        let (deletedVersion, deletedIndices) = try loadDeleted()
+        try syncTranslatorsWithBundledData(deleteIndices: deletedIndices, forceUpdate: forceUpdate)
 
-        self.queue.async(flags: .barrier) { [weak self] in
-            self?.lastTranslatorDeleted = deletedVersion
-            self?.lastTranslatorCommitHash = hash
+        queue.async(flags: .barrier) { [weak self] in
+            guard let self else { return }
+            lastTranslatorDeleted = deletedVersion
+            lastTranslatorCommitHash = hash
         }
     }
 
     /// Update local styles with bundled styles if needed.
     private func _updateStylesFromBundle() throws {
-        let hash = try self.loadLastStylesCommitHash()
+        let hash = try loadLastStylesCommitHash()
 
-        guard self.lastStylesCommitHash != hash else { return }
+        guard lastStylesCommitHash != hash else { return }
 
         DDLogInfo("TranslatorsAndStylesController: update styles from bundle")
 
-        try self.syncStylesWithBundledData()
+        try syncStylesWithBundledData()
 
-        self.queue.async(flags: .barrier) { [weak self] in
+        queue.async(flags: .barrier) { [weak self] in
             self?.lastStylesCommitHash = hash
         }
     }
 
     /// Manual update of translators from remote repo.
     func updateFromRepo(type: UpdateType) {
-        self.queue.async(flags: .barrier) { [weak self] in
+        queue.async(flags: .barrier) { [weak self] in
             self?.isLoading.accept(true)
         }
 
-        self._updateFromRepo(type: type)
-            .subscribe(on: self.scheduler)
-            .observe(on: self.scheduler)
+        _updateFromRepo(type: type)
+            .subscribe(on: scheduler)
+            .observe(on: scheduler)
             .observe(on: MainScheduler.instance)
             .subscribe(onSuccess: { [weak self] timestamp in
                 self?.queue.async(flags: .barrier) {
@@ -273,7 +275,7 @@ final class TranslatorsAndStylesController {
             }, onFailure: { [weak self] error in
                 self?.process(error: error, updateType: type)
             })
-            .disposed(by: self.disposeBag)
+            .disposed(by: disposeBag)
     }
 
     /// Loads remote translators and syncs them with local data.
@@ -281,27 +283,27 @@ final class TranslatorsAndStylesController {
     /// - returns: Timestamp of repo update.
     private func _updateFromRepo(type: UpdateType) -> Single<Int> {
         // Startup update is limited to once daily, other updates happen always
-        guard type != .startup || self.didDayChange(from: Date(timeIntervalSince1970: Double(self.lastTimestamp))) else { return Single.just(self.lastTimestamp) }
+        guard type != .startup || didDayChange(from: Date(timeIntervalSince1970: Double(lastTimestamp))) else { return Single.just(lastTimestamp) }
 
         DDLogInfo("TranslatorsAndStylesController: update from repo, type=\(type)")
 
         let version = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? ""
         let bundle = (Bundle.main.infoDictionary?["CFBundleVersion"] as? String) ?? ""
-        let request = RepoRequest(timestamp: self.lastTimestamp, version: "\(version)-\(bundle)-iOS", type: type.rawValue, styles: self.styles(for: type))
-        return self.apiClient.send(request: request, queue: self.queue)
-                             .mapData(httpMethod: request.httpMethod.rawValue)
-                             .observe(on: self.scheduler)
-                             .flatMap { data, _ -> Single<(Int, [Translator], [(String, String)])> in
-                                 do {
-                                     let response = try self.parseRepoResponse(from: data)
-                                     return Single.just(response)
-                                 } catch let error {
-                                     return Single.error(error)
-                                 }
-                             }
-                             .flatMap { timestamp, translators, styles in
-                                 return self.syncRepoResponse(translators: translators, styles: styles).flatMap({ return Single.just(timestamp) })
-                             }
+        let request = RepoRequest(timestamp: lastTimestamp, version: "\(version)-\(bundle)-iOS", type: type.rawValue, styles: styles(for: type))
+        return apiClient.send(request: request, queue: queue)
+            .mapData(httpMethod: request.httpMethod.rawValue)
+            .observe(on: scheduler)
+            .flatMap { data, _ -> Single<(Int, [Translator], [(String, String)])> in
+                do {
+                    let response = try self.parseRepoResponse(from: data)
+                    return Single.just(response)
+                } catch let error {
+                    return Single.error(error)
+                }
+            }
+            .flatMap { timestamp, translators, styles in
+                return self.syncRepoResponse(translators: translators, styles: styles).flatMap({ return Single.just(timestamp) })
+            }
     }
 
     private func styles(for type: UpdateType) -> [Style]? {
@@ -309,7 +311,7 @@ final class TranslatorsAndStylesController {
 
         do {
             var styles: [Style] = []
-            try self.dbQueue.sync {
+            try dbQueue.sync {
                 let rStyles = try self.dbStorage.perform(request: ReadStylesDbRequest(), on: self.dbQueue)
                 styles = Array(rStyles.compactMap(Style.init))
                 rStyles.first?.realm?.invalidate()
@@ -334,8 +336,8 @@ final class TranslatorsAndStylesController {
     private func process(error: Swift.Error, updateType: UpdateType) {
         DDLogError("TranslatorsAndStylesController: error - \(error)")
 
-        guard let delegate = self.coordinator else {
-            self.queue.async(flags: .barrier) { [weak self] in
+        guard let delegate = coordinator else {
+            queue.async(flags: .barrier) { [weak self] in
                 self?.isLoading.accept(false)
             }
             return
@@ -343,7 +345,7 @@ final class TranslatorsAndStylesController {
 
         // In case of bundle loading error ask user whether we should try to reset.
         guard (error as? Error)?.isBundleLoadingError == true else {
-            self.queue.async(flags: .barrier) { [weak self] in
+            queue.async(flags: .barrier) { [weak self] in
                 self?.isLoading.accept(false)
             }
             return
@@ -366,58 +368,58 @@ final class TranslatorsAndStylesController {
     private func syncTranslatorsWithBundledData(deleteIndices: [String], forceUpdate: Bool) throws {
         // Load metadata index
         DDLogInfo("TranslatorsAndStylesController: load index")
-        let metadata = try self.loadIndex()
+        let metadata = try loadIndex()
         // Sync translators
         DDLogInfo("TranslatorsAndStylesController: sync translators to database")
-        let request = SyncTranslatorsDbRequest(updateMetadata: metadata, deleteIndices: deleteIndices, forceUpdate: forceUpdate, fileStorage: self.fileStorage)
+        let request = SyncTranslatorsDbRequest(updateMetadata: metadata, deleteIndices: deleteIndices, forceUpdate: forceUpdate, fileStorage: fileStorage)
         var updated: SyncTranslatorsDbRequest.Response = []
-        try self.dbQueue.sync {
-            updated = try self.dbStorage.perform(request: request, on: self.dbQueue, invalidateRealm: true)
+        try dbQueue.sync {
+            updated = try dbStorage.perform(request: request, on: dbQueue, invalidateRealm: true)
         }
         DDLogInfo("TranslatorsAndStylesController: updated \(updated.count) translators")
         // Delete files of deleted translators
         deleteIndices.forEach { id in
-            try? self.fileStorage.remove(Files.translator(filename: id))
+            try? fileStorage.remove(Files.translator(filename: id))
         }
         // Unzip updated translators
         DDLogInfo("TranslatorsAndStylesController: unzip translators")
-        try self.unzip(translators: updated)
+        try unzip(translators: updated)
         DDLogInfo("TranslatorsAndStylesController: unzipped translators")
     }
 
     /// Sync local styles with bundled styles.
     private func syncStylesWithBundledData() throws {
-        guard let stylesUrl = self.bundle.path(forResource: "Bundled/styles", ofType: "").flatMap({ URL(fileURLWithPath: $0) }) else {
+        guard let stylesUrl = bundle.path(forResource: "Bundled/styles", ofType: "").flatMap({ URL(fileURLWithPath: $0) }) else {
             throw Error.bundleMissing
         }
 
         // Load file metadata of bundled styles
-        let files: [File] = try self.fileStorage.contentsOfDirectory(at: Files.file(from: stylesUrl))
+        let files: [File] = try fileStorage.contentsOfDirectory(at: Files.file(from: stylesUrl))
         let styles: [Style] = files.compactMap({ file in
             guard file.ext == "csl" else { return nil }
-            return try? self.parseStyle(from: file)
+            return try? parseStyle(from: file)
         })
         // Sync styles
         let request = SyncStylesDbRequest(styles: styles)
         var updated: SyncStylesDbRequest.Response = []
-        try self.dbQueue.sync {
-            updated = try self.dbStorage.perform(request: request, on: self.dbQueue, invalidateRealm: true)
+        try dbQueue.sync {
+            updated = try dbStorage.perform(request: request, on: dbQueue, invalidateRealm: true)
         }
         DDLogInfo("TranslatorsAndStylesController: updated \(updated.count) styles")
         // Copy updated files
         for file in files.filter({ updated.contains($0.name) }) {
             let toFile = Files.style(filename: file.name)
-            if self.fileStorage.has(toFile) {
-                try self.fileStorage.remove(toFile)
+            if fileStorage.has(toFile) {
+                try fileStorage.remove(toFile)
             }
-            try self.fileStorage.copy(from: file, to: toFile)
+            try fileStorage.copy(from: file, to: toFile)
         }
     }
 
     /// Unzip individual translators from bundled zip file to translator location.
     /// - parameter translators: Array of tuples. Each tuple consists of translator id and translator filename.
     private func unzip(translators: [(id: String, filename: String)]) throws {
-        guard let zipUrl = self.bundle.path(forResource: "Bundled/translators/translators", ofType: "zip").flatMap({ URL(fileURLWithPath: $0) }),
+        guard let zipUrl = bundle.path(forResource: "Bundled/translators/translators", ofType: "zip").flatMap({ URL(fileURLWithPath: $0) }),
                 let archive = try? Archive(url: zipUrl, accessMode: .read, pathEncoding: nil) else {
             throw Error.bundleMissing
         }
@@ -425,7 +427,7 @@ final class TranslatorsAndStylesController {
         for (id, filename) in translators {
             guard let entry = archive[filename] else { continue }
             let file = Files.translator(filename: id)
-            try? self.fileStorage.remove(file)
+            try? fileStorage.remove(file)
             _ = try archive.extract(entry, to: file.createUrl())
         }
     }
@@ -482,7 +484,7 @@ final class TranslatorsAndStylesController {
 
     /// Manual reset of translators.
     func resetToBundle(completion: (() -> Void)? = nil) {
-        self.queue.async { [weak self] in
+        queue.async { [weak self] in
             self?._resetToBundle(completion: completion)
         }
     }
@@ -491,13 +493,13 @@ final class TranslatorsAndStylesController {
         do {
             DDLogInfo("TranslatorsAndStylesController: reset translators to bundle")
             // TODO: - implement styles reset if needed
-            try self._resetToBundle()
+            try _resetToBundle()
 
-            let lastTimestamp = try self.loadLastTimestamp()
-            let lastTranslatorCommitHash = try self.loadLastTranslatorCommitHash()
-            let lastTranslatorDeleted = try self.loadDeleted().0
+            let lastTimestamp = try loadLastTimestamp()
+            let lastTranslatorCommitHash = try loadLastTranslatorCommitHash()
+            let lastTranslatorDeleted = try loadDeleted().0
 
-            self.queue.async(flags: .barrier) { [weak self] in
+            queue.async(flags: .barrier) { [weak self] in
                 self?.lastTimestamp = lastTimestamp
                 self?.lastTranslatorCommitHash = lastTranslatorCommitHash
                 self?.lastTranslatorDeleted = lastTranslatorDeleted
@@ -515,20 +517,19 @@ final class TranslatorsAndStylesController {
     /// Reset local translators to match bundled translators.
     private func _resetToBundle() throws {
         // Load bundled data
-        guard let zipUrl = self.bundle.path(forResource: "Bundled/translators/translators", ofType: "zip")
-                                      .flatMap({ URL(fileURLWithPath: $0) }),
+        guard let zipUrl = bundle.path(forResource: "Bundled/translators/translators", ofType: "zip").flatMap({ URL(fileURLWithPath: $0) }),
               let archive = try? Archive(url: zipUrl, accessMode: .read, pathEncoding: nil) else {
             throw Error.bundleMissing
         }
         DDLogInfo("TranslatorsAndStylesController: load index")
-        let metadata = try self.loadIndex()
+        let metadata = try loadIndex()
         DDLogInfo("TranslatorsAndStylesController: loaded \(metadata.count) translators")
         // Remove existing translators and unzip all translators to folder
         DDLogInfo("TranslatorsAndStylesController: delete all existing local translators")
-        if self.fileStorage.has(Files.translators) {
-            try self.fileStorage.remove(Files.translators)
+        if fileStorage.has(Files.translators) {
+            try fileStorage.remove(Files.translators)
         }
-        try self.fileStorage.createDirectories(for: Files.translators)
+        try fileStorage.createDirectories(for: Files.translators)
         DDLogInfo("TranslatorsAndStylesController: extract bundled translators")
         for data in metadata {
             guard let entry = archive[data.filename] else { continue }
@@ -536,8 +537,8 @@ final class TranslatorsAndStylesController {
         }
         DDLogInfo("TranslatorsAndStylesController: reset database translators")
         // Reset metadata in database
-        try self.dbQueue.sync {
-            try self.dbStorage.perform(request: ResetTranslatorsDbRequest(metadata: metadata), on: self.dbQueue)
+        try dbQueue.sync {
+            try dbStorage.perform(request: ResetTranslatorsDbRequest(metadata: metadata), on: dbQueue)
         }
     }
 
@@ -548,16 +549,16 @@ final class TranslatorsAndStylesController {
 
         DDLogInfo("TranslatorsAndStylesController: load translators for \(url ?? "-")")
 
-        self.queue.sync { [weak self] in
-            guard let self = self else { return }
+        queue.sync { [weak self] in
+            guard let self else { return }
 
-            if !self.isLoading.value {
-                result = self.loadTranslators(matching: url)
+            if !isLoading.value {
+                result = loadTranslators(matching: url)
             }
 
             DDLogInfo("TranslatorsAndStylesController: wait for translators")
 
-            result = self.isLoading.filter({ !$0 }).first().flatMap { _ in return self.loadTranslators(matching: url) }
+            result = isLoading.filter({ !$0 }).first().flatMap { _ in return self.loadTranslators(matching: url) }
         }
 
         return result
@@ -595,16 +596,16 @@ final class TranslatorsAndStylesController {
         for uuid in uuids {
             guard !loadedUuids.contains(uuid) else { continue }
 
-            guard let translator = self.loadRawTranslator(from: Files.translator(filename: uuid), ifTargetMatches: url), let id = translator["translatorID"] as? String else { continue }
+            guard let translator = loadRawTranslator(from: Files.translator(filename: uuid), ifTargetMatches: url), let id = translator["translatorID"] as? String else { continue }
             loadedUuids.insert(id)
             translators.append(translator)
             // Add dependencies which are not yet loaded
-            let deps = self.findDependencies(for: translator).subtracting(loadedUuids).subtracting(loadedUuids)
+            let deps = findDependencies(for: translator).subtracting(loadedUuids).subtracting(loadedUuids)
             dependencies.formUnion(deps)
         }
 
         // Dependencies don't need to match the URL anymore.
-        translators.append(contentsOf: self.loadTranslatorsWithDependencies(for: dependencies, matching: nil, loadedUuids: &loadedUuids))
+        translators.append(contentsOf: loadTranslatorsWithDependencies(for: dependencies, matching: nil, loadedUuids: &loadedUuids))
 
         return translators
     }
@@ -616,7 +617,7 @@ final class TranslatorsAndStylesController {
         let data: Data
 
         do {
-            data = try self.fileStorage.read(file)
+            data = try fileStorage.read(file)
         } catch let error {
             DDLogError("TranslatorsAndStylesController: can't read data from \(file.createUrl()) - \(error)")
             return nil
@@ -627,7 +628,7 @@ final class TranslatorsAndStylesController {
             return nil
         }
 
-        guard let metadataEndIndex = self.metadataIndex(from: rawString),
+        guard let metadataEndIndex = metadataIndex(from: rawString),
               let metadataData = rawString[rawString.startIndex..<metadataEndIndex].data(using: .utf8) else {
             DDLogError("TranslatorsAndStylesController: can't find metadata in translator file")
             return nil
@@ -685,7 +686,7 @@ final class TranslatorsAndStylesController {
             DDLogError("TranslatorsAndStylesController: raw translator missing code")
             return []
         }
-        guard let uuidRegex = self.uuidExpression else { return [] }
+        guard let uuidRegex = uuidExpression else { return [] }
 
         let matches = uuidRegex.matches(in: code, options: [], range: NSRange(code.startIndex..., in: code))
         return Set(matches.compactMap({ $0.substring(withName: "uuid", in: code).flatMap(String.init) }))
@@ -742,13 +743,13 @@ final class TranslatorsAndStylesController {
     private func parse(deleted: String, lastDeletedVersion: Int) -> (Int, [String])? {
         let deletedLines = deleted.split(whereSeparator: { $0.isNewline })
         guard !deletedLines.isEmpty,
-              let version = self.parseDeleted(line: deletedLines[0]).flatMap(Int.init) else { return nil }
+              let version = parseDeleted(line: deletedLines[0]).flatMap(Int.init) else { return nil }
 
         if version <= lastDeletedVersion {
             return (lastDeletedVersion, [])
         }
 
-        let indices = (1..<deletedLines.count).compactMap({ self.parseDeleted(line: deletedLines[$0]) })
+        let indices = (1..<deletedLines.count).compactMap({ parseDeleted(line: deletedLines[$0]) })
         return (version, indices)
     }
 
@@ -852,7 +853,7 @@ final class TranslatorsAndStylesController {
     /// Load bundled index file and parse translator metadata.
     /// - returns: Parsed translator metadata.
     private func loadIndex() throws -> [TranslatorMetadata] {
-        guard let url = self.bundle.url(forResource: "Bundled/translators/index", withExtension: "json") else {
+        guard let url = bundle.url(forResource: "Bundled/translators/index", withExtension: "json") else {
             throw Error.bundleMissing
         }
         let data = try Data(contentsOf: url)
@@ -863,8 +864,8 @@ final class TranslatorsAndStylesController {
     /// Load bundled deleted.txt file and parse version and indices stored there.
     /// - returns: Tuple, where first value is the version of deleted file and second value is an array of indices of translators to be deleted.
     private func loadDeleted() throws -> (Int, [String]) {
-        return try self.loadFromBundle(resource: "Bundled/translators/deleted", type: "txt", map: {
-            guard let data = self.parse(deleted: $0, lastDeletedVersion: self.lastTranslatorDeleted) else {
+        return try loadFromBundle(resource: "Bundled/translators/deleted", type: "txt", map: {
+            guard let data = parse(deleted: $0, lastDeletedVersion: lastTranslatorDeleted) else {
                 throw Error.incompatibleDeleted
             }
             return data
@@ -874,7 +875,7 @@ final class TranslatorsAndStylesController {
     /// Load bundled last timestamp.
     /// - returns: Last timestamp.
     private func loadLastTimestamp() throws -> Int {
-        return try self.loadFromBundle(resource: "Bundled/timestamp", type: "txt", map: {
+        return try loadFromBundle(resource: "Bundled/timestamp", type: "txt", map: {
             guard let value = Int($0) else { throw Error.bundleMissing }
             return value
         })
@@ -883,13 +884,13 @@ final class TranslatorsAndStylesController {
     /// Load bundled last translator commit hash.
     /// - returns: Commit hash.
     private func loadLastTranslatorCommitHash() throws -> String {
-        return try self.loadFromBundle(resource: "Bundled/translators/commit_hash", type: "txt", map: { return $0 })
+        return try loadFromBundle(resource: "Bundled/translators/commit_hash", type: "txt", map: { return $0 })
     }
 
     /// Load bundled last styles commit hash.
     /// - returns: Commit hash.
     private func loadLastStylesCommitHash() throws -> String {
-        return try self.loadFromBundle(resource: "Bundled/styles/commit_hash", type: "txt", map: { return $0 })
+        return try loadFromBundle(resource: "Bundled/styles/commit_hash", type: "txt", map: { return $0 })
     }
 
     /// Load bundled data and map it to appropriate type.
@@ -898,7 +899,7 @@ final class TranslatorsAndStylesController {
     /// - parameter map: Mapping function to convert the raw string to appropriate value.
     /// - returns: Returns mapped result.
     private func loadFromBundle<Result>(resource: String, type: String, map: (String) throws -> Result) throws -> Result {
-        guard let url = self.bundle.path(forResource: resource, ofType: type).flatMap({ URL(fileURLWithPath: $0) }),
+        guard let url = bundle.path(forResource: resource, ofType: type).flatMap({ URL(fileURLWithPath: $0) }),
               let rawValue = try? String(contentsOf: url) else {
             throw Error.bundleMissing
         }
@@ -908,8 +909,8 @@ final class TranslatorsAndStylesController {
     // MARK: - Testing
 
     func setupTest(timestamp: Int, hash: String, deleted: Int) {
-        self.lastTimestamp = timestamp
-        self.lastTranslatorCommitHash = hash
-        self.lastTranslatorDeleted = deleted
+        lastTimestamp = timestamp
+        lastTranslatorCommitHash = hash
+        lastTranslatorDeleted = deleted
     }
 }
