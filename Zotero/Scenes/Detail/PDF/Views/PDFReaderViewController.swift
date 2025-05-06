@@ -1024,6 +1024,13 @@ extension PDFReaderViewController: IntraDocumentNavigationButtonsHandlerDelegate
 
 extension PDFReaderViewController: ParentWithSidebarController {}
 
+private struct Column {
+    let minX: CGFloat
+    let maxX: CGFloat
+    let minY: CGFloat
+    var blocks: [TextBlock]
+}
+
 extension PDFReaderViewController: SpeechmanagerDelegate {
     func getCurrentPageIndex() -> UInt {
         return documentController?.currentPage ?? 0
@@ -1041,14 +1048,24 @@ extension PDFReaderViewController: SpeechmanagerDelegate {
 
     func text(for pageIndex: UInt) -> String? {
         guard let textParser = viewModel.state.document.textParserForPage(at: pageIndex) else { return nil }
-
-        let sortedByX = textParser.textBlocks.sorted { $0.frame.minX > $1.frame.minX }
-        DDLogInfo("!!! TEST !!!")
-        for block in sortedByX {
-            DDLogInfo("\(block.frame.minX) - \"\(block.content)\"")
+        
+        // Sort blocks in reading order
+        let ySorted = textParser.textBlocks.sorted(by: { $0.frame.minY > $1.frame.minY })
+        var columns: [Column] = []
+        for block in ySorted {
+            if let index = columns.firstIndex(where: { block.frame.minX >= $0.minX && block.frame.maxX <= $0.maxX }) {
+                var column = columns[index]
+                column.blocks.append(block)
+                columns[index] = column
+            } else {
+                let offset = block.frame.width * 0.1
+                columns.append(Column(minX: block.frame.minX - offset, maxX: block.frame.maxX + offset, minY: block.frame.minY, blocks: [block]))
+            }
         }
-
-        let sorted = textParser.textBlocks.sorted(by: { $0.frame.minY > $1.frame.minY })
+        
+        columns.sort(by: { $0.minY == $1.minY ? $0.minX < $1.minX : $0.minY > $1.minY })
+        
+        let sorted = columns.map({ $0.blocks }).flatMap({ $0 })
         let lineHeight = calculateLineHeight(for: sorted)
         return createText(from: sorted, lineHeight: lineHeight)
 
