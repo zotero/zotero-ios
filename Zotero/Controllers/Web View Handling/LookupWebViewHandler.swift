@@ -73,7 +73,10 @@ final class LookupWebViewHandler: WebViewHandler {
             }
             .flatMap { translators -> Single<Any> in
                 DDLogInfo("LookupWebViewHandler: encode translators")
-                let encodedTranslators = WebViewEncoder.encodeAsJSONForJavascript(translators)
+                var encodedTranslators: String = ""
+                autoreleasepool {
+                    encodedTranslators = WebViewEncoder.encodeAsJSONForJavascript(translators)
+                }
                 return self.call(javascript: "initTranslators(\(encodedTranslators));")
             }
             .flatMap { _ -> Single<()> in
