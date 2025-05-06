@@ -66,6 +66,13 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
             guard let workerHtmlUrl = Bundle.main.url(forResource: "worker", withExtension: "html") else {
                 return .error(Error.cantFindFile("worker.html"))
             }
+            if let path = Bundle.main.resourcePath {
+                let fileManager = FileManager.default
+                if let subpaths = try? fileManager.subpathsOfDirectory(atPath: path) {
+                    DDLogInfo("PDFWorkerWebViewHandler: All bundle contents:")
+                    subpaths.forEach { DDLogInfo("PDFWorkerWebViewHandler: \($0)") }
+                }
+            }
             guard let workerJsUrl = Bundle.main.url(forResource: "worker", withExtension: "js", subdirectory: "Bundled/pdf_worker") else {
                 return .error(Error.cantFindFile("worker.js"))
             }
