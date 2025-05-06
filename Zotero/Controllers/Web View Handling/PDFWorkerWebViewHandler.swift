@@ -25,7 +25,7 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
     }
 
     enum Error: Swift.Error {
-        case cantFindFile
+        case cantFindFile(String)
     }
 
     enum PDFWorkerData {
@@ -63,10 +63,11 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
             }
 
         func createTemporaryWorker() -> Single<()> {
-            guard let workerHtmlUrl = Bundle.main.url(forResource: "worker", withExtension: "html"),
-                  let workerJsUrl = Bundle.main.url(forResource: "worker", withExtension: "js", subdirectory: "Bundled/pdf_worker")
-            else {
-                return .error(Error.cantFindFile)
+            guard let workerHtmlUrl = Bundle.main.url(forResource: "worker", withExtension: "html") else {
+                return .error(Error.cantFindFile("worker.html"))
+            }
+            guard let workerJsUrl = Bundle.main.url(forResource: "worker", withExtension: "js", subdirectory: "Bundled/pdf_worker") else {
+                return .error(Error.cantFindFile("worker.js"))
             }
             let temporaryDirectory = Files.tmpReaderDirectory
             self.temporaryDirectory = temporaryDirectory
@@ -85,7 +86,7 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
 
         func loadIndex() -> Single<()> {
             guard let temporaryDirectory else {
-                return .error(Error.cantFindFile)
+                return .error(Error.cantFindFile("temporary directory"))
             }
             let indexUrl = temporaryDirectory.copy(withName: "worker", ext: "html").createUrl()
             return load(fileUrl: indexUrl)
