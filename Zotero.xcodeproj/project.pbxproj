@@ -4454,7 +4454,6 @@
 				6185A1A82D9C266100285385 /* Bundle Utilities */,
 				B3A1D03D2BA321B30040FEE9 /* Bundle Note Editor */,
 				B3052A912C412E12008C8596 /* Bundle Reader */,
-				61BDE15F2D1458D200100612 /* Bundle PDF Worker */,
 				B30D59512206F60400884C4A /* Sources */,
 				B30D59522206F60400884C4A /* Frameworks */,
 				B30D59532206F60400884C4A /* Resources */,
@@ -4540,12 +4539,13 @@
 			buildConfigurationList = B311B32B2386A39800BCF592 /* Build configuration list for PBXNativeTarget "ZShare" */;
 			buildPhases = (
 				6179996F2D79F40B0051D35E /* SwiftGen */,
+				618D27E62DCA891900B60444 /* Bundle PDF Worker */,
 				B311B3182386A39800BCF592 /* Sources */,
 				B311B3192386A39800BCF592 /* Frameworks */,
 				B311B31A2386A39800BCF592 /* Resources */,
-				B3087B87245190F500FF05ED /* ShellScript */,
+				B3087B87245190F500FF05ED /* Cleanup Translate Files */,
 				B3E1970525308DCA00DBBE5C /* CopyFiles */,
-				B3E1970625308DD100DBBE5C /* ShellScript */,
+				B3E1970625308DD100DBBE5C /* Fix Code Signing */,
 			);
 			buildRules = (
 			);
@@ -4812,26 +4812,7 @@
 			shellPath = /bin/sh;
 			shellScript = "sh \"$SCRIPT_INPUT_FILE_0\"\n";
 		};
-		61AE2F282A2619E50072571D /* SwiftLint */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = SwiftLint;
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "swiftlint\n";
-		};
-		61BDE15F2D1458D200100612 /* Bundle PDF Worker */ = {
+		618D27E62DCA891900B60444 /* Bundle PDF Worker */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -4850,6 +4831,25 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "sh \"$SCRIPT_INPUT_FILE_0\"\n";
+		};
+		61AE2F282A2619E50072571D /* SwiftLint */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = SwiftLint;
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "swiftlint\n";
 		};
 		B3052A912C412E12008C8596 /* Bundle Reader */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -4871,7 +4871,7 @@
 			shellPath = /bin/sh;
 			shellScript = "sh \"$SCRIPT_INPUT_FILE_0\"\n";
 		};
-		B3087B87245190F500FF05ED /* ShellScript */ = {
+		B3087B87245190F500FF05ED /* Cleanup Translate Files */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -4881,6 +4881,7 @@
 			);
 			inputPaths = (
 			);
+			name = "Cleanup Translate Files";
 			outputFileListPaths = (
 			);
 			outputPaths = (
@@ -4988,7 +4989,7 @@
 			shellPath = /bin/sh;
 			shellScript = "find \"${CODESIGNING_FOLDER_PATH}\" -name '*.framework' -print0 | while read -d $'\\0' framework \ndo \n    codesign --force --deep --sign \"${EXPANDED_CODE_SIGN_IDENTITY}\" --preserve-metadata=identifier,entitlements --timestamp=none \"${framework}\" \ndone\n";
 		};
-		B3E1970625308DD100DBBE5C /* ShellScript */ = {
+		B3E1970625308DD100DBBE5C /* Fix Code Signing */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -4998,6 +4999,7 @@
 			);
 			inputPaths = (
 			);
+			name = "Fix Code Signing";
 			outputFileListPaths = (
 			);
 			outputPaths = (
