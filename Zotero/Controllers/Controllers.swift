@@ -399,7 +399,6 @@ final class UserControllers {
         self.webSocketController = webSocketController
         self.fileCleanupController = fileCleanupController
         citationController = CitationController(
-            stylesController: controllers.translatorsAndStylesController,
             fileStorage: controllers.fileStorage,
             dbStorage: dbStorage,
             bundledDataStorage: controllers.bundledDataStorage

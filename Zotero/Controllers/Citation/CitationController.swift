@@ -53,7 +53,6 @@ class CitationController: NSObject {
     }
 
     static let invalidItemTypes: Set<String> = [ItemTypes.attachment, ItemTypes.note]
-    private unowned let stylesController: TranslatorsAndStylesController
     private unowned let fileStorage: FileStorage
     private unowned let dbStorage: DbStorage
     private unowned let bundledDataStorage: DbStorage
@@ -62,9 +61,8 @@ class CitationController: NSObject {
     weak var webViewProvider: WebViewProvider?
     private var citationWebViewHandlerBySession: [Session: CitationWebViewHandler] = [:]
 
-    init(stylesController: TranslatorsAndStylesController, fileStorage: FileStorage, dbStorage: DbStorage, bundledDataStorage: DbStorage) {
+    init(fileStorage: FileStorage, dbStorage: DbStorage, bundledDataStorage: DbStorage) {
         let queue = DispatchQueue(label: "org.zotero.CitationController.queue", qos: .userInitiated)
-        self.stylesController = stylesController
         self.fileStorage = fileStorage
         self.dbStorage = dbStorage
         self.bundledDataStorage = bundledDataStorage
