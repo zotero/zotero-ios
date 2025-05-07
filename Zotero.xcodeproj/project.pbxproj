@@ -4543,9 +4543,9 @@
 				B311B3182386A39800BCF592 /* Sources */,
 				B311B3192386A39800BCF592 /* Frameworks */,
 				B311B31A2386A39800BCF592 /* Resources */,
-				B3087B87245190F500FF05ED /* ShellScript */,
+				B3087B87245190F500FF05ED /* Cleanup Translate Files */,
 				B3E1970525308DCA00DBBE5C /* CopyFiles */,
-				B3E1970625308DD100DBBE5C /* ShellScript */,
+				B3E1970625308DD100DBBE5C /* Fix Code Signing */,
 			);
 			buildRules = (
 			);
@@ -4871,7 +4871,7 @@
 			shellPath = /bin/sh;
 			shellScript = "sh \"$SCRIPT_INPUT_FILE_0\"\n";
 		};
-		B3087B87245190F500FF05ED /* ShellScript */ = {
+		B3087B87245190F500FF05ED /* Cleanup Translate Files */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -4881,6 +4881,7 @@
 			);
 			inputPaths = (
 			);
+			name = "Cleanup Translate Files";
 			outputFileListPaths = (
 			);
 			outputPaths = (
@@ -4988,7 +4989,7 @@
 			shellPath = /bin/sh;
 			shellScript = "find \"${CODESIGNING_FOLDER_PATH}\" -name '*.framework' -print0 | while read -d $'\\0' framework \ndo \n    codesign --force --deep --sign \"${EXPANDED_CODE_SIGN_IDENTITY}\" --preserve-metadata=identifier,entitlements --timestamp=none \"${framework}\" \ndone\n";
 		};
-		B3E1970625308DD100DBBE5C /* ShellScript */ = {
+		B3E1970625308DD100DBBE5C /* Fix Code Signing */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -4998,6 +4999,7 @@
 			);
 			inputPaths = (
 			);
+			name = "Fix Code Signing";
 			outputFileListPaths = (
 			);
 			outputPaths = (
