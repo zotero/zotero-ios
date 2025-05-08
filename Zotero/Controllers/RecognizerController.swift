@@ -303,13 +303,13 @@ final class RecognizerController {
 
         switch identifier {
         case .arXiv, .doi, .isbn:
-            lookup(identifier: identifier.identifierWithPrefix, copyTagsAsAutomatic: identifier.copyTagsAsAutomatic, remainingIdentifiers: remainingIdentifiers)
+            lookup(identifier: identifier.identifierWithPrefix, copyTagsAsAutomatic: identifier.copyTagsAsAutomatic)
 
         case .title(let title):
             use(title: title, with: response)
         }
 
-        func lookup(identifier: String, copyTagsAsAutomatic: Bool, remainingIdentifiers: [RecognizerIdentifier]) {
+        func lookup(identifier: String, copyTagsAsAutomatic: Bool) {
             DDLogInfo("RecognizerController: \(task) - looking up identifier \(identifier)")
             guard let lookupWebViewHandler = getLookupWebViewHandler(for: task) else {
                 enqueueNextIdentifierLookup(for: task)
