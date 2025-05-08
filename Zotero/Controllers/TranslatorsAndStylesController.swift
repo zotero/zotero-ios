@@ -47,6 +47,17 @@ final class TranslatorsAndStylesController {
         }
     }
 
+    struct Types: OptionSet {
+        let rawValue: Int
+
+        static let `import` = Types(rawValue: 1 << 0)
+        static let export = Types(rawValue: 1 << 1)
+        static let web = Types(rawValue: 1 << 2)
+        static let search = Types(rawValue: 1 << 3)
+
+        static let all: Types = [.import, .export, .web, .search]
+    }
+
     @UserDefault(key: "TranslatorLastTimestamp", defaultValue: 0)
     private var lastTimestamp: Int
     @UserDefault(key: "TranslatorLastCommitHash", defaultValue: "")
@@ -544,7 +555,7 @@ final class TranslatorsAndStylesController {
 
     // MARK: - Translator loading
 
-    func translators(matching url: String? = nil) -> Single<[RawTranslator]> {
+    func translators(matching url: String? = nil, types: Types = .all) -> Single<[RawTranslator]> {
         var result: Single<[RawTranslator]> = .just([])
 
         DDLogInfo("TranslatorsAndStylesController: load translators for \(url ?? "-")")
@@ -553,18 +564,18 @@ final class TranslatorsAndStylesController {
             guard let self else { return }
 
             if !isLoading.value {
-                result = loadTranslators(matching: url)
+                result = loadTranslators(matching: url, types: types)
             }
 
             DDLogInfo("TranslatorsAndStylesController: wait for translators")
 
-            result = isLoading.filter({ !$0 }).first().flatMap { _ in return self.loadTranslators(matching: url) }
+            result = isLoading.filter({ !$0 }).first().flatMap { _ in return self.loadTranslators(matching: url, types: types) }
         }
 
         return result
     }
 
-    private func loadTranslators(matching url: String?) -> Single<[RawTranslator]> {
+    private func loadTranslators(matching url: String?, types: Types = .all) -> Single<[RawTranslator]> {
         return Single.create { subscriber -> Disposable in
             DDLogInfo("TranslatorsAndStylesController: load translators timestamp: \(self.lastTimestamp)")
 
@@ -573,7 +584,7 @@ final class TranslatorsAndStylesController {
 
                 var loadedUuids: Set<String> = []
                 let allUuids = try self.fileStorage.contentsOfDirectory(at: Files.translators).compactMap({ $0.fileName })
-                let translators = self.loadTranslatorsWithDependencies(for: Set(allUuids), matching: url, loadedUuids: &loadedUuids)
+                let translators = self.loadTranslatorsWithDependencies(for: Set(allUuids), matching: url, types: types, loadedUuids: &loadedUuids)
 
                 DDLogInfo("TranslatorsAndStylesController: found \(translators.count) translators")
 
@@ -587,7 +598,7 @@ final class TranslatorsAndStylesController {
         }
     }
 
-    private func loadTranslatorsWithDependencies(for uuids: Set<String>, matching url: String?, loadedUuids: inout Set<String>) -> [RawTranslator] {
+    private func loadTranslatorsWithDependencies(for uuids: Set<String>, matching url: String?, types: Types, loadedUuids: inout Set<String>) -> [RawTranslator] {
         guard !uuids.isEmpty else { return [] }
 
         var translators: [RawTranslator] = []
@@ -596,7 +607,7 @@ final class TranslatorsAndStylesController {
         for uuid in uuids {
             guard !loadedUuids.contains(uuid) else { continue }
 
-            guard let translator = loadRawTranslator(from: Files.translator(filename: uuid), ifTargetMatches: url), let id = translator["translatorID"] as? String else { continue }
+            guard let translator = loadRawTranslator(from: Files.translator(filename: uuid), ifTargetMatches: url, types: types), let id = translator["translatorID"] as? String else { continue }
             loadedUuids.insert(id)
             translators.append(translator)
             // Add dependencies which are not yet loaded
@@ -605,7 +616,7 @@ final class TranslatorsAndStylesController {
         }
 
         // Dependencies don't need to match the URL anymore.
-        translators.append(contentsOf: loadTranslatorsWithDependencies(for: dependencies, matching: nil, loadedUuids: &loadedUuids))
+        translators.append(contentsOf: loadTranslatorsWithDependencies(for: dependencies, matching: nil, types: types, loadedUuids: &loadedUuids))
 
         return translators
     }
@@ -613,7 +624,7 @@ final class TranslatorsAndStylesController {
     /// Loads raw translator dictionary from translator file.
     /// - parameter file: File of translator.
     /// - returns: Raw translator data.
-    private func loadRawTranslator(from file: File, ifTargetMatches url: String? = nil) -> RawTranslator? {
+    private func loadRawTranslator(from file: File, ifTargetMatches url: String? = nil, types: Types) -> RawTranslator? {
         let data: Data
 
         do {
@@ -676,6 +687,14 @@ final class TranslatorsAndStylesController {
         if let id = metadata["id"] {
             metadata["translatorID"] = id
             metadata["id"] = nil
+        }
+
+        if types == .all {
+            return metadata
+        }
+
+        guard let translatorType = metadata["translatorType"] as? Int, translatorType & types.rawValue != 0 else {
+            return nil
         }
 
         return metadata

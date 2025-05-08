@@ -195,7 +195,7 @@ final class IdentifierLookupController {
             var lookupWebViewHandler: LookupWebViewHandler?
             inMainThread(sync: true) {
                 if let webView = self.webViewProvider?.addWebView(configuration: nil) {
-                    lookupWebViewHandler = LookupWebViewHandler(webView: webView, translatorsController: self.translatorsController)
+                    lookupWebViewHandler = LookupWebViewHandler(webView: webView, translatorsController: self.translatorsController, types: .all)
                 }
             }
             guard let lookupWebViewHandler else {

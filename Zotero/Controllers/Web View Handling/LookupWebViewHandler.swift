@@ -41,11 +41,13 @@ final class LookupWebViewHandler: WebViewHandler {
     }
 
     private let translatorsController: TranslatorsAndStylesController
+    private let types: TranslatorsAndStylesController.Types
     private let disposeBag: DisposeBag
     let observable: PublishSubject<Result<LookupData, Swift.Error>>
 
-    init(webView: WKWebView, translatorsController: TranslatorsAndStylesController) {
+    init(webView: WKWebView, translatorsController: TranslatorsAndStylesController, types: TranslatorsAndStylesController.Types) {
         self.translatorsController = translatorsController
+        self.types = types
         observable = PublishSubject()
         disposeBag = DisposeBag()
 
@@ -69,7 +71,7 @@ final class LookupWebViewHandler: WebViewHandler {
             }
             .flatMap { _ -> Single<[RawTranslator]> in
                 DDLogInfo("LookupWebViewHandler: load translators")
-                return self.translatorsController.translators()
+                return self.translatorsController.translators(types: self.types)
             }
             .flatMap { translators -> Single<Any> in
                 DDLogInfo("LookupWebViewHandler: encode translators")
