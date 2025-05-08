@@ -600,7 +600,7 @@ final class TranslatorsAndStylesController {
             loadedUuids.insert(id)
             translators.append(translator)
             // Add dependencies which are not yet loaded
-            let deps = findDependencies(for: translator).subtracting(loadedUuids).subtracting(loadedUuids)
+            let deps = findDependencies(for: translator).subtracting(loadedUuids)
             dependencies.formUnion(deps)
         }
 
@@ -652,7 +652,7 @@ final class TranslatorsAndStylesController {
             return nil
         }
 
-        if let url = url, !target.isEmpty {
+        if let url, !target.isEmpty {
             do {
                 let regularExpression = try NSRegularExpression(pattern: target)
                 if regularExpression.firstMatch(in: url, range: NSRange(url.startIndex..., in: url)) == nil {
