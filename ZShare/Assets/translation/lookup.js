@@ -45,7 +45,7 @@ function initSchemaAndDateFormats(encodedSchema, encodedDateFormats) {
     }
 }
 
-async function lookup(encodedIdentifiers) {
+async function lookup(encodedIdentifiers, saveAttachments) {
     // Get identifiers
     Zotero.debug("Parse identifiers");
 
@@ -89,7 +89,7 @@ async function lookup(encodedIdentifiers) {
 
         try {
             translate.setIdentifier(identifier);
-            let items = await translate.translate({ libraryID: false, collections: false, saveAttachments: true });
+            let items = await translate.translate({ libraryID: false, collections: false, saveAttachments: saveAttachments });
             window.webkit.messageHandlers.itemsHandler.postMessage({"identifier": identifier, "data": items});
         } catch (e) {
             // Continue with other ids on failure

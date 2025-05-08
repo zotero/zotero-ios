@@ -214,7 +214,7 @@ final class IdentifierLookupController {
             DDLogError("IdentifierLookupController: can't find lookup web view handler for settings - \(lookupSettings)")
             return
         }
-        lookupWebViewHandler.lookUp(identifier: identifier)
+        lookupWebViewHandler.lookUp(identifier: identifier, saveAttachments: true)
     }
     
     func cancelAllLookups() {

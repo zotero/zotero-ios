@@ -118,13 +118,13 @@ final class LookupWebViewHandler: WebViewHandler {
         }
     }
 
-    func lookUp(identifier: String) {
+    func lookUp(identifier: String, saveAttachments: Bool) {
         performAfterInitialization()
             .flatMap { [weak self] _ -> Single<Any> in
                 guard let self else { return .never() }
                 DDLogInfo("LookupWebViewHandler: call translate js")
                 let encodedIdentifiers = WebViewEncoder.encodeForJavascript(identifier.data(using: .utf8))
-                return call(javascript: "lookup(\(encodedIdentifiers));")
+                return call(javascript: "lookup(\(encodedIdentifiers), \(saveAttachments ? "true" : "false"));")
             }
             .subscribe(on: MainScheduler.instance)
             .observe(on: MainScheduler.instance)
