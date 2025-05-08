@@ -315,7 +315,7 @@ final class RecognizerController {
                 enqueueNextIdentifierLookup(for: task)
                 return
             }
-            lookupWebViewHandler.lookUp(identifier: identifier, saveAttachments: false)
+            lookupWebViewHandler.lookup(identifier: identifier, saveAttachments: false)
 
             func getLookupWebViewHandler(for task: Task) -> LookupWebViewHandler? {
                 if let lookupWebViewHandler = lookupWebViewHandlersByTask[task] {

@@ -118,7 +118,7 @@ final class LookupWebViewHandler: WebViewHandler {
         }
     }
 
-    func lookUp(identifier: String, saveAttachments: Bool) {
+    func lookup(identifier: String, saveAttachments: Bool) {
         performAfterInitialization()
             .flatMap { [weak self] _ -> Single<Any> in
                 guard let self else { return .never() }
