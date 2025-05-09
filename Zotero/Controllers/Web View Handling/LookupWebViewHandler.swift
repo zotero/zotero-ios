@@ -41,11 +41,13 @@ final class LookupWebViewHandler: WebViewHandler {
     }
 
     private let translatorsController: TranslatorsAndStylesController
+    private let types: TranslatorsAndStylesController.Types
     private let disposeBag: DisposeBag
     let observable: PublishSubject<Result<LookupData, Swift.Error>>
 
-    init(webView: WKWebView, translatorsController: TranslatorsAndStylesController) {
+    init(webView: WKWebView, translatorsController: TranslatorsAndStylesController, types: TranslatorsAndStylesController.Types) {
         self.translatorsController = translatorsController
+        self.types = types
         observable = PublishSubject()
         disposeBag = DisposeBag()
 
@@ -69,7 +71,7 @@ final class LookupWebViewHandler: WebViewHandler {
             }
             .flatMap { _ -> Single<[RawTranslator]> in
                 DDLogInfo("LookupWebViewHandler: load translators")
-                return self.translatorsController.translators()
+                return self.translatorsController.translators(types: self.types)
             }
             .flatMap { translators -> Single<Any> in
                 DDLogInfo("LookupWebViewHandler: encode translators")
@@ -118,13 +120,13 @@ final class LookupWebViewHandler: WebViewHandler {
         }
     }
 
-    func lookUp(identifier: String) {
+    func lookup(identifier: String, saveAttachments: Bool) {
         performAfterInitialization()
             .flatMap { [weak self] _ -> Single<Any> in
                 guard let self else { return .never() }
                 DDLogInfo("LookupWebViewHandler: call translate js")
                 let encodedIdentifiers = WebViewEncoder.encodeForJavascript(identifier.data(using: .utf8))
-                return call(javascript: "lookup(\(encodedIdentifiers));")
+                return call(javascript: "lookup(\(encodedIdentifiers), \(saveAttachments ? "true" : "false"));")
             }
             .subscribe(on: MainScheduler.instance)
             .observe(on: MainScheduler.instance)

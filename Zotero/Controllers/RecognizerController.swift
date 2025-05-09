@@ -303,19 +303,19 @@ final class RecognizerController {
 
         switch identifier {
         case .arXiv, .doi, .isbn:
-            lookup(identifier: identifier.identifierWithPrefix, copyTagsAsAutomatic: identifier.copyTagsAsAutomatic, remainingIdentifiers: remainingIdentifiers)
+            lookup(identifier: identifier.identifierWithPrefix, copyTagsAsAutomatic: identifier.copyTagsAsAutomatic)
 
         case .title(let title):
             use(title: title, with: response)
         }
 
-        func lookup(identifier: String, copyTagsAsAutomatic: Bool, remainingIdentifiers: [RecognizerIdentifier]) {
+        func lookup(identifier: String, copyTagsAsAutomatic: Bool) {
             DDLogInfo("RecognizerController: \(task) - looking up identifier \(identifier)")
             guard let lookupWebViewHandler = getLookupWebViewHandler(for: task) else {
                 enqueueNextIdentifierLookup(for: task)
                 return
             }
-            lookupWebViewHandler.lookUp(identifier: identifier)
+            lookupWebViewHandler.lookup(identifier: identifier, saveAttachments: false)
 
             func getLookupWebViewHandler(for task: Task) -> LookupWebViewHandler? {
                 if let lookupWebViewHandler = lookupWebViewHandlersByTask[task] {
@@ -325,7 +325,7 @@ final class RecognizerController {
                 DispatchQueue.main.sync { [weak self, weak webViewProvider] in
                     guard let self, let webViewProvider else { return }
                     let webView = webViewProvider.addWebView(configuration: nil)
-                    lookupWebViewHandler = LookupWebViewHandler(webView: webView, translatorsController: translatorsController)
+                    lookupWebViewHandler = LookupWebViewHandler(webView: webView, translatorsController: translatorsController, types: .search)
                 }
                 guard let lookupWebViewHandler else {
                     DDLogWarn("RecognizerController: \(task) - can't create LookupWebViewHandler instance")
