@@ -841,6 +841,10 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
         case 404:
             error = createError(from: downloadTask, statusCode: 404, response: "Not Found")
 
+        case 429:
+            error = createError(from: downloadTask, statusCode: 429, response: "Too Many Requests")
+            // TODO: Retry download task if response has a Retry-After header
+
         default:
             error = checkFileResponse(for: Files.file(from: location), fileStorage: fileStorage, downloadTask: downloadTask)
         }
