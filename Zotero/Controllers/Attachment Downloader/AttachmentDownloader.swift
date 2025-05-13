@@ -153,7 +153,8 @@ final class AttachmentDownloader: NSObject {
         session = URLSessionCreator.createSession(for: Self.sessionId, delegate: self, httpMaximumConnectionsPerHost: Self.maxConcurrentDownloads)
         session.getAllTasks { [weak self] tasks in
             guard let self else { return }
-            resumeDownloads(tasks: tasks, downloader: self)
+            let tasksGroupedByIdentifier = Dictionary(grouping: tasks, by: { $0.taskIdentifier })
+            resumeDownloads(tasksGroupedByIdentifier: tasksGroupedByIdentifier, downloader: self)
         }
         #endif
 
@@ -167,8 +168,8 @@ final class AttachmentDownloader: NSObject {
             })
             .disposed(by: disposeBag)
 
-        func resumeDownloads(tasks: [URLSessionTask], downloader: AttachmentDownloader) {
-            let taskIds: Set<Int> = Set(tasks.map { $0.taskIdentifier })
+        func resumeDownloads(tasksGroupedByIdentifier: [Int: [URLSessionTask]], downloader: AttachmentDownloader) {
+            let taskIds = Set(tasksGroupedByIdentifier.keys)
             downloader.dbQueue.async { [weak downloader] in
                 guard let downloader else { return }
                 let (cancelledTaskIds, activeDownloads, downloadsToRestore) = loadDatabaseDownloads(
@@ -180,8 +181,7 @@ final class AttachmentDownloader: NSObject {
 
                 DDLogInfo("AttachmentDownloader: cancel stored downloads - \(cancelledTaskIds.count)")
                 for taskId in cancelledTaskIds {
-                    guard let task = tasks.first(where: { $0.taskIdentifier == taskId }) else { continue }
-                    task.cancel()
+                    tasksGroupedByIdentifier[taskId]?.forEach { $0.cancel() }
                 }
 
                 guard !activeDownloads.isEmpty || !downloadsToRestore.isEmpty else { return }
@@ -237,7 +237,8 @@ final class AttachmentDownloader: NSObject {
 
                         guard let attachmentItem = try? dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: rDownload.key), on: dbQueue),
                               let attachment = AttachmentCreator.attachment(for: attachmentItem, fileStorage: fileStorage, urlDetector: nil),
-                              let file = attachment.file else {
+                              let file = attachment.file
+                        else {
                             // Attachment item doesn't exist anymore, cancel download
                             toDelete.append(download)
                             if let taskId = rDownload.taskId {
@@ -246,12 +247,13 @@ final class AttachmentDownloader: NSObject {
                             continue
                         }
 
+                        let enqueuedDownload = EnqueuedDownload(download: download, file: file, progress: Progress(), extractAfterDownload: false)
                         if let taskId = rDownload.taskId, existingTaskIds.contains(taskId) {
                             // Download is ongoing, cache data
-                            activeDownloads.append((taskId, EnqueuedDownload(download: download, file: file, progress: Progress(), extractAfterDownload: false)))
+                            activeDownloads.append((taskId, enqueuedDownload))
                         } else {
                             // Download was cancelled by OS, restart download
-                            downloadsToRestore.append(EnqueuedDownload(download: download, file: file, progress: Progress(), extractAfterDownload: false))
+                            downloadsToRestore.append(enqueuedDownload)
                         }
                     }
 
