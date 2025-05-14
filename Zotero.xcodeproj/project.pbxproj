@@ -18,6 +18,8 @@
 		61099E6E2C91BAF300EDD92C /* NSDecimalNumber+Rounding.m in Sources */ = {isa = PBXBuildFile; fileRef = 61099E6D2C91BAF300EDD92C /* NSDecimalNumber+Rounding.m */; };
 		61099E6F2C91BAF300EDD92C /* NSDecimalNumber+Rounding.m in Sources */ = {isa = PBXBuildFile; fileRef = 61099E6D2C91BAF300EDD92C /* NSDecimalNumber+Rounding.m */; };
 		61168F612D50D4B6005495E8 /* PDFWorkerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61168F602D50D4B6005495E8 /* PDFWorkerController.swift */; };
+		611FF4E02DD47F860094184A /* RetryDelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 611FF4DF2DD47F860094184A /* RetryDelay.swift */; };
+		611FF4E12DD47F860094184A /* RetryDelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 611FF4DF2DD47F860094184A /* RetryDelay.swift */; };
 		612361072D439D6A007FA575 /* PDFWorkerWebViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 612361062D439D6A007FA575 /* PDFWorkerWebViewHandler.swift */; };
 		612361082D439D6A007FA575 /* PDFWorkerWebViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 612361062D439D6A007FA575 /* PDFWorkerWebViewHandler.swift */; };
 		6135EF9A2C2ABCD7008DA17B /* SquareAnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6135EF992C2ABCD7008DA17B /* SquareAnnotationView.swift */; };
@@ -1342,6 +1344,7 @@
 		61099E6D2C91BAF300EDD92C /* NSDecimalNumber+Rounding.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "NSDecimalNumber+Rounding.m"; sourceTree = "<group>"; };
 		611486502A9CD511002EEBEF /* ci_post_xcodebuild.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ci_post_xcodebuild.sh; sourceTree = "<group>"; };
 		61168F602D50D4B6005495E8 /* PDFWorkerController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFWorkerController.swift; sourceTree = "<group>"; };
+		611FF4DF2DD47F860094184A /* RetryDelay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetryDelay.swift; sourceTree = "<group>"; };
 		612361062D439D6A007FA575 /* PDFWorkerWebViewHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFWorkerWebViewHandler.swift; sourceTree = "<group>"; };
 		6135EF992C2ABCD7008DA17B /* SquareAnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquareAnnotationView.swift; sourceTree = "<group>"; };
 		6135EF9B2C2ABDD1008DA17B /* AnnotationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationManager.swift; sourceTree = "<group>"; };
@@ -2802,6 +2805,7 @@
 				B377F2A1249373A400022943 /* Notifications.swift */,
 				B3B1EE052502675E00D8BC1E /* Parsing.swift */,
 				B305654423FC051E003304F2 /* Predicates.swift */,
+				611FF4DF2DD47F860094184A /* RetryDelay.swift */,
 				B3BC6B1F250FA437006A8B9C /* SchemaError.swift */,
 				B305656223FC051E003304F2 /* SortType.swift */,
 				B3235C9124ADE11E0034113B /* StringAttributes.swift */,
@@ -5782,6 +5786,7 @@
 				B343419E260A093400093E63 /* CollectionIdentifier.swift in Sources */,
 				B3A351E3271578B1002E597A /* WebDavDeleteRequest.swift in Sources */,
 				B35C529C26383BDD007BD036 /* ReadAllDownloadedItemsDbRequest.swift in Sources */,
+				611FF4E02DD47F860094184A /* RetryDelay.swift in Sources */,
 				B373C98F2B1F5431007FD56C /* PDFThumbnailsLayout.swift in Sources */,
 				B305660723FC051E003304F2 /* LoginRequest.swift in Sources */,
 				61A0C8472B8F669C0048FF92 /* PSPDFKitUI+Extensions.swift in Sources */,
@@ -5844,6 +5849,7 @@
 				B39DBFF42D7EF2C600454486 /* FeatureGates.swift in Sources */,
 				B305675F23FC0A0B003304F2 /* Collection.swift in Sources */,
 				B305676023FC0A0B003304F2 /* Convertible.swift in Sources */,
+				611FF4E12DD47F860094184A /* RetryDelay.swift in Sources */,
 				B305676123FC0A0B003304F2 /* Defaults.swift in Sources */,
 				B305676223FC0A0B003304F2 /* DelayIntervals.swift in Sources */,
 				B305676323FC0A0B003304F2 /* DeletableObject.swift in Sources */,

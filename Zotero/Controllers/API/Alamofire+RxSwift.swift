@@ -20,24 +20,6 @@ struct AFResponseError: Error, @unchecked Sendable {
     let response: String
 }
 
-private enum RetryDelay {
-    case constant(Double)
-    case progressive(initial: Double, multiplier: Double, maxDelay: Double)
-}
-
-extension RetryDelay {
-    func seconds(for attempt: Int) -> Double {
-        switch self {
-        case .constant(let time):
-            return time
-
-        case .progressive(let initial, let multiplier, let maxDelay):
-            let delay = attempt == 1 ? initial : (initial * pow(multiplier, Double(attempt - 1)))
-            return min(maxDelay, delay)
-        }
-    }
-}
-
 extension PrimitiveSequence where Trait == SingleTrait, Element == (Data?, HTTPURLResponse) {
     func mapData(httpMethod: String) -> Single<(Data, HTTPURLResponse)> {
         self.flatMap { data, response in
@@ -53,7 +35,7 @@ extension PrimitiveSequence where Trait == SingleTrait, Element == (Data?, HTTPU
 
 extension ObservableType where Element == (Data?, HTTPURLResponse) {
     func retryIfNeeded() -> Observable<Element> {
-        return self.retry(maxAttemptCount: 10, retryDelay: { error -> RetryDelay? in
+        return self.retry(maxAttemptCount: RetryDelay.maxAttemptsCount, retryDelay: { error -> RetryDelay? in
             guard let responseError = error as? AFResponseError else { return nil }
             switch responseError.error {
             case .responseValidationFailed(let reason):
@@ -72,7 +54,7 @@ extension ObservableType where Element == (Data?, HTTPURLResponse) {
                                 return .constant(time)
                             }
                         }
-                        return .progressive(initial: 2.5, multiplier: 2, maxDelay: 3600)
+                        return .progressive()
                     }
                     return nil
                 default: return nil
