@@ -361,7 +361,7 @@
 "settings.export.copy_as_html" = "Copy as HTML";
 "settings.versionAndBuild" = "Version %@ Build %@";
 "settings.export_db" = "Export Database File";
-"settings.full_sync_debug" = "Full Sync Debugging";
+"settings.full_sync_debug" = "Advanced";
 "settings.full_sync.start" = "Start Full Sync Debugging";
 "settings.full_sync.other_in_progress" = "Sync is already in progress. Wait for it to finish.";
 "settings.full_sync.in_progress" = "A full sync is in progress. Wait for it to finish and post the Debug ID to the Zotero Forums.";
