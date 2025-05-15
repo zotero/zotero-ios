@@ -1025,10 +1025,39 @@ extension PDFReaderViewController: IntraDocumentNavigationButtonsHandlerDelegate
 extension PDFReaderViewController: ParentWithSidebarController {}
 
 private struct Column {
-    let minX: CGFloat
-    let maxX: CGFloat
-    let minY: CGFloat
-    var blocks: [TextBlock]
+    private(set) var frame: CGRect
+    private(set) var blocks: [TextBlock]
+    // If true, it's single column for full width in this page, otherwise there are multiple columns next to each other.
+    let isSingle: Bool
+    
+    init(blocks: [TextBlock], isSingle: Bool) {
+        self.blocks = blocks
+        self.isSingle = isSingle
+        frame = Self.frame(from: blocks)
+    }
+    
+    mutating func append(_ block: TextBlock) {
+        blocks.append(block)
+        frame = Self.appending(block, to: frame)
+    }
+    
+    private static func frame(from blocks: [TextBlock]) -> CGRect {
+        var frame: CGRect?
+        for block in blocks {
+            if let currentFrame = frame {
+                frame = Self.appending(block, to: currentFrame)
+            } else {
+                frame = block.frame
+            }
+        }
+        return frame ?? .zero
+    }
+    
+    private static func appending(_ block: TextBlock, to frame: CGRect) -> CGRect {
+        let minX = min(frame.minX, block.frame.minX)
+        let maxX = max(frame.maxX, block.frame.maxX)
+        return CGRect(x: minX, y: frame.minY, width: maxX - minX, height: block.frame.maxY - frame.minY)
+    }
 }
 
 extension PDFReaderViewController: SpeechmanagerDelegate {
@@ -1048,22 +1077,44 @@ extension PDFReaderViewController: SpeechmanagerDelegate {
 
     func text(for pageIndex: UInt) -> String? {
         guard let textParser = viewModel.state.document.textParserForPage(at: pageIndex) else { return nil }
+
+        let text = textParser.text
         
         // Sort blocks in reading order
         let ySorted = textParser.textBlocks.sorted(by: { $0.frame.minY > $1.frame.minY })
         var columns: [Column] = []
-        for block in ySorted {
-            if let index = columns.firstIndex(where: { block.frame.minX >= $0.minX && block.frame.maxX <= $0.maxX }) {
-                var column = columns[index]
-                column.blocks.append(block)
-                columns[index] = column
-            } else {
-                let offset = block.frame.width * 0.1
-                columns.append(Column(minX: block.frame.minX - offset, maxX: block.frame.maxX + offset, minY: block.frame.minY, blocks: [block]))
+        for (idx, block) in ySorted.enumerated() {
+            var hasTextBlockToTheRight = false
+            for idy in idx..<ySorted.count {
+                let yBlock = ySorted[idy]
+                if block.frame.maxX < yBlock.frame.minX {
+                    hasTextBlockToTheRight = true
+                    break
+                }
             }
+            
+            if columns.isEmpty {
+                columns.append(.init(blocks: [block], isSingle: !hasTextBlockToTheRight))
+                continue
+            }
+            
+//            if !hasTextBlockToTheRight {
+//                if let column = columns.last, column.isSingle {
+//                    
+//                }
+//            }
+//            let offset = block.frame.width * 0.1
+//            // Ignorovat sirku a vysku, nechat to takto prejst prvy krat, potom prejst druhy krat a zistit, ktore columns sa prekryvaju a rozbit columns s mensim poctom blokov a priradit bloky na spravne miesto, pripadne nechat rozdelene
+//            if let index = columns.lastIndex(where: { block.frame.minX >= ($0.frame.minX - offset) && block.frame.maxX <= ($0.frame.maxX + offset) && block.frame.width >= $0.frame.width * 0.8 && $0.frame.maxY - block.frame.maxY <= 40 }) {
+//                var column = columns[index]
+//                column.append(block)
+//                columns[index] = column
+//            } else {
+//                columns.append(Column(blocks: [block]))
+//            }
         }
         
-        columns.sort(by: { $0.minY == $1.minY ? $0.minX < $1.minX : $0.minY > $1.minY })
+        columns.sort(by: { $0.frame.minY == $1.frame.minY ? $0.frame.minX < $1.frame.minX : $0.frame.minY > $1.frame.minY })
         
         let sorted = columns.map({ $0.blocks }).flatMap({ $0 })
         let lineHeight = calculateLineHeight(for: sorted)
