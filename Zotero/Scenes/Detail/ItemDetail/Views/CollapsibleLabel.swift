@@ -17,11 +17,13 @@ final class CollapsibleLabel: UILabel {
     private var collapsedString: NSAttributedString?
     private var expandedString: NSAttributedString?
     private var originalString: NSAttributedString?
+    private var maxWidth: CGFloat = 0
 
     func set(text: NSAttributedString, isCollapsed: Bool, maxWidth: CGFloat) {
-        if originalString != text {
+        if (originalString != text) || (self.maxWidth != maxWidth) {
             createStrings(from: text, maxWidth: maxWidth)
             originalString = text
+            self.maxWidth = maxWidth
         }
         attributedText = isCollapsed ? collapsedString : expandedString
         self.isCollapsed = isCollapsed
