@@ -199,3 +199,14 @@ extension Results where Element: Syncable & Object {
         return sorted.first
     }
 }
+
+extension Realm {
+    func selfAndSubcollectionKeys(for key: String, libraryId: LibraryIdentifier) -> Set<String> {
+        var keys: Set<String> = [key]
+        let children = objects(RCollection.self).filter(.parentKey(key, in: libraryId))
+        for child in children {
+            keys.formUnion(selfAndSubcollectionKeys(for: child.key, libraryId: libraryId))
+        }
+        return keys
+    }
+}
