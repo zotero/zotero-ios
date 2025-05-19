@@ -182,6 +182,9 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 state.itemTitles = [:]
             }
+
+        case .applySettings:
+            applySettings(in: viewModel)
         }
     }
 
@@ -528,6 +531,20 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
     }
 
     // MARK: - Searching & Filtering
+
+    private func applySettings(in viewModel: ViewModel<ItemsActionHandler>) {
+        let results = try? results(
+            for: viewModel.state.searchTerm,
+            filters: viewModel.state.filters,
+            collectionId: viewModel.state.collection.identifier,
+            sortType: viewModel.state.sortType,
+            libraryId: viewModel.state.library.identifier
+        )
+        update(viewModel: viewModel) { state in
+            state.results = results
+            state.changes = [.results]
+        }
+    }
 
     private func filter(with filters: [ItemsFilter], in viewModel: ViewModel<ItemsActionHandler>) {
         guard filters != viewModel.state.filters else { return }

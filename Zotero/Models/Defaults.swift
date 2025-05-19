@@ -50,7 +50,7 @@ final class Defaults {
     @UserDefault(key: "ShareExtensionIncludeAttachment", defaultValue: true)
     var shareExtensionIncludeAttachment: Bool
 
-    @UserDefault(key: "ShowSubcollectionItems", defaultValue: false, defaults: .standard)
+    @UserDefault(key: "ShowSubcollectionItems", defaultValue: false, defaults: .standard, didChangeNotificationName: .showSubcollectionItemsChanged)
     var showSubcollectionItems: Bool
 
     @UserDefault(key: "ShowCollectionItemCounts", defaultValue: true, defaults: .standard)
