@@ -13,4 +13,6 @@ extension Notification.Name {
     static let attachmentFileDeleted = Notification.Name("org.zotero.AttachmentFileDeleted")
     // Sent when attachment (`RItem`) is completely removed from the app (not just trashed). Used to remove attachment files of deleted attachments.
     static let attachmentDeleted = Notification.Name(rawValue: "org.zotero.AttachmentsDeleted")
+    // Sent when Defaults.shared.showSubcollectionItems changes.
+    static let showSubcollectionItemsChanged = Notification.Name(rawValue: "org.zotero.Defaults.shared.showSubcollectionItemsChanged")
 }

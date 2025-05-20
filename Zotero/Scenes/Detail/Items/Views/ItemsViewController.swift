@@ -56,6 +56,7 @@ final class ItemsViewController: BaseItemsViewController {
         setupFileObservers()
         setupRecognizerObserver()
         setupAppStateObserver()
+        setupSettingsObserver()
 
         if let term = viewModel.state.searchTerm, !term.isEmpty {
             navigationItem.searchController?.searchBar.text = term
@@ -144,6 +145,18 @@ final class ItemsViewController: BaseItemsViewController {
                     guard let self else { return }
                     viewModel.process(action: .clearTitleCache)
                     handler?.reloadAll()
+                })
+                .disposed(by: disposeBag)
+        }
+
+        func setupSettingsObserver() {
+            NotificationCenter.default
+                .rx
+                .notification(.showSubcollectionItemsChanged)
+                .observe(on: MainScheduler.instance)
+                .subscribe(onNext: { [weak self] _ in
+                    guard let self else { return }
+                    viewModel.process(action: .applySettings)
                 })
                 .disposed(by: disposeBag)
         }

@@ -32,45 +32,36 @@ struct ReadItemsDbRequest: DbResponseRequest {
     func process(in database: Realm) throws -> Results<RItem> {
         var results: Results<RItem>
 
-        if Defaults.shared.showSubcollectionItems, case .collection(let key) = self.collectionId {
+        if Defaults.shared.showSubcollectionItems, case .collection(let key) = collectionId {
             // Filter results with subcollections
-            let keys = self.selfAndSubcollectionKeys(for: key, in: database)
-            results = database.objects(RItem.self).filter(.items(forCollections: keys, libraryId: self.libraryId))
+            let keys = database.selfAndSubcollectionKeys(for: key, libraryId: libraryId)
+            results = database.objects(RItem.self).filter(.items(forCollections: keys, libraryId: libraryId))
         } else {
             // Filter results from given collection only
-            results = database.objects(RItem.self).filter(.items(for: self.collectionId, libraryId: self.libraryId))
+            results = database.objects(RItem.self).filter(.items(for: collectionId, libraryId: libraryId))
         }
         // Apply search
-        if !self.searchTextComponents.isEmpty {
-            results = results.filter(.itemSearch(for: self.searchTextComponents))
+        if !searchTextComponents.isEmpty {
+            results = results.filter(.itemSearch(for: searchTextComponents))
         }
         // Apply filters
-        if !self.filters.isEmpty {
-            for filter in self.filters {
-                switch filter {
-                case .downloadedFiles:
-                    results = results.filter("fileDownloaded = true or any children.fileDownloaded = true")
+        for filter in filters {
+            switch filter {
+            case .downloadedFiles:
+                results = results.filter("fileDownloaded = true or any children.fileDownloaded = true")
 
-                case .tags(let tags):
-                    var predicates: [NSPredicate] = []
-                    for tag in tags {
-                        predicates.append(NSPredicate(format: "any tags.tag.name == %@ or any children.tags.tag.name == %@ or SUBQUERY(children, $item, any $item.children.tags.tag.name == %@).@count > 0", tag, tag, tag))
-                    }
-                    results = results.filter(NSCompoundPredicate(andPredicateWithSubpredicates: predicates))
+            case .tags(let tags):
+                var predicates: [NSPredicate] = []
+                for tag in tags {
+                    predicates.append(NSPredicate(
+                        format: "any tags.tag.name == %@ or any children.tags.tag.name == %@ or SUBQUERY(children, $item, any $item.children.tags.tag.name == %@).@count > 0", tag, tag, tag)
+                    )
                 }
+                results = results.filter(NSCompoundPredicate(andPredicateWithSubpredicates: predicates))
             }
         }
         // Sort if needed
-        return self.sortType.flatMap({ results.sorted(by: $0.descriptors) }) ?? results
-    }
-
-    private func selfAndSubcollectionKeys(for key: String, in database: Realm) -> Set<String> {
-        var keys: Set<String> = [key]
-        let children = database.objects(RCollection.self).filter(.parentKey(key, in: self.libraryId))
-        for child in children {
-            keys.formUnion(self.selfAndSubcollectionKeys(for: child.key, in: database))
-        }
-        return keys
+        return sortType.flatMap({ results.sorted(by: $0.descriptors) }) ?? results
     }
 }
 
@@ -83,6 +74,6 @@ struct ReadItemsWithKeysDbRequest: DbResponseRequest {
     var needsWrite: Bool { return false }
 
     func process(in database: Realm) throws -> Results<RItem> {
-        return database.objects(RItem.self).filter(.keys(self.keys, in: self.libraryId))
+        return database.objects(RItem.self).filter(.keys(keys, in: libraryId))
     }
 }

@@ -23,13 +23,24 @@ struct ReadFilteredTagsDbRequest: DbResponseRequest {
     func process(in database: Realm) throws -> Set<Tag> {
         var predicates: [NSPredicate] = [.typedTagLibrary(with: self.libraryId)]
 
-        switch self.collectionId {
-        case .collection(let string):
-            predicates.append(NSPredicate(format: "any item.collections.key = %@", string))
+        switch collectionId {
+        case .collection(let key):
+            let keys: Set<String>
+            if Defaults.shared.showSubcollectionItems {
+                keys = database.selfAndSubcollectionKeys(for: key, libraryId: libraryId)
+            } else {
+                keys = Set([key])
+            }
+            var collectionPredicates: [NSPredicate] = []
+            for key in keys {
+                collectionPredicates.append(NSPredicate(format: "any item.collections.key = %@", key))
+            }
+            predicates.append(NSCompoundPredicate(orPredicateWithSubpredicates: collectionPredicates))
 
         case .custom(let customType):
             switch customType {
-            case .all, .publications: break
+            case .all, .publications:
+                break
 
             case .unfiled:
                 predicates.append(NSPredicate(format: "any item.collections.@count == 0"))
@@ -37,15 +48,17 @@ struct ReadFilteredTagsDbRequest: DbResponseRequest {
             case .trash:
                 predicates.append(NSPredicate(format: "item.trash = true"))
             }
-        case .search: break
+
+        case .search:
+            break
         }
 
-        if !self.showAutomatic {
+        if !showAutomatic {
             // Don't apply this filter to colored or emoji tags
             predicates.append(NSPredicate(format: "tag.color != \"\" or tag.emojiGroup != nil or type = %d", RTypedTag.Kind.manual.rawValue))
         }
 
-        for filter in self.filters {
+        for filter in filters {
             switch filter {
             case .downloadedFiles:
                 predicates.append(NSPredicate(format: "item.fileDownloaded = true or any item.children.fileDownloaded = true"))

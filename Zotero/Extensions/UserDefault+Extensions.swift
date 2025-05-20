@@ -29,24 +29,32 @@ extension UserDefaults {
 }
 
 @propertyWrapper
-struct UserDefault<T> {
+struct UserDefault<T: Equatable> {
     let key: String
     let defaultValue: T
     private let defaults: UserDefaults
+    let didChangeNotificationName: Notification.Name?
 
-    init(key: String, defaultValue: T, defaults: UserDefaults = UserDefaults.zotero) {
+    init(key: String, defaultValue: T, defaults: UserDefaults = UserDefaults.zotero, didChangeNotificationName: Notification.Name? = nil) {
         self.key = key
         self.defaultValue = defaultValue
         self.defaults = defaults
+        self.didChangeNotificationName = didChangeNotificationName
     }
 
     var wrappedValue: T {
         get {
-            return self.defaults.object(forKey: self.key) as? T ?? self.defaultValue
+            return defaults.object(forKey: self.key) as? T ?? self.defaultValue
         }
 
         set {
-            self.defaults.set(newValue, forKey: self.key)
+            let didChange = newValue != wrappedValue
+            defaults.set(newValue, forKey: self.key)
+            guard didChange, let didChangeNotificationName else { return }
+            // Notification is posted asynchronously, otherwise another access to the same property before set finishes, will trigger a simultaneous access during modification error.
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: didChangeNotificationName, object: newValue)
+            }
         }
     }
 }
