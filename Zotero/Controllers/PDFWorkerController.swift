@@ -16,9 +16,9 @@ import RxSwift
 final class PDFWorkerController {
     // MARK: Types
     struct PDFWork: Hashable {
-        enum Kind {
+        enum Kind: Hashable {
             case recognizer
-            case fullText
+            case fullText(page: Int?)
         }
 
         let file: FileData
@@ -113,8 +113,8 @@ final class PDFWorkerController {
             case .recognizer:
                 pdfWorkerWebViewHandler.recognize(file: work.file)
 
-            case .fullText:
-                pdfWorkerWebViewHandler.getFullText(file: work.file)
+            case .fullText(let page):
+                pdfWorkerWebViewHandler.getFullText(file: work.file, page: page)
             }
 
             func setupObserver(for pdfWorkerWebViewHandler: PDFWorkerWebViewHandler) {
