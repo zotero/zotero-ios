@@ -58,12 +58,22 @@ final class CollapsibleLabel: UILabel {
 
     private func fit(attributedString stringToFit: NSAttributedString, toLastLineOf string: NSAttributedString, lineLimit: Int?, maxWidth: CGFloat) -> NSAttributedString? {
         guard let lines = string.lines(for: maxWidth) else { return nil }
+        guard let limit = lineLimit else {
+            // Since there is no limit we just append the string to fit and return it, so we don't trim unnecessarily any actual contents if the last line is close to the maxWidth.
+            let result = NSMutableAttributedString()
+            result.append(string)
+            result.append(stringToFit)
+            if let paragraphStyle = string.attributes(at: 0, effectiveRange: nil)[.paragraphStyle] as? NSParagraphStyle {
+                result.addAttribute(.paragraphStyle, value: paragraphStyle, range: NSRange(location: 0, length: result.length))
+            }
+            return result
+        }
 
-        if let limit = lineLimit, lines.count <= limit {
+        if lines.count <= limit {
+            // The lines are less than or equal to the limit, so it fits as is.
             return nil
         }
 
-        let limit = lineLimit ?? lines.count
         let lastLine = lines[limit - 1]
         let lastLineWithFittedString = line(string.attributedString(for: lastLine), withFittedString: stringToFit, maxWidth: maxWidth)
         let result = NSMutableAttributedString()
