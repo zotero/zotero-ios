@@ -31,6 +31,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
     }
 
     private let viewModel: ViewModel<PDFReaderActionHandler>
+    private unowned let pdfWorkerController: PDFWorkerController
     let disposeBag: DisposeBag
 
     var state: PDFReaderState { return viewModel.state }
@@ -184,8 +185,9 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         return false
     }
 
-    init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool) {
+    init(viewModel: ViewModel<PDFReaderActionHandler>, pdfWorkerController: PDFWorkerController, compactSize: Bool) {
         self.viewModel = viewModel
+        self.pdfWorkerController = pdfWorkerController
         isCompactWidth = compactSize
         disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
@@ -1072,7 +1074,32 @@ extension PDFReaderViewController: SpeechmanagerDelegate {
     }
     
     func text(for pageIndex: UInt, completion: @escaping (String?) -> Void) {
-        completion(nil)
+        guard let file = viewModel.state.document.fileURL.flatMap({ Files.file(from: $0) }) else {
+            DDLogInfo("PDFReaderViewController: document url not found")
+            completion(nil)
+            return
+        }
+        pdfWorkerController.queue(work: .init(file: file as! FileData, kind: .fullText(page: Int(pageIndex))))
+            .subscribe(onNext: { [weak self] update in
+                guard let self else { return }
+                switch update.kind {
+                case .failed, .cancelled:
+                    DDLogError("PDFReaderViewController: full data extraction failed")
+                    completion(nil)
+
+                case .inProgress:
+                    break
+
+                case .extractedData(let data):
+                    guard let text = data["text"] as? String else {
+                        DDLogError("PDFReaderViewController: full text extraction incorrect data - \(data)")
+                        completion(nil)
+                        return
+                    }
+                    completion(text)
+                }
+            })
+            .disposed(by: disposeBag)
     }
 
     func moved(to pageIndex: UInt) {
