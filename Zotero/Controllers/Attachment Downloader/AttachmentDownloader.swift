@@ -907,7 +907,7 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
         var shouldExtractAfterDownload = activeDownload.extractAfterDownload
         var isCompressed = webDavController.sessionStorage.isEnabled && !download.libraryId.isGroupLibrary
         if let response = downloadTask.response as? HTTPURLResponse {
-            let _isCompressed = response.value(forHTTPHeaderField: "Zotero-File-Compressed") == "Yes" || response.value(forHTTPHeaderField: "Content-Type") == "application/zip"
+            let _isCompressed = response.value(forHTTPHeaderField: "Content-Type") == "application/zip"
             isCompressed = isCompressed || _isCompressed
         }
         if isCompressed {

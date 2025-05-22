@@ -244,7 +244,7 @@ final class WebDavControllerSpec: QuickSpec {
                     let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
                     let request = FileRequest(webDavUrl: webDavUrl.appendingPathComponent(attachment.key + ".zip"), destination: file)
 
-                    createStub(for: request, ignoreBody: true, baseUrl: apiBaseUrl, headers: ["Zotero-File-Compressed": "Yes"], statusCode: 200, url: zipUrl)
+                    createStub(for: request, ignoreBody: true, baseUrl: apiBaseUrl, headers: ["Content-Type": "application/zip"], statusCode: 200, url: zipUrl)
 
                     waitUntil(timeout: .seconds(60)) { finished in
                         testDownload(attachment: attachment, successAction: {
