@@ -1198,26 +1198,3 @@ extension PDFDocumentViewController: PSPDFKitUI.ScrubberBarDelegate {
 }
 
 extension PDFDocumentViewController: ParentWithSidebarDocumentController {}
-
-extension PDFDocumentViewController: SpeechmanagerDelegate {
-    func getCurrentPageIndex() -> UInt {
-        return pdfController?.pageIndex ?? 0
-    }
-    
-    func getNextPageIndex(from currentPageIndex: UInt) -> UInt? {
-        guard currentPageIndex + 1 < viewModel.state.document.pageCount else { return nil }
-        return currentPageIndex + 1
-    }
-    
-    func getPreviousPageIndex(from currentPageIndex: UInt) -> UInt? {
-        guard currentPageIndex > 0 else { return nil }
-        return currentPageIndex - 1
-    }
-    
-    func text(for pageIndex: UInt) -> String? {
-        return viewModel.state.document.textParserForPage(at: pageIndex)?.text
-    }
-    
-    func moved(to pageIndex: UInt) {
-    }
-}
