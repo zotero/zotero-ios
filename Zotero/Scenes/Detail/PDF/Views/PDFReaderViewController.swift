@@ -245,6 +245,7 @@ class PDFReaderViewController: UIViewController {
                 },
                 delegate: self
             )
+            intraDocumentNavigationHandler.isHidden = !statusBarVisible
             let backButton = intraDocumentNavigationHandler.backButton
             let forwardButton = intraDocumentNavigationHandler.forwardButton
 
