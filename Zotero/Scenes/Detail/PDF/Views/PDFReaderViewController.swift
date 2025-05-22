@@ -1070,90 +1070,9 @@ extension PDFReaderViewController: SpeechmanagerDelegate {
         guard currentPageIndex > 0 else { return nil }
         return currentPageIndex - 1
     }
-
-    func text(for pageIndex: UInt) -> String? {
-        guard let textParser = viewModel.state.document.textParserForPage(at: pageIndex) else { return nil }
-
-        let text = textParser.text
-        
-        // Sort blocks in reading order
-        let ySorted = textParser.textBlocks.sorted(by: { $0.frame.minY > $1.frame.minY })
-        var columns: [Column] = []
-        for (idx, block) in ySorted.enumerated() {
-            var hasTextBlockToTheRight = false
-            for idy in idx..<ySorted.count {
-                let yBlock = ySorted[idy]
-                if block.frame.maxX < yBlock.frame.minX {
-                    hasTextBlockToTheRight = true
-                    break
-                }
-            }
-            
-            if columns.isEmpty {
-                columns.append(.init(blocks: [block], isSingle: !hasTextBlockToTheRight))
-                continue
-            }
-            
-//            if !hasTextBlockToTheRight {
-//                if let column = columns.last, column.isSingle {
-//                    
-//                }
-//            }
-//            let offset = block.frame.width * 0.1
-//            // Ignorovat sirku a vysku, nechat to takto prejst prvy krat, potom prejst druhy krat a zistit, ktore columns sa prekryvaju a rozbit columns s mensim poctom blokov a priradit bloky na spravne miesto, pripadne nechat rozdelene
-//            if let index = columns.lastIndex(where: { block.frame.minX >= ($0.frame.minX - offset) && block.frame.maxX <= ($0.frame.maxX + offset) && block.frame.width >= $0.frame.width * 0.8 && $0.frame.maxY - block.frame.maxY <= 40 }) {
-//                var column = columns[index]
-//                column.append(block)
-//                columns[index] = column
-//            } else {
-//                columns.append(Column(blocks: [block]))
-//            }
-        }
-        
-        columns.sort(by: { $0.frame.minY == $1.frame.minY ? $0.frame.minX < $1.frame.minX : $0.frame.minY > $1.frame.minY })
-        
-        let sorted = columns.map({ $0.blocks }).flatMap({ $0 })
-        let lineHeight = calculateLineHeight(for: sorted)
-        return createText(from: sorted, lineHeight: lineHeight)
-
-        func createText(from blocks: [TextBlock], lineHeight: CGFloat) -> String {
-            var text: String = ""
-            var paragraph: String = ""
-            for (idx, block) in blocks.enumerated() {
-                if idx == 0 {
-                    paragraph = block.content
-                    continue
-                }
-
-                let previousBlock = sorted[idx - 1]
-                let currentLineHeight = previousBlock.frame.minY - block.frame.minY
-                if currentLineHeight <= lineHeight {
-                    paragraph += " " + block.content
-                } else {
-                    text += paragraph + "\n\n"
-                    paragraph = block.content
-                }
-            }
-            text += paragraph
-            return text
-        }
-
-        func calculateLineHeight(for blocks: [TextBlock]) -> CGFloat {
-            var lineHeight: CGFloat = .infinity
-            for (idx, block) in blocks.enumerated() {
-                guard idx > 0 else { continue }
-                let currentLineHeight = sorted[idx - 1].frame.minY - block.frame.minY
-                if idx == 1 {
-                    lineHeight = currentLineHeight
-                    continue
-                }
-                // Filter out same-line blocks or very small differences (due to different font sizes)
-                if currentLineHeight < lineHeight && currentLineHeight > lineHeight * 0.2 {
-                    lineHeight = currentLineHeight
-                }
-            }
-            return round(lineHeight * 1.15)
-        }
+    
+    func text(for pageIndex: UInt, completion: @escaping (String?) -> Void) {
+        completion(nil)
     }
 
     func moved(to pageIndex: UInt) {
