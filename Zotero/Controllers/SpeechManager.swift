@@ -19,13 +19,17 @@ protocol SpeechmanagerDelegate: AnyObject {
     func getCurrentPageIndex() -> Index
     func getNextPageIndex(from currentPageIndex: Index) -> Index?
     func getPreviousPageIndex(from currentPageIndex: Index) -> Index?
-    func text(for pageIndex: Index) -> String?
+    func text(for pageIndex: Index, completion: @escaping (String?) -> Void)
     func moved(to pageIndex: Index)
 }
 
 final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSynthesizerDelegate {
     enum State {
-        case speaking, paused, stopped
+        case speaking, paused, stopped, loading
+    }
+    
+    private enum Error: Swift.Error {
+        case cantGetText
     }
 
     private struct SpeechData {
@@ -55,17 +59,17 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
             self.index = index
             self.voice = voice
             self.text = text
-            threshold = Int(Double(text.count) * 0.85)
+            threshold = Int(Double(text.count) * 0.75)
         }
     }
 
     private let synthetizer: AVSpeechSynthesizer
     let state: BehaviorRelay<State>
+    private let disposeBag: DisposeBag
 
     private var speech: SpeechData?
     private var page: PageData?
-    private var enqueuedNextPage: PageData?
-    private var enqueuedPreviousPage: PageData?
+    private var enqueuedNextPage: BehaviorSubject<PageData?>?
     private var ignoreFinishCallCount = 0
     private weak var delegate: Delegate?
     private lazy var paragraphRegex: NSRegularExpression? = {
@@ -78,6 +82,7 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
     init(delegate: Delegate) {
         synthetizer = AVSpeechSynthesizer()
         state = BehaviorRelay(value: .stopped)
+        disposeBag = DisposeBag()
         self.delegate = delegate
         super.init()
         synthetizer.delegate = self
@@ -86,22 +91,54 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
     // MARK: - Actions
 
     func start() {
-        guard let page = delegate?.getCurrentPageIndex(), let (text, voice) = getData(for: page) else { return }
-        DDLogInfo("SpeechManager: start \(text)")
-        go(to: PageData(index: page, text: text, voice: voice), reportPageChange: false)
+        guard let delegate else {
+            DDLogError("SpeechManager: can't get delegate")
+            return
+        }
+        
+        state.accept(.loading)
+        
+        let page = delegate.getCurrentPageIndex()
+        getData(for: page, from: delegate) { [weak self] data in
+            guard let self, let data else {
+                self?.state.accept(.stopped)
+                return
+            }
+            go(to: PageData(index: page, text: data.0, voice: data.1), reportPageChange: false)
+        }
 
-        func getData(for page: Delegate.Index) -> (String, AVSpeechSynthesisVoice)? {
-            guard let text = delegate?.text(for: page) else { return nil }
-            let recognizer = NLLanguageRecognizer()
-            recognizer.processString(text)
-            let language = recognizer.dominantLanguage?.rawValue
-            let voice = language.flatMap({ findVoice(for: $0) }) ?? AVSpeechSynthesisVoice(identifier: "en-US")!
-            return (text, voice)
+        func getData(for page: Delegate.Index, from delegate: Delegate, completion: @escaping ((String, AVSpeechSynthesisVoice)?) -> Void) {
+            delegate.text(for: page) { [weak self] text in
+                guard let self, let text else {
+                    completion(nil)
+                    return
+                }
+                let recognizer = NLLanguageRecognizer()
+                recognizer.processString(text)
+                let language = recognizer.dominantLanguage?.rawValue
+                let voice = language.flatMap({ findVoice(for: $0) }) ?? AVSpeechSynthesisVoice(identifier: "en-US")!
+                completion((text, voice))
+            }
 
             func findVoice(for language: String) -> AVSpeechSynthesisVoice? {
                 return AVSpeechSynthesisVoice.speechVoices().first { $0.language.starts(with: language) }
             }
         }
+    }
+    
+    func pause() {
+        guard synthetizer.isSpeaking else { return }
+        state.accept(.paused)
+        synthetizer.pauseSpeaking(at: .word)
+    }
+
+    func resume() {
+        guard synthetizer.isPaused else { return }
+        synthetizer.continueSpeaking()
+    }
+
+    func stop() {
+        synthetizer.stopSpeaking(at: .immediate)
     }
 
     private func go(to page: PageData, reportPageChange: Bool = true) {
@@ -113,8 +150,6 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
     }
 
     private func skip(to index: Int, on page: PageData) {
-        DDLogInfo("SpeechManager: SKIP TO \(index) ON \(page.index)")
-        DDLogInfo("SpeechManager: TEXT \"\(page.text[page.text.index(page.text.startIndex, offsetBy: index)..<page.text.endIndex])\"")
         speech = SpeechData(startIndex: index, speakingRange: NSRange(location: 0, length: 0))
         let text = page.text[page.text.index(page.text.startIndex, offsetBy: index)..<page.text.endIndex]
         speechSynthesizer(synthetizer, willSpeakRangeOfSpeechString: NSRange(location: 0, length: 0), utterance: AVSpeechUtterance())
@@ -129,35 +164,55 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
 
         let utterance = AVSpeechUtterance(string: text)
         utterance.voice = voice
+        state.accept(.speaking)
         synthetizer.speak(utterance)
     }
-
-    func pause() {
-        guard synthetizer.isSpeaking else { return }
-        synthetizer.pauseSpeaking(at: .word)
+    
+    private func preloadText(for page: Delegate.Index, voice: AVSpeechSynthesisVoice, delegate: Delegate) -> BehaviorSubject<PageData?> {
+        let subject = BehaviorSubject<PageData?>(value: nil)
+        delegate.text(for: page) { [weak subject] text in
+            if let text {
+                subject?.on(.next(PageData(index: page, text: text, voice: voice)))
+            } else {
+                subject?.on(.error(Error.cantGetText))
+            }
+        }
+        return subject
     }
-
-    func resume() {
-        guard synthetizer.isPaused else { return }
-        synthetizer.continueSpeaking()
-    }
-
-    func stop() {
-        synthetizer.stopSpeaking(at: .immediate)
+    
+    private func loadEnqueuedPage(_ page: BehaviorSubject<PageData?>, cleanPage: @escaping () -> Void) {
+        page.subscribe(
+            onNext: { [weak self] page in
+                guard let self else { return }
+                if let page {
+                    cleanPage()
+                    go(to: page)
+                } else {
+                    state.accept(.loading)
+                }
+            },
+            onError: { [weak self] _ in
+                guard let self else { return }
+                cleanup()
+                state.accept(.stopped)
+            }
+        )
+        .disposed(by: disposeBag)
     }
 
     func forward() {
         guard let page, let speech else { return }
+        
+        pause()
 
         let globalRange = speech.globalRange
         let start = globalRange.location + globalRange.length + 50
 
         if let index = findNextIndex() {
-            DDLogInfo("SpeechManager: FORWARD TO \(start); \(speech.startIndex); \(speech.speakingRange.location); \(speech.speakingRange.length)")
+            DDLogInfo("SpeechManager: forward to \(start); \(speech.startIndex); \(speech.speakingRange.location); \(speech.speakingRange.length)")
             skip(to: index, on: page)
         } else if let enqueuedNextPage {
-            go(to: enqueuedNextPage)
-            self.enqueuedNextPage = nil
+            loadEnqueuedPage(enqueuedNextPage, cleanPage: { [weak self] in self?.enqueuedNextPage = nil })
         } else {
             stop()
         }
@@ -172,17 +227,27 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
 
     func back() {
         guard let page, let speech else { return }
+        
+        pause()
 
         let globalRange = speech.globalRange
-        if globalRange.location >= 50 {
-            let start = globalRange.location - 50
-            DDLogInfo("SpeechManager: BACKWARD TO \(start); \(speech.startIndex); \(speech.speakingRange.location); \(speech.speakingRange.length)")
-            skip(to: start, on: page)
-        } else if let previousIndex = delegate?.getPreviousPageIndex(from: page.index), let text = delegate?.text(for: previousIndex) {
-            go(to: .init(index: previousIndex, text: text, voice: page.voice))
+        if let index = findPreviousIndex(page: page) {
+            DDLogInfo("SpeechManager: backward to \(index); \(speech.startIndex); \(speech.speakingRange.location); \(speech.speakingRange.length)")
+            skip(to: index, on: page)
+        } else if let previousIndex = delegate?.getPreviousPageIndex(from: page.index) {
+            state.accept(.loading)
+//            delegate?.text(for: previousIndex) { [weak self] text in
+//                guard let self else { return }
+//                if let text {
+//
+//                } else {
+//                    state.accept(.stopped)
+//                }
+//            }
+//            go(to: .init(index: previousIndex, text: text, voice: page.voice))
         }
 
-        func findPreviousIndex() -> Int? {
+        func findPreviousIndex(page: PageData) -> Int? {
             guard let paragraphRegex else { return nil }
             let matches = paragraphRegex.matches(in: page.text, range: NSRange(page.text.startIndex..<page.text.index(page.text.startIndex, offsetBy: globalRange.location), in: page.text))
             guard let range = matches.first?.range else { return nil }
@@ -208,9 +273,9 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
             ignoreFinishCallCount -= 1
             return
         }
+
         if let enqueuedNextPage {
-            go(to: enqueuedNextPage)
-            self.enqueuedNextPage = nil
+            loadEnqueuedPage(enqueuedNextPage, cleanPage: { [weak self] in self?.enqueuedNextPage = nil })
         } else {
             cleanup()
             state.accept(.stopped)
@@ -222,10 +287,8 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
         if characterRange.length > 0 {
             speech = speech?.copy(with: characterRange)
         }
-        guard enqueuedNextPage == nil && (page.text.count <= 300 || characterRange.location >= page.threshold),
-              let nextPageIndex = delegate?.getNextPageIndex(from: page.index),
-              let text = delegate?.text(for: nextPageIndex)
+        guard enqueuedNextPage == nil && (page.text.count <= 300 || characterRange.location >= page.threshold), let delegate, let nextPageIndex = delegate.getNextPageIndex(from: page.index)
         else { return }
-        enqueuedNextPage = PageData(index: nextPageIndex, text: text, voice: page.voice)
+        enqueuedNextPage = preloadText(for: page.index, voice: page.voice, delegate: delegate)
     }
 }
