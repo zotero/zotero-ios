@@ -84,10 +84,10 @@ final class PDFCoordinator: ReaderCoordinator {
 
     func start(animated: Bool) {
         let username = Defaults.shared.username
-        guard let dbStorage = self.controllers.userControllers?.dbStorage,
-              let userId = self.controllers.sessionController.sessionData?.userId,
+        guard let userControllers = controllers.userControllers,
+              let userId = controllers.sessionController.sessionData?.userId,
               !username.isEmpty,
-              let parentNavigationController = self.parentCoordinator?.navigationController
+              let parentNavigationController = parentCoordinator?.navigationController
         else { return }
 
         let settings = Defaults.shared.pdfSettings
@@ -99,19 +99,19 @@ final class PDFCoordinator: ReaderCoordinator {
             DDLogWarn("PDFCoordinator: displayName is empty")
         }
         let handler = PDFReaderActionHandler(
-            dbStorage: dbStorage,
-            annotationPreviewController: self.controllers.annotationPreviewController,
-            pdfThumbnailController: self.controllers.pdfThumbnailController,
-            htmlAttributedStringConverter: self.controllers.htmlAttributedStringConverter,
-            schemaController: self.controllers.schemaController,
-            fileStorage: self.controllers.fileStorage,
-            idleTimerController: self.controllers.idleTimerController,
-            dateParser: self.controllers.dateParser
+            dbStorage: userControllers.dbStorage,
+            annotationPreviewController: controllers.annotationPreviewController,
+            pdfThumbnailController: controllers.pdfThumbnailController,
+            htmlAttributedStringConverter: controllers.htmlAttributedStringConverter,
+            schemaController: controllers.schemaController,
+            fileStorage: controllers.fileStorage,
+            idleTimerController: controllers.idleTimerController,
+            dateParser: controllers.dateParser
         )
         let state = PDFReaderState(
-            url: self.url,
-            key: self.key,
-            parentKey: self.parentKey,
+            url: url,
+            key: key,
+            parentKey: parentKey,
             title: try? controllers.userControllers?.dbStorage.perform(request: ReadFilenameDbRequest(libraryId: libraryId, key: key), on: .main),
             libraryId: libraryId,
             initialPage: page,
@@ -124,12 +124,13 @@ final class PDFCoordinator: ReaderCoordinator {
         )
         let controller = PDFReaderViewController(
             viewModel: ViewModel(initialState: state, handler: handler),
+            pdfWorkerController: userControllers.pdfWorkerController,
             compactSize: UIDevice.current.isCompactWidth(size: parentNavigationController.view.frame.size)
         )
         controller.coordinatorDelegate = self
         handler.delegate = controller
 
-        self.navigationController?.setViewControllers([controller], animated: false)
+        navigationController?.setViewControllers([controller], animated: false)
     }
 }
 
