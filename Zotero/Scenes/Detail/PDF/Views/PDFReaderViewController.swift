@@ -1084,8 +1084,7 @@ extension PDFReaderViewController: SpeechmanagerDelegate {
             return
         }
         pdfWorkerController.queue(work: .init(file: file as! FileData, kind: .fullText(page: Int(pageIndex))))
-            .subscribe(onNext: { [weak self] update in
-                guard let self else { return }
+            .subscribe(onNext: { update in
                 switch update.kind {
                 case .failed, .cancelled:
                     DDLogError("PDFReaderViewController: full data extraction failed")
