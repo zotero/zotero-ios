@@ -58,26 +58,66 @@ bump_version() {
     echo "${version_parts[0]}.${version_parts[1]}.${version_parts[2]}"
 }
 
-# Bump version string according to trigger tag
-case "$CI_TAG" in
-    "trigger-build-bump-patch-"*)
+generate_feature_gates_line() {
+    local featureGates="$1"
+    local line='SWIFT_ACTIVE_COMPILATION_CONDITIONS = $(inherited)'
+
+    case "$featureGates" in
+        all)
+            line="$line FEATURE_GATES_ALL"
+            ;;
+        none)
+            # No feature gates added
+            ;;
+        +*|*+|*[^a-zA-Z0-9+_-]*)
+            echo "Error: Invalid feature gates format: $featureGates" >&2
+            return 1
+            ;;
+        *)
+            IFS='+' read -ra FEATURES <<< "$featureGates"
+            for feature in "${FEATURES[@]}"; do
+                UPPERCASE_FEATURE=$(echo "$feature" | tr '[:lower:]-' '[:upper:]_')
+                line="$line FEATURE_GATE_${UPPERCASE_FEATURE}"
+            done
+            ;;
+    esac
+
+    echo "$line"
+}
+
+
+# Extract version bump
+case "$(echo "$CI_TAG" | sed -n 's/^trigger-build-bump-\(.*\)-feature-gates-\(.*\)-date-.*$/\1/p')" in
+    "patch")
         newVersionString=$(bump_version "$versionString" "patch")
         ;;
-    "trigger-build-bump-minor-"*)
+    "minor")
         newVersionString=$(bump_version "$versionString" "minor")
         ;;
-    "trigger-build-bump-major-"*)
+    "major")
         newVersionString=$(bump_version "$versionString" "major")
         ;;
     *)
-        echo "Error: Invalid CI_TAG value $CI_TAG"
+        echo "Error: Invalid version bump in CI_TAG: $CI_TAG"
         exit 1
         ;;
 esac
 
+# Extract feature gates
+featureGates="$(echo "$CI_TAG" | sed -n 's/^trigger-build-bump-\(.*\)-feature-gates-\(.*\)-date-.*$/\2/p')"
+if [[ -z "$featureGates" ]]; then
+    echo "Error: Could not extract feature gates from CI_TAG: $CI_TAG"
+    exit 1
+fi
+featureGatesLine="$(generate_feature_gates_line "$featureGates")" || exit 1
+
 # Update Info.plist files
 echo "Setting version to $newVersionString"
 sed -i "" -e "s/MARKETING_VERSION \= [^\;]*\;/MARKETING_VERSION = $newVersionString;/" ../Zotero.xcodeproj/project.pbxproj
+
+# Update FeatureGates.xcconfig
+echo "Setting FeatureGates.xcconfig to $featureGatesLine"
+echo "$featureGatesLine" > FeatureGates.xcconfig
 
 # Install node
 which node || HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew install node

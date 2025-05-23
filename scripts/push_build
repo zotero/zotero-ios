@@ -2,8 +2,7 @@
 set -euo pipefail
 
 push_tag() {
-    TAG=$1
-    TAG=$1-$(date "+%Y%m%d%H%M%S")-$(echo $((RANDOM%10000)))
+    TAG="$1-date-$(date "+%Y%m%d%H%M%S")-$(echo $((RANDOM%10000)))"
     git tag $TAG -m "$TAG"
     git push origin $TAG
     git tag -d $TAG
@@ -12,20 +11,35 @@ push_tag() {
     echo "Pushed tag '$TAG' to branch '$CURRENT_BRANCH' at commit '$COMMIT'."
 }
 
-DEFAULT_TAG="trigger-build-bump-patch"
+TAG_START="trigger-build"
+TAG_BUMP="bump"
+DEFAULT_TAG_BUMP="patch"
+TAG_FEATURE_GATES="feature-gates"
+DEFAULT_TAG_FEATURE_GATES="all"
+DEFAULT_TAG="$TAG_START-$TAG_BUMP-$DEFAULT_TAG_BUMP-$TAG_FEATURE_GATES-$DEFAULT_TAG_FEATURE_GATES"
+
+# Positional arguments:
+# $1 = bump [patch (default)|minor|major]
+# $2 = feature-gates [all (default)|none|feature-a_..._feature-b]
 
 if [ $# -eq 0 ]; then
     TAG=$DEFAULT_TAG
 else
     case $1 in
         "minor"|"major"|"patch")
-            TAG="trigger-build-bump-$1"
+            TAG="$TAG_START-$TAG_BUMP-$1"
             ;;
         *)
-            echo "Invalid tag argument. Usage: $0 [patch (default)|minor|major]"
+            echo "Invalid bump argument. Usage: $0 [patch (default)|minor|major] [all (default)|none|feature-a_..._feature-b]"
             exit 1
             ;;
     esac
+
+    if [ -z "$2" ]; then
+        TAG="$TAG-$TAG_FEATURE_GATES-$DEFAULT_TAG_FEATURE_GATES"
+    else
+        TAG="$TAG-$TAG_FEATURE_GATES-$2"
+    fi
 fi
 
 if [ "$TAG" != "$DEFAULT_TAG" ]; then
