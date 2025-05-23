@@ -66,13 +66,20 @@ struct TextConverter {
         return replaceMatches(of: expression, with: " ", in: string)
     }
 
+    static func sanitizeText(_ string: String) -> String {
+        // Replaces faulty characters, that may cause a crash if used e.g. in Realm, with "\u{fffd}", i.e. �
+        return String(String.UnicodeScalarView(string.unicodeScalars))
+    }
+
     static func convertTextForAnnotation(from string: String) -> String {
-        let stringWithoutHyphens = removeHyphenAndNewlinePairs(from: string)
+        let sanitizedString = sanitizeText(string)
+        let stringWithoutHyphens = removeHyphenAndNewlinePairs(from: sanitizedString)
         return replaceNewlineOptionallySurroundedByWhitespaceExcludingEndingSentencesExpressionWithSingleSpace(from: stringWithoutHyphens).trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     static func convertTextForCopying(from string: String) -> String {
-        let stringWithoutHyphens = removeHyphenAndNewlinePairs(from: string)
+        let sanitizedString = sanitizeText(string)
+        let stringWithoutHyphens = removeHyphenAndNewlinePairs(from: sanitizedString)
         return replaceNewlinesWithSingleSpace(from: stringWithoutHyphens)
     }
 }
