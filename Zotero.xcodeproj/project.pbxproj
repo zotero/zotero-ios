@@ -48,6 +48,8 @@
 		614D65822A79C9AC007CF449 /* Localizable.stringsdict in Resources */ = {isa = PBXBuildFile; fileRef = 614D65802A79C9AC007CF449 /* Localizable.stringsdict */; };
 		614D65832A79C9B0007CF449 /* Localizable.stringsdict in Resources */ = {isa = PBXBuildFile; fileRef = 614D65802A79C9AC007CF449 /* Localizable.stringsdict */; };
 		614D65872A8030C9007CF449 /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 614D65862A8030C9007CF449 /* OrderedCollections */; };
+		615645512DE0825900B8AA6D /* FeatureGates.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 615645502DE0825900B8AA6D /* FeatureGates.xcconfig */; };
+		615645522DE0825900B8AA6D /* FeatureGates.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 615645502DE0825900B8AA6D /* FeatureGates.xcconfig */; };
 		615C10E12D5BA17A001F1E8E /* RecognizerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 615C10E02D5BA17A001F1E8E /* RecognizerController.swift */; };
 		615C10E22D5E22F1001F1E8E /* RecognizerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 615C10E02D5BA17A001F1E8E /* RecognizerController.swift */; };
 		615C10E32D5E230D001F1E8E /* PDFWorkerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61168F602D50D4B6005495E8 /* PDFWorkerController.swift */; };
@@ -1355,6 +1357,7 @@
 		613F32782C1086950088EF70 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		614D65812A79C9AC007CF449 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = en; path = en.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
 		614D65842A7BCC22007CF449 /* ci_post_clone.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ci_post_clone.sh; sourceTree = "<group>"; };
+		615645502DE0825900B8AA6D /* FeatureGates.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = FeatureGates.xcconfig; sourceTree = "<group>"; };
 		615C10E02D5BA17A001F1E8E /* RecognizerController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecognizerController.swift; sourceTree = "<group>"; };
 		615FD8762C8B475A00808C1D /* ReaderCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderCoordinator.swift; sourceTree = "<group>"; };
 		6162F2502D076A990096FEEE /* ReaderAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderAnnotation.swift; sourceTree = "<group>"; };
@@ -2937,6 +2940,7 @@
 				B311B31D2386A39800BCF592 /* ZShare */,
 				B30D59562206F60400884C4A /* Products */,
 				9A5CCE075B69890E36482447 /* Frameworks */,
+				615645502DE0825900B8AA6D /* FeatureGates.xcconfig */,
 			);
 			sourceTree = "<group>";
 		};
@@ -4699,6 +4703,7 @@
 				B3ADAE4B2833B56F00D46271 /* LookupViewController.xib in Resources */,
 				B3C8DD8827B54EE70084E1AD /* CollectionsPickerViewController.xib in Resources */,
 				B3593F2C241A61C700760E20 /* ItemDetailTagContentView.xib in Resources */,
+				615645522DE0825900B8AA6D /* FeatureGates.xcconfig in Resources */,
 				B3B78C44266FAF0800E91D02 /* citation in Resources */,
 				B32CDD3D2AEA9BB100EF5054 /* AnnotationPopoverViewController.xib in Resources */,
 				B30D59652206F60500884C4A /* LaunchScreen.storyboard in Resources */,
@@ -4762,6 +4767,7 @@
 				618D83E82BAAC88C00E7966B /* PrivacyInfo.xcprivacy in Resources */,
 				B311B3222386A39800BCF592 /* MainInterface.storyboard in Resources */,
 				B36459E926441A2000A0C2C0 /* TagRow.xib in Resources */,
+				615645512DE0825900B8AA6D /* FeatureGates.xcconfig in Resources */,
 				614D65832A79C9B0007CF449 /* Localizable.stringsdict in Resources */,
 				B33E8A4E27B6AAF000CBC7DE /* CollectionCellContentView.xib in Resources */,
 				B355B8FF239951E800E837B9 /* translation in Resources */,
@@ -6236,6 +6242,7 @@
 /* Begin XCBuildConfiguration section */
 		B30D597D2206F60500884C4A /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 615645502DE0825900B8AA6D /* FeatureGates.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -6294,13 +6301,14 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG FEATURE_GATE_ALL";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
 		};
 		B30D597E2206F60500884C4A /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 615645502DE0825900B8AA6D /* FeatureGates.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -6361,6 +6369,7 @@
 		};
 		B30D59802206F60500884C4A /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 615645502DE0825900B8AA6D /* FeatureGates.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -6399,6 +6408,7 @@
 		};
 		B30D59812206F60500884C4A /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 615645502DE0825900B8AA6D /* FeatureGates.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -6435,6 +6445,7 @@
 		};
 		B30D59832206F60500884C4A /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 615645502DE0825900B8AA6D /* FeatureGates.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_IDENTITY = "Apple Development";
@@ -6466,6 +6477,7 @@
 		};
 		B30D59842206F60500884C4A /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 615645502DE0825900B8AA6D /* FeatureGates.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_IDENTITY = "Apple Development";
@@ -6492,6 +6504,7 @@
 		};
 		B30D59862206F60500884C4A /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 615645502DE0825900B8AA6D /* FeatureGates.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
@@ -6517,6 +6530,7 @@
 		};
 		B30D59872206F60500884C4A /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 615645502DE0825900B8AA6D /* FeatureGates.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
@@ -6542,6 +6556,7 @@
 		};
 		B311B3282386A39800BCF592 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 615645502DE0825900B8AA6D /* FeatureGates.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = ZShare/ZShare.entitlements;
@@ -6576,6 +6591,7 @@
 		};
 		B311B32A2386A39800BCF592 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 615645502DE0825900B8AA6D /* FeatureGates.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = ZShare/ZShare.entitlements;
@@ -6609,6 +6625,7 @@
 		};
 		B3B74F852B9086B800D966EC /* Test */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 615645502DE0825900B8AA6D /* FeatureGates.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -6667,13 +6684,14 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG FEATURE_GATE_ALL";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Test;
 		};
 		B3B74F862B9086B800D966EC /* Test */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 615645502DE0825900B8AA6D /* FeatureGates.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -6712,6 +6730,7 @@
 		};
 		B3B74F872B9086B800D966EC /* Test */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 615645502DE0825900B8AA6D /* FeatureGates.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_IDENTITY = "Apple Development";
@@ -6743,6 +6762,7 @@
 		};
 		B3B74F882B9086B800D966EC /* Test */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 615645502DE0825900B8AA6D /* FeatureGates.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
@@ -6768,6 +6788,7 @@
 		};
 		B3B74F892B9086B800D966EC /* Test */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 615645502DE0825900B8AA6D /* FeatureGates.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = ZShare/ZShare.entitlements;
