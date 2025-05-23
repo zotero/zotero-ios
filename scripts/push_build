@@ -12,17 +12,25 @@ push_tag() {
     echo "Pushed tag '$TAG' to branch '$CURRENT_BRANCH' at commit '$COMMIT'."
 }
 
-DEFAULT_TAG="trigger-build-bump-patch"
+TAG_START="trigger-build"
+TAG_BUMP="bump"
+DEFAULT_TAG_BUMP="patch"
+TAG_FEATURE_GATES="feature-gates"
+DEFAULT_TAG="$TAG_START-$TAG_BUMP-$DEFAULT_TAG_BUMP"
+
+# Positional arguments:
+# $1 = bump type [patch (default)|minor|major]
+# $2 = feature gates [all (default)|none|feature-a+...+feature-b]
 
 if [ $# -eq 0 ]; then
     TAG=$DEFAULT_TAG
 else
     case $1 in
         "minor"|"major"|"patch")
-            TAG="trigger-build-bump-$1"
+            TAG="$TAG_START-$TAG_BUMP-$1"
             ;;
         *)
-            echo "Invalid tag argument. Usage: $0 [patch (default)|minor|major]"
+            echo "Invalid bump argument. Usage: $0 [patch (default)|minor|major] [all (default)|none|feature-a+...+feature-b]"
             exit 1
             ;;
     esac
