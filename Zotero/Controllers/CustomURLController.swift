@@ -14,12 +14,12 @@ import RxSwift
 final class CustomURLController {
     enum CustomURLAction: String {
         case select = "select"
-        case openPdf = "open-pdf"
+        case openItem = "open-pdf"
     }
 
     enum Kind {
         case itemDetail(key: String, libraryId: LibraryIdentifier, preselectedChildKey: String?)
-        case pdfReader(attachment: Attachment, libraryId: LibraryIdentifier, page: Int?, annotation: String?, parentKey: String?, isAvailable: Bool)
+        case itemReader(attachment: Attachment, libraryId: LibraryIdentifier, page: Int?, annotation: String?, parentKey: String?, isAvailable: Bool)
     }
 
     private unowned let dbStorage: DbStorage
@@ -32,16 +32,16 @@ final class CustomURLController {
 
     func process(url: URL) -> Kind? {
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-                components.scheme == "zotero",
-                let action = components.host.flatMap({ CustomURLAction(rawValue: $0) })
+              components.scheme == "zotero",
+              let action = components.host.flatMap({ CustomURLAction(rawValue: $0) })
         else { return nil }
 
         switch action {
         case .select:
             return select(path: components.path)
 
-        case .openPdf:
-            return openPdf(path: components.path, queryItems: components.queryItems ?? [])
+        case .openItem:
+            return openItem(path: components.path, queryItems: components.queryItems ?? [])
         }
 
         func select(path: String) -> Kind? {
@@ -59,11 +59,11 @@ final class CustomURLController {
             }
         }
 
-        func openPdf(path: String, queryItems: [URLQueryItem]) -> Kind? {
+        func openItem(path: String, queryItems: [URLQueryItem]) -> Kind? {
             guard let (key, libraryId, page, annotation) = extractProperties(from: path, and: queryItems, extractPageAndAnnotation: true, allowZotFileFormat: true) else { return nil }
-            return loadPdfKind(on: page, annotation: annotation, key: key, libraryId: libraryId)
+            return loadItemReaderKind(on: page, annotation: annotation, key: key, libraryId: libraryId)
 
-            func loadPdfKind(on page: Int?, annotation: String?, key: String, libraryId: LibraryIdentifier) -> Kind? {
+            func loadItemReaderKind(on page: Int?, annotation: String?, key: String, libraryId: LibraryIdentifier) -> Kind? {
                 do {
                     let item = try dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key), on: .main)
 
@@ -81,10 +81,10 @@ final class CustomURLController {
 
                     switch location {
                     case .local:
-                        return .pdfReader(attachment: attachment, libraryId: libraryId, page: page, annotation: annotation, parentKey: parentKey, isAvailable: true)
+                        return .itemReader(attachment: attachment, libraryId: libraryId, page: page, annotation: annotation, parentKey: parentKey, isAvailable: true)
 
                     case .remote, .localAndChangedRemotely:
-                        return .pdfReader(attachment: attachment, libraryId: libraryId, page: page, annotation: annotation, parentKey: parentKey, isAvailable: false)
+                        return .itemReader(attachment: attachment, libraryId: libraryId, page: page, annotation: annotation, parentKey: parentKey, isAvailable: false)
 
                     case .remoteMissing:
                         DDLogInfo("CustomURLConverter: attachment \(attachment.key) missing remotely")

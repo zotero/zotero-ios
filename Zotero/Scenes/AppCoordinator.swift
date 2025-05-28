@@ -327,7 +327,7 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
             DDLogInfo("AppCoordinator: show screen - item detail; key=\(key); library=\(libraryId)")
             showItemDetail(in: mainController, key: key, libraryId: libraryId, selectChildKey: preselectedChildKey, animated: animated, dismissIfPresenting: true)
 
-        case .pdfReader(let attachment, let libraryId, let page, let annotation, let parentKey, let isAvailable):
+        case .itemReader(let attachment, let libraryId, let page, let annotation, let parentKey, let isAvailable):
             let message = DDLogMessageFormat(
                 stringLiteral:
                     "AppCoordinator: show screen - pdf reader; key=\(attachment.key); library=\(libraryId);" +
