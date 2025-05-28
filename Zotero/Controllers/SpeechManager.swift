@@ -73,7 +73,7 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
     private var ignoreFinishCallCount = 0
     private weak var delegate: Delegate?
     private lazy var paragraphRegex: NSRegularExpression? = {
-        return try? NSRegularExpression(pattern: "(?:[^\r\n]+(?:\r?\n(?!\r?\n))*)")
+        return try? NSRegularExpression(pattern: "[\r\n]{1,}")
     }()
     var isSpeaking: Bool {
         return synthetizer.isSpeaking
@@ -235,7 +235,7 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
         guard let page, let speech else { return }
         
         pause()
-
+  
         if let index = findPreviousIndex(in: page.text, endIndex: page.text.index(page.text.startIndex, offsetBy: speech.globalRange.location)) {
             DDLogInfo("SpeechManager: backward to \(index); \(speech.startIndex); \(speech.speakingRange.location); \(speech.speakingRange.length)")
             skip(to: index, on: page)
@@ -255,9 +255,18 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
 
         func findPreviousIndex(in text: String, endIndex: String.Index) -> Int? {
             guard let paragraphRegex else { return nil }
-            let matches = paragraphRegex.matches(in: text, range: NSRange(text.startIndex..<endIndex, in: page.text))
-            guard let range = matches.first?.range else { return nil }
-            return range.location + range.length
+            let range = NSRange(text.startIndex..<endIndex, in: page.text)
+            let matches = paragraphRegex.matches(in: text, range: range)
+            guard let matchRange = matches.last?.range else { return nil }
+            if matchRange.location + matchRange.length != range.length {
+                // A lot of times it happens that `range` contains `\n` at the end. In that case the last match is actually the end of the string, so we filter out those cases.
+                return matchRange.location + matchRange.length
+            } else if matches.count > 1 {
+                let matchRangeBeforeLast = matches[matches.count - 2].range
+                return matchRangeBeforeLast.location + matchRangeBeforeLast.length
+            } else {
+                return nil
+            }
         }
     }
 
