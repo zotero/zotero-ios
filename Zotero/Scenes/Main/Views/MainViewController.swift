@@ -45,13 +45,19 @@ final class MainViewController: UISplitViewController {
 
     init(controllers: Controllers) {
         self.controllers = controllers
-        self.disposeBag = DisposeBag()
-
+        disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
+        setupControllers()
+        preferredDisplayMode = .oneBesideSecondary
 
-        self.setupControllers()
-
-        self.preferredDisplayMode = .oneBesideSecondary
+        func setupControllers() {
+            let masterController = MasterContainerViewController()
+            let masterCoordinator = MasterCoordinator(navigationController: masterController, mainCoordinatorDelegate: self, controllers: controllers)
+            masterController.coordinatorDelegate = masterCoordinator
+            masterCoordinator.start(animated: false)
+            viewControllers = [masterController]
+            self.masterCoordinator = masterCoordinator
+        }
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -65,11 +71,10 @@ final class MainViewController: UISplitViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.delegate = self
-
-        self.preferredPrimaryColumnWidthFraction = 1 / 3
-        self.maximumPrimaryColumnWidth = .infinity
-        self.minimumPrimaryColumnWidth = 320
+        delegate = self
+        preferredPrimaryColumnWidthFraction = 1 / 3
+        maximumPrimaryColumnWidth = .infinity
+        minimumPrimaryColumnWidth = 320
 
         DDLogInfo("MainViewController: viewDidLoad")
     }
@@ -92,17 +97,17 @@ final class MainViewController: UISplitViewController {
         set(userActivity: .mainActivity().set(title: detailCoordinator.displayTitle))
     }
 
-    func getDetailCoordinator(completed: @escaping (DetailCoordinator) -> Void) {
-        if let coordinator = self.detailCoordinator {
-            completed(coordinator)
+    func getDetailCoordinator(completion: @escaping (DetailCoordinator) -> Void) {
+        if let detailCoordinator {
+            completion(detailCoordinator)
             return
         }
-        self.detailCoordinatorGetter = completed
+        detailCoordinatorGetter = completion
     }
 
     private func showItems(for collection: Collection, in libraryId: LibraryIdentifier, searchItemKeys: [String]?) {
         let navigationController = UINavigationController()
-        let tagFilterController = (self.viewControllers.first as? MasterContainerViewController)?.bottomController as? ItemsTagFilterDelegate
+        let tagFilterController = (viewControllers.first as? MasterContainerViewController)?.bottomController as? ItemsTagFilterDelegate
 
         let coordinator = DetailCoordinator(
             libraryId: libraryId,
@@ -110,28 +115,16 @@ final class MainViewController: UISplitViewController {
             searchItemKeys: searchItemKeys,
             navigationController: navigationController,
             itemsTagFilterDelegate: tagFilterController,
-            controllers: self.controllers
+            controllers: controllers
         )
         coordinator.start(animated: false)
-        self.detailCoordinator = coordinator
+        detailCoordinator = coordinator
 
-        self.showDetailViewController(navigationController, sender: nil)
-    }
-
-    // MARK: - Setups
-
-    private func setupControllers() {
-        let masterController = MasterContainerViewController()
-        let masterCoordinator = MasterCoordinator(navigationController: masterController, mainCoordinatorDelegate: self, controllers: self.controllers)
-        masterController.coordinatorDelegate = masterCoordinator
-        masterCoordinator.start(animated: false)
-        self.viewControllers = [masterController]
-        self.masterCoordinator = masterCoordinator
+        showDetailViewController(navigationController, sender: nil)
     }
 }
 
-extension MainViewController: UISplitViewControllerDelegate {
-}
+extension MainViewController: UISplitViewControllerDelegate { }
 
 extension MainViewController: MainCoordinatorDelegate {
     func showItems(for collection: Collection, in libraryId: LibraryIdentifier) {
@@ -142,7 +135,7 @@ extension MainViewController: MainCoordinatorDelegate {
 
 extension MainViewController: MainCoordinatorSyncToolbarDelegate {
     func showItems(with keys: [String], in libraryId: LibraryIdentifier) {
-        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
+        guard let dbStorage = controllers.userControllers?.dbStorage else { return }
 
         do {
             var collectionType: CollectionIdentifier.CustomType?
@@ -154,8 +147,8 @@ extension MainViewController: MainCoordinatorSyncToolbarDelegate {
 
             guard let collectionType else { return }
 
-            self.masterCoordinator?.showCollections(for: libraryId, preselectedCollection: .custom(collectionType), animated: true)
-            self.showItems(for: Collection(custom: collectionType), in: libraryId, searchItemKeys: keys)
+            masterCoordinator?.showCollections(for: libraryId, preselectedCollection: .custom(collectionType), animated: true)
+            showItems(for: Collection(custom: collectionType), in: libraryId, searchItemKeys: keys)
         } catch let error {
             DDLogError("MainViewController: can't load searched keys - \(error)")
         }
