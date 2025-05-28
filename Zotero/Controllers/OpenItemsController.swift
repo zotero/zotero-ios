@@ -116,7 +116,8 @@ final class OpenItemsController {
 
     enum Presentation {
         case pdf(library: Library, key: String, parentKey: String?, url: URL)
-        case htmlEpub(library: Library, key: String, parentKey: String?, url: URL)
+        case html(library: Library, key: String, parentKey: String?, url: URL)
+        case epub(library: Library, key: String, parentKey: String?, url: URL)
         case note(library: Library, key: String, text: String, tags: [Tag], parentTitleData: NoteEditorState.TitleData?, title: String)
     }
 }
