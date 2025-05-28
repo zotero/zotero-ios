@@ -17,7 +17,8 @@ import RxSwift
 protocol AppDelegateCoordinatorDelegate: AnyObject {
     func showMainScreen(isLoggedIn: Bool, options: UIScene.ConnectionOptions, session: UISceneSession, animated: Bool)
     func didRotate(to size: CGSize)
-    func show(customUrl: CustomURLController.Kind, animated: Bool)
+    @discardableResult
+    func showScreen(for urlContext: UIOpenURLContext, animated: Bool) -> Bool
     func showMainScreen(with data: RestoredStateData, session: UISceneSession) -> Bool
 }
 
@@ -173,15 +174,8 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
         }
 
         func process(urlContext: UIOpenURLContext?, data: RestoredStateData?) {
-            if let urlContext, let urlController = controllers.userControllers?.customUrlController {
-                // If scene was started from custom URL
-                let sourceApp = urlContext.options.sourceApplication ?? "unknown"
-                DDLogInfo("AppCoordinator: App launched by \(urlContext.url.absoluteString) from \(sourceApp)")
-
-                if let kind = urlController.process(url: urlContext.url) {
-                    self.show(customUrl: kind, animated: false)
-                    return
-                }
+            if let urlContext, showScreen(for: urlContext, animated: false) {
+                 return
             }
 
             if let data {
@@ -318,21 +312,25 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
         debugWindow.frame = debugWindowFrame(for: size, xPos: xPos)
     }
 
-    func show(customUrl: CustomURLController.Kind, animated: Bool) {
+    @discardableResult
+    func showScreen(for urlContext: UIOpenURLContext, animated: Bool) -> Bool {
+        let sourceApp = urlContext.options.sourceApplication ?? "unknown"
+        DDLogInfo("AppCoordinator: show screen for \(urlContext.url.absoluteString) from \(sourceApp)")
         guard let window, let mainController = window.rootViewController as? MainViewController else {
-            DDLogWarn("AppCoordinator: show custom url aborted - invalid root view controller")
-            return
+            DDLogWarn("AppCoordinator: show screen aborted - invalid root view controller")
+            return false
         }
+        guard let urlController = controllers.userControllers?.customUrlController, let kind = urlController.process(url: urlContext.url) else { return false }
 
-        switch customUrl {
+        switch kind {
         case .itemDetail(let key, let libraryId, let preselectedChildKey):
-            DDLogInfo("AppCoordinator: show custom url - item detail; key=\(key); library=\(libraryId)")
+            DDLogInfo("AppCoordinator: show screen - item detail; key=\(key); library=\(libraryId)")
             showItemDetail(in: mainController, key: key, libraryId: libraryId, selectChildKey: preselectedChildKey, animated: animated, dismissIfPresenting: true)
 
         case .pdfReader(let attachment, let libraryId, let page, let annotation, let parentKey, let isAvailable):
             let message = DDLogMessageFormat(
                 stringLiteral:
-                    "AppCoordinator: show custom url - pdf reader; key=\(attachment.key); library=\(libraryId);" +
+                    "AppCoordinator: show screen - pdf reader; key=\(attachment.key); library=\(libraryId);" +
                 " page=\(page.flatMap(String.init) ?? "nil"); annotation=\(annotation ?? "nil"); parentKey=\(parentKey ?? "nil")"
             )
             DDLogInfo(message)
@@ -351,6 +349,8 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
                 }
             }
         }
+
+        return true
 
         func showItemDetail(
             in mainController: MainViewController,
