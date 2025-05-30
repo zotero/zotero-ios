@@ -245,7 +245,7 @@ class PDFReaderViewController: UIViewController {
                 },
                 delegate: self
             )
-            intraDocumentNavigationHandler.isHidden = !statusBarVisible
+            intraDocumentNavigationHandler.isHidden = false
             let backButton = intraDocumentNavigationHandler.backButton
             let forwardButton = intraDocumentNavigationHandler.forwardButton
 
@@ -887,7 +887,6 @@ extension PDFReaderViewController: PDFDocumentDelegate {
         }
 
         statusBarVisible = !isHidden
-        intraDocumentNavigationHandler?.isHidden = isHidden
         annotationToolbarHandler?.interfaceVisibilityDidChange()
 
         UIView.animate(withDuration: 0.15, animations: { [weak self] in
