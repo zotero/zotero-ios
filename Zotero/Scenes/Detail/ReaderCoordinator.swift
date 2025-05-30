@@ -283,3 +283,7 @@ extension ReaderCoordinator {
         return viewModel
     }
 }
+
+protocol ReaderViewController: UIViewController {
+    var key: String { get }
+}

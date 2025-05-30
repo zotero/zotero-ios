@@ -33,13 +33,15 @@ final class MainViewController: UISplitViewController {
         didSet {
             guard let detailCoordinator else { return }
             set(userActivity: .mainActivity().set(title: detailCoordinator.displayTitle))
-            if let detailCoordinatorGetter {
-                detailCoordinatorGetter(detailCoordinator)
+            if let detailCoordinatorGetter,
+               detailCoordinatorGetter.libraryId == nil || detailCoordinatorGetter.libraryId == detailCoordinator.libraryId,
+               detailCoordinatorGetter.collectionId == nil || detailCoordinatorGetter.collectionId == detailCoordinator.collection.identifier {
+                detailCoordinatorGetter.completion(detailCoordinator)
                 self.detailCoordinatorGetter = nil
             }
         }
     }
-    private var detailCoordinatorGetter: ((DetailCoordinator) -> Void)?
+    private var detailCoordinatorGetter: (libraryId: LibraryIdentifier?, collectionId: CollectionIdentifier?, completion: (DetailCoordinator) -> Void)?
 
     // MARK: - Lifecycle
 
@@ -97,12 +99,12 @@ final class MainViewController: UISplitViewController {
         set(userActivity: .mainActivity().set(title: detailCoordinator.displayTitle))
     }
 
-    func getDetailCoordinator(completion: @escaping (DetailCoordinator) -> Void) {
-        if let detailCoordinator {
+    func getDetailCoordinator(for libraryId: LibraryIdentifier?, and collectionId: CollectionIdentifier?, completion: @escaping (DetailCoordinator) -> Void) {
+        if let detailCoordinator, libraryId == nil || libraryId == detailCoordinator.libraryId, collectionId == nil || collectionId == detailCoordinator.collection.identifier {
             completion(detailCoordinator)
             return
         }
-        detailCoordinatorGetter = completion
+        detailCoordinatorGetter = (libraryId, collectionId, completion)
     }
 
     private func showItems(for collection: Collection, in libraryId: LibraryIdentifier, searchItemKeys: [String]?) {

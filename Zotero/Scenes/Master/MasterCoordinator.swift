@@ -216,7 +216,7 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
             viewControllers.append(controller)
 
             navigationController.setViewControllers(viewControllers, animated: animated)
-        } else if let controller = navigationController.visibleViewController as? CollectionsViewController, controller.selectedIdentifier != .custom(.all) {
+        } else if let controller = navigationController.topViewController as? CollectionsViewController, controller.selectedIdentifier != .custom(.all) {
             // Correct Collections screen is visible, just select proper collection
             controller.viewModel.process(action: .select(.custom(.all)))
         }
