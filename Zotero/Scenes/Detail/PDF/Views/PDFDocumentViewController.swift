@@ -25,7 +25,10 @@ protocol PDFDocumentDelegate: AnyObject {
     func didChange(undoState undoEnabled: Bool, redoState redoEnabled: Bool)
     func interfaceVisibilityDidChange(to isHidden: Bool)
     func showToolOptions()
-    func navigationButtonsChanged(hasBackActions: Bool, hasForwardActions: Bool)
+    func pageIndexChanged(event: PDFViewController.PageIndexChangeEvent)
+    func backActionExecuted()
+    func forwardActionExecuted()
+    func backForwardListDidUpdate(hasBackActions: Bool, hasForwardActions: Bool)
     func didSelectText(_ text: String)
 }
 
@@ -641,7 +644,8 @@ final class PDFDocumentViewController: UIViewController {
             controller.annotationStateManager.add(self)
             controller.annotationStateManager.pencilInteraction.delegate = self
             controller.annotationStateManager.pencilInteraction.isEnabled = true
-            pageIndexCancellable = controller.pageIndexPublisher.sink { [weak viewModel] event in
+            pageIndexCancellable = controller.pageIndexPublisher.sink { [weak self, weak viewModel] event in
+                self?.parentDelegate?.pageIndexChanged(event: event)
                 viewModel?.process(action: .setVisiblePage(page: Int(event.pageIndex), userActionFromDocument: event.reason == .userInterface, fromThumbnailList: false))
             }
             setup(scrubberBar: controller.userInterfaceView.scrubberBar)
@@ -882,15 +886,17 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
 extension PDFDocumentViewController: BackForwardActionListDelegate {
     func backForwardList(_ list: PSPDFKit.BackForwardActionList, requestedBackActionExecution actions: [Action], animated: Bool) {
         pdfController?.backForwardList(list, requestedBackActionExecution: actions, animated: animated)
+        parentDelegate?.backActionExecuted()
     }
 
     func backForwardList(_ list: PSPDFKit.BackForwardActionList, requestedForwardActionExecution actions: [Action], animated: Bool) {
         pdfController?.backForwardList(list, requestedForwardActionExecution: actions, animated: animated)
+        parentDelegate?.forwardActionExecuted()
     }
 
     func backForwardListDidUpdate(_ list: PSPDFKit.BackForwardActionList) {
         pdfController?.backForwardListDidUpdate(list)
-        parentDelegate?.navigationButtonsChanged(hasBackActions: list.backAction != nil, hasForwardActions: list.forwardAction != nil)
+        parentDelegate?.backForwardListDidUpdate(hasBackActions: list.backAction != nil, hasForwardActions: list.forwardAction != nil)
     }
 }
 

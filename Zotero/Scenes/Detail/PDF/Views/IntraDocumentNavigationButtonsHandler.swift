@@ -12,6 +12,12 @@ protocol IntraDocumentNavigationButtonsHandlerDelegate: AnyObject {
     var isCompactWidth: Bool { get }
 }
 
+enum PageChange {
+    case manual
+    case link
+    case programmatic
+}
+
 final class IntraDocumentNavigationButtonsHandler {
     let back: () -> Void
     let forward: () -> Void
@@ -31,11 +37,13 @@ final class IntraDocumentNavigationButtonsHandler {
     }
     private(set) var hasBackActions: Bool = false
     private(set) var hasForwardActions: Bool = false
-    var isHidden: Bool = true {
+    var interfaceIsVisible: Bool = true {
         didSet {
             updateVisibility()
         }
     }
+    private var backDisappearingTimer: BackgroundTimer?
+    private var forwardDisappearingTimer: BackgroundTimer?
 
     init(back: @escaping () -> Void, forward: @escaping () -> Void, delegate: IntraDocumentNavigationButtonsHandlerDelegate) {
         self.back = back
@@ -49,16 +57,105 @@ final class IntraDocumentNavigationButtonsHandler {
         updateVisibility()
     }
 
-    private func updateVisibility() {
-        backButton.isHidden = isHidden || !hasBackActions
-        forwardButton.isHidden = isHidden || !hasForwardActions
-        backButton.superview?.bringSubviewToFront(backButton)
-        forwardButton.superview?.bringSubviewToFront(forwardButton)
+    func backActionExecuted() {
+        resetBothDisappearingTimers()
+        updateVisibility()
+    }
+
+    func forwardActionExecuted() {
+        resetBothDisappearingTimers()
+        updateVisibility()
+    }
+
+    func pageChanged(_ pageChange: PageChange) {
+        updateVisibility(pageChange: pageChange)
+    }
+
+    static private let disappearingDelay: DispatchTimeInterval = .milliseconds(3000)
+    private func updateVisibility(pageChange: PageChange? = nil) {
+        defer {
+            backButton.superview?.bringSubviewToFront(backButton)
+            forwardButton.superview?.bringSubviewToFront(forwardButton)
+        }
+        if interfaceIsVisible || (!hasBackActions && !hasForwardActions) {
+            resetBothDisappearingTimers()
+            // Update the buttons.
+            backButton.isHidden = !hasBackActions
+            forwardButton.isHidden = !hasForwardActions
+            return
+        }
+        if hasBackActions {
+            // Interface is not visible and there are back actions.
+            switch pageChange {
+            case .manual:
+                // A manual page change by scrolling triggered this update. Start a disappearing timer, if one is not already running.
+                backButton.isHidden = false
+                startBackDisappearingTimerIfNeeded()
+
+            case .none, .link, .programmatic:
+                // Another change triggered this update. Reset timer and show button.
+                resetBackDisappearingTimer()
+                backButton.isHidden = false
+            }
+        }
+        // HERE
+        if hasForwardActions {
+            // Interface is not visible and there are forward actions.
+            switch pageChange {
+            case .manual:
+                // A manual page change by scrolling triggered this update. Start a disappearing timer, if one is not already running.
+                forwardButton.isHidden = false
+                startForwardDisappearingTimerIfNeeded()
+
+            case .none, .link, .programmatic:
+                // Another change triggered this update. Reset timer, show button, and start timer again.
+                resetForwardDisappearingTimer()
+                forwardButton.isHidden = false
+                startForwardDisappearingTimerIfNeeded()
+            }
+        }
+
+        func startBackDisappearingTimerIfNeeded() {
+            guard backDisappearingTimer == nil else { return }
+            backDisappearingTimer = BackgroundTimer(timeInterval: Self.disappearingDelay, queue: .main)
+            backDisappearingTimer?.eventHandler = { [weak self] in
+                guard let self else { return }
+                backButton.isHidden = true
+                backDisappearingTimer = nil
+            }
+            backDisappearingTimer?.resume()
+        }
+
+        func startForwardDisappearingTimerIfNeeded() {
+            guard forwardDisappearingTimer == nil else { return }
+            forwardDisappearingTimer = BackgroundTimer(timeInterval: Self.disappearingDelay, queue: .main)
+            forwardDisappearingTimer?.eventHandler = { [weak self] in
+                guard let self else { return }
+                forwardButton.isHidden = true
+                forwardDisappearingTimer = nil
+            }
+            forwardDisappearingTimer?.resume()
+        }
     }
 
     func containerViewWillTransitionToNewSize() {
         backButton.setNeedsUpdateConfiguration()
         forwardButton.setNeedsUpdateConfiguration()
+    }
+
+    private func resetBackDisappearingTimer() {
+        backDisappearingTimer?.suspend()
+        backDisappearingTimer = nil
+    }
+
+    private func resetForwardDisappearingTimer() {
+        forwardDisappearingTimer?.suspend()
+        forwardDisappearingTimer = nil
+    }
+
+    private func resetBothDisappearingTimers() {
+        resetBackDisappearingTimer()
+        resetForwardDisappearingTimer()
     }
 
     private func createButton(title: String, imageSystemName: String, action: UIAction) -> UIButton {
@@ -77,7 +174,6 @@ final class IntraDocumentNavigationButtonsHandler {
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setContentHuggingPriority(.defaultHigh, for: .vertical)
         button.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
-        button.isHidden = isHidden
         button.addAction(action, for: .touchUpInside)
         return button
     }
