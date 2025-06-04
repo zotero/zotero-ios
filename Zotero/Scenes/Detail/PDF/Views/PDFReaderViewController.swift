@@ -333,39 +333,25 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
 
             let speechButton = UIBarButtonItem(image: UIImage(systemName: "waveform.circle"), style: .plain, target: nil, action: nil)
             speechButton.rx.tap
-                .subscribe(onNext: { [weak self] _ in
-                    guard let self else { return }
-                    startSpeech(controller: self)
+                .subscribe(onNext: { [weak self, weak speechButton] _ in
+                    guard let self, let speechButton else { return }
+                    showSpeech(controller: self, sender: speechButton)
                 })
                 .disposed(by: disposeBag)
 
-            let backSpeechButton = UIBarButtonItem(image: UIImage(systemName: "arrowshape.backward.fill"), style: .plain, target: nil, action: nil)
-            backSpeechButton.rx.tap
-                .subscribe(onNext: { [weak self] _ in
-                    self?.speechManager?.back()
-                })
-                .disposed(by: disposeBag)
-
-            let forwardSpeechButton = UIBarButtonItem(image: UIImage(systemName: "arrowshape.forward.fill"), style: .plain, target: nil, action: nil)
-            forwardSpeechButton.rx.tap
-                .subscribe(onNext: { [weak self] _ in
-                    self?.speechManager?.forward()
-                })
-                .disposed(by: disposeBag)
-
-            navigationItem.leftBarButtonItems = [closeButton, sidebarButton, readerButton, speechButton, backSpeechButton, forwardSpeechButton]
+            navigationItem.leftBarButtonItems = [closeButton, sidebarButton, readerButton, speechButton]
             navigationItem.rightBarButtonItems = createRightBarButtonItems()
-
-            func startSpeech(controller: PDFReaderViewController) {
-                if let speechManager = controller.speechManager {
-                    speechManager.start()
-                    return
-                }
-
-                let speechManager = SpeechManager(delegate: controller)
-                speechManager.start()
+        }
+        
+        func showSpeech(controller: PDFReaderViewController, sender: UIBarButtonItem) {
+            let speechManager: SpeechManager<PDFReaderViewController>
+            if let manager = controller.speechManager {
+                speechManager = manager
+            } else {
+                speechManager = SpeechManager(delegate: controller)
                 controller.speechManager = speechManager
             }
+            controller.coordinatorDelegate?.showSpeech(speechManager: speechManager, sender: sender)
         }
 
         func setupObserving() {
@@ -1084,6 +1070,7 @@ extension PDFReaderViewController: SpeechmanagerDelegate {
             return
         }
         pdfWorkerController.queue(work: .init(file: file as! FileData, kind: .fullText(page: Int(pageIndex))))
+            .observe(on: MainScheduler.instance)
             .subscribe(onNext: { update in
                 switch update.kind {
                 case .failed, .cancelled:

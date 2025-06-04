@@ -887,6 +887,7 @@
 		B395EFE725494B2300CEBD9F /* CreatorEditState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B395EFE625494B2300CEBD9F /* CreatorEditState.swift */; };
 		B395EFEB25494B3200CEBD9F /* CreatorEditActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B395EFEA25494B3200CEBD9F /* CreatorEditActionHandler.swift */; };
 		B39649182869B0D0000BCB6C /* ISBNParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39649172869B0D0000BCB6C /* ISBNParser.swift */; };
+		B3969A402DE9AAEF00425FF3 /* SpeechPopupViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3969A3F2DE9AAEF00425FF3 /* SpeechPopupViewController.swift */; };
 		B3972689247D403200A8B469 /* UrlDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3972688247D403200A8B469 /* UrlDetector.swift */; };
 		B3981427257A5A16002C755C /* AnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3981426257A5A16002C755C /* AnnotationView.swift */; };
 		B398142E257A649D002C755C /* TextContentEditCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B398142C257A649D002C755C /* TextContentEditCell.swift */; };
@@ -1947,6 +1948,7 @@
 		B395EFE625494B2300CEBD9F /* CreatorEditState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatorEditState.swift; sourceTree = "<group>"; };
 		B395EFEA25494B3200CEBD9F /* CreatorEditActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatorEditActionHandler.swift; sourceTree = "<group>"; };
 		B39649172869B0D0000BCB6C /* ISBNParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ISBNParser.swift; sourceTree = "<group>"; };
+		B3969A3F2DE9AAEF00425FF3 /* SpeechPopupViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechPopupViewController.swift; sourceTree = "<group>"; };
 		B3972688247D403200A8B469 /* UrlDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UrlDetector.swift; sourceTree = "<group>"; };
 		B3981426257A5A16002C755C /* AnnotationView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnnotationView.swift; sourceTree = "<group>"; };
 		B398142C257A649D002C755C /* TextContentEditCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextContentEditCell.swift; sourceTree = "<group>"; };
@@ -4008,6 +4010,7 @@
 				B361820E24C9B9E800B30D56 /* SelectableTextField.swift */,
 				B3DCDF1A24091EBE0039ED0D /* SinglePickerRow.swift */,
 				B3DCDF1C24091EC40039ED0D /* SinglePickerView.swift */,
+				B3969A3F2DE9AAEF00425FF3 /* SpeechPopupViewController.swift */,
 				B32B4F942475544700F78A05 /* SyncToolbarController.swift */,
 				B3830CF425545EE400910FE0 /* TagPickerCell.swift */,
 				B3830CF525545EE400910FE0 /* TagPickerCell.xib */,
@@ -5463,6 +5466,7 @@
 				B3DEAAA728AD01CA00F72D90 /* URLSession+Extensions.swift in Sources */,
 				B36FD9B32A7929C8002D77E8 /* FontSizeCell.swift in Sources */,
 				B357A28C285B73BD00E73CA1 /* ScannerState.swift in Sources */,
+				B3969A402DE9AAEF00425FF3 /* SpeechPopupViewController.swift in Sources */,
 				B3E8FE5A2714325200F51458 /* SavingSettingsActionHandler.swift in Sources */,
 				B30566B623FC051F003304F2 /* DeletionsResponse.swift in Sources */,
 				B30566C423FC051F003304F2 /* DeleteBatch.swift in Sources */,
