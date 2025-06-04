@@ -26,6 +26,7 @@ protocol PdfReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarC
     func showFontSizePicker(sender: UIView, picked: @escaping (CGFloat) -> Void)
     func showDeleteAlertForAnnotation(sender: UIView, delete: @escaping () -> Void)
     func showDocumentChangedAlert(completed: @escaping () -> Void)
+    func showSpeech<Delegate: SpeechmanagerDelegate>(speechManager: SpeechManager<Delegate>, sender: UIBarButtonItem)
 }
 
 protocol PdfAnnotationsCoordinatorDelegate: ReaderSidebarCoordinatorDelegate {
@@ -284,6 +285,28 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         let controller = UIAlertController(title: L10n.warning, message: L10n.Errors.Pdf.documentChanged, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: { _ in completed() }))
         navigationController?.present(controller, animated: true)
+    }
+    
+    func showSpeech<Delegate: SpeechmanagerDelegate>(speechManager: SpeechManager<Delegate>, sender: UIBarButtonItem) {
+        let controller = SpeechPopupViewController(speechManager: speechManager)
+        let presentedController: UIViewController
+        switch UIDevice.current.userInterfaceIdiom {
+        case .pad:
+            controller.modalPresentationStyle = .popover
+            if #available(iOS 17, *) {
+                controller.popoverPresentationController?.sourceItem = sender
+            } else {
+                controller.popoverPresentationController?.barButtonItem = sender
+            }
+            controller.preferredContentSize = CGSize(width: 200, height: 44)
+            presentedController = controller
+
+        default:
+            let navigationController = UINavigationController(rootViewController: controller)
+            navigationController.modalPresentationStyle = .formSheet
+            presentedController = navigationController
+        }
+        navigationController?.present(presentedController, animated: true)
     }
 }
 
