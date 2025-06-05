@@ -98,7 +98,6 @@ final class IntraDocumentNavigationButtonsHandler {
                 backButton.isHidden = false
             }
         }
-        // HERE
         if hasForwardActions {
             // Interface is not visible and there are forward actions.
             switch pageChange {
