@@ -245,7 +245,7 @@ class PDFReaderViewController: UIViewController {
                 },
                 delegate: self
             )
-            intraDocumentNavigationHandler.isHidden = false
+            intraDocumentNavigationHandler.interfaceIsVisible = statusBarVisible
             let backButton = intraDocumentNavigationHandler.backButton
             let forwardButton = intraDocumentNavigationHandler.forwardButton
 
@@ -887,6 +887,7 @@ extension PDFReaderViewController: PDFDocumentDelegate {
         }
 
         statusBarVisible = !isHidden
+        intraDocumentNavigationHandler.interfaceIsVisible = !isHidden
         annotationToolbarHandler?.interfaceVisibilityDidChange()
 
         UIView.animate(withDuration: 0.15, animations: { [weak self] in
@@ -905,7 +906,27 @@ extension PDFReaderViewController: PDFDocumentDelegate {
         }
     }
 
-    func navigationButtonsChanged(hasBackActions: Bool, hasForwardActions: Bool) {
+    func pageIndexChanged(event: PDFViewController.PageIndexChangeEvent) {
+        switch event.reason {
+        case .programmatically:
+            intraDocumentNavigationHandler?.pageChanged(.programmatic)
+
+        case .userInterface:
+            // Manual page scrolling and page change due to a link, are differentiated by this heuristic.
+            // When a link is tapped, a sequence of page index changes event are triggered, with the final ones maintaining the page index.
+            intraDocumentNavigationHandler?.pageChanged((event.oldPageIndex == event.pageIndex) ? .link : .manual)
+        }
+    }
+
+    func backActionExecuted() {
+        intraDocumentNavigationHandler?.backActionExecuted()
+    }
+
+    func forwardActionExecuted() {
+        intraDocumentNavigationHandler?.forwardActionExecuted()
+    }
+
+    func backForwardListDidUpdate(hasBackActions: Bool, hasForwardActions: Bool) {
         intraDocumentNavigationHandler?.set(hasBackActions: hasBackActions, hasForwardActions: hasForwardActions)
     }
 
