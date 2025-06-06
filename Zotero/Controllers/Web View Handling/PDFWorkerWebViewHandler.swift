@@ -121,8 +121,8 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
         performPDFWorkerOperation(file: file, operationName: "recognize", jsFunction: "recognize")
     }
 
-    func getFullText(file: FileData, page: Int?) {
-        performPDFWorkerOperation(file: file, operationName: "getFullText", jsFunction: "getFullText", additionalParams: page.flatMap({ ["[\($0)]"] }) ?? [])
+    func getFullText(file: FileData, pages: [Int]?) {
+        performPDFWorkerOperation(file: file, operationName: "getFullText", jsFunction: "getFullText", additionalParams: pages.flatMap({ ["[\($0.map({ "\($0)" }).joined(separator: ","))]"] }) ?? [])
     }
 
     /// Communication with JS in `webView`. The `webView` sends a message through one of the registered `JSHandlers`, which is received here.
