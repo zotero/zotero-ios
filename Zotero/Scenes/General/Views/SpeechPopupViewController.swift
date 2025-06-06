@@ -42,7 +42,7 @@ final class SpeechPopupViewController<Delegate: SpeechmanagerDelegate>: UIViewCo
             playConfig.image = UIImage(systemName: "play.fill")
             let playButton = UIButton(configuration: playConfig)
             playButton.isHidden = speechManager.isSpeaking
-            playButton.addAction(UIAction(handler: { [weak self] _ in self?.speechManager.start() }), for: .touchUpInside)
+            playButton.addAction(UIAction(handler: { [weak self] _ in self?.playOrResume() }), for: .touchUpInside)
             
             var pauseConfig = UIButton.Configuration.plain()
             pauseConfig.image = UIImage(systemName: "pause.fill")
@@ -92,6 +92,14 @@ final class SpeechPopupViewController<Delegate: SpeechmanagerDelegate>: UIViewCo
                     process(state: state)
                 })
                 .disposed(by: disposeBag)
+        }
+    }
+    
+    private func playOrResume() {
+        if speechManager.isPaused {
+            speechManager.resume()
+        } else {
+            speechManager.start()
         }
     }
     
