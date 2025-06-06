@@ -72,6 +72,9 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
     var isSpeaking: Bool {
         return synthetizer.isSpeaking
     }
+    var isPaused: Bool {
+        return synthetizer.isPaused
+    }
 
     init(delegate: Delegate) {
         cachedPages = [:]
@@ -94,7 +97,7 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
         state.accept(.loading)
 
         let index = delegate.getCurrentPageIndex()
-        getData(for: index, from: delegate) { [weak self] pages in
+        getData(for: [index], from: delegate) { [weak self] pages in
             guard let self, let pages, let page = pages[index] else {
                 self?.state.accept(.stopped)
                 return
@@ -119,14 +122,7 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
         synthetizer.stopSpeaking(at: .immediate)
     }
     
-    private func getData(for page: Delegate.Index, from delegate: Delegate, completion: @escaping (([Delegate.Index: PageData])?) -> Void) {
-        var indices: [Delegate.Index] = [page]
-        if let index = delegate.getPreviousPageIndex(from: page) {
-            indices.insert(index, at: 0)
-        }
-        if let index = delegate.getNextPageIndex(from: page) {
-            indices.append(index)
-        }
+    private func getData(for indices: [Delegate.Index], from delegate: Delegate, completion: @escaping (([Delegate.Index: PageData])?) -> Void) {
         delegate.text(for: indices) { texts in
             guard let texts, texts.count == indices.count else {
                 completion(nil)
@@ -154,19 +150,38 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
     }
 
     private func go(to page: PageData, pageIndex: Delegate.Index, speechStartIndex: Int? = nil, reportPageChange: Bool = true) {
-        currentIndex = pageIndex
-        speech = SpeechData(startIndex: speechStartIndex ?? 0, speakingRange: NSRange(location: 0, length: 0))
-        
         let text: String
         if let index = speechStartIndex {
             text = String(page.text[page.text.index(page.text.startIndex, offsetBy: index)..<page.text.endIndex])
         } else {
             text = page.text
         }
+        currentIndex = pageIndex
+        speech = SpeechData(startIndex: speechStartIndex ?? 0, speakingRange: NSRange(location: 0, length: 0))
         speak(text: text, voice: page.voice)
         
-        guard reportPageChange else { return }
-        delegate?.moved(to: pageIndex)
+        guard let delegate else { return }
+        
+        if reportPageChange {
+            delegate.moved(to: pageIndex)
+        }
+        
+        // Cache next/previous page after page change if needed
+        var indices: [Delegate.Index] = []
+        if let index = delegate.getPreviousPageIndex(from: pageIndex), cachedPages[index] == nil {
+            indices.append(index)
+        }
+        if let index = delegate.getNextPageIndex(from: pageIndex), cachedPages[index] == nil {
+            indices.append(index)
+        }
+        if !indices.isEmpty {
+            getData(for: indices, from: delegate) { [weak self] pages in
+                guard let self else { return }
+                for (index, page) in pages ?? [:] {
+                    cachedPages[index] = page
+                }
+            }
+        }
     }
 
     private func skip(to index: Int, on page: PageData) {
@@ -184,20 +199,16 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
 
         let utterance = AVSpeechUtterance(string: text)
         utterance.voice = voice
-        state.accept(.speaking)
         synthetizer.speak(utterance)
     }
 
     func forward() {
         guard let currentIndex, let currentPage = cachedPages[currentIndex], let speech else { return }
-        
-        pause()
 
         if let index = findNextIndex(on: currentPage, speechRange: speech.globalRange) {
             DDLogInfo("SpeechManager: forward to \(start); \(speech.startIndex); \(speech.speakingRange.location); \(speech.speakingRange.length)")
             skip(to: index, on: currentPage)
         } else if let nextIndex = delegate?.getNextPageIndex(from: currentIndex), let page = cachedPages[nextIndex] {
-            // TODO: - load next page
             go(to: page, pageIndex: nextIndex)
         } else {
             stop()
@@ -213,8 +224,6 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
 
     func backward() {
         guard let currentIndex, let currentPage = cachedPages[currentIndex], let speech else { return }
-        
-        pause()
   
         if let index = findPreviousIndex(in: currentPage.text, endIndex: currentPage.text.index(currentPage.text.startIndex, offsetBy: speech.globalRange.location)) {
             DDLogInfo("SpeechManager: backward to \(index); \(speech.startIndex); \(speech.speakingRange.location); \(speech.speakingRange.length)")
@@ -224,7 +233,6 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
         } else if let previousIndex = delegate?.getPreviousPageIndex(from: currentIndex),
                   let previousPage = cachedPages[previousIndex],
                   let speechIndex = findPreviousIndex(in: previousPage.text, endIndex: previousPage.text.endIndex) {
-            // TODO: - load previous page
             go(to: previousPage, pageIndex: previousIndex, speechStartIndex: speechIndex)
         } else {
             stop()
@@ -263,6 +271,14 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didPause utterance: AVSpeechUtterance) {
         state.accept(.paused)
     }
+    
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
+        state.accept(.speaking)
+    }
+    
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didContinue utterance: AVSpeechUtterance) {
+        state.accept(.speaking)
+    }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
         guard ignoreFinishCallCount <= 0 else {
@@ -270,8 +286,8 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
             return
         }
 
-        if let currentIndex, let nextIndex = delegate?.getNextPageIndex(from: currentIndex) {
-            // TODO
+        if let currentIndex, let nextIndex = delegate?.getNextPageIndex(from: currentIndex), let page = cachedPages[nextIndex] {
+            go(to: page, pageIndex: nextIndex)
         } else {
             cleanup()
             state.accept(.stopped)
