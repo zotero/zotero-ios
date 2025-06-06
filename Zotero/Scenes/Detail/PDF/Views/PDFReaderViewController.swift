@@ -1063,13 +1063,13 @@ extension PDFReaderViewController: SpeechmanagerDelegate {
         return currentPageIndex - 1
     }
     
-    func text(for pageIndex: UInt, completion: @escaping (String?) -> Void) {
+    func text(for indices: [UInt], completion: @escaping ([UInt: String]?) -> Void) {
         guard let file = viewModel.state.document.fileURL.flatMap({ Files.file(from: $0) }) else {
             DDLogInfo("PDFReaderViewController: document url not found")
             completion(nil)
             return
         }
-        pdfWorkerController.queue(work: .init(file: file as! FileData, kind: .fullText(page: Int(pageIndex))))
+        pdfWorkerController.queue(work: .init(file: file as! FileData, kind: .fullText(pages: indices.map({ Int($0) }))))
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { update in
                 switch update.kind {
@@ -1086,7 +1086,17 @@ extension PDFReaderViewController: SpeechmanagerDelegate {
                         completion(nil)
                         return
                     }
-                    completion(text)
+                    let textParts = text.components(separatedBy: "\u{000C}")
+                    guard textParts.count == indices.count else {
+                        DDLogError("PDFReaderViewController: full text didn't contain proper number of pages (\(indices.count); \(textParts.count))")
+                        completion(nil)
+                        return
+                    }
+                    var result: [UInt: String] = [:]
+                    for idx in 0..<indices.count {
+                        result[indices[idx]] = String(textParts[idx])
+                    }
+                    completion(result)
                 }
             })
             .disposed(by: disposeBag)
