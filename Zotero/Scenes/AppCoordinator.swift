@@ -167,7 +167,7 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
             if let data {
                 // If scene had state stored, check if defaults need to be updated first
                 DDLogInfo("AppCoordinator: Preprocessing restored state - \(data)")
-                Defaults.shared.selectedLibrary = data.libraryId
+                Defaults.shared.selectedLibraryId = data.libraryId
                 Defaults.shared.selectedCollectionId = data.collectionId
             }
             return (urlContext, data)

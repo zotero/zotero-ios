@@ -49,7 +49,7 @@ final class MasterCoordinator: NSObject, Coordinator {
         self.mainCoordinatorDelegate = mainCoordinatorDelegate
         self.controllers = controllers
         childCoordinators = []
-        visibleLibraryId = Defaults.shared.selectedLibrary
+        visibleLibraryId = Defaults.shared.selectedLibraryId
 
         super.init()
     }
@@ -95,7 +95,7 @@ final class MasterCoordinator: NSObject, Coordinator {
     }
 
     private func storeIfNeeded(libraryId: LibraryIdentifier, preselectedCollection collectionId: CollectionIdentifier? = nil) -> CollectionIdentifier {
-        if Defaults.shared.selectedLibrary == libraryId {
+        if Defaults.shared.selectedLibraryId == libraryId {
             if let collectionId {
                 Defaults.shared.selectedCollectionId = collectionId
                 return collectionId
@@ -104,7 +104,7 @@ final class MasterCoordinator: NSObject, Coordinator {
         }
 
         let collectionId = collectionId ?? .custom(.all)
-        Defaults.shared.selectedLibrary = libraryId
+        Defaults.shared.selectedLibraryId = libraryId
         Defaults.shared.selectedCollectionId = collectionId
         return collectionId
     }

@@ -78,7 +78,7 @@ final class Defaults {
     // MARK: - Selection
 
     @CodableUserDefault(key: "SelectedRawLibraryKey", defaultValue: LibraryIdentifier.custom(.myLibrary), encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
-    var selectedLibrary: LibraryIdentifier
+    var selectedLibraryId: LibraryIdentifier
 
     @CodableUserDefault(key: "SelectedRawCollectionKey", defaultValue: CollectionIdentifier.custom(.all), encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
     var selectedCollectionId: CollectionIdentifier
@@ -194,7 +194,7 @@ final class Defaults {
         userId = 0
         shareExtensionIncludeTags = true
         shareExtensionIncludeAttachment = true
-        selectedLibrary = .custom(.myLibrary)
+        selectedLibraryId = .custom(.myLibrary)
         selectedCollectionId = .custom(.all)
         webDavUrl = nil
         webDavScheme = .https
