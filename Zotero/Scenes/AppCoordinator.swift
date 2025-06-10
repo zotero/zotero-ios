@@ -382,7 +382,10 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
                 completion()
                 return
             }
-            downloader.downloadIfNeeded(attachment: attachment, parentKey: parentKey, completion: { _ in completion() })
+            downloader.downloadIfNeeded(attachment: attachment, parentKey: parentKey) { result in
+                guard case .success = result else { return }
+                completion()
+            }
         }
 
         func showItem(
