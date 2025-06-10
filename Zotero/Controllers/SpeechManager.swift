@@ -199,6 +199,7 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
 
         let utterance = AVSpeechUtterance(string: text)
         utterance.voice = voice
+        DDLogInfo("SpeechManager: speak - \"\(text.count > 100 ? text.prefix(100) : text)\"")
         synthetizer.speak(utterance)
     }
 
@@ -206,7 +207,7 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
         guard let currentIndex, let currentPage = cachedPages[currentIndex], let speech else { return }
 
         if let index = findNextIndex(on: currentPage, speechRange: speech.globalRange) {
-            DDLogInfo("SpeechManager: forward to \(start); \(speech.startIndex); \(speech.speakingRange.location); \(speech.speakingRange.length)")
+            DDLogInfo("SpeechManager: forward to \(index); \(speech.startIndex); \(speech.speakingRange.location); \(speech.speakingRange.length)")
             skip(to: index, on: currentPage)
         } else if let nextIndex = delegate?.getNextPageIndex(from: currentIndex), let page = cachedPages[nextIndex] {
             go(to: page, pageIndex: nextIndex)
@@ -242,16 +243,11 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
             guard let paragraphRegex else { return nil }
             let range = NSRange(text.startIndex..<endIndex, in: text)
             let matches = paragraphRegex.matches(in: text, range: range)
-            guard let matchRange = matches.last?.range else { return nil }
-            if matchRange.location + matchRange.length != range.length {
-                // A lot of times it happens that `range` contains `\n` at the end. In that case the last match is actually the end of the string, so we filter out those cases.
+            if matches.count > 1 {
+                let matchRange = matches[matches.count - 2].range
                 return matchRange.location + matchRange.length
-            } else if matches.count > 1 {
-                let matchRangeBeforeLast = matches[matches.count - 2].range
-                return matchRangeBeforeLast.location + matchRangeBeforeLast.length
-            } else {
-                return nil
             }
+            return nil
         }
     }
 
