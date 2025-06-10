@@ -323,16 +323,19 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
             let key = presentation.key
             let parentKey = presentation.parentKey
             let libraryId = presentation.library.identifier
-            mainController.getDetailCoordinator(for: nil, and: nil) { coordinator in
-                if isAvailable {
+            if isAvailable {
+                mainController.getDetailCoordinator(for: nil, and: nil) { coordinator in
                     guard (coordinator.navigationController?.presentedViewController as? ReaderViewController)?.key != key else { return }
                     showItem(presentation: presentation, window: window, detailCoordinator: coordinator, animated: animated) {
                         showItemDetail(in: mainController, key: parentKey ?? key, libraryId: libraryId, selectChildKey: key, animated: false, dismissIfPresenting: false)
                     }
-                } else {
-                    showItemDetail(in: mainController, key: parentKey ?? key, libraryId: libraryId, selectChildKey: key, animated: animated, dismissIfPresenting: true) {
-                        download(attachment: attachment, parentKey: parentKey) {
-                            showItem(presentation: presentation, window: window, detailCoordinator: coordinator, animated: true)
+                }
+            } else {
+                showItemDetail(in: mainController, key: parentKey ?? key, libraryId: libraryId, selectChildKey: key, animated: animated, dismissIfPresenting: true) {
+                    download(attachment: attachment, parentKey: parentKey) {
+                        mainController.getDetailCoordinator(for: nil, and: nil) { coordinator in
+                            showItem(presentation: presentation, window: window, detailCoordinator: coordinator, animated: true) {
+                            }
                         }
                     }
                 }
