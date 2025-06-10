@@ -53,11 +53,13 @@ final class SpeechPopupViewController<Delegate: SpeechmanagerDelegate>: UIViewCo
             var forwardConfig = UIButton.Configuration.plain()
             forwardConfig.image = UIImage(systemName: "forward.fill")
             let forwardButton = UIButton(configuration: forwardConfig)
+            forwardButton.isEnabled = speechManager.isSpeaking
             forwardButton.addAction(UIAction(handler: { [weak self] _ in self?.speechManager.forward() }), for: .touchUpInside)
             
             var backwardConfig = UIButton.Configuration.plain()
             backwardConfig.image = UIImage(systemName: "backward.fill")
             let backwardButton = UIButton(configuration: backwardConfig)
+            backwardButton.isEnabled = speechManager.isSpeaking
             backwardButton.addAction(UIAction(handler: { [weak self] _ in self?.speechManager.backward() }), for: .touchUpInside)
             
             let activityIndicator = UIActivityIndicatorView(style: .medium)
@@ -117,13 +119,17 @@ final class SpeechPopupViewController<Delegate: SpeechmanagerDelegate>: UIViewCo
             }
             playButton.isHidden = true
             pauseButton.isHidden = false
-            
+            forwardButton.isEnabled = true
+            backwardButton.isEnabled = true
+
         case .stopped, .paused:
             if activityIndicator.isAnimating {
                 activityIndicator.stopAnimating()
             }
             pauseButton.isHidden = true
             playButton.isHidden = false
+            forwardButton.isEnabled = false
+            backwardButton.isEnabled = false
         }
     }
 }
