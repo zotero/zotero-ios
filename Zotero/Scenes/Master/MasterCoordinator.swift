@@ -62,10 +62,7 @@ final class MasterCoordinator: NSObject, Coordinator {
         let collectionsController = createCollectionsViewController(
             libraryId: Defaults.shared.selectedLibraryId,
             selectedCollectionId: Defaults.shared.selectedCollectionId,
-            dbStorage: userControllers.dbStorage,
-            syncScheduler: userControllers.syncScheduler,
-            attachmentDownloader: userControllers.fileDownloader,
-            fileCleanupController: userControllers.fileCleanupController
+            userControllers: userControllers
         )
         navigationController.setViewControllers([librariesController, collectionsController], animated: animated)
 
@@ -80,11 +77,12 @@ final class MasterCoordinator: NSObject, Coordinator {
     private func createCollectionsViewController(
         libraryId: LibraryIdentifier,
         selectedCollectionId: CollectionIdentifier,
-        dbStorage: DbStorage,
-        syncScheduler: SynchronizationScheduler,
-        attachmentDownloader: AttachmentDownloader,
-        fileCleanupController: AttachmentFileCleanupController
+        userControllers: UserControllers
     ) -> CollectionsViewController {
+        let dbStorage = userControllers.dbStorage
+        let syncScheduler = userControllers.syncScheduler
+        let attachmentDownloader = userControllers.fileDownloader
+        let fileCleanupController = userControllers.fileCleanupController
         DDLogInfo("MasterTopCoordinator: show collections for \(selectedCollectionId.id); \(libraryId)")
         let handler = CollectionsActionHandler(dbStorage: dbStorage, fileStorage: controllers.fileStorage, attachmentDownloader: attachmentDownloader, fileCleanupController: fileCleanupController)
         let state = CollectionsState(libraryId: libraryId, selectedCollectionId: selectedCollectionId)
@@ -122,10 +120,7 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
         let controller = createCollectionsViewController(
             libraryId: libraryId,
             selectedCollectionId: collectionId,
-            dbStorage: userControllers.dbStorage,
-            syncScheduler: userControllers.syncScheduler,
-            attachmentDownloader: userControllers.fileDownloader,
-            fileCleanupController: userControllers.fileCleanupController
+            userControllers: userControllers
         )
 
         let animated: Bool
@@ -178,10 +173,7 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
         let controller = createCollectionsViewController(
             libraryId: libraryId,
             selectedCollectionId: collectionId,
-            dbStorage: userControllers.dbStorage,
-            syncScheduler: userControllers.syncScheduler,
-            attachmentDownloader: userControllers.fileDownloader,
-            fileCleanupController: userControllers.fileCleanupController
+            userControllers: userControllers
         )
         navigationController.pushViewController(controller, animated: true)
     }
@@ -196,10 +188,7 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
             let controller = createCollectionsViewController(
                 libraryId: libraryId,
                 selectedCollectionId: collectionId,
-                dbStorage: userControllers.dbStorage,
-                syncScheduler: userControllers.syncScheduler,
-                attachmentDownloader: userControllers.fileDownloader,
-                fileCleanupController: userControllers.fileCleanupController
+                userControllers: userControllers
             )
             navigationController.pushViewController(controller, animated: animated)
         } else if libraryId != visibleLibraryId {
@@ -207,10 +196,7 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
             let controller = createCollectionsViewController(
                 libraryId: libraryId,
                 selectedCollectionId: collectionId,
-                dbStorage: userControllers.dbStorage,
-                syncScheduler: userControllers.syncScheduler,
-                attachmentDownloader: userControllers.fileDownloader,
-                fileCleanupController: userControllers.fileCleanupController
+                userControllers: userControllers
             )
 
             var viewControllers = navigationController.viewControllers
