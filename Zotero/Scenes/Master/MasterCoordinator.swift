@@ -19,7 +19,7 @@ protocol MasterLibrariesCoordinatorDelegate: AnyObject {
     func showDeleteGroupQuestion(id: Int, name: String, viewModel: ViewModel<LibrariesActionHandler>)
     func showDefaultLibrary()
 
-    var visibleLibraryId: LibraryIdentifier { get }
+    var visibleLibraryId: LibraryIdentifier? { get }
 }
 
 protocol MasterCollectionsCoordinatorDelegate: MainCoordinatorDelegate {
@@ -38,7 +38,6 @@ protocol MasterContainerCoordinatorDelegate: AnyObject {
 final class MasterCoordinator: NSObject, Coordinator {
     weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
-    private(set) var visibleLibraryId: LibraryIdentifier
     weak var navigationController: UINavigationController?
 
     private unowned let controllers: Controllers
@@ -49,7 +48,6 @@ final class MasterCoordinator: NSObject, Coordinator {
         self.mainCoordinatorDelegate = mainCoordinatorDelegate
         self.controllers = controllers
         childCoordinators = []
-        visibleLibraryId = Defaults.shared.selectedLibraryId
 
         super.init()
     }
@@ -62,7 +60,7 @@ final class MasterCoordinator: NSObject, Coordinator {
         userControllers.pdfWorkerController.webViewProvider = librariesController
         userControllers.recognizerController.webViewProvider = librariesController
         let collectionsController = createCollectionsViewController(
-            libraryId: visibleLibraryId,
+            libraryId: Defaults.shared.selectedLibraryId,
             selectedCollectionId: Defaults.shared.selectedCollectionId,
             dbStorage: userControllers.dbStorage,
             syncScheduler: userControllers.syncScheduler,
@@ -111,6 +109,10 @@ final class MasterCoordinator: NSObject, Coordinator {
 }
 
 extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
+    var visibleLibraryId: LibraryIdentifier? {
+        navigationController?.viewControllers.compactMap({ $0 as? CollectionsViewController }).first?.viewModel.state.library.id
+    }
+
     func showDefaultLibrary() {
         guard let userControllers = controllers.userControllers, let navigationController else { return }
 
@@ -251,7 +253,6 @@ extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
     }
 
     func showItems(for collection: Collection, in libraryId: LibraryIdentifier) {
-        visibleLibraryId = libraryId
         mainCoordinatorDelegate.showItems(for: collection, in: libraryId)
     }
 
@@ -287,7 +288,7 @@ extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
     }
     
     func showDefaultCollection() {
-        showItems(for: Collection(custom: .all), in: visibleLibraryId)
+        showItems(for: Collection(custom: .all), in: Defaults.shared.selectedLibraryId)
     }
 }
 
