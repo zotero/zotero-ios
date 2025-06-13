@@ -179,12 +179,13 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
     }
 
     func showCollections(for libraryId: LibraryIdentifier, preselectedCollection collectionId: CollectionIdentifier, animated: Bool) {
-        guard let userControllers = controllers.userControllers, let navigationController else { return }
+        guard let userControllers = controllers.userControllers, let navigationController, !navigationController.viewControllers.isEmpty else { return }
 
         let collectionId = storeIfNeeded(libraryId: libraryId, preselectedCollection: collectionId)
 
-        if navigationController.viewControllers.count == 1 {
-            // If only "Libraries" screen is visible, push collections
+        let count = navigationController.viewControllers.count
+        if count == 1 {
+            // If only "Libraries" screen is visible, push collections.
             let controller = createCollectionsViewController(
                 libraryId: libraryId,
                 selectedCollectionId: collectionId,
@@ -192,21 +193,41 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
             )
             navigationController.pushViewController(controller, animated: animated)
         } else if libraryId != visibleLibraryId {
-            // If Collections screen is visible, but for different library, switch controllers
+            // If Collections screen is visible, but for a different library, switch controllers.
             let controller = createCollectionsViewController(
                 libraryId: libraryId,
                 selectedCollectionId: collectionId,
                 userControllers: userControllers
             )
 
-            var viewControllers = navigationController.viewControllers
-            _ = viewControllers.popLast()
-            viewControllers.append(controller)
-
-            navigationController.setViewControllers(viewControllers, animated: animated)
-        } else if let controller = navigationController.topViewController as? CollectionsViewController, controller.selectedIdentifier != .custom(.all) {
-            // Correct Collections screen is visible, just select proper collection
-            controller.viewModel.process(action: .select(.custom(.all)))
+            if count == 2 {
+                // If only Libraries and Collections are shown, simply do the switch.
+                var viewControllers = navigationController.viewControllers
+                _ = viewControllers.popLast()
+                viewControllers.append(controller)
+                navigationController.setViewControllers(viewControllers, animated: animated)
+            } else {
+                // Otherwise, the split view controller is collapsed, also remove extraneous controllers, and show default collection.
+                var viewControllers = navigationController.viewControllers
+                viewControllers.removeLast(viewControllers.count - 1)
+                viewControllers.append(controller)
+                navigationController.setViewControllers(viewControllers, animated: animated)
+                showDefaultCollection()
+            }
+        } else if let controller = navigationController.viewControllers[1] as? CollectionsViewController {
+            // There is a Collections screen in the stack.
+            var modifiedViewControllers = false
+            if count > 2 {
+                // Remove any extraneous controllers.
+                var viewControllers = navigationController.viewControllers
+                viewControllers.removeLast(viewControllers.count - 2)
+                navigationController.setViewControllers(viewControllers, animated: animated)
+                modifiedViewControllers = true
+            }
+            if controller.selectedIdentifier != collectionId || modifiedViewControllers {
+                // Select proper collection.
+                controller.viewModel.process(action: .select(collectionId))
+            }
         }
     }
 

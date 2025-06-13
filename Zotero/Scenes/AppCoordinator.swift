@@ -356,19 +356,21 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
             let dismissPresented = dismissIfPresenting && (mainController.presentedViewController != nil)
             let itemDetailAnimated = dismissPresented ? false : animated
 
-            // Show "All" collection in given library/group
+            // Show "All" collection in given library/group.
             let collectionId: CollectionIdentifier = .custom(.all)
-            if let coordinator = mainController.masterCoordinator,
-               coordinator.visibleLibraryId != libraryId ||
-                (coordinator.navigationController?.topViewController as? CollectionsViewController)?.selectedIdentifier != collectionId {
-                coordinator.showCollections(for: libraryId, preselectedCollection: collectionId, animated: itemDetailAnimated)
-            }
+            mainController.masterCoordinator?.showCollections(for: libraryId, preselectedCollection: collectionId, animated: itemDetailAnimated)
 
             // Show item detail of given key.
-            // If switching from another library or root view controller, then current detail coordinator will be replaced, so we have to wait for the new one for the specific library and collection.
-            mainController.getDetailCoordinator(for: libraryId, and: collectionId) { coordinator in
-                if (coordinator.navigationController?.topViewController as? ItemDetailViewController)?.key != key {
+            // If switching from another library or root view controller, while in split mode,
+            // then the current detail coordinator will be replaced, so wait for the new one for the specific library and collection.
+            mainController.getDetailCoordinator(for: !mainController.isCollapsed ? libraryId : nil, and: !mainController.isCollapsed ? collectionId : nil) { coordinator in
+                guard let detailNavigationController = coordinator.navigationController else { return }
+                if (detailNavigationController.topViewController as? ItemDetailViewController)?.key != key {
                     coordinator.showItemDetail(for: .preview(key: key), libraryId: libraryId, scrolledToKey: childKey, animated: itemDetailAnimated)
+                }
+                if detailNavigationController.parent == nil, mainController.isCollapsed, let navigationController = mainController.masterCoordinator?.navigationController {
+                    // In collapsed mode, if the detail is not already handled by the split view controller, then it needs to be push in the stack.
+                    navigationController.pushViewController(detailNavigationController, animated: itemDetailAnimated)
                 }
             }
 
