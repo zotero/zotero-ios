@@ -132,6 +132,11 @@ final class Defaults {
     var htmlEpubSettings: HtmlEpubSettings
     #endif
 
+    // MARK: - Speech
+
+    @UserDefault(key: "SpeechRateModifier", defaultValue: 1)
+    var speechRateModifier: Float
+
     // MARK: - Citation / Bibliography Export
 
     @UserDefault(key: "exportStyleId", defaultValue: "http://www.zotero.org/styles/chicago-note-bibliography", defaults: .standard)

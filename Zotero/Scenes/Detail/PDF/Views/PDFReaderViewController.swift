@@ -28,6 +28,7 @@ class PDFReaderViewController: UIViewController {
     private enum NavigationBarButton: Int {
         case share = 1
         case sidebar = 7
+        case speech = 4
     }
 
     private let viewModel: ViewModel<PDFReaderActionHandler>
@@ -308,6 +309,18 @@ class PDFReaderViewController: UIViewController {
             }
         }
 
+        func createSpeechButton(isSpeaking: Bool, controller: PDFReaderViewController) -> UIBarButtonItem {
+            let speechButton = UIBarButtonItem(image: UIImage(systemName: isSpeaking ? "speaker.wave.2.bubble.fill" : "speaker.wave.2.bubble"), style: .plain, target: nil, action: nil)
+            speechButton.tag = NavigationBarButton.speech.rawValue
+            speechButton.rx.tap
+                .subscribe(onNext: { [weak controller, weak speechButton] _ in
+                    guard let controller, let speechButton else { return }
+                    showSpeech(controller: controller, sender: speechButton)
+                })
+                .disposed(by: disposeBag)
+            return speechButton
+        }
+
         func setupNavigationBar() {
             let sidebarButton = UIBarButtonItem(image: UIImage(systemName: "sidebar.left"), style: .plain, target: nil, action: nil)
             sidebarButton.isEnabled = !viewModel.state.document.isLocked
@@ -331,13 +344,7 @@ class PDFReaderViewController: UIViewController {
                 })
                 .disposed(by: disposeBag)
 
-            let speechButton = UIBarButtonItem(image: UIImage(systemName: "waveform.circle"), style: .plain, target: nil, action: nil)
-            speechButton.rx.tap
-                .subscribe(onNext: { [weak self, weak speechButton] _ in
-                    guard let self, let speechButton else { return }
-                    showSpeech(controller: self, sender: speechButton)
-                })
-                .disposed(by: disposeBag)
+            let speechButton = createSpeechButton(isSpeaking: speechManager?.isSpeaking ?? false, controller: self)
 
             navigationItem.leftBarButtonItems = [closeButton, sidebarButton, readerButton, speechButton]
             navigationItem.rightBarButtonItems = createRightBarButtonItems()
@@ -348,10 +355,23 @@ class PDFReaderViewController: UIViewController {
             if let manager = controller.speechManager {
                 speechManager = manager
             } else {
-                speechManager = SpeechManager(delegate: controller)
+                speechManager = SpeechManager(delegate: controller, speechRateModifier: Defaults.shared.speechRateModifier)
+                speechManager.state
+                    .skip(1)
+                    .observe(on: MainScheduler.instance)
+                    .subscribe(onNext: { [weak controller] state in
+                        guard let controller else { return }
+                        reloadSpeechButton(isSpeaking: state.isSpeakingOrLoading, controller: controller)
+                    })
+                    .disposed(by: controller.disposeBag)
                 controller.speechManager = speechManager
             }
             controller.coordinatorDelegate?.showSpeech(speechManager: speechManager, sender: sender)
+
+            func reloadSpeechButton(isSpeaking: Bool, controller: PDFReaderViewController) {
+                guard let index = controller.navigationItem.leftBarButtonItems?.firstIndex(where: { $0.tag == NavigationBarButton.speech.rawValue }) else { return }
+                controller.navigationItem.leftBarButtonItems?[index] = createSpeechButton(isSpeaking: isSpeaking, controller: controller)
+            }
         }
 
         func setupObserving() {
