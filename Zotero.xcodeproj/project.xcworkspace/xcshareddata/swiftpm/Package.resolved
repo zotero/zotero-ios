@@ -78,8 +78,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/PSPDFKit/PSPDFKit-SP",
       "state" : {
-        "revision" : "ae6356d3751e4eda5fb0992683996bddbd190eae",
-        "version" : "14.8.0"
+        "revision" : "aa2f1e74375aa4078bc7e54ccdbf2fea55b7d150",
+        "version" : "14.9.0"
       }
     },
     {
@@ -105,8 +105,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/realm/realm-swift",
       "state" : {
-        "revision" : "d94d44781167fbb8d7a46fb181e784a6446ca5c1",
-        "version" : "10.54.4"
+        "revision" : "54eebd2b5e7a4a8055a7a8b55ac859a48462d722",
+        "version" : "10.54.5"
       }
     },
     {
@@ -159,8 +159,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-collections.git",
       "state" : {
-        "revision" : "671108c96644956dddcd89dd59c203dcdb36cec7",
-        "version" : "1.1.4"
+        "revision" : "c1805596154bb3a265fd91b8ac0c4433b4348fb0",
+        "version" : "1.2.0"
       }
     },
     {
