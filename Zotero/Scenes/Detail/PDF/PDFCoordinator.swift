@@ -298,7 +298,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
             } else {
                 controller.popoverPresentationController?.barButtonItem = sender
             }
-            controller.preferredContentSize = CGSize(width: 200, height: 44)
+            controller.preferredContentSize = CGSize(width: 300, height: 130)
             presentedController = controller
 
         default:
