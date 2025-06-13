@@ -12,7 +12,7 @@ import PSPDFKit
 import PSPDFKitUI
 import RxSwift
 
-final class PDFPlainReaderViewController: ReaderViewController {
+final class PDFPlainReaderViewController: PSPDFKitUI.ReaderViewController {
     private let disposeBag: DisposeBag = DisposeBag()
 
     override func viewDidLoad() {

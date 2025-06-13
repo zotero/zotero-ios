@@ -585,6 +585,28 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         return (navigationController, coordinator.viewModel!)
     }
 
+    func createViewController(for presentation: ItemPresentation) -> UIViewController {
+        switch presentation {
+        case .pdf(let library, let key, let parentKey, let url, let page, let preselectedAnnotationKey, let previewRects):
+            return createPDFController(
+                key: key,
+                parentKey: parentKey,
+                libraryId: library.identifier,
+                url: url,
+                page: page,
+                preselectedAnnotationKey: preselectedAnnotationKey,
+                previewRects: previewRects
+            )
+
+        case .html(let library, let key, let parentKey, let url), .epub(let library, let key, let parentKey, let url):
+            return createHtmlEpubController(key: key, parentKey: parentKey, libraryId: library.identifier, url: url)
+
+        case .note(let library, let key, let text, let tags, let parentTitleData, let title):
+            let kind: NoteEditorKind = library.metadataEditable ? .edit(key: key) : .readOnly(key: key)
+            return createNoteController(library: library, kind: kind, text: text, tags: tags, parentTitleData: parentTitleData, title: title)
+        }
+    }
+
     func showItemDetail(for type: ItemDetailState.DetailType, libraryId: LibraryIdentifier, scrolledToKey childKey: String?, animated: Bool) {
         guard let dbStorage = self.controllers.userControllers?.dbStorage,
               let fileDownloader = self.controllers.userControllers?.fileDownloader,

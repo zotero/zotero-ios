@@ -19,7 +19,7 @@ protocol HtmlEpubReaderContainerDelegate: AnyObject {
     func show(url: URL)
 }
 
-class HtmlEpubReaderViewController: UIViewController, ParentWithSidebarController {
+class HtmlEpubReaderViewController: UIViewController, ReaderViewController, ParentWithSidebarController {
     typealias DocumentController = HtmlEpubDocumentViewController
     typealias SidebarController = HtmlEpubSidebarViewController
 
@@ -42,6 +42,8 @@ class HtmlEpubReaderViewController: UIViewController, ParentWithSidebarControlle
     }
     private(set) var isCompactWidth: Bool
     var statusBarHeight: CGFloat
+    var key: String { return viewModel.state.key }
+    
     weak var coordinatorDelegate: (HtmlEpubReaderCoordinatorDelegate & HtmlEpubSidebarCoordinatorDelegate)?
     @CodableUserDefault(
         key: "HtmlEpubReaderToolbarState",

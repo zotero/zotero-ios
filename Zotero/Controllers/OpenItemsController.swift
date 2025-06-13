@@ -115,8 +115,44 @@ final class OpenItemsController {
     }
 
     enum Presentation {
-        case pdf(library: Library, key: String, parentKey: String?, url: URL)
-        case htmlEpub(library: Library, key: String, parentKey: String?, url: URL)
+        case pdf(library: Library, key: String, parentKey: String?, url: URL, page: Int?, preselectedAnnotationKey: String?, previewRects: [CGRect]?)
+        case html(library: Library, key: String, parentKey: String?, url: URL)
+        case epub(library: Library, key: String, parentKey: String?, url: URL)
         case note(library: Library, key: String, text: String, tags: [Tag], parentTitleData: NoteEditorState.TitleData?, title: String)
+
+        // MARK: Properties
+        var isFileBased: Bool {
+            switch self {
+            case .pdf, .html, .epub:
+                return true
+
+            case .note:
+                return false
+            }
+        }
+
+        var library: Library {
+            switch self {
+            case .pdf(let library, _, _, _, _, _, _), .html(let library, _, _, _), .epub(let library, _, _, _), .note(let library, _, _, _, _, _):
+                return library
+            }
+        }
+
+        var key: String {
+            switch self {
+            case .pdf(_, let key, _, _, _, _, _), .html(_, let key, _, _), .epub(_, let key, _, _), .note(_, let key, _, _, _, _):
+                return key
+            }
+        }
+
+        var parentKey: String? {
+            switch self {
+            case .pdf(_, _, let parentKey, _, _, _, _), .html(_, _, let parentKey, _), .epub(_, _, let parentKey, _):
+                return parentKey
+
+            case .note:
+                return nil
+            }
+        }
     }
 }

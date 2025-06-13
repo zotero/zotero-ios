@@ -455,8 +455,19 @@ final class AttachmentDownloader: NSObject {
     func downloadIfNeeded(attachment: Attachment, parentKey: String?, scheduler: SchedulerType = MainScheduler.instance, completion: @escaping (Result<(), Swift.Error>) -> Void) {
         observable
             .observe(on: scheduler)
-            .subscribe(onNext: { update in
-                guard update.libraryId == attachment.libraryId && update.key == attachment.key else { return }
+            .filter { update in
+                guard update.libraryId == attachment.libraryId && update.key == attachment.key else { return false }
+                switch update.kind {
+                case .cancelled, .failed, .ready:
+                    return true
+
+                case .progress:
+                    return false
+                }
+            }
+            .first()
+            .subscribe { update in
+                guard let update else { return }
                 switch update.kind {
                 case .ready:
                     completion(.success(()))
@@ -470,7 +481,7 @@ final class AttachmentDownloader: NSObject {
                 case .progress:
                     break
                 }
-            })
+            }
             .disposed(by: disposeBag)
 
         downloadIfNeeded(attachment: attachment, parentKey: parentKey)

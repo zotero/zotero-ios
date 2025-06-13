@@ -90,14 +90,14 @@ final class LibrariesViewController: UIViewController {
     // MARK: - Actions
 
     private func showDefaultLibraryIfNeeded(for state: LibrariesState) {
-        guard let visibleLibraryId = self.coordinatorDelegate?.visibleLibraryId else { return }
-        switch visibleLibraryId {
-        case .custom: break
+        switch coordinatorDelegate?.visibleLibraryId {
+        case .none, .custom:
+            break
 
         case .group(let groupId):
             if state.groupLibraries?.filter(.groupId(groupId)).first == nil {
                 // Currently visible group was recently deleted, show default library
-                self.coordinatorDelegate?.showDefaultLibrary()
+                coordinatorDelegate?.showDefaultLibrary()
             }
         }
     }
