@@ -16,7 +16,12 @@ class ItemDetailFieldEditContentView: UIView {
     @IBOutlet private weak var valueTextField: UITextField!
     @IBOutlet private weak var topConstraint: NSLayoutConstraint!
     @IBOutlet private weak var bottomConstraint: NSLayoutConstraint!
-    private var heightConstraint: NSLayoutConstraint?
+    private lazy var heightConstraint: NSLayoutConstraint = {
+        let constraint = heightAnchor.constraint(equalToConstant: 0)
+        constraint.priority = UILayoutPriority(rawValue: 999)
+        constraint.isActive = true
+        return constraint
+    }()
 
     var textObservable: Observable<String> {
         return valueTextField.rx.controlEvent(.editingChanged).flatMap({ Observable.just(self.valueTextField.text ?? "") })
@@ -43,14 +48,6 @@ class ItemDetailFieldEditContentView: UIView {
         valueTextField.text = value
 
         let height = ceil(valueTextField.font!.capHeight + layoutMargins.top + layoutMargins.bottom)
-
-        if let heightConstraint {
-            heightConstraint.constant = height
-        } else {
-            let heightConstraint = heightAnchor.constraint(equalToConstant: height)
-            heightConstraint.priority = UILayoutPriority(rawValue: 999)
-            heightConstraint.isActive = true
-            self.heightConstraint = heightConstraint
-        }
+        heightConstraint.constant = height
     }
 }
