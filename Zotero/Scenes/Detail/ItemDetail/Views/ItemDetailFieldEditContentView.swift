@@ -19,7 +19,6 @@ class ItemDetailFieldEditContentView: UIView {
     private lazy var heightConstraint: NSLayoutConstraint = {
         let constraint = heightAnchor.constraint(equalToConstant: 0)
         constraint.priority = UILayoutPriority(rawValue: 999)
-        constraint.isActive = true
         return constraint
     }()
     var textChanged: ((String) -> Void)?
@@ -57,5 +56,6 @@ class ItemDetailFieldEditContentView: UIView {
 
         let height = ceil(valueTextField.font!.capHeight + layoutMargins.top + layoutMargins.bottom)
         heightConstraint.constant = height
+        heightConstraint.isActive = true
     }
 }
