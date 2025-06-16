@@ -24,7 +24,7 @@ final class ItemDetailFieldEditCell: UICollectionViewListCell {
             self.field = field
             self.titleWidth = titleWidth
             self.layoutMargins = layoutMargins
-            self.textObservable = PublishSubject()
+            textObservable = PublishSubject()
             self.disposeBag = disposeBag
         }
 
@@ -40,8 +40,8 @@ final class ItemDetailFieldEditCell: UICollectionViewListCell {
     final class ContentView: UIView, UIContentView {
         var configuration: UIContentConfiguration {
             didSet {
-                guard let configuration = self.configuration as? ContentConfiguration else { return }
-                self.apply(configuration: configuration)
+                guard let configuration = configuration as? ContentConfiguration else { return }
+                apply(configuration: configuration)
             }
         }
 
@@ -54,9 +54,9 @@ final class ItemDetailFieldEditCell: UICollectionViewListCell {
 
             guard let view = UINib.init(nibName: "ItemDetailFieldEditContentView", bundle: nil).instantiate(withOwner: self)[0] as? ItemDetailFieldEditContentView else { return }
 
-            self.add(contentView: view)
-            self.contentView = view
-            self.apply(configuration: configuration)
+            add(contentView: view)
+            contentView = view
+            apply(configuration: configuration)
         }
 
         required init?(coder: NSCoder) {
@@ -64,11 +64,11 @@ final class ItemDetailFieldEditCell: UICollectionViewListCell {
         }
 
         private func apply(configuration: ContentConfiguration) {
-            let disposable = self.contentView.textObservable.bind(to: configuration.textObservable)
+            let disposable = contentView.textObservable.bind(to: configuration.textObservable)
             _ = configuration.disposeBag.insert(disposable)
 
-            self.contentView.layoutMargins = configuration.layoutMargins
-            self.contentView.setup(with: configuration.field, titleWidth: configuration.titleWidth)
+            contentView.layoutMargins = configuration.layoutMargins
+            contentView.setup(with: configuration.field, titleWidth: configuration.titleWidth)
         }
     }
 
