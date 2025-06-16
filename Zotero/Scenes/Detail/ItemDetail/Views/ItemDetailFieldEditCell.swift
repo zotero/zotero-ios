@@ -11,22 +11,11 @@ import UIKit
 import RxSwift
 
 final class ItemDetailFieldEditCell: UICollectionViewListCell {
-    private(set) var disposeBag = DisposeBag()
-
     struct ContentConfiguration: UIContentConfiguration {
         let field: ItemDetailState.Field
         let titleWidth: CGFloat
         let layoutMargins: UIEdgeInsets
-        let textObservable: PublishSubject<String>
-        let disposeBag: DisposeBag
-
-        init(field: ItemDetailState.Field, titleWidth: CGFloat, layoutMargins: UIEdgeInsets, disposeBag: DisposeBag) {
-            self.field = field
-            self.titleWidth = titleWidth
-            self.layoutMargins = layoutMargins
-            textObservable = PublishSubject()
-            self.disposeBag = disposeBag
-        }
+        let textChanged: (String) -> Void
 
         func makeContentView() -> UIView & UIContentView {
             return ContentView(configuration: self)
@@ -64,17 +53,9 @@ final class ItemDetailFieldEditCell: UICollectionViewListCell {
         }
 
         private func apply(configuration: ContentConfiguration) {
-            contentView.textObservable
-                .bind(to: configuration.textObservable)
-                .disposed(by: configuration.disposeBag)
-
+            contentView.textChanged = configuration.textChanged
             contentView.layoutMargins = configuration.layoutMargins
             contentView.setup(with: configuration.field, titleWidth: configuration.titleWidth)
         }
-    }
-
-    override func prepareForReuse() {
-        super.prepareForReuse()
-        disposeBag = DisposeBag()
     }
 }

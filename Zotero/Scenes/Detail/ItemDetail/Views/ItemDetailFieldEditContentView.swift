@@ -22,10 +22,8 @@ class ItemDetailFieldEditContentView: UIView {
         constraint.isActive = true
         return constraint
     }()
-
-    var textObservable: Observable<String> {
-        return valueTextField.rx.controlEvent(.editingChanged).flatMap({ Observable.just(self.valueTextField.text ?? "") })
-    }
+    var textChanged: ((String) -> Void)?
+    private(set) var disposeBag = DisposeBag()
 
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -38,6 +36,16 @@ class ItemDetailFieldEditContentView: UIView {
         bottomConstraint.constant = valueFont.descender
 
         clipsToBounds = true
+
+        NotificationCenter.default
+            .rx
+            .notification(UITextField.textDidChangeNotification, object: valueTextField)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] _ in
+                guard let self else { return }
+                textChanged?(valueTextField.text ?? "")
+            })
+            .disposed(by: disposeBag)
     }
 
     func setup(with field: ItemDetailState.Field, titleWidth: CGFloat) {
