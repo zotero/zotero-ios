@@ -11,45 +11,51 @@ import UIKit
 import RxSwift
 
 class ItemDetailFieldEditContentView: UIView {
-    @IBOutlet private weak var titleWidth: NSLayoutConstraint!
+    @IBOutlet private weak var titleWidthConstraint: NSLayoutConstraint!
     @IBOutlet private weak var titleLabel: UILabel!
     @IBOutlet private weak var valueTextField: UITextField!
     @IBOutlet private weak var topConstraint: NSLayoutConstraint!
     @IBOutlet private weak var bottomConstraint: NSLayoutConstraint!
-    private var heightConstraint: NSLayoutConstraint?
-
-    var textObservable: Observable<String> {
-        return self.valueTextField.rx.controlEvent(.editingChanged).flatMap({ Observable.just(self.valueTextField.text ?? "") })
-    }
+    private lazy var heightConstraint: NSLayoutConstraint = {
+        let constraint = heightAnchor.constraint(equalToConstant: 0)
+        constraint.priority = UILayoutPriority(rawValue: 999)
+        return constraint
+    }()
+    var textChanged: ((String) -> Void)?
+    private(set) var disposeBag = DisposeBag()
 
     override func awakeFromNib() {
         super.awakeFromNib()
 
         let valueFont = UIFont.preferredFont(forTextStyle: .body)
-        self.titleLabel.font = UIFont.preferredFont(for: .headline, weight: .regular)
-        self.valueTextField.font = valueFont
+        titleLabel.font = UIFont.preferredFont(for: .headline, weight: .regular)
+        valueTextField.font = valueFont
 
-        self.topConstraint.constant = valueFont.capHeight - valueFont.ascender
-        self.bottomConstraint.constant = valueFont.descender
+        topConstraint.constant = valueFont.capHeight - valueFont.ascender
+        bottomConstraint.constant = valueFont.descender
 
-        self.clipsToBounds = true
+        clipsToBounds = true
+
+        NotificationCenter.default
+            .rx
+            .notification(UITextField.textDidChangeNotification, object: valueTextField)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] _ in
+                guard let self else { return }
+                textChanged?(valueTextField.text ?? "")
+            })
+            .disposed(by: disposeBag)
     }
 
     func setup(with field: ItemDetailState.Field, titleWidth: CGFloat) {
         let value = field.additionalInfo?[.formattedEditDate] ?? field.value
 
-        self.titleLabel.text = field.name
-        self.titleWidth.constant = titleWidth
-        self.valueTextField.text = value
+        titleLabel.text = field.name
+        titleWidthConstraint.constant = titleWidth
+        valueTextField.text = value
 
-        let height = ceil(self.valueTextField.font!.capHeight + self.layoutMargins.top + self.layoutMargins.bottom)
-
-        if let constraint = self.heightConstraint {
-            constraint.constant = height
-        } else {
-            self.heightConstraint = self.heightAnchor.constraint(equalToConstant: height)
-            self.heightConstraint?.priority = UILayoutPriority(rawValue: 999)
-            self.heightConstraint?.isActive = true
-        }
+        let height = ceil(valueTextField.font!.capHeight + layoutMargins.top + layoutMargins.bottom)
+        heightConstraint.constant = height
+        heightConstraint.isActive = true
     }
 }

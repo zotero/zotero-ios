@@ -804,12 +804,9 @@ final class ItemDetailCollectionViewHandler: NSObject {
     private lazy var fieldEditRegistration: UICollectionView.CellRegistration<ItemDetailFieldEditCell, (ItemDetailState.Field, CGFloat)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
             guard let self else { return }
-            let configuration = ItemDetailFieldEditCell.ContentConfiguration(field: data.0, titleWidth: data.1, layoutMargins: layoutMargins(for: indexPath, self: self))
-            let disposable = configuration.textObservable
-                .subscribe(onNext: { [weak self] text in
-                    self?.viewModel.process(action: .setFieldValue(id: data.0.key, value: text))
-                })
-            _ = configuration.disposeBag.insert(disposable)
+            let configuration = ItemDetailFieldEditCell.ContentConfiguration(field: data.0, titleWidth: data.1, layoutMargins: layoutMargins(for: indexPath, self: self)) { [weak self] text in
+                self?.viewModel.process(action: .setFieldValue(id: data.0.key, value: text))
+            }
             cell.contentConfiguration = configuration
         }
     }()
@@ -817,12 +814,9 @@ final class ItemDetailCollectionViewHandler: NSObject {
     private lazy var fieldMultilineEditRegistration: UICollectionView.CellRegistration<ItemDetailFieldMultilineEditCell, (ItemDetailState.Field, CGFloat)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
             guard let self else { return }
-            let configuration = ItemDetailFieldMultilineEditCell.ContentConfiguration(field: data.0, titleWidth: data.1, layoutMargins: layoutMargins(for: indexPath, self: self))
-            let disposable = configuration.textObservable
-                .subscribe(onNext: { [weak self] text in
-                    self?.viewModel.process(action: .setFieldValue(id: data.0.key, value: text))
-                })
-            _ = configuration.disposeBag.insert(disposable)
+            let configuration = ItemDetailFieldMultilineEditCell.ContentConfiguration(field: data.0, titleWidth: data.1, layoutMargins: layoutMargins(for: indexPath, self: self)) { [weak self] text in
+                self?.viewModel.process(action: .setFieldValue(id: data.0.key, value: text))
+            }
             cell.contentConfiguration = configuration
         }
     }()
