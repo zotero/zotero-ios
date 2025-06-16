@@ -111,7 +111,7 @@ extension NSUserActivity {
         }
 
         func restoreContentContainer() -> RestoredStateData {
-            var libraryId: LibraryIdentifier = Defaults.shared.selectedLibrary
+            var libraryId: LibraryIdentifier = Defaults.shared.selectedLibraryId
             var collectionId: CollectionIdentifier = Defaults.shared.selectedCollectionId
             var openItems: [OpenItem] = []
             var restoreMostRecentlyOpenedItem = false
@@ -133,7 +133,7 @@ extension NSUserActivity {
 
         func restoreDeprecatedPdf() -> RestoredStateData? {
             guard let key = userInfo["key"] as? String else { return nil }
-            var libraryId: LibraryIdentifier = Defaults.shared.selectedLibrary
+            var libraryId: LibraryIdentifier = Defaults.shared.selectedLibraryId
             var collectionId: CollectionIdentifier = Defaults.shared.selectedCollectionId
             if let libraryString = userInfo["libraryId"] as? String, let _libraryId = stringToLibraryId(libraryString) {
                 libraryId = _libraryId

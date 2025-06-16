@@ -21,7 +21,7 @@ protocol PDFReaderContainerDelegate: AnyObject {
     func showSearch(pdfController: PDFViewController, text: String?)
 }
 
-class PDFReaderViewController: UIViewController {
+class PDFReaderViewController: UIViewController, ReaderViewController {
     typealias DocumentController = PDFDocumentViewController
     typealias SidebarController = PDFSidebarViewController
 

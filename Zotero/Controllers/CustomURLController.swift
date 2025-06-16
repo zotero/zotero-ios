@@ -14,12 +14,12 @@ import RxSwift
 final class CustomURLController {
     enum CustomURLAction: String {
         case select = "select"
-        case openPdf = "open-pdf"
+        case openItem = "open-pdf"
     }
 
     enum Kind {
         case itemDetail(key: String, libraryId: LibraryIdentifier, preselectedChildKey: String?)
-        case pdfReader(attachment: Attachment, libraryId: LibraryIdentifier, page: Int?, annotation: String?, parentKey: String?, isAvailable: Bool)
+        case itemReader(presentation: ItemPresentation, attachment: Attachment, isAvailable: Bool)
     }
 
     private unowned let dbStorage: DbStorage
@@ -32,16 +32,16 @@ final class CustomURLController {
 
     func process(url: URL) -> Kind? {
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-                components.scheme == "zotero",
-                let action = components.host.flatMap({ CustomURLAction(rawValue: $0) })
+              components.scheme == "zotero",
+              let action = components.host.flatMap({ CustomURLAction(rawValue: $0) })
         else { return nil }
 
         switch action {
         case .select:
             return select(path: components.path)
 
-        case .openPdf:
-            return openPdf(path: components.path, queryItems: components.queryItems ?? [])
+        case .openItem:
+            return openItem(path: components.path, queryItems: components.queryItems ?? [])
         }
 
         func select(path: String) -> Kind? {
@@ -59,39 +59,65 @@ final class CustomURLController {
             }
         }
 
-        func openPdf(path: String, queryItems: [URLQueryItem]) -> Kind? {
+        func openItem(path: String, queryItems: [URLQueryItem]) -> Kind? {
             guard let (key, libraryId, page, annotation) = extractProperties(from: path, and: queryItems, extractPageAndAnnotation: true, allowZotFileFormat: true) else { return nil }
-            return loadPdfKind(on: page, annotation: annotation, key: key, libraryId: libraryId)
+            return loadItemReaderKind(on: page, annotation: annotation, key: key, libraryId: libraryId)
 
-            func loadPdfKind(on page: Int?, annotation: String?, key: String, libraryId: LibraryIdentifier) -> Kind? {
+            func loadItemReaderKind(on page: Int?, annotation: String?, key: String, libraryId: LibraryIdentifier) -> Kind? {
+                var library: Library?
+                var item: RItem?
                 do {
-                    let item = try dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key), on: .main)
-
-                    guard let attachment = AttachmentCreator.attachment(for: item, fileStorage: fileStorage, urlDetector: nil) else {
-                        DDLogInfo("CustomURLConverter: trying to open incorrect item - \(item.rawType)")
-                        return nil
-                    }
-
-                    guard case .file(_, let contentType, let location, _, _) = attachment.type, contentType == "application/pdf" else {
-                        DDLogInfo("CustomURLConverter: trying to open \(attachment.type) instead of pdf")
-                        return nil
-                    }
-
-                    let parentKey = item.parent?.key
-
-                    switch location {
-                    case .local:
-                        return .pdfReader(attachment: attachment, libraryId: libraryId, page: page, annotation: annotation, parentKey: parentKey, isAvailable: true)
-
-                    case .remote, .localAndChangedRemotely:
-                        return .pdfReader(attachment: attachment, libraryId: libraryId, page: page, annotation: annotation, parentKey: parentKey, isAvailable: false)
-
-                    case .remoteMissing:
-                        DDLogInfo("CustomURLConverter: attachment \(attachment.key) missing remotely")
-                        return nil
+                    try dbStorage.perform(on: .main) { coordinator in
+                        library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
+                        item = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
                     }
                 } catch let error {
                     DDLogError("CustomURLConverter: library (\(libraryId)) or item (\(key)) not found - \(error)")
+                    return nil
+                }
+                guard let library, let item else { return nil }
+                guard let attachment = AttachmentCreator.attachment(for: item, fileStorage: fileStorage, urlDetector: nil) else {
+                    DDLogInfo("CustomURLConverter: trying to open incorrect item - \(item.rawType)")
+                    return nil
+                }
+                guard case .file(let filename, let contentType, let location, _, _) = attachment.type else {
+                    DDLogInfo("CustomURLConverter: trying to open invalid attachment type \(attachment.type)")
+                    return nil
+                }
+                let parentKey = item.parent?.key
+                let file = Files.attachmentFile(in: libraryId, key: attachment.key, filename: filename, contentType: contentType)
+                let url = file.createUrl()
+                var presentation: ItemPresentation?
+                switch contentType {
+                case "application/pdf":
+                    presentation = .pdf(library: library, key: key, parentKey: parentKey, url: url, page: page, preselectedAnnotationKey: annotation, previewRects: nil)
+
+                case "text/html":
+                    if FeatureGates.enabled.contains(.htmlEpubReader) {
+                        presentation = .html(library: library, key: key, parentKey: parentKey, url: url)
+                    }
+
+                case "application/epub+zip":
+                    if FeatureGates.enabled.contains(.htmlEpubReader) {
+                        presentation = .epub(library: library, key: key, parentKey: parentKey, url: url)
+                    }
+
+                default:
+                    break
+                }
+                guard let presentation else {
+                    DDLogInfo("CustomURLConverter: trying to open invalid content type \(contentType)")
+                    return nil
+                }
+                switch location {
+                case .local:
+                    return .itemReader(presentation: presentation, attachment: attachment, isAvailable: true)
+
+                case .remote, .localAndChangedRemotely:
+                    return .itemReader(presentation: presentation, attachment: attachment, isAvailable: false)
+
+                case .remoteMissing:
+                    DDLogInfo("CustomURLConverter: attachment \(attachment.key) missing remotely")
                     return nil
                 }
             }

@@ -17,7 +17,8 @@ import RxSwift
 protocol AppDelegateCoordinatorDelegate: AnyObject {
     func showMainScreen(isLoggedIn: Bool, options: UIScene.ConnectionOptions, session: UISceneSession, animated: Bool)
     func didRotate(to size: CGSize)
-    func show(customUrl: CustomURLController.Kind, animated: Bool)
+    @discardableResult
+    func showScreen(for urlContext: UIOpenURLContext, animated: Bool) -> Bool
     func showMainScreen(with data: RestoredStateData, session: UISceneSession) -> Bool
 }
 
@@ -166,22 +167,15 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
             if let data {
                 // If scene had state stored, check if defaults need to be updated first
                 DDLogInfo("AppCoordinator: Preprocessing restored state - \(data)")
-                Defaults.shared.selectedLibrary = data.libraryId
+                Defaults.shared.selectedLibraryId = data.libraryId
                 Defaults.shared.selectedCollectionId = data.collectionId
             }
             return (urlContext, data)
         }
 
         func process(urlContext: UIOpenURLContext?, data: RestoredStateData?) {
-            if let urlContext, let urlController = controllers.userControllers?.customUrlController {
-                // If scene was started from custom URL
-                let sourceApp = urlContext.options.sourceApplication ?? "unknown"
-                DDLogInfo("AppCoordinator: App launched by \(urlContext.url.absoluteString) from \(sourceApp)")
-
-                if let kind = urlController.process(url: urlContext.url) {
-                    self.show(customUrl: kind, animated: false)
-                    return
-                }
+            if let urlContext, showScreen(for: urlContext, animated: false) {
+                 return
             }
 
             if let data {
@@ -231,15 +225,12 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
 
                     func loadPresentation(for item: OpenItem) -> ItemPresentation? {
                         guard let dbStorage = controllers.userControllers?.dbStorage else { return nil }
-                            var presentation: ItemPresentation?
+                        var presentation: ItemPresentation?
                         do {
                             try dbStorage.perform(on: .main) { coordinator in
                                 switch item.kind {
-                                case .pdf(let libraryId, let key):
-                                    presentation = try loadPDFPresentation(key: key, libraryId: libraryId, coordinator: coordinator)
-
-                                case .html(let libraryId, let key), .epub(let libraryId, let key):
-                                    presentation = try loadEpubHtmlPresentation(key: key, libraryId: libraryId, coordinator: coordinator)
+                                case .pdf, .html, .epub:
+                                    presentation = try loadItemPresentation(kind: item.kind, coordinator: coordinator)
 
                                 case .note(let libraryId, let key):
                                     presentation = try loadNotePresentation(key: key, libraryId: libraryId, coordinator: coordinator)
@@ -250,18 +241,19 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
                         }
                         return presentation
 
-                        func loadPDFPresentation(key: String, libraryId: LibraryIdentifier, coordinator: DbCoordinator) throws -> ItemPresentation? {
+                        func loadItemPresentation(kind: OpenItem.Kind, coordinator: DbCoordinator) throws -> ItemPresentation? {
+                            let libraryId = kind.libraryId
+                            let key = kind.key
                             let library: Library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
                             let rItem = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
                             let parentKey = rItem.parent?.key
                             guard let attachment = AttachmentCreator.attachment(for: rItem, fileStorage: controllers.fileStorage, urlDetector: nil) else { return nil }
-                            var url: URL?
+                            var presentation: ItemPresentation?
                             switch attachment.type {
                             case .file(let filename, let contentType, let location, _, _):
                                 switch location {
                                 case .local, .localAndChangedRemotely:
-                                    let file = Files.attachmentFile(in: libraryId, key: key, filename: filename, contentType: contentType)
-                                    url = file.createUrl()
+                                    presentation = createItemPresentation(kind: kind, parentKey: parentKey, library: library, filename: filename, contentType: contentType)
 
                                 case .remote, .remoteMissing:
                                     break
@@ -270,8 +262,25 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
                             case .url:
                                 break
                             }
-                            guard let url else { return nil }
-                            return .pdf(library: library, key: key, parentKey: parentKey, url: url)
+                            return presentation
+
+                            func createItemPresentation(kind: OpenItem.Kind, parentKey: String?, library: Library, filename: String, contentType: String) -> ItemPresentation? {
+                                let file = Files.attachmentFile(in: library.identifier, key: kind.key, filename: filename, contentType: contentType)
+                                let url = file.createUrl()
+                                switch kind {
+                                case .pdf(_, let key):
+                                    return .pdf(library: library, key: key, parentKey: parentKey, url: url, page: nil, preselectedAnnotationKey: nil, previewRects: nil)
+
+                                case .html(_, let key):
+                                    return .html(library: library, key: key, parentKey: parentKey, url: url)
+
+                                case .epub(_, let key):
+                                    return .epub(library: library, key: key, parentKey: parentKey, url: url)
+
+                                case .note:
+                                    return nil
+                                }
+                            }
                         }
 
                         func loadNotePresentation(key: String, libraryId: LibraryIdentifier, coordinator: DbCoordinator) throws -> ItemPresentation? {
@@ -281,30 +290,6 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
                             let parentTitleData: NoteEditorState.TitleData? = rItem.parent.flatMap { .init(type: $0.rawType, title: $0.displayTitle) }
                             guard let note else { return nil }
                             return .note(library: library, key: note.key, text: note.text, tags: note.tags, parentTitleData: parentTitleData, title: note.title)
-                        }
-
-                        func loadEpubHtmlPresentation(key: String, libraryId: LibraryIdentifier, coordinator: DbCoordinator) throws -> ItemPresentation? {
-                            let library: Library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
-                            let rItem = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
-                            let parentKey = rItem.parent?.key
-                            guard let attachment = AttachmentCreator.attachment(for: rItem, fileStorage: controllers.fileStorage, urlDetector: nil) else { return nil }
-                            var url: URL?
-                            switch attachment.type {
-                            case .file(let filename, let contentType, let location, _, _):
-                                switch location {
-                                case .local, .localAndChangedRemotely:
-                                    let file = Files.attachmentFile(in: libraryId, key: key, filename: filename, contentType: contentType)
-                                    url = file.createUrl()
-
-                                case .remote, .remoteMissing:
-                                    break
-                                }
-
-                            case .url:
-                                break
-                            }
-                            guard let url else { return nil }
-                            return .htmlEpub(library: library, key: key, parentKey: parentKey, url: url)
                         }
                     }
                 }
@@ -318,39 +303,46 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
         debugWindow.frame = debugWindowFrame(for: size, xPos: xPos)
     }
 
-    func show(customUrl: CustomURLController.Kind, animated: Bool) {
+    @discardableResult
+    func showScreen(for urlContext: UIOpenURLContext, animated: Bool) -> Bool {
+        let sourceApp = urlContext.options.sourceApplication ?? "unknown"
+        DDLogInfo("AppCoordinator: show screen for \(urlContext.url.absoluteString) from \(sourceApp)")
         guard let window, let mainController = window.rootViewController as? MainViewController else {
-            DDLogWarn("AppCoordinator: show custom url aborted - invalid root view controller")
-            return
+            DDLogWarn("AppCoordinator: show screen aborted - invalid root view controller")
+            return false
         }
+        guard let urlController = controllers.userControllers?.customUrlController, let kind = urlController.process(url: urlContext.url) else { return false }
 
-        switch customUrl {
+        switch kind {
         case .itemDetail(let key, let libraryId, let preselectedChildKey):
-            DDLogInfo("AppCoordinator: show custom url - item detail; key=\(key); library=\(libraryId)")
+            DDLogInfo("AppCoordinator: show screen - item detail; key=\(key); library=\(libraryId)")
             showItemDetail(in: mainController, key: key, libraryId: libraryId, selectChildKey: preselectedChildKey, animated: animated, dismissIfPresenting: true)
 
-        case .pdfReader(let attachment, let libraryId, let page, let annotation, let parentKey, let isAvailable):
-            let message = DDLogMessageFormat(
-                stringLiteral:
-                    "AppCoordinator: show custom url - pdf reader; key=\(attachment.key); library=\(libraryId);" +
-                " page=\(page.flatMap(String.init) ?? "nil"); annotation=\(annotation ?? "nil"); parentKey=\(parentKey ?? "nil")"
-            )
-            DDLogInfo(message)
-            mainController.getDetailCoordinator { coordinator in
-                if isAvailable {
-                    guard (coordinator.navigationController?.presentedViewController as? PDFReaderViewController)?.key != attachment.key else { return }
-                    open(attachment: attachment, parentKey: parentKey, libraryId: libraryId, on: page, annotation: annotation, window: window, detailCoordinator: coordinator, animated: animated) {
-                        showItemDetail(in: mainController, key: (parentKey ?? attachment.key), libraryId: libraryId, selectChildKey: attachment.key, animated: false, dismissIfPresenting: false)
+        case .itemReader(let presentation, let attachment, let isAvailable):
+            DDLogInfo("AppCoordinator: show screen - item reader; \(presentation)")
+            let key = presentation.key
+            let parentKey = presentation.parentKey
+            let libraryId = presentation.library.identifier
+            if isAvailable {
+                mainController.getDetailCoordinator(for: nil, and: nil) { coordinator in
+                    guard (coordinator.navigationController?.presentedViewController as? ReaderViewController)?.key != key else { return }
+                    showItem(presentation: presentation, window: window, detailCoordinator: coordinator, animated: animated) {
+                        showItemDetail(in: mainController, key: parentKey ?? key, libraryId: libraryId, selectChildKey: key, animated: false, dismissIfPresenting: false)
                     }
-                } else {
-                    showItemDetail(in: mainController, key: (parentKey ?? attachment.key), libraryId: libraryId, selectChildKey: attachment.key, animated: animated, dismissIfPresenting: true) {
-                        download(attachment: attachment, parentKey: parentKey) {
-                            open(attachment: attachment, parentKey: parentKey, libraryId: libraryId, on: page, annotation: annotation, window: window, detailCoordinator: coordinator, animated: true)
+                }
+            } else {
+                showItemDetail(in: mainController, key: parentKey ?? key, libraryId: libraryId, selectChildKey: key, animated: animated, dismissIfPresenting: true) {
+                    download(attachment: attachment, parentKey: parentKey) {
+                        mainController.getDetailCoordinator(for: nil, and: nil) { coordinator in
+                            showItem(presentation: presentation, window: window, detailCoordinator: coordinator, animated: true) {
+                            }
                         }
                     }
                 }
             }
         }
+
+        return true
 
         func showItemDetail(
             in mainController: MainViewController,
@@ -364,17 +356,21 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
             let dismissPresented = dismissIfPresenting && (mainController.presentedViewController != nil)
             let itemDetailAnimated = dismissPresented ? false : animated
 
-            // Show "All" collection in given library/group
-            if let coordinator = mainController.masterCoordinator,
-               coordinator.visibleLibraryId != libraryId ||
-                (coordinator.navigationController?.visibleViewController as? CollectionsViewController)?.selectedIdentifier != .custom(.all) {
-                coordinator.showCollections(for: libraryId, preselectedCollection: .custom(.all), animated: itemDetailAnimated)
-            }
+            // Show "All" collection in given library/group.
+            let collectionId: CollectionIdentifier = .custom(.all)
+            mainController.masterCoordinator?.showCollections(for: libraryId, preselectedCollection: collectionId, animated: itemDetailAnimated)
 
-            // Show item detail of given key
-            mainController.getDetailCoordinator { coordinator in
-                if (coordinator.navigationController?.visibleViewController as? ItemDetailViewController)?.key != key {
+            // Show item detail of given key.
+            // If switching from another library or root view controller, while in split mode,
+            // then the current detail coordinator will be replaced, so wait for the new one for the specific library and collection.
+            mainController.getDetailCoordinator(for: !mainController.isCollapsed ? libraryId : nil, and: !mainController.isCollapsed ? collectionId : nil) { coordinator in
+                guard let detailNavigationController = coordinator.navigationController else { return }
+                if (detailNavigationController.topViewController as? ItemDetailViewController)?.key != key {
                     coordinator.showItemDetail(for: .preview(key: key), libraryId: libraryId, scrolledToKey: childKey, animated: itemDetailAnimated)
+                }
+                if detailNavigationController.parent == nil, mainController.isCollapsed, let navigationController = mainController.masterCoordinator?.navigationController {
+                    // In collapsed mode, if the detail is not already handled by the split view controller, then it needs to be push in the stack.
+                    navigationController.pushViewController(detailNavigationController, animated: itemDetailAnimated)
                 }
             }
 
@@ -391,40 +387,29 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
                 completion()
                 return
             }
-            downloader.downloadIfNeeded(attachment: attachment, parentKey: parentKey, completion: { _ in completion() })
+            downloader.downloadIfNeeded(attachment: attachment, parentKey: parentKey) { result in
+                guard case .success = result else { return }
+                completion()
+            }
         }
 
-        func open(
-            attachment: Attachment,
-            parentKey: String?,
-            libraryId: LibraryIdentifier,
-            on page: Int?,
-            annotation: String?,
+        func showItem(
+            presentation: ItemPresentation,
             window: UIWindow,
             detailCoordinator: DetailCoordinator,
             animated: Bool,
             completion: (() -> Void)? = nil
         ) {
-            switch attachment.type {
-            case .file(let filename, let contentType, _, _, _) where contentType == "application/pdf":
-                // TODO: - call completion?
-                guard let presenter = window.rootViewController else { return }
-                let file = Files.attachmentFile(in: libraryId, key: attachment.key, filename: filename, contentType: contentType)
-                let url = file.createUrl()
-                show(
-                    viewControllerProvider: {
-                        detailCoordinator.createPDFController(key: attachment.key, parentKey: parentKey, libraryId: libraryId, url: url, page: page, preselectedAnnotationKey: annotation)
-                    },
-                    by: presenter,
-                    in: window,
-                    animated: animated,
-                    completion: completion
-                )
-
-            default:
-                completion?()
-                return
-            }
+            guard let presenter = window.rootViewController else { return }
+            show(
+                viewControllerProvider: {
+                    detailCoordinator.createViewController(for: presentation)
+                },
+                by: presenter,
+                in: window,
+                animated: animated,
+                completion: completion
+            )
         }
     }
 
@@ -905,21 +890,11 @@ extension AppCoordinator: SyncRequestReceiver {
 extension AppCoordinator: OpenItemsPresenter {
     func showItem(with presentation: ItemPresentation?) {
         guard let presentation, let window, let mainController = window.rootViewController as? MainViewController else { return }
-        mainController.getDetailCoordinator { [weak self] coordinator in
+        mainController.getDetailCoordinator(for: nil, and: nil) { [weak self] coordinator in
             guard let self else { return }
             show(
                 viewControllerProvider: {
-                    switch presentation {
-                    case .pdf(let library, let key, let parentKey, let url):
-                        return coordinator.createPDFController(key: key, parentKey: parentKey, libraryId: library.identifier, url: url)
-
-                    case .htmlEpub(let library, let key, let parentKey, let url):
-                        return coordinator.createHtmlEpubController(key: key, parentKey: parentKey, libraryId: library.identifier, url: url)
-
-                    case .note(let library, let key, let text, let tags, let parentTitleData, let title):
-                        let kind: NoteEditorKind = library.metadataEditable ? .edit(key: key) : .readOnly(key: key)
-                        return coordinator.createNoteController(library: library, kind: kind, text: text, tags: tags, parentTitleData: parentTitleData, title: title)
-                    }
+                    return coordinator.createViewController(for: presentation)
                 },
                 by: mainController,
                 in: window,

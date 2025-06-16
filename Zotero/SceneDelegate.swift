@@ -68,17 +68,9 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
-        guard let delegate = UIApplication.shared.delegate as? AppDelegate, let urlController = delegate.controllers.userControllers?.customUrlController else { return }
-        
-        if let urlContext = URLContexts.first {
-            let sourceApp = urlContext.options.sourceApplication ?? "unknown"
-
-            DDLogInfo("SceneDelegate: App opened by \(urlContext.url.absoluteString) from \(sourceApp)")
-
-            if let kind = urlController.process(url: urlContext.url) {
-                coordinator.show(customUrl: kind, animated: (UIApplication.shared.applicationState == .active))
-            }
-        }
+        DDLogInfo("SceneDelegate: app opened by \(URLContexts)")
+        guard let urlContext = URLContexts.first else { return }
+        coordinator.showScreen(for: urlContext, animated: (UIApplication.shared.applicationState == .active))
     }
 
     func windowScene(_ windowScene: UIWindowScene, performActionFor shortcutItem: UIApplicationShortcutItem, completionHandler: @escaping (Bool) -> Void) {

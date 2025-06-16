@@ -291,7 +291,7 @@ final class ExtensionViewModel {
         init() {
             self.attachmentKey = KeyGenerator.newKey
             self.selectedCollectionId = Defaults.shared.selectedCollectionId
-            self.selectedLibraryId = Defaults.shared.selectedLibrary
+            self.selectedLibraryId = Defaults.shared.selectedLibraryId
             self.collectionPickerState = .loading
             self.attachmentState = .decoding
             self.recents = []
@@ -1795,7 +1795,7 @@ final class ExtensionViewModel {
         self.state = state
 
         Defaults.shared.selectedCollectionId = state.selectedCollectionId
-        Defaults.shared.selectedLibrary = state.selectedLibraryId
+        Defaults.shared.selectedLibraryId = state.selectedLibraryId
     }
 
     // MARK: - Tag picker

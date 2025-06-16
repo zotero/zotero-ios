@@ -19,7 +19,7 @@ protocol MasterLibrariesCoordinatorDelegate: AnyObject {
     func showDeleteGroupQuestion(id: Int, name: String, viewModel: ViewModel<LibrariesActionHandler>)
     func showDefaultLibrary()
 
-    var visibleLibraryId: LibraryIdentifier { get }
+    var visibleLibraryId: LibraryIdentifier? { get }
 }
 
 protocol MasterCollectionsCoordinatorDelegate: MainCoordinatorDelegate {
@@ -38,7 +38,6 @@ protocol MasterContainerCoordinatorDelegate: AnyObject {
 final class MasterCoordinator: NSObject, Coordinator {
     weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
-    private(set) var visibleLibraryId: LibraryIdentifier
     weak var navigationController: UINavigationController?
 
     private unowned let controllers: Controllers
@@ -48,45 +47,42 @@ final class MasterCoordinator: NSObject, Coordinator {
         self.navigationController = navigationController
         self.mainCoordinatorDelegate = mainCoordinatorDelegate
         self.controllers = controllers
-        self.childCoordinators = []
-        self.visibleLibraryId = Defaults.shared.selectedLibrary
+        childCoordinators = []
 
         super.init()
     }
 
     func start(animated: Bool) {
-        guard let userControllers = self.controllers.userControllers else { return }
-        let librariesController = self.createLibrariesViewController(dbStorage: userControllers.dbStorage, syncScheduler: userControllers.syncScheduler)
+        guard let userControllers = controllers.userControllers, let navigationController else { return }
+        let librariesController = createLibrariesViewController(dbStorage: userControllers.dbStorage, syncScheduler: userControllers.syncScheduler)
         userControllers.identifierLookupController.webViewProvider = librariesController
         userControllers.citationController.webViewProvider = librariesController
         userControllers.pdfWorkerController.webViewProvider = librariesController
         userControllers.recognizerController.webViewProvider = librariesController
-        let collectionsController = self.createCollectionsViewController(
-            libraryId: self.visibleLibraryId,
+        let collectionsController = createCollectionsViewController(
+            libraryId: Defaults.shared.selectedLibraryId,
             selectedCollectionId: Defaults.shared.selectedCollectionId,
-            dbStorage: userControllers.dbStorage,
-            syncScheduler: userControllers.syncScheduler,
-            attachmentDownloader: userControllers.fileDownloader,
-            fileCleanupController: userControllers.fileCleanupController
+            userControllers: userControllers
         )
-        self.navigationController?.setViewControllers([librariesController, collectionsController], animated: animated)
-    }
+        navigationController.setViewControllers([librariesController, collectionsController], animated: animated)
 
-    private func createLibrariesViewController(dbStorage: DbStorage, syncScheduler: SynchronizationScheduler) -> LibrariesViewController {
-        let viewModel = ViewModel(initialState: LibrariesState(), handler: LibrariesActionHandler(dbStorage: dbStorage))
-        let controller = LibrariesViewController(viewModel: viewModel, syncScheduler: syncScheduler)
-        controller.coordinatorDelegate = self
-        return controller
+        func createLibrariesViewController(dbStorage: DbStorage, syncScheduler: SynchronizationScheduler) -> LibrariesViewController {
+            let viewModel = ViewModel(initialState: LibrariesState(), handler: LibrariesActionHandler(dbStorage: dbStorage))
+            let controller = LibrariesViewController(viewModel: viewModel, syncScheduler: syncScheduler)
+            controller.coordinatorDelegate = self
+            return controller
+        }
     }
 
     private func createCollectionsViewController(
         libraryId: LibraryIdentifier,
         selectedCollectionId: CollectionIdentifier,
-        dbStorage: DbStorage,
-        syncScheduler: SynchronizationScheduler,
-        attachmentDownloader: AttachmentDownloader,
-        fileCleanupController: AttachmentFileCleanupController
+        userControllers: UserControllers
     ) -> CollectionsViewController {
+        let dbStorage = userControllers.dbStorage
+        let syncScheduler = userControllers.syncScheduler
+        let attachmentDownloader = userControllers.fileDownloader
+        let fileCleanupController = userControllers.fileCleanupController
         DDLogInfo("MasterTopCoordinator: show collections for \(selectedCollectionId.id); \(libraryId)")
         let handler = CollectionsActionHandler(dbStorage: dbStorage, fileStorage: controllers.fileStorage, attachmentDownloader: attachmentDownloader, fileCleanupController: fileCleanupController)
         let state = CollectionsState(libraryId: libraryId, selectedCollectionId: selectedCollectionId)
@@ -95,8 +91,8 @@ final class MasterCoordinator: NSObject, Coordinator {
     }
 
     private func storeIfNeeded(libraryId: LibraryIdentifier, preselectedCollection collectionId: CollectionIdentifier? = nil) -> CollectionIdentifier {
-        if Defaults.shared.selectedLibrary == libraryId {
-            if let collectionId = collectionId {
+        if Defaults.shared.selectedLibraryId == libraryId {
+            if let collectionId {
                 Defaults.shared.selectedCollectionId = collectionId
                 return collectionId
             }
@@ -104,30 +100,31 @@ final class MasterCoordinator: NSObject, Coordinator {
         }
 
         let collectionId = collectionId ?? .custom(.all)
-        Defaults.shared.selectedLibrary = libraryId
+        Defaults.shared.selectedLibraryId = libraryId
         Defaults.shared.selectedCollectionId = collectionId
         return collectionId
     }
 }
 
 extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
+    var visibleLibraryId: LibraryIdentifier? {
+        navigationController?.viewControllers.compactMap({ $0 as? CollectionsViewController }).first?.viewModel.state.library.id
+    }
+
     func showDefaultLibrary() {
-        guard let userControllers = self.controllers.userControllers else { return }
+        guard let userControllers = controllers.userControllers, let navigationController else { return }
 
         let libraryId = LibraryIdentifier.custom(.myLibrary)
-        let collectionId = self.storeIfNeeded(libraryId: libraryId)
+        let collectionId = storeIfNeeded(libraryId: libraryId)
 
-        let controller = self.createCollectionsViewController(
+        let controller = createCollectionsViewController(
             libraryId: libraryId,
             selectedCollectionId: collectionId,
-            dbStorage: userControllers.dbStorage,
-            syncScheduler: userControllers.syncScheduler,
-            attachmentDownloader: userControllers.fileDownloader,
-            fileCleanupController: userControllers.fileCleanupController
+            userControllers: userControllers
         )
 
         let animated: Bool
-        var viewControllers = self.navigationController?.viewControllers ?? []
+        var viewControllers = navigationController.viewControllers
 
         if let index = viewControllers.firstIndex(where: { $0 is CollectionsViewController }) {
             // If `CollectionsViewController` is visible, replace it with new controller without animation
@@ -139,10 +136,11 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
             animated = true
         }
 
-        self.navigationController?.setViewControllers(viewControllers, animated: animated)
+        navigationController.setViewControllers(viewControllers, animated: animated)
     }
 
     func show(error: LibrariesError) {
+        guard let navigationController else { return }
         let title: String
         let message: String
 
@@ -154,118 +152,134 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
 
         let controller = UIAlertController(title: title, message: message, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
-        self.navigationController?.present(controller, animated: true, completion: nil)
+        navigationController.present(controller, animated: true, completion: nil)
     }
 
     func showDeleteGroupQuestion(id: Int, name: String, viewModel: ViewModel<LibrariesActionHandler>) {
+        guard let navigationController else { return }
         let controller = UIAlertController(title: L10n.delete, message: L10n.Libraries.deleteQuestion(name), preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.yes, style: .destructive, handler: { [weak viewModel] _ in
             viewModel?.process(action: .deleteGroup(id))
         }))
         controller.addAction(UIAlertAction(title: L10n.no, style: .cancel, handler: nil))
-        self.navigationController?.present(controller, animated: true, completion: nil)
+        navigationController.present(controller, animated: true, completion: nil)
     }
 
     func showCollections(for libraryId: LibraryIdentifier) {
-        guard let userControllers = self.controllers.userControllers else { return }
+        guard let userControllers = controllers.userControllers, let navigationController else { return }
 
-        let collectionId = self.storeIfNeeded(libraryId: libraryId)
+        let collectionId = storeIfNeeded(libraryId: libraryId)
 
-        let controller = self.createCollectionsViewController(
+        let controller = createCollectionsViewController(
             libraryId: libraryId,
             selectedCollectionId: collectionId,
-            dbStorage: userControllers.dbStorage,
-            syncScheduler: userControllers.syncScheduler,
-            attachmentDownloader: userControllers.fileDownloader,
-            fileCleanupController: userControllers.fileCleanupController
+            userControllers: userControllers
         )
-        self.navigationController?.pushViewController(controller, animated: true)
+        navigationController.pushViewController(controller, animated: true)
     }
 
     func showCollections(for libraryId: LibraryIdentifier, preselectedCollection collectionId: CollectionIdentifier, animated: Bool) {
-        guard let navigationController, let userControllers = self.controllers.userControllers else { return }
+        guard let userControllers = controllers.userControllers, let navigationController, !navigationController.viewControllers.isEmpty else { return }
 
-        let collectionId = self.storeIfNeeded(libraryId: libraryId, preselectedCollection: collectionId)
+        let collectionId = storeIfNeeded(libraryId: libraryId, preselectedCollection: collectionId)
 
-        if navigationController.viewControllers.count == 1 {
-            // If only "Libraries" screen is visible, push collections
-            let controller = self.createCollectionsViewController(
+        let count = navigationController.viewControllers.count
+        if count == 1 {
+            // If only "Libraries" screen is visible, push collections.
+            let controller = createCollectionsViewController(
                 libraryId: libraryId,
                 selectedCollectionId: collectionId,
-                dbStorage: userControllers.dbStorage,
-                syncScheduler: userControllers.syncScheduler,
-                attachmentDownloader: userControllers.fileDownloader,
-                fileCleanupController: userControllers.fileCleanupController
+                userControllers: userControllers
             )
             navigationController.pushViewController(controller, animated: animated)
-        } else if libraryId != self.visibleLibraryId {
-            // If Collections screen is visible, but for different library, switch controllers
-            let controller = self.createCollectionsViewController(
+        } else if libraryId != visibleLibraryId {
+            // If Collections screen is visible, but for a different library, switch controllers.
+            let controller = createCollectionsViewController(
                 libraryId: libraryId,
                 selectedCollectionId: collectionId,
-                dbStorage: userControllers.dbStorage,
-                syncScheduler: userControllers.syncScheduler,
-                attachmentDownloader: userControllers.fileDownloader,
-                fileCleanupController: userControllers.fileCleanupController
+                userControllers: userControllers
             )
 
-            var viewControllers = navigationController.viewControllers
-            _ = viewControllers.popLast()
-            viewControllers.append(controller)
-
-            navigationController.setViewControllers(viewControllers, animated: animated)
-        } else if let controller = navigationController.visibleViewController as? CollectionsViewController, controller.selectedIdentifier != .custom(.all) {
-            // Correct Collections screen is visible, just select proper collection
-            controller.viewModel.process(action: .select(.custom(.all)))
+            if count == 2 {
+                // If only Libraries and Collections are shown, simply do the switch.
+                var viewControllers = navigationController.viewControllers
+                _ = viewControllers.popLast()
+                viewControllers.append(controller)
+                navigationController.setViewControllers(viewControllers, animated: animated)
+            } else {
+                // Otherwise, the split view controller is collapsed, also remove extraneous controllers, and show default collection.
+                var viewControllers = navigationController.viewControllers
+                viewControllers.removeLast(viewControllers.count - 1)
+                viewControllers.append(controller)
+                navigationController.setViewControllers(viewControllers, animated: animated)
+                showDefaultCollection()
+            }
+        } else if let controller = navigationController.viewControllers[1] as? CollectionsViewController {
+            // There is a Collections screen in the stack.
+            var modifiedViewControllers = false
+            if count > 2 {
+                // Remove any extraneous controllers.
+                var viewControllers = navigationController.viewControllers
+                viewControllers.removeLast(viewControllers.count - 2)
+                navigationController.setViewControllers(viewControllers, animated: animated)
+                modifiedViewControllers = true
+            }
+            if controller.selectedIdentifier != collectionId || modifiedViewControllers {
+                // Select proper collection.
+                controller.viewModel.process(action: .select(collectionId))
+            }
         }
     }
 
     func showSettings() {
-        let navigationController = NavigationViewController()
-        let containerController = ContainerViewController(rootViewController: navigationController)
-        let coordinator = SettingsCoordinator(navigationController: navigationController, controllers: controllers)
+        guard let navigationController else { return }
+        let settingsNavigationController = NavigationViewController()
+        let containerController = ContainerViewController(rootViewController: settingsNavigationController)
+        let coordinator = SettingsCoordinator(navigationController: settingsNavigationController, controllers: controllers)
         coordinator.parentCoordinator = self
         childCoordinators.append(coordinator)
         coordinator.start(animated: false)
 
-        self.navigationController?.present(containerController, animated: true, completion: nil)
+        navigationController.present(containerController, animated: true, completion: nil)
     }
 }
 
 extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
     func showEditView(for data: CollectionStateEditingData, library: Library) {
-        let navigationController = UINavigationController()
-        navigationController.isModalInPresentation = true
-        navigationController.modalPresentationStyle = .formSheet
+        guard let navigationController else { return }
+        let editNavigationController = UINavigationController()
+        editNavigationController.isModalInPresentation = true
+        editNavigationController.modalPresentationStyle = .formSheet
 
-        let coordinator = CollectionEditingCoordinator(data: data, library: library, navigationController: navigationController, controllers: self.controllers)
+        let coordinator = CollectionEditingCoordinator(data: data, library: library, navigationController: editNavigationController, controllers: controllers)
         coordinator.parentCoordinator = self
-        self.childCoordinators.append(coordinator)
+        childCoordinators.append(coordinator)
         coordinator.start(animated: false)
 
-        self.navigationController?.present(navigationController, animated: true, completion: nil)
+        navigationController.present(editNavigationController, animated: true, completion: nil)
     }
 
     func showItems(for collection: Collection, in libraryId: LibraryIdentifier) {
-        self.visibleLibraryId = libraryId
-        self.mainCoordinatorDelegate.showItems(for: collection, in: libraryId)
+        mainCoordinatorDelegate.showItems(for: collection, in: libraryId)
     }
 
     func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier) {
-        let navigationController = NavigationViewController()
-        let containerController = ContainerViewController(rootViewController: navigationController)
-        let coordinator = CitationBibliographyExportCoordinator(itemIds: itemIds, libraryId: libraryId, navigationController: navigationController, controllers: self.controllers)
+        guard let navigationController else { return }
+        let exportNavigationController = NavigationViewController()
+        let containerController = ContainerViewController(rootViewController: exportNavigationController)
+        let coordinator = CitationBibliographyExportCoordinator(itemIds: itemIds, libraryId: libraryId, navigationController: exportNavigationController, controllers: controllers)
         coordinator.parentCoordinator = self
-        self.childCoordinators.append(coordinator)
+        childCoordinators.append(coordinator)
         coordinator.start(animated: false)
 
-        self.navigationController?.present(containerController, animated: true, completion: nil)
+        navigationController.present(containerController, animated: true, completion: nil)
     }
 
     func showCiteExportError() {
+        guard let navigationController else { return }
         let controller = UIAlertController(title: L10n.error, message: L10n.Errors.Collections.bibliographyFailed, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
-        self.navigationController?.present(controller, animated: true, completion: nil)
+        navigationController.present(controller, animated: true, completion: nil)
     }
 
     func showSearch(for state: CollectionsState, in controller: UIViewController, selectAction: @escaping (Collection) -> Void) {
@@ -281,7 +295,7 @@ extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
     }
     
     func showDefaultCollection() {
-        showItems(for: Collection(custom: .all), in: visibleLibraryId)
+        showItems(for: Collection(custom: .all), in: Defaults.shared.selectedLibraryId)
     }
 }
 
