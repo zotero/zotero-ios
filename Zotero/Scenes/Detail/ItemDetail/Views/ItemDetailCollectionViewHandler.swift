@@ -804,7 +804,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
     private lazy var fieldEditRegistration: UICollectionView.CellRegistration<ItemDetailFieldEditCell, (ItemDetailState.Field, CGFloat)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
             guard let self else { return }
-            let configuration = ItemDetailFieldEditCell.ContentConfiguration(field: data.0, titleWidth: data.1, layoutMargins: layoutMargins(for: indexPath, self: self))
+            let configuration = ItemDetailFieldEditCell.ContentConfiguration(field: data.0, titleWidth: data.1, layoutMargins: layoutMargins(for: indexPath, self: self), disposeBag: cell.disposeBag)
             let disposable = configuration.textObservable
                 .subscribe(onNext: { [weak self] text in
                     self?.viewModel.process(action: .setFieldValue(id: data.0.key, value: text))
