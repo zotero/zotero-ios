@@ -28,7 +28,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
     private enum NavigationBarButton: Int {
         case share = 1
         case sidebar = 7
-        case speech = 4
+        case accessibility = 4
     }
 
     private let viewModel: ViewModel<PDFReaderActionHandler>
@@ -309,9 +309,9 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
             }
         }
 
-        func createSpeechButton(isSpeaking: Bool, controller: PDFReaderViewController) -> UIBarButtonItem {
-            let speechButton = UIBarButtonItem(image: UIImage(systemName: isSpeaking ? "speaker.wave.2.bubble.fill" : "speaker.wave.2.bubble"), style: .plain, target: nil, action: nil)
-            speechButton.tag = NavigationBarButton.speech.rawValue
+        func createAccessibilityButton(isSpeaking: Bool, controller: PDFReaderViewController) -> UIBarButtonItem {
+            let speechButton = UIBarButtonItem(image: UIImage(systemName: isSpeaking ? "text.page.fill" : "text.page"), style: .plain, target: nil, action: nil)
+            speechButton.tag = NavigationBarButton.accessibility.rawValue
             speechButton.rx.tap
                 .subscribe(onNext: { [weak controller, weak speechButton] _ in
                     guard let controller, let speechButton else { return }
@@ -333,20 +333,9 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
             closeButton.accessibilityLabel = L10n.close
             closeButton.rx.tap.subscribe(onNext: { [weak self] _ in self?.close() }).disposed(by: disposeBag)
 
-            let readerButton = UIBarButtonItem(image: Asset.Images.pdfRawReader.image, style: .plain, target: nil, action: nil)
-            readerButton.isEnabled = !viewModel.state.document.isLocked
-            readerButton.accessibilityLabel = L10n.Accessibility.Pdf.openReader
-            readerButton.title = L10n.Accessibility.Pdf.openReader
-            readerButton.rx.tap
-                .subscribe(onNext: { [weak self] _ in
-                    guard let self else { return }
-                    coordinatorDelegate?.showReader(document: viewModel.state.document, userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle)
-                })
-                .disposed(by: disposeBag)
+            let accessibilityButton = createAccessibilityButton(isSpeaking: speechManager?.isSpeaking ?? false, controller: self)
 
-            let speechButton = createSpeechButton(isSpeaking: speechManager?.isSpeaking ?? false, controller: self)
-
-            navigationItem.leftBarButtonItems = [closeButton, sidebarButton, readerButton, speechButton]
+            navigationItem.leftBarButtonItems = [closeButton, sidebarButton, accessibilityButton]
             navigationItem.rightBarButtonItems = createRightBarButtonItems()
         }
         
@@ -366,11 +355,16 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
                     .disposed(by: controller.disposeBag)
                 controller.speechManager = speechManager
             }
-            controller.coordinatorDelegate?.showSpeech(speechManager: speechManager, sender: sender)
+            controller.coordinatorDelegate?.showAccessibility(
+                speechManager: speechManager,
+                document: viewModel.state.document,
+                userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle,
+                sender: sender
+            )
 
             func reloadSpeechButton(isSpeaking: Bool, controller: PDFReaderViewController) {
-                guard let index = controller.navigationItem.leftBarButtonItems?.firstIndex(where: { $0.tag == NavigationBarButton.speech.rawValue }) else { return }
-                controller.navigationItem.leftBarButtonItems?[index] = createSpeechButton(isSpeaking: isSpeaking, controller: controller)
+                guard let index = controller.navigationItem.leftBarButtonItems?.firstIndex(where: { $0.tag == NavigationBarButton.accessibility.rawValue }) else { return }
+                controller.navigationItem.leftBarButtonItems?[index] = createAccessibilityButton(isSpeaking: isSpeaking, controller: controller)
             }
         }
 
