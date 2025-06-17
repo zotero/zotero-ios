@@ -1,5 +1,5 @@
 //
-//  SpeechPopupViewController.swift
+//  AccessibilityPopupViewController.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 30.05.2025.
@@ -11,10 +11,11 @@ import UIKit
 import RxCocoa
 import RxSwift
 
-final class SpeechPopupViewController<Delegate: SpeechmanagerDelegate>: UIViewController {
+final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: UIViewController {
     private unowned let speechManager: SpeechManager<Delegate>
     private let speedNumberFormatter: NumberFormatter
     private let disposeBag: DisposeBag
+    private let readerAction: () -> Void
 
     private weak var speedButton: UIButton!
     private weak var playButton: UIButton!
@@ -23,8 +24,9 @@ final class SpeechPopupViewController<Delegate: SpeechmanagerDelegate>: UIViewCo
     private weak var forwardButton: UIButton!
     private weak var activityIndicator: UIActivityIndicatorView!
 
-    init(speechManager: SpeechManager<Delegate>) {
+    init(speechManager: SpeechManager<Delegate>, readerAction: @escaping () -> Void) {
         self.speechManager = speechManager
+        self.readerAction = readerAction
         speedNumberFormatter = NumberFormatter()
         disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
@@ -40,10 +42,17 @@ final class SpeechPopupViewController<Delegate: SpeechmanagerDelegate>: UIViewCo
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        view.backgroundColor = .systemGroupedBackground
         createView()
         observeState()
 
         func createView() {
+            // Speech container
+            let speechContentView = UIView()
+            speechContentView.backgroundColor = .systemBackground
+            speechContentView.layer.cornerRadius = 13
+            speechContentView.layer.masksToBounds = true
+
             let titleLabel = UILabel()
             titleLabel.text = "Listen to Document"
             titleLabel.font = .preferredFont(forTextStyle: .headline)
@@ -55,10 +64,10 @@ final class SpeechPopupViewController<Delegate: SpeechmanagerDelegate>: UIViewCo
             let speedActions = [2, 1.75, 1.5, 1.25, 1, 0.75].map({ [unowned self] val in UIAction(title: formatted(modifier: val), handler: { [weak self] _ in self?.set(rateModifier: val) }) })
             var speedConfiguration = UIButton.Configuration.filled()
             speedConfiguration.title = formatted(modifier: Defaults.shared.speechRateModifier)
-            speedConfiguration.baseBackgroundColor = .systemGray4
+            speedConfiguration.baseBackgroundColor = .systemGray5
             speedConfiguration.baseForegroundColor = .label
             speedConfiguration.cornerStyle = .capsule
-            speedConfiguration.contentInsets = .init(top: 8, leading: 16, bottom: 8, trailing: 16)
+            speedConfiguration.contentInsets = .init(top: 6, leading: 16, bottom: 6, trailing: 16)
             let speedButton = UIButton(configuration: speedConfiguration)
             speedButton.setContentHuggingPriority(.required, for: .vertical)
             speedButton.setContentHuggingPriority(.required, for: .horizontal)
@@ -72,7 +81,7 @@ final class SpeechPopupViewController<Delegate: SpeechmanagerDelegate>: UIViewCo
             titleStackView.distribution = .fill
             titleStackView.setContentHuggingPriority(.required, for: .vertical)
             titleStackView.translatesAutoresizingMaskIntoConstraints = false
-            view.addSubview(titleStackView)
+            speechContentView.addSubview(titleStackView)
 
             let imageConfiguration = UIImage.SymbolConfiguration.init(scale: .large)
 
@@ -110,7 +119,7 @@ final class SpeechPopupViewController<Delegate: SpeechmanagerDelegate>: UIViewCo
             controlsStackView.distribution = .fillEqually
             controlsStackView.setContentHuggingPriority(.defaultLow, for: .vertical)
             controlsStackView.translatesAutoresizingMaskIntoConstraints = false
-            view.addSubview(controlsStackView)
+            speechContentView.addSubview(controlsStackView)
 
             self.playButton = playButton
             self.pauseButton = pauseButton
@@ -119,14 +128,40 @@ final class SpeechPopupViewController<Delegate: SpeechmanagerDelegate>: UIViewCo
             self.activityIndicator = activityIndicator
             self.speedButton = speedButton
 
+            // Reader button
+
+            var readerConfiguration = UIButton.Configuration.filled()
+            readerConfiguration.cornerStyle = .capsule
+            readerConfiguration.imagePadding = 12
+            readerConfiguration.image = UIImage(systemName: "text.page", withConfiguration: UIImage.SymbolConfiguration(scale: .small))
+            readerConfiguration.title = "Show Reader"
+            readerConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0)
+            readerConfiguration.baseBackgroundColor = Asset.Colors.zoteroBlueWithDarkMode.color
+            let readerButton = UIButton(configuration: readerConfiguration)
+            readerButton.addAction(UIAction(handler: { [weak self] _ in self?.readerAction() }), for: .touchUpInside)
+
+            // Content container
+
+            let contentStackView = UIStackView(arrangedSubviews: [speechContentView, readerButton])
+            contentStackView.spacing = 16
+            contentStackView.axis = .vertical
+            contentStackView.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview(contentStackView)
+
+            // Constraints
+
             NSLayoutConstraint.activate([
-                titleStackView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
-                view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: titleStackView.trailingAnchor, constant: 20),
-                controlsStackView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
-                view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: controlsStackView.trailingAnchor, constant: 20),
-                titleStackView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 12),
+                contentStackView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
+                view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: contentStackView.trailingAnchor, constant: 16),
+                contentStackView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
+                view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: contentStackView.bottomAnchor, constant: 16),
+                titleStackView.leadingAnchor.constraint(equalTo: speechContentView.leadingAnchor, constant: 16),
+                speechContentView.trailingAnchor.constraint(equalTo: titleStackView.trailingAnchor, constant: 16),
+                controlsStackView.leadingAnchor.constraint(equalTo: speechContentView.leadingAnchor, constant: 16),
+                speechContentView.trailingAnchor.constraint(equalTo: controlsStackView.trailingAnchor, constant: 16),
+                titleStackView.topAnchor.constraint(equalTo: speechContentView.topAnchor, constant: 12),
                 titleStackView.bottomAnchor.constraint(equalTo: controlsStackView.topAnchor),
-                view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: controlsStackView.bottomAnchor, constant: 6)
+                speechContentView.bottomAnchor.constraint(equalTo: controlsStackView.bottomAnchor, constant: 6)
             ])
         }
         

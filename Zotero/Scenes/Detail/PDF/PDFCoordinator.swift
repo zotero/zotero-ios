@@ -26,7 +26,7 @@ protocol PdfReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarC
     func showFontSizePicker(sender: UIView, picked: @escaping (CGFloat) -> Void)
     func showDeleteAlertForAnnotation(sender: UIView, delete: @escaping () -> Void)
     func showDocumentChangedAlert(completed: @escaping () -> Void)
-    func showSpeech<Delegate: SpeechmanagerDelegate>(speechManager: SpeechManager<Delegate>, sender: UIBarButtonItem)
+    func showAccessibility<Delegate: SpeechmanagerDelegate>(speechManager: SpeechManager<Delegate>, document: Document, userInterfaceStyle: UIUserInterfaceStyle, sender: UIBarButtonItem)
 }
 
 protocol PdfAnnotationsCoordinatorDelegate: ReaderSidebarCoordinatorDelegate {
@@ -287,8 +287,12 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         navigationController?.present(controller, animated: true)
     }
     
-    func showSpeech<Delegate: SpeechmanagerDelegate>(speechManager: SpeechManager<Delegate>, sender: UIBarButtonItem) {
-        let controller = SpeechPopupViewController(speechManager: speechManager)
+    func showAccessibility<Delegate: SpeechmanagerDelegate>(speechManager: SpeechManager<Delegate>, document: Document, userInterfaceStyle: UIUserInterfaceStyle, sender: UIBarButtonItem) {
+        let controller = AccessibilityPopupViewController(speechManager: speechManager, readerAction: { [weak self] in
+            guard let self else { return }
+            navigationController?.dismiss(animated: true)
+            showReader(document: document, userInterfaceStyle: userInterfaceStyle)
+        })
         let presentedController: UIViewController
         switch UIDevice.current.userInterfaceIdiom {
         case .pad:
@@ -298,7 +302,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
             } else {
                 controller.popoverPresentationController?.barButtonItem = sender
             }
-            controller.preferredContentSize = CGSize(width: 300, height: 130)
+            controller.preferredContentSize = CGSize(width: 300, height: 220)
             presentedController = controller
 
         default:
