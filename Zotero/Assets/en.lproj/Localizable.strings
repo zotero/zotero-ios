@@ -582,3 +582,10 @@
 "accessibility.pdf.undo" = "Undo";
 "accessibility.pdf.toggle_annotation_toolbar" = "Toggle annotation toolbar";
 "accessibility.pdf.show_more_tools" = "Show more";
+"accessibility.speech.play" = "Start speaking";
+"accessibility.speech.pause" = "Pause speaking";
+"accessibility.speech.forward" = "Skip forward";
+"accessibility.speech.backward" = "Skip backward";
+"accessibility.speech.title" = "Listen to Document";
+"accessibility.show_reader" = "Show Reader";
+"accessibility.open_document_accessibility" = "Open accessibility options";
