@@ -219,6 +219,7 @@ extension AppDelegate: SceneActivityCounter {
 
 extension AppDelegate: UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        // TODO: - Remove when no longer necessary (hopefully when Xcode 26 is out of beta)
         nw_tls_create_options()
         if let key = Licenses.shared.pspdfkitKey {
             PSPDFKit.SDK.setLicenseKey(key)
