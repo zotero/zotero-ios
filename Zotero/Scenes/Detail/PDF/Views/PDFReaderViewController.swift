@@ -1044,42 +1044,6 @@ extension PDFReaderViewController: IntraDocumentNavigationButtonsHandlerDelegate
 
 extension PDFReaderViewController: ParentWithSidebarController {}
 
-private struct Column {
-    private(set) var frame: CGRect
-    private(set) var blocks: [TextBlock]
-    // If true, it's single column for full width in this page, otherwise there are multiple columns next to each other.
-    let isSingle: Bool
-    
-    init(blocks: [TextBlock], isSingle: Bool) {
-        self.blocks = blocks
-        self.isSingle = isSingle
-        frame = Self.frame(from: blocks)
-    }
-    
-    mutating func append(_ block: TextBlock) {
-        blocks.append(block)
-        frame = Self.appending(block, to: frame)
-    }
-    
-    private static func frame(from blocks: [TextBlock]) -> CGRect {
-        var frame: CGRect?
-        for block in blocks {
-            if let currentFrame = frame {
-                frame = Self.appending(block, to: currentFrame)
-            } else {
-                frame = block.frame
-            }
-        }
-        return frame ?? .zero
-    }
-    
-    private static func appending(_ block: TextBlock, to frame: CGRect) -> CGRect {
-        let minX = min(frame.minX, block.frame.minX)
-        let maxX = max(frame.maxX, block.frame.maxX)
-        return CGRect(x: minX, y: frame.minY, width: maxX - minX, height: block.frame.maxY - frame.minY)
-    }
-}
-
 extension PDFReaderViewController: SpeechmanagerDelegate {
     func getCurrentPageIndex() -> UInt {
         return documentController?.currentPage ?? 0
