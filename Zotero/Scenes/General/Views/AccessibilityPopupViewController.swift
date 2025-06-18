@@ -15,7 +15,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
     private unowned let speechManager: SpeechManager<Delegate>
     private let speedNumberFormatter: NumberFormatter
     private let disposeBag: DisposeBag
-    private let readerAction: () -> Void
+    private let readerAction: (() -> Void)?
 
     private weak var speedButton: UIButton!
     private weak var playButton: UIButton!
@@ -24,7 +24,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
     private weak var forwardButton: UIButton!
     private weak var activityIndicator: UIActivityIndicatorView!
 
-    init(speechManager: SpeechManager<Delegate>, readerAction: @escaping () -> Void) {
+    init(speechManager: SpeechManager<Delegate>, readerAction: (() -> Void)?) {
         self.speechManager = speechManager
         self.readerAction = readerAction
         speedNumberFormatter = NumberFormatter()
@@ -54,7 +54,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
             speechContentView.layer.masksToBounds = true
 
             let titleLabel = UILabel()
-            titleLabel.text = "Listen to Document"
+            titleLabel.text = L10n.Accessibility.Speech.title
             titleLabel.font = .preferredFont(forTextStyle: .headline)
 
             let spacer = UIView()
@@ -89,24 +89,28 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
             playConfig.image = UIImage(systemName: "play.fill", withConfiguration: imageConfiguration)
             playConfig.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 22, bottom: 8, trailing: 22)
             let playButton = UIButton(configuration: playConfig)
+            playButton.accessibilityLabel = L10n.Accessibility.Speech.play
             playButton.isHidden = speechManager.isSpeaking
             playButton.addAction(UIAction(handler: { [weak self] _ in self?.playOrResume() }), for: .touchUpInside)
 
             var pauseConfig = UIButton.Configuration.plain()
             pauseConfig.image = UIImage(systemName: "pause.fill", withConfiguration: imageConfiguration)
             let pauseButton = UIButton(configuration: pauseConfig)
+            pauseButton.accessibilityLabel = L10n.Accessibility.Speech.pause
             pauseButton.isHidden = !speechManager.isSpeaking
             pauseButton.addAction(UIAction(handler: { [weak self] _ in self?.speechManager.pause() }), for: .touchUpInside)
 
             var forwardConfig = UIButton.Configuration.plain()
             forwardConfig.image = UIImage(systemName: "plus.arrow.trianglehead.clockwise", withConfiguration: imageConfiguration)
             let forwardButton = UIButton(configuration: forwardConfig)
+            forwardButton.accessibilityLabel = L10n.Accessibility.Speech.forward
             forwardButton.isEnabled = speechManager.isSpeaking
             forwardButton.addAction(UIAction(handler: { [weak self] _ in self?.speechManager.forward() }), for: .touchUpInside)
 
             var backwardConfig = UIButton.Configuration.plain()
             backwardConfig.image = UIImage(systemName: "minus.arrow.trianglehead.counterclockwise", withConfiguration: imageConfiguration)
             let backwardButton = UIButton(configuration: backwardConfig)
+            backwardButton.accessibilityLabel = L10n.Accessibility.Speech.backward
             backwardButton.isEnabled = speechManager.isSpeaking
             backwardButton.addAction(UIAction(handler: { [weak self] _ in self?.speechManager.backward() }), for: .touchUpInside)
 
@@ -128,21 +132,27 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
             self.activityIndicator = activityIndicator
             self.speedButton = speedButton
 
+            var contentSubviews: [UIView] = [speechContentView]
+
             // Reader button
 
-            var readerConfiguration = UIButton.Configuration.filled()
-            readerConfiguration.cornerStyle = .capsule
-            readerConfiguration.imagePadding = 12
-            readerConfiguration.image = UIImage(systemName: "text.page", withConfiguration: UIImage.SymbolConfiguration(scale: .small))
-            readerConfiguration.title = "Show Reader"
-            readerConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0)
-            readerConfiguration.baseBackgroundColor = Asset.Colors.zoteroBlueWithDarkMode.color
-            let readerButton = UIButton(configuration: readerConfiguration)
-            readerButton.addAction(UIAction(handler: { [weak self] _ in self?.readerAction() }), for: .touchUpInside)
+            if readerAction != nil {
+                var readerConfiguration = UIButton.Configuration.filled()
+                readerConfiguration.cornerStyle = .capsule
+                readerConfiguration.imagePadding = 12
+                readerConfiguration.image = UIImage(systemName: "text.page", withConfiguration: UIImage.SymbolConfiguration(scale: .small))
+                readerConfiguration.title = L10n.Accessibility.showReader
+                readerConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0)
+                readerConfiguration.baseBackgroundColor = Asset.Colors.zoteroBlueWithDarkMode.color
+                let readerButton = UIButton(configuration: readerConfiguration)
+                readerButton.accessibilityLabel = L10n.Accessibility.Pdf.openReader
+                readerButton.addAction(UIAction(handler: { [weak self] _ in self?.readerAction?() }), for: .touchUpInside)
+                contentSubviews.append(readerButton)
+            }
 
             // Content container
 
-            let contentStackView = UIStackView(arrangedSubviews: [speechContentView, readerButton])
+            let contentStackView = UIStackView(arrangedSubviews: contentSubviews)
             contentStackView.spacing = 16
             contentStackView.axis = .vertical
             contentStackView.translatesAutoresizingMaskIntoConstraints = false

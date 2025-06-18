@@ -312,6 +312,7 @@ class PDFReaderViewController: UIViewController {
         func createAccessibilityButton(isSpeaking: Bool, controller: PDFReaderViewController) -> UIBarButtonItem {
             let speechButton = UIBarButtonItem(image: UIImage(systemName: isSpeaking ? "text.page.fill" : "text.page"), style: .plain, target: nil, action: nil)
             speechButton.tag = NavigationBarButton.accessibility.rawValue
+            speechButton.accessibilityLabel = L10n.Accessibility.openDocumentAccessibility
             speechButton.rx.tap
                 .subscribe(onNext: { [weak controller, weak speechButton] _ in
                     guard let controller, let speechButton else { return }
@@ -333,9 +334,26 @@ class PDFReaderViewController: UIViewController {
             closeButton.accessibilityLabel = L10n.close
             closeButton.rx.tap.subscribe(onNext: { [weak self] _ in self?.close() }).disposed(by: disposeBag)
 
-            let accessibilityButton = createAccessibilityButton(isSpeaking: speechManager?.isSpeaking ?? false, controller: self)
+            var leftBarButtonItems: [UIBarButtonItem] = [closeButton, sidebarButton]
 
-            navigationItem.leftBarButtonItems = [closeButton, sidebarButton, accessibilityButton]
+            if FeatureGates.enabled.contains(.speech) {
+                let accessibilityButton = createAccessibilityButton(isSpeaking: speechManager?.isSpeaking ?? false, controller: self)
+                leftBarButtonItems.append(accessibilityButton)
+            } else {
+                let readerButton = UIBarButtonItem(image: Asset.Images.pdfRawReader.image, style: .plain, target: nil, action: nil)
+                readerButton.isEnabled = !viewModel.state.document.isLocked
+                readerButton.accessibilityLabel = L10n.Accessibility.Pdf.openReader
+                readerButton.title = L10n.Accessibility.Pdf.openReader
+                readerButton.rx.tap
+                    .subscribe(onNext: { [weak self] _ in
+                        guard let self else { return }
+                        coordinatorDelegate?.showReader(document: viewModel.state.document, userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle)
+                    })
+                    .disposed(by: disposeBag)
+                leftBarButtonItems.append(readerButton)
+            }
+
+            navigationItem.leftBarButtonItems = leftBarButtonItems
             navigationItem.rightBarButtonItems = createRightBarButtonItems()
         }
         
