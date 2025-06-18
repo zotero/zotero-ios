@@ -44,7 +44,8 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
     var statusBarHeight: CGFloat
     var key: String { return viewModel.state.key }
     
-    weak var coordinatorDelegate: (HtmlEpubReaderCoordinatorDelegate & HtmlEpubSidebarCoordinatorDelegate)?
+    private unowned let openItemsController: OpenItemsController
+    weak var coordinatorDelegate: (HtmlEpubReaderCoordinatorDelegate & HtmlEpubSidebarCoordinatorDelegate & OpenItemsPresenter)?
     @CodableUserDefault(
         key: "HtmlEpubReaderToolbarState",
         defaultValue: AnnotationToolbarHandler.State(position: .leading, visible: true),
@@ -61,6 +62,25 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
     var isSidebarVisible: Bool { return self.sidebarControllerLeft?.constant == 0 }
     var isDocumentLocked: Bool { return false }
     private(set) var activeAnnotationTool: AnnotationTool?
+    private lazy var openItemsButton: UIBarButtonItem = {
+        let openItems = UIBarButtonItem.openItemsBarButtonItem()
+        if let sessionIdentifier {
+            let deferredOpenItemsMenuElement = openItemsController.deferredOpenItemsMenuElement(
+                for: sessionIdentifier,
+                showMenuForCurrentItem: true,
+                openItemPresenterProvider: { [weak self] in
+                    self?.coordinatorDelegate
+                },
+                completion: { [weak self] _, openItemsChanged in
+                    guard let self, openItemsChanged else { return }
+                    openItemsController.setOpenItemsUserActivity(from: self, libraryId: viewModel.state.library.identifier, title: viewModel.state.title)
+                }
+            )
+            let openItemsMenu = UIMenu(title: L10n.Accessibility.Pdf.openItems, options: [.displayInline], children: [deferredOpenItemsMenuElement])
+            openItems.menu = UIMenu(children: [openItemsMenu])
+        }
+        return openItems
+    }()
     lazy var toolbarButton: UIBarButtonItem = {
         return createToolbarButton()
     }()
@@ -79,9 +99,10 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
 
     // MARK: - Lifecycle
 
-    init(viewModel: ViewModel<HtmlEpubReaderActionHandler>, compactSize: Bool) {
+    init(viewModel: ViewModel<HtmlEpubReaderActionHandler>, compactSize: Bool, openItemsController: OpenItemsController) {
         self.viewModel = viewModel
         isCompactWidth = compactSize
+        self.openItemsController = openItemsController
         disposeBag = DisposeBag()
         statusBarHeight = UIApplication
             .shared
@@ -105,23 +126,31 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        setActivity()
+        openItemsController.setOpenItemsUserActivity(from: self, libraryId: viewModel.state.library.identifier, title: viewModel.state.title)
         viewModel.process(action: .changeIdleTimerDisabled(true))
         view.backgroundColor = .systemBackground
-        observeViewModel()
         setupNavigationBar()
         setupSearch()
         setupViews()
+        setupObserving()
         updateInterface(to: viewModel.state.settings)
-        navigationItem.rightBarButtonItems = createRightBarButtonItems()
 
-        func observeViewModel() {
+        func setupObserving() {
             viewModel.stateObservable
                 .observe(on: MainScheduler.instance)
                 .subscribe(onNext: { [weak self] state in
                     self?.process(state: state)
                 })
                 .disposed(by: disposeBag)
+
+            if let sessionIdentifier {
+                openItemsController.observable(for: sessionIdentifier)
+                    .observe(on: MainScheduler.instance)
+                    .subscribe(onNext: { [weak self] items in
+                        self?.viewModel.process(action: .updateOpenItems(items: items))
+                    })
+                    .disposed(by: disposeBag)
+            }
         }
 
         func setupNavigationBar() {
@@ -136,6 +165,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
             sidebarButton.rx.tap.subscribe(onNext: { [weak self] _ in self?.toggleSidebar(animated: true) }).disposed(by: disposeBag)
 
             navigationItem.leftBarButtonItems = [closeButton, sidebarButton]
+            navigationItem.rightBarButtonItems = createRightBarButtonItems(for: viewModel.state)
         }
 
         func setupSearch() {
@@ -227,22 +257,6 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
                 controller.didMove(toParent: self)
             }
         }
-
-        func setActivity() {
-            let kind: OpenItem.Kind
-            switch viewModel.state.documentFile.ext.lowercased() {
-            case "epub":
-                kind = .epub(libraryId: viewModel.state.library.identifier, key: viewModel.state.key)
-
-            case "html", "htm":
-                kind = .html(libraryId: viewModel.state.library.identifier, key: viewModel.state.key)
-
-            default:
-                return
-            }
-            let openItem = OpenItem(kind: kind, userIndex: 0)
-            set(userActivity: .contentActivity(with: [openItem], libraryId: viewModel.state.library.identifier, collectionId: Defaults.shared.selectedCollectionId).set(title: viewModel.state.title))
-        }
     }
 
     override func viewIsAppearing(_ animated: Bool) {
@@ -310,7 +324,9 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
             let hidden = !state.library.metadataEditable || !toolbarState.visible
             annotationToolbarHandler?.set(hidden: hidden, animated: true)
             (toolbarButton.customView as? CheckboxButton)?.isSelected = toolbarState.visible
-            navigationItem.rightBarButtonItems = createRightBarButtonItems()
+        }
+        if state.changes.contains(.library) || state.changes.contains(.openItems) {
+            navigationItem.rightBarButtonItems = createRightBarButtonItems(for: state)
         }
 
         if state.changes.contains(.popover) {
@@ -423,11 +439,15 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
         navigationController?.presentingViewController?.dismiss(animated: true)
     }
 
-    private func createRightBarButtonItems() -> [UIBarButtonItem] {
+    private func createRightBarButtonItems(for state: HtmlEpubReaderState) -> [UIBarButtonItem] {
         var buttons = [settingsButton]
-        if viewModel.state.library.metadataEditable {
+        buttons.insert(openItemsButton, at: 1)
+        openItemsButton.image = .openItemsImage(count: state.openItemsCount)
+
+        if state.library.metadataEditable {
             buttons.append(toolbarButton)
         }
+
         return buttons
     }
 }
