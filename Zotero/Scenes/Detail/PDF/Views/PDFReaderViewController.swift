@@ -28,9 +28,11 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
     private enum NavigationBarButton: Int {
         case share = 1
         case sidebar = 7
+        case accessibility = 4
     }
 
     private let viewModel: ViewModel<PDFReaderActionHandler>
+    private unowned let pdfWorkerController: PDFWorkerController
     let disposeBag: DisposeBag
 
     var state: PDFReaderState { return viewModel.state }
@@ -43,6 +45,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
     var annotationToolbarHandler: AnnotationToolbarHandler?
     private var intraDocumentNavigationHandler: IntraDocumentNavigationButtonsHandler!
     private var selectedText: String?
+    private var speechManager: SpeechManager<PDFReaderViewController>?
     private(set) var isCompactWidth: Bool
     @CodableUserDefault(key: "PDFReaderToolbarState", defaultValue: AnnotationToolbarHandler.State(position: .leading, visible: true), encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
     var toolbarState: AnnotationToolbarHandler.State
@@ -183,8 +186,9 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         return false
     }
 
-    init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool) {
+    init(viewModel: ViewModel<PDFReaderActionHandler>, pdfWorkerController: PDFWorkerController, compactSize: Bool) {
         self.viewModel = viewModel
+        self.pdfWorkerController = pdfWorkerController
         isCompactWidth = compactSize
         disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
@@ -305,6 +309,19 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
             }
         }
 
+        func createAccessibilityButton(isSpeaking: Bool, controller: PDFReaderViewController) -> UIBarButtonItem {
+            let speechButton = UIBarButtonItem(image: UIImage(systemName: isSpeaking ? "text.page.fill" : "text.page"), style: .plain, target: nil, action: nil)
+            speechButton.tag = NavigationBarButton.accessibility.rawValue
+            speechButton.accessibilityLabel = L10n.Accessibility.openDocumentAccessibility
+            speechButton.rx.tap
+                .subscribe(onNext: { [weak controller, weak speechButton] _ in
+                    guard let controller, let speechButton else { return }
+                    showSpeech(controller: controller, sender: speechButton)
+                })
+                .disposed(by: disposeBag)
+            return speechButton
+        }
+
         func setupNavigationBar() {
             let sidebarButton = UIBarButtonItem(image: UIImage(systemName: "sidebar.left"), style: .plain, target: nil, action: nil)
             sidebarButton.isEnabled = !viewModel.state.document.isLocked
@@ -317,19 +334,56 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
             closeButton.accessibilityLabel = L10n.close
             closeButton.rx.tap.subscribe(onNext: { [weak self] _ in self?.close() }).disposed(by: disposeBag)
 
-            let readerButton = UIBarButtonItem(image: Asset.Images.pdfRawReader.image, style: .plain, target: nil, action: nil)
-            readerButton.isEnabled = !viewModel.state.document.isLocked
-            readerButton.accessibilityLabel = L10n.Accessibility.Pdf.openReader
-            readerButton.title = L10n.Accessibility.Pdf.openReader
-            readerButton.rx.tap
-                .subscribe(onNext: { [weak self] _ in
-                    guard let self else { return }
-                    coordinatorDelegate?.showReader(document: viewModel.state.document, userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle)
-                })
-                .disposed(by: disposeBag)
+            var leftBarButtonItems: [UIBarButtonItem] = [closeButton, sidebarButton]
 
-            navigationItem.leftBarButtonItems = [closeButton, sidebarButton, readerButton]
+            if FeatureGates.enabled.contains(.speech) {
+                let accessibilityButton = createAccessibilityButton(isSpeaking: speechManager?.isSpeaking ?? false, controller: self)
+                leftBarButtonItems.append(accessibilityButton)
+            } else {
+                let readerButton = UIBarButtonItem(image: Asset.Images.pdfRawReader.image, style: .plain, target: nil, action: nil)
+                readerButton.isEnabled = !viewModel.state.document.isLocked
+                readerButton.accessibilityLabel = L10n.Accessibility.Pdf.openReader
+                readerButton.title = L10n.Accessibility.Pdf.openReader
+                readerButton.rx.tap
+                    .subscribe(onNext: { [weak self] _ in
+                        guard let self else { return }
+                        coordinatorDelegate?.showReader(document: viewModel.state.document, userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle)
+                    })
+                    .disposed(by: disposeBag)
+                leftBarButtonItems.append(readerButton)
+            }
+
+            navigationItem.leftBarButtonItems = leftBarButtonItems
             navigationItem.rightBarButtonItems = createRightBarButtonItems()
+        }
+        
+        func showSpeech(controller: PDFReaderViewController, sender: UIBarButtonItem) {
+            let speechManager: SpeechManager<PDFReaderViewController>
+            if let manager = controller.speechManager {
+                speechManager = manager
+            } else {
+                speechManager = SpeechManager(delegate: controller, speechRateModifier: Defaults.shared.speechRateModifier)
+                speechManager.state
+                    .skip(1)
+                    .observe(on: MainScheduler.instance)
+                    .subscribe(onNext: { [weak controller] state in
+                        guard let controller else { return }
+                        reloadSpeechButton(isSpeaking: state.isSpeakingOrLoading, controller: controller)
+                    })
+                    .disposed(by: controller.disposeBag)
+                controller.speechManager = speechManager
+            }
+            controller.coordinatorDelegate?.showAccessibility(
+                speechManager: speechManager,
+                document: viewModel.state.document,
+                userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle,
+                sender: sender
+            )
+
+            func reloadSpeechButton(isSpeaking: Bool, controller: PDFReaderViewController) {
+                guard let index = controller.navigationItem.leftBarButtonItems?.firstIndex(where: { $0.tag == NavigationBarButton.accessibility.rawValue }) else { return }
+                controller.navigationItem.leftBarButtonItems?[index] = createAccessibilityButton(isSpeaking: isSpeaking, controller: controller)
+            }
         }
 
         func setupObserving() {
@@ -985,3 +1039,62 @@ extension PDFReaderViewController: PDFSearchDelegate {
 extension PDFReaderViewController: IntraDocumentNavigationButtonsHandlerDelegate { }
 
 extension PDFReaderViewController: ParentWithSidebarController {}
+
+extension PDFReaderViewController: SpeechmanagerDelegate {
+    func getCurrentPageIndex() -> UInt {
+        return documentController?.currentPage ?? 0
+    }
+    
+    func getNextPageIndex(from currentPageIndex: UInt) -> UInt? {
+        guard currentPageIndex + 1 < viewModel.state.document.pageCount else { return nil }
+        return currentPageIndex + 1
+    }
+    
+    func getPreviousPageIndex(from currentPageIndex: UInt) -> UInt? {
+        guard currentPageIndex > 0 else { return nil }
+        return currentPageIndex - 1
+    }
+    
+    func text(for indices: [UInt], completion: @escaping ([UInt: String]?) -> Void) {
+        guard let file = viewModel.state.document.fileURL.flatMap({ Files.file(from: $0) }) else {
+            DDLogInfo("PDFReaderViewController: document url not found")
+            completion(nil)
+            return
+        }
+        pdfWorkerController.queue(work: .init(file: file as! FileData, kind: .fullText(pages: indices.map({ Int($0) }))))
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { update in
+                switch update.kind {
+                case .failed, .cancelled:
+                    DDLogError("PDFReaderViewController: full data extraction failed")
+                    completion(nil)
+
+                case .inProgress:
+                    break
+
+                case .extractedData(let data):
+                    guard let text = data["text"] as? String else {
+                        DDLogError("PDFReaderViewController: full text extraction incorrect data - \(data)")
+                        completion(nil)
+                        return
+                    }
+                    let textParts = text.components(separatedBy: "\u{000C}")
+                    guard textParts.count == indices.count else {
+                        DDLogError("PDFReaderViewController: full text didn't contain proper number of pages (\(indices.count); \(textParts.count))")
+                        completion(nil)
+                        return
+                    }
+                    var result: [UInt: String] = [:]
+                    for idx in 0..<indices.count {
+                        result[indices[idx]] = String(textParts[idx])
+                    }
+                    completion(result)
+                }
+            })
+            .disposed(by: disposeBag)
+    }
+
+    func moved(to pageIndex: UInt) {
+        documentController?.focus(page: pageIndex)
+    }
+}
