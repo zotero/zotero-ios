@@ -6975,10 +6975,10 @@
 		};
 		B35C9C042642A0BC0004C47E /* XCRemoteSwiftPackageReference "realm-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/michalrentka/realm-swift";
+			repositoryURL = "https://github.com/realm/realm-swift";
 			requirement = {
-				branch = xcode26_fix;
-				kind = branch;
+				kind = exactVersion;
+				version = 10.54.4;
 			};
 		};
 		B35E4B8B25248B3C000EA134 /* XCRemoteSwiftPackageReference "RxSwift" */ = {
