@@ -157,6 +157,22 @@ final class OpenItemsController {
                 return nil
             }
         }
+
+        var kind: Item.Kind {
+            switch self {
+            case .pdf:
+                return .pdf(libraryId: library.identifier, key: key)
+                
+            case .html:
+                return .html(libraryId: library.identifier, key: key)
+                
+            case .epub:
+                return .epub(libraryId: library.identifier, key: key)
+                
+            case .note:
+                return .note(libraryId: library.identifier, key: key)
+            }
+        }
     }
 
     // MARK: Properties
