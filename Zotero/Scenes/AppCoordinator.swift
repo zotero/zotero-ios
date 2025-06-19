@@ -261,16 +261,22 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
             if isAvailable {
                 mainController.getDetailCoordinator(for: nil, and: nil) { coordinator in
                     guard (coordinator.navigationController?.presentedViewController as? ReaderViewController)?.key != key else { return }
-                    showItem(presentation: presentation, window: window, detailCoordinator: coordinator, animated: animated) {
+                    let show = {
+                        coordinator.showItem(with: presentation)
                         showItemDetail(in: mainController, key: parentKey ?? key, libraryId: libraryId, selectChildKey: key, animated: false, dismissIfPresenting: false)
+                    }
+                    if animated {
+                        show()
+                    } else {
+                        // When launching the app, the presentation is dispatched to the next main run loop, otherwise it fails.
+                        DispatchQueue.main.async(execute: show)
                     }
                 }
             } else {
                 showItemDetail(in: mainController, key: parentKey ?? key, libraryId: libraryId, selectChildKey: key, animated: animated, dismissIfPresenting: true) {
                     download(attachment: attachment, parentKey: parentKey) {
                         mainController.getDetailCoordinator(for: nil, and: nil) { coordinator in
-                            showItem(presentation: presentation, window: window, detailCoordinator: coordinator, animated: true) {
-                            }
+                            coordinator.showItem(with: presentation)
                         }
                     }
                 }
