@@ -235,7 +235,7 @@ final class DetailCoordinator: Coordinator {
             switch contentType {
             case "application/pdf":
                 DDLogInfo("DetailCoordinator: show PDF \(attachment.key)")
-                showPDF(at: url, key: attachment.key, parentKey: parentKey, libraryId: libraryId)
+                showPDF(at: url, key: attachment.key, parentKey: parentKey, libraryId: libraryId, page: nil, preselectedAnnotationKey: nil, previewRects: nil)
 
             case "text/html":
                 if FeatureGates.enabled.contains(.htmlEpubReader) {
@@ -443,9 +443,9 @@ final class DetailCoordinator: Coordinator {
         showDetail(presentedBy: navigationController, detailControllerProvider: detailControllerProvider)
     }
 
-    private func showPDF(at url: URL, key: String, parentKey: String?, libraryId: LibraryIdentifier) {
+    private func showPDF(at url: URL, key: String, parentKey: String?, libraryId: LibraryIdentifier, page: Int?, preselectedAnnotationKey: String?, previewRects: [CGRect]?) {
         showReaderItem(kind: .pdf(libraryId: libraryId, key: key)) {
-            self.createPDFController(key: key, parentKey: parentKey, libraryId: libraryId, url: url)
+            self.createPDFController(key: key, parentKey: parentKey, libraryId: libraryId, url: url, page: page, preselectedAnnotationKey: preselectedAnnotationKey, previewRects: previewRects)
         }
     }
 
@@ -1231,7 +1231,7 @@ extension DetailCoordinator: OpenItemsPresenter {
     func showItem(with presentation: ItemPresentation?) {
         switch presentation {
         case .pdf(let library, let key, let parentKey, let url, let page, let preselectedAnnotationKey, let previewRects):
-            showPDF(at: url, key: key, parentKey: parentKey, libraryId: library.identifier)
+            showPDF(at: url, key: key, parentKey: parentKey, libraryId: library.identifier, page: page, preselectedAnnotationKey: preselectedAnnotationKey, previewRects: previewRects)
 
         case .html(let library, let key, let parentKey, let url):
             showHTML(at: url, key: key, parentKey: parentKey, libraryId: library.identifier)
