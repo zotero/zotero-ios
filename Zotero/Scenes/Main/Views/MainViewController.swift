@@ -111,7 +111,7 @@ final class MainViewController: UISplitViewController {
         let navigationController = UINavigationController()
         let tagFilterController = (viewControllers.first as? MasterContainerViewController)?.bottomController as? ItemsTagFilterDelegate
 
-        let coordinator = DetailCoordinator(
+        let newDetailCoordinator = DetailCoordinator(
             libraryId: libraryId,
             collection: collection,
             searchItemKeys: searchItemKeys,
@@ -119,8 +119,18 @@ final class MainViewController: UISplitViewController {
             itemsTagFilterDelegate: tagFilterController,
             controllers: controllers
         )
-        coordinator.start(animated: false)
-        detailCoordinator = coordinator
+        newDetailCoordinator.start(animated: false)
+        if let detailCoordinator, presentedViewController != nil {
+            // Detail coordinator is about to change while there is a presented view controller.
+            // This can happen if e.g. a URL opens an item, and while it is being presented, the collection changes underneath.
+            // Existing children are moved to the new instance, so they are properly retained by the new parent coordinator.
+            detailCoordinator.childCoordinators.forEach {
+                $0.parentCoordinator = newDetailCoordinator
+                newDetailCoordinator.childCoordinators.append($0)
+            }
+            detailCoordinator.childCoordinators = []
+        }
+        detailCoordinator = newDetailCoordinator
 
         showDetailViewController(navigationController, sender: nil)
     }

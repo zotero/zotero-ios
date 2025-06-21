@@ -14,7 +14,7 @@ enum SourceView {
 }
 
 protocol Coordinator: AnyObject {
-    var parentCoordinator: Coordinator? { get }
+    var parentCoordinator: Coordinator? { get set }
     var childCoordinators: [Coordinator] { get set }
     var navigationController: UINavigationController? { get }
 
