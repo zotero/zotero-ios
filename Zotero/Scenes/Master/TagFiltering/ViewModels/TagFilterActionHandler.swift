@@ -20,37 +20,34 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
 
     init(dbStorage: DbStorage) {
         self.dbStorage = dbStorage
-        self.backgroundQueue = DispatchQueue(label: "org.zotero.TagFilterActionHandler.background", qos: .userInitiated)
+        backgroundQueue = DispatchQueue(label: "org.zotero.TagFilterActionHandler.background", qos: .userInitiated)
     }
 
     func process(action: TagFilterAction, in viewModel: ViewModel<TagFilterActionHandler>) {
         switch action {
         case .select(let name):
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.selectedTags.insert(name)
                 state.changes = .selection
             }
 
         case .deselect(let name):
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.selectedTags.remove(name)
                 state.changes = .selection
             }
 
         case .load(let itemFilters, let collectionId, let libraryId):
-            self.load(with: itemFilters, collectionId: collectionId, libraryId: libraryId, in: viewModel)
+            load(with: itemFilters, collectionId: collectionId, libraryId: libraryId, in: viewModel)
 
         case .search(let term):
-            self.search(with: term, in: viewModel)
-
-        case .add(let name):
-            self.add(name: name, in: viewModel)
+            search(with: term, in: viewModel)
 
         case .setDisplayAll(let displayAll):
             guard displayAll != viewModel.state.displayAll else { return }
 
             Defaults.shared.tagPickerDisplayAllTags = displayAll
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.displayAll = displayAll
                 state.changes = .options
             }
@@ -59,42 +56,42 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
             guard showAutomatic != viewModel.state.showAutomatic else { return }
 
             Defaults.shared.tagPickerShowAutomaticTags = showAutomatic
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.showAutomatic = showAutomatic
                 state.changes = .options
             }
 
         case .deselectAll:
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.selectedTags = []
                 state.changes = .selection
             }
 
         case .deselectAllWithoutNotifying:
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.selectedTags = []
             }
 
         case .loadAutomaticCount(let libraryId):
             let request = ReadAutomaticTagsDbRequest(libraryId: libraryId)
-            let count = (try? self.dbStorage.perform(request: request, on: .main))?.count ?? 0
-            self.update(viewModel: viewModel) { state in
+            let count = (try? dbStorage.perform(request: request, on: .main))?.count ?? 0
+            update(viewModel: viewModel) { state in
                 state.automaticCount = count
             }
 
         case .deleteAutomatic(let libraryId):
-            self.deleteAutomaticTags(in: libraryId, viewModel: viewModel)
+            deleteAutomaticTags(in: libraryId, viewModel: viewModel)
 
         case .assignTag(let name, let itemKeys, let libraryId):
-            self.assign(tagName: name, toItemKeys: itemKeys, libraryId: libraryId, viewModel: viewModel)
+            assign(tagName: name, toItemKeys: itemKeys, libraryId: libraryId, viewModel: viewModel)
         }
     }
 
     private func assign(tagName: String, toItemKeys keys: Set<String>, libraryId: LibraryIdentifier, viewModel: ViewModel<TagFilterActionHandler>) {
-        self.perform(request: AssignItemsToTagDbRequest(keys: keys, libraryId: libraryId, tagName: tagName)) { [weak viewModel] _ in
+        perform(request: AssignItemsToTagDbRequest(keys: keys, libraryId: libraryId, tagName: tagName)) { [weak viewModel] _ in
             inMainThread {
-                guard let viewModel = viewModel else { return }
-                self.update(viewModel: viewModel) { state in
+                guard let viewModel else { return }
+                update(viewModel: viewModel) { state in
                     state.error = .tagAssignFailed
                 }
             }
@@ -102,38 +99,20 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
     }
 
     private func deleteAutomaticTags(in libraryId: LibraryIdentifier, viewModel: ViewModel<TagFilterActionHandler>) {
-        self.perform(request: DeleteAutomaticTagsDbRequest(libraryId: libraryId)) { [weak viewModel] _ in
+        perform(request: DeleteAutomaticTagsDbRequest(libraryId: libraryId)) { [weak viewModel] _ in
             inMainThread {
-                guard let viewModel = viewModel else { return }
-                self.update(viewModel: viewModel) { state in
+                guard let viewModel else { return }
+                update(viewModel: viewModel) { state in
                     state.error = .deletionFailed
                 }
             }
         }
     }
 
-    private func add(name: String, in viewModel: ViewModel<TagFilterActionHandler>) {
-//        guard let snapshot = viewModel.state.snapshot else { return }
-//        self.update(viewModel: viewModel) { state in
-//            let tag = Tag(name: name, color: "")
-//            state.tags = snapshot
-//
-//            let index = state.tags.index(of: tag, sortedBy: { $0.name.caseInsensitiveCompare($1.name) == .orderedAscending })
-//            state.tags.insert(tag, at: index)
-//            state.selectedTags.insert(name)
-//
-//            state.snapshot = nil
-//            state.searchTerm = ""
-//            state.addedTagName = name
-//            state.showAddTagButton = false
-//            state.changes = [.tags, .selection]
-//        }
-    }
-
     private func search(with term: String, in viewModel: ViewModel<TagFilterActionHandler>) {
         if !term.isEmpty {
             let filtered = viewModel.state.tags.filter({ $0.tag.name.localizedCaseInsensitiveContains(term) })
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 if state.snapshot == nil {
                     state.snapshot = state.tags
                 }
@@ -143,7 +122,7 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
             }
         } else {
             guard let snapshot = viewModel.state.snapshot else { return }
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.tags = snapshot
                 state.snapshot = nil
                 state.searchTerm = ""
@@ -153,9 +132,9 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
     }
 
     private func load(with filters: [ItemsFilter], collectionId: CollectionIdentifier, libraryId: LibraryIdentifier, in viewModel: ViewModel<TagFilterActionHandler>) {
-        self.backgroundQueue.async { [weak viewModel] in
-            guard let viewModel = viewModel else { return }
-            self._load(with: filters, collectionId: collectionId, libraryId: libraryId, in: viewModel)
+        backgroundQueue.async { [weak viewModel] in
+            guard let viewModel else { return }
+            _load(with: filters, collectionId: collectionId, libraryId: libraryId, in: viewModel)
         }
     }
 
@@ -168,7 +147,11 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
                 return $0.tag.name.localizedCaseInsensitiveCompare($1.tag.name) == .orderedAscending
             }
 
-            try self.dbStorage.perform(on: self.backgroundQueue) { coordinator in
+            try dbStorage.perform(on: backgroundQueue) { [weak viewModel] coordinator in
+                guard let viewModel else {
+                    coordinator.invalidate()
+                    return
+                }
                 let filtered = try coordinator.perform(
                     request: ReadFilteredTagsDbRequest(collectionId: collectionId, libraryId: libraryId, showAutomatic: viewModel.state.showAutomatic, filters: filters)
                 )
@@ -235,7 +218,7 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
 
             inMainThread { [weak viewModel] in
                 guard let viewModel = viewModel else { return }
-                self.update(viewModel: viewModel) { state in
+                update(viewModel: viewModel) { state in
                     state.tags = sorted
                     state.snapshot = snapshot
                     state.changes = .tags
@@ -246,7 +229,7 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
             inMainThread { [weak viewModel] in
                 guard let viewModel = viewModel else { return }
                 DDLogError("TagFilterActionHandler: can't load tag: \(error)")
-                self.update(viewModel: viewModel) { state in
+                update(viewModel: viewModel) { state in
                     state.error = .loadingFailed
                 }
             }
