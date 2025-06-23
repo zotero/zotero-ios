@@ -13,43 +13,42 @@ class TagFilterCell: UICollectionViewCell {
     @IBOutlet private weak var roundBackground: UIView!
     @IBOutlet private var maxWidthConstraint: NSLayoutConstraint! {
         didSet {
-            self.maxWidthConstraint.isActive = false
+            maxWidthConstraint.isActive = false
         }
     }
 
     var maxWidth: CGFloat? {
         didSet {
-            guard let maxWidth = self.maxWidth else { return }
-            self.maxWidthConstraint.isActive = true
-            self.maxWidthConstraint.constant = maxWidth
+            guard let maxWidth else { return }
+            maxWidthConstraint.isActive = true
+            maxWidthConstraint.constant = maxWidth
         }
     }
 
     override func awakeFromNib() {
         super.awakeFromNib()
 
-        self.roundBackground.layer.masksToBounds = true
-        self.roundBackground.layer.borderWidth = 1
-        self.roundBackground.layer.borderColor = Asset.Colors.zoteroBlueWithDarkMode.color.cgColor
-        self.roundBackground.backgroundColor = Asset.Colors.zoteroBlueWithDarkMode.color.withAlphaComponent(0.25)
+        roundBackground.layer.masksToBounds = true
+        roundBackground.layer.borderWidth = 1
+        roundBackground.layer.borderColor = Asset.Colors.zoteroBlueWithDarkMode.color.cgColor
+        roundBackground.backgroundColor = Asset.Colors.zoteroBlueWithDarkMode.color.withAlphaComponent(0.25)
     }
 
     override func layoutSubviews() {
         super.layoutSubviews()
-
-        self.roundBackground.layer.cornerRadius = self.frame.height / 2
+        roundBackground.layer.cornerRadius = frame.height / 2
     }
 
     func set(selected: Bool) {
-        self.roundBackground.isHidden = !selected
+        roundBackground.isHidden = !selected
     }
 
     func setup(with text: String, color: UIColor, bolded: Bool, isActive: Bool) {
-        self.label.text = text
-        self.label.textColor = color
-        self.label.alpha = isActive ? 1 : 0.55
-        self.label.font = .preferredFont(for: .body, weight: bolded ? .medium : .regular)
-        self.roundBackground.isHidden = !self.isSelected
-        self.roundBackground.alpha = isActive ? 1 : 0.55
+        label.text = text
+        label.textColor = color
+        label.alpha = isActive ? 1 : 0.55
+        label.font = .preferredFont(for: .body, weight: bolded ? .medium : .regular)
+        roundBackground.isHidden = !isSelected
+        roundBackground.alpha = isActive ? 1 : 0.55
     }
 }

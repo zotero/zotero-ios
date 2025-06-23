@@ -20,8 +20,8 @@ final class TagsFlowLayout: UICollectionViewFlowLayout {
         self.minimumLineSpacing = minimumLineSpacing
         self.sectionInset = sectionInset
 
-        self.estimatedItemSize = UICollectionViewFlowLayout.automaticSize
-        self.sectionInsetReference = SectionInsetReference.fromLayoutMargins
+        estimatedItemSize = UICollectionViewFlowLayout.automaticSize
+        sectionInsetReference = SectionInsetReference.fromLayoutMargins
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -29,8 +29,7 @@ final class TagsFlowLayout: UICollectionViewFlowLayout {
     }
 
     override func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
-        guard let superArray = super.layoutAttributesForElements(in: rect),
-              let attributes = NSArray(array: superArray, copyItems: true) as? [UICollectionViewLayoutAttributes] else {  return nil  }
+        guard let superArray = super.layoutAttributesForElements(in: rect), let attributes = NSArray(array: superArray, copyItems: true) as? [UICollectionViewLayoutAttributes] else { return nil }
 
         var leftMargin: CGFloat = self.sectionInset.left
         var maxY: CGFloat = -1.0
@@ -39,11 +38,11 @@ final class TagsFlowLayout: UICollectionViewFlowLayout {
             guard layoutAttribute.representedElementCategory == .cell else { break }
 
             if layoutAttribute.frame.minY >= maxY {
-                leftMargin = self.sectionInset.left
+                leftMargin = sectionInset.left
             }
 
             layoutAttribute.frame.origin.x = leftMargin
-            leftMargin += layoutAttribute.frame.width + self.minimumInteritemSpacing
+            leftMargin += layoutAttribute.frame.width + minimumInteritemSpacing
             maxY = max(layoutAttribute.frame.maxY, maxY)
         }
 
