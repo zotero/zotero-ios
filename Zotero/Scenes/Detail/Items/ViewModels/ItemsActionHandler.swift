@@ -302,7 +302,7 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
 
     private func process(downloadUpdate: AttachmentDownloader.Update, batchData: ItemsState.DownloadBatchData?, in viewModel: ViewModel<ItemsActionHandler>) {
         let updateKey = downloadUpdate.parentKey ?? downloadUpdate.key
-        guard let accessory = viewModel.state.itemAccessories[updateKey], let attachment = accessory.attachment else {
+        guard let accessory = viewModel.state.itemAccessories[updateKey], let attachment = accessory.attachment, attachment.key == downloadUpdate.key else {
             updateViewModel()
             return
         }

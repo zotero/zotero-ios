@@ -495,7 +495,7 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
 
     private func process(downloadUpdate: AttachmentDownloader.Update, batchData: ItemsState.DownloadBatchData?, in viewModel: ViewModel<TrashActionHandler>) {
         let updateKey = TrashKey(type: .item, key: downloadUpdate.parentKey ?? downloadUpdate.key)
-        guard let itemData = viewModel.state.itemDataCache[updateKey], let attachment = itemData.accessory?.attachment else {
+        guard let itemData = viewModel.state.itemDataCache[updateKey], let attachment = itemData.accessory?.attachment, attachment.key == downloadUpdate.key else {
             updateViewModel()
             return
         }
