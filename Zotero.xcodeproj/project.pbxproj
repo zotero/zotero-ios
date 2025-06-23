@@ -901,8 +901,6 @@
 		B39C9AB7252B589F00462D27 /* Threading+Extras.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650423FC051E003304F2 /* Threading+Extras.swift */; };
 		B39D336823FFD96C00EF2ACB /* Note.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39D336723FFD96C00EF2ACB /* Note.swift */; };
 		B39D33712400150B00EF2ACB /* CreateAttachmentsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39D33702400150B00EF2ACB /* CreateAttachmentsDbRequest.swift */; };
-		B39D42D229BF84FA0035CDA9 /* TagFilterContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39D42D129BF84FA0035CDA9 /* TagFilterContentView.swift */; };
-		B39D42D429BF85930035CDA9 /* TagFilterContentView.xib in Resources */ = {isa = PBXBuildFile; fileRef = B39D42D329BF85930035CDA9 /* TagFilterContentView.xib */; };
 		B39D42D929C0B82F0035CDA9 /* TagFilterCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39D42D729C0B82F0035CDA9 /* TagFilterCell.swift */; };
 		B39D42DA29C0B82F0035CDA9 /* TagFilterCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B39D42D829C0B82F0035CDA9 /* TagFilterCell.xib */; };
 		B39D42DF29C0CE7D0035CDA9 /* TagsFlowLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39D42DE29C0CE7D0035CDA9 /* TagsFlowLayout.swift */; };
@@ -1962,8 +1960,6 @@
 		B39C7BDD251237D600C2CCF1 /* ReadUpdatedItemUpdateParametersSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadUpdatedItemUpdateParametersSpec.swift; sourceTree = "<group>"; };
 		B39D336723FFD96C00EF2ACB /* Note.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Note.swift; sourceTree = "<group>"; };
 		B39D33702400150B00EF2ACB /* CreateAttachmentsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateAttachmentsDbRequest.swift; sourceTree = "<group>"; };
-		B39D42D129BF84FA0035CDA9 /* TagFilterContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagFilterContentView.swift; sourceTree = "<group>"; };
-		B39D42D329BF85930035CDA9 /* TagFilterContentView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = TagFilterContentView.xib; sourceTree = "<group>"; };
 		B39D42D729C0B82F0035CDA9 /* TagFilterCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagFilterCell.swift; sourceTree = "<group>"; };
 		B39D42D829C0B82F0035CDA9 /* TagFilterCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = TagFilterCell.xib; sourceTree = "<group>"; };
 		B39D42DE29C0CE7D0035CDA9 /* TagsFlowLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagsFlowLayout.swift; sourceTree = "<group>"; };
@@ -2903,8 +2899,6 @@
 			children = (
 				B39D42D729C0B82F0035CDA9 /* TagFilterCell.swift */,
 				B39D42D829C0B82F0035CDA9 /* TagFilterCell.xib */,
-				B39D42D129BF84FA0035CDA9 /* TagFilterContentView.swift */,
-				B39D42D329BF85930035CDA9 /* TagFilterContentView.xib */,
 				B30A44AD29B88E7200332B4E /* TagFilterViewController.swift */,
 				B39D42DE29C0CE7D0035CDA9 /* TagsFlowLayout.swift */,
 			);
@@ -4682,7 +4676,6 @@
 				B3F9A4C12B04CED600684030 /* ReaderSettingsSegmentedCellContentView.xib in Resources */,
 				B3E1BECA254B0B9500D9BB27 /* ItemDetailFieldEditContentView.xib in Resources */,
 				B30B550524B85A6200F94B59 /* Images.xcassets in Resources */,
-				B39D42D429BF85930035CDA9 /* TagFilterContentView.xib in Resources */,
 				B3C9D60624DA921B003EA1EE /* CollectionsSearchViewController.xib in Resources */,
 				B3593AD824B601AB00CA0B57 /* PDFSearchCell.xib in Resources */,
 				B3F0C3FE250A1DB8002D557A /* LibraryCell.xib in Resources */,
@@ -5321,7 +5314,6 @@
 				B305667F23FC051F003304F2 /* UIView+Extensions.swift in Sources */,
 				B3DCDEE12408F5200039ED0D /* MainViewController.swift in Sources */,
 				B3574E3F2AC5C53E009234BE /* HtmlEpubCoordinator.swift in Sources */,
-				B39D42D229BF84FA0035CDA9 /* TagFilterContentView.swift in Sources */,
 				B30566A923FC051F003304F2 /* File.swift in Sources */,
 				B305669B23FC051F003304F2 /* RSearch.swift in Sources */,
 				B37AA28C289960FF00A1C643 /* ItemDetailNoteContentView.swift in Sources */,
