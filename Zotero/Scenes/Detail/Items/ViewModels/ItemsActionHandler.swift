@@ -222,6 +222,7 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
     private func downloadAttachments(for keys: Set<String>, in viewModel: ViewModel<ItemsActionHandler>) {
         var attachments: [(Attachment, String?)] = []
         for key in keys {
+            cacheItemAccessory(for: key, in: viewModel)
             guard let attachment = viewModel.state.itemAccessories[key]?.attachment else { continue }
             let parentKey = attachment.key == key ? nil : key
             attachments.append((attachment, parentKey))
@@ -371,8 +372,19 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
 
     private func cacheItemAccessory(for item: RItem, in viewModel: ViewModel<ItemsActionHandler>) {
         // Create cached accessory only if there is nothing in cache yet.
-        guard viewModel.state.itemAccessories[item.key] == nil, let accessory = ItemAccessory.create(from: item, fileStorage: fileStorage, urlDetector: urlDetector) else { return }
-        self.update(viewModel: viewModel) { state in
+        guard viewModel.state.itemAccessories[item.key] == nil else { return }
+        cacheItemAccessoryIfNeeded(for: item, in: viewModel)
+    }
+
+    private func cacheItemAccessory(for itemKey: String, in viewModel: ViewModel<ItemsActionHandler>) {
+        // Create cached accessory only if there is nothing in cache yet.
+        guard viewModel.state.itemAccessories[itemKey] == nil, let item = viewModel.state.results?.filter("key == %@", itemKey).first else { return }
+        cacheItemAccessoryIfNeeded(for: item, in: viewModel)
+    }
+
+    private func cacheItemAccessoryIfNeeded(for item: RItem, in viewModel: ViewModel<ItemsActionHandler>) {
+        guard let accessory = ItemAccessory.create(from: item, fileStorage: fileStorage, urlDetector: urlDetector) else { return }
+        update(viewModel: viewModel) { state in
             state.itemAccessories[item.key] = accessory
         }
     }
