@@ -323,7 +323,7 @@ final class OpenItemsController {
     }
 
     func restore(_ item: Item, using presenter: OpenItemsPresenter, completion: @escaping (Bool) -> Void) {
-        loadPresentation(for: item) { [weak presenter] presentation in
+        loadPresentation(for: item.kind) { [weak presenter] presentation in
             guard let presenter, let presentation else {
                 completion(false)
                 return
@@ -364,7 +364,7 @@ final class OpenItemsController {
             var remainingItems = items
             let currentItem = remainingItems.removeFirst()
 
-            loadPresentation(for: currentItem) { presentation in
+            loadPresentation(for: currentItem.kind) { presentation in
                 if let presentation {
                     completion(currentItem, presentation, indexOffset)
                 } else {
@@ -455,7 +455,86 @@ final class OpenItemsController {
             elementProvider(elements)
         }
     }
-    
+
+    func loadPresentation(for key: String, libraryId: LibraryIdentifier, page: Int?, preselectedAnnotationKey: String?, previewRects: [CGRect]?, completion: @escaping (Presentation?) -> Void) {
+        var library: Library?
+        var rItem: RItem?
+        do {
+            try dbStorage.perform(on: .main) { coordinator in
+                library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
+                rItem = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
+            }
+        } catch let error {
+            DDLogError("OpenItemsController: library (\(libraryId)) or item (\(key)) not found - \(error)")
+        }
+        guard let library, let rItem else {
+            completion(nil)
+            return
+        }
+        if let note = Note(item: rItem) {
+            completion(createNotePresentation(library: library, rItem: rItem, note: note))
+            return
+        }
+        guard let attachment = AttachmentCreator.attachment(for: rItem, fileStorage: fileStorage, urlDetector: nil) else {
+            DDLogInfo("OpenItemsController: trying to create attachment for incorrect item type - \(rItem.rawType)")
+            completion(nil)
+            return
+        }
+        guard case .file(_, let contentType, _, _, _) = attachment.type else {
+            DDLogInfo("OpenItemsController: trying to open invalid attachment type - \(attachment.type)")
+            completion(nil)
+            return
+        }
+        switch contentType {
+        case "application/pdf":
+            loadPresentation(
+                for: .pdf(libraryId: libraryId, key: key),
+                library: library,
+                rItem: rItem,
+                attachment: attachment,
+                page: page,
+                preselectedAnnotationKey: preselectedAnnotationKey,
+                previewRects: previewRects,
+                completion: completion
+            )
+            return
+
+        case "text/html":
+            if FeatureGates.enabled.contains(.htmlEpubReader) {
+                loadPresentation(
+                    for: .html(libraryId: libraryId, key: key),
+                    library: library,
+                    rItem: rItem,
+                    attachment: attachment,
+                    page: page,
+                    preselectedAnnotationKey: preselectedAnnotationKey,
+                    previewRects: previewRects,
+                    completion: completion
+                )
+                return
+            }
+
+        case "application/epub+zip":
+            if FeatureGates.enabled.contains(.htmlEpubReader) {
+                loadPresentation(
+                    for: .epub(libraryId: libraryId, key: key),
+                    library: library,
+                    rItem: rItem,
+                    attachment: attachment,
+                    page: page,
+                    preselectedAnnotationKey: preselectedAnnotationKey,
+                    previewRects: previewRects,
+                    completion: completion
+                )
+                return
+            }
+
+        default:
+            break
+        }
+        completion(nil)
+    }
+
     // MARK: Helper Methods
     private func itemsSortedByUserOrder(for sessionIdentifier: String) -> [Item] {
         getItems(for: sessionIdentifier).sorted(by: { $0.userIndex < $1.userIndex })
@@ -491,37 +570,82 @@ final class OpenItemsController {
         filterValidItemsWithRItem(items).map { $0.0 }
     }
 
-    private func loadPresentation(for item: Item, completion: @escaping (Presentation?) -> Void) {
+    private func loadPresentation(for itemKind: Item.Kind, completion: @escaping (Presentation?) -> Void) {
+        var library: Library?
+        var rItem: RItem?
         do {
             try dbStorage.perform(on: .main) { coordinator in
-                switch item.kind {
-                case .pdf, .html, .epub:
-                    try loadItemPresentation(kind: item.kind, coordinator: coordinator, completion: completion)
-
-                case .note(let libraryId, let key):
-                    try loadNotePresentation(key: key, libraryId: libraryId, coordinator: coordinator, completion: completion)
-                }
+                library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: itemKind.libraryId))
+                rItem = try coordinator.perform(request: ReadItemDbRequest(libraryId: itemKind.libraryId, key: itemKind.key))
             }
         } catch let error {
-            DDLogError("OpenItemsController: can't load item \(item) - \(error)")
-            completion(nil)
+            DDLogError("OpenItemsController: item kind \(itemKind) not found - \(error)")
         }
+        guard let library, let rItem else {
+            completion(nil)
+            return
+        }
+        loadPresentation(for: itemKind, library: library, rItem: rItem, attachment: nil, page: nil, preselectedAnnotationKey: nil, previewRects: nil, completion: completion)
+    }
 
-        func loadItemPresentation(kind: Item.Kind, coordinator: DbCoordinator, completion: @escaping (Presentation?) -> Void) throws {
-            let libraryId = kind.libraryId
-            let key = kind.key
-            let library: Library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
-            let rItem = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
-            let parentKey = rItem.parent?.key
-            guard let attachment = AttachmentCreator.attachment(for: rItem, fileStorage: fileStorage, urlDetector: nil) else {
+    private func loadPresentation(
+        for itemKind: Item.Kind,
+        library: Library,
+        rItem: RItem,
+        attachment: Attachment?,
+        page: Int?,
+        preselectedAnnotationKey: String?,
+        previewRects: [CGRect]?,
+        completion: @escaping (Presentation?) -> Void
+    ) {
+        switch itemKind {
+        case .pdf, .html, .epub:
+            guard let attachment = attachment ?? AttachmentCreator.attachment(for: rItem, fileStorage: fileStorage, urlDetector: nil) else {
                 completion(nil)
                 return
             }
+            loadItemPresentation(
+                kind: itemKind,
+                library: library,
+                rItem: rItem,
+                attachment: attachment,
+                page: page,
+                preselectedAnnotationKey: preselectedAnnotationKey,
+                previewRects: previewRects,
+                completion: completion
+            )
+
+        case .note:
+            completion(createNotePresentation(library: library, rItem: rItem))
+        }
+
+        func loadItemPresentation(
+            kind: Item.Kind,
+            library: Library,
+            rItem: RItem,
+            attachment: Attachment,
+            page: Int?,
+            preselectedAnnotationKey: String?,
+            previewRects: [CGRect]?,
+            completion: @escaping (Presentation?) -> Void
+        ) {
+            let libraryId = kind.libraryId
+            let key = kind.key
+            let parentKey = rItem.parent?.key
             switch attachment.type {
             case .file(let filename, let contentType, let location, _, _):
                 switch location {
                 case .local:
-                    completion(createItemPresentation(kind: kind, parentKey: parentKey, library: library, filename: filename, contentType: contentType))
+                    completion(createItemPresentation(
+                        kind: kind,
+                        parentKey: parentKey,
+                        library: library,
+                        filename: filename,
+                        contentType: contentType,
+                        page: page,
+                        preselectedAnnotationKey: preselectedAnnotationKey,
+                        previewRects: previewRects
+                    ))
 
                 case .localAndChangedRemotely, .remote:
                     let disposeBag = DisposeBag()
@@ -531,7 +655,16 @@ final class OpenItemsController {
                             guard let self, update.libraryId == attachment.libraryId, update.key == attachment.key else { return }
                             switch update.kind {
                             case .ready:
-                                completion(createItemPresentation(kind: kind, parentKey: parentKey, library: library, filename: filename, contentType: contentType))
+                                completion(createItemPresentation(
+                                    kind: kind,
+                                    parentKey: parentKey,
+                                    library: library,
+                                    filename: filename,
+                                    contentType: contentType,
+                                    page: page,
+                                    preselectedAnnotationKey: preselectedAnnotationKey,
+                                    previewRects: previewRects
+                                ))
                                 downloadDisposeBag = nil
 
                             case .cancelled, .failed:
@@ -556,12 +689,21 @@ final class OpenItemsController {
                 completion(nil)
             }
 
-            func createItemPresentation(kind: Item.Kind, parentKey: String?, library: Library, filename: String, contentType: String) -> Presentation? {
+            func createItemPresentation(
+                kind: Item.Kind,
+                parentKey: String?,
+                library: Library,
+                filename: String,
+                contentType: String,
+                page: Int?,
+                preselectedAnnotationKey: String?,
+                previewRects: [CGRect]?
+            ) -> Presentation? {
                 let file = Files.attachmentFile(in: library.identifier, key: kind.key, filename: filename, contentType: contentType)
                 let url = file.createUrl()
                 switch kind {
                 case .pdf(_, let key):
-                    return .pdf(library: library, key: key, parentKey: parentKey, url: url, page: nil, preselectedAnnotationKey: nil, previewRects: nil)
+                    return .pdf(library: library, key: key, parentKey: parentKey, url: url, page: page, preselectedAnnotationKey: preselectedAnnotationKey, previewRects: previewRects)
 
                 case .html(_, let key):
                     return .html(library: library, key: key, parentKey: parentKey, url: url)
@@ -574,17 +716,15 @@ final class OpenItemsController {
                 }
             }
         }
+    }
 
-        func loadNotePresentation(key: String, libraryId: LibraryIdentifier, coordinator: DbCoordinator, completion: @escaping (Presentation?) -> Void) throws {
-            let library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
-            let rItem = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
-            guard let note = Note(item: rItem) else {
-                completion(nil)
-                return
-            }
-            let parentTitleData: NoteEditorState.TitleData? = rItem.parent.flatMap { .init(type: $0.rawType, title: $0.displayTitle) }
-            completion(.note(library: library, key: note.key, text: note.text, tags: note.tags, parentTitleData: parentTitleData, title: note.title))
-        }
+    private func createNotePresentation(library: Library, rItem: RItem, note: Note) -> Presentation? {
+        let parentTitleData: NoteEditorState.TitleData? = rItem.parent.flatMap { .init(type: $0.rawType, title: $0.displayTitle) }
+        return .note(library: library, key: note.key, text: note.text, tags: note.tags, parentTitleData: parentTitleData, title: note.title)
+    }
+
+    private func createNotePresentation(library: Library, rItem: RItem) -> Presentation? {
+        return Note(item: rItem).flatMap { createNotePresentation(library: library, rItem: rItem, note: $0) }
     }
 }
 
