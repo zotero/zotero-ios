@@ -70,7 +70,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
         DDLogInfo("SceneDelegate: app opened by \(URLContexts)")
         guard let urlContext = URLContexts.first else { return }
-        coordinator.showScreen(for: urlContext, animated: (UIApplication.shared.applicationState == .active))
+        coordinator.showScreen(for: urlContext, animated: (UIApplication.shared.applicationState == .active), completion: nil)
     }
 
     func windowScene(_ windowScene: UIWindowScene, performActionFor shortcutItem: UIApplicationShortcutItem, completionHandler: @escaping (Bool) -> Void) {
