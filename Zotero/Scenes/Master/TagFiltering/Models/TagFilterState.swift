@@ -43,17 +43,17 @@ struct TagFilterState: ViewModelState {
     var changes: Changes
 
     init(selectedTags: Set<String>, showAutomatic: Bool, displayAll: Bool) {
-        self.tags = []
-        self.searchTerm = ""
+        tags = []
+        searchTerm = ""
         self.selectedTags = selectedTags
         self.showAutomatic = showAutomatic
         self.displayAll = displayAll
-        self.changes = []
+        changes = []
     }
 
     mutating func cleanup() {
-        self.changes = []
-        self.error = nil
-        self.automaticCount = nil
+        changes = []
+        error = nil
+        automaticCount = nil
     }
 }
