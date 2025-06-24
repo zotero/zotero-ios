@@ -328,15 +328,15 @@ final class NoteEditorViewController: UIViewController {
                 return CGRect(x: doubles[0], y: doubles[1], width: doubles[2] - doubles[0], height: doubles[3] - doubles[1])
             })
             let preview = AnnotationPreview(parentKey: key, libraryId: libraryId, pageIndex: pageIndex, rects: rects)
-            coordinatorDelegate?.showPdf(withPreview: preview)
+            coordinatorDelegate?.showItem(withPreview: preview, completion: createCloseCompletion())
 
         case "openCitationPage":
             guard let citation = data["citation"] as? [String: Any], let metadata = parseCitation(from: citation) else { return }
-            coordinatorDelegate?.showPdf(withCitation: metadata)
+            coordinatorDelegate?.showItem(withCitation: metadata, completion: createCloseCompletion())
 
         case "showCitationItem":
             guard let citation = data["citation"] as? [String: Any], let metadata = parseCitation(from: citation) else { return }
-            coordinatorDelegate?.showItemDetail(withCitation: metadata)
+            coordinatorDelegate?.showItemDetail(withCitation: metadata, completion: createCloseCompletion())
 
         default:
             DDLogWarn("NoteEditorViewController JS: unknown action \(action); \(data)")
@@ -354,6 +354,14 @@ final class NoteEditorViewController: UIViewController {
                 let attachment = AttachmentCreator.mainAttachment(for: item, fileStorage: fileStorage)
             else { return nil }
             return CitationMetadata(attachmentKey: attachment.key, parentKey: key, libraryId: libraryId, locator: locator)
+        }
+
+        func createCloseCompletion() -> ((Bool) -> Void) {
+            return { [weak self] closed in
+                guard closed, let self, debounceDisposeBag != nil else { return }
+                debounceDisposeBag = nil
+                viewModel.process(action: .save)
+            }
         }
     }
 
