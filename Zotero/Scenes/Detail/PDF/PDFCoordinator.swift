@@ -272,13 +272,10 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
     }
     
     func showAccessibility<Delegate: SpeechmanagerDelegate>(speechManager: SpeechManager<Delegate>, document: Document, userInterfaceStyle: UIUserInterfaceStyle, sender: UIBarButtonItem) {
-        var readerAction: (() -> Void)?
-        if !document.isLocked {
-            readerAction = { [weak self] in
-                guard let self else { return }
-                navigationController?.dismiss(animated: true)
-                showReader(document: document, userInterfaceStyle: userInterfaceStyle)
-            }
+        var readerAction = { [weak self] in
+            guard let self else { return }
+            navigationController?.dismiss(animated: true)
+            showReader(document: document, userInterfaceStyle: userInterfaceStyle)
         }
         let controller = AccessibilityPopupViewController(speechManager: speechManager, readerAction: readerAction)
         let presentedController: UIViewController
@@ -290,7 +287,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
             } else {
                 controller.popoverPresentationController?.barButtonItem = sender
             }
-            controller.preferredContentSize = CGSize(width: 300, height: document.isLocked ? 168 : 220)
+            controller.preferredContentSize = CGSize(width: 300, height: speechManager.isSpeaking ? controller.expandedHeight : controller.baseHeight)
             presentedController = controller
 
         default:
