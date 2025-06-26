@@ -312,6 +312,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         func createAccessibilityButton(isSpeaking: Bool, controller: PDFReaderViewController) -> UIBarButtonItem {
             let speechButton = UIBarButtonItem(image: UIImage(systemName: isSpeaking ? "text.page.fill" : "text.page"), style: .plain, target: nil, action: nil)
             speechButton.tag = NavigationBarButton.accessibility.rawValue
+            speechButton.isEnabled = !controller.viewModel.state.document.isLocked
             speechButton.accessibilityLabel = L10n.Accessibility.openDocumentAccessibility
             speechButton.rx.tap
                 .subscribe(onNext: { [weak controller, weak speechButton] _ in
@@ -342,8 +343,8 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
             } else {
                 let readerButton = UIBarButtonItem(image: Asset.Images.pdfRawReader.image, style: .plain, target: nil, action: nil)
                 readerButton.isEnabled = !viewModel.state.document.isLocked
-                readerButton.accessibilityLabel = L10n.Accessibility.Pdf.openReader
-                readerButton.title = L10n.Accessibility.Pdf.openReader
+                readerButton.accessibilityLabel = L10n.Accessibility.showReaderAccessibilityLabel
+                readerButton.title = L10n.Accessibility.showReader
                 readerButton.rx.tap
                     .subscribe(onNext: { [weak self] _ in
                         guard let self else { return }
