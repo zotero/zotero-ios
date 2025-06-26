@@ -15,7 +15,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
     private unowned let speechManager: SpeechManager<Delegate>
     private let speedNumberFormatter: NumberFormatter
     private let disposeBag: DisposeBag
-    private let readerAction: (() -> Void)?
+    private let readerAction: () -> Void
 
     private weak var speedButton: UIButton!
     private weak var playButton: UIButton!
@@ -24,7 +24,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
     private weak var forwardButton: UIButton!
     private weak var activityIndicator: UIActivityIndicatorView!
 
-    init(speechManager: SpeechManager<Delegate>, readerAction: (() -> Void)?) {
+    init(speechManager: SpeechManager<Delegate>, readerAction: () -> Void) {
         self.speechManager = speechManager
         self.readerAction = readerAction
         speedNumberFormatter = NumberFormatter()
@@ -136,19 +136,17 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
 
             // Reader button
 
-            if readerAction != nil {
-                var readerConfiguration = UIButton.Configuration.filled()
-                readerConfiguration.cornerStyle = .capsule
-                readerConfiguration.imagePadding = 12
-                readerConfiguration.image = UIImage(systemName: "text.page", withConfiguration: UIImage.SymbolConfiguration(scale: .small))
-                readerConfiguration.title = L10n.Accessibility.showReader
-                readerConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0)
-                readerConfiguration.baseBackgroundColor = Asset.Colors.zoteroBlueWithDarkMode.color
-                let readerButton = UIButton(configuration: readerConfiguration)
-                readerButton.accessibilityLabel = L10n.Accessibility.Pdf.openReader
-                readerButton.addAction(UIAction(handler: { [weak self] _ in self?.readerAction?() }), for: .touchUpInside)
-                contentSubviews.append(readerButton)
-            }
+            var readerConfiguration = UIButton.Configuration.filled()
+            readerConfiguration.cornerStyle = .capsule
+            readerConfiguration.imagePadding = 12
+            readerConfiguration.image = UIImage(systemName: "text.page", withConfiguration: UIImage.SymbolConfiguration(scale: .small))
+            readerConfiguration.title = L10n.Accessibility.showReader
+            readerConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0)
+            readerConfiguration.baseBackgroundColor = Asset.Colors.zoteroBlueWithDarkMode.color
+            let readerButton = UIButton(configuration: readerConfiguration)
+            readerButton.accessibilityLabel = L10n.Accessibility.Pdf.openReader
+            readerButton.addAction(UIAction(handler: { [weak self] _ in self?.readerAction() }), for: .touchUpInside)
+            contentSubviews.append(readerButton)
 
             // Content container
 
