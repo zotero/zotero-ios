@@ -148,7 +148,6 @@ extension RItemsTableViewDataSource: ItemsTableViewDataSource {
 
         // Add parent creation for standalone attachments
         if item.rawType == ItemTypes.attachment && item.parent == nil {
-            actions.append(ItemAction(type: .createParent))
             if attachment?.file?.mimeType == "application/pdf" {
                 switch location {
                 case .local, .localAndChangedRemotely:
@@ -160,6 +159,7 @@ extension RItemsTableViewDataSource: ItemsTableViewDataSource {
                     break
                 }
             }
+            actions.append(ItemAction(type: .createParent))
         }
 
         // Add download/remove downloaded option for attachments
