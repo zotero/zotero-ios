@@ -151,7 +151,13 @@ final class AttachmentDownloader: NSObject {
         let configuration = URLSessionConfiguration.default
         session = URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
         #else
-        session = URLSessionCreator.createSession(for: Self.sessionId, delegate: self, httpMaximumConnectionsPerHost: Self.maxConcurrentDownloads)
+        session = URLSessionCreator.createSession(
+            for: Self.sessionId,
+            forwardingDelegate: self,
+            forwardingTaskDelegate: self,
+            forwardingDownloadDelegate: self,
+            httpMaximumConnectionsPerHost: Self.maxConcurrentDownloads
+        )
         session.getAllTasks { [weak self] tasks in
             guard let self else { return }
             let tasksGroupedByIdentifier = Dictionary(grouping: tasks, by: { $0.taskIdentifier })
@@ -976,22 +982,6 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
         }
     }
 
-    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Swift.Error?) {
-        accessQueue.sync(flags: .barrier) { [weak self] in
-            guard let self, let error else { return }
-            if let download = taskIdToDownload[task.taskIdentifier], let activeDownload = activeDownloads[download] {
-                if let data = activeDownload.logData {
-                    logResponse(for: data, task: task, error: error)
-                }
-                finish(activeDownload: activeDownload, download: download, compressed: nil, result: .failure(error), retryDelay: nil)
-            } else if activeDownloads.isEmpty {
-                // Though in some cases the `URLSession` can report errors before `activeDownloads` is populated with data (when app was killed manually for example), so let's just store errors
-                // so that it's apparent that these tasks finished already.
-                initialErrors[task.taskIdentifier] = error
-            }
-        }
-    }
-
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
         var download: Download?
         var activeDownload: ActiveDownload?
@@ -1036,5 +1026,21 @@ extension AttachmentDownloader: URLSessionTaskDelegate {
             return
         }
         completionHandler(.useCredential, URLCredential(user: sessionStorage.username, password: sessionStorage.password, persistence: .permanent))
+    }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Swift.Error?) {
+        accessQueue.sync(flags: .barrier) { [weak self] in
+            guard let self, let error else { return }
+            if let download = taskIdToDownload[task.taskIdentifier], let activeDownload = activeDownloads[download] {
+                if let data = activeDownload.logData {
+                    logResponse(for: data, task: task, error: error)
+                }
+                finish(activeDownload: activeDownload, download: download, compressed: nil, result: .failure(error), retryDelay: nil)
+            } else if activeDownloads.isEmpty {
+                // Though in some cases the `URLSession` can report errors before `activeDownloads` is populated with data (when app was killed manually for example), so let's just store errors
+                // so that it's apparent that these tasks finished already.
+                initialErrors[task.taskIdentifier] = error
+            }
+        }
     }
 }

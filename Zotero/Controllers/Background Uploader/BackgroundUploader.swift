@@ -48,7 +48,7 @@ final class BackgroundUploader {
     private func createSession(delegate: URLSessionTaskDelegate?) -> Single<URLSession> {
         return Single.create { [weak self] subscriber in
             let sessionId = UUID().uuidString
-            let session = URLSessionCreator.createSession(for: sessionId, delegate: delegate)
+            let session = URLSessionCreator.createSession(for: sessionId, forwardingDelegate: delegate, forwardingTaskDelegate: delegate)
             self?.context.saveSession(with: sessionId)
             self?.context.saveShareExtensionSession(with: sessionId)
             subscriber(.success(session))
