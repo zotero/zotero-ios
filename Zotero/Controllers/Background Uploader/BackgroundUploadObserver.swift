@@ -132,7 +132,7 @@ final class BackgroundUploadObserver: NSObject {
                 self.sessions[sessionId] = nil
                 session.invalidateAndCancel()
             } else {
-                let session = URLSessionCreator.createSession(for: sessionId, delegate: nil)
+                let session = URLSessionCreator.createSession(for: sessionId)
                 session.invalidateAndCancel()
             }
         }
@@ -150,7 +150,7 @@ final class BackgroundUploadObserver: NSObject {
 
             DDLogInfo("BackgroundUploadObserver: start observing \(identifier)")
 
-            let session = URLSessionCreator.createSession(for: identifier, delegate: self)
+            let session = URLSessionCreator.createSession(for: identifier, forwardingDelegate: self, forwardingTaskDelegate: self)
             self.sessions[identifier] = session
         }
     }
@@ -195,14 +195,14 @@ final class BackgroundUploadObserver: NSObject {
     func handleEventsForBackgroundURLSession(with identifier: String, completionHandler: @escaping () -> Void) {
         DDLogInfo("BackgroundUploadObserver: handle events for background url session \(identifier)")
         self.completionHandlers[identifier] = completionHandler
-        let session = URLSessionCreator.createSession(for: identifier, delegate: self)
+        let session = URLSessionCreator.createSession(for: identifier, forwardingDelegate: self, forwardingTaskDelegate: self)
         self.sessions[identifier] = session
     }
 
     func cancelAllUploads() {
         for id in self.context.sessionIds {
             guard self.sessions[id] == nil else { continue }
-            let session = URLSessionCreator.createSession(for: id, delegate: self)
+            let session = URLSessionCreator.createSession(for: id, forwardingDelegate: self, forwardingTaskDelegate: self)
             session.invalidateAndCancel()
         }
 
