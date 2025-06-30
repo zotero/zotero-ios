@@ -11,7 +11,9 @@ import Foundation
 final class URLSessionCreator {
     static func createSession(
         for identifier: String,
-        delegate: URLSessionDelegate?,
+        forwardingDelegate: URLSessionDelegate? = nil,
+        forwardingTaskDelegate: URLSessionTaskDelegate? = nil,
+        forwardingDownloadDelegate: URLSessionDownloadDelegate? = nil,
         delegateQueue: OperationQueue? = nil,
         isDiscretionary: Bool = false,
         httpMaximumConnectionsPerHost: Int? = nil
@@ -25,6 +27,55 @@ final class URLSessionCreator {
         if let httpMaximumConnectionsPerHost {
             configuration.httpMaximumConnectionsPerHost = httpMaximumConnectionsPerHost
         }
-        return URLSession(configuration: configuration, delegate: delegate, delegateQueue: delegateQueue)
+        let session = URLSession(configuration: configuration, delegate: BackgroundSessionDelegate(), delegateQueue: delegateQueue)
+        if let backgroundSessionDelegate = session.delegate as? BackgroundSessionDelegate {
+            backgroundSessionDelegate.forwardingDelegate = forwardingDelegate
+            backgroundSessionDelegate.forwardingTaskDelegate = forwardingTaskDelegate
+            backgroundSessionDelegate.forwardingDownloadDelegate = forwardingDownloadDelegate
+        }
+        return session
+    }
+}
+
+final class BackgroundSessionDelegate: NSObject {
+    weak var forwardingDelegate: URLSessionDelegate?
+    weak var forwardingTaskDelegate: URLSessionTaskDelegate?
+    weak var forwardingDownloadDelegate: URLSessionDownloadDelegate?
+}
+
+extension BackgroundSessionDelegate: URLSessionDelegate {
+    func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
+        forwardingDelegate?.urlSessionDidFinishEvents?(forBackgroundURLSession: session)
+    }
+}
+
+extension BackgroundSessionDelegate: URLSessionTaskDelegate {
+    func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        didReceive challenge: URLAuthenticationChallenge,
+        completionHandler: @escaping @Sendable (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+    ) {
+        forwardingTaskDelegate?.urlSession?(session, task: task, didReceive: challenge, completionHandler: completionHandler)
+    }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Swift.Error?) {
+        forwardingTaskDelegate?.urlSession?(session, task: task, didCompleteWithError: error)
+    }
+}
+
+extension BackgroundSessionDelegate: URLSessionDownloadDelegate {
+    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
+        forwardingDownloadDelegate?.urlSession(session, downloadTask: downloadTask, didFinishDownloadingTo: location)
+    }
+
+    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
+        forwardingDownloadDelegate?.urlSession?(
+            session,
+            downloadTask: downloadTask,
+            didWriteData: bytesWritten,
+            totalBytesWritten: totalBytesWritten,
+            totalBytesExpectedToWrite: totalBytesExpectedToWrite
+        )
     }
 }
