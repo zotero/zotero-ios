@@ -522,8 +522,9 @@ final class ExtensionViewModel {
                                .disposed(by: self.disposeBag)
     }
 
-    private func process(fileUrl url: URL) {
+    private func process(fileUrl url: URL, expectedAttachmentFilename: String? = nil) {
         let filename = url.lastPathComponent
+        let expectedAttachmentFilename = expectedAttachmentFilename ?? filename
         let tmpFile = Files.temporaryFile(ext: url.pathExtension)
 
         copyFile(from: url.path, to: tmpFile)
@@ -542,7 +543,7 @@ final class ExtensionViewModel {
         func updateState(with attachmentState: State.AttachmentState) {
             var state = self.state
             state.processedAttachment = .file(file: tmpFile, filename: filename)
-            state.expectedAttachment = (filename, tmpFile)
+            state.expectedAttachment = (expectedAttachmentFilename, tmpFile)
             state.attachmentState = attachmentState
             self.state = state
         }
@@ -596,20 +597,19 @@ final class ExtensionViewModel {
             .subscribe(onSuccess: { [weak self] _ in
                 guard let self = self else { return }
 
-                var state = self.state
                 if self.fileStorage.isPdf(file: file) {
                     DDLogInfo("ExtensionViewModel: downloaded pdf")
-                    state.processedAttachment = .file(file: file, filename: filename)
-                    state.attachmentState = .processed
+                    process(fileUrl: file.createUrl(), expectedAttachmentFilename: filename)
                 } else {
                     DDLogInfo("ExtensionViewModel: downloaded unsupported file")
+                    var state = self.state
                     state.processedAttachment = nil
                     state.attachmentState = .failed(.downloadedFileNotPdf)
                     state.expectedAttachment = nil
                     // Remove downloaded file, it won't be used anymore
                     try? self.fileStorage.remove(file)
+                    self.state = state
                 }
-                self.state = state
             }, onFailure: { [weak self] error in
                 DDLogError("ExtensionViewModel: could not download shared file - \(url.absoluteString) - \(error)")
                 self?.state.attachmentState = .failed(.downloadFailed)
