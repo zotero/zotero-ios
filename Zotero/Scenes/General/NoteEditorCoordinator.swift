@@ -15,9 +15,9 @@ protocol NoteEditorCoordinatorDelegate: AnyObject {
     func show(url: URL)
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
     func show(error: Error, isClosing: Bool)
-    func showPdf(withPreview preview: AnnotationPreview)
-    func showPdf(withCitation citation: CitationMetadata)
-    func showItemDetail(withCitation citation: CitationMetadata)
+    func showItem(withPreview preview: AnnotationPreview, completion: @escaping (Bool) -> Void)
+    func showItem(withCitation citation: CitationMetadata, completion: @escaping (Bool) -> Void)
+    func showItemDetail(withCitation citation: CitationMetadata, completion: @escaping (Bool) -> Void)
 }
 
 final class NoteEditorCoordinator: NSObject, Coordinator {
@@ -32,6 +32,7 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
     private let parentTitleData: NoteEditorState.TitleData?
     private let title: String?
     private let library: Library
+    private let sessionIdentifier: String
     private unowned let controllers: Controllers
 
     var viewModel: ViewModel<NoteEditorActionHandler>? {
@@ -46,6 +47,7 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
         parentTitleData: NoteEditorState.TitleData?,
         title: String?,
         navigationController: NavigationViewController,
+        sessionIdentifier: String,
         controllers: Controllers
     ) {
         self.kind = kind
@@ -55,6 +57,7 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
         self.title = title
         self.library = library
         self.navigationController = navigationController
+        self.sessionIdentifier = sessionIdentifier
         self.controllers = controllers
         childCoordinators = []
 
@@ -71,21 +74,29 @@ final class NoteEditorCoordinator: NSObject, Coordinator {
     }
 
     func start(animated: Bool) {
-        guard let dbStorage = controllers.userControllers?.dbStorage, let fileDownloader = controllers.userControllers?.fileDownloader else { return }
-        let state = NoteEditorState(kind: kind, library: library, parentTitleData: parentTitleData, text: initialText, tags: initialTags, title: title)
-        let handler = NoteEditorActionHandler(
-            dbStorage: dbStorage,
-            fileStorage: controllers.fileStorage,
-            schemaController: controllers.schemaController,
-            attachmentDownloader: fileDownloader
+        guard let dbStorage = controllers.userControllers?.dbStorage,
+                let fileDownloader = controllers.userControllers?.fileDownloader,
+                let openItemsController = controllers.userControllers?.openItemsController
+        else { return }
+
+        let state = NoteEditorState(
+            kind: kind,
+            library: library,
+            parentTitleData: parentTitleData,
+            text: initialText,
+            tags: initialTags,
+            openItemsCount: openItemsController.getItems(for: sessionIdentifier).count,
+            title: title
         )
+        let handler = NoteEditorActionHandler(dbStorage: dbStorage, fileStorage: controllers.fileStorage, schemaController: controllers.schemaController, attachmentDownloader: fileDownloader)
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = NoteEditorViewController(
             viewModel: viewModel,
             htmlAttributedStringConverter: controllers.htmlAttributedStringConverter,
             dbStorage: dbStorage,
             fileStorage: controllers.fileStorage,
-            uriConverter: controllers.uriConverter
+            uriConverter: controllers.uriConverter,
+            openItemsController: openItemsController
         )
         controller.coordinatorDelegate = self
         navigationController?.setViewControllers([controller], animated: animated)
@@ -122,40 +133,49 @@ extension NoteEditorCoordinator: NoteEditorCoordinatorDelegate {
         navigationController?.present(controller, animated: true)
     }
 
-    func showPdf(withPreview preview: AnnotationPreview) {
-        showPdf(key: preview.parentKey, libraryId: preview.libraryId, page: preview.pageIndex, rects: preview.rects)
+    func showItem(withPreview preview: AnnotationPreview, completion: @escaping (Bool) -> Void) {
+        showItem(key: preview.parentKey, libraryId: preview.libraryId, page: preview.pageIndex, rects: preview.rects, completion: completion)
     }
 
-    func showPdf(withCitation citation: CitationMetadata) {
-        showPdf(key: citation.attachmentKey, libraryId: citation.libraryId, page: citation.locator, rects: nil)
+    func showItem(withCitation citation: CitationMetadata, completion: @escaping (Bool) -> Void) {
+        showItem(key: citation.attachmentKey, libraryId: citation.libraryId, page: citation.locator, rects: nil, completion: completion)
     }
 
-    func showItemDetail(withCitation citation: CitationMetadata) {
-        guard let coordinator = (parentCoordinator as? DetailCoordinator) else { return }
-        coordinator.showItemDetail(for: .preview(key: citation.parentKey), libraryId: citation.libraryId, scrolledToKey: nil, animated: false)
-        navigationController?.dismiss(animated: true)
-    }
-
-    private func showPdf(key: String, libraryId: LibraryIdentifier, page: Int, rects: [CGRect]?) {
-        guard
-            let coordinator = (parentCoordinator as? DetailCoordinator),
-            let userControllers = controllers.userControllers,
-            let item = try? userControllers.dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key), on: .main),
-            let attachment = AttachmentCreator.attachment(for: item, fileStorage: controllers.fileStorage, urlDetector: nil),
-            let file = attachment.file
-        else { return }
-
-        userControllers.fileDownloader.downloadIfNeeded(attachment: attachment, parentKey: item.parent?.key) { [weak self, weak coordinator] result in
-            guard let self, let coordinator else { return }
-
-            switch result {
-            case .success:
-                let controller = coordinator.createPDFController(key: key, parentKey: item.parent?.key, libraryId: libraryId, url: file.createUrl(), page: page, previewRects: rects)
-                navigationController?.present(controller, animated: true)
-
-            case .failure(let error):
-                DDLogError("NoteEditorCoordinator: could not download attachment - \(error)")
-            }
+    func showItemDetail(withCitation citation: CitationMetadata, completion: @escaping (Bool) -> Void) {
+        guard let coordinator = (parentCoordinator as? DetailCoordinator) else {
+            completion(false)
+            return
         }
+        coordinator.showItemDetail(for: .preview(key: citation.parentKey), libraryId: citation.libraryId, scrolledToKey: nil, animated: false)
+        navigationController?.dismiss(animated: true) {
+            completion(true)
+        }
+    }
+
+    private func showItem(key: String, libraryId: LibraryIdentifier, page: Int, rects: [CGRect]?, completion: @escaping (Bool) -> Void) {
+        guard let openItemsController = controllers.userControllers?.openItemsController else {
+            completion(false)
+            return
+        }
+        openItemsController.loadPresentation(
+            for: key,
+            libraryId: libraryId,
+            page: page,
+            preselectedAnnotationKey: nil,
+            previewRects: rects
+        ) { [weak self] presentation in
+            guard let presentation, let self, let coordinator = parentCoordinator as? DetailCoordinator else {
+                completion(false)
+                return
+            }
+            coordinator.showItem(with: presentation)
+            completion(true)
+        }
+    }
+}
+
+extension NoteEditorCoordinator: OpenItemsPresenter {
+    func showItem(with presentation: ItemPresentation?) {
+        (parentCoordinator as? OpenItemsPresenter)?.showItem(with: presentation)
     }
 }
