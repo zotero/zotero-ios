@@ -18,21 +18,19 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
     private let speedNumberFormatter: NumberFormatter
     private let disposeBag: DisposeBag
     private let readerAction: () -> Void
+    private let dismissAction: () -> Void
 
     private weak var speechButton: UIButton!
     private weak var speechContainer: UIView!
     private weak var speedButton: UIButton!
-    private weak var playButton: UIButton!
-    private weak var pauseButton: UIButton!
-    private weak var backwardButton: UIButton!
-    private weak var forwardButton: UIButton!
-    private weak var activityIndicator: UIActivityIndicatorView!
+    private weak var controlsView: AccessibilitySpeechControlsView<Delegate>!
     private var speechButtonBottom: NSLayoutConstraint!
     private var speechContainerBottom: NSLayoutConstraint!
 
-    init(speechManager: SpeechManager<Delegate>, readerAction: @escaping () -> Void) {
+    init(speechManager: SpeechManager<Delegate>, readerAction: @escaping () -> Void, dismissAction: @escaping () -> Void) {
         self.speechManager = speechManager
         self.readerAction = readerAction
+        self.dismissAction = dismissAction
         speedNumberFormatter = NumberFormatter()
         disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
@@ -70,21 +68,19 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
             spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
             spacer.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
-            let speedActions = [2, 1.75, 1.5, 1.25, 1, 0.75].map({ [unowned self] val in UIAction(title: formatted(modifier: val), handler: { [weak self] _ in self?.set(rateModifier: val) }) })
-            var speedConfiguration = UIButton.Configuration.filled()
-            speedConfiguration.title = formatted(modifier: Defaults.shared.speechRateModifier)
-            speedConfiguration.baseBackgroundColor = .systemGray5
-            speedConfiguration.baseForegroundColor = .label
-            speedConfiguration.cornerStyle = .capsule
-            speedConfiguration.contentInsets = .init(top: 6, leading: 16, bottom: 6, trailing: 16)
-            let speedButton = UIButton(configuration: speedConfiguration)
-            speedButton.setContentHuggingPriority(.required, for: .vertical)
-            speedButton.setContentHuggingPriority(.required, for: .horizontal)
-            speedButton.setContentCompressionResistancePriority(.required, for: .horizontal)
-            speedButton.showsMenuAsPrimaryAction = true
-            speedButton.menu = UIMenu(title: "Speech Rate", children: speedActions)
+            var xConfiguration = UIButton.Configuration.filled()
+            xConfiguration.image = UIImage(systemName: "xmark", withConfiguration: UIImage.SymbolConfiguration.init(pointSize: titleLabel.font.pointSize, weight: .medium, scale: .medium))
+            xConfiguration.baseBackgroundColor = .systemGray5
+            xConfiguration.baseForegroundColor = .darkGray
+            xConfiguration.cornerStyle = .capsule
+//            speedConfiguration.contentInsets = .init(top: 6, leading: 16, bottom: 6, trailing: 16)
+            let xButton = UIButton(configuration: xConfiguration)
+            xButton.setContentHuggingPriority(.required, for: .vertical)
+            xButton.setContentHuggingPriority(.required, for: .horizontal)
+            xButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+            xButton.addAction(UIAction(handler: { [weak self] _ in self?.speechManager.stop() }), for: .touchUpInside)
 
-            let titleStackView = UIStackView(arrangedSubviews: [titleLabel, spacer, speedButton])
+            let titleStackView = UIStackView(arrangedSubviews: [titleLabel, spacer, xButton])
             titleStackView.axis = .horizontal
             titleStackView.alignment = .fill
             titleStackView.distribution = .fill
@@ -92,53 +88,49 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
             titleStackView.translatesAutoresizingMaskIntoConstraints = false
             speechContainer.addSubview(titleStackView)
 
-            let imageConfiguration = UIImage.SymbolConfiguration.init(scale: .large)
+            let controlsView = AccessibilitySpeechControlsView(speechManager: speechManager)
+            controlsView.setContentHuggingPriority(.defaultLow, for: .vertical)
+            speechContainer.addSubview(controlsView)
 
-            var playConfig = UIButton.Configuration.plain()
-            playConfig.image = UIImage(systemName: "play.fill", withConfiguration: imageConfiguration)
-            playConfig.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 22, bottom: 8, trailing: 22)
-            let playButton = UIButton(configuration: playConfig)
-            playButton.accessibilityLabel = L10n.Accessibility.Speech.play
-            playButton.isHidden = speechManager.isSpeaking
-            playButton.addAction(UIAction(handler: { [weak self] _ in self?.playOrResume() }), for: .touchUpInside)
+            var voiceConfiguration = UIButton.Configuration.filled()
+            voiceConfiguration.title = "American - Voice 4"
+            voiceConfiguration.baseBackgroundColor = .systemGray5
+            voiceConfiguration.baseForegroundColor = .label
+            voiceConfiguration.cornerStyle = .capsule
+            voiceConfiguration.contentInsets = .init(top: 6, leading: 10, bottom: 6, trailing: 10)
+            let voiceButton = UIButton(configuration: voiceConfiguration)
+            voiceButton.setContentHuggingPriority(.required, for: .vertical)
+            voiceButton.setContentHuggingPriority(.required, for: .horizontal)
+            voiceButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+//            voiceButton.addAction(UIAction(handler: { [weak self] in self? }), for: .touchUpInside)
 
-            var pauseConfig = UIButton.Configuration.plain()
-            pauseConfig.image = UIImage(systemName: "pause.fill", withConfiguration: imageConfiguration)
-            let pauseButton = UIButton(configuration: pauseConfig)
-            pauseButton.accessibilityLabel = L10n.Accessibility.Speech.pause
-            pauseButton.isHidden = !speechManager.isSpeaking
-            pauseButton.addAction(UIAction(handler: { [weak self] _ in self?.speechManager.pause() }), for: .touchUpInside)
+            let spacer2 = UIView()
+            spacer2.setContentHuggingPriority(.defaultLow, for: .horizontal)
+            spacer2.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
-            var forwardConfig = UIButton.Configuration.plain()
-            forwardConfig.image = UIImage(systemName: "plus.arrow.trianglehead.clockwise", withConfiguration: imageConfiguration)
-            let forwardButton = UIButton(configuration: forwardConfig)
-            forwardButton.accessibilityLabel = L10n.Accessibility.Speech.forward
-            forwardButton.isEnabled = speechManager.isSpeaking
-            forwardButton.addAction(UIAction(handler: { [weak self] _ in self?.speechManager.forward() }), for: .touchUpInside)
+            let speedActions = [2, 1.75, 1.5, 1.25, 1, 0.75].map({ [unowned self] val in UIAction(title: formatted(modifier: val), handler: { [weak self] _ in self?.set(rateModifier: val) }) })
+            var speedConfiguration = UIButton.Configuration.filled()
+            speedConfiguration.title = formatted(modifier: Defaults.shared.speechRateModifier)
+            speedConfiguration.baseBackgroundColor = .systemGray5
+            speedConfiguration.baseForegroundColor = .label
+            speedConfiguration.cornerStyle = .capsule
+            speedConfiguration.contentInsets = .init(top: 6, leading: 10, bottom: 6, trailing: 10)
+            let speedButton = UIButton(configuration: speedConfiguration)
+            speedButton.setContentHuggingPriority(.required, for: .vertical)
+            speedButton.setContentHuggingPriority(.required, for: .horizontal)
+            speedButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+            speedButton.showsMenuAsPrimaryAction = true
+            speedButton.menu = UIMenu(title: "Speech Rate", children: speedActions)
 
-            var backwardConfig = UIButton.Configuration.plain()
-            backwardConfig.image = UIImage(systemName: "minus.arrow.trianglehead.counterclockwise", withConfiguration: imageConfiguration)
-            let backwardButton = UIButton(configuration: backwardConfig)
-            backwardButton.accessibilityLabel = L10n.Accessibility.Speech.backward
-            backwardButton.isEnabled = speechManager.isSpeaking
-            backwardButton.addAction(UIAction(handler: { [weak self] _ in self?.speechManager.backward() }), for: .touchUpInside)
+            let additionalControlsStackView = UIStackView(arrangedSubviews: [voiceButton, spacer2, speedButton])
+            additionalControlsStackView.axis = .horizontal
+            additionalControlsStackView.alignment = .fill
+            additionalControlsStackView.distribution = .fill
+            additionalControlsStackView.setContentHuggingPriority(.required, for: .vertical)
+            additionalControlsStackView.translatesAutoresizingMaskIntoConstraints = false
+            speechContainer.addSubview(additionalControlsStackView)
 
-            let activityIndicator = UIActivityIndicatorView(style: .medium)
-            activityIndicator.hidesWhenStopped = true
-
-            let controlsStackView = UIStackView(arrangedSubviews: [backwardButton, playButton, pauseButton, activityIndicator, forwardButton])
-            controlsStackView.axis = .horizontal
-            controlsStackView.alignment = .center
-            controlsStackView.distribution = .fillEqually
-            controlsStackView.setContentHuggingPriority(.defaultLow, for: .vertical)
-            controlsStackView.translatesAutoresizingMaskIntoConstraints = false
-            speechContainer.addSubview(controlsStackView)
-
-            self.playButton = playButton
-            self.pauseButton = pauseButton
-            self.forwardButton = forwardButton
-            self.backwardButton = backwardButton
-            self.activityIndicator = activityIndicator
+            self.controlsView = controlsView
             self.speedButton = speedButton
             self.speechContainer = speechContainer
 
@@ -200,15 +192,19 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
                 speechContainer.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
                 view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: speechContainer.trailingAnchor, constant: 16),
                 bottomToActivate!,
-                // Speech container title
+                // Speech Title
+                titleStackView.topAnchor.constraint(equalTo: speechContainer.topAnchor, constant: 16),
                 titleStackView.leadingAnchor.constraint(equalTo: speechContainer.leadingAnchor, constant: 16),
                 speechContainer.trailingAnchor.constraint(equalTo: titleStackView.trailingAnchor, constant: 16),
-                // Speech container controls
-                controlsStackView.leadingAnchor.constraint(equalTo: speechContainer.leadingAnchor, constant: 16),
-                speechContainer.trailingAnchor.constraint(equalTo: controlsStackView.trailingAnchor, constant: 16),
-                titleStackView.topAnchor.constraint(equalTo: speechContainer.topAnchor, constant: 12),
-                titleStackView.bottomAnchor.constraint(equalTo: controlsStackView.topAnchor),
-                speechContainer.bottomAnchor.constraint(equalTo: controlsStackView.bottomAnchor, constant: 6)
+                // Speech Controls
+                controlsView.leadingAnchor.constraint(equalTo: speechContainer.leadingAnchor, constant: 16),
+                speechContainer.trailingAnchor.constraint(equalTo: controlsView.trailingAnchor, constant: 16),
+                titleStackView.bottomAnchor.constraint(equalTo: controlsView.topAnchor),
+                // Speech Additional Controls
+                controlsView.bottomAnchor.constraint(equalTo: additionalControlsStackView.topAnchor),
+                additionalControlsStackView.leadingAnchor.constraint(equalTo: speechContainer.leadingAnchor, constant: 16),
+                speechContainer.trailingAnchor.constraint(equalTo: additionalControlsStackView.trailingAnchor, constant: 16),
+                speechContainer.bottomAnchor.constraint(equalTo: additionalControlsStackView.bottomAnchor, constant: 16)
             ])
         }
         
@@ -223,15 +219,12 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
         }
     }
 
-    // MARK: - Actions
-
-    private func playOrResume() {
-        if speechManager.isPaused {
-            speechManager.resume()
-        } else {
-            speechManager.start()
-        }
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        dismissAction()
     }
+
+    // MARK: - Actions
 
     private func formatted(modifier: Float) -> String {
         return (speedNumberFormatter.string(from: NSNumber(value: modifier)) ?? "") + "x"
@@ -247,47 +240,24 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
 
     private func process(state: SpeechManager<Delegate>.State) {
         switch state {
-        case .loading:
-            playButton.isHidden = true
-            pauseButton.isHidden = true
-            activityIndicator.startAnimating()
-            activityIndicator.isHidden = false
-            updateUIToSpeakingIfNeeded()
-
-        case .speaking:
-            if activityIndicator.isAnimating {
-                activityIndicator.stopAnimating()
-            }
-            playButton.isHidden = true
-            pauseButton.isHidden = false
-            forwardButton.isEnabled = true
-            backwardButton.isEnabled = true
-            updateUIToSpeakingIfNeeded()
-
-        case .stopped:
-            updateSpeechControlsToStoppedOrPaused()
-            updateUIToStoppedIfNeeded()
-
-        case .paused:
-            updateSpeechControlsToStoppedOrPaused()
-        }
-
-        func updateUIToSpeakingIfNeeded() {
+        case .loading, .speaking:
             guard speechContainer.isHidden else { return }
             updatePopup(toHeight: expandedHeight)
             speechContainer.isHidden = false
             speechButton.isHidden = true
             speechContainerBottom.isActive = true
             speechButtonBottom.isActive = false
-        }
 
-        func updateUIToStoppedIfNeeded() {
+        case .stopped:
             guard speechButton.isHidden else { return }
             speechContainer.isHidden = true
             speechButton.isHidden = false
             speechContainerBottom.isActive = false
             speechButtonBottom.isActive = true
             updatePopup(toHeight: baseHeight)
+
+        case .paused:
+            break
         }
 
         func updatePopup(toHeight height: CGFloat) {
@@ -299,16 +269,6 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
                 // TODO
                 break
             }
-        }
-
-        func updateSpeechControlsToStoppedOrPaused() {
-            if activityIndicator.isAnimating {
-                activityIndicator.stopAnimating()
-            }
-            pauseButton.isHidden = true
-            playButton.isHidden = false
-            forwardButton.isEnabled = false
-            backwardButton.isEnabled = false
         }
     }
 }
