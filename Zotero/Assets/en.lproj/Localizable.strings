@@ -585,7 +585,7 @@
 "accessibility.speech.pause" = "Pause speaking";
 "accessibility.speech.forward" = "Skip forward";
 "accessibility.speech.backward" = "Skip backward";
-"accessibility.speech.title" = "Listen to Document";
+"accessibility.speech.title" = "Read Aloud";
 "accessibility.show_reader" = "Reading Mode";
 "accessibility.show_reader_accessibility_label" = "Switch to reading mode";
 "accessibility.show_speech" = "Read Aloud";

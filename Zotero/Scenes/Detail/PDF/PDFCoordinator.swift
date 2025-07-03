@@ -26,7 +26,7 @@ protocol PdfReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarC
     func showFontSizePicker(sender: UIView, picked: @escaping (CGFloat) -> Void)
     func showDeleteAlertForAnnotation(sender: UIView, delete: @escaping () -> Void)
     func showDocumentChangedAlert(completed: @escaping () -> Void)
-    func showAccessibility<Delegate: SpeechmanagerDelegate>(speechManager: SpeechManager<Delegate>, document: Document, userInterfaceStyle: UIUserInterfaceStyle, sender: UIBarButtonItem)
+    func showAccessibility<Delegate: SpeechmanagerDelegate>(speechManager: SpeechManager<Delegate>, document: Document, userInterfaceStyle: UIUserInterfaceStyle, sender: UIBarButtonItem, dismissAction: @escaping () -> Void)
 }
 
 protocol PdfAnnotationsCoordinatorDelegate: ReaderSidebarCoordinatorDelegate {
@@ -287,13 +287,13 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         navigationController?.present(controller, animated: true)
     }
     
-    func showAccessibility<Delegate: SpeechmanagerDelegate>(speechManager: SpeechManager<Delegate>, document: Document, userInterfaceStyle: UIUserInterfaceStyle, sender: UIBarButtonItem) {
-        var readerAction = { [weak self] in
+    func showAccessibility<Delegate: SpeechmanagerDelegate>(speechManager: SpeechManager<Delegate>, document: Document, userInterfaceStyle: UIUserInterfaceStyle, sender: UIBarButtonItem, dismissAction: @escaping () -> Void) {
+        let readerAction = { [weak self] in
             guard let self else { return }
             navigationController?.dismiss(animated: true)
             showReader(document: document, userInterfaceStyle: userInterfaceStyle)
         }
-        let controller = AccessibilityPopupViewController(speechManager: speechManager, readerAction: readerAction)
+        let controller = AccessibilityPopupViewController(speechManager: speechManager, readerAction: readerAction, dismissAction: dismissAction)
         let presentedController: UIViewController
         switch UIDevice.current.userInterfaceIdiom {
         case .pad:
