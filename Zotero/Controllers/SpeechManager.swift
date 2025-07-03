@@ -107,15 +107,20 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
             return
         }
 
-        state.accept(.loading)
-
         let index = delegate.getCurrentPageIndex()
+        if let page = cachedPages[index] {
+            go(to: page, pageIndex: index, reportPageChange: false)
+            return
+        }
+
+        state.accept(.loading)
         getData(for: [index], from: delegate) { [weak self] pages in
             guard let self, let pages, let page = pages[index] else {
                 self?.state.accept(.stopped)
                 return
             }
             cachedPages = pages
+            guard state.value == .loading else { return }
             go(to: page, pageIndex: index, reportPageChange: false)
         }
     }
@@ -136,8 +141,15 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
     }
 
     func stop() {
-        guard synthetizer.isSpeaking || synthetizer.isPaused else { return }
-        synthetizer.stopSpeaking(at: .immediate)
+        guard synthetizer.isSpeaking || synthetizer.isPaused || state.value == .loading else { return }
+        if state.value == .loading {
+            state.accept(.stopped)
+        } else {
+            // Ignore finish delegate, which would move us to another page
+            ignoreFinishCallCount = 1
+            synthetizer.stopSpeaking(at: .immediate)
+            state.accept(.stopped)
+        }
     }
 
     func set(rateModifier: Float) {
