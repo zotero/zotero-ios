@@ -28,7 +28,6 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
     private enum NavigationBarButton: Int {
         case share = 1
         case sidebar = 7
-        case accessibility = 4
     }
 
     private let viewModel: ViewModel<PDFReaderActionHandler>
@@ -45,7 +44,6 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
     var annotationToolbarHandler: AnnotationToolbarHandler?
     private var intraDocumentNavigationHandler: IntraDocumentNavigationButtonsHandler!
     private var selectedText: String?
-    private var speechManager: SpeechManager<PDFReaderViewController>?
     private(set) var isCompactWidth: Bool
     @CodableUserDefault(key: "PDFReaderToolbarState", defaultValue: AnnotationToolbarHandler.State(position: .leading, visible: true), encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
     var toolbarState: AnnotationToolbarHandler.State
@@ -62,6 +60,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         }
     }
     private var previousTraitCollection: UITraitCollection?
+    private var accessibilityHandler: AccessibilityViewHandler<PDFReaderViewController>!
     var isSidebarVisible: Bool { return sidebarControllerLeft?.constant == 0 }
     var isToolbarVisible: Bool { return toolbarState.visible }
     var isDocumentLocked: Bool { return viewModel.state.document.isLocked }
@@ -208,6 +207,8 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         viewModel.process(action: .changeIdleTimerDisabled(true))
         view.backgroundColor = .systemGray6
         setupViews()
+        accessibilityHandler = AccessibilityViewHandler(viewController: self, speechManager: SpeechManager(delegate: self, speechRateModifier: Defaults.shared.speechRateModifier))
+        accessibilityHandler.delegate = self
         setupObserving()
 
         if !viewModel.state.document.isLocked, let documentController {
@@ -309,20 +310,6 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
             }
         }
 
-        func createAccessibilityButton(isSpeaking: Bool, controller: PDFReaderViewController) -> UIBarButtonItem {
-            let speechButton = UIBarButtonItem(image: UIImage(systemName: isSpeaking ? "text.page.fill" : "text.page"), style: .plain, target: nil, action: nil)
-            speechButton.tag = NavigationBarButton.accessibility.rawValue
-            speechButton.isEnabled = !controller.viewModel.state.document.isLocked
-            speechButton.accessibilityLabel = L10n.Accessibility.openDocumentAccessibility
-            speechButton.rx.tap
-                .subscribe(onNext: { [weak controller, weak speechButton] _ in
-                    guard let controller, let speechButton else { return }
-                    showSpeech(controller: controller, sender: speechButton)
-                })
-                .disposed(by: disposeBag)
-            return speechButton
-        }
-
         func setupNavigationBar() {
             let sidebarButton = UIBarButtonItem(image: UIImage(systemName: "sidebar.left"), style: .plain, target: nil, action: nil)
             sidebarButton.isEnabled = !viewModel.state.document.isLocked
@@ -338,7 +325,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
             var leftBarButtonItems: [UIBarButtonItem] = [closeButton, sidebarButton]
 
             if FeatureGates.enabled.contains(.speech) {
-                let accessibilityButton = createAccessibilityButton(isSpeaking: speechManager?.isSpeaking ?? false, controller: self)
+                let accessibilityButton = accessibilityHandler.createAccessibilityButton(isEnabled: !viewModel.state.document.isLocked)
                 leftBarButtonItems.append(accessibilityButton)
             } else {
                 let readerButton = UIBarButtonItem(image: Asset.Images.pdfRawReader.image, style: .plain, target: nil, action: nil)
@@ -356,35 +343,6 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
 
             navigationItem.leftBarButtonItems = leftBarButtonItems
             navigationItem.rightBarButtonItems = createRightBarButtonItems()
-        }
-        
-        func showSpeech(controller: PDFReaderViewController, sender: UIBarButtonItem) {
-            let speechManager: SpeechManager<PDFReaderViewController>
-            if let manager = controller.speechManager {
-                speechManager = manager
-            } else {
-                speechManager = SpeechManager(delegate: controller, speechRateModifier: Defaults.shared.speechRateModifier)
-                speechManager.state
-                    .skip(1)
-                    .observe(on: MainScheduler.instance)
-                    .subscribe(onNext: { [weak controller] state in
-                        guard let controller else { return }
-                        reloadSpeechButton(isSpeaking: state.isSpeakingOrLoading, controller: controller)
-                    })
-                    .disposed(by: controller.disposeBag)
-                controller.speechManager = speechManager
-            }
-            controller.coordinatorDelegate?.showAccessibility(
-                speechManager: speechManager,
-                document: viewModel.state.document,
-                userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle,
-                sender: sender
-            )
-
-            func reloadSpeechButton(isSpeaking: Bool, controller: PDFReaderViewController) {
-                guard let index = controller.navigationItem.leftBarButtonItems?.firstIndex(where: { $0.tag == NavigationBarButton.accessibility.rawValue }) else { return }
-                controller.navigationItem.leftBarButtonItems?[index] = createAccessibilityButton(isSpeaking: isSpeaking, controller: controller)
-            }
         }
 
         func setupObserving() {
@@ -1097,5 +1055,21 @@ extension PDFReaderViewController: SpeechmanagerDelegate {
 
     func moved(to pageIndex: UInt) {
         documentController?.focus(page: pageIndex)
+    }
+}
+
+extension PDFReaderViewController: AccessibilityViewDelegate {
+    func accessibilityOverlayChanged(overlayHeight: CGFloat) {
+        sidebarController?.setAccessibilityOverlay(height: overlayHeight, animated: isSidebarVisible)
+    }
+    
+    func showAccessibilityPopup<Delegate: SpeechmanagerDelegate>(speechManager: SpeechManager<Delegate>, sender: UIBarButtonItem, dismissAction: @escaping () -> Void) {
+        coordinatorDelegate?.showAccessibility(
+            speechManager: speechManager,
+            document: viewModel.state.document,
+            userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle,
+            sender: sender,
+            dismissAction: dismissAction
+        )
     }
 }
