@@ -24,6 +24,7 @@ private struct StyleData {
     }
 }
 
+@preconcurrency
 class CitationController: NSObject {
     struct Session: Hashable {
         let id = UUID()

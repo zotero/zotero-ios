@@ -260,9 +260,8 @@ extension ExpandableCollectionsCollectionViewHandler: UICollectionViewDropDelega
         guard let indexPath = coordinator.destinationIndexPath, let key = dataSource.itemIdentifier(for: indexPath)?.identifier.key else { return }
         switch coordinator.proposal.operation {
         case .copy:
-            dragDropController.keys(from: coordinator.items.map({ $0.dragItem })) { [weak self] keys in
-                self?.viewModel.process(action: .assignKeysToCollection(itemKeys: keys, collectionKey: key))
-            }
+            guard let localContext = coordinator.session.localDragSession?.localContext as? DragSessionItemsLocalContext, !localContext.keys.isEmpty else { break }
+            viewModel.process(action: .assignKeysToCollection(itemKeys: localContext.keys, collectionKey: key))
 
         default:
             break
@@ -270,15 +269,15 @@ extension ExpandableCollectionsCollectionViewHandler: UICollectionViewDropDelega
     }
 
     func collectionView(_ collectionView: UICollectionView, dropSessionDidUpdate session: UIDropSession, withDestinationIndexPath destinationIndexPath: IndexPath?) -> UICollectionViewDropProposal {
-        guard
-            viewModel.state.library.metadataEditable &&                                                                                     // allow only when library is editable
-            session.localDragSession != nil &&                                                                                              // allow only local drag session
-            session.items.compactMap({ $0.localObject as? RItem }).compactMap({ $0.libraryId }).first == viewModel.state.library.identifier // allow drag from the same library
+        let library = viewModel.state.library
+        guard library.metadataEditable,
+              let localContext = session.localDragSession?.localContext as? DragSessionItemsLocalContext,
+              localContext.libraryIdentifier == library.identifier,
+              !localContext.keys.isEmpty,
+              let destinationIndexPath,
+              let collection = dataSource.itemIdentifier(for: destinationIndexPath),
+              collection.identifier.isCollection
         else { return UICollectionViewDropProposal(operation: .forbidden) }
-        // Allow only dropping to user collections, not custom collections, such as "All Items" or "My Publications"
-        if let destination = destinationIndexPath, let collection = dataSource.itemIdentifier(for: destination), collection.identifier.isCollection {
-            return UICollectionViewDropProposal(operation: .copy, intent: .insertIntoDestinationIndexPath)
-        }
-        return UICollectionViewDropProposal(operation: .forbidden)
+        return UICollectionViewDropProposal(operation: .copy, intent: .insertIntoDestinationIndexPath)
     }
 }

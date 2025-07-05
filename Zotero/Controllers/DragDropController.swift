@@ -8,47 +8,60 @@
 
 import UIKit
 
+@preconcurrency
+import RxSwift
+
+struct DragSessionItemsLocalContext {
+    let libraryIdentifier: LibraryIdentifier
+    let keys: Set<String>
+
+    func createNewContext(with item: RItem) -> Self? {
+        guard libraryIdentifier == item.libraryIdentifier, !keys.contains(item.key) else { return nil }
+        return Self(libraryIdentifier: libraryIdentifier, keys: keys.union([item.key]))
+    }
+}
+
+@preconcurrency
 final class DragDropController {
-    func dragItem(from item: RItem) -> UIDragItem {
-        let provider = NSItemProvider(object: item.key as NSString)
-        let dragItem = UIDragItem(itemProvider: provider)
-        dragItem.localObject = item
-        return dragItem
-    }
+    private var citationSessions: [UUID: CitationController.Session] = [:]
 
-    func item(from dragItem: UIDragItem) -> RItem? {
-        return dragItem.localObject as? RItem
-    }
-
-    func dragItem(from tag: RTag) -> UIDragItem {
-        let provider = NSItemProvider(object: tag.name as NSString)
-        let dragItem = UIDragItem(itemProvider: provider)
-        dragItem.localObject = tag
-        return dragItem
-    }
-
-    func tag(from dragItem: UIDragItem) -> RTag? {
-        return dragItem.localObject as? RTag
-    }
-
-    func keys(from dragItems: [UIDragItem], completed: @escaping (Set<String>) -> Void) {
-        var keys: Set<String> = []
-
-        let group = DispatchGroup()
-
-        for dragItem in dragItems {
-            group.enter()
-
-            dragItem.itemProvider.loadObject(ofClass: NSString.self) { nsString, _ in
-                if let key = nsString as? String {
-                    keys.insert(key)
+    func dragItem(from item: RItem, citationController: CitationController?, disposeBag: DisposeBag) -> UIDragItem {
+        let itemProvider = NSItemProvider()
+        let key = item.key
+        let libraryId = item.libraryIdentifier
+        if let citationController {
+            let uuid = UUID()
+            itemProvider.registerDataRepresentation(for: .html, visibility: .all) { completion in
+                DispatchQueue.main.async {
+                    citationController.startSession(
+                        for: Set(arrayLiteral: key),
+                        libraryId: libraryId,
+                        styleId: Defaults.shared.quickCopyStyleId,
+                        localeId: Defaults.shared.quickCopyLocaleId
+                    )
+                    .do(onSuccess: { [weak self] session in
+                        self?.citationSessions[uuid] = session
+                    })
+                    .flatMap({ session -> Single<String> in
+                        return citationController.bibliography(for: session, format: .html)
+                    })
+                    .subscribe { [weak self] html in
+                        completion(html.data(using: .utf8), nil)
+                        guard let self, let session = citationSessions.removeValue(forKey: uuid) else { return }
+                        citationController.endSession(session)
+                    } onFailure: { [weak self] error in
+                        completion(nil, error)
+                        guard let self, let session = citationSessions.removeValue(forKey: uuid) else { return }
+                        citationController.endSession(session)
+                    }
+                    .disposed(by: disposeBag)
                 }
-                group.leave()
+                return nil
             }
         }
 
-        group.notify(queue: .main) {
-            completed(keys)
-        }
+        let dragItem = UIDragItem(itemProvider: itemProvider)
+        dragItem.localObject = item
+        return dragItem
     }
 }

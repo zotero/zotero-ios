@@ -54,6 +54,7 @@ final class ItemsTableViewHandler: NSObject {
     private unowned let delegate: ItemsTableViewHandlerDelegate
     private unowned let dataSource: ItemsTableViewDataSource
     private unowned let dragDropController: DragDropController
+    private unowned let citationController: CitationController?
     private let disposeBag: DisposeBag
 
     private var reloadAnimationsDisabled: Bool
@@ -62,12 +63,14 @@ final class ItemsTableViewHandler: NSObject {
         tableView: UITableView,
         delegate: ItemsTableViewHandlerDelegate,
         dataSource: ItemsTableViewDataSource,
-        dragDropController: DragDropController
+        dragDropController: DragDropController,
+        citationController: CitationController?
     ) {
         self.tableView = tableView
         self.delegate = delegate
         self.dataSource = dataSource
         self.dragDropController = dragDropController
+        self.citationController = citationController
         reloadAnimationsDisabled = false
         disposeBag = DisposeBag()
 
@@ -308,56 +311,47 @@ extension ItemsTableViewHandler: UITableViewDelegate {
 extension ItemsTableViewHandler: UITableViewDragDelegate {
     func tableView(_ tableView: UITableView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem] {
         guard let item = dataSource.object(at: indexPath.row) as? RItem else { return [] }
-        return [self.dragDropController.dragItem(from: item)]
+        session.localContext = DragSessionItemsLocalContext(libraryIdentifier: item.libraryIdentifier, keys: Set([item.key]))
+        return [dragDropController.dragItem(from: item, citationController: citationController, disposeBag: disposeBag)]
+    }
+
+    func tableView(_ tableView: UITableView, itemsForAddingTo session: any UIDragSession, at indexPath: IndexPath, point: CGPoint) -> [UIDragItem] {
+        guard let item = dataSource.object(at: indexPath.row) as? RItem,
+              let localContext = session.localContext as? DragSessionItemsLocalContext,
+              let newLocalContext = localContext.createNewContext(with: item)
+        else { return [] }
+        session.localContext = newLocalContext
+        return [dragDropController.dragItem(from: item, citationController: citationController, disposeBag: disposeBag)]
     }
 }
 
 extension ItemsTableViewHandler: UITableViewDropDelegate {
     func tableView(_ tableView: UITableView, performDropWith coordinator: UITableViewDropCoordinator) {
-        guard let object = coordinator.destinationIndexPath.flatMap({ dataSource.object(at: $0.row) }) else { return }
-
+        guard let indexPath = coordinator.destinationIndexPath, let object = dataSource.object(at: indexPath.row) else { return }
         switch coordinator.proposal.operation {
         case .copy:
             let key = object.key
-            let localObject = coordinator.items.first?.dragItem.localObject
-            self.dragDropController.keys(from: coordinator.items.map({ $0.dragItem })) { [weak self] keys in
-                guard let self else { return }
-                if localObject is RItem {
-                    delegate.process(dragAndDropAction: .moveItems(keys: keys, toKey: key))
-                } else if localObject is RTag {
-                    delegate.process(dragAndDropAction: .tagItem(key: key, libraryId: object.libraryIdentifier, tags: keys))
-                }
-            }
-        default: break
+            guard let localContext = coordinator.session.localDragSession?.localContext as? DragSessionItemsLocalContext, !localContext.keys.isEmpty else { break }
+            delegate.process(dragAndDropAction: .moveItems(keys: localContext.keys, toKey: key))
+
+        default:
+            break
         }
     }
 
     func tableView(_ tableView: UITableView, dropSessionDidUpdate session: UIDropSession, withDestinationIndexPath destinationIndexPath: IndexPath?) -> UITableViewDropProposal {
-        guard
-            delegate.library.metadataEditable,                // allow only when library is editable
-            session.localDragSession != nil,                  // allow only local drag session
-            let destinationIndexPath = destinationIndexPath,
-            destinationIndexPath.row < dataSource.count,
-            session.items.first?.localObject is RItem
-        else {
-            return UITableViewDropProposal(operation: .forbidden)
-        }
-        return self.itemDropSessionDidUpdate(session: session, withDestinationIndexPath: destinationIndexPath)
-    }
-
-    private func itemDropSessionDidUpdate(session: UIDropSession, withDestinationIndexPath destinationIndexPath: IndexPath) -> UITableViewDropProposal {
-        guard let object = dataSource.object(at: destinationIndexPath.row) else {
-            return UITableViewDropProposal(operation: .forbidden)
-        }
-        let dragItemsLibraryId = session.items.compactMap({ $0.localObject as? RItem }).compactMap({ $0.libraryId }).first
-
-        if dragItemsLibraryId != object.libraryIdentifier ||                                // allow dropping only to the same library
-           object.isNote || object.isAttachment ||                                          // allow dropping only to non-standalone items
-           session.items.compactMap({ self.dragDropController.item(from: $0) })             // allow drops of only standalone items
-                        .contains(where: { $0.rawType != ItemTypes.attachment && $0.rawType != ItemTypes.note }) {
-           return UITableViewDropProposal(operation: .forbidden)
-        }
-
+        let library = delegate.library
+        guard library.metadataEditable,
+              let localContext = session.localDragSession?.localContext as? DragSessionItemsLocalContext,
+              localContext.libraryIdentifier == library.identifier,
+              !localContext.keys.isEmpty,
+              let destinationIndexPath,
+              destinationIndexPath.row < dataSource.count,
+              let object = dataSource.object(at: destinationIndexPath.row),
+              !object.isNote,
+              !object.isAttachment,
+              !session.items.compactMap({ $0.localObject as? RItem }).contains(where: { $0.rawType != ItemTypes.attachment && $0.rawType != ItemTypes.note })
+        else { return UITableViewDropProposal(operation: .forbidden) }
         return UITableViewDropProposal(operation: .copy, intent: .insertIntoDestinationIndexPath)
     }
 }
