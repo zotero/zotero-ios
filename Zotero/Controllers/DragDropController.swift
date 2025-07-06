@@ -22,51 +22,54 @@ struct DragSessionItemsLocalContext {
     }
 }
 
-@preconcurrency
 final class DragDropController {
-    private var citationSessions: [UUID: CitationController.Session] = [:]
-
     func dragItem(from item: RItem, citationController: CitationController?, disposeBag: DisposeBag) -> UIDragItem {
         let itemProvider = NSItemProvider()
-        let key = item.key
-        let libraryId = item.libraryIdentifier
         if let citationController {
-            registerDataRepresentation(for: itemProvider, contentType: .html, citationController: citationController, format: .html)
-            registerDataRepresentation(for: itemProvider, contentType: .plainText, citationController: citationController, format: .text)
+            registerDataRepresentation(for: itemProvider, contentType: .html, item: item, citationController: citationController, format: .html, disposeBag: disposeBag)
+            registerDataRepresentation(for: itemProvider, contentType: .plainText, item: item, citationController: citationController, format: .text, disposeBag: disposeBag)
         }
-
         let dragItem = UIDragItem(itemProvider: itemProvider)
         dragItem.localObject = item
         return dragItem
 
-        func registerDataRepresentation(for itemProvider: NSItemProvider, contentType: UTType, citationController: CitationController, format: CitationController.Format) {
-            let uuid = UUID()
+        func registerDataRepresentation(
+            for itemProvider: NSItemProvider,
+            contentType: UTType,
+            item: RItem,
+            citationController: CitationController,
+            format: CitationController.Format,
+            disposeBag: DisposeBag
+        ) {
+            let key = item.key
+            let libraryId = item.libraryIdentifier
             itemProvider.registerDataRepresentation(for: contentType, visibility: .all) { completion in
                 let progress = Progress(totalUnitCount: 2)
                 DispatchQueue.main.async {
+                    var session: CitationController.Session?
                     citationController.startSession(
                         for: Set(arrayLiteral: key),
                         libraryId: libraryId,
                         styleId: Defaults.shared.quickCopyStyleId,
                         localeId: Defaults.shared.quickCopyLocaleId
                     )
-                    .do(onSuccess: { [weak self] session in
-                        self?.citationSessions[uuid] = session
+                    .flatMap({ startedSession -> Single<String> in
+                        session = startedSession
                         progress.completedUnitCount = 1
+                        return citationController.bibliography(for: startedSession, format: format)
                     })
-                    .flatMap({ session -> Single<String> in
-                        return citationController.bibliography(for: session, format: format)
-                    })
-                    .subscribe { [weak self] bibliography in
+                    .subscribe { bibliography in
                         progress.completedUnitCount = 2
                         completion(bibliography.data(using: .utf8), nil)
-                        guard let self, let session = citationSessions.removeValue(forKey: uuid) else { return }
-                        citationController.endSession(session)
-                    } onFailure: { [weak self] error in
+                        if let session {
+                            citationController.endSession(session)
+                        }
+                    } onFailure: { error in
                         progress.completedUnitCount = 2
                         completion(nil, error)
-                        guard let self, let session = citationSessions.removeValue(forKey: uuid) else { return }
-                        citationController.endSession(session)
+                        if let session {
+                            citationController.endSession(session)
+                        }
                     }
                     .disposed(by: disposeBag)
                 }
