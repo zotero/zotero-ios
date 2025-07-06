@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import UniformTypeIdentifiers
 
 @preconcurrency
 import RxSwift
@@ -30,8 +31,18 @@ final class DragDropController {
         let key = item.key
         let libraryId = item.libraryIdentifier
         if let citationController {
+            registerDataRepresentation(for: itemProvider, contentType: .html, citationController: citationController, format: .html)
+            registerDataRepresentation(for: itemProvider, contentType: .plainText, citationController: citationController, format: .text)
+        }
+
+        let dragItem = UIDragItem(itemProvider: itemProvider)
+        dragItem.localObject = item
+        return dragItem
+
+        func registerDataRepresentation(for itemProvider: NSItemProvider, contentType: UTType, citationController: CitationController, format: CitationController.Format) {
             let uuid = UUID()
-            itemProvider.registerDataRepresentation(for: .html, visibility: .all) { completion in
+            itemProvider.registerDataRepresentation(for: contentType, visibility: .all) { completion in
+                let progress = Progress(totalUnitCount: 2)
                 DispatchQueue.main.async {
                     citationController.startSession(
                         for: Set(arrayLiteral: key),
@@ -41,27 +52,26 @@ final class DragDropController {
                     )
                     .do(onSuccess: { [weak self] session in
                         self?.citationSessions[uuid] = session
+                        progress.completedUnitCount = 1
                     })
                     .flatMap({ session -> Single<String> in
-                        return citationController.bibliography(for: session, format: .html)
+                        return citationController.bibliography(for: session, format: format)
                     })
-                    .subscribe { [weak self] html in
-                        completion(html.data(using: .utf8), nil)
+                    .subscribe { [weak self] bibliography in
+                        progress.completedUnitCount = 2
+                        completion(bibliography.data(using: .utf8), nil)
                         guard let self, let session = citationSessions.removeValue(forKey: uuid) else { return }
                         citationController.endSession(session)
                     } onFailure: { [weak self] error in
+                        progress.completedUnitCount = 2
                         completion(nil, error)
                         guard let self, let session = citationSessions.removeValue(forKey: uuid) else { return }
                         citationController.endSession(session)
                     }
                     .disposed(by: disposeBag)
                 }
-                return nil
+                return progress
             }
         }
-
-        let dragItem = UIDragItem(itemProvider: itemProvider)
-        dragItem.localObject = item
-        return dragItem
     }
 }
