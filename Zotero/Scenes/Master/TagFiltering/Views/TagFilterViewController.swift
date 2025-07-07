@@ -103,9 +103,8 @@ class TagFilterViewController: UIViewController {
             self.collectionView = collectionView
             view.insertSubview(collectionView, belowSubview: searchContainer)
 
-            if traitCollection.horizontalSizeClass == .regular && UIDevice.current.userInterfaceIdiom == .pad {
-                collectionView.dropDelegate = self
-            } else {
+            collectionView.dropDelegate = self
+            if traitCollection.horizontalSizeClass != .regular || UIDevice.current.userInterfaceIdiom != .pad {
                 collectionView.keyboardDismissMode = .onDrag
             }
 
@@ -274,28 +273,23 @@ extension TagFilterViewController: UICollectionViewDataSource {
 
 extension TagFilterViewController: UICollectionViewDropDelegate {
     func collectionView(_ collectionView: UICollectionView, dropSessionDidUpdate session: UIDropSession, withDestinationIndexPath destinationIndexPath: IndexPath?) -> UICollectionViewDropProposal {
-        guard delegate?.currentLibrary.metadataEditable == true,    // allow only when library is editable
-              session.localDragSession != nil,                  // allow only local drag session
-              let destinationIndexPath = destinationIndexPath,
-              destinationIndexPath.row < self.collectionView(collectionView, numberOfItemsInSection: destinationIndexPath.section) else {
-            return UICollectionViewDropProposal(operation: .forbidden)
-        }
-
-        let dragItemsLibraryId = session.items.compactMap({ $0.localObject as? RItem }).compactMap({ $0.libraryId }).first
-        if dragItemsLibraryId == delegate?.currentLibrary.identifier {
-            return UICollectionViewDropProposal(operation: .copy, intent: .insertIntoDestinationIndexPath)
-        }
-
-        return UICollectionViewDropProposal(operation: .forbidden)
+        guard let library = delegate?.currentLibrary,
+              library.metadataEditable,
+              let localContext = session.localDragSession?.localContext as? DragSessionItemsLocalContext,
+              localContext.libraryIdentifier == library.identifier,
+              !localContext.keys.isEmpty,
+              let destinationIndexPath,
+              destinationIndexPath.row < viewModel.state.tags.count
+        else { return UICollectionViewDropProposal(operation: .forbidden) }
+        return UICollectionViewDropProposal(operation: .copy, intent: .insertIntoDestinationIndexPath)
     }
 
     func collectionView(_ collectionView: UICollectionView, performDropWith coordinator: UICollectionViewDropCoordinator) {
-        guard let tag = coordinator.destinationIndexPath.flatMap({ tag(for: $0) }), let libraryId = (coordinator.items.first?.dragItem.localObject as? RItem)?.libraryId else { return }
+        guard let indexPath = coordinator.destinationIndexPath, let tag = tag(for: indexPath) else { return }
         switch coordinator.proposal.operation {
         case .copy:
-            dragDropController.keys(from: coordinator.items.map({ $0.dragItem })) { [weak viewModel] keys in
-                viewModel?.process(action: .assignTag(name: tag.tag.name, toItemKeys: keys, libraryId: libraryId))
-            }
+            guard let localContext = coordinator.session.localDragSession?.localContext as? DragSessionItemsLocalContext, !localContext.keys.isEmpty else { break }
+            viewModel.process(action: .assignTag(name: tag.tag.name, toItemKeys: localContext.keys, libraryId: localContext.libraryIdentifier))
 
         default:
             break

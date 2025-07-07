@@ -38,7 +38,13 @@ final class TrashViewController: BaseItemsViewController {
         super.viewDidLoad()
 
         dataSource = TrashTableViewDataSource(viewModel: viewModel, schemaController: controllers.schemaController, fileDownloader: controllers.userControllers?.fileDownloader)
-        handler = ItemsTableViewHandler(tableView: tableView, delegate: self, dataSource: dataSource, dragDropController: controllers.dragDropController)
+        handler = ItemsTableViewHandler(
+            tableView: tableView,
+            delegate: self,
+            dataSource: dataSource,
+            dragDropController: controllers.dragDropController,
+            citationController: controllers.userControllers?.citationController
+        )
         toolbarController = ItemsToolbarController(viewController: self, data: toolbarData, collection: collection, library: library, delegate: self)
         setupRightBarButtonItems(expectedItems: rightBarButtonItemTypes(for: viewModel.state))
         setupDownloadObserver()

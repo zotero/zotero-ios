@@ -7,48 +7,74 @@
 //
 
 import UIKit
+import UniformTypeIdentifiers
+
+@preconcurrency
+import RxSwift
+
+struct DragSessionItemsLocalContext {
+    let libraryIdentifier: LibraryIdentifier
+    let keys: Set<String>
+
+    func createNewContext(with item: RItem) -> Self? {
+        guard libraryIdentifier == item.libraryIdentifier, !keys.contains(item.key) else { return nil }
+        return Self(libraryIdentifier: libraryIdentifier, keys: keys.union([item.key]))
+    }
+}
 
 final class DragDropController {
-    func dragItem(from item: RItem) -> UIDragItem {
-        let provider = NSItemProvider(object: item.key as NSString)
-        let dragItem = UIDragItem(itemProvider: provider)
+    func dragItem(from item: RItem, citationController: CitationController?, disposeBag: DisposeBag) -> UIDragItem {
+        let itemProvider = NSItemProvider()
+        if let citationController {
+            registerDataRepresentation(for: itemProvider, contentType: .html, item: item, citationController: citationController, format: .html, disposeBag: disposeBag)
+            registerDataRepresentation(for: itemProvider, contentType: .plainText, item: item, citationController: citationController, format: .text, disposeBag: disposeBag)
+        }
+        let dragItem = UIDragItem(itemProvider: itemProvider)
         dragItem.localObject = item
         return dragItem
-    }
 
-    func item(from dragItem: UIDragItem) -> RItem? {
-        return dragItem.localObject as? RItem
-    }
-
-    func dragItem(from tag: RTag) -> UIDragItem {
-        let provider = NSItemProvider(object: tag.name as NSString)
-        let dragItem = UIDragItem(itemProvider: provider)
-        dragItem.localObject = tag
-        return dragItem
-    }
-
-    func tag(from dragItem: UIDragItem) -> RTag? {
-        return dragItem.localObject as? RTag
-    }
-
-    func keys(from dragItems: [UIDragItem], completed: @escaping (Set<String>) -> Void) {
-        var keys: Set<String> = []
-
-        let group = DispatchGroup()
-
-        for dragItem in dragItems {
-            group.enter()
-
-            dragItem.itemProvider.loadObject(ofClass: NSString.self) { nsString, _ in
-                if let key = nsString as? String {
-                    keys.insert(key)
+        func registerDataRepresentation(
+            for itemProvider: NSItemProvider,
+            contentType: UTType,
+            item: RItem,
+            citationController: CitationController,
+            format: CitationController.Format,
+            disposeBag: DisposeBag
+        ) {
+            let key = item.key
+            let libraryId = item.libraryIdentifier
+            itemProvider.registerDataRepresentation(for: contentType, visibility: .all) { completion in
+                let progress = Progress(totalUnitCount: 2)
+                DispatchQueue.main.async {
+                    var session: CitationController.Session?
+                    citationController.startSession(
+                        for: Set(arrayLiteral: key),
+                        libraryId: libraryId,
+                        styleId: Defaults.shared.quickCopyStyleId,
+                        localeId: Defaults.shared.quickCopyLocaleId
+                    )
+                    .flatMap({ startedSession -> Single<String> in
+                        session = startedSession
+                        progress.completedUnitCount = 1
+                        return citationController.bibliography(for: startedSession, format: format)
+                    })
+                    .subscribe { bibliography in
+                        progress.completedUnitCount = 2
+                        completion(bibliography.data(using: .utf8), nil)
+                        if let session {
+                            citationController.endSession(session)
+                        }
+                    } onFailure: { error in
+                        progress.completedUnitCount = 2
+                        completion(nil, error)
+                        if let session {
+                            citationController.endSession(session)
+                        }
+                    }
+                    .disposed(by: disposeBag)
                 }
-                group.leave()
+                return progress
             }
-        }
-
-        group.notify(queue: .main) {
-            completed(keys)
         }
     }
 }
