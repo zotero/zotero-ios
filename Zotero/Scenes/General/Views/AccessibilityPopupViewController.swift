@@ -11,15 +11,20 @@ import UIKit
 import RxCocoa
 import RxSwift
 
-final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: UIViewController {
-    let baseHeight: CGFloat = 130
-    let expandedHeight: CGFloat = 262
+final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: UIViewController, UIAdaptivePresentationControllerDelegate {
     private unowned let speechManager: SpeechManager<Delegate>
     private let speedNumberFormatter: NumberFormatter
     private let disposeBag: DisposeBag
     private let readerAction: () -> Void
     private let dismissAction: () -> Void
 
+    var baseHeight: CGFloat {
+        return modalPresentationStyle == .popover ? 130 : 150
+    }
+    var expandedHeight: CGFloat {
+        return modalPresentationStyle == .popover ? 262 : 300
+    }
+    private weak var containerTop: NSLayoutConstraint!
     private weak var speechButton: UIButton!
     private weak var speechContainer: UIView!
     private weak var speedButton: UIButton!
@@ -46,7 +51,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        view.backgroundColor = .systemGroupedBackground
+        view.backgroundColor = .clear
         createView()
         observeState()
 
@@ -58,7 +63,6 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
             speechContainer.layer.cornerRadius = 13
             speechContainer.layer.masksToBounds = true
             speechContainer.isHidden = !speechManager.isSpeaking
-            view.addSubview(speechContainer)
 
             let titleLabel = UILabel()
             titleLabel.text = L10n.Accessibility.Speech.title
@@ -143,14 +147,14 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
             readerConfiguration.imagePadding = 12
             readerConfiguration.image = UIImage(systemName: "text.page.fill", withConfiguration: UIImage.SymbolConfiguration(scale: .small))
             readerConfiguration.attributedTitle = AttributedString(L10n.Accessibility.showReader, attributes: mainButtonsAttributeContainer)
-            readerConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0)
+            readerConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 14, leading: 0, bottom: 14, trailing: 0)
             readerConfiguration.baseBackgroundColor = Asset.Colors.zoteroBlueWithDarkMode.color
             readerConfiguration.baseForegroundColor = .white
             let readerButton = UIButton(configuration: readerConfiguration)
             readerButton.translatesAutoresizingMaskIntoConstraints = false
             readerButton.accessibilityLabel = L10n.Accessibility.showReaderAccessibilityLabel
+            readerButton.setContentCompressionResistancePriority(.required, for: .vertical)
             readerButton.addAction(UIAction(handler: { [weak self] _ in self?.readerAction() }), for: .touchUpInside)
-            view.addSubview(readerButton)
 
             // Speech button
 
@@ -159,7 +163,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
             speechConfiguration.imagePadding = 12
             speechConfiguration.image = UIImage(systemName: "headphones", withConfiguration: UIImage.SymbolConfiguration(scale: .small))
             speechConfiguration.attributedTitle = AttributedString(L10n.Accessibility.showSpeech, attributes: mainButtonsAttributeContainer)
-            speechConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0)
+            speechConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 14, leading: 0, bottom: 14, trailing: 0)
             speechConfiguration.baseBackgroundColor = .systemGray5
             speechConfiguration.baseForegroundColor = .label
             let speechButton = UIButton(configuration: speechConfiguration)
@@ -167,30 +171,56 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
             speechButton.translatesAutoresizingMaskIntoConstraints = false
             speechButton.accessibilityLabel = L10n.Accessibility.showSpeechAccessibilityLabel
             speechButton.addAction(UIAction(handler: { [weak self] _ in self?.speechManager.start() }), for: .touchUpInside)
-            view.addSubview(speechButton)
             self.speechButton = speechButton
+
+            // Container
+            // We use additional container for the whole UI so that we can animate height change when this controller is presented as .pageSheet
+            let container = UIView()
+            container.backgroundColor = .systemGroupedBackground
+            container.translatesAutoresizingMaskIntoConstraints = false
+            container.addSubview(speechButton)
+            container.addSubview(readerButton)
+            container.addSubview(speechContainer)
+            view.addSubview(container)
+
+            // Button which is used to dismiss on tap on the "fake background" area when in .pageSheet mode.
+            let dismissButton = UIButton()
+            dismissButton.translatesAutoresizingMaskIntoConstraints = false
+            dismissButton.addAction(UIAction(handler: { [weak self] _ in self?.presentingViewController?.dismiss(animated: true) }), for: .touchUpInside)
+            view.addSubview(dismissButton)
 
             // Constraints
 
-            speechButtonBottom = view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: speechButton.bottomAnchor, constant: 16)
+            let isSheet = modalPresentationStyle == .pageSheet
+            speechButtonBottom = view.safeAreaLayoutGuide.bottomAnchor.constraint(greaterThanOrEqualTo: speechButton.bottomAnchor, constant: 16)
             speechContainerBottom = view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: speechContainer.bottomAnchor, constant: 16)
+            let containerTop = container.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: isSheet ? expandedHeight - baseHeight : 0)
+            self.containerTop = containerTop
 
             let bottomToActivate = speechManager.isSpeaking ? speechContainerBottom : speechButtonBottom
-
             NSLayoutConstraint.activate([
+                // Container
+                containerTop,
+                container.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+                view.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+                view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+                dismissButton.topAnchor.constraint(equalTo: view.topAnchor),
+                dismissButton.bottomAnchor.constraint(equalTo: container.topAnchor),
+                dismissButton.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                dismissButton.trailingAnchor.constraint(equalTo: view.trailingAnchor),
                 // Reader Button
-                readerButton.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
-                view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: readerButton.trailingAnchor, constant: 16),
-                readerButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
+                readerButton.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
+                container.trailingAnchor.constraint(equalTo: readerButton.trailingAnchor, constant: 16),
+                readerButton.topAnchor.constraint(equalTo: container.topAnchor, constant: 16),
                 // Speech button
                 speechButton.topAnchor.constraint(equalTo: readerButton.bottomAnchor, constant: 16),
+                speechButton.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
+                container.trailingAnchor.constraint(equalTo: speechButton.trailingAnchor, constant: 16),
                 speechButton.heightAnchor.constraint(equalTo: readerButton.heightAnchor),
-                speechButton.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
-                view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: speechButton.trailingAnchor, constant: 16),
                 // Speech container
                 speechContainer.topAnchor.constraint(equalTo: readerButton.bottomAnchor, constant: 16),
-                speechContainer.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
-                view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: speechContainer.trailingAnchor, constant: 16),
+                speechContainer.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
+                container.trailingAnchor.constraint(equalTo: speechContainer.trailingAnchor, constant: 16),
                 bottomToActivate!,
                 // Speech Title
                 titleStackView.topAnchor.constraint(equalTo: speechContainer.topAnchor, constant: 16),
@@ -239,36 +269,56 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
     // MARK: - SpeechManager State
 
     private func process(state: SpeechManager<Delegate>.State) {
-        switch state {
-        case .loading, .speaking:
-            guard speechContainer.isHidden else { return }
-            updatePopup(toHeight: expandedHeight)
-            speechContainer.isHidden = false
-            speechButton.isHidden = true
-            speechContainerBottom.isActive = true
-            speechButtonBottom.isActive = false
+        guard let data = updateToState() else { return }
+        view.layoutIfNeeded()
+        data.toShow.alpha = 0
+        data.toShow.isHidden = false
+        UIView.animate(withDuration: 0.2, animations: {
+            data.toShow.alpha = 1
+            data.toHide.alpha = 0
+            updatePopup(toHeight: data.height)
+            self.view.layoutIfNeeded()
+        }, completion: { _ in
+            data.toHide.isHidden = true
+        })
 
-        case .stopped:
-            guard speechButton.isHidden else { return }
-            speechContainer.isHidden = true
-            speechButton.isHidden = false
-            speechContainerBottom.isActive = false
-            speechButtonBottom.isActive = true
-            updatePopup(toHeight: baseHeight)
+        func updateToState() -> (toHide: UIView, toShow: UIView, height: CGFloat)? {
+            switch state {
+            case .loading, .speaking:
+                guard speechContainer.isHidden else { return nil }
+                speechContainerBottom.isActive = true
+                speechButtonBottom.isActive = false
+                return (speechButton, speechContainer, expandedHeight)
 
-        case .paused:
-            break
+            case .stopped:
+                guard speechButton.isHidden else { return nil }
+                speechContainerBottom.isActive = false
+                speechButtonBottom.isActive = true
+                return (speechContainer, speechButton, baseHeight)
+
+            case .paused:
+                return nil
+            }
         }
 
         func updatePopup(toHeight height: CGFloat) {
-            switch UIDevice.current.userInterfaceIdiom {
-            case .pad:
+            let isCompact = presentingViewController?.view.traitCollection.horizontalSizeClass == .compact
+            if isCompact {
+                containerTop.constant = max(expandedHeight - height, 0)
+            } else {
                 preferredContentSize = CGSize(width: view.frame.width, height: height)
-
-            default:
-                // TODO
-                break
             }
         }
+    }
+
+    // MARK: - UIPopoverPresentationControllerDelegate
+
+    func adaptivePresentationStyle(for controller: UIPresentationController) -> UIModalPresentationStyle {
+        if controller.traitCollection.horizontalSizeClass == .compact && controller.presentationStyle == .popover {
+            return .pageSheet
+        } else if controller.traitCollection.horizontalSizeClass != .compact && controller.presentationStyle == .pageSheet {
+            return .popover
+        }
+        return .none
     }
 }
