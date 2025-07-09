@@ -26,6 +26,7 @@ protocol PdfReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarC
     func showFontSizePicker(sender: UIView, picked: @escaping (CGFloat) -> Void)
     func showDeleteAlertForAnnotation(sender: UIView, delete: @escaping () -> Void)
     func showDocumentChangedAlert(completed: @escaping () -> Void)
+    func showAccessibility<Delegate: SpeechmanagerDelegate>(speechManager: SpeechManager<Delegate>, document: Document, userInterfaceStyle: UIUserInterfaceStyle, sender: UIBarButtonItem, dismissAction: @escaping () -> Void)
 }
 
 protocol PdfAnnotationsCoordinatorDelegate: ReaderSidebarCoordinatorDelegate {
@@ -84,10 +85,10 @@ final class PDFCoordinator: ReaderCoordinator {
 
     func start(animated: Bool) {
         let username = Defaults.shared.username
-        guard let dbStorage = self.controllers.userControllers?.dbStorage,
-              let userId = self.controllers.sessionController.sessionData?.userId,
+        guard let userControllers = controllers.userControllers,
+              let userId = controllers.sessionController.sessionData?.userId,
               !username.isEmpty,
-              let parentNavigationController = self.parentCoordinator?.navigationController
+              let parentNavigationController = parentCoordinator?.navigationController
         else { return }
 
         let settings = Defaults.shared.pdfSettings
@@ -99,19 +100,19 @@ final class PDFCoordinator: ReaderCoordinator {
             DDLogWarn("PDFCoordinator: displayName is empty")
         }
         let handler = PDFReaderActionHandler(
-            dbStorage: dbStorage,
-            annotationPreviewController: self.controllers.annotationPreviewController,
-            pdfThumbnailController: self.controllers.pdfThumbnailController,
-            htmlAttributedStringConverter: self.controllers.htmlAttributedStringConverter,
-            schemaController: self.controllers.schemaController,
-            fileStorage: self.controllers.fileStorage,
-            idleTimerController: self.controllers.idleTimerController,
-            dateParser: self.controllers.dateParser
+            dbStorage: userControllers.dbStorage,
+            annotationPreviewController: controllers.annotationPreviewController,
+            pdfThumbnailController: controllers.pdfThumbnailController,
+            htmlAttributedStringConverter: controllers.htmlAttributedStringConverter,
+            schemaController: controllers.schemaController,
+            fileStorage: controllers.fileStorage,
+            idleTimerController: controllers.idleTimerController,
+            dateParser: controllers.dateParser
         )
         let state = PDFReaderState(
-            url: self.url,
-            key: self.key,
-            parentKey: self.parentKey,
+            url: url,
+            key: key,
+            parentKey: parentKey,
             title: try? controllers.userControllers?.dbStorage.perform(request: ReadFilenameDbRequest(libraryId: libraryId, key: key), on: .main),
             libraryId: libraryId,
             initialPage: page,
@@ -124,12 +125,13 @@ final class PDFCoordinator: ReaderCoordinator {
         )
         let controller = PDFReaderViewController(
             viewModel: ViewModel(initialState: state, handler: handler),
+            pdfWorkerController: userControllers.pdfWorkerController,
             compactSize: UIDevice.current.isCompactWidth(size: parentNavigationController.view.frame.size)
         )
         controller.coordinatorDelegate = self
         handler.delegate = controller
 
-        self.navigationController?.setViewControllers([controller], animated: false)
+        navigationController?.setViewControllers([controller], animated: false)
     }
 }
 
@@ -283,6 +285,31 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         let controller = UIAlertController(title: L10n.warning, message: L10n.Errors.Pdf.documentChanged, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: { _ in completed() }))
         navigationController?.present(controller, animated: true)
+    }
+    
+    func showAccessibility<Delegate: SpeechmanagerDelegate>(speechManager: SpeechManager<Delegate>, document: Document, userInterfaceStyle: UIUserInterfaceStyle, sender: UIBarButtonItem, dismissAction: @escaping () -> Void) {
+        guard let navigationController else { return }
+        let readerAction = { [weak self] in
+            guard let self else { return }
+            self.navigationController?.dismiss(animated: true)
+            showReader(document: document, userInterfaceStyle: userInterfaceStyle)
+        }
+        let controller = AccessibilityPopupViewController(speechManager: speechManager, readerAction: readerAction, dismissAction: dismissAction)
+        controller.presentationController?.delegate = controller
+        if navigationController.view.traitCollection.horizontalSizeClass == .compact {
+            controller.modalPresentationStyle = .pageSheet
+            controller.sheetPresentationController?.detents = [.custom(resolver: { _ in controller.expandedHeight })]
+            controller.sheetPresentationController?.prefersGrabberVisible = false
+        } else {
+            controller.modalPresentationStyle = .popover
+            if #available(iOS 17, *) {
+                controller.popoverPresentationController?.sourceItem = sender
+            } else {
+                controller.popoverPresentationController?.barButtonItem = sender
+            }
+            controller.preferredContentSize = CGSize(width: 300, height: speechManager.isSpeaking ? controller.expandedHeight : controller.baseHeight)
+        }
+        navigationController.present(controller, animated: true)
     }
 }
 
