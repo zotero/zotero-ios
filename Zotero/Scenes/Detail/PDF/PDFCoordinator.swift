@@ -288,15 +288,19 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
     }
     
     func showAccessibility<Delegate: SpeechmanagerDelegate>(speechManager: SpeechManager<Delegate>, document: Document, userInterfaceStyle: UIUserInterfaceStyle, sender: UIBarButtonItem, dismissAction: @escaping () -> Void) {
+        guard let navigationController else { return }
         let readerAction = { [weak self] in
             guard let self else { return }
-            navigationController?.dismiss(animated: true)
+            self.navigationController?.dismiss(animated: true)
             showReader(document: document, userInterfaceStyle: userInterfaceStyle)
         }
         let controller = AccessibilityPopupViewController(speechManager: speechManager, readerAction: readerAction, dismissAction: dismissAction)
-        let presentedController: UIViewController
-        switch UIDevice.current.userInterfaceIdiom {
-        case .pad:
+        controller.presentationController?.delegate = controller
+        if navigationController.view.traitCollection.horizontalSizeClass == .compact {
+            controller.modalPresentationStyle = .pageSheet
+            controller.sheetPresentationController?.detents = [.custom(resolver: { _ in controller.expandedHeight })]
+            controller.sheetPresentationController?.prefersGrabberVisible = false
+        } else {
             controller.modalPresentationStyle = .popover
             if #available(iOS 17, *) {
                 controller.popoverPresentationController?.sourceItem = sender
@@ -304,14 +308,8 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
                 controller.popoverPresentationController?.barButtonItem = sender
             }
             controller.preferredContentSize = CGSize(width: 300, height: speechManager.isSpeaking ? controller.expandedHeight : controller.baseHeight)
-            presentedController = controller
-
-        default:
-            let navigationController = UINavigationController(rootViewController: controller)
-            navigationController.modalPresentationStyle = .formSheet
-            presentedController = navigationController
         }
-        navigationController?.present(presentedController, animated: true)
+        navigationController.present(controller, animated: true)
     }
 }
 
