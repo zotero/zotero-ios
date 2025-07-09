@@ -57,6 +57,7 @@ final class MainViewController: UISplitViewController {
             let masterCoordinator = MasterCoordinator(navigationController: masterController, mainCoordinatorDelegate: self, controllers: controllers)
             masterController.coordinatorDelegate = masterCoordinator
             masterCoordinator.start(animated: false)
+            // In iOS 26 setting the viewControllers here (or in viewDidLoad for that matter), doesn't set the view controller's children initially.
             viewControllers = [masterController]
             self.masterCoordinator = masterCoordinator
         }

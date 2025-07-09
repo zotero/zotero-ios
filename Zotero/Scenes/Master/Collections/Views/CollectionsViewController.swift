@@ -242,6 +242,10 @@ extension CollectionsViewController: BottomSheetObserver { }
 
 extension CollectionsViewController: SplitControllerDelegate {
     var isSplit: Bool {
-        splitViewController?.isCollapsed == false
+        // In iOS 26 split view controller is nil when this view loads for the first time.
+        // We assume in that case that the view is split, as we want in any case for the collection items view controller to load.
+        // In actual split view it shown as the detail, while in collapsed view it is pushed in the stack as the initially presented view controller.
+        guard let splitViewController else { return true }
+        return splitViewController.isCollapsed == false
     }
 }
