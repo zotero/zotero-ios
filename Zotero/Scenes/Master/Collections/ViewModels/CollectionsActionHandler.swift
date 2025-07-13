@@ -11,7 +11,7 @@ import Foundation
 import CocoaLumberjackSwift
 import RealmSwift
 
-struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionHandler {
+final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingActionHandler {
     typealias Action = CollectionsAction
     typealias State = CollectionsState
 
@@ -76,12 +76,12 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
     }
 
     private func downloadAttachments(in collectionId: CollectionIdentifier, viewModel: ViewModel<CollectionsActionHandler>) {
-        backgroundQueue.async { [weak viewModel] in
-            guard let viewModel else { return }
+        backgroundQueue.async { [weak self, weak viewModel] in
+            guard let self, let viewModel else { return }
             do {
                 let items = try dbStorage.perform(request: ReadAllAttachmentsFromCollectionDbRequest(collectionId: collectionId, libraryId: viewModel.state.library.identifier), on: backgroundQueue)
-                let attachments = items.compactMap({ item -> (Attachment, String?)? in
-                    guard let attachment = AttachmentCreator.attachment(for: item, fileStorage: fileStorage, urlDetector: nil) else { return nil }
+                let attachments = items.compactMap({ [weak self] item -> (Attachment, String?)? in
+                    guard let self, let attachment = AttachmentCreator.attachment(for: item, fileStorage: fileStorage, urlDetector: nil) else { return nil }
 
                     switch attachment.type {
                     case .file(_, _, _, let linkType, _):
@@ -107,8 +107,8 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
     }
 
     private func removeDownloads(in collectionId: CollectionIdentifier, viewModel: ViewModel<CollectionsActionHandler>) {
-        backgroundQueue.async { [weak viewModel] in
-            guard let viewModel else { return }
+        backgroundQueue.async { [weak self, weak viewModel] in
+            guard let self, let viewModel else { return }
             do {
                 let items = try dbStorage.perform(request: ReadItemsDbRequest(collectionId: collectionId, libraryId: viewModel.state.library.identifier), on: backgroundQueue)
                 let keys = Set(items.map { $0.key })
@@ -195,10 +195,11 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
         let libraryId = viewModel.state.library.identifier
 
         do {
-            try dbStorage.perform(on: .main, with: { coordinator in
+            try dbStorage.perform(on: .main, with: { [weak self, weak viewModel] coordinator in
+                guard let self, let viewModel else { return }
                 let collections = try coordinator.perform(request: ReadCollectionsDbRequest(libraryId: libraryId))
-                let (library, libraryToken) = try libraryId.observe(in: coordinator, changes: { [weak viewModel] library in
-                    guard let viewModel else { return }
+                let (library, libraryToken) = try libraryId.observe(in: coordinator, changes: { [weak self, weak viewModel] library in
+                    guard let self, let viewModel else { return }
                     update(viewModel: viewModel) { state in
                         state.library = library
                         state.changes = .library
@@ -224,10 +225,10 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
                     let trashCollections = try coordinator.perform(request: ReadCollectionsDbRequest(libraryId: libraryId, trash: true))
                     trashItemCount = trashItems.count + trashCollections.count
 
-                    itemsToken = observeItemCount(in: allItems, for: .all, in: viewModel)
-                    unfiledToken = observeItemCount(in: unfiledItems, for: .unfiled, in: viewModel)
-                    trashItemsToken = observeItemCount(in: trashItems, for: .trash, in: viewModel)
-                    trashCollectionsToken = observeTrashedCollectionCount(in: trashCollections, in: viewModel)
+                    itemsToken = observeItemCount(in: allItems, for: .all, in: viewModel, handler: self)
+                    unfiledToken = observeItemCount(in: unfiledItems, for: .unfiled, in: viewModel, handler: self)
+                    trashItemsToken = observeItemCount(in: trashItems, for: .trash, in: viewModel, handler: self)
+                    trashCollectionsToken = observeTrashedCollectionCount(in: trashCollections, in: viewModel, handler: self)
                 }
 
                 let collectionTree = CollectionTreeBuilder.collections(from: collections, libraryId: libraryId, includeItemCounts: includeItemCounts)
@@ -235,8 +236,8 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
                 collectionTree.append(collection: Collection(custom: .unfiled, itemCount: unfiledItemCount))
                 collectionTree.append(collection: Collection(custom: .trash, itemCount: trashItemCount))
 
-                let collectionsToken = collections.observe(keyPaths: RCollection.observableKeypathsForList, { [weak viewModel] changes in
-                    guard let viewModel else { return }
+                let collectionsToken = collections.observe(keyPaths: RCollection.observableKeypathsForList, { [weak self, weak viewModel] changes in
+                    guard let self, let viewModel else { return }
                     switch changes {
                     case .update(let objects, _, _, _):
                         updateCollections(with: objects, includeItemCounts: includeItemCounts, viewModel: viewModel)
@@ -264,17 +265,22 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
             }
         }
 
-        func observeItemCount(in results: Results<RItem>, for customType: CollectionIdentifier.CustomType, in viewModel: ViewModel<CollectionsActionHandler>) -> NotificationToken {
-            return results.observe({ [weak viewModel] changes in
-                guard let viewModel else { return }
+        func observeItemCount(
+            in results: Results<RItem>,
+            for customType: CollectionIdentifier.CustomType,
+            in viewModel: ViewModel<CollectionsActionHandler>,
+            handler: CollectionsActionHandler
+        ) -> NotificationToken {
+            return results.observe({ [weak handler, weak viewModel] changes in
+                guard let handler, let viewModel else { return }
                 switch changes {
                 case .update(let objects, _, _, _):
                     switch customType {
                     case .trash:
-                        updateTrashCount(itemsCount: objects.count, collectionsCount: nil, in: viewModel)
+                        updateTrashCount(itemsCount: objects.count, collectionsCount: nil, in: viewModel, handler: handler)
 
                     case .all, .publications, .unfiled:
-                        updateItemsCount(objects.count, for: customType, in: viewModel)
+                        updateItemsCount(objects.count, for: customType, in: viewModel, handler: handler)
                     }
 
                 case .initial:
@@ -285,8 +291,8 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
                 }
             })
 
-            func updateItemsCount(_ count: Int, for customType: CollectionIdentifier.CustomType, in viewModel: ViewModel<CollectionsActionHandler>) {
-                update(viewModel: viewModel) { state in
+            func updateItemsCount(_ count: Int, for customType: CollectionIdentifier.CustomType, in viewModel: ViewModel<CollectionsActionHandler>, handler: CollectionsActionHandler) {
+                handler.update(viewModel: viewModel) { state in
                     state.collectionTree.update(collection: Collection(custom: customType, itemCount: count))
 
                     switch customType {
@@ -306,12 +312,12 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
             }
         }
 
-        func observeTrashedCollectionCount(in results: Results<RCollection>, in viewModel: ViewModel<CollectionsActionHandler>) -> NotificationToken {
-            return results.observe({ [weak viewModel] changes in
-                guard let viewModel else { return }
+        func observeTrashedCollectionCount(in results: Results<RCollection>, in viewModel: ViewModel<CollectionsActionHandler>, handler: CollectionsActionHandler) -> NotificationToken {
+            return results.observe({ [weak handler, weak viewModel] changes in
+                guard let handler, let viewModel else { return }
                 switch changes {
                 case .update(let objects, _, _, _):
-                    updateTrashCount(itemsCount: nil, collectionsCount: objects.count, in: viewModel)
+                    updateTrashCount(itemsCount: nil, collectionsCount: objects.count, in: viewModel, handler: handler)
 
                 case .initial:
                     break
@@ -322,19 +328,19 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
             })
         }
 
-        func updateTrashCount(itemsCount: Int?, collectionsCount: Int?, in viewModel: ViewModel<CollectionsActionHandler>) {
+        func updateTrashCount(itemsCount: Int?, collectionsCount: Int?, in viewModel: ViewModel<CollectionsActionHandler>, handler: CollectionsActionHandler) {
             var count = 0
             if let itemsCount {
                 count += itemsCount
             } else {
-                count += (try? dbStorage.perform(request: ReadItemsDbRequest(collectionId: .custom(.trash), libraryId: libraryId), on: .main))?.count ?? 0
+                count += (try? handler.dbStorage.perform(request: ReadItemsDbRequest(collectionId: .custom(.trash), libraryId: libraryId), on: .main))?.count ?? 0
             }
             if let collectionsCount {
                 count += collectionsCount
             } else {
-                count += (try? dbStorage.perform(request: ReadCollectionsDbRequest(libraryId: libraryId, trash: true), on: .main))?.count ?? 0
+                count += (try? handler.dbStorage.perform(request: ReadCollectionsDbRequest(libraryId: libraryId, trash: true), on: .main))?.count ?? 0
             }
-            update(viewModel: viewModel) { state in
+            handler.update(viewModel: viewModel) { state in
                 state.collectionTree.update(collection: Collection(custom: .trash, itemCount: count))
                 state.changes = .trashItemCount
             }
@@ -359,8 +365,8 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
     private func assignItems(keys: Set<String>, to collectionKey: String, in viewModel: ViewModel<CollectionsActionHandler>) {
         let collectionKeys: Set<String> = [collectionKey]
         let request = AssignItemsToCollectionsDbRequest(collectionKeys: collectionKeys, itemKeys: keys, libraryId: viewModel.state.library.identifier)
-        perform(request: request) { [weak viewModel] error in
-            guard let error, let viewModel else { return }
+        perform(request: request) { [weak self, weak viewModel] error in
+            guard let error, let self, let viewModel else { return }
 
             DDLogError("CollectionsActionHandler: can't assign collections to items - \(error)")
 
@@ -372,8 +378,8 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
 
     private func delete<Obj: DeletableObject&Updatable>(object: Obj.Type, keys: [String], in viewModel: ViewModel<CollectionsActionHandler>) {
         let request = MarkCollectionsAsTrashedDbRequest(keys: keys, libraryId: viewModel.state.library.identifier, trashed: true)
-        perform(request: request) { [weak viewModel] error in
-            guard let error, let viewModel else { return }
+        perform(request: request) { [weak self, weak viewModel] error in
+            guard let error, let self, let viewModel else { return }
             DDLogError("CollectionsActionHandler: can't delete object - \(error)")
             update(viewModel: viewModel) { state in
                 state.error = .deletion
