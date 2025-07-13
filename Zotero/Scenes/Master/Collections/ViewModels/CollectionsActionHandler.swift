@@ -32,43 +32,43 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
     func process(action: CollectionsAction, in viewModel: ViewModel<CollectionsActionHandler>) {
         switch action {
         case .startEditing(let type):
-            self.startEditing(type: type, in: viewModel)
+            startEditing(type: type, in: viewModel)
 
         case .assignKeysToCollection(let fromKeys, let toKey):
-            self.assignItems(keys: fromKeys, to: toKey, in: viewModel)
+            assignItems(keys: fromKeys, to: toKey, in: viewModel)
 
         case .deleteCollection(let key):
-            self.delete(object: RCollection.self, keys: [key], in: viewModel)
+            delete(object: RCollection.self, keys: [key], in: viewModel)
 
         case .deleteSearch(let key):
-            self.delete(object: RSearch.self, keys: [key], in: viewModel)
+            delete(object: RSearch.self, keys: [key], in: viewModel)
 
         case .select(let collectionId):
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.selectedCollectionId = collectionId
                 state.changes.insert(.selection)
             }
 
         case .loadData:
-            self.loadData(in: viewModel)
+            loadData(in: viewModel)
 
         case .toggleCollapsed(let collection):
-            self.toggleCollapsed(for: collection, in: viewModel)
+            toggleCollapsed(for: collection, in: viewModel)
 
         case .emptyTrash:
-            self.emptyTrash(in: viewModel)
+            emptyTrash(in: viewModel)
 
         case .expandAll(let selectedCollectionIsRoot):
-            self.set(allCollapsed: false, selectedCollectionIsRoot: selectedCollectionIsRoot, in: viewModel)
+            set(allCollapsed: false, selectedCollectionIsRoot: selectedCollectionIsRoot, in: viewModel)
 
         case .collapseAll(let selectedCollectionIsRoot):
-            self.set(allCollapsed: true, selectedCollectionIsRoot: selectedCollectionIsRoot, in: viewModel)
+            set(allCollapsed: true, selectedCollectionIsRoot: selectedCollectionIsRoot, in: viewModel)
 
         case .loadItemKeysForBibliography(let collection):
-            self.loadItemKeysForBibliography(collection: collection, in: viewModel)
+            loadItemKeysForBibliography(collection: collection, in: viewModel)
 
         case .downloadAttachments(let identifier):
-            self.downloadAttachments(in: identifier, viewModel: viewModel)
+            downloadAttachments(in: identifier, viewModel: viewModel)
 
         case .removeDownloads(let identifier):
             removeDownloads(in: identifier, viewModel: viewModel)
@@ -76,38 +76,33 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
     }
 
     private func downloadAttachments(in collectionId: CollectionIdentifier, viewModel: ViewModel<CollectionsActionHandler>) {
-        self.backgroundQueue.async { [weak viewModel] in
-            guard let viewModel = viewModel else { return }
-            self._downloadAttachments(in: collectionId, viewModel: viewModel)
-        }
-    }
+        backgroundQueue.async { [weak viewModel] in
+            guard let viewModel else { return }
+            do {
+                let items = try dbStorage.perform(request: ReadAllAttachmentsFromCollectionDbRequest(collectionId: collectionId, libraryId: viewModel.state.library.identifier), on: backgroundQueue)
+                let attachments = items.compactMap({ item -> (Attachment, String?)? in
+                    guard let attachment = AttachmentCreator.attachment(for: item, fileStorage: fileStorage, urlDetector: nil) else { return nil }
 
-    private func _downloadAttachments(in collectionId: CollectionIdentifier, viewModel: ViewModel<CollectionsActionHandler>) {
-        do {
-            let items = try self.dbStorage.perform(
-                request: ReadAllAttachmentsFromCollectionDbRequest(collectionId: collectionId, libraryId: viewModel.state.library.identifier),
-                on: self.backgroundQueue
-            )
-            let attachments = items.compactMap({ item -> (Attachment, String?)? in
-                guard let attachment = AttachmentCreator.attachment(for: item, fileStorage: self.fileStorage, urlDetector: nil) else { return nil }
+                    switch attachment.type {
+                    case .file(_, _, _, let linkType, _):
+                        switch linkType {
+                        case .importedFile, .importedUrl:
+                            return (attachment, item.parent?.key)
 
-                switch attachment.type {
-                case .file(_, _, _, let linkType, _):
-                    switch linkType {
-                    case .importedFile, .importedUrl:
-                        return (attachment, item.parent?.key)
+                        default:
+                            break
+                        }
 
-                    default: break
+                    default:
+                        break
                     }
 
-                default: break
-                }
-
-                return nil
-            })
-            self.attachmentDownloader.batchDownload(attachments: Array(attachments))
-        } catch let error {
-            DDLogError("CollectionsActionHandler: download attachments - \(error)")
+                    return nil
+                })
+                attachmentDownloader.batchDownload(attachments: Array(attachments))
+            } catch let error {
+                DDLogError("CollectionsActionHandler: download attachments - \(error)")
+            }
         }
     }
 
@@ -125,8 +120,8 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
     }
 
     private func emptyTrash(in viewModel: ViewModel<CollectionsActionHandler>) {
-        self.perform(request: EmptyTrashDbRequest(libraryId: viewModel.state.library.identifier)) { error in
-            guard let error = error else { return }
+        perform(request: EmptyTrashDbRequest(libraryId: viewModel.state.library.identifier)) { error in
+            guard let error else { return }
             DDLogError("CollectionsActionHandler: can't empty trash - \(error)")
             // TODO: - show error
         }
@@ -134,14 +129,14 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
 
     private func loadItemKeysForBibliography(collection: Collection, in viewModel: ViewModel<CollectionsActionHandler>) {
         do {
-            let items = try self.dbStorage.perform(request: ReadItemsDbRequest(collectionId: collection.identifier, libraryId: viewModel.state.library.identifier), on: .main)
+            let items = try dbStorage.perform(request: ReadItemsDbRequest(collectionId: collection.identifier, libraryId: viewModel.state.library.identifier), on: .main)
             let keys = Set(items.map({ $0.key }))
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.itemKeysForBibliography = .success(keys)
             }
         } catch let error {
             DDLogError("CollectionsActionHandler: can't load bibliography items - \(error)")
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.itemKeysForBibliography = .failure(error)
             }
         }
@@ -150,7 +145,7 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
     private func set(allCollapsed: Bool, selectedCollectionIsRoot: Bool, in viewModel: ViewModel<CollectionsActionHandler>) {
         var changedCollections: Set<CollectionIdentifier> = []
 
-        self.update(viewModel: viewModel) { state in
+        update(viewModel: viewModel) { state in
             changedCollections = state.collectionTree.setAll(collapsed: allCollapsed)
             state.changes = .collapsedState
 
@@ -161,8 +156,8 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
         }
 
         let request = SetCollectionsCollapsedDbRequest(identifiers: changedCollections, collapsed: allCollapsed, libraryId: viewModel.state.library.identifier)
-        self.perform(request: request) { error in
-            guard let error = error else { return }
+        perform(request: request) { error in
+            guard let error else { return }
             DDLogError("CollectionsActionHandler: can't change collapsed all - \(error)")
         }
     }
@@ -174,7 +169,7 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
         let libraryId = viewModel.state.library.identifier
 
         // Update local state
-        self.update(viewModel: viewModel) { state in
+        update(viewModel: viewModel) { state in
             state.collectionTree.set(collapsed: newCollapsed, to: collection.identifier)
             state.changes = .collapsedState
 
@@ -188,27 +183,11 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
 
         // Store change to database
         let request = SetCollectionCollapsedDbRequest(collapsed: !collapsed, identifier: collection.identifier, libraryId: libraryId)
-        self.perform(request: request) { error in
-            guard let error = error else { return }
+        perform(request: request) { error in
+            guard let error else { return }
             DDLogError("CollectionsActionHandler: can't change collapsed - \(error)")
             // TODO: show error
         }
-    }
-
-    private func child(of collectionId: CollectionIdentifier, containsSelectedId selectedId: CollectionIdentifier, in childCollections: [CollectionIdentifier: [CollectionIdentifier]]) -> Bool {
-        guard let children = childCollections[collectionId] else { return false }
-
-        if children.contains(selectedId) {
-            return true
-        }
-
-        for childId in children {
-            if self.child(of: childId, containsSelectedId: selectedId, in: childCollections) {
-                return true
-            }
-        }
-
-        return false
     }
 
     private func loadData(in viewModel: ViewModel<CollectionsActionHandler>) {
@@ -260,14 +239,14 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
                     guard let viewModel else { return }
                     switch changes {
                     case .update(let objects, _, _, _):
-                        update(collections: objects, includeItemCounts: includeItemCounts, viewModel: viewModel)
+                        updateCollections(with: objects, includeItemCounts: includeItemCounts, viewModel: viewModel)
 
                     case .initial, .error:
                         break
                     }
                 })
 
-                self.update(viewModel: viewModel) { state in
+                update(viewModel: viewModel) { state in
                     state.collectionTree = collectionTree
                     state.library = library
                     state.libraryToken = libraryToken
@@ -305,6 +284,26 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
                     break
                 }
             })
+
+            func updateItemsCount(_ count: Int, for customType: CollectionIdentifier.CustomType, in viewModel: ViewModel<CollectionsActionHandler>) {
+                update(viewModel: viewModel) { state in
+                    state.collectionTree.update(collection: Collection(custom: customType, itemCount: count))
+
+                    switch customType {
+                    case .all:
+                        state.changes = .allItemCount
+
+                    case .unfiled:
+                        state.changes = .unfiledItemCount
+
+                    case .trash:
+                        state.changes = .trashItemCount
+
+                    case .publications:
+                        break
+                    }
+                }
+            }
         }
 
         func observeTrashedCollectionCount(in results: Results<RCollection>, in viewModel: ViewModel<CollectionsActionHandler>) -> NotificationToken {
@@ -321,26 +320,6 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
                     break
                 }
             })
-        }
-
-        func updateItemsCount(_ count: Int, for customType: CollectionIdentifier.CustomType, in viewModel: ViewModel<CollectionsActionHandler>) {
-            self.update(viewModel: viewModel) { state in
-                state.collectionTree.update(collection: Collection(custom: customType, itemCount: count))
-
-                switch customType {
-                case .all:
-                    state.changes = .allItemCount
-
-                case .unfiled:
-                    state.changes = .unfiledItemCount
-
-                case .trash:
-                    state.changes = .trashItemCount
-
-                case .publications:
-                    break
-                }
-            }
         }
 
         func updateTrashCount(itemsCount: Int?, collectionsCount: Int?, in viewModel: ViewModel<CollectionsActionHandler>) {
@@ -360,17 +339,32 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
                 state.changes = .trashItemCount
             }
         }
+
+        func updateCollections(with collections: Results<RCollection>, includeItemCounts: Bool, viewModel: ViewModel<CollectionsActionHandler>) {
+            let tree = CollectionTreeBuilder.collections(from: collections, libraryId: viewModel.state.library.identifier, includeItemCounts: includeItemCounts)
+
+            update(viewModel: viewModel) { state in
+                state.collectionTree.replace(identifiersMatching: { $0.isCollection }, with: tree)
+                state.changes = .results
+
+                // Check whether selection still exists
+                if state.collectionTree.collection(for: state.selectedCollectionId) == nil {
+                    state.selectedCollectionId = .custom(.all)
+                    state.changes.insert(.selection)
+                }
+            }
+        }
     }
 
     private func assignItems(keys: Set<String>, to collectionKey: String, in viewModel: ViewModel<CollectionsActionHandler>) {
         let collectionKeys: Set<String> = [collectionKey]
         let request = AssignItemsToCollectionsDbRequest(collectionKeys: collectionKeys, itemKeys: keys, libraryId: viewModel.state.library.identifier)
-        self.perform(request: request) { [weak viewModel] error in
-            guard let error = error, let viewModel = viewModel else { return }
+        perform(request: request) { [weak viewModel] error in
+            guard let error, let viewModel else { return }
 
             DDLogError("CollectionsActionHandler: can't assign collections to items - \(error)")
 
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.error = .collectionAssignment
             }
         }
@@ -378,10 +372,10 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
 
     private func delete<Obj: DeletableObject&Updatable>(object: Obj.Type, keys: [String], in viewModel: ViewModel<CollectionsActionHandler>) {
         let request = MarkCollectionsAsTrashedDbRequest(keys: keys, libraryId: viewModel.state.library.identifier, trashed: true)
-        self.perform(request: request) { [weak viewModel] error in
-            guard let error = error, let viewModel = viewModel else { return }
+        perform(request: request) { [weak viewModel] error in
+            guard let error, let viewModel else { return }
             DDLogError("CollectionsActionHandler: can't delete object - \(error)")
-            self.update(viewModel: viewModel) { state in
+            update(viewModel: viewModel) { state in
                 state.error = .deletion
             }
         }
@@ -411,30 +405,15 @@ struct CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProcessingA
 
             if let parentKey = viewModel.state.collectionTree.parent(of: collection.identifier)?.key {
                 let request = ReadRCollectionDbRequest(libraryId: viewModel.state.library.identifier, key: parentKey)
-                let rCollection = try? self.dbStorage.perform(request: request, on: .main)
+                let rCollection = try? dbStorage.perform(request: request, on: .main)
                 parent = rCollection.flatMap { Collection(object: $0, itemCount: 0) }
             } else {
                 parent = nil
             }
         }
 
-        self.update(viewModel: viewModel) { state in
+        update(viewModel: viewModel) { state in
             state.editingData = (key, name, parent)
-        }
-    }
-
-    private func update(collections: Results<RCollection>, includeItemCounts: Bool, viewModel: ViewModel<CollectionsActionHandler>) {
-        let tree = CollectionTreeBuilder.collections(from: collections, libraryId: viewModel.state.library.identifier, includeItemCounts: includeItemCounts)
-
-        self.update(viewModel: viewModel) { state in
-            state.collectionTree.replace(identifiersMatching: { $0.isCollection }, with: tree)
-            state.changes = .results
-
-            // Check whether selection still exists
-            if state.collectionTree.collection(for: state.selectedCollectionId) == nil {
-                state.selectedCollectionId = .custom(.all)
-                state.changes.insert(.selection)
-            }
         }
     }
 }
