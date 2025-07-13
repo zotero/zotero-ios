@@ -69,7 +69,7 @@ final class RecognizerController {
 
     struct Update {
         enum Kind {
-            case failed(Error)
+            case failed(Swift.Error)
             case cancelled
             case enqueued
             case inProgress
@@ -188,7 +188,7 @@ final class RecognizerController {
                     switch update.kind {
                     case .failed:
                         DDLogError("RecognizerController: \(task) - recognizer failed")
-                        cleanupTask(for: task) { $0?.on(.next(Update(task: task, kind: .failed(.recognizerFailed)))) }
+                        cleanupTask(for: task) { $0?.on(.next(Update(task: task, kind: .failed(Error.recognizerFailed)))) }
 
                     case .cancelled:
                         cleanupTask(for: task) { $0?.on(.next(Update(task: task, kind: .cancelled))) }
@@ -204,7 +204,7 @@ final class RecognizerController {
 
                         case .fullText:
                             DDLogError("RecognizerController: \(task) - PDF worker error")
-                            cleanupTask(for: task) { $0?.on(.next(Update(task: task, kind: .failed(.pdfWorkerError)))) }
+                            cleanupTask(for: task) { $0?.on(.next(Update(task: task, kind: .failed(Error.pdfWorkerError)))) }
                         }
                     }
                 })
@@ -240,7 +240,7 @@ final class RecognizerController {
                         identifiers.append(.title(identifier))
                     }
                     guard !identifiers.isEmpty else {
-                        cleanupTask(for: task) { $0?.on(.next(Update(task: task, kind: .failed(.remoteRecognizerFailed)))) }
+                        cleanupTask(for: task) { $0?.on(.next(Update(task: task, kind: .failed(Error.remoteRecognizerFailed)))) }
                         return
                     }
                     enqueueNextIdentifierLookup(for: task) { state in
@@ -251,7 +251,7 @@ final class RecognizerController {
                 onFailure: { [weak self] error in
                     guard let self else { return }
                     DDLogError("RecognizerController: \(task) - remote recognizer request failed: \(error)")
-                    cleanupTask(for: task) { $0?.on(.next(Update(task: task, kind: .failed(error as! Error)))) }
+                    cleanupTask(for: task) { $0?.on(.next(Update(task: task, kind: .failed(error)))) }
                 }
             )
             .disposed(by: disposeBag)
@@ -280,7 +280,7 @@ final class RecognizerController {
                 return
             }
             guard let (response, pendingIdentifiers) = getResponseAndIdentifiers(state) else {
-                controller.cleanupTask(for: task) { $0?.on(.next(Update(task: task, kind: .failed(.unexpectedState)))) }
+                controller.cleanupTask(for: task) { $0?.on(.next(Update(task: task, kind: .failed(Error.unexpectedState)))) }
                 return
             }
             controller.lookupNextIdentifier(for: task, with: response, pendingIdentifiers: pendingIdentifiers)
@@ -294,7 +294,7 @@ final class RecognizerController {
             return
         }
         guard !pendingIdentifiers.isEmpty else {
-            cleanupTask(for: task) { $0?.on(.next(Update(task: task, kind: .failed(.noRemainingIdentifiersForLookup)))) }
+            cleanupTask(for: task) { $0?.on(.next(Update(task: task, kind: .failed(Error.noRemainingIdentifiersForLookup)))) }
             return
         }
         var remainingIdentifiers = pendingIdentifiers
@@ -448,7 +448,7 @@ final class RecognizerController {
                         try dbStorage.perform(on: backgroundQueue) { coordinator in
                             let items = try coordinator.perform(request: CreateTranslatedItemsDbRequest(responses: [response], schemaController: schemaController, dateParser: dateParser))
                             guard let parent = items.first else {
-                                update = Update(task: task, kind: .failed(.cantCreateParentForItem))
+                                update = Update(task: task, kind: .failed(Error.cantCreateParentForItem))
                                 return
                             }
                             try coordinator.perform(request: MoveItemsToParentDbRequest(itemKeys: [key], parentKey: parent.key, libraryId: libraryId))
@@ -473,7 +473,7 @@ final class RecognizerController {
                         }
                     } catch let error {
                         DDLogError("RecognizerController: can't create parent for item - \(error)")
-                        update = Update(task: task, kind: .failed(error as! Error))
+                        update = Update(task: task, kind: .failed(error))
                     }
                     cleanupTask(for: task) {
                         if let update {
