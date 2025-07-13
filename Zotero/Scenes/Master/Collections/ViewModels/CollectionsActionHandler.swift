@@ -80,8 +80,9 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
             guard let self, let viewModel else { return }
             do {
                 let items = try dbStorage.perform(request: ReadAllAttachmentsFromCollectionDbRequest(collectionId: collectionId, libraryId: viewModel.state.library.identifier), on: backgroundQueue)
-                let attachments = items.compactMap({ [weak self] item -> (Attachment, String?)? in
-                    guard let self, let attachment = AttachmentCreator.attachment(for: item, fileStorage: fileStorage, urlDetector: nil) else { return nil }
+                let fileStorage = self.fileStorage
+                let attachments = items.compactMap({ item -> (Attachment, String?)? in
+                    guard let attachment = AttachmentCreator.attachment(for: item, fileStorage: fileStorage, urlDetector: nil) else { return nil }
 
                     switch attachment.type {
                     case .file(_, _, _, let linkType, _):
