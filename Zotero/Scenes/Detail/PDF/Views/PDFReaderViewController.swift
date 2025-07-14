@@ -1067,12 +1067,13 @@ extension PDFReaderViewController: AccessibilityViewDelegate {
         sidebarController?.setAccessibilityOverlay(height: overlayHeight, animated: isSidebarVisible)
     }
     
-    func showAccessibilityPopup<Delegate: SpeechmanagerDelegate>(speechManager: SpeechManager<Delegate>, sender: UIBarButtonItem, dismissAction: @escaping () -> Void) {
+    func showAccessibilityPopup<Delegate: SpeechmanagerDelegate>(speechManager: SpeechManager<Delegate>, sender: UIBarButtonItem, animated: Bool, dismissAction: @escaping () -> Void) {
         coordinatorDelegate?.showAccessibility(
             speechManager: speechManager,
             document: viewModel.state.document,
             userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle,
             sender: sender,
+            animated: animated,
             dismissAction: dismissAction
         )
     }
