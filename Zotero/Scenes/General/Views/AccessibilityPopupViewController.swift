@@ -11,19 +11,12 @@ import UIKit
 import RxCocoa
 import RxSwift
 
-final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: UIViewController, UIAdaptivePresentationControllerDelegate {
+final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: UIViewController, UIPopoverPresentationControllerDelegate {
     private unowned let speechManager: SpeechManager<Delegate>
     private let speedNumberFormatter: NumberFormatter
     private let disposeBag: DisposeBag
     private let readerAction: () -> Void
     private let dismissAction: () -> Void
-
-    var baseHeight: CGFloat {
-        return modalPresentationStyle == .popover ? 130 : 150
-    }
-    var expandedHeight: CGFloat {
-        return modalPresentationStyle == .popover ? 262 : 300
-    }
     private weak var containerTop: NSLayoutConstraint!
     private weak var speechButton: UIButton!
     private weak var speechContainer: UIView!
@@ -31,11 +24,16 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
     private weak var controlsView: AccessibilitySpeechControlsView<Delegate>!
     private var speechButtonBottom: NSLayoutConstraint!
     private var speechContainerBottom: NSLayoutConstraint!
+    private var ignoreTopUpdate: Bool
+    private var isCompact: Bool {
+        return UIDevice.current.userInterfaceIdiom == .phone || traitCollection.horizontalSizeClass == .compact
+    }
 
     init(speechManager: SpeechManager<Delegate>, readerAction: @escaping () -> Void, dismissAction: @escaping () -> Void) {
         self.speechManager = speechManager
         self.readerAction = readerAction
         self.dismissAction = dismissAction
+        ignoreTopUpdate = false
         speedNumberFormatter = NumberFormatter()
         disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
@@ -51,6 +49,9 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        // preferredContentSize is respected by popover only, so set the height to popover sizes
+        let height = speechManager.state.value.isSpeakingOrLoading ? expandedHeight(isPopover: true) : baseHeight(isPopover: true)
+        preferredContentSize = CGSize(width: 300, height: height)
         view.backgroundColor = .clear
         createView()
         observeState()
@@ -62,7 +63,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
             speechContainer.backgroundColor = .systemBackground
             speechContainer.layer.cornerRadius = 13
             speechContainer.layer.masksToBounds = true
-            speechContainer.isHidden = !speechManager.isSpeaking
+            speechContainer.isHidden = !speechManager.state.value.isSpeakingOrLoading
 
             let titleLabel = UILabel()
             titleLabel.text = L10n.Accessibility.Speech.title
@@ -77,7 +78,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
             xConfiguration.baseBackgroundColor = .systemGray5
             xConfiguration.baseForegroundColor = .darkGray
             xConfiguration.cornerStyle = .capsule
-//            speedConfiguration.contentInsets = .init(top: 6, leading: 16, bottom: 6, trailing: 16)
+            //            speedConfiguration.contentInsets = .init(top: 6, leading: 16, bottom: 6, trailing: 16)
             let xButton = UIButton(configuration: xConfiguration)
             xButton.setContentHuggingPriority(.required, for: .vertical)
             xButton.setContentHuggingPriority(.required, for: .horizontal)
@@ -106,7 +107,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
             voiceButton.setContentHuggingPriority(.required, for: .vertical)
             voiceButton.setContentHuggingPriority(.required, for: .horizontal)
             voiceButton.setContentCompressionResistancePriority(.required, for: .horizontal)
-//            voiceButton.addAction(UIAction(handler: { [weak self] in self? }), for: .touchUpInside)
+            //            voiceButton.addAction(UIAction(handler: { [weak self] in self? }), for: .touchUpInside)
 
             let spacer2 = UIView()
             spacer2.setContentHuggingPriority(.defaultLow, for: .horizontal)
@@ -167,14 +168,15 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
             speechConfiguration.baseBackgroundColor = .systemGray5
             speechConfiguration.baseForegroundColor = .label
             let speechButton = UIButton(configuration: speechConfiguration)
-            speechButton.isHidden = speechManager.isSpeaking
+            speechButton.isHidden = speechManager.state.value.isSpeakingOrLoading
             speechButton.translatesAutoresizingMaskIntoConstraints = false
             speechButton.accessibilityLabel = L10n.Accessibility.showSpeechAccessibilityLabel
             speechButton.addAction(UIAction(handler: { [weak self] _ in self?.speechManager.start() }), for: .touchUpInside)
             self.speechButton = speechButton
 
             // Container
-            // We use additional container for the whole UI so that we can animate height change when this controller is presented as .pageSheet
+            // We use additional container for the whole UI so that we can we can mimic the .pageSheet presentation in .formSheet,
+            // because the .popover always adopts to .formSheet when window size changes and we can't force .pageSheet.
             let container = UIView()
             container.backgroundColor = .systemGroupedBackground
             container.translatesAutoresizingMaskIntoConstraints = false
@@ -191,13 +193,12 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
 
             // Constraints
 
-            let isSheet = modalPresentationStyle == .pageSheet
             speechButtonBottom = view.safeAreaLayoutGuide.bottomAnchor.constraint(greaterThanOrEqualTo: speechButton.bottomAnchor, constant: 16)
             speechContainerBottom = view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: speechContainer.bottomAnchor, constant: 16)
-            let containerTop = container.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: isSheet ? expandedHeight - baseHeight : 0)
+            let containerTop = container.topAnchor.constraint(equalTo: view.topAnchor, constant: 0)
             self.containerTop = containerTop
+            let bottomToActivate = speechManager.state.value.isSpeakingOrLoading ? speechContainerBottom : speechButtonBottom
 
-            let bottomToActivate = speechManager.isSpeaking ? speechContainerBottom : speechButtonBottom
             NSLayoutConstraint.activate([
                 // Container
                 containerTop,
@@ -237,7 +238,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
                 speechContainer.bottomAnchor.constraint(equalTo: additionalControlsStackView.bottomAnchor, constant: 16)
             ])
         }
-        
+
         func observeState() {
             speechManager.state
                 .observe(on: MainScheduler.instance)
@@ -254,6 +255,13 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
         dismissAction()
     }
 
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        guard !ignoreTopUpdate && isCompact else { return }
+        let offset = speechManager.state.value.isSpeakingOrLoading ? expandedHeight(isPopover: false) : baseHeight(isPopover: false)
+        containerTop.constant = view.frame.height - offset
+    }
+
     // MARK: - Actions
 
     private func formatted(modifier: Float) -> String {
@@ -266,10 +274,19 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
         Defaults.shared.speechRateModifier = rateModifier
     }
 
+    func baseHeight(isPopover: Bool) -> CGFloat {
+        return isPopover ? 130 : 150
+    }
+
+    func expandedHeight(isPopover: Bool) -> CGFloat {
+        return isPopover ? 262 : 300
+    }
+
     // MARK: - SpeechManager State
 
     private func process(state: SpeechManager<Delegate>.State) {
         guard let data = updateToState() else { return }
+        ignoreTopUpdate = true
         view.layoutIfNeeded()
         data.toShow.alpha = 0
         data.toShow.isHidden = false
@@ -280,6 +297,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
             self.view.layoutIfNeeded()
         }, completion: { _ in
             data.toHide.isHidden = true
+            self.ignoreTopUpdate = false
         })
 
         func updateToState() -> (toHide: UIView, toShow: UIView, height: CGFloat)? {
@@ -288,13 +306,13 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
                 guard speechContainer.isHidden else { return nil }
                 speechContainerBottom.isActive = true
                 speechButtonBottom.isActive = false
-                return (speechButton, speechContainer, expandedHeight)
+                return (speechButton, speechContainer, expandedHeight(isPopover: traitCollection.horizontalSizeClass == .regular))
 
             case .stopped:
                 guard speechButton.isHidden else { return nil }
                 speechContainerBottom.isActive = false
                 speechButtonBottom.isActive = true
-                return (speechContainer, speechButton, baseHeight)
+                return (speechContainer, speechButton, baseHeight(isPopover: traitCollection.horizontalSizeClass == .regular))
 
             case .paused:
                 return nil
@@ -302,9 +320,8 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
         }
 
         func updatePopup(toHeight height: CGFloat) {
-            let isCompact = presentingViewController?.view.traitCollection.horizontalSizeClass == .compact
             if isCompact {
-                containerTop.constant = max(expandedHeight - height, 0)
+                containerTop.constant = max(view.frame.height - height, 0)
             } else {
                 preferredContentSize = CGSize(width: view.frame.width, height: height)
             }
@@ -314,11 +331,6 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
     // MARK: - UIPopoverPresentationControllerDelegate
 
     func adaptivePresentationStyle(for controller: UIPresentationController) -> UIModalPresentationStyle {
-        if controller.traitCollection.horizontalSizeClass == .compact && controller.presentationStyle == .popover {
-            return .pageSheet
-        } else if controller.traitCollection.horizontalSizeClass != .compact && controller.presentationStyle == .pageSheet {
-            return .popover
-        }
-        return .none
+        return .formSheet
     }
 }

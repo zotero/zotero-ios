@@ -26,7 +26,7 @@ protocol PdfReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarC
     func showFontSizePicker(sender: UIView, picked: @escaping (CGFloat) -> Void)
     func showDeleteAlertForAnnotation(sender: UIView, delete: @escaping () -> Void)
     func showDocumentChangedAlert(completed: @escaping () -> Void)
-    func showAccessibility<Delegate: SpeechmanagerDelegate>(speechManager: SpeechManager<Delegate>, document: Document, userInterfaceStyle: UIUserInterfaceStyle, sender: UIBarButtonItem, dismissAction: @escaping () -> Void)
+    func showAccessibility<Delegate: SpeechmanagerDelegate>(speechManager: SpeechManager<Delegate>, document: Document, userInterfaceStyle: UIUserInterfaceStyle, sender: UIBarButtonItem, animated: Bool, dismissAction: @escaping () -> Void)
 }
 
 protocol PdfAnnotationsCoordinatorDelegate: ReaderSidebarCoordinatorDelegate {
@@ -271,7 +271,14 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         navigationController?.present(controller, animated: true)
     }
     
-    func showAccessibility<Delegate: SpeechmanagerDelegate>(speechManager: SpeechManager<Delegate>, document: Document, userInterfaceStyle: UIUserInterfaceStyle, sender: UIBarButtonItem, dismissAction: @escaping () -> Void) {
+    func showAccessibility<Delegate: SpeechmanagerDelegate>(
+        speechManager: SpeechManager<Delegate>,
+        document: Document,
+        userInterfaceStyle: UIUserInterfaceStyle,
+        sender: UIBarButtonItem,
+        animated: Bool,
+        dismissAction: @escaping () -> Void
+    ) {
         guard let navigationController else { return }
         let readerAction = { [weak self] in
             guard let self else { return }
@@ -279,21 +286,18 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
             showReader(document: document, userInterfaceStyle: userInterfaceStyle)
         }
         let controller = AccessibilityPopupViewController(speechManager: speechManager, readerAction: readerAction, dismissAction: dismissAction)
-        controller.presentationController?.delegate = controller
-        if navigationController.view.traitCollection.horizontalSizeClass == .compact {
-            controller.modalPresentationStyle = .pageSheet
-            controller.sheetPresentationController?.detents = [.custom(resolver: { _ in controller.expandedHeight })]
-            controller.sheetPresentationController?.prefersGrabberVisible = false
-        } else {
+        if UIDevice.current.userInterfaceIdiom == .pad {
             controller.modalPresentationStyle = .popover
+            controller.popoverPresentationController?.delegate = controller
             if #available(iOS 17, *) {
                 controller.popoverPresentationController?.sourceItem = sender
             } else {
                 controller.popoverPresentationController?.barButtonItem = sender
             }
-            controller.preferredContentSize = CGSize(width: 300, height: speechManager.isSpeaking ? controller.expandedHeight : controller.baseHeight)
+        } else {
+            controller.modalPresentationStyle = .formSheet
         }
-        navigationController.present(controller, animated: true)
+        navigationController.present(controller, animated: animated)
     }
 }
 
