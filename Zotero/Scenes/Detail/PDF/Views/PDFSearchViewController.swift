@@ -62,6 +62,10 @@ final class PDFSearchViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupViews()
+        if let text {
+            searchBar.text = text
+            search(for: text)
+        }
 
         func setupViews() {
             let tableView = UITableView()
