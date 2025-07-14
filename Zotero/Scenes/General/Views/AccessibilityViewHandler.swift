@@ -11,14 +11,14 @@ import UIKit
 import RxSwift
 
 protocol AccessibilityViewDelegate: AnyObject {
-    func showAccessibilityPopup<Delegate: SpeechmanagerDelegate>(speechManager: SpeechManager<Delegate>, sender: UIBarButtonItem, dismissAction: @escaping () -> Void)
+    func showAccessibilityPopup<Delegate: SpeechmanagerDelegate>(speechManager: SpeechManager<Delegate>, sender: UIBarButtonItem, animated: Bool, dismissAction: @escaping () -> Void)
     func accessibilityOverlayChanged(overlayHeight: CGFloat)
 }
 
 final class AccessibilityViewHandler<Delegate: SpeechmanagerDelegate> {
     let navbarButtonTag = 4
     private unowned let viewController: UIViewController
-    private let speechManager: SpeechManager<Delegate>
+    let speechManager: SpeechManager<Delegate>
     private let disposeBag: DisposeBag
 
     private weak var activeOverlay: AccessibilityReaderOverlayView<Delegate>?
@@ -52,10 +52,10 @@ final class AccessibilityViewHandler<Delegate: SpeechmanagerDelegate> {
         return speechButton
     }
 
-    func showSpeech(sender: UIBarButtonItem? = nil) {
+    func showSpeech(sender: UIBarButtonItem? = nil, isCompact: Bool = false, animated: Bool = true) {
         guard let sender = sender ?? viewController.navigationItem.leftBarButtonItems?.first(where: { $0.tag == navbarButtonTag }) else { return }
         hideOverlay()
-        delegate?.showAccessibilityPopup(speechManager: speechManager, sender: sender, dismissAction: { [weak self] in
+        delegate?.showAccessibilityPopup(speechManager: speechManager, sender: sender, animated: animated, dismissAction: { [weak self] in
             self?.showOverlayIfNeeded()
         })
     }
