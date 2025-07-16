@@ -98,7 +98,10 @@ final class ItemsToolbarController {
         }
 
         func createEditingToolbarItems(from actions: [ItemAction]) -> [UIBarButtonItem] {
-            let spacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
+            let innerFlexibleSpace = UIBarButtonItem.flexibleSpace()
+            if #available(iOS 26.0.0, *) {
+                innerFlexibleSpace.hidesSharedBackground = false
+            }
             let items = actions.map({ action -> UIBarButtonItem in
                 let item = UIBarButtonItem(image: action.image, style: .plain, target: nil, action: nil)
                 switch action.type {
@@ -142,7 +145,7 @@ final class ItemsToolbarController {
                 .disposed(by: disposeBag)
                 return item
             })
-            return [spacer] + (0..<(2 * items.count)).map({ idx -> UIBarButtonItem in idx % 2 == 0 ? items[idx / 2] : spacer })
+            return [.flexibleSpace()] + items.enumerated().flatMap({ index, item in [item, index < items.count - 1 ? innerFlexibleSpace : .flexibleSpace()] })
         }
 
         func createNormalToolbarItems(for filters: [ItemsFilter]) -> [UIBarButtonItem] {
