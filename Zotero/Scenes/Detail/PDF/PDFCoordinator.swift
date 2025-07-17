@@ -26,7 +26,15 @@ protocol PdfReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarC
     func showFontSizePicker(sender: UIView, picked: @escaping (CGFloat) -> Void)
     func showDeleteAlertForAnnotation(sender: UIView, delete: @escaping () -> Void)
     func showDocumentChangedAlert(completed: @escaping () -> Void)
-    func showAccessibility<Delegate: SpeechmanagerDelegate>(speechManager: SpeechManager<Delegate>, document: Document, userInterfaceStyle: UIUserInterfaceStyle, sender: UIBarButtonItem, animated: Bool, dismissAction: @escaping () -> Void)
+    func showAccessibility<Delegate: SpeechmanagerDelegate>(
+        speechManager: SpeechManager<Delegate>,
+        document: Document,
+        userInterfaceStyle: UIUserInterfaceStyle,
+        sender: UIBarButtonItem,
+        animated: Bool,
+        isFormSheet: @escaping () -> Bool,
+        dismissAction: @escaping () -> Void
+    )
 }
 
 protocol PdfAnnotationsCoordinatorDelegate: ReaderSidebarCoordinatorDelegate {
@@ -293,6 +301,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         userInterfaceStyle: UIUserInterfaceStyle,
         sender: UIBarButtonItem,
         animated: Bool,
+        isFormSheet: @escaping () -> Bool,
         dismissAction: @escaping () -> Void
     ) {
         guard let navigationController else { return }
@@ -301,7 +310,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
             self.navigationController?.dismiss(animated: true)
             showReader(document: document, userInterfaceStyle: userInterfaceStyle)
         }
-        let controller = AccessibilityPopupViewController(speechManager: speechManager, readerAction: readerAction, dismissAction: dismissAction)
+        let controller = AccessibilityPopupViewController(speechManager: speechManager, isFormSheet: isFormSheet, readerAction: readerAction, dismissAction: dismissAction)
         if UIDevice.current.userInterfaceIdiom == .pad {
             controller.modalPresentationStyle = .popover
             controller.popoverPresentationController?.delegate = controller
