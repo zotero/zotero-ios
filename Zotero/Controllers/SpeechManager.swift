@@ -27,13 +27,13 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
     enum State {
         case speaking, paused, stopped, loading
 
-        var isSpeakingOrLoading: Bool {
+        var isStopped: Bool {
             switch self {
-            case .speaking, .loading:
-                return true
-
-            case .stopped, .paused:
+            case .speaking, .loading, .paused:
                 return false
+
+            case .stopped:
+                return true
             }
         }
     }

@@ -39,6 +39,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
     weak var sidebarControllerLeft: NSLayoutConstraint?
     weak var documentController: PDFDocumentViewController?
     weak var documentControllerLeft: NSLayoutConstraint?
+    weak var documentControllerBottom: NSLayoutConstraint?
     weak var annotationToolbarController: AnnotationToolbarViewController?
     private var documentTop: NSLayoutConstraint!
     var annotationToolbarHandler: AnnotationToolbarHandler?
@@ -207,7 +208,11 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         viewModel.process(action: .changeIdleTimerDisabled(true))
         view.backgroundColor = .systemGray6
         setupViews()
-        accessibilityHandler = AccessibilityViewHandler(viewController: self, speechManager: SpeechManager(delegate: self, speechRateModifier: Defaults.shared.speechRateModifier))
+        accessibilityHandler = AccessibilityViewHandler(
+            viewController: self,
+            documentContainer: documentController!.view,
+            speechManager: SpeechManager(delegate: self, speechRateModifier: Defaults.shared.speechRateModifier)
+        )
         accessibilityHandler.delegate = self
         setupObserving()
 
@@ -266,6 +271,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
             view.addSubview(forwardButton)
 
             let documentLeftConstraint = documentController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor)
+            let documentBottomConstraint = view.bottomAnchor.constraint(equalTo: documentController.view.bottomAnchor)
             let sidebarLeftConstraint = sidebarController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: -PDFReaderLayout.sidebarWidth)
             documentTop = documentController.view.topAnchor.constraint(equalTo: view.topAnchor)
 
@@ -284,7 +290,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
                 separator.bottomAnchor.constraint(equalTo: view.bottomAnchor),
                 documentController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
                 documentTop,
-                documentController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+                documentBottomConstraint,
                 documentLeftConstraint,
                 backButton.leadingAnchor.constraint(equalTo: documentController.view.leadingAnchor, constant: 20),
                 documentController.view.bottomAnchor.constraint(equalTo: backButton.bottomAnchor, constant: 40),
@@ -295,6 +301,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
 
             self.documentController = documentController
             documentControllerLeft = documentLeftConstraint
+            documentControllerBottom = documentBottomConstraint
             self.sidebarController = sidebarController
             sidebarControllerLeft = sidebarLeftConstraint
             annotationToolbarController = annotationToolbar
@@ -408,6 +415,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
         updateUserInterfaceStyleIfNeeded(previousTraitCollection: previousTraitCollection)
+        accessibilityHandler.overlayTypeDidChange()
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
@@ -1063,17 +1071,28 @@ extension PDFReaderViewController: SpeechmanagerDelegate {
 }
 
 extension PDFReaderViewController: AccessibilityViewDelegate {
-    func accessibilityOverlayChanged(overlayHeight: CGFloat) {
-        sidebarController?.setAccessibilityOverlay(height: overlayHeight, animated: isSidebarVisible)
+    func accessibilityOverlayChanged(overlayHeight: CGFloat, isOverlay: Bool) {
+        if isOverlay {
+            sidebarController?.setAccessibilityOverlay(height: overlayHeight, animated: isSidebarVisible)
+        } else {
+            documentControllerBottom?.constant = overlayHeight
+        }
     }
     
-    func showAccessibilityPopup<Delegate: SpeechmanagerDelegate>(speechManager: SpeechManager<Delegate>, sender: UIBarButtonItem, animated: Bool, dismissAction: @escaping () -> Void) {
+    func showAccessibilityPopup<Delegate: SpeechmanagerDelegate>(
+        speechManager: SpeechManager<Delegate>,
+        sender: UIBarButtonItem,
+        animated: Bool,
+        isFormSheet: @escaping () -> Bool,
+        dismissAction: @escaping () -> Void
+    ) {
         coordinatorDelegate?.showAccessibility(
             speechManager: speechManager,
             document: viewModel.state.document,
             userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle,
             sender: sender,
             animated: animated,
+            isFormSheet: isFormSheet,
             dismissAction: dismissAction
         )
     }
