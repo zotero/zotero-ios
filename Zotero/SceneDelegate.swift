@@ -70,12 +70,13 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
         DDLogInfo("SceneDelegate: app opened by \(URLContexts)")
         guard let urlContext = URLContexts.first else { return }
-        coordinator.showScreen(for: urlContext, animated: (UIApplication.shared.applicationState == .active))
+        coordinator.showScreen(for: urlContext, animated: (UIApplication.shared.applicationState == .active), completion: nil)
     }
 
     func windowScene(_ windowScene: UIWindowScene, performActionFor shortcutItem: UIApplicationShortcutItem, completionHandler: @escaping (Bool) -> Void) {
         if shortcutItem.type == NSUserActivity.mainId {
-            completionHandler(coordinator.showMainScreen(with: .myLibrary(), session: windowScene.session))
+            let openItems: [OpenItem] = windowScene.userActivity?.restoredStateData?.openItems ?? []
+            completionHandler(coordinator.showMainScreen(with: .myLibrary(openItems: openItems), session: windowScene.session))
         }
         completionHandler(false)
     }
@@ -108,5 +109,9 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     func stateRestorationActivity(for scene: UIScene) -> NSUserActivity? {
         return scene.userActivity
+    }
+
+    func scene(_ scene: UIScene, continue userActivity: NSUserActivity) {
+        coordinator.continueUserActivity(userActivity, for: scene.session.persistentIdentifier)
     }
 }

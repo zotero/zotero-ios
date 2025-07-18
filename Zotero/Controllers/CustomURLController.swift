@@ -19,29 +19,32 @@ final class CustomURLController {
 
     enum Kind {
         case itemDetail(key: String, libraryId: LibraryIdentifier, preselectedChildKey: String?)
-        case itemReader(presentation: ItemPresentation, attachment: Attachment, isAvailable: Bool)
+        case itemReader(presentation: ItemPresentation)
     }
 
     private unowned let dbStorage: DbStorage
-    private unowned let fileStorage: FileStorage
+    private unowned let openItemsController: OpenItemsController
 
-    init(dbStorage: DbStorage, fileStorage: FileStorage) {
+    init(dbStorage: DbStorage, openItemsController: OpenItemsController) {
         self.dbStorage = dbStorage
-        self.fileStorage = fileStorage
+        self.openItemsController = openItemsController
     }
 
-    func process(url: URL) -> Kind? {
+    func process(url: URL, completion: @escaping(Kind?) -> Void) {
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
               components.scheme == "zotero",
               let action = components.host.flatMap({ CustomURLAction(rawValue: $0) })
-        else { return nil }
+        else {
+            completion(nil)
+            return
+        }
 
         switch action {
         case .select:
-            return select(path: components.path)
+            completion(select(path: components.path))
 
         case .openItem:
-            return openItem(path: components.path, queryItems: components.queryItems ?? [])
+            openItem(path: components.path, queryItems: components.queryItems ?? [], completion: completion)
         }
 
         func select(path: String) -> Kind? {
@@ -59,67 +62,13 @@ final class CustomURLController {
             }
         }
 
-        func openItem(path: String, queryItems: [URLQueryItem]) -> Kind? {
-            guard let (key, libraryId, page, annotation) = extractProperties(from: path, and: queryItems, extractPageAndAnnotation: true, allowZotFileFormat: true) else { return nil }
-            return loadItemReaderKind(on: page, annotation: annotation, key: key, libraryId: libraryId)
-
-            func loadItemReaderKind(on page: Int?, annotation: String?, key: String, libraryId: LibraryIdentifier) -> Kind? {
-                var library: Library?
-                var item: RItem?
-                do {
-                    try dbStorage.perform(on: .main) { coordinator in
-                        library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
-                        item = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
-                    }
-                } catch let error {
-                    DDLogError("CustomURLConverter: library (\(libraryId)) or item (\(key)) not found - \(error)")
-                    return nil
-                }
-                guard let library, let item else { return nil }
-                guard let attachment = AttachmentCreator.attachment(for: item, fileStorage: fileStorage, urlDetector: nil) else {
-                    DDLogInfo("CustomURLConverter: trying to open incorrect item - \(item.rawType)")
-                    return nil
-                }
-                guard case .file(let filename, let contentType, let location, _, _) = attachment.type else {
-                    DDLogInfo("CustomURLConverter: trying to open invalid attachment type \(attachment.type)")
-                    return nil
-                }
-                let parentKey = item.parent?.key
-                let file = Files.attachmentFile(in: libraryId, key: attachment.key, filename: filename, contentType: contentType)
-                let url = file.createUrl()
-                var presentation: ItemPresentation?
-                switch contentType {
-                case "application/pdf":
-                    presentation = .pdf(library: library, key: key, parentKey: parentKey, url: url, page: page, preselectedAnnotationKey: annotation, previewRects: nil)
-
-                case "text/html":
-                    if FeatureGates.enabled.contains(.htmlEpubReader) {
-                        presentation = .html(library: library, key: key, parentKey: parentKey, url: url)
-                    }
-
-                case "application/epub+zip":
-                    if FeatureGates.enabled.contains(.htmlEpubReader) {
-                        presentation = .epub(library: library, key: key, parentKey: parentKey, url: url)
-                    }
-
-                default:
-                    break
-                }
-                guard let presentation else {
-                    DDLogInfo("CustomURLConverter: trying to open invalid content type \(contentType)")
-                    return nil
-                }
-                switch location {
-                case .local:
-                    return .itemReader(presentation: presentation, attachment: attachment, isAvailable: true)
-
-                case .remote, .localAndChangedRemotely:
-                    return .itemReader(presentation: presentation, attachment: attachment, isAvailable: false)
-
-                case .remoteMissing:
-                    DDLogInfo("CustomURLConverter: attachment \(attachment.key) missing remotely")
-                    return nil
-                }
+        func openItem(path: String, queryItems: [URLQueryItem], completion: @escaping(Kind?) -> Void) {
+            guard let (key, libraryId, page, annotation) = extractProperties(from: path, and: queryItems, extractPageAndAnnotation: true, allowZotFileFormat: true) else {
+                completion(nil)
+                return
+            }
+            openItemsController.loadPresentation(for: key, libraryId: libraryId, page: page, preselectedAnnotationKey: annotation, previewRects: nil) { presentation in
+                completion(presentation.flatMap { Kind.itemReader(presentation: $0) })
             }
         }
 
