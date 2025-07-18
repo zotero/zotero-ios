@@ -87,6 +87,9 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
     var isPaused: Bool {
         return synthetizer.isPaused
     }
+    var currentVoice: AVSpeechSynthesisVoice? {
+        return currentIndex.flatMap({ cachedPages[$0] })?.voice
+    }
 
     init(delegate: Delegate, speechRateModifier: Float) {
         cachedPages = [:]
