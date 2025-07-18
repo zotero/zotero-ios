@@ -1218,6 +1218,7 @@
 		B3F3D63C255EC98600F310C2 /* AnnotationViewButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F3D63B255EC98600F310C2 /* AnnotationViewButton.swift */; };
 		B3F3D640255ECA4700F310C2 /* AnnotationViewText.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F3D63F255ECA4700F310C2 /* AnnotationViewText.swift */; };
 		B3F3D644255ECF3500F310C2 /* AnnotationViewSeparator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F3D643255ECF3500F310C2 /* AnnotationViewSeparator.swift */; };
+		B3F451E72E2A57380051E377 /* SpeechVoicePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F451E62E2A57380051E377 /* SpeechVoicePickerView.swift */; };
 		B3F47E0025B5F550006FA96F /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B30B550424B85A6200F94B59 /* Images.xcassets */; };
 		B3F49FB628B8C3F600A1F3E8 /* AnnotationEditability.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F49FB528B8C3F600A1F3E8 /* AnnotationEditability.swift */; };
 		B3F4E4EC2A4DAA7D00820718 /* UpdatableObjectSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F4E4EB2A4DAA7D00820718 /* UpdatableObjectSpec.swift */; };
@@ -2234,6 +2235,7 @@
 		B3F3D63B255EC98600F310C2 /* AnnotationViewButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationViewButton.swift; sourceTree = "<group>"; };
 		B3F3D63F255ECA4700F310C2 /* AnnotationViewText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationViewText.swift; sourceTree = "<group>"; };
 		B3F3D643255ECF3500F310C2 /* AnnotationViewSeparator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationViewSeparator.swift; sourceTree = "<group>"; };
+		B3F451E62E2A57380051E377 /* SpeechVoicePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechVoicePickerView.swift; sourceTree = "<group>"; };
 		B3F47C00243B339F004F8B1E /* TranslatorsControllerSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorsControllerSpec.swift; sourceTree = "<group>"; };
 		B3F47C04243B4BC0004F8B1E /* Bundled */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Bundled; sourceTree = "<group>"; };
 		B3F49FB528B8C3F600A1F3E8 /* AnnotationEditability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationEditability.swift; sourceTree = "<group>"; };
@@ -3987,9 +3989,9 @@
 		B3DCDF00240912060039ED0D /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				B384B5C12E1539C900D023C6 /* AccessibilitySpeechControlsView.swift */,
 				B3969A3F2DE9AAEF00425FF3 /* AccessibilityPopupViewController.swift */,
 				B37352B02E141F990078BB00 /* AccessibilityReaderOverlayView.swift */,
+				B384B5C12E1539C900D023C6 /* AccessibilitySpeechControlsView.swift */,
 				B37352AE2E140DE70078BB00 /* AccessibilityViewHandler.swift */,
 				B3DCDF03240912060039ED0D /* ActivityIndicatorView.swift */,
 				B347F2B924DC4D5D000D5FF6 /* CapHeightLabel.swift */,
@@ -4020,6 +4022,7 @@
 				B361820E24C9B9E800B30D56 /* SelectableTextField.swift */,
 				B3DCDF1A24091EBE0039ED0D /* SinglePickerRow.swift */,
 				B3DCDF1C24091EC40039ED0D /* SinglePickerView.swift */,
+				B3F451E62E2A57380051E377 /* SpeechVoicePickerView.swift */,
 				B32B4F942475544700F78A05 /* SyncToolbarController.swift */,
 				B3830CF425545EE400910FE0 /* TagPickerCell.swift */,
 				B3830CF525545EE400910FE0 /* TagPickerCell.xib */,
@@ -5722,6 +5725,7 @@
 				618404262A4456A9005AAF22 /* IdentifierLookupController.swift in Sources */,
 				B305662223FC051F003304F2 /* StoreVersionSyncAction.swift in Sources */,
 				B3BC25CD247E6BA000AC27B5 /* DateParser.swift in Sources */,
+				B3F451E72E2A57380051E377 /* SpeechVoicePickerView.swift in Sources */,
 				B305662523FC051F003304F2 /* RevertLibraryUpdatesSyncAction.swift in Sources */,
 				B361820D24C9B9D900B30D56 /* NoRotationHostingController.swift in Sources */,
 				B3ED79372C9C6678004F5C9A /* ItemsTableViewObject.swift in Sources */,

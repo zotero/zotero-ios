@@ -1080,7 +1080,8 @@ extension PDFReaderViewController: AccessibilityViewDelegate {
         sender: UIBarButtonItem,
         animated: Bool,
         isFormSheet: @escaping () -> Bool,
-        dismissAction: @escaping () -> Void
+        dismissAction: @escaping () -> Void,
+        voiceChangeAction: @escaping (AVSpeechSynthesisVoice) -> Void
     ) {
         coordinatorDelegate?.showAccessibility(
             speechManager: speechManager,
@@ -1089,7 +1090,8 @@ extension PDFReaderViewController: AccessibilityViewDelegate {
             sender: sender,
             animated: animated,
             isFormSheet: isFormSheet,
-            dismissAction: dismissAction
+            dismissAction: dismissAction,
+            voiceChangeAction: voiceChangeAction
         )
     }
 }
