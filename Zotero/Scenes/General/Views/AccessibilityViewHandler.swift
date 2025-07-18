@@ -6,6 +6,7 @@
 //  Copyright © 2025 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import AVFAudio
 import UIKit
 
 import RxSwift
@@ -16,7 +17,8 @@ protocol AccessibilityViewDelegate: AnyObject {
         sender: UIBarButtonItem,
         animated: Bool,
         isFormSheet: @escaping () -> Bool,
-        dismissAction: @escaping () -> Void
+        dismissAction: @escaping () -> Void,
+        voiceChangeAction: @escaping (AVSpeechSynthesisVoice) -> Void
     )
     func accessibilityOverlayChanged(overlayHeight: CGFloat, isOverlay: Bool)
 }
@@ -81,9 +83,22 @@ final class AccessibilityViewHandler<Delegate: SpeechmanagerDelegate> {
     func showSpeech(sender: UIBarButtonItem? = nil, isCompact: Bool = false, animated: Bool = true) {
         guard let sender = sender ?? viewController.navigationItem.leftBarButtonItems?.first(where: { $0.tag == navbarButtonTag }) else { return }
         hideOverlay()
-        delegate?.showAccessibilityPopup(speechManager: speechManager, sender: sender, animated: animated, isFormSheet: { [weak self] in self?.isFormSheet ?? false }, dismissAction: { [weak self] in
-            self?.showOverlayIfNeeded()
-        })
+        delegate?.showAccessibilityPopup(
+            speechManager: speechManager,
+            sender: sender,
+            animated: animated,
+            isFormSheet: { [weak self] in self?.isFormSheet ?? false },
+            dismissAction: { [weak self] in
+                self?.showOverlayIfNeeded()
+            },
+            voiceChangeAction: { [weak self] voice in
+                self?.processVoiceChange(toVoice: voice)
+            }
+        )
+    }
+
+    private func processVoiceChange(toVoice voice: AVSpeechSynthesisVoice) {
+        // TODO
     }
 
     private func update(state: SpeechManager<Delegate>.State) {

@@ -6,6 +6,7 @@
 //  Copyright © 2023 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import AVFAudio
 import UIKit
 import SwiftUI
 
@@ -33,7 +34,8 @@ protocol PdfReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarC
         sender: UIBarButtonItem,
         animated: Bool,
         isFormSheet: @escaping () -> Bool,
-        dismissAction: @escaping () -> Void
+        dismissAction: @escaping () -> Void,
+        voiceChangeAction: @escaping (AVSpeechSynthesisVoice) -> Void
     )
 }
 
@@ -302,7 +304,8 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         sender: UIBarButtonItem,
         animated: Bool,
         isFormSheet: @escaping () -> Bool,
-        dismissAction: @escaping () -> Void
+        dismissAction: @escaping () -> Void,
+        voiceChangeAction: @escaping (AVSpeechSynthesisVoice) -> Void
     ) {
         guard let navigationController else { return }
         let readerAction = { [weak self] in
@@ -310,7 +313,14 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
             self.navigationController?.dismiss(animated: true)
             showReader(document: document, userInterfaceStyle: userInterfaceStyle)
         }
-        let controller = AccessibilityPopupViewController(speechManager: speechManager, isFormSheet: isFormSheet, readerAction: readerAction, dismissAction: dismissAction)
+        let controller = AccessibilityPopupViewController(
+            speechManager: speechManager,
+            isFormSheet: isFormSheet,
+            readerAction: readerAction,
+            dismissAction: dismissAction,
+            voiceChangeAction: voiceChangeAction
+        )
+        controller.coordinatorDelegate = self
         if UIDevice.current.userInterfaceIdiom == .pad {
             controller.modalPresentationStyle = .popover
             controller.popoverPresentationController?.delegate = controller
@@ -323,6 +333,20 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
             controller.modalPresentationStyle = .formSheet
         }
         navigationController.present(controller, animated: animated)
+    }
+}
+
+extension PDFCoordinator: AccessibilityPopoupCoordinatorDelegate {
+    func showVoicePicker(for voice: AVSpeechSynthesisVoice, selectionChanged: @escaping (AVSpeechSynthesisVoice) -> Void) {
+        guard let navigationController else { return }
+        let view = SpeechVoicePickerView(selectedVoice: voice, selectionChanged: selectionChanged)
+        let controller = UIHostingController(rootView: view)
+        controller.modalPresentationStyle = .formSheet
+        if let presentedController = navigationController.presentedViewController {
+            presentedController.present(controller, animated: true)
+        } else {
+            navigationController.present(controller, animated: true)
+        }
     }
 }
 
