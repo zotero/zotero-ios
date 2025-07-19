@@ -172,21 +172,22 @@ final class AppDelegate: UIResponder {
     }
 
     private func setupAppearance() {
-        // Navigation bars
-        let appearance = UINavigationBarAppearance()
-        appearance.configureWithDefaultBackground()
-        UINavigationBar.appearance().scrollEdgeAppearance = appearance
-        UINavigationBar.appearance().tintColor = Asset.Colors.zoteroBlue.color
-        // Toolbars
-        UIToolbar.appearance().tintColor = Asset.Colors.zoteroBlue.color
-        // Buttons
-        UIButton.appearance().tintColor = Asset.Colors.zoteroBlue.color
-        // Search bar
-        UISearchBar.appearance().tintColor = Asset.Colors.zoteroBlue.color
         if #available(iOS 26.0.0, *) {
             // Potential fix for NSInternalInconsistencyException crashes, with reason "Invalid parameter not satisfying: parentEnvironment != nil"
             UITableView.appearance().selectionFollowsFocus = false
             UICollectionView.appearance().selectionFollowsFocus = false
+        } else {
+            // Navigation bars
+            let appearance = UINavigationBarAppearance()
+            appearance.configureWithDefaultBackground()
+            UINavigationBar.appearance().scrollEdgeAppearance = appearance
+            UINavigationBar.appearance().tintColor = Asset.Colors.zoteroBlue.color
+            // Toolbars
+            UIToolbar.appearance().tintColor = Asset.Colors.zoteroBlue.color
+            // Buttons
+            UIButton.appearance().tintColor = Asset.Colors.zoteroBlue.color
+            // Search bar
+            UISearchBar.appearance().tintColor = Asset.Colors.zoteroBlue.color
         }
     }
 
