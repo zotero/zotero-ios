@@ -118,7 +118,8 @@ final class ImagePreviewViewController: UIViewController {
     }
 
     private func setupNavigationBar() {
-        let closeItem = UIBarButtonItem(title: L10n.close, style: .plain, target: nil, action: nil)
+        let closeItem = UIBarButtonItem(title: L10n.close)
+        closeItem.tintColor = Asset.Colors.zoteroBlue.color
         closeItem.rx
                  .tap
                  .observe(on: MainScheduler.instance)

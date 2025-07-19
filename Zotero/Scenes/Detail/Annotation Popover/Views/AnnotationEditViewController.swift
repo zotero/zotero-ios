@@ -124,7 +124,8 @@ final class AnnotationEditViewController: UIViewController {
         func setupNavigationBar() {
             navigationItem.hidesBackButton = true
 
-            let cancel = UIBarButtonItem(title: L10n.cancel, style: .plain, target: nil, action: nil)
+            let cancel = UIBarButtonItem(title: L10n.cancel)
+            cancel.tintColor = Asset.Colors.zoteroBlue.color
             cancel.rx.tap
                 .subscribe(onNext: { [weak self] in
                     self?.cancel()
@@ -134,7 +135,13 @@ final class AnnotationEditViewController: UIViewController {
 
             guard viewModel.state.isEditable else { return }
 
-            let save = UIBarButtonItem(title: L10n.save, style: .done, target: nil, action: nil)
+            let save = UIBarButtonItem(title: L10n.save)
+            save.tintColor = Asset.Colors.zoteroBlue.color
+            if #available(iOS 26.0.0, *) {
+                save.style = .prominent
+            } else {
+                save.style = .done
+            }
             save.rx.tap
                 .subscribe(onNext: { [weak self] in
                     guard let self else { return }
