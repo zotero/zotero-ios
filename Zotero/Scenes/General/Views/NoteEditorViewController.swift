@@ -143,7 +143,13 @@ final class NoteEditorViewController: UIViewController {
             return
         }
 
-        let done = UIBarButtonItem(title: L10n.done, style: .done, target: nil, action: nil)
+        let done = UIBarButtonItem(title: L10n.done)
+        done.tintColor = Asset.Colors.zoteroBlue.color
+        if #available(iOS 26.0.0, *) {
+            done.style = .prominent
+        } else {
+            done.style = .done
+        }
         done.rx
             .tap
             .subscribe(onNext: { [weak self] _ in
