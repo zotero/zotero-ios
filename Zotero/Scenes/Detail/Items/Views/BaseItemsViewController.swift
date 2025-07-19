@@ -49,9 +49,11 @@ class BaseItemsViewController: UIViewController {
         super.viewDidLoad()
 
         createTableView()
-        navigationController?.toolbar.barTintColor = UIColor(dynamicProvider: { traitCollection in
-            return traitCollection.userInterfaceStyle == .dark ? .black : .white
-        })
+        if #unavailable(iOS 26.0.0) {
+            navigationController?.toolbar.barTintColor = UIColor(dynamicProvider: { traitCollection in
+                return traitCollection.userInterfaceStyle == .dark ? .black : .white
+            })
+        }
         setupTitle()
         setupSearchBar()
         if let scheduler = controllers.userControllers?.syncScheduler {
