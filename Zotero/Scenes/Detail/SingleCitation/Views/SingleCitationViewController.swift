@@ -205,7 +205,8 @@ final class SingleCitationViewController: UIViewController {
         }
 
         func setupNavigationBar() {
-            let cancel = UIBarButtonItem(title: L10n.cancel, style: .plain, target: nil, action: nil)
+            let cancel = UIBarButtonItem(title: L10n.cancel)
+            cancel.tintColor = Asset.Colors.zoteroBlue.color
             cancel.rx.tap.subscribe(onNext: { [weak self] in
                 self?.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
             })
@@ -263,7 +264,13 @@ final class SingleCitationViewController: UIViewController {
             indicator.startAnimating()
             navigationItem.rightBarButtonItem = UIBarButtonItem(customView: indicator)
         } else {
-            let copy = UIBarButtonItem(title: L10n.copy, style: .done, target: nil, action: nil)
+            let copy = UIBarButtonItem(title: L10n.copy)
+            copy.tintColor = Asset.Colors.zoteroBlue.color
+            if #available(iOS 26.0.0, *) {
+                copy.style = .prominent
+            } else {
+                copy.style = .done
+            }
             copy.rx.tap.subscribe(onNext: { [weak self] in
                 guard let self else { return }
                 viewModel.process(action: .copy)

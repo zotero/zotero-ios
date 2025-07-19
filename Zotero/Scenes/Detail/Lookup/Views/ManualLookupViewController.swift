@@ -144,31 +144,37 @@ class ManualLookupViewController: UIViewController {
     private func setupCloseCancelAllBarButtons() {
         navigationItem.rightBarButtonItem = nil
 
-        let fixedSpacer = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
-        fixedSpacer.width = 16
-
-        let closeItem = UIBarButtonItem(title: L10n.close, style: .plain, target: nil, action: nil)
+        let closeItem = UIBarButtonItem(title: L10n.close)
+        closeItem.tintColor = Asset.Colors.zoteroBlue.color
         closeItem.rx.tap.subscribe(onNext: { [weak self] in
             self?.close()
         }).disposed(by: self.disposeBag)
         
-        let cancelAllItem = UIBarButtonItem(title: L10n.cancelAll, style: .plain, target: nil, action: nil)
+        let cancelAllItem = UIBarButtonItem(title: L10n.cancelAll)
+        cancelAllItem.tintColor = Asset.Colors.zoteroBlue.color
         cancelAllItem.rx.tap.subscribe(onNext: { [weak self] in
             self?.lookupController?.viewModel.process(action: .cancelAllLookups)
             self?.close()
         }).disposed(by: self.disposeBag)
 
-        navigationItem.leftBarButtonItems = [closeItem, fixedSpacer, cancelAllItem]
+        navigationItem.leftBarButtonItems = [closeItem, .fixedSpace(16), cancelAllItem]
     }
 
     private func setupCancelDoneBarButtons() {
-        let doneItem = UIBarButtonItem(title: L10n.lookUp, style: .done, target: nil, action: nil)
+        let doneItem = UIBarButtonItem(title: L10n.lookUp)
+        doneItem.tintColor = Asset.Colors.zoteroBlue.color
+        if #available(iOS 26.0.0, *) {
+            doneItem.style = .prominent
+        } else {
+            doneItem.style = .done
+        }
         doneItem.rx.tap.subscribe(onNext: { [weak self] in
             self?.lookup(text: self?.textView.text ?? "")
         }).disposed(by: self.disposeBag)
         self.navigationItem.rightBarButtonItem = doneItem
 
-        let cancelItem = UIBarButtonItem(title: L10n.cancel, style: .plain, target: nil, action: nil)
+        let cancelItem = UIBarButtonItem(title: L10n.cancel)
+        cancelItem.tintColor = Asset.Colors.zoteroBlue.color
         cancelItem.rx.tap.subscribe(onNext: { [weak self] in
             self?.close()
         }).disposed(by: self.disposeBag)
