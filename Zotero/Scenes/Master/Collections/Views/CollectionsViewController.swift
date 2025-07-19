@@ -184,7 +184,8 @@ final class CollectionsViewController: UICollectionViewController {
     // MARK: - Setups
 
     private func setupNavigationBar() {
-        let searchItem = UIBarButtonItem(image: UIImage(systemName: "magnifyingglass"), style: .plain, target: nil, action: nil)
+        let searchItem = UIBarButtonItem(image: UIImage(systemName: "magnifyingglass"))
+        searchItem.tintColor = Asset.Colors.zoteroBlue.color
         searchItem.accessibilityLabel = L10n.Accessibility.Collections.searchCollections
         searchItem.rx.tap
             .subscribe(onNext: { [weak self] _ in
@@ -198,7 +199,8 @@ final class CollectionsViewController: UICollectionViewController {
         var buttons: [UIBarButtonItem] = [searchItem]
 
         if viewModel.state.library.metadataEditable {
-            let addItem = UIBarButtonItem(image: UIImage(systemName: "plus"), style: .plain, target: nil, action: nil)
+            let addItem = UIBarButtonItem(image: UIImage(systemName: "plus"))
+            addItem.tintColor = Asset.Colors.zoteroBlue.color
             addItem.accessibilityLabel = L10n.Accessibility.Collections.createCollection
             addItem.rx.tap
                 .subscribe(onNext: { [weak self] _ in
