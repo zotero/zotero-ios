@@ -213,7 +213,8 @@ final class CreatorEditViewController: UIViewController {
     }
 
     private func setupNavigationItems() {
-        let cancel = UIBarButtonItem(title: L10n.cancel, style: .plain, target: nil, action: nil)
+        let cancel = UIBarButtonItem(title: L10n.cancel)
+        cancel.tintColor = Asset.Colors.zoteroBlue.color
         cancel.rx.tap
               .subscribe(onNext: { [weak self] in
                   self?.presentingViewController?.dismiss(animated: true, completion: nil)
@@ -221,7 +222,13 @@ final class CreatorEditViewController: UIViewController {
               .disposed(by: self.disposeBag)
         self.navigationItem.leftBarButtonItem = cancel
 
-        let save = UIBarButtonItem(title: L10n.save, style: .done, target: nil, action: nil)
+        let save = UIBarButtonItem(title: L10n.save)
+        save.tintColor = Asset.Colors.zoteroBlue.color
+        if #available(iOS 26.0.0, *) {
+            save.style = .prominent
+        } else {
+            save.style = .done
+        }
         save.isEnabled = self.viewModel.state.isValid
         save.rx.tap
               .subscribe(onNext: { [weak self] in

@@ -113,7 +113,8 @@ final class ItemsToolbarController {
 
         func createEditingToolbarItems(from actions: [ItemAction]) -> [UIBarButtonItem] {
             let items = actions.map({ action -> UIBarButtonItem in
-                let item = UIBarButtonItem(image: action.image, style: .plain, target: nil, action: nil)
+                let item = UIBarButtonItem(image: action.image)
+                item.tintColor = Asset.Colors.zoteroBlue.color
                 switch action.type {
                 case .addToCollection, .trash, .delete, .removeFromCollection, .restore, .share, .download, .removeDownload, .removeFromRecentlyRead:
                     item.tag = ToolbarItem.empty.tag
@@ -176,7 +177,8 @@ final class ItemsToolbarController {
 
             let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease.circle" : "line.horizontal.3.decrease.circle.fill"
             let filterImage = UIImage(systemName: filterImageName)
-            let filterButton = UIBarButtonItem(image: filterImage, style: .plain, target: nil, action: nil)
+            let filterButton = UIBarButtonItem(image: filterImage)
+            filterButton.tintColor = Asset.Colors.zoteroBlue.color
             if isCompact {
                 filterButton.primaryAction = createFilterPrimaryAction(image: filterImage)
             } else {
@@ -206,6 +208,7 @@ final class ItemsToolbarController {
             if data.allowsManualSort {
                 let action = ItemAction(type: .sort)
                 let sortButton = UIBarButtonItem(image: action.image, menu: createSortMenu(for: data.sortType))
+                sortButton.tintColor = Asset.Colors.zoteroBlue.color
                 sortButton.tag = ToolbarItem.sort.tag
                 sortButton.accessibilityLabel = L10n.Accessibility.Items.sortItems
                 items.append(contentsOf: [.flexibleSpace(), sortButton, .fixedSpace(fixedSpaceWidth)])
