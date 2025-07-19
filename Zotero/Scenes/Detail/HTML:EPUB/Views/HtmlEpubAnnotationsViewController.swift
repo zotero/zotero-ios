@@ -352,10 +352,11 @@ class HtmlEpubAnnotationsViewController: UIViewController {
         guard !toolbarContainer.isHidden else { return }
 
         var items: [UIBarButtonItem] = []
-        items.append(UIBarButtonItem(systemItem: .flexibleSpace, primaryAction: nil, menu: nil))
+        items.append(.flexibleSpace())
 
         if editingEnabled {
-            let delete = UIBarButtonItem(title: L10n.delete, style: .plain, target: nil, action: nil)
+            let delete = UIBarButtonItem(title: L10n.delete)
+            delete.tintColor = Asset.Colors.zoteroBlue.color
             delete.isEnabled = deletionEnabled
             delete.rx.tap
                 .subscribe(onNext: { [weak self] _ in
@@ -369,7 +370,8 @@ class HtmlEpubAnnotationsViewController: UIViewController {
             deleteBarButton = nil
 
             let filterImageName = filterOn ? "line.horizontal.3.decrease.circle.fill" : "line.horizontal.3.decrease.circle"
-            let filter = UIBarButtonItem(image: UIImage(systemName: filterImageName), style: .plain, target: nil, action: nil)
+            let filter = UIBarButtonItem(image: UIImage(systemName: filterImageName))
+            filter.tintColor = Asset.Colors.zoteroBlue.color
             filter.rx.tap
                 .subscribe(onNext: { [weak self, weak filter] _ in
                     guard let self, let filter else { return }
@@ -379,7 +381,8 @@ class HtmlEpubAnnotationsViewController: UIViewController {
             items.insert(filter, at: 0)
         }
 
-        let select = UIBarButtonItem(title: (editingEnabled ? L10n.done : L10n.select), style: .plain, target: nil, action: nil)
+        let select = UIBarButtonItem(title: (editingEnabled ? L10n.done : L10n.select))
+        select.tintColor = Asset.Colors.zoteroBlue.color
         select.rx.tap
             .subscribe(onNext: { [weak self] _ in
                 self?.viewModel.process(action: .setSidebarEditingEnabled(!editingEnabled))

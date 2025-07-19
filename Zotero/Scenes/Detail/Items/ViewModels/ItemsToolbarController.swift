@@ -110,7 +110,8 @@ final class ItemsToolbarController {
 
         func createEditingToolbarItems(from actions: [ItemAction]) -> [UIBarButtonItem] {
             let items = actions.map({ action -> UIBarButtonItem in
-                let item = UIBarButtonItem(image: action.image, style: .plain, target: nil, action: nil)
+                let item = UIBarButtonItem(image: action.image)
+                item.tintColor = Asset.Colors.zoteroBlue.color
                 switch action.type {
                 case .addToCollection, .trash, .delete, .removeFromCollection, .restore, .share, .download, .removeDownload, .removeFromRecentlyRead:
                     item.tag = ToolbarItem.empty.tag
@@ -165,12 +166,9 @@ final class ItemsToolbarController {
         }
 
         func createNormalToolbarItems(for filters: [ItemsFilter]) -> [UIBarButtonItem] {
-            let fixedSpacer = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
-            fixedSpacer.width = 16
-            let flexibleSpacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
-
             let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease.circle" : "line.horizontal.3.decrease.circle.fill"
-            let filterButton = UIBarButtonItem(image: UIImage(systemName: filterImageName), style: .plain, target: nil, action: nil)
+            let filterButton = UIBarButtonItem(image: UIImage(systemName: filterImageName))
+            filterButton.tintColor = Asset.Colors.zoteroBlue.color
             if isCompact {
                 filterButton.primaryAction = UIAction { [weak self, weak filterButton] _ in
                     guard let filterButton else { return }
@@ -186,16 +184,17 @@ final class ItemsToolbarController {
             let titleButton = UIBarButtonItem(customView: createTitleView())
             titleButton.tag = ToolbarItem.title.tag
 
-            var items: [UIBarButtonItem] = [fixedSpacer, filterButton, flexibleSpacer, titleButton]
+            var items: [UIBarButtonItem] = [.fixedSpace(16), filterButton, .flexibleSpace(), titleButton]
 
             if data.allowsManualSort {
                 let action = ItemAction(type: .sort)
                 let sortButton = UIBarButtonItem(image: action.image, menu: createSortMenu(for: data.sortType))
+                sortButton.tintColor = Asset.Colors.zoteroBlue.color
                 sortButton.tag = ToolbarItem.sort.tag
                 sortButton.accessibilityLabel = L10n.Accessibility.Items.sortItems
-                items.append(contentsOf: [flexibleSpacer, sortButton, fixedSpacer])
+                items.append(contentsOf: [.flexibleSpace(), sortButton, .fixedSpace(16)])
             } else {
-                items.append(contentsOf: [flexibleSpacer, fixedSpacer])
+                items.append(contentsOf: [.flexibleSpace(), .fixedSpace(16)])
             }
 
             return items
