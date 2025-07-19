@@ -135,7 +135,8 @@ class AnnotationsFilterViewController: UIViewController {
         }
 
         func setupNavigationBar() {
-            let closeBarButtonItem = UIBarButtonItem(title: L10n.close, style: .plain, target: nil, action: nil)
+            let closeBarButtonItem = UIBarButtonItem(title: L10n.close)
+            closeBarButtonItem.tintColor = Asset.Colors.zoteroBlue.color
             closeBarButtonItem.rx.tap
                 .subscribe(onNext: { _ in
                     close()
@@ -190,7 +191,8 @@ class AnnotationsFilterViewController: UIViewController {
 
             guard navigationItem.rightBarButtonItem == nil else { return }
 
-            let clear = UIBarButtonItem(title: L10n.clear, style: .plain, target: nil, action: nil)
+            let clear = UIBarButtonItem(title: L10n.clear)
+            clear.tintColor = Asset.Colors.zoteroBlue.color
             clear.rx.tap
                 .subscribe(onNext: { [weak self] _ in
                     self?.viewModel.process(action: .clear)
