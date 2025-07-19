@@ -114,7 +114,8 @@ final class LibrariesViewController: UIViewController {
     }
 
     private func setupNavigationBar() {
-        let item = UIBarButtonItem(image: UIImage(systemName: "gear"), style: .plain, target: nil, action: nil)
+        let item = UIBarButtonItem(image: UIImage(systemName: "gear"))
+        item.tintColor = Asset.Colors.zoteroBlue.color
         item.accessibilityLabel = L10n.Settings.title
         item.rx.tap
             .subscribe(onNext: { [weak self] _ in

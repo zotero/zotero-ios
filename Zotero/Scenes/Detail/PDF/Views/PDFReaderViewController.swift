@@ -71,7 +71,8 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
     weak var coordinatorDelegate: (PdfReaderCoordinatorDelegate & PdfAnnotationsCoordinatorDelegate)?
 
     private lazy var shareButton: UIBarButtonItem = {
-        let share = UIBarButtonItem(image: UIImage(systemName: "square.and.arrow.up"), style: .plain, target: nil, action: nil)
+        let share = UIBarButtonItem(image: UIImage(systemName: "square.and.arrow.up"))
+        share.tintColor = Asset.Colors.zoteroBlue.color
         share.accessibilityLabel = L10n.Accessibility.Pdf.share
         share.isEnabled = !viewModel.state.document.isLocked
         share.title = L10n.Accessibility.Pdf.share
@@ -117,7 +118,8 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         return share
     }()
     private lazy var settingsButton: UIBarButtonItem = {
-        let settings = UIBarButtonItem(image: UIImage(systemName: "gearshape"), style: .plain, target: nil, action: nil)
+        let settings = UIBarButtonItem(image: UIImage(systemName: "gearshape"))
+        settings.tintColor = Asset.Colors.zoteroBlue.color
         settings.isEnabled = !viewModel.state.document.isLocked
         settings.accessibilityLabel = L10n.Accessibility.Pdf.settings
         settings.title = L10n.Accessibility.Pdf.settings
@@ -130,7 +132,8 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         return settings
     }()
     private lazy var searchButton: UIBarButtonItem = {
-        let search = UIBarButtonItem(image: UIImage(systemName: "magnifyingglass"), style: .plain, target: nil, action: nil)
+        let search = UIBarButtonItem(image: UIImage(systemName: "magnifyingglass"))
+        search.tintColor = Asset.Colors.zoteroBlue.color
         search.isEnabled = !viewModel.state.document.isLocked
         search.accessibilityLabel = L10n.Accessibility.Pdf.searchPdf
         search.title = L10n.Accessibility.Pdf.searchPdf
@@ -294,13 +297,15 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         }
 
         func setupNavigationBar() {
-            let sidebarButton = UIBarButtonItem(image: UIImage(systemName: "sidebar.left"), style: .plain, target: nil, action: nil)
+            let sidebarButton = UIBarButtonItem(image: UIImage(systemName: "sidebar.left"))
+            sidebarButton.tintColor = Asset.Colors.zoteroBlue.color
             sidebarButton.isEnabled = !viewModel.state.document.isLocked
             setupAccessibility(forSidebarButton: sidebarButton)
             sidebarButton.tag = NavigationBarButton.sidebar.rawValue
             sidebarButton.rx.tap.subscribe(onNext: { [weak self] _ in self?.toggleSidebar(animated: true) }).disposed(by: disposeBag)
 
-            let closeButton = UIBarButtonItem(image: UIImage(systemName: "chevron.left"), style: .plain, target: nil, action: nil)
+            let closeButton = UIBarButtonItem(image: UIImage(systemName: "chevron.left"))
+            closeButton.tintColor = Asset.Colors.zoteroBlue.color
             closeButton.title = L10n.close
             closeButton.accessibilityLabel = L10n.close
             closeButton.rx.tap.subscribe(onNext: { [weak self] _ in self?.close() }).disposed(by: disposeBag)
@@ -309,7 +314,8 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
             if FeatureGates.enabled.contains(.speech), let accessibilityHandler {
                 accessibilityButton = accessibilityHandler.createAccessibilityButton(isSelected: false, isFilled: false, isEnabled: !viewModel.state.document.isLocked)
             } else {
-                accessibilityButton = UIBarButtonItem(image: Asset.Images.pdfRawReader.image, style: .plain, target: nil, action: nil)
+                accessibilityButton = UIBarButtonItem(image: Asset.Images.pdfRawReader.image)
+                accessibilityButton.tintColor = Asset.Colors.zoteroBlue.color
                 accessibilityButton.isEnabled = !viewModel.state.document.isLocked
                 accessibilityButton.accessibilityLabel = L10n.Accessibility.showReader
                 accessibilityButton.title = L10n.Accessibility.showReader
