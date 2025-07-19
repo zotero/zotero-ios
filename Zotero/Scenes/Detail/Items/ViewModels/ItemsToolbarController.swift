@@ -103,7 +103,8 @@ final class ItemsToolbarController {
                 innerFlexibleSpace.hidesSharedBackground = false
             }
             let items = actions.map({ action -> UIBarButtonItem in
-                let item = UIBarButtonItem(image: action.image, style: .plain, target: nil, action: nil)
+                let item = UIBarButtonItem(image: action.image)
+                item.tintColor = Asset.Colors.zoteroBlue.color
                 switch action.type {
                 case .addToCollection, .trash, .delete, .removeFromCollection, .restore, .share, .download, .removeDownload:
                     item.tag = ToolbarItem.empty.tag
@@ -149,12 +150,9 @@ final class ItemsToolbarController {
         }
 
         func createNormalToolbarItems(for filters: [ItemsFilter]) -> [UIBarButtonItem] {
-            let fixedSpacer = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
-            fixedSpacer.width = 16
-            let flexibleSpacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
-
             let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease.circle" : "line.horizontal.3.decrease.circle.fill"
-            let filterButton = UIBarButtonItem(image: UIImage(systemName: filterImageName), style: .plain, target: nil, action: nil)
+            let filterButton = UIBarButtonItem(image: UIImage(systemName: filterImageName))
+            filterButton.tintColor = Asset.Colors.zoteroBlue.color
             filterButton.tag = ToolbarItem.filter.tag
             filterButton.accessibilityLabel = L10n.Accessibility.Items.filterItems
             filterButton.rx.tap.subscribe(onNext: { [weak self] _ in
@@ -163,7 +161,8 @@ final class ItemsToolbarController {
             .disposed(by: disposeBag)
 
             let action = ItemAction(type: .sort)
-            let sortButton = UIBarButtonItem(image: action.image, style: .plain, target: nil, action: nil)
+            let sortButton = UIBarButtonItem(image: action.image)
+            sortButton.tintColor = Asset.Colors.zoteroBlue.color
             sortButton.accessibilityLabel = L10n.Accessibility.Items.sortItems
             sortButton.rx.tap.subscribe(onNext: { [weak self] _ in
                 self?.delegate?.process(action: action.type, button: sortButton)
@@ -173,7 +172,7 @@ final class ItemsToolbarController {
             let titleButton = UIBarButtonItem(customView: createTitleView())
             titleButton.tag = ToolbarItem.title.tag
 
-            return [fixedSpacer, filterButton, flexibleSpacer, titleButton, flexibleSpacer, sortButton, fixedSpacer]
+            return [.fixedSpace(16), filterButton, .flexibleSpace(), titleButton, .flexibleSpace(), sortButton, .fixedSpace(16)]
 
             func createTitleView() -> UIStackView {
                 // Filter title label

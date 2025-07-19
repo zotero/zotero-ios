@@ -125,7 +125,8 @@ final class ScannerViewController: UIViewController {
     }
 
     private func setupNavigationItems() {
-        let cancelItem = UIBarButtonItem(title: L10n.close, style: .plain, target: nil, action: nil)
+        let cancelItem = UIBarButtonItem(title: L10n.close)
+        cancelItem.tintColor = Asset.Colors.zoteroBlue.color
         cancelItem.rx.tap.subscribe(onNext: { [weak self] in
             self?.navigationController?.presentingViewController?.dismiss(animated: true)
         }).disposed(by: self.disposeBag)
