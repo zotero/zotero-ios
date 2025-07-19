@@ -50,7 +50,8 @@ final class WebViewController: UIViewController {
     }
 
     private func setupNavigationBar() {
-        let close = UIBarButtonItem(title: L10n.close, style: .plain, target: nil, action: nil)
+        let close = UIBarButtonItem(title: L10n.close)
+        close.tintColor = Asset.Colors.zoteroBlue.color
         close.rx.tap
              .subscribe(onNext: { [weak self] in
                  self?.dismiss(animated: true, completion: nil)

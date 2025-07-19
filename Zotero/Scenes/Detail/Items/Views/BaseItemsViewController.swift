@@ -261,6 +261,7 @@ class BaseItemsViewController: UIViewController {
                 process(barButtonItemAction: type, sender: sender)
             }
             let item = UIBarButtonItem(title: title, image: image, primaryAction: primaryAction)
+            item.tintColor = Asset.Colors.zoteroBlue.color
             item.tag = type.rawValue
             item.accessibilityLabel = accessibilityLabel
             return item

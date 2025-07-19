@@ -65,7 +65,8 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
         return createToolbarButton()
     }()
     private lazy var settingsButton: UIBarButtonItem = {
-        let settings = UIBarButtonItem(image: UIImage(systemName: "gearshape"), style: .plain, target: nil, action: nil)
+        let settings = UIBarButtonItem(image: UIImage(systemName: "gearshape"))
+        settings.tintColor = Asset.Colors.zoteroBlue.color
         settings.accessibilityLabel = L10n.Accessibility.Pdf.settings
         settings.title = L10n.Accessibility.Pdf.settings
         settings.rx.tap
@@ -125,12 +126,14 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
         }
 
         func setupNavigationBar() {
-            let closeButton = UIBarButtonItem(image: UIImage(systemName: "chevron.left"), style: .plain, target: nil, action: nil)
+            let closeButton = UIBarButtonItem(image: UIImage(systemName: "chevron.left"))
+            closeButton.tintColor = Asset.Colors.zoteroBlue.color
             closeButton.title = L10n.close
             closeButton.accessibilityLabel = L10n.close
             closeButton.rx.tap.subscribe(onNext: { [weak self] _ in self?.close() }).disposed(by: disposeBag)
 
-            let sidebarButton = UIBarButtonItem(image: UIImage(systemName: "sidebar.left"), style: .plain, target: nil, action: nil)
+            let sidebarButton = UIBarButtonItem(image: UIImage(systemName: "sidebar.left"))
+            sidebarButton.tintColor = Asset.Colors.zoteroBlue.color
             setupAccessibility(forSidebarButton: sidebarButton)
             sidebarButton.tag = NavigationBarButton.sidebar.rawValue
             sidebarButton.rx.tap.subscribe(onNext: { [weak self] _ in self?.toggleSidebar(animated: true) }).disposed(by: disposeBag)

@@ -61,16 +61,23 @@ class ItemsFilterViewController: UIViewController {
         delegate?.downloadsFilterDidChange(enabled: sender.isOn)
     }
 
-    @objc private func done() {
-        self.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
-    }
-
     // MARK: - Setups
 
     private func setupNavigationBar() {
-        self.navigationItem.title = L10n.Items.Filters.title
-        let done = UIBarButtonItem(title: L10n.done, style: .done, target: self, action: #selector(ItemsFilterViewController.done))
-        self.navigationItem.rightBarButtonItem = done
+        navigationItem.title = L10n.Items.Filters.title
+        let done = UIBarButtonItem(title: L10n.done)
+        done.tintColor = Asset.Colors.zoteroBlue.color
+        if #available(iOS 26.0.0, *) {
+            done.style = .prominent
+        } else {
+            done.style = .done
+        }
+        done.rx.tap
+            .subscribe(onNext: { [weak self] _ in
+                self?.navigationController?.presentingViewController?.dismiss(animated: true)
+            })
+            .disposed(by: disposeBag)
+        navigationItem.rightBarButtonItem = done
     }
 
     private func setupUI() {
