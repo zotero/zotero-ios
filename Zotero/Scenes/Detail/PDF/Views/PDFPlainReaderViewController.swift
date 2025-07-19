@@ -18,7 +18,8 @@ final class PDFPlainReaderViewController: PSPDFKitUI.ReaderViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        let closeButton = UIBarButtonItem(image: UIImage(systemName: "chevron.left"), style: .plain, target: nil, action: nil)
+        let closeButton = UIBarButtonItem(image: UIImage(systemName: "chevron.left"))
+        closeButton.tintColor = Asset.Colors.zoteroBlue.color
         closeButton.rx.tap
                    .subscribe(with: self, onNext: { `self`, _ in self.navigationController?.presentingViewController?.dismiss(animated: true) })
                    .disposed(by: self.disposeBag)

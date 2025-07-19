@@ -136,6 +136,7 @@ final class TagPickerViewController: UIViewController {
 
         func setupNavigationBar() {
             let left = UIBarButtonItem(title: L10n.cancel)
+            left.tintColor = Asset.Colors.zoteroBlue.color
             left.rx.tap
                 .subscribe(onNext: { [weak self] in
                     self?.dismiss()
@@ -144,6 +145,7 @@ final class TagPickerViewController: UIViewController {
             navigationItem.leftBarButtonItem = left
 
             let right = UIBarButtonItem(title: L10n.save)
+            right.tintColor = Asset.Colors.zoteroBlue.color
             right.rx.tap
                  .subscribe(onNext: { [weak self] in
                      guard let self else { return }

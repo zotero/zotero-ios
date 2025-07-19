@@ -84,6 +84,7 @@ class FontSizePickerViewController: UIViewController {
             // need the cancel button.
             guard let navigationController, navigationController.viewControllers.count == 1 else { return }
             let cancel = UIBarButtonItem(systemItem: .cancel)
+            cancel.tintColor = Asset.Colors.zoteroBlue.color
             cancel
                 .rx
                 .tap
