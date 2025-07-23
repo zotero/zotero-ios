@@ -1057,7 +1057,7 @@ extension PDFDocumentViewController: FreeTextInputDelegate {
             tool: .freeText,
             colorHex: color,
             sizeValue: nil,
-            sender: .view(sender),
+            sourceItem: sender,
             userInterfaceStyle: self.overrideUserInterfaceStyle,
             valueChanged: { [weak viewModel] newColor, _ in
                 guard let newColor else { return }

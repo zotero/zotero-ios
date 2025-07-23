@@ -97,7 +97,7 @@ final class CitationBibliographyExportCoordinator: NSObject, Coordinator {
         guard let navigationController else { return }
         let controller = UIActivityViewController(activityItems: [file.createUrl()], applicationActivities: nil)
         controller.modalPresentationStyle = .pageSheet
-        controller.popoverPresentationController?.sourceView = navigationController.viewControllers.first?.view
+        controller.popoverPresentationController?.sourceItem = navigationController.viewControllers.first?.view
         controller.completionWithItemsHandler = { [weak self] _, finished, _, _ in
             if finished {
                 self?.cancel()

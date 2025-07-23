@@ -515,7 +515,7 @@ extension HtmlEpubReaderViewController: AnnotationToolbarDelegate {
         viewModel.process(action: .toggleTool(tool))
     }
 
-    func showToolOptions(sender: SourceView) {
+    func showToolOptions(sourceItem: UIPopoverPresentationControllerSourceItem) {
         guard let tool = viewModel.state.activeTool else { return }
         let colorHex = viewModel.state.toolColors[tool]?.hexString
 
@@ -523,7 +523,7 @@ extension HtmlEpubReaderViewController: AnnotationToolbarDelegate {
             tool: tool,
             colorHex: colorHex,
             sizeValue: nil,
-            sender: sender,
+            sourceItem: sourceItem,
             userInterfaceStyle: viewModel.state.settings.appearance.userInterfaceStyle
         ) { [weak self] newColor, newSize in
             self?.viewModel.process(action: .setToolOptions(color: newColor, size: newSize.flatMap(CGFloat.init), tool: tool))

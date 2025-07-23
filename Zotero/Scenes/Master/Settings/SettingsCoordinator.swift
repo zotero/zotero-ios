@@ -423,7 +423,7 @@ extension SettingsCoordinator: DebuggingSettingsSettingsCoordinatorDelegate {
 
         let controller = UIActivityViewController(activityItems: [mainUrl, bundledUrl], applicationActivities: nil)
         controller.modalPresentationStyle = .pageSheet
-        controller.popoverPresentationController?.sourceView = navigationController.view
+        controller.popoverPresentationController?.sourceItem = navigationController.view
         navigationController.present(controller, animated: true, completion: nil)
     }
 

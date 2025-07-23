@@ -160,16 +160,9 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         self.navigationController?.present(viewController, animated: true, completion: nil)
 
         func setupPresentation(for pdfSearchController: PDFSearchViewController, with sender: UIBarButtonItem) {
-            pdfSearchController.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
-            guard let popoverPresentationController = pdfSearchController.popoverPresentationController else { return }
-            if navigationController?.isNavigationBarHidden == false {
-                popoverPresentationController.sourceItem = sender
-                popoverPresentationController.sourceView = nil
-            } else {
-                popoverPresentationController.sourceItem = nil
-                popoverPresentationController.sourceView = navigationController?.view
-            }
-            popoverPresentationController.sourceRect = .zero
+            pdfSearchController.modalPresentationStyle = .popover
+            pdfSearchController.popoverPresentationController?.sourceItem = (navigationController?.isNavigationBarHidden == false) ? sender : navigationController?.view
+            pdfSearchController.popoverPresentationController?.sourceRect = .zero
         }
     }
 
@@ -226,7 +219,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
 
     func showDeleteAlertForAnnotation(sender: UIView, delete: @escaping () -> Void) {
         let controller = UIAlertController(title: nil, message: L10n.Pdf.deleteAnnotation, preferredStyle: .actionSheet)
-        controller.popoverPresentationController?.sourceView = sender
+        controller.popoverPresentationController?.sourceItem = sender
         controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
         controller.addAction(UIAlertAction(title: L10n.delete, style: .destructive, handler: { _ in
             delete()
@@ -257,7 +250,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         switch UIDevice.current.userInterfaceIdiom {
         case .pad:
             controller.modalPresentationStyle = .popover
-            controller.popoverPresentationController?.sourceView = sender
+            controller.popoverPresentationController?.sourceItem = sender
             controller.preferredContentSize = CGSize(width: 200, height: 400)
             presentedController = controller
 
@@ -321,9 +314,9 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
                     }
                     
                     if let coordinator = self.childCoordinators.last, coordinator is AnnotationPopoverCoordinator {
-                        coordinator.share(item: shareableImage, sourceView: .view(sender), completionWithItemsHandler: completion)
+                        coordinator.share(item: shareableImage, sourceView: .item(sender), completionWithItemsHandler: completion)
                     } else {
-                        (self as Coordinator).share(item: shareableImage, sourceView: .view(sender), completionWithItemsHandler: completion)
+                        (self as Coordinator).share(item: shareableImage, sourceView: .item(sender), completionWithItemsHandler: completion)
                     }
                 }
                 action.accessibilityLabel = L10n.Accessibility.Pdf.shareAnnotationImage + " " + title
