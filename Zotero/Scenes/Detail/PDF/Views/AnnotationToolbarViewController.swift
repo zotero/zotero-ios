@@ -325,7 +325,7 @@ class AnnotationToolbarViewController: UIViewController {
                 picker.rx.controlEvent(.touchUpInside)
                     .subscribe(onNext: { [weak self] _ in
                         guard let self else { return }
-                        delegate?.showToolOptions(sender: .view(colorPickerButton, nil))
+                        delegate?.showToolOptions(sender: .view(colorPickerButton))
                     })
                     .disposed(by: disposeBag)
                 return picker

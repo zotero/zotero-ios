@@ -208,10 +208,10 @@ final class DetailCoordinator: Coordinator {
             .compactMap({ ($0 as? DetailCoordinatorAttachmentProvider)?.attachment(for: key, parentKey: parentKey, libraryId: libraryId) })
             .first
         else { return }
-        self.show(attachment: attachment, parentKey: parentKey, libraryId: libraryId, sourceView: sourceView, sourceRect: sourceRect)
+        self.show(attachment: attachment, parentKey: parentKey, libraryId: libraryId, sourceView: sourceView, sourceRect: sourceRect ?? .null)
     }
 
-    private func show(attachment: Attachment, parentKey: String?, libraryId: LibraryIdentifier, sourceView: UIView, sourceRect: CGRect?) {
+    private func show(attachment: Attachment, parentKey: String?, libraryId: LibraryIdentifier, sourceView: UIView, sourceRect: CGRect) {
         switch attachment.type {
         case .url(let url):
             show(url: url)
@@ -219,7 +219,6 @@ final class DetailCoordinator: Coordinator {
         case .file(let filename, let contentType, _, _, _):
             let file = Files.attachmentFile(in: libraryId, key: attachment.key, filename: filename, contentType: contentType)
             let url = file.createUrl()
-            let rect = sourceRect ?? CGRect(x: (sourceView.frame.width / 3.0), y: (sourceView.frame.height * 2.0 / 3.0), width: (sourceView.frame.width / 3), height: (sourceView.frame.height / 3))
 
             switch contentType {
             case "application/pdf":
@@ -234,7 +233,7 @@ final class DetailCoordinator: Coordinator {
                     showWebView(for: url)
                 } else {
                     DDLogInfo("DetailCoordinator: share attachment \(attachment.key)")
-                    share(item: file.createUrl(), sourceView: .view(sourceView, rect))
+                    share(item: file.createUrl(), sourceView: .view(sourceView, sourceRect))
                 }
 
             case "text/plain":
@@ -244,7 +243,7 @@ final class DetailCoordinator: Coordinator {
                     show(text: text, title: filename)
                 } else {
                     DDLogInfo("DetailCoordinator: share plain text \(attachment.key)")
-                    share(item: url, sourceView: .view(sourceView, rect))
+                    share(item: url, sourceView: .view(sourceView, sourceRect))
                 }
 
             case _ where contentType.contains("image"):
@@ -254,7 +253,7 @@ final class DetailCoordinator: Coordinator {
                     show(image: image, title: filename)
                 } else {
                     DDLogInfo("DetailCoordinator: share image \(attachment.key)")
-                    share(item: url, sourceView: .view(sourceView, rect))
+                    share(item: url, sourceView: .view(sourceView, sourceRect))
                 }
 
             default:
@@ -263,7 +262,7 @@ final class DetailCoordinator: Coordinator {
                     showVideo(for: url)
                 } else {
                     DDLogInfo("DetailCoordinator: share attachment \(attachment.key)")
-                    share(item: file.createUrl(), sourceView: .view(sourceView, rect))
+                    share(item: file.createUrl(), sourceView: .view(sourceView, sourceRect))
                 }
             }
         }

@@ -9,8 +9,8 @@
 import UIKit
 
 enum SourceView {
-    case view(UIView, CGRect?)
-    case item(UIBarButtonItem)
+    case view(UIView, CGRect = .null)
+    case item(UIPopoverPresentationControllerSourceItem)
 }
 
 protocol Coordinator: AnyObject {
@@ -58,13 +58,11 @@ extension Coordinator {
 
         switch sourceView {
         case .item(let item):
-            controller.popoverPresentationController?.barButtonItem = item
+            controller.popoverPresentationController?.sourceItem = item
 
         case .view(let sourceView, let sourceRect):
             controller.popoverPresentationController?.sourceView = sourceView
-            if let rect = sourceRect {
-                controller.popoverPresentationController?.sourceRect = rect
-            }
+            controller.popoverPresentationController?.sourceRect = sourceRect
         }
 
         (presenter ?? navigationController)?.present(controller, animated: true, completion: nil)

@@ -542,7 +542,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
 
     func showToolOptions() {
         if let annotationToolbarController, !annotationToolbarController.view.isHidden, !annotationToolbarController.colorPickerButton.isHidden {
-            showToolOptions(sender: .view(annotationToolbarController.colorPickerButton, nil))
+            showToolOptions(sender: .view(annotationToolbarController.colorPickerButton))
             return
         }
 

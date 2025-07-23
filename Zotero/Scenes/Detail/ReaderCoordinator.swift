@@ -112,7 +112,7 @@ extension ReaderCoordinator {
                 controller.popoverPresentationController?.sourceView = view
 
             case .item(let item):
-                controller.popoverPresentationController?.barButtonItem = item
+                controller.popoverPresentationController?.sourceItem = item
             }
             navigationController?.present(controller, animated: true, completion: nil)
 
