@@ -126,34 +126,6 @@ extension HtmlEpubCoordinator: HtmlEpubReaderCoordinatorDelegate {
         navigationController?.present(controller, animated: true)
     }
 
-    func showToolSettings(tool: AnnotationTool, colorHex: String?, sizeValue: Float?, sender: SourceView, userInterfaceStyle: UIUserInterfaceStyle, valueChanged: @escaping (String?, Float?) -> Void) {
-        DDLogInfo("HtmlEpubCoordinator: show tool settings for \(tool)")
-        let state = AnnotationToolOptionsState(tool: tool, colorHex: colorHex, size: sizeValue)
-        let handler = AnnotationToolOptionsActionHandler()
-        let controller = AnnotationToolOptionsViewController(viewModel: ViewModel(initialState: state, handler: handler), valueChanged: valueChanged)
-
-        switch UIDevice.current.userInterfaceIdiom {
-        case .pad:
-            controller.overrideUserInterfaceStyle = userInterfaceStyle
-            controller.modalPresentationStyle = .popover
-
-            switch sender {
-            case .view(let view, _):
-                controller.popoverPresentationController?.sourceView = view
-
-            case .item(let item):
-                controller.popoverPresentationController?.barButtonItem = item
-            }
-            navigationController?.present(controller, animated: true, completion: nil)
-
-        default:
-            let navigationController = UINavigationController(rootViewController: controller)
-            navigationController.modalPresentationStyle = .formSheet
-            navigationController.overrideUserInterfaceStyle = userInterfaceStyle
-            self.navigationController?.present(navigationController, animated: true, completion: nil)
-        }
-    }
-
     func showDocumentChangedAlert(completed: @escaping () -> Void) {
         let controller = UIAlertController(title: L10n.warning, message: L10n.Errors.Pdf.documentChanged, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: { _ in completed() }))
