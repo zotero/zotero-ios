@@ -284,7 +284,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
 
     private func process(state: HtmlEpubReaderState) {
         if let error = state.error {
-            show(error: error)
+            coordinatorDelegate?.show(error: error)
         }
 
         if state.changes.contains(.toolColor), let color = state.activeTool.flatMap({ state.toolColors[$0] }) {
@@ -332,9 +332,6 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
                 annotationToolbarController?.set(selected: true, to: tool, color: color)
                 activeAnnotationTool = tool
             }
-        }
-
-        func show(error: HtmlEpubReaderState.Error) {
         }
 
         func showPopover(forKey key: String, rect: CGRect) {

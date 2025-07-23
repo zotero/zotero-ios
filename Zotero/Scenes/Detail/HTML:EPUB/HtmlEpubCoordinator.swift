@@ -95,37 +95,6 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
 }
 
 extension HtmlEpubCoordinator: HtmlEpubReaderCoordinatorDelegate {
-    func show(error: HtmlEpubReaderState.Error) {
-        let title: String
-        let message: String
-
-        switch error {
-        case .cantAddAnnotations:
-            title = L10n.error
-            message = L10n.Errors.Pdf.cantAddAnnotations
-
-        case .cantDeleteAnnotation:
-            title = L10n.error
-            message = L10n.Errors.Pdf.cantDeleteAnnotations
-
-        case .cantUpdateAnnotation:
-            title = L10n.error
-            message = L10n.Errors.Pdf.cantUpdateAnnotation
-
-        case .incompatibleDocument:
-            title = L10n.error
-            message = L10n.Errors.Pdf.cantUpdateAnnotation
-
-        case .unknown:
-            title = L10n.error
-            message = L10n.Errors.unknown
-        }
-
-        let controller = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        controller.addAction(UIAlertAction(title: L10n.ok, style: .default))
-        navigationController?.present(controller, animated: true)
-    }
-
     func showDocumentChangedAlert(completed: @escaping () -> Void) {
         let controller = UIAlertController(title: L10n.warning, message: L10n.Errors.Pdf.documentChanged, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: { _ in completed() }))

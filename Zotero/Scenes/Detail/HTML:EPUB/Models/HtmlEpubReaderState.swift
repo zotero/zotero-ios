@@ -83,7 +83,7 @@ struct HtmlEpubReaderState: ViewModelState {
                 return L10n.Errors.Pdf.cantUpdateAnnotation
 
             case .incompatibleDocument:
-                return L10n.Errors.Pdf.cantUpdateAnnotation
+                return L10n.Errors.Pdf.incompatibleDocument
 
             case .unknown:
                 return L10n.Errors.unknown
