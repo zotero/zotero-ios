@@ -31,6 +31,7 @@ final class PDFAnnotationsViewController: UIViewController {
     private weak var mergeBarButton: UIBarButtonItem?
     private var dataSource: TableViewDiffableDataSource<Int, PDFReaderState.AnnotationKey>!
     private var searchController: UISearchController!
+    private var didAppear = false
 
     weak var parentDelegate: (PDFReaderContainerDelegate & PDFSidebarDelegate & ReaderAnnotationsDelegate)?
     weak var coordinatorDelegate: PdfAnnotationsCoordinatorDelegate?
@@ -69,6 +70,10 @@ final class PDFAnnotationsViewController: UIViewController {
             tableView.selectRow(at: indexPath, animated: false, scrollPosition: .middle)
         }
 
+        if !didAppear {
+            didAppear = true
+            setupToolbar(to: viewModel.state)
+        }
         viewModel.stateObservable
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] state in
