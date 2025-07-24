@@ -44,7 +44,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
     var statusBarHeight: CGFloat
     var key: String { return viewModel.state.key }
     
-    weak var coordinatorDelegate: (HtmlEpubReaderCoordinatorDelegate & HtmlEpubSidebarCoordinatorDelegate)?
+    weak var coordinatorDelegate: HtmlEpubReaderCoordinatorDelegate?
     @CodableUserDefault(
         key: "HtmlEpubReaderToolbarState",
         defaultValue: AnnotationToolbarHandler.State(position: .leading, visible: true),

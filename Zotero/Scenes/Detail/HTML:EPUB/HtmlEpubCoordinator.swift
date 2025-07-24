@@ -11,18 +11,9 @@ import UIKit
 import CocoaLumberjackSwift
 import RxSwift
 
-protocol HtmlEpubReaderCoordinatorDelegate: ReaderCoordinatorDelegate {
+protocol HtmlEpubReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarCoordinatorDelegate {
     func showDocumentChangedAlert(completed: @escaping () -> Void)
     func show(url: URL)
-}
-
-protocol HtmlEpubSidebarCoordinatorDelegate: ReaderSidebarCoordinatorDelegate {
-    func showAnnotationPopover(
-        viewModel: ViewModel<HtmlEpubReaderActionHandler>,
-        sourceRect: CGRect,
-        popoverDelegate: UIPopoverPresentationControllerDelegate,
-        userInterfaceStyle: UIUserInterfaceStyle
-    ) -> PublishSubject<AnnotationPopoverState>?
 }
 
 final class HtmlEpubCoordinator: ReaderCoordinator {
@@ -103,62 +94,5 @@ extension HtmlEpubCoordinator: HtmlEpubReaderCoordinatorDelegate {
 
     func show(url: URL) {
         (parentCoordinator as? DetailCoordinator)?.show(url: url)
-    }
-}
-
-extension HtmlEpubCoordinator: HtmlEpubSidebarCoordinatorDelegate {
-    func showAnnotationPopover(
-        viewModel: ViewModel<HtmlEpubReaderActionHandler>,
-        sourceRect: CGRect,
-        popoverDelegate: UIPopoverPresentationControllerDelegate,
-        userInterfaceStyle: UIUserInterfaceStyle
-    ) -> PublishSubject<AnnotationPopoverState>? {
-        guard let currentNavigationController = navigationController, let annotation = viewModel.state.annotationPopoverKey.flatMap({ viewModel.state.annotations[$0] }) else { return nil }
-
-        DDLogInfo("HtmlEpubCoordinator: show annotation popover")
-
-        if let coordinator = childCoordinators.last, coordinator is AnnotationPopoverCoordinator {
-            return nil
-        }
-
-        let navigationController = NavigationViewController()
-        navigationController.overrideUserInterfaceStyle = userInterfaceStyle
-        let author = viewModel.state.library.identifier == .custom(.myLibrary) ? "" : annotation.author
-        let comment: NSAttributedString = (self.navigationController?.viewControllers.first as? ReaderAnnotationsDelegate)?
-            .parseAndCacheIfNeededAttributedComment(for: annotation) ?? .init(string: "")
-        let highlightFont = viewModel.state.textFont
-        let highlightText: NSAttributedString = (self.navigationController?.viewControllers.first as? ReaderAnnotationsDelegate)?
-            .parseAndCacheIfNeededAttributedText(for: annotation, with: highlightFont) ?? .init(string: "")
-        let editability = annotation.editability(currentUserId: viewModel.state.userId, library: viewModel.state.library)
-        let data = AnnotationPopoverState.Data(
-            libraryId: viewModel.state.library.identifier,
-            type: annotation.type,
-            isEditable: editability == .editable,
-            author: author,
-            comment: comment,
-            color: annotation.color,
-            lineWidth: 0,
-            pageLabel: annotation.pageLabel,
-            highlightText: highlightText,
-            highlightFont: highlightFont,
-            tags: annotation.tags,
-            showsDeleteButton: editability != .notEditable
-        )
-        let coordinator = AnnotationPopoverCoordinator(data: data, navigationController: navigationController, controllers: self.controllers)
-        coordinator.parentCoordinator = self
-        childCoordinators.append(coordinator)
-        coordinator.start(animated: false)
-
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            navigationController.modalPresentationStyle = .popover
-            navigationController.popoverPresentationController?.sourceView = currentNavigationController.view
-            navigationController.popoverPresentationController?.sourceRect = sourceRect
-            navigationController.popoverPresentationController?.permittedArrowDirections = [.left, .right]
-            navigationController.popoverPresentationController?.delegate = popoverDelegate
-        }
-
-        currentNavigationController.present(navigationController, animated: true, completion: nil)
-
-        return coordinator.viewModelObservable
     }
 }
