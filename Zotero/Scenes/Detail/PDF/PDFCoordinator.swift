@@ -167,11 +167,11 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
     }
 
     func share(url: URL, barButton: UIBarButtonItem) {
-        self.share(item: url, sourceView: .item(barButton))
+        share(item: url, sourceItem: barButton)
     }
 
     func share(text: String, rect: CGRect, view: UIView, userInterfaceStyle: UIUserInterfaceStyle) {
-        self.share(item: text, sourceView: .view(view, rect), userInterfaceStyle: userInterfaceStyle)
+        share(item: text, sourceView: view, sourceRect: rect, userInterfaceStyle: userInterfaceStyle)
     }
 
     func lookup(text: String, rect: CGRect, view: UIView, userInterfaceStyle: UIUserInterfaceStyle) {
@@ -313,11 +313,7 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
                         DDLogInfo("PDFCoordinator: share pdf annotation image - activity type: \(String(describing: activityType)) completed: \(completed) error: \(String(describing: error))")
                     }
                     
-                    if let coordinator = self.childCoordinators.last, coordinator is AnnotationPopoverCoordinator {
-                        coordinator.share(item: shareableImage, sourceView: .item(sender), completionWithItemsHandler: completion)
-                    } else {
-                        (self as Coordinator).share(item: shareableImage, sourceView: .item(sender), completionWithItemsHandler: completion)
-                    }
+                    ((childCoordinators.last as? AnnotationPopoverCoordinator) ?? (self as? Coordinator))?.share(item: shareableImage, sourceItem: sender, completionWithItemsHandler: completion)
                 }
                 action.accessibilityLabel = L10n.Accessibility.Pdf.shareAnnotationImage + " " + title
                 action.isAccessibilityElement = true

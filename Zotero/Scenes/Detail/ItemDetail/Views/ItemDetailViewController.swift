@@ -437,16 +437,16 @@ extension ItemDetailViewController: ConflictViewControllerReceiver {
 }
 
 extension ItemDetailViewController: DetailCoordinatorAttachmentProvider {
-    func attachment(for key: String, parentKey: String?, libraryId: LibraryIdentifier) -> (Attachment, UIView, CGRect?)? {
+    func attachment(for key: String, parentKey: String?, libraryId: LibraryIdentifier) -> (Attachment, UIPopoverPresentationControllerSourceItem)? {
         guard let index = viewModel.state.attachments.firstIndex(where: { $0.key == key && $0.libraryId == libraryId }) else { return nil }
 
         let attachment = viewModel.state.attachments[index]
 
         guard let section = collectionViewHandler.attachmentSectionIndex else {
-            return (attachment, view, nil)
+            return (attachment, view)
         }
 
-        let (sourceView, sourceRect) = collectionViewHandler.sourceDataForCell(at: IndexPath(row: index, section: section))
-        return (attachment, sourceView, sourceRect)
+        let sourceItem = collectionViewHandler.sourceItemForCell(at: IndexPath(row: index, section: section))
+        return (attachment, sourceItem)
     }
 }

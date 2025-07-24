@@ -495,12 +495,9 @@ extension ItemsViewController: ItemsToolbarControllerDelegate {
 }
 
 extension ItemsViewController: DetailCoordinatorAttachmentProvider {
-    func attachment(for key: String, parentKey: String?, libraryId: LibraryIdentifier) -> (Attachment, UIView, CGRect?)? {
-        guard
-            let accessory = self.viewModel.state.itemAccessories[parentKey ?? key],
-            let attachment = accessory.attachment,
-            let (sourceView, sourceRect) = handler?.sourceDataForCell(for: (parentKey ?? key))
-        else { return nil }
-        return (attachment, sourceView, sourceRect)
+    func attachment(for key: String, parentKey: String?, libraryId: LibraryIdentifier) -> (Attachment, UIPopoverPresentationControllerSourceItem)? {
+        guard let accessory = viewModel.state.itemAccessories[parentKey ?? key], let attachment = accessory.attachment, let handler else { return nil }
+        let sourceItem = handler.sourceItemForCell(for: (parentKey ?? key))
+        return (attachment, sourceItem)
     }
 }

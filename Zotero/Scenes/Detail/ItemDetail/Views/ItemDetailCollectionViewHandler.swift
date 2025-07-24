@@ -445,8 +445,8 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
     // MARK: - Actions
 
-    func sourceDataForCell(at indexPath: IndexPath) -> (UIView, CGRect?) {
-        return (collectionView, collectionView.cellForItem(at: indexPath)?.frame)
+    func sourceItemForCell(at indexPath: IndexPath) -> UIPopoverPresentationControllerSourceItem {
+        return collectionView.cellForItem(at: indexPath) ?? collectionView
     }
 
     /// Reloads the whole `collectionView`. Applies new snapshot based on `state` and reloads remaining items which were not changed between snapshots.

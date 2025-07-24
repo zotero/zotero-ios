@@ -143,9 +143,8 @@ final class ItemsTableViewHandler: NSObject {
         return UISwipeActionsConfiguration(actions: actions)
     }
 
-    func sourceDataForCell(for key: String) -> (UIView, CGRect?) {
-        let cell = self.tableView.visibleCells.first(where: { ($0 as? ItemCell)?.key == key })
-        return (self.tableView, cell?.frame)
+    func sourceItemForCell(for key: String) -> UIPopoverPresentationControllerSourceItem {
+        return tableView.visibleCells.first(where: { ($0 as? ItemCell)?.key == key }) ?? tableView
     }
 
     func reload(modifications: [IndexPath], insertions: [IndexPath], deletions: [IndexPath], updateSnapshot: () -> Void, completion: (() -> Void)? = nil) {

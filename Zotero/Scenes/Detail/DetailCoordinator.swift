@@ -20,7 +20,7 @@ import RxSwift
 import SwiftyGif
 
 protocol DetailCoordinatorAttachmentProvider {
-    func attachment(for key: String, parentKey: String?, libraryId: LibraryIdentifier) -> (Attachment, UIView, CGRect?)?
+    func attachment(for key: String, parentKey: String?, libraryId: LibraryIdentifier) -> (Attachment, UIPopoverPresentationControllerSourceItem)?
 }
 
 protocol DetailMissingStyleErrorDelegate: AnyObject {
@@ -204,14 +204,14 @@ final class DetailCoordinator: Coordinator {
     }
 
     func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier) {
-        guard let (attachment, sourceView, sourceRect) = self.navigationController?.viewControllers.reversed()
+        guard let (attachment, sourceItem) = navigationController?.viewControllers.reversed()
             .compactMap({ ($0 as? DetailCoordinatorAttachmentProvider)?.attachment(for: key, parentKey: parentKey, libraryId: libraryId) })
             .first
         else { return }
-        self.show(attachment: attachment, parentKey: parentKey, libraryId: libraryId, sourceView: sourceView, sourceRect: sourceRect ?? .null)
+        show(attachment: attachment, parentKey: parentKey, libraryId: libraryId, sourceItem: sourceItem)
     }
 
-    private func show(attachment: Attachment, parentKey: String?, libraryId: LibraryIdentifier, sourceView: UIView, sourceRect: CGRect) {
+    private func show(attachment: Attachment, parentKey: String?, libraryId: LibraryIdentifier, sourceItem: UIPopoverPresentationControllerSourceItem) {
         switch attachment.type {
         case .url(let url):
             show(url: url)
@@ -233,7 +233,7 @@ final class DetailCoordinator: Coordinator {
                     showWebView(for: url)
                 } else {
                     DDLogInfo("DetailCoordinator: share attachment \(attachment.key)")
-                    share(item: file.createUrl(), sourceView: .view(sourceView, sourceRect))
+                    share(item: file.createUrl(), sourceItem: sourceItem)
                 }
 
             case "text/plain":
@@ -243,7 +243,7 @@ final class DetailCoordinator: Coordinator {
                     show(text: text, title: filename)
                 } else {
                     DDLogInfo("DetailCoordinator: share plain text \(attachment.key)")
-                    share(item: url, sourceView: .view(sourceView, sourceRect))
+                    share(item: url, sourceItem: sourceItem)
                 }
 
             case _ where contentType.contains("image"):
@@ -253,7 +253,7 @@ final class DetailCoordinator: Coordinator {
                     show(image: image, title: filename)
                 } else {
                     DDLogInfo("DetailCoordinator: share image \(attachment.key)")
-                    share(item: url, sourceView: .view(sourceView, sourceRect))
+                    share(item: url, sourceItem: sourceItem)
                 }
 
             default:
@@ -262,7 +262,7 @@ final class DetailCoordinator: Coordinator {
                     showVideo(for: url)
                 } else {
                     DDLogInfo("DetailCoordinator: share attachment \(attachment.key)")
-                    share(item: file.createUrl(), sourceView: .view(sourceView, sourceRect))
+                    share(item: file.createUrl(), sourceItem: sourceItem)
                 }
             }
         }

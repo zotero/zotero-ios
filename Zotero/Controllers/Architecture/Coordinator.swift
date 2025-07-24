@@ -8,8 +8,8 @@
 
 import UIKit
 
-enum SourceView {
-    case view(UIView, CGRect = .null)
+private enum Source {
+    case view(UIView, CGRect)
     case item(UIPopoverPresentationControllerSourceItem)
 }
 
@@ -22,7 +22,15 @@ protocol Coordinator: AnyObject {
     func childDidFinish(_ child: Coordinator)
     func share(
         item: Any,
-        sourceView: SourceView,
+        sourceItem: UIPopoverPresentationControllerSourceItem,
+        presenter: UIViewController?,
+        userInterfaceStyle: UIUserInterfaceStyle?,
+        completionWithItemsHandler: UIActivityViewController.CompletionWithItemsHandler?
+    )
+    func share(
+        item: Any,
+        sourceView: UIView,
+        sourceRect: CGRect,
         presenter: UIViewController?,
         userInterfaceStyle: UIUserInterfaceStyle?,
         completionWithItemsHandler: UIActivityViewController.CompletionWithItemsHandler?
@@ -42,12 +50,12 @@ extension Coordinator {
         }
     }
 
-    func share(
+    private func share(
         item: Any,
-        sourceView: SourceView,
-        presenter: UIViewController? = nil,
-        userInterfaceStyle: UIUserInterfaceStyle? = nil,
-        completionWithItemsHandler: UIActivityViewController.CompletionWithItemsHandler? = nil
+        source: Source,
+        presenter: UIViewController?,
+        userInterfaceStyle: UIUserInterfaceStyle?,
+        completionWithItemsHandler: UIActivityViewController.CompletionWithItemsHandler?
     ) {
         let controller = UIActivityViewController(activityItems: [item], applicationActivities: nil)
         if let userInterfaceStyle {
@@ -56,7 +64,7 @@ extension Coordinator {
         controller.modalPresentationStyle = .pageSheet
         controller.completionWithItemsHandler = completionWithItemsHandler
 
-        switch sourceView {
+        switch source {
         case .item(let item):
             controller.popoverPresentationController?.sourceItem = item
 
@@ -66,5 +74,26 @@ extension Coordinator {
         }
 
         (presenter ?? navigationController)?.present(controller, animated: true, completion: nil)
+    }
+
+    func share(
+        item: Any,
+        sourceItem: UIPopoverPresentationControllerSourceItem,
+        presenter: UIViewController? = nil,
+        userInterfaceStyle: UIUserInterfaceStyle? = nil,
+        completionWithItemsHandler: UIActivityViewController.CompletionWithItemsHandler? = nil
+    ) {
+        share(item: item, source: .item(sourceItem), presenter: presenter, userInterfaceStyle: userInterfaceStyle, completionWithItemsHandler: completionWithItemsHandler)
+    }
+
+    func share(
+        item: Any,
+        sourceView: UIView,
+        sourceRect: CGRect,
+        presenter: UIViewController? = nil,
+        userInterfaceStyle: UIUserInterfaceStyle? = nil,
+        completionWithItemsHandler: UIActivityViewController.CompletionWithItemsHandler? = nil
+    ) {
+        share(item: item, source: .view(sourceView, sourceRect), presenter: presenter, userInterfaceStyle: userInterfaceStyle, completionWithItemsHandler: completionWithItemsHandler)
     }
 }
