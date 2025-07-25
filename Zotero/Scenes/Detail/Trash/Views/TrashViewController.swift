@@ -336,12 +336,9 @@ extension TrashViewController: ItemsToolbarControllerDelegate {
 }
 
 extension TrashViewController: DetailCoordinatorAttachmentProvider {
-    func attachment(for key: String, parentKey: String?, libraryId: LibraryIdentifier) -> (Attachment, UIView, CGRect?)? {
-        guard
-            let accessory = viewModel.state.itemDataCache[TrashKey(type: .item, key: parentKey ?? key)]?.accessory,
-            let attachment = accessory.attachment,
-            let (sourceView, sourceRect) = handler?.sourceDataForCell(for: (parentKey ?? key))
-        else { return nil }
-        return (attachment, sourceView, sourceRect)
+    func attachment(for key: String, parentKey: String?, libraryId: LibraryIdentifier) -> (Attachment, UIPopoverPresentationControllerSourceItem)? {
+        guard let accessory = viewModel.state.itemDataCache[TrashKey(type: .item, key: parentKey ?? key)]?.accessory, let attachment = accessory.attachment, let handler else { return nil }
+        let sourceItem = handler.sourceItemForCell(for: (parentKey ?? key))
+        return (attachment, sourceItem)
     }
 }

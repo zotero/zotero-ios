@@ -30,7 +30,6 @@ protocol PdfReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarC
 
 protocol PdfAnnotationsCoordinatorDelegate: ReaderSidebarCoordinatorDelegate {
     func createShareAnnotationMenu(state: PDFReaderState, annotation: PDFAnnotation, sender: UIButton) -> UIMenu?
-    func shareAnnotationImage(state: PDFReaderState, annotation: PDFAnnotation, scale: CGFloat, sender: UIButton )
 }
 
 final class PDFCoordinator: ReaderCoordinator {
@@ -161,33 +160,18 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         self.navigationController?.present(viewController, animated: true, completion: nil)
 
         func setupPresentation(for pdfSearchController: PDFSearchViewController, with sender: UIBarButtonItem) {
-            pdfSearchController.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
-            guard let popoverPresentationController = pdfSearchController.popoverPresentationController else { return }
-            if navigationController?.isNavigationBarHidden == false {
-                if #available(iOS 17, *) {
-                    popoverPresentationController.sourceItem = sender
-                } else {
-                    popoverPresentationController.barButtonItem = sender
-                }
-                popoverPresentationController.sourceView = nil
-            } else {
-                if #available(iOS 17, *) {
-                    popoverPresentationController.sourceItem = nil
-                } else {
-                    popoverPresentationController.barButtonItem = nil
-                }
-                popoverPresentationController.sourceView = navigationController?.view
-            }
-            popoverPresentationController.sourceRect = .zero
+            pdfSearchController.modalPresentationStyle = .popover
+            pdfSearchController.popoverPresentationController?.sourceItem = (navigationController?.isNavigationBarHidden == false) ? sender : navigationController?.view
+            pdfSearchController.popoverPresentationController?.sourceRect = .zero
         }
     }
 
     func share(url: URL, barButton: UIBarButtonItem) {
-        self.share(item: url, sourceView: .item(barButton))
+        share(item: url, sourceItem: barButton)
     }
 
     func share(text: String, rect: CGRect, view: UIView, userInterfaceStyle: UIUserInterfaceStyle) {
-        self.share(item: text, sourceView: .view(view, rect), userInterfaceStyle: userInterfaceStyle)
+        share(item: text, sourceView: view, sourceRect: rect, userInterfaceStyle: userInterfaceStyle)
     }
 
     func lookup(text: String, rect: CGRect, view: UIView, userInterfaceStyle: UIUserInterfaceStyle) {
@@ -235,7 +219,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
 
     func showDeleteAlertForAnnotation(sender: UIView, delete: @escaping () -> Void) {
         let controller = UIAlertController(title: nil, message: L10n.Pdf.deleteAnnotation, preferredStyle: .actionSheet)
-        controller.popoverPresentationController?.sourceView = sender
+        controller.popoverPresentationController?.sourceItem = sender
         controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
         controller.addAction(UIAlertAction(title: L10n.delete, style: .destructive, handler: { _ in
             delete()
@@ -266,7 +250,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         switch UIDevice.current.userInterfaceIdiom {
         case .pad:
             controller.modalPresentationStyle = .popover
-            controller.popoverPresentationController?.sourceView = sender
+            controller.popoverPresentationController?.sourceItem = sender
             controller.preferredContentSize = CGSize(width: 200, height: 400)
             presentedController = controller
 
@@ -329,11 +313,7 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
                         DDLogInfo("PDFCoordinator: share pdf annotation image - activity type: \(String(describing: activityType)) completed: \(completed) error: \(String(describing: error))")
                     }
                     
-                    if let coordinator = self.childCoordinators.last, coordinator is AnnotationPopoverCoordinator {
-                        coordinator.share(item: shareableImage, sourceView: .view(sender, nil), completionWithItemsHandler: completion)
-                    } else {
-                        (self as Coordinator).share(item: shareableImage, sourceView: .view(sender, nil), completionWithItemsHandler: completion)
-                    }
+                    ((childCoordinators.last as? AnnotationPopoverCoordinator) ?? (self as? Coordinator))?.share(item: shareableImage, sourceItem: sender, completionWithItemsHandler: completion)
                 }
                 action.accessibilityLabel = L10n.Accessibility.Pdf.shareAnnotationImage + " " + title
                 action.isAccessibilityElement = true
@@ -365,39 +345,6 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
         let shareImageMenu = UIMenu(title: L10n.Pdf.AnnotationShare.Image.share, options: [.displayInline], children: shareImageMenuChildren)
         children.append(shareImageMenu)
         return UIMenu(children: children)
-    }
-    
-    func shareAnnotationImage(state: PDFReaderState, annotation: PDFAnnotation, scale: CGFloat = 1.0, sender: UIButton) {
-        guard annotation.type == .image, let pdfReaderViewController = navigationController?.viewControllers.last as? PDFReaderViewController else { return }
-        let annotationPreviewController = controllers.annotationPreviewController
-        let pageIndex: PageIndex = UInt(annotation.page)
-        let rect = annotation.boundingBox(boundingBoxConverter: pdfReaderViewController)
-        var size = rect.size
-        size.width *= scale
-        size.height *= scale
-        annotationPreviewController.render(
-            document: state.document,
-            page: pageIndex,
-            rect: rect,
-            imageSize: size,
-            imageScale: 1.0,
-            key: annotation.key,
-            parentKey: state.key,
-            libraryId: state.library.id
-        )
-        .observe(on: MainScheduler.instance)
-        .subscribe { [weak self] (image: UIImage) in
-            guard let self else { return }
-            if let coordinator = self.childCoordinators.last, coordinator is AnnotationPopoverCoordinator {
-                coordinator.share(item: image, sourceView: .view(sender, nil))
-            } else {
-                (self as Coordinator).share(item: image, sourceView: .view(sender, nil))
-            }
-        } onFailure: { (error: Error) in
-            DDLogError("PDFCoordinator: can't render annotation image - \(error)")
-            // TODO: show error?
-        }
-        .disposed(by: disposeBag)
     }
 }
 

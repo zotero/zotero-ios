@@ -20,7 +20,7 @@ import RxSwift
 import SwiftyGif
 
 protocol DetailCoordinatorAttachmentProvider {
-    func attachment(for key: String, parentKey: String?, libraryId: LibraryIdentifier) -> (Attachment, UIView, CGRect?)?
+    func attachment(for key: String, parentKey: String?, libraryId: LibraryIdentifier) -> (Attachment, UIPopoverPresentationControllerSourceItem)?
 }
 
 protocol DetailMissingStyleErrorDelegate: AnyObject {
@@ -204,14 +204,14 @@ final class DetailCoordinator: Coordinator {
     }
 
     func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier) {
-        guard let (attachment, sourceView, sourceRect) = self.navigationController?.viewControllers.reversed()
+        guard let (attachment, sourceItem) = navigationController?.viewControllers.reversed()
             .compactMap({ ($0 as? DetailCoordinatorAttachmentProvider)?.attachment(for: key, parentKey: parentKey, libraryId: libraryId) })
             .first
         else { return }
-        self.show(attachment: attachment, parentKey: parentKey, libraryId: libraryId, sourceView: sourceView, sourceRect: sourceRect)
+        show(attachment: attachment, parentKey: parentKey, libraryId: libraryId, sourceItem: sourceItem)
     }
 
-    private func show(attachment: Attachment, parentKey: String?, libraryId: LibraryIdentifier, sourceView: UIView, sourceRect: CGRect?) {
+    private func show(attachment: Attachment, parentKey: String?, libraryId: LibraryIdentifier, sourceItem: UIPopoverPresentationControllerSourceItem) {
         switch attachment.type {
         case .url(let url):
             show(url: url)
@@ -219,7 +219,6 @@ final class DetailCoordinator: Coordinator {
         case .file(let filename, let contentType, _, _, _):
             let file = Files.attachmentFile(in: libraryId, key: attachment.key, filename: filename, contentType: contentType)
             let url = file.createUrl()
-            let rect = sourceRect ?? CGRect(x: (sourceView.frame.width / 3.0), y: (sourceView.frame.height * 2.0 / 3.0), width: (sourceView.frame.width / 3), height: (sourceView.frame.height / 3))
 
             switch contentType {
             case "application/pdf":
@@ -234,7 +233,7 @@ final class DetailCoordinator: Coordinator {
                     showWebView(for: url)
                 } else {
                     DDLogInfo("DetailCoordinator: share attachment \(attachment.key)")
-                    share(item: file.createUrl(), sourceView: .view(sourceView, rect))
+                    share(item: file.createUrl(), sourceItem: sourceItem)
                 }
 
             case "text/plain":
@@ -244,7 +243,7 @@ final class DetailCoordinator: Coordinator {
                     show(text: text, title: filename)
                 } else {
                     DDLogInfo("DetailCoordinator: share plain text \(attachment.key)")
-                    share(item: url, sourceView: .view(sourceView, rect))
+                    share(item: url, sourceItem: sourceItem)
                 }
 
             case _ where contentType.contains("image"):
@@ -254,7 +253,7 @@ final class DetailCoordinator: Coordinator {
                     show(image: image, title: filename)
                 } else {
                     DDLogInfo("DetailCoordinator: share image \(attachment.key)")
-                    share(item: url, sourceView: .view(sourceView, rect))
+                    share(item: url, sourceItem: sourceItem)
                 }
 
             default:
@@ -263,7 +262,7 @@ final class DetailCoordinator: Coordinator {
                     showVideo(for: url)
                 } else {
                     DDLogInfo("DetailCoordinator: share attachment \(attachment.key)")
-                    share(item: file.createUrl(), sourceView: .view(sourceView, rect))
+                    share(item: file.createUrl(), sourceItem: sourceItem)
                 }
             }
         }
@@ -440,7 +439,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
 
     func showAddActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem) {
         let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
-        controller.popoverPresentationController?.barButtonItem = button
+        controller.popoverPresentationController?.sourceItem = button
 
         if viewModel.state.library.metadataAndFilesEditable {
             controller.addAction(UIAlertAction(title: L10n.Items.lookup, style: .default, handler: { [weak self] _ in
@@ -489,8 +488,8 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         DDLogInfo("DetailCoordinator: show item sort popup")
 
         let sortNavigationController = UINavigationController()
-        sortNavigationController.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
-        sortNavigationController.popoverPresentationController?.barButtonItem = button
+        sortNavigationController.modalPresentationStyle = .popover
+        sortNavigationController.popoverPresentationController?.sourceItem = button
         let view = ItemSortingView(
             sortType: sortType,
             changed: changed,
@@ -663,8 +662,8 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         DDLogInfo("DetailCoordinator: show item filters")
 
         let navigationController = NavigationViewController()
-        navigationController.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
-        navigationController.popoverPresentationController?.barButtonItem = button
+        navigationController.modalPresentationStyle = .popover
+        navigationController.popoverPresentationController?.sourceItem = button
 
         let coordinator = ItemsFilterCoordinator(filters: filters, filtersDelegate: filtersDelegate, navigationController: navigationController, controllers: controllers)
         coordinator.parentCoordinator = self
@@ -813,7 +812,7 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
     func showAttachmentPicker(save: @escaping ([URL]) -> Void) {
         guard let navigationController else { return }
         let controller = DocumentPickerViewController(forOpeningContentTypes: [.pdf, .png, .jpeg], asCopy: true)
-        controller.popoverPresentationController?.sourceView = navigationController.visibleViewController?.view
+        controller.popoverPresentationController?.sourceItem = navigationController.visibleViewController?.view
         controller.observable
                   .observe(on: MainScheduler.instance)
                   .subscribe(onNext: { urls in

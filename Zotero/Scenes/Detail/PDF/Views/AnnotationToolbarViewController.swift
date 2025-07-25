@@ -27,7 +27,7 @@ protocol AnnotationToolbarDelegate: AnyObject {
     var maxAvailableToolbarSize: CGFloat { get }
 
     func toggle(tool: AnnotationTool, options: AnnotationToolOptions)
-    func showToolOptions(sender: SourceView)
+    func showToolOptions(sourceItem: UIPopoverPresentationControllerSourceItem)
     func closeAnnotationToolbar()
     func performUndo()
     func performRedo()
@@ -325,7 +325,7 @@ class AnnotationToolbarViewController: UIViewController {
                 picker.rx.controlEvent(.touchUpInside)
                     .subscribe(onNext: { [weak self] _ in
                         guard let self else { return }
-                        delegate?.showToolOptions(sender: .view(colorPickerButton, nil))
+                        delegate?.showToolOptions(sourceItem: colorPickerButton)
                     })
                     .disposed(by: disposeBag)
                 return picker

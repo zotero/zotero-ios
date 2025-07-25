@@ -49,7 +49,14 @@ extension ReaderState {
 
 protocol ReaderCoordinatorDelegate: AnyObject {
     func show(error: ReaderError)
-    func showToolSettings(tool: AnnotationTool, colorHex: String?, sizeValue: Float?, sender: SourceView, userInterfaceStyle: UIUserInterfaceStyle, valueChanged: @escaping (String?, Float?) -> Void)
+    func showToolSettings(
+        tool: AnnotationTool,
+        colorHex: String?,
+        sizeValue: Float?,
+        sourceItem: UIPopoverPresentationControllerSourceItem,
+        userInterfaceStyle: UIUserInterfaceStyle,
+        valueChanged: @escaping (String?, Float?) -> Void
+    )
 }
 
 protocol ReaderSidebarCoordinatorDelegate: AnyObject {
@@ -97,7 +104,14 @@ extension ReaderCoordinator {
         navigationController?.present(controller, animated: true)
     }
 
-    func showToolSettings(tool: AnnotationTool, colorHex: String?, sizeValue: Float?, sender: SourceView, userInterfaceStyle: UIUserInterfaceStyle, valueChanged: @escaping (String?, Float?) -> Void) {
+    func showToolSettings(
+        tool: AnnotationTool,
+        colorHex: String?,
+        sizeValue: Float?,
+        sourceItem: UIPopoverPresentationControllerSourceItem,
+        userInterfaceStyle: UIUserInterfaceStyle,
+        valueChanged: @escaping (String?, Float?) -> Void
+    ) {
         DDLogInfo("ReaderCoordinator: show tool settings for \(tool)")
         let state = AnnotationToolOptionsState(tool: tool, colorHex: colorHex, size: sizeValue)
         let handler = AnnotationToolOptionsActionHandler()
@@ -107,13 +121,7 @@ extension ReaderCoordinator {
         case .pad:
             controller.overrideUserInterfaceStyle = userInterfaceStyle
             controller.modalPresentationStyle = .popover
-            switch sender {
-            case .view(let view, _):
-                controller.popoverPresentationController?.sourceView = view
-
-            case .item(let item):
-                controller.popoverPresentationController?.barButtonItem = item
-            }
+            controller.popoverPresentationController?.sourceItem = sourceItem
             navigationController?.present(controller, animated: true, completion: nil)
 
         default:
@@ -168,7 +176,7 @@ extension ReaderCoordinator {
 
         if UIDevice.current.userInterfaceIdiom == .pad {
             navigationController.modalPresentationStyle = .popover
-            navigationController.popoverPresentationController?.sourceView = sender
+            navigationController.popoverPresentationController?.sourceItem = sender
             navigationController.popoverPresentationController?.permittedArrowDirections = .left
         }
 
@@ -255,7 +263,7 @@ extension ReaderCoordinator {
 
         if UIDevice.current.userInterfaceIdiom == .pad {
             navigationController.modalPresentationStyle = .popover
-            navigationController.popoverPresentationController?.barButtonItem = barButton
+            navigationController.popoverPresentationController?.sourceItem = barButton
             navigationController.popoverPresentationController?.permittedArrowDirections = .down
         }
 
@@ -274,8 +282,8 @@ extension ReaderCoordinator {
         } else {
             controller = UINavigationController(rootViewController: baseController)
         }
-        controller.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
-        controller.popoverPresentationController?.barButtonItem = sender
+        controller.modalPresentationStyle = .popover
+        controller.popoverPresentationController?.sourceItem = sender
         controller.preferredContentSize = settings.preferredContentSize
         controller.overrideUserInterfaceStyle = settings.appearance.userInterfaceStyle
         navigationController?.present(controller, animated: true, completion: nil)

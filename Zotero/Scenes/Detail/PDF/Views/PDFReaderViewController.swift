@@ -542,15 +542,15 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
 
     func showToolOptions() {
         if let annotationToolbarController, !annotationToolbarController.view.isHidden, !annotationToolbarController.colorPickerButton.isHidden {
-            showToolOptions(sender: .view(annotationToolbarController.colorPickerButton, nil))
+            showToolOptions(sourceItem: annotationToolbarController.colorPickerButton)
             return
         }
 
         guard let item = navigationItem.rightBarButtonItems?.last else { return }
-        showToolOptions(sender: .item(item))
+        showToolOptions(sourceItem: item)
     }
 
-    func showToolOptions(sender: SourceView) {
+    func showToolOptions(sourceItem: UIPopoverPresentationControllerSourceItem) {
         guard let tool = documentController?.pdfController?.annotationStateManager.state, let toolbarTool = tool.toolbarTool else { return }
 
         let colorHex = viewModel.state.toolColors[tool]?.hexString
@@ -573,7 +573,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
             tool: toolbarTool,
             colorHex: colorHex,
             sizeValue: size,
-            sender: sender,
+            sourceItem: sourceItem,
             userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle
         ) { [weak self] newColor, newSize in
             self?.viewModel.process(action: .setToolOptions(color: newColor, size: newSize.flatMap(CGFloat.init), tool: tool))
