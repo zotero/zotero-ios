@@ -439,7 +439,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
 
     func showAddActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem) {
         let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
-        controller.popoverPresentationController?.barButtonItem = button
+        controller.popoverPresentationController?.sourceItem = button
 
         if viewModel.state.library.metadataAndFilesEditable {
             controller.addAction(UIAlertAction(title: L10n.Items.lookup, style: .default, handler: { [weak self] _ in
@@ -488,8 +488,8 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         DDLogInfo("DetailCoordinator: show item sort popup")
 
         let sortNavigationController = UINavigationController()
-        sortNavigationController.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
-        sortNavigationController.popoverPresentationController?.barButtonItem = button
+        sortNavigationController.modalPresentationStyle = .popover
+        sortNavigationController.popoverPresentationController?.sourceItem = button
         let view = ItemSortingView(
             sortType: sortType,
             changed: changed,
@@ -662,8 +662,8 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         DDLogInfo("DetailCoordinator: show item filters")
 
         let navigationController = NavigationViewController()
-        navigationController.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
-        navigationController.popoverPresentationController?.barButtonItem = button
+        navigationController.modalPresentationStyle = .popover
+        navigationController.popoverPresentationController?.sourceItem = button
 
         let coordinator = ItemsFilterCoordinator(filters: filters, filtersDelegate: filtersDelegate, navigationController: navigationController, controllers: controllers)
         coordinator.parentCoordinator = self

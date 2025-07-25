@@ -263,7 +263,7 @@ extension ReaderCoordinator {
 
         if UIDevice.current.userInterfaceIdiom == .pad {
             navigationController.modalPresentationStyle = .popover
-            navigationController.popoverPresentationController?.barButtonItem = barButton
+            navigationController.popoverPresentationController?.sourceItem = barButton
             navigationController.popoverPresentationController?.permittedArrowDirections = .down
         }
 
@@ -282,8 +282,8 @@ extension ReaderCoordinator {
         } else {
             controller = UINavigationController(rootViewController: baseController)
         }
-        controller.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
-        controller.popoverPresentationController?.barButtonItem = sender
+        controller.modalPresentationStyle = .popover
+        controller.popoverPresentationController?.sourceItem = sender
         controller.preferredContentSize = settings.preferredContentSize
         controller.overrideUserInterfaceStyle = settings.appearance.userInterfaceStyle
         navigationController?.present(controller, animated: true, completion: nil)
