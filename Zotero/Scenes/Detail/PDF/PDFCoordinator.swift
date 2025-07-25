@@ -339,9 +339,17 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
 extension PDFCoordinator: AccessibilityPopoupCoordinatorDelegate {
     func showVoicePicker(for voice: AVSpeechSynthesisVoice, selectionChanged: @escaping (AVSpeechSynthesisVoice) -> Void) {
         guard let navigationController else { return }
-        let view = SpeechVoicePickerView(selectedVoice: voice, selectionChanged: selectionChanged)
+        let view = SpeechVoicePickerView(selectedVoice: voice, dismiss: { voice in
+            selectionChanged(voice)
+            if let presentedViewController = navigationController.presentedViewController as? AccessibilityPopupViewController<PDFReaderViewController> {
+                presentedViewController.dismiss(animated: true)
+            } else {
+                navigationController.dismiss(animated: true)
+            }
+        })
         let controller = UIHostingController(rootView: view)
         controller.modalPresentationStyle = .formSheet
+        controller.isModalInPresentation = true
         if let presentedController = navigationController.presentedViewController {
             presentedController.present(controller, animated: true)
         } else {

@@ -51,10 +51,10 @@ final class AccessibilityViewHandler<Delegate: SpeechmanagerDelegate> {
         }
     }
 
-    init(viewController: UIViewController, documentContainer: UIView, speechManager: SpeechManager<Delegate>) {
+    init(viewController: UIViewController, documentContainer: UIView, delegate: Delegate) {
         self.viewController = viewController
         self.documentContainer = documentContainer
-        self.speechManager = speechManager
+        speechManager = SpeechManager(delegate: delegate, speechRateModifier: Defaults.shared.speechRateModifier)
         disposeBag = DisposeBag()
 
         speechManager.state
@@ -98,7 +98,7 @@ final class AccessibilityViewHandler<Delegate: SpeechmanagerDelegate> {
     }
 
     private func processVoiceChange(toVoice voice: AVSpeechSynthesisVoice) {
-        // TODO
+        speechManager.set(voice: voice)
     }
 
     private func update(state: SpeechManager<Delegate>.State) {

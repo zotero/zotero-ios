@@ -90,10 +90,12 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
     var currentVoice: AVSpeechSynthesisVoice? {
         return currentIndex.flatMap({ cachedPages[$0] })?.voice
     }
+    private var overrideLanguage: String?
 
-    init(delegate: Delegate, speechRateModifier: Float) {
+    init(delegate: Delegate, speechRateModifier: Float, voiceLanguage: String? = nil) {
         cachedPages = [:]
         self.speechRateModifier = speechRateModifier
+        overrideLanguage = voiceLanguage
         synthetizer = AVSpeechSynthesizer()
         state = BehaviorRelay(value: .stopped)
         disposeBag = DisposeBag()
@@ -155,8 +157,36 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
         }
     }
 
+    func set(voice: AVSpeechSynthesisVoice) {
+        Defaults.shared.defaultVoiceForLanguage[voice.baseLanguage] = voice.identifier
+
+        guard let currentVoice else { return }
+
+        let newBaseLanguage = voice.baseLanguage
+        if currentVoice.baseLanguage != newBaseLanguage {
+            set(overrideLanguage: newBaseLanguage, voice: voice)
+        } else {
+            for (key, value) in cachedPages {
+                guard value.voice.baseLanguage == newBaseLanguage else { continue }
+                cachedPages[key] = PageData(text: value.text, voice: voice)
+            }
+        }
+        utteranceChanged()
+
+        func set(overrideLanguage: String, voice: AVSpeechSynthesisVoice) {
+            self.overrideLanguage = overrideLanguage
+            for (key, value) in cachedPages {
+                cachedPages[key] = PageData(text: value.text, voice: voice)
+            }
+        }
+    }
+
     func set(rateModifier: Float) {
         speechRateModifier = rateModifier
+        utteranceChanged()
+    }
+
+    private func utteranceChanged() {
         if synthetizer.isPaused {
             shouldReloadUtteranceOnResume = true
         } else if synthetizer.isSpeaking {
@@ -186,17 +216,32 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
                     completion(nil)
                     return
                 }
-                let recognizer = NLLanguageRecognizer()
-                recognizer.processString(text)
-                let language = recognizer.dominantLanguage?.rawValue
-                let voice = language.flatMap({ findVoice(for: $0) }) ?? AVSpeechSynthesisVoice(identifier: "en-US")!
-                pages[index] = PageData(text: text, voice: voice)
+                pages[index] = PageData(text: text, voice: voice(for: text))
             }
             completion(pages)
         }
 
-        func findVoice(for language: String) -> AVSpeechSynthesisVoice? {
-            return AVSpeechSynthesisVoice.speechVoices().first { $0.language.starts(with: language) }
+        func voice(for text: String) -> AVSpeechSynthesisVoice {
+            if let overrideLanguage {
+                return findVoice(for: overrideLanguage)
+            }
+
+            let recognizer = NLLanguageRecognizer()
+            recognizer.processString(text)
+            let language = recognizer.dominantLanguage?.rawValue ?? "en"
+            return findVoice(for: language)
+        }
+    }
+
+    private func findVoice(for language: String) -> AVSpeechSynthesisVoice {
+        let voiceId = Defaults.shared.defaultVoiceForLanguage[language]
+        return AVSpeechSynthesisVoice.speechVoices().first(where: isProperVoice) ?? AVSpeechSynthesisVoice(identifier: "en-US")!
+
+        func isProperVoice(_ voice: AVSpeechSynthesisVoice) -> Bool {
+            if let voiceId {
+                return voice.identifier == voiceId
+            }
+            return voice.language.starts(with: language)
         }
     }
 
@@ -344,5 +389,14 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, willSpeakRangeOfSpeechString characterRange: NSRange, utterance: AVSpeechUtterance) {
         guard currentIndex != nil && characterRange.length > 0 else { return }
         speech = speech?.copy(with: characterRange)
+    }
+}
+
+fileprivate extension AVSpeechSynthesisVoice {
+    var baseLanguage: String {
+        if let index = language.firstIndex(of: "-") {
+            return String(language[language.startIndex..<index])
+        }
+        return language
     }
 }
