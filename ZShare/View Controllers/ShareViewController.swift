@@ -210,11 +210,7 @@ final class ShareViewController: UIViewController {
         self.navigationController?.pushViewController(controller, animated: true)
     }
 
-    @objc private func done() {
-        self.viewModel?.submit()
-    }
-
-    @objc private func cancel() {
+    private func cancel() {
         self.viewModel?.cancel()
         self.debugLogging.storeLogs { [unowned self] in
             self.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
@@ -375,7 +371,12 @@ final class ShareViewController: UIViewController {
             switch error {
             case .quotaLimit, .webDavFailure, .apiFailure, .forbidden:
                 self.navigationItem.leftBarButtonItem = nil
-                self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(ShareViewController.cancel))
+                let cancelAction = UIAction { [weak self] _ in
+                    self?.cancel()
+                }
+                let item = UIBarButtonItem(systemItem: .done, primaryAction: cancelAction)
+                item.tintColor = Asset.Colors.zoteroBlue.color
+                self.navigationItem.rightBarButtonItem = item
                 return
 
             default:
@@ -696,11 +697,24 @@ final class ShareViewController: UIViewController {
     private func setupNavbar(loggedIn: Bool) {
         self.navigationController?.navigationBar.tintColor = Asset.Colors.zoteroBlue.color
 
-        let cancel = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(ShareViewController.cancel))
+        let cancelAction = UIAction { [weak self] _ in
+            self?.cancel()
+        }
+        let cancel = UIBarButtonItem(systemItem: .cancel, primaryAction: cancelAction)
+        cancel.tintColor = Asset.Colors.zoteroBlue.color
         self.navigationItem.leftBarButtonItem = cancel
 
         if loggedIn {
-            let done = UIBarButtonItem(title: L10n.Shareext.save, style: .done, target: self, action: #selector(ShareViewController.done))
+            let doneAction = UIAction(title: L10n.Shareext.save) { [weak viewModel] _ in
+                viewModel?.submit()
+            }
+            let done = UIBarButtonItem(title: L10n.Shareext.save, primaryAction: doneAction)
+            done.tintColor = Asset.Colors.zoteroBlue.color
+            if #available(iOS 26.0.0, *) {
+                done.style = .prominent
+            } else {
+                done.style = .done
+            }
             done.isEnabled = false
             self.navigationItem.rightBarButtonItem = done
         }
