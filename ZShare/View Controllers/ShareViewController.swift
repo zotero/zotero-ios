@@ -80,14 +80,43 @@ final class ShareViewController: UIViewController {
     private static let width: CGFloat = 468
     private static let pickerSize = CGSize(width: width, height: 500.0)
 
-    lazy private var cancelButton: UIBarButtonItem = {
-        .init(barButtonSystemItem: .cancel, target: self, action: #selector(ShareViewController.cancel))
-    }()
+    private func createCancelButton(cancel: Bool) -> UIBarButtonItem {
+        let action = UIAction { [weak self] _ in
+            guard let self else { return }
+            viewModel?.cancel()
+            debugLogging?.storeLogs { [weak self] in
+                self?.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
+            }
+        }
+        let item = UIBarButtonItem(systemItem: cancel ? .cancel : .done, primaryAction: action)
+        item.tintColor = Asset.Colors.zoteroBlue.color
+        return item
+    }
     lazy private var doneButton: UIBarButtonItem = {
-        .init(title: L10n.Shareext.save, style: .done, target: self, action: #selector(ShareViewController.done))
+        let action = UIAction(title: L10n.Shareext.save) { [weak viewModel] _ in
+            viewModel?.submit()
+        }
+        let item = UIBarButtonItem(title: L10n.Shareext.save, primaryAction: action)
+        item.tintColor = Asset.Colors.zoteroBlue.color
+        if #available(iOS 26.0.0, *) {
+            item.style = .prominent
+        } else {
+            item.style = .done
+        }
+        return item
     }()
     lazy private var continueButton: UIBarButtonItem = {
-        .init(title: L10n.Shareext.resolveChallenge, style: .done, target: self, action: #selector(ShareViewController.continueAfterChallenge))
+        let action = UIAction(title: L10n.Shareext.resolveChallenge) { [weak viewModel] _ in
+            viewModel?.continueAfterChallenge()
+        }
+        let item = UIBarButtonItem(title: L10n.Shareext.resolveChallenge, primaryAction: action)
+        item.tintColor = Asset.Colors.zoteroBlue.color
+        if #available(iOS 26.0.0, *) {
+            item.style = .prominent
+        } else {
+            item.style = .done
+        }
+        return item
     }()
 
     // MARK: - Lifecycle
@@ -218,21 +247,6 @@ final class ShareViewController: UIViewController {
         
         self.navigationController?.preferredContentSize = ShareViewController.pickerSize
         self.navigationController?.pushViewController(controller, animated: true)
-    }
-
-    @objc private func done() {
-        self.viewModel?.submit()
-    }
-
-    @objc private func continueAfterChallenge() {
-        viewModel?.continueAfterChallenge()
-    }
-
-    @objc private func cancel() {
-        self.viewModel?.cancel()
-        self.debugLogging.storeLogs { [unowned self] in
-            self.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
-        }
     }
 
     private func update(to state: ExtensionViewModel.State) {
@@ -398,7 +412,7 @@ final class ShareViewController: UIViewController {
             switch error {
             case .quotaLimit, .webDavFailure, .webDavUnauthorized, .webDavForbidden, .apiFailure, .forbidden:
                 navigationItem.leftBarButtonItem = nil
-                navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(ShareViewController.cancel))
+                navigationItem.rightBarButtonItem = createCancelButton(cancel: false)
                 return
 
             default:
@@ -726,7 +740,7 @@ final class ShareViewController: UIViewController {
 
     private func setupNavbar(loggedIn: Bool) {
         navigationController?.navigationBar.tintColor = Asset.Colors.zoteroBlue.color
-        navigationItem.leftBarButtonItem = cancelButton
+        navigationItem.leftBarButtonItem = createCancelButton(cancel: true)
         if loggedIn {
             doneButton.isEnabled = false
             navigationItem.rightBarButtonItem = doneButton
