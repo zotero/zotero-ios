@@ -6,6 +6,7 @@
 //  Copyright © 2019 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import AVFAudio
 import Foundation
 
 final class Defaults {
@@ -133,6 +134,9 @@ final class Defaults {
     #endif
 
     // MARK: - Speech
+
+    @UserDefault(key: "SpeechDefaultVoiceForLanguage", defaultValue: [:])
+    var defaultVoiceForLanguage: [String: String]
 
     @UserDefault(key: "SpeechRateModifier", defaultValue: 1)
     var speechRateModifier: Float
