@@ -116,16 +116,17 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
 
             let currentVoice = speechManager.currentVoice
             var voiceConfiguration = UIButton.Configuration.filled()
-            voiceConfiguration.title = currentVoice.flatMap({ self.voiceTitle(from: $0) }) ?? ""
+            voiceConfiguration.title = currentVoice.flatMap({ self.voiceTitle(from: $0) }) ?? "Voice"
             voiceConfiguration.baseBackgroundColor = .systemGray5
             voiceConfiguration.baseForegroundColor = .label
             voiceConfiguration.cornerStyle = .capsule
             voiceConfiguration.contentInsets = .init(top: 6, leading: 10, bottom: 6, trailing: 10)
             let voiceButton = UIButton(configuration: voiceConfiguration)
-            voiceButton.isHidden = currentVoice == nil
+            voiceButton.isEnabled = currentVoice != nil
             voiceButton.setContentHuggingPriority(.required, for: .vertical)
             voiceButton.setContentHuggingPriority(.required, for: .horizontal)
             voiceButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+            voiceButton.setContentCompressionResistancePriority(.required, for: .vertical)
             voiceButton.addAction(UIAction(handler: { [weak self] _ in self?.showVoiceOptions() }), for: .touchUpInside)
 
             let spacer2 = UIView()
@@ -140,9 +141,11 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
             speedConfiguration.cornerStyle = .capsule
             speedConfiguration.contentInsets = .init(top: 6, leading: 10, bottom: 6, trailing: 10)
             let speedButton = UIButton(configuration: speedConfiguration)
+            speedButton.isEnabled = voiceButton.isEnabled
             speedButton.setContentHuggingPriority(.required, for: .vertical)
             speedButton.setContentHuggingPriority(.required, for: .horizontal)
             speedButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+            speedButton.setContentCompressionResistancePriority(.required, for: .vertical)
             speedButton.showsMenuAsPrimaryAction = true
             speedButton.menu = UIMenu(title: "Speech Rate", children: speedActions)
 
@@ -290,11 +293,14 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
     // MARK: - Actions
 
     private func voiceTitle(from voice: AVSpeechSynthesisVoice) -> String {
-        return (Locale.current.localizedString(forIdentifier: voice.language) ?? voice.language) + " - " + voice.name
+        return Locale.current.localizedString(forIdentifier: voice.language) ?? voice.language// + " - " + voice.name
     }
 
     private func showVoiceOptions() {
         guard let voice = speechManager.currentVoice else { return }
+        if speechManager.isSpeaking {
+            speechManager.pause()
+        }
         coordinatorDelegate?.showVoicePicker(for: voice, selectionChanged: voiceChangeAction)
     }
 
@@ -334,18 +340,23 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
 
         func updateToState() -> (toHide: UIView, toShow: UIView, height: CGFloat)? {
             switch state {
-            case .loading, .speaking:
-                if state == .speaking && voiceButton.isHidden, let voice = speechManager.currentVoice {
+            case .loading:
+                if voiceButton.isEnabled {
+                    voiceButton.isEnabled = false
+                    speedButton.isEnabled = false
+                }
+                return loadingSpeakingContainerState()
+
+            case .speaking:
+                if !voiceButton.isEnabled, let voice = speechManager.currentVoice {
                     // TODO: - change title when page changes
                     var config = voiceButton.configuration
                     config?.title = voiceTitle(from: voice)
                     voiceButton.configuration = config
-                    voiceButton.isHidden = false
+                    voiceButton.isEnabled = true
+                    speedButton.isEnabled = true
                 }
-                guard speechContainer.isHidden else { return nil }
-                speechContainerBottom.isActive = true
-                speechButtonBottom.isActive = false
-                return (speechButton, speechContainer, expandedHeight(isPopover: traitCollection.horizontalSizeClass == .regular))
+                return loadingSpeakingContainerState()
 
             case .stopped:
                 guard speechButton.isHidden else { return nil }
@@ -356,6 +367,13 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
             case .paused:
                 return nil
             }
+        }
+
+        func loadingSpeakingContainerState() -> (toHide: UIView, toShow: UIView, height: CGFloat)? {
+            guard speechContainer.isHidden else { return nil }
+            speechContainerBottom.isActive = true
+            speechButtonBottom.isActive = false
+            return (speechButton, speechContainer, expandedHeight(isPopover: traitCollection.horizontalSizeClass == .regular))
         }
     }
 

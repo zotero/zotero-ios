@@ -211,7 +211,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         accessibilityHandler = AccessibilityViewHandler(
             viewController: self,
             documentContainer: documentController!.view,
-            speechManager: SpeechManager(delegate: self, speechRateModifier: Defaults.shared.speechRateModifier)
+            delegate: self
         )
         accessibilityHandler.delegate = self
         setupObserving()
