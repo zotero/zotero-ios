@@ -6,6 +6,7 @@
 //  Copyright © 2019 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import AVFAudio
 import Foundation
 
 final class Defaults {
@@ -131,6 +132,14 @@ final class Defaults {
     @CodableUserDefault(key: "HtmlEpubReaderSettings", defaultValue: HtmlEpubSettings.default, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder, defaults: .standard)
     var htmlEpubSettings: HtmlEpubSettings
     #endif
+
+    // MARK: - Speech
+
+    @UserDefault(key: "SpeechDefaultVoiceForLanguage", defaultValue: [:])
+    var defaultVoiceForLanguage: [String: String]
+
+    @UserDefault(key: "SpeechRateModifier", defaultValue: 1)
+    var speechRateModifier: Float
 
     // MARK: - Citation / Bibliography Export
 
