@@ -76,26 +76,21 @@ final class CheckboxButton: MenuTrackingButton {
         configuration.contentInsets = contentInsets
         self.configuration = configuration
 
-        self.configurationUpdateHandler = { [weak self] button in
-            guard let self else { return }
-            let bgColor = self.isSelected ? self.selectedBackgroundColor : self.deselectedBackgroundColor
-            let tintColor = self.isSelected ? self.selectedTintColor : self.deselectedTintColor
-            if self.useLayerBackground {
-                self.layer.backgroundColor = bgColor.cgColor
-                var configuration = button.configuration
-                configuration?.baseForegroundColor = tintColor
+        configurationUpdateHandler = { button in
+            guard let button = button as? CheckboxButton, var configuration = button.configuration else { return }
+            let bgColor = button.isSelected ? button.selectedBackgroundColor : button.deselectedBackgroundColor
+            let tintColor = button.isSelected ? button.selectedTintColor : button.deselectedTintColor
+            if button.useLayerBackground {
+                button.layer.backgroundColor = bgColor.cgColor
+                configuration.baseForegroundColor = tintColor
                 button.configuration = configuration
             } else {
-                var configuration = button.configuration
-                var background = configuration?.background
-                background?.backgroundColor = bgColor
-                if let background {
-                    configuration?.background = background
-                }
-                configuration?.baseForegroundColor = tintColor
+                var background = configuration.background
+                background.backgroundColor = bgColor
+                configuration.background = background
+                configuration.baseForegroundColor = tintColor
                 button.configuration = configuration
             }
-        }
     }
 
     override func layoutSubviews() {
