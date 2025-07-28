@@ -519,7 +519,13 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
             if UIDevice.current.userInterfaceIdiom == .phone {
                 controller.didLoad = { [weak self] viewController in
                     guard let self else { return }
-                    let doneButton = UIBarButtonItem(title: L10n.done, style: .done, target: nil, action: nil)
+                    let doneButton = UIBarButtonItem(title: L10n.done)
+                    doneButton.tintColor = Asset.Colors.zoteroBlue.color
+                    if #available(iOS 26.0.0, *) {
+                        doneButton.style = .prominent
+                    } else {
+                        doneButton.style = .done
+                    }
                     doneButton.rx.tap
                         .subscribe({ [weak self] _ in
                             self?.navigationController?.dismiss(animated: true)
