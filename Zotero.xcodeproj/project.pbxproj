@@ -807,6 +807,10 @@
 		B373877328FEA0C7004E5031 /* PDFSidebarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B373877228FEA0C7004E5031 /* PDFSidebarViewController.swift */; };
 		B373B1B82BBD74F400DCF893 /* DeleteFailedItemsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B373B1B62BBD748600DCF893 /* DeleteFailedItemsDbRequest.swift */; };
 		B373C98F2B1F5431007FD56C /* PDFThumbnailsLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = B373C98E2B1F5431007FD56C /* PDFThumbnailsLayout.swift */; };
+		B37434C72E38C5A800D8FAC2 /* SetSpeechLanguageDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37434C62E38C59A00D8FAC2 /* SetSpeechLanguageDbRequest.swift */; };
+		B37434C82E38C5A800D8FAC2 /* SetSpeechLanguageDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37434C62E38C59A00D8FAC2 /* SetSpeechLanguageDbRequest.swift */; };
+		B37434CA2E38C5B100D8FAC2 /* ReadSpeechLanguageDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37434C92E38C5AB00D8FAC2 /* ReadSpeechLanguageDbRequest.swift */; };
+		B37434CB2E38C5B100D8FAC2 /* ReadSpeechLanguageDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37434C92E38C5AB00D8FAC2 /* ReadSpeechLanguageDbRequest.swift */; };
 		B3748D2026566F4800ED05F8 /* ContainerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3748D1F26566F4800ED05F8 /* ContainerViewController.swift */; };
 		B3748D2226566F6900ED05F8 /* ContainerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3748D2126566F6900ED05F8 /* ContainerViewController.swift */; };
 		B3756E8F2B835BDC0001CD0A /* IntraDocumentNavigationButtonsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3756E8E2B835BDC0001CD0A /* IntraDocumentNavigationButtonsHandler.swift */; };
@@ -1888,6 +1892,8 @@
 		B373877228FEA0C7004E5031 /* PDFSidebarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFSidebarViewController.swift; sourceTree = "<group>"; };
 		B373B1B62BBD748600DCF893 /* DeleteFailedItemsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteFailedItemsDbRequest.swift; sourceTree = "<group>"; };
 		B373C98E2B1F5431007FD56C /* PDFThumbnailsLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFThumbnailsLayout.swift; sourceTree = "<group>"; };
+		B37434C62E38C59A00D8FAC2 /* SetSpeechLanguageDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetSpeechLanguageDbRequest.swift; sourceTree = "<group>"; };
+		B37434C92E38C5AB00D8FAC2 /* ReadSpeechLanguageDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadSpeechLanguageDbRequest.swift; sourceTree = "<group>"; };
 		B3748D1F26566F4800ED05F8 /* ContainerViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ContainerViewController.swift; sourceTree = "<group>"; };
 		B3748D2126566F6900ED05F8 /* ContainerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContainerViewController.swift; sourceTree = "<group>"; };
 		B3756E8E2B835BDC0001CD0A /* IntraDocumentNavigationButtonsHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntraDocumentNavigationButtonsHandler.swift; sourceTree = "<group>"; };
@@ -2574,6 +2580,7 @@
 				B34341A4260A16AB00093E63 /* ReadLibraryDbRequest.swift */,
 				B305645023FC051E003304F2 /* ReadSearchDbRequest.swift */,
 				B305646423FC051E003304F2 /* ReadSearchesDbRequest.swift */,
+				B37434C92E38C5AB00D8FAC2 /* ReadSpeechLanguageDbRequest.swift */,
 				B322B4762673A41200BC3D08 /* ReadStyleDbRequest.swift */,
 				B331F9B4265400D70099F6A6 /* ReadStylesDbRequest.swift */,
 				B305644723FC051E003304F2 /* ReadTagPickerTagsDbRequest.swift */,
@@ -2582,10 +2589,12 @@
 				B349182A25E00771006C3313 /* ReadVersionDbRequest.swift */,
 				B3100920272C0960003FC743 /* ReadWebDavDeletionsDbRequest.swift */,
 				B35DD74229813AA6004CC34D /* RemoveItemFromParentDbRequest.swift */,
+				617999712D8089200051D35E /* RenameAttachmentFilenameDbRequest.swift */,
 				B3863FCD2AD830FE005082F0 /* ReorderCreatorsItemDetailDbRequest.swift */,
 				B361C2B329DECB220035BF7E /* ResetSettingsVersionDbRequest.swift */,
 				B353F1FA242E21880062EE24 /* ResetTranslatorsDbRequest.swift */,
 				B3588C6825FF7A800049D484 /* SetCollectionCollapsedDbRequest.swift */,
+				B37434C62E38C59A00D8FAC2 /* SetSpeechLanguageDbRequest.swift */,
 				B3E8B24E27DA3969001825F8 /* SplitAnnotationsDbRequest.swift */,
 				B305646723FC051E003304F2 /* StoreCollectionsDbRequest.swift */,
 				B305645323FC051E003304F2 /* StoreGroupDbRequest.swift */,
@@ -2603,7 +2612,6 @@
 				B3D84BEC27917E3D005DDD7C /* UpdateCreatorSummaryFormatDbRequest.swift */,
 				B305644E23FC051E003304F2 /* UpdateItemLocaleDbRequest.swift */,
 				B305645F23FC051E003304F2 /* UpdateVersionsDbRequest.swift */,
-				617999712D8089200051D35E /* RenameAttachmentFilenameDbRequest.swift */,
 			);
 			path = Requests;
 			sourceTree = "<group>";
@@ -5043,6 +5051,7 @@
 				B3A95DAA29194BDE00BCCF11 /* DashedView.swift in Sources */,
 				B3593F1C2668E86100FA4BB2 /* SyncStylesDbRequest.swift in Sources */,
 				B3E9180C25ECE30A002B77AF /* CoreGraphics+Extensions.swift in Sources */,
+				B37434C72E38C5A800D8FAC2 /* SetSpeechLanguageDbRequest.swift in Sources */,
 				B30565CD23FC051E003304F2 /* InitializeCustomLibrariesDbRequest.swift in Sources */,
 				B3866A5A2417C1C7006693C4 /* Coordinator.swift in Sources */,
 				B305661023FC051E003304F2 /* SchemaRequest.swift in Sources */,
@@ -5056,6 +5065,7 @@
 				B336FE812A2F6D9E00B52F4A /* UploadFixSyncAction.swift in Sources */,
 				B3486B8B26CFAFEA0036A267 /* SingleCitationAction.swift in Sources */,
 				B3593F3C241A61C700760E20 /* ItemsSortType.swift in Sources */,
+				B37434CA2E38C5B100D8FAC2 /* ReadSpeechLanguageDbRequest.swift in Sources */,
 				B372CEE92486748500B423AE /* MarkGroupForResyncSyncAction.swift in Sources */,
 				B340831328F983CF0087D1A1 /* URL+Extensions.swift in Sources */,
 				B378F4C9242CC8EF00B88A05 /* Translator.swift in Sources */,
@@ -6064,6 +6074,7 @@
 				B3DCDF19240918E50039ED0D /* ActivityIndicatorView.swift in Sources */,
 				B3593F1A2668E75700FA4BB2 /* StyleParserDelegate.swift in Sources */,
 				B32EBFC6276A89390003897E /* BackgroundUpload.swift in Sources */,
+				B37434CB2E38C5B100D8FAC2 /* ReadSpeechLanguageDbRequest.swift in Sources */,
 				B341C8D425CBFF8A005562E5 /* LibraryIdentifier.swift in Sources */,
 				B30566FF23FC0869003304F2 /* MarkItemsAsTrashedDbRequest.swift in Sources */,
 				B305671D23FC08E2003304F2 /* SyncVersionsDbRequest.swift in Sources */,
@@ -6190,6 +6201,7 @@
 				B30566FC23FC0862003304F2 /* MarkCollectionAndItemsAsDeletedDbRequest.swift in Sources */,
 				B3F9A4CC2B04F2AC00684030 /* WebViewEncoder.swift in Sources */,
 				B3D59F142A38A6C100F6BB7D /* RevertLibraryFilesSyncAction.swift in Sources */,
+				B37434C82E38C5A800D8FAC2 /* SetSpeechLanguageDbRequest.swift in Sources */,
 				B377F2A02493725E00022943 /* UrlDetector.swift in Sources */,
 				B305670A23FC08B5003304F2 /* ReadCollectionsDbRequest.swift in Sources */,
 				B305672A23FC0914003304F2 /* LoadUploadDataSyncAction.swift in Sources */,

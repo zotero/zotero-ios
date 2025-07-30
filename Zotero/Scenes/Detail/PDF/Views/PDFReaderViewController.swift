@@ -209,9 +209,12 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         view.backgroundColor = .systemGray6
         setupViews()
         accessibilityHandler = AccessibilityViewHandler(
+            key: viewModel.state.key,
+            libraryId: viewModel.state.library.identifier,
             viewController: self,
             documentContainer: documentController!.view,
-            delegate: self
+            delegate: self,
+            dbStorage: viewModel.handler.dbStorage
         )
         accessibilityHandler.delegate = self
         setupObserving()
@@ -332,7 +335,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
             var leftBarButtonItems: [UIBarButtonItem] = [closeButton, sidebarButton]
 
             if FeatureGates.enabled.contains(.speech) {
-                let accessibilityButton = accessibilityHandler.createAccessibilityButton(isEnabled: !viewModel.state.document.isLocked)
+                let accessibilityButton = accessibilityHandler.createAccessibilityButton(isSelected: false, isFilled: false, isEnabled: !viewModel.state.document.isLocked)
                 leftBarButtonItems.append(accessibilityButton)
             } else {
                 let readerButton = UIBarButtonItem(image: Asset.Images.pdfRawReader.image, style: .plain, target: nil, action: nil)
