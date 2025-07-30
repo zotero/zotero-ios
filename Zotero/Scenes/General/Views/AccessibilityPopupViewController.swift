@@ -318,7 +318,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
     }
 
     func baseHeight(isPopover: Bool) -> CGFloat {
-        return isPopover ? 130 : 150
+        return isPopover ? 130 : 176
     }
 
     func expandedHeight(isPopover: Bool) -> CGFloat {
