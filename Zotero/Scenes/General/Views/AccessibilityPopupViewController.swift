@@ -117,6 +117,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
             let currentVoice = speechManager.currentVoice
             var voiceConfiguration = UIButton.Configuration.filled()
             voiceConfiguration.title = currentVoice.flatMap({ self.voiceTitle(from: $0) }) ?? "Voice"
+            voiceConfiguration.titleLineBreakMode = .byTruncatingMiddle
             voiceConfiguration.baseBackgroundColor = .systemGray5
             voiceConfiguration.baseForegroundColor = .label
             voiceConfiguration.cornerStyle = .capsule
@@ -125,13 +126,12 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
             voiceButton.isEnabled = currentVoice != nil
             voiceButton.setContentHuggingPriority(.required, for: .vertical)
             voiceButton.setContentHuggingPriority(.required, for: .horizontal)
-            voiceButton.setContentCompressionResistancePriority(.required, for: .horizontal)
-            voiceButton.setContentCompressionResistancePriority(.required, for: .vertical)
             voiceButton.addAction(UIAction(handler: { [weak self] _ in self?.showVoiceOptions() }), for: .touchUpInside)
 
             let spacer2 = UIView()
             spacer2.setContentHuggingPriority(.defaultLow, for: .horizontal)
             spacer2.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+            spacer2.widthAnchor.constraint(greaterThanOrEqualToConstant: 20).isActive = true
 
             let speedActions = [2, 1.75, 1.5, 1.25, 1, 0.75].map({ [unowned self] val in UIAction(title: formatted(modifier: val), handler: { [weak self] _ in self?.set(rateModifier: val) }) })
             var speedConfiguration = UIButton.Configuration.filled()
@@ -301,7 +301,10 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
         if speechManager.isSpeaking {
             speechManager.pause()
         }
-        coordinatorDelegate?.showVoicePicker(for: voice, selectionChanged: voiceChangeAction)
+        coordinatorDelegate?.showVoicePicker(for: voice, selectionChanged: { [weak self] voice in
+            self?.update(voice: voice)
+            self?.voiceChangeAction(voice)
+        })
     }
 
     private func formatted(modifier: Float) -> String {
@@ -387,6 +390,12 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
             containerTop.isActive = true
             preferredContentSize = CGSize(width: 300, height: height)
         }
+    }
+
+    private func update(voice: AVSpeechSynthesisVoice) {
+        var config = voiceButton.configuration
+        config?.title = voiceTitle(from: voice)
+        voiceButton.configuration = config
     }
 
     // MARK: - UIPopoverPresentationControllerDelegate

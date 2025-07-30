@@ -9,8 +9,6 @@
 import AVFAudio
 import UIKit
 
-import RxSwift
-
 protocol AccessibilityViewDelegate: AnyObject {
     func showAccessibilityPopup<Delegate: SpeechmanagerDelegate>(
         speechManager: SpeechManager<Delegate>,
@@ -27,8 +25,10 @@ final class AccessibilityViewHandler<Delegate: SpeechmanagerDelegate> {
     let navbarButtonTag = 4
     private unowned let viewController: UIViewController
     private unowned let documentContainer: UIView
+    private unowned let dbStorage: DbStorage
     let speechManager: SpeechManager<Delegate>
-    private let disposeBag: DisposeBag
+    private let key: String
+    private let libraryId: LibraryIdentifier
 
     private weak var activeOverlay: AccessibilityReaderOverlayView<Delegate>?
     private var overlayTop: NSLayoutConstraint?
@@ -51,38 +51,45 @@ final class AccessibilityViewHandler<Delegate: SpeechmanagerDelegate> {
         }
     }
 
-    init(viewController: UIViewController, documentContainer: UIView, delegate: Delegate) {
+    init(key: String, libraryId: LibraryIdentifier, viewController: UIViewController, documentContainer: UIView, delegate: Delegate, dbStorage: DbStorage) {
+        self.key = key
+        self.libraryId = libraryId
         self.viewController = viewController
         self.documentContainer = documentContainer
-        speechManager = SpeechManager(delegate: delegate, speechRateModifier: Defaults.shared.speechRateModifier)
-        disposeBag = DisposeBag()
-
-        speechManager.state
-            .skip(1)
-            .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { [weak self] state in
-                self?.update(state: state)
-            })
-            .disposed(by: disposeBag)
+        self.dbStorage = dbStorage
+        let language = try? dbStorage.perform(request: ReadSpeechLanguageDbRequest(key: key, libraryId: libraryId), on: .main)
+        speechManager = SpeechManager(delegate: delegate, speechRateModifier: Defaults.shared.speechRateModifier, voiceLanguage: language)
     }
 
-    func createAccessibilityButton(isEnabled: Bool = true) -> UIBarButtonItem {
-        let speechButton = UIBarButtonItem(image: UIImage(systemName: speechManager.isSpeaking ? "text.page.fill" : "text.page"), style: .plain, target: nil, action: nil)
-        speechButton.tag = navbarButtonTag
-        speechButton.isEnabled = isEnabled
-        speechButton.accessibilityLabel = L10n.Accessibility.openDocumentAccessibility
-        speechButton.rx.tap
-            .subscribe(onNext: { [weak self, weak speechButton] _ in
-                guard let self, let speechButton else { return }
-                showSpeech(sender: speechButton)
-            })
-            .disposed(by: disposeBag)
-        return speechButton
+    func createAccessibilityButton(isSelected: Bool, isFilled: Bool, isEnabled: Bool = true) -> UIBarButtonItem {
+        let button = CheckboxButton(
+            image: UIImage(systemName: isFilled ? "text.page.fill" : "text.page", withConfiguration: UIImage.SymbolConfiguration(scale: .large))!.withRenderingMode(.alwaysTemplate),
+            contentInsets: NSDirectionalEdgeInsets(top: 9, leading: 6, bottom: 9, trailing: 6)
+        )
+        button.showsLargeContentViewer = true
+        button.accessibilityLabel = L10n.Accessibility.openDocumentAccessibility
+        button.deselectedBackgroundColor = .clear
+        button.deselectedTintColor = isEnabled ? Asset.Colors.zoteroBlueWithDarkMode.color : .gray
+        button.selectedBackgroundColor = Asset.Colors.zoteroBlue.color
+        button.selectedTintColor = .white
+        button.isSelected = isSelected
+        button.isEnabled = isEnabled
+        let item = UIBarButtonItem(customView: button)
+        item.tag = navbarButtonTag
+        button.addAction(
+            UIAction(handler: { [weak self, weak item] _ in
+                guard let self, let item else { return }
+                showSpeech(sender: item)
+            }),
+            for: .touchUpInside
+        )
+        return item
     }
 
     func showSpeech(sender: UIBarButtonItem? = nil, isCompact: Bool = false, animated: Bool = true) {
         guard let sender = sender ?? viewController.navigationItem.leftBarButtonItems?.first(where: { $0.tag == navbarButtonTag }) else { return }
         hideOverlay()
+        reloadSpeechButton(isSelected: true)
         delegate?.showAccessibilityPopup(
             speechManager: speechManager,
             sender: sender,
@@ -90,6 +97,7 @@ final class AccessibilityViewHandler<Delegate: SpeechmanagerDelegate> {
             isFormSheet: { [weak self] in self?.isFormSheet ?? false },
             dismissAction: { [weak self] in
                 self?.showOverlayIfNeeded()
+                self?.reloadSpeechButton(isSelected: false)
             },
             voiceChangeAction: { [weak self] voice in
                 self?.processVoiceChange(toVoice: voice)
@@ -98,15 +106,13 @@ final class AccessibilityViewHandler<Delegate: SpeechmanagerDelegate> {
     }
 
     private func processVoiceChange(toVoice voice: AVSpeechSynthesisVoice) {
+        try? dbStorage.perform(request: SetSpeechLanguageDbRequest(key: key, libraryId: libraryId, language: voice.baseLanguage), on: .main)
         speechManager.set(voice: voice)
     }
 
-    private func update(state: SpeechManager<Delegate>.State) {
-        reloadSpeechButton(isSpeaking: !state.isStopped)
-        func reloadSpeechButton(isSpeaking: Bool) {
-            guard let index = viewController.navigationItem.leftBarButtonItems?.firstIndex(where: { $0.tag == navbarButtonTag }) else { return }
-            viewController.navigationItem.leftBarButtonItems?[index] = createAccessibilityButton()
-        }
+    private func reloadSpeechButton(isSelected: Bool) {
+        guard let index = viewController.navigationItem.leftBarButtonItems?.firstIndex(where: { $0.tag == navbarButtonTag }) else { return }
+        (viewController.navigationItem.leftBarButtonItems?[index].customView as? CheckboxButton)?.isSelected = isSelected
     }
 
     func overlayTypeDidChange() {

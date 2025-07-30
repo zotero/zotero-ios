@@ -37,7 +37,7 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
             }
         }
     }
-    
+
     private enum Error: Swift.Error {
         case cantGetText
     }
@@ -392,7 +392,7 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
     }
 }
 
-fileprivate extension AVSpeechSynthesisVoice {
+extension AVSpeechSynthesisVoice {
     var baseLanguage: String {
         if let index = language.firstIndex(of: "-") {
             return String(language[language.startIndex..<index])
