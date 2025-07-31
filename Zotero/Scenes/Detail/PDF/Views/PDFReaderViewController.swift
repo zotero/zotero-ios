@@ -447,7 +447,6 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         coordinator.animate { [weak self] _ in
             guard let self else { return }
             annotationToolbarHandler?.viewWillTransitionToNewSize()
-            intraDocumentNavigationHandler?.containerViewWillTransitionToNewSize()
         }
     }
 
