@@ -42,6 +42,33 @@ class CitationController: NSObject {
         case html
         case text
         case rtf
+
+        func wrapIfNeeeded(result: String) -> String {
+            switch self {
+            case .rtf:
+                var newResult = result
+                if !result.hasPrefix("{\\rtf") {
+                    newResult = "{\\rtf\n" + newResult
+                }
+                if !result.hasSuffix("}") {
+                    newResult += "\n}"
+                }
+                return newResult
+
+            case .html:
+                var newResult = result
+                if !result.hasPrefix("<html") {
+                    newResult = #"<html><head><meta http-equiv="content-type" content="text/html; charset=utf-8"></head><body>"# + newResult
+                }
+                if !result.hasSuffix("</html>") {
+                    newResult += "</body></html>"
+                }
+                return newResult
+
+            case .text:
+                return result
+            }
+        }
     }
 
     enum Error: Swift.Error {
@@ -297,7 +324,7 @@ class CitationController: NSObject {
                 format: format.rawValue,
                 showInWebView: showInWebView
             )
-            .flatMap({ .just(self.format(result: $0, format: format)) })
+            .flatMap({ .just($0) })
 
         func itemsData(for itemIds: Set<String>, label: String?, locator: String?, omitAuthor: Bool) -> String {
             var itemsData: [[String: Any]] = []
@@ -332,10 +359,10 @@ class CitationController: NSObject {
                     localeXML: session.localeXML,
                     format: format.rawValue
                 )
-                .flatMap({ .just(self.format(result: $0, format: format)) })
+                .flatMap({ .just($0) })
         }
         return numberedBibliography(for: session.itemIds, format: format)
-            .flatMap({ .just(self.format(result: $0, format: format)) })
+            .flatMap({ .just($0) })
 
         func numberedBibliography(for itemIds: Set<String>, format: Format) -> Single<String> {
             let actions = itemIds.map({ citation(for: session, itemIds: [$0], label: nil, locator: nil, omitAuthor: false, format: format, showInWebView: false).asObservable() })
@@ -366,33 +393,6 @@ class CitationController: NSObject {
                     return citations.enumerated().map({ "\($0.offset + 1). \($0.element)" }).joined(separator: "\r\n")
                 }
             }
-        }
-    }
-
-    private func format(result: String, format: Format) -> String {
-        switch format {
-        case .rtf:
-            var newResult = result
-            if !result.hasPrefix("{\\rtf") {
-                newResult = "{\\rtf\n" + newResult
-            }
-            if !result.hasSuffix("}") {
-                newResult += "\n}"
-            }
-            return newResult
-
-        case .html:
-            var newResult = result
-            if !result.hasPrefix("<!DOCTYPE") {
-                newResult = "<!DOCTYPE html><html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"></head><body>" + newResult
-            }
-            if !result.hasSuffix("</html>") {
-                newResult += "</body></html>"
-            }
-            return newResult
-
-        case .text:
-            return result
         }
     }
 }

@@ -88,7 +88,7 @@ struct CitationBibliographyExportActionHandler: ViewModelActionHandler {
             loadForCopy(in: viewModel)
                 .subscribe(onSuccess: { [weak viewModel] data in
                     guard let viewModel else { return }
-                    copy(html: data.0, plaintext: data.1, in: viewModel)
+                    copy(html: data.html, plainText: data.plainText, in: viewModel)
                 }, onFailure: { [weak viewModel] error in
                     DDLogError("CitationBibliographyExportActionHandler: can't create citation of bibliography - \(error)")
                     guard let viewModel else { return }
@@ -138,7 +138,7 @@ struct CitationBibliographyExportActionHandler: ViewModelActionHandler {
             })
     }
 
-    private func loadForCopy(in viewModel: ViewModel<CitationBibliographyExportActionHandler>) -> Single<(String, String)> {
+    private func loadForCopy(in viewModel: ViewModel<CitationBibliographyExportActionHandler>) -> Single<(html: String, plainText: String)> {
         return loadSession(in: viewModel).flatMap { session in
             return loadForHtml(in: viewModel).flatMap({ return .just((session, $0)) })
         }
@@ -149,7 +149,7 @@ struct CitationBibliographyExportActionHandler: ViewModelActionHandler {
                     .flatMap({ return .just((html, $0)) })
 
             case .bibliography:
-                return citationController.bibliography(for: session, format: .html)
+                return citationController.bibliography(for: session, format: .text)
                     .flatMap({ return .just((html, $0)) })
             }
         }
@@ -165,10 +165,13 @@ struct CitationBibliographyExportActionHandler: ViewModelActionHandler {
                 return citationController.bibliography(for: session, format: .html)
             }
         }
+        .flatMap { html in
+            return .just(CitationController.Format.html.wrapIfNeeeded(result: html))
+        }
     }
 
-    private func copy(html: String, plaintext: String, in viewModel: ViewModel<CitationBibliographyExportActionHandler>) {
-        UIPasteboard.general.copy(html: html, plaintext: plaintext)
+    private func copy(html: String, plainText: String, in viewModel: ViewModel<CitationBibliographyExportActionHandler>) {
+        UIPasteboard.general.copy(html: html, plainText: plainText)
         update(viewModel: viewModel) { state in
             state.isLoading = false
             state.changes = .finished

@@ -52,16 +52,13 @@ struct CopyBibliographyActionHandler: ViewModelActionHandler {
                 .flatMap { session -> Single<(CitationController.Session, String)> in
                     return citationController.bibliography(for: session, format: .html).flatMap({ .just((session, $0)) })
                 }
-                .flatMap { session, html -> Single<(String, String?)> in
-                    if state.exportAsHtml { return Single.just((html, nil)) }
-                    return citationController.bibliography(for: session, format: .text).flatMap({ Single.just((html, $0)) })
+                .flatMap { session, html -> Single<(html: String, plainText: String)> in
+                    let wrappedHTML = CitationController.Format.html.wrapIfNeeeded(result: html)
+                    if state.exportAsHtml { return Single.just((wrappedHTML, html)) }
+                    return citationController.bibliography(for: session, format: .text).flatMap({ Single.just((wrappedHTML, $0)) })
                 }
                 .subscribe(with: viewModel, onSuccess: { viewModel, data in
-                    if let plaintext = data.1 {
-                        UIPasteboard.general.copy(html: data.0, plaintext: plaintext)
-                    } else {
-                        UIPasteboard.general.string = data.0
-                    }
+                    UIPasteboard.general.copy(html: data.html, plainText: data.plainText)
                     update(viewModel: viewModel) { state in
                         state.processingBibliography = false
                     }

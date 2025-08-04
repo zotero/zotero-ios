@@ -154,7 +154,11 @@ final class SingleCitationViewController: UIViewController {
                     return collectionView.dequeueConfiguredReusableCell(using: authorRegistration, for: indexPath, item: viewModel.state.omitAuthor)
 
                 case .preview:
-                    return collectionView.dequeueConfiguredReusableCell(using: previewRegistration, for: indexPath, item: (viewModel.state.preview ?? "", viewModel.state.previewHeight))
+                    return collectionView.dequeueConfiguredReusableCell(
+                        using: previewRegistration,
+                        for: indexPath,
+                        item: (CitationController.Format.html.wrapIfNeeeded(result: viewModel.state.preview ?? ""), viewModel.state.previewHeight)
+                    )
                 }
             })
 

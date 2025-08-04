@@ -86,9 +86,9 @@ struct SingleCitationActionHandler: ViewModelActionHandler {
 
     private func copy(in viewModel: ViewModel<SingleCitationActionHandler>) {
         guard let preview = viewModel.state.preview else { return }
-
+        let wrappedHTML = CitationController.Format.html.wrapIfNeeeded(result: preview)
         if viewModel.state.exportAsHtml {
-            UIPasteboard.general.string = preview
+            UIPasteboard.general.copy(html: wrappedHTML, plainText: preview)
             update(viewModel: viewModel) { state in
                 state.changes = .copied
             }
@@ -109,7 +109,7 @@ struct SingleCitationActionHandler: ViewModelActionHandler {
             showInWebView: false
         )
         .subscribe(onSuccess: { [weak viewModel] text in
-            UIPasteboard.general.copy(html: preview, plaintext: text)
+            UIPasteboard.general.copy(html: wrappedHTML, plainText: text)
             guard let viewModel else { return }
             update(viewModel: viewModel) { state in
                 state.loadingCopy = false

@@ -42,8 +42,7 @@ final class TrashViewController: BaseItemsViewController {
             tableView: tableView,
             delegate: self,
             dataSource: dataSource,
-            dragDropController: controllers.dragDropController,
-            citationController: controllers.userControllers?.citationController
+            dragDropController: controllers.userControllers?.dragDropController
         )
         toolbarController = ItemsToolbarController(viewController: self, data: toolbarData, collection: collection, library: library, delegate: self)
         setupRightBarButtonItems(expectedItems: rightBarButtonItemTypes(for: viewModel.state))
