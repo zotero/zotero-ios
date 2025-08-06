@@ -660,7 +660,7 @@
 		B357DEE8241661E500E06153 /* DebugLogFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B357DEE524165E0B00E06153 /* DebugLogFormatter.swift */; };
 		B3588C6925FF7A800049D484 /* SetCollectionCollapsedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3588C6825FF7A800049D484 /* SetCollectionCollapsedDbRequest.swift */; };
 		B358D3B4279590C200A67054 /* CheckAnyItemIsInTrashDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B358D3B3279590C200A67054 /* CheckAnyItemIsInTrashDbRequest.swift */; };
-		B3593AD424B6007900CA0B57 /* PDFSearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593AD324B6007900CA0B57 /* PDFSearchViewController.swift */; };
+		B3593AD424B6007900CA0B57 /* DocumentSearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593AD324B6007900CA0B57 /* DocumentSearchViewController.swift */; };
 		B3593AD724B601AB00CA0B57 /* PDFSearchCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593AD524B601AB00CA0B57 /* PDFSearchCell.swift */; };
 		B3593AD824B601AB00CA0B57 /* PDFSearchCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3593AD624B601AB00CA0B57 /* PDFSearchCell.xib */; };
 		B3593ADC24B60A7600CA0B57 /* UISearchBar+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593ADB24B60A7600CA0B57 /* UISearchBar+Extensions.swift */; };
@@ -1762,7 +1762,7 @@
 		B357DEE524165E0B00E06153 /* DebugLogFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLogFormatter.swift; sourceTree = "<group>"; };
 		B3588C6825FF7A800049D484 /* SetCollectionCollapsedDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetCollectionCollapsedDbRequest.swift; sourceTree = "<group>"; };
 		B358D3B3279590C200A67054 /* CheckAnyItemIsInTrashDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckAnyItemIsInTrashDbRequest.swift; sourceTree = "<group>"; };
-		B3593AD324B6007900CA0B57 /* PDFSearchViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFSearchViewController.swift; sourceTree = "<group>"; };
+		B3593AD324B6007900CA0B57 /* DocumentSearchViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentSearchViewController.swift; sourceTree = "<group>"; };
 		B3593AD524B601AB00CA0B57 /* PDFSearchCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFSearchCell.swift; sourceTree = "<group>"; };
 		B3593AD624B601AB00CA0B57 /* PDFSearchCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = PDFSearchCell.xib; sourceTree = "<group>"; };
 		B3593ADB24B60A7600CA0B57 /* UISearchBar+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UISearchBar+Extensions.swift"; sourceTree = "<group>"; };
@@ -3068,7 +3068,7 @@
 				B340ECA7290FDE3B00EE920D /* PDFReaderViewController.swift */,
 				B3593AD524B601AB00CA0B57 /* PDFSearchCell.swift */,
 				B3593AD624B601AB00CA0B57 /* PDFSearchCell.xib */,
-				B3593AD324B6007900CA0B57 /* PDFSearchViewController.swift */,
+				B3593AD324B6007900CA0B57 /* DocumentSearchViewController.swift */,
 				B373877228FEA0C7004E5031 /* PDFSidebarViewController.swift */,
 				B31028062B1E070F00E41554 /* PDFThumbnailsCell.swift */,
 				B31028042B1E012A00E41554 /* PDFThumbnailsViewController.swift */,
@@ -5626,7 +5626,7 @@
 				61391B862B3C6FF4003B314A /* CopyBibliographyViewController.swift in Sources */,
 				B305661723FC051E003304F2 /* AuthorizeUploadSyncAction.swift in Sources */,
 				B37F58662672229D00C4089B /* InstallStyleDbRequest.swift in Sources */,
-				B3593AD424B6007900CA0B57 /* PDFSearchViewController.swift in Sources */,
+				B3593AD424B6007900CA0B57 /* DocumentSearchViewController.swift in Sources */,
 				B3E8FE1C2714297200F51458 /* CiteSettingsView.swift in Sources */,
 				B3DCDF23240945FA0039ED0D /* CollectionsPickerAction.swift in Sources */,
 				B37673FB262DB25700C3BFAF /* ItemsToolbarController.swift in Sources */,

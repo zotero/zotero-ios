@@ -18,7 +18,7 @@ protocol PDFReaderContainerDelegate: AnyObject {
     var isToolbarVisible: Bool { get }
     var documentTopOffset: CGFloat { get }
 
-    func showSearch(pdfController: PDFViewController, text: String?)
+    func showSearch(text: String?)
 }
 
 class PDFReaderViewController: UIViewController, ReaderViewController {
@@ -132,8 +132,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         search.title = L10n.Accessibility.Pdf.searchPdf
         search.rx.tap
             .subscribe(onNext: { [weak self] _ in
-                guard let self, let controller = documentController?.pdfController else { return }
-                showSearch(pdfController: controller, text: nil)
+                self?.showSearch(text: nil)
             })
             .disposed(by: disposeBag)
         return search
@@ -589,13 +588,14 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         viewModel.process(action: .userInterfaceStyleChanged(traitCollection.userInterfaceStyle))
     }
 
-    func showSearch(pdfController: PDFViewController, text: String?) {
+    func showSearch(text: String?) {
+        guard let documentController else { return }
         coordinatorDelegate?.showSearch(
-            pdfController: pdfController,
+            document: viewModel.state.document,
+            documentController: documentController,
             text: text,
             sender: searchButton,
-            userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle,
-            delegate: self
+            userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle
         )
     }
 
@@ -627,8 +627,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
     }
 
     @objc private func search() {
-        guard let pdfController = documentController?.pdfController else { return }
-        showSearch(pdfController: pdfController, text: nil)
+        showSearch(text: nil)
     }
 
     @objc private func previousViewportAction() {
@@ -973,16 +972,6 @@ extension PDFReaderViewController: AnnotationBoundingBoxConverter {
 
     func textOffset(rect: CGRect, page: PageIndex) -> Int? {
         return documentController?.textOffset(rect: rect, page: page)
-    }
-}
-
-extension PDFReaderViewController: PDFSearchDelegate {
-    func didFinishSearch(with results: [SearchResult], for text: String?) {
-        documentController?.highlightSearchResults(results)
-    }
-
-    func didSelectSearchResult(_ result: SearchResult) {
-        documentController?.highlightSelectedSearchResult(result)
     }
 }
 

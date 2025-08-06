@@ -76,6 +76,18 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
             .disposed(by: disposeBag)
         return settings
     }()
+    private lazy var searchButton: UIBarButtonItem = {
+        let search = UIBarButtonItem(image: UIImage(systemName: "magnifyingglass"), style: .plain, target: nil, action: nil)
+        search.accessibilityLabel = L10n.Accessibility.Pdf.searchPdf
+        search.title = L10n.Accessibility.Pdf.searchPdf
+        search.rx.tap
+            .subscribe(onNext: { [weak self] _ in
+                guard let self, let documentController else { return }
+                coordinatorDelegate?.showSearch(viewModel: viewModel, documentController: documentController, text: nil, sender: searchButton, userInterfaceStyle: viewModel.state.interfaceStyle)
+            })
+            .disposed(by: disposeBag)
+        return search
+    }()
 
     // MARK: - Lifecycle
 
@@ -110,7 +122,6 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
         view.backgroundColor = .systemBackground
         observeViewModel()
         setupNavigationBar()
-        setupSearch()
         setupViews()
         updateInterface(to: viewModel.state.settings)
         navigationItem.rightBarButtonItems = createRightBarButtonItems()
@@ -136,36 +147,6 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
             sidebarButton.rx.tap.subscribe(onNext: { [weak self] _ in self?.toggleSidebar(animated: true) }).disposed(by: disposeBag)
 
             navigationItem.leftBarButtonItems = [closeButton, sidebarButton]
-        }
-
-        func setupSearch() {
-            let searchController = UISearchController()
-            searchController.obscuresBackgroundDuringPresentation = false
-            searchController.hidesNavigationBarDuringPresentation = false
-            searchController.searchBar.placeholder = "Search Document"
-            searchController.searchBar.autocapitalizationType = .none
-
-            searchController.searchBar
-                .rx
-                .text
-                .observe(on: MainScheduler.instance)
-                .skip(1)
-                .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
-                .subscribe(onNext: { [weak self] text in
-                    self?.viewModel.process(action: .searchDocument(text ?? ""))
-                })
-                .disposed(by: disposeBag)
-
-            searchController.searchBar
-                .rx
-                .cancelButtonClicked
-                .observe(on: MainScheduler.instance)
-                .subscribe(onNext: { [weak self] _ in
-                    self?.viewModel.process(action: .searchDocument(""))
-                })
-                .disposed(by: disposeBag)
-
-            navigationItem.searchController = searchController
         }
 
         func setupViews() {
@@ -421,7 +402,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
     }
 
     private func createRightBarButtonItems() -> [UIBarButtonItem] {
-        var buttons = [settingsButton]
+        var buttons = [settingsButton, searchButton]
         if viewModel.state.library.metadataEditable {
             buttons.append(toolbarButton)
         }
