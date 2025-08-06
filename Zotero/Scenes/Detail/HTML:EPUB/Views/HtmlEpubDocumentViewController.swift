@@ -77,7 +77,7 @@ class HtmlEpubDocumentViewController: UIViewController {
 
             NSLayoutConstraint.activate([
                 view.safeAreaLayoutGuide.topAnchor.constraint(equalTo: webView.topAnchor),
-                view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: webView.bottomAnchor),
+                view.bottomAnchor.constraint(equalTo: webView.bottomAnchor),
                 view.safeAreaLayoutGuide.leadingAnchor.constraint(equalTo: webView.leadingAnchor),
                 view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: webView.trailingAnchor)
             ])
