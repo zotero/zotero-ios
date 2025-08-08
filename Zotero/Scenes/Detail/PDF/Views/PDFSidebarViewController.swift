@@ -43,6 +43,7 @@ class PDFSidebarViewController: UIViewController {
     private let viewModel: ViewModel<PDFReaderActionHandler>
     private let disposeBag: DisposeBag
 
+    private weak var pickerTop: NSLayoutConstraint!
     private weak var picker: UISegmentedControl!
     private weak var controllerContainer: UIView!
     private weak var currentController: UIViewController?
@@ -70,6 +71,19 @@ class PDFSidebarViewController: UIViewController {
 
         setupViews()
         select(tab: .annotations)
+    }
+
+    func setAccessibilityOverlay(height: CGFloat, animated: Bool) {
+        pickerTop.constant = max(height, 20)
+
+        if !animated {
+            view.layoutIfNeeded()
+            return
+        }
+
+        UIView.animate(withDuration: 0.2) {
+            self.view.layoutIfNeeded()
+        }
     }
 
     private func select(tab: Tab) {
@@ -194,8 +208,11 @@ class PDFSidebarViewController: UIViewController {
         picker.setContentHuggingPriority(.defaultHigh, for: .vertical)
         container.setContentHuggingPriority(.defaultLow, for: .vertical)
 
+        let pickerTop = picker.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20)
+        self.pickerTop = pickerTop
+
         NSLayoutConstraint.activate([
-            picker.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
+            pickerTop,
             container.topAnchor.constraint(equalTo: picker.bottomAnchor, constant: 4),
             picker.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 15),
             view.trailingAnchor.constraint(equalTo: picker.trailingAnchor, constant: 15),

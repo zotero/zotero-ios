@@ -144,6 +144,8 @@ final class RItem: Object {
     @Persisted var deleted: Bool
     /// Comment (for annotations) or note (for notes) text without HTML tags
     @Persisted var htmlFreeContent: String?
+    /// Selected override speech language for this item
+    @Persisted var speechLanguage: String?
 
     var doi: String? {
         return self.fields.filter(.key(FieldKeys.Item.doi)).first.flatMap({ field -> String? in
