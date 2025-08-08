@@ -93,7 +93,7 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
         }
     }
 
-    private func performPDFWorkerOperation(file: FileData, operationName: String, jsFunction: String) {
+    private func performPDFWorkerOperation(file: FileData, operationName: String, jsFunction: String, additionalParams: [String] = []) {
         performAfterInitialization()
             .flatMap { [weak self] _ -> Single<Any> in
                 guard let self, let temporaryDirectory else { return .never() }
@@ -103,7 +103,12 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
                     return .error(error)
                 }
                 DDLogInfo("PDFWorkerWebViewHandler: call \(operationName) js")
-                return call(javascript: "\(jsFunction)('\(file.fileName)');")
+                var javascript = "\(jsFunction)('\(file.fileName)'"
+                if !additionalParams.isEmpty {
+                    javascript += ", " + additionalParams.joined(separator: ", ")
+                }
+                javascript += ");"
+                return call(javascript: javascript)
             }
             .subscribe(onFailure: { [weak self] error in
                 DDLogError("PDFWorkerWebViewHandler: \(operationName) failed - \(error)")
@@ -116,8 +121,8 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
         performPDFWorkerOperation(file: file, operationName: "recognize", jsFunction: "recognize")
     }
 
-    func getFullText(file: FileData) {
-        performPDFWorkerOperation(file: file, operationName: "getFullText", jsFunction: "getFullText")
+    func getFullText(file: FileData, pages: [Int]?) {
+        performPDFWorkerOperation(file: file, operationName: "getFullText", jsFunction: "getFullText", additionalParams: pages.flatMap({ ["[\($0.map({ "\($0)" }).joined(separator: ","))]"] }) ?? [])
     }
 
     /// Communication with JS in `webView`. The `webView` sends a message through one of the registered `JSHandlers`, which is received here.
