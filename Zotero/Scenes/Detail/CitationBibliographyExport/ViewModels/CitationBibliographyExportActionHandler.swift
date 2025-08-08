@@ -159,14 +159,11 @@ struct CitationBibliographyExportActionHandler: ViewModelActionHandler {
         return loadSession(in: viewModel).flatMap { session in
             switch viewModel.state.mode {
             case .citation:
-                return citationController.citation(for: session, label: nil, locator: nil, omitAuthor: false, format: .html, showInWebView: false)
+                return citationController.citation(for: session, label: nil, locator: nil, omitAuthor: false, format: .html(wrapped: true), showInWebView: false)
 
             case .bibliography:
-                return citationController.bibliography(for: session, format: .html)
+                return citationController.bibliography(for: session, format: .html(wrapped: true))
             }
-        }
-        .flatMap { html in
-            return .just(CitationController.Format.html.wrapIfNeeeded(result: html))
         }
     }
 

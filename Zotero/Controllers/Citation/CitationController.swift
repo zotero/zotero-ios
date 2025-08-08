@@ -38,14 +38,25 @@ class CitationController: NSObject {
         var itemsCSL: String
     }
 
-    enum Format: String {
-        case html
+    enum Format {
+        case html(wrapped: Bool)
         case text
-        case rtf
+        case rtf(wrapped: Bool)
 
-        func wrapIfNeeeded(result: String) -> String {
+        var rawValue: String {
             switch self {
+            case .html:
+                return "html"
+            case .text:
+                return "text"
             case .rtf:
+                return "rtf"
+            }
+        }
+
+        func formatted(result: String) -> String {
+            switch self {
+            case .rtf(wrapped: true):
                 var newResult = result
                 if !result.hasPrefix("{\\rtf") {
                     newResult = "{\\rtf\n" + newResult
@@ -55,7 +66,7 @@ class CitationController: NSObject {
                 }
                 return newResult
 
-            case .html:
+            case .html(wrapped: true):
                 var newResult = result
                 if !result.hasPrefix("<html") {
                     newResult = #"<html><head><meta http-equiv="content-type" content="text/html; charset=utf-8"></head><body>"# + newResult
@@ -65,7 +76,7 @@ class CitationController: NSObject {
                 }
                 return newResult
 
-            case .text:
+            default:
                 return result
             }
         }
@@ -323,6 +334,7 @@ class CitationController: NSObject {
             format: format.rawValue,
             showInWebView: showInWebView
         )
+        .flatMap({ .just(format.formatted(result: $0)) })
 
         func itemsData(for itemIds: Set<String>, label: String?, locator: String?, omitAuthor: Bool) -> String {
             var itemsData: [[String: Any]] = []
@@ -356,8 +368,9 @@ class CitationController: NSObject {
                 localeXML: session.localeXML,
                 format: format.rawValue
             )
+            .flatMap({ .just(format.formatted(result: $0)) })
         }
-        return numberedBibliography(for: session.itemIds, format: format)
+        return numberedBibliography(for: session.itemIds, format: format).flatMap({ .just(format.formatted(result: $0)) })
 
         func numberedBibliography(for itemIds: Set<String>, format: Format) -> Single<String> {
             let actions = itemIds.map({ citation(for: session, itemIds: [$0], label: nil, locator: nil, omitAuthor: false, format: format, showInWebView: false).asObservable() })

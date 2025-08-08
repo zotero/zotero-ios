@@ -86,7 +86,7 @@ struct SingleCitationActionHandler: ViewModelActionHandler {
 
     private func copy(in viewModel: ViewModel<SingleCitationActionHandler>) {
         guard let preview = viewModel.state.preview else { return }
-        let wrappedHTML = CitationController.Format.html.wrapIfNeeeded(result: preview)
+        let wrappedHTML = CitationController.Format.html(wrapped: true).formatted(result: preview)
         if viewModel.state.exportAsHtml {
             UIPasteboard.general.copy(html: wrappedHTML, plainText: preview)
             update(viewModel: viewModel) { state in
@@ -128,7 +128,7 @@ struct SingleCitationActionHandler: ViewModelActionHandler {
     ) {
         guard let session = viewModel.state.citationSession else { return }
         citationController
-            .citation(for: session, label: locatorLabel, locator: locatorValue, omitAuthor: omitAuthor, format: .html, showInWebView: true)
+            .citation(for: session, label: locatorLabel, locator: locatorValue, omitAuthor: omitAuthor, format: .html(wrapped: false), showInWebView: true)
             .subscribe(onSuccess: { [weak viewModel] preview in
                 guard let viewModel else { return }
                 update(viewModel: viewModel) { state in
@@ -151,7 +151,7 @@ struct SingleCitationActionHandler: ViewModelActionHandler {
                 }
             })
             .flatMap { session -> Single<String> in
-                return citationController.citation(for: session, label: state.locator, locator: state.locatorValue, omitAuthor: state.omitAuthor, format: .html, showInWebView: true)
+                return citationController.citation(for: session, label: state.locator, locator: state.locatorValue, omitAuthor: state.omitAuthor, format: .html(wrapped: false), showInWebView: true)
             }
             .subscribe(
                 onSuccess: { [weak viewModel] preview in

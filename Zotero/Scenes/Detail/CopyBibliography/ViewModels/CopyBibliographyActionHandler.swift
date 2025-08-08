@@ -50,10 +50,10 @@ struct CopyBibliographyActionHandler: ViewModelActionHandler {
                     }
                 })
                 .flatMap { session -> Single<(CitationController.Session, String)> in
-                    return citationController.bibliography(for: session, format: .html).flatMap({ .just((session, $0)) })
+                    return citationController.bibliography(for: session, format: .html(wrapped: false)).flatMap({ .just((session, $0)) })
                 }
                 .flatMap { session, html -> Single<(html: String, plainText: String)> in
-                    let wrappedHTML = CitationController.Format.html.wrapIfNeeeded(result: html)
+                    let wrappedHTML = CitationController.Format.html(wrapped: true).formatted(result: html)
                     if state.exportAsHtml { return Single.just((wrappedHTML, html)) }
                     return citationController.bibliography(for: session, format: .text).flatMap({ Single.just((wrappedHTML, $0)) })
                 }

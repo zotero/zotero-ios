@@ -74,11 +74,10 @@ final class DragDropController: @unchecked Sendable {
                     guard let self else { return .just("") }
                     session = startedSession
                     progress.completedUnitCount = 1
-                    return citationController.bibliography(for: startedSession, format: .html)
+                    return citationController.bibliography(for: startedSession, format: .html(wrapped: true))
                 }
-                .subscribe { [weak self] html in
+                .subscribe { [weak self] wrappedHTML in
                     progress.completedUnitCount = 2
-                    let wrappedHTML = CitationController.Format.html.wrapIfNeeeded(result: html)
                     completion(wrappedHTML.data(using: .utf8), nil)
                     if let session {
                         self?.citationController.endSession(session)
@@ -118,7 +117,7 @@ final class DragDropController: @unchecked Sendable {
                     guard let self else { return .just("") }
                     session = startedSession
                     progress.completedUnitCount = 1
-                    return citationController.bibliography(for: startedSession, format: Defaults.shared.quickCopyAsHtml ? .html : .text)
+                    return citationController.bibliography(for: startedSession, format: Defaults.shared.quickCopyAsHtml ? .html(wrapped: false) : .text)
                 }
                 .subscribe { [weak self] plainText in
                     progress.completedUnitCount = 2
@@ -161,11 +160,10 @@ final class DragDropController: @unchecked Sendable {
                     guard let self else { return .just("") }
                     session = startedSession
                     progress.completedUnitCount = 1
-                    return citationController.bibliography(for: startedSession, format: .html)
+                    return citationController.bibliography(for: startedSession, format: .html(wrapped: true))
                 }
-                .subscribe { [weak self] html in
+                .subscribe { [weak self] wrappedHTML in
                     progress.completedUnitCount = 2
-                    let wrappedHTML = CitationController.Format.html.wrapIfNeeeded(result: html)
                     if let htmlData = wrappedHTML.data(using: .utf8) {
                         do {
                             completion(try Data.convertHTMLToRTF(htmlData: htmlData), nil)
