@@ -423,6 +423,10 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         return !statusBarVisible
     }
 
+    override var prefersHomeIndicatorAutoHidden: Bool {
+        return !statusBarVisible
+    }
+
     // MARK: - Actions
 
     private func toggleSidebar(animated: Bool) {
