@@ -314,17 +314,15 @@ class CitationController: NSObject {
         guard let citationWebViewHandler = citationWebViewHandlerBySession[session] else { return .error(Error.invalidSession) }
         let itemIds = itemIds ?? session.itemIds
         let itemsData = itemsData(for: itemIds, label: label, locator: locator, omitAuthor: omitAuthor)
-        return citationWebViewHandler
-            .getCitation(
-                itemsCSL: session.itemsCSL,
-                itemsData: itemsData,
-                styleXML: session.styleXML,
-                localeId: session.styleLocaleId,
-                localeXML: session.localeXML,
-                format: format.rawValue,
-                showInWebView: showInWebView
-            )
-            .flatMap({ .just($0) })
+        return citationWebViewHandler.getCitation(
+            itemsCSL: session.itemsCSL,
+            itemsData: itemsData,
+            styleXML: session.styleXML,
+            localeId: session.styleLocaleId,
+            localeXML: session.localeXML,
+            format: format.rawValue,
+            showInWebView: showInWebView
+        )
 
         func itemsData(for itemIds: Set<String>, label: String?, locator: String?, omitAuthor: Bool) -> String {
             var itemsData: [[String: Any]] = []
@@ -351,18 +349,15 @@ class CitationController: NSObject {
     func bibliography(for session: Session, format: Format) -> Single<String> {
         guard let citationWebViewHandler = citationWebViewHandlerBySession[session] else { return .error(Error.invalidSession) }
         if session.supportsBibliography {
-            return citationWebViewHandler
-                .getBibliography(
-                    itemsCSL: session.itemsCSL,
-                    styleXML: session.styleXML,
-                    localeId: session.styleLocaleId,
-                    localeXML: session.localeXML,
-                    format: format.rawValue
-                )
-                .flatMap({ .just($0) })
+            return citationWebViewHandler.getBibliography(
+                itemsCSL: session.itemsCSL,
+                styleXML: session.styleXML,
+                localeId: session.styleLocaleId,
+                localeXML: session.localeXML,
+                format: format.rawValue
+            )
         }
         return numberedBibliography(for: session.itemIds, format: format)
-            .flatMap({ .just($0) })
 
         func numberedBibliography(for itemIds: Set<String>, format: Format) -> Single<String> {
             let actions = itemIds.map({ citation(for: session, itemIds: [$0], label: nil, locator: nil, omitAuthor: false, format: format, showInWebView: false).asObservable() })
