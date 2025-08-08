@@ -12,7 +12,6 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
     private let collectionsSection: Int = 0
     private weak var collectionView: UICollectionView?
     private unowned let dbStorage: DbStorage
-    private unowned let dragDropController: DragDropController
     private unowned let viewModel: ViewModel<CollectionsActionHandler>
 
     private var dataSource: UICollectionViewDiffableDataSource<Int, Collection>!
@@ -32,10 +31,9 @@ final class ExpandableCollectionsCollectionViewHandler: NSObject {
         return self.dataSource.snapshot(for: self.collectionsSection).rootItems.contains(where: { $0.identifier == self.viewModel.state.selectedCollectionId })
     }
 
-    init(collectionView: UICollectionView, dbStorage: DbStorage, dragDropController: DragDropController, viewModel: ViewModel<CollectionsActionHandler>, splitDelegate: SplitControllerDelegate?) {
+    init(collectionView: UICollectionView, dbStorage: DbStorage, viewModel: ViewModel<CollectionsActionHandler>, splitDelegate: SplitControllerDelegate?) {
         self.collectionView = collectionView
         self.dbStorage = dbStorage
-        self.dragDropController = dragDropController
         self.viewModel = viewModel
         self.splitDelegate = splitDelegate
 
@@ -260,7 +258,7 @@ extension ExpandableCollectionsCollectionViewHandler: UICollectionViewDropDelega
         guard let indexPath = coordinator.destinationIndexPath, let key = dataSource.itemIdentifier(for: indexPath)?.identifier.key else { return }
         switch coordinator.proposal.operation {
         case .copy:
-            guard let localContext = coordinator.session.localDragSession?.localContext as? DragSessionItemsLocalContext, !localContext.keys.isEmpty else { break }
+            guard let localContext = coordinator.session.localDragSession?.localContext as? DragDropController.LocalContext, !localContext.keys.isEmpty else { break }
             viewModel.process(action: .assignKeysToCollection(itemKeys: localContext.keys, collectionKey: key))
 
         default:
@@ -271,7 +269,7 @@ extension ExpandableCollectionsCollectionViewHandler: UICollectionViewDropDelega
     func collectionView(_ collectionView: UICollectionView, dropSessionDidUpdate session: UIDropSession, withDestinationIndexPath destinationIndexPath: IndexPath?) -> UICollectionViewDropProposal {
         let library = viewModel.state.library
         guard library.metadataEditable,
-              let localContext = session.localDragSession?.localContext as? DragSessionItemsLocalContext,
+              let localContext = session.localDragSession?.localContext as? DragDropController.LocalContext,
               localContext.libraryIdentifier == library.identifier,
               !localContext.keys.isEmpty,
               let destinationIndexPath,

@@ -49,7 +49,7 @@ final class ItemsFilterCoordinator: NSObject, Coordinator {
         let tags = filters.compactMap({ $0.tags }).first
         let state = TagFilterState(selectedTags: tags ?? [], showAutomatic: Defaults.shared.tagPickerShowAutomaticTags, displayAll: Defaults.shared.tagPickerDisplayAllTags)
         let handler = TagFilterActionHandler(dbStorage: dbStorage)
-        let tagController = TagFilterViewController(viewModel: ViewModel(initialState: state, handler: handler), dragDropController: controllers.dragDropController)
+        let tagController = TagFilterViewController(viewModel: ViewModel(initialState: state, handler: handler))
         tagController.view.translatesAutoresizingMaskIntoConstraints = false
         tagController.delegate = filtersDelegate
         filtersDelegate?.tagFilterDelegate = tagController

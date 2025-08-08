@@ -26,12 +26,10 @@ class TagFilterViewController: UIViewController {
     private static let searchBarTopOffset: CGFloat = -10
     private static let searchBarBottomOffset: CGFloat = -8
     private let viewModel: ViewModel<TagFilterActionHandler>
-    private unowned let dragDropController: DragDropController
     private let disposeBag: DisposeBag
 
-    init(viewModel: ViewModel<TagFilterActionHandler>, dragDropController: DragDropController) {
+    init(viewModel: ViewModel<TagFilterActionHandler>) {
         self.viewModel = viewModel
-        self.dragDropController = dragDropController
         searchBarScrollEnabled = true
         disposeBag = DisposeBag()
         didAppear = false
@@ -275,7 +273,7 @@ extension TagFilterViewController: UICollectionViewDropDelegate {
     func collectionView(_ collectionView: UICollectionView, dropSessionDidUpdate session: UIDropSession, withDestinationIndexPath destinationIndexPath: IndexPath?) -> UICollectionViewDropProposal {
         guard let library = delegate?.currentLibrary,
               library.metadataEditable,
-              let localContext = session.localDragSession?.localContext as? DragSessionItemsLocalContext,
+              let localContext = session.localDragSession?.localContext as? DragDropController.LocalContext,
               localContext.libraryIdentifier == library.identifier,
               !localContext.keys.isEmpty,
               let destinationIndexPath,
@@ -288,7 +286,7 @@ extension TagFilterViewController: UICollectionViewDropDelegate {
         guard let indexPath = coordinator.destinationIndexPath, let tag = tag(for: indexPath) else { return }
         switch coordinator.proposal.operation {
         case .copy:
-            guard let localContext = coordinator.session.localDragSession?.localContext as? DragSessionItemsLocalContext, !localContext.keys.isEmpty else { break }
+            guard let localContext = coordinator.session.localDragSession?.localContext as? DragDropController.LocalContext, !localContext.keys.isEmpty else { break }
             viewModel.process(action: .assignTag(name: tag.tag.name, toItemKeys: localContext.keys, libraryId: localContext.libraryIdentifier))
 
         default:

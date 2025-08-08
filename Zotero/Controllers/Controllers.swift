@@ -20,7 +20,6 @@ final class Controllers {
     let secureStorage: SecureStorage
     let fileStorage: FileStorage
     let schemaController: SchemaController
-    let dragDropController: DragDropController
     let crashReporter: CrashReporter
     let debugLogging: DebugLogging
     let bundledDataStorage: DbStorage
@@ -86,7 +85,6 @@ final class Controllers {
         self.secureStorage = secureStorage
         self.fileStorage = fileStorage
         self.schemaController = schemaController
-        dragDropController = DragDropController()
         self.crashReporter = crashReporter
         self.debugLogging = debugLogging
         self.translatorsAndStylesController = translatorsAndStylesController
@@ -302,6 +300,7 @@ final class UserControllers {
     let webSocketController: WebSocketController
     let fileCleanupController: AttachmentFileCleanupController
     let citationController: CitationController
+    let dragDropController: DragDropController
     let webDavController: WebDavController
     let customUrlController: CustomURLController
     let fullSyncDebugger: FullSyncDebugger
@@ -398,11 +397,8 @@ final class UserControllers {
         )
         self.webSocketController = webSocketController
         self.fileCleanupController = fileCleanupController
-        citationController = CitationController(
-            fileStorage: controllers.fileStorage,
-            dbStorage: dbStorage,
-            bundledDataStorage: controllers.bundledDataStorage
-        )
+        citationController = CitationController(fileStorage: controllers.fileStorage, dbStorage: dbStorage, bundledDataStorage: controllers.bundledDataStorage)
+        dragDropController = DragDropController(citationController: citationController)
         translatorsAndStylesController = controllers.translatorsAndStylesController
         fullSyncDebugger = FullSyncDebugger(syncScheduler: syncScheduler, debugLogging: controllers.debugLogging, sessionController: controllers.sessionController)
         idleTimerController = controllers.idleTimerController
