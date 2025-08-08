@@ -52,8 +52,12 @@ final class DragDropController: @unchecked Sendable {
         let localContext = LocalContext(libraryIdentifier: libraryIdentifier)
         // Register data representation for html.
         localContext.itemProvider.registerDataRepresentation(for: .html, visibility: .all) { [weak self, weak localContext] completion in
-            let progress = Progress(totalUnitCount: 2)
             let keys = localContext?.keys ?? []
+            guard !keys.isEmpty else {
+                completion(nil, nil)
+                return nil
+            }
+            let progress = Progress(totalUnitCount: 2)
             DispatchQueue.main.async { [weak self] in
                 guard let self else {
                     completion(nil, nil)
@@ -92,8 +96,12 @@ final class DragDropController: @unchecked Sendable {
         }
         // Register data representation for plain text. Use html without wrapping according to user option.
         localContext.itemProvider.registerDataRepresentation(for: .plainText, visibility: .all) { [weak self, weak localContext] completion in
-            let progress = Progress(totalUnitCount: 2)
             let keys = localContext?.keys ?? []
+            guard !keys.isEmpty else {
+                completion(nil, nil)
+                return nil
+            }
+            let progress = Progress(totalUnitCount: 2)
             DispatchQueue.main.async { [weak self] in
                 guard let self else {
                     completion(nil, nil)
@@ -131,8 +139,12 @@ final class DragDropController: @unchecked Sendable {
         }
         // Register data representation for rtf. Create html and transform it to rtf
         localContext.itemProvider.registerDataRepresentation(for: .rtf, visibility: .all) { [weak self, weak localContext] completion in
-            let progress = Progress(totalUnitCount: 2)
             let keys = localContext?.keys ?? []
+            guard !keys.isEmpty else {
+                completion(nil, nil)
+                return nil
+            }
+            let progress = Progress(totalUnitCount: 2)
             DispatchQueue.main.async { [weak self] in
                 guard let self else {
                     completion(nil, nil)
