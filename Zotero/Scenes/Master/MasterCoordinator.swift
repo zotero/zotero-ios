@@ -87,7 +87,7 @@ final class MasterCoordinator: NSObject, Coordinator {
         let handler = CollectionsActionHandler(dbStorage: dbStorage, fileStorage: controllers.fileStorage, attachmentDownloader: attachmentDownloader, fileCleanupController: fileCleanupController)
         let state = CollectionsState(libraryId: libraryId, selectedCollectionId: selectedCollectionId)
         let viewModel = ViewModel(initialState: state, handler: handler)
-        return CollectionsViewController(viewModel: viewModel, dbStorage: dbStorage, dragDropController: controllers.dragDropController, syncScheduler: syncScheduler, coordinatorDelegate: self)
+        return CollectionsViewController(viewModel: viewModel, dbStorage: dbStorage, syncScheduler: syncScheduler, coordinatorDelegate: self)
     }
 
     private func storeIfNeeded(libraryId: LibraryIdentifier, preselectedCollection collectionId: CollectionIdentifier? = nil) -> CollectionIdentifier {
@@ -305,6 +305,6 @@ extension MasterCoordinator: MasterContainerCoordinatorDelegate {
         let state = TagFilterState(selectedTags: [], showAutomatic: Defaults.shared.tagPickerShowAutomaticTags, displayAll: Defaults.shared.tagPickerDisplayAllTags)
         let handler = TagFilterActionHandler(dbStorage: dbStorage)
         let viewModel = ViewModel(initialState: state, handler: handler)
-        return TagFilterViewController(viewModel: viewModel, dragDropController: controllers.dragDropController)
+        return TagFilterViewController(viewModel: viewModel)
     }
 }

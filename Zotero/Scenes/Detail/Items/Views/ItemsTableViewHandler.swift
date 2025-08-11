@@ -53,8 +53,7 @@ final class ItemsTableViewHandler: NSObject {
     private unowned let tableView: UITableView
     private unowned let delegate: ItemsTableViewHandlerDelegate
     private unowned let dataSource: ItemsTableViewDataSource
-    private unowned let dragDropController: DragDropController
-    private unowned let citationController: CitationController?
+    private unowned let dragDropController: DragDropController?
     private let disposeBag: DisposeBag
 
     private var reloadAnimationsDisabled: Bool
@@ -63,14 +62,12 @@ final class ItemsTableViewHandler: NSObject {
         tableView: UITableView,
         delegate: ItemsTableViewHandlerDelegate,
         dataSource: ItemsTableViewDataSource,
-        dragDropController: DragDropController,
-        citationController: CitationController?
+        dragDropController: DragDropController?
     ) {
         self.tableView = tableView
         self.delegate = delegate
         self.dataSource = dataSource
         self.dragDropController = dragDropController
-        self.citationController = citationController
         reloadAnimationsDisabled = false
         disposeBag = DisposeBag()
 
@@ -309,18 +306,20 @@ extension ItemsTableViewHandler: UITableViewDelegate {
 
 extension ItemsTableViewHandler: UITableViewDragDelegate {
     func tableView(_ tableView: UITableView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem] {
-        guard let item = dataSource.object(at: indexPath.row) as? RItem else { return [] }
-        session.localContext = DragSessionItemsLocalContext(libraryIdentifier: item.libraryIdentifier, keys: Set([item.key]))
-        return [dragDropController.dragItem(from: item, citationController: citationController, disposeBag: disposeBag)]
+        guard let dragDropController, let item = dataSource.object(at: indexPath.row) as? RItem else { return [] }
+        let localContext = (session.localContext as? DragDropController.LocalContext) ?? dragDropController.startContext(libraryIdentifier: item.libraryIdentifier)
+        session.localContext = localContext
+        guard localContext.addToContext(item: item) else { return [] }
+        return [dragDropController.dragItem(from: item, localContext: localContext)]
     }
 
     func tableView(_ tableView: UITableView, itemsForAddingTo session: any UIDragSession, at indexPath: IndexPath, point: CGPoint) -> [UIDragItem] {
-        guard let item = dataSource.object(at: indexPath.row) as? RItem,
-              let localContext = session.localContext as? DragSessionItemsLocalContext,
-              let newLocalContext = localContext.createNewContext(with: item)
+        guard let dragDropController,
+              let item = dataSource.object(at: indexPath.row) as? RItem,
+              let localContext = session.localContext as? DragDropController.LocalContext,
+              localContext.addToContext(item: item)
         else { return [] }
-        session.localContext = newLocalContext
-        return [dragDropController.dragItem(from: item, citationController: citationController, disposeBag: disposeBag)]
+        return [dragDropController.dragItem(from: item, localContext: localContext)]
     }
 }
 
@@ -330,7 +329,7 @@ extension ItemsTableViewHandler: UITableViewDropDelegate {
         switch coordinator.proposal.operation {
         case .copy:
             let key = object.key
-            guard let localContext = coordinator.session.localDragSession?.localContext as? DragSessionItemsLocalContext, !localContext.keys.isEmpty else { break }
+            guard let localContext = coordinator.session.localDragSession?.localContext as? DragDropController.LocalContext, !localContext.keys.isEmpty else { break }
             delegate.process(dragAndDropAction: .moveItems(keys: localContext.keys, toKey: key))
 
         default:
@@ -341,7 +340,7 @@ extension ItemsTableViewHandler: UITableViewDropDelegate {
     func tableView(_ tableView: UITableView, dropSessionDidUpdate session: UIDropSession, withDestinationIndexPath destinationIndexPath: IndexPath?) -> UITableViewDropProposal {
         let library = delegate.library
         guard library.metadataEditable,
-              let localContext = session.localDragSession?.localContext as? DragSessionItemsLocalContext,
+              let localContext = session.localDragSession?.localContext as? DragDropController.LocalContext,
               localContext.libraryIdentifier == library.identifier,
               !localContext.keys.isEmpty,
               let destinationIndexPath,

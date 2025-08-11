@@ -13,23 +13,24 @@ import UniformTypeIdentifiers
 import CocoaLumberjackSwift
 
 extension UIPasteboard {
-    func copy(html: String, plaintext: String) {
-        guard let htmlData = html.data(using: .utf8) else {
-            DDLogError("UIPasteboard: can't convert html string to data")
-            UIPasteboard.general.string = plaintext
-            return
-        }
+    func copy(html: String, plainText: String) {
+        var item: [String: Any] = [UTType.plainText.identifier: plainText, UTType.html.identifier: html]
 
-        var item: [String: Any] = [UTType.plainText.identifier: plaintext, UTType.html.identifier: htmlData]
-
-        do {
-            let attrString = try NSAttributedString(data: htmlData, options: [.documentType: NSAttributedString.DocumentType.html], documentAttributes: nil)
-            let data = try attrString.data(from: NSRange(location: 0, length: attrString.length), documentAttributes: [.documentType: NSAttributedString.DocumentType.rtf])
-            item[UTType.rtf.identifier] = data
-        } catch let error {
-            DDLogError("UIPasteboard: can't convert html to attributed string or rtf - \(error)")
+        if let htmlData = html.data(using: .utf8) {
+            do {
+                item[UTType.rtf.identifier] = try Data.convertHTMLToRTF(htmlData: htmlData)
+            } catch let error {
+                DDLogError("UIPasteboard: can't convert html to attributed string or rtf - \(error)")
+            }
         }
 
         UIPasteboard.general.items = [item]
+    }
+}
+
+extension Data {
+    static func convertHTMLToRTF(htmlData: Data) throws -> Data {
+        let attrString = try NSAttributedString(data: htmlData, options: [.documentType: NSAttributedString.DocumentType.html], documentAttributes: nil)
+        return try attrString.data(from: NSRange(location: 0, length: attrString.length), documentAttributes: [.documentType: NSAttributedString.DocumentType.rtf])
     }
 }
