@@ -47,8 +47,10 @@ class CitationController: NSObject {
             switch self {
             case .html:
                 return "html"
+
             case .text:
                 return "text"
+                
             case .rtf:
                 return "rtf"
             }
