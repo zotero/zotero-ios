@@ -56,15 +56,10 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
     }
 
     private struct PageData {
-        // Voice used for this page
-        let voice: AVSpeechSynthesisVoice
         // Text to read
         let text: String
-
-        init(text: String, voice: AVSpeechSynthesisVoice) {
-            self.voice = voice
-            self.text = text
-        }
+        // Voice used for this page
+        let voice: AVSpeechSynthesisVoice
     }
 
     private let synthetizer: AVSpeechSynthesizer
