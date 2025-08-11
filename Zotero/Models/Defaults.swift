@@ -6,7 +6,6 @@
 //  Copyright © 2019 Corporation for Digital Scholarship. All rights reserved.
 //
 
-import AVFAudio
 import Foundation
 
 final class Defaults {
