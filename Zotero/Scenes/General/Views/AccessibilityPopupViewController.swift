@@ -15,7 +15,7 @@ import RxSwift
 import CocoaLumberjackSwift
 
 protocol AccessibilityPopoupCoordinatorDelegate: AnyObject {
-    func showVoicePicker(for voice: AVSpeechSynthesisVoice, selectionChanged: @escaping (AVSpeechSynthesisVoice) -> Void)
+    func showVoicePicker(for voice: AVSpeechSynthesisVoice, userInterfaceStyle: UIUserInterfaceStyle, selectionChanged: @escaping (AVSpeechSynthesisVoice) -> Void)
 }
 
 final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: UIViewController, UIPopoverPresentationControllerDelegate {
@@ -77,7 +77,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
             // Speech container
             let speechContainer = UIView()
             speechContainer.translatesAutoresizingMaskIntoConstraints = false
-            speechContainer.backgroundColor = .systemBackground
+            speechContainer.backgroundColor = Asset.Colors.navbarBackground.color
             speechContainer.layer.cornerRadius = 13
             speechContainer.layer.masksToBounds = true
             speechContainer.isHidden = speechManager.state.value.isStopped
@@ -197,6 +197,9 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
             speechButton.addAction(UIAction(handler: { [weak self] _ in self?.speechManager.start() }), for: .touchUpInside)
             self.speechButton = speechButton
 
+            speechButtonBottom = view.safeAreaLayoutGuide.bottomAnchor.constraint(greaterThanOrEqualTo: speechButton.bottomAnchor, constant: 16)
+            speechContainerBottom = view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: speechContainer.bottomAnchor, constant: 16)
+
             // Container
             // We use additional container for the whole UI so that we can we can mimic the .pageSheet presentation in .formSheet,
             // because the .popover always adopts to .formSheet when window size changes and we can't force .pageSheet.
@@ -206,6 +209,8 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
             container.addSubview(speechButton)
             container.addSubview(readerButton)
             container.addSubview(speechContainer)
+            containerHeight = container.heightAnchor.constraint(equalToConstant: currentHeight)
+            containerTop = container.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor)
             view.addSubview(container)
 
             // Button which is used to dismiss on tap on the "fake background" area when in .pageSheet mode.
@@ -214,12 +219,6 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
             dismissButton.addAction(UIAction(handler: { [weak self] _ in self?.presentingViewController?.dismiss(animated: true) }), for: .touchUpInside)
             view.addSubview(dismissButton)
 
-            // Constraints
-
-            containerHeight = container.heightAnchor.constraint(equalToConstant: currentHeight)
-            containerTop = container.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor)
-            speechButtonBottom = view.safeAreaLayoutGuide.bottomAnchor.constraint(greaterThanOrEqualTo: speechButton.bottomAnchor, constant: 16)
-            speechContainerBottom = view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: speechContainer.bottomAnchor, constant: 16)
             let bottomToActivate = speechManager.state.value.isStopped ? speechButtonBottom : speechContainerBottom
 
             var toActivate = [
@@ -301,7 +300,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
         if speechManager.isSpeaking {
             speechManager.pause()
         }
-        coordinatorDelegate?.showVoicePicker(for: voice, selectionChanged: { [weak self] voice in
+        coordinatorDelegate?.showVoicePicker(for: voice, userInterfaceStyle: overrideUserInterfaceStyle, selectionChanged: { [weak self] voice in
             self?.update(voice: voice)
             self?.voiceChangeAction(voice)
         })
@@ -382,12 +381,12 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
 
     private func updatePopup(toHeight height: CGFloat) {
         if isFormSheet() {
-            containerTop.isActive = false
-            containerHeight.isActive = true
-            containerHeight.constant = height
+            containerTop?.isActive = false
+            containerHeight?.isActive = true
+            containerHeight?.constant = height
         } else {
-            containerHeight.isActive = false
-            containerTop.isActive = true
+            containerHeight?.isActive = false
+            containerTop?.isActive = true
             preferredContentSize = CGSize(width: 300, height: height)
         }
     }

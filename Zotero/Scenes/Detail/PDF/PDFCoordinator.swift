@@ -304,6 +304,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
             dismissAction: dismissAction,
             voiceChangeAction: voiceChangeAction
         )
+        controller.overrideUserInterfaceStyle = userInterfaceStyle
         controller.coordinatorDelegate = self
         if UIDevice.current.userInterfaceIdiom == .pad {
             controller.modalPresentationStyle = .popover
@@ -321,7 +322,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
 }
 
 extension PDFCoordinator: AccessibilityPopoupCoordinatorDelegate {
-    func showVoicePicker(for voice: AVSpeechSynthesisVoice, selectionChanged: @escaping (AVSpeechSynthesisVoice) -> Void) {
+    func showVoicePicker(for voice: AVSpeechSynthesisVoice, userInterfaceStyle: UIUserInterfaceStyle, selectionChanged: @escaping (AVSpeechSynthesisVoice) -> Void) {
         guard let navigationController else { return }
         let view = SpeechVoicePickerView(selectedVoice: voice, dismiss: { voice in
             selectionChanged(voice)
@@ -332,6 +333,7 @@ extension PDFCoordinator: AccessibilityPopoupCoordinatorDelegate {
             }
         })
         let controller = UIHostingController(rootView: view)
+        controller.overrideUserInterfaceStyle = userInterfaceStyle
         controller.modalPresentationStyle = .formSheet
         controller.isModalInPresentation = true
         if let presentedController = navigationController.presentedViewController {

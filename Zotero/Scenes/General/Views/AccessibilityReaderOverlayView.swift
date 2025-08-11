@@ -25,7 +25,7 @@ final class AccessibilityReaderOverlayView<Delegate: SpeechmanagerDelegate>: UIV
         super.init(frame: .zero)
 
         translatesAutoresizingMaskIntoConstraints = false
-        backgroundColor = .white
+        backgroundColor = Asset.Colors.navbarBackground.color
         if type == .overlay {
             setupRoundedCorners()
         }
