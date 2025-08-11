@@ -47,6 +47,7 @@ struct FeatureGates: OptionSet {
 
 #if FEATURE_GATE_SPEECH
         gates.insert(.speech)
+        gates.insert(.pdfWorker)
 #endif
 #endif
 
