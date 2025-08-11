@@ -62,7 +62,7 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
         let voice: AVSpeechSynthesisVoice
     }
 
-    private let synthetizer: AVSpeechSynthesizer
+    private let synthesizer: AVSpeechSynthesizer
     let state: BehaviorRelay<State>
     private let disposeBag: DisposeBag
 
@@ -77,10 +77,10 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
         return try? NSRegularExpression(pattern: "[\r\n]{1,}")
     }()
     var isSpeaking: Bool {
-        return synthetizer.isSpeaking
+        return synthesizer.isSpeaking
     }
     var isPaused: Bool {
-        return synthetizer.isPaused
+        return synthesizer.isPaused
     }
     var currentVoice: AVSpeechSynthesisVoice? {
         return currentIndex.flatMap({ cachedPages[$0] })?.voice
@@ -91,12 +91,12 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
         cachedPages = [:]
         self.speechRateModifier = speechRateModifier
         overrideLanguage = voiceLanguage
-        synthetizer = AVSpeechSynthesizer()
+        synthesizer = AVSpeechSynthesizer()
         state = BehaviorRelay(value: .stopped)
         disposeBag = DisposeBag()
         self.delegate = delegate
         super.init()
-        synthetizer.delegate = self
+        synthesizer.delegate = self
     }
 
     // MARK: - Actions
@@ -126,28 +126,28 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
     }
     
     func pause() {
-        guard synthetizer.isSpeaking else { return }
-        synthetizer.pauseSpeaking(at: .word)
+        guard synthesizer.isSpeaking else { return }
+        synthesizer.pauseSpeaking(at: .word)
     }
 
     func resume() {
-        guard synthetizer.isPaused else { return }
+        guard synthesizer.isPaused else { return }
 
         if !shouldReloadUtteranceOnResume {
-            synthetizer.continueSpeaking()
+            synthesizer.continueSpeaking()
         } else {
             reloadUtterance()
         }
     }
 
     func stop() {
-        guard synthetizer.isSpeaking || synthetizer.isPaused || state.value == .loading else { return }
+        guard synthesizer.isSpeaking || synthesizer.isPaused || state.value == .loading else { return }
         if state.value == .loading {
             state.accept(.stopped)
         } else {
             // Ignore finish delegate, which would move us to another page
             ignoreFinishCallCount = 1
-            synthetizer.stopSpeaking(at: .immediate)
+            synthesizer.stopSpeaking(at: .immediate)
             state.accept(.stopped)
         }
     }
@@ -182,17 +182,17 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
     }
 
     private func utteranceChanged() {
-        if synthetizer.isPaused {
+        if synthesizer.isPaused {
             shouldReloadUtteranceOnResume = true
-        } else if synthetizer.isSpeaking {
+        } else if synthesizer.isSpeaking {
             reloadUtterance()
         }
     }
 
     private func reloadUtterance() {
         guard let currentIndex, let page = cachedPages[currentIndex], let speech else { return }
-        if synthetizer.isSpeaking {
-            synthetizer.pauseSpeaking(at: .immediate)
+        if synthesizer.isSpeaking {
+            synthesizer.pauseSpeaking(at: .immediate)
         }
         let text = String(page.text[page.text.index(page.text.startIndex, offsetBy: speech.globalRange.location)..<page.text.endIndex])
         speak(text: text, voice: page.voice)
@@ -278,20 +278,20 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
     private func skip(to index: Int, on page: PageData) {
         speech = SpeechData(startIndex: index, speakingRange: NSRange(location: 0, length: 0))
         let text = page.text[page.text.index(page.text.startIndex, offsetBy: index)..<page.text.endIndex]
-        speechSynthesizer(synthetizer, willSpeakRangeOfSpeechString: NSRange(location: 0, length: 0), utterance: AVSpeechUtterance())
+        speechSynthesizer(synthesizer, willSpeakRangeOfSpeechString: NSRange(location: 0, length: 0), utterance: AVSpeechUtterance())
         speak(text: String(text), voice: page.voice)
     }
 
     private func speak(text: String, voice: AVSpeechSynthesisVoice) {
-        if synthetizer.isSpeaking {
+        if synthesizer.isSpeaking {
             ignoreFinishCallCount += 1
-            synthetizer.stopSpeaking(at: .immediate)
+            synthesizer.stopSpeaking(at: .immediate)
         }
 
         let utterance = AVSpeechUtterance(string: text)
         utterance.voice = voice
         utterance.rate = 0.5 * speechRateModifier
-        synthetizer.speak(utterance)
+        synthesizer.speak(utterance)
     }
 
     func forward() {
