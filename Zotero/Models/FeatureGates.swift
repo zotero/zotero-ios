@@ -19,7 +19,7 @@ struct FeatureGates: OptionSet {
     static let downloadFilesAtSync = FeatureGates(rawValue: 1 << 3)
 
     static var enabled: FeatureGates {
-        var gates: FeatureGates = []
+        var gates: FeatureGates = [.htmlEpubReader]
 
 #if FEATURE_GATE_ALL
         gates.insert(.multipleOpenItems)

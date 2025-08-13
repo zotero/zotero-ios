@@ -1,5 +1,5 @@
 //
-//  PDFSearchCell.swift
+//  DocumentSearchCell.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 08/07/2020.
@@ -8,7 +8,7 @@
 
 import UIKit
 
-final class PDFSearchCell: UITableViewCell {
+final class DocumentSearchCell: UITableViewCell {
     @IBOutlet private weak var pageLabel: UILabel!
     @IBOutlet private weak var contentLabel: UILabel!
 
