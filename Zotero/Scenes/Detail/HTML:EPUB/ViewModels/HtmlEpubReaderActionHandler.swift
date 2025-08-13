@@ -64,9 +64,10 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             searchAnnotations(for: term, in: viewModel)
 
         case .searchDocument(let term):
-            update(viewModel: viewModel) { state in
-                state.documentSearchTerm = term
-            }
+            searchDocument(term: term, viewModel: viewModel)
+
+        case .processDocumentSearchResults(let data):
+            processDocumentSearchResults(data: data, viewModel: viewModel)
 
         case .selectAnnotationFromSidebar(let key):
             update(viewModel: viewModel) { state in
@@ -159,6 +160,44 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
         case .parseOutline(let data):
             parse(outline: data, viewModel: viewModel)
+        }
+    }
+
+    private func searchDocument(term: String, viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
+        if !term.isEmpty {
+            update(viewModel: viewModel) { state in
+                state.documentSearchTerm = term
+            }
+            return
+        }
+
+        update(viewModel: viewModel) { state in
+            state.documentSearchTerm = nil
+            state.documentSearchResults = []
+            state.changes = .searchResults
+        }
+    }
+
+    private func processDocumentSearchResults(data: [String: Any], viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
+        guard let params = data["params"] as? [String: Any], let snippets = params["snippets"] as? [String], let term = viewModel.state.documentSearchTerm else {
+            update(viewModel: viewModel) { state in
+                state.changes = .searchResults
+            }
+            return
+        }
+
+        let results = snippets.map({ snippet in
+            let nsRange: NSRange
+            if let range = snippet.range(of: term, options: .caseInsensitive) {
+                nsRange = NSRange(range, in: snippet)
+            } else {
+                nsRange = .init()
+            }
+            return DocumentSearchResult(snippet: snippet, highlightRange: nsRange)
+        })
+        update(viewModel: viewModel) { state in
+            state.documentSearchResults = results
+            state.changes = .searchResults
         }
     }
 
