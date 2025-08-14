@@ -794,8 +794,7 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
                     switch action.identifier {
                     case .PSPDFKit.searchDocument:
                         return action.replacing(handler: { [weak self] _ in
-                            guard let self, let pdfController else { return }
-                            parentDelegate?.showSearch(pdfController: pdfController, text: glyphs.text)
+                            self?.parentDelegate?.showSearch(text: glyphs.text)
                         })
 
                     default:
