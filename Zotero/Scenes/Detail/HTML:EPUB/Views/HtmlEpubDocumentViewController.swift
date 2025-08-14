@@ -318,6 +318,9 @@ class HtmlEpubDocumentViewController: UIViewController {
             case "onFindResult":
                 viewModel.process(action: .processDocumentSearchResults(data: data))
 
+            case "onBackdropTap":
+                parentDelegate?.toggleInterfaceVisibility()
+
             default:
                 break
             }

@@ -17,6 +17,7 @@ protocol HtmlEpubReaderContainerDelegate: AnyObject {
     var isSidebarVisible: Bool { get }
 
     func show(url: URL)
+    func toggleInterfaceVisibility()
 }
 
 class HtmlEpubReaderViewController: UIViewController, ReaderViewController, ParentWithSidebarController {
@@ -259,6 +260,10 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
             statusBarHeight = view.safeAreaInsets.top - (navigationController?.isNavigationBarHidden == true ? 0 : navigationBarHeight)
             annotationToolbarHandler?.viewWillTransitionToNewSize()
         }, completion: nil)
+    }
+
+    override var prefersStatusBarHidden: Bool {
+        return !statusBarVisible
     }
 
     // MARK: - State
@@ -527,6 +532,34 @@ extension HtmlEpubReaderViewController: UIPopoverPresentationControllerDelegate 
 extension HtmlEpubReaderViewController: HtmlEpubReaderContainerDelegate {
     func show(url: URL) {
         coordinatorDelegate?.show(url: url)
+    }
+
+    func toggleInterfaceVisibility() {
+        let isHidden = !(navigationController?.navigationBar.isHidden ?? false)
+        let shouldChangeNavigationBarVisibility = !toolbarState.visible || toolbarState.position != .pinned
+
+        if !isHidden && shouldChangeNavigationBarVisibility && navigationController?.navigationBar.isHidden == true {
+            navigationController?.setNavigationBarHidden(false, animated: false)
+            navigationController?.navigationBar.alpha = 0
+        }
+
+        statusBarVisible = !isHidden
+        annotationToolbarHandler?.interfaceVisibilityDidChange()
+
+        UIView.animate(withDuration: 0.15, animations: { [weak self] in
+            guard let self else { return }
+            updateStatusBar()
+            view.layoutIfNeeded()
+            if shouldChangeNavigationBarVisibility {
+                navigationController?.navigationBar.alpha = isHidden ? 0 : 1
+                navigationController?.setNavigationBarHidden(isHidden, animated: false)
+            }
+            annotationToolbarHandler?.interfaceVisibilityDidChange()
+        })
+
+        if isHidden && isSidebarVisible {
+            toggleSidebar(animated: true)
+        }
     }
 }
 
