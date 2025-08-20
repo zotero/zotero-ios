@@ -542,7 +542,7 @@ final class ExtensionViewModel {
 
         func updateState(with attachmentState: State.AttachmentState) {
             var state = self.state
-            state.processedAttachment = .file(file: tmpFile, filename: filename)
+            state.processedAttachment = .file(file: tmpFile, filename: expectedAttachmentFilename)
             state.expectedAttachment = (expectedAttachmentFilename, tmpFile)
             state.attachmentState = attachmentState
             self.state = state
