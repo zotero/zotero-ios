@@ -127,6 +127,7 @@ extension RedirectWebViewHandler: WKNavigationDelegate {
                     self?.disposeBag = nil
 
                     guard let payload = data as? [String: Any],
+                          payload["hasDocument"] as? Bool == true,
                           let cookies = payload["cookies"] as? String,
                           let userAgent = payload["userAgent"] as? String,
                           let referrer = payload["referrer"] as? String else {

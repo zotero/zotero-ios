@@ -4,8 +4,17 @@ function extractData() {
         cookies = document.cookie;
     } catch (e) {}
 
-    if (!document || !document.documentElement) {
-        return {"isFile": true, "contentType": document.contentType, "cookies": cookies, "userAgent": window.navigator.userAgent, "referrer": document.referrer}
+    if (!document) {
+        return {"hasDocument": false, "hasDocumentElement": false, "cookies": cookies, "userAgent": window.navigator.userAgent}
+    }
+    if (!document.documentElement) {
+        return {"hasDocument": true,
+                "hasDocumentElement": false,
+                "title": document.title,
+                "contentType": document.contentType,
+                "cookies": cookies,
+                "userAgent": window.navigator.userAgent,
+                "referrer": document.referrer}
     }
 
     let allFrames = document.querySelectorAll('iframe, frame');
@@ -30,11 +39,13 @@ function extractData() {
         }
     }
 
-    return {"title": document.title,
+    return {"hasDocument": true,
+            "hasDocumentElement": true,
+            "title": document.title,
             "html": document.documentElement.innerHTML,
-            "cookies": cookies,
             "frames": frames,
-            "isFile": false,
+            "contentType": document.contentType,
+            "cookies": cookies,
             "userAgent": window.navigator.userAgent,
             "referrer": document.referrer}
 }
