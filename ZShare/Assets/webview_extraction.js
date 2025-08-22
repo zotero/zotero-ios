@@ -5,11 +5,10 @@ function extractData() {
     } catch (e) {}
 
     if (!document) {
-        return {"hasDocument": false, "hasDocumentElement": false, "cookies": cookies, "userAgent": window.navigator.userAgent}
+        return {"hasDocument": false, "cookies": cookies, "userAgent": window.navigator.userAgent}
     }
     if (!document.documentElement) {
         return {"hasDocument": true,
-                "hasDocumentElement": false,
                 "title": document.title,
                 "contentType": document.contentType,
                 "cookies": cookies,
@@ -40,7 +39,6 @@ function extractData() {
     }
 
     return {"hasDocument": true,
-            "hasDocumentElement": true,
             "title": document.title,
             "html": document.documentElement.innerHTML,
             "frames": frames,

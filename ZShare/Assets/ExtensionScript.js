@@ -9,14 +9,12 @@ ExtensionScriptClass.prototype = {
 
         if (!document) {
             arguments.completionFunction({"hasDocument": false,
-                                          "hasDocumentElement": false,
                                           "cookies": cookies,
                                           "userAgent": window.navigator.userAgent});
             return;
         }
         if (!document.documentElement) {
             arguments.completionFunction({"hasDocument": true,
-                                          "hasDocumentElement": false,
                                           "title": document.title,
                                           "url": document.URL,
                                           "contentType": document.contentType,
@@ -49,7 +47,6 @@ ExtensionScriptClass.prototype = {
         }
 
       	arguments.completionFunction({"hasDocument": true,
-                                      "hasDocumentElement": true,
                                       "title": document.title,
                              	      "url": document.URL,
                                       "contentType": document.contentType,
