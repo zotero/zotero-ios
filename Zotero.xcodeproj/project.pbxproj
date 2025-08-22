@@ -443,7 +443,6 @@
 		B3129855270EE9DE002376F9 /* Error+Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3129854270EE9DE002376F9 /* Error+Helpers.swift */; };
 		B312BB4125519DD30023300A /* ItemDetailLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = B312BB4025519DD30023300A /* ItemDetailLayout.swift */; };
 		B31901942629C9CB00209E33 /* ItemsFilterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31901922629C9CB00209E33 /* ItemsFilterViewController.swift */; };
-		B31901952629C9CB00209E33 /* ItemsFilterViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B31901932629C9CB00209E33 /* ItemsFilterViewController.xib */; };
 		B31941DD24531F6600BF6296 /* PDFAnnotationsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31941DB24531F6600BF6296 /* PDFAnnotationsViewController.swift */; };
 		B319D6B6265CE05000E52132 /* ReadAllItemsForUploadDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B319D6B5265CE05000E52132 /* ReadAllItemsForUploadDbRequest.swift */; };
 		B319D6B8265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B319D6B7265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift */; };
@@ -1591,7 +1590,6 @@
 		B3129854270EE9DE002376F9 /* Error+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Error+Helpers.swift"; sourceTree = "<group>"; };
 		B312BB4025519DD30023300A /* ItemDetailLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailLayout.swift; sourceTree = "<group>"; };
 		B31901922629C9CB00209E33 /* ItemsFilterViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemsFilterViewController.swift; sourceTree = "<group>"; };
-		B31901932629C9CB00209E33 /* ItemsFilterViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ItemsFilterViewController.xib; sourceTree = "<group>"; };
 		B31941DB24531F6600BF6296 /* PDFAnnotationsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PDFAnnotationsViewController.swift; sourceTree = "<group>"; };
 		B319D6B5265CE05000E52132 /* ReadAllItemsForUploadDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAllItemsForUploadDbRequest.swift; sourceTree = "<group>"; };
 		B319D6B7265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAllDownloadedAndForUploadItemsDbRequest.swift; sourceTree = "<group>"; };
@@ -3456,7 +3454,6 @@
 				B3593EF2241A61C700760E20 /* ItemCell.swift */,
 				B30B405E2490CAFC00FAAF6D /* ItemCell.xib */,
 				B31901922629C9CB00209E33 /* ItemsFilterViewController.swift */,
-				B31901932629C9CB00209E33 /* ItemsFilterViewController.xib */,
 				B3D32A4C286C77850075C6D7 /* ItemSortingView.swift */,
 				B3593EF7241A61C700760E20 /* ItemSortTypePickerView.swift */,
 				B3593EF0241A61C700760E20 /* ItemsTableViewHandler.swift */,
@@ -4704,7 +4701,6 @@
 				B30BA8C4255D415600361D25 /* Bundled in Resources */,
 				614D65822A79C9AC007CF449 /* Localizable.stringsdict in Resources */,
 				B34DF1B625768BB70019CCD1 /* TextFieldCell.xib in Resources */,
-				B31901952629C9CB00209E33 /* ItemsFilterViewController.xib in Resources */,
 				B35EDECC263ADD0C003574AC /* TextPreviewViewController.xib in Resources */,
 				B30565B123FC051E003304F2 /* Assets.xcassets in Resources */,
 				B3C9096F2497666900286FCF /* ImagePreviewViewController.xib in Resources */,
