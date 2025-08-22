@@ -15,6 +15,7 @@ class ItemsFilterViewController: UIViewController {
     private weak var containerTop: NSLayoutConstraint!
     private weak var separator: UIView!
 
+    private static let downloadsHeight: CGFloat = 44
     private static let width: CGFloat = 320
     private let tagFilterController: TagFilterViewController
     private let disposeBag: DisposeBag
@@ -93,7 +94,7 @@ class ItemsFilterViewController: UIViewController {
 
             containerTop = container.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 15)
             NSLayoutConstraint.activate([
-                downloadsContainer.heightAnchor.constraint(equalToConstant: 44),
+                downloadsContainer.heightAnchor.constraint(equalToConstant: Self.downloadsHeight),
                 downloadsTitleLabel.topAnchor.constraint(equalTo: downloadsContainer.topAnchor),
                 downloadsTitleLabel.leadingAnchor.constraint(equalTo: downloadsContainer.leadingAnchor),
                 downloadsTitleLabel.bottomAnchor.constraint(equalTo: downloadsContainer.bottomAnchor),
@@ -118,10 +119,7 @@ class ItemsFilterViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        var preferredSize = container.systemLayoutSizeFitting(CGSize(width: Self.width, height: .greatestFiniteMagnitude))
-        preferredSize.width = Self.width
-        preferredContentSize = preferredSize
-        navigationController?.preferredContentSize = preferredSize
+        preferredContentSize = CGSize(width: Self.width, height: Self.downloadsHeight)
     }
 
     // MARK: - Actions
