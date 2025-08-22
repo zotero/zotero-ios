@@ -542,7 +542,7 @@ final class ExtensionViewModel {
 
         func updateState(with attachmentState: State.AttachmentState) {
             var state = self.state
-            state.processedAttachment = .file(file: tmpFile, filename: filename)
+            state.processedAttachment = .file(file: tmpFile, filename: expectedAttachmentFilename)
             state.expectedAttachment = (expectedAttachmentFilename, tmpFile)
             state.attachmentState = attachmentState
             self.state = state
@@ -671,18 +671,19 @@ final class ExtensionViewModel {
 
                 guard let scriptData = item as? [String: Any],
                       let data = scriptData[NSExtensionJavaScriptPreprocessingResultsKey] as? [String: Any],
-                      let isFile = data["isFile"] as? Bool,
+                      data["hasDocument"] as? Bool == true,
                       let url = (data["url"] as? String).flatMap(URL.init),
                       let cookies = data["cookies"] as? String,
                       let userAgent = data["userAgent"] as? String,
-                      let referrer = data["referrer"] as? String else {
+                      let referrer = data["referrer"] as? String
+                else {
                     DDLogError("ExtensionViewModel: can't read script data")
                     subscriber.on(.next(.failure(.cantLoadWebData)))
                     subscriber.on(.completed)
                     return
                 }
 
-                if isFile, let contentType = data["contentType"] as? String {
+                if let contentType = data["contentType"] as? String, !contentType.hasPrefix("text/html"), !contentType.hasPrefix("application/xhtml") {
                     DDLogInfo("ExtensionViewModel: loaded remote file")
                     subscriber.on(.next(.success(.remoteFileUrl(url: url, contentType: contentType, cookies: cookies, userAgent: userAgent, referrer: referrer))))
                 } else if let title = data["title"] as? String,

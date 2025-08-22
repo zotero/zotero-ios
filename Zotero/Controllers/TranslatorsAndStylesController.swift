@@ -616,7 +616,7 @@ final class TranslatorsAndStylesController {
         }
 
         // Dependencies don't need to match the URL anymore.
-        translators.append(contentsOf: loadTranslatorsWithDependencies(for: dependencies, matching: nil, types: types, loadedUuids: &loadedUuids))
+        translators.append(contentsOf: loadTranslatorsWithDependencies(for: dependencies, matching: nil, types: .all, loadedUuids: &loadedUuids))
 
         return translators
     }

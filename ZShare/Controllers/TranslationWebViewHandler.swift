@@ -87,7 +87,7 @@ final class TranslationWebViewHandler: WebViewHandler {
             }
             .flatMap { data -> Single<ExtensionViewModel.State.RawAttachment> in
                 guard let payload = data as? [String: Any],
-                      let isFile = payload["isFile"] as? Bool,
+                      payload["hasDocument"] as? Bool == true,
                       let cookies = payload["cookies"] as? String,
                       let userAgent = payload["userAgent"] as? String,
                       let referrer = payload["referrer"] as? String else {
@@ -96,7 +96,7 @@ final class TranslationWebViewHandler: WebViewHandler {
                     return .error(Error.webExtractionMissingData)
                 }
 
-                if isFile, let contentType = payload["contentType"] as? String {
+                if let contentType = payload["contentType"] as? String, !contentType.hasPrefix("text/html"), !contentType.hasPrefix("application/xhtml") {
                     DDLogInfo("TranslationWebViewHandler: extracted file")
                     return .just(.remoteFileUrl(url: url, contentType: contentType, cookies: cookies, userAgent: userAgent, referrer: referrer))
                 } else if let title = payload["title"] as? String, let html = payload["html"] as? String, let frames = payload["frames"] as? [String] {

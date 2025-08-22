@@ -7,8 +7,15 @@ ExtensionScriptClass.prototype = {
             cookies = document.cookie;
         } catch (e) {}
 
-        if (!document || !document.documentElement) {
-            arguments.completionFunction({"isFile": true,
+        if (!document) {
+            arguments.completionFunction({"hasDocument": false,
+                                          "cookies": cookies,
+                                          "userAgent": window.navigator.userAgent});
+            return;
+        }
+        if (!document.documentElement) {
+            arguments.completionFunction({"hasDocument": true,
+                                          "title": document.title,
                                           "url": document.URL,
                                           "contentType": document.contentType,
                                           "cookies": cookies,
@@ -39,12 +46,13 @@ ExtensionScriptClass.prototype = {
             }
         }
 
-      	arguments.completionFunction({"title": document.title,
+      	arguments.completionFunction({"hasDocument": true,
+                                      "title": document.title,
                              	      "url": document.URL,
+                                      "contentType": document.contentType,
                                       "html": document.documentElement.innerHTML,
                                       "cookies": cookies,
                                       "frames": frames,
-                                      "isFile": false,
                                       "userAgent": window.navigator.userAgent,
                                       "referrer": document.referrer});
     }
