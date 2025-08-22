@@ -14,7 +14,6 @@ class ItemsFilterViewController: UIViewController {
     private weak var container: UIStackView!
     private weak var containerTop: NSLayoutConstraint!
     private weak var separator: UIView!
-    private weak var tagFilterControllerContainer: UIView!
 
     private static let width: CGFloat = 320
     private let tagFilterController: TagFilterViewController
@@ -57,11 +56,6 @@ class ItemsFilterViewController: UIViewController {
         }
 
         func setupViews() {
-            let stackBackgroundView = UIView()
-            stackBackgroundView.backgroundColor = .systemBackground
-            stackBackgroundView.translatesAutoresizingMaskIntoConstraints = false
-            view.addSubview(stackBackgroundView)
-
             let downloadsTitleLabel = UILabel()
             downloadsTitleLabel.font = .preferredFont(forTextStyle: .body)
             downloadsTitleLabel.text = L10n.Items.Filters.downloads
@@ -75,7 +69,6 @@ class ItemsFilterViewController: UIViewController {
             downloadsSwitch.translatesAutoresizingMaskIntoConstraints = false
 
             let downloadsContainer = UIView()
-            downloadsContainer.backgroundColor = .systemBackground
             downloadsContainer.translatesAutoresizingMaskIntoConstraints = false
             downloadsContainer.addSubview(downloadsTitleLabel)
             downloadsContainer.addSubview(downloadsSwitch)
@@ -93,22 +86,13 @@ class ItemsFilterViewController: UIViewController {
             view.addSubview(separator)
             self.separator = separator
 
-            let tagFilterControllerContainer = UIView()
-            tagFilterControllerContainer.backgroundColor = .systemBackground
-            tagFilterControllerContainer.translatesAutoresizingMaskIntoConstraints = false
-            view.addSubview(tagFilterControllerContainer)
-            self.tagFilterControllerContainer = tagFilterControllerContainer
-
             tagFilterController.willMove(toParent: self)
-            tagFilterControllerContainer.addSubview(tagFilterController.view)
+            view.addSubview(tagFilterController.view)
             addChild(tagFilterController)
             tagFilterController.didMove(toParent: self)
 
             containerTop = container.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 15)
             NSLayoutConstraint.activate([
-                stackBackgroundView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-                stackBackgroundView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-                stackBackgroundView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
                 downloadsContainer.heightAnchor.constraint(equalToConstant: 44),
                 downloadsTitleLabel.topAnchor.constraint(equalTo: downloadsContainer.topAnchor),
                 downloadsTitleLabel.leadingAnchor.constraint(equalTo: downloadsContainer.leadingAnchor),
@@ -119,19 +103,14 @@ class ItemsFilterViewController: UIViewController {
                 containerTop,
                 container.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
                 container.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-                container.bottomAnchor.constraint(equalTo: stackBackgroundView.bottomAnchor),
-                separator.topAnchor.constraint(equalTo: stackBackgroundView.bottomAnchor, constant: 4),
+                separator.topAnchor.constraint(equalTo: container.bottomAnchor, constant: 4),
                 separator.leadingAnchor.constraint(equalTo: view.leadingAnchor),
                 separator.trailingAnchor.constraint(equalTo: view.trailingAnchor),
                 separator.heightAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale),
-                tagFilterControllerContainer.topAnchor.constraint(equalTo: container.bottomAnchor, constant: 15),
-                tagFilterControllerContainer.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-                tagFilterControllerContainer.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-                tagFilterControllerContainer.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-                tagFilterController.view.topAnchor.constraint(equalTo: tagFilterControllerContainer.topAnchor),
-                tagFilterController.view.leadingAnchor.constraint(equalTo: tagFilterControllerContainer.leadingAnchor),
-                tagFilterController.view.trailingAnchor.constraint(equalTo: tagFilterControllerContainer.trailingAnchor),
-                tagFilterController.view.bottomAnchor.constraint(equalTo: tagFilterControllerContainer.bottomAnchor)
+                tagFilterController.view.topAnchor.constraint(equalTo: container.bottomAnchor, constant: 15),
+                tagFilterController.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+                tagFilterController.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+                tagFilterController.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
             ])
         }
     }
@@ -150,11 +129,11 @@ class ItemsFilterViewController: UIViewController {
     private func showHideTagFilter() {
         let isCollapsed = (presentingViewController as? MainViewController)?.isCollapsed
         if UIDevice.current.userInterfaceIdiom == .phone || isCollapsed == true {
-            tagFilterControllerContainer.isHidden = false
+            tagFilterController.view.isHidden = false
             separator.isHidden = false
             containerTop.constant = 4
         } else {
-            tagFilterControllerContainer.isHidden = true
+            tagFilterController.view.isHidden = true
             separator.isHidden = true
             containerTop.constant = 15
         }
