@@ -11,7 +11,7 @@ import UIKit
 import RxSwift
 
 class ItemsFilterViewController: UIViewController {
-    private weak var container: UIStackView!
+    private weak var container: UIView!
     private weak var containerTop: NSLayoutConstraint!
     private weak var separator: UIView!
 
@@ -69,15 +69,10 @@ class ItemsFilterViewController: UIViewController {
             }), for: .valueChanged)
             downloadsSwitch.translatesAutoresizingMaskIntoConstraints = false
 
-            let downloadsContainer = UIView()
-            downloadsContainer.translatesAutoresizingMaskIntoConstraints = false
-            downloadsContainer.addSubview(downloadsTitleLabel)
-            downloadsContainer.addSubview(downloadsSwitch)
-
-            let container = UIStackView(arrangedSubviews: [downloadsContainer])
-            container.axis = .vertical
-            container.spacing = 6
+            let container = UIView()
             container.translatesAutoresizingMaskIntoConstraints = false
+            container.addSubview(downloadsTitleLabel)
+            container.addSubview(downloadsSwitch)
             view.addSubview(container)
             self.container = container
 
@@ -94,16 +89,16 @@ class ItemsFilterViewController: UIViewController {
 
             containerTop = container.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 15)
             NSLayoutConstraint.activate([
-                downloadsContainer.heightAnchor.constraint(equalToConstant: Self.downloadsHeight),
-                downloadsTitleLabel.topAnchor.constraint(equalTo: downloadsContainer.topAnchor),
-                downloadsTitleLabel.leadingAnchor.constraint(equalTo: downloadsContainer.leadingAnchor),
-                downloadsTitleLabel.bottomAnchor.constraint(equalTo: downloadsContainer.bottomAnchor),
-                downloadsSwitch.leadingAnchor.constraint(equalTo: downloadsTitleLabel.trailingAnchor, constant: 12),
-                downloadsContainer.trailingAnchor.constraint(equalTo: downloadsSwitch.trailingAnchor, constant: 16),
-                downloadsSwitch.centerYAnchor.constraint(equalTo: downloadsContainer.centerYAnchor),
                 containerTop,
                 container.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
                 container.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                container.heightAnchor.constraint(equalToConstant: Self.downloadsHeight),
+                downloadsTitleLabel.topAnchor.constraint(equalTo: container.topAnchor),
+                downloadsTitleLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+                downloadsTitleLabel.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+                downloadsSwitch.leadingAnchor.constraint(equalTo: downloadsTitleLabel.trailingAnchor, constant: 12),
+                container.trailingAnchor.constraint(equalTo: downloadsSwitch.trailingAnchor, constant: 16),
+                downloadsSwitch.centerYAnchor.constraint(equalTo: container.centerYAnchor),
                 separator.topAnchor.constraint(equalTo: container.bottomAnchor, constant: 4),
                 separator.leadingAnchor.constraint(equalTo: view.leadingAnchor),
                 separator.trailingAnchor.constraint(equalTo: view.trailingAnchor),
