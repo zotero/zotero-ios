@@ -49,9 +49,11 @@ class BaseItemsViewController: UIViewController {
         super.viewDidLoad()
 
         createTableView()
-        navigationController?.toolbar.barTintColor = UIColor(dynamicProvider: { traitCollection in
-            return traitCollection.userInterfaceStyle == .dark ? .black : .white
-        })
+        if #unavailable(iOS 26.0.0) {
+            navigationController?.toolbar.barTintColor = UIColor(dynamicProvider: { traitCollection in
+                return traitCollection.userInterfaceStyle == .dark ? .black : .white
+            })
+        }
         setupTitle()
         setupSearchBar()
         if let scheduler = controllers.userControllers?.syncScheduler {
@@ -259,6 +261,7 @@ class BaseItemsViewController: UIViewController {
                 process(barButtonItemAction: type, sender: sender)
             }
             let item = UIBarButtonItem(title: title, image: image, primaryAction: primaryAction)
+            item.tintColor = Asset.Colors.zoteroBlue.color
             item.tag = type.rawValue
             item.accessibilityLabel = accessibilityLabel
             return item
