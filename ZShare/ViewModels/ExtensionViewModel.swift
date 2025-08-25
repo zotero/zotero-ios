@@ -72,6 +72,7 @@ final class ExtensionViewModel {
                 case webDavFailure
                 case md5Missing
                 case mtimeMissing
+                case requiresBrowser
 
                 var isFatal: Bool {
                     switch self {
@@ -82,7 +83,8 @@ final class ExtensionViewModel {
                          .parseError,
                          .schemaError,
                          .md5Missing,
-                         .mtimeMissing:
+                         .mtimeMissing,
+                         .requiresBrowser:
                         return true
 
                     case .apiFailure,
@@ -1265,6 +1267,13 @@ final class ExtensionViewModel {
         }
         if let alamoError = error as? AFError {
             return alamoErrorRequiresAbort(alamoError, url: nil, libraryId: libraryId)
+        }
+        let nsError = error as NSError
+        if nsError.domain == "WebKitErrorDomain",
+           nsError.code == 102,
+           let failingUrl = nsError.userInfo["NSErrorFailingURLStringKey"] as? String,
+           failingUrl.starts(with: "x-safari-https://") || failingUrl.starts(with: "x-safari-http://") {
+            return .requiresBrowser
         }
         return .unknown
 
