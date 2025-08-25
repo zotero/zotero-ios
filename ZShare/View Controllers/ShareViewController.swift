@@ -540,6 +540,9 @@ final class ShareViewController: UIViewController {
                 return L10n.Errors.Shareext.forbidden(groupName)
             }
 
+        case .requiresBrowser:
+            return L10n.Errors.Shareext.requiresBrowser
+
         case .downloadedFileNotPdf, .md5Missing, .mtimeMissing:
             return nil
         }

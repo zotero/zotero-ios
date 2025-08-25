@@ -268,6 +268,11 @@ extension WebViewHandler: WKNavigationDelegate {
         DDLogError("WebViewHandler: did fail - \(error)")
         webDidLoad?(.failure(error))
     }
+
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Swift.Error) {
+        DDLogError("WebViewHandler: did fail provisional navigation - \(error)")
+        webDidLoad?(.failure(error))
+    }
 }
 
 /// Communication with JS in `webView`. The `webView` sends a message through one of the registered `JSHandlers`, which is received here.
