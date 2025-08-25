@@ -11,13 +11,11 @@ import UIKit
 import RxSwift
 
 class ItemsFilterViewController: UIViewController {
-    @IBOutlet private weak var container: UIStackView!
-    @IBOutlet private weak var containerTop: NSLayoutConstraint!
-    @IBOutlet private weak var downloadsTitleLabel: UILabel!
-    @IBOutlet private weak var downloadsSwitch: UISwitch!
-    @IBOutlet private weak var separator: UIView!
-    @IBOutlet private weak var tagFilterControllerContainer: UIView!
+    private weak var container: UIView!
+    private weak var containerTop: NSLayoutConstraint!
+    private weak var separator: UIView!
 
+    private static let downloadsHeight: CGFloat = 44
     private static let width: CGFloat = 320
     private let tagFilterController: TagFilterViewController
     private let disposeBag: DisposeBag
@@ -29,8 +27,8 @@ class ItemsFilterViewController: UIViewController {
     init(downloadsFilterEnabled: Bool, tagFilterController: TagFilterViewController) {
         self.downloadsFilterEnabled = downloadsFilterEnabled
         self.tagFilterController = tagFilterController
-        self.disposeBag = DisposeBag()
-        super.init(nibName: "ItemsFilterViewController", bundle: nil)
+        disposeBag = DisposeBag()
+        super.init(nibName: nil, bundle: nil)
     }
 
     required init?(coder: NSCoder) {
@@ -40,67 +38,95 @@ class ItemsFilterViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.setupNavigationBar()
-        self.setupUI()
-        
+        view.backgroundColor = .systemBackground
+        setupNavigationBar()
+        setupViews()
+        showHideTagFilter()
+
         parent?.presentationController?.delegate = self
+
+        func setupNavigationBar() {
+            navigationItem.title = L10n.Items.Filters.title
+            let done = UIBarButtonItem(title: L10n.done)
+            done.rx.tap
+                .subscribe(onNext: { [weak self] _ in
+                    self?.navigationController?.presentingViewController?.dismiss(animated: true)
+                })
+                .disposed(by: disposeBag)
+            navigationItem.rightBarButtonItem = done
+        }
+
+        func setupViews() {
+            let downloadsTitleLabel = UILabel()
+            downloadsTitleLabel.font = .preferredFont(forTextStyle: .body)
+            downloadsTitleLabel.text = L10n.Items.Filters.downloads
+            downloadsTitleLabel.translatesAutoresizingMaskIntoConstraints = false
+
+            let downloadsSwitch = UISwitch()
+            downloadsSwitch.isOn = downloadsFilterEnabled
+            downloadsSwitch.addAction(UIAction(handler: { [weak self] action in
+                self?.delegate?.downloadsFilterDidChange(enabled: (action.sender as? UISwitch)?.isOn == true)
+            }), for: .valueChanged)
+            downloadsSwitch.translatesAutoresizingMaskIntoConstraints = false
+
+            let container = UIView()
+            container.translatesAutoresizingMaskIntoConstraints = false
+            container.addSubview(downloadsTitleLabel)
+            container.addSubview(downloadsSwitch)
+            view.addSubview(container)
+            self.container = container
+
+            let separator = UIView()
+            separator.backgroundColor = .opaqueSeparator
+            separator.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview(separator)
+            self.separator = separator
+
+            tagFilterController.willMove(toParent: self)
+            view.addSubview(tagFilterController.view)
+            addChild(tagFilterController)
+            tagFilterController.didMove(toParent: self)
+
+            containerTop = container.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 15)
+            NSLayoutConstraint.activate([
+                containerTop,
+                container.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
+                container.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                container.heightAnchor.constraint(equalToConstant: Self.downloadsHeight),
+                downloadsTitleLabel.topAnchor.constraint(equalTo: container.topAnchor),
+                downloadsTitleLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+                downloadsTitleLabel.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+                downloadsSwitch.leadingAnchor.constraint(equalTo: downloadsTitleLabel.trailingAnchor, constant: 12),
+                container.trailingAnchor.constraint(equalTo: downloadsSwitch.trailingAnchor, constant: 16),
+                downloadsSwitch.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+                separator.topAnchor.constraint(equalTo: container.bottomAnchor, constant: 4),
+                separator.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                separator.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                separator.heightAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale),
+                tagFilterController.view.topAnchor.constraint(equalTo: container.bottomAnchor, constant: 15),
+                tagFilterController.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+                tagFilterController.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+                tagFilterController.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            ])
+        }
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        var preferredSize = self.container.systemLayoutSizeFitting(CGSize(width: ItemsFilterViewController.width, height: .greatestFiniteMagnitude))
-        preferredSize.width = ItemsFilterViewController.width
-        self.preferredContentSize = preferredSize
-        self.navigationController?.preferredContentSize = preferredSize
+        preferredContentSize = CGSize(width: Self.width, height: Self.downloadsHeight)
     }
 
     // MARK: - Actions
-
-    @IBAction private func toggleDownloads(sender: UISwitch) {
-        delegate?.downloadsFilterDidChange(enabled: sender.isOn)
-    }
-
-    @objc private func done() {
-        self.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
-    }
-
-    // MARK: - Setups
-
-    private func setupNavigationBar() {
-        self.navigationItem.title = L10n.Items.Filters.title
-        let done = UIBarButtonItem(title: L10n.done, style: .done, target: self, action: #selector(ItemsFilterViewController.done))
-        self.navigationItem.rightBarButtonItem = done
-    }
-
-    private func setupUI() {
-        self.downloadsTitleLabel.text = L10n.Items.Filters.downloads
-        self.downloadsSwitch.isOn = self.downloadsFilterEnabled
-
-        self.tagFilterController.willMove(toParent: self)
-        self.tagFilterControllerContainer.addSubview(self.tagFilterController.view)
-        self.addChild(self.tagFilterController)
-        self.tagFilterController.didMove(toParent: self)
-
-        NSLayoutConstraint.activate([
-            self.tagFilterControllerContainer.leadingAnchor.constraint(equalTo: self.tagFilterController.view.leadingAnchor),
-            self.tagFilterControllerContainer.trailingAnchor.constraint(equalTo: self.tagFilterController.view.trailingAnchor),
-            self.tagFilterControllerContainer.topAnchor.constraint(equalTo: self.tagFilterController.view.topAnchor),
-            self.tagFilterControllerContainer.bottomAnchor.constraint(equalTo: self.tagFilterController.view.bottomAnchor),
-            self.separator.heightAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale)
-        ])
-        
-        showHideTagFilter()
-    }
     
-    func showHideTagFilter() {
+    private func showHideTagFilter() {
         let isCollapsed = (presentingViewController as? MainViewController)?.isCollapsed
         if UIDevice.current.userInterfaceIdiom == .phone || isCollapsed == true {
-            tagFilterControllerContainer.isHidden = false
+            tagFilterController.view.isHidden = false
             separator.isHidden = false
             containerTop.constant = 4
         } else {
-            tagFilterControllerContainer.isHidden = true
+            tagFilterController.view.isHidden = true
             separator.isHidden = true
             containerTop.constant = 15
         }

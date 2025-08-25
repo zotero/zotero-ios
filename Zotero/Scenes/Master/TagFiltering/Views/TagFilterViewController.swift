@@ -136,6 +136,14 @@ class TagFilterViewController: UIViewController {
         didAppear = true
     }
 
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        if UIDevice.current.userInterfaceIdiom == .pad, previousTraitCollection?.horizontalSizeClass != traitCollection.horizontalSizeClass {
+            delegate?.tagOptionsDidChange()
+        }
+    }
+
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
 
