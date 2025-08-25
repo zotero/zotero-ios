@@ -40,6 +40,8 @@ class WebViewHandler: NSObject {
     private(set) var referer: String?
     private var initializationState: BehaviorRelay<InitializationState>
     private let disposeBag: DisposeBag
+    private static let webKitPrefix = "AppleWebKit/"
+    private static let safariVersionPrefix = "Mobile Safari/"
 
     // MARK: - Lifecycle
 
@@ -60,7 +62,15 @@ class WebViewHandler: NSObject {
         super.init()
 
         webView.navigationDelegate = self
-        let userAgent = webView.value(forKey: "userAgent") ?? ""
+        var userAgent = ""
+        if let webViewUserAgent = webView.value(forKey: "userAgent") as? String {
+            userAgent = webViewUserAgent + " Version/" + UIDevice.current.systemVersion
+            if let safariVersion = webViewUserAgent.components(separatedBy: " ")
+                .first(where: { $0.starts(with: Self.webKitPrefix) })?
+                .replacingOccurrences(of: Self.webKitPrefix, with: Self.safariVersionPrefix) {
+                userAgent += " " + safariVersion
+            }
+        }
         webView.customUserAgent = "\(userAgent) Zotero_iOS/\(DeviceInfoProvider.versionString ?? "")-\(DeviceInfoProvider.buildString ?? "")"
 
         javascriptHandlers?.forEach { handler in
