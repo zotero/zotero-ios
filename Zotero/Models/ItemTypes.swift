@@ -23,7 +23,7 @@ struct ItemTypes {
     static let annotation = "annotation"
     static let document = "document"
 
-    static var excludedFromTypePicker: Set<String> = [ItemTypes.attachment, ItemTypes.annotation]
+    static var excludedFromTypePicker: Set<String> = [ItemTypes.attachment, ItemTypes.annotation, ItemTypes.note]
 }
 
 extension ItemTypes {
