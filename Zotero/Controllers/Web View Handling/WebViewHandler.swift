@@ -40,6 +40,8 @@ class WebViewHandler: NSObject {
     private(set) var referer: String?
     private var initializationState: BehaviorRelay<InitializationState>
     private let disposeBag: DisposeBag
+    private static let webKitPrefix = "AppleWebKit/"
+    private static let safariVersionPrefix = "Mobile Safari/"
 
     // MARK: - Lifecycle
 
@@ -60,7 +62,15 @@ class WebViewHandler: NSObject {
         super.init()
 
         webView.navigationDelegate = self
-        let userAgent = webView.value(forKey: "userAgent") ?? ""
+        var userAgent = ""
+        if let webViewUserAgent = webView.value(forKey: "userAgent") as? String {
+            userAgent = webViewUserAgent + " Version/" + UIDevice.current.systemVersion
+            if let safariVersion = webViewUserAgent.components(separatedBy: " ")
+                .first(where: { $0.starts(with: Self.webKitPrefix) })?
+                .replacingOccurrences(of: Self.webKitPrefix, with: Self.safariVersionPrefix) {
+                userAgent += " " + safariVersion
+            }
+        }
         webView.customUserAgent = "\(userAgent) Zotero_iOS/\(DeviceInfoProvider.versionString ?? "")-\(DeviceInfoProvider.buildString ?? "")"
 
         javascriptHandlers?.forEach { handler in
@@ -266,6 +276,11 @@ extension WebViewHandler: WKNavigationDelegate {
 
     public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Swift.Error) {
         DDLogError("WebViewHandler: did fail - \(error)")
+        webDidLoad?(.failure(error))
+    }
+
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Swift.Error) {
+        DDLogError("WebViewHandler: did fail provisional navigation - \(error)")
         webDidLoad?(.failure(error))
     }
 }
