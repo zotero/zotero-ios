@@ -84,8 +84,8 @@ final class PDFAnnotationsViewController: UIViewController {
 
     // MARK: - Actions
 
-    private func perform(action: AnnotationView.Action, annotation: PDFAnnotation) {
-        guard viewModel.state.library.metadataEditable else { return }
+    private func perform(action: AnnotationView.Action, annotationKey: PDFReaderState.AnnotationKey) {
+        guard viewModel.state.library.metadataEditable, let annotation = viewModel.state.annotation(for: annotationKey) else { return }
 
         switch action {
         case .tags:
@@ -102,7 +102,6 @@ final class PDFAnnotationsViewController: UIViewController {
 
         case .options(let sender):
             guard let sender else { return }
-            let key = annotation.readerKey
             coordinatorDelegate?.showCellOptions(
                 for: annotation,
                 userId: viewModel.state.userId,
@@ -113,7 +112,7 @@ final class PDFAnnotationsViewController: UIViewController {
                 saveAction: { [weak viewModel] data, updateSubsequentLabels in
                     guard let viewModel else { return }
                     viewModel.process(action: .updateAnnotationProperties(
-                        key: key.key,
+                        key: annotation.key,
                         type: data.type,
                         color: data.color,
                         lineWidth: data.lineWidth,
@@ -125,7 +124,7 @@ final class PDFAnnotationsViewController: UIViewController {
                     ))
                 },
                 deleteAction: { [weak self] in
-                    self?.viewModel.process(action: .removeAnnotation(key))
+                    self?.viewModel.process(action: .removeAnnotation(annotationKey))
                 }
             )
 
@@ -138,7 +137,8 @@ final class PDFAnnotationsViewController: UIViewController {
         case .setCommentActive(let isActive):
             viewModel.process(action: .setCommentActive(isActive))
 
-        case .done: break // Done button doesn't appear here
+        case .done:
+            break // Done button doesn't appear here
         }
 
         func reconfigureSelectedCellIfAny() {
@@ -341,7 +341,7 @@ final class PDFAnnotationsViewController: UIViewController {
         )
         if !reconfiguringForSameAnnotation {
             let actionSubscription = cell.actionPublisher.subscribe(onNext: { [weak self] action in
-                self?.perform(action: action, annotation: annotation)
+                self?.perform(action: action, annotationKey: annotation.readerKey)
             })
             _ = cell.disposeBag?.insert(actionSubscription)
         }
