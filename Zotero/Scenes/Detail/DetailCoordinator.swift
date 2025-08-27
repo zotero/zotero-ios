@@ -895,6 +895,10 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
                         }
                         return (message, cancelAction + [action])
 
+                    case 429:
+                        let message = webDavEnabled ? L10n.Errors.Attachments.tooManyRequestsWebdav : L10n.Errors.Attachments.tooManyRequests
+                        return (message, cancelAction)
+
                     default:
                         break
                     }

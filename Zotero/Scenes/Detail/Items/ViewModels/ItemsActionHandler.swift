@@ -297,7 +297,7 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
                 state.attachmentToOpen = attachment.key
             }
 
-            self.fileDownloader.downloadIfNeeded(attachment: attachment, parentKey: parentKey)
+            self.fileDownloader.downloadIfNeeded(attachment: attachment, parentKey: parentKey, retryIfNeeded: false)
         }
     }
 

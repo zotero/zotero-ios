@@ -71,6 +71,7 @@ final class AttachmentDownloader: NSObject {
         let file: File
         let progress: Progress
         let extractAfterDownload: Bool
+        let retryIfNeeded: Bool
     }
 
     private struct ActiveDownload {
@@ -78,6 +79,7 @@ final class AttachmentDownloader: NSObject {
         let file: File
         let progress: Progress
         let extractAfterDownload: Bool
+        let retryIfNeeded: Bool
         let logData: ApiLogger.StartData?
         let attempt: Int
     }
@@ -254,7 +256,7 @@ final class AttachmentDownloader: NSObject {
                             continue
                         }
 
-                        let enqueuedDownload = EnqueuedDownload(download: download, file: file, progress: Progress(), extractAfterDownload: false)
+                        let enqueuedDownload = EnqueuedDownload(download: download, file: file, progress: Progress(), extractAfterDownload: false, retryIfNeeded: true)
                         if let taskId = rDownload.taskId, existingTaskIds.contains(taskId) {
                             // Download is ongoing, cache data
                             activeDownloads.append((taskId, enqueuedDownload))
@@ -290,6 +292,7 @@ final class AttachmentDownloader: NSObject {
                         file: enqueuedDownload.file,
                         progress: progress,
                         extractAfterDownload: false,
+                        retryIfNeeded: true,
                         logData: nil,
                         attempt: 0
                     )
@@ -366,7 +369,7 @@ final class AttachmentDownloader: NSObject {
                             let progress = Progress(totalUnitCount: 100)
                             let download = Download(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId)
                             addProgressToBatchProgress(progress: progress)
-                            downloads.append(EnqueuedDownload(download: download, file: file, progress: progress, extractAfterDownload: false))
+                            downloads.append(EnqueuedDownload(download: download, file: file, progress: progress, extractAfterDownload: false, retryIfNeeded: true))
                         }
                     }
                 }
@@ -390,7 +393,7 @@ final class AttachmentDownloader: NSObject {
         }
     }
 
-    func downloadIfNeeded(attachment: Attachment, parentKey: String?) {
+    func downloadIfNeeded(attachment: Attachment, parentKey: String?, retryIfNeeded: Bool = true) {
         switch attachment.type {
         case .url:
             DDLogInfo("AttachmentDownloader: open url \(attachment.key)")
@@ -450,7 +453,13 @@ final class AttachmentDownloader: NSObject {
 
                 let progress = Progress(totalUnitCount: 100)
                 addProgressToBatchProgress(progress: progress)
-                let download = EnqueuedDownload(download: Download(key: key, parentKey: parentKey, libraryId: libraryId), file: file, progress: progress, extractAfterDownload: true)
+                let download = EnqueuedDownload(
+                    download: Download(key: key, parentKey: parentKey, libraryId: libraryId),
+                    file: file,
+                    progress: progress,
+                    extractAfterDownload: true,
+                    retryIfNeeded: retryIfNeeded
+                )
                 queue.insert(download, at: 0)
                 observable.on(.next(Update(download: download.download, kind: .progress)))
                 startNextDownloadIfPossible()
@@ -709,7 +718,7 @@ final class AttachmentDownloader: NSObject {
         totalCount += 1
     }
 
-    private func createDownloadTask(for download: Download, file: File, progress: Progress, extractAfterDownload: Bool, attempt: Int) -> (URLSessionTask, ActiveDownload)? {
+    private func createDownloadTask(for download: Download, file: File, progress: Progress, extractAfterDownload: Bool, retryIfNeeded: Bool, attempt: Int) -> (URLSessionTask, ActiveDownload)? {
         do {
             let request: URLRequest
             if case .custom = download.libraryId, webDavController.sessionStorage.isEnabled {
@@ -729,6 +738,7 @@ final class AttachmentDownloader: NSObject {
                 file: file,
                 progress: progress,
                 extractAfterDownload: extractAfterDownload,
+                retryIfNeeded: retryIfNeeded,
                 logData: ApiLogger.log(urlRequest: request, encoding: .url, logParams: .headers),
                 attempt: attempt
             )
@@ -743,11 +753,25 @@ final class AttachmentDownloader: NSObject {
     }
 
     private func createDownloadTask(from enqueuedDownload: EnqueuedDownload) -> (URLSessionTask, ActiveDownload)? {
-        createDownloadTask(for: enqueuedDownload.download, file: enqueuedDownload.file, progress: enqueuedDownload.progress, extractAfterDownload: enqueuedDownload.extractAfterDownload, attempt: 0)
+        createDownloadTask(
+            for: enqueuedDownload.download,
+            file: enqueuedDownload.file,
+            progress: enqueuedDownload.progress,
+            extractAfterDownload: enqueuedDownload.extractAfterDownload,
+            retryIfNeeded: enqueuedDownload.retryIfNeeded,
+            attempt: 0
+        )
     }
 
     private func createDownloadTask(from download: Download, retrying activeDownload: ActiveDownload) -> (URLSessionTask, ActiveDownload)? {
-        createDownloadTask(for: download, file: activeDownload.file, progress: activeDownload.progress, extractAfterDownload: activeDownload.extractAfterDownload, attempt: activeDownload.attempt + 1)
+        createDownloadTask(
+            for: download,
+            file: activeDownload.file,
+            progress: activeDownload.progress,
+            extractAfterDownload: activeDownload.extractAfterDownload,
+            retryIfNeeded: activeDownload.retryIfNeeded,
+            attempt: activeDownload.attempt + 1
+        )
     }
 
     private func startDownloadTask(for download: Download, downloadTaskTuple: (URLSessionTask, ActiveDownload)?) {
@@ -894,10 +918,12 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
 
         case 429:
             error = createError(from: downloadTask, statusCode: 429, response: "Too Many Requests")
-            if let response = downloadTask.response as? HTTPURLResponse, let retryAfter = response.value(forHTTPHeaderField: "Retry-After") {
-                if let interval = TimeInterval(retryAfter) {
+            if activeDownload.retryIfNeeded {
+                let response = downloadTask.response as? HTTPURLResponse
+                let retryAfter = response?.value(forHTTPHeaderField: "Retry-After")
+                if let interval = retryAfter.flatMap({ TimeInterval($0) }) {
                     retryDelay = .constant(interval)
-                } else if let retryDate = DateFormatter().date(from: retryAfter) {
+                } else if let retryDate = retryAfter.flatMap({ DateFormatter().date(from: $0) }) {
                     retryDelay = .constant(retryDate.timeIntervalSinceNow)
                 } else {
                     retryDelay = .progressive()
