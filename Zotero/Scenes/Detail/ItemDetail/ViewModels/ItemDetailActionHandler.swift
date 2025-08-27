@@ -596,7 +596,7 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
             state.attachmentToOpen = key
         }
 
-        self.fileDownloader.downloadIfNeeded(attachment: attachment, parentKey: viewModel.state.key)
+        self.fileDownloader.downloadIfNeeded(attachment: attachment, parentKey: viewModel.state.key, retryIfNeeded: false)
     }
 
     private func process(downloadUpdate update: AttachmentDownloader.Update, in viewModel: ViewModel<ItemDetailActionHandler>) {

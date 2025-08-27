@@ -611,7 +611,7 @@ final class TrashActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
             update(viewModel: viewModel) { state in
                 state.attachmentToOpen = attachment.key
             }
-            fileDownloader.downloadIfNeeded(attachment: attachment, parentKey: parentKey)
+            fileDownloader.downloadIfNeeded(attachment: attachment, parentKey: parentKey, retryIfNeeded: false)
         }
     }
 
