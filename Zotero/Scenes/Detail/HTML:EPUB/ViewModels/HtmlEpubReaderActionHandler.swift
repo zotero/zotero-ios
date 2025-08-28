@@ -177,7 +177,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         func parseOutline(from data: [String: Any]) -> HtmlEpubReaderState.Outline? {
             guard let title = data["title"] as? String, let location = data["location"] as? [String: Any], let rawChildren = data["items"] as? [[String: Any]] else { return nil }
             let children = rawChildren.compactMap({ parseOutline(from: $0) })
-            return HtmlEpubReaderState.Outline(title: title, location: location, children: children)
+            return HtmlEpubReaderState.Outline(title: title.trimmingCharacters(in: .whitespacesAndNewlines), location: location, children: children)
         }
     }
 
