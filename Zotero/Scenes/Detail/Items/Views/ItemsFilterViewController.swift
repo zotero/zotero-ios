@@ -106,7 +106,7 @@ class ItemsFilterViewController: UIViewController {
                 tagFilterController.view.topAnchor.constraint(equalTo: container.bottomAnchor, constant: 15),
                 tagFilterController.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
                 tagFilterController.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-                tagFilterController.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+                tagFilterController.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
             ])
         }
     }
