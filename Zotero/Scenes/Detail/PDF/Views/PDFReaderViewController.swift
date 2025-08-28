@@ -828,7 +828,7 @@ extension PDFReaderViewController: AnnotationToolbarDelegate {
 extension PDFReaderViewController: PDFSidebarDelegate {
     func tableOfContentsSelected(page: UInt) {
         documentController?.focus(page: page)
-        if UIDevice.current.userInterfaceIdiom == .phone {
+        if isSidebarVisible && sidebarController?.view.frame.width == view.frame.width {
             toggleSidebar(animated: true)
         }
     }
