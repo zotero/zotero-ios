@@ -660,9 +660,6 @@
 		B357DEE8241661E500E06153 /* DebugLogFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B357DEE524165E0B00E06153 /* DebugLogFormatter.swift */; };
 		B3588C6925FF7A800049D484 /* SetCollectionCollapsedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3588C6825FF7A800049D484 /* SetCollectionCollapsedDbRequest.swift */; };
 		B358D3B4279590C200A67054 /* CheckAnyItemIsInTrashDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B358D3B3279590C200A67054 /* CheckAnyItemIsInTrashDbRequest.swift */; };
-		B3593AD424B6007900CA0B57 /* PDFSearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593AD324B6007900CA0B57 /* PDFSearchViewController.swift */; };
-		B3593AD724B601AB00CA0B57 /* PDFSearchCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593AD524B601AB00CA0B57 /* PDFSearchCell.swift */; };
-		B3593AD824B601AB00CA0B57 /* PDFSearchCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3593AD624B601AB00CA0B57 /* PDFSearchCell.xib */; };
 		B3593ADC24B60A7600CA0B57 /* UISearchBar+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593ADB24B60A7600CA0B57 /* UISearchBar+Extensions.swift */; };
 		B3593F162668E29C00FA4BB2 /* Style.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593F152668E29C00FA4BB2 /* Style.swift */; };
 		B3593F182668E6A700FA4BB2 /* StyleParserDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593F172668E6A700FA4BB2 /* StyleParserDelegate.swift */; };
@@ -973,6 +970,11 @@
 		B3B1EDFE2502498100D8BC1E /* collectionresponse_unknownfields.json in Resources */ = {isa = PBXBuildFile; fileRef = B3B1EDFC2502498100D8BC1E /* collectionresponse_unknownfields.json */; };
 		B3B1EE062502675E00D8BC1E /* Parsing.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EE052502675E00D8BC1E /* Parsing.swift */; };
 		B3B1EE072502680000D8BC1E /* Parsing.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EE052502675E00D8BC1E /* Parsing.swift */; };
+		B3B3984D2E4CCAA9009C59F5 /* PDFSearchHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B3984C2E4CCAA5009C59F5 /* PDFSearchHandler.swift */; };
+		B3B3984F2E4CCACD009C59F5 /* HtmlEpubSearchHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B3984E2E4CCAC9009C59F5 /* HtmlEpubSearchHandler.swift */; };
+		B3B398532E4CCB20009C59F5 /* DocumentSearchCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3B398512E4CCB20009C59F5 /* DocumentSearchCell.xib */; };
+		B3B398542E4CCB20009C59F5 /* DocumentSearchCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B398502E4CCB20009C59F5 /* DocumentSearchCell.swift */; };
+		B3B398552E4CCB20009C59F5 /* DocumentSearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B398522E4CCB20009C59F5 /* DocumentSearchViewController.swift */; };
 		B3B3FF7B266A1FAB0061E3B2 /* StoreStyleDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B3FF7A266A1FAB0061E3B2 /* StoreStyleDbRequest.swift */; };
 		B3B3FF83266A380D0061E3B2 /* UninstallStyleDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B3FF82266A380D0061E3B2 /* UninstallStyleDbRequest.swift */; };
 		B3B41F132848E59D0017CA4B /* AnnotationsFilterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B41F112848E59D0017CA4B /* AnnotationsFilterViewController.swift */; };
@@ -1762,9 +1764,6 @@
 		B357DEE524165E0B00E06153 /* DebugLogFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLogFormatter.swift; sourceTree = "<group>"; };
 		B3588C6825FF7A800049D484 /* SetCollectionCollapsedDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetCollectionCollapsedDbRequest.swift; sourceTree = "<group>"; };
 		B358D3B3279590C200A67054 /* CheckAnyItemIsInTrashDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckAnyItemIsInTrashDbRequest.swift; sourceTree = "<group>"; };
-		B3593AD324B6007900CA0B57 /* PDFSearchViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFSearchViewController.swift; sourceTree = "<group>"; };
-		B3593AD524B601AB00CA0B57 /* PDFSearchCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFSearchCell.swift; sourceTree = "<group>"; };
-		B3593AD624B601AB00CA0B57 /* PDFSearchCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = PDFSearchCell.xib; sourceTree = "<group>"; };
 		B3593ADB24B60A7600CA0B57 /* UISearchBar+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UISearchBar+Extensions.swift"; sourceTree = "<group>"; };
 		B3593EC5241A61C700760E20 /* ItemDetailActionHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemDetailActionHandler.swift; sourceTree = "<group>"; };
 		B3593EC9241A61C700760E20 /* ItemDetailState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemDetailState.swift; sourceTree = "<group>"; };
@@ -2024,6 +2023,11 @@
 		B3B1EDFB2502498100D8BC1E /* collectionresponse_knownfields.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = collectionresponse_knownfields.json; sourceTree = "<group>"; };
 		B3B1EDFC2502498100D8BC1E /* collectionresponse_unknownfields.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = collectionresponse_unknownfields.json; sourceTree = "<group>"; };
 		B3B1EE052502675E00D8BC1E /* Parsing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Parsing.swift; sourceTree = "<group>"; };
+		B3B3984C2E4CCAA5009C59F5 /* PDFSearchHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFSearchHandler.swift; sourceTree = "<group>"; };
+		B3B3984E2E4CCAC9009C59F5 /* HtmlEpubSearchHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HtmlEpubSearchHandler.swift; sourceTree = "<group>"; };
+		B3B398502E4CCB20009C59F5 /* DocumentSearchCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentSearchCell.swift; sourceTree = "<group>"; };
+		B3B398512E4CCB20009C59F5 /* DocumentSearchCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = DocumentSearchCell.xib; sourceTree = "<group>"; };
+		B3B398522E4CCB20009C59F5 /* DocumentSearchViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentSearchViewController.swift; sourceTree = "<group>"; };
 		B3B3FF7A266A1FAB0061E3B2 /* StoreStyleDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreStyleDbRequest.swift; sourceTree = "<group>"; };
 		B3B3FF82266A380D0061E3B2 /* UninstallStyleDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UninstallStyleDbRequest.swift; sourceTree = "<group>"; };
 		B3B41F112848E59D0017CA4B /* AnnotationsFilterViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnnotationsFilterViewController.swift; sourceTree = "<group>"; };
@@ -3066,9 +3070,6 @@
 				B3B953CD245981DA00FC96DB /* PDFDocumentViewController.swift */,
 				B32259A127070EBA0047598D /* PDFPlainReaderViewController.swift */,
 				B340ECA7290FDE3B00EE920D /* PDFReaderViewController.swift */,
-				B3593AD524B601AB00CA0B57 /* PDFSearchCell.swift */,
-				B3593AD624B601AB00CA0B57 /* PDFSearchCell.xib */,
-				B3593AD324B6007900CA0B57 /* PDFSearchViewController.swift */,
 				B373877228FEA0C7004E5031 /* PDFSidebarViewController.swift */,
 				B31028062B1E070F00E41554 /* PDFThumbnailsCell.swift */,
 				B31028042B1E012A00E41554 /* PDFThumbnailsViewController.swift */,
@@ -3897,6 +3898,7 @@
 			children = (
 				B30BE126297AAD9E000AED6A /* AnnotationToolOptionsActionHandler.swift */,
 				B3B953CB245981C100FC96DB /* PDFReaderActionHandler.swift */,
+				B3B3984C2E4CCAA5009C59F5 /* PDFSearchHandler.swift */,
 				B31028082B1E16E200E41554 /* PDFThumbnailsActionHandler.swift */,
 				B3A47C3529015FCE00E7D90D /* TableOfContentsActionHandler.swift */,
 			);
@@ -3982,6 +3984,9 @@
 				B3748D2126566F6900ED05F8 /* ContainerViewController.swift */,
 				B338E81F273AA9B20003DECD /* DisappearActionHostingController.swift */,
 				B3DCDF01240912060039ED0D /* DocumentPickerViewController.swift */,
+				B3B398502E4CCB20009C59F5 /* DocumentSearchCell.swift */,
+				B3B398512E4CCB20009C59F5 /* DocumentSearchCell.xib */,
+				B3B398522E4CCB20009C59F5 /* DocumentSearchViewController.swift */,
 				B30B40622490F09400FAAF6D /* FileAttachmentView.swift */,
 				61DE64D42C5BD0250096776C /* FormattedTextView.swift */,
 				B33979CF2493ACA800A923C3 /* ImagePreviewViewController.swift */,
@@ -4062,6 +4067,7 @@
 			isa = PBXGroup;
 			children = (
 				B3F6AA372AB303E8005BC22E /* HtmlEpubReaderActionHandler.swift */,
+				B3B3984E2E4CCAC9009C59F5 /* HtmlEpubSearchHandler.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -4664,6 +4670,7 @@
 				B361820424C9A7C000B30D56 /* OnboardingPageView.xib in Resources */,
 				B3F0C3FA250A1BD8002D557A /* LibrariesViewController.xib in Resources */,
 				B3E8FE1D2714297200F51458 /* CiteSearchViewController.xib in Resources */,
+				B3B398532E4CCB20009C59F5 /* DocumentSearchCell.xib in Resources */,
 				B3593F31241A61C700760E20 /* ItemDetailViewController.xib in Resources */,
 				B3BC1F61254322D200BA3388 /* ItemDetailAbstractEditContentView.xib in Resources */,
 				B3D16BF324E161C70002663B /* LoginViewController.xib in Resources */,
@@ -4674,7 +4681,6 @@
 				B3E1BECA254B0B9500D9BB27 /* ItemDetailFieldEditContentView.xib in Resources */,
 				B30B550524B85A6200F94B59 /* Images.xcassets in Resources */,
 				B3C9D60624DA921B003EA1EE /* CollectionsSearchViewController.xib in Resources */,
-				B3593AD824B601AB00CA0B57 /* PDFSearchCell.xib in Resources */,
 				B3F0C3FE250A1DB8002D557A /* LibraryCell.xib in Resources */,
 				B37D8E6424DC21D300F526C5 /* CollectionCellContentView.xib in Resources */,
 				B3593F23241A61C700760E20 /* ItemDetailSectionView.xib in Resources */,
@@ -5334,6 +5340,7 @@
 				B3F9A4C42B04D0D900684030 /* ReaderSettingsState.swift in Sources */,
 				B3C9D60824DA9D40003EA1EE /* CollectionsSearchState.swift in Sources */,
 				B34DF1B525768BB70019CCD1 /* TextFieldCell.swift in Sources */,
+				B3B3984D2E4CCAA9009C59F5 /* PDFSearchHandler.swift in Sources */,
 				B3593F50241A61C700760E20 /* CollectionsState.swift in Sources */,
 				B3401D5B2567DAAE00BB8D6E /* AnnotationPopoverCoordinator.swift in Sources */,
 				B39505E82AE9469300F73079 /* AnnotationPopoverState.swift in Sources */,
@@ -5467,7 +5474,6 @@
 				B32A273C254841B80081E061 /* CreatorEditViewController.swift in Sources */,
 				B31D4A722767840800E22DCC /* BackgroundTaskController.swift in Sources */,
 				B37EFDBC2A73EEA8008507C5 /* EditAnnotationRotationDbRequest.swift in Sources */,
-				B3593AD724B601AB00CA0B57 /* PDFSearchCell.swift in Sources */,
 				B30566AC23FC051F003304F2 /* Predicates.swift in Sources */,
 				B30566A023FC051F003304F2 /* KeyedResponse.swift in Sources */,
 				B305667123FC051F003304F2 /* Threading+Extras.swift in Sources */,
@@ -5516,6 +5522,8 @@
 				B3A2AECE26553DD8004BF3A4 /* NavigationViewController.swift in Sources */,
 				6135EF9C2C2ABDD1008DA17B /* AnnotationManager.swift in Sources */,
 				B358D3B4279590C200A67054 /* CheckAnyItemIsInTrashDbRequest.swift in Sources */,
+				B3B398542E4CCB20009C59F5 /* DocumentSearchCell.swift in Sources */,
+				B3B398552E4CCB20009C59F5 /* DocumentSearchViewController.swift in Sources */,
 				B3866A582417C1BC006693C4 /* ViewModel.swift in Sources */,
 				B305669D23FC051F003304F2 /* RGroup.swift in Sources */,
 				B30565CC23FC051E003304F2 /* StoreSettingsDbRequest.swift in Sources */,
@@ -5626,7 +5634,6 @@
 				61391B862B3C6FF4003B314A /* CopyBibliographyViewController.swift in Sources */,
 				B305661723FC051E003304F2 /* AuthorizeUploadSyncAction.swift in Sources */,
 				B37F58662672229D00C4089B /* InstallStyleDbRequest.swift in Sources */,
-				B3593AD424B6007900CA0B57 /* PDFSearchViewController.swift in Sources */,
 				B3E8FE1C2714297200F51458 /* CiteSettingsView.swift in Sources */,
 				B3DCDF23240945FA0039ED0D /* CollectionsPickerAction.swift in Sources */,
 				B37673FB262DB25700C3BFAF /* ItemsToolbarController.swift in Sources */,
@@ -5744,6 +5751,7 @@
 				B36C5086257521DE00A370D3 /* AnnotationEditActionHandler.swift in Sources */,
 				B3E2FF2229CAE3DF00F85AEB /* NoteEditorCoordinator.swift in Sources */,
 				B30A8C672582690900EC56FB /* HighlightAnnotation.swift in Sources */,
+				B3B3984F2E4CCACD009C59F5 /* HtmlEpubSearchHandler.swift in Sources */,
 				B305667923FC051F003304F2 /* UserDefault+Extensions.swift in Sources */,
 				B30548F62B331B1A00853966 /* CreateEditDownloadDbRequest.swift in Sources */,
 				B34DF1BD2576956F0019CCD1 /* SwitchCell.swift in Sources */,

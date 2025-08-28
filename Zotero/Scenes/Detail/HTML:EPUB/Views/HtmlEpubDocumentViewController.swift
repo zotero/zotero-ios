@@ -95,6 +95,14 @@ class HtmlEpubDocumentViewController: UIViewController {
         webViewHandler.call(javascript: "navigate({ location: \(WebViewEncoder.encodeAsJSONForJavascript(location)) });").subscribe().disposed(by: disposeBag)
     }
 
+    func selectSearchResult(index: Int) {
+        webViewHandler.call(javascript: "window._view.find({ index: \(index) });").subscribe().disposed(by: disposeBag)
+    }
+
+    func clearSearch() {
+        webViewHandler.call(javascript: "window._view.find();").subscribe().disposed(by: disposeBag)
+    }
+
     private func deselectText() {
         webViewHandler.call(javascript: "window._view.selectAnnotations([]);").subscribe().disposed(by: disposeBag)
     }
@@ -306,6 +314,12 @@ class HtmlEpubDocumentViewController: UIViewController {
 
             case "onSetOutline":
                 viewModel.process(action: .parseOutline(data: data))
+
+            case "onFindResult":
+                viewModel.process(action: .processDocumentSearchResults(data: data))
+
+            case "onBackdropTap":
+                parentDelegate?.toggleInterfaceVisibility()
 
             default:
                 break
