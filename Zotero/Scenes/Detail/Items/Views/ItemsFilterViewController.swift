@@ -88,26 +88,49 @@ class ItemsFilterViewController: UIViewController {
             tagFilterController.didMove(toParent: self)
 
             containerTop = container.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 15)
-            NSLayoutConstraint.activate([
-                containerTop,
-                container.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
-                container.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-                container.heightAnchor.constraint(equalToConstant: Self.downloadsHeight),
-                downloadsTitleLabel.topAnchor.constraint(equalTo: container.topAnchor),
-                downloadsTitleLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-                downloadsTitleLabel.bottomAnchor.constraint(equalTo: container.bottomAnchor),
-                downloadsSwitch.leadingAnchor.constraint(equalTo: downloadsTitleLabel.trailingAnchor, constant: 12),
-                container.trailingAnchor.constraint(equalTo: downloadsSwitch.trailingAnchor, constant: 16),
-                downloadsSwitch.centerYAnchor.constraint(equalTo: container.centerYAnchor),
-                separator.topAnchor.constraint(equalTo: container.bottomAnchor, constant: 4),
-                separator.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-                separator.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-                separator.heightAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale),
-                tagFilterController.view.topAnchor.constraint(equalTo: container.bottomAnchor, constant: 15),
-                tagFilterController.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-                tagFilterController.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-                tagFilterController.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
-            ])
+            if #available(iOS 26.0.0, *) {
+                NSLayoutConstraint.activate([
+                    container.topAnchor.constraint(equalTo: view.layoutMarginsGuide.topAnchor),
+                    container.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor),
+                    container.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor),
+                    container.heightAnchor.constraint(equalToConstant: Self.downloadsHeight),
+                    downloadsTitleLabel.topAnchor.constraint(equalTo: container.topAnchor),
+                    downloadsTitleLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+                    downloadsTitleLabel.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+                    downloadsSwitch.leadingAnchor.constraint(equalTo: downloadsTitleLabel.trailingAnchor, constant: 12),
+                    container.trailingAnchor.constraint(equalTo: downloadsSwitch.trailingAnchor),
+                    downloadsSwitch.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+                    separator.topAnchor.constraint(equalTo: container.bottomAnchor, constant: 4),
+                    separator.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                    separator.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                    separator.heightAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale),
+                    tagFilterController.view.topAnchor.constraint(equalTo: container.bottomAnchor, constant: 15),
+                    tagFilterController.view.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor),
+                    tagFilterController.view.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor),
+                    tagFilterController.view.bottomAnchor.constraint(equalTo: view.layoutMarginsGuide.bottomAnchor)
+                ])
+            } else {
+                NSLayoutConstraint.activate([
+                    containerTop,
+                    container.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
+                    container.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                    container.heightAnchor.constraint(equalToConstant: Self.downloadsHeight),
+                    downloadsTitleLabel.topAnchor.constraint(equalTo: container.topAnchor),
+                    downloadsTitleLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+                    downloadsTitleLabel.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+                    downloadsSwitch.leadingAnchor.constraint(equalTo: downloadsTitleLabel.trailingAnchor, constant: 12),
+                    container.trailingAnchor.constraint(equalTo: downloadsSwitch.trailingAnchor, constant: 16),
+                    downloadsSwitch.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+                    separator.topAnchor.constraint(equalTo: container.bottomAnchor, constant: 4),
+                    separator.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                    separator.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                    separator.heightAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale),
+                    tagFilterController.view.topAnchor.constraint(equalTo: container.bottomAnchor, constant: 15),
+                    tagFilterController.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+                    tagFilterController.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+                    tagFilterController.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+                ])
+            }
         }
     }
 
@@ -124,11 +147,15 @@ class ItemsFilterViewController: UIViewController {
         if UIDevice.current.userInterfaceIdiom == .phone || isCollapsed == true {
             tagFilterController.view.isHidden = false
             separator.isHidden = false
-            containerTop.constant = 4
+            if #unavailable(iOS 26.0.0) {
+                containerTop.constant = 4
+            }
         } else {
             tagFilterController.view.isHidden = true
             separator.isHidden = true
-            containerTop.constant = 15
+            if #unavailable(iOS 26.0.0) {
+                containerTop.constant = 15
+            }
         }
     }
 }
