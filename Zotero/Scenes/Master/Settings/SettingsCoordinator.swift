@@ -14,6 +14,22 @@ import CocoaLumberjackSwift
 import RxCocoa
 import RxSwift
 
+protocol SettingsPresenter: Coordinator {
+    func showSettings(using presenter: UINavigationController, controllers: Controllers, animated: Bool, initialScreen: SettingsCoordinator.InitialScreen?)
+}
+
+extension SettingsPresenter {
+    func showSettings(using presenter: UINavigationController, controllers: Controllers, animated: Bool, initialScreen: SettingsCoordinator.InitialScreen?) {
+        let navigationController = NavigationViewController()
+        let containerController = ContainerViewController(rootViewController: navigationController)
+        let coordinator = SettingsCoordinator(navigationController: navigationController, controllers: controllers, initialScreen: initialScreen)
+        coordinator.parentCoordinator = self
+        childCoordinators.append(coordinator)
+        coordinator.start(animated: false)
+        presenter.present(containerController, animated: animated)
+    }
+}
+
 protocol SettingsCoordinatorDelegate: AnyObject {
     func showSync()
     func showPrivacyPolicy()
