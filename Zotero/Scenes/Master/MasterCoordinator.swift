@@ -233,14 +233,7 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
 
     func showSettings() {
         guard let navigationController else { return }
-        let settingsNavigationController = NavigationViewController()
-        let containerController = ContainerViewController(rootViewController: settingsNavigationController)
-        let coordinator = SettingsCoordinator(navigationController: settingsNavigationController, controllers: controllers)
-        coordinator.parentCoordinator = self
-        childCoordinators.append(coordinator)
-        coordinator.start(animated: false)
-
-        navigationController.present(containerController, animated: true, completion: nil)
+        showSettings(using: navigationController, controllers: controllers, animated: true, initialScreen: nil)
     }
 }
 
@@ -308,3 +301,5 @@ extension MasterCoordinator: MasterContainerCoordinatorDelegate {
         return TagFilterViewController(viewModel: viewModel)
     }
 }
+
+extension MasterCoordinator: SettingsPresenter { }

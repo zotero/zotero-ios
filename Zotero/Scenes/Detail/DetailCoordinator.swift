@@ -420,16 +420,6 @@ final class DetailCoordinator: Coordinator {
         transitionDelegate = nil
         (navigationController?.presentedViewController ?? navigationController)?.present(controller, animated: true, completion: nil)
     }
-
-    private func showSettings(using presenter: UINavigationController, initialScreen: SettingsCoordinator.InitialScreen? = nil) {
-        let navigationController = NavigationViewController()
-        let containerController = ContainerViewController(rootViewController: navigationController)
-        let coordinator = SettingsCoordinator(navigationController: navigationController, controllers: controllers, initialScreen: initialScreen)
-        coordinator.parentCoordinator = self
-        childCoordinators.append(coordinator)
-        coordinator.start(animated: false)
-        presenter.present(containerController, animated: true)
-    }
 }
 
 extension DetailCoordinator: DetailItemsCoordinatorDelegate {
@@ -874,7 +864,7 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
                         if webDavEnabled {
                             let action = UIAlertAction(title: L10n.goToSettings, style: .default) { [weak self] _ in
                                 guard let self, let navigationController else { return }
-                                showSettings(using: navigationController, initialScreen: .sync)
+                                showSettings(using: navigationController, controllers: controllers, animated: true, initialScreen: .sync)
                             }
                             return(L10n.Errors.Attachments.unauthorizedWebdav, [action] + cancelAction)
                         }
@@ -1107,7 +1097,8 @@ extension DetailCoordinator: DetailMissingStyleErrorDelegate {
         let controller = UIAlertController(title: L10n.error, message: L10n.Errors.Citation.missingStyle, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
         controller.addAction(UIAlertAction(title: L10n.Errors.Citation.openSettings, style: .default, handler: { [weak self] _ in
-            self?.showSettings(using: resolvedPresenter, initialScreen: .export)
+            guard let self else { return }
+            showSettings(using: resolvedPresenter, controllers: controllers, animated: true, initialScreen: .export)
         }))
 
         if resolvedPresenter.presentedViewController == nil {
@@ -1129,6 +1120,8 @@ extension DetailCoordinator: DetailCitationCoordinatorDelegate {
 }
 
 extension DetailCoordinator: DetailCopyBibliographyCoordinatorDelegate { }
+
+extension DetailCoordinator: SettingsPresenter { }
 
 // swiftlint:disable private_over_fileprivate
 fileprivate class AVPlayerDelegate: NSObject, AVPlayerViewControllerDelegate {
