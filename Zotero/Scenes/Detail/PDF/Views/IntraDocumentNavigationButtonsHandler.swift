@@ -8,10 +8,6 @@
 
 import UIKit
 
-protocol IntraDocumentNavigationButtonsHandlerDelegate: AnyObject {
-    var isCompactWidth: Bool { get }
-}
-
 enum PageChange {
     case manual
     case link
@@ -21,7 +17,6 @@ enum PageChange {
 final class IntraDocumentNavigationButtonsHandler {
     let back: () -> Void
     let forward: () -> Void
-    private unowned let delegate: IntraDocumentNavigationButtonsHandlerDelegate
 
     lazy var backButton: UIButton = {
         return createButton(title: L10n.back, imageSystemName: "chevron.left", action: UIAction(handler: { [weak self] _ in self?.back() }))
@@ -45,10 +40,9 @@ final class IntraDocumentNavigationButtonsHandler {
     private var backDisappearingTimer: BackgroundTimer?
     private var forwardDisappearingTimer: BackgroundTimer?
 
-    init(back: @escaping () -> Void, forward: @escaping () -> Void, delegate: IntraDocumentNavigationButtonsHandlerDelegate) {
+    init(back: @escaping () -> Void, forward: @escaping () -> Void) {
         self.back = back
         self.forward = forward
-        self.delegate = delegate
     }
 
     func set(hasBackActions: Bool, hasForwardActions: Bool) {
@@ -137,11 +131,6 @@ final class IntraDocumentNavigationButtonsHandler {
         }
     }
 
-    func containerViewWillTransitionToNewSize() {
-        backButton.setNeedsUpdateConfiguration()
-        forwardButton.setNeedsUpdateConfiguration()
-    }
-
     private func resetBackDisappearingTimer() {
         backDisappearingTimer?.suspend()
         backDisappearingTimer = nil
@@ -164,10 +153,10 @@ final class IntraDocumentNavigationButtonsHandler {
         configuration.background.backgroundColor = Asset.Colors.navbarBackground.color
         configuration.imagePadding = 8
         let button = UIButton(configuration: configuration)
-        button.configurationUpdateHandler = { [weak self] button in
-            guard let self else { return }
+        button.configurationUpdateHandler = {  button in
+            let hasCompactWidth = button.traitCollection.horizontalSizeClass == .compact
             var configuration = button.configuration
-            configuration?.title = delegate.isCompactWidth ? nil : title
+            configuration?.title = hasCompactWidth ? nil : title
             button.configuration = configuration
         }
         button.translatesAutoresizingMaskIntoConstraints = false
