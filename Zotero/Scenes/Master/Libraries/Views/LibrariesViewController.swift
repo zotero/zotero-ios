@@ -57,11 +57,9 @@ final class LibrariesViewController: UIViewController {
             let item = UIBarButtonItem(image: UIImage(systemName: "gear"))
             item.tintColor = Asset.Colors.zoteroBlue.color
             item.accessibilityLabel = L10n.Settings.title
-            item.rx.tap
-                .subscribe(onNext: { [weak self] _ in
-                    self?.coordinatorDelegate?.showSettings()
-                })
-                .disposed(by: disposeBag)
+            item.primaryAction = UIAction(handler: { [weak self] action in
+                self?.coordinatorDelegate?.showSettings(sourceItem: action.sender as? UIPopoverPresentationControllerSourceItem)
+            })
             navigationItem.rightBarButtonItem = item
         }
 
