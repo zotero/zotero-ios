@@ -15,18 +15,39 @@ import RxCocoa
 import RxSwift
 
 protocol SettingsPresenter: Coordinator {
-    func showSettings(using presenter: UINavigationController, controllers: Controllers, animated: Bool, initialScreen: SettingsCoordinator.InitialScreen?)
+    func showSettings(using presenter: UINavigationController, controllers: Controllers, animated: Bool, initialScreen: SettingsCoordinator.InitialScreen?, sourceItem: UIPopoverPresentationControllerSourceItem?)
 }
 
 extension SettingsPresenter {
-    func showSettings(using presenter: UINavigationController, controllers: Controllers, animated: Bool, initialScreen: SettingsCoordinator.InitialScreen?) {
+    func showSettings(
+        using presenter: UINavigationController,
+        controllers: Controllers,
+        animated: Bool,
+        initialScreen: SettingsCoordinator.InitialScreen?,
+        sourceItem: UIPopoverPresentationControllerSourceItem?
+    ) {
         let navigationController = NavigationViewController()
-        let containerController = ContainerViewController(rootViewController: navigationController)
         let coordinator = SettingsCoordinator(navigationController: navigationController, controllers: controllers, initialScreen: initialScreen)
         coordinator.parentCoordinator = self
         childCoordinators.append(coordinator)
         coordinator.start(animated: false)
-        presenter.present(containerController, animated: animated)
+        
+        if #available(iOS 26.0, *) {
+            navigationController.modalPresentationStyle = .popover
+            if let popoverPresentationController = navigationController.popoverPresentationController {
+                if let sourceItem {
+                    popoverPresentationController.sourceItem = sourceItem
+                } else {
+                    popoverPresentationController.sourceView = presenter.view
+                    popoverPresentationController.sourceRect = CGRect(x: presenter.view.bounds.midX, y: presenter.view.bounds.midY, width: 0, height: 0)
+                    popoverPresentationController.permittedArrowDirections = []
+                }
+            }
+            presenter.present(navigationController, animated: animated)
+        } else {
+            let containerController = ContainerViewController(rootViewController: navigationController)
+            presenter.present(containerController, animated: animated)
+        }
     }
 }
 

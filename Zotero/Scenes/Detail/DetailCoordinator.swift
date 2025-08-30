@@ -866,7 +866,7 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
                         if webDavEnabled {
                             let action = UIAlertAction(title: L10n.goToSettings, style: .default) { [weak self] _ in
                                 guard let self, let navigationController else { return }
-                                showSettings(using: navigationController, controllers: controllers, animated: true, initialScreen: .sync)
+                                showSettings(using: navigationController, controllers: controllers, animated: true, initialScreen: .sync, sourceItem: nil)
                             }
                             return(L10n.Errors.Attachments.unauthorizedWebdav, [action] + cancelAction)
                         }
@@ -1100,7 +1100,7 @@ extension DetailCoordinator: DetailMissingStyleErrorDelegate {
         controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
         controller.addAction(UIAlertAction(title: L10n.Errors.Citation.openSettings, style: .default, handler: { [weak self] _ in
             guard let self else { return }
-            showSettings(using: resolvedPresenter, controllers: controllers, animated: true, initialScreen: .export)
+            showSettings(using: resolvedPresenter, controllers: controllers, animated: true, initialScreen: .export, sourceItem: nil)
         }))
 
         if resolvedPresenter.presentedViewController == nil {
