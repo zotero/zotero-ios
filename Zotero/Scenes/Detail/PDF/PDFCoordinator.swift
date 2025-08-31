@@ -21,7 +21,7 @@ protocol PdfReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarC
     func share(text: String, rect: CGRect, view: UIView, userInterfaceStyle: UIUserInterfaceStyle)
     func showDeletedAlertForPdf(completion: @escaping (Bool) -> Void)
     func showReader(document: Document, userInterfaceStyle: UIUserInterfaceStyle)
-    func showCitation(for itemId: String, libraryId: LibraryIdentifier)
+    func showCitation(for itemId: String, libraryId: LibraryIdentifier, sourceItem: UIPopoverPresentationControllerSourceItem?)
     func copyBibliography(using presenter: UIViewController, for itemId: String, libraryId: LibraryIdentifier)
     func showFontSizePicker(sender: UIView, picked: @escaping (CGFloat) -> Void)
     func showDeleteAlertForAnnotation(sender: UIView, delete: @escaping () -> Void)
@@ -236,8 +236,8 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         self.navigationController?.present(navigationController, animated: true, completion: nil)
     }
 
-    func showCitation(for itemId: String, libraryId: LibraryIdentifier) {
-        (parentCoordinator as? DetailCoordinator)?.showCitation(using: navigationController, for: Set([itemId]), libraryId: libraryId, delegate: self)
+    func showCitation(for itemId: String, libraryId: LibraryIdentifier, sourceItem: UIPopoverPresentationControllerSourceItem?) {
+        (parentCoordinator as? DetailCoordinator)?.showCitation(using: navigationController, for: Set([itemId]), libraryId: libraryId, delegate: self, sourceItem: sourceItem)
     }
 
     func copyBibliography(using presenter: UIViewController, for itemId: String, libraryId: LibraryIdentifier) {
