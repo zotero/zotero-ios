@@ -45,7 +45,13 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showFilters(filters: [ItemsFilter], filtersDelegate: BaseItemsViewController, button: UIBarButtonItem)
     func showDeletionQuestion(count: Int, confirmAction: @escaping () -> Void, cancelAction: @escaping () -> Void)
     func showRemoveFromCollectionQuestion(count: Int, confirmAction: @escaping () -> Void)
-    func showCitation(using presenter: UIViewController?, for itemIds: Set<String>, libraryId: LibraryIdentifier, delegate: DetailCitationCoordinatorDelegate?)
+    func showCitation(
+        using presenter: UIViewController?,
+        for itemIds: Set<String>,
+        libraryId: LibraryIdentifier,
+        delegate: DetailCitationCoordinatorDelegate?,
+        sourceItem: UIPopoverPresentationControllerSourceItem?
+    )
     func copyBibliography(using presenter: UIViewController, for itemIds: Set<String>, libraryId: LibraryIdentifier, delegate: DetailCopyBibliographyCoordinatorDelegate?)
     func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier, sourceItem: UIPopoverPresentationControllerSourceItem?)
     func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier)
@@ -690,7 +696,13 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         self.navigationController?.present(controller, animated: true, completion: nil)
     }
 
-    func showCitation(using presenter: UIViewController?, for itemIds: Set<String>, libraryId: LibraryIdentifier, delegate: DetailCitationCoordinatorDelegate?) {
+    func showCitation(
+        using presenter: UIViewController?,
+        for itemIds: Set<String>,
+        libraryId: LibraryIdentifier,
+        delegate: DetailCitationCoordinatorDelegate?,
+        sourceItem: UIPopoverPresentationControllerSourceItem?
+    ) {
         guard let resolvedPresenter = presenter ?? navigationController else { return }
         guard let citationController = controllers.userControllers?.citationController else { return }
 
@@ -709,8 +721,22 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         let controller = SingleCitationViewController(viewModel: viewModel)
         controller.coordinatorDelegate = delegate ?? self
         let navigationController = UINavigationController(rootViewController: controller)
-        let containerController = ContainerViewController(rootViewController: navigationController)
-        resolvedPresenter.present(containerController, animated: true, completion: nil)
+        if #available(iOS 26.0, *) {
+            navigationController.modalPresentationStyle = .popover
+            if let popoverPresentationController = navigationController.popoverPresentationController {
+                if let sourceItem {
+                    popoverPresentationController.sourceItem = sourceItem
+                } else {
+                    popoverPresentationController.sourceView = resolvedPresenter.view
+                    popoverPresentationController.sourceRect = CGRect(x: resolvedPresenter.view.bounds.midX, y: resolvedPresenter.view.bounds.midY, width: 0, height: 0)
+                    popoverPresentationController.permittedArrowDirections = []
+                }
+            }
+            resolvedPresenter.present(navigationController, animated: true)
+        } else {
+            let containerController = ContainerViewController(rootViewController: navigationController)
+            resolvedPresenter.present(containerController, animated: true)
+        }
     }
 
     func copyBibliography(using presenter: UIViewController, for itemIds: Set<String>, libraryId: LibraryIdentifier, delegate: DetailCopyBibliographyCoordinatorDelegate?) {
