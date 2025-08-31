@@ -333,7 +333,7 @@ final class ItemsViewController: BaseItemsViewController {
             coordinatorDelegate?.copyBibliography(using: presenter, for: selectedKeys, libraryId: library.identifier, delegate: nil)
 
         case .copyCitation:
-            coordinatorDelegate?.showCitation(using: nil, for: selectedKeys, libraryId: library.identifier, delegate: nil)
+            coordinatorDelegate?.showCitation(using: nil, for: selectedKeys, libraryId: library.identifier, delegate: nil, sourceItem: nil)
 
         case .download:
             viewModel.process(action: .download(selectedKeys))

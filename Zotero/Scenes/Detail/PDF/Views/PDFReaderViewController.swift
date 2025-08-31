@@ -81,9 +81,9 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
             guard let self else { return }
 
             if let parentKey = viewModel.state.parentKey {
-                let copyCitationAction = UIAction(title: L10n.Citation.copyCitation, image: .init(systemName: "doc.on.doc")) { [weak self] _ in
+                let copyCitationAction = UIAction(title: L10n.Citation.copyCitation, image: .init(systemName: "doc.on.doc")) { [weak self] action in
                     guard let self, let coordinatorDelegate else { return }
-                    coordinatorDelegate.showCitation(for: parentKey, libraryId: viewModel.state.library.identifier)
+                    coordinatorDelegate.showCitation(for: parentKey, libraryId: viewModel.state.library.identifier, sourceItem: action.sender as? UIPopoverPresentationControllerSourceItem)
                 }
                 elements.append(copyCitationAction)
                 let copyBibliographyAction = UIAction(title: L10n.Citation.copyBibliography, image: .init(systemName: "doc.on.doc")) { [weak self] _ in
