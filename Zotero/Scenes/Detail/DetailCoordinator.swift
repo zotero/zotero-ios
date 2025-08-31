@@ -47,7 +47,7 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showRemoveFromCollectionQuestion(count: Int, confirmAction: @escaping () -> Void)
     func showCitation(using presenter: UIViewController?, for itemIds: Set<String>, libraryId: LibraryIdentifier, delegate: DetailCitationCoordinatorDelegate?)
     func copyBibliography(using presenter: UIViewController, for itemIds: Set<String>, libraryId: LibraryIdentifier, delegate: DetailCopyBibliographyCoordinatorDelegate?)
-    func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier)
+    func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier, sourceItem: UIPopoverPresentationControllerSourceItem?)
     func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier)
     func show(error: ItemsError)
     func showLookup()
@@ -735,16 +735,10 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         presenter.present(controller, animated: true)
     }
 
-    func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier) {
+    func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier, sourceItem: UIPopoverPresentationControllerSourceItem?) {
         DDLogInfo("DetailCoordinator: show citation/bibliography export for \(itemIds)")
-
-        let navigationController = NavigationViewController()
-        let containerController = ContainerViewController(rootViewController: navigationController)
-        let coordinator = CitationBibliographyExportCoordinator(itemIds: itemIds, libraryId: libraryId, navigationController: navigationController, controllers: self.controllers)
-        coordinator.parentCoordinator = self
-        self.childCoordinators.append(coordinator)
-        coordinator.start(animated: false)
-        self.navigationController?.present(containerController, animated: true, completion: nil)
+        guard let navigationController else { return }
+        showCitationBibliographyExport(using: navigationController, for: itemIds, in: libraryId, controllers: controllers, animated: true, sourceItem: sourceItem)
     }
 
     func show(error: ItemsError) {
@@ -1124,6 +1118,8 @@ extension DetailCoordinator: DetailCitationCoordinatorDelegate {
 extension DetailCoordinator: DetailCopyBibliographyCoordinatorDelegate { }
 
 extension DetailCoordinator: SettingsPresenter { }
+
+extension DetailCoordinator: CitationBibliographyExportPresenter { }
 
 // swiftlint:disable private_over_fileprivate
 fileprivate class AVPlayerDelegate: NSObject, AVPlayerViewControllerDelegate {
