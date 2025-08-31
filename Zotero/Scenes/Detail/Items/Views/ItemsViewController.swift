@@ -345,7 +345,7 @@ final class ItemsViewController: BaseItemsViewController {
 
         case .copyCitation:
             guard !selectedKeys.isEmpty else { return }
-            coordinatorDelegate?.showCitation(using: nil, for: selectedKeys, libraryId: library.identifier, delegate: nil)
+            coordinatorDelegate?.showCitation(using: nil, for: selectedKeys, libraryId: library.identifier, delegate: nil, sourceItem: nil)
             completed = true
 
         case .download:
