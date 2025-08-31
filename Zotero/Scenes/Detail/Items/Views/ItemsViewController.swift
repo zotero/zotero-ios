@@ -312,7 +312,7 @@ final class ItemsViewController: BaseItemsViewController {
 
         case .share:
             guard !selectedKeys.isEmpty else { return }
-            coordinatorDelegate?.showCiteExport(for: selectedKeys, libraryId: library.identifier)
+            coordinatorDelegate?.showCiteExport(for: selectedKeys, libraryId: library.identifier, sourceItem: button)
 
         case .copyBibliography:
             var presenter: UIViewController = self

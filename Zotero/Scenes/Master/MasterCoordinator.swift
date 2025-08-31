@@ -264,14 +264,7 @@ extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
 
     func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier) {
         guard let navigationController else { return }
-        let exportNavigationController = NavigationViewController()
-        let containerController = ContainerViewController(rootViewController: exportNavigationController)
-        let coordinator = CitationBibliographyExportCoordinator(itemIds: itemIds, libraryId: libraryId, navigationController: exportNavigationController, controllers: controllers)
-        coordinator.parentCoordinator = self
-        childCoordinators.append(coordinator)
-        coordinator.start(animated: false)
-
-        navigationController.present(containerController, animated: true, completion: nil)
+        showCitationBibliographyExport(using: navigationController, for: itemIds, in: libraryId, controllers: controllers, animated: true, sourceItem: nil)
     }
 
     func showCiteExportError() {
@@ -309,3 +302,5 @@ extension MasterCoordinator: MasterContainerCoordinatorDelegate {
 }
 
 extension MasterCoordinator: SettingsPresenter { }
+
+extension MasterCoordinator: CitationBibliographyExportPresenter { }
