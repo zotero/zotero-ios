@@ -65,9 +65,15 @@ final class LibrariesViewController: UIViewController {
 
         func setupTableView() {
             let tableView: UITableView
-            tableView = UITableView(frame: .zero, style: .grouped)
-            tableView.rowHeight = 44
-            tableView.separatorInset = UIEdgeInsets(top: 0, left: 60, bottom: 0, right: 0)
+            if #available(iOS 26.0.0, *) {
+                tableView = UITableView(frame: .zero, style: .insetGrouped)
+                tableView.rowHeight = 52
+                tableView.separatorInset = UIEdgeInsets(top: 0, left: LibraryCell.titleLabelLeadingOffset, bottom: 0, right: 16)
+            } else {
+                tableView = UITableView(frame: .zero, style: .grouped)
+                tableView.rowHeight = 44
+                tableView.separatorInset = UIEdgeInsets(top: 0, left: LibraryCell.titleLabelLeadingOffset, bottom: 0, right: 0)
+            }
             tableView.dataSource = self
             tableView.delegate = self
             tableView.register(LibraryCell.self, forCellReuseIdentifier: Self.cellId)
