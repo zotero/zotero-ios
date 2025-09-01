@@ -11,40 +11,71 @@ import UIKit
 final class LibraryCell: UITableViewCell {
     enum LibraryState {
         case normal, locked, archived
+
+        var image: UIImage {
+            switch self {
+            case .normal:
+                return Asset.Images.Cells.library.image
+
+            case .locked:
+                return Asset.Images.Cells.libraryReadonly.image
+
+            case .archived:
+                return Asset.Images.Cells.libraryArchived.image
+            }
+        }
+
+        var accessibilityNamePrefix: String {
+            switch self {
+            case .normal:
+                return ""
+
+            case .locked:
+                return "\(L10n.Accessibility.locked) "
+
+            case .archived:
+                return "\(L10n.Accessibility.archived) "
+            }
+        }
     }
 
-    @IBOutlet private weak var iconLeftConstraint: NSLayoutConstraint!
-    @IBOutlet private weak var iconView: UIImageView!
-    @IBOutlet private weak var iconToLabelConstraint: NSLayoutConstraint!
-    @IBOutlet private weak var titleLabel: UILabel!
-    @IBOutlet private weak var titleRightConstraint: NSLayoutConstraint!
+    private weak var iconView: UIImageView!
+    private weak var titleLabel: UILabel!
 
-    private static let horizontalPadding: CGFloat = 16
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        setup()
 
+        func setup() {
+            let iconView = UIImageView()
+            iconView.tintColor = Asset.Colors.zoteroBlue.color
+            iconView.translatesAutoresizingMaskIntoConstraints = false
+            contentView.addSubview(iconView)
+            self.iconView = iconView
+
+            let titleLabel = UILabel()
+            titleLabel.translatesAutoresizingMaskIntoConstraints = false
+            contentView.addSubview(titleLabel)
+            self.titleLabel = titleLabel
+
+            NSLayoutConstraint.activate([
+                iconView.centerXAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 30),
+                iconView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+                titleLabel.topAnchor.constraint(equalTo: contentView.topAnchor),
+                titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 60),
+                titleLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+                contentView.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor, constant: 16)
+            ])
+        }
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
     func setup(with name: String, libraryState: LibraryState) {
-        self.iconView.image = self.image(for: libraryState).withRenderingMode(.alwaysTemplate)
-        self.titleLabel.text = name
-        self.titleLabel.accessibilityLabel = self.accessibilityNamePrefix(for: libraryState) + name
-
-        let hasExtraPadding = libraryState != .normal
-        self.iconLeftConstraint.constant = LibraryCell.horizontalPadding - (hasExtraPadding ? 2 : 0)
-        self.iconToLabelConstraint.constant = LibraryCell.horizontalPadding - (hasExtraPadding ? 2 : 0)
-        self.titleRightConstraint.constant = LibraryCell.horizontalPadding
-    }
-
-    private func image(for state: LibraryState) -> UIImage {
-        switch state {
-        case .normal: return Asset.Images.Cells.library.image
-        case .locked: return Asset.Images.Cells.libraryReadonly.image
-        case .archived: return Asset.Images.Cells.libraryArchived.image
-        }
-    }
-
-    private func accessibilityNamePrefix(for state: LibraryState) -> String {
-        switch state {
-        case .normal: return ""
-        case .locked: return "\(L10n.Accessibility.locked) "
-        case .archived: return "\(L10n.Accessibility.archived) "
-        }
+        iconView.image = libraryState.image.withRenderingMode(.alwaysTemplate)
+        titleLabel.text = name
+        titleLabel.accessibilityLabel = libraryState.accessibilityNamePrefix + name
     }
 }
