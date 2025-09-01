@@ -42,6 +42,14 @@ final class LibraryCell: UITableViewCell {
     private weak var iconView: UIImageView!
     private weak var titleLabel: UILabel!
 
+    static var titleLabelLeadingOffset: CGFloat {
+        if #available(iOS 26.0.0, *) {
+            return 56
+        } else {
+            return 60
+        }
+    }
+
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         setup()
@@ -62,7 +70,7 @@ final class LibraryCell: UITableViewCell {
                 iconView.centerXAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 30),
                 iconView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
                 titleLabel.topAnchor.constraint(equalTo: contentView.topAnchor),
-                titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 60),
+                titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Self.titleLabelLeadingOffset),
                 titleLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
                 contentView.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor, constant: 16)
             ])
