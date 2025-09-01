@@ -103,6 +103,15 @@ final class DocumentSearchViewController: UIViewController {
             view.addSubview(tableView)
             self.tableView = tableView
 
+            let label = UILabel(frame: CGRect(x: 0, y: 0, width: tableView.frame.width, height: 44))
+            label.translatesAutoresizingMaskIntoConstraints = false
+            label.font = UIFont.preferredFont(forTextStyle: .footnote)
+            label.textColor = .darkGray
+            label.textAlignment = .center
+            label.backgroundColor = .systemBackground
+            view.addSubview(label)
+            footerLabel = label
+
             let searchBar = UISearchBar()
             searchBar.translatesAutoresizingMaskIntoConstraints = false
             searchBar.placeholder = L10n.Pdf.Search.title
@@ -126,16 +135,13 @@ final class DocumentSearchViewController: UIViewController {
                 searchBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
                 tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
                 tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-                tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-                tableView.topAnchor.constraint(equalTo: searchBar.bottomAnchor)
+                tableView.bottomAnchor.constraint(equalTo: label.topAnchor),
+                tableView.topAnchor.constraint(equalTo: searchBar.bottomAnchor),
+                label.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+                label.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                label.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                label.heightAnchor.constraint(equalToConstant: 36)
             ])
-
-            let label = UILabel(frame: CGRect(x: 0, y: 0, width: tableView.frame.width, height: 44))
-            label.font = UIFont.preferredFont(forTextStyle: .footnote)
-            label.textColor = .darkGray
-            label.textAlignment = .center
-            tableView.tableFooterView = label
-            footerLabel = label
         }
     }
 
