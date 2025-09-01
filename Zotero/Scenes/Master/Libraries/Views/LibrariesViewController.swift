@@ -12,7 +12,7 @@ import WebKit
 import RxSwift
 
 final class LibrariesViewController: UIViewController {
-    @IBOutlet private weak var tableView: UITableView!
+    private weak var tableView: UITableView!
 
     private static let cellId = "LibraryCell"
     private static let customLibrariesSection = 0
@@ -33,7 +33,7 @@ final class LibrariesViewController: UIViewController {
         self.viewModel = viewModel
         self.syncScheduler = syncScheduler
         disposeBag = DisposeBag()
-        super.init(nibName: "LibrariesViewController", bundle: nil)
+        super.init(nibName: nil, bundle: nil)
     }
 
     required init?(coder: NSCoder) {
@@ -64,12 +64,24 @@ final class LibrariesViewController: UIViewController {
         }
 
         func setupTableView() {
-            tableView.dataSource = self
-            tableView.delegate = self
+            let tableView: UITableView
+            tableView = UITableView(frame: .zero, style: .grouped)
             tableView.rowHeight = 44
             tableView.separatorInset = UIEdgeInsets(top: 0, left: 60, bottom: 0, right: 0)
+            tableView.dataSource = self
+            tableView.delegate = self
             tableView.register(UINib(nibName: "LibraryCell", bundle: nil), forCellReuseIdentifier: Self.cellId)
             tableView.tableFooterView = UIView()
+            tableView.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview(tableView)
+            self.tableView = tableView
+
+            NSLayoutConstraint.activate([
+                tableView.topAnchor.constraint(equalTo: view.topAnchor),
+                tableView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+                tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+                tableView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor)
+            ])
         }
     }
 
