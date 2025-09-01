@@ -70,7 +70,7 @@ final class LibrariesViewController: UIViewController {
             tableView.separatorInset = UIEdgeInsets(top: 0, left: 60, bottom: 0, right: 0)
             tableView.dataSource = self
             tableView.delegate = self
-            tableView.register(UINib(nibName: "LibraryCell", bundle: nil), forCellReuseIdentifier: Self.cellId)
+            tableView.register(LibraryCell.self, forCellReuseIdentifier: Self.cellId)
             tableView.tableFooterView = UIView()
             tableView.translatesAutoresizingMaskIntoConstraints = false
             view.addSubview(tableView)
