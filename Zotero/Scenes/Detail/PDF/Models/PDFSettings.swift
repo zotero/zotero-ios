@@ -36,7 +36,11 @@ extension PDFSettings: ReaderSettings {
     }
     
     var preferredContentSize: CGSize {
-        return CGSize(width: 480, height: 308)
+        if #available(iOS 26.0, *) {
+            return CGSize(width: 480, height: 320)
+        } else {
+            return CGSize(width: 480, height: 308)
+        }
     }
 
     var rows: [ReaderSettingsViewController.Row] {
