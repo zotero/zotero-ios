@@ -80,7 +80,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
     private lazy var searchButton: UIBarButtonItem = {
         let search = UIBarButtonItem(image: UIImage(systemName: "magnifyingglass"), style: .plain, target: nil, action: nil)
         search.accessibilityLabel = L10n.Accessibility.Pdf.searchPdf
-        search.title = L10n.Accessibility.Pdf.searchPdf
+        search.title = viewModel.state.originalFile.ext.lowercased() == "epub" ? L10n.Accessibility.Htmlepub.searchEpub : L10n.Accessibility.Htmlepub.searchHtml
         search.rx.tap
             .subscribe(onNext: { [weak self] _ in
                 guard let self, let documentController else { return }
