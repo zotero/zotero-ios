@@ -118,16 +118,16 @@ final class ImagePreviewViewController: UIViewController {
     }
 
     private func setupNavigationBar() {
-        let closeItem = UIBarButtonItem(title: L10n.close)
-        closeItem.tintColor = Asset.Colors.zoteroBlue.color
-        closeItem.rx
-                 .tap
-                 .observe(on: MainScheduler.instance)
-                 .subscribe(onNext: { [weak self] in
-                     self?.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
-                 })
-                 .disposed(by: self.disposeBag)
-        self.navigationItem.rightBarButtonItem = closeItem
+        let primaryAction = UIAction(title: L10n.close) { [weak self] _ in
+            self?.navigationController?.presentingViewController?.dismiss(animated: true)
+        }
+        let closeItem: UIBarButtonItem
+        if #available(iOS 26.0.0, *) {
+            closeItem = UIBarButtonItem(systemItem: .close, primaryAction: primaryAction)
+        } else {
+            closeItem = UIBarButtonItem(primaryAction: primaryAction)
+        }
+        navigationItem.rightBarButtonItem = closeItem
     }
 }
 

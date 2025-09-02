@@ -703,18 +703,19 @@ final class ShareViewController: UIViewController {
             self?.cancel()
         }
         let cancel = UIBarButtonItem(systemItem: .cancel, primaryAction: cancelAction)
-        cancel.tintColor = Asset.Colors.zoteroBlue.color
         self.navigationItem.leftBarButtonItem = cancel
 
         if loggedIn {
             let doneAction = UIAction(title: L10n.Shareext.save) { [weak viewModel] _ in
                 viewModel?.submit()
             }
-            let done = UIBarButtonItem(title: L10n.Shareext.save, primaryAction: doneAction)
-            done.tintColor = Asset.Colors.zoteroBlue.color
+            let done: UIBarButtonItem
             if #available(iOS 26.0.0, *) {
+                done = UIBarButtonItem(systemItem: .done, primaryAction: doneAction)
+                done.tintColor = Asset.Colors.zoteroBlue.color
                 done.style = .prominent
             } else {
+                done = UIBarButtonItem(primaryAction: doneAction)
                 done.style = .done
             }
             done.isEnabled = false

@@ -144,41 +144,50 @@ class ManualLookupViewController: UIViewController {
     private func setupCloseCancelAllBarButtons() {
         navigationItem.rightBarButtonItem = nil
 
-        let closeItem = UIBarButtonItem(title: L10n.close)
-        closeItem.tintColor = Asset.Colors.zoteroBlue.color
-        closeItem.rx.tap.subscribe(onNext: { [weak self] in
+        let closePrimaryAction = UIAction(title: L10n.close) { [weak self] _ in
             self?.close()
-        }).disposed(by: self.disposeBag)
-        
-        let cancelAllItem = UIBarButtonItem(title: L10n.cancelAll)
-        cancelAllItem.tintColor = Asset.Colors.zoteroBlue.color
-        cancelAllItem.rx.tap.subscribe(onNext: { [weak self] in
-            self?.lookupController?.viewModel.process(action: .cancelAllLookups)
-            self?.close()
-        }).disposed(by: self.disposeBag)
+        }
+        let closeItem: UIBarButtonItem
+        if #available(iOS 26.0.0, *) {
+            closeItem = UIBarButtonItem(systemItem: .close, primaryAction: closePrimaryAction)
+        } else {
+            closeItem = UIBarButtonItem(primaryAction: closePrimaryAction)
+        }
+
+        let cancelAllPrimaryAction = UIAction(title: L10n.cancelAll) { [weak self] _ in
+            guard let self else { return }
+            lookupController?.viewModel.process(action: .cancelAllLookups)
+            close()
+        }
+        let cancelAllItem = UIBarButtonItem(primaryAction: cancelAllPrimaryAction)
 
         navigationItem.leftBarButtonItems = [closeItem, .fixedSpace(16), cancelAllItem]
     }
 
     private func setupCancelDoneBarButtons() {
-        let doneItem = UIBarButtonItem(title: L10n.lookUp)
-        doneItem.tintColor = Asset.Colors.zoteroBlue.color
+        let donePrimaryAction = UIAction(title: L10n.lookUp) { [weak self] _ in
+            guard let self else { return }
+            lookup(text: textView.text ?? "")
+        }
+        let doneItem = UIBarButtonItem(primaryAction: donePrimaryAction)
         if #available(iOS 26.0.0, *) {
+            doneItem.tintColor = Asset.Colors.zoteroBlue.color
             doneItem.style = .prominent
         } else {
             doneItem.style = .done
         }
-        doneItem.rx.tap.subscribe(onNext: { [weak self] in
-            self?.lookup(text: self?.textView.text ?? "")
-        }).disposed(by: self.disposeBag)
-        self.navigationItem.rightBarButtonItem = doneItem
+        navigationItem.rightBarButtonItem = doneItem
 
-        let cancelItem = UIBarButtonItem(title: L10n.cancel)
-        cancelItem.tintColor = Asset.Colors.zoteroBlue.color
-        cancelItem.rx.tap.subscribe(onNext: { [weak self] in
+        let cancelPrimaryAction = UIAction(title: L10n.cancel) { [weak self] _ in
             self?.close()
-        }).disposed(by: self.disposeBag)
-        self.navigationItem.leftBarButtonItems = [cancelItem]
+        }
+        let cancelItem: UIBarButtonItem
+        if #available(iOS 26.0.0, *) {
+            cancelItem = UIBarButtonItem(systemItem: .cancel, primaryAction: cancelPrimaryAction)
+        } else {
+            cancelItem = UIBarButtonItem(primaryAction: cancelPrimaryAction)
+        }
+        navigationItem.leftBarButtonItems = [cancelItem]
     }
 
     private func updatePreferredContentSize() {

@@ -66,16 +66,12 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
         return createToolbarButton()
     }()
     private lazy var settingsButton: UIBarButtonItem = {
-        let settings = UIBarButtonItem(image: UIImage(systemName: "gearshape"))
-        settings.tintColor = Asset.Colors.zoteroBlue.color
+        let primaryAction = UIAction(title: L10n.Accessibility.Pdf.settings, image: UIImage(systemName: "gearshape")) { [weak self] action in
+            guard let self, let settings = action.sender as? UIBarButtonItem else { return }
+            showSettings(sender: settings)
+        }
+        let settings = UIBarButtonItem(primaryAction: primaryAction)
         settings.accessibilityLabel = L10n.Accessibility.Pdf.settings
-        settings.title = L10n.Accessibility.Pdf.settings
-        settings.rx.tap
-            .subscribe(onNext: { [weak self, weak settings] _ in
-                guard let self, let settings else { return }
-                showSettings(sender: settings)
-            })
-            .disposed(by: disposeBag)
         return settings
     }()
     private lazy var searchButton: UIBarButtonItem = {
@@ -138,17 +134,18 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
         }
 
         func setupNavigationBar() {
-            let closeButton = UIBarButtonItem(image: UIImage(systemName: "chevron.left"))
-            closeButton.tintColor = Asset.Colors.zoteroBlue.color
-            closeButton.title = L10n.close
+            let closePrimaryAction = UIAction(title: L10n.close, image: UIImage(systemName: "chevron.left")) { [weak self] _ in
+                self?.close()
+            }
+            let closeButton = UIBarButtonItem(primaryAction: closePrimaryAction)
             closeButton.accessibilityLabel = L10n.close
-            closeButton.rx.tap.subscribe(onNext: { [weak self] _ in self?.close() }).disposed(by: disposeBag)
 
-            let sidebarButton = UIBarButtonItem(image: UIImage(systemName: "sidebar.left"))
-            sidebarButton.tintColor = Asset.Colors.zoteroBlue.color
+            let sidebarPrimaryAction = UIAction(image: UIImage(systemName: "sidebar.left")) { [weak self] _ in
+                self?.toggleSidebar(animated: true)
+            }
+            let sidebarButton = UIBarButtonItem(primaryAction: sidebarPrimaryAction)
             setupAccessibility(forSidebarButton: sidebarButton)
             sidebarButton.tag = NavigationBarButton.sidebar.rawValue
-            sidebarButton.rx.tap.subscribe(onNext: { [weak self] _ in self?.toggleSidebar(animated: true) }).disposed(by: disposeBag)
 
             navigationItem.leftBarButtonItems = [closeButton, sidebarButton]
         }

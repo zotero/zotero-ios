@@ -225,13 +225,13 @@ final class ReaderSettingsViewController: UICollectionViewController {
 
     private func setupNavigationBarIfNeeded() {
         guard UIDevice.current.userInterfaceIdiom == .phone else { return }
-        let button = UIBarButtonItem(systemItem: .done)
-        button.tintColor = Asset.Colors.zoteroBlue.color
-        button.rx.tap
-            .subscribe(onNext: { [weak self] _ in
-                self?.presentingViewController?.dismiss(animated: true)
-            })
-            .disposed(by: disposeBag)
+        let primaryAction = UIAction { [weak self] _ in
+            self?.presentingViewController?.dismiss(animated: true)
+        }
+        let button = UIBarButtonItem(systemItem: .done, primaryAction: primaryAction)
+        if #available(iOS 26.0.0, *) {
+            button.tintColor = Asset.Colors.zoteroBlue.color
+        }
         navigationItem.rightBarButtonItem = button
     }
 }

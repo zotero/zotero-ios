@@ -336,7 +336,9 @@ final class ItemDetailViewController: UIViewController {
                     saveButton = UIBarButtonItem(systemItem: .done, primaryAction: UIAction { [weak viewModel] _ in
                         viewModel?.process(action: .endEditing)
                     })
-                    saveButton.tintColor = Asset.Colors.zoteroBlue.color
+                    if #available(iOS 26.0.0, *) {
+                        saveButton.tintColor = Asset.Colors.zoteroBlue.color
+                    }
                 }
                 navigationItem.rightBarButtonItem = saveButton
 
@@ -344,7 +346,6 @@ final class ItemDetailViewController: UIViewController {
                 let cancelButton = UIBarButtonItem(systemItem: .cancel, primaryAction: UIAction(title: L10n.cancel) { [weak viewModel] _ in
                     viewModel?.process(action: .cancelEditing)
                 })
-                cancelButton.tintColor = Asset.Colors.zoteroBlue.color
                 navigationItem.leftBarButtonItem = cancelButton
             }
 
@@ -363,7 +364,6 @@ final class ItemDetailViewController: UIViewController {
                     let button = UIBarButtonItem(primaryAction: UIAction(title: L10n.edit) { [weak viewModel] _ in
                         viewModel?.process(action: .startEditing)
                     })
-                    button.tintColor = Asset.Colors.zoteroBlue.color
                     buttons.append(button)
                 }
                 buttons.append(contentsOf: attachmentButtonItems(for: attachmentButtonState))
@@ -383,7 +383,6 @@ final class ItemDetailViewController: UIViewController {
                             downloadingViaNavigationBar = true
                             viewModel.process(action: .openAttachment(key))
                         })
-                        button.tintColor = Asset.Colors.zoteroBlue.color
                         items.append(button)
 
                     case .downloading(_, let progress):
@@ -394,7 +393,6 @@ final class ItemDetailViewController: UIViewController {
                             items.append(UIBarButtonItem(customView: view))
                         } else {
                             let button = UIBarButtonItem(title: L10n.ItemDetail.viewPdf)
-                            button.tintColor = Asset.Colors.zoteroBlue.color
                             button.isEnabled = false
                             items.append(button)
                         }

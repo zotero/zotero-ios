@@ -12,44 +12,50 @@ struct ItemSortingView: View {
     @State var sortType: ItemsSortType
 
     let changed: (ItemsSortType) -> Void
-    let showPicker: (ItemSortTypePickerView) -> Void
-    let closePicker: () -> Void
 
     var body: some View {
-        VStack(spacing: 20) {
-            Button {
-                showPicker(ItemSortTypePickerView(sortType: $sortType, closeAction: closePicker))
-            } label: {
-                HStack {
-                    Text("\(L10n.Items.sortBy): \(sortType.field.title)")
-                        .foregroundColor(Color(UIColor.label))
-
-                    Spacer()
-
-                    Image(systemName: "chevron.right")
-                        .foregroundColor(Color(UIColor.systemGray2))
-                        .font(.body.weight(.semibold))
-                        .imageScale(.small)
-                }
-            }
-            .padding(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
-
-            Divider()
-
+        VStack(spacing: 0) {
             Picker(L10n.Items.sortOrder, selection: $sortType.ascending) {
                 Text("Ascending").tag(true)
                 Text("Descending").tag(false)
             }
             .pickerStyle(.segmented)
-            .padding(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
+            .padding(EdgeInsets(top: 20, leading: 20, bottom: 20, trailing: 20))
 
-            if UIDevice.current.userInterfaceIdiom == .phone {
-                Spacer()
+            List {
+                ForEach(ItemsSortType.Field.allCases) { field in
+                    Button {
+                        var new = sortType
+                        new.field = field
+                        new.ascending = field.defaultOrderAscending // 🍎 check if change flips UI
+                        sortType = new
+                    } label: {
+                        SortTypeRow(title: field.title, isSelected: (sortType.field == field))
+                    }
+                    .foregroundColor(Color(.label))
+                }
             }
+            .listStyle(.plain)
         }
-        .padding(EdgeInsets(top: 20, leading: 0, bottom: 20, trailing: 0))
+        .navigationBarTitle(Text(L10n.Items.sortBy), displayMode: .inline)
         .onChange(of: sortType) { newValue in
             self.changed(newValue)
+        }
+    }
+}
+
+private struct SortTypeRow: View {
+    let title: String
+    let isSelected: Bool
+
+    var body: some View {
+        HStack {
+            Text(self.title)
+            if self.isSelected {
+                Spacer()
+                Image(systemName: "checkmark")
+                    .foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
+            }
         }
     }
 }

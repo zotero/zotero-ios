@@ -184,33 +184,37 @@ final class CollectionsViewController: UICollectionViewController {
     // MARK: - Setups
 
     private func setupNavigationBar() {
-        let searchItem = UIBarButtonItem(image: UIImage(systemName: "magnifyingglass"))
-        searchItem.tintColor = Asset.Colors.zoteroBlue.color
-        searchItem.accessibilityLabel = L10n.Accessibility.Collections.searchCollections
-        searchItem.rx.tap
-            .subscribe(onNext: { [weak self] _ in
-                guard let self else { return }
-                coordinatorDelegate?.showSearch(for: viewModel.state, in: self, selectAction: { [weak self] collection in
-                    self?.select(searchResult: collection)
-                })
+        let primaryAction = UIAction(image: UIImage(systemName: "magnifyingglass")) { [weak self] _ in
+            guard let self else { return }
+            coordinatorDelegate?.showSearch(for: viewModel.state, in: self, selectAction: { [weak self] collection in
+                self?.select(searchResult: collection)
             })
-            .disposed(by: disposeBag)
+        }
+        let searchItem: UIBarButtonItem
+        if #available(iOS 26.0.0, *) {
+            searchItem = UIBarButtonItem(systemItem: .search, primaryAction: primaryAction)
+        } else {
+            searchItem = UIBarButtonItem(primaryAction: primaryAction)
+        }
+        searchItem.accessibilityLabel = L10n.Accessibility.Collections.searchCollections
 
         var buttons: [UIBarButtonItem] = [searchItem]
 
         if viewModel.state.library.metadataEditable {
-            let addItem = UIBarButtonItem(image: UIImage(systemName: "plus"))
-            addItem.tintColor = Asset.Colors.zoteroBlue.color
+            let primaryAction = UIAction(image: UIImage(systemName: "plus")) { [weak viewModel] _ in
+                viewModel?.process(action: .startEditing(.add))
+            }
+            let addItem: UIBarButtonItem
+            if #available(iOS 26.0.0, *) {
+                addItem = UIBarButtonItem(systemItem: .add, primaryAction: primaryAction)
+            } else {
+                addItem = UIBarButtonItem(primaryAction: primaryAction)
+            }
             addItem.accessibilityLabel = L10n.Accessibility.Collections.createCollection
-            addItem.rx.tap
-                .subscribe(onNext: { [weak self] _ in
-                    self?.viewModel.process(action: .startEditing(.add))
-                })
-                .disposed(by: disposeBag)
             buttons.append(addItem)
         }
 
-        self.navigationItem.rightBarButtonItems = buttons
+        navigationItem.rightBarButtonItems = buttons
     }
 
     private func setupTitleWithContextMenu(_ title: String) {
