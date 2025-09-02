@@ -78,12 +78,26 @@ struct SettingsListView: View {
             }
         }
         .listStyle(GroupedListStyle())
-        .navigationBarTitle(Text(L10n.Settings.title), displayMode: .inline)
-        .navigationBarItems(leading: self.closeButton)
+        .navigationTitle(L10n.Settings.title)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                closeButton
+            }
+        }
     }
 
     private var closeButton: some View {
-        Button(action: { self.coordinatorDelegate?.dismiss() }, label: { Text(L10n.close).padding(.vertical, 10).padding(.trailing, 10) }) .foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUiColor)
+        Group {
+            if #available(iOS 26.0.0, *) {
+                Button(role: .close) {
+                    coordinatorDelegate?.dismiss()
+                }
+            } else {
+                Button(action: { self.coordinatorDelegate?.dismiss() }, label: { Text(L10n.close).padding(.vertical, 10).padding(.trailing, 10) })
+                    .foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUiColor)
+            }
+        }
     }
 
     private var footer: some View {

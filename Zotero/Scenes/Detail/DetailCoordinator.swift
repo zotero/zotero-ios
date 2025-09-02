@@ -486,17 +486,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         let sortNavigationController = UINavigationController()
         sortNavigationController.modalPresentationStyle = .popover
         sortNavigationController.popoverPresentationController?.sourceItem = button
-        let view = ItemSortingView(
-            sortType: sortType,
-            changed: changed,
-            showPicker: { [weak sortNavigationController] view in
-                guard let sortNavigationController else { return }
-                showPicker(view: view, navigationController: sortNavigationController)
-            },
-            closePicker: { [weak sortNavigationController] in
-                sortNavigationController?.popViewController(animated: true)
-            }
-        )
+        let view = ItemSortingView(sortType: sortType, changed: changed)
         let controller = createItemSortingController(for: view, navigationController: sortNavigationController)
         sortNavigationController.setViewControllers([controller], animated: false)
         navigationController?.present(sortNavigationController, animated: true, completion: nil)
@@ -506,38 +496,30 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
             var size: CGSize?
             controller.willAppear = { [weak controller, weak navigationController] in
                 guard let controller else { return }
-                let _size = size ?? controller.view.systemLayoutSizeFitting(CGSize(width: 400.0, height: .greatestFiniteMagnitude))
+                let _size = size ?? controller.view.systemLayoutSizeFitting(CGSize(width: 400.0, height: 600))
                 size = _size
                 controller.preferredContentSize = _size
                 navigationController?.preferredContentSize = _size
             }
 
-            if UIDevice.current.userInterfaceIdiom == .phone {
-                controller.didLoad = { [weak self] viewController in
-                    guard let self else { return }
-                    let doneButton = UIBarButtonItem(title: L10n.done)
-                    doneButton.tintColor = Asset.Colors.zoteroBlue.color
-                    if #available(iOS 26.0.0, *) {
-                        doneButton.style = .prominent
-                    } else {
-                        doneButton.style = .done
-                    }
-                    doneButton.rx.tap
-                        .subscribe({ [weak self] _ in
-                            self?.navigationController?.dismiss(animated: true)
-                        })
-                        .disposed(by: disposeBag)
-                    viewController.navigationItem.rightBarButtonItem = doneButton
+            controller.didLoad = { [weak self] viewController in
+                guard let self else { return }
+                let primaryAction = UIAction(title: L10n.done) { [weak self] _ in
+                    self?.navigationController?.dismiss(animated: true)
                 }
+                let doneButton: UIBarButtonItem
+                if #available(iOS 26.0.0, *) {
+                    doneButton = UIBarButtonItem(systemItem: .done, primaryAction: primaryAction)
+                    doneButton.tintColor = Asset.Colors.zoteroBlue.color
+                    doneButton.style = .prominent
+                } else {
+                    doneButton = UIBarButtonItem(primaryAction: primaryAction)
+                    doneButton.style = .done
+                }
+                viewController.navigationItem.rightBarButtonItem = doneButton
             }
-            return controller
-        }
 
-        func showPicker(view: ItemSortTypePickerView, navigationController: UINavigationController) {
-            let controller = UIHostingController(rootView: view)
-            controller.preferredContentSize = CGSize(width: 400, height: 600)
-            navigationController.preferredContentSize = controller.preferredContentSize
-            navigationController.pushViewController(controller, animated: true)
+            return controller
         }
     }
 

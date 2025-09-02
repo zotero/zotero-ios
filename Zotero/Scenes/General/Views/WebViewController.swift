@@ -9,11 +9,8 @@
 import UIKit
 import WebKit
 
-import RxSwift
-
 final class WebViewController: UIViewController {
     private let url: URL
-    private let disposeBag: DisposeBag
 
     private var webView: WKWebView? {
         return self.view as? WKWebView
@@ -21,7 +18,6 @@ final class WebViewController: UIViewController {
 
     init(url: URL) {
         self.url = url
-        self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -50,14 +46,16 @@ final class WebViewController: UIViewController {
     }
 
     private func setupNavigationBar() {
-        let close = UIBarButtonItem(title: L10n.close)
-        close.tintColor = Asset.Colors.zoteroBlue.color
-        close.rx.tap
-             .subscribe(onNext: { [weak self] in
-                 self?.dismiss(animated: true, completion: nil)
-             })
-             .disposed(by: self.disposeBag)
-        self.navigationItem.leftBarButtonItem = close
+        let primaryAction = UIAction(title: L10n.close) { [weak self] _ in
+            self?.dismiss(animated: true)
+        }
+        let closeItem: UIBarButtonItem
+        if #available(iOS 26.0.0, *) {
+            closeItem = UIBarButtonItem(systemItem: .close, primaryAction: primaryAction)
+        } else {
+            closeItem = UIBarButtonItem(primaryAction: primaryAction)
+        }
+        navigationItem.leftBarButtonItem = closeItem
     }
 }
 

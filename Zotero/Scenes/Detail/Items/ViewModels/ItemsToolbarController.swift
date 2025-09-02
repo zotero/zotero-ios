@@ -103,16 +103,20 @@ final class ItemsToolbarController {
                 innerFlexibleSpace.hidesSharedBackground = false
             }
             let items = actions.map({ action -> UIBarButtonItem in
-                let item = UIBarButtonItem(image: action.image)
-                item.tintColor = Asset.Colors.zoteroBlue.color
-                switch action.type {
+                let type = action.type
+                let primaryAction = UIAction(image: action.image) { [weak self] action in
+                    guard let self, let delegate, let button = action.sender as? UIBarButtonItem else { return }
+                    delegate.process(action: type, button: button)
+                }
+                let item = UIBarButtonItem(primaryAction: primaryAction)
+                switch type {
                 case .addToCollection, .trash, .delete, .removeFromCollection, .restore, .share, .download, .removeDownload:
                     item.tag = ToolbarItem.empty.tag
 
                 case .sort, .filter, .createParent, .retrieveMetadata, .copyCitation, .copyBibliography, .duplicate:
                     break
                 }
-                switch action.type {
+                switch type {
                 case .addToCollection:
                     item.accessibilityLabel = L10n.Accessibility.Items.addToCollection
 
@@ -140,10 +144,6 @@ final class ItemsToolbarController {
                 case .sort, .filter, .createParent, .retrieveMetadata, .copyCitation, .copyBibliography, .duplicate:
                     break
                 }
-                item.rx.tap.subscribe(onNext: { [weak self] _ in
-                    self?.delegate?.process(action: action.type, button: item)
-                })
-                .disposed(by: disposeBag)
                 return item
             })
             return [.flexibleSpace()] + items.enumerated().flatMap({ index, item in [item, index < items.count - 1 ? innerFlexibleSpace : .flexibleSpace()] })
@@ -151,23 +151,21 @@ final class ItemsToolbarController {
 
         func createNormalToolbarItems(for filters: [ItemsFilter]) -> [UIBarButtonItem] {
             let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease.circle" : "line.horizontal.3.decrease.circle.fill"
-            let filterButton = UIBarButtonItem(image: UIImage(systemName: filterImageName))
-            filterButton.tintColor = Asset.Colors.zoteroBlue.color
+            let filterPrimaryAction = UIAction(image: UIImage(systemName: filterImageName)) { [weak self] action in
+                guard let self, let delegate, let button = action.sender as? UIBarButtonItem else { return }
+                delegate.process(action: .filter, button: button)
+            }
+            let filterButton = UIBarButtonItem(primaryAction: filterPrimaryAction)
             filterButton.tag = ToolbarItem.filter.tag
             filterButton.accessibilityLabel = L10n.Accessibility.Items.filterItems
-            filterButton.rx.tap.subscribe(onNext: { [weak self] _ in
-                self?.delegate?.process(action: .filter, button: filterButton)
-            })
-            .disposed(by: disposeBag)
 
-            let action = ItemAction(type: .sort)
-            let sortButton = UIBarButtonItem(image: action.image)
-            sortButton.tintColor = Asset.Colors.zoteroBlue.color
+            let itemAction = ItemAction(type: .sort)
+            let sortPrimaryAction = UIAction(image: itemAction.image) { [weak self] action in
+                guard let self, let delegate, let button = action.sender as? UIBarButtonItem else { return }
+                delegate.process(action: .sort, button: button)
+            }
+            let sortButton = UIBarButtonItem(primaryAction: sortPrimaryAction)
             sortButton.accessibilityLabel = L10n.Accessibility.Items.sortItems
-            sortButton.rx.tap.subscribe(onNext: { [weak self] _ in
-                self?.delegate?.process(action: action.type, button: sortButton)
-            })
-            .disposed(by: disposeBag)
 
             let titleButton = UIBarButtonItem(customView: createTitleView())
             titleButton.tag = ToolbarItem.title.tag

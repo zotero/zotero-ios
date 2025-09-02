@@ -8,8 +8,6 @@
 
 import UIKit
 
-import RxSwift
-
 class FontSizePickerViewController: UIViewController {
     private static let sizes: [CGFloat] = [
         10,
@@ -27,14 +25,12 @@ class FontSizePickerViewController: UIViewController {
     ]
 
     private let pickAction: (CGFloat) -> Void
-    private let disposeBag: DisposeBag
 
     private weak var tableView: UITableView!
     private var dataSource: UITableViewDiffableDataSource<Int, CGFloat>!
 
     init(pickAction: @escaping (CGFloat) -> Void) {
         self.pickAction = pickAction
-        disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -83,15 +79,10 @@ class FontSizePickerViewController: UIViewController {
             // Check whether this controller is used in UINavigationController container which only contains this controller. Otherwise if this controller was pushed into navigation stack we don't
             // need the cancel button.
             guard let navigationController, navigationController.viewControllers.count == 1 else { return }
-            let cancel = UIBarButtonItem(systemItem: .cancel)
-            cancel.tintColor = Asset.Colors.zoteroBlue.color
-            cancel
-                .rx
-                .tap
-                .subscribe(onNext: { [weak self] _ in
-                    self?.navigationController?.presentingViewController?.dismiss(animated: true)
-                })
-                .disposed(by: disposeBag)
+            let primaryAction = UIAction { [weak self] _ in
+                self?.navigationController?.presentingViewController?.dismiss(animated: true)
+            }
+            let cancel = UIBarButtonItem(systemItem: .cancel, primaryAction: primaryAction)
             navigationItem.leftBarButtonItem = cancel
         }
     }

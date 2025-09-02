@@ -206,18 +206,21 @@ class CollectionsPickerViewController: UICollectionViewController {
     private func setupNavigationBar() {
         guard multipleSelectionAllowed else { return }
 
-        let cancel = UIBarButtonItem(systemItem: .cancel)
-        cancel.tintColor = Asset.Colors.zoteroBlue.color
-        cancel.rx.tap.subscribe(onNext: { [weak self] in
+        let cancelPrimaryAction = UIAction { [weak self] _ in
             self?.close()
-        }).disposed(by: disposeBag)
+        }
+        let cancel = UIBarButtonItem(systemItem: .cancel, primaryAction: cancelPrimaryAction)
         navigationItem.leftBarButtonItem = cancel
 
-        let add = UIBarButtonItem(title: L10n.add)
-        add.tintColor = Asset.Colors.zoteroBlue.color
-        add.rx.tap.subscribe(onNext: { [weak self] in
+        let addPrimaryAction = UIAction(title: L10n.add) { [weak self] _ in
             self?.confirmSelection()
-        }).disposed(by: disposeBag)
+        }
+        let add: UIBarButtonItem
+        if #available(iOS 26.0.0, *) {
+            add = UIBarButtonItem(systemItem: .add, primaryAction: addPrimaryAction)
+        } else {
+            add = UIBarButtonItem(primaryAction: addPrimaryAction)
+        }
         addButton = add
         navigationItem.rightBarButtonItem = add
     }
