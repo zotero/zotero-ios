@@ -699,7 +699,6 @@
 		B3593F3E241A61C700760E20 /* ItemsTableViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593EF0241A61C700760E20 /* ItemsTableViewHandler.swift */; };
 		B3593F40241A61C700760E20 /* ItemCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593EF2241A61C700760E20 /* ItemCell.swift */; };
 		B3593F44241A61C700760E20 /* BaseItemsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593EF6241A61C700760E20 /* BaseItemsViewController.swift */; };
-		B3593F45241A61C700760E20 /* ItemSortTypePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593EF7241A61C700760E20 /* ItemSortTypePickerView.swift */; };
 		B3593F47241A61C700760E20 /* TagEmojiCirclesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593EF9241A61C700760E20 /* TagEmojiCirclesView.swift */; };
 		B3593F48241A61C700760E20 /* LibrariesActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593EFD241A61C700760E20 /* LibrariesActionHandler.swift */; };
 		B3593F49241A61C700760E20 /* LibrariesAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593EFF241A61C700760E20 /* LibrariesAction.swift */; };
@@ -1795,7 +1794,6 @@
 		B3593EF0241A61C700760E20 /* ItemsTableViewHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemsTableViewHandler.swift; sourceTree = "<group>"; };
 		B3593EF2241A61C700760E20 /* ItemCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemCell.swift; sourceTree = "<group>"; };
 		B3593EF6241A61C700760E20 /* BaseItemsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BaseItemsViewController.swift; sourceTree = "<group>"; };
-		B3593EF7241A61C700760E20 /* ItemSortTypePickerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemSortTypePickerView.swift; sourceTree = "<group>"; };
 		B3593EF9241A61C700760E20 /* TagEmojiCirclesView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TagEmojiCirclesView.swift; sourceTree = "<group>"; };
 		B3593EFD241A61C700760E20 /* LibrariesActionHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LibrariesActionHandler.swift; sourceTree = "<group>"; };
 		B3593EFF241A61C700760E20 /* LibrariesAction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LibrariesAction.swift; sourceTree = "<group>"; };
@@ -3455,7 +3453,6 @@
 				B30B405E2490CAFC00FAAF6D /* ItemCell.xib */,
 				B31901922629C9CB00209E33 /* ItemsFilterViewController.swift */,
 				B3D32A4C286C77850075C6D7 /* ItemSortingView.swift */,
-				B3593EF7241A61C700760E20 /* ItemSortTypePickerView.swift */,
 				B3593EF0241A61C700760E20 /* ItemsTableViewHandler.swift */,
 				B31D973B27F5E51100ED3DA2 /* ItemsToolbarDownloadProgressView.swift */,
 				B3ED793A2C9D74DF004F5C9A /* ItemsViewController.swift */,
@@ -5085,7 +5082,6 @@
 				B32EBFC0276A89190003897E /* BackgroundUploadObserver.swift in Sources */,
 				B31CF9292ACED3B5009ED996 /* HtmlEpubAnnotationsViewController.swift in Sources */,
 				B3E67C0C2AA75DC100D7615F /* HtmlEpubReaderViewController.swift in Sources */,
-				B3593F45241A61C700760E20 /* ItemSortTypePickerView.swift in Sources */,
 				B30B550B24B85CC900F94B59 /* Assets.swift in Sources */,
 				B305661523FC051E003304F2 /* UploadAttachmentSyncAction.swift in Sources */,
 				B349182B25E00771006C3313 /* ReadVersionDbRequest.swift in Sources */,

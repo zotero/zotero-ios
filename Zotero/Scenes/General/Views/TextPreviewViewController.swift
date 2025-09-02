@@ -8,17 +8,13 @@
 
 import UIKit
 
-import RxSwift
-
 class TextPreviewViewController: UIViewController {
     @IBOutlet private weak var textView: UITextView!
 
     private let text: String
-    private let disposeBag: DisposeBag
 
     init(text: String, title: String) {
         self.text = text
-        self.disposeBag = DisposeBag()
 
         super.init(nibName: "TextPreviewViewController", bundle: nil)
 
@@ -38,15 +34,15 @@ class TextPreviewViewController: UIViewController {
     }
 
     private func setupNavigationBar() {
-        let closeItem = UIBarButtonItem(title: L10n.close)
-        closeItem.tintColor = Asset.Colors.zoteroBlue.color
-        closeItem.rx
-                 .tap
-                 .observe(on: MainScheduler.instance)
-                 .subscribe(onNext: { [weak self] in
-                     self?.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
-                 })
-                 .disposed(by: self.disposeBag)
-        self.navigationItem.rightBarButtonItem = closeItem
+        let primaryAction = UIAction(title: L10n.close) { [weak self] _ in
+            self?.navigationController?.presentingViewController?.dismiss(animated: true)
+        }
+        let closeItem: UIBarButtonItem
+        if #available(iOS 26.0.0, *) {
+            closeItem = UIBarButtonItem(systemItem: .close, primaryAction: primaryAction)
+        } else {
+            closeItem = UIBarButtonItem(primaryAction: primaryAction)
+        }
+        navigationItem.rightBarButtonItem = closeItem
     }
 }
