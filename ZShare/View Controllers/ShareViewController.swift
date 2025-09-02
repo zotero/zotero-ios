@@ -739,7 +739,9 @@ final class ShareViewController: UIViewController {
     }
 
     private func setupNavbar(loggedIn: Bool) {
-        navigationController?.navigationBar.tintColor = Asset.Colors.zoteroBlue.color
+        if #unavailable(iOS 26.0.0) {
+            navigationController?.navigationBar.tintColor = Asset.Colors.zoteroBlue.color
+        }
         navigationItem.leftBarButtonItem = createCancelButton(cancel: true)
         if loggedIn {
             doneButton.isEnabled = false
