@@ -691,7 +691,9 @@ final class ShareViewController: UIViewController {
     }
 
     private func setupNavbar(loggedIn: Bool) {
-        self.navigationController?.navigationBar.tintColor = Asset.Colors.zoteroBlue.color
+        if #unavailable(iOS 26.0.0) {
+            navigationController?.navigationBar.tintColor = Asset.Colors.zoteroBlue.color
+        }
 
         let cancelAction = UIAction { [weak self] _ in
             self?.cancel()
