@@ -226,7 +226,7 @@ class BaseItemsViewController: UIViewController {
 
         func createRightBarButtonItem(_ type: RightBarButtonItem) -> UIBarButtonItem? {
             var image: UIImage?
-            var title: String?
+            let title: String
             let accessibilityLabel: String
 
             switch type {
@@ -256,12 +256,23 @@ class BaseItemsViewController: UIViewController {
                 accessibilityLabel = L10n.Collections.emptyTrash
             }
 
-            let primaryAction = UIAction { [weak self] action in
+            let primaryAction = UIAction(title: title, image: image) { [weak self] action in
                 guard let self, let sender = action.sender as? UIBarButtonItem else { return }
                 process(barButtonItemAction: type, sender: sender)
             }
-            let item = UIBarButtonItem(title: title, image: image, primaryAction: primaryAction)
-            item.tintColor = Asset.Colors.zoteroBlue.color
+            let item: UIBarButtonItem
+            if #available(iOS 26.0.0, *) {
+                switch type {
+                case .select, .selectAll, .deselectAll, .add, .emptyTrash:
+                    item = UIBarButtonItem(primaryAction: primaryAction)
+
+                case .done:
+                    item = UIBarButtonItem(systemItem: .done, primaryAction: primaryAction)
+                    item.tintColor = Asset.Colors.zoteroBlue.color
+                }
+            } else {
+                item = UIBarButtonItem(primaryAction: primaryAction)
+            }
             item.tag = type.rawValue
             item.accessibilityLabel = accessibilityLabel
             return item

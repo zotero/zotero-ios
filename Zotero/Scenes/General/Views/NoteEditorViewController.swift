@@ -143,20 +143,19 @@ final class NoteEditorViewController: UIViewController {
             return
         }
 
-        let done = UIBarButtonItem(title: L10n.done)
-        done.tintColor = Asset.Colors.zoteroBlue.color
+        let primaryAction = UIAction(title: L10n.done) { [weak self] _ in
+            guard let self else { return }
+            closeAndSaveIfNeeded(controller: self)
+        }
+        let done: UIBarButtonItem
         if #available(iOS 26.0.0, *) {
+            done = UIBarButtonItem(systemItem: .done, primaryAction: primaryAction)
+            done.tintColor = Asset.Colors.zoteroBlue.color
             done.style = .prominent
         } else {
+            done = UIBarButtonItem(primaryAction: primaryAction)
             done.style = .done
         }
-        done.rx
-            .tap
-            .subscribe(onNext: { [weak self] _ in
-                guard let self else { return }
-                closeAndSaveIfNeeded(controller: self)
-            })
-            .disposed(by: disposeBag)
         navigationItem.rightBarButtonItem = done
 
         func closeAndSaveIfNeeded(controller: NoteEditorViewController) {
