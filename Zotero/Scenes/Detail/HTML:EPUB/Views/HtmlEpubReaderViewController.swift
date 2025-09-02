@@ -577,5 +577,8 @@ extension HtmlEpubReaderViewController: ReaderAnnotationsDelegate {
 extension HtmlEpubReaderViewController: HtmlEpubSidebarDelegate {
     func tableOfContentsSelected(location: [String: Any]) {
         documentController?.show(location: location)
+        if isSidebarVisible && sidebarController?.view.frame.width == view.frame.width {
+            toggleSidebar(animated: true)
+        }
     }
 }
