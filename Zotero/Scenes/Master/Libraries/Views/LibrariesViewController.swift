@@ -54,12 +54,12 @@ final class LibrariesViewController: UIViewController {
             .disposed(by: disposeBag)
 
         func setupNavigationBar() {
-            let item = UIBarButtonItem(image: UIImage(systemName: "gear"))
-            item.tintColor = Asset.Colors.zoteroBlue.color
-            item.accessibilityLabel = L10n.Settings.title
-            item.primaryAction = UIAction(handler: { [weak self] action in
+            let primaryAction = UIAction(handler: { [weak self] action in
                 self?.coordinatorDelegate?.showSettings(sourceItem: action.sender as? UIPopoverPresentationControllerSourceItem)
             })
+            let item = UIBarButtonItem(image: UIImage(systemName: "gear"), primaryAction: primaryAction)
+            item.tintColor = Asset.Colors.zoteroBlue.color
+            item.accessibilityLabel = L10n.Settings.title
             navigationItem.rightBarButtonItem = item
         }
 
