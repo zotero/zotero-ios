@@ -70,7 +70,7 @@ final class ContainerViewController: UIViewController {
             break
         }
 
-        func setupForHorizontalSizeClassRegular() -> [NSLayoutConstraint]  {
+        func setupForHorizontalSizeClassRegular() -> [NSLayoutConstraint] {
             view.backgroundColor = .clear
 
             containerView.layer.cornerRadius = 8
@@ -91,7 +91,7 @@ final class ContainerViewController: UIViewController {
             return constraints
         }
 
-        func setupForHorizontalSizeClassCompact() -> [NSLayoutConstraint]  {
+        func setupForHorizontalSizeClassCompact() -> [NSLayoutConstraint] {
             containerView.layer.cornerRadius = 0
             containerView.layer.masksToBounds = false
 
