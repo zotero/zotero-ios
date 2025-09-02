@@ -88,19 +88,19 @@ final class ShareViewController: UIViewController {
                 self?.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
             }
         }
-        let item = UIBarButtonItem(systemItem: cancel ? .cancel : .done, primaryAction: action)
-        item.tintColor = Asset.Colors.zoteroBlue.color
-        return item
+        return UIBarButtonItem(systemItem: cancel ? .cancel : .done, primaryAction: action)
     }
     lazy private var doneButton: UIBarButtonItem = {
         let action = UIAction(title: L10n.Shareext.save) { [weak viewModel] _ in
             viewModel?.submit()
         }
-        let item = UIBarButtonItem(title: L10n.Shareext.save, primaryAction: action)
-        item.tintColor = Asset.Colors.zoteroBlue.color
+        let item: UIBarButtonItem
         if #available(iOS 26.0.0, *) {
+            item = UIBarButtonItem(systemItem: .done, primaryAction: action)
+            item.tintColor = Asset.Colors.zoteroBlue.color
             item.style = .prominent
         } else {
+            item = UIBarButtonItem(primaryAction: action)
             item.style = .done
         }
         return item
