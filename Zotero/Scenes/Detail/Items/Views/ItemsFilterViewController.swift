@@ -8,8 +8,6 @@
 
 import UIKit
 
-import RxSwift
-
 class ItemsFilterViewController: UIViewController {
     private weak var container: UIView!
     private weak var containerTop: NSLayoutConstraint!
@@ -18,7 +16,6 @@ class ItemsFilterViewController: UIViewController {
     private static let downloadsHeight: CGFloat = 44
     private static let width: CGFloat = 320
     private let tagFilterController: TagFilterViewController
-    private let disposeBag: DisposeBag
 
     weak var coordinatorDelegate: ItemsFilterCoordinatorDelegate?
     private var downloadsFilterEnabled: Bool
@@ -27,7 +24,6 @@ class ItemsFilterViewController: UIViewController {
     init(downloadsFilterEnabled: Bool, tagFilterController: TagFilterViewController) {
         self.downloadsFilterEnabled = downloadsFilterEnabled
         self.tagFilterController = tagFilterController
-        disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -47,12 +43,16 @@ class ItemsFilterViewController: UIViewController {
 
         func setupNavigationBar() {
             navigationItem.title = L10n.Items.Filters.title
-            let done = UIBarButtonItem(title: L10n.done)
-            done.rx.tap
-                .subscribe(onNext: { [weak self] _ in
-                    self?.navigationController?.presentingViewController?.dismiss(animated: true)
-                })
-                .disposed(by: disposeBag)
+            let primaryAction = UIAction(title: L10n.done) { [weak self] _ in
+                self?.navigationController?.presentingViewController?.dismiss(animated: true)
+            }
+            let done: UIBarButtonItem
+            if #available(iOS 26.0.0, *) {
+                done = UIBarButtonItem(systemItem: .done, primaryAction: primaryAction)
+                done.tintColor = Asset.Colors.zoteroBlue.color
+            } else {
+                done = UIBarButtonItem(primaryAction: primaryAction)
+            }
             navigationItem.rightBarButtonItem = done
         }
 

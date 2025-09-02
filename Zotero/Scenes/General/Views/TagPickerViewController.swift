@@ -148,24 +148,32 @@ final class TagPickerViewController: UIViewController {
     }
 
     private func setupNavigationBar() {
-        let left = UIBarButtonItem(title: L10n.cancel)
-        left.tintColor = Asset.Colors.zoteroBlue.color
-        left.rx.tap
-            .subscribe(onNext: { [weak self] in
-                self?.dismiss()
-            })
-            .disposed(by: self.disposeBag)
-        self.navigationItem.leftBarButtonItem = left
+        let cancelPrimaryAction = UIAction(title: L10n.cancel) { [weak self] _ in
+            self?.dismiss()
+        }
+        let cancelItem: UIBarButtonItem
+        if #available(iOS 26.0.0, *) {
+            cancelItem = UIBarButtonItem(systemItem: .cancel, primaryAction: cancelPrimaryAction)
+        } else {
+            cancelItem = UIBarButtonItem(primaryAction: cancelPrimaryAction)
+        }
+        navigationItem.leftBarButtonItem = cancelItem
 
-        let right = UIBarButtonItem(title: L10n.save)
-        right.tintColor = Asset.Colors.zoteroBlue.color
-        right.rx.tap
-             .subscribe(onNext: { [weak self] in
-                 self?.save()
-                 self?.dismiss()
-             })
-             .disposed(by: self.disposeBag)
-        self.navigationItem.rightBarButtonItem = right
+        let savePrimaryAction = UIAction(title: L10n.save) { [weak self] _ in
+            guard let self else { return }
+            save()
+            dismiss()
+        }
+        let saveItem: UIBarButtonItem
+        if #available(iOS 26.0.0, *) {
+            saveItem = UIBarButtonItem(systemItem: .save, primaryAction: savePrimaryAction)
+            saveItem.tintColor = Asset.Colors.zoteroBlue.color
+            saveItem.style = .prominent
+        } else {
+            saveItem = UIBarButtonItem(primaryAction: savePrimaryAction)
+            saveItem.style = .done
+        }
+        navigationItem.rightBarButtonItem = saveItem
     }
 }
 

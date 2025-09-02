@@ -355,39 +355,34 @@ class HtmlEpubAnnotationsViewController: UIViewController {
         items.append(.flexibleSpace())
 
         if editingEnabled {
-            let delete = UIBarButtonItem(title: L10n.delete)
-            delete.tintColor = Asset.Colors.zoteroBlue.color
+            let primaryAction = UIAction(title: L10n.delete) { [weak viewModel] _ in
+                guard let viewModel, viewModel.state.sidebarEditingEnabled else { return }
+                viewModel.process(action: .removeSelectedAnnotations)
+            }
+            let delete = UIBarButtonItem(primaryAction: primaryAction)
             delete.isEnabled = deletionEnabled
-            delete.rx.tap
-                .subscribe(onNext: { [weak self] _ in
-                    guard let self, viewModel.state.sidebarEditingEnabled else { return }
-                    viewModel.process(action: .removeSelectedAnnotations)
-                })
-                .disposed(by: disposeBag)
             items.append(delete)
             deleteBarButton = delete
         } else if filterEnabled {
             deleteBarButton = nil
-
             let filterImageName = filterOn ? "line.horizontal.3.decrease.circle.fill" : "line.horizontal.3.decrease.circle"
-            let filter = UIBarButtonItem(image: UIImage(systemName: filterImageName))
-            filter.tintColor = Asset.Colors.zoteroBlue.color
-            filter.rx.tap
-                .subscribe(onNext: { [weak self, weak filter] _ in
-                    guard let self, let filter else { return }
-                    showFilterPopup(from: filter, viewModel: viewModel, coordinatorDelegate: coordinatorDelegate)
-                })
-                .disposed(by: disposeBag)
+            let primaryAction = UIAction(image: UIImage(systemName: filterImageName)) { [weak self] action in
+                guard let self, let filter = action.sender as? UIBarButtonItem else { return }
+                showFilterPopup(from: filter, viewModel: viewModel, coordinatorDelegate: coordinatorDelegate)
+            }
+            let filter = UIBarButtonItem(primaryAction: primaryAction)
             items.insert(filter, at: 0)
         }
 
-        let select = UIBarButtonItem(title: (editingEnabled ? L10n.done : L10n.select))
-        select.tintColor = Asset.Colors.zoteroBlue.color
-        select.rx.tap
-            .subscribe(onNext: { [weak self] _ in
-                self?.viewModel.process(action: .setSidebarEditingEnabled(!editingEnabled))
-            })
-            .disposed(by: disposeBag)
+        let primaryAction = UIAction(title: (editingEnabled ? L10n.done : L10n.select)) { [weak viewModel] _ in
+            viewModel?.process(action: .setSidebarEditingEnabled(!editingEnabled))
+        }
+        let select: UIBarButtonItem
+        if #available(iOS 26.0.0, *) {
+            select = editingEnabled ? UIBarButtonItem(systemItem: .done, primaryAction: primaryAction) : UIBarButtonItem(primaryAction: primaryAction)
+        } else {
+            select = UIBarButtonItem(primaryAction: primaryAction)
+        }
         items.append(select)
 
         toolbar.items = items
