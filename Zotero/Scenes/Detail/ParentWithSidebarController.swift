@@ -53,9 +53,9 @@ extension ParentWithSidebarController {
         let image = UIImage(systemName: imageSystemName)
         if #available(iOS 26.0.0, *) {
             barButton = UIBarButtonItem(image: image)
-            barButton.tintColor = Asset.Colors.zoteroBlue.color
             barButton.changesSelectionAsPrimaryAction = true
             barButton.isSelected = !isDocumentLocked && isToolbarVisible
+            barButton.tintColor = barButton.isSelected ? Asset.Colors.zoteroBlue.color : nil
             barButton.primaryAction = UIAction(title: "", image: image) { [weak self] _ in
                 guard let self else { return }
                 setAnnotationToolbar(hidden: toolbarButton.isSelected)
@@ -87,6 +87,7 @@ extension ParentWithSidebarController {
     private func setAnnotationToolbar(hidden: Bool) {
         if #available(iOS 26.0.0, *) {
             toolbarButton.isSelected = !hidden
+            toolbarButton.tintColor = toolbarButton.isSelected ? Asset.Colors.zoteroBlue.color : nil
         } else {
             (toolbarButton.customView as? CheckboxButton)?.isSelected = !hidden
         }
