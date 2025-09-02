@@ -124,33 +124,34 @@ final class AnnotationEditViewController: UIViewController {
         func setupNavigationBar() {
             navigationItem.hidesBackButton = true
 
-            let cancel = UIBarButtonItem(title: L10n.cancel)
-            cancel.tintColor = Asset.Colors.zoteroBlue.color
-            cancel.rx.tap
-                .subscribe(onNext: { [weak self] in
-                    self?.cancel()
-                })
-                .disposed(by: disposeBag)
+            let cancelPrimaryAction = UIAction(title: L10n.cancel) { [weak self] _ in
+                self?.cancel()
+            }
+            let cancel: UIBarButtonItem
+            if #available(iOS 26.0.0, *) {
+                cancel = UIBarButtonItem(systemItem: .cancel, primaryAction: cancelPrimaryAction)
+            } else {
+                cancel = UIBarButtonItem(primaryAction: cancelPrimaryAction)
+            }
             navigationItem.leftBarButtonItem = cancel
 
             guard viewModel.state.isEditable else { return }
 
-            let save = UIBarButtonItem(title: L10n.save)
-            save.tintColor = Asset.Colors.zoteroBlue.color
+            let savePrimaryAction = UIAction(title: L10n.save) { [weak self] _ in
+                guard let self else { return }
+                let state = viewModel.state
+                saveAction(state.data, state.updateSubsequentLabels)
+                self.cancel()
+            }
+            let save: UIBarButtonItem
             if #available(iOS 26.0.0, *) {
+                save = UIBarButtonItem(systemItem: .save, primaryAction: savePrimaryAction)
+                save.tintColor = Asset.Colors.zoteroBlue.color
                 save.style = .prominent
             } else {
+                save = UIBarButtonItem(primaryAction: savePrimaryAction)
                 save.style = .done
             }
-            save.rx.tap
-                .subscribe(onNext: { [weak self] in
-                    guard let self else { return }
-                    let state = viewModel.state
-                    saveAction(state.data, state.updateSubsequentLabels)
-                    self.cancel()
-                })
-                .disposed(by: disposeBag)
-
             navigationItem.rightBarButtonItem = save
         }
 

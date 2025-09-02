@@ -113,16 +113,22 @@ final class ItemsToolbarController {
 
         func createEditingToolbarItems(from actions: [ItemAction]) -> [UIBarButtonItem] {
             let items = actions.map({ action -> UIBarButtonItem in
-                let item = UIBarButtonItem(image: action.image)
+                let type = action.type
+                let primaryAction = UIAction(image: action.image) { [weak self] action in
+                    guard let self, let delegate, let button = action.sender as? UIBarButtonItem else { return }
+                    delegate.process(action: type, button: button)
+                }
+                let item = UIBarButtonItem(image: action.image, primaryAction: primaryAction)
                 item.tintColor = Asset.Colors.zoteroBlue.color
-                switch action.type {
+
+                switch type {
                 case .addToCollection, .trash, .delete, .removeFromCollection, .restore, .share, .download, .removeDownload, .removeFromRecentlyRead:
                     item.tag = ToolbarItem.empty.tag
 
                 case .sort, .filter, .createParent, .retrieveMetadata, .copyCitation, .copyBibliography, .duplicate, .debugReader, .getStructuredText:
                     break
                 }
-                switch action.type {
+                switch type {
                 case .addToCollection:
                     item.accessibilityLabel = L10n.Accessibility.Items.addToCollection
 
@@ -153,10 +159,6 @@ final class ItemsToolbarController {
                 case .sort, .filter, .createParent, .retrieveMetadata, .copyCitation, .copyBibliography, .duplicate, .debugReader, .getStructuredText:
                     break
                 }
-                item.rx.tap.subscribe(onNext: { [weak self] _ in
-                    self?.delegate?.process(action: action.type, button: item)
-                })
-                .disposed(by: disposeBag)
                 return item
             })
             return [.flexibleSpace()] + items.enumerated().flatMap({ index, item in
