@@ -66,12 +66,21 @@ class BaseItemsViewController: UIViewController {
             tableView.translatesAutoresizingMaskIntoConstraints = false
             view.addSubview(tableView)
 
-            NSLayoutConstraint.activate([
-                tableView.topAnchor.constraint(equalTo: view.topAnchor),
-                tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-                tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-                tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
-            ])
+            if #available(iOS 26.0.0, *) {
+                NSLayoutConstraint.activate([
+                    tableView.topAnchor.constraint(equalTo: view.topAnchor),
+                    tableView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+                    tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+                    tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+                ])
+            } else {
+                NSLayoutConstraint.activate([
+                    tableView.topAnchor.constraint(equalTo: view.topAnchor),
+                    tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                    tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+                    tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+                ])
+            }
 
             self.tableView = tableView
         }
