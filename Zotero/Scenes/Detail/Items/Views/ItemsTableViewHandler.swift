@@ -233,8 +233,15 @@ final class ItemsTableViewHandler: NSObject {
         tableView.dataSource = self.dataSource
         tableView.dragDelegate = self
         tableView.dropDelegate = self
-        tableView.rowHeight = UITableView.automaticDimension
-        tableView.estimatedRowHeight = 60
+        if #available(iOS 26.0.0, *) {
+            tableView.rowHeight = 68
+            tableView.estimatedRowHeight = 68
+            tableView.separatorInset = UIEdgeInsets(top: 0, left: 64, bottom: 0, right: 12)
+        } else {
+            tableView.rowHeight = UITableView.automaticDimension
+            tableView.estimatedRowHeight = 60
+            tableView.separatorInset = UIEdgeInsets(top: 0, left: 64, bottom: 0, right: 0)
+        }
         tableView.allowsMultipleSelectionDuringEditing = true
         // keyboardDismissMode is device based, regardless of horizontal size class.
         tableView.keyboardDismissMode = UIDevice.current.userInterfaceIdiom == .phone ? .interactive : .none
