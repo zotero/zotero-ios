@@ -26,6 +26,7 @@ final class CollectionsViewController: UICollectionViewController {
     private var collectionViewHandler: ExpandableCollectionsCollectionViewHandler!
     private weak var coordinatorDelegate: MasterCollectionsCoordinatorDelegate?
     private var refreshController: SyncRefreshController?
+    private var addButton: UIBarButtonItem?
     var selectedIdentifier: CollectionIdentifier {
         return self.viewModel.state.selectedCollectionId
     }
@@ -129,7 +130,7 @@ final class CollectionsViewController: UICollectionViewController {
         }
 
         if let data = state.editingData {
-            self.coordinatorDelegate?.showEditView(for: data, library: state.library)
+            coordinatorDelegate?.showEditView(for: data, library: state.library, sourceItem: (data.key == nil) ? addButton : nil)
         }
 
         if let result = state.itemKeysForBibliography {
@@ -211,6 +212,7 @@ final class CollectionsViewController: UICollectionViewController {
                 addItem = UIBarButtonItem(primaryAction: primaryAction)
             }
             addItem.accessibilityLabel = L10n.Accessibility.Collections.createCollection
+            addButton = addItem
             buttons.append(addItem)
         }
 
