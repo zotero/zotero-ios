@@ -172,17 +172,19 @@ final class AppDelegate: UIResponder {
     }
 
     private func setupAppearance() {
-        // Navigation bars
-        let appearance = UINavigationBarAppearance()
-        appearance.configureWithDefaultBackground()
-        UINavigationBar.appearance().scrollEdgeAppearance = appearance
-        UINavigationBar.appearance().tintColor = Asset.Colors.zoteroBlue.color
-        // Toolbars
-        UIToolbar.appearance().tintColor = Asset.Colors.zoteroBlue.color
-        // Buttons
-        UIButton.appearance().tintColor = Asset.Colors.zoteroBlue.color
-        // Search bar
-        UISearchBar.appearance().tintColor = Asset.Colors.zoteroBlue.color
+        if #unavailable(iOS 26.0.0) {
+            // Navigation bars
+            let appearance = UINavigationBarAppearance()
+            appearance.configureWithDefaultBackground()
+            UINavigationBar.appearance().scrollEdgeAppearance = appearance
+            UINavigationBar.appearance().tintColor = Asset.Colors.zoteroBlue.color
+            // Toolbars
+            UIToolbar.appearance().tintColor = Asset.Colors.zoteroBlue.color
+            // Buttons
+            UIButton.appearance().tintColor = Asset.Colors.zoteroBlue.color
+            // Search bar
+            UISearchBar.appearance().tintColor = Asset.Colors.zoteroBlue.color
+        }
     }
 
     private func setupExportDefaults() {
