@@ -23,7 +23,7 @@ protocol MasterLibrariesCoordinatorDelegate: AnyObject {
 }
 
 protocol MasterCollectionsCoordinatorDelegate: MainCoordinatorDelegate {
-    func showEditView(for data: CollectionStateEditingData, library: Library)
+    func showEditView(for data: CollectionStateEditingData, library: Library, sourceItem: UIPopoverPresentationControllerSourceItem?)
     func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier)
     func showCiteExportError()
     func showSearch(for state: CollectionsState, in controller: UIViewController, selectAction: @escaping (Collection) -> Void)
@@ -244,11 +244,25 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
 }
 
 extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
-    func showEditView(for data: CollectionStateEditingData, library: Library) {
+    func showEditView(for data: CollectionStateEditingData, library: Library, sourceItem: UIPopoverPresentationControllerSourceItem?) {
         guard let navigationController else { return }
         let editNavigationController = UINavigationController()
         editNavigationController.isModalInPresentation = true
-        editNavigationController.modalPresentationStyle = .formSheet
+
+        if #available(iOS 26.0, *) {
+            editNavigationController.modalPresentationStyle = .popover
+            if let popoverPresentationController = editNavigationController.popoverPresentationController {
+                if let sourceItem {
+                    popoverPresentationController.sourceItem = sourceItem
+                } else {
+                    popoverPresentationController.sourceView = navigationController.view
+                    popoverPresentationController.sourceRect = CGRect(x: navigationController.view.bounds.midX, y: navigationController.view.bounds.midY, width: 0, height: 0)
+                    popoverPresentationController.permittedArrowDirections = []
+                }
+            }
+        } else {
+            editNavigationController.modalPresentationStyle = .formSheet
+        }
 
         let coordinator = CollectionEditingCoordinator(data: data, library: library, navigationController: editNavigationController, controllers: controllers)
         coordinator.parentCoordinator = self
