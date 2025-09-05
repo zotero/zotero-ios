@@ -113,7 +113,11 @@ final class ItemsTableViewHandler: NSObject {
     private func createSwipeConfiguration(from itemActions: [ItemAction], at indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         guard !tableView.isEditing && delegate.library.metadataEditable else { return nil }
         let actions = itemActions.map({ action -> UIContextualAction in
-            let contextualAction = UIContextualAction(style: (action.isDestructive ? .destructive : .normal), title: action.title, handler: { [weak self] _, _, completion in
+            var title: String?
+            if #unavailable(iOS 26.0.0) {
+                title = action.title
+            }
+            let contextualAction = UIContextualAction(style: (action.isDestructive ? .destructive : .normal), title: title, handler: { [weak self] _, _, completion in
                 guard let self else {
                     completion(false)
                     return
