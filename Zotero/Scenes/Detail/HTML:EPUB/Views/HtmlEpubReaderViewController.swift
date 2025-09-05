@@ -17,6 +17,7 @@ protocol HtmlEpubReaderContainerDelegate: AnyObject {
     var isSidebarVisible: Bool { get }
 
     func show(url: URL)
+    func toggleInterfaceVisibility()
 }
 
 class HtmlEpubReaderViewController: UIViewController, ReaderViewController, ParentWithSidebarController {
@@ -76,6 +77,18 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
             .disposed(by: disposeBag)
         return settings
     }()
+    private lazy var searchButton: UIBarButtonItem = {
+        let search = UIBarButtonItem(image: UIImage(systemName: "magnifyingglass"), style: .plain, target: nil, action: nil)
+        search.accessibilityLabel = L10n.Accessibility.Pdf.searchPdf
+        search.title = viewModel.state.originalFile.ext.lowercased() == "epub" ? L10n.Accessibility.Htmlepub.searchEpub : L10n.Accessibility.Htmlepub.searchHtml
+        search.rx.tap
+            .subscribe(onNext: { [weak self] _ in
+                guard let self, let documentController else { return }
+                coordinatorDelegate?.showSearch(viewModel: viewModel, documentController: documentController, text: nil, sender: searchButton, userInterfaceStyle: viewModel.state.interfaceStyle)
+            })
+            .disposed(by: disposeBag)
+        return search
+    }()
 
     // MARK: - Lifecycle
 
@@ -110,7 +123,6 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
         view.backgroundColor = .systemBackground
         observeViewModel()
         setupNavigationBar()
-        setupSearch()
         setupViews()
         updateInterface(to: viewModel.state.settings)
         navigationItem.rightBarButtonItems = createRightBarButtonItems()
@@ -136,36 +148,6 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
             sidebarButton.rx.tap.subscribe(onNext: { [weak self] _ in self?.toggleSidebar(animated: true) }).disposed(by: disposeBag)
 
             navigationItem.leftBarButtonItems = [closeButton, sidebarButton]
-        }
-
-        func setupSearch() {
-            let searchController = UISearchController()
-            searchController.obscuresBackgroundDuringPresentation = false
-            searchController.hidesNavigationBarDuringPresentation = false
-            searchController.searchBar.placeholder = "Search Document"
-            searchController.searchBar.autocapitalizationType = .none
-
-            searchController.searchBar
-                .rx
-                .text
-                .observe(on: MainScheduler.instance)
-                .skip(1)
-                .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
-                .subscribe(onNext: { [weak self] text in
-                    self?.viewModel.process(action: .searchDocument(text ?? ""))
-                })
-                .disposed(by: disposeBag)
-
-            searchController.searchBar
-                .rx
-                .cancelButtonClicked
-                .observe(on: MainScheduler.instance)
-                .subscribe(onNext: { [weak self] _ in
-                    self?.viewModel.process(action: .searchDocument(""))
-                })
-                .disposed(by: disposeBag)
-
-            navigationItem.searchController = searchController
         }
 
         func setupViews() {
@@ -278,6 +260,10 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
             statusBarHeight = view.safeAreaInsets.top - (navigationController?.isNavigationBarHidden == true ? 0 : navigationBarHeight)
             annotationToolbarHandler?.viewWillTransitionToNewSize()
         }, completion: nil)
+    }
+
+    override var prefersStatusBarHidden: Bool {
+        return !statusBarVisible
     }
 
     // MARK: - State
@@ -421,7 +407,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
     }
 
     private func createRightBarButtonItems() -> [UIBarButtonItem] {
-        var buttons = [settingsButton]
+        var buttons = [settingsButton, searchButton]
         if viewModel.state.library.metadataEditable {
             buttons.append(toolbarButton)
         }
@@ -546,6 +532,34 @@ extension HtmlEpubReaderViewController: UIPopoverPresentationControllerDelegate 
 extension HtmlEpubReaderViewController: HtmlEpubReaderContainerDelegate {
     func show(url: URL) {
         coordinatorDelegate?.show(url: url)
+    }
+
+    func toggleInterfaceVisibility() {
+        let isHidden = !(navigationController?.navigationBar.isHidden ?? false)
+        let shouldChangeNavigationBarVisibility = !toolbarState.visible || toolbarState.position != .pinned
+
+        if !isHidden && shouldChangeNavigationBarVisibility && navigationController?.navigationBar.isHidden == true {
+            navigationController?.setNavigationBarHidden(false, animated: false)
+            navigationController?.navigationBar.alpha = 0
+        }
+
+        statusBarVisible = !isHidden
+        annotationToolbarHandler?.interfaceVisibilityDidChange()
+
+        UIView.animate(withDuration: 0.15, animations: { [weak self] in
+            guard let self else { return }
+            updateStatusBar()
+            view.layoutIfNeeded()
+            if shouldChangeNavigationBarVisibility {
+                navigationController?.navigationBar.alpha = isHidden ? 0 : 1
+                navigationController?.setNavigationBarHidden(isHidden, animated: false)
+            }
+            annotationToolbarHandler?.interfaceVisibilityDidChange()
+        })
+
+        if isHidden && isSidebarVisible {
+            toggleSidebar(animated: true)
+        }
     }
 }
 

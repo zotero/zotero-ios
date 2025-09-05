@@ -15,7 +15,7 @@ import PSPDFKitUI
 import RxSwift
 
 protocol PdfReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarCoordinatorDelegate {
-    func showSearch(pdfController: PDFViewController, text: String?, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle, delegate: PDFSearchDelegate)
+    func showSearch(document: Document, documentController: PDFDocumentViewController, text: String?, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle)
     func show(error: PDFDocumentExporter.Error)
     func share(url: URL, barButton: UIBarButtonItem)
     func share(text: String, rect: CGRect, view: UIView, userInterfaceStyle: UIUserInterfaceStyle)
@@ -35,7 +35,7 @@ protocol PdfAnnotationsCoordinatorDelegate: ReaderSidebarCoordinatorDelegate {
 final class PDFCoordinator: ReaderCoordinator {
     weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
-    private var pdfSearchController: PDFSearchViewController?
+    private var searchController: DocumentSearchViewController?
     weak var navigationController: UINavigationController?
 
     private let key: String
@@ -133,13 +133,13 @@ final class PDFCoordinator: ReaderCoordinator {
 }
 
 extension PDFCoordinator: PdfReaderCoordinatorDelegate {
-    func showSearch(pdfController: PDFViewController, text: String?, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle, delegate: PDFSearchDelegate) {
+    func showSearch(document: Document, documentController: PDFDocumentViewController, text: String?, sender: UIBarButtonItem, userInterfaceStyle: UIUserInterfaceStyle) {
         DDLogInfo("PDFCoordinator: show search")
 
-        if let existing = self.pdfSearchController {
+        if let existing = self.searchController {
             if let controller = existing.presentingViewController {
                 controller.dismiss(animated: true) { [weak self] in
-                    self?.showSearch(pdfController: pdfController, text: text, sender: sender, userInterfaceStyle: userInterfaceStyle, delegate: delegate)
+                    self?.showSearch(document: document, documentController: documentController, text: text, sender: sender, userInterfaceStyle: userInterfaceStyle)
                 }
                 return
             }
@@ -152,14 +152,14 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
             return
         }
 
-        let viewController = PDFSearchViewController(controller: pdfController, text: text)
-        viewController.delegate = delegate
+        let handler = PDFSearchHandler(document: document, documentController: documentController)
+        let viewController = DocumentSearchViewController(text: text, handler: handler)
         viewController.overrideUserInterfaceStyle = userInterfaceStyle
         setupPresentation(for: viewController, with: sender)
-        self.pdfSearchController = viewController
+        self.searchController = viewController
         self.navigationController?.present(viewController, animated: true, completion: nil)
 
-        func setupPresentation(for pdfSearchController: PDFSearchViewController, with sender: UIBarButtonItem) {
+        func setupPresentation(for pdfSearchController: DocumentSearchViewController, with sender: UIBarButtonItem) {
             pdfSearchController.modalPresentationStyle = .popover
             pdfSearchController.popoverPresentationController?.sourceItem = (navigationController?.isNavigationBarHidden == false) ? sender : navigationController?.view
             pdfSearchController.popoverPresentationController?.sourceRect = .zero

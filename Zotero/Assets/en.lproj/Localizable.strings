@@ -585,3 +585,5 @@
 "accessibility.pdf.undo" = "Undo";
 "accessibility.pdf.toggle_annotation_toolbar" = "Toggle annotation toolbar";
 "accessibility.pdf.show_more_tools" = "Show more";
+"accessibility.htmlepub.search_html" = "Search Website";
+"accessibility.htmlepub.search_epub" = "Search EPUB";

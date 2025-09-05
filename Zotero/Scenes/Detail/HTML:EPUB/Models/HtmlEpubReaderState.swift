@@ -31,6 +31,7 @@ struct HtmlEpubReaderState: ViewModelState {
         static let library = Changes(rawValue: 1 << 12)
         static let outline = Changes(rawValue: 1 << 13)
         static let appearance = Changes(rawValue: 1 << 14)
+        static let searchResults = Changes(rawValue: 1 << 15)
     }
 
     struct DocumentData {
@@ -119,6 +120,7 @@ struct HtmlEpubReaderState: ViewModelState {
     var annotationPopoverKey: String?
     var annotationPopoverRect: CGRect?
     var documentSearchTerm: String?
+    var documentSearchResults: [DocumentSearchResult]
     var comments: [String: NSAttributedString]
     var texts: [String: (String, [UIFont: NSAttributedString])]
     var changes: Changes
@@ -169,6 +171,7 @@ struct HtmlEpubReaderState: ViewModelState {
         selectedAnnotationsDuringEditing = []
         outlines = []
         outlineSearch = ""
+        documentSearchResults = []
 
         switch libraryId {
         case .custom:

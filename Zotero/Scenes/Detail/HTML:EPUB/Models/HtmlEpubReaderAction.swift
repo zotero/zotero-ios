@@ -20,6 +20,7 @@ enum HtmlEpubReaderAction {
     case parseAndCacheComment(key: String, comment: String)
     case parseAndCacheText(key: String, text: String, font: UIFont)
     case parseOutline(data: [String: Any])
+    case processDocumentSearchResults(data: [String: Any])
     case removeAnnotation(String)
     case removeSelectedAnnotations
     case saveAnnotations([String: Any])
