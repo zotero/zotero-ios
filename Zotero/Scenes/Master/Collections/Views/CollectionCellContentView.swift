@@ -28,7 +28,7 @@ final class CollectionCellContentView: UIView {
         setupViews()
 
         func setupViews() {
-            let chevronButton = UIButton(type: .custom, primaryAction: UIAction() { [weak self] _ in
+            let chevronButton = UIButton(type: .custom, primaryAction: UIAction { [weak self] _ in
                 self?.toggleCollapsedAction?()
             })
             var chevronButtonConfiguration = UIButton.Configuration.plain()
@@ -60,8 +60,13 @@ final class CollectionCellContentView: UIView {
             self.titleLabel = titleLabel
 
             let badgeContainer = UIView()
-            badgeContainer.backgroundColor = badgeBackgroundColor
-            badgeContainer.layer.masksToBounds = true
+            if #available(iOS 26.0.0, *) {
+                badgeContainer.backgroundColor = .clear
+                badgeContainer.layer.masksToBounds = false
+            } else {
+                badgeContainer.backgroundColor = badgeBackgroundColor
+                badgeContainer.layer.masksToBounds = true
+            }
             badgeContainer.setContentHuggingPriority(.required, for: .horizontal)
             badgeContainer.setContentCompressionResistancePriority(.required, for: .horizontal)
             badgeContainer.translatesAutoresizingMaskIntoConstraints = false
@@ -69,8 +74,14 @@ final class CollectionCellContentView: UIView {
             self.badgeContainer = badgeContainer
 
             let badgeLabel = UILabel()
-            badgeLabel.font = UIFont.preferredFont(forTextStyle: .caption1)
-            badgeLabel.textAlignment = .center
+            if #available(iOS 26.0.0, *) {
+                badgeLabel.font = UIFont.preferredFont(forTextStyle: .body)
+                badgeLabel.textAlignment = .right
+                badgeLabel.textColor = .secondaryLabel
+            } else {
+                badgeLabel.font = UIFont.preferredFont(forTextStyle: .caption1)
+                badgeLabel.textAlignment = .center
+            }
             badgeLabel.setContentHuggingPriority(.required, for: .horizontal)
             badgeLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
             badgeLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -89,30 +100,57 @@ final class CollectionCellContentView: UIView {
             self.titleLabelTrailingConstraint = titleLabelTrailingConstraint
             self.badgeContainerLeadingConstraint = badgeContainerLeadingConstraint
 
-            NSLayoutConstraint.activate([
-                chevronButton.topAnchor.constraint(equalTo: topAnchor),
-                bottomAnchor.constraint(equalTo: chevronButton.bottomAnchor),
-                chevronButton.widthAnchor.constraint(equalToConstant: 48),
-                iconImageView.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: 8),
-                safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: iconImageView.bottomAnchor, constant: 8),
-                iconImageViewLeadingConstraint,
-                iconImageView.leadingAnchor.constraint(equalTo: chevronButton.trailingAnchor, constant: -4),
-                iconImageView.widthAnchor.constraint(equalToConstant: 28),
-                iconImageView.heightAnchor.constraint(equalToConstant: 28),
-                titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
-                titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: 16),
-                badgeContainer.centerYAnchor.constraint(equalTo: centerYAnchor),
-                layoutMarginsGuide.trailingAnchor.constraint(equalTo: badgeContainer.trailingAnchor),
-                badgeContainerLeadingConstraint,
-                badgeLabel.topAnchor.constraint(equalTo: badgeContainer.topAnchor, constant: 2),
-                badgeLabel.leadingAnchor.constraint(equalTo: badgeContainer.leadingAnchor, constant: 8),
-                badgeContainer.trailingAnchor.constraint(equalTo: badgeLabel.trailingAnchor, constant: 8),
-                badgeContainer.bottomAnchor.constraint(equalTo: badgeLabel.bottomAnchor, constant: 2),
-                separatorView.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
-                separatorView.trailingAnchor.constraint(equalTo: trailingAnchor),
-                separatorView.bottomAnchor.constraint(equalTo: bottomAnchor),
-                separatorView.heightAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale)
-            ])
+            if #available(iOS 26.0.0, *) {
+                NSLayoutConstraint.activate([
+                    chevronButton.topAnchor.constraint(equalTo: topAnchor),
+                    bottomAnchor.constraint(equalTo: chevronButton.bottomAnchor),
+                    chevronButton.widthAnchor.constraint(equalToConstant: 48),
+                    chevronButton.heightAnchor.constraint(equalToConstant: 52),
+                    iconImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
+                    iconImageViewLeadingConstraint,
+                    iconImageView.leadingAnchor.constraint(equalTo: chevronButton.trailingAnchor, constant: -4),
+                    iconImageView.widthAnchor.constraint(equalToConstant: 28),
+                    iconImageView.heightAnchor.constraint(equalToConstant: 28),
+                    titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
+                    titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: 12),
+                    badgeContainer.centerYAnchor.constraint(equalTo: centerYAnchor),
+                    layoutMarginsGuide.trailingAnchor.constraint(equalTo: badgeContainer.trailingAnchor, constant: 8),
+                    badgeContainerLeadingConstraint,
+                    badgeLabel.topAnchor.constraint(equalTo: badgeContainer.topAnchor),
+                    badgeLabel.leadingAnchor.constraint(equalTo: badgeContainer.leadingAnchor),
+                    badgeContainer.trailingAnchor.constraint(equalTo: badgeLabel.trailingAnchor),
+                    badgeContainer.bottomAnchor.constraint(equalTo: badgeLabel.bottomAnchor),
+                    separatorView.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
+                    layoutMarginsGuide.trailingAnchor.constraint(equalTo: separatorView.trailingAnchor, constant: 8),
+                    separatorView.bottomAnchor.constraint(equalTo: bottomAnchor),
+                    separatorView.heightAnchor.constraint(equalToConstant: 1)
+                ])
+            } else {
+                NSLayoutConstraint.activate([
+                    chevronButton.topAnchor.constraint(equalTo: topAnchor),
+                    bottomAnchor.constraint(equalTo: chevronButton.bottomAnchor),
+                    chevronButton.widthAnchor.constraint(equalToConstant: 48),
+                    chevronButton.heightAnchor.constraint(equalToConstant: 44),
+                    iconImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
+                    iconImageViewLeadingConstraint,
+                    iconImageView.leadingAnchor.constraint(equalTo: chevronButton.trailingAnchor, constant: -4),
+                    iconImageView.widthAnchor.constraint(equalToConstant: 28),
+                    iconImageView.heightAnchor.constraint(equalToConstant: 28),
+                    titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
+                    titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: 16),
+                    badgeContainer.centerYAnchor.constraint(equalTo: centerYAnchor),
+                    layoutMarginsGuide.trailingAnchor.constraint(equalTo: badgeContainer.trailingAnchor),
+                    badgeContainerLeadingConstraint,
+                    badgeLabel.topAnchor.constraint(equalTo: badgeContainer.topAnchor, constant: 2),
+                    badgeLabel.leadingAnchor.constraint(equalTo: badgeContainer.leadingAnchor, constant: 8),
+                    badgeContainer.trailingAnchor.constraint(equalTo: badgeLabel.trailingAnchor, constant: 8),
+                    badgeContainer.bottomAnchor.constraint(equalTo: badgeLabel.bottomAnchor, constant: 2),
+                    separatorView.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
+                    separatorView.trailingAnchor.constraint(equalTo: trailingAnchor),
+                    separatorView.bottomAnchor.constraint(equalTo: bottomAnchor),
+                    separatorView.heightAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale)
+                ])
+            }
         }
     }
     
@@ -122,7 +160,9 @@ final class CollectionCellContentView: UIView {
     
     override func layoutSubviews() {
         super.layoutSubviews()
-        badgeContainer.layer.cornerRadius = badgeContainer.frame.height / 2.0
+        if #unavailable(iOS 26.0.0) {
+            badgeContainer.layer.cornerRadius = badgeContainer.frame.height / 2.0
+        }
     }
 
     private func set(collapsed: Bool) {
