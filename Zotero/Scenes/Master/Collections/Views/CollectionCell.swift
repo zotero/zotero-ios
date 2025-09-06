@@ -20,7 +20,6 @@ final class CollectionCell: UICollectionViewListCell {
 
         static let badge = Accessories(rawValue: 1 << 0)
         static let chevron = Accessories(rawValue: 1 << 1)
-        static let chevronSpace = Accessories(rawValue: 1 << 2)
     }
     
     struct ContentConfiguration: UIContentConfiguration {
@@ -91,7 +90,7 @@ final class CollectionCell: UICollectionViewListCell {
 
             super.init(frame: .zero)
 
-            guard let view = UINib.init(nibName: "CollectionCellContentView", bundle: nil).instantiate(withOwner: self)[0] as? CollectionCellContentView else { return }
+            let view = CollectionCellContentView()
             self.setup(view: view)
         }
 
