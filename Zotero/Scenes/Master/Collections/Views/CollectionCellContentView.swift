@@ -16,6 +16,7 @@ final class CollectionCellContentView: UIView {
     private weak var titleLabel: UILabel!
     private weak var badgeContainer: UIView!
     private weak var badgeLabel: UILabel!
+    private weak var separatorView: UIView!
     // These 2 need to be strong because they are being activated/deactivated
     private var titleLabelTrailingConstraint: NSLayoutConstraint!
     private var badgeContainerLeadingConstraint: NSLayoutConstraint!
@@ -93,6 +94,7 @@ final class CollectionCellContentView: UIView {
             separatorView.backgroundColor = UIColor.separator
             separatorView.translatesAutoresizingMaskIntoConstraints = false
             addSubview(separatorView)
+            self.separatorView = separatorView
 
             let chevronButtonHeightConstraint = chevronButton.heightAnchor.constraint(equalToConstant: 52)
             let iconImageViewLeadingConstraint = iconImageView.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor, constant: 32)
@@ -174,9 +176,11 @@ final class CollectionCellContentView: UIView {
             switch traitCollection.splitViewControllerLayoutEnvironment {
             case .expanded:
                 chevronButtonHeightConstraint.constant = 52
+                separatorView.isHidden = true
 
             case .collapsed:
                 chevronButtonHeightConstraint.constant = 44
+                separatorView.isHidden = false
 
             case .none:
                 break
