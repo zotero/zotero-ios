@@ -70,6 +70,17 @@ final class CollectionCell: UICollectionViewListCell {
         }
     }
 
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        if #available(iOS 26.0.0, *) {
+            indentationWidth = 16
+        }
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
     final class ContentView: UIView, UIContentView {
         var configuration: UIContentConfiguration {
             didSet {
