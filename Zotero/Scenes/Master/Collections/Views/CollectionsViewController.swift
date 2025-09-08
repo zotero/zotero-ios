@@ -56,7 +56,7 @@ final class CollectionsViewController: UICollectionViewController {
         super.viewDidLoad()
 
         if let selectedCollectionId = viewModel.state.selectedCollectionId ?? (isSplit ? .custom(.all) : nil), let collection = viewModel.state.collectionTree.collection(for: selectedCollectionId) {
-            coordinatorDelegate?.showItems(for: collection, in: viewModel.state.library.identifier)
+            coordinatorDelegate?.showItems(for: collection, in: viewModel.state.library.identifier, reason: .initialCollectionsLoad)
         }
 
         self.setupTitleWithContextMenu(self.viewModel.state.library.name)
@@ -114,7 +114,7 @@ final class CollectionsViewController: UICollectionViewController {
 
         if state.changes.contains(.selection), let selectedCollectionId = state.selectedCollectionId, let collection = state.collectionTree.collection(for: selectedCollectionId) {
             Defaults.shared.selectedCollectionId = collection.identifier
-            self.coordinatorDelegate?.showItems(for: collection, in: state.library.identifier)
+            self.coordinatorDelegate?.showItems(for: collection, in: state.library.identifier, reason: .userSelectedCollection)
 
             if !requiresUpdate {
                 self.selectIfNeeded(collectionId: selectedCollectionId, tree: state.collectionTree, scrollToPosition: false)
