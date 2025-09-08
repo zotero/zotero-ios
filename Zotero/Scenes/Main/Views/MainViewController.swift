@@ -14,10 +14,17 @@ import SwiftUI
 import CocoaLumberjackSwift
 import RxSwift
 
+enum ShowItemsReason {
+    case userSelectedCollection
+    case initialCollectionsLoad
+    case splitExpansion
+    case restoration
+}
+
 protocol MainCoordinatorDelegate: AnyObject {
     var sharedTagFilterViewModel: ViewModel<TagFilterActionHandler>? { get }
     
-    func showItems(for collection: Collection, in libraryId: LibraryIdentifier)
+    func showItems(for collection: Collection, in libraryId: LibraryIdentifier, reason: ShowItemsReason)
 }
 
 protocol MainCoordinatorSyncToolbarDelegate: AnyObject {
@@ -158,15 +165,27 @@ extension MainViewController: UISplitViewControllerDelegate { }
 extension MainViewController: MainCoordinatorDelegate {
     var sharedTagFilterViewModel: ViewModel<TagFilterActionHandler>? { tagFilterViewModel }
 
-    func showItems(for collection: Collection, in libraryId: LibraryIdentifier) {
-        if !isCollapsed && detailCoordinator?.libraryId == libraryId && detailCoordinator?.collection.identifier == collection.identifier {
-            if (detailCoordinator?.navigationController?.viewControllers.count ?? 1) > 1 {
-                // Extraneous controllers are visible, pop to root to show items for given collection
-                detailCoordinator?.navigationController?.popToRootViewController(animated: true)
-            }
+    func showItems(for collection: Collection, in libraryId: LibraryIdentifier, reason: ShowItemsReason) {
+        guard detailCoordinator?.libraryId == libraryId && detailCoordinator?.collection.identifier == collection.identifier else {
+            showItems(for: collection, in: libraryId, searchItemKeys: nil)
             return
         }
-        showItems(for: collection, in: libraryId, searchItemKeys: nil)
+        switch reason {
+        case .userSelectedCollection:
+            guard let navigationController = detailCoordinator?.navigationController else {
+                showItems(for: collection, in: libraryId, searchItemKeys: nil)
+                return
+            }
+            if navigationController.viewControllers.count > 1 {
+                navigationController.popToRootViewController(animated: !isCollapsed)
+            }
+            if isCollapsed {
+                showDetailViewController(navigationController, sender: nil)
+            }
+
+        case .initialCollectionsLoad, .splitExpansion, .restoration:
+            break
+        }
     }
 }
 
