@@ -196,7 +196,7 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
                     // Collection is missing, show all items instead
                     collection = Collection(custom: .all)
                 }
-                mainController.showItems(for: collection, in: data.libraryId)
+                mainController.showItems(for: collection, in: data.libraryId, reason: .restoration)
                 guard data.restoreMostRecentlyOpenedItem, let item = data.openItems.first else { return }
                 restoreMostRecentlyOpenedItem(using: self, item: item)
 
