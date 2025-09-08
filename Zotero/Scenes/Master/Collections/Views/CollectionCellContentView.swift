@@ -245,4 +245,16 @@ final class CollectionCellContentView: UIView {
             return .systemGray.withAlphaComponent(traitCollection.userInterfaceStyle == .dark ? 0.5 : 0.2)
         }
     }
+
+    func updateTitleLabel(emphasized: Bool) {
+        if emphasized {
+            titleLabel.textColor = Asset.Colors.zoteroBlueWithDarkMode.color
+            var descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .body)
+            descriptor = descriptor.withSymbolicTraits(.traitBold) ?? descriptor
+            titleLabel.font = UIFont(descriptor: descriptor, size: 0)
+        } else {
+            titleLabel.textColor = nil
+            titleLabel.font = UIFont.preferredFont(forTextStyle: .body)
+        }
+    }
 }
