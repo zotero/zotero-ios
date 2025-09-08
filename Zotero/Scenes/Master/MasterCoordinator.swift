@@ -27,11 +27,11 @@ protocol MasterCollectionsCoordinatorDelegate: MainCoordinatorDelegate {
     func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier)
     func showCiteExportError()
     func showSearch(for state: CollectionsState, in controller: UIViewController, selectAction: @escaping (Collection) -> Void)
-    func showDefaultCollection()
+    func showDefaultCollection(reason: ShowItemsReason)
 }
 
 protocol MasterContainerCoordinatorDelegate: AnyObject {
-    func showDefaultCollection()
+    func showDefaultCollection(reason: ShowItemsReason)
     func createBottomController() -> DraggableViewController?
 }
 
@@ -213,7 +213,7 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
                 viewControllers.removeLast(viewControllers.count - 1)
                 viewControllers.append(controller)
                 navigationController.setViewControllers(viewControllers, animated: animated)
-                showDefaultCollection()
+                showDefaultCollection(reason: .splitExpansion)
             }
         } else if let controller = navigationController.viewControllers[1] as? CollectionsViewController {
             // There is a Collections screen in the stack.
@@ -273,8 +273,8 @@ extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
         navigationController.present(editNavigationController, animated: true, completion: nil)
     }
 
-    func showItems(for collection: Collection, in libraryId: LibraryIdentifier) {
-        mainCoordinatorDelegate.showItems(for: collection, in: libraryId)
+    func showItems(for collection: Collection, in libraryId: LibraryIdentifier, reason: ShowItemsReason) {
+        mainCoordinatorDelegate.showItems(for: collection, in: libraryId, reason: reason)
     }
 
     func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier) {
@@ -301,8 +301,8 @@ extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
         controller.present(searchController, animated: true, completion: nil)
     }
     
-    func showDefaultCollection() {
-        showItems(for: Collection(custom: .all), in: Defaults.shared.selectedLibraryId)
+    func showDefaultCollection(reason: ShowItemsReason) {
+        showItems(for: Collection(custom: .all), in: Defaults.shared.selectedLibraryId, reason: reason)
     }
 }
 
