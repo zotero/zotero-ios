@@ -162,6 +162,13 @@ extension MainViewController: MainCoordinatorDelegate {
             }
             return
         }
+        let shouldCheckCollapsed: Bool
+        if #available(iOS 26.0.0, *) {
+            shouldCheckCollapsed = false
+        } else {
+            shouldCheckCollapsed = true
+        }
+        guard (shouldCheckCollapsed && isCollapsed) || detailCoordinator?.libraryId != libraryId || detailCoordinator?.collection.identifier != collection.identifier else { return }
         showItems(for: collection, in: libraryId, searchItemKeys: nil)
     }
 }
