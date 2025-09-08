@@ -81,6 +81,35 @@ final class CollectionCell: UICollectionViewListCell {
         fatalError("init(coder:) has not been implemented")
     }
 
+    override func updateConfiguration(using state: UICellConfigurationState) {
+        var backgroundConfiguration = UIBackgroundConfiguration.listPlainCell().updated(for: state)
+
+        if #available(iOS 26.0.0, *) {
+            if state.isHighlighted || state.isSelected {
+                switch traitCollection.splitViewControllerLayoutEnvironment {
+                case .expanded:
+                    let selectedBackgroundView = UIView()
+                    selectedBackgroundView.backgroundColor = .tertiarySystemFill
+                    selectedBackgroundView.cornerConfiguration = .capsule()
+                    self.selectedBackgroundView = selectedBackgroundView
+                    (contentView as? ContentView)?.contentView?.updateTitleLabel(emphasized: true)
+                    return
+
+                case .none, .collapsed:
+                    break
+
+                @unknown default:
+                    break
+                }
+                selectedBackgroundView = nil
+                backgroundConfiguration.backgroundColor = .systemGray5
+            }
+            (contentView as? ContentView)?.contentView?.updateTitleLabel(emphasized: false)
+        }
+
+        self.backgroundConfiguration = backgroundConfiguration
+    }
+
     final class ContentView: UIView, UIContentView {
         var configuration: UIContentConfiguration {
             didSet {
