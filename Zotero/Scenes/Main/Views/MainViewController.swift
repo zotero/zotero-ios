@@ -142,13 +142,7 @@ extension MainViewController: UISplitViewControllerDelegate { }
 
 extension MainViewController: MainCoordinatorDelegate {
     func showItems(for collection: Collection, in libraryId: LibraryIdentifier) {
-        let shouldCheckCollapsed: Bool
-        if #available(iOS 26.0.0, *) {
-            shouldCheckCollapsed = false
-        } else {
-            shouldCheckCollapsed = true
-        }
-        guard (shouldCheckCollapsed && isCollapsed) || detailCoordinator?.libraryId != libraryId || detailCoordinator?.collection.identifier != collection.identifier else { return }
+        guard isCollapsed || detailCoordinator?.libraryId != libraryId || detailCoordinator?.collection.identifier != collection.identifier else { return }
         showItems(for: collection, in: libraryId, searchItemKeys: nil)
     }
 }
