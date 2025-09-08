@@ -70,9 +70,6 @@ final class CollectionsSearchViewController: UIViewController {
 
             cell.contentConfiguration = configuration
             cell.backgroundConfiguration = .listPlainCell()
-            if #available(iOS 26.0.0, *) {
-                cell.indentationWidth = 16
-            }
         }
     }()
 
