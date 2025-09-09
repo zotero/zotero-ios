@@ -172,7 +172,14 @@ final class AppDelegate: UIResponder {
     }
 
     private func setupAppearance() {
-        if #unavailable(iOS 26.0.0) {
+        if #available(iOS 26.0.0, *) {
+            // Focus change in collections would cause a crash, if selection wasn't dispatched in the next runloop.
+            // Additionally, in expanded split view controller, going back to libraries would immediately focus and select the same library, pushing again the collections view controller in the stack.
+            // Disabling selectionFollowsFocus globally, elminates all related issues.
+            // TODO: Define focus logic as neeeded, separately for each class.
+            UITableView.appearance().selectionFollowsFocus = false
+            UICollectionView.appearance().selectionFollowsFocus = false
+        } else {
             // Navigation bars
             let appearance = UINavigationBarAppearance()
             appearance.configureWithDefaultBackground()
