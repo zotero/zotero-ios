@@ -173,7 +173,11 @@ final class AppDelegate: UIResponder {
 
     private func setupAppearance() {
         if #available(iOS 26.0.0, *) {
+            // Focus change in collections would cause a crash, if selection wasn't dispatched in the next runloop.
+            // Additionally, in expanded split view controller, going back to libraries would immediately focus and select the same library, pushing again the collections view controller in the stack.
+            // Disabling selectionFollowsFocus globally, eliminates all related issues.
             // Potential fix for NSInternalInconsistencyException crashes, with reason "Invalid parameter not satisfying: parentEnvironment != nil"
+            // TODO: Define focus logic as needed, separately for each class.
             UITableView.appearance().selectionFollowsFocus = false
             UICollectionView.appearance().selectionFollowsFocus = false
         } else {
