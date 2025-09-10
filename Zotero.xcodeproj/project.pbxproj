@@ -64,6 +64,7 @@
 		618404262A4456A9005AAF22 /* IdentifierLookupController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 618404252A4456A9005AAF22 /* IdentifierLookupController.swift */; };
 		618D83E72BAAC88C00E7966B /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 618D83E62BAAC88C00E7966B /* PrivacyInfo.xcprivacy */; };
 		618D83E82BAAC88C00E7966B /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 618D83E62BAAC88C00E7966B /* PrivacyInfo.xcprivacy */; };
+		61933F242E7218B500F4547F /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 61933F232E7218B500F4547F /* AppIcon.icon */; };
 		61A0C8472B8F669C0048FF92 /* PSPDFKitUI+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61A0C8462B8F669B0048FF92 /* PSPDFKitUI+Extensions.swift */; };
 		61ABA7512A6137D1002A4219 /* ShareableImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61ABA7502A6137D1002A4219 /* ShareableImage.swift */; };
 		61AD977D2D67F42A000FDF45 /* PDFWorkerControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61AD977C2D67F42A000FDF45 /* PDFWorkerControllerSpec.swift */; };
@@ -1364,6 +1365,7 @@
 		617999712D8089200051D35E /* RenameAttachmentFilenameDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenameAttachmentFilenameDbRequest.swift; sourceTree = "<group>"; };
 		618404252A4456A9005AAF22 /* IdentifierLookupController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdentifierLookupController.swift; sourceTree = "<group>"; };
 		618D83E62BAAC88C00E7966B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		61933F232E7218B500F4547F /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		61A0C8462B8F669B0048FF92 /* PSPDFKitUI+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PSPDFKitUI+Extensions.swift"; sourceTree = "<group>"; };
 		61ABA7502A6137D1002A4219 /* ShareableImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareableImage.swift; sourceTree = "<group>"; };
 		61AD977C2D67F42A000FDF45 /* PDFWorkerControllerSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFWorkerControllerSpec.swift; sourceTree = "<group>"; };
@@ -2369,6 +2371,7 @@
 		B30563AD23FC051D003304F2 /* Assets */ = {
 			isa = PBXGroup;
 			children = (
+				61933F232E7218B500F4547F /* AppIcon.icon */,
 				B305643323FC051E003304F2 /* Assets.xcassets */,
 				B30B550224B85A3A00F94B59 /* Colors.xcassets */,
 				B30B550424B85A6200F94B59 /* Images.xcassets */,
@@ -4668,6 +4671,7 @@
 				613F32792C1086960088EF70 /* InfoPlist.strings in Resources */,
 				B361820324C9A7C000B30D56 /* OnboardingViewController.xib in Resources */,
 				B361820424C9A7C000B30D56 /* OnboardingPageView.xib in Resources */,
+				61933F242E7218B500F4547F /* AppIcon.icon in Resources */,
 				B3F0C3FA250A1BD8002D557A /* LibrariesViewController.xib in Resources */,
 				B3E8FE1D2714297200F51458 /* CiteSearchViewController.xib in Resources */,
 				B3B398532E4CCB20009C59F5 /* DocumentSearchCell.xib in Resources */,
@@ -6368,6 +6372,7 @@
 			baseConfigurationReference = 615645502DE0825900B8AA6D /* FeatureGates.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
@@ -6407,6 +6412,7 @@
 			baseConfigurationReference = 615645502DE0825900B8AA6D /* FeatureGates.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
@@ -6690,6 +6696,7 @@
 			baseConfigurationReference = 615645502DE0825900B8AA6D /* FeatureGates.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
