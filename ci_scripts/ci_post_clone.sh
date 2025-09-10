@@ -58,8 +58,12 @@ bump_version() {
     echo "${version_parts[0]}.${version_parts[1]}.${version_parts[2]}"
 }
 
-# Extract version bump
-case "$(echo "$CI_TAG" | sed -n 's/^trigger-build-bump-\(.*\)-date-.*$/\1/p')" in
+# Extract version bump from either trigger-build or trigger-beta-build tags
+version_bump_part=""
+if [[ "$CI_TAG" =~ ^trigger-(beta-)?build-bump-(.*)-date-.*$ ]]; then
+    version_bump_part="${BASH_REMATCH[2]}"
+fi
+case "$version_bump_part" in
     "patch")
         newVersionString=$(bump_version "$versionString" "patch")
         ;;
