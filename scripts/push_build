@@ -16,22 +16,38 @@ TAG_BUMP="bump"
 DEFAULT_TAG_BUMP="patch"
 DEFAULT_TAG="$TAG_START-$TAG_BUMP-$DEFAULT_TAG_BUMP"
 
-# Positional arguments:
-# $1 = bump [patch (default)|minor|major]
+# Parse arguments
+BETA_BUILD=false
+VERSION_BUMP=""
 
-if [ $# -eq 0 ]; then
-    TAG=$DEFAULT_TAG
-else
+while [[ $# -gt 0 ]]; do
     case $1 in
-        "minor"|"major"|"patch")
-            TAG="$TAG_START-$TAG_BUMP-$1"
+        --beta)
+            BETA_BUILD=true
+            shift
+            ;;
+        patch|minor|major)
+            VERSION_BUMP="$1"
+            shift
             ;;
         *)
-            echo "Invalid bump argument. Usage: $0 [patch (default)|minor|major]"
+            echo "Invalid argument. Usage: $0 [patch|minor|major] [--beta]"
             exit 1
             ;;
     esac
+done
+
+# Set tag prefix based on beta flag
+if [ "$BETA_BUILD" = true ]; then
+    TAG_START="trigger-beta-build"
 fi
+
+# Set version bump (default to patch)
+if [ -z "$VERSION_BUMP" ]; then
+    VERSION_BUMP="$DEFAULT_TAG_BUMP"
+fi
+
+TAG="$TAG_START-$TAG_BUMP-$VERSION_BUMP"
 
 if [ "$TAG" != "$DEFAULT_TAG" ]; then
     read -p "Are you sure you want to push tag '$TAG'? (y/n): " choice
