@@ -186,7 +186,6 @@
               }
             }
           ],
-          "hidden" : false,
           "image-name" : "default 4.svg",
           "name" : "sticky-notes",
           "opacity-specializations" : [
@@ -254,16 +253,12 @@
       "hidden" : false,
       "layers" : [
         {
-          "fill-specializations" : [
-            {
-              "appearance" : "dark",
-              "value" : "none"
-            }
-          ],
-          "hidden" : false,
-          "image-name" : "Artboard 1 12.svg",
+          "image-name" : "cover.svg",
           "name" : "cover",
           "opacity-specializations" : [
+            {
+              "value" : 1
+            },
             {
               "appearance" : "dark",
               "value" : 0
@@ -272,14 +267,7 @@
               "appearance" : "tinted",
               "value" : 0
             }
-          ],
-          "position" : {
-            "scale" : 1,
-            "translation-in-points" : [
-              0,
-              0
-            ]
-          }
+          ]
         }
       ],
       "name" : "Group",
@@ -289,6 +277,10 @@
         },
         {
           "appearance" : "dark",
+          "value" : 1
+        },
+        {
+          "appearance" : "tinted",
           "value" : 1
         }
       ],
@@ -317,7 +309,7 @@
         {
           "value" : {
             "enabled" : true,
-            "value" : 0.7
+            "value" : 0.5
           }
         },
         {
@@ -331,7 +323,7 @@
           "appearance" : "tinted",
           "value" : {
             "enabled" : true,
-            "value" : 0.4
+            "value" : 1
           }
         }
       ]
