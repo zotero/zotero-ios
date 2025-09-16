@@ -22,10 +22,10 @@ struct AttachmentCreator {
 
     private static let mainAttachmentContentTypes: Set<String> = ["text/html", "application/pdf", "image/png", "image/jpeg", "image/gif", "text/plain", "application/epub+zip"]
 
-    static func mainAttachment(for item: RItem, fileStorage: FileStorage) -> Attachment? {
+    static func mainAttachment(for item: RItem, fileStorage: FileStorage, urlDetector: UrlDetector?) -> Attachment? {
         if item.rawType == ItemTypes.attachment {
             // If item is attachment, create `Attachment` and ignore linked attachments.
-            if let attachment = attachment(for: item, fileStorage: fileStorage, urlDetector: nil) {
+            if let attachment = attachment(for: item, fileStorage: fileStorage, urlDetector: urlDetector) {
                 switch attachment.type {
                 case .url:
                     return attachment
@@ -40,20 +40,49 @@ struct AttachmentCreator {
             return nil
         }
 
-        var attachmentData = attachmentData(for: item)
+        return bestFileAttachmentIfAny(for: item) ?? firstLinkedURLAttachmentIfAny(for: item, urlDetector: urlDetector)
 
-        guard !attachmentData.isEmpty else { return nil }
+        func bestFileAttachmentIfAny(for item: RItem) -> Attachment? {
+            let itemUrl = item.fields.first(where: { $0.key == FieldKeys.Item.url })?.value
+            var data: [(Int, String, LinkMode, Bool, Date)] = []
+            for (idx, child) in item.children.enumerated() {
+                guard (child.rawType == ItemTypes.attachment) && (child.syncState != .dirty) && !child.trash,
+                      let linkMode = child.fields.first(where: { $0.key == FieldKeys.Item.Attachment.linkMode }).flatMap({ LinkMode(rawValue: $0.value) }),
+                      (linkMode == .importedUrl) || (linkMode == .importedFile),
+                      let contentType = contentType(for: child),
+                      AttachmentCreator.mainAttachmentContentTypes.contains(contentType) else { continue }
 
-        attachmentData.sort { lData, rData in
-            mainAttachmentsAreInIncreasingOrder(lData: (lData.1, lData.3, lData.4), rData: (rData.1, rData.3, rData.4))
+                var hasMatchingUrlWithParent = false
+                if let url = itemUrl, let childUrl = child.fields.first(where: { $0.key == FieldKeys.Item.Attachment.url })?.value {
+                    hasMatchingUrlWithParent = url == childUrl
+                }
+                data.append((idx, contentType, linkMode, hasMatchingUrlWithParent, child.dateAdded))
+            }
+            guard !data.isEmpty else { return nil }
+            data.sort { lData, rData in
+                mainAttachmentsAreInIncreasingOrder(lData: (lData.1, lData.3, lData.4), rData: (rData.1, rData.3, rData.4))
+            }
+            guard let (idx, contentType, linkMode, _, _) = data.first else { return nil }
+            let rAttachment = item.children[idx]
+            let linkType: Attachment.FileLinkType = linkMode == .importedFile ? .importedFile : .importedUrl
+            guard let libraryId = rAttachment.libraryId else { return nil }
+            let type = importedType(for: rAttachment, contentType: contentType, libraryId: libraryId, fileStorage: fileStorage, linkType: linkType, compressed: rAttachment.fileCompressed)
+            return Attachment(item: rAttachment, type: type)
         }
 
-        guard let (idx, contentType, linkMode, _, _) = attachmentData.first else { return nil }
-        let rAttachment = item.children[idx]
-        let linkType: Attachment.FileLinkType = linkMode == .importedFile ? .importedFile : .importedUrl
-        guard let libraryId = rAttachment.libraryId else { return nil }
-        let type = importedType(for: rAttachment, contentType: contentType, libraryId: libraryId, fileStorage: fileStorage, linkType: linkType, compressed: rAttachment.fileCompressed)
-        return Attachment(item: rAttachment, type: type)
+        func firstLinkedURLAttachmentIfAny(for item: RItem, urlDetector: UrlDetector?) -> Attachment? {
+            guard let urlDetector else { return nil }
+            for child in item.children {
+                guard (child.rawType == ItemTypes.attachment) && (child.syncState != .dirty) && !child.trash,
+                      let linkMode = child.fields.first(where: { $0.key == FieldKeys.Item.Attachment.linkMode }).flatMap({ LinkMode(rawValue: $0.value) }),
+                      linkMode == .linkedUrl,
+                      let libraryId = child.libraryId,
+                      let attachmentType = linkedUrlType(for: child, libraryId: libraryId, urlDetector: urlDetector)
+                else { continue }
+                return Attachment(item: child, type: attachmentType)
+            }
+            return nil
+        }
     }
 
     static func mainPdfAttachment(from attachments: [Attachment], parentUrl: String?) -> Attachment? {

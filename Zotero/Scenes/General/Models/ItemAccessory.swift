@@ -39,8 +39,14 @@ extension ItemAccessory {
     }
 
     static func create(from item: RItem, fileStorage: FileStorage, urlDetector: UrlDetector) -> ItemAccessory? {
-        if let attachment = AttachmentCreator.mainAttachment(for: item, fileStorage: fileStorage) {
-            return .attachment(attachment: attachment, parentKey: (item.key != attachment.key) ? item.key : nil)
+        if let attachment = AttachmentCreator.mainAttachment(for: item, fileStorage: fileStorage, urlDetector: urlDetector) {
+            switch attachment.type {
+            case .file:
+                return .attachment(attachment: attachment, parentKey: (item.key != attachment.key) ? item.key : nil)
+
+            case .url(let url):
+                return .url(url)
+            }
         }
 
         if let urlString = item.urlString, urlDetector.isUrl(string: urlString), let url = URL(string: urlString) {
