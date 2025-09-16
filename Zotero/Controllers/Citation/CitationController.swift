@@ -161,6 +161,7 @@ class CitationController: NSObject {
             .do(onSuccess: { [weak self] session in
                 self?.citationWebViewHandlerBySession[session] = citationWebViewHandler
             })
+            .observe(on: MainScheduler.instance)
 
         /// Loads style data.
         /// - parameter styleId: Identifier of style
