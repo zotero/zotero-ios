@@ -24,7 +24,6 @@ struct AttachmentCreator {
 
     static func mainAttachment(for item: RItem, fileStorage: FileStorage, urlDetector: UrlDetector?) -> Attachment? {
         if item.rawType == ItemTypes.attachment {
-            // If item is attachment, create `Attachment` and ignore linked attachments.
             if let attachment = attachment(for: item, fileStorage: fileStorage, urlDetector: urlDetector) {
                 switch attachment.type {
                 case .url:
@@ -40,9 +39,14 @@ struct AttachmentCreator {
             return nil
         }
 
-        return bestFileAttachmentIfAny(for: item) ?? firstLinkedURLAttachmentIfAny(for: item, urlDetector: urlDetector)
+        if let fileAttachment = fileAttachmentData(for: item).sorted(by: { lData, rData in
+            mainAttachmentsAreInIncreasingOrder(lData: (lData.1, lData.3, lData.4), rData: (rData.1, rData.3, rData.4))
+        }).first.flatMap({ fileAttachmentDataToAttachment($0) }) {
+            return fileAttachment
+        }
+        return firstLinkedURLAttachmentIfAny(for: item, urlDetector: urlDetector)
 
-        func bestFileAttachmentIfAny(for item: RItem) -> Attachment? {
+        func fileAttachmentData(for item: RItem) -> [(Int, String, LinkMode, Bool, Date)] {
             let itemUrl = item.fields.first(where: { $0.key == FieldKeys.Item.url })?.value
             var data: [(Int, String, LinkMode, Bool, Date)] = []
             for (idx, child) in item.children.enumerated() {
@@ -58,11 +62,11 @@ struct AttachmentCreator {
                 }
                 data.append((idx, contentType, linkMode, hasMatchingUrlWithParent, child.dateAdded))
             }
-            guard !data.isEmpty else { return nil }
-            data.sort { lData, rData in
-                mainAttachmentsAreInIncreasingOrder(lData: (lData.1, lData.3, lData.4), rData: (rData.1, rData.3, rData.4))
-            }
-            guard let (idx, contentType, linkMode, _, _) = data.first else { return nil }
+            return data
+        }
+
+        func fileAttachmentDataToAttachment(_ data: (Int, String, LinkMode, Bool, Date)) -> Attachment? {
+            let (idx, contentType, linkMode, _, _) = data
             let rAttachment = item.children[idx]
             let linkType: Attachment.FileLinkType = linkMode == .importedFile ? .importedFile : .importedUrl
             guard let libraryId = rAttachment.libraryId else { return nil }
