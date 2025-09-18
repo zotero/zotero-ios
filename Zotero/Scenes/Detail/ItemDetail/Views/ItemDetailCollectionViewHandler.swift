@@ -461,6 +461,9 @@ final class ItemDetailCollectionViewHandler: NSObject {
                 .map({ SectionType(identifier: id, section: $0) })
             var snapshot = NSDiffableDataSourceSnapshot<SectionType, Row>()
             snapshot.appendSections(sections)
+            if #available(iOS 26.0, *) {
+                snapshot.reloadSections(sections)
+            }
             for section in sections {
                 snapshot.appendItems(rows(for: section.section, state: state), toSection: section)
             }
