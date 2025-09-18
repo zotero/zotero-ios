@@ -455,8 +455,11 @@ final class IdentifierLookupController {
                     }
                     
                     func storeDataAndDownloadAttachmentIfNecessary(identifier: String, response: ItemResponse, attachments: [(Attachment, URL)]) throws {
-                        let request = CreateTranslatedItemsDbRequest(responses: [response], schemaController: schemaController, dateParser: dateParser)
-                        _ = try dbStorage.perform(request: request, on: backgroundQueue)
+                        var library: Library?
+                        try dbStorage.perform(on: backgroundQueue) { coordinator in
+                            _ = try coordinator.perform(request: CreateTranslatedItemsDbRequest(responses: [response], schemaController: schemaController, dateParser: dateParser))
+                            library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
+                        }
                         changeLookup(
                             for: identifier,
                             to: .translated(.init(response: response, attachments: attachments, libraryId: libraryId, collectionKeys: collectionKeys))
@@ -464,7 +467,7 @@ final class IdentifierLookupController {
                             guard let self, didChange else { return }
                             observable.on(.next(Update(kind: .itemStored(identifier: identifier, response: response, attachments: attachments), lookupData: Array(lookupData.values))))
                             
-                            if Defaults.shared.shareExtensionIncludeAttachment, !attachments.isEmpty {
+                            if Defaults.shared.shareExtensionIncludeAttachment, library?.filesEditable == true, !attachments.isEmpty {
                                 let downloadData = attachments.map({ ($0, $1, response.key) })
                                 remoteFileDownloader.download(data: downloadData)
                                 observable.on(.next(Update(kind: .pendingAttachments(identifier: identifier, response: response, attachments: attachments), lookupData: Array(lookupData.values))))

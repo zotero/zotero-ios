@@ -441,15 +441,13 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         controller.popoverPresentationController?.sourceItem = button
 
-        if viewModel.state.library.metadataAndFilesEditable {
-            controller.addAction(UIAlertAction(title: L10n.Items.lookup, style: .default, handler: { [weak self] _ in
-                self?.showLookup(startWith: .manual(restoreLookupState: false))
-            }))
+        controller.addAction(UIAlertAction(title: L10n.Items.lookup, style: .default, handler: { [weak self] _ in
+            self?.showLookup(startWith: .manual(restoreLookupState: false))
+        }))
 
-            controller.addAction(UIAlertAction(title: L10n.Items.barcode, style: .default, handler: { [weak self] _ in
-                self?.showLookup(startWith: .scanner)
-            }))
-        }
+        controller.addAction(UIAlertAction(title: L10n.Items.barcode, style: .default, handler: { [weak self] _ in
+            self?.showLookup(startWith: .scanner)
+        }))
 
         controller.addAction(UIAlertAction(title: L10n.Items.new, style: .default, handler: { [weak self, weak viewModel] _ in
             guard let self, let viewModel else { return }
@@ -471,7 +469,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
             showNote(library: viewModel.state.library, kind: .standaloneCreation(collection: viewModel.state.collection), saveCallback: nil)
         }))
 
-        if viewModel.state.library.metadataAndFilesEditable {
+        if viewModel.state.library.filesEditable {
             controller.addAction(UIAlertAction(title: L10n.Items.newFile, style: .default, handler: { [weak self, weak viewModel] _ in
                 self?.showAttachmentPicker(save: { urls in
                     viewModel?.process(action: .addAttachments(urls))

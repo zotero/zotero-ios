@@ -237,7 +237,13 @@ final class ShareViewController: UIViewController {
 
         let hasItem = state.processedAttachment != nil
         self.log(attachmentState: state.attachmentState, itemState: state.itemPickerState)
-        self.update(item: state.expectedItem, attachment: state.expectedAttachment, attachmentState: state.attachmentState, defaultTitle: state.title)
+        update(
+            libraryIsFilesEditable: state.collectionPickerState.libraryIsFilesEditable,
+            item: state.expectedItem,
+            attachment: state.expectedAttachment,
+            attachmentState: state.attachmentState,
+            defaultTitle: state.title
+        )
         self.update(attachmentState: state.attachmentState, itemState: state.itemPickerState, hasItem: hasItem, isSubmitting: state.isSubmitting)
         self.update(collectionPicker: state.collectionPickerState, recents: state.recents)
         self.update(itemPicker: state.itemPickerState, hasExpectedItem: (state.expectedItem != nil || state.expectedAttachment != nil))
@@ -287,7 +293,7 @@ final class ShareViewController: UIViewController {
         self.updateBottomProgress(for: state, itemState: itemState, hasItem: hasItem, isSubmitting: isSubmitting)
     }
 
-    private func update(item: ItemResponse?, attachment: (String, File)?, attachmentState: ExtensionViewModel.State.AttachmentState, defaultTitle title: String?) {
+    private func update(libraryIsFilesEditable: Bool, item: ItemResponse?, attachment: (String, File)?, attachmentState: ExtensionViewModel.State.AttachmentState, defaultTitle title: String?) {
         self.translationContainer.isHidden = false
 
         if item == nil && attachment == nil {
@@ -306,23 +312,52 @@ final class ShareViewController: UIViewController {
             return
         }
 
-        self.itemContainer.isHidden = item == nil
-        self.attachmentContainer.isHidden = attachment == nil
+        let itemFound: Bool
+        if let item {
+            itemFound = true
+            // Item was found, show its metadata.
+            let itemTitle = itemTitle(for: item, schemaController: schemaController, defaultValue: title ?? "")
+            setItem(title: itemTitle, type: item.rawType)
+            itemContainer.isHidden = false
+        } else {
+            itemFound = false
+            itemContainer.isHidden = true
+        }
+        if libraryIsFilesEditable, let (attachmentTitle, file) = attachment {
+            // The picked library allows file editing, and either item with attachment, or only attachment (local/remote file), was found, show its metadata.
+            setAttachment(title: attachmentTitle, file: file, state: attachmentState)
+            attachmentContainerLeft.constant = itemFound ? Self.childAttachmentLeftOffset : 0
+            attachmentContainer.isHidden = false
+        } else {
+            attachmentContainer.isHidden = true
+        }
 
-        if let item = item, let (attachmentTitle, file) = attachment {
-            // Item with attachment was found, show their metadata
-            let itemTitle = self.itemTitle(for: item, schemaController: self.schemaController, defaultValue: title ?? "")
-            self.setItem(title: itemTitle, type: item.rawType)
-            self.attachmentContainerLeft.constant = ShareViewController.childAttachmentLeftOffset
-            self.setAttachment(title: attachmentTitle, file: file, state: attachmentState)
-        } else if let item = item {
-            // Only item was found, show metadata
-            let title = self.itemTitle(for: item, schemaController: self.schemaController, defaultValue: title ?? "")
-            self.setItem(title: title, type: item.rawType)
-        } else if let (title, file) = attachment {
-            // Only attachment (local/remote file) was found, show metadata
-            self.attachmentContainerLeft.constant = 0
-            self.setAttachment(title: title, file: file, state: attachmentState)
+        func setAttachment(title: String, file: File, state: ExtensionViewModel.State.AttachmentState) {
+            attachmentTitleLabel.text = title
+            let type: Attachment.Kind = .file(filename: "", contentType: file.mimeType, location: .local, linkType: .importedFile, compressed: false)
+            let iconState = FileAttachmentView.State.stateFrom(type: type, progress: nil, error: state.error)
+            attachmentIcon.set(state: iconState, style: .shareExtension)
+
+            switch state {
+            case .downloading(let progress):
+                attachmentProgressView.isHidden = progress == 0
+                attachmentActivityIndicator.isHidden = progress > 0
+                attachmentProgressView.progress = CGFloat(progress)
+                if progress == 0 && !attachmentActivityIndicator.isAnimating {
+                    attachmentActivityIndicator.startAnimating()
+                }
+                attachmentIcon.alpha = 0.5
+                attachmentTitleLabel.alpha = 0.5
+
+            default:
+                attachmentProgressView.isHidden = true
+                if attachmentActivityIndicator.isAnimating {
+                    attachmentActivityIndicator.stopAnimating()
+                }
+                attachmentActivityIndicator.isHidden = true
+                attachmentIcon.alpha = 1
+                attachmentTitleLabel.alpha = 1
+            }
         }
     }
 
@@ -333,37 +368,6 @@ final class ShareViewController: UIViewController {
     private func setItem(title: String, type: String) {
         self.itemTitleLabel.text = title
         self.itemIcon.image = UIImage(named: ItemTypes.iconName(for: type))
-    }
-
-    private func setAttachment(title: String, file: File, state: ExtensionViewModel.State.AttachmentState) {
-        self.attachmentTitleLabel.text = title
-        let type: Attachment.Kind = .file(filename: "", contentType: file.mimeType, location: .local, linkType: .importedFile, compressed: false)
-        let iconState = FileAttachmentView.State.stateFrom(type: type, progress: nil, error: state.error)
-        self.attachmentIcon.set(state: iconState, style: .shareExtension)
-
-        switch state {
-        case .downloading(let progress):
-            self.attachmentProgressView.isHidden = progress == 0
-            self.attachmentActivityIndicator.isHidden = progress > 0
-            self.attachmentProgressView.progress = CGFloat(progress)
-            if progress == 0 && !self.attachmentActivityIndicator.isAnimating {
-                self.attachmentActivityIndicator.startAnimating()
-            }
-
-            self.attachmentIcon.alpha = 0.5
-            self.attachmentTitleLabel.alpha = 0.5
-
-        default:
-            if !self.attachmentContainer.isHidden {
-                self.attachmentProgressView.isHidden = true
-                if self.attachmentActivityIndicator.isAnimating {
-                    self.attachmentActivityIndicator.stopAnimating()
-                }
-                self.attachmentActivityIndicator.isHidden = true
-                self.attachmentIcon.alpha = 1
-                self.attachmentTitleLabel.alpha = 1
-            }
-        }
     }
 
     private func updateNavigationItems(for state: ExtensionViewModel.State.AttachmentState, isSubmitting: Bool) {
