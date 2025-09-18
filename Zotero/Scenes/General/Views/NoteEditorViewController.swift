@@ -303,7 +303,7 @@ final class NoteEditorViewController: UIViewController {
                 let (key, libraryId) = uriConverter.convert(uri: uri),
                 let locator = (rawItem["locator"] as? String).flatMap(Int.init),
                 let item = try? dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key), on: .main),
-                let attachment = AttachmentCreator.mainAttachment(for: item, fileStorage: fileStorage)
+                let attachment = AttachmentCreator.mainAttachment(for: item, fileStorage: fileStorage, urlDetector: nil)
             else { return nil }
             return CitationMetadata(attachmentKey: attachment.key, parentKey: key, libraryId: libraryId, locator: locator)
         }

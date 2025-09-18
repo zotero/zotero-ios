@@ -995,9 +995,11 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
             }
 
             if !viewModel.state.data.isAttachment {
-                actions.append(UIAction(title: L10n.ItemDetail.moveToStandaloneAttachment, image: UIImage(systemName: "arrow.up.to.line"), attributes: []) { [weak self] _ in
-                    self?.viewModel.process(action: .moveAttachmentToStandalone(attachment))
-                })
+                if case .file = attachment.type {
+                    actions.append(UIAction(title: L10n.ItemDetail.moveToStandaloneAttachment, image: UIImage(systemName: "arrow.up.to.line"), attributes: []) { [weak self] _ in
+                        self?.viewModel.process(action: .moveAttachmentToStandalone(attachment))
+                    })
+                }
 
                 actions.append(UIAction(title: L10n.moveToTrash, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
                     self?.viewModel.process(action: .deleteAttachment(attachment))

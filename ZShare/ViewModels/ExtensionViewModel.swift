@@ -37,6 +37,16 @@ final class ExtensionViewModel {
         enum CollectionPickerState {
             case loading, failed
             case picked(Library, Collection?)
+
+            var libraryIsFilesEditable: Bool {
+                switch self {
+                case .loading, .failed:
+                    return false
+
+                case let .picked(library, _):
+                    return library.filesEditable
+                }
+            }
         }
 
         struct ItemPickerState {
@@ -1049,7 +1059,12 @@ final class ExtensionViewModel {
 
             case .itemWithAttachment(let item, let attachmentData, let attachmentFile):
                 let newTags = (Defaults.shared.shareExtensionIncludeTags ? item.tags + tags : tags)
-                attachment = .itemWithAttachment(item: item.copy(libraryId: libraryId, collectionKeys: collectionKeys, tags: newTags), attachment: attachmentData, attachmentFile: attachmentFile)
+                if state.collectionPickerState.libraryIsFilesEditable {
+                    attachment = .itemWithAttachment(item: item.copy(libraryId: libraryId, collectionKeys: collectionKeys, tags: newTags), attachment: attachmentData, attachmentFile: attachmentFile)
+                } else {
+                    // Picked library doesn't allow file editing, convert attachment to item only.
+                    attachment = .item(item.copy(libraryId: libraryId, collectionKeys: collectionKeys, tags: newTags))
+                }
 
             case .file: break
             }
