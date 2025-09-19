@@ -10,10 +10,10 @@ import UIKit
 
 final class AccessibilityReaderOverlayView<Delegate: SpeechmanagerDelegate>: UIView {
     enum Kind {
-        case overlay, toolbar
+        case overlay, toolbar, navbar
     }
 
-    private var type: Kind
+    private(set) var type: Kind
     private weak var controls: UIView!
     private var width: NSLayoutConstraint!
     private var top: NSLayoutConstraint!
@@ -48,6 +48,12 @@ final class AccessibilityReaderOverlayView<Delegate: SpeechmanagerDelegate>: UIV
         case .overlay:
             toActivate.append(width)
             toActivate.append(bottom)
+            width.constant = 290
+            
+        case .navbar:
+            toActivate.append(width)
+            toActivate.append(bottom)
+            width.constant = 150
 
         case .toolbar:
             break
@@ -74,6 +80,15 @@ final class AccessibilityReaderOverlayView<Delegate: SpeechmanagerDelegate>: UIV
             bottom.isActive = true
             safeBottom?.isActive = false
             safeBottom = nil
+            width.constant = 290
+            setupRoundedCorners()
+            
+        case .navbar:
+            width.isActive = true
+            bottom.isActive = true
+            safeBottom?.isActive = false
+            safeBottom = nil
+            width.constant = 150
             setupRoundedCorners()
 
         case .toolbar:

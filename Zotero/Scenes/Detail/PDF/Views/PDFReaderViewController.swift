@@ -737,6 +737,7 @@ extension PDFReaderViewController: AnnotationToolbarHandlerDelegate {
 
     func setNavigationBar(hidden: Bool, animated: Bool) {
         navigationController?.setNavigationBarHidden(hidden, animated: animated)
+        accessibilityHandler.overlayTypeDidChange()
     }
 
     func setNavigationBar(alpha: CGFloat) {
@@ -899,6 +900,7 @@ extension PDFReaderViewController: PDFDocumentDelegate {
         statusBarVisible = !isHidden
         intraDocumentNavigationHandler?.interfaceIsVisible = !isHidden
         annotationToolbarHandler?.interfaceVisibilityDidChange()
+        accessibilityHandler.overlayTypeDidChange()
 
         UIView.animate(withDuration: 0.15, animations: { [weak self] in
             guard let self else { return }
@@ -909,6 +911,7 @@ extension PDFReaderViewController: PDFDocumentDelegate {
                 navigationController?.setNavigationBarHidden(isHidden, animated: false)
             }
             annotationToolbarHandler?.interfaceVisibilityDidChange()
+            accessibilityHandler.overlayTypeDidChange()
         })
 
         if isHidden && isSidebarVisible {
@@ -1050,11 +1053,13 @@ extension PDFReaderViewController: SpeechmanagerDelegate {
 }
 
 extension PDFReaderViewController: AccessibilityViewDelegate {
-    func accessibilityOverlayChanged(overlayHeight: CGFloat, isOverlay: Bool) {
-        if isOverlay {
+    func accessibilityOverlayChanged(overlayHeight: CGFloat, isToolbar: Bool) {
+        if !isToolbar {
+            documentControllerBottom?.constant = 0
             sidebarController?.setAccessibilityOverlay(height: overlayHeight, animated: isSidebarVisible)
         } else {
             documentControllerBottom?.constant = overlayHeight
+            sidebarController?.setAccessibilityOverlay(height: 0, animated: isSidebarVisible)
         }
     }
     
