@@ -76,8 +76,9 @@ final class MainViewController: UISplitViewController {
 
         delegate = self
         preferredPrimaryColumnWidthFraction = 1 / 3
-        maximumPrimaryColumnWidth = .infinity
+        maximumPrimaryColumnWidth = max(320, UIScreen.main.bounds.width / 3)
         minimumPrimaryColumnWidth = 320
+        presentsWithGesture = false
 
         DDLogInfo("MainViewController: viewDidLoad")
     }
