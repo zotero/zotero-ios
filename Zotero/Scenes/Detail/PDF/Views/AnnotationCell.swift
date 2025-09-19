@@ -40,6 +40,10 @@ final class AnnotationCell: UITableViewCell {
         disposeBag?.dispose()
     }
 
+    deinit {
+        disposeBag?.dispose()
+    }
+
     // MARK: - Actions
 
     func updatePreview(image: UIImage?) {

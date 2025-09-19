@@ -17,7 +17,7 @@ typealias AnnotationsViewControllerAction = (AnnotationView.Action, Annotation, 
 
 final class PDFAnnotationsViewController: UIViewController {
     private static let cellId = "AnnotationCell"
-    private unowned let viewModel: ViewModel<PDFReaderActionHandler>
+    private let viewModel: ViewModel<PDFReaderActionHandler>
     private let updateQueue: DispatchQueue
     private let disposeBag: DisposeBag
 

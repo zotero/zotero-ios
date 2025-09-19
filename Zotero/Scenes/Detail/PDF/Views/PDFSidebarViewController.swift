@@ -40,7 +40,7 @@ class PDFSidebarViewController: UIViewController {
         }
     }
 
-    private unowned let viewModel: ViewModel<PDFReaderActionHandler>
+    private let viewModel: ViewModel<PDFReaderActionHandler>
     private let disposeBag: DisposeBag
 
     private weak var picker: UISegmentedControl!
