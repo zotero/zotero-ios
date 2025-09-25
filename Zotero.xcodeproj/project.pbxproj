@@ -800,7 +800,7 @@
 		B372CEE92486748500B423AE /* MarkGroupForResyncSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B372CEE82486748500B423AE /* MarkGroupForResyncSyncAction.swift */; };
 		B372CEEA248675A200B423AE /* MarkGroupForResyncSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B372CEE82486748500B423AE /* MarkGroupForResyncSyncAction.swift */; };
 		B37352AF2E140DF10078BB00 /* AccessibilityViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37352AE2E140DE70078BB00 /* AccessibilityViewHandler.swift */; };
-		B37352B12E141F9F0078BB00 /* AccessibilityReaderOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37352B02E141F990078BB00 /* AccessibilityReaderOverlayView.swift */; };
+		B37352B12E141F9F0078BB00 /* AccessibilitySpeechControlsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37352B02E141F990078BB00 /* AccessibilitySpeechControlsView.swift */; };
 		B373877328FEA0C7004E5031 /* PDFSidebarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B373877228FEA0C7004E5031 /* PDFSidebarViewController.swift */; };
 		B373B1B82BBD74F400DCF893 /* DeleteFailedItemsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B373B1B62BBD748600DCF893 /* DeleteFailedItemsDbRequest.swift */; };
 		B373C98F2B1F5431007FD56C /* PDFThumbnailsLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = B373C98E2B1F5431007FD56C /* PDFThumbnailsLayout.swift */; };
@@ -860,7 +860,7 @@
 		B3830CEA255451DC00910FE0 /* TagPickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CE8255451DC00910FE0 /* TagPickerViewController.swift */; };
 		B3830CF625545EE400910FE0 /* TagPickerCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CF425545EE400910FE0 /* TagPickerCell.swift */; };
 		B3830CF725545EE400910FE0 /* TagPickerCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3830CF525545EE400910FE0 /* TagPickerCell.xib */; };
-		B384B5C22E1539D000D023C6 /* AccessibilitySpeechControlsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B384B5C12E1539C900D023C6 /* AccessibilitySpeechControlsView.swift */; };
+		B384B5C22E1539D000D023C6 /* AccessibilitySpeechControlsStackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B384B5C12E1539C900D023C6 /* AccessibilitySpeechControlsStackView.swift */; };
 		B385B70E25C03E7E0073CA6F /* PDFExportState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385B70D25C03E7E0073CA6F /* PDFExportState.swift */; };
 		B386328626C5499900183062 /* TranslatorsAndStylesController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36A988C2428E059005D5790 /* TranslatorsAndStylesController.swift */; };
 		B3863FC82AD819AB005082F0 /* EndItemCreationDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3863FC72AD819AB005082F0 /* EndItemCreationDbRequest.swift */; };
@@ -1887,7 +1887,7 @@
 		B372CEE4248670AF00B423AE /* FetchAndStoreGroupSyncAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FetchAndStoreGroupSyncAction.swift; sourceTree = "<group>"; };
 		B372CEE82486748500B423AE /* MarkGroupForResyncSyncAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkGroupForResyncSyncAction.swift; sourceTree = "<group>"; };
 		B37352AE2E140DE70078BB00 /* AccessibilityViewHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityViewHandler.swift; sourceTree = "<group>"; };
-		B37352B02E141F990078BB00 /* AccessibilityReaderOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityReaderOverlayView.swift; sourceTree = "<group>"; };
+		B37352B02E141F990078BB00 /* AccessibilitySpeechControlsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilitySpeechControlsView.swift; sourceTree = "<group>"; };
 		B373877228FEA0C7004E5031 /* PDFSidebarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFSidebarViewController.swift; sourceTree = "<group>"; };
 		B373B1B62BBD748600DCF893 /* DeleteFailedItemsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteFailedItemsDbRequest.swift; sourceTree = "<group>"; };
 		B373C98E2B1F5431007FD56C /* PDFThumbnailsLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFThumbnailsLayout.swift; sourceTree = "<group>"; };
@@ -1937,7 +1937,7 @@
 		B3830CE8255451DC00910FE0 /* TagPickerViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TagPickerViewController.swift; sourceTree = "<group>"; };
 		B3830CF425545EE400910FE0 /* TagPickerCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagPickerCell.swift; sourceTree = "<group>"; };
 		B3830CF525545EE400910FE0 /* TagPickerCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = TagPickerCell.xib; sourceTree = "<group>"; };
-		B384B5C12E1539C900D023C6 /* AccessibilitySpeechControlsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilitySpeechControlsView.swift; sourceTree = "<group>"; };
+		B384B5C12E1539C900D023C6 /* AccessibilitySpeechControlsStackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilitySpeechControlsStackView.swift; sourceTree = "<group>"; };
 		B385B70D25C03E7E0073CA6F /* PDFExportState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFExportState.swift; sourceTree = "<group>"; };
 		B3863FC72AD819AB005082F0 /* EndItemCreationDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EndItemCreationDbRequest.swift; sourceTree = "<group>"; };
 		B3863FC92AD830DE005082F0 /* DeleteCreatorItemDetailDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteCreatorItemDetailDbRequest.swift; sourceTree = "<group>"; };
@@ -4002,8 +4002,8 @@
 			isa = PBXGroup;
 			children = (
 				B3969A3F2DE9AAEF00425FF3 /* AccessibilityPopupViewController.swift */,
-				B37352B02E141F990078BB00 /* AccessibilityReaderOverlayView.swift */,
-				B384B5C12E1539C900D023C6 /* AccessibilitySpeechControlsView.swift */,
+				B384B5C12E1539C900D023C6 /* AccessibilitySpeechControlsStackView.swift */,
+				B37352B02E141F990078BB00 /* AccessibilitySpeechControlsView.swift */,
 				B37352AE2E140DE70078BB00 /* AccessibilityViewHandler.swift */,
 				B3DCDF03240912060039ED0D /* ActivityIndicatorView.swift */,
 				B347F2B924DC4D5D000D5FF6 /* CapHeightLabel.swift */,
@@ -5063,7 +5063,7 @@
 				B305661023FC051E003304F2 /* SchemaRequest.swift in Sources */,
 				B305660223FC051E003304F2 /* ApiClient.swift in Sources */,
 				B312BB4125519DD30023300A /* ItemDetailLayout.swift in Sources */,
-				B37352B12E141F9F0078BB00 /* AccessibilityReaderOverlayView.swift in Sources */,
+				B37352B12E141F9F0078BB00 /* AccessibilitySpeechControlsView.swift in Sources */,
 				B331F9B5265400D70099F6A6 /* ReadStylesDbRequest.swift in Sources */,
 				B39D33712400150B00EF2ACB /* CreateAttachmentsDbRequest.swift in Sources */,
 				B3A081E125D2D8050088EC24 /* CollectionEditHostingViewController.swift in Sources */,
@@ -5147,7 +5147,7 @@
 				61EB05B42C9D8EA200152482 /* CreateReaderAnnotationsDbRequest.swift in Sources */,
 				B3229FD128C0A07500DAF3B7 /* EditAnnotationRectsDbRequest.swift in Sources */,
 				B3DF9AD22747AAD2007933CB /* ApiRequest.swift in Sources */,
-				B384B5C22E1539D000D023C6 /* AccessibilitySpeechControlsView.swift in Sources */,
+				B384B5C22E1539D000D023C6 /* AccessibilitySpeechControlsStackView.swift in Sources */,
 				615FD8772C8B475A00808C1D /* ReaderCoordinator.swift in Sources */,
 				B3DCDF0E240912500039ED0D /* SinglePickerActionHandler.swift in Sources */,
 				B3593F162668E29C00FA4BB2 /* Style.swift in Sources */,

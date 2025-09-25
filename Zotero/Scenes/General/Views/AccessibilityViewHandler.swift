@@ -19,7 +19,9 @@ protocol AccessibilityViewDelegate: AnyObject {
         dismissAction: @escaping () -> Void,
         voiceChangeAction: @escaping (AVSpeechSynthesisVoice) -> Void
     )
-    func accessibilityOverlayChanged(overlayHeight: CGFloat, isToolbar: Bool)
+    func accessibilityToolbarChanged(height: CGFloat)
+    func addAccessibilityControlsViewToAnnotationToolbar(view: AnnotationToolbarLeadingView)
+    func removeAccessibilityControlsViewFromAnnotationToolbar()
 }
 
 final class AccessibilityViewHandler<Delegate: SpeechmanagerDelegate> {
@@ -31,9 +33,8 @@ final class AccessibilityViewHandler<Delegate: SpeechmanagerDelegate> {
     private let key: String
     private let libraryId: LibraryIdentifier
 
-    private weak var activeOverlay: AccessibilityReaderOverlayView<Delegate>?
+    private weak var activeOverlay: AccessibilitySpeechControlsView<Delegate>?
     weak var delegate: AccessibilityViewDelegate?
-    private var isBeingDismissed: Bool
     var isFormSheet: Bool {
         // Detecting horizontalSizeClass == .compact is not reliable, as the controller can still be shown as formSheet even when horizontalSizeClass is .regular. Therefore the safest way to check
         // whether the controller is shown as form sheet or popover is to check view size. However the controller doesn't have to be visible all the time, so when the controller is not visible,
@@ -54,7 +55,6 @@ final class AccessibilityViewHandler<Delegate: SpeechmanagerDelegate> {
         self.viewController = viewController
         self.documentContainer = documentContainer
         self.dbStorage = dbStorage
-        isBeingDismissed = false
         let language = try? dbStorage.perform(request: ReadSpeechLanguageDbRequest(key: key, libraryId: libraryId), on: .main)
         speechManager = SpeechManager(delegate: delegate, speechRateModifier: Defaults.shared.speechRateModifier, voiceLanguage: language)
     }
@@ -86,7 +86,7 @@ final class AccessibilityViewHandler<Delegate: SpeechmanagerDelegate> {
 
     func showSpeech(sender: UIBarButtonItem? = nil, isCompact: Bool = false, animated: Bool = true) {
         guard let sender = sender ?? viewController.navigationItem.leftBarButtonItems?.first(where: { $0.tag == navbarButtonTag }) else { return }
-        hideOverlay(animated: activeOverlay?.type == .navbar ? false : true)
+        hideOverlay()
         reloadSpeechButton(isSelected: true)
         delegate?.showAccessibilityPopup(
             speechManager: speechManager,
@@ -94,7 +94,7 @@ final class AccessibilityViewHandler<Delegate: SpeechmanagerDelegate> {
             animated: animated,
             isFormSheet: { [weak self] in self?.isFormSheet ?? false },
             dismissAction: { [weak self] in
-                self?.showOverlayIfNeeded(animated: true)
+                self?.showOverlayIfNeeded()
                 self?.reloadSpeechButton(isSelected: false)
             },
             voiceChangeAction: { [weak self] voice in
@@ -114,14 +114,15 @@ final class AccessibilityViewHandler<Delegate: SpeechmanagerDelegate> {
     }
 
     func overlayTypeDidChange() {
-        guard activeOverlay != nil && !isBeingDismissed else { return }
-        showOverlayIfNeeded(animated: false)
+        guard activeOverlay != nil else { return }
+        // TODO: - call in more appropriate time
+        showOverlayIfNeeded()
     }
 
-    private func showOverlayIfNeeded(animated: Bool) {
+    private func showOverlayIfNeeded() {
         guard speechManager.state.value != .stopped else { return }
 
-        let type: AccessibilityReaderOverlayView<Delegate>.Kind
+        let type: AccessibilitySpeechControlsView<Delegate>.Kind
         if isFormSheet {
             type = .toolbar
         } else if !(delegate?.isNavigationBarHidden ?? true) {
@@ -133,107 +134,60 @@ final class AccessibilityViewHandler<Delegate: SpeechmanagerDelegate> {
         guard activeOverlay?.type != type else { return }
         
         if let activeOverlay {
-            activeOverlay.removeFromSuperview()
-            viewController.navigationItem.titleView = nil
+            remove(activeControls: activeOverlay)
         }
 
-        let overlay = AccessibilityReaderOverlayView(type: type, speechManager: speechManager)
-        overlay.alpha = 0
+        let overlay = AccessibilitySpeechControlsView(type: type, speechManager: speechManager)
         activeOverlay = overlay
 
         switch type {
         case .toolbar:
-            viewController.view.addSubview(overlay)
             showAsToolbar()
 
         case .overlay:
-            viewController.view.addSubview(overlay)
-            showAsOverlay()
+            delegate?.addAccessibilityControlsViewToAnnotationToolbar(view: overlay)
 
         case .navbar:
             showInNavigationBar()
         }
 
-        func showAsOverlay() {
-            NSLayoutConstraint.activate([
-                overlay.topAnchor.constraint(equalTo: viewController.view.safeAreaLayoutGuide.topAnchor, constant: 16),
-                overlay.leadingAnchor.constraint(equalTo: viewController.view.leadingAnchor, constant: 16)
-            ])
-
-            viewController.view.layoutIfNeeded()
-            delegate?.accessibilityOverlayChanged(overlayHeight: 76, isToolbar: false)
-
-            if !animated {
-                overlay.alpha = 1
-                return
-            }
-
-            UIView.animate(
-                withDuration: 0.2,
-                animations: {
-                    overlay.alpha = 1
-                }
-            )
-        }
-
         func showAsToolbar() {
+            viewController.view.addSubview(overlay)
+            
             NSLayoutConstraint.activate([
                 overlay.bottomAnchor.constraint(equalTo: viewController.view.bottomAnchor),
                 overlay.leadingAnchor.constraint(equalTo: documentContainer.leadingAnchor),
-                overlay.trailingAnchor.constraint(equalTo: documentContainer.trailingAnchor)
+                overlay.trailingAnchor.constraint(equalTo: documentContainer.trailingAnchor),
+                overlay.controlsView.bottomAnchor.constraint(equalTo: viewController.view.safeAreaLayoutGuide.bottomAnchor)
             ])
-            overlay.connectControlsToSafeBottom(anchor: viewController.view.safeAreaLayoutGuide.bottomAnchor)
 
+            delegate?.accessibilityToolbarChanged(height: overlay.frame.height)
             viewController.view.layoutIfNeeded()
-            delegate?.accessibilityOverlayChanged(overlayHeight: 76, isToolbar: true)
-
-            if !animated {
-                overlay.alpha = 1
-                return
-            }
-
-            UIView.animate(
-                withDuration: 0.2,
-                animations: {
-                    self.viewController.view.layoutIfNeeded()
-                    overlay.alpha = 1
-                }
-            )
         }
 
         func showInNavigationBar() {
-            overlay.alpha = 1
             viewController.navigationItem.titleView = overlay
-            delegate?.accessibilityOverlayChanged(overlayHeight: 0, isToolbar: false)
         }
     }
 
-    private func hideOverlay(animated: Bool = true) {
-        delegate?.accessibilityOverlayChanged(overlayHeight: 0, isToolbar: false)
-
-        if !animated {
+    private func hideOverlay() {
+        guard let activeOverlay else { return }
+        remove(activeControls: activeOverlay)
+        self.activeOverlay = nil
+        viewController.view.layoutIfNeeded()
+    }
+    
+    private func remove(activeControls: AccessibilitySpeechControlsView<Delegate>) {
+        switch activeControls.type {
+        case .navbar:
             viewController.navigationItem.titleView = nil
-            activeOverlay?.removeFromSuperview()
-            activeOverlay = nil
-            viewController.view.layoutIfNeeded()
-            return
+            
+        case .toolbar:
+            delegate?.accessibilityToolbarChanged(height: 0)
+            activeControls.removeFromSuperview()
+            
+        case .overlay:
+            delegate?.removeAccessibilityControlsViewFromAnnotationToolbar()
         }
-
-        isBeingDismissed = true
-
-        UIView.animate(
-            withDuration: 0.2,
-            animations: {
-                self.viewController.view.layoutIfNeeded()
-                self.activeOverlay?.alpha = 0
-            },
-            completion: { success in
-                guard success else { return }
-                self.viewController.navigationItem.titleView = nil
-                self.activeOverlay?.removeFromSuperview()
-                self.activeOverlay = nil
-                self.isBeingDismissed = false
-            }
-        )
     }
 }

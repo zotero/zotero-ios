@@ -32,7 +32,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
     private weak var speechContainer: UIView!
     private weak var voiceButton: UIButton!
     private weak var speedButton: UIButton!
-    private weak var controlsView: AccessibilitySpeechControlsView<Delegate>!
+    private weak var controlsView: AccessibilitySpeechControlsStackView<Delegate>!
     private var speechButtonBottom: NSLayoutConstraint!
     private var speechContainerBottom: NSLayoutConstraint!
     private var currentHeight: CGFloat {
@@ -110,7 +110,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
             titleStackView.translatesAutoresizingMaskIntoConstraints = false
             speechContainer.addSubview(titleStackView)
 
-            let controlsView = AccessibilitySpeechControlsView(speechManager: speechManager)
+            let controlsView = AccessibilitySpeechControlsStackView(speechManager: speechManager)
             controlsView.setContentHuggingPriority(.defaultLow, for: .vertical)
             speechContainer.addSubview(controlsView)
 
