@@ -1053,14 +1053,8 @@ extension PDFReaderViewController: SpeechmanagerDelegate {
 }
 
 extension PDFReaderViewController: AccessibilityViewDelegate {
-    func accessibilityOverlayChanged(overlayHeight: CGFloat, isToolbar: Bool) {
-        if !isToolbar {
-            documentControllerBottom?.constant = 0
-            sidebarController?.setAccessibilityOverlay(height: overlayHeight, animated: isSidebarVisible)
-        } else {
-            documentControllerBottom?.constant = overlayHeight
-            sidebarController?.setAccessibilityOverlay(height: 0, animated: isSidebarVisible)
-        }
+    func accessibilityToolbarChanged(height: CGFloat) {
+        documentControllerBottom?.constant = height
     }
     
     func showAccessibilityPopup<Delegate: SpeechmanagerDelegate>(
@@ -1081,5 +1075,13 @@ extension PDFReaderViewController: AccessibilityViewDelegate {
             dismissAction: dismissAction,
             voiceChangeAction: voiceChangeAction
         )
+    }
+    
+    func addAccessibilityControlsViewToAnnotationToolbar(view: AnnotationToolbarLeadingView) {
+        annotationToolbarHandler?.setLeadingView(view: view)
+    }
+    
+    func removeAccessibilityControlsViewFromAnnotationToolbar() {
+        annotationToolbarHandler?.setLeadingView(view: nil)
     }
 }

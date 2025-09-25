@@ -258,6 +258,10 @@ final class AnnotationToolbarHandler: NSObject {
 
     // MARK: - Actions
 
+    func setLeadingView(view: AnnotationToolbarLeadingView?) {
+        controller.setLeadingView(view: view)
+    }
+
     func set(hidden: Bool, animated: Bool) {
         delegate.toolbarState = State(position: delegate.toolbarState.position, visible: !hidden)
 
