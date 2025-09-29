@@ -94,13 +94,24 @@ final class AccessibilityViewHandler<Delegate: SpeechmanagerDelegate> {
             animated: animated,
             isFormSheet: { [weak self] in self?.isFormSheet ?? false },
             dismissAction: { [weak self] in
-                self?.showOverlayIfNeeded()
-                self?.reloadSpeechButton(isSelected: false)
+                guard let self else { return }
+                showOverlayIfNeeded(forType: currentOverlayType(controller: self))
+                reloadSpeechButton(isSelected: false)
             },
             voiceChangeAction: { [weak self] voice in
                 self?.processVoiceChange(toVoice: voice)
             }
         )
+        
+        func currentOverlayType(controller: AccessibilityViewHandler<Delegate>) -> AccessibilitySpeechControlsView<Delegate>.Kind {
+            if controller.isFormSheet {
+                return .bottomToolbar
+            } else if !(controller.delegate?.isNavigationBarHidden ?? true) {
+                return .navbar
+            } else {
+                return .annotationToolbar
+            }
+        }
     }
 
     private func processVoiceChange(toVoice voice: AVSpeechSynthesisVoice) {
@@ -113,25 +124,21 @@ final class AccessibilityViewHandler<Delegate: SpeechmanagerDelegate> {
         (viewController.navigationItem.leftBarButtonItems?[index].customView as? CheckboxButton)?.isSelected = isSelected
     }
 
-    func overlayTypeDidChange() {
+    func accessibilityControlsShouldChange(isNavbarHidden: Bool) {
         guard activeOverlay != nil else { return }
-        // TODO: - call in more appropriate time
-        showOverlayIfNeeded()
-    }
-
-    private func showOverlayIfNeeded() {
-        guard speechManager.state.value != .stopped else { return }
-
         let type: AccessibilitySpeechControlsView<Delegate>.Kind
         if isFormSheet {
-            type = .toolbar
-        } else if !(delegate?.isNavigationBarHidden ?? true) {
+            type = .bottomToolbar
+        } else if !isNavbarHidden {
             type = .navbar
         } else {
-            type = .overlay
+            type = .annotationToolbar
         }
-        
-        guard activeOverlay?.type != type else { return }
+        showOverlayIfNeeded(forType: type)
+    }
+
+    private func showOverlayIfNeeded(forType type: AccessibilitySpeechControlsView<Delegate>.Kind) {
+        guard speechManager.state.value != .stopped, activeOverlay?.type != type else { return }
         
         if let activeOverlay {
             remove(activeControls: activeOverlay)
@@ -141,17 +148,17 @@ final class AccessibilityViewHandler<Delegate: SpeechmanagerDelegate> {
         activeOverlay = overlay
 
         switch type {
-        case .toolbar:
-            showAsToolbar()
+        case .bottomToolbar:
+            showAsBottomToolbar()
 
-        case .overlay:
+        case .annotationToolbar:
             delegate?.addAccessibilityControlsViewToAnnotationToolbar(view: overlay)
 
         case .navbar:
             showInNavigationBar()
         }
 
-        func showAsToolbar() {
+        func showAsBottomToolbar() {
             viewController.view.addSubview(overlay)
             
             NSLayoutConstraint.activate([
@@ -182,11 +189,11 @@ final class AccessibilityViewHandler<Delegate: SpeechmanagerDelegate> {
         case .navbar:
             viewController.navigationItem.titleView = nil
             
-        case .toolbar:
+        case .bottomToolbar:
             delegate?.accessibilityToolbarChanged(height: 0)
             activeControls.removeFromSuperview()
             
-        case .overlay:
+        case .annotationToolbar:
             delegate?.removeAccessibilityControlsViewFromAnnotationToolbar()
         }
     }
