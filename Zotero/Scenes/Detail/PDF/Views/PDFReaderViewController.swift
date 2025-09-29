@@ -400,7 +400,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
         updateUserInterfaceStyleIfNeeded(previousTraitCollection: previousTraitCollection)
-        accessibilityHandler.overlayTypeDidChange()
+        accessibilityHandler.accessibilityControlsShouldChange(isNavbarHidden: isNavigationBarHidden)
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
@@ -737,11 +737,18 @@ extension PDFReaderViewController: AnnotationToolbarHandlerDelegate {
 
     func setNavigationBar(hidden: Bool, animated: Bool) {
         navigationController?.setNavigationBarHidden(hidden, animated: animated)
-        accessibilityHandler.overlayTypeDidChange()
     }
 
     func setNavigationBar(alpha: CGFloat) {
         navigationController?.navigationBar.alpha = alpha
+    }
+    
+    func annotationToolbarWillChange(state: AnnotationToolbarHandler.State, statusBarVisible: Bool) {
+        if state.visible && state.position == .pinned {
+            accessibilityHandler.accessibilityControlsShouldChange(isNavbarHidden: true)
+        } else {
+            accessibilityHandler.accessibilityControlsShouldChange(isNavbarHidden: !statusBarVisible)
+        }
     }
 
     func topDidChange(forToolbarState state: AnnotationToolbarHandler.State) {
@@ -900,7 +907,9 @@ extension PDFReaderViewController: PDFDocumentDelegate {
         statusBarVisible = !isHidden
         intraDocumentNavigationHandler?.interfaceIsVisible = !isHidden
         annotationToolbarHandler?.interfaceVisibilityDidChange()
-        accessibilityHandler.overlayTypeDidChange()
+        if shouldChangeNavigationBarVisibility {
+            accessibilityHandler.accessibilityControlsShouldChange(isNavbarHidden: isHidden)
+        }
 
         UIView.animate(withDuration: 0.15, animations: { [weak self] in
             guard let self else { return }
@@ -911,7 +920,6 @@ extension PDFReaderViewController: PDFDocumentDelegate {
                 navigationController?.setNavigationBarHidden(isHidden, animated: false)
             }
             annotationToolbarHandler?.interfaceVisibilityDidChange()
-            accessibilityHandler.overlayTypeDidChange()
         })
 
         if isHidden && isSidebarVisible {
