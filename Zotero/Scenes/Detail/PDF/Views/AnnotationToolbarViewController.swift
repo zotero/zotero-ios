@@ -76,7 +76,6 @@ class AnnotationToolbarViewController: UIViewController {
     private var containerTrailing: NSLayoutConstraint!
     private var containerToPickerVertical: NSLayoutConstraint!
     private var containerToPickerHorizontal: NSLayoutConstraint!
-    private var containerCenteredVertical: NSLayoutConstraint!
     private var containerCenteredHorizontal: NSLayoutConstraint!
     private weak var trailingContainer: UIStackView!
     private var trailingContainerTop: NSLayoutConstraint!
@@ -225,7 +224,6 @@ class AnnotationToolbarViewController: UIViewController {
             horizontalHeight.priority = .required
             containerBottom = view.bottomAnchor.constraint(equalTo: stackView.bottomAnchor, constant: 8)
             containerTrailing = view.trailingAnchor.constraint(equalTo: stackView.trailingAnchor, constant: 8)
-            containerCenteredVertical = view.centerYAnchor.constraint(equalTo: stackView.centerYAnchor)
             containerCenteredHorizontal = view.centerXAnchor.constraint(equalTo: stackView.centerXAnchor)
             trailingContainerTop = additionalStackView.topAnchor.constraint(equalTo: view.topAnchor, constant: 8)
             trailingContainerLeading = additionalStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 8)
@@ -469,15 +467,13 @@ class AnnotationToolbarViewController: UIViewController {
                 leadingView.update(toRotation: .vertical)
                 
                 NSLayoutConstraint.activate([
-                    containerCenteredVertical,
                     leadingView.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor),
                     view.trailingAnchor.constraint(greaterThanOrEqualTo: leadingView.trailingAnchor),
                     leadingView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
                     leadingView.topAnchor.constraint(equalTo: view.topAnchor, constant: 15),
-                    toolContainer.topAnchor.constraint(greaterThanOrEqualTo: leadingView.bottomAnchor, constant: 8)
+                    toolContainer.topAnchor.constraint(greaterThanOrEqualTo: leadingView.bottomAnchor, constant: 20)
                 ])
             } else {
-                containerCenteredVertical.isActive = false
                 containerCenteredHorizontal.isActive = false
                 containerTop.isActive = true
             }
@@ -526,7 +522,6 @@ class AnnotationToolbarViewController: UIViewController {
                     leadingView.centerYAnchor.constraint(equalTo: view.centerYAnchor)
                 ])
             } else {
-                containerCenteredVertical.isActive = false
                 containerCenteredHorizontal.isActive = false
                 containerLeading.isActive = true
             }
@@ -589,12 +584,10 @@ class AnnotationToolbarViewController: UIViewController {
             self.view.addSubview(view)
             self.leadingView = view
             set(rotation: rotation, isCompactSize: isCompact)
-            self.view.layoutIfNeeded()
         } else if let leadingView {
             leadingView.removeFromSuperview()
             self.leadingView = nil
             set(rotation: rotation, isCompactSize: isCompact)
-            self.view.layoutIfNeeded()
         }
     }
 

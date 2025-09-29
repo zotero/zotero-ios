@@ -10,11 +10,14 @@ import UIKit
 
 final class AccessibilitySpeechControlsView<Delegate: SpeechmanagerDelegate>: UIView, AnnotationToolbarLeadingView {
     enum Kind {
-        case overlay, toolbar, navbar
+        case annotationToolbar, bottomToolbar, navbar
     }
 
     let type: Kind
-    unowned let controlsView: UIView
+    unowned let controlsView: AccessibilitySpeechControlsStackView<Delegate>
+    
+    private weak var widthConstraint: NSLayoutConstraint?
+    private weak var heightConstraint: NSLayoutConstraint?
 
     init(type: Kind, speechManager: SpeechManager<Delegate>) {
         let controls = AccessibilitySpeechControlsStackView(speechManager: speechManager)
@@ -26,32 +29,40 @@ final class AccessibilitySpeechControlsView<Delegate: SpeechmanagerDelegate>: UI
         layer.masksToBounds = false
         
         addSubview(controls)
+        
+        let height = controls.heightAnchor.constraint(equalToConstant: 44)
 
         NSLayoutConstraint.activate([
-            controls.heightAnchor.constraint(equalToConstant: 44),
+            height,
             controls.topAnchor.constraint(equalTo: topAnchor),
             controls.leadingAnchor.constraint(equalTo: leadingAnchor),
             trailingAnchor.constraint(equalTo: controls.trailingAnchor)
         ])
+        
+        heightConstraint = height
 
         switch type {
-        case .overlay:
+        case .annotationToolbar:
+            let width = widthAnchor.constraint(equalToConstant: 150)
             backgroundColor = .systemGray6
             NSLayoutConstraint.activate([
-                widthAnchor.constraint(equalToConstant: 150),
+                width,
                 bottomAnchor.constraint(equalTo: controls.bottomAnchor)
             ])
             layer.cornerRadius = 22
+            widthConstraint = width
             
         case .navbar:
+            let width = widthAnchor.constraint(equalToConstant: 150)
             backgroundColor = .systemGray6
             NSLayoutConstraint.activate([
-                widthAnchor.constraint(equalToConstant: 150),
+                width,
                 bottomAnchor.constraint(equalTo: controls.bottomAnchor)
             ])
             layer.cornerRadius = 22
+            widthConstraint = width
 
-        case .toolbar:
+        case .bottomToolbar:
             backgroundColor = Asset.Colors.navbarBackground.color
             layer.cornerRadius = 0
         }
@@ -62,6 +73,16 @@ final class AccessibilitySpeechControlsView<Delegate: SpeechmanagerDelegate>: UI
     }
 
     func update(toRotation rotation: AnnotationToolbarViewController.Rotation) {
-        // Doesn't need anything, it appears only in .pinned position.
+        switch rotation {
+        case .horizontal:
+            widthConstraint?.constant = 150
+            heightConstraint?.constant = 44
+            controlsView.axis = .horizontal
+            
+        case .vertical:
+            widthConstraint?.constant = 44
+            heightConstraint?.constant = 150
+            controlsView.axis = .vertical
+        }
     }
 }
