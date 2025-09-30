@@ -60,13 +60,14 @@ struct AnnotationConverter {
         library: Library,
         username: String,
         displayName: String,
+        defaultPageLabel: PDFReaderState.DefaultAnnotationPageLabel?,
         boundingBoxConverter: AnnotationBoundingBoxConverter?
     ) -> PDFDocumentAnnotation? {
         guard let document = annotation.document, AnnotationsConfig.supported.contains(annotation.type) else { return nil }
 
         let key = annotation.key ?? annotation.uuid
         let page = Int(annotation.pageIndex)
-        let pageLabel = document.pageLabelForPage(at: annotation.pageIndex, substituteWithPlainLabel: false) ?? "\(annotation.pageIndex + 1)"
+        let pageLabel = defaultPageLabel?.label(for: Int(annotation.pageIndex)) ?? document.pageLabelForPage(at: annotation.pageIndex, substituteWithPlainLabel: false) ?? "\(annotation.pageIndex + 1)"
         let isAuthor = annotation.user == displayName || annotation.user == username
         let comment = annotation.contents.flatMap({ $0.trimmingCharacters(in: .whitespacesAndNewlines) }) ?? ""
         let sortIndex = self.sortIndex(from: annotation, boundingBoxConverter: boundingBoxConverter)
