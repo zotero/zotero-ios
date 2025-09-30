@@ -73,7 +73,7 @@ struct ApiLogger {
         if error.response.isEmpty || error.response == "No Response" {
             DDLogError("\(error.error)")
         } else {
-            DDLogError(DDLogMessageFormat(stringLiteral: error.response))
+            DDLogError("\(error.response) - \(error.error)")
         }
     }
 
