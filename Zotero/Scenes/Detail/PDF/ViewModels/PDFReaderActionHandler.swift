@@ -2130,6 +2130,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         var annotations: [String: PDFDocumentAnnotation] = [:]
         for pdfAnnotation in documentAnnotations {
+            if pdfAnnotation is LinkAnnotation {
+                // Ignored Link Annotation, as they are not editable, and if numerous they can create a noticeable hang the first time the document lazily evaluates dirty annotations.
+                continue
+            }
             pdfAnnotation.flags.update(with: .locked)
 
             // Unsupported annotations aren't visible in sidebar

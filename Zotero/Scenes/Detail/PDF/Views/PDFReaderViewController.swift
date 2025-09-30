@@ -41,7 +41,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
     weak var annotationToolbarController: AnnotationToolbarViewController?
     private var documentTop: NSLayoutConstraint!
     var annotationToolbarHandler: AnnotationToolbarHandler?
-    private var intraDocumentNavigationHandler: IntraDocumentNavigationButtonsHandler!
+    private var intraDocumentNavigationHandler: IntraDocumentNavigationButtonsHandler?
     private var selectedText: String?
     private(set) var isCompactWidth: Bool
     @CodableUserDefault(key: "PDFReaderToolbarState", defaultValue: AnnotationToolbarHandler.State(position: .leading, visible: true), encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
@@ -890,7 +890,7 @@ extension PDFReaderViewController: PDFDocumentDelegate {
         }
 
         statusBarVisible = !isHidden
-        intraDocumentNavigationHandler.interfaceIsVisible = !isHidden
+        intraDocumentNavigationHandler?.interfaceIsVisible = !isHidden
         annotationToolbarHandler?.interfaceVisibilityDidChange()
 
         UIView.animate(withDuration: 0.15, animations: { [weak self] in
