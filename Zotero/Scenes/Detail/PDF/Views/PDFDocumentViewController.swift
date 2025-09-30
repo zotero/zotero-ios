@@ -634,6 +634,7 @@ final class PDFDocumentViewController: UIViewController {
                 builder.overrideClass(PSPDFKit.AnnotationManager.self, with: AnnotationManager.self)
                 builder.overrideClass(PSPDFKitUI.FreeTextAnnotationView.self, with: FreeTextAnnotationView.self)
                 builder.propertiesForAnnotations = [.freeText: []]
+                builder.editableAnnotationTypes = AnnotationsConfig.editableAnnotationTypes
             }
 
             let controller = PDFViewController(document: document, configuration: pdfConfiguration)
