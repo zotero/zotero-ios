@@ -875,7 +875,11 @@ final class ExtensionViewModel {
 
             case .failure(let error):
                 switch error {
-                case .timeout:
+                case .timeout(let url):
+                    if url?.host()?.lowercased() == "challenges.cloudflare.com" {
+                        webView?.isHidden = false
+                        return
+                    }
                     // Check if there is a captcha, in order to show the web view.
                     let captchaLocator = ".challenge-form"
                     let javascript = "document.querySelector('\(captchaLocator)') !== null"
