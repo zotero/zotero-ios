@@ -56,7 +56,11 @@ extension BackgroundSessionDelegate: URLSessionTaskDelegate {
         didReceive challenge: URLAuthenticationChallenge,
         completionHandler: @escaping @Sendable (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
     ) {
-        forwardingTaskDelegate?.urlSession?(session, task: task, didReceive: challenge, completionHandler: completionHandler)
+        guard let forwardingTaskDelegate, forwardingTaskDelegate.responds(to: #selector(URLSessionTaskDelegate.urlSession(_:task:didReceive:completionHandler:))) else {
+            completionHandler(.performDefaultHandling, nil)
+            return
+        }
+        forwardingTaskDelegate.urlSession?(session, task: task, didReceive: challenge, completionHandler: completionHandler)
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Swift.Error?) {
