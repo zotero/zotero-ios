@@ -160,6 +160,13 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
         case .parseOutline(let data):
             parse(outline: data, viewModel: viewModel)
+
+        case .updateOpenItems(let items):
+            guard viewModel.state.openItemsCount != items.count else { return }
+            update(viewModel: viewModel) { state in
+                state.openItemsCount = items.count
+                state.changes = .openItems
+            }
         }
     }
 

@@ -32,6 +32,7 @@ struct HtmlEpubReaderState: ViewModelState {
         static let outline = Changes(rawValue: 1 << 13)
         static let appearance = Changes(rawValue: 1 << 14)
         static let searchResults = Changes(rawValue: 1 << 15)
+        static let openItems = Changes(rawValue: 1 << 16)
     }
 
     struct DocumentData {
@@ -142,7 +143,20 @@ struct HtmlEpubReaderState: ViewModelState {
     var outlineSearch: String
     var interfaceStyle: UIUserInterfaceStyle
 
-    init(url: URL, key: String, parentKey: String?, title: String?, settings: HtmlEpubSettings, libraryId: LibraryIdentifier, userId: Int, username: String, interfaceStyle: UIUserInterfaceStyle) {
+    var openItemsCount: Int
+
+    init(
+        url: URL,
+        key: String,
+        parentKey: String?,
+        title: String?,
+        settings: HtmlEpubSettings,
+        libraryId: LibraryIdentifier,
+        userId: Int,
+        username: String,
+        interfaceStyle: UIUserInterfaceStyle,
+        openItemsCount: Int
+    ) {
         let originalFile = Files.file(from: url)
         let temporaryDirectory = Files.tmpReaderDirectory
         self.originalFile = originalFile
@@ -155,6 +169,7 @@ struct HtmlEpubReaderState: ViewModelState {
         self.userId = userId
         self.username = username
         self.interfaceStyle = interfaceStyle
+        self.openItemsCount = openItemsCount
         sortedKeys = []
         annotations = [:]
         comments = [:]
