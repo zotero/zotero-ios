@@ -276,12 +276,13 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
                 guard let handler, let viewModel else { return }
                 switch changes {
                 case .update(let objects, _, _, _):
+                    let itemsCount = objects.freeze().count
                     switch customType {
                     case .trash:
-                        updateTrashCount(itemsCount: objects.count, collectionsCount: nil, in: viewModel, handler: handler)
+                        updateTrashCount(itemsCount: itemsCount, collectionsCount: nil, in: viewModel, handler: handler)
 
                     case .all, .publications, .unfiled:
-                        updateItemsCount(objects.count, for: customType, in: viewModel, handler: handler)
+                        updateItemsCount(itemsCount, for: customType, in: viewModel, handler: handler)
                     }
 
                 case .initial:
@@ -318,7 +319,8 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
                 guard let handler, let viewModel else { return }
                 switch changes {
                 case .update(let objects, _, _, _):
-                    updateTrashCount(itemsCount: nil, collectionsCount: objects.count, in: viewModel, handler: handler)
+                    let collectionsCount = objects.freeze().count
+                    updateTrashCount(itemsCount: nil, collectionsCount: collectionsCount, in: viewModel, handler: handler)
 
                 case .initial:
                     break
