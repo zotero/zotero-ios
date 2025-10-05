@@ -207,35 +207,39 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
                     }
                 })
 
-                var allItemCount = 0
-                var unfiledItemCount = 0
-                var trashItemCount = 0
-                var itemsToken: NotificationToken?
-                var unfiledToken: NotificationToken?
-                var trashItemsToken: NotificationToken?
-                var trashCollectionsToken: NotificationToken?
+                var allItemsCount = 0
+                var unfiledItemsCount = 0
+                var trashItemsCount = 0
+                var allItemsCountToken: NotificationToken?
+                var unfiledItemsCountToken: NotificationToken?
+                var trashItemsCountToken: NotificationToken?
+                var trashCollectionsCountToken: NotificationToken?
+                var itemsChangesToken: NotificationToken?
 
                 if includeItemCounts {
                     let allItems = try coordinator.perform(request: ReadItemsDbRequest(collectionId: .custom(.all), libraryId: libraryId))
-                    allItemCount = allItems.count
+                    allItemsCount = allItems.count
 
                     let unfiledItems = try coordinator.perform(request: ReadItemsDbRequest(collectionId: .custom(.unfiled), libraryId: libraryId))
-                    unfiledItemCount = unfiledItems.count
+                    unfiledItemsCount = unfiledItems.count
 
                     let trashItems = try coordinator.perform(request: ReadItemsDbRequest(collectionId: .custom(.trash), libraryId: libraryId))
                     let trashCollections = try coordinator.perform(request: ReadCollectionsDbRequest(libraryId: libraryId, trash: true))
-                    trashItemCount = trashItems.count + trashCollections.count
+                    trashItemsCount = trashItems.count + trashCollections.count
 
-                    itemsToken = observeItemCount(in: allItems, for: .all, in: viewModel, handler: self)
-                    unfiledToken = observeItemCount(in: unfiledItems, for: .unfiled, in: viewModel, handler: self)
-                    trashItemsToken = observeItemCount(in: trashItems, for: .trash, in: viewModel, handler: self)
-                    trashCollectionsToken = observeTrashedCollectionCount(in: trashCollections, in: viewModel, handler: self)
+                    allItemsCountToken = observeItemCount(in: allItems, for: .all, in: viewModel, handler: self)
+                    unfiledItemsCountToken = observeItemCount(in: unfiledItems, for: .unfiled, in: viewModel, handler: self)
+                    trashItemsCountToken = observeItemCount(in: trashItems, for: .trash, in: viewModel, handler: self)
+                    trashCollectionsCountToken = observeTrashedCollectionCount(in: trashCollections, in: viewModel, handler: self)
+
+                    let itemsForCollectionCounts = try coordinator.perform(request: ReadItemsForCollectionCountsDbRequest(libraryId: libraryId))
+                    itemsChangesToken = observeItemsChanges(in: itemsForCollectionCounts, in: viewModel, handler: self)
                 }
 
                 let collectionTree = CollectionTreeBuilder.collections(from: collections, libraryId: libraryId, includeItemCounts: includeItemCounts)
-                collectionTree.insert(collection: Collection(custom: .all, itemCount: allItemCount), at: 0)
-                collectionTree.append(collection: Collection(custom: .unfiled, itemCount: unfiledItemCount))
-                collectionTree.append(collection: Collection(custom: .trash, itemCount: trashItemCount))
+                collectionTree.insert(collection: Collection(custom: .all, itemCount: allItemsCount), at: 0)
+                collectionTree.append(collection: Collection(custom: .unfiled, itemCount: unfiledItemsCount))
+                collectionTree.append(collection: Collection(custom: .trash, itemCount: trashItemsCount))
 
                 let collectionsToken = collections.observe(keyPaths: RCollection.observableKeypathsForList, { [weak self, weak viewModel] changes in
                     guard let self, let viewModel else { return }
@@ -253,10 +257,11 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
                     state.library = library
                     state.libraryToken = libraryToken
                     state.collectionsToken = collectionsToken
-                    state.itemsToken = itemsToken
-                    state.unfiledToken = unfiledToken
-                    state.trashItemsToken = trashItemsToken
-                    state.trashCollectionsToken = trashCollectionsToken
+                    state.allItemsCountToken = allItemsCountToken
+                    state.unfiledItemsCountToken = unfiledItemsCountToken
+                    state.trashItemsCountToken = trashItemsCountToken
+                    state.trashCollectionsCountToken = trashCollectionsCountToken
+                    state.itemsChangesToken = itemsChangesToken
                 }
             })
         } catch let error {
@@ -329,6 +334,63 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
                     break
                 }
             })
+        }
+
+        func observeItemsChanges(in results: Results<RItem>, in viewModel: ViewModel<CollectionsActionHandler>, handler: CollectionsActionHandler) -> NotificationToken {
+            return results.observe(keyPaths: ["trash", "deleted"], { [weak handler, weak viewModel] changes in
+                guard let handler, let viewModel else { return }
+                switch changes {
+                case .update(let objects, _, _, let modifications):
+                    guard !modifications.isEmpty else { return }
+                    let frozenObjects = objects.freeze()
+                    var affectedCollectionKeys: Set<String> = []
+                    for index in modifications {
+                        let item = frozenObjects[index]
+                        guard item.parent == nil else { continue }
+                        for collection in item.collections {
+                            affectedCollectionKeys.insert(collection.key)
+                        }
+                    }
+                    guard !affectedCollectionKeys.isEmpty else { return }
+                    refreshCollectionItemCounts(for: affectedCollectionKeys, in: viewModel, handler: handler)
+
+                case .initial:
+                    break
+
+                case .error:
+                    break
+                }
+            })
+
+            func refreshCollectionItemCounts(for collectionKeys: Set<String>, in viewModel: ViewModel<CollectionsActionHandler>, handler: CollectionsActionHandler) {
+                guard !collectionKeys.isEmpty else { return }
+                var counts: [String: Int] = [:]
+                for key in collectionKeys {
+                    let request = ReadItemsDbRequest(collectionId: .collection(key), libraryId: viewModel.state.library.identifier)
+                    do {
+                        let results = try handler.dbStorage.perform(request: request, on: .main)
+                        counts[key] = results.freeze().count
+                    } catch {
+                        DDLogError("CollectionsActionHandler: failed to refresh count for collection \(key) - \(error)")
+                    }
+                }
+                guard !counts.isEmpty else { return }
+                handler.update(viewModel: viewModel) { state in
+                    // state.collectionTree is a class instance, so changes are performed within the update block for consistency.
+                    var didUpdate = false
+                    for (key, count) in counts {
+                        let identifier = CollectionIdentifier.collection(key)
+                        guard let collection = state.collectionTree.collection(for: identifier) else { continue }
+                        if collection.itemCount != count {
+                            state.collectionTree.update(collection: collection.copy(with: count))
+                            didUpdate = true
+                        }
+                    }
+                    if didUpdate {
+                        state.changes = .results
+                    }
+                }
+            }
         }
 
         func updateTrashCount(itemsCount: Int?, collectionsCount: Int?, in viewModel: ViewModel<CollectionsActionHandler>, handler: CollectionsActionHandler) {
