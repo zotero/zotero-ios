@@ -241,7 +241,7 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
                     guard let self, let viewModel else { return }
                     switch changes {
                     case .update(let objects, _, _, _):
-                        updateCollections(with: objects, includeItemCounts: includeItemCounts, viewModel: viewModel)
+                        updateCollections(with: objects.freeze(), includeItemCounts: includeItemCounts, in: viewModel, handler: self)
 
                     case .initial, .error:
                         break
@@ -349,10 +349,10 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
             }
         }
 
-        func updateCollections(with collections: Results<RCollection>, includeItemCounts: Bool, viewModel: ViewModel<CollectionsActionHandler>) {
+        func updateCollections(with collections: Results<RCollection>, includeItemCounts: Bool, in viewModel: ViewModel<CollectionsActionHandler>, handler: CollectionsActionHandler) {
             let tree = CollectionTreeBuilder.collections(from: collections, libraryId: viewModel.state.library.identifier, includeItemCounts: includeItemCounts)
 
-            update(viewModel: viewModel) { state in
+            handler.update(viewModel: viewModel) { state in
                 state.collectionTree.replace(identifiersMatching: { $0.isCollection }, with: tree)
                 state.changes = .results
 
