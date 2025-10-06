@@ -28,7 +28,7 @@ final class RedirectWebViewHandler: NSObject {
         case webViewNil
         case invalidURL
         case extractionFailed
-        case timeout
+        case timeout(URL?)
     }
 
     private let initialUrl: URL
@@ -38,6 +38,7 @@ final class RedirectWebViewHandler: NSObject {
     private weak var webView: WKWebView?
     private var completionHandler: RedirectWebViewCompletion?
     private var disposeBag: DisposeBag?
+    private var currentNavigationResponse: WKNavigationResponse?
 
     init(url: URL, timeoutPerRedirect timeout: RxTimeInterval, webView: WKWebView) {
         initialUrl = url
@@ -64,7 +65,7 @@ final class RedirectWebViewHandler: NSObject {
 extension RedirectWebViewHandler: WKNavigationDelegate {
     func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse, decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
         guard let mimeType = navigationResponse.response.mimeType else {
-            startTimer()
+            startTimer(for: navigationResponse)
             decisionHandler(.allow)
             return
         }
@@ -93,19 +94,21 @@ extension RedirectWebViewHandler: WKNavigationDelegate {
             decisionHandler(.cancel)
 
         default:
-            startTimer()
+            startTimer(for: navigationResponse)
             decisionHandler(.allow)
         }
 
-        func startTimer() {
+        func startTimer(for navigationResponse: WKNavigationResponse) {
             let disposeBag = DisposeBag()
             self.disposeBag = disposeBag
+            currentNavigationResponse = navigationResponse
 
             Single<Int>.timer(timeout, scheduler: timerScheduler)
                 .observe(on: MainScheduler.instance)
                 .subscribe(onSuccess: { [weak self] _ in
                     DDLogInfo("RedirectWebViewHandler: redirection timed out")
-                    self?.completionHandler?(.failure(.timeout))
+                    guard let self else { return }
+                    completionHandler?(.failure(.timeout(currentNavigationResponse?.response.url)))
                 })
                 .disposed(by: disposeBag)
         }
