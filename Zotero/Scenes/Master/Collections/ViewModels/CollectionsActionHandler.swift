@@ -232,8 +232,8 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
                     trashItemsCountToken = observeItemCount(in: trashItems, for: .trash, in: viewModel, handler: self)
                     trashCollectionsCountToken = observeTrashedCollectionCount(in: trashCollections, in: viewModel, handler: self)
 
-                    let itemsForCollectionCounts = try coordinator.perform(request: ReadItemsForCollectionCountsDbRequest(libraryId: libraryId))
-                    itemsChangesToken = observeItemsChanges(in: itemsForCollectionCounts, in: viewModel, handler: self)
+                    let libraryItems = try coordinator.perform(request: ReadLibraryItemsDbRequest(libraryId: libraryId))
+                    itemsChangesToken = observeItemsChanges(in: libraryItems, in: viewModel, handler: self)
                 }
 
                 let collectionTree = CollectionTreeBuilder.collections(from: collections, libraryId: libraryId, includeItemCounts: includeItemCounts)
@@ -245,7 +245,8 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
                     guard let self, let viewModel else { return }
                     switch changes {
                     case .update(let objects, _, _, _):
-                        updateCollections(with: objects.freeze(), includeItemCounts: includeItemCounts, in: viewModel, handler: self)
+                        let frozenObjects = objects.freeze()
+                        updateCollections(with: frozenObjects, includeItemCounts: includeItemCounts, in: viewModel, handler: self)
 
                     case .initial, .error:
                         break
@@ -281,7 +282,7 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
                 guard let handler, let viewModel else { return }
                 switch changes {
                 case .update(let objects, _, _, _):
-                    let itemsCount = objects.freeze().count
+                    let itemsCount = objects.count
                     switch customType {
                     case .trash:
                         updateTrashCount(itemsCount: itemsCount, collectionsCount: nil, in: viewModel, handler: handler)
@@ -324,7 +325,7 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
                 guard let handler, let viewModel else { return }
                 switch changes {
                 case .update(let objects, _, _, _):
-                    let collectionsCount = objects.freeze().count
+                    let collectionsCount = objects.count
                     updateTrashCount(itemsCount: nil, collectionsCount: collectionsCount, in: viewModel, handler: handler)
 
                 case .initial:
@@ -346,7 +347,6 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
                     var affectedCollectionKeys: Set<String> = []
                     for index in modifications {
                         let item = frozenObjects[index]
-                        guard item.parent == nil else { continue }
                         for collection in item.collections {
                             affectedCollectionKeys.insert(collection.key)
                         }
@@ -369,7 +369,8 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
                     let request = ReadItemsDbRequest(collectionId: .collection(key), libraryId: viewModel.state.library.identifier)
                     do {
                         let results = try handler.dbStorage.perform(request: request, on: .main)
-                        counts[key] = results.freeze().count
+                        let resultsCount = results.count
+                        counts[key] = resultsCount
                     } catch {
                         DDLogError("CollectionsActionHandler: failed to refresh count for collection \(key) - \(error)")
                     }
