@@ -41,10 +41,11 @@ struct CollectionsState: ViewModelState {
     var changes: Changes
     var collectionsToken: NotificationToken?
     var searchesToken: NotificationToken?
-    var itemsToken: NotificationToken?
-    var unfiledToken: NotificationToken?
-    var trashItemsToken: NotificationToken?
-    var trashCollectionsToken: NotificationToken?
+    var allItemsCountToken: NotificationToken?
+    var unfiledItemsCountToken: NotificationToken?
+    var trashItemsCountToken: NotificationToken?
+    var trashCollectionsCountToken: NotificationToken?
+    var itemsChangesToken: NotificationToken?
     var error: CollectionsError?
     // Used when user wants to create bibliography from whole collection.
     var itemKeysForBibliography: Swift.Result<Set<String>, Error>?
