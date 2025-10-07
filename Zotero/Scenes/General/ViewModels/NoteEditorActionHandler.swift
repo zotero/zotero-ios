@@ -70,6 +70,11 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
         }
     }
 
+    private func updateInMainThreadIfNeeded(viewModel: ViewModel<Self>, notifyListeners: Bool = true, action: @escaping (inout State) -> Void) {
+        inMainThread {
+            update(viewModel: viewModel, notifyListeners: notifyListeners, action: action)
+        }
+    }
     private func importImages(data: [String: Any], in viewModel: ViewModel<NoteEditorActionHandler>) {
         guard !viewModel.state.kind.readOnly, let rawImages = data["images"] as? [[String: Any]] else { return }
 
@@ -120,13 +125,13 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             let failedKeys = try dbStorage.perform(request: request, on: backgroundQueue).1.map({ $0.0 })
             let successfulImages = images.filter({ !failedKeys.contains($0.1.key) }).map({ NoteEditorState.CreatedImage(nodeId: $0.0, key: $0.1.key) })
             DDLogInfo("NoteEditorActionHandler: successfully created \(successfulImages)")
-            update(viewModel: viewModel) { state in
+            updateInMainThreadIfNeeded(viewModel: viewModel) { state in
                 state.createdImages = successfulImages
                 state.changes = .shouldSave
             }
         } catch let error {
             DDLogError("NoteEditorActionHandler: can't create embedded images - \(error)")
-            update(viewModel: viewModel) { state in
+            updateInMainThreadIfNeeded(viewModel: viewModel) { state in
                 state.error = error
             }
         }
@@ -150,7 +155,7 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
 
             do {
                 _ = try dbStorage.perform(request: request, on: backgroundQueue)
-                update(viewModel: viewModel) { state in
+                updateInMainThreadIfNeeded(viewModel: viewModel) { state in
                     state.kind = .edit(key: note.key)
                     updateTitleIfNeeded(title: note.title, state: &state)
                     state.changes = [.kind, .saved]
@@ -158,7 +163,7 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 return note.key
             } catch let error {
                 DDLogError("NoteEditorActionHandler: can't create item note for added image: \(error)")
-                update(viewModel: viewModel) { state in
+                updateInMainThreadIfNeeded(viewModel: viewModel) { state in
                     state.error = error
                 }
                 return nil
@@ -204,7 +209,7 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                 }
                 DDLogInfo("NoteEditorActionHandler: loaded resource \(identifier); \(file.relativeComponents.joined(separator: "; "))")
                 let resource = NoteEditorState.Resource(identifier: identifier, data: ["src": "data:\(file.mimeType);base64,\(dataString)"])
-                update(viewModel: viewModel) { state in
+                updateInMainThreadIfNeeded(viewModel: viewModel) { state in
                     state.downloadedResource = resource
                 }
             } catch let error {
@@ -263,7 +268,7 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
             perform(request: request, invalidateRealm: true) { result in
                 switch result {
                 case .success:
-                    update(viewModel: viewModel) { state in
+                    updateInMainThreadIfNeeded(viewModel: viewModel) { state in
                         state.kind = .edit(key: note.key)
                         state.changes = [.kind, .saved]
                         updateTitleIfNeeded(title: note.title, state: &state)
@@ -284,7 +289,7 @@ struct NoteEditorActionHandler: ViewModelActionHandler, BackgroundDbProcessingAc
                     DDLogError("NoteEditorActionHandler: can't update existing note: \(error)")
                     store(error: error, key: key)
                 } else {
-                    update(viewModel: viewModel) { state in
+                    updateInMainThreadIfNeeded(viewModel: viewModel) { state in
                         state.changes = .saved
                         updateTitleIfNeeded(title: note.title, state: &state)
                     }
