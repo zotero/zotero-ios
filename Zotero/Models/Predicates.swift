@@ -228,6 +228,12 @@ extension NSPredicate {
         return predicates
     }
 
+    static func items(for libraryId: LibraryIdentifier) -> NSPredicate {
+        var predicates: [NSPredicate] = [.library(with: libraryId), .notSyncState(.dirty), .deleted(false)]
+        predicates.append(NSPredicate(format: "parent = nil"))
+        return NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
+    }
+
     static func items(for collectionId: CollectionIdentifier, libraryId: LibraryIdentifier) -> NSPredicate {
         var predicates = self.baseItemPredicates(isTrash: collectionId.isTrash, libraryId: libraryId)
 

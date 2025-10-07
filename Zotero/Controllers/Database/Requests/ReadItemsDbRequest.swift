@@ -77,3 +77,15 @@ struct ReadItemsWithKeysDbRequest: DbResponseRequest {
         return database.objects(RItem.self).filter(.keys(keys, in: libraryId))
     }
 }
+
+struct ReadLibraryItemsDbRequest: DbResponseRequest {
+    typealias Response = Results<RItem>
+
+    let libraryId: LibraryIdentifier
+
+    var needsWrite: Bool { return false }
+
+    func process(in database: Realm) throws -> Results<RItem> {
+        return database.objects(RItem.self).filter(.items(for: libraryId))
+    }
+}
