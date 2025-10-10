@@ -160,7 +160,7 @@ final class AccessibilityViewHandler<Delegate: SpeechmanagerDelegate> {
 
         func showAsBottomToolbar() {
             viewController.view.addSubview(overlay)
-            
+
             NSLayoutConstraint.activate([
                 overlay.bottomAnchor.constraint(equalTo: viewController.view.bottomAnchor),
                 overlay.leadingAnchor.constraint(equalTo: documentContainer.leadingAnchor),
