@@ -341,11 +341,12 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
             return results.observe(keyPaths: ["trash", "deleted"], { [weak handler, weak viewModel] changes in
                 guard let handler, let viewModel else { return }
                 switch changes {
-                case .update(let objects, _, _, let modifications):
-                    guard !modifications.isEmpty else { return }
+                case .update(let objects, let deletions, let insertions, let modifications):
+                    let correctedModifications = Database.correctedModifications(from: modifications, insertions: insertions, deletions: deletions)
+                    guard !correctedModifications.isEmpty else { return }
                     let frozenObjects = objects.freeze()
                     var affectedCollectionKeys: Set<String> = []
-                    for index in modifications {
+                    for index in correctedModifications {
                         let item = frozenObjects[index]
                         for collection in item.collections {
                             affectedCollectionKeys.insert(collection.key)
