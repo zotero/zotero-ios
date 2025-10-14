@@ -557,7 +557,7 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
                 let mimeType = url.pathExtension.mimeTypeFromExtension ?? "application/octet-stream"
                 let key = KeyGenerator.newKey
                 if let firstPDFFilename, mimeType == "application/pdf", !usedFirstPDFFilename {
-                    nameWithExtension = firstPDFFilename + "." + url.pathExtension
+                    nameWithExtension = FilenameFormatter.validate(filename: firstPDFFilename) + "." + url.pathExtension
                     title = "PDF"
                 } else {
                     var name = url.deletingPathExtension().lastPathComponent
