@@ -11,7 +11,6 @@ import NaturalLanguage
 
 import CocoaLumberjackSwift
 import RxCocoa
-import RxSwift
 
 protocol SpeechmanagerDelegate: AnyObject {
     associatedtype Index: Hashable
@@ -64,7 +63,6 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
 
     private let synthesizer: AVSpeechSynthesizer
     let state: BehaviorRelay<State>
-    private let disposeBag: DisposeBag
 
     private var speech: SpeechData?
     private var cachedPages: [Delegate.Index: PageData]
@@ -93,7 +91,6 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
         overrideLanguage = voiceLanguage
         synthesizer = AVSpeechSynthesizer()
         state = BehaviorRelay(value: .stopped)
-        disposeBag = DisposeBag()
         self.delegate = delegate
         super.init()
         synthesizer.delegate = self

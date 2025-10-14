@@ -1017,42 +1017,53 @@ extension PDFReaderViewController: SpeechmanagerDelegate {
     }
     
     func text(for indices: [UInt], completion: @escaping ([UInt: String]?) -> Void) {
-        guard let file = viewModel.state.document.fileURL.flatMap({ Files.file(from: $0) }) else {
-            DDLogInfo("PDFReaderViewController: document url not found")
-            completion(nil)
-            return
+        var result: [UInt: String] = [:]
+        for index in indices {
+            guard let parser = viewModel.state.document.textParserForPage(at: index) else {
+                completion(nil)
+                return
+            }
+            result[index] = parser.text
         }
-        pdfWorkerController.queue(work: .init(file: file as! FileData, kind: .fullText(pages: indices.map({ Int($0) }))))
-            .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { update in
-                switch update.kind {
-                case .failed, .cancelled:
-                    DDLogError("PDFReaderViewController: full data extraction failed")
-                    completion(nil)
-
-                case .inProgress:
-                    break
-
-                case .extractedData(let data):
-                    guard let text = data["text"] as? String else {
-                        DDLogError("PDFReaderViewController: full text extraction incorrect data - \(data)")
-                        completion(nil)
-                        return
-                    }
-                    let textParts = text.components(separatedBy: "\u{000C}")
-                    guard textParts.count == indices.count else {
-                        DDLogError("PDFReaderViewController: full text didn't contain proper number of pages (\(indices.count); \(textParts.count))")
-                        completion(nil)
-                        return
-                    }
-                    var result: [UInt: String] = [:]
-                    for idx in 0..<indices.count {
-                        result[indices[idx]] = String(textParts[idx])
-                    }
-                    completion(result)
-                }
-            })
-            .disposed(by: disposeBag)
+        completion(result)
+//        guard let file = viewModel.state.document.fileURL.flatMap({ Files.file(from: $0) }) else {
+//            DDLogInfo("PDFReaderViewController: document url not found")
+//            completion(nil)
+//            return
+//        }
+//        let start = CFAbsoluteTimeGetCurrent()
+//        pdfWorkerController.queue(work: .init(file: file as! FileData, kind: .fullText(pages: indices.map({ Int($0) }))))
+//            .observe(on: MainScheduler.instance)
+//            .subscribe(onNext: { update in
+//                switch update.kind {
+//                case .failed, .cancelled:
+//                    DDLogError("PDFReaderViewController: full data extraction failed")
+//                    completion(nil)
+//
+//                case .inProgress:
+//                    break
+//
+//                case .extractedData(let data):
+//                    guard let text = data["text"] as? String else {
+//                        DDLogError("PDFReaderViewController: full text extraction incorrect data - \(data)")
+//                        completion(nil)
+//                        return
+//                    }
+//                    let textParts = text.components(separatedBy: "\u{000C}")
+//                    guard textParts.count == indices.count else {
+//                        DDLogError("PDFReaderViewController: full text didn't contain proper number of pages (\(indices.count); \(textParts.count))")
+//                        completion(nil)
+//                        return
+//                    }
+//                    var result: [UInt: String] = [:]
+//                    for idx in 0..<indices.count {
+//                        result[indices[idx]] = String(textParts[idx])
+//                    }
+//                    DDLogInfo("TEST TIME: \(CFAbsoluteTimeGetCurrent() - start)")
+//                    completion(result)
+//                }
+//            })
+//            .disposed(by: disposeBag)
     }
 
     func moved(to pageIndex: UInt) {
