@@ -486,11 +486,14 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
     }
 
     private func addAttachments(from urls: [URL], in viewModel: ViewModel<ItemDetailActionHandler>) {
-        var firstPDFFilename: String? = viewModel.state.data.title
-        for attachment in viewModel.state.attachments {
-            if case .file(_, let contentType, _, _, _) = attachment.type, contentType == "application/pdf" {
-                firstPDFFilename = nil
-                break
+        var firstPDFFilename: String?
+        if urls.count == 1 {
+            firstPDFFilename = viewModel.state.data.title
+            for attachment in viewModel.state.attachments {
+                if case .file(_, let contentType, _, _, _) = attachment.type, contentType == "application/pdf" {
+                    firstPDFFilename = nil
+                    break
+                }
             }
         }
         createAttachments(from: urls, libraryId: viewModel.state.library.identifier, firstPDFFilename: firstPDFFilename) { [weak viewModel] attachments, failedCopyNames in
