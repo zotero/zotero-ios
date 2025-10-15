@@ -491,7 +491,7 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
             attachments.append(
                 Attachment(
                     type: .file(filename: filename, contentType: original.mimeType, location: .local, linkType: .importedFile, compressed: false),
-                    title: filename,
+                    title: original.name,
                     key: key,
                     libraryId: libraryId
                 )
