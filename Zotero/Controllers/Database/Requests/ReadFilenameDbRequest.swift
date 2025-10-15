@@ -31,6 +31,6 @@ struct ReadFilenameDbRequest: DbResponseRequest {
             return field.value
         }
 
-        return item.displayTitle
+        return item.baseTitle
     }
 }
