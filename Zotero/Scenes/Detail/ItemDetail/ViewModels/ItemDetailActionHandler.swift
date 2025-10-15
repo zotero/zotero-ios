@@ -486,17 +486,7 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
     }
 
     private func addAttachments(from urls: [URL], in viewModel: ViewModel<ItemDetailActionHandler>) {
-        var firstPDFFilename: String?
-        if urls.count == 1 {
-            firstPDFFilename = viewModel.state.data.title
-            for attachment in viewModel.state.attachments {
-                if case .file(_, let contentType, _, _, _) = attachment.type, contentType == "application/pdf" {
-                    firstPDFFilename = nil
-                    break
-                }
-            }
-        }
-        createAttachments(from: urls, libraryId: viewModel.state.library.identifier, firstPDFFilename: firstPDFFilename) { [weak viewModel] attachments, failedCopyNames in
+        createAttachments(from: urls, in: viewModel) { [weak viewModel] attachments, failedCopyNames in
             guard let viewModel = viewModel else { return }
 
             if attachments.isEmpty {
@@ -548,19 +538,26 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
         }
     }
 
-    private func createAttachments(from urls: [URL], libraryId: LibraryIdentifier, firstPDFFilename: String?, completion: @escaping (([Attachment], [String])) -> Void) {
-        backgroundQueue.async {
+    private func createAttachments(from urls: [URL], in viewModel: ViewModel<ItemDetailActionHandler>, completion: @escaping (([Attachment], [String])) -> Void) {
+        let libraryId = viewModel.state.library.identifier
+        let parentTitle = viewModel.state.data.title
+        let parentHasPDFAttachments = viewModel.state.attachments.contains {
+            guard case .file(_, let contentType, _, _, _) = $0.type, contentType == "application/pdf" else { return false }
+            return true
+        }
+        let useParentTitle = (urls.count == 1) && !parentHasPDFAttachments
+        backgroundQueue.async { [weak self] in
+            guard let self else { return }
             var attachments: [Attachment] = []
             var failedNames: [String] = []
-            var usedFirstPDFFilename = false
 
             for url in urls {
                 let nameWithExtension: String
                 let title: String
                 let mimeType = url.pathExtension.mimeTypeFromExtension ?? "application/octet-stream"
                 let key = KeyGenerator.newKey
-                if let firstPDFFilename, mimeType == "application/pdf", !usedFirstPDFFilename {
-                    nameWithExtension = FilenameFormatter.validate(filename: firstPDFFilename) + "." + url.pathExtension
+                if urls.count == 1, !parentHasPDFAttachments, mimeType == "application/pdf" {
+                    nameWithExtension = FilenameFormatter.validate(filename: parentTitle) + "." + url.pathExtension
                     title = "PDF"
                 } else {
                     var name = url.deletingPathExtension().lastPathComponent
@@ -572,7 +569,7 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
                 let file = Files.attachmentFile(in: libraryId, key: key, filename: nameWithExtension, contentType: mimeType)
 
                 do {
-                    try self.fileStorage.move(from: url.path, to: file)
+                    try fileStorage.move(from: url.path, to: file)
                     attachments.append(
                         Attachment(
                             type: .file(filename: nameWithExtension, contentType: mimeType, location: .local, linkType: .importedFile, compressed: false),
@@ -581,9 +578,6 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
                             libraryId: libraryId
                         )
                     )
-                    if firstPDFFilename != nil, mimeType == "application/pdf", !usedFirstPDFFilename {
-                        usedFirstPDFFilename = true
-                    }
                 } catch let error {
                     DDLogError("ItemDetailActionHandler: can't move attachment from source url \(url.relativePath) - \(error)")
                     failedNames.append(nameWithExtension)
