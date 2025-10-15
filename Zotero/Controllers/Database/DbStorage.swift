@@ -39,6 +39,7 @@ protocol DbResponseRequest {
 
 protocol DbStorage: AnyObject {
     func perform(on queue: DispatchQueue, with coordinatorAction: (DbCoordinator) throws -> Void) throws
+    func perform(on queue: DispatchQueue, refreshRealm: Bool, invalidateRealm: Bool, with coordinatorAction: (DbCoordinator) throws -> Void) throws
     func perform<Request>(request: Request, on queue: DispatchQueue) throws -> Request.Response where Request: DbResponseRequest
     func perform<Request>(request: Request, on queue: DispatchQueue, refreshRealm: Bool) throws -> Request.Response where Request: DbResponseRequest
     func perform<Request>(request: Request, on queue: DispatchQueue, invalidateRealm: Bool) throws -> Request.Response where Request: DbResponseRequest

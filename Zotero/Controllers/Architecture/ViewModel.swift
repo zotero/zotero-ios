@@ -44,6 +44,13 @@ protocol BackgroundDbProcessingActionHandler {
     /// - parameter invalidateRealm: Indicates whether realm should be invalidated after use.
     /// - parameter completion: Handler called after db request is performed. Contains result with request response. Always called on main thread.
     func perform<Request: DbResponseRequest>(request: Request, invalidateRealm: Bool, completion: @escaping (Result<Request.Response, Error>) -> Void)
+
+    /// Performs database request in background.
+    /// - parameter refreshRealm: Indicates whether realm should be refreshed before use.
+    /// - parameter invalidateRealm: Indicates whether realm should be invalidated after use.
+    /// - parameter coordinatorAction: Closure of coordinated database actions.
+    /// - parameter completion: Handler called after db request is performed. Contains error if any. Always called on main thread.
+    func perform(refreshRealm: Bool, invalidateRealm: Bool, with coordinatorAction: @escaping (DbCoordinator) throws -> Void, completion: @escaping (Result<Void, Error>) -> Void) throws
 }
 
 extension BackgroundDbProcessingActionHandler {
@@ -86,6 +93,21 @@ extension BackgroundDbProcessingActionHandler {
 
                 DispatchQueue.main.async {
                     completion(.success(result))
+                }
+            } catch let error {
+                DispatchQueue.main.async {
+                    completion(.failure(error))
+                }
+            }
+        }
+    }
+
+    func perform(refreshRealm: Bool = false, invalidateRealm: Bool = false, with coordinatorAction: @escaping (DbCoordinator) throws -> Void, completion: @escaping (Result<Void, Error>) -> Void) {
+        backgroundQueue.async {
+            do {
+                try dbStorage.perform(on: backgroundQueue, refreshRealm: refreshRealm, invalidateRealm: invalidateRealm, with: coordinatorAction)
+                DispatchQueue.main.async {
+                    completion(.success(()))
                 }
             } catch let error {
                 DispatchQueue.main.async {

@@ -392,47 +392,45 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
     // MARK: - Drag & Drop
 
     private func moveItems(from keys: Set<String>, to key: String, libraryId: LibraryIdentifier, completion: @escaping (Result<Void, ItemsError>) -> Void) {
-        backgroundQueue.async { [weak self] in
+        perform(invalidateRealm: true) { [weak self] coordinator in
             guard let self else { return }
-            do {
-                try dbStorage.perform(on: backgroundQueue) { [weak self] coordinator in
-                    guard let self else { return }
-                    defer {
-                        coordinator.invalidate()
-                    }
-                    try coordinator.perform(request: MoveItemsToParentDbRequest(itemKeys: keys, parentKey: key, libraryId: libraryId))
-                    guard keys.count == 1, let childKey = keys.first else { return }
-                    // Only one attachment was added to the item, check if it is a PDF one.
-                    let child = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: childKey))
-                    guard let attachment = AttachmentCreator.attachment(for: child, fileStorage: fileStorage, urlDetector: urlDetector),
-                    case .file(_, let contentType, _, _, _) = attachment.type,
-                    contentType == "application/pdf"
-                    else { return }
-                    // Check if the parent has only one child that is a PDF attachment, making it this one.
-                    let parent = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
-                    let pdfAttachmentsCount = parent.children.filter(.items(type: ItemTypes.attachment, notSyncState: .dirty, trash: false)).filter({ [weak self] in
-                        guard let self,
-                              let attachment = AttachmentCreator.attachment(for: $0, fileStorage: fileStorage, urlDetector: urlDetector),
-                              case .file(_, let contentType, _, _, _) = attachment.type,
-                              contentType == "application/pdf"
-                        else { return false }
-                        return true
-                    }).count
-                    guard pdfAttachmentsCount == 1, let titleKey = schemaController.titleKey(for: ItemTypes.attachment) else { return }
-                    // Change attachment title to "PDF".
-                    let keyPair = KeyBaseKeyPair(key: titleKey, baseKey: (titleKey != FieldKeys.Item.title ? FieldKeys.Item.title : nil))
-                    try coordinator.perform(request: EditItemTitleDbRequest(key: childKey, libraryId: libraryId, titleKeyPair: keyPair, title: "PDF"))
-                    // Rename attachment filename to use parent title.
-                    let newFilename = FilenameFormatter.validate(filename: parent.baseTitle) + ".pdf"
-                    guard let change = try coordinator.perform(
-                        request: RenameAttachmentFilenameDbRequest(key: childKey, libraryId: libraryId, filename: newFilename, contentType: "application/pdf", schemaController: schemaController)
-                    ) else { return }
-                    let oldFile = Files.attachmentFile(in: libraryId, key: change.key, filename: change.oldName, contentType: change.contentType)
-                    guard fileStorage.has(oldFile) else { return }
-                    let newFile = Files.attachmentFile(in: libraryId, key: change.key, filename: change.newName, contentType: change.contentType)
-                    try fileStorage.move(from: oldFile, to: newFile)
-                }
-            } catch let error {
+            try coordinator.perform(request: MoveItemsToParentDbRequest(itemKeys: keys, parentKey: key, libraryId: libraryId))
+            guard keys.count == 1, let childKey = keys.first else { return }
+            // Only one attachment was added to the item, check if it is a PDF one.
+            let child = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: childKey))
+            guard let attachment = AttachmentCreator.attachment(for: child, fileStorage: fileStorage, urlDetector: urlDetector),
+            case .file(_, let contentType, _, _, _) = attachment.type,
+            contentType == "application/pdf"
+            else { return }
+            // Check if the parent has only one child that is a PDF attachment, making it this one.
+            let parent = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
+            let pdfAttachmentsCount = parent.children.filter(.items(type: ItemTypes.attachment, notSyncState: .dirty, trash: false)).filter({ [weak self] in
+                guard let self,
+                      let attachment = AttachmentCreator.attachment(for: $0, fileStorage: fileStorage, urlDetector: urlDetector),
+                      case .file(_, let contentType, _, _, _) = attachment.type,
+                      contentType == "application/pdf"
+                else { return false }
+                return true
+            }).count
+            guard pdfAttachmentsCount == 1, let titleKey = schemaController.titleKey(for: ItemTypes.attachment) else { return }
+            // Change attachment title to "PDF".
+            let keyPair = KeyBaseKeyPair(key: titleKey, baseKey: (titleKey != FieldKeys.Item.title ? FieldKeys.Item.title : nil))
+            try coordinator.perform(request: EditItemTitleDbRequest(key: childKey, libraryId: libraryId, titleKeyPair: keyPair, title: "PDF"))
+            // Rename attachment filename to use parent title.
+            let newFilename = FilenameFormatter.validate(filename: parent.baseTitle) + ".pdf"
+            guard let change = try coordinator.perform(
+                request: RenameAttachmentFilenameDbRequest(key: childKey, libraryId: libraryId, filename: newFilename, contentType: "application/pdf", schemaController: schemaController)
+            ) else { return }
+            let oldFile = Files.attachmentFile(in: libraryId, key: change.key, filename: change.oldName, contentType: change.contentType)
+            guard fileStorage.has(oldFile) else { return }
+            let newFile = Files.attachmentFile(in: libraryId, key: change.key, filename: change.newName, contentType: change.contentType)
+            try fileStorage.move(from: oldFile, to: newFile)
+        } completion: { result in
+            switch result {
+            case .success:
+                completion(.success(()))
+
+            case .failure(let error):
                 DDLogError("BaseItemsActionHandler: can't move items to parent: \(error)")
                 DispatchQueue.main.async {
                     completion(.failure(.itemMove))
