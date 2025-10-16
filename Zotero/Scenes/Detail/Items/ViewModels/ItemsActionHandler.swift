@@ -396,23 +396,17 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
             guard let self else { return }
             try coordinator.perform(request: MoveItemsToParentDbRequest(itemKeys: keys, parentKey: key, libraryId: libraryId))
             guard keys.count == 1, let childKey = keys.first else { return }
-            // Only one attachment was added to the item, check if it is a PDF one.
-            let child = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: childKey))
-            guard let attachment = AttachmentCreator.attachment(for: child, fileStorage: fileStorage, urlDetector: urlDetector),
-            case .file(_, let contentType, _, _, _) = attachment.type,
-            contentType == "application/pdf"
-            else { return }
-            // Check if the parent has only one child that is a PDF attachment, making it this one.
+            // Only one attachment was added to the item, check if its new parent only has one PDF child, and if it is the one just added.
             let parent = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
-            let pdfAttachmentsCount = parent.children.filter(.items(type: ItemTypes.attachment, notSyncState: .dirty, trash: false)).filter({ [weak self] in
+            let pdfChildren = parent.children.filter(.items(type: ItemTypes.attachment, notSyncState: .dirty, trash: false)).filter({ [weak self] in
                 guard let self,
                       let attachment = AttachmentCreator.attachment(for: $0, fileStorage: fileStorage, urlDetector: urlDetector),
                       case .file(_, let contentType, _, _, _) = attachment.type,
                       contentType == "application/pdf"
                 else { return false }
                 return true
-            }).count
-            guard pdfAttachmentsCount == 1, let titleKey = schemaController.titleKey(for: ItemTypes.attachment) else { return }
+            })
+            guard pdfChildren.count == 1, pdfChildren.first?.key == childKey, let titleKey = schemaController.titleKey(for: ItemTypes.attachment) else { return }
             // Change attachment title to "PDF".
             let keyPair = KeyBaseKeyPair(key: titleKey, baseKey: (titleKey != FieldKeys.Item.title ? FieldKeys.Item.title : nil))
             try coordinator.perform(request: EditItemTitleDbRequest(key: childKey, libraryId: libraryId, titleKeyPair: keyPair, title: "PDF"))
