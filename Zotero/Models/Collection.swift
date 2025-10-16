@@ -36,7 +36,7 @@ struct Collection: Identifiable, Equatable, Hashable {
                 return Asset.Images.Cells.unfiled.name
 
             case .trash:
-                return Asset.Images.Cells.trash.name
+                return itemCount == 0 ? Asset.Images.Cells.trashEmpty.name : Asset.Images.Cells.trash.name
             }
         }
     }

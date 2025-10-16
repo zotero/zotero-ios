@@ -212,7 +212,8 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
 
                 var allItemsCount = 0
                 var unfiledItemsCount = 0
-                var trashItemsCount = 0
+                // If not showing item counts, trashItemsCount is set to -1, in order for the trash icon to not be shown as empty.
+                var trashItemsCount = includeItemCounts ? 0 : -1
                 var allItemsCountToken: NotificationToken?
                 var unfiledItemsCountToken: NotificationToken?
                 var trashItemsCountToken: NotificationToken?
