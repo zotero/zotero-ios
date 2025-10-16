@@ -545,7 +545,6 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
             guard case .file(_, let contentType, _, _, _) = $0.type, contentType == "application/pdf" else { return false }
             return true
         }
-        let useParentTitle = (urls.count == 1) && !parentHasPDFAttachments
         backgroundQueue.async { [weak self] in
             guard let self else { return }
             var attachments: [Attachment] = []
