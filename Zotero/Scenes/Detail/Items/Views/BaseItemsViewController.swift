@@ -49,9 +49,11 @@ class BaseItemsViewController: UIViewController {
         super.viewDidLoad()
 
         createTableView()
-        navigationController?.toolbar.barTintColor = UIColor(dynamicProvider: { traitCollection in
-            return traitCollection.userInterfaceStyle == .dark ? .black : .white
-        })
+        if #unavailable(iOS 26.0.0) {
+            navigationController?.toolbar.barTintColor = UIColor(dynamicProvider: { traitCollection in
+                return traitCollection.userInterfaceStyle == .dark ? .black : .white
+            })
+        }
         setupTitle()
         setupSearchBar()
         if let scheduler = controllers.userControllers?.syncScheduler {
@@ -64,12 +66,21 @@ class BaseItemsViewController: UIViewController {
             tableView.translatesAutoresizingMaskIntoConstraints = false
             view.addSubview(tableView)
 
-            NSLayoutConstraint.activate([
-                tableView.topAnchor.constraint(equalTo: view.topAnchor),
-                tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-                tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-                tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
-            ])
+            if #available(iOS 26.0.0, *) {
+                NSLayoutConstraint.activate([
+                    tableView.topAnchor.constraint(equalTo: view.topAnchor),
+                    tableView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+                    tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+                    tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+                ])
+            } else {
+                NSLayoutConstraint.activate([
+                    tableView.topAnchor.constraint(equalTo: view.topAnchor),
+                    tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                    tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+                    tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+                ])
+            }
 
             self.tableView = tableView
         }
@@ -224,7 +235,7 @@ class BaseItemsViewController: UIViewController {
 
         func createRightBarButtonItem(_ type: RightBarButtonItem) -> UIBarButtonItem? {
             var image: UIImage?
-            var title: String?
+            let title: String
             let accessibilityLabel: String
 
             switch type {
@@ -254,11 +265,23 @@ class BaseItemsViewController: UIViewController {
                 accessibilityLabel = L10n.Collections.emptyTrash
             }
 
-            let primaryAction = UIAction { [weak self] action in
+            let primaryAction = UIAction(title: title, image: image) { [weak self] action in
                 guard let self, let sender = action.sender as? UIBarButtonItem else { return }
                 process(barButtonItemAction: type, sender: sender)
             }
-            let item = UIBarButtonItem(title: title, image: image, primaryAction: primaryAction)
+            let item: UIBarButtonItem
+            if #available(iOS 26.0.0, *) {
+                switch type {
+                case .select, .selectAll, .deselectAll, .add, .emptyTrash:
+                    item = UIBarButtonItem(primaryAction: primaryAction)
+
+                case .done:
+                    item = UIBarButtonItem(systemItem: .done, primaryAction: primaryAction)
+                    item.tintColor = Asset.Colors.zoteroBlue.color
+                }
+            } else {
+                item = UIBarButtonItem(primaryAction: primaryAction)
+            }
             item.tag = type.rawValue
             item.accessibilityLabel = accessibilityLabel
             return item

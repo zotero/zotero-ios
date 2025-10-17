@@ -33,7 +33,14 @@ struct CitationBibliographyExportView: View {
                 Overlay(type: .error(message))
             }
         }
-        .navigationBarItems(leading: self.leadingItem, trailing: self.trailingItem)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                leadingItem
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                trailingItem
+            }
+        }
     }
 
     private func message(for error: Error, mode: CitationBibliographyExportState.OutputMode) -> String? {
@@ -58,20 +65,37 @@ struct CitationBibliographyExportView: View {
     }
 
     private var leadingItem: some View {
-        Button(action: {
-            self.coordinatorDelegate?.cancel()
-        }, label: {
-            Text(L10n.cancel)
-        })
+        Group {
+            if #available(iOS 26.0, *) {
+                Button(role: .cancel) {
+                    coordinatorDelegate?.cancel()
+                }
+            } else {
+                Button(action: {
+                    coordinatorDelegate?.cancel()
+                }, label: {
+                    Text(L10n.cancel)
+                })
+            }
+        }
     }
 
     private var trailingItem: some View {
-        Button(action: {
-            self.viewModel.process(action: .process)
-        }, label: {
-            Text(L10n.done)
-        })
-        .disabled(self.viewModel.state.isLoading || self.viewModel.state.error != nil)
+        Group {
+            if #available(iOS 26.0.0, *) {
+                Button(role: .confirm) {
+                    viewModel.process(action: .process)
+                }
+                .tint(Asset.Colors.zoteroBlueWithDarkMode.swiftUiColor)
+            } else {
+                Button(action: {
+                    self.viewModel.process(action: .process)
+                }, label: {
+                    Text(L10n.done)
+                })
+            }
+        }
+        .disabled(viewModel.state.isLoading || viewModel.state.error != nil)
     }
 
     private var citeView: some View {

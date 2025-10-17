@@ -135,12 +135,17 @@ class AnnotationsFilterViewController: UIViewController {
         }
 
         func setupNavigationBar() {
-            let closeBarButtonItem = UIBarButtonItem(title: L10n.close, style: .plain, target: nil, action: nil)
-            closeBarButtonItem.rx.tap
-                .subscribe(onNext: { _ in
-                    close()
-                })
-                .disposed(by: disposeBag)
+            let primaryAction = UIAction(title: L10n.close) { [weak self] _ in
+                guard let self else { return }
+                updateFilter()
+                navigationController?.presentingViewController?.dismiss(animated: true)
+            }
+            let closeBarButtonItem: UIBarButtonItem
+            if #available(iOS 26.0.0, *) {
+                closeBarButtonItem = UIBarButtonItem(systemItem: .close, primaryAction: primaryAction)
+            } else {
+                closeBarButtonItem = UIBarButtonItem(primaryAction: primaryAction)
+            }
             navigationItem.leftBarButtonItem = closeBarButtonItem
 
             setupClearButton(visible: (!viewModel.state.colors.isEmpty || !viewModel.state.tags.isEmpty))
@@ -190,12 +195,10 @@ class AnnotationsFilterViewController: UIViewController {
 
             guard navigationItem.rightBarButtonItem == nil else { return }
 
-            let clear = UIBarButtonItem(title: L10n.clear, style: .plain, target: nil, action: nil)
-            clear.rx.tap
-                .subscribe(onNext: { [weak self] _ in
-                    self?.viewModel.process(action: .clear)
-                })
-                .disposed(by: disposeBag)
+            let primaryAction = UIAction(title: L10n.clear) { [weak viewModel] _ in
+                viewModel?.process(action: .clear)
+            }
+            let clear = UIBarButtonItem(primaryAction: primaryAction)
             navigationItem.rightBarButtonItem = clear
         }
 

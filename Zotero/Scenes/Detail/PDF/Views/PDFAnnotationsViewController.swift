@@ -572,29 +572,24 @@ final class PDFAnnotationsViewController: UIViewController {
     private func setupToolbar(filterEnabled: Bool, filterOn: Bool, editingEnabled: Bool, deletionEnabled: Bool, mergingEnabled: Bool) {
         guard !toolbarContainer.isHidden else { return }
 
-        var items: [UIBarButtonItem] = []
-        items.append(UIBarButtonItem(systemItem: .flexibleSpace, primaryAction: nil, menu: nil))
+        var items: [UIBarButtonItem] = [.flexibleSpace()]
 
         if editingEnabled {
-            let merge = UIBarButtonItem(title: L10n.Pdf.AnnotationsSidebar.merge, style: .plain, target: nil, action: nil)
+            let mergePrimaryAction = UIAction(title: L10n.Pdf.AnnotationsSidebar.merge) { [weak viewModel] _ in
+                guard let viewModel, viewModel.state.sidebarEditingEnabled else { return }
+                viewModel.process(action: .mergeSelectedAnnotations)
+            }
+            let merge = UIBarButtonItem(primaryAction: mergePrimaryAction)
             merge.isEnabled = mergingEnabled
-            merge.rx.tap
-                .subscribe(onNext: { [weak self] _ in
-                     guard let self, viewModel.state.sidebarEditingEnabled else { return }
-                     viewModel.process(action: .mergeSelectedAnnotations)
-                 })
-                 .disposed(by: disposeBag)
             items.append(merge)
             mergeBarButton = merge
 
-            let delete = UIBarButtonItem(title: L10n.delete, style: .plain, target: nil, action: nil)
+            let deletePrimaryAction = UIAction(title: L10n.delete) { [weak viewModel] _ in
+                guard let viewModel, viewModel.state.sidebarEditingEnabled else { return }
+                viewModel.process(action: .removeSelectedAnnotations)
+            }
+            let delete = UIBarButtonItem(primaryAction: deletePrimaryAction)
             delete.isEnabled = deletionEnabled
-            delete.rx.tap
-                .subscribe(onNext: { [weak self] _ in
-                    guard let self, viewModel.state.sidebarEditingEnabled else { return }
-                    viewModel.process(action: .removeSelectedAnnotations)
-                })
-                .disposed(by: disposeBag)
             items.append(delete)
             deleteBarButton = delete
         } else if filterEnabled {
@@ -602,25 +597,26 @@ final class PDFAnnotationsViewController: UIViewController {
             mergeBarButton = nil
 
             let filterImageName = filterOn ? "line.horizontal.3.decrease.circle.fill" : "line.horizontal.3.decrease.circle"
-            let filter = UIBarButtonItem(image: UIImage(systemName: filterImageName), style: .plain, target: nil, action: nil)
-            filter.rx.tap
-                .subscribe(onNext: { [weak self, weak filter]  _ in
-                    guard let self, let filter else { return }
-                    showFilterPopup(from: filter)
-                })
-                .disposed(by: disposeBag)
+            let primaryAction = UIAction(image: UIImage(systemName: filterImageName)) { [weak self] action in
+                guard let self, let filter = action.sender as? UIBarButtonItem else { return }
+                showFilterPopup(from: filter)
+            }
+            let filter = UIBarButtonItem(primaryAction: primaryAction)
             items.insert(filter, at: 0)
         }
 
-        let select = UIBarButtonItem(title: (editingEnabled ? L10n.done : L10n.select), style: .plain, target: nil, action: nil)
-        select.rx.tap
-            .subscribe(onNext: { [weak self] _ in
-                self?.viewModel.process(action: .setSidebarEditingEnabled(!editingEnabled))
-            })
-            .disposed(by: disposeBag)
+        let primaryAction = UIAction(title: (editingEnabled ? L10n.done : L10n.select)) { [weak viewModel] _ in
+            viewModel?.process(action: .setSidebarEditingEnabled(!editingEnabled))
+        }
+        let select: UIBarButtonItem
+        if #available(iOS 26.0.0, *) {
+            select = editingEnabled ? UIBarButtonItem(systemItem: .done, primaryAction: primaryAction) : UIBarButtonItem(primaryAction: primaryAction)
+        } else {
+            select = UIBarButtonItem(primaryAction: primaryAction)
+        }
         items.append(select)
-        
-        self.toolbar.items = items
+
+        toolbar.items = items
     }
 }
 
