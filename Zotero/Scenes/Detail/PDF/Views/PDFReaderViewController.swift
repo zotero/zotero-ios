@@ -67,8 +67,6 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
     weak var coordinatorDelegate: (PdfReaderCoordinatorDelegate & PdfAnnotationsCoordinatorDelegate)?
 
     private lazy var shareButton: UIBarButtonItem = {
-        var menuChildren: [UIMenuElement] = []
-
         let share = UIBarButtonItem(image: UIImage(systemName: "square.and.arrow.up"), style: .plain, target: nil, action: nil)
         share.accessibilityLabel = L10n.Accessibility.Pdf.share
         share.isEnabled = !viewModel.state.document.isLocked
@@ -101,7 +99,9 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
             exportOriginalPDFAction.accessibilityValue = L10n.Accessibility.Pdf.export
             elements.append(exportOriginalPDFAction)
 
-            if !viewModel.state.databaseAnnotations.isEmpty {
+            // viewModel.state.databaseAnnotations is accessed as an optional here (it is implicitly unwrapped),
+            // to avoid a the edge case where the user taps the share button before database annotations have finised loading, if too numerous.
+            if viewModel.state.databaseAnnotations?.isEmpty == false {
                 let exportAnnotatedPDFAction = UIAction(title: L10n.Pdf.Export.exportAnnotated, image: .init(systemName: "square.and.arrow.up"), attributes: exportAttributes) { [weak self] _ in
                     self?.viewModel.process(action: .export(includeAnnotations: true))
                 }

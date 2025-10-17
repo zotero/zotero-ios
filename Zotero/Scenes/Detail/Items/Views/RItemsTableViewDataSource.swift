@@ -40,8 +40,8 @@ extension RItem: ItemsTableViewObject {
 final class RItemsTableViewDataSource: NSObject {
     private unowned let viewModel: ViewModel<ItemsActionHandler>
     private unowned let schemaController: SchemaController
-    private unowned let fileDownloader: AttachmentDownloader?
-    private unowned let recognizerController: RecognizerController?
+    private weak var fileDownloader: AttachmentDownloader?
+    private weak var recognizerController: RecognizerController?
 
     private var snapshot: Results<RItem>?
     weak var handler: ItemsTableViewHandler?
