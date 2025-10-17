@@ -272,9 +272,9 @@ struct AttachmentCreator {
             return filename
         }
         if let ext = ext {
-            return item.displayTitle + "." + ext
+            return item.baseTitle + "." + ext
         }
-        return item.displayTitle
+        return item.baseTitle
     }
 
     static func contentType(for item: RItem) -> String? {
