@@ -49,6 +49,19 @@ extension RealmDbStorage: DbStorage {
         }
     }
 
+    func perform(on queue: DispatchQueue, refreshRealm: Bool, invalidateRealm: Bool, with coordinatorAction: (DbCoordinator) throws -> Void) throws {
+        try self.performInAutoreleasepoolIfNeeded {
+            let coordinator = try RealmDbCoordinator(configuration: config, queue: queue)
+            if refreshRealm {
+                coordinator.refresh()
+            }
+            try coordinatorAction(coordinator)
+            if invalidateRealm {
+                coordinator.invalidate()
+            }
+        }
+    }
+
     func perform<Request>(request: Request, on queue: DispatchQueue) throws -> Request.Response where Request: DbResponseRequest {
         return try self.perform(request: request, on: queue, invalidateRealm: false, refreshRealm: false)
     }

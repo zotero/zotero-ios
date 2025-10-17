@@ -96,3 +96,24 @@ struct EditItemFieldsDbResponseRequest: EditItemFieldsBaseRequest, DbResponseReq
         return try processAndReturnResponse(in: database)
     }
 }
+
+struct EditItemTitleDbRequest: DbRequest {
+    let key: String
+    let libraryId: LibraryIdentifier
+    let titleKeyPair: KeyBaseKeyPair
+    let title: String
+
+    var needsWrite: Bool { return true }
+
+    func process(in database: Realm) throws {
+        guard let item = database.objects(RItem.self).uniqueObject(key: key, libraryId: libraryId) else { return }
+        let filter: NSPredicate = titleKeyPair.baseKey.flatMap({ .key(titleKeyPair.key, andBaseKey: $0) }) ?? .key(titleKeyPair.key)
+        guard let field = item.fields.filter(filter).first, title != field.value else { return }
+        field.value = title
+        field.changed = true
+        item.set(title: field.value)
+        item.changes.append(RObjectChange.create(changes: RItemChanges.fields))
+        item.changeType = .user
+        item.dateModified = Date()
+    }
+}

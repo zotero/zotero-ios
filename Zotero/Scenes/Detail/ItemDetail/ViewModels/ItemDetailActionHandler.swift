@@ -486,7 +486,7 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
     }
 
     private func addAttachments(from urls: [URL], in viewModel: ViewModel<ItemDetailActionHandler>) {
-        self.createAttachments(from: urls, libraryId: viewModel.state.library.identifier) { [weak viewModel] attachments, failedCopyNames in
+        createAttachments(from: urls, in: viewModel) { [weak viewModel] attachments, failedCopyNames in
             guard let viewModel = viewModel else { return }
 
             if attachments.isEmpty {
@@ -538,25 +538,41 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
         }
     }
 
-    private func createAttachments(from urls: [URL], libraryId: LibraryIdentifier, completion: @escaping (([Attachment], [String])) -> Void) {
-        self.backgroundQueue.async {
+    private func createAttachments(from urls: [URL], in viewModel: ViewModel<ItemDetailActionHandler>, completion: @escaping (([Attachment], [String])) -> Void) {
+        let libraryId = viewModel.state.library.identifier
+        let parentTitle = viewModel.state.data.title
+        let parentHasPDFAttachments = viewModel.state.attachments.contains {
+            guard case .file(_, let contentType, _, _, _) = $0.type, contentType == "application/pdf" else { return false }
+            return true
+        }
+        backgroundQueue.async { [weak self] in
+            guard let self else { return }
             var attachments: [Attachment] = []
             var failedNames: [String] = []
 
             for url in urls {
-                var name = url.deletingPathExtension().lastPathComponent
-                name = name.removingPercentEncoding ?? name
+                let nameWithExtension: String
+                let title: String
                 let mimeType = url.pathExtension.mimeTypeFromExtension ?? "application/octet-stream"
                 let key = KeyGenerator.newKey
-                let nameWithExtension = name + "." + url.pathExtension
+                if urls.count == 1, !parentHasPDFAttachments, mimeType == "application/pdf" {
+                    nameWithExtension = FilenameFormatter.validate(filename: parentTitle) + "." + url.pathExtension
+                    title = "PDF"
+                } else {
+                    var name = url.deletingPathExtension().lastPathComponent
+                    name = name.removingPercentEncoding ?? name
+                    nameWithExtension = name + "." + url.pathExtension
+                    title = name
+                }
+
                 let file = Files.attachmentFile(in: libraryId, key: key, filename: nameWithExtension, contentType: mimeType)
 
                 do {
-                    try self.fileStorage.move(from: url.path, to: file)
+                    try fileStorage.move(from: url.path, to: file)
                     attachments.append(
                         Attachment(
                             type: .file(filename: nameWithExtension, contentType: mimeType, location: .local, linkType: .importedFile, compressed: false),
-                            title: nameWithExtension,
+                            title: title,
                             key: key,
                             libraryId: libraryId
                         )
