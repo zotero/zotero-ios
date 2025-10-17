@@ -225,9 +225,21 @@ extension ReaderCoordinator {
         coordinator.start(animated: false)
 
         if UIDevice.current.userInterfaceIdiom == .pad {
+            // Since iOS 18, crashes have been such as
+            //   *** Terminating app due to uncaught exception 'CALayerInvalidGeometry', reason:
+            //   'CALayer position contains NaN: [219 nan]. Layer: <CALayer:0x152de6320; position = CGPoint (19 -inf); bounds = CGRect (0 0; 400 267.5); delegate = <_UIPopoverView: 0x160d92600;
+            //   frame = (-181 -inf; 400 267.5); layer = <CALayer: 0x152de6320>>; sublayers = (<CALayer: 0x13b67a080>, <CALayer: 0x13bc97b60>); opaque = YES; anchorPoint = CGPoint (0.5 0.5);
+            //   transform = CATransform3D (1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 1); opacity = 1; animations = []>'
+            // Since the source rect has been computed from the annotation rect data, it's not impossible to get such a result.
+            // In this case, it is logged and the default CGNull is used instead, that will anchor the popover to the source view.
+            var safeSourceRect = sourceRect
+            if ![sourceRect.origin.x, sourceRect.origin.y, sourceRect.size.width, sourceRect.size.height].allSatisfy({ $0.isFinite && !$0.isNaN }) {
+                DDLogWarn("ReaderCoordinator: asked to show popover annotation using source rect \(sourceRect), using default CGNull insted")
+                safeSourceRect = .null
+            }
             navigationController.modalPresentationStyle = .popover
             navigationController.popoverPresentationController?.sourceView = currentNavigationController.view
-            navigationController.popoverPresentationController?.sourceRect = sourceRect
+            navigationController.popoverPresentationController?.sourceRect = safeSourceRect
             navigationController.popoverPresentationController?.permittedArrowDirections = [.left, .right]
             navigationController.popoverPresentationController?.delegate = popoverDelegate
         }
