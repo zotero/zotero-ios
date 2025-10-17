@@ -275,9 +275,20 @@ final class ItemsViewController: BaseItemsViewController {
                   parentKey == nil,
                   let file = attachment.file as? FileData,
                   file.mimeType == "application/pdf",
+                  attachment.location != nil,
+                  let downloader = controllers.userControllers?.fileDownloader,
                   let recognizerController = controllers.userControllers?.recognizerController
             else { return }
-            _ = recognizerController.queue(task: RecognizerController.Task(file: file, kind: .createParentForItem(libraryId: library.identifier, key: key)))
+            let libraryId = library.identifier
+            downloader.downloadIfNeeded(attachment: attachment, parentKey: nil) { [weak coordinatorDelegate] result in
+                switch result {
+                case .success:
+                    _ = recognizerController.queue(task: RecognizerController.Task(file: file, kind: .createParentForItem(libraryId: libraryId, key: key)))
+
+                case .failure(let error):
+                    coordinatorDelegate?.showAttachmentError(error)
+                }
+            }
 
         case .duplicate:
             guard let key = selectedKeys.first else { return }
