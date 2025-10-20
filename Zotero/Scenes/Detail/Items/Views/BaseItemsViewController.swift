@@ -89,13 +89,21 @@ class BaseItemsViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         if #available(iOS 18, *) {
-            // In some cases in iOS 18, where the horizontal size class changes, e.g. when switching to a scene with a PDF reader and dismissing it,
-            // this error is logged multiple times, and leaves the search bar in stack placement, but overlapping the table view:
-            // "UINavigationBar has changed horizontal size class without updating search bar to new placement. Fixing, but delegate searchBarPlacement callbacks have been skipped."
-            // Setting "navigationItem.preferredSearchBarPlacement = .inline" explicitly, would even freeze the app and crash it.
-            // Instead, hiding and showing the navigation bar momentarily when the view will appear, fixes the issue.
-            navigationController?.setNavigationBarHidden(true, animated: false)
-            navigationController?.setNavigationBarHidden(false, animated: false)
+            if #unavailable(iOS 26.0) {
+                // In some cases in iOS 18, where the horizontal size class changes, e.g. when switching to a scene with a PDF reader and dismissing it,
+                // this error is logged multiple times, and leaves the search bar in stack placement, but overlapping the table view:
+                // "UINavigationBar has changed horizontal size class without updating search bar to new placement. Fixing, but delegate searchBarPlacement callbacks have been skipped."
+                // Setting "navigationItem.preferredSearchBarPlacement = .inline" explicitly, would even freeze the app and crash it.
+                // Instead, hiding and showing the navigation bar momentarily when the view will appear, fixes the issue.
+                navigationController?.setNavigationBarHidden(true, animated: false)
+                navigationController?.setNavigationBarHidden(false, animated: false)
+            }
+            // In iOS 26 this fix doesn't seem necessary and also causes a crash if design compatibility is off.
+            // The crsh can be reproduced as following:
+            // - Make a search in items.
+            // - Go to an item's details from the search results.
+            // - Go back, where it crases with error
+                //   "Terminating app due to uncaught exception 'NSInternalInconsistencyException', reason: 'The view should already be in the window before adding a _UIPassthroughScrollInteraction'".
         }
         toolbarController?.willAppear()
     }
