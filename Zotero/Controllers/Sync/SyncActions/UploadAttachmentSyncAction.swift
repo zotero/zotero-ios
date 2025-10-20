@@ -218,13 +218,7 @@ class UploadAttachmentSyncAction: SyncAction {
             DDLogInfo("UploadAttachmentSyncAction: mark as uploaded")
 
             do {
-                var requests: [DbRequest] = [MarkAttachmentUploadedDbRequest(libraryId: self.libraryId, key: self.key, version: version)]
-                if let version = version {
-                    requests.append(UpdateVersionsDbRequest(version: version, libraryId: self.libraryId, type: .object(.item)))
-                }
-
-                try self.dbStorage.perform(writeRequests: requests, on: self.queue)
-
+                try self.dbStorage.perform(request: MarkAttachmentUploadedDbRequest(libraryId: self.libraryId, key: self.key, version: version), on: self.queue)
                 subscriber(.success(()))
             } catch let error {
                 DDLogError("UploadAttachmentSyncAction: can't mark attachment as uploaded - \(error)")
