@@ -672,11 +672,13 @@ final class PDFDocumentViewController: UIViewController {
             }
 
             func setup(scrubberBar: ScrubberBar) {
-                let appearance = UIToolbarAppearance()
-                appearance.backgroundColor = Asset.Colors.pdfScrubberBarBackground.color
-
-                scrubberBar.standardAppearance = appearance
-                scrubberBar.compactAppearance = appearance
+                if #unavailable(iOS 26.0.0) {
+                    let appearance = UIToolbarAppearance()
+                    appearance.backgroundColor = Asset.Colors.pdfScrubberBarBackground.color
+                    
+                    scrubberBar.standardAppearance = appearance
+                    scrubberBar.compactAppearance = appearance
+                }
                 scrubberBar.delegate = self
             }
 

@@ -10,18 +10,15 @@ import UIKit
 
 import PSPDFKit
 import PSPDFKitUI
-import RxSwift
 
 final class PDFPlainReaderViewController: PSPDFKitUI.ReaderViewController {
-    private let disposeBag: DisposeBag = DisposeBag()
-
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        let closeButton = UIBarButtonItem(image: UIImage(systemName: "chevron.left"), style: .plain, target: nil, action: nil)
-        closeButton.rx.tap
-                   .subscribe(with: self, onNext: { `self`, _ in self.navigationController?.presentingViewController?.dismiss(animated: true) })
-                   .disposed(by: self.disposeBag)
-        self.navigationItem.leftBarButtonItem = closeButton
+        let primaryAction = UIAction(image: UIImage(systemName: "chevron.left")) { [weak self] _ in
+            self?.navigationController?.presentingViewController?.dismiss(animated: true)
+        }
+        let closeButton = UIBarButtonItem(primaryAction: primaryAction)
+        navigationItem.leftBarButtonItem = closeButton
     }
 }

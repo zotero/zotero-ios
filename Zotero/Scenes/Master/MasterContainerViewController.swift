@@ -347,12 +347,21 @@ final class MasterContainerViewController: UINavigationController {
 
     override func separateSecondaryViewController(for splitViewController: UISplitViewController) -> UIViewController? {
         setBottomSheet(hidden: false)
-        guard topViewController?.isKind(of: UINavigationController.self) == true else {
+        if topViewController?.isKind(of: UINavigationController.self) == true {
+            return super.separateSecondaryViewController(for: splitViewController)
+        }
+        if #available(iOS 26.0.0, *) {
+            if let collectionsViewController = topViewController as? CollectionsViewController {
+                collectionsViewController.viewModel.process(action: .select(.custom(.all)))
+            } else {
+                coordinatorDelegate?.showDefaultCollection()
+            }
+            return super.separateSecondaryViewController(for: splitViewController)
+        } else {
             // When separating from an initially collapsed split view controller, the detail view controller is not yet set.
             coordinatorDelegate?.showDefaultCollection()
             return nil
         }
-        return super.separateSecondaryViewController(for: splitViewController)
     }
 
     // MARK: - Bottom Panning

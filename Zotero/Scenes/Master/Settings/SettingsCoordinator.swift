@@ -14,6 +14,49 @@ import CocoaLumberjackSwift
 import RxCocoa
 import RxSwift
 
+protocol SettingsPresenter: Coordinator {
+    func showSettings(
+        using presenter: UINavigationController,
+        controllers: Controllers,
+        animated: Bool,
+        initialScreen: SettingsCoordinator.InitialScreen?,
+        sourceItem: UIPopoverPresentationControllerSourceItem?
+    )
+}
+
+extension SettingsPresenter {
+    func showSettings(
+        using presenter: UINavigationController,
+        controllers: Controllers,
+        animated: Bool,
+        initialScreen: SettingsCoordinator.InitialScreen?,
+        sourceItem: UIPopoverPresentationControllerSourceItem?
+    ) {
+        let navigationController = NavigationViewController()
+        let coordinator = SettingsCoordinator(navigationController: navigationController, controllers: controllers, initialScreen: initialScreen)
+        coordinator.parentCoordinator = self
+        childCoordinators.append(coordinator)
+        coordinator.start(animated: false)
+        
+        if #available(iOS 26.0, *) {
+            navigationController.modalPresentationStyle = .popover
+            if let popoverPresentationController = navigationController.popoverPresentationController {
+                if let sourceItem {
+                    popoverPresentationController.sourceItem = sourceItem
+                } else {
+                    popoverPresentationController.sourceView = presenter.view
+                    popoverPresentationController.sourceRect = CGRect(x: presenter.view.bounds.midX, y: presenter.view.bounds.midY, width: 0, height: 0)
+                    popoverPresentationController.permittedArrowDirections = []
+                }
+            }
+            presenter.present(navigationController, animated: animated)
+        } else {
+            let containerController = ContainerViewController(rootViewController: navigationController)
+            presenter.present(containerController, animated: animated)
+        }
+    }
+}
+
 protocol SettingsCoordinatorDelegate: AnyObject {
     func showSync()
     func showPrivacyPolicy()
@@ -80,7 +123,9 @@ final class SettingsCoordinator: NSObject, Coordinator {
 
         super.init()
 
-        navigationController.delegate = self
+        if #unavailable(iOS 26.0) {
+            navigationController.delegate = self
+        }
         navigationController.dismissHandler = {
             self.parentCoordinator?.childDidFinish(self)
         }
@@ -448,7 +493,7 @@ extension SettingsCoordinator: DebuggingSettingsSettingsCoordinatorDelegate {
 
 extension SettingsCoordinator: UINavigationControllerDelegate {
     func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {
-        guard viewController.preferredContentSize.width > 0 && viewController.preferredContentSize.height > 0 else { return }
+        guard #unavailable(iOS 26.0), viewController.preferredContentSize.width > 0, viewController.preferredContentSize.height > 0 else { return }
         navigationController.preferredContentSize = viewController.preferredContentSize
     }
 }

@@ -67,7 +67,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
     weak var coordinatorDelegate: (PdfReaderCoordinatorDelegate & PdfAnnotationsCoordinatorDelegate)?
 
     private lazy var shareButton: UIBarButtonItem = {
-        let share = UIBarButtonItem(image: UIImage(systemName: "square.and.arrow.up"), style: .plain, target: nil, action: nil)
+        let share = UIBarButtonItem(image: UIImage(systemName: "square.and.arrow.up"))
         share.accessibilityLabel = L10n.Accessibility.Pdf.share
         share.isEnabled = !viewModel.state.document.isLocked
         share.title = L10n.Accessibility.Pdf.share
@@ -80,9 +80,9 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
             guard let self else { return }
 
             if let parentKey = viewModel.state.parentKey {
-                let copyCitationAction = UIAction(title: L10n.Citation.copyCitation, image: .init(systemName: "doc.on.doc")) { [weak self] _ in
+                let copyCitationAction = UIAction(title: L10n.Citation.copyCitation, image: .init(systemName: "doc.on.doc")) { [weak self] action in
                     guard let self, let coordinatorDelegate else { return }
-                    coordinatorDelegate.showCitation(for: parentKey, libraryId: viewModel.state.library.identifier)
+                    coordinatorDelegate.showCitation(for: parentKey, libraryId: viewModel.state.library.identifier, sourceItem: action.sender as? UIPopoverPresentationControllerSourceItem)
                 }
                 elements.append(copyCitationAction)
                 let copyBibliographyAction = UIAction(title: L10n.Citation.copyBibliography, image: .init(systemName: "doc.on.doc")) { [weak self] _ in
@@ -113,28 +113,22 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         return share
     }()
     private lazy var settingsButton: UIBarButtonItem = {
-        let settings = UIBarButtonItem(image: UIImage(systemName: "gearshape"), style: .plain, target: nil, action: nil)
+        let primaryAction = UIAction(title: L10n.Accessibility.Pdf.settings, image: UIImage(systemName: "gearshape")) { [weak self] action in
+            guard let self, let settings = action.sender as? UIBarButtonItem else { return }
+            showSettings(sender: settings)
+        }
+        let settings = UIBarButtonItem(primaryAction: primaryAction)
         settings.isEnabled = !viewModel.state.document.isLocked
         settings.accessibilityLabel = L10n.Accessibility.Pdf.settings
-        settings.title = L10n.Accessibility.Pdf.settings
-        settings.rx.tap
-            .subscribe(onNext: { [weak self, weak settings] _ in
-                guard let self, let settings else { return }
-                showSettings(sender: settings)
-            })
-            .disposed(by: disposeBag)
         return settings
     }()
     private lazy var searchButton: UIBarButtonItem = {
-        let search = UIBarButtonItem(image: UIImage(systemName: "magnifyingglass"), style: .plain, target: nil, action: nil)
+        let primaryAction = UIAction(title: L10n.Accessibility.Pdf.searchPdf, image: UIImage(systemName: "magnifyingglass")) { [weak self] _ in
+            self?.showSearch(text: nil)
+        }
+        let search = UIBarButtonItem(primaryAction: primaryAction)
         search.isEnabled = !viewModel.state.document.isLocked
         search.accessibilityLabel = L10n.Accessibility.Pdf.searchPdf
-        search.title = L10n.Accessibility.Pdf.searchPdf
-        search.rx.tap
-            .subscribe(onNext: { [weak self] _ in
-                self?.showSearch(text: nil)
-            })
-            .disposed(by: disposeBag)
         return search
     }()
     lazy var toolbarButton: UIBarButtonItem = {
@@ -241,8 +235,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
                 },
                 forward: { [weak self] in
                     self?.documentController?.performForwardAction()
-                },
-                delegate: self
+                }
             )
             intraDocumentNavigationHandler.interfaceIsVisible = statusBarVisible
             let backButton = intraDocumentNavigationHandler.backButton
@@ -305,27 +298,27 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         }
 
         func setupNavigationBar() {
-            let sidebarButton = UIBarButtonItem(image: UIImage(systemName: "sidebar.left"), style: .plain, target: nil, action: nil)
+            let sidebarPrimaryAction = UIAction(image: UIImage(systemName: "sidebar.left")) { [weak self] _ in
+                self?.toggleSidebar(animated: true)
+            }
+            let sidebarButton = UIBarButtonItem(primaryAction: sidebarPrimaryAction)
             sidebarButton.isEnabled = !viewModel.state.document.isLocked
             setupAccessibility(forSidebarButton: sidebarButton)
             sidebarButton.tag = NavigationBarButton.sidebar.rawValue
-            sidebarButton.rx.tap.subscribe(onNext: { [weak self] _ in self?.toggleSidebar(animated: true) }).disposed(by: disposeBag)
 
-            let closeButton = UIBarButtonItem(image: UIImage(systemName: "chevron.left"), style: .plain, target: nil, action: nil)
-            closeButton.title = L10n.close
+            let closePrimaryAction = UIAction(title: L10n.close, image: UIImage(systemName: "chevron.left")) { [weak self] _ in
+                self?.close()
+            }
+            let closeButton = UIBarButtonItem(primaryAction: closePrimaryAction)
             closeButton.accessibilityLabel = L10n.close
-            closeButton.rx.tap.subscribe(onNext: { [weak self] _ in self?.close() }).disposed(by: disposeBag)
 
-            let readerButton = UIBarButtonItem(image: Asset.Images.pdfRawReader.image, style: .plain, target: nil, action: nil)
+            let readerPrimaryAction = UIAction(title: L10n.Accessibility.Pdf.openReader, image: Asset.Images.pdfRawReader.image) { [weak self] _ in
+                guard let self else { return }
+                coordinatorDelegate?.showReader(document: viewModel.state.document, userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle)
+            }
+            let readerButton = UIBarButtonItem(primaryAction: readerPrimaryAction)
             readerButton.isEnabled = !viewModel.state.document.isLocked
             readerButton.accessibilityLabel = L10n.Accessibility.Pdf.openReader
-            readerButton.title = L10n.Accessibility.Pdf.openReader
-            readerButton.rx.tap
-                .subscribe(onNext: { [weak self] _ in
-                    guard let self else { return }
-                    coordinatorDelegate?.showReader(document: viewModel.state.document, userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle)
-                })
-                .disposed(by: disposeBag)
 
             navigationItem.leftBarButtonItems = [closeButton, sidebarButton, readerButton]
             navigationItem.rightBarButtonItems = createRightBarButtonItems()
@@ -414,7 +407,6 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         coordinator.animate { [weak self] _ in
             guard let self else { return }
             annotationToolbarHandler?.viewWillTransitionToNewSize()
-            intraDocumentNavigationHandler?.containerViewWillTransitionToNewSize()
         }
     }
 
@@ -974,7 +966,5 @@ extension PDFReaderViewController: AnnotationBoundingBoxConverter {
         return documentController?.textOffset(rect: rect, page: page)
     }
 }
-
-extension PDFReaderViewController: IntraDocumentNavigationButtonsHandlerDelegate { }
 
 extension PDFReaderViewController: ParentWithSidebarController {}

@@ -14,7 +14,7 @@ import RxSwift
 
 protocol MasterLibrariesCoordinatorDelegate: AnyObject {
     func showCollections(for libraryId: LibraryIdentifier)
-    func showSettings()
+    func showSettings(sourceItem: UIPopoverPresentationControllerSourceItem?)
     func show(error: LibrariesError)
     func showDeleteGroupQuestion(id: Int, name: String, viewModel: ViewModel<LibrariesActionHandler>)
     func showDefaultLibrary()
@@ -23,7 +23,7 @@ protocol MasterLibrariesCoordinatorDelegate: AnyObject {
 }
 
 protocol MasterCollectionsCoordinatorDelegate: MainCoordinatorDelegate {
-    func showEditView(for data: CollectionStateEditingData, library: Library)
+    func showEditView(for data: CollectionStateEditingData, library: Library, sourceItem: UIPopoverPresentationControllerSourceItem?)
     func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier)
     func showCiteExportError()
     func showSearch(for state: CollectionsState, in controller: UIViewController, selectAction: @escaping (Collection) -> Void)
@@ -231,25 +231,38 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
         }
     }
 
-    func showSettings() {
+    func showSettings(sourceItem: UIPopoverPresentationControllerSourceItem?) {
         guard let navigationController else { return }
-        let settingsNavigationController = NavigationViewController()
-        let containerController = ContainerViewController(rootViewController: settingsNavigationController)
-        let coordinator = SettingsCoordinator(navigationController: settingsNavigationController, controllers: controllers)
-        coordinator.parentCoordinator = self
-        childCoordinators.append(coordinator)
-        coordinator.start(animated: false)
-
-        navigationController.present(containerController, animated: true, completion: nil)
+        showSettings(
+            using: navigationController,
+            controllers: controllers,
+            animated: true,
+            initialScreen: nil,
+            sourceItem: sourceItem
+        )
     }
 }
 
 extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
-    func showEditView(for data: CollectionStateEditingData, library: Library) {
+    func showEditView(for data: CollectionStateEditingData, library: Library, sourceItem: UIPopoverPresentationControllerSourceItem?) {
         guard let navigationController else { return }
         let editNavigationController = UINavigationController()
         editNavigationController.isModalInPresentation = true
-        editNavigationController.modalPresentationStyle = .formSheet
+
+        if #available(iOS 26.0, *) {
+            editNavigationController.modalPresentationStyle = .popover
+            if let popoverPresentationController = editNavigationController.popoverPresentationController {
+                if let sourceItem {
+                    popoverPresentationController.sourceItem = sourceItem
+                } else {
+                    popoverPresentationController.sourceView = navigationController.view
+                    popoverPresentationController.sourceRect = CGRect(x: navigationController.view.bounds.midX, y: navigationController.view.bounds.midY, width: 0, height: 0)
+                    popoverPresentationController.permittedArrowDirections = []
+                }
+            }
+        } else {
+            editNavigationController.modalPresentationStyle = .formSheet
+        }
 
         let coordinator = CollectionEditingCoordinator(data: data, library: library, navigationController: editNavigationController, controllers: controllers)
         coordinator.parentCoordinator = self
@@ -265,14 +278,7 @@ extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
 
     func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier) {
         guard let navigationController else { return }
-        let exportNavigationController = NavigationViewController()
-        let containerController = ContainerViewController(rootViewController: exportNavigationController)
-        let coordinator = CitationBibliographyExportCoordinator(itemIds: itemIds, libraryId: libraryId, navigationController: exportNavigationController, controllers: controllers)
-        coordinator.parentCoordinator = self
-        childCoordinators.append(coordinator)
-        coordinator.start(animated: false)
-
-        navigationController.present(containerController, animated: true, completion: nil)
+        showCitationBibliographyExport(using: navigationController, for: itemIds, in: libraryId, controllers: controllers, animated: true, sourceItem: nil)
     }
 
     func showCiteExportError() {
@@ -308,3 +314,7 @@ extension MasterCoordinator: MasterContainerCoordinatorDelegate {
         return TagFilterViewController(viewModel: viewModel)
     }
 }
+
+extension MasterCoordinator: SettingsPresenter { }
+
+extension MasterCoordinator: CitationBibliographyExportPresenter { }

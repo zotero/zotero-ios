@@ -49,9 +49,11 @@ class BaseItemsViewController: UIViewController {
         super.viewDidLoad()
 
         createTableView()
-        navigationController?.toolbar.barTintColor = UIColor(dynamicProvider: { traitCollection in
-            return traitCollection.userInterfaceStyle == .dark ? .black : .white
-        })
+        if #unavailable(iOS 26.0.0) {
+            navigationController?.toolbar.barTintColor = UIColor(dynamicProvider: { traitCollection in
+                return traitCollection.userInterfaceStyle == .dark ? .black : .white
+            })
+        }
         setupTitle()
         setupSearchBar()
         if let scheduler = controllers.userControllers?.syncScheduler {
@@ -64,12 +66,21 @@ class BaseItemsViewController: UIViewController {
             tableView.translatesAutoresizingMaskIntoConstraints = false
             view.addSubview(tableView)
 
-            NSLayoutConstraint.activate([
-                tableView.topAnchor.constraint(equalTo: view.topAnchor),
-                tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-                tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-                tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
-            ])
+            if #available(iOS 26.0.0, *) {
+                NSLayoutConstraint.activate([
+                    tableView.topAnchor.constraint(equalTo: view.topAnchor),
+                    tableView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+                    tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+                    tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+                ])
+            } else {
+                NSLayoutConstraint.activate([
+                    tableView.topAnchor.constraint(equalTo: view.topAnchor),
+                    tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                    tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+                    tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+                ])
+            }
 
             self.tableView = tableView
         }
@@ -78,13 +89,21 @@ class BaseItemsViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         if #available(iOS 18, *) {
-            // In some cases in iOS 18, where the horizontal size class changes, e.g. when switching to a scene with a PDF reader and dismissing it,
-            // this error is logged multiple times, and leaves the search bar in stack placement, but overlapping the table view:
-            // "UINavigationBar has changed horizontal size class without updating search bar to new placement. Fixing, but delegate searchBarPlacement callbacks have been skipped."
-            // Setting "navigationItem.preferredSearchBarPlacement = .inline" explicitly, would even freeze the app and crash it.
-            // Instead, hiding and showing the navigation bar momentarily when the view will appear, fixes the issue.
-            navigationController?.setNavigationBarHidden(true, animated: false)
-            navigationController?.setNavigationBarHidden(false, animated: false)
+            if #unavailable(iOS 26.0) {
+                // In some cases in iOS 18, where the horizontal size class changes, e.g. when switching to a scene with a PDF reader and dismissing it,
+                // this error is logged multiple times, and leaves the search bar in stack placement, but overlapping the table view:
+                // "UINavigationBar has changed horizontal size class without updating search bar to new placement. Fixing, but delegate searchBarPlacement callbacks have been skipped."
+                // Setting "navigationItem.preferredSearchBarPlacement = .inline" explicitly, would even freeze the app and crash it.
+                // Instead, hiding and showing the navigation bar momentarily when the view will appear, fixes the issue.
+                navigationController?.setNavigationBarHidden(true, animated: false)
+                navigationController?.setNavigationBarHidden(false, animated: false)
+            }
+            // In iOS 26 this fix doesn't seem necessary and also causes a crash if design compatibility is off.
+            // The crsh can be reproduced as following:
+            // - Make a search in items.
+            // - Go to an item's details from the search results.
+            // - Go back, where it crases with error
+                //   "Terminating app due to uncaught exception 'NSInternalInconsistencyException', reason: 'The view should already be in the window before adding a _UIPassthroughScrollInteraction'".
         }
         toolbarController?.willAppear()
     }
@@ -224,7 +243,7 @@ class BaseItemsViewController: UIViewController {
 
         func createRightBarButtonItem(_ type: RightBarButtonItem) -> UIBarButtonItem? {
             var image: UIImage?
-            var title: String?
+            let title: String
             let accessibilityLabel: String
 
             switch type {
@@ -254,11 +273,23 @@ class BaseItemsViewController: UIViewController {
                 accessibilityLabel = L10n.Collections.emptyTrash
             }
 
-            let primaryAction = UIAction { [weak self] action in
+            let primaryAction = UIAction(title: title, image: image) { [weak self] action in
                 guard let self, let sender = action.sender as? UIBarButtonItem else { return }
                 process(barButtonItemAction: type, sender: sender)
             }
-            let item = UIBarButtonItem(title: title, image: image, primaryAction: primaryAction)
+            let item: UIBarButtonItem
+            if #available(iOS 26.0.0, *) {
+                switch type {
+                case .select, .selectAll, .deselectAll, .add, .emptyTrash:
+                    item = UIBarButtonItem(primaryAction: primaryAction)
+
+                case .done:
+                    item = UIBarButtonItem(systemItem: .done, primaryAction: primaryAction)
+                    item.tintColor = Asset.Colors.zoteroBlue.color
+                }
+            } else {
+                item = UIBarButtonItem(primaryAction: primaryAction)
+            }
             item.tag = type.rawValue
             item.accessibilityLabel = accessibilityLabel
             return item

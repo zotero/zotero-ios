@@ -65,10 +65,6 @@ final class ReaderSettingsViewController: UICollectionViewController {
         dataSource.apply(snapshot)
     }
 
-    @objc private func done() {
-        presentingViewController?.dismiss(animated: true, completion: nil)
-    }
-
     // MARK: - Data Source
 
     private func createDataSource(for collectionView: UICollectionView) -> UICollectionViewDiffableDataSource<Int, Row> {
@@ -229,7 +225,13 @@ final class ReaderSettingsViewController: UICollectionViewController {
 
     private func setupNavigationBarIfNeeded() {
         guard UIDevice.current.userInterfaceIdiom == .phone else { return }
-        let button = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(Self.done))
+        let primaryAction = UIAction { [weak self] _ in
+            self?.presentingViewController?.dismiss(animated: true)
+        }
+        let button = UIBarButtonItem(systemItem: .done, primaryAction: primaryAction)
+        if #available(iOS 26.0.0, *) {
+            button.tintColor = Asset.Colors.zoteroBlue.color
+        }
         navigationItem.rightBarButtonItem = button
     }
 }

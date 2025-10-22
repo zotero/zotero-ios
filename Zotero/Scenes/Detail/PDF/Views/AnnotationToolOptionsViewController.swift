@@ -144,18 +144,21 @@ class AnnotationToolOptionsViewController: UIViewController {
         func setupNavigationBar() {
             guard UIDevice.current.userInterfaceIdiom == .phone else { return }
 
-            let appearance = UINavigationBarAppearance()
-            appearance.configureWithOpaqueBackground()
-            appearance.backgroundColor = Asset.Colors.navbarBackground.color
-            navigationController?.navigationBar.standardAppearance = appearance
-            navigationController?.navigationBar.scrollEdgeAppearance = appearance
+            if #unavailable(iOS 26.0.0) {
+                let appearance = UINavigationBarAppearance()
+                appearance.configureWithOpaqueBackground()
+                appearance.backgroundColor = Asset.Colors.navbarBackground.color
+                navigationController?.navigationBar.standardAppearance = appearance
+                navigationController?.navigationBar.scrollEdgeAppearance = appearance
+            }
 
-            let doneButton = UIBarButtonItem(barButtonSystemItem: .done, target: nil, action: nil)
-            doneButton.rx.tap
-                .subscribe(onNext: { [weak self] _ in
-                    self?.navigationController?.presentingViewController?.dismiss(animated: true)
-                })
-                .disposed(by: disposeBag)
+            let primaryAction = UIAction(title: L10n.lookUp) { [weak self] _ in
+                self?.navigationController?.presentingViewController?.dismiss(animated: true)
+            }
+            let doneButton = UIBarButtonItem(systemItem: .done, primaryAction: primaryAction)
+            if #available(iOS 26.0.0, *) {
+                doneButton.tintColor = Asset.Colors.zoteroBlue.color
+            }
             navigationItem.rightBarButtonItem = doneButton
         }
     }

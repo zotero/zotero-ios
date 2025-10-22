@@ -45,9 +45,15 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showFilters(filters: [ItemsFilter], filtersDelegate: BaseItemsViewController, button: UIBarButtonItem)
     func showDeletionQuestion(count: Int, confirmAction: @escaping () -> Void, cancelAction: @escaping () -> Void)
     func showRemoveFromCollectionQuestion(count: Int, confirmAction: @escaping () -> Void)
-    func showCitation(using presenter: UIViewController?, for itemIds: Set<String>, libraryId: LibraryIdentifier, delegate: DetailCitationCoordinatorDelegate?)
+    func showCitation(
+        using presenter: UIViewController?,
+        for itemIds: Set<String>,
+        libraryId: LibraryIdentifier,
+        delegate: DetailCitationCoordinatorDelegate?,
+        sourceItem: UIPopoverPresentationControllerSourceItem?
+    )
     func copyBibliography(using presenter: UIViewController, for itemIds: Set<String>, libraryId: LibraryIdentifier, delegate: DetailCopyBibliographyCoordinatorDelegate?)
-    func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier)
+    func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier, sourceItem: UIPopoverPresentationControllerSourceItem?)
     func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier)
     func show(error: ItemsError)
     func showLookup()
@@ -420,16 +426,6 @@ final class DetailCoordinator: Coordinator {
         transitionDelegate = nil
         (navigationController?.presentedViewController ?? navigationController)?.present(controller, animated: true, completion: nil)
     }
-
-    private func showSettings(using presenter: UINavigationController, initialScreen: SettingsCoordinator.InitialScreen? = nil) {
-        let navigationController = NavigationViewController()
-        let containerController = ContainerViewController(rootViewController: navigationController)
-        let coordinator = SettingsCoordinator(navigationController: navigationController, controllers: controllers, initialScreen: initialScreen)
-        coordinator.parentCoordinator = self
-        childCoordinators.append(coordinator)
-        coordinator.start(animated: false)
-        presenter.present(containerController, animated: true)
-    }
 }
 
 extension DetailCoordinator: DetailItemsCoordinatorDelegate {
@@ -488,17 +484,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         let sortNavigationController = UINavigationController()
         sortNavigationController.modalPresentationStyle = .popover
         sortNavigationController.popoverPresentationController?.sourceItem = button
-        let view = ItemSortingView(
-            sortType: sortType,
-            changed: changed,
-            showPicker: { [weak sortNavigationController] view in
-                guard let sortNavigationController else { return }
-                showPicker(view: view, navigationController: sortNavigationController)
-            },
-            closePicker: { [weak sortNavigationController] in
-                sortNavigationController?.popViewController(animated: true)
-            }
-        )
+        let view = ItemSortingView(sortType: sortType, changed: changed)
         let controller = createItemSortingController(for: view, navigationController: sortNavigationController)
         sortNavigationController.setViewControllers([controller], animated: false)
         navigationController?.present(sortNavigationController, animated: true, completion: nil)
@@ -508,32 +494,30 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
             var size: CGSize?
             controller.willAppear = { [weak controller, weak navigationController] in
                 guard let controller else { return }
-                let _size = size ?? controller.view.systemLayoutSizeFitting(CGSize(width: 400.0, height: .greatestFiniteMagnitude))
+                let _size = size ?? controller.view.systemLayoutSizeFitting(CGSize(width: 400.0, height: 600))
                 size = _size
                 controller.preferredContentSize = _size
                 navigationController?.preferredContentSize = _size
             }
 
-            if UIDevice.current.userInterfaceIdiom == .phone {
-                controller.didLoad = { [weak self] viewController in
-                    guard let self else { return }
-                    let doneButton = UIBarButtonItem(title: L10n.done, style: .done, target: nil, action: nil)
-                    doneButton.rx.tap
-                        .subscribe({ [weak self] _ in
-                            self?.navigationController?.dismiss(animated: true)
-                        })
-                        .disposed(by: disposeBag)
-                    viewController.navigationItem.rightBarButtonItem = doneButton
+            controller.didLoad = { [weak self] viewController in
+                guard let self else { return }
+                let primaryAction = UIAction(title: L10n.done) { [weak self] _ in
+                    self?.navigationController?.dismiss(animated: true)
                 }
+                let doneButton: UIBarButtonItem
+                if #available(iOS 26.0.0, *) {
+                    doneButton = UIBarButtonItem(systemItem: .done, primaryAction: primaryAction)
+                    doneButton.tintColor = Asset.Colors.zoteroBlue.color
+                    doneButton.style = .prominent
+                } else {
+                    doneButton = UIBarButtonItem(primaryAction: primaryAction)
+                    doneButton.style = .done
+                }
+                viewController.navigationItem.rightBarButtonItem = doneButton
             }
-            return controller
-        }
 
-        func showPicker(view: ItemSortTypePickerView, navigationController: UINavigationController) {
-            let controller = UIHostingController(rootView: view)
-            controller.preferredContentSize = CGSize(width: 400, height: 600)
-            navigationController.preferredContentSize = controller.preferredContentSize
-            navigationController.pushViewController(controller, animated: true)
+            return controller
         }
     }
 
@@ -692,7 +676,13 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         self.navigationController?.present(controller, animated: true, completion: nil)
     }
 
-    func showCitation(using presenter: UIViewController?, for itemIds: Set<String>, libraryId: LibraryIdentifier, delegate: DetailCitationCoordinatorDelegate?) {
+    func showCitation(
+        using presenter: UIViewController?,
+        for itemIds: Set<String>,
+        libraryId: LibraryIdentifier,
+        delegate: DetailCitationCoordinatorDelegate?,
+        sourceItem: UIPopoverPresentationControllerSourceItem?
+    ) {
         guard let resolvedPresenter = presenter ?? navigationController else { return }
         guard let citationController = controllers.userControllers?.citationController else { return }
 
@@ -711,8 +701,22 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         let controller = SingleCitationViewController(viewModel: viewModel)
         controller.coordinatorDelegate = delegate ?? self
         let navigationController = UINavigationController(rootViewController: controller)
-        let containerController = ContainerViewController(rootViewController: navigationController)
-        resolvedPresenter.present(containerController, animated: true, completion: nil)
+        if #available(iOS 26.0, *) {
+            navigationController.modalPresentationStyle = .popover
+            if let popoverPresentationController = navigationController.popoverPresentationController {
+                if let sourceItem {
+                    popoverPresentationController.sourceItem = sourceItem
+                } else {
+                    popoverPresentationController.sourceView = resolvedPresenter.view
+                    popoverPresentationController.sourceRect = CGRect(x: resolvedPresenter.view.bounds.midX, y: resolvedPresenter.view.bounds.midY, width: 0, height: 0)
+                    popoverPresentationController.permittedArrowDirections = []
+                }
+            }
+            resolvedPresenter.present(navigationController, animated: true)
+        } else {
+            let containerController = ContainerViewController(rootViewController: navigationController)
+            resolvedPresenter.present(containerController, animated: true)
+        }
     }
 
     func copyBibliography(using presenter: UIViewController, for itemIds: Set<String>, libraryId: LibraryIdentifier, delegate: DetailCopyBibliographyCoordinatorDelegate?) {
@@ -737,16 +741,10 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         presenter.present(controller, animated: true)
     }
 
-    func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier) {
+    func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier, sourceItem: UIPopoverPresentationControllerSourceItem?) {
         DDLogInfo("DetailCoordinator: show citation/bibliography export for \(itemIds)")
-
-        let navigationController = NavigationViewController()
-        let containerController = ContainerViewController(rootViewController: navigationController)
-        let coordinator = CitationBibliographyExportCoordinator(itemIds: itemIds, libraryId: libraryId, navigationController: navigationController, controllers: self.controllers)
-        coordinator.parentCoordinator = self
-        self.childCoordinators.append(coordinator)
-        coordinator.start(animated: false)
-        self.navigationController?.present(containerController, animated: true, completion: nil)
+        guard let navigationController else { return }
+        showCitationBibliographyExport(using: navigationController, for: itemIds, in: libraryId, controllers: controllers, animated: true, sourceItem: sourceItem)
     }
 
     func show(error: ItemsError) {
@@ -868,7 +866,7 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
                         if webDavEnabled {
                             let action = UIAlertAction(title: L10n.goToSettings, style: .default) { [weak self] _ in
                                 guard let self, let navigationController else { return }
-                                showSettings(using: navigationController, initialScreen: .sync)
+                                showSettings(using: navigationController, controllers: controllers, animated: true, initialScreen: .sync, sourceItem: nil)
                             }
                             return(L10n.Errors.Attachments.unauthorizedWebdav, [action] + cancelAction)
                         }
@@ -1101,7 +1099,8 @@ extension DetailCoordinator: DetailMissingStyleErrorDelegate {
         let controller = UIAlertController(title: L10n.error, message: L10n.Errors.Citation.missingStyle, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
         controller.addAction(UIAlertAction(title: L10n.Errors.Citation.openSettings, style: .default, handler: { [weak self] _ in
-            self?.showSettings(using: resolvedPresenter, initialScreen: .export)
+            guard let self else { return }
+            showSettings(using: resolvedPresenter, controllers: controllers, animated: true, initialScreen: .export, sourceItem: nil)
         }))
 
         if resolvedPresenter.presentedViewController == nil {
@@ -1123,6 +1122,10 @@ extension DetailCoordinator: DetailCitationCoordinatorDelegate {
 }
 
 extension DetailCoordinator: DetailCopyBibliographyCoordinatorDelegate { }
+
+extension DetailCoordinator: SettingsPresenter { }
+
+extension DetailCoordinator: CitationBibliographyExportPresenter { }
 
 // swiftlint:disable private_over_fileprivate
 fileprivate class AVPlayerDelegate: NSObject, AVPlayerViewControllerDelegate {

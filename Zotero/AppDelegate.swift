@@ -172,17 +172,26 @@ final class AppDelegate: UIResponder {
     }
 
     private func setupAppearance() {
-        // Navigation bars
-        let appearance = UINavigationBarAppearance()
-        appearance.configureWithDefaultBackground()
-        UINavigationBar.appearance().scrollEdgeAppearance = appearance
-        UINavigationBar.appearance().tintColor = Asset.Colors.zoteroBlue.color
-        // Toolbars
-        UIToolbar.appearance().tintColor = Asset.Colors.zoteroBlue.color
-        // Buttons
-        UIButton.appearance().tintColor = Asset.Colors.zoteroBlue.color
-        // Search bar
-        UISearchBar.appearance().tintColor = Asset.Colors.zoteroBlue.color
+        if #available(iOS 26.0.0, *) {
+            // Focus change in collections would cause a crash, if selection wasn't dispatched in the next runloop.
+            // Additionally, in expanded split view controller, going back to libraries would immediately focus and select the same library, pushing again the collections view controller in the stack.
+            // Disabling selectionFollowsFocus globally, elminates all related issues.
+            // TODO: Define focus logic as neeeded, separately for each class.
+            UITableView.appearance().selectionFollowsFocus = false
+            UICollectionView.appearance().selectionFollowsFocus = false
+        } else {
+            // Navigation bars
+            let appearance = UINavigationBarAppearance()
+            appearance.configureWithDefaultBackground()
+            UINavigationBar.appearance().scrollEdgeAppearance = appearance
+            UINavigationBar.appearance().tintColor = Asset.Colors.zoteroBlue.color
+            // Toolbars
+            UIToolbar.appearance().tintColor = Asset.Colors.zoteroBlue.color
+            // Buttons
+            UIButton.appearance().tintColor = Asset.Colors.zoteroBlue.color
+            // Search bar
+            UISearchBar.appearance().tintColor = Asset.Colors.zoteroBlue.color
+        }
     }
 
     private func setupExportDefaults() {
