@@ -150,7 +150,7 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
             changedCollections = state.collectionTree.setAll(collapsed: allCollapsed)
             state.changes = .collapsedState
 
-            if allCollapsed && !state.collectionTree.isRoot(identifier: state.selectedCollectionId) {
+            if allCollapsed, let selectedCollectionId = state.selectedCollectionId, !state.collectionTree.isRoot(identifier: selectedCollectionId) {
                 state.selectedCollectionId = .custom(.all)
                 state.changes.insert(.selection)
             }
@@ -175,8 +175,11 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
             state.changes = .collapsedState
 
             // If a collection is being collapsed and selected collection is a child of collapsed collection, select currently collapsed collection
-            if state.selectedCollectionId != collection.identifier && newCollapsed && !state.collectionTree.isRoot(identifier: state.selectedCollectionId) &&
-               state.collectionTree.identifier(state.selectedCollectionId, isChildOf: collection.identifier) {
+            if let selectedCollectionId = state.selectedCollectionId,
+               selectedCollectionId != collection.identifier,
+               newCollapsed,
+               !state.collectionTree.isRoot(identifier: selectedCollectionId),
+               state.collectionTree.identifier(selectedCollectionId, isChildOf: collection.identifier) {
                 state.selectedCollectionId = collection.identifier
                 state.changes.insert(.selection)
             }
@@ -421,7 +424,7 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
                 state.changes = .results
 
                 // Check whether selection still exists
-                if state.collectionTree.collection(for: state.selectedCollectionId) == nil {
+                if let selectedCollectionId = state.selectedCollectionId, state.collectionTree.collection(for: selectedCollectionId) == nil {
                     state.selectedCollectionId = .custom(.all)
                     state.changes.insert(.selection)
                 }
