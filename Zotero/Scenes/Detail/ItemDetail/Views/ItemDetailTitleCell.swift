@@ -9,7 +9,7 @@
 import UIKit
 import RxSwift
 
-final class ItemDetailTitleCell: UICollectionViewListCell, FocusableCell {
+final class ItemDetailTitleCell: UICollectionViewListCell {
     struct ContentConfiguration: UIContentConfiguration {
         let title: NSAttributedString
         let isEditing: Bool
@@ -57,7 +57,9 @@ final class ItemDetailTitleCell: UICollectionViewListCell, FocusableCell {
             contentView.setup(with: configuration.title, isEditing: configuration.isEditing)
         }
     }
-    
+}
+
+extension ItemDetailTitleCell: FocusableCell {
     func focus() {
         guard let view = contentView as? ContentView else { return }
         view.contentView.focus()
