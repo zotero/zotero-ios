@@ -9,7 +9,7 @@
 import UIKit
 import RxSwift
 
-final class ItemDetailTitleCell: UICollectionViewListCell {
+final class ItemDetailTitleCell: UICollectionViewListCell, FocusableCell {
     struct ContentConfiguration: UIContentConfiguration {
         let title: NSAttributedString
         let isEditing: Bool
@@ -56,5 +56,10 @@ final class ItemDetailTitleCell: UICollectionViewListCell {
             contentView.layoutMargins = configuration.layoutMargins
             contentView.setup(with: configuration.title, isEditing: configuration.isEditing)
         }
+    }
+    
+    func focus() {
+        guard let view = contentView as? ContentView else { return }
+        view.contentView.focus()
     }
 }
