@@ -36,7 +36,9 @@ final class MainViewController: UISplitViewController {
             if let detailCoordinatorGetter,
                detailCoordinatorGetter.libraryId == nil || detailCoordinatorGetter.libraryId == detailCoordinator.libraryId,
                detailCoordinatorGetter.collectionId == nil || detailCoordinatorGetter.collectionId == detailCoordinator.collection.identifier {
-                detailCoordinatorGetter.completion(detailCoordinator)
+                DispatchQueue.main.async {
+                    detailCoordinatorGetter.completion(detailCoordinator)
+                }
                 self.detailCoordinatorGetter = nil
             }
         }

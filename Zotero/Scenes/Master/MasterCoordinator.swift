@@ -76,20 +76,21 @@ final class MasterCoordinator: NSObject, Coordinator {
 
     private func createCollectionsViewController(
         libraryId: LibraryIdentifier,
-        selectedCollectionId: CollectionIdentifier,
+        selectedCollectionId: CollectionIdentifier?,
         userControllers: UserControllers
     ) -> CollectionsViewController {
         let dbStorage = userControllers.dbStorage
         let syncScheduler = userControllers.syncScheduler
         let attachmentDownloader = userControllers.fileDownloader
         let fileCleanupController = userControllers.fileCleanupController
-        DDLogInfo("MasterTopCoordinator: show collections for \(selectedCollectionId.id); \(libraryId)")
+        DDLogInfo("MasterTopCoordinator: show collections for \(selectedCollectionId?.id ?? "nil"); \(libraryId)")
         let handler = CollectionsActionHandler(dbStorage: dbStorage, fileStorage: controllers.fileStorage, attachmentDownloader: attachmentDownloader, fileCleanupController: fileCleanupController)
         let state = CollectionsState(libraryId: libraryId, selectedCollectionId: selectedCollectionId)
         let viewModel = ViewModel(initialState: state, handler: handler)
         return CollectionsViewController(viewModel: viewModel, dbStorage: dbStorage, syncScheduler: syncScheduler, coordinatorDelegate: self)
     }
 
+    @discardableResult
     private func storeIfNeeded(libraryId: LibraryIdentifier, preselectedCollection collectionId: CollectionIdentifier? = nil) -> CollectionIdentifier {
         if Defaults.shared.selectedLibraryId == libraryId {
             if let collectionId {
@@ -115,11 +116,11 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
         guard let userControllers = controllers.userControllers, let navigationController else { return }
 
         let libraryId = LibraryIdentifier.custom(.myLibrary)
-        let collectionId = storeIfNeeded(libraryId: libraryId)
+        storeIfNeeded(libraryId: libraryId)
 
         let controller = createCollectionsViewController(
             libraryId: libraryId,
-            selectedCollectionId: collectionId,
+            selectedCollectionId: nil,
             userControllers: userControllers
         )
 
@@ -168,11 +169,11 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
     func showCollections(for libraryId: LibraryIdentifier) {
         guard let userControllers = controllers.userControllers, let navigationController else { return }
 
-        let collectionId = storeIfNeeded(libraryId: libraryId)
+        storeIfNeeded(libraryId: libraryId)
 
         let controller = createCollectionsViewController(
             libraryId: libraryId,
-            selectedCollectionId: collectionId,
+            selectedCollectionId: nil,
             userControllers: userControllers
         )
         navigationController.pushViewController(controller, animated: true)
@@ -224,7 +225,7 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
                 navigationController.setViewControllers(viewControllers, animated: animated)
                 modifiedViewControllers = true
             }
-            if controller.selectedIdentifier != collectionId || modifiedViewControllers {
+            if controller.selectedCollectionId != collectionId || modifiedViewControllers {
                 // Select proper collection.
                 controller.viewModel.process(action: .select(collectionId))
             }

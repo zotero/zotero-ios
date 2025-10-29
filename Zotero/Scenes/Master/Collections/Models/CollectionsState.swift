@@ -36,7 +36,7 @@ struct CollectionsState: ViewModelState {
     var library: Library
     var libraryToken: NotificationToken?
     var collectionTree: CollectionTree
-    var selectedCollectionId: CollectionIdentifier
+    var selectedCollectionId: CollectionIdentifier?
     var editingData: CollectionStateEditingData?
     var changes: Changes
     var collectionsToken: NotificationToken?
@@ -50,7 +50,7 @@ struct CollectionsState: ViewModelState {
     // Used when user wants to create bibliography from whole collection.
     var itemKeysForBibliography: Swift.Result<Set<String>, Error>?
 
-    init(libraryId: LibraryIdentifier, selectedCollectionId: CollectionIdentifier) {
+    init(libraryId: LibraryIdentifier, selectedCollectionId: CollectionIdentifier?) {
         self.selectedCollectionId = selectedCollectionId
         self.changes = []
         self.collectionTree = CollectionTree(nodes: [], collections: [:], collapsed: [:])

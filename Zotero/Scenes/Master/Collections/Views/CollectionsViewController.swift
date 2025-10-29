@@ -26,7 +26,7 @@ final class CollectionsViewController: UICollectionViewController {
     private var collectionViewHandler: ExpandableCollectionsCollectionViewHandler!
     private weak var coordinatorDelegate: MasterCollectionsCoordinatorDelegate?
     private var refreshController: SyncRefreshController?
-    var selectedIdentifier: CollectionIdentifier {
+    var selectedCollectionId: CollectionIdentifier? {
         return self.viewModel.state.selectedCollectionId
     }
 
@@ -54,12 +54,8 @@ final class CollectionsViewController: UICollectionViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        if isSplit {
-            if let collection = self.viewModel.state.collectionTree.collection(for: self.viewModel.state.selectedCollectionId) {
-                self.coordinatorDelegate?.showItems(for: collection, in: self.viewModel.state.library.identifier)
-            } else {
-                self.viewModel.process(action: .select(.custom(.all)))
-            }
+        if let selectedCollectionId = viewModel.state.selectedCollectionId ?? (isSplit ? .custom(.all) : nil), let collection = viewModel.state.collectionTree.collection(for: selectedCollectionId) {
+            coordinatorDelegate?.showItems(for: collection, in: viewModel.state.library.identifier)
         }
 
         self.setupTitleWithContextMenu(self.viewModel.state.library.name)
@@ -115,12 +111,12 @@ final class CollectionsViewController: UICollectionViewController {
             }
         }
 
-        if state.changes.contains(.selection), let collection = state.collectionTree.collection(for: state.selectedCollectionId) {
+        if state.changes.contains(.selection), let selectedCollectionId = state.selectedCollectionId, let collection = state.collectionTree.collection(for: selectedCollectionId) {
             Defaults.shared.selectedCollectionId = collection.identifier
             self.coordinatorDelegate?.showItems(for: collection, in: state.library.identifier)
 
             if !requiresUpdate {
-                self.selectIfNeeded(collectionId: state.selectedCollectionId, tree: state.collectionTree, scrollToPosition: false)
+                self.selectIfNeeded(collectionId: selectedCollectionId, tree: state.collectionTree, scrollToPosition: false)
             }
         }
 
@@ -155,10 +151,11 @@ final class CollectionsViewController: UICollectionViewController {
 
     // MARK: - Actions
 
-    private func selectIfNeeded(collectionId: CollectionIdentifier, tree: CollectionTree, scrollToPosition: Bool) {
+    private func selectIfNeeded(collectionId: CollectionIdentifier?, tree: CollectionTree, scrollToPosition: Bool) {
         // Selection is disabled in compact mode (when UISplitViewController is a single column instead of master + detail).
         guard isSplit else { return }
-        self.collectionViewHandler.selectIfNeeded(collectionId: collectionId, tree: tree, scrollToPosition: scrollToPosition)
+        let collectionId = collectionId ?? .custom(.all)
+        collectionViewHandler.selectIfNeeded(collectionId: collectionId, tree: tree, scrollToPosition: scrollToPosition)
     }
 
     private func select(searchResult: Collection) {
