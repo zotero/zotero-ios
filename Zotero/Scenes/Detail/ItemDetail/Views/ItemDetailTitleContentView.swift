@@ -89,6 +89,12 @@ final class ItemDetailTitleContentView: UIView {
         delegate.set(text: title, to: textView)
     }
     
+    func focus() {
+        if textView.isEditable {
+            textView.becomeFirstResponder()
+        }
+    }
+    
     private func setupBottomConstraint() {
         if traitCollection.horizontalSizeClass == .regular && UIDevice.current.userInterfaceIdiom == .pad, let font = textView.font {
             bottomConstraint.constant = -font.descender

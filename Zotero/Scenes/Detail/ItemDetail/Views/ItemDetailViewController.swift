@@ -70,6 +70,7 @@ final class ItemDetailViewController: UIViewController {
         super.viewDidLoad()
 
         navigationController?.setToolbarHidden(true, animated: false)
+        collectionView.isHidden = true
         setupFileObservers()
 
         viewModel.stateObservable
@@ -248,7 +249,11 @@ final class ItemDetailViewController: UIViewController {
 
             setNavigationBarButtons(to: state)
             collectionViewHandler.recalculateTitleWidth(from: state.data)
-            collectionViewHandler.reloadAll(to: state, animated: !wasHidden)
+            collectionViewHandler.reloadAll(to: state, animated: !wasHidden) { [weak self] in
+                if wasHidden, case .creation = state.type {
+                    self?.collectionViewHandler.focus(row: .title)
+                }
+            }
 
             return
         }
