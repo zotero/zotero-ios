@@ -1008,7 +1008,7 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
                 })
             }
 
-            if !viewModel.state.data.isAttachment {
+            if !viewModel.state.data.isAttachment, !viewModel.state.isTrash {
                 if case .file = attachment.type {
                     actions.append(UIAction(title: L10n.ItemDetail.moveToStandaloneAttachment, image: UIImage(systemName: "arrow.up.to.line"), attributes: []) { [weak self] _ in
                         self?.viewModel.process(action: .moveAttachmentToStandalone(attachment))
