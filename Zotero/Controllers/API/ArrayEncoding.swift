@@ -53,22 +53,7 @@ struct ArrayEncoding: ParameterEncoding {
         guard let array = parameters[ArrayEncoding.arrayParametersKey] else { return urlRequest }
 
         let tmpPath = NSTemporaryDirectory() + UUID().uuidString + ".json"
-
-        guard let outputStream = OutputStream(toFileAtPath: tmpPath, append: false) else {
-            throw AFError.parameterEncodingFailed(reason: .jsonEncodingFailed(error: ArrayEncodingError.cantCreateOutputStream))
-        }
-
-        outputStream.open()
-
-        var error: NSError?
-        JSONSerialization.writeJSONObject(array, to: outputStream, options: self.options, error: &error)
-
-        outputStream.close()
-
-        if let error = error {
-            DDLogError("ArrayEncoding: serialization error - \(error)")
-            throw AFError.parameterEncodingFailed(reason: .jsonEncodingFailed(error: error))
-        }
+        try safeWrite()
 
         guard let inputStream = InputStream(fileAtPath: tmpPath) else {
             throw AFError.parameterEncodingFailed(reason: .jsonEncodingFailed(error: ArrayEncodingError.cantCreateInputStream))
@@ -81,5 +66,34 @@ struct ArrayEncoding: ParameterEncoding {
         urlRequest.httpBodyStream = inputStream
 
         return urlRequest
+        
+        func safeWrite() throws {
+            var error: NSError?
+            
+            for attempt in 1...2 {
+                guard let outputStream = OutputStream(toFileAtPath: tmpPath, append: false) else {
+                    throw AFError.parameterEncodingFailed(reason: .jsonEncodingFailed(error: ArrayEncodingError.cantCreateOutputStream))
+                }
+
+                outputStream.open()
+                JSONSerialization.writeJSONObject(array, to: outputStream, options: self.options, error: &error)
+                outputStream.close()
+                
+                guard let error else {
+                    return
+                }
+
+                DDLogError("ArrayEncoding: attempt \(attempt) serialization error - \(error). Stream error: \(outputStream.streamError as Any)")
+                
+                if attempt == 1 {
+                    // Let's try again in a second to rule out cleanup of the temporary directory or other race conditions.
+                    Thread.sleep(forTimeInterval: 1)
+                }
+            }
+            
+            if let error {
+                throw AFError.parameterEncodingFailed(reason: .jsonEncodingFailed(error: error))
+            }
+        }
     }
 }
