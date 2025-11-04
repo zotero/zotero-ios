@@ -176,6 +176,7 @@ final class SyncController: SynchronizationController {
 
     // All access to local variables is performed on this queue.
     private let accessQueue: DispatchQueue
+    private let accessQueueKey = DispatchSpecificKey<Void>()
     // All processing of actions is performed on this queue.
     private let workQueue: DispatchQueue
     // All processing of actions is scheduled on this scheduler.
@@ -230,6 +231,9 @@ final class SyncController: SynchronizationController {
     private var uploadsFailedBeforeReachingZoteroBackend: Int
 
     private var isSyncing: Bool {
+        if DispatchQueue.getSpecific(key: accessQueueKey) == nil {
+            DDLogError("Sync: isSyncing not called on correct queue")
+        }
         return self.processingAction != nil || !self.queue.isEmpty
     }
 
@@ -254,6 +258,7 @@ final class SyncController: SynchronizationController {
         maxRetryCount: Int
     ) {
         let accessQueue = DispatchQueue(label: "org.zotero.SyncController.accessQueue", qos: .userInteractive, attributes: .concurrent)
+        accessQueue.setSpecific(key: accessQueueKey, value: ())
         let workQueue = DispatchQueue(label: "org.zotero.SyncController.workQueue", qos: .userInteractive)
         self.userId = userId
         self.accessQueue = accessQueue
@@ -482,6 +487,10 @@ final class SyncController: SynchronizationController {
     /// - parameter actions: Array of actions to be added.
     /// - parameter index: Index in array where actions should be added. If nil, they will be appended.
     private func enqueue(actions: [Action], at index: Int? = nil) {
+        if DispatchQueue.getSpecific(key: accessQueueKey) == nil {
+            DDLogError("Sync: enqueue(actions:at:) not called on correct queue")
+        }
+        
         if !actions.isEmpty {
             if let index = index {
                 self.queue.insert(contentsOf: actions, at: index)
@@ -496,6 +505,9 @@ final class SyncController: SynchronizationController {
     /// Removes all actions for given library from the beginning of the queue.
     /// - parameter libraryId: Library identifier for which actions will be deleted.
     private func removeAllActions(for libraryId: LibraryIdentifier) {
+        if DispatchQueue.getSpecific(key: accessQueueKey) == nil {
+            DDLogError("Sync: removeAllActions not called on correct queue")
+        }
         while !self.queue.isEmpty {
             guard self.queue.first?.libraryId == libraryId else { break }
             self.queue.removeFirst()
@@ -504,6 +516,10 @@ final class SyncController: SynchronizationController {
 
     /// Processes next action in queue.
     private func processNextAction() {
+        if DispatchQueue.getSpecific(key: accessQueueKey) == nil {
+            DDLogError("Sync: processNextAction not called on correct queue")
+        }
+        
         guard !self.queue.isEmpty else {
             self.processingAction = nil
             self.finish()
@@ -973,6 +989,10 @@ final class SyncController: SynchronizationController {
     }
 
     private func process(uploads: [AttachmentUpload], hadOtherWriteActions: Bool, libraryId: LibraryIdentifier, canWriteFiles: Bool) {
+        if DispatchQueue.getSpecific(key: accessQueueKey) == nil {
+            DDLogError("Sync: process(uploads:) not called on correct queue")
+        }
+        
         if uploads.isEmpty {
             // If no uploads were loaded (probably because there are ongoing background uploads) and there were other write actions performed, continue with next actions.
             if hadOtherWriteActions {
@@ -1174,6 +1194,10 @@ final class SyncController: SynchronizationController {
     }
 
     private func finishBatchesSyncAction(for libraryId: LibraryIdentifier, object: SyncObject, result: Swift.Result<SyncBatchResponse, Error>, keys: [String]) {
+        if DispatchQueue.getSpecific(key: accessQueueKey) == nil {
+            DDLogError("Sync: finishBatchesSyncAction not called on correct queue")
+        }
+        
         switch result {
         case .success((let failedKeys, let parseErrors, _))://let itemConflicts)):
             let nonFatalErrors = parseErrors.map({
@@ -1769,6 +1793,9 @@ final class SyncController: SynchronizationController {
     /// Handles case from issue #381. If there were only uploads enqueued and they all failed before reaching Zotero backend, the sync didn't check whether there are remote changes, so this function
     /// adds download actions to check for remote changes.
     private func handleAllUploadsFailedBeforeReachingZoteroBackend(in libraryId: LibraryIdentifier) {
+        if DispatchQueue.getSpecific(key: accessQueueKey) == nil {
+            DDLogError("Sync: handleAllUploadsFailedBeforeReachingZoteroBackend not called on correct queue")
+        }
         // If there were write actions (write, delete item) to Zotero backend, we don't need to check for this anymore. If there were remote changes, we would have gotten 412 from backend already.
         guard !self.didEnqueueWriteActionsToZoteroBackend && self.enqueuedUploads > 0 else { return }
         self.uploadsFailedBeforeReachingZoteroBackend += 1
@@ -1922,6 +1949,10 @@ final class SyncController: SynchronizationController {
     /// on backend. The new version is returned by backend and needs to be used in next batch, so that it doesn't report a conflict.
     /// - parameter version: New version after submission of last batch of changes.
     private func updateVersionInNextWriteBatch(to version: Int) {
+        if DispatchQueue.getSpecific(key: accessQueueKey) == nil {
+            DDLogError("Sync: updateVersionInNextWriteBatch not called on correct queue")
+        }
+        
         guard let action = self.queue.first else { return }
 
         switch action {
@@ -1940,6 +1971,10 @@ final class SyncController: SynchronizationController {
     /// - parameter libraryId: LibraryIdentifier of action
     /// - parameter version: Version number to which the action should be updated
     private func updateDeletionVersion(for libraryId: LibraryIdentifier, to version: Int) {
+        if DispatchQueue.getSpecific(key: accessQueueKey) == nil {
+            DDLogError("Sync: updateDeletionVersion not called on correct queue")
+        }
+        
         for (idx, action) in self.queue.enumerated() {
             switch action {
             case .storeDeletionVersion(let actionLibraryId, _):
@@ -2174,6 +2209,9 @@ final class SyncController: SynchronizationController {
         /// - additiionalAction: Additional actions that should be applied to queue
         func handleQuotaLimit(for libraryId: LibraryIdentifier, andAppendError error: SyncError.NonFatal, additionalAction: (() -> Bool)?) {
             DDLogInfo("Sync: received quota limit for \(libraryId)")
+            if DispatchQueue.getSpecific(key: accessQueueKey) == nil {
+                DDLogError("Sync: handleQuotaLimit not called on correct queue")
+            }
 
             // Remove all other upload actions from queue, our quota is full, so they'll just fail
             self.queue.removeAll(where: { action in
@@ -2208,6 +2246,9 @@ final class SyncController: SynchronizationController {
         /// - returns: `true` if there was a unchanged error, `false` otherwise.
         func handleUnchangedFailure(lastVersion: Int, libraryId: LibraryIdentifier, additionalAction: (() -> Bool)?) {
             DDLogInfo("Sync: received unchanged error, store version: \(lastVersion)")
+            if DispatchQueue.getSpecific(key: accessQueueKey) == nil {
+                DDLogError("Sync: handleUnchangedFailure not called on correct queue")
+            }
             self.lastReturnedVersion = lastVersion
 
             // If current sync type is `.full` we don't want to skip anything.
@@ -2248,6 +2289,10 @@ final class SyncController: SynchronizationController {
     }
 
     private func addWebDavDeletionsActionIfNeeded(libraryId: LibraryIdentifier) {
+        if DispatchQueue.getSpecific(key: accessQueueKey) == nil {
+            DDLogError("Sync: addWebDavDeletionsActionIfNeeded not called on correct queue")
+        }
+        
         var libraryIndex = 0
         for action in self.queue {
             if action.libraryId != libraryId {

@@ -236,6 +236,7 @@ extension AppDelegate: UIApplicationDelegate {
                                                           forProperty: "lineWidth",
                                                           forKey: PSPDFKit.Annotation.ToolVariantID(tool: .square))
 
+        DeviceInfoProvider.delegateStart = CFAbsoluteTimeGetCurrent()
         self.setupLogs()
         self.controllers = Controllers()
         self.setupAppearance()

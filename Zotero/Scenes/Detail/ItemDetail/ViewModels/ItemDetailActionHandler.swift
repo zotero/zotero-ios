@@ -258,7 +258,7 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
                 doiDetector: FieldKeys.Item.isDoi
             )
 
-            saveReloaded(data: data, attachments: attachments, notes: notes, tags: tags, isEditing: canEdit, library: library, token: token, in: viewModel)
+            saveReloaded(data: data, attachments: attachments, notes: notes, tags: tags, isEditing: canEdit, isTrash: item.trash, library: library, token: token, in: viewModel)
         } catch let error {
             DDLogError("ItemDetailActionHandler: can't load data - \(error)")
             self.update(viewModel: viewModel) { state in
@@ -272,6 +272,7 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
             notes: [Note],
             tags: [Tag],
             isEditing: Bool,
+            isTrash: Bool,
             library: Library,
             token: NotificationToken,
             in viewModel: ViewModel<ItemDetailActionHandler>
@@ -295,6 +296,7 @@ final class ItemDetailActionHandler: ViewModelActionHandler, BackgroundDbProcess
                 state.library = library
                 state.isLoadingData = false
                 state.isEditing = isEditing
+                state.isTrash = isTrash
                 state.observationToken = token
                 state.changes.insert(.reloadedData)
             }

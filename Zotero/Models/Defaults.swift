@@ -166,7 +166,7 @@ final class Defaults {
     var askForSyncPermission: Bool
 
     // Increment currentPerformFullSyncGuard by 1, whenever the upcoming release should trigger a full sync.
-    static let currentPerformFullSyncGuard = 1
+    static let currentPerformFullSyncGuard = 2
     @UserDefault(key: "PerformFullSyncGuard", defaultValue: {
         if UserDefaults.zotero.object(forKey: "DidPerformFullSyncFix") != nil {
             // Existing installation. Since this is the first use of this guard, we return the default value - 1, to be certain to trigger a full sync.

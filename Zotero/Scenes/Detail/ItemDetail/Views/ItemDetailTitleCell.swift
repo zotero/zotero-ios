@@ -58,3 +58,10 @@ final class ItemDetailTitleCell: UICollectionViewListCell {
         }
     }
 }
+
+extension ItemDetailTitleCell: FocusableCell {
+    func focus() {
+        guard let view = contentView as? ContentView else { return }
+        view.contentView.focus()
+    }
+}

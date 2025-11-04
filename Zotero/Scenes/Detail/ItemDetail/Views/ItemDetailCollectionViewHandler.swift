@@ -15,6 +15,10 @@ protocol ItemDetailCollectionViewHandlerDelegate: AnyObject {
     func isDownloadingFromNavigationBar(for key: String) -> Bool
 }
 
+protocol FocusableCell: UICollectionViewCell {
+    func focus()
+}
+
 /// Class for handling the `UICollectionView` of `ItemDetailViewController`. It takes care of showing appropriate data in the `collectionView`, keeping track
 /// of visible sections and reports actions that need to take place after user interaction with the `collectionView`.
 final class ItemDetailCollectionViewHandler: NSObject {
@@ -452,7 +456,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
     /// Reloads the whole `collectionView`. Applies new snapshot based on `state` and reloads remaining items which were not changed between snapshots.
     /// - parameter state: State to which we're reloading the table view.
     /// - parameter animated: `true` if the change is animated, `false` otherwise.
-    func reloadAll(to state: ItemDetailState, animated: Bool) {
+    func reloadAll(to state: ItemDetailState, animated: Bool, completion: (() -> Void)? = nil) {
         updateQueue.async { [weak self] in
             guard let self else { return }
             // Assign new id to all sections, just reload everything
@@ -470,6 +474,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
             dataSource.apply(snapshot, animatingDifferences: animated) { [weak self] in
                 // Setting isEditing will trigger reconfiguration of cells, before the new snapshot has been applied, so it is done afterwards to avoid e.g. flickering the old text in a text view.
                 self?.collectionView.isEditing = state.isEditing
+                completion?()
             }
         }
 
@@ -657,6 +662,15 @@ final class ItemDetailCollectionViewHandler: NSObject {
         guard let row = row, let indexPath = dataSource.indexPath(for: row) else { return }
 
         collectionView.scrollToItem(at: indexPath, at: .centeredVertically, animated: animated)
+    }
+    
+    func focus(row: Row) {
+        guard let section = dataSource.snapshot().sectionIdentifier(containingItem: row),
+              let sectionId = dataSource.snapshot().indexOfSection(section),
+              let rowId = dataSource.snapshot().indexOfItem(row),
+              let cell = collectionView.cellForItem(at: IndexPath(row: rowId, section: sectionId)) as? FocusableCell
+        else { return }
+        cell.focus()
     }
 
     // MARK: - Helpers
@@ -994,7 +1008,7 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
                 })
             }
 
-            if !viewModel.state.data.isAttachment {
+            if !viewModel.state.data.isAttachment, !viewModel.state.isTrash {
                 if case .file = attachment.type {
                     actions.append(UIAction(title: L10n.ItemDetail.moveToStandaloneAttachment, image: UIImage(systemName: "arrow.up.to.line"), attributes: []) { [weak self] _ in
                         self?.viewModel.process(action: .moveAttachmentToStandalone(attachment))

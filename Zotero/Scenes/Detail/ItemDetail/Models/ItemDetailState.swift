@@ -250,6 +250,7 @@ struct ItemDetailState: ViewModelState {
     var changes: Changes
     var isEditing: Bool
     var isSaving: Bool
+    var isTrash: Bool
     var data: Data
     var snapshot: Data?
     var promptSnapshot: Data?
@@ -310,6 +311,7 @@ struct ItemDetailState: ViewModelState {
         self.isLoadingData = true
         self.preScrolledChildKey = preScrolledChildKey
         self.hideController = false
+        self.isTrash = false
 
         switch libraryId {
         case .custom:

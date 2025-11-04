@@ -193,7 +193,7 @@
 "item_detail.add_attachment" = "Add attachment";
 "item_detail.split_name" = "Split name";
 "item_detail.merge_name" = "Merge name";
-"item_detail.untitled" = "Untitled";
+"item_detail.untitled" = "Title";
 "item_detail.show_more" = "Show more";
 "item_detail.show_less" = "Show less";
 "item_detail.view_pdf" = "View PDF";
@@ -520,7 +520,7 @@
 "errors.pdf.page_index_not_int" = "Incorrect format of page stored for this document.";
 "errors.pdf.document_changed" = "This document has been changed on another device. Please reopen it to continue editing.";
 
-"accessibility.untitled" = "Untitled";
+"accessibility.untitled" = "Title";
 "accessibility.locked" = "Locked";
 "accessibility.archived" = "Archived";
 "accessibility.collections.items" = "items";
