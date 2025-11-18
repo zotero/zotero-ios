@@ -132,8 +132,7 @@ final class BackgroundUploadObserver: NSObject {
                 self.sessions[sessionId] = nil
                 session.invalidateAndCancel()
             } else {
-                let session = URLSessionCreator.createSession(for: sessionId)
-                session.invalidateAndCancel()
+                URLSessionCreator.invalidateAndCancelSession(for: sessionId)
             }
         }
 
@@ -150,7 +149,7 @@ final class BackgroundUploadObserver: NSObject {
 
             DDLogInfo("BackgroundUploadObserver: start observing \(identifier)")
 
-            let session = URLSessionCreator.createSession(for: identifier, forwardingDelegate: self, forwardingTaskDelegate: self)
+            let session = URLSessionCreator.createTaskSession(for: identifier, delegate: self)
             self.sessions[identifier] = session
         }
     }
@@ -195,15 +194,14 @@ final class BackgroundUploadObserver: NSObject {
     func handleEventsForBackgroundURLSession(with identifier: String, completionHandler: @escaping () -> Void) {
         DDLogInfo("BackgroundUploadObserver: handle events for background url session \(identifier)")
         self.completionHandlers[identifier] = completionHandler
-        let session = URLSessionCreator.createSession(for: identifier, forwardingDelegate: self, forwardingTaskDelegate: self)
+        let session = URLSessionCreator.createTaskSession(for: identifier, delegate: self)
         self.sessions[identifier] = session
     }
 
     func cancelAllUploads() {
-        for id in self.context.sessionIds {
-            guard self.sessions[id] == nil else { continue }
-            let session = URLSessionCreator.createSession(for: id, forwardingDelegate: self, forwardingTaskDelegate: self)
-            session.invalidateAndCancel()
+        for sessionId in self.context.sessionIds {
+            guard self.sessions[sessionId] == nil else { continue }
+            URLSessionCreator.invalidateAndCancelSession(for: sessionId)
         }
 
         for (_, session) in self.sessions {
@@ -277,6 +275,10 @@ extension BackgroundUploadObserver: URLSessionDelegate {
         self.context.deleteSession(with: sessionId)
         self.context.deleteShareExtensionSession(with: sessionId)
     }
+
+    func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+        completionHandler(.performDefaultHandling, nil)
+    }
 }
 
 extension BackgroundUploadObserver: URLSessionTaskDelegate {
@@ -329,5 +331,23 @@ extension BackgroundUploadObserver: URLSessionTaskDelegate {
         let responseError = AFResponseError(url: task.originalRequest?.url, httpMethod: task.originalRequest?.httpMethod, error: .responseValidationFailed(reason: .unacceptableStatusCode(code: response.statusCode)), headers: response.allHeaderFields, response: "Upload failed")
         ApiLogger.logFailedresponse(error: responseError, statusCode: response.statusCode, startData: logStartData)
         return true
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        didReceive challenge: URLAuthenticationChallenge,
+        completionHandler: @escaping @Sendable (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+    ) {
+        completionHandler(.performDefaultHandling, nil)
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        willBeginDelayedRequest request: URLRequest,
+        completionHandler: @escaping (URLSession.DelayedRequestDisposition, URLRequest?) -> Void
+    ) {
+        completionHandler(.continueLoading, nil)
     }
 }
