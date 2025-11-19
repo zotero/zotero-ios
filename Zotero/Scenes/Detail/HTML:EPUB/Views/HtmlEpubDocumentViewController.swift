@@ -179,7 +179,9 @@ class HtmlEpubDocumentViewController: UIViewController {
             DDLogInfo("HtmlEpubDocumentViewController: try creating view for \(data.type); page = \(String(describing: data.page))")
             DDLogInfo("URL: \(data.url.absoluteString)")
             var javascript = "createView({ type: '\(data.type)', url: '\(data.url.absoluteString.replacingOccurrences(of: "'", with: #"\'"#))', annotations: \(data.annotationsJson)"
-            if let page = data.page {
+            if let key = data.selectedAnnotation {
+                javascript += ", location: {annotationID: '\(key)'}"
+            } else if let page = data.page {
                 switch page {
                 case .html(let scrollYPercent):
                     javascript += ", viewState: {scrollYPercent: \(scrollYPercent), scale: 1}"

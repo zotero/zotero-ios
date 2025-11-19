@@ -757,7 +757,13 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
             let (sortedKeys, annotations, json) = processAnnotations(items: annotationItems)
             let (type, page) = try loadTypeAndPage(from: viewModel.state.documentFile, rawPage: rawPage)
-            let documentData = HtmlEpubReaderState.DocumentData(type: type, url: viewModel.state.documentFile.createUrl(), annotationsJson: json, page: page)
+            let documentData = HtmlEpubReaderState.DocumentData(
+                type: type,
+                url: viewModel.state.documentFile.createUrl(),
+                annotationsJson: json,
+                page: page,
+                selectedAnnotation: viewModel.state.selectedAnnotationKey
+            )
 
             let (library, libraryToken) = try viewModel.state.library.identifier.observe(in: dbStorage, changes: { [weak self, weak viewModel] library in
                 guard let self, let viewModel else { return }
