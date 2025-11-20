@@ -153,13 +153,7 @@ final class AttachmentDownloader: NSObject {
         let configuration = URLSessionConfiguration.default
         session = URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
         #else
-        session = URLSessionCreator.createSession(
-            for: Self.sessionId,
-            forwardingDelegate: self,
-            forwardingTaskDelegate: self,
-            forwardingDownloadDelegate: self,
-            httpMaximumConnectionsPerHost: Self.maxConcurrentDownloads
-        )
+        session = URLSessionCreator.createDownloadSession(for: Self.sessionId, delegate: self, httpMaximumConnectionsPerHost: Self.maxConcurrentDownloads)
         session.getAllTasks { [weak self] tasks in
             guard let self else { return }
             let tasksGroupedByIdentifier = Dictionary(grouping: tasks, by: { $0.taskIdentifier })
