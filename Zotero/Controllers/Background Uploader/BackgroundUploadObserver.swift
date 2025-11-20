@@ -132,7 +132,7 @@ final class BackgroundUploadObserver: NSObject {
                 self.sessions[sessionId] = nil
                 session.invalidateAndCancel()
             } else {
-                URLSessionCreator.invalidateAndCancelSession(for: sessionId)
+                URLSessionCreator.createSessionWithoutDelegate(for: sessionId).invalidateAndCancel()
             }
         }
 
@@ -201,7 +201,7 @@ final class BackgroundUploadObserver: NSObject {
     func cancelAllUploads() {
         for sessionId in self.context.sessionIds {
             guard self.sessions[sessionId] == nil else { continue }
-            URLSessionCreator.invalidateAndCancelSession(for: sessionId)
+            URLSessionCreator.createSessionWithoutDelegate(for: sessionId).invalidateAndCancel()
         }
 
         for (_, session) in self.sessions {

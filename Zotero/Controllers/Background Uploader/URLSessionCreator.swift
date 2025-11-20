@@ -45,10 +45,6 @@ final class URLSessionCreator {
             delegateQueue: nil
         )
     }
-
-    static func invalidateAndCancelSession(for identifier: String) {
-        createSessionWithoutDelegate(for: identifier).invalidateAndCancel()
-    }
 }
 
 class BackgroundSessionDelegate: NSObject {
