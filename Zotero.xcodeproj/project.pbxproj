@@ -6896,7 +6896,7 @@
 			repositoryURL = "https://github.com/microsoft/plcrashreporter";
 			requirement = {
 				kind = exactVersion;
-				version = 1.12.0;
+				version = 1.12.2;
 			};
 		};
 		B356A361252490B3003F1943 /* XCRemoteSwiftPackageReference "Alamofire" */ = {
@@ -6992,7 +6992,7 @@
 			repositoryURL = "https://github.com/PSPDFKit/PSPDFKit-SP";
 			requirement = {
 				kind = exactVersion;
-				version = 26.1.0;
+				version = 26.2.0;
 			};
 		};
 		B3D84BEE27919FDE005DDD7C /* XCRemoteSwiftPackageReference "Starscream" */ = {

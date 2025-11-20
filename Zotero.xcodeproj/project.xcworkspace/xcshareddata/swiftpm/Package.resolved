@@ -69,8 +69,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/microsoft/plcrashreporter",
       "state" : {
-        "revision" : "8c61e5e38e9f737dd68512ed1ea5ab081244ad65",
-        "version" : "1.12.0"
+        "revision" : "0254f941c646b1ed17b243654723d0f071e990d0",
+        "version" : "1.12.2"
       }
     },
     {
@@ -78,8 +78,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/PSPDFKit/PSPDFKit-SP",
       "state" : {
-        "revision" : "0408161215280f91eae85276108de47295811868",
-        "version" : "26.1.0"
+        "revision" : "3300eced9885b3c72176d1bbf600ce87c33ec881",
+        "version" : "26.2.0"
       }
     },
     {
