@@ -975,6 +975,10 @@ extension PDFReaderViewController: AnnotationBoundingBoxConverter {
     }
 }
 
-extension PDFReaderViewController: IntraDocumentNavigationButtonsHandlerDelegate { }
+extension PDFReaderViewController: IntraDocumentNavigationButtonsHandlerDelegate {
+    var sidebarView: UIView? {
+        return sidebarController?.view
+    }
+}
 
 extension PDFReaderViewController: ParentWithSidebarController {}
