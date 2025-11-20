@@ -332,22 +332,4 @@ extension BackgroundUploadObserver: URLSessionTaskDelegate {
         ApiLogger.logFailedresponse(error: responseError, statusCode: response.statusCode, startData: logStartData)
         return true
     }
-
-    func urlSession(
-        _ session: URLSession,
-        task: URLSessionTask,
-        didReceive challenge: URLAuthenticationChallenge,
-        completionHandler: @escaping @Sendable (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
-    ) {
-        completionHandler(.performDefaultHandling, nil)
-    }
-
-    func urlSession(
-        _ session: URLSession,
-        task: URLSessionTask,
-        willBeginDelayedRequest request: URLRequest,
-        completionHandler: @escaping (URLSession.DelayedRequestDisposition, URLRequest?) -> Void
-    ) {
-        completionHandler(.continueLoading, nil)
-    }
 }
