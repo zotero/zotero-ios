@@ -272,10 +272,10 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
                                     return .pdf(library: library, key: key, parentKey: parentKey, url: url, page: nil, preselectedAnnotationKey: nil, previewRects: nil)
 
                                 case .html(_, let key):
-                                    return .html(library: library, key: key, parentKey: parentKey, url: url)
+                                    return .html(library: library, key: key, parentKey: parentKey, url: url, preselectedAnnotationKey: nil)
 
                                 case .epub(_, let key):
-                                    return .epub(library: library, key: key, parentKey: parentKey, url: url)
+                                    return .epub(library: library, key: key, parentKey: parentKey, url: url, preselectedAnnotationKey: nil)
 
                                 case .note:
                                     return nil
