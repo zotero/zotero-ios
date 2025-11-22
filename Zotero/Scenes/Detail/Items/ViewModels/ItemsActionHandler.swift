@@ -578,16 +578,25 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
     // MARK: - Searching & Filtering
 
     private func applySettings(in viewModel: ViewModel<ItemsActionHandler>) {
-        let results = try? results(
-            for: viewModel.state.searchTerm,
-            filters: viewModel.state.filters,
-            collectionId: viewModel.state.collection.identifier,
-            sortType: viewModel.state.sortType,
-            libraryId: viewModel.state.library.identifier
-        )
-        update(viewModel: viewModel) { state in
-            state.results = results
-            state.changes = [.results]
+        let state = viewModel.state
+        do {
+            let results = try results(
+                for: state.searchTerm,
+                filters: state.filters,
+                collectionId: state.collection.identifier,
+                sortType: state.sortType,
+                libraryId: state.library.identifier
+            )
+            update(viewModel: viewModel) { state in
+                state.results = results
+                state.changes = [.results]
+            }
+        } catch {
+            DDLogError("ItemsActionHandler: can't apply settings - \(error)")
+            update(viewModel: viewModel) { state in
+                state.results = nil
+                state.changes = [.results]
+            }
         }
     }
 

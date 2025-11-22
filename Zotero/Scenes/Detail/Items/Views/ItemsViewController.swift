@@ -371,9 +371,10 @@ final class ItemsViewController: BaseItemsViewController {
                 updateTagFilter(filters: viewModel.state.filters, collectionId: collection.identifier, libraryId: library.identifier)
 
             case .update(let results, let deletions, let insertions, let modifications):
+                let frozenResults = results.freeze()
                 let correctedModifications = Database.correctedModifications(from: modifications, insertions: insertions, deletions: deletions)
-                viewModel.process(action: .updateKeys(items: results, deletions: deletions, insertions: insertions, modifications: correctedModifications))
-                dataSource.apply(snapshot: results.freeze(), modifications: modifications, insertions: insertions, deletions: deletions) { [weak self] in
+                viewModel.process(action: .updateKeys(items: frozenResults, deletions: deletions, insertions: insertions, modifications: correctedModifications))
+                dataSource.apply(snapshot: frozenResults, modifications: correctedModifications, insertions: insertions, deletions: deletions) { [weak self] in
                     guard let self else { return }
                     updateTagFilter(filters: viewModel.state.filters, collectionId: collection.identifier, libraryId: library.identifier)
                 }
