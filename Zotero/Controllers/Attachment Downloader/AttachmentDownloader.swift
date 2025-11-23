@@ -831,7 +831,6 @@ final class AttachmentDownloader: NSObject {
         let fm = FileManager.default
         guard fm.fileExists(atPath: url.path) else { return false }
 
-        // Use ubiquitousItemDownloadingStatusKey to determine if the iCloud item is downloaded
         let keys: Set<URLResourceKey> = [.isUbiquitousItemKey, .ubiquitousItemDownloadingStatusKey]
         let values = try? url.resourceValues(forKeys: keys)
         let isUbiquitous = values?.isUbiquitousItem == true
@@ -865,7 +864,6 @@ final class AttachmentDownloader: NSObject {
         DispatchQueue.global(qos: .utility).async { [weak self] in
             guard let self else { return }
             let url = file.createUrl()
-            // Poll using ubiquitousItemDownloadingStatusKey until the file is downloaded
             for _ in 0..<50 {
                 let values = try? url.resourceValues(forKeys: [.ubiquitousItemDownloadingStatusKey])
                 if values?.ubiquitousItemDownloadingStatus == URLUbiquitousItemDownloadingStatus.current {

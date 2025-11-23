@@ -233,7 +233,6 @@ class UploadAttachmentSyncAction: SyncAction {
                 }
 
                 if !url.path.hasPrefix(iCloudRoot.path) {
-                    // Preserve the relative downloads path under the iCloud root.
                     let relativePath = trimmedRelativePath(fullPath: url.path, root: self.file.rootPath)
                     let destination = iCloudRoot.appendingPathComponent(relativePath)
                     let destinationDir = destination.deletingLastPathComponent()
@@ -245,11 +244,9 @@ class UploadAttachmentSyncAction: SyncAction {
                     }
                     try fm.copyItem(at: url, to: destination)
 
-                    // Move/copy into iCloud and mark as ubiquitous at the destination path.
                     try? fm.setUbiquitous(true, itemAt: destination, destinationURL: destination)
                 }
 
-                // If already inside the iCloud root, ensure it's marked ubiquitous.
                 if url.path.hasPrefix(iCloudRoot.path) {
                     try? fm.setUbiquitous(true, itemAt: url, destinationURL: url)
                 }
