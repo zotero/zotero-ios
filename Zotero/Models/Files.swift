@@ -16,42 +16,58 @@ struct Files {
     }()
 
     static var documentsRootPath: String = {
-        return NSSearchPathForDirectoriesInDomains(.documentDirectory, .allDomainsMask, true).first ?? "/"
+        let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+        return url?.path ?? "/"
     }()
 
     static var cachesRootPath: String = {
-        return NSSearchPathForDirectoriesInDomains(.cachesDirectory, .allDomainsMask, true).first ?? "/"
+        let url = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
+        return url?.path ?? "/"
     }()
+
+    #if MAINAPP
+    private static var attachmentsRootPath: String {
+        if Defaults.shared.attachmentStoragePreference == .iCloud,
+           let iCloudRoot = FileManager.default.url(forUbiquityContainerIdentifier: "iCloud.org.zotero.ios.Zotero")?.appendingPathComponent("Documents", isDirectory: true) {
+            return iCloudRoot.path
+        }
+        return Files.appGroupPath
+    }
+    #else
+    private static var attachmentsRootPath: String {
+        return Files.appGroupPath
+    }
+    #endif
 
     // MARK: - Attachments
 
     static var downloads: File {
-        return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["downloads"])
+        return FileData.directory(rootPath: Files.attachmentsRootPath, relativeComponents: ["downloads"])
     }
 
     static func downloads(for libraryId: LibraryIdentifier) -> File {
-        return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName])
+        return FileData.directory(rootPath: Files.attachmentsRootPath, relativeComponents: ["downloads", libraryId.folderName])
     }
 
     static func attachmentFile(in libraryId: LibraryIdentifier, key: String, filename: String, contentType: String) -> File {
         let name = self.split(filename: filename).name
-        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName, key], name: name, contentType: contentType)
+        return FileData(rootPath: Files.attachmentsRootPath, relativeComponents: ["downloads", libraryId.folderName, key], name: name, contentType: contentType)
     }
 
     static func attachmentDirectory(in libraryId: LibraryIdentifier, key: String) -> File {
-        return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName, key])
+        return FileData.directory(rootPath: Files.attachmentsRootPath, relativeComponents: ["downloads", libraryId.folderName, key])
     }
 
     static var uploads: File {
-        return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["uploads"])
+        return FileData.directory(rootPath: Files.attachmentsRootPath, relativeComponents: ["uploads"])
     }
 
     static func temporaryZipUploadFile(key: String) -> File {
-        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["uploads"], name: key, ext: "zip")
+        return FileData(rootPath: Files.attachmentsRootPath, relativeComponents: ["uploads"], name: key, ext: "zip")
     }
 
     static var temporaryMultipartformUploadFile: File {
-        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["uploads"], name: UUID().uuidString, contentType: "")
+        return FileData(rootPath: Files.attachmentsRootPath, relativeComponents: ["uploads"], name: UUID().uuidString, contentType: "")
     }
 
     static func temporaryFile(ext: String) -> File {
@@ -251,6 +267,11 @@ struct Files {
             urlString = String(urlString[urlString.index(urlString.startIndex, offsetBy: 7)...])
         }
 
+        #if MAINAPP
+        if let range = urlString.range(of: self.attachmentsRootPath) {
+            return (self.attachmentsRootPath, self.components(from: urlString, excluding: range))
+        }
+        #endif
         if let range = urlString.range(of: self.appGroupPath) {
             return (self.appGroupPath, self.components(from: urlString, excluding: range))
         }

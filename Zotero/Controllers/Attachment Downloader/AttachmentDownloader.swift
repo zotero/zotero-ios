@@ -417,12 +417,18 @@ final class AttachmentDownloader: NSObject {
                     }
 
                 case .remote, .remoteMissing:
-                    DDLogInfo("AttachmentDownloader: download remote\(location == .remoteMissing ? "ly missing" : "") file \(attachment.key)")
                     let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
+                    if handleICloudIfAvailable(file: file, attachment: attachment, parentKey: parentKey, compressed: compressed) {
+                        return
+                    }
+                    DDLogInfo("AttachmentDownloader: download remote\(location == .remoteMissing ? "ly missing" : "") file \(attachment.key)")
                     download(file: file, key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId)
 
                 case .localAndChangedRemotely:
                     let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
+                    if handleICloudIfAvailable(file: file, attachment: attachment, parentKey: parentKey, compressed: compressed) {
+                        return
+                    }
                     if file.ext == "pdf" && fileStorage.has(file) && !fileStorage.isPdf(file: file) {
                         // Check whether downloaded file is actually a PDF, otherwise remove it. Fixes #483.
                         try? fileStorage.remove(file)
@@ -816,6 +822,71 @@ final class AttachmentDownloader: NSObject {
 
     private func retryDownload(_ download: Download, after activeDownload: ActiveDownload) {
         startDownloadTask(for: download, downloadTaskTuple: createDownloadTask(from: download, retrying: activeDownload))
+    }
+
+    private func handleICloudIfAvailable(file: File, attachment: Attachment, parentKey: String?, compressed: Bool) -> Bool {
+        guard Defaults.shared.attachmentStoragePreference == .iCloud else { return false }
+
+        let url = file.createUrl()
+        let fm = FileManager.default
+        guard fm.fileExists(atPath: url.path) else { return false }
+
+        // Use ubiquitousItemDownloadingStatusKey to determine if the iCloud item is downloaded
+        let keys: Set<URLResourceKey> = [.isUbiquitousItemKey, .ubiquitousItemDownloadingStatusKey]
+        let values = try? url.resourceValues(forKeys: keys)
+        let isUbiquitous = values?.isUbiquitousItem == true
+        let isDownloaded = (values?.ubiquitousItemDownloadingStatus == URLUbiquitousItemDownloadingStatus.current)
+
+        if isUbiquitous, !isDownloaded {
+            do {
+                try fm.startDownloadingUbiquitousItem(at: url)
+                DDLogInfo("AttachmentDownloader: start iCloud download for \(attachment.key)")
+            } catch let error {
+                DDLogWarn("AttachmentDownloader: failed to start iCloud download \(attachment.key) - \(error)")
+            }
+            waitForICloudDownload(file: file, attachment: attachment, parentKey: parentKey, compressed: compressed)
+            return true
+        }
+
+        if compressed {
+            extract(zipFile: file.copy(withExt: "zip"), toFile: file, download: Download(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId))
+        } else {
+            DDLogInfo("AttachmentDownloader: open iCloud file \(attachment.key)")
+            observable.on(.next(Update(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, kind: .ready(compressed: false))))
+        }
+
+        return true
+    }
+
+    private func waitForICloudDownload(file: File, attachment: Attachment, parentKey: String?, compressed: Bool) {
+        let download = Download(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId)
+        observable.on(.next(Update(download: download, kind: .progress)))
+
+        DispatchQueue.global(qos: .utility).async { [weak self] in
+            guard let self else { return }
+            let url = file.createUrl()
+            // Poll using ubiquitousItemDownloadingStatusKey until the file is downloaded
+            for _ in 0..<50 {
+                let values = try? url.resourceValues(forKeys: [.ubiquitousItemDownloadingStatusKey])
+                if values?.ubiquitousItemDownloadingStatus == URLUbiquitousItemDownloadingStatus.current {
+                    DispatchQueue.main.async { [weak self] in
+                        guard let self else { return }
+                        if compressed {
+                            self.extract(zipFile: file.copy(withExt: "zip"), toFile: file, download: download)
+                        } else {
+                            self.observable.on(.next(Update(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, kind: .ready(compressed: false))))
+                        }
+                    }
+                    return
+                }
+                Thread.sleep(forTimeInterval: 0.2)
+            }
+
+            DDLogWarn("AttachmentDownloader: iCloud download timeout for \(attachment.key)")
+            DispatchQueue.main.async { [weak self] in
+                self?.observable.on(.next(Update(key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId, kind: .failed(Error.cancelled))))
+            }
+        }
     }
 
     private static let maxAttemptCount = 10

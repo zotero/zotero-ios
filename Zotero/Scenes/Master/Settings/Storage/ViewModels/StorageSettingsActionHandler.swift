@@ -29,6 +29,9 @@ struct StorageSettingsActionHandler: ViewModelActionHandler {
         case .loadData:
             self.loadStorageData(in: viewModel)
 
+        case .setStoragePreference(let preference):
+            self.setStoragePreference(preference, in: viewModel)
+
         case .deleteAll:
             self.removeAllDownloads(in: viewModel)
 
@@ -52,6 +55,9 @@ struct StorageSettingsActionHandler: ViewModelActionHandler {
                 state.libraries = libraries
                 state.storageData = storageData
                 state.totalStorageData = totalData
+                state.storagePreference = Defaults.shared.attachmentStoragePreference
+                state.iCloudAvailable = FileManager.default.ubiquityIdentityToken != nil &&
+                                        FileManager.default.url(forUbiquityContainerIdentifier: "iCloud.org.zotero.ios.Zotero") != nil
             }
         } catch let error {
             DDLogError("SettingsActionHandler: can't load libraries - \(error)")
@@ -92,6 +98,23 @@ struct StorageSettingsActionHandler: ViewModelActionHandler {
                 state.storageData[libraryId] = DirectoryData(fileCount: 0, mbSize: 0)
                 state.totalStorageData = newTotal
             }
+        }
+    }
+
+    private func setStoragePreference(_ preference: AttachmentStoragePreference, in viewModel: ViewModel<StorageSettingsActionHandler>) {
+        let iCloudAvailable = FileManager.default.ubiquityIdentityToken != nil &&
+                              FileManager.default.url(forUbiquityContainerIdentifier: "iCloud.org.zotero.ios.Zotero") != nil
+
+        guard preference != .iCloud || iCloudAvailable else {
+            DDLogWarn("StorageSettingsActionHandler: iCloud storage selected but iCloud is unavailable")
+            return
+        }
+
+        Defaults.shared.attachmentStoragePreference = preference
+
+        self.update(viewModel: viewModel) { state in
+            state.storagePreference = preference
+            state.iCloudAvailable = iCloudAvailable
         }
     }
 }
