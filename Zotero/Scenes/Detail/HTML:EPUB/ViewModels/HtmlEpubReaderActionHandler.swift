@@ -716,8 +716,8 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
     }
 
     private func initialise(in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
-        guard let readerUrl = Bundle.main.url(forResource: "view", withExtension: "html", subdirectory: "Bundled/reader") else {
-            DDLogError("HtmlEpubReaderActionHandler: can't find reader view.html")
+        guard let readerURL = viewModel.state.readerURL else {
+            DDLogError("HtmlEpubReaderActionHandler: reader URL missing")
             return
         }
 
@@ -725,9 +725,9 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
         do {
             // Copy reader files to temporary directory
-            let readerFiles: [File] = try fileStorage.contentsOfDirectory(at: Files.file(from: readerUrl).directory)
+            let readerFiles: [File] = try fileStorage.contentsOfDirectory(at: Files.file(from: readerURL))
             for file in readerFiles {
-                try fileStorage.copy(from: file, to: viewModel.state.readerFile.copy(withName: file.name, ext: file.ext))
+                try fileStorage.copy(from: file, to: viewModel.state.readerDirectory.copy(withName: file.name, ext: file.ext))
             }
             // Copy document files (in case of snapshot there can be multiple files) to temporary sub-directory
             let documentFiles: [File] = try fileStorage.contentsOfDirectory(at: viewModel.state.originalFile.directory)
@@ -744,7 +744,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
     }
 
     private func deinitialise(in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
-        try? fileStorage.remove(viewModel.state.readerFile.directory)
+        try? fileStorage.remove(viewModel.state.readerDirectory)
     }
 
     private func load(in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {

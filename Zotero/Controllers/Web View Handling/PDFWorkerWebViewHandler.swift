@@ -69,7 +69,7 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
             guard let workerJsUrl = Bundle.main.url(forResource: "worker", withExtension: "js", subdirectory: "Bundled/pdf_worker") else {
                 return .error(Error.cantFindFile("worker.js"))
             }
-            let temporaryDirectory = Files.tmpReaderDirectory
+            let temporaryDirectory = Files.temporaryDirectory
             self.temporaryDirectory = temporaryDirectory
             do {
                 try fileStorage.copy(from: workerHtmlUrl.path, to: temporaryDirectory.copy(withName: "worker", ext: "html"))

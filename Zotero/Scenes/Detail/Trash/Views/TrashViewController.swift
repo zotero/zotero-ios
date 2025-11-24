@@ -191,6 +191,9 @@ final class TrashViewController: BaseItemsViewController {
 
         case .removeDownload:
             viewModel.process(action: .removeDownloads(selectedKeys))
+
+        case .debugReader:
+            break
         }
     }
 
@@ -272,8 +275,15 @@ extension TrashViewController: ItemsTableViewHandlerDelegate {
         return nil
     }
 
-    func process(action: ItemAction.Kind, at index: Int, completionAction: ((Bool) -> Void)?) {
-        guard let key = dataSource.key(at: index) else { return }
+    func process(action: ItemAction.Kind, at indexPath: IndexPath, completionAction: ((Bool) -> Void)?) {
+        if action == .debugReader {
+            guard let tapAction = dataSource.tapAction(for: indexPath) else { return }
+            processDebugReaderAction(tapAction: tapAction) { [weak self] in
+                self?.process(tapAction: tapAction)
+            }
+            return
+        }
+        guard let key = dataSource.key(at: indexPath.row) else { return }
         process(action: action, for: [key], button: nil, completionAction: completionAction)
     }
 

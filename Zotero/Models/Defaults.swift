@@ -185,6 +185,14 @@ final class Defaults {
     @UserDefault(key: "ClearPSPDFKitCacheGuard", defaultValue: currentClearPSPDFKitCacheGuard - 1)
     var clearPSPDFKitCacheGuard: Int
 
+    // MARK: - Debug
+
+    @UserDefault(key: "DebugReaderUUIDByHash", defaultValue: [:])
+    var debugReaderUUIDByHash: [String: String]
+
+    @OptionalUserDefault(key: "LastDebugReaderHash")
+    var lastDebugReaderHash: String?
+
     // MARK: - Actions
 
     func reset() {
