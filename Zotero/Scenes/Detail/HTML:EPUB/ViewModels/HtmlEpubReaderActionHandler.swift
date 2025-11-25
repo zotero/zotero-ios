@@ -762,7 +762,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
                 url: viewModel.state.documentFile.createUrl(),
                 annotationsJson: json,
                 page: page,
-                selectedAnnotation: viewModel.state.selectedAnnotationKey
+                selectedAnnotationKey: viewModel.state.selectedAnnotationKey
             )
 
             let (library, libraryToken) = try viewModel.state.library.identifier.observe(in: dbStorage, changes: { [weak self, weak viewModel] library in

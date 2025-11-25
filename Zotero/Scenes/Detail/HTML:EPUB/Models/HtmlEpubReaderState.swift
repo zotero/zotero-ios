@@ -44,7 +44,7 @@ struct HtmlEpubReaderState: ViewModelState {
         let url: URL
         let annotationsJson: String
         let page: Page?
-        let selectedAnnotation: String?
+        let selectedAnnotationKey: String?
     }
 
     struct DocumentUpdate {
@@ -148,7 +148,7 @@ struct HtmlEpubReaderState: ViewModelState {
         key: String,
         parentKey: String?,
         title: String?,
-        preselectedAnnotation: String?,
+        preselectedAnnotationKey: String?,
         settings: HtmlEpubSettings,
         libraryId: LibraryIdentifier,
         userId: Int,
@@ -167,7 +167,7 @@ struct HtmlEpubReaderState: ViewModelState {
         self.userId = userId
         self.username = username
         self.interfaceStyle = interfaceStyle
-        selectedAnnotationKey = preselectedAnnotation
+        selectedAnnotationKey = preselectedAnnotationKey
         sortedKeys = []
         annotations = [:]
         comments = [:]

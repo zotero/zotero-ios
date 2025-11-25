@@ -80,7 +80,7 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
             key: key,
             parentKey: parentKey,
             title: try? dbStorage.perform(request: ReadFilenameDbRequest(libraryId: libraryId, key: key), on: .main),
-            preselectedAnnotation: preselectedAnnotationKey,
+            preselectedAnnotationKey: preselectedAnnotationKey,
             settings: Defaults.shared.htmlEpubSettings,
             libraryId: libraryId,
             userId: userId,
