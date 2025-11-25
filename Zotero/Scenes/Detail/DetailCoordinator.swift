@@ -360,10 +360,18 @@ final class DetailCoordinator: Coordinator {
         return navigationController
     }
 
-    func createHtmlEpubController(key: String, parentKey: String?, libraryId: LibraryIdentifier, url: URL) -> NavigationViewController {
+    func createHtmlEpubController(key: String, parentKey: String?, libraryId: LibraryIdentifier, url: URL, preselectedAnnotationKey: String? = nil) -> NavigationViewController {
         let navigationController = NavigationViewController()
         navigationController.modalPresentationStyle = .fullScreen
-        let coordinator = HtmlEpubCoordinator(key: key, parentKey: parentKey, libraryId: libraryId, url: url, navigationController: navigationController, controllers: controllers)
+        let coordinator = HtmlEpubCoordinator(
+            key: key,
+            parentKey: parentKey,
+            libraryId: libraryId,
+            url: url,
+            preselectedAnnotationKey: preselectedAnnotationKey,
+            navigationController: navigationController,
+            controllers: controllers
+        )
         coordinator.parentCoordinator = self
         self.childCoordinators.append(coordinator)
         coordinator.start(animated: false)
@@ -595,8 +603,8 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
                 previewRects: previewRects
             )
 
-        case .html(let library, let key, let parentKey, let url), .epub(let library, let key, let parentKey, let url):
-            return createHtmlEpubController(key: key, parentKey: parentKey, libraryId: library.identifier, url: url)
+        case .html(let library, let key, let parentKey, let url, let preselectedAnnotationKey), .epub(let library, let key, let parentKey, let url, let preselectedAnnotationKey):
+            return createHtmlEpubController(key: key, parentKey: parentKey, libraryId: library.identifier, url: url, preselectedAnnotationKey: preselectedAnnotationKey)
 
         case .note(let library, let key, let text, let tags, let parentTitleData, let title):
             let kind: NoteEditorKind = library.metadataEditable ? .edit(key: key) : .readOnly(key: key)
