@@ -19,8 +19,10 @@ class HtmlEpubDocumentViewController: UIViewController {
     }
 
     private let viewModel: ViewModel<HtmlEpubReaderActionHandler>
+    private let pencilInteraction: UIPencilInteraction
     private let disposeBag: DisposeBag
 
+    private static var toolHistory: [AnnotationTool?] = []
     private weak var webView: WKWebView!
     private var webViewHandler: WebViewHandler!
     weak var parentDelegate: HtmlEpubReaderContainerDelegate?
@@ -28,6 +30,7 @@ class HtmlEpubDocumentViewController: UIViewController {
     init(viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
         self.viewModel = viewModel
         disposeBag = DisposeBag()
+        pencilInteraction = UIPencilInteraction()
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -43,7 +46,10 @@ class HtmlEpubDocumentViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        pencilInteraction.delegate = self
+        view.addInteraction(pencilInteraction)
         observeViewModel()
+        observePenSettingsChange()
         setupWebView()
         viewModel.process(action: .initialiseReader)
 
@@ -52,6 +58,17 @@ class HtmlEpubDocumentViewController: UIViewController {
                 .observe(on: MainScheduler.instance)
                 .subscribe(onNext: { [weak self] state in
                     self?.process(state: state)
+                })
+                .disposed(by: disposeBag)
+        }
+        
+        func observePenSettingsChange() {
+            NotificationCenter.default.rx
+                .notification(UIApplication.didBecomeActiveNotification)
+                .observe(on: MainScheduler.instance)
+                .subscribe(onNext: { [weak self] _ in
+                    guard let self else { return }
+                    webViewHandler.call(javascript: "window._view.setPenExclusive(\(UIPencilInteraction.prefersPencilOnlyDrawing));").subscribe().disposed(by: disposeBag)
                 })
                 .disposed(by: disposeBag)
         }
@@ -90,6 +107,25 @@ class HtmlEpubDocumentViewController: UIViewController {
     }
 
     // MARK: - Actions
+
+    func toggle(tool: AnnotationTool, tappedWithStylus: Bool) {
+        viewModel.process(action: .toggleTool(tool))
+        if Self.toolHistory.last != viewModel.state.activeTool {
+            Self.toolHistory.append(viewModel.state.activeTool)
+            if Self.toolHistory.count > 2 {
+                Self.toolHistory.remove(at: 0)
+            }
+        }
+        if viewModel.state.activeTool == nil {
+            set(penActive: false)
+        } else if tappedWithStylus {
+            set(penActive: true)
+        }
+
+        func set(penActive: Bool) {
+            webViewHandler.call(javascript: "window._view.setPenActive(\(penActive));").subscribe().disposed(by: disposeBag)
+        }
+    }
 
     func show(location: [String: Any]) {
         webViewHandler.call(javascript: "navigate({ location: \(WebViewEncoder.encodeAsJSONForJavascript(location)) });").subscribe().disposed(by: disposeBag)
@@ -178,7 +214,11 @@ class HtmlEpubDocumentViewController: UIViewController {
         func load(documentData data: HtmlEpubReaderState.DocumentData) {
             DDLogInfo("HtmlEpubDocumentViewController: try creating view for \(data.type); page = \(String(describing: data.page))")
             DDLogInfo("URL: \(data.url.absoluteString)")
-            var javascript = "createView({ type: '\(data.type)', url: '\(data.url.absoluteString.replacingOccurrences(of: "'", with: #"\'"#))', annotations: \(data.annotationsJson)"
+            var javascript = "createView({ type: '\(data.type)', " +
+                "url: '\(data.url.absoluteString.replacingOccurrences(of: "'", with: #"\'"#))', " +
+                "penConnected: false, " +
+                "penExclusive: \(UIPencilInteraction.prefersPencilOnlyDrawing), " +
+                "annotations: \(data.annotationsJson)"
             if let key = data.selectedAnnotationKey {
                 javascript += ", location: {annotationID: '\(key)'}"
             } else if let page = data.page {
@@ -337,5 +377,59 @@ extension HtmlEpubDocumentViewController: ParentWithSidebarDocumentController {
     func disableAnnotationTools() {
         guard let tool = viewModel.state.activeTool else { return }
         viewModel.process(action: .toggleTool(tool))
+    }
+}
+
+extension HtmlEpubDocumentViewController: UIPencilInteractionDelegate {
+    private func process(action: UIPencilPreferredAction) {
+        guard parentDelegate?.isToolbarVisible == true else { return }
+        switch action {
+        case .switchEraser:
+            guard viewModel.state.activeTool != nil else { return }
+            if viewModel.state.activeTool != .eraser {
+                toggle(tool: .eraser, tappedWithStylus: true)
+            } else {
+                let previous = (HtmlEpubDocumentViewController.toolHistory.last(where: { $0 != .eraser }) ?? nil) ?? .highlight
+                toggle(tool: previous, tappedWithStylus: true)
+            }
+
+        case .switchPrevious:
+            let previous: AnnotationTool
+            if let tool = viewModel.state.activeTool {
+                // Find the most recent different tool – if it's the "nil tool", default to `tool` to unset current tool
+                previous = (HtmlEpubDocumentViewController.toolHistory.last(where: { $0 != tool }) ?? nil) ?? tool
+            } else {
+                // Since we can't switch from nil to nil, find the most recent non-nil tool, default to .highlight
+                previous = (HtmlEpubDocumentViewController.toolHistory.last(where: { $0 != nil }) ?? nil) ?? .highlight
+            }
+            toggle(tool: previous, tappedWithStylus: true)
+
+        case .showColorPalette, .showInkAttributes, .showContextualPalette:
+            parentDelegate?.showToolOptions()
+
+        case .runSystemShortcut, .ignore:
+            break
+
+        @unknown default:
+            break
+        }
+    }
+
+    func pencilInteractionDidTap(_ interaction: UIPencilInteraction) {
+        process(action: UIPencilInteraction.preferredTapAction)
+    }
+
+    @available(iOS 17.5, *)
+    func pencilInteraction(_ interaction: UIPencilInteraction, didReceiveSqueeze squeeze: UIPencilInteraction.Squeeze) {
+        switch squeeze.phase {
+        case .ended:
+            process(action: UIPencilInteraction.preferredSqueezeAction)
+
+        case .began, .changed, .cancelled:
+            break
+
+        @unknown default:
+            break
+        }
     }
 }
