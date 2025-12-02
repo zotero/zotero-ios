@@ -44,6 +44,7 @@ struct HtmlEpubReaderState: ViewModelState {
         let url: URL
         let annotationsJson: String
         let page: Page?
+        let selectedAnnotationKey: String?
     }
 
     struct DocumentUpdate {
@@ -142,7 +143,18 @@ struct HtmlEpubReaderState: ViewModelState {
     var outlineSearch: String
     var interfaceStyle: UIUserInterfaceStyle
 
-    init(url: URL, key: String, parentKey: String?, title: String?, settings: HtmlEpubSettings, libraryId: LibraryIdentifier, userId: Int, username: String, interfaceStyle: UIUserInterfaceStyle) {
+    init(
+        url: URL,
+        key: String,
+        parentKey: String?,
+        title: String?,
+        preselectedAnnotationKey: String?,
+        settings: HtmlEpubSettings,
+        libraryId: LibraryIdentifier,
+        userId: Int,
+        username: String,
+        interfaceStyle: UIUserInterfaceStyle
+    ) {
         let originalFile = Files.file(from: url)
         let temporaryDirectory = Files.tmpReaderDirectory
         self.originalFile = originalFile
@@ -155,6 +167,7 @@ struct HtmlEpubReaderState: ViewModelState {
         self.userId = userId
         self.username = username
         self.interfaceStyle = interfaceStyle
+        selectedAnnotationKey = preselectedAnnotationKey
         sortedKeys = []
         annotations = [:]
         comments = [:]
