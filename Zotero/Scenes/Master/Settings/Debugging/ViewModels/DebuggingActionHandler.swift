@@ -73,6 +73,11 @@ struct DebuggingActionHandler: ViewModelActionHandler {
 
         case .showFullSyncDebugging:
             coordinatorDelegate.showFullSyncDebugging()
+            
+        case .setAdvancedVisible(let visible):
+            update(viewModel: viewModel) { state in
+                state.advancedVisible = visible
+            }
         }
     }
 
