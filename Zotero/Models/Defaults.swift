@@ -190,8 +190,8 @@ final class Defaults {
     @UserDefault(key: "DebugReaderUUIDByHash", defaultValue: [:])
     var debugReaderUUIDByHash: [String: String]
 
-    @OptionalUserDefault(key: "LastDebugReaderHash")
-    var lastDebugReaderHash: String?
+    @OptionalUserDefault(key: "LastDebugReaderHashOrURL")
+    var lastDebugReaderHashOrURL: String?
 
     // MARK: - Actions
 
