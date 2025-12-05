@@ -48,7 +48,7 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showCitation(using presenter: UIViewController?, for itemIds: Set<String>, libraryId: LibraryIdentifier, delegate: DetailCitationCoordinatorDelegate?)
     func copyBibliography(using presenter: UIViewController, for itemIds: Set<String>, libraryId: LibraryIdentifier, delegate: DetailCopyBibliographyCoordinatorDelegate?)
     func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier)
-    func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier)
+    func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier, readerURL: URL?)
     func show(error: ItemsError)
     func showLookup()
 }
@@ -65,7 +65,7 @@ protocol DetailItemDetailCoordinatorDelegate: AnyObject {
     func showDeletedAlertForItem(completion: @escaping (Bool) -> Void)
     func show(error: ItemDetailError, viewModel: ViewModel<ItemDetailActionHandler>)
     func showDataReloaded(completion: @escaping () -> Void)
-    func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier)
+    func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier, readerURL: URL?)
 }
 
 protocol DetailNoteEditorCoordinatorDelegate: AnyObject {
@@ -203,15 +203,15 @@ final class DetailCoordinator: Coordinator {
         }
     }
 
-    func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier) {
+    func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier, readerURL: URL?) {
         guard let (attachment, sourceItem) = navigationController?.viewControllers.reversed()
             .compactMap({ ($0 as? DetailCoordinatorAttachmentProvider)?.attachment(for: key, parentKey: parentKey, libraryId: libraryId) })
             .first
         else { return }
-        show(attachment: attachment, parentKey: parentKey, libraryId: libraryId, sourceItem: sourceItem)
+        show(attachment: attachment, parentKey: parentKey, libraryId: libraryId, sourceItem: sourceItem, readerURL: readerURL)
     }
 
-    private func show(attachment: Attachment, parentKey: String?, libraryId: LibraryIdentifier, sourceItem: UIPopoverPresentationControllerSourceItem) {
+    private func show(attachment: Attachment, parentKey: String?, libraryId: LibraryIdentifier, sourceItem: UIPopoverPresentationControllerSourceItem, readerURL: URL?) {
         switch attachment.type {
         case .url(let url):
             show(url: url)
@@ -228,7 +228,7 @@ final class DetailCoordinator: Coordinator {
             case "text/html", "application/epub+zip":
                 if FeatureGates.enabled.contains(.htmlEpubReader) {
                     DDLogInfo("DetailCoordinator: show HTML / EPUB \(attachment.key)")
-                    showHtmlEpubReader(for: url, key: attachment.key, parentKey: parentKey, libraryId: libraryId)
+                    showHtmlEpubReader(for: url, key: attachment.key, parentKey: parentKey, libraryId: libraryId, readerURL: readerURL)
                 } else if contentType == "text/html" {
                     showWebView(for: url)
                 } else {
@@ -360,7 +360,7 @@ final class DetailCoordinator: Coordinator {
         return navigationController
     }
 
-    func createHtmlEpubController(key: String, parentKey: String?, libraryId: LibraryIdentifier, url: URL, preselectedAnnotationKey: String? = nil) -> NavigationViewController {
+    func createHtmlEpubController(key: String, parentKey: String?, libraryId: LibraryIdentifier, url: URL, readerURL: URL?, preselectedAnnotationKey: String? = nil) -> NavigationViewController {
         let navigationController = NavigationViewController()
         navigationController.modalPresentationStyle = .fullScreen
         let coordinator = HtmlEpubCoordinator(
@@ -368,6 +368,7 @@ final class DetailCoordinator: Coordinator {
             parentKey: parentKey,
             libraryId: libraryId,
             url: url,
+            readerURL: readerURL,
             preselectedAnnotationKey: preselectedAnnotationKey,
             navigationController: navigationController,
             controllers: controllers
@@ -383,8 +384,8 @@ final class DetailCoordinator: Coordinator {
         navigationController?.present(controller, animated: true, completion: nil)
     }
 
-    private func showHtmlEpubReader(for url: URL, key: String, parentKey: String?, libraryId: LibraryIdentifier) {
-        let controller = createHtmlEpubController(key: key, parentKey: parentKey, libraryId: libraryId, url: url)
+    private func showHtmlEpubReader(for url: URL, key: String, parentKey: String?, libraryId: LibraryIdentifier, readerURL: URL?) {
+        let controller = createHtmlEpubController(key: key, parentKey: parentKey, libraryId: libraryId, url: url, readerURL: readerURL)
         self.navigationController?.present(controller, animated: true, completion: nil)
     }
 
@@ -604,7 +605,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
             )
 
         case .html(let library, let key, let parentKey, let url, let preselectedAnnotationKey), .epub(let library, let key, let parentKey, let url, let preselectedAnnotationKey):
-            return createHtmlEpubController(key: key, parentKey: parentKey, libraryId: library.identifier, url: url, preselectedAnnotationKey: preselectedAnnotationKey)
+            return createHtmlEpubController(key: key, parentKey: parentKey, libraryId: library.identifier, url: url, readerURL: nil, preselectedAnnotationKey: preselectedAnnotationKey)
 
         case .note(let library, let key, let text, let tags, let parentTitleData, let title):
             let kind: NoteEditorKind = library.metadataEditable ? .edit(key: key) : .readOnly(key: key)

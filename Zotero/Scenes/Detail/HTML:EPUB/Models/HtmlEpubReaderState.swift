@@ -93,8 +93,9 @@ struct HtmlEpubReaderState: ViewModelState {
         }
     }
 
+    let readerURL: URL?
     let originalFile: File
-    let readerFile: File
+    let readerDirectory: File
     let documentFile: File
     let key: String
     let parentKey: String?
@@ -143,7 +144,12 @@ struct HtmlEpubReaderState: ViewModelState {
     var outlineSearch: String
     var interfaceStyle: UIUserInterfaceStyle
 
+    var readerFile: File {
+        readerDirectory.copy(withName: "view", ext: "html")
+    }
+
     init(
+        readerURL: URL?,
         url: URL,
         key: String,
         parentKey: String?,
@@ -155,11 +161,11 @@ struct HtmlEpubReaderState: ViewModelState {
         username: String,
         interfaceStyle: UIUserInterfaceStyle
     ) {
+        self.readerURL = readerURL ?? Bundle.main.url(forResource: "reader", withExtension: nil, subdirectory: "Bundled")
         let originalFile = Files.file(from: url)
-        let temporaryDirectory = Files.tmpReaderDirectory
         self.originalFile = originalFile
-        readerFile = temporaryDirectory.copy(withName: "view", ext: "html")
-        documentFile = temporaryDirectory.appending(relativeComponent: "content").copy(withName: originalFile.name, ext: originalFile.ext)
+        readerDirectory = Files.temporaryDirectory
+        documentFile = readerDirectory.appending(relativeComponent: "content").copy(withName: originalFile.name, ext: originalFile.ext)
         self.key = key
         self.parentKey = parentKey
         self.title = title

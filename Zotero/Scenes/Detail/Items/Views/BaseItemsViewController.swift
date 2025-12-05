@@ -12,6 +12,7 @@ import CocoaLumberjackSwift
 import RealmSwift
 import RxSwift
 import WebKit
+import ZIPFoundation
 
 class BaseItemsViewController: UIViewController {
     enum RightBarButtonItem: Int {
@@ -33,11 +34,16 @@ class BaseItemsViewController: UIViewController {
     var handler: ItemsTableViewHandler?
     weak var tagFilterDelegate: ItemsTagFilterDelegate?
     weak var coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)?
+    private let debugReaderQueue: DispatchQueue?
+    private var readerURL: URL?
 
     init(controllers: Controllers, coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)) {
         self.controllers = controllers
         self.coordinatorDelegate = coordinatorDelegate
-        self.disposeBag = DisposeBag()
+        disposeBag = DisposeBag()
+        #if DEBUG
+        debugReaderQueue = DispatchQueue(label: "org.zotero.DebugReaderQueue", qos: .userInteractive)
+        #endif
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -154,13 +160,113 @@ class BaseItemsViewController: UIViewController {
 
         switch update.kind {
         case .ready:
-            coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId)
+            coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId, readerURL: readerURL)
+            readerURL = nil
 
         case .failed(let error):
             coordinatorDelegate?.showAttachmentError(error)
 
         case .progress, .cancelled:
             break
+        }
+    }
+
+    private enum DebugReaderError: LocalizedError {
+        case invalidInput
+        
+        var errorDescription: String? {
+            switch self {
+            case .invalidInput:
+                return "Please enter a valid reader commit hash or build zip URL."
+            }
+        }
+    }
+
+    func processDebugReaderAction(tapAction: ItemsTableViewHandler.TapAction, completion: @escaping (() -> Void)) {
+        guard case .attachment = tapAction else { return }
+        let alertController = UIAlertController(title: "Debug Reader", message: "Enter <reader commit hash> or <build zip URL>", preferredStyle: .alert)
+        alertController.addTextField { textField in
+            textField.placeholder = "<reader commit hash> or <build zip URL>"
+            textField.autocapitalizationType = .none
+            textField.autocorrectionType = .no
+            textField.keyboardType = .default
+            textField.text = Defaults.shared.lastDebugReaderHashOrURL
+        }
+        alertController.addAction(UIAlertAction(title: L10n.cancel, style: .cancel))
+        alertController.addAction(UIAlertAction(title: L10n.ok, style: .default) { [weak self, weak alertController] _ in
+            guard let self, let hashOrURL = alertController?.textFields?.first?.text?.trimmingCharacters(in: .whitespacesAndNewlines), !hashOrURL.isEmpty else {
+                showError(DebugReaderError.invalidInput)
+                return
+            }
+            let url: URL?
+            var hash: String?
+            if hashOrURL.starts(with: "http://") || hashOrURL.starts(with: "https://") {
+                url = URL(string: hashOrURL)
+            } else if let uuidString = Defaults.shared.debugReaderUUIDByHash[hashOrURL] {
+                Defaults.shared.lastDebugReaderHashOrURL = hashOrURL
+                readerURL = FileData.directory(rootPath: Files.cachesRootPath, relativeComponents: ["Zotero", uuidString, "ios"]).createUrl()
+                completion()
+                return
+            } else {
+                url = URL(string: "https://zotero-download.s3.amazonaws.com/ci/reader/\(hashOrURL).zip")
+                hash = hashOrURL
+            }
+            guard let url, let debugReaderQueue else {
+                cache(uuidString: nil, for: hash, hashOrURL: nil)
+                showError(DebugReaderError.invalidInput)
+                return
+            }
+            let temporaryDirectory = Files.temporaryDirectory
+            let fileExtension = url.pathExtension
+            let fileName = url.deletingPathExtension().lastPathComponent
+            let zipFile = FileData(rootPath: temporaryDirectory.rootPath, relativeComponents: temporaryDirectory.relativeComponents, name: fileName, ext: fileExtension)
+            let request = FileRequest(url: url, destination: zipFile)
+            controllers.apiClient
+                .download(request: request, queue: debugReaderQueue)
+                .subscribe(onNext: { request in
+                    request.resume()
+                }, onError: { [weak self] error in
+                    cache(uuidString: nil, for: hash, hashOrURL: nil)
+                    guard let self else { return }
+                    readerURL = nil
+                    showError(error)
+                }, onCompleted: { [weak self] in
+                    guard let self else { return }
+                    do {
+                        let destinationURL = zipFile.createRelativeUrl()
+                        try FileManager.default.unzipItem(at: zipFile.createUrl(), to: destinationURL)
+                        try? controllers.fileStorage.remove(zipFile)
+                        cache(uuidString: destinationURL.lastPathComponent, for: hash, hashOrURL: hashOrURL)
+                        readerURL = destinationURL.appending(path: "ios")
+                        DispatchQueue.main.async {
+                            completion()
+                        }
+                    } catch {
+                        cache(uuidString: nil, for: hash, hashOrURL: nil)
+                        readerURL = nil
+                        showError(error)
+                    }
+                })
+                .disposed(by: disposeBag)
+        })
+        present(alertController, animated: true)
+
+        func cache(uuidString: String?, for hash: String?, hashOrURL: String?) {
+            if let hash {
+                var debugReaderUUIDByHash = Defaults.shared.debugReaderUUIDByHash
+                debugReaderUUIDByHash[hash] = uuidString
+                Defaults.shared.debugReaderUUIDByHash = debugReaderUUIDByHash
+            }
+            Defaults.shared.lastDebugReaderHashOrURL = hashOrURL
+        }
+
+        func showError(_ error: Error) {
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                let alert = UIAlertController(title: L10n.error, message: error.localizedDescription, preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: L10n.ok, style: .cancel))
+                present(alert, animated: true)
+            }
         }
     }
 
