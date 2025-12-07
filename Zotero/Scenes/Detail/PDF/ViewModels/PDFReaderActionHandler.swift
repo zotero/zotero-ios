@@ -1797,6 +1797,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             let (item, liveAnnotations, storedPage) = try loadItemAnnotationsAndPage(for: key, libraryId: viewModel.state.library.identifier)
 
             if checkWhetherMd5Changed(forItem: item, andUpdateViewModel: viewModel, handler: self) {
+                DDLogWarn("PDFReaderActionHandler: MD5 has changed, before PDF was loaded")
                 return
             }
 
@@ -1875,6 +1876,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             observeDocument(in: viewModel)
         } catch let error {
             // TODO: - Show error
+            DDLogError("PDFReaderActionHandler: failed to load PDF: \(error)")
         }
 
         func observe(library: Library, viewModel: ViewModel<PDFReaderActionHandler>, handler: PDFReaderActionHandler) {
