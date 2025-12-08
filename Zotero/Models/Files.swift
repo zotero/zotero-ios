@@ -206,7 +206,7 @@ struct Files {
 
     // MARK: Epub/Html reader
 
-    static var tmpReaderDirectory: File {
+    static var temporaryDirectory: File {
         return FileData.directory(rootPath: Files.cachesRootPath, relativeComponents: ["Zotero", UUID().uuidString])
     }
 

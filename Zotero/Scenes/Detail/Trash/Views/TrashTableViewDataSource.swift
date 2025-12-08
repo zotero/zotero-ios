@@ -97,9 +97,12 @@ extension TrashTableViewDataSource {
 
     func createContextMenuActions(at index: Int) -> [ItemAction] {
         var actions = [ItemAction(type: .restore), ItemAction(type: .delete)]
+        guard let key = snapshot?.key(for: index), let attachment = viewModel.state.itemDataCache[key]?.accessory?.attachment else {
+            return actions
+        }
 
         // Add download/remove downloaded option for attachments
-        if let key = snapshot?.key(for: index), let accessory = viewModel.state.itemDataCache[key]?.accessory, let location = accessory.attachment?.location {
+        if let location = attachment.location {
             switch location {
             case .local:
                 actions.append(ItemAction(type: .removeDownload))
@@ -115,6 +118,12 @@ extension TrashTableViewDataSource {
                 break
             }
         }
+
+        #if DEBUG
+        if case .file(_, let contentType, _, _, _) = attachment.type, contentType == "application/epub+zip" || contentType == "text/html" {
+            actions.append(ItemAction(type: .debugReader))
+        }
+        #endif
 
         return actions
     }

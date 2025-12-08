@@ -114,7 +114,7 @@ final class ItemDetailViewController: UIViewController {
                     switch update.kind {
                     case .ready:
                         viewModel.process(action: .attachmentOpened(update.key))
-                        coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId)
+                        coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId, readerURL: nil)
 
                     case .failed(let error):
                         viewModel.process(action: .attachmentOpened(update.key))

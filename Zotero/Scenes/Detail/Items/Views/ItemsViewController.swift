@@ -340,6 +340,9 @@ final class ItemsViewController: BaseItemsViewController {
 
         case .removeDownload:
             viewModel.process(action: .removeDownloads(selectedKeys))
+
+        case .debugReader:
+            break
         }
     }
 
@@ -479,8 +482,15 @@ extension ItemsViewController: ItemsTableViewHandlerDelegate {
         }
     }
 
-    func process(action: ItemAction.Kind, at index: Int, completionAction: ((Bool) -> Void)?) {
-        guard let object = dataSource.object(at: index) else { return }
+    func process(action: ItemAction.Kind, at indexPath: IndexPath, completionAction: ((Bool) -> Void)?) {
+        if action == .debugReader {
+            guard let tapAction = dataSource.tapAction(for: indexPath) else { return }
+            processDebugReaderAction(tapAction: tapAction) { [weak self] in
+                self?.process(tapAction: tapAction)
+            }
+            return
+        }
+        guard let object = dataSource.object(at: indexPath.row) else { return }
         process(action: action, for: [object.key], button: nil, completionAction: completionAction)
     }
 

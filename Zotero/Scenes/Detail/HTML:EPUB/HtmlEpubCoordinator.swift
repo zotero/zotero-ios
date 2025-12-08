@@ -33,15 +33,26 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
     private let parentKey: String?
     private let libraryId: LibraryIdentifier
     private let url: URL
+    private let readerURL: URL?
     private let preselectedAnnotationKey: String?
     internal unowned let controllers: Controllers
     private let disposeBag: DisposeBag
 
-    init(key: String, parentKey: String?, libraryId: LibraryIdentifier, url: URL, preselectedAnnotationKey: String?, navigationController: NavigationViewController, controllers: Controllers) {
+    init(
+        key: String,
+        parentKey: String?,
+        libraryId: LibraryIdentifier,
+        url: URL,
+        readerURL: URL?,
+        preselectedAnnotationKey: String?,
+        navigationController: NavigationViewController,
+        controllers: Controllers
+    ) {
         self.key = key
         self.parentKey = parentKey
         self.libraryId = libraryId
         self.url = url
+        self.readerURL = readerURL
         self.preselectedAnnotationKey = preselectedAnnotationKey
         self.navigationController = navigationController
         self.controllers = controllers
@@ -76,6 +87,7 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
             idleTimerController: controllers.idleTimerController
         )
         let state = HtmlEpubReaderState(
+            readerURL: readerURL,
             url: url,
             key: key,
             parentKey: parentKey,
