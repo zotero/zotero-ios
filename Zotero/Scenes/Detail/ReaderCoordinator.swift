@@ -287,7 +287,7 @@ extension ReaderCoordinator {
 
         let state = ReaderSettingsState(settings: settings)
         let viewModel = ViewModel(initialState: state, handler: ReaderSettingsActionHandler())
-        let baseController = ReaderSettingsViewController(rows: settings.rows, viewModel: viewModel)
+        let baseController = ReaderSettingsViewController(rows: settings.rows, minimumPreferredContentSize: settings.minimumPreferredContentSize, viewModel: viewModel)
         let controller: UIViewController
         if UIDevice.current.userInterfaceIdiom == .pad {
             controller = baseController
@@ -296,7 +296,6 @@ extension ReaderCoordinator {
         }
         controller.modalPresentationStyle = .popover
         controller.popoverPresentationController?.sourceItem = sender
-        controller.preferredContentSize = settings.preferredContentSize
         controller.overrideUserInterfaceStyle = settings.appearance.userInterfaceStyle
         navigationController?.present(controller, animated: true, completion: nil)
 
