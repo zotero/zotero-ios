@@ -67,7 +67,7 @@ final class ReaderSettingsViewController: UICollectionViewController {
 
         func updatePreferredContentSizeIfNeeded() {
             let contentHeight = max(collectionView.collectionViewLayout.collectionViewContentSize.height, minimumPreferredContentSize.height)
-            let contentWidth = max(collectionView.collectionViewLayout.collectionViewContentSize.width, minimumPreferredContentSize.width)
+            let contentWidth = minimumPreferredContentSize.width
             let newPreferredContentSize = CGSize(width: contentWidth, height: contentHeight)
             guard preferredContentSize != newPreferredContentSize else { return }
             preferredContentSize = newPreferredContentSize
