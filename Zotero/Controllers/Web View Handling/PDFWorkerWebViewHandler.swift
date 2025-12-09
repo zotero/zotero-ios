@@ -10,7 +10,6 @@ import Foundation
 import WebKit
 
 import CocoaLumberjackSwift
-import RxCocoa
 import RxSwift
 
 final class PDFWorkerWebViewHandler: WebViewHandler {
@@ -30,13 +29,11 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
     }
 
     private let disposeBag: DisposeBag
-    private unowned let fileStorage: FileStorage
-    private let temporaryDirectory: File
+    let temporaryDirectory: File
     private let cleanup: (() -> Void)?
     let observable: PublishSubject<Result<PDFWorkerData, Swift.Error>>
 
-    init(webView: WKWebView, fileStorage: FileStorage, temporaryDirectory: File, cleanup: (() -> Void)?) {
-        self.fileStorage = fileStorage
+    init(webView: WKWebView, temporaryDirectory: File, cleanup: (() -> Void)?) {
         self.temporaryDirectory = temporaryDirectory
         self.cleanup = cleanup
         observable = PublishSubject()
@@ -58,17 +55,14 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
         return load(fileUrl: temporaryDirectory.copy(withName: "worker", ext: "html").createUrl())
     }
 
-    private func performPDFWorkerOperation(file: FileData, operationName: String, jsFunction: String, additionalParams: [String] = []) {
+    private func performPDFWorkerOperation(fileURL: URL, operationName: String, jsFunction: String, additionalParams: [String] = []) {
         performAfterInitialization()
+            .observe(on: MainScheduler.instance)
             .flatMap { [weak self] _ -> Single<Any> in
                 guard let self else { return .never() }
-                do {
-                    try fileStorage.copy(from: file.createUrl().path, to: temporaryDirectory.copy(withName: file.name, ext: file.ext))
-                } catch let error {
-                    return .error(error)
-                }
                 DDLogInfo("PDFWorkerWebViewHandler: call \(operationName) js")
-                var javascript = "\(jsFunction)('\(file.fileName)'"
+                let relativePath = fileURL.lastPathComponent
+                var javascript = "\(jsFunction)('\(escapeJavaScriptString(relativePath))'"
                 if !additionalParams.isEmpty {
                     javascript += ", " + additionalParams.joined(separator: ", ")
                 }
@@ -80,14 +74,25 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
                 self?.observable.on(.next(.failure(error)))
             })
             .disposed(by: disposeBag)
+
+        func escapeJavaScriptString(_ string: String) -> String {
+            return string
+                .replacingOccurrences(of: "\\", with: "\\\\")
+                .replacingOccurrences(of: "'", with: "\\'")
+        }
     }
 
-    func recognize(file: FileData) {
-        performPDFWorkerOperation(file: file, operationName: "recognize", jsFunction: "recognize")
+    func recognize(fileURL: URL) {
+        performPDFWorkerOperation(fileURL: fileURL, operationName: "recognize", jsFunction: "recognize")
     }
 
-    func getFullText(file: FileData, pages: [Int]?) {
-        performPDFWorkerOperation(file: file, operationName: "getFullText", jsFunction: "getFullText", additionalParams: pages.flatMap({ ["[\($0.map({ "\($0)" }).joined(separator: ","))]"] }) ?? [])
+    func getFullText(fileURL: URL, pages: [Int]?) {
+        performPDFWorkerOperation(
+            fileURL: fileURL,
+            operationName: "getFullText",
+            jsFunction: "getFullText",
+            additionalParams: pages.flatMap({ ["[\($0.map({ "\($0)" }).joined(separator: ","))]"] }) ?? []
+        )
     }
 
     /// Communication with JS in `webView`. The `webView` sends a message through one of the registered `JSHandlers`, which is received here.

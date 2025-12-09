@@ -114,14 +114,30 @@ final class PDFWorkerController {
                 return
             }
 
+            guard let workFileUrl = copyFileForPDFWorker(file: work.file, handler: pdfWorkerWebViewHandler) else {
+                cleanupPDFWorker(for: work) { $0?.on(.next(Update(work: work, kind: .failed))) }
+                return
+            }
+
             setupObserver(for: pdfWorkerWebViewHandler)
             subject.on(.next(Update(work: work, kind: .inProgress)))
             switch work.kind {
             case .recognizer:
-                pdfWorkerWebViewHandler.recognize(file: work.file)
+                pdfWorkerWebViewHandler.recognize(fileURL: workFileUrl)
 
             case .fullText(let pages):
-                pdfWorkerWebViewHandler.getFullText(file: work.file, pages: pages)
+                pdfWorkerWebViewHandler.getFullText(fileURL: workFileUrl, pages: pages)
+            }
+
+            func copyFileForPDFWorker(file: FileData, handler: PDFWorkerWebViewHandler) -> URL? {
+                let destination = handler.temporaryDirectory.copy(withName: file.name, ext: file.ext)
+                do {
+                    try fileStorage.copy(from: file.createUrl().path, to: destination)
+                } catch {
+                    DDLogError("PDFWorkerController: failed to copy file for PDF worker - \(error)")
+                    return nil
+                }
+                return destination.createUrl()
             }
 
             func setupObserver(for pdfWorkerWebViewHandler: PDFWorkerWebViewHandler) {
@@ -205,7 +221,7 @@ final class PDFWorkerController {
             let configuration = WKWebViewConfiguration()
             configuration.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
             let webView = webViewProvider.addWebView(configuration: configuration)
-            pdfWorkerWebViewHandler = PDFWorkerWebViewHandler(webView: webView, fileStorage: fileStorage, temporaryDirectory: temporaryDirectory, cleanup: cleanupClosure)
+            pdfWorkerWebViewHandler = PDFWorkerWebViewHandler(webView: webView, temporaryDirectory: temporaryDirectory, cleanup: cleanupClosure)
         }
         if pdfWorkerWebViewHandler == nil {
             removeTemporaryWorkerDirectory(temporaryDirectory)
