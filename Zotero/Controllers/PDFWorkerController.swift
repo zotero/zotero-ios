@@ -44,13 +44,21 @@ final class PDFWorkerController {
     private unowned let fileStorage: FileStorage
     private let disposeBag: DisposeBag
 
-    weak var webViewProvider: WebViewProvider?
+    weak var webViewProvider: WebViewProvider? {
+        didSet {
+            guard webViewProvider !== oldValue, webViewProvider != nil else { return }
+            accessQueue.async(flags: .barrier) { [weak self] in
+                self?.preloadPDFWorkerIfIdle()
+            }
+        }
+    }
 
     // Accessed only via accessQueue
     private static let maxConcurrentPDFWorkers: Int = 1
     private var queue: [PDFWork] = []
     private var subjectsByPDFWork: [PDFWork: PublishSubject<Update>] = [:]
     private var pdfWorkerWebViewHandlersByPDFWork: [PDFWork: PDFWorkerWebViewHandler] = [:]
+    private var preloadedPDFWorkerWebViewHandler: PDFWorkerWebViewHandler?
 
     // MARK: Object Lifecycle
     init(fileStorage: FileStorage) {
@@ -92,12 +100,11 @@ final class PDFWorkerController {
         func start(work: PDFWork, subject: PublishSubject<Update>) {
             var pdfWorkerWebViewHandler = pdfWorkerWebViewHandlersByPDFWork[work]
             if pdfWorkerWebViewHandler == nil {
-                DispatchQueue.main.sync { [weak webViewProvider] in
-                    guard let webViewProvider else { return }
-                    let configuration = WKWebViewConfiguration()
-                    configuration.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
-                    let webView = webViewProvider.addWebView(configuration: configuration)
-                    pdfWorkerWebViewHandler = PDFWorkerWebViewHandler(webView: webView, fileStorage: fileStorage)
+                if let preloadedPDFWorkerWebViewHandler {
+                    pdfWorkerWebViewHandler = preloadedPDFWorkerWebViewHandler
+                    self.preloadedPDFWorkerWebViewHandler = nil
+                } else {
+                    pdfWorkerWebViewHandler = createPDFWorkerWebViewHandler()
                 }
                 pdfWorkerWebViewHandlersByPDFWork[work] = pdfWorkerWebViewHandler
             }
@@ -175,6 +182,24 @@ final class PDFWorkerController {
             controller.pdfWorkerWebViewHandlersByPDFWork.removeValue(forKey: work)?.removeFromSuperviewAsynchronously()
             completion?(subject)
             controller.startWorkIfNeeded()
+            controller.preloadPDFWorkerIfIdle()
         }
+    }
+
+    private func preloadPDFWorkerIfIdle() {
+        guard preloadedPDFWorkerWebViewHandler == nil, pdfWorkerWebViewHandlersByPDFWork.isEmpty else { return }
+        preloadedPDFWorkerWebViewHandler = createPDFWorkerWebViewHandler()
+    }
+
+    private func createPDFWorkerWebViewHandler() -> PDFWorkerWebViewHandler? {
+        var pdfWorkerWebViewHandler: PDFWorkerWebViewHandler?
+        DispatchQueue.main.sync { [weak self] in
+            guard let self, let webViewProvider else { return }
+            let configuration = WKWebViewConfiguration()
+            configuration.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
+            let webView = webViewProvider.addWebView(configuration: configuration)
+            pdfWorkerWebViewHandler = PDFWorkerWebViewHandler(webView: webView, fileStorage: fileStorage)
+        }
+        return pdfWorkerWebViewHandler
     }
 }
