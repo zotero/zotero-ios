@@ -192,14 +192,57 @@ final class PDFWorkerController {
     }
 
     private func createPDFWorkerWebViewHandler() -> PDFWorkerWebViewHandler? {
+        guard let temporaryDirectory = prepareTemporaryWorkerDirectory() else { return nil }
+        let cleanupClosure: () -> Void = { [weak self] in
+            self?.accessQueue.async { [weak self] in
+                self?.removeTemporaryWorkerDirectory(temporaryDirectory)
+            }
+        }
+
         var pdfWorkerWebViewHandler: PDFWorkerWebViewHandler?
         DispatchQueue.main.sync { [weak self] in
             guard let self, let webViewProvider else { return }
             let configuration = WKWebViewConfiguration()
             configuration.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
             let webView = webViewProvider.addWebView(configuration: configuration)
-            pdfWorkerWebViewHandler = PDFWorkerWebViewHandler(webView: webView, fileStorage: fileStorage)
+            pdfWorkerWebViewHandler = PDFWorkerWebViewHandler(webView: webView, fileStorage: fileStorage, temporaryDirectory: temporaryDirectory, cleanup: cleanupClosure)
+        }
+        if pdfWorkerWebViewHandler == nil {
+            removeTemporaryWorkerDirectory(temporaryDirectory)
         }
         return pdfWorkerWebViewHandler
+    }
+
+    private func prepareTemporaryWorkerDirectory() -> File? {
+        guard let workerHtmlUrl = Bundle.main.url(forResource: "worker", withExtension: "html") else {
+            DDLogError("PDFWorkerController: worker.html not found")
+            return nil
+        }
+        guard let workerJsUrl = Bundle.main.url(forResource: "worker", withExtension: "js", subdirectory: "Bundled/pdf_worker") else {
+            DDLogError("PDFWorkerController: worker.js not found")
+            return nil
+        }
+        let temporaryDirectory = Files.tmpReaderDirectory
+        do {
+            try fileStorage.copy(from: workerHtmlUrl.path, to: temporaryDirectory.copy(withName: "worker", ext: "html"))
+            try fileStorage.copy(from: workerJsUrl.path, to: temporaryDirectory.copy(withName: "worker", ext: "js"))
+            let cmapsDirectory = Files.file(from: workerJsUrl).directory.appending(relativeComponent: "cmaps")
+            try fileStorage.copyContents(of: cmapsDirectory, to: temporaryDirectory.appending(relativeComponent: "cmaps"))
+            let standardFontsDirectory = Files.file(from: workerJsUrl).directory.appending(relativeComponent: "standard_fonts")
+            try fileStorage.copyContents(of: standardFontsDirectory, to: temporaryDirectory.appending(relativeComponent: "standard_fonts"))
+        } catch {
+            DDLogError("PDFWorkerController: failed to prepare worker directory - \(error)")
+            removeTemporaryWorkerDirectory(temporaryDirectory)
+            return nil
+        }
+        return temporaryDirectory
+    }
+
+    private func removeTemporaryWorkerDirectory(_ directory: File) {
+        do {
+            try fileStorage.remove(directory)
+        } catch {
+            DDLogError("PDFWorkerController: failed to remove worker directory - \(error)")
+        }
     }
 }
