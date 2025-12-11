@@ -23,12 +23,14 @@ final class ReaderSettingsViewController: UICollectionViewController {
 
     let viewModel: ViewModel<ReaderSettingsActionHandler>
     private let rows: [Row]
+    private let minimumPreferredContentSize: CGSize
     private let disposeBag: DisposeBag
 
     private var dataSource: UICollectionViewDiffableDataSource<Int, Row>!
 
-    init(rows: [Row], viewModel: ViewModel<ReaderSettingsActionHandler>) {
+    init(rows: [Row], minimumPreferredContentSize: CGSize, viewModel: ViewModel<ReaderSettingsActionHandler>) {
         self.rows = rows
+        self.minimumPreferredContentSize = minimumPreferredContentSize
         self.viewModel = viewModel
         disposeBag = DisposeBag()
 
@@ -42,6 +44,9 @@ final class ReaderSettingsViewController: UICollectionViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        preferredContentSize = minimumPreferredContentSize
+        navigationController?.preferredContentSize = minimumPreferredContentSize
+
         setupNavigationBarIfNeeded()
         collectionView.allowsSelection = false
         collectionView.collectionViewLayout = createCollectionViewLayout()
@@ -54,6 +59,20 @@ final class ReaderSettingsViewController: UICollectionViewController {
                 self?.update(state: state)
             })
             .disposed(by: disposeBag)
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        updatePreferredContentSizeIfNeeded()
+
+        func updatePreferredContentSizeIfNeeded() {
+            let contentHeight = max(collectionView.collectionViewLayout.collectionViewContentSize.height, minimumPreferredContentSize.height)
+            let contentWidth = minimumPreferredContentSize.width
+            let newPreferredContentSize = CGSize(width: contentWidth, height: contentHeight)
+            guard preferredContentSize != newPreferredContentSize else { return }
+            preferredContentSize = newPreferredContentSize
+            navigationController?.preferredContentSize = newPreferredContentSize
+        }
     }
 
     // MARK: - Actions

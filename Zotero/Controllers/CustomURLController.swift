@@ -94,12 +94,12 @@ final class CustomURLController {
 
                 case "text/html":
                     if FeatureGates.enabled.contains(.htmlEpubReader) {
-                        presentation = .html(library: library, key: key, parentKey: parentKey, url: url)
+                        presentation = .html(library: library, key: key, parentKey: parentKey, url: url, preselectedAnnotationKey: annotation)
                     }
 
                 case "application/epub+zip":
                     if FeatureGates.enabled.contains(.htmlEpubReader) {
-                        presentation = .epub(library: library, key: key, parentKey: parentKey, url: url)
+                        presentation = .epub(library: library, key: key, parentKey: parentKey, url: url, preselectedAnnotationKey: annotation)
                     }
 
                 default:

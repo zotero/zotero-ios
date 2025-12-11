@@ -13,9 +13,11 @@ import RxSwift
 struct DebuggingState: ViewModelState {
     var isLogging: Bool
     var numberOfLines: Int
+    var advancedVisible: Bool
     var disposeBag: DisposeBag?
 
     init(isLogging: Bool, numberOfLines: Int) {
+        advancedVisible = false
         self.isLogging = isLogging
         self.numberOfLines = numberOfLines
     }

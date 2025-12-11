@@ -35,7 +35,7 @@ extension PDFSettings: ReaderSettings {
         return appearanceMode
     }
     
-    var preferredContentSize: CGSize {
+    var minimumPreferredContentSize: CGSize {
         return CGSize(width: 480, height: 308)
     }
 

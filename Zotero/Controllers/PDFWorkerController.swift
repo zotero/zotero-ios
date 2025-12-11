@@ -16,9 +16,9 @@ import RxSwift
 final class PDFWorkerController {
     // MARK: Types
     struct PDFWork: Hashable {
-        enum Kind {
+        enum Kind: Hashable {
             case recognizer
-            case fullText
+            case fullText(pages: [Int])
         }
 
         let file: FileData
@@ -44,13 +44,21 @@ final class PDFWorkerController {
     private unowned let fileStorage: FileStorage
     private let disposeBag: DisposeBag
 
-    weak var webViewProvider: WebViewProvider?
+    weak var webViewProvider: WebViewProvider? {
+        didSet {
+            guard webViewProvider !== oldValue, webViewProvider != nil else { return }
+            accessQueue.async(flags: .barrier) { [weak self] in
+                self?.preloadPDFWorkerIfIdle()
+            }
+        }
+    }
 
     // Accessed only via accessQueue
     private static let maxConcurrentPDFWorkers: Int = 1
     private var queue: [PDFWork] = []
     private var subjectsByPDFWork: [PDFWork: PublishSubject<Update>] = [:]
     private var pdfWorkerWebViewHandlersByPDFWork: [PDFWork: PDFWorkerWebViewHandler] = [:]
+    private var preloadedPDFWorkerWebViewHandler: PDFWorkerWebViewHandler?
 
     // MARK: Object Lifecycle
     init(fileStorage: FileStorage) {
@@ -92,12 +100,11 @@ final class PDFWorkerController {
         func start(work: PDFWork, subject: PublishSubject<Update>) {
             var pdfWorkerWebViewHandler = pdfWorkerWebViewHandlersByPDFWork[work]
             if pdfWorkerWebViewHandler == nil {
-                DispatchQueue.main.sync { [weak webViewProvider] in
-                    guard let webViewProvider else { return }
-                    let configuration = WKWebViewConfiguration()
-                    configuration.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
-                    let webView = webViewProvider.addWebView(configuration: configuration)
-                    pdfWorkerWebViewHandler = PDFWorkerWebViewHandler(webView: webView, fileStorage: fileStorage)
+                if let preloadedPDFWorkerWebViewHandler {
+                    pdfWorkerWebViewHandler = preloadedPDFWorkerWebViewHandler
+                    self.preloadedPDFWorkerWebViewHandler = nil
+                } else {
+                    pdfWorkerWebViewHandler = createPDFWorkerWebViewHandler()
                 }
                 pdfWorkerWebViewHandlersByPDFWork[work] = pdfWorkerWebViewHandler
             }
@@ -107,14 +114,30 @@ final class PDFWorkerController {
                 return
             }
 
+            guard let workFileUrl = copyFileForPDFWorker(file: work.file, handler: pdfWorkerWebViewHandler) else {
+                cleanupPDFWorker(for: work) { $0?.on(.next(Update(work: work, kind: .failed))) }
+                return
+            }
+
             setupObserver(for: pdfWorkerWebViewHandler)
             subject.on(.next(Update(work: work, kind: .inProgress)))
             switch work.kind {
             case .recognizer:
-                pdfWorkerWebViewHandler.recognize(file: work.file)
+                pdfWorkerWebViewHandler.recognize(fileURL: workFileUrl)
 
-            case .fullText:
-                pdfWorkerWebViewHandler.getFullText(file: work.file)
+            case .fullText(let pages):
+                pdfWorkerWebViewHandler.getFullText(fileURL: workFileUrl, pages: pages)
+            }
+
+            func copyFileForPDFWorker(file: FileData, handler: PDFWorkerWebViewHandler) -> URL? {
+                let destination = handler.temporaryDirectory.copy(withName: file.name, ext: file.ext)
+                do {
+                    try fileStorage.copy(from: file.createUrl().path, to: destination)
+                } catch {
+                    DDLogError("PDFWorkerController: failed to copy file for PDF worker - \(error)")
+                    return nil
+                }
+                return destination.createUrl()
             }
 
             func setupObserver(for pdfWorkerWebViewHandler: PDFWorkerWebViewHandler) {
@@ -175,6 +198,67 @@ final class PDFWorkerController {
             controller.pdfWorkerWebViewHandlersByPDFWork.removeValue(forKey: work)?.removeFromSuperviewAsynchronously()
             completion?(subject)
             controller.startWorkIfNeeded()
+            controller.preloadPDFWorkerIfIdle()
+        }
+    }
+
+    private func preloadPDFWorkerIfIdle() {
+        guard preloadedPDFWorkerWebViewHandler == nil, pdfWorkerWebViewHandlersByPDFWork.isEmpty else { return }
+        preloadedPDFWorkerWebViewHandler = createPDFWorkerWebViewHandler()
+    }
+
+    private func createPDFWorkerWebViewHandler() -> PDFWorkerWebViewHandler? {
+        guard let temporaryDirectory = prepareTemporaryWorkerDirectory() else { return nil }
+        let cleanupClosure: () -> Void = { [weak self] in
+            self?.accessQueue.async { [weak self] in
+                self?.removeTemporaryWorkerDirectory(temporaryDirectory)
+            }
+        }
+
+        var pdfWorkerWebViewHandler: PDFWorkerWebViewHandler?
+        DispatchQueue.main.sync { [weak self] in
+            guard let self, let webViewProvider else { return }
+            let configuration = WKWebViewConfiguration()
+            configuration.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
+            let webView = webViewProvider.addWebView(configuration: configuration)
+            pdfWorkerWebViewHandler = PDFWorkerWebViewHandler(webView: webView, temporaryDirectory: temporaryDirectory, cleanup: cleanupClosure)
+        }
+        if pdfWorkerWebViewHandler == nil {
+            removeTemporaryWorkerDirectory(temporaryDirectory)
+        }
+        return pdfWorkerWebViewHandler
+    }
+
+    private func prepareTemporaryWorkerDirectory() -> File? {
+        guard let workerHtmlUrl = Bundle.main.url(forResource: "worker", withExtension: "html") else {
+            DDLogError("PDFWorkerController: worker.html not found")
+            return nil
+        }
+        guard let workerJsUrl = Bundle.main.url(forResource: "worker", withExtension: "js", subdirectory: "Bundled/pdf_worker") else {
+            DDLogError("PDFWorkerController: worker.js not found")
+            return nil
+        }
+        let temporaryDirectory = Files.temporaryDirectory
+        do {
+            try fileStorage.copy(from: workerHtmlUrl.path, to: temporaryDirectory.copy(withName: "worker", ext: "html"))
+            try fileStorage.copy(from: workerJsUrl.path, to: temporaryDirectory.copy(withName: "worker", ext: "js"))
+            let cmapsDirectory = Files.file(from: workerJsUrl).directory.appending(relativeComponent: "cmaps")
+            try fileStorage.copyContents(of: cmapsDirectory, to: temporaryDirectory.appending(relativeComponent: "cmaps"))
+            let standardFontsDirectory = Files.file(from: workerJsUrl).directory.appending(relativeComponent: "standard_fonts")
+            try fileStorage.copyContents(of: standardFontsDirectory, to: temporaryDirectory.appending(relativeComponent: "standard_fonts"))
+        } catch {
+            DDLogError("PDFWorkerController: failed to prepare worker directory - \(error)")
+            removeTemporaryWorkerDirectory(temporaryDirectory)
+            return nil
+        }
+        return temporaryDirectory
+    }
+
+    private func removeTemporaryWorkerDirectory(_ directory: File) {
+        do {
+            try fileStorage.remove(directory)
+        } catch {
+            DDLogError("PDFWorkerController: failed to remove worker directory - \(error)")
         }
     }
 }

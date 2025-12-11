@@ -132,6 +132,14 @@ final class Defaults {
     var htmlEpubSettings: HtmlEpubSettings
     #endif
 
+    // MARK: - Speech
+
+    @UserDefault(key: "SpeechDefaultVoiceForLanguage", defaultValue: [:])
+    var defaultVoiceForLanguage: [String: String]
+
+    @UserDefault(key: "SpeechRateModifier", defaultValue: 1)
+    var speechRateModifier: Float
+
     // MARK: - Citation / Bibliography Export
 
     @UserDefault(key: "exportStyleId", defaultValue: "http://www.zotero.org/styles/chicago-note-bibliography", defaults: .standard)
@@ -184,6 +192,14 @@ final class Defaults {
     static let currentClearPSPDFKitCacheGuard = 2
     @UserDefault(key: "ClearPSPDFKitCacheGuard", defaultValue: currentClearPSPDFKitCacheGuard - 1)
     var clearPSPDFKitCacheGuard: Int
+
+    // MARK: - Debug
+
+    @UserDefault(key: "DebugReaderUUIDByHash", defaultValue: [:])
+    var debugReaderUUIDByHash: [String: String]
+
+    @OptionalUserDefault(key: "LastDebugReaderHashOrURL")
+    var lastDebugReaderHashOrURL: String?
 
     // MARK: - Actions
 

@@ -18,4 +18,5 @@ enum DebuggingAction {
     case clearLogs
     case showLogs
     case showFullSyncDebugging
+    case setAdvancedVisible(Bool)
 }

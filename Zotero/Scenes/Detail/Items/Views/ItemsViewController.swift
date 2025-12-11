@@ -340,6 +340,9 @@ final class ItemsViewController: BaseItemsViewController {
 
         case .removeDownload:
             viewModel.process(action: .removeDownloads(selectedKeys))
+
+        case .debugReader:
+            break
         }
     }
 
@@ -371,9 +374,10 @@ final class ItemsViewController: BaseItemsViewController {
                 updateTagFilter(filters: viewModel.state.filters, collectionId: collection.identifier, libraryId: library.identifier)
 
             case .update(let results, let deletions, let insertions, let modifications):
+                let frozenResults = results.freeze()
                 let correctedModifications = Database.correctedModifications(from: modifications, insertions: insertions, deletions: deletions)
-                viewModel.process(action: .updateKeys(items: results, deletions: deletions, insertions: insertions, modifications: correctedModifications))
-                dataSource.apply(snapshot: results.freeze(), modifications: modifications, insertions: insertions, deletions: deletions) { [weak self] in
+                viewModel.process(action: .updateKeys(items: frozenResults, deletions: deletions, insertions: insertions, modifications: correctedModifications))
+                dataSource.apply(snapshot: frozenResults, modifications: correctedModifications, insertions: insertions, deletions: deletions) { [weak self] in
                     guard let self else { return }
                     updateTagFilter(filters: viewModel.state.filters, collectionId: collection.identifier, libraryId: library.identifier)
                 }
@@ -478,8 +482,15 @@ extension ItemsViewController: ItemsTableViewHandlerDelegate {
         }
     }
 
-    func process(action: ItemAction.Kind, at index: Int, completionAction: ((Bool) -> Void)?) {
-        guard let object = dataSource.object(at: index) else { return }
+    func process(action: ItemAction.Kind, at indexPath: IndexPath, completionAction: ((Bool) -> Void)?) {
+        if action == .debugReader {
+            guard let tapAction = dataSource.tapAction(for: indexPath) else { return }
+            processDebugReaderAction(tapAction: tapAction) { [weak self] in
+                self?.process(tapAction: tapAction)
+            }
+            return
+        }
+        guard let object = dataSource.object(at: indexPath.row) else { return }
         process(action: action, for: [object.key], button: nil, completionAction: completionAction)
     }
 
