@@ -93,7 +93,7 @@ final class PDFWorkerControllerSpec: QuickSpec {
                 }
 
                 it("can extract full text") {
-                    let work = PDFWorkerController.PDFWork(file: file, kind: .fullText)
+                    let work = PDFWorkerController.PDFWork(file: file, kind: .fullText(pages: nil))
                     var emittedUpdates: [PDFWorkerController.Update.Kind] = []
 
                     waitUntil(timeout: .seconds(20)) { completion in
