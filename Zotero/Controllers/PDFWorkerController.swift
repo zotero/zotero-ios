@@ -21,8 +21,14 @@ final class PDFWorkerController {
             case fullText(pages: [Int]?)
         }
 
+        enum Priority: Hashable {
+            case `default`
+            case high
+        }
+
         let file: FileData
         let kind: Kind
+        let priority: Priority
     }
 
     struct Update {
@@ -54,8 +60,12 @@ final class PDFWorkerController {
     }
 
     // Accessed only via accessQueue
-    private static let maxConcurrentPDFWorkers: Int = 1
-    private var queue: [PDFWork] = []
+    private static let maxDefaultPriorityConcurrentPDFWorkers: Int = 1
+    private static let maxHighPriorityConcurrentPDFWorkers: Int = 3
+    private var defaultPriorityQueue: [PDFWork] = []
+    private var defaultPriorityRunningCount: Int = 0
+    private var highPriorityQueue: [PDFWork] = []
+    private var highPriorityRunningCount: Int = 0
     private var subjectsByPDFWork: [PDFWork: PublishSubject<Update>] = [:]
     private var pdfWorkerWebViewHandlersByPDFWork: [PDFWork: PDFWorkerWebViewHandler] = [:]
     private var preloadedPDFWorkerWebViewHandler: PDFWorkerWebViewHandler?
@@ -79,7 +89,13 @@ final class PDFWorkerController {
                 existingSubject.bind(to: subject).disposed(by: disposeBag)
                 return
             }
-            queue.append(work)
+            switch work.priority {
+            case .default:
+                defaultPriorityQueue.append(work)
+
+            case .high:
+                highPriorityQueue.append(work)
+            }
             subjectsByPDFWork[work] = subject
 
             startWorkIfNeeded()
@@ -88,8 +104,15 @@ final class PDFWorkerController {
     }
 
     private func startWorkIfNeeded() {
-        guard pdfWorkerWebViewHandlersByPDFWork.count < Self.maxConcurrentPDFWorkers, !queue.isEmpty else { return }
-        let work = queue.removeFirst()
+        var work: PDFWork?
+        if !highPriorityQueue.isEmpty, highPriorityRunningCount < Self.maxHighPriorityConcurrentPDFWorkers {
+            work = highPriorityQueue.removeFirst()
+            highPriorityRunningCount += 1
+        } else if !defaultPriorityQueue.isEmpty, defaultPriorityRunningCount < Self.maxDefaultPriorityConcurrentPDFWorkers {
+            work = defaultPriorityQueue.removeFirst()
+            defaultPriorityRunningCount += 1
+        }
+        guard let work else { return }
         guard let subject = subjectsByPDFWork[work] else {
             startWorkIfNeeded()
             return
@@ -173,7 +196,7 @@ final class PDFWorkerController {
             pdfWorkerWebViewHandlersByPDFWork.values.forEach { $0.removeFromSuperviewAsynchronously() }
             pdfWorkerWebViewHandlersByPDFWork = [:]
             // Then cancel actual works, and send cancelled event for each queued work.
-            let works = subjectsByPDFWork.keys + queue
+            let works = subjectsByPDFWork.keys + highPriorityQueue + defaultPriorityQueue
             for work in works {
                 cancel(work: work)
             }
@@ -192,7 +215,15 @@ final class PDFWorkerController {
 
         func cleanup(for work: PDFWork, completion: ((_ subject: PublishSubject<Update>?) -> Void)?, controller: PDFWorkerController) {
             let subject = controller.subjectsByPDFWork[work]
-            controller.queue.removeAll(where: { $0 == work })
+            switch work.priority {
+            case .default:
+                controller.defaultPriorityQueue.removeAll(where: { $0 == work })
+                defaultPriorityRunningCount -= 1
+
+            case .high:
+                controller.highPriorityQueue.removeAll(where: { $0 == work })
+                highPriorityRunningCount -= 1
+            }
             controller.subjectsByPDFWork[work] = nil
             DDLogInfo("PDFWorkerController: cleaned up for \(work)")
             controller.pdfWorkerWebViewHandlersByPDFWork.removeValue(forKey: work)?.removeFromSuperviewAsynchronously()

@@ -1033,7 +1033,7 @@ extension PDFReaderViewController: SpeechmanagerDelegate {
             return
         }
         let start = CFAbsoluteTimeGetCurrent()
-        pdfWorkerController.queue(work: .init(file: file as! FileData, kind: .fullText(pages: indices.map({ Int($0) }))))
+        pdfWorkerController.queue(work: .init(file: file as! FileData, kind: .fullText(pages: indices.map({ Int($0) })), priority: .high))
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { update in
                 switch update.kind {
