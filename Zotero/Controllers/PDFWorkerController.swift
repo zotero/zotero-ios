@@ -238,7 +238,7 @@ final class PDFWorkerController {
             DDLogError("PDFWorkerController: worker.js not found")
             return nil
         }
-        let temporaryDirectory = Files.tmpReaderDirectory
+        let temporaryDirectory = Files.temporaryDirectory
         do {
             try fileStorage.copy(from: workerHtmlUrl.path, to: temporaryDirectory.copy(withName: "worker", ext: "html"))
             try fileStorage.copy(from: workerJsUrl.path, to: temporaryDirectory.copy(withName: "worker", ext: "js"))
