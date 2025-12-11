@@ -210,9 +210,7 @@ final class PDFWorkerController {
     private func createPDFWorkerWebViewHandler() -> PDFWorkerWebViewHandler? {
         guard let temporaryDirectory = prepareTemporaryWorkerDirectory() else { return nil }
         let cleanupClosure: () -> Void = { [weak self] in
-            self?.accessQueue.async { [weak self] in
-                self?.removeTemporaryWorkerDirectory(temporaryDirectory)
-            }
+            self?.removeTemporaryWorkerDirectory(temporaryDirectory)
         }
 
         var pdfWorkerWebViewHandler: PDFWorkerWebViewHandler?
