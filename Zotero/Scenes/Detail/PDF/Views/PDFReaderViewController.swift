@@ -1060,7 +1060,7 @@ extension PDFReaderViewController: SpeechmanagerDelegate {
                     for idx in 0..<indices.count {
                         result[indices[idx]] = String(textParts[idx])
                     }
-                    DDLogInfo("TEST TIME: \(CFAbsoluteTimeGetCurrent() - start)")
+                    DDLogInfo("PDFReaderViewController: speech text extracted in \(CFAbsoluteTimeGetCurrent() - start)")
                     completion(result)
                 }
             })
