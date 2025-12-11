@@ -364,7 +364,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
                 guard speechButton.isHidden else { return nil }
                 speechContainerBottom.isActive = false
                 speechButtonBottom.isActive = true
-                return (speechContainer, speechButton, baseHeight(isPopover: traitCollection.horizontalSizeClass == .regular))
+                return (speechContainer, speechButton, baseHeight(isPopover: !isFormSheet()))
 
             case .paused:
                 return nil
@@ -375,7 +375,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
             guard speechContainer.isHidden else { return nil }
             speechContainerBottom.isActive = true
             speechButtonBottom.isActive = false
-            return (speechButton, speechContainer, expandedHeight(isPopover: traitCollection.horizontalSizeClass == .regular))
+            return (speechButton, speechContainer, expandedHeight(isPopover: !isFormSheet()))
         }
     }
 
