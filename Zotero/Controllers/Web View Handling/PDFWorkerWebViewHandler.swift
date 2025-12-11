@@ -10,7 +10,6 @@ import Foundation
 import WebKit
 
 import CocoaLumberjackSwift
-import RxCocoa
 import RxSwift
 
 final class PDFWorkerWebViewHandler: WebViewHandler {
@@ -24,22 +23,19 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
         case log = "logHandler"
     }
 
-    enum Error: Swift.Error {
-        case cantFindFile(String)
-    }
-
     enum PDFWorkerData {
         case recognizerData(data: [String: Any])
         case fullText(data: [String: Any])
     }
 
     private let disposeBag: DisposeBag
-    private unowned let fileStorage: FileStorage
-    private var temporaryDirectory: File?
+    let temporaryDirectory: File
+    private let cleanup: (() -> Void)?
     let observable: PublishSubject<Result<PDFWorkerData, Swift.Error>>
 
-    init(webView: WKWebView, fileStorage: FileStorage) {
-        self.fileStorage = fileStorage
+    init(webView: WKWebView, temporaryDirectory: File, cleanup: (() -> Void)?) {
+        self.temporaryDirectory = temporaryDirectory
+        self.cleanup = cleanup
         observable = PublishSubject()
         disposeBag = DisposeBag()
 
@@ -51,59 +47,22 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
     }
 
     deinit {
-        guard let temporaryDirectory else { return }
-        try? fileStorage.remove(temporaryDirectory)
+        cleanup?()
     }
 
     override func initializeWebView() -> Single<()> {
         DDLogInfo("PDFWorkerWebViewHandler: initialize web view")
-        return createTemporaryWorker()
-            .flatMap { _ in
-                return loadIndex()
-            }
-
-        func createTemporaryWorker() -> Single<()> {
-            guard let workerHtmlUrl = Bundle.main.url(forResource: "worker", withExtension: "html") else {
-                return .error(Error.cantFindFile("worker.html"))
-            }
-            guard let workerJsUrl = Bundle.main.url(forResource: "worker", withExtension: "js", subdirectory: "Bundled/pdf_worker") else {
-                return .error(Error.cantFindFile("worker.js"))
-            }
-            let temporaryDirectory = Files.temporaryDirectory
-            self.temporaryDirectory = temporaryDirectory
-            do {
-                try fileStorage.copy(from: workerHtmlUrl.path, to: temporaryDirectory.copy(withName: "worker", ext: "html"))
-                try fileStorage.copy(from: workerJsUrl.path, to: temporaryDirectory.copy(withName: "worker", ext: "js"))
-                let cmapsDirectory = Files.file(from: workerJsUrl).directory.appending(relativeComponent: "cmaps")
-                try fileStorage.copyContents(of: cmapsDirectory, to: temporaryDirectory.appending(relativeComponent: "cmaps"))
-                let standardFontsDirectory = Files.file(from: workerJsUrl).directory.appending(relativeComponent: "standard_fonts")
-                try fileStorage.copyContents(of: standardFontsDirectory, to: temporaryDirectory.appending(relativeComponent: "standard_fonts"))
-            } catch let error {
-                return .error(error)
-            }
-            return Single.just(Void())
-        }
-
-        func loadIndex() -> Single<()> {
-            guard let temporaryDirectory else {
-                return .error(Error.cantFindFile("temporary directory"))
-            }
-            let indexUrl = temporaryDirectory.copy(withName: "worker", ext: "html").createUrl()
-            return load(fileUrl: indexUrl)
-        }
+        return load(fileUrl: temporaryDirectory.copy(withName: "worker", ext: "html").createUrl())
     }
 
-    private func performPDFWorkerOperation(file: FileData, operationName: String, jsFunction: String, additionalParams: [String] = []) {
+    private func performPDFWorkerOperation(fileURL: URL, operationName: String, jsFunction: String, additionalParams: [String] = []) {
         performAfterInitialization()
+            .observe(on: MainScheduler.instance)
             .flatMap { [weak self] _ -> Single<Any> in
-                guard let self, let temporaryDirectory else { return .never() }
-                do {
-                    try fileStorage.copy(from: file.createUrl().path, to: temporaryDirectory.copy(withName: file.name, ext: file.ext))
-                } catch let error {
-                    return .error(error)
-                }
+                guard let self else { return .never() }
                 DDLogInfo("PDFWorkerWebViewHandler: call \(operationName) js")
-                var javascript = "\(jsFunction)('\(file.fileName)'"
+                let relativePath = fileURL.lastPathComponent
+                var javascript = "\(jsFunction)('\(escapeJavaScriptString(relativePath))'"
                 if !additionalParams.isEmpty {
                     javascript += ", " + additionalParams.joined(separator: ", ")
                 }
@@ -115,14 +74,25 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
                 self?.observable.on(.next(.failure(error)))
             })
             .disposed(by: disposeBag)
+
+        func escapeJavaScriptString(_ string: String) -> String {
+            return string
+                .replacingOccurrences(of: "\\", with: "\\\\")
+                .replacingOccurrences(of: "'", with: "\\'")
+        }
     }
 
-    func recognize(file: FileData) {
-        performPDFWorkerOperation(file: file, operationName: "recognize", jsFunction: "recognize")
+    func recognize(fileURL: URL) {
+        performPDFWorkerOperation(fileURL: fileURL, operationName: "recognize", jsFunction: "recognize")
     }
 
-    func getFullText(file: FileData, pages: [Int]?) {
-        performPDFWorkerOperation(file: file, operationName: "getFullText", jsFunction: "getFullText", additionalParams: pages.flatMap({ ["[\($0.map({ "\($0)" }).joined(separator: ","))]"] }) ?? [])
+    func getFullText(fileURL: URL, pages: [Int]?) {
+        performPDFWorkerOperation(
+            fileURL: fileURL,
+            operationName: "getFullText",
+            jsFunction: "getFullText",
+            additionalParams: pages.flatMap({ ["[\($0.map({ "\($0)" }).joined(separator: ","))]"] }) ?? []
+        )
     }
 
     /// Communication with JS in `webView`. The `webView` sends a message through one of the registered `JSHandlers`, which is received here.
