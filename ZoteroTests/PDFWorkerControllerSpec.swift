@@ -74,22 +74,7 @@ final class PDFWorkerControllerSpec: QuickSpec {
                     }
 
                     expect(emittedUpdates.count).toEventually(equal(2), timeout: .seconds(20))
-                    for (index, update) in emittedUpdates.enumerated() {
-                        switch update {
-                        case .inProgress:
-                            expect(index).to(equal(0))
-
-                        case .extractedData(let data):
-                            expect(index).to(equal(1))
-                            let recognizerDataURL = Bundle(for: Self.self).url(forResource: "bitcoin_pdf_recognizer_data", withExtension: "json")!
-                            let recognizerData = try! Data(contentsOf: recognizerDataURL)
-                            let recognizerJSONData = try! JSONSerialization.jsonObject(with: recognizerData, options: .allowFragments) as! [String: Any]
-                            expect(data as? [String: AnyHashable]).to(equal(recognizerJSONData as! [String: AnyHashable]))
-
-                        default:
-                            fail("unexpected update \(index): \(update)")
-                        }
-                    }
+                    process(updates: emittedUpdates, jsonFileName: "bitcoin_pdf_recognizer_data")
                 }
 
                 it("can extract full text") {
@@ -113,22 +98,7 @@ final class PDFWorkerControllerSpec: QuickSpec {
                     }
 
                     expect(emittedUpdates.count).toEventually(equal(2), timeout: .seconds(20))
-                    for (index, update) in emittedUpdates.enumerated() {
-                        switch update {
-                        case .inProgress:
-                            expect(index).to(equal(0))
-
-                        case .extractedData(let data):
-                            expect(index).to(equal(1))
-                            let fullTextURL = Bundle(for: Self.self).url(forResource: "bitcoin_pdf_full_text", withExtension: "json")!
-                            let fullTextData = try! Data(contentsOf: fullTextURL)
-                            let fullTextJSONData = try! JSONSerialization.jsonObject(with: fullTextData, options: .allowFragments) as! [String: Any]
-                            expect(data as? [String: AnyHashable]).to(equal(fullTextJSONData as! [String: AnyHashable]))
-
-                        default:
-                            fail("unexpected update \(index): \(update)")
-                        }
-                    }
+                    process(updates: emittedUpdates, jsonFileName: "bitcoin_pdf_full_text")
                 }
 
                 it("can extract text from a single page") {
@@ -152,17 +122,21 @@ final class PDFWorkerControllerSpec: QuickSpec {
                     }
 
                     expect(emittedUpdates.count).toEventually(equal(2), timeout: .seconds(20))
-                    for (index, update) in emittedUpdates.enumerated() {
+                    process(updates: emittedUpdates, jsonFileName: "bitcoin_pdf_page_0_text")
+                }
+
+                func process(updates: [PDFWorkerController.Update.Kind], jsonFileName: String) {
+                    for (index, update) in updates.enumerated() {
                         switch update {
                         case .inProgress:
                             expect(index).to(equal(0))
 
                         case .extractedData(let data):
                             expect(index).to(equal(1))
-                            let page0TextURL = Bundle(for: Self.self).url(forResource: "bitcoin_pdf_page_0_text", withExtension: "json")!
-                            let page0TextData = try! Data(contentsOf: page0TextURL)
-                            let page0TextJSONData = try! JSONSerialization.jsonObject(with: page0TextData, options: .allowFragments) as! [String: Any]
-                            expect(data as? [String: AnyHashable]).to(equal(page0TextJSONData as! [String: AnyHashable]))
+                            let url = Bundle(for: Self.self).url(forResource: jsonFileName, withExtension: "json")!
+                            let expectedData = try! Data(contentsOf: url)
+                            let expectedJSONData = try! JSONSerialization.jsonObject(with: expectedData, options: .allowFragments) as! [String: Any]
+                            expect(data as? [String: AnyHashable]).to(equal(expectedJSONData as! [String: AnyHashable]))
 
                         default:
                             fail("unexpected update \(index): \(update)")
