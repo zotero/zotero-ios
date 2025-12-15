@@ -365,6 +365,7 @@
 "settings.full_sync.start" = "Start Full Sync Debugging";
 "settings.full_sync.other_in_progress" = "Sync is already in progress. Wait for it to finish.";
 "settings.full_sync.in_progress" = "A full sync is in progress. Wait for it to finish and post the Debug ID to the Zotero Forums.";
+"settings.annotation_tools" = "Annotation Tools";
 
 "shareext.save" = "Save to Zotero";
 "shareext.decoding_attachment" = "Searching for items";

@@ -8,7 +8,7 @@
 
 import Foundation
 
-enum AnnotationTool {
+enum AnnotationTool: Hashable, Codable {
     case ink
     case image
     case note

@@ -126,10 +126,28 @@ final class Defaults {
     @CodableUserDefault(key: "PDFReaderSettings", defaultValue: PDFSettings.default, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder, defaults: .standard)
     var pdfSettings: PDFSettings
 
+    @CodableUserDefault(
+        key: "PDFReaderAnnotationTools",
+        defaultValue: [.highlight, .underline, .note, .freeText, .image, .ink, .eraser],
+        encoder: Defaults.jsonEncoder,
+        decoder: Defaults.jsonDecoder,
+        defaults: .zotero
+    )
+    var pdfAnnotationTools: [AnnotationTool]
+
     // MARK: - HTML / Epub Settings
 
     @CodableUserDefault(key: "HtmlEpubReaderSettings", defaultValue: HtmlEpubSettings.default, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder, defaults: .standard)
     var htmlEpubSettings: HtmlEpubSettings
+
+    @CodableUserDefault(
+        key: "HtmlEpubReaderAnnotationTools",
+        defaultValue: [.highlight, .underline, .note],
+        encoder: Defaults.jsonEncoder,
+        decoder: Defaults.jsonDecoder,
+        defaults: .zotero
+    )
+    var htmlEpubAnnotationTools: [AnnotationTool]
     #endif
 
     // MARK: - Citation / Bibliography Export
