@@ -55,14 +55,13 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
         return load(fileUrl: temporaryDirectory.copy(withName: "worker", ext: "html").createUrl())
     }
 
-    private func performPDFWorkerOperation(fileURL: URL, operationName: String, jsFunction: String, additionalParams: [String] = []) {
+    private func performPDFWorkerOperation(fileName: String, operationName: String, jsFunction: String, additionalParams: [String] = []) {
         performAfterInitialization()
             .observe(on: MainScheduler.instance)
             .flatMap { [weak self] _ -> Single<Any> in
                 guard let self else { return .never() }
                 DDLogInfo("PDFWorkerWebViewHandler: call \(operationName) js")
-                let relativePath = fileURL.lastPathComponent
-                var javascript = "\(jsFunction)('\(escapeJavaScriptString(relativePath))'"
+                var javascript = "\(jsFunction)('\(escapeJavaScriptString(fileName))'"
                 if !additionalParams.isEmpty {
                     javascript += ", " + additionalParams.joined(separator: ", ")
                 }
@@ -82,13 +81,13 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
         }
     }
 
-    func recognize(fileURL: URL) {
-        performPDFWorkerOperation(fileURL: fileURL, operationName: "recognize", jsFunction: "recognize")
+    func recognize(fileName: String) {
+        performPDFWorkerOperation(fileName: fileName, operationName: "recognize", jsFunction: "recognize")
     }
 
-    func getFullText(fileURL: URL, pages: [Int]?) {
+    func getFullText(fileName: String, pages: [Int]?) {
         performPDFWorkerOperation(
-            fileURL: fileURL,
+            fileName: fileName,
             operationName: "getFullText",
             jsFunction: "getFullText",
             additionalParams: pages.flatMap({ ["[\($0.map({ "\($0)" }).joined(separator: ","))]"] }) ?? []

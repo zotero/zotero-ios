@@ -137,7 +137,7 @@ final class PDFWorkerController {
                 return
             }
 
-            guard let workFileUrl = copyFileForPDFWorker(file: work.file, handler: pdfWorkerWebViewHandler) else {
+            guard copyPDFWorker(file: work.file, to: pdfWorkerWebViewHandler.temporaryDirectory) else {
                 cleanupPDFWorker(for: work) { $0?.on(.next(Update(work: work, kind: .failed))) }
                 return
             }
@@ -146,21 +146,21 @@ final class PDFWorkerController {
             subject.on(.next(Update(work: work, kind: .inProgress)))
             switch work.kind {
             case .recognizer:
-                pdfWorkerWebViewHandler.recognize(fileURL: workFileUrl)
+                pdfWorkerWebViewHandler.recognize(fileName: work.file.fileName)
 
             case .fullText(let pages):
-                pdfWorkerWebViewHandler.getFullText(fileURL: workFileUrl, pages: pages)
+                pdfWorkerWebViewHandler.getFullText(fileName: work.file.fileName, pages: pages)
             }
 
-            func copyFileForPDFWorker(file: FileData, handler: PDFWorkerWebViewHandler) -> URL? {
-                let destination = handler.temporaryDirectory.copy(withName: file.name, ext: file.ext)
+            func copyPDFWorker(file: FileData, to directory: File) -> Bool {
+                let destination = directory.copy(withName: file.name, ext: file.ext)
                 do {
                     try fileStorage.copy(from: file.createUrl().path, to: destination)
                 } catch {
                     DDLogError("PDFWorkerController: failed to copy file for PDF worker - \(error)")
-                    return nil
+                    return false
                 }
-                return destination.createUrl()
+                return true
             }
 
             func setupObserver(for pdfWorkerWebViewHandler: PDFWorkerWebViewHandler) {
