@@ -91,77 +91,10 @@ class AnnotationToolbarViewController: UIViewController {
 
     init(tools: [AnnotationTool], undoRedoEnabled: Bool, size: CGFloat) {
         self.size = size
-        toolButtons = tools.map({ button(from: $0) })
+        toolButtons = tools.map({ ToolButton(type: $0, title: $0.name, accessibilityLabel: $0.accessibilityLabel, image: $0.image, isHidden: false) })
         self.undoRedoEnabled = undoRedoEnabled
         disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
-
-        func button(from tool: AnnotationTool) -> ToolButton {
-            switch tool {
-            case .highlight:
-                ToolButton(
-                    type: .highlight,
-                    title: L10n.Pdf.AnnotationToolbar.highlight,
-                    accessibilityLabel: L10n.Accessibility.Pdf.highlightAnnotationTool,
-                    image: Asset.Images.Annotations.highlightLarge.image,
-                    isHidden: false
-                )
-
-            case .note:
-                ToolButton(
-                    type: .note,
-                    title: L10n.Pdf.AnnotationToolbar.note,
-                    accessibilityLabel: L10n.Accessibility.Pdf.noteAnnotationTool,
-                    image: Asset.Images.Annotations.noteLarge.image,
-                    isHidden: false
-                )
-
-            case .image:
-                ToolButton(
-                    type: .image,
-                    title: L10n.Pdf.AnnotationToolbar.image,
-                    accessibilityLabel: L10n.Accessibility.Pdf.imageAnnotationTool,
-                    image: Asset.Images.Annotations.areaLarge.image,
-                    isHidden: false
-                )
-
-            case .ink:
-                ToolButton(
-                    type: .ink,
-                    title: L10n.Pdf.AnnotationToolbar.ink,
-                    accessibilityLabel: L10n.Accessibility.Pdf.inkAnnotationTool,
-                    image: Asset.Images.Annotations.inkLarge.image,
-                    isHidden: false
-                )
-
-            case .eraser:
-                ToolButton(
-                    type: .eraser,
-                    title: L10n.Pdf.AnnotationToolbar.eraser,
-                    accessibilityLabel: L10n.Accessibility.Pdf.eraserAnnotationTool,
-                    image: Asset.Images.Annotations.eraserLarge.image,
-                    isHidden: false
-                )
-
-            case .underline:
-                ToolButton(
-                    type: .underline,
-                    title: L10n.Pdf.AnnotationToolbar.underline,
-                    accessibilityLabel: L10n.Accessibility.Pdf.underlineAnnotationTool,
-                    image: Asset.Images.Annotations.underlineLarge.image,
-                    isHidden: false
-                )
-
-            case .freeText:
-                ToolButton(
-                    type: .freeText,
-                    title: L10n.Pdf.AnnotationToolbar.text,
-                    accessibilityLabel: L10n.Accessibility.Pdf.textAnnotationTool,
-                    image: Asset.Images.Annotations.textLarge.image,
-                    isHidden: false
-                )
-            }
-        }
     }
 
     required init?(coder: NSCoder) {
