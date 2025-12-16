@@ -15,6 +15,7 @@
 		6102D2BD2D6CCF7600505E6A /* RecognizerRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6102D2BB2D6CCF7600505E6A /* RecognizerRequest.swift */; };
 		6102D2BF2D6E23D100505E6A /* worker.html in Resources */ = {isa = PBXBuildFile; fileRef = 6102D2BE2D6E23C400505E6A /* worker.html */; };
 		6102D2C02D6E23D100505E6A /* worker.html in Resources */ = {isa = PBXBuildFile; fileRef = 6102D2BE2D6E23C400505E6A /* worker.html */; };
+		6108CF432EF1E80C00036576 /* bitcoin_pdf_pages_0_1_text.json in Resources */ = {isa = PBXBuildFile; fileRef = 6108CF422EF1E80C00036576 /* bitcoin_pdf_pages_0_1_text.json */; };
 		61099E6E2C91BAF300EDD92C /* NSDecimalNumber+Rounding.m in Sources */ = {isa = PBXBuildFile; fileRef = 61099E6D2C91BAF300EDD92C /* NSDecimalNumber+Rounding.m */; };
 		61099E6F2C91BAF300EDD92C /* NSDecimalNumber+Rounding.m in Sources */ = {isa = PBXBuildFile; fileRef = 61099E6D2C91BAF300EDD92C /* NSDecimalNumber+Rounding.m */; };
 		61168F612D50D4B6005495E8 /* PDFWorkerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61168F602D50D4B6005495E8 /* PDFWorkerController.swift */; };
@@ -1357,6 +1358,7 @@
 		6102D2B72D6CCDD300505E6A /* RemoteRecognizerResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteRecognizerResponse.swift; sourceTree = "<group>"; };
 		6102D2BB2D6CCF7600505E6A /* RecognizerRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecognizerRequest.swift; sourceTree = "<group>"; };
 		6102D2BE2D6E23C400505E6A /* worker.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = worker.html; sourceTree = "<group>"; };
+		6108CF422EF1E80C00036576 /* bitcoin_pdf_pages_0_1_text.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = bitcoin_pdf_pages_0_1_text.json; sourceTree = "<group>"; };
 		61099E6A2C91BAF300EDD92C /* Zotero-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Zotero-Bridging-Header.h"; sourceTree = "<group>"; };
 		61099E6B2C91BAF300EDD92C /* ZShare-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "ZShare-Bridging-Header.h"; sourceTree = "<group>"; };
 		61099E6C2C91BAF300EDD92C /* NSDecimalNumber+Rounding.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSDecimalNumber+Rounding.h"; sourceTree = "<group>"; };
@@ -3158,6 +3160,7 @@
 				6102D2B12D68ABD900505E6A /* bitcoin_pdf_recognizer_data.json */,
 				6102D2B52D68B5DE00505E6A /* bitcoin_pdf_full_text.json */,
 				61FB13D62EECBE0700329563 /* bitcoin_pdf_page_0_text.json */,
+				6108CF422EF1E80C00036576 /* bitcoin_pdf_pages_0_1_text.json */,
 				B3B1EDFB2502498100D8BC1E /* collectionresponse_knownfields.json */,
 				B3B1EDFC2502498100D8BC1E /* collectionresponse_unknownfields.json */,
 				B3B1EDF32502456000D8BC1E /* itemresponse_knownfields.json */,
@@ -4820,6 +4823,7 @@
 				B3B1EDF52502456000D8BC1E /* itemresponse_knownfields.json in Resources */,
 				B36B8A542A4C2E930038BA1C /* test_annotation_dictionary_position.json in Resources */,
 				6102D2B62D68B5E800505E6A /* bitcoin_pdf_full_text.json in Resources */,
+				6108CF432EF1E80C00036576 /* bitcoin_pdf_pages_0_1_text.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

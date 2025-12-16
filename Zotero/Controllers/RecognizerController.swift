@@ -182,7 +182,7 @@ final class RecognizerController {
             statesByTask[task] = .recognitionInProgress
             emmitUpdate(for: task, subject: subject, kind: .inProgress)
 
-            pdfWorkerController.queue(work: PDFWorkerController.PDFWork(file: task.file, kind: .recognizer, priority: .default))
+            pdfWorkerController.queue(work: .recognizer, in: PDFWorkerController.Worker(file: task.file, priority: .default))
                 .subscribe(onNext: { [weak self] update in
                     guard let self else { return }
                     switch update.kind {
@@ -197,7 +197,7 @@ final class RecognizerController {
                         break
 
                     case .extractedData(let data):
-                        switch update.work.kind {
+                        switch update.work {
                         case .recognizer:
                             DDLogInfo("RecognizerController: \(task) - extracted recognizer data")
                             startRemoteRecognition(for: task, with: data)

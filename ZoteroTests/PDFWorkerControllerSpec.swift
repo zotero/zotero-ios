@@ -54,11 +54,12 @@ final class PDFWorkerControllerSpec: QuickSpec {
                 expect(TestControllers.fileStorage.has(file)).to(beTrue())
 
                 it("can extract recognizer data") {
-                    let work = PDFWorkerController.PDFWork(file: file, kind: .recognizer, priority: .default)
+                    let work: PDFWorkerController.Work = .recognizer
+                    let worker = PDFWorkerController.Worker(file: file, priority: .default)
                     var emittedUpdates: [PDFWorkerController.Update.Kind] = []
 
                     waitUntil(timeout: .seconds(10)) { completion in
-                        pdfWorkerController.queue(work: work)
+                        pdfWorkerController.queue(work: work, in: worker)
                             .subscribe(onNext: { update in
                                 expect(update.work).to(equal(work))
                                 emittedUpdates.append(update.kind)
@@ -78,11 +79,12 @@ final class PDFWorkerControllerSpec: QuickSpec {
                 }
 
                 it("can extract full text") {
-                    let work = PDFWorkerController.PDFWork(file: file, kind: .fullText(pages: nil), priority: .default)
+                    let work: PDFWorkerController.Work = .fullText(pages: nil)
+                    let worker = PDFWorkerController.Worker(file: file, priority: .default)
                     var emittedUpdates: [PDFWorkerController.Update.Kind] = []
 
                     waitUntil(timeout: .seconds(20)) { completion in
-                        pdfWorkerController.queue(work: work)
+                        pdfWorkerController.queue(work: work, in: worker)
                             .subscribe(onNext: { update in
                                 expect(update.work).to(equal(work))
                                 emittedUpdates.append(update.kind)
@@ -102,11 +104,12 @@ final class PDFWorkerControllerSpec: QuickSpec {
                 }
 
                 it("can extract text from a single page") {
-                    let work = PDFWorkerController.PDFWork(file: file, kind: .fullText(pages: [0]), priority: .default)
+                    let work: PDFWorkerController.Work = .fullText(pages: [0])
+                    let worker = PDFWorkerController.Worker(file: file, priority: .default)
                     var emittedUpdates: [PDFWorkerController.Update.Kind] = []
 
                     waitUntil(timeout: .seconds(20)) { completion in
-                        pdfWorkerController.queue(work: work)
+                        pdfWorkerController.queue(work: work, in: worker)
                             .subscribe(onNext: { update in
                                 expect(update.work).to(equal(work))
                                 emittedUpdates.append(update.kind)
@@ -123,6 +126,31 @@ final class PDFWorkerControllerSpec: QuickSpec {
 
                     expect(emittedUpdates.count).toEventually(equal(2), timeout: .seconds(20))
                     process(updates: emittedUpdates, jsonFileName: "bitcoin_pdf_page_0_text")
+                }
+
+                it("can extract text from two pages") {
+                    let work: PDFWorkerController.Work = .fullText(pages: [0, 1])
+                    let worker = PDFWorkerController.Worker(file: file, priority: .default)
+                    var emittedUpdates: [PDFWorkerController.Update.Kind] = []
+
+                    waitUntil(timeout: .seconds(20)) { completion in
+                        pdfWorkerController.queue(work: work, in: worker)
+                            .subscribe(onNext: { update in
+                                expect(update.work).to(equal(work))
+                                emittedUpdates.append(update.kind)
+                                switch update.kind {
+                                case .failed, .cancelled, .extractedData:
+                                    completion()
+
+                                case .inProgress:
+                                    break
+                                }
+                            })
+                            .disposed(by: disposeBag)
+                    }
+
+                    expect(emittedUpdates.count).toEventually(equal(2), timeout: .seconds(20))
+                    process(updates: emittedUpdates, jsonFileName: "bitcoin_pdf_pages_0_1_text")
                 }
 
                 func process(updates: [PDFWorkerController.Update.Kind], jsonFileName: String) {
