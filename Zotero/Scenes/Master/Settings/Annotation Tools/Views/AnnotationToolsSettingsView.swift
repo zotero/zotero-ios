@@ -44,6 +44,13 @@ struct AnnotationToolsSettingsView: View {
             }
         }
         .listStyle(GroupedListStyle())
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(L10n.Settings.AnnotationTools.reset) {
+                    viewModel.process(action: .reset(section))
+                }
+            }
+        }
         .onDisappear {
             viewModel.process(action: .save)
         }

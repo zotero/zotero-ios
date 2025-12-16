@@ -10,6 +10,7 @@ import Foundation
 
 enum AnnotationToolsSettingsAction {
     case move(IndexSet, Int, AnnotationToolsSettingsState.Section)
+    case reset(AnnotationToolsSettingsState.Section)
     case setVisible(Bool, AnnotationTool, AnnotationToolsSettingsState.Section)
     case save
 }

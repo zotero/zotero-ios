@@ -368,6 +368,7 @@
 "settings.annotation_tools" = "Annotation Tools";
 "settings.annotation_tools.pdf" = "PDF";
 "settings.annotation_tools.html_epub" = "HTML / EPUB";
+"settings.annotation_tools.reset" = "Reset";
 
 "shareext.save" = "Save to Zotero";
 "shareext.decoding_attachment" = "Searching for items";
