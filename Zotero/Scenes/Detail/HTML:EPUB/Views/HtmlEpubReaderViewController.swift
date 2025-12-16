@@ -155,7 +155,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
             documentController.parentDelegate = self
             documentController.view.translatesAutoresizingMaskIntoConstraints = false
 
-            let annotationToolbar = AnnotationToolbarViewController(tools: [.highlight, .underline, .note], undoRedoEnabled: false, size: navigationBarHeight)
+            let annotationToolbar = AnnotationToolbarViewController(tools: Defaults.shared.htmlEpubAnnotationTools.map({ $0.type }), undoRedoEnabled: false, size: navigationBarHeight)
             annotationToolbar.delegate = self
 
             let sidebarController = HtmlEpubSidebarViewController(viewModel: viewModel)

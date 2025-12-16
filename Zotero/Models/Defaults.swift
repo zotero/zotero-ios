@@ -126,10 +126,36 @@ final class Defaults {
     @CodableUserDefault(key: "PDFReaderSettings", defaultValue: PDFSettings.default, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder, defaults: .standard)
     var pdfSettings: PDFSettings
 
+    @CodableUserDefault(
+        key: "PDFReaderAnnotationTools",
+        defaultValue: [
+            AnnotationToolButton(type: .highlight, isVisible: true),
+            AnnotationToolButton(type: .underline, isVisible: true),
+            AnnotationToolButton(type: .note, isVisible: true),
+            AnnotationToolButton(type: .freeText, isVisible: true),
+            AnnotationToolButton(type: .image, isVisible: true),
+            AnnotationToolButton(type: .ink, isVisible: true),
+            AnnotationToolButton(type: .eraser, isVisible: true)
+        ],
+        encoder: Defaults.jsonEncoder,
+        decoder: Defaults.jsonDecoder,
+        defaults: .standard
+    )
+    var pdfAnnotationTools: [AnnotationToolButton]
+
     // MARK: - HTML / Epub Settings
 
     @CodableUserDefault(key: "HtmlEpubReaderSettings", defaultValue: HtmlEpubSettings.default, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder, defaults: .standard)
     var htmlEpubSettings: HtmlEpubSettings
+
+    @CodableUserDefault(
+        key: "HtmlEpubReaderAnnotationTools",
+        defaultValue: [AnnotationToolButton(type: .highlight, isVisible: true), AnnotationToolButton(type: .underline, isVisible: true), AnnotationToolButton(type: .note, isVisible: true)],
+        encoder: Defaults.jsonEncoder,
+        decoder: Defaults.jsonDecoder,
+        defaults: .standard
+    )
+    var htmlEpubAnnotationTools: [AnnotationToolButton]
     #endif
 
     // MARK: - Citation / Bibliography Export
