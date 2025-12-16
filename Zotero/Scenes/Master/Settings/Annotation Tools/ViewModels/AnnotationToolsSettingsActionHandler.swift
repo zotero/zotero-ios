@@ -8,8 +8,6 @@
 
 import Foundation
 
-import OrderedCollections
-
 struct AnnotationToolsSettingsViewModel: ViewModelActionHandler {
     typealias Action = AnnotationToolsSettingsAction
     typealias State = AnnotationToolsSettingsState
@@ -20,10 +18,10 @@ struct AnnotationToolsSettingsViewModel: ViewModelActionHandler {
             update(viewModel: viewModel) { state in
                 switch section {
                 case .pdf:
-                    state.pdfTools = move(fromIndices: fromIndices, toIndex: toIndex, inOrderedDictionary: state.pdfTools)
+                    state.pdfTools.move(fromOffsets: fromIndices, toOffset: toIndex)
                     
                 case .htmlEpub:
-                    state.htmlEpubTools = move(fromIndices: fromIndices, toIndex: toIndex, inOrderedDictionary: state.htmlEpubTools)
+                    state.htmlEpubTools.move(fromOffsets: fromIndices, toOffset: toIndex)
                 }
             }
 
@@ -31,22 +29,18 @@ struct AnnotationToolsSettingsViewModel: ViewModelActionHandler {
             update(viewModel: viewModel) { state in
                 switch section {
                 case .pdf:
-                    state.pdfTools[tool] = isVisible
+                    guard let index = state.pdfTools.firstIndex(where: { $0.type == tool }) else { return }
+                    state.pdfTools[index] = AnnotationToolButton(type: tool, isVisible: isVisible)
 
                 case .htmlEpub:
-                    state.htmlEpubTools[tool] = isVisible
+                    guard let index = state.htmlEpubTools.firstIndex(where: { $0.type == tool }) else { return }
+                    state.htmlEpubTools[index] = AnnotationToolButton(type: tool, isVisible: isVisible)
                 }
             }
 
         case .save:
-            Defaults.shared.pdfAnnotationTools = viewModel.state.pdfTools.keys.compactMap({ viewModel.state.pdfTools[$0] == true ? $0 : nil })
-            Defaults.shared.htmlEpubAnnotationTools = viewModel.state.htmlEpubTools.keys.compactMap({ viewModel.state.htmlEpubTools[$0] == true ? $0 : nil })
+            Defaults.shared.pdfAnnotationTools = viewModel.state.pdfTools
+            Defaults.shared.htmlEpubAnnotationTools = viewModel.state.htmlEpubTools
         }
-    }
-
-    private func move(fromIndices: IndexSet, toIndex: Int, inOrderedDictionary orderedDictionary: OrderedDictionary<AnnotationTool, Bool>) -> OrderedDictionary<AnnotationTool, Bool> {
-        var array = orderedDictionary.compactMap { key, value in (key, value) }
-        array.move(fromOffsets: fromIndices, toOffset: toIndex)
-        return OrderedDictionary(uniqueKeysWithValues: array)
     }
 }

@@ -128,12 +128,20 @@ final class Defaults {
 
     @CodableUserDefault(
         key: "PDFReaderAnnotationTools",
-        defaultValue: [.highlight, .underline, .note, .freeText, .image, .ink, .eraser],
+        defaultValue: [
+            AnnotationToolButton(type: .highlight, isVisible: true),
+            AnnotationToolButton(type: .underline, isVisible: true),
+            AnnotationToolButton(type: .note, isVisible: true),
+            AnnotationToolButton(type: .freeText, isVisible: true),
+            AnnotationToolButton(type: .image, isVisible: true),
+            AnnotationToolButton(type: .ink, isVisible: true),
+            AnnotationToolButton(type: .eraser, isVisible: true)
+        ],
         encoder: Defaults.jsonEncoder,
         decoder: Defaults.jsonDecoder,
-        defaults: .zotero
+        defaults: .standard
     )
-    var pdfAnnotationTools: [AnnotationTool]
+    var pdfAnnotationTools: [AnnotationToolButton]
 
     // MARK: - HTML / Epub Settings
 
@@ -142,12 +150,12 @@ final class Defaults {
 
     @CodableUserDefault(
         key: "HtmlEpubReaderAnnotationTools",
-        defaultValue: [.highlight, .underline, .note],
+        defaultValue: [AnnotationToolButton(type: .highlight, isVisible: true), AnnotationToolButton(type: .underline, isVisible: true), AnnotationToolButton(type: .note, isVisible: true)],
         encoder: Defaults.jsonEncoder,
         decoder: Defaults.jsonDecoder,
-        defaults: .zotero
+        defaults: .standard
     )
-    var htmlEpubAnnotationTools: [AnnotationTool]
+    var htmlEpubAnnotationTools: [AnnotationToolButton]
     #endif
 
     // MARK: - Citation / Bibliography Export

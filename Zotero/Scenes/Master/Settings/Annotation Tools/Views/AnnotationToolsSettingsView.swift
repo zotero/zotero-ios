@@ -8,8 +8,6 @@
 
 import SwiftUI
 
-import OrderedCollections
-
 struct AnnotationToolsSettingsView: View {
     @EnvironmentObject var viewModel: ViewModel<AnnotationToolsSettingsViewModel>
     @State var section: AnnotationToolsSettingsState.Section = .pdf
@@ -17,19 +15,20 @@ struct AnnotationToolsSettingsView: View {
     var body: some View {
         Form {
             Section {
-                ForEach(tools.keys) { tool in
+                ForEach(tools) { tool in
                     HStack {
-                        Image(uiImage: tool.image)
-                        Text(tool.name)
+                        Image(uiImage: tool.type.image)
+                        Text(tool.type.name)
                         Spacer()
-                        Toggle(isOn: .init(get: { tools[tool] ?? false }, set: { viewModel.process(action: .setVisible($0, tool, section)) }), label: {})
+                        Toggle(isOn: .init(get: { tool.isVisible }, set: { viewModel.process(action: .setVisible($0, tool.type, section)) }), label: {})
                         Spacer()
                             .frame(width: 18)
                         Image(systemName: "line.3.horizontal")
                             .foregroundStyle(.secondary)
                             .opacity(0.5)
                     }
-                    .accessibilityLabel(tool.accessibilityLabel)
+                    .opacity(tool.isVisible ? 1 : 0.5)
+                    .accessibilityLabel(tool.type.accessibilityLabel)
                 }
                 .onMove(perform: { fromIndices, toIndex in viewModel.process(action: .move(fromIndices, toIndex, section)) })
             } header: {
@@ -50,7 +49,7 @@ struct AnnotationToolsSettingsView: View {
         }
     }
 
-    var tools: OrderedDictionary<AnnotationTool, Bool> {
+    var tools: [AnnotationToolButton] {
         switch section {
         case .pdf:
             return viewModel.state.pdfTools

@@ -7,7 +7,6 @@
 //
 
 import UIKit
-import OrderedCollections
 
 struct AnnotationToolsSettingsState: ViewModelState {
     enum Section: Int {
@@ -15,23 +14,12 @@ struct AnnotationToolsSettingsState: ViewModelState {
         case htmlEpub
     }
 
-    var pdfTools: OrderedDictionary<AnnotationTool, Bool>
-    var htmlEpubTools: OrderedDictionary<AnnotationTool, Bool>
+    var pdfTools: [AnnotationToolButton]
+    var htmlEpubTools: [AnnotationToolButton]
 
-    init(pdfAnnotationTools: [AnnotationTool], htmlEpubAnnotationTools: [AnnotationTool]) {
-        var pdfTools: OrderedDictionary<AnnotationTool, Bool> = [:]
-        pdfAnnotationTools.forEach({ pdfTools[$0] = true })
-        ([.eraser, .freeText, .highlight, .image, .ink, .note, .underline] as [AnnotationTool])
-            .filter({ !pdfAnnotationTools.contains($0) })
-            .forEach({ pdfTools[$0] = false })
-        self.pdfTools = pdfTools
-        
-        var htmlEpubTools: OrderedDictionary<AnnotationTool, Bool> = [:]
-        htmlEpubAnnotationTools.forEach({ htmlEpubTools[$0] = true })
-        ([.highlight, .underline, .note] as [AnnotationTool])
-            .filter({ !htmlEpubAnnotationTools.contains($0) })
-            .forEach({ htmlEpubTools[$0] = false })
-        self.htmlEpubTools = htmlEpubTools
+    init(pdfAnnotationTools: [AnnotationToolButton], htmlEpubAnnotationTools: [AnnotationToolButton]) {
+        pdfTools = pdfAnnotationTools
+        htmlEpubTools = htmlEpubAnnotationTools
     }
 
     mutating func cleanup() {

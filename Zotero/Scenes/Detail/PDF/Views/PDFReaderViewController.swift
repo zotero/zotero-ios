@@ -232,7 +232,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
             separator.translatesAutoresizingMaskIntoConstraints = false
             separator.backgroundColor = Asset.Colors.annotationSidebarBorderColor.color
 
-            let annotationToolbar = AnnotationToolbarViewController(tools: Defaults.shared.pdfAnnotationTools, undoRedoEnabled: true, size: navigationBarHeight)
+            let annotationToolbar = AnnotationToolbarViewController(tools: Defaults.shared.pdfAnnotationTools.map({ $0.type }), undoRedoEnabled: true, size: navigationBarHeight)
             annotationToolbar.delegate = self
 
             let intraDocumentNavigationHandler = IntraDocumentNavigationButtonsHandler(

@@ -93,7 +93,11 @@ enum AnnotationTool: Hashable, Codable {
     }
 }
 
-struct AnnotationToolButton: Codable {
+struct AnnotationToolButton: Codable, Identifiable {
     let type: AnnotationTool
     let isVisible: Bool
+    
+    var id: AnnotationTool {
+        return type
+    }
 }
