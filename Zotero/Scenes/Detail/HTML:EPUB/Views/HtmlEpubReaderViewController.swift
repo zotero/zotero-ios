@@ -452,6 +452,9 @@ extension HtmlEpubReaderViewController: AnnotationToolbarHandlerDelegate {
 
     func setDocumentInterface(hidden: Bool) {
     }
+    
+    func annotationToolbarWillChange(state: AnnotationToolbarHandler.State, statusBarVisible: Bool) {
+    }
 
     func topDidChange(forToolbarState state: AnnotationToolbarHandler.State) {
         guard let annotationToolbarHandler, let annotationToolbarController else { return }

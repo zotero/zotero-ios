@@ -20,6 +20,10 @@ struct AnnotationToolOptions: OptionSet {
     static let stylus = AnnotationToolOptions(rawValue: 1 << 0)
 }
 
+protocol AnnotationToolbarLeadingView: UIView {
+    func update(toRotation rotation: AnnotationToolbarViewController.Rotation)
+}
+
 protocol AnnotationToolbarDelegate: AnyObject {
     var activeAnnotationTool: AnnotationTool? { get }
     var canUndo: Bool { get }
@@ -63,27 +67,30 @@ class AnnotationToolbarViewController: UIViewController {
     private let undoRedoEnabled: Bool
 
     private var horizontalHeight: NSLayoutConstraint!
-    private weak var stackView: UIStackView!
-    private weak var additionalStackView: UIStackView!
+    private weak var leadingView: AnnotationToolbarLeadingView?
+    private weak var toolContainer: UIStackView!
+    private var containerTop: NSLayoutConstraint!
+    private var containerLeading: NSLayoutConstraint!
+    private weak var containerToLeadingView: NSLayoutConstraint?
+    private var containerBottom: NSLayoutConstraint!
+    private var containerTrailing: NSLayoutConstraint!
+    private var containerToPickerVertical: NSLayoutConstraint!
+    private var containerToPickerHorizontal: NSLayoutConstraint!
+    private var containerCenteredHorizontal: NSLayoutConstraint!
+    private weak var trailingContainer: UIStackView!
+    private var trailingContainerTop: NSLayoutConstraint!
+    private var trailingContainerLeading: NSLayoutConstraint!
+    private weak var trailingContainerTrailing: NSLayoutConstraint!
+    private weak var trailingContainerBottom: NSLayoutConstraint!
     private(set) weak var colorPickerButton: UIButton!
     private var colorPickerTop: NSLayoutConstraint!
     private var colorPickerLeading: NSLayoutConstraint!
     private var colorPickerToAdditionalHorizontal: NSLayoutConstraint!
     private var colorPickerTrailing: NSLayoutConstraint!
-    private var colorPickerToAdditionalVertical: NSLayoutConstraint!
+    private var colorPickerToTrailingContainerVertical: NSLayoutConstraint!
     private var colorPickerBottom: NSLayoutConstraint!
     private(set) weak var undoButton: UIButton?
     private(set) weak var redoButton: UIButton?
-    private var additionalTop: NSLayoutConstraint!
-    private var additionalLeading: NSLayoutConstraint!
-    private weak var additionalTrailing: NSLayoutConstraint!
-    private weak var additionalBottom: NSLayoutConstraint!
-    private weak var containerTop: NSLayoutConstraint!
-    private weak var containerLeading: NSLayoutConstraint!
-    private var containerBottom: NSLayoutConstraint!
-    private var containerTrailing: NSLayoutConstraint!
-    private var containerToPickerVertical: NSLayoutConstraint!
-    private var containerToPickerHorizontal: NSLayoutConstraint!
     private var hairlineView: UIView!
     private var toolButtons: [ToolButton]
     weak var delegate: AnnotationToolbarDelegate?
@@ -150,13 +157,14 @@ class AnnotationToolbarViewController: UIViewController {
             horizontalHeight.priority = .required
             containerBottom = view.bottomAnchor.constraint(equalTo: stackView.bottomAnchor, constant: 8)
             containerTrailing = view.trailingAnchor.constraint(equalTo: stackView.trailingAnchor, constant: 8)
-            additionalTop = additionalStackView.topAnchor.constraint(equalTo: view.topAnchor, constant: 8)
-            additionalLeading = additionalStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 8)
+            containerCenteredHorizontal = view.centerXAnchor.constraint(equalTo: stackView.centerXAnchor)
+            trailingContainerTop = additionalStackView.topAnchor.constraint(equalTo: view.topAnchor, constant: 8)
+            trailingContainerLeading = additionalStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 8)
             containerToPickerVertical = picker.topAnchor.constraint(greaterThanOrEqualTo: stackView.bottomAnchor, constant: 0)
             containerToPickerVertical.priority = .required
             containerToPickerHorizontal = picker.leadingAnchor.constraint(equalTo: stackView.trailingAnchor)
             containerToPickerHorizontal.priority = .required
-            colorPickerToAdditionalVertical = additionalStackView.topAnchor.constraint(equalTo: picker.bottomAnchor)
+            colorPickerToTrailingContainerVertical = additionalStackView.topAnchor.constraint(equalTo: picker.bottomAnchor)
             colorPickerToAdditionalHorizontal = additionalStackView.leadingAnchor.constraint(greaterThanOrEqualTo: picker.trailingAnchor, constant: 0)
             colorPickerTop = picker.topAnchor.constraint(equalTo: view.topAnchor)
             colorPickerBottom = view.bottomAnchor.constraint(equalTo: picker.bottomAnchor)
@@ -179,9 +187,9 @@ class AnnotationToolbarViewController: UIViewController {
                 colorPickerLeading,
                 colorPickerTrailing,
                 additionalBottom,
-                colorPickerToAdditionalVertical,
+                colorPickerToTrailingContainerVertical,
                 additionalTrailing,
-                additionalLeading,
+                trailingContainerLeading,
                 hairlineHeight,
                 hairlineLeading,
                 hairlineTrailing,
@@ -190,10 +198,10 @@ class AnnotationToolbarViewController: UIViewController {
 
             self.containerTop = containerTop
             self.containerLeading = containerLeading
-            self.additionalTrailing = additionalTrailing
-            self.additionalBottom = additionalBottom
-            self.stackView = stackView
-            self.additionalStackView = additionalStackView
+            self.trailingContainerTrailing = additionalTrailing
+            self.trailingContainerBottom = additionalBottom
+            self.toolContainer = stackView
+            self.trailingContainer = additionalStackView
 
             func createToolButtons(from tools: [ToolButton]) -> [UIView] {
                 var showMoreConfig = UIButton.Configuration.plain()
@@ -276,8 +284,8 @@ class AnnotationToolbarViewController: UIViewController {
     // MARK: - Layout
 
     func prepareForSizeChange() {
-        for (idx, view) in stackView.arrangedSubviews.enumerated() {
-            if idx == stackView.arrangedSubviews.count - 1 {
+        for (idx, view) in toolContainer.arrangedSubviews.enumerated() {
+            if idx == toolContainer.arrangedSubviews.count - 1 {
                 view.alpha = 1
                 view.isHidden = false
             } else {
@@ -288,11 +296,11 @@ class AnnotationToolbarViewController: UIViewController {
     }
 
     func sizeDidChange() {
-        guard stackView.arrangedSubviews.count == toolButtons.count + 1 else {
-            DDLogError("AnnotationToolbarViewController: too many views in stack view! Stack view views: \(stackView.arrangedSubviews.count). Tools: \(toolButtons.count)")
+        guard toolContainer.arrangedSubviews.count == toolButtons.count + 1 else {
+            DDLogError("AnnotationToolbarViewController: too many views in stack view! Stack view views: \(toolContainer.arrangedSubviews.count). Tools: \(toolButtons.count)")
             return
         }
-        guard let button = stackView.arrangedSubviews.last, let maxAvailableSize = delegate?.maxAvailableToolbarSize, maxAvailableSize > 0 else { return }
+        guard let button = toolContainer.arrangedSubviews.last, let maxAvailableSize = delegate?.maxAvailableToolbarSize, maxAvailableSize > 0 else { return }
 
         let isHorizontal = view.frame.width > view.frame.height
         let buttonSize = isHorizontal ? button.frame.width : button.frame.height
@@ -300,22 +308,22 @@ class AnnotationToolbarViewController: UIViewController {
         guard buttonSize > 0 else { return }
 
         let stackViewOffset = isHorizontal ? containerLeading.constant : containerTop.constant
-        let additionalSize = isHorizontal ? additionalStackView.frame.width : additionalStackView.frame.height
+        let additionalSize = isHorizontal ? trailingContainer.frame.width : trailingContainer.frame.height
         let containerToPickerOffset = isHorizontal ? containerToPickerHorizontal.constant : containerToPickerVertical.constant
         let pickerSize = isHorizontal ? colorPickerButton.frame.width : colorPickerButton.frame.height
-        let pickerToAdditionalOffset = isHorizontal ? colorPickerToAdditionalHorizontal.constant : colorPickerToAdditionalVertical.constant
-        let additionalOffset = isHorizontal ? additionalTrailing.constant : additionalBottom.constant
+        let pickerToAdditionalOffset = isHorizontal ? colorPickerToAdditionalHorizontal.constant : colorPickerToTrailingContainerVertical.constant
+        let additionalOffset = isHorizontal ? trailingContainerTrailing.constant : trailingContainerBottom.constant
         let remainingSize = maxAvailableSize - stackViewOffset - containerToPickerOffset - pickerSize - pickerToAdditionalOffset - additionalSize - additionalOffset
         if remainingSize < 0 {
             DDLogWarn("AnnotationToolbarViewController: not enough \(isHorizontal ? "horizontal" : "vertical") minimum size")
         }
-        let buttonSpacing = stackView.spacing
+        let buttonSpacing = toolContainer.spacing
         let count = max(0, min(Int(floor((remainingSize + buttonSpacing) / (buttonSize + buttonSpacing))), toolButtons.count))
 
         for idx in 0..<count {
             guard idx < (count - 1) || count == toolButtons.count else { continue }
-            stackView.arrangedSubviews[idx].alpha = 1
-            stackView.arrangedSubviews[idx].isHidden = false
+            toolContainer.arrangedSubviews[idx].alpha = 1
+            toolContainer.arrangedSubviews[idx].isHidden = false
             toolButtons[idx] = toolButtons[idx].copy(isHidden: false)
         }
 
@@ -324,12 +332,12 @@ class AnnotationToolbarViewController: UIViewController {
                 toolButtons[idx] = toolButtons[idx].copy(isHidden: true)
             }
         } else {
-            stackView.arrangedSubviews.last?.alpha = 0
-            stackView.arrangedSubviews.last?.isHidden = true
+            toolContainer.arrangedSubviews.last?.alpha = 0
+            toolContainer.arrangedSubviews.last?.isHidden = true
         }
 
-        if stackView.arrangedSubviews.last?.isHidden == false {
-            (stackView.arrangedSubviews.last as? UIButton)?.menu = createHiddenToolsMenu()
+        if toolContainer.arrangedSubviews.last?.isHidden == false {
+            (toolContainer.arrangedSubviews.last as? UIButton)?.menu = createHiddenToolsMenu()
         }
     }
 
@@ -340,8 +348,8 @@ class AnnotationToolbarViewController: UIViewController {
     func set(selected: Bool, to tool: AnnotationTool, color: UIColor?) {
         guard let idx = toolButtons.firstIndex(where: { $0.type == tool }) else { return }
 
-        (stackView.arrangedSubviews[idx] as? CheckboxButton)?.isSelected = selected
-        (stackView.arrangedSubviews.last as? UIButton)?.menu = createHiddenToolsMenu()
+        (toolContainer.arrangedSubviews[idx] as? CheckboxButton)?.isSelected = selected
+        (toolContainer.arrangedSubviews.last as? UIButton)?.menu = createHiddenToolsMenu()
 
         colorPickerButton.isHidden = !selected
 
@@ -374,58 +382,97 @@ class AnnotationToolbarViewController: UIViewController {
         }
 
         let inset: CGFloat = isCompactSize ? Self.buttonCompactSpacing : Self.buttonSpacing
-        stackView.spacing = inset
-        additionalStackView.spacing = inset
+        toolContainer.spacing = inset
+        trailingContainer.spacing = inset
 
         func setVerticalLayout(isCompactSize: Bool) {
             horizontalHeight.isActive = false
-            additionalTop.isActive = false
+            trailingContainerTop.isActive = false
             containerBottom.isActive = false
             containerToPickerHorizontal.isActive = false
             colorPickerToAdditionalHorizontal.isActive = false
             colorPickerTop.isActive = false
             colorPickerBottom.isActive = false
-            additionalLeading.isActive = true
+
+            if let leadingView {
+                containerTop.isActive = false
+
+                leadingView.update(toRotation: .vertical)
+                
+                NSLayoutConstraint.activate([
+                    leadingView.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor),
+                    view.trailingAnchor.constraint(greaterThanOrEqualTo: leadingView.trailingAnchor),
+                    leadingView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+                    leadingView.topAnchor.constraint(equalTo: view.topAnchor, constant: 15),
+                    toolContainer.topAnchor.constraint(greaterThanOrEqualTo: leadingView.bottomAnchor, constant: 20)
+                ])
+            } else {
+                containerCenteredHorizontal.isActive = false
+                containerTop.isActive = true
+            }
+
+            trailingContainerLeading.isActive = true
+            containerLeading.isActive = true
             containerTrailing.isActive = true
             containerToPickerVertical.isActive = true
-            colorPickerToAdditionalVertical.isActive = true
+            colorPickerToTrailingContainerVertical.isActive = true
             colorPickerLeading.isActive = true
             colorPickerTrailing.isActive = true
 
-            stackView.axis = .vertical
-            additionalStackView.axis = .vertical
+            toolContainer.axis = .vertical
+            trailingContainer.axis = .vertical
 
-            additionalBottom.constant = 8
-            additionalTrailing.constant = 8
+            trailingContainerBottom.constant = 8
+            trailingContainerTrailing.constant = 8
             containerLeading.constant = 8
             containerTop.constant = 15
             colorPickerLeading.constant = 8
             colorPickerTrailing.constant = 8
-            colorPickerToAdditionalVertical.constant = isCompactSize ? Self.toolsToAdditionalCompactOffset : Self.toolsToAdditionalFullOffset
+            colorPickerToTrailingContainerVertical.constant = isCompactSize ? Self.toolsToAdditionalCompactOffset : Self.toolsToAdditionalFullOffset
             containerToPickerVertical.constant = isCompactSize ? 4 : 8
             hairlineView.isHidden = true
         }
 
         func setHorizontalLayout(isCompactSize: Bool) {
-            additionalLeading.isActive = false
+            trailingContainerLeading.isActive = false
             containerTrailing.isActive = false
             containerToPickerVertical.isActive = false
-            colorPickerToAdditionalVertical.isActive = false
+            colorPickerToTrailingContainerVertical.isActive = false
             colorPickerLeading.isActive = false
             colorPickerTrailing.isActive = false
-            horizontalHeight.isActive = true
-            additionalTop.isActive = true
+
+            if let leadingView {
+                containerLeading.isActive = false
+
+                leadingView.update(toRotation: .horizontal)
+
+                NSLayoutConstraint.activate([
+                    containerCenteredHorizontal,
+                    leadingView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 15),
+                    toolContainer.leadingAnchor.constraint(greaterThanOrEqualTo: leadingView.trailingAnchor, constant: 8),
+                    leadingView.topAnchor.constraint(greaterThanOrEqualTo: view.topAnchor),
+                    view.bottomAnchor.constraint(greaterThanOrEqualTo: leadingView.bottomAnchor),
+                    leadingView.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+                ])
+            } else {
+                containerCenteredHorizontal.isActive = false
+                containerLeading.isActive = true
+            }
+
+            containerTop.isActive = true
             containerBottom.isActive = true
+            horizontalHeight.isActive = true
+            trailingContainerTop.isActive = true
             containerToPickerHorizontal.isActive = true
             colorPickerToAdditionalHorizontal.isActive = true
             colorPickerTop.isActive = true
             colorPickerBottom.isActive = true
 
-            stackView.axis = .horizontal
-            additionalStackView.axis = .horizontal
+            toolContainer.axis = .horizontal
+            trailingContainer.axis = .horizontal
 
-            additionalBottom.constant = 8
-            additionalTrailing.constant = 15
+            trailingContainerBottom.constant = 8
+            trailingContainerTrailing.constant = 15
             containerLeading.constant = 20
             containerTop.constant = 8
             colorPickerToAdditionalHorizontal.constant = isCompactSize ? Self.toolsToAdditionalCompactOffset : Self.toolsToAdditionalFullOffset
@@ -437,11 +484,11 @@ class AnnotationToolbarViewController: UIViewController {
     }
 
     func updateAdditionalButtons() {
-        for view in additionalStackView.arrangedSubviews {
+        for view in trailingContainer.arrangedSubviews {
             view.removeFromSuperview()
         }
         for view in createAdditionalItems() {
-            additionalStackView.addArrangedSubview(view)
+            trailingContainer.addArrangedSubview(view)
         }
     }
 
@@ -450,6 +497,31 @@ class AnnotationToolbarViewController: UIViewController {
             return .stylus
         }
         return []
+    }
+    
+    func setLeadingView(view: AnnotationToolbarLeadingView?) {
+        let rotation: Rotation = horizontalHeight.isActive ? .horizontal : .vertical
+        let isCompact: Bool
+        switch rotation {
+        case .horizontal:
+            isCompact = colorPickerToAdditionalHorizontal.constant == Self.toolsToAdditionalCompactOffset
+            
+        case .vertical:
+            isCompact = colorPickerToTrailingContainerVertical.constant == Self.toolsToAdditionalCompactOffset
+        }
+            
+        if let view {
+            if let leadingView {
+                leadingView.removeFromSuperview()
+            }
+            self.view.addSubview(view)
+            self.leadingView = view
+            set(rotation: rotation, isCompactSize: isCompact)
+        } else if let leadingView {
+            leadingView.removeFromSuperview()
+            self.leadingView = nil
+            set(rotation: rotation, isCompactSize: isCompact)
+        }
     }
 
     // MARK: - Setup

@@ -65,10 +65,10 @@ async function recognize(filePath) {
   }
 }
 
-async function getFullText(filePath) {
+async function getFullText(filePath, pageIndexes) {
   try {
     let buf = await fetchLocalFile(filePath)
-    let fulltext = await query('getFulltext', { buf }, [buf]);
+    let fulltext = await query('getFulltext', { buf, pageIndexes }, [buf]);
     webkit.messageHandlers.fullTextHandler.postMessage({"fullText": fulltext});
   } catch (error) {
     log(`error: ${error}`);

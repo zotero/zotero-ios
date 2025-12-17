@@ -47,6 +47,9 @@ final class PDFDocumentViewController: UIViewController {
     private var selectedAnnotationWasSelectedBefore: Bool
     private var searchResults: [SearchResult] = []
     private var pageIndexCancellable: AnyCancellable?
+    var currentPage: UInt {
+        return pdfController?.pageIndex ?? 0
+    }
 
     weak var parentDelegate: (PDFReaderContainerDelegate & PDFDocumentDelegate)?
     weak var coordinatorDelegate: PdfReaderCoordinatorDelegate?

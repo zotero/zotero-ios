@@ -583,7 +583,6 @@
 "accessibility.pdf.annotation_hint" = "Double-tap to select and edit";
 "accessibility.pdf.tags_hint" = "Double-tap to edit tags";
 "accessibility.pdf.selected" = "Selected";
-"accessibility.pdf.open_reader" = "Open reading mode";
 "accessibility.pdf.search_pdf" = "Search PDF";
 "accessibility.pdf.redo" = "Redo";
 "accessibility.pdf.undo" = "Undo";
@@ -591,3 +590,13 @@
 "accessibility.pdf.show_more_tools" = "Show more";
 "accessibility.htmlepub.search_html" = "Search Website";
 "accessibility.htmlepub.search_epub" = "Search EPUB";
+"accessibility.speech.play" = "Start speaking";
+"accessibility.speech.pause" = "Pause speaking";
+"accessibility.speech.forward" = "Skip forward";
+"accessibility.speech.backward" = "Skip backward";
+"accessibility.speech.title" = "Read Aloud";
+"accessibility.show_reader" = "Reading Mode";
+"accessibility.show_reader_accessibility_label" = "Switch to reading mode";
+"accessibility.show_speech" = "Read Aloud";
+"accessibility.show_speech_accessibility_label" = "Start reading aloud";
+"accessibility.open_document_accessibility" = "Open accessibility options";
