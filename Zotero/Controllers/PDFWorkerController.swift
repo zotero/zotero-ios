@@ -35,21 +35,29 @@ final class PDFWorkerController {
     }
 
     class Worker: Hashable {
-        enum State {
+        enum State: CaseIterable {
             case pending
+            case preparing
+            case ready
             case queued
             case running
+            case failed
         }
 
         let id = UUID()
         let file: FileData
         let priority: Priority
-        fileprivate var state: State = .pending
+        fileprivate(set) var state: State = .pending
         fileprivate var subjectsByWork: OrderedDictionary<Work, PublishSubject<Update>> = [:]
+        fileprivate var webViewHandler: PDFWorkerWebViewHandler?
 
         init(file: FileData, priority: Priority) {
             self.file = file
             self.priority = priority
+        }
+
+        deinit {
+            webViewHandler?.removeFromSuperviewAsynchronously()
         }
 
         static func == (lhs: PDFWorkerController.Worker, rhs: PDFWorkerController.Worker) -> Bool {
@@ -128,9 +136,12 @@ final class PDFWorkerController {
     }
 
     // Accessed only via accessQueue
-    private var queuesByPriority: [Priority: OrderedSet<Worker>] = [:]
+    private var preparing: Set<Worker> = []
+    private var ready: Set<Worker> = []
+    private var queuedByPriority: [Priority: OrderedSet<Worker>] = [:]
     private var runningByPriority: [Priority: OrderedSet<Worker>] = [:]
-    private var pdfWorkerWebViewHandlersByWorker: [Worker: PDFWorkerWebViewHandler] = [:]
+    private var failed: Set<Worker> = []
+    private var preparingPreloadedPDFWorkerWebViewHandler: Bool = false
     private var preloadedPDFWorkerWebViewHandler: PDFWorkerWebViewHandler?
 
     // MARK: Object Lifecycle
@@ -144,6 +155,40 @@ final class PDFWorkerController {
     }
 
     // MARK: Actions
+    private func updateStateAndQueues(for worker: Worker, state: Worker.State) {
+        // Is called only by callers already in the access queue.
+        worker.state = state
+        var queued = queuedByPriority[worker.priority, default: []]
+        var running = runningByPriority[worker.priority, default: []]
+        preparing.remove(worker)
+        ready.remove(worker)
+        queued.remove(worker)
+        running.remove(worker)
+        failed.remove(worker)
+        switch worker.state {
+        case .pending:
+            // Pending workers, i.e. worker that where initialized, but no work has been queued in them yet, and thus not prepared, are not kept in any structure.
+            break
+
+        case .preparing:
+            preparing.insert(worker)
+
+        case .ready:
+            ready.insert(worker)
+
+        case .queued:
+            queued.append(worker)
+
+        case .running:
+            running.append(worker)
+
+        case .failed:
+            failed.insert(worker)
+        }
+        queuedByPriority[worker.priority] = queued
+        runningByPriority[worker.priority] = running
+    }
+
     func queue(work: Work, in worker: Worker) -> Observable<Update> {
         let subject = PublishSubject<Update>()
         accessQueue.async(flags: .barrier) { [weak self] in
@@ -154,12 +199,53 @@ final class PDFWorkerController {
             }
             worker.subjectsByWork[work] = subject
             switch worker.state {
-            case .pending:
-                // Add to proper priority queue and start work if needed.
-                var queue = queuesByPriority[worker.priority, default: []]
-                queue.append(worker)
-                queuesByPriority[worker.priority] = queue
-                worker.state = .queued
+            case .pending, .failed:
+                // Assign preparing state and place in proper queue, then prepare web view handler.
+                updateStateAndQueues(for: worker, state: .preparing)
+                // Prepare web view handler.
+                if let preloadedPDFWorkerWebViewHandler {
+                    // There is a preloaded web view handler, worker can finish setup within the access queue.
+                    if setup(pdfWorkerWebViewHandler: preloadedPDFWorkerWebViewHandler, for: worker) {
+                        // Setup succeded, consume preloaded web view handler, assign queued state and place in proper queue.
+                        self.preloadedPDFWorkerWebViewHandler = nil
+                        updateStateAndQueues(for: worker, state: .queued)
+                        // Start work if needed to run queued worker.
+                        startWorkIfNeeded()
+                    } else {
+                        // Setup failed, assign failed state, so owner can either retry by queueing another work, or can cleanup.
+                        updateStateAndQueues(for: worker, state: .failed)
+                    }
+                } else {
+                    // A new web view handler needs to be created asynchronously, if successful.
+                    createPDFWorkerWebViewHandler(fileStorage: fileStorage) { [weak self, weak worker] pdfWorkerWebViewHandler in
+                        guard let self, let worker else { return }
+                        guard let pdfWorkerWebViewHandler else {
+                            // Failure happens within the access queue.
+                            updateStateAndQueues(for: worker, state: .failed)
+                            return
+                        }
+                        // Otherwise, a web view handler was created asynchronously, and completion is called within a new work in the access queue.
+                        // Setup newly created web view handler.
+                        if setup(pdfWorkerWebViewHandler: pdfWorkerWebViewHandler, for: worker) {
+                            // Setup succeded, assign queued state and place in proper queue.
+                            updateStateAndQueues(for: worker, state: .queued)
+                            // Start work if needed to run queued worker.
+                            startWorkIfNeeded()
+                        } else {
+                            // Setup failed, assign failed state, so owner can either retry by queueing another work, or can cleanup.
+                            updateStateAndQueues(for: worker, state: .failed)
+                        }
+                    }
+                }
+
+            case .preparing:
+                // A new work is queued to a worker that is still preparing, do nothing.
+                break
+
+            case .ready:
+                // A new work is queued to a worker that is ready with no works (e.g. a worker that finished its works, but was kept by the user).
+                // Assign queued state, place in proper queue, and start work if needed.
+                updateStateAndQueues(for: worker, state: .queued)
                 startWorkIfNeeded()
 
             case .queued:
@@ -174,79 +260,16 @@ final class PDFWorkerController {
         return subject.asObservable()
     }
 
-    private func startWorkIfNeeded() {
-        var worker: Worker?
-        var running: OrderedSet<Worker>!
-        for priority in Priority.inDescendingOrder {
-            var queue = queuesByPriority[priority, default: []]
-            running = runningByPriority[priority, default: []]
-            if !queue.isEmpty, running.count < priority.maxConcurrentWorkers {
-                worker = queue.removeFirst()
-                queuesByPriority[priority] = queue
-                break
-            }
-        }
-        guard let worker else { return }
-        guard let work = worker.subjectsByWork.keys.first, let subject = worker.subjectsByWork[work] else {
-            // This shouldn't happen, move worker back to pending state.
-            worker.state = .pending
-            startWorkIfNeeded()
-            return
-        }
-        guard let pdfWorkerWebViewHandler = pdfWorkerWebViewHandler(for: worker), copyIfNeeded(workFile: worker.file, to: pdfWorkerWebViewHandler) else {
-            // Set worker to pending, so owner can retry to queue another work, or end its session.
-            finishWork(work, in: worker, explicitNextState: .pending) { $0?.on(.next(Update(work: work, kind: .failed))) }
-            worker.state = .pending
-            startWorkIfNeeded()
-            return
-        }
-        running.append(worker)
-        runningByPriority[worker.priority] = running
-        worker.state = .running
-        start(work: work, in: worker, using: pdfWorkerWebViewHandler, subject: subject)
-        startWorkIfNeeded()
+    private func setup(pdfWorkerWebViewHandler: PDFWorkerWebViewHandler, for worker: Worker) -> Bool {
+        guard copy(workFile: worker.file, to: pdfWorkerWebViewHandler) else { return false }
+        setupObserver(in: worker, for: pdfWorkerWebViewHandler)
+        worker.webViewHandler = pdfWorkerWebViewHandler
+        return true
 
-        func pdfWorkerWebViewHandler(for worker: Worker) -> PDFWorkerWebViewHandler? {
-            var pdfWorkerWebViewHandler = pdfWorkerWebViewHandlersByWorker[worker]
-            if pdfWorkerWebViewHandler == nil {
-                if let preloadedPDFWorkerWebViewHandler {
-                    pdfWorkerWebViewHandler = preloadedPDFWorkerWebViewHandler
-                    self.preloadedPDFWorkerWebViewHandler = nil
-                } else {
-                    pdfWorkerWebViewHandler = createPDFWorkerWebViewHandler()
-                }
-                if let pdfWorkerWebViewHandler {
-                    setupObserver(in: worker, for: pdfWorkerWebViewHandler)
-                }
-                pdfWorkerWebViewHandlersByWorker[worker] = pdfWorkerWebViewHandler
-            }
-            guard let pdfWorkerWebViewHandler else {
-                DDLogError("PDFWorkerController: can't create PDFWorkerWebViewHandler instance")
-                return nil
-            }
-            return pdfWorkerWebViewHandler
-
-            func setupObserver(in worker: Worker, for pdfWorkerWebViewHandler: PDFWorkerWebViewHandler) {
-                pdfWorkerWebViewHandler.observable.subscribe(onNext: { [weak self, weak worker] event in
-                    guard let self, let worker, let work = Work(id: event.workId), worker.subjectsByWork[work] != nil else { return }
-                    switch event.result {
-                    case .success(let data):
-                        switch data {
-                        case .recognizerData(let data), .fullText(let data):
-                            finishWork(work, in: worker) { $0?.on(.next(Update(work: work, kind: .extractedData(data: data)))) }
-                        }
-
-                    case .failure(let error):
-                        DDLogError("PDFWorkerController: recognizer failed - \(error)")
-                        finishWork(work, in: worker) { $0?.on(.next(Update(work: work, kind: .failed))) }
-                    }
-                })
-                .disposed(by: disposeBag)
-            }
-        }
-
-        func copyIfNeeded(workFile file: FileData, to pdfWorkerWebViewHandler: PDFWorkerWebViewHandler) -> Bool {
+        func copy(workFile file: FileData, to pdfWorkerWebViewHandler: PDFWorkerWebViewHandler) -> Bool {
             if pdfWorkerWebViewHandler.workFile != nil {
+                // This shouldn't happen
+                DDLogWarn("PDFWorkerController: PDFWorkerWebViewHandler work file already set")
                 return true
             }
             let destination = pdfWorkerWebViewHandler.temporaryDirectory.copy(withName: file.name, ext: file.ext)
@@ -260,37 +283,78 @@ final class PDFWorkerController {
             return true
         }
 
-        func start(work: Work, in worker: Worker, using pdfWorkerWebViewHandler: PDFWorkerWebViewHandler, subject: PublishSubject<Update>) {
-            subject.on(.next(Update(work: work, kind: .inProgress)))
-            switch work {
-            case .recognizer:
-                pdfWorkerWebViewHandler.recognize(workId: work.id)
+        func setupObserver(in worker: Worker, for pdfWorkerWebViewHandler: PDFWorkerWebViewHandler) {
+            pdfWorkerWebViewHandler.observable.subscribe(onNext: { [weak self, weak worker] event in
+                guard let self else { return }
+                accessQueue.async(flags: .barrier) { [weak self, weak worker] in
+                    guard let self, let worker, let work = Work(id: event.workId), worker.subjectsByWork[work] != nil else { return }
+                    switch event.result {
+                    case .success(let data):
+                        switch data {
+                        case .recognizerData(let data), .fullText(let data):
+                            finishWork(work, in: worker) { $0?.on(.next(Update(work: work, kind: .extractedData(data: data)))) }
+                        }
 
-            case .fullText(let pages):
-                pdfWorkerWebViewHandler.getFullText(pages: pages, workId: work.id)
-            }
+                    case .failure(let error):
+                        DDLogError("PDFWorkerController: recognizer failed - \(error)")
+                        finishWork(work, in: worker) { $0?.on(.next(Update(work: work, kind: .failed))) }
+                    }
+                }
+            })
+            .disposed(by: disposeBag)
         }
     }
 
-    private func updateQueues(for worker: Worker) {
-        // Is called only by callers already in access queue.
-        var queue = queuesByPriority[worker.priority, default: []]
-        var running = runningByPriority[worker.priority, default: []]
-        switch worker.state {
-        case .pending:
-            queue.remove(worker)
-            running.remove(worker)
-
-        case .queued:
-            queue.append(worker)
-            running.remove(worker)
-
-        case .running:
-            queue.remove(worker)
-            running.append(worker)
+    private func startWorkIfNeeded() {
+        var worker: Worker?
+        for priority in Priority.inDescendingOrder {
+            let queued = queuedByPriority[priority, default: []]
+            if !queued.isEmpty, runningByPriority[priority, default: []].count < priority.maxConcurrentWorkers {
+                worker = queued.first
+                // Since queued is not empty, we are certain that worker is not nil, so break from the for loop.
+                // The new worker state and queue to be appended to, will be made in a subsequent updateStateAndQueues call.
+                break
+            }
         }
-        queuesByPriority[worker.priority] = queue
-        runningByPriority[worker.priority] = running
+        guard let worker else { return }
+        guard let pdfWorkerWebViewHandler = worker.webViewHandler, let work = worker.subjectsByWork.keys.first, let subject = worker.subjectsByWork[work] else {
+            // This shouldn't happen, move worker back to ready state.
+            updateStateAndQueues(for: worker, state: .ready)
+            startWorkIfNeeded()
+            return
+        }
+        // Set worker state to running and append to proper queue.
+        updateStateAndQueues(for: worker, state: .running)
+        // Start work.
+        subject.on(.next(Update(work: work, kind: .inProgress)))
+        switch work {
+        case .recognizer:
+            pdfWorkerWebViewHandler.recognize(workId: work.id)
+
+        case .fullText(let pages):
+            pdfWorkerWebViewHandler.getFullText(pages: pages, workId: work.id)
+        }
+        // Start another work if needed.
+        startWorkIfNeeded()
+    }
+
+    private func finishWork(_ work: Work, in worker: Worker, completion: ((_ subject: PublishSubject<Update>?) -> Void)?) {
+        if DispatchQueue.getSpecific(key: dispatchSpecificKey) == accessQueueLabel {
+            finishWork(work, worker: worker, completion: completion, controller: self)
+        } else {
+            accessQueue.async(flags: .barrier) { [weak self] in
+                guard let self else { return }
+                finishWork(work, worker: worker, completion: completion, controller: self)
+            }
+        }
+
+        func finishWork(_ work: Work, worker: Worker, completion: ((_ subject: PublishSubject<Update>?) -> Void)?, controller: PDFWorkerController) {
+            let subject = worker.subjectsByWork.removeValue(forKey: work)
+            controller.updateStateAndQueues(for: worker, state: worker.subjectsByWork.isEmpty ? .ready : .queued)
+            DDLogInfo("PDFWorkerController: finished \(work) in \(worker)")
+            completion?(subject)
+            controller.startWorkIfNeeded()
+        }
     }
 
     func cancelWork(_ work: Work, in worker: Worker) {
@@ -310,10 +374,10 @@ final class PDFWorkerController {
 
         func cancelAllWorks(in worker: Worker, startNextWorkIfNeeded: Bool, controller: PDFWorkerController) {
             DDLogInfo("PDFWorkerController: cancel all works in \(worker)")
-            // Immediatelly release worker web view handler. If another work is queued for this worker, a new handler will be created.
-            controller.pdfWorkerWebViewHandlersByWorker.removeValue(forKey: worker)?.removeFromSuperviewAsynchronously()
-            worker.state = .pending
-            controller.updateQueues(for: worker)
+            // Immediatelly release worker web view handler and assign pending state to worker. If another work is queued for this worker, a new handler will be created.
+            worker.webViewHandler?.removeFromSuperviewAsynchronously()
+            worker.webViewHandler = nil
+            controller.updateStateAndQueues(for: worker, state: .pending)
             for (work, subject) in worker.subjectsByWork {
                 subject.on(.next(Update(work: work, kind: .cancelled)))
             }
@@ -332,65 +396,65 @@ final class PDFWorkerController {
         accessQueue.async(flags: .barrier) { [weak self] in
             guard let self else { return }
             DDLogInfo("PDFWorkerController: cancel all works")
-            // Immediatelly release all werker web view handlers.
-            pdfWorkerWebViewHandlersByWorker.values.forEach { $0.removeFromSuperviewAsynchronously() }
-            pdfWorkerWebViewHandlersByWorker = [:]
-            var workers: OrderedSet<Worker> = []
+            var workers: Set<Worker> = []
+            workers.formUnion(preparing)
+            workers.formUnion(ready)
             for priority in Priority.inDescendingOrder {
-                workers.formUnion(queuesByPriority[priority, default: []])
+                workers.formUnion(queuedByPriority[priority, default: []])
                 workers.formUnion(runningByPriority[priority, default: []])
             }
+            workers.formUnion(failed)
             for worker in workers {
                 cancelAllWorks(in: worker, startNextWorkIfNeeded: false)
             }
         }
     }
 
-    private func finishWork(_ work: Work, in worker: Worker, explicitNextState: Worker.State? = nil, completion: ((_ subject: PublishSubject<Update>?) -> Void)?) {
-        if DispatchQueue.getSpecific(key: dispatchSpecificKey) == accessQueueLabel {
-            finishWork(work, worker: worker, explicitNextState: explicitNextState, completion: completion, controller: self)
-        } else {
-            accessQueue.async(flags: .barrier) { [weak self] in
-                guard let self else { return }
-                finishWork(work, worker: worker, explicitNextState: explicitNextState, completion: completion, controller: self)
-            }
-        }
-
-        func finishWork(_ work: Work, worker: Worker, explicitNextState: Worker.State?, completion: ((_ subject: PublishSubject<Update>?) -> Void)?, controller: PDFWorkerController) {
-            let subject = worker.subjectsByWork.removeValue(forKey: work)
-            worker.state = explicitNextState ?? (worker.subjectsByWork.isEmpty ? .pending : .queued)
-            // Update queues according to new worker state.
-            controller.updateQueues(for: worker)
-            DDLogInfo("PDFWorkerController: finished \(work) in \(worker)")
-            completion?(subject)
-            controller.startWorkIfNeeded()
-        }
-    }
-
     private func preloadPDFWorkerIfIdle() {
-        guard preloadedPDFWorkerWebViewHandler == nil, pdfWorkerWebViewHandlersByWorker.isEmpty else { return }
-        preloadedPDFWorkerWebViewHandler = createPDFWorkerWebViewHandler()
+        guard preloadedPDFWorkerWebViewHandler == nil,
+              !preparingPreloadedPDFWorkerWebViewHandler,
+              ready.isEmpty,
+              preparing.isEmpty,
+              !Priority.inDescendingOrder.contains(where: { !queuedByPriority[$0, default: []].isEmpty || !runningByPriority[$0, default: []].isEmpty })
+        else { return }
+        preparingPreloadedPDFWorkerWebViewHandler = true
+        createPDFWorkerWebViewHandler(fileStorage: fileStorage) { [weak self] pdfWebViewHandler in
+            guard let self else { return }
+            preloadedPDFWorkerWebViewHandler = pdfWebViewHandler
+            preparingPreloadedPDFWorkerWebViewHandler = false
+        }
     }
 
-    private func createPDFWorkerWebViewHandler() -> PDFWorkerWebViewHandler? {
-        guard let temporaryDirectory = prepareTemporaryWorkerDirectory(fileStorage: fileStorage) else { return nil }
+    private func createPDFWorkerWebViewHandler(fileStorage: FileStorage, completion: @escaping (PDFWorkerWebViewHandler?) -> Void) {
+        guard let temporaryDirectory = prepareTemporaryWorkerDirectory(fileStorage: fileStorage) else {
+            completion(nil)
+            return
+        }
         let cleanupClosure: () -> Void = { [weak fileStorage] in
             guard let fileStorage else { return }
             removeTemporaryWorkerDirectory(temporaryDirectory, fileStorage: fileStorage)
         }
 
-        var pdfWorkerWebViewHandler: PDFWorkerWebViewHandler?
-        DispatchQueue.main.sync { [weak self] in
-            guard let self, let webViewProvider else { return }
+        DispatchQueue.main.async { [weak self] in
+            guard let self else {
+                cleanupClosure()
+                return
+            }
+            guard let webViewProvider else {
+                accessQueue.async(flags: .barrier) {
+                    completion(nil)
+                }
+                cleanupClosure()
+                return
+            }
             let configuration = WKWebViewConfiguration()
             configuration.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
             let webView = webViewProvider.addWebView(configuration: configuration)
-            pdfWorkerWebViewHandler = PDFWorkerWebViewHandler(webView: webView, temporaryDirectory: temporaryDirectory, cleanup: cleanupClosure)
+            let pdfWorkerWebViewHandler = PDFWorkerWebViewHandler(webView: webView, temporaryDirectory: temporaryDirectory, cleanup: cleanupClosure)
+            accessQueue.async(flags: .barrier) {
+                completion(pdfWorkerWebViewHandler)
+            }
         }
-        if pdfWorkerWebViewHandler == nil {
-            removeTemporaryWorkerDirectory(temporaryDirectory, fileStorage: fileStorage)
-        }
-        return pdfWorkerWebViewHandler
 
         func prepareTemporaryWorkerDirectory(fileStorage: FileStorage) -> File? {
             guard let workerHtmlUrl = Bundle.main.url(forResource: "worker", withExtension: "html") else {
