@@ -45,6 +45,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
         case tags
         case title
         case type
+        case collections
     }
 
     /// `UICollectionViewDiffableDataSource` has a bug where it doesn't reload sections which are in `reloadSections` of its snapshot, but if sections are actually different, the snapshot will reload them.
@@ -61,10 +62,12 @@ final class ItemDetailCollectionViewHandler: NSObject {
         case addTag
         case abstract
         case attachment(attachment: Attachment, type: ItemDetailAttachmentCell.Kind)
+        case collection(CollectionIdentifier, String)
         case creator(ItemDetailState.Creator)
         case dateAdded(Date)
         case dateModified(Date)
         case field(key: String, multiline: Bool)
+        case library(LibraryIdentifier, String)
         case note(key: String, title: String, isProcessing: Bool)
         case tag(id: UUID, tag: Tag, isProcessing: Bool)
         case title
@@ -521,6 +524,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
             if library.metadataAndFilesEditable || !state.attachments.isEmpty {
                 sections.append(.attachments)
             }
+            sections.append(.collections)
 
             return sections
         }
