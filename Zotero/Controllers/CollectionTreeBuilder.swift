@@ -62,12 +62,7 @@ struct CollectionTreeBuilder {
                     DDLogError("CollectionTreeBuilder: parent missing in all collections - \(parentKey), \(libraryId)")
                     continue
                 }
-                if var children = allChildren[.collection(parentKey)] {
-                    children.append(collection.id)
-                    allChildren[.collection(parentKey)] = children
-                } else {
-                    allChildren[.collection(parentKey)] = [collection.id]
-                }
+                allChildren[.collection(parentKey), default: []].append(collection.id)
                 stack.append(Collection(object: rParent, isAvailable: false))
             } else {
                 rootIds.insert(.collection(key))

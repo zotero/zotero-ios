@@ -1015,7 +1015,7 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
             default:
                 break
             }
-            
+
         case .collection(let collection):
             guard !viewModel.state.isEditing else { return }
             observer.on(.next(.openCollection(collection)))
