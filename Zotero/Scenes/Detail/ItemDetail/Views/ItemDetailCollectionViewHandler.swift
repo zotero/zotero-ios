@@ -62,12 +62,12 @@ final class ItemDetailCollectionViewHandler: NSObject {
         case addTag
         case abstract
         case attachment(attachment: Attachment, type: ItemDetailAttachmentCell.Kind)
-        case collection(CollectionIdentifier, String)
+        case collection(Collection)
         case creator(ItemDetailState.Creator)
         case dateAdded(Date)
         case dateModified(Date)
         case field(key: String, multiline: Bool)
-        case library(LibraryIdentifier, String)
+        case library(Library)
         case note(key: String, title: String, isProcessing: Bool)
         case tag(id: UUID, tag: Tag, isProcessing: Bool)
         case title
@@ -178,6 +178,8 @@ final class ItemDetailCollectionViewHandler: NSObject {
             let noteRegistration = self.noteRegistration
             let tagRegistration = self.tagRegistration
             let attachmentRegistration = self.attachmentRegistration
+            let libraryRegistration = self.libraryRegistration
+            let collectionRegistration = self.collectionRegistration
 
             dataSource = UICollectionViewDiffableDataSource(collectionView: collectionView, cellProvider: { [weak self] collectionView, indexPath, row in
                 guard let self else { return collectionView.dequeueConfiguredReusableCell(using: emptyRegistration, for: indexPath, item: ()) }
@@ -242,6 +244,12 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
                 case .type(let type):
                     return collectionView.dequeueConfiguredReusableCell(using: fieldRegistration, for: indexPath, item: (.value(value: type, title: L10n.itemType), titleWidth))
+                    
+                case .collection(let collection):
+                    return collectionView.dequeueConfiguredReusableCell(using: collectionRegistration, for: indexPath, item: collection)
+                    
+                case .library(let library):
+                    return collectionView.dequeueConfiguredReusableCell(using: libraryRegistration, for: indexPath, item: library)
                 }
             })
 
@@ -313,6 +321,9 @@ final class ItemDetailCollectionViewHandler: NSObject {
                 case .tags:
                     view.setup(with: L10n.ItemDetail.tags)
 
+                case .collections:
+                    view.setup(with: "Libraries and Collections")
+
                 default: break
                 }
             }
@@ -342,7 +353,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
                 func createHeader(for section: Section) -> NSCollectionLayoutBoundarySupplementaryItem? {
                     switch section {
-                    case .attachments, .tags, .notes:
+                    case .attachments, .tags, .notes, .collections:
                         let height = ItemDetailLayout.sectionHeaderHeight - ItemDetailLayout.separatorHeight
                         return NSCollectionLayoutBoundarySupplementaryItem(
                             layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .absolute(height)),
@@ -399,8 +410,12 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
                         case .note(let key, _, _):
                             self.viewModel.process(action: .deleteNote(key: key))
+                            
+                        case .collection(let collection):
+                            // TODO: delete collection
+                            break
 
-                        case .title, .abstract, .addAttachment, .addCreator, .addNote, .addTag, .dateAdded, .dateModified, .type, .field:
+                        case .title, .abstract, .addAttachment, .addCreator, .addNote, .addTag, .dateAdded, .dateModified, .type, .field, .library:
                             break
                         }
                     }
@@ -430,7 +445,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
                     case .type, .fields, .creators:
                         return isEditing
 
-                    case .attachments, .notes, .tags:
+                    case .attachments, .notes, .tags, .collections:
                         return !isLastRow
 
                     case .dates:
@@ -440,7 +455,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
                 func separatorLeftInset(for section: Section) -> CGFloat {
                     switch section {
-                    case .notes, .attachments, .tags:
+                    case .notes, .attachments, .tags, .collections:
                         return ItemDetailLayout.iconWidth + ItemDetailLayout.horizontalInset + 17
 
                     case .abstract, .creators, .dates, .fields, .title, .type:
@@ -472,14 +487,26 @@ final class ItemDetailCollectionViewHandler: NSObject {
             if #available(iOS 26.0, *) {
                 snapshot.reloadSections(sections)
             }
+            var collectionsSection: SectionType?
             for section in sections {
-                snapshot.appendItems(rows(for: section.section, state: state), toSection: section)
+                if section.section == .collections {
+                    collectionsSection = section
+                } else {
+                    snapshot.appendItems(rows(for: section.section, state: state), toSection: section)
+                }
             }
             dataSource.apply(snapshot, animatingDifferences: animated) { [weak self] in
+                guard collectionsSection == nil else { return }
                 // Setting isEditing will trigger reconfiguration of cells, before the new snapshot has been applied, so it is done afterwards to avoid e.g. flickering the old text in a text view.
                 self?.collectionView.isEditing = state.isEditing
                 completion?()
             }
+//            if let collectionsSection, let snapshot = state.data.collections?.createSnapshot(selectedId: nil, collapseState: .expandedAll) {
+//                dataSource.apply(snapshot, to: collectionsSection, animatingDifferences: true) { [weak self] in
+//                    self?.collectionView.isEditing = state.isEditing
+//                    completion?()
+//                }
+//            }
         }
 
         /// Creates array of visible sections for current state data.
@@ -738,6 +765,10 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
         case .type:
             return [.type(state.data.localizedType)]
+            
+        case .collections:
+            // This section is handled separately
+            return []
         }
     }
 
@@ -792,6 +823,28 @@ final class ItemDetailCollectionViewHandler: NSObject {
     }
 
     // MARK: - Cells
+    
+    private lazy var libraryRegistration: UICollectionView.CellRegistration<CollectionCell, Library> = {
+        return UICollectionView.CellRegistration<CollectionCell, Library> { [weak self] cell, _, library in
+            var configuration = CollectionCell.LibraryContentConfiguration(name: library.name, accessories: [])
+            cell.contentConfiguration = configuration
+            cell.backgroundConfiguration = .listPlainCell()
+        }
+    }()
+    
+    private lazy var collectionRegistration: UICollectionView.CellRegistration<CollectionCell, Collection> = {
+        return UICollectionView.CellRegistration<CollectionCell, Collection> { [weak self] cell, _, collection in
+            guard let self, let sectionType = self.dataSource.snapshot().sectionIdentifiers.first(where: { $0.section == .collections }) else { return }
+            
+            let snapshot = self.dataSource.snapshot(for: sectionType)
+            let hasChildren = snapshot.contains(.collection(collection)) && !snapshot.snapshot(of: .collection(collection), includingParent: false).items.isEmpty
+            var configuration = CollectionCell.ContentConfiguration(collection: collection, hasChildren: hasChildren, accessories: [])
+            configuration.isCollapsedProvider = { false }
+
+            cell.contentConfiguration = configuration
+            cell.backgroundConfiguration = .listPlainCell()
+        }
+    }()
 
     private lazy var titleRegistration: UICollectionView.CellRegistration<ItemDetailTitleCell, (NSAttributedString, Bool)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
@@ -953,8 +1006,12 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
             default:
                 break
             }
+            
+        case .collection(let collection):
+            // TODO: - show collection
+            break
 
-        case .title, .dateAdded, .dateModified, .tag:
+        case .title, .dateAdded, .dateModified, .tag, .library:
             break
         }
     }

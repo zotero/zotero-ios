@@ -8,8 +8,8 @@
 
 import UIKit
 
-final class CollectionTree {
-    struct Node: Hashable {
+final class CollectionTree: Equatable {
+    struct Node: Hashable, Equatable {
         let identifier: CollectionIdentifier
         let parent: CollectionIdentifier?
         let children: [Node]
@@ -35,6 +35,13 @@ final class CollectionTree {
         self.collections = collections
         self.collapsed = collapsed
         self.filtered = [:]
+    }
+    
+    static func == (lhs: CollectionTree, rhs: CollectionTree) -> Bool {
+        if lhs.nodes != rhs.nodes {
+            return false
+        }
+        return true
     }
 }
 

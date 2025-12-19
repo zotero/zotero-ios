@@ -28,9 +28,64 @@ struct CollectionTreeBuilder {
         let nodes: [CollectionTree.Node] = self.collections(for: nil, from: rCollections, libraryId: libraryId, includeItemCounts: includeItemCounts, allCollections: &collections, collapsedState: &collapsed)
         return CollectionTree(nodes: nodes, collections: collections, collapsed: collapsed)
     }
+    
+    static func collections(from rItem: RItem, allCollections allRCollections: Results<RCollection>) -> CollectionTree {
+        var collections: [CollectionIdentifier: Collection] = [:]
+        var nodes: [CollectionTree.Node] = []
+        for rCollection in rItem.collections {
+            let collection = Collection(object: rCollection, isInItem: true)
+            collections[collection.identifier] = collection
+            let nodesToRoot = getNodes(fromCollectionToRoot: rCollection, allCollections: &collections)
+            nodes = merge(branchNode: nodesToRoot, toAllNodes: nodes)
+        }
+        return CollectionTree(nodes: nodes, collections: collections, collapsed: [:])
+        
+        func getNodes(fromCollectionToRoot rCollection: RCollection, allCollections: inout [CollectionIdentifier: Collection]) -> CollectionTree.Node {
+            let node = CollectionTree.Node(identifier: .collection(rCollection.key), parent: rCollection.parentKey.flatMap({ .collection($0) }), children: [])
+            return getParentNodeIfAvailable(from: node, parentKey: rCollection.parentKey)
 
-    private static func collections(for parent: CollectionIdentifier?, from rCollections: Results<RCollection>, libraryId: LibraryIdentifier, includeItemCounts: Bool,
-                                    allCollections: inout [CollectionIdentifier: Collection], collapsedState: inout [CollectionIdentifier: Bool]) -> [CollectionTree.Node] {
+            func getParentNodeIfAvailable(from childNode: CollectionTree.Node, parentKey: String?) -> CollectionTree.Node {
+                // Find parent if available, otherwise just return self
+                guard let parentKey, let parent = allRCollections.filter(.key(parentKey)).first else { return childNode }
+                // Create new Collection if needed
+                if allCollections[.collection(rCollection.key)] == nil {
+                    let collection = Collection(object: parent, isInItem: false)
+                    allCollections[collection.id] = collection
+                }
+                let node = CollectionTree.Node(identifier: .collection(parentKey), parent: parent.parentKey.flatMap({ .collection($0) }), children: [childNode])
+                return getParentNodeIfAvailable(from: node, parentKey: parent.parentKey)
+            }
+        }
+        
+        func merge(branchNode: CollectionTree.Node, toAllNodes allNodes: [CollectionTree.Node]) -> [CollectionTree.Node] {
+            return allNodes.map { currentNode in
+                return merge(node: currentNode, withBranch: branchNode)
+            }
+        }
+        
+        func merge(node: CollectionTree.Node, withBranch branchNode: CollectionTree.Node) -> CollectionTree.Node {
+            if node.identifier == branchNode.identifier {
+                let children = branchNode.children.isEmpty ?
+                    node.children :
+                    merge(branchNode: branchNode.children[0], toAllNodes: node.children)
+                return CollectionTree.Node(identifier: node.identifier, parent: node.parent, children: children)
+            } else {
+                let children = node.children.map { child in
+                    return merge(node: child, withBranch: branchNode)
+                }
+                return CollectionTree.Node(identifier: node.identifier, parent: node.parent, children: children)
+            }
+        }
+    }
+
+    private static func collections(
+        for parent: CollectionIdentifier?,
+        from rCollections: Results<RCollection>,
+        libraryId: LibraryIdentifier,
+        includeItemCounts: Bool,
+        allCollections: inout [CollectionIdentifier: Collection],
+        collapsedState: inout [CollectionIdentifier: Bool]
+    ) -> [CollectionTree.Node] {
         var nodes: [CollectionTree.Node] = []
         for rCollection in rCollections.filter(parent?.key.flatMap({ .parentKey($0) }) ?? .parentKeyNil) {
             let collection = self.collection(from: rCollection, libraryId: libraryId, includeItemCounts: includeItemCounts)
