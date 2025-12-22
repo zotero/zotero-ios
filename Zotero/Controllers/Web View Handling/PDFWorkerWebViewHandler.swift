@@ -12,7 +12,7 @@ import WebKit
 import CocoaLumberjackSwift
 import RxSwift
 
-final class PDFWorkerWebViewHandler: WebViewHandler {
+final class PDFWorkerWebViewHandler: WebViewHandler, PDFWorkerHandling {
     /// Handlers for communication with JS in `webView`
     enum JSHandlers: String, CaseIterable {
         /// Handler used for reporting recognizer data.
@@ -25,11 +25,6 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
 
     enum Error: Swift.Error {
         case cantFindWorkFile
-    }
-
-    enum PDFWorkerData {
-        case recognizerData(data: [String: Any])
-        case fullText(data: [String: Any])
     }
 
     private let disposeBag: DisposeBag
