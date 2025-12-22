@@ -733,7 +733,6 @@ final class ShareViewController: UIViewController {
 
         apiClient.set(authToken: ("Bearer " + session.apiToken))
         translatorsController.updateFromRepo(type: .shareExtension)
-        pdfWorkerController.webViewProvider = self
 
         self.fileStorage = fileStorage
         self.schemaController = schemaController
