@@ -7,7 +7,6 @@
 //
 
 import UIKit
-import WebKit
 
 @testable import Zotero
 
@@ -15,32 +14,44 @@ import Nimble
 import Quick
 import RxSwift
 
-class WebViewProviderViewController: UIViewController { }
-
-extension WebViewProviderViewController: WebViewProvider {
-    func addWebView(configuration: WKWebViewConfiguration?) -> WKWebView {
-        let webView: WKWebView = configuration.flatMap({ WKWebView(frame: .zero, configuration: $0) }) ?? WKWebView()
-        webView.isHidden = true
-        view.insertSubview(webView, at: 0)
-        return webView
-    }
-}
-
 final class PDFWorkerControllerSpec: QuickSpec {
     override class func spec() {
-        var webViewProviderViewController: WebViewProviderViewController!
         var pdfWorkerController: PDFWorkerController!
         var disposeBag: DisposeBag!
 
         beforeSuite {
-            webViewProviderViewController = WebViewProviderViewController()
-            webViewProviderViewController.loadViewIfNeeded()
             pdfWorkerController = PDFWorkerController(fileStorage: TestControllers.fileStorage)
-            pdfWorkerController.webViewProvider = webViewProviderViewController
             disposeBag = DisposeBag()
         }
 
         describe("a PDF Worker Controller") {
+            context("with the JavaScriptCore shim") {
+                it("can evaluate the pdf worker shim in JavaScriptCore") {
+                    let bundle = Bundle(for: PDFWorkerController.self)
+                    guard let url = bundle.url(forResource: "pdf_worker_shim", withExtension: "js") else {
+                        fail("pdf_worker_shim.js not found in app bundle")
+                        return
+                    }
+                    guard let script = try? String(contentsOf: url, encoding: .utf8) else {
+                        fail("pdf_worker_shim.js could not be read")
+                        return
+                    }
+
+                    var didPostMessage = false
+
+                    let queue = DispatchQueue(label: "org.zotero.PDFWorkerControllerSpec.queue")
+                    let engine = PDFWorkerJSEngine(bundle: bundle, queue: queue)
+                    engine.onPostMessage = { _, _ in
+                        didPostMessage = true
+                    }
+
+                    expect { try engine.evaluate(script: script) }.toNot(throwError())
+                    expect(try? engine.evaluate(script: "self === globalThis")?.toBool()).to(beTrue())
+                    _ = try? engine.evaluate(script: "self.postMessage({ hello: 'world' })")
+                    expect(didPostMessage).to(beTrue())
+                }
+            }
+
             context("with a valid PDF URL") {
                 let fileΝame = "bitcoin"
                 let fileExtension = "pdf"
@@ -164,10 +175,25 @@ final class PDFWorkerControllerSpec: QuickSpec {
                             let url = Bundle(for: Self.self).url(forResource: jsonFileName, withExtension: "json")!
                             let expectedData = try! Data(contentsOf: url)
                             let expectedJSONData = try! JSONSerialization.jsonObject(with: expectedData, options: .allowFragments) as! [String: Any]
-                            expect(data as? [String: AnyHashable]).to(equal(expectedJSONData as! [String: AnyHashable]))
+                            compareJSONObjects(actual: data, expected: expectedJSONData, context: jsonFileName)
 
                         default:
                             fail("unexpected update \(index): \(update)")
+                        }
+                    }
+                }
+
+                func compareJSONObjects(actual: [String: Any], expected: [String: Any], context: String) {
+                    let actualKeys = actual.keys
+                    let expectedKeys = expected.keys
+                    expect(Set(actualKeys)).to(equal(Set(expectedKeys)))
+                    for key in expectedKeys {
+                        switch key {
+                        case "metadata":
+                            expect(actual[key] as? [String: String]).to(equal(expected[key] as? [String: String]))
+
+                        default:
+                            expect(actual[key] as? AnyHashable).to(equal(expected[key] as? AnyHashable))
                         }
                     }
                 }
