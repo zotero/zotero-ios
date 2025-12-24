@@ -23,6 +23,10 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
         case log = "logHandler"
     }
 
+    enum Error: Swift.Error {
+        case cantFindWorkFile
+    }
+
     enum PDFWorkerData {
         case recognizerData(data: [String: Any])
         case fullText(data: [String: Any])
@@ -30,8 +34,9 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
 
     private let disposeBag: DisposeBag
     let temporaryDirectory: File
+    var workFile: File?
     private let cleanup: (() -> Void)?
-    let observable: PublishSubject<Result<PDFWorkerData, Swift.Error>>
+    let observable: PublishSubject<(workId: String, result: Result<PDFWorkerData, Swift.Error>)>
 
     init(webView: WKWebView, temporaryDirectory: File, cleanup: (() -> Void)?) {
         self.temporaryDirectory = temporaryDirectory
@@ -55,14 +60,14 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
         return load(fileUrl: temporaryDirectory.copy(withName: "worker", ext: "html").createUrl())
     }
 
-    private func performPDFWorkerOperation(fileURL: URL, operationName: String, jsFunction: String, additionalParams: [String] = []) {
+    private func performPDFWorkerOperation(operationName: String, jsFunction: String, additionalParams: [String] = [], workId: String) {
         performAfterInitialization()
             .observe(on: MainScheduler.instance)
             .flatMap { [weak self] _ -> Single<Any> in
                 guard let self else { return .never() }
+                guard let workFile else { return .error(Error.cantFindWorkFile) }
                 DDLogInfo("PDFWorkerWebViewHandler: call \(operationName) js")
-                let relativePath = fileURL.lastPathComponent
-                var javascript = "\(jsFunction)('\(escapeJavaScriptString(relativePath))'"
+                var javascript = "\(jsFunction)('\(workId)', '\(escapeJavaScriptString(workFile.fileName))'"
                 if !additionalParams.isEmpty {
                     javascript += ", " + additionalParams.joined(separator: ", ")
                 }
@@ -71,7 +76,7 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
             }
             .subscribe(onFailure: { [weak self] error in
                 DDLogError("PDFWorkerWebViewHandler: \(operationName) failed - \(error)")
-                self?.observable.on(.next(.failure(error)))
+                self?.observable.on(.next((workId: workId, result: .failure(error))))
             })
             .disposed(by: disposeBag)
 
@@ -82,16 +87,16 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
         }
     }
 
-    func recognize(fileURL: URL) {
-        performPDFWorkerOperation(fileURL: fileURL, operationName: "recognize", jsFunction: "recognize")
+    func recognize(workId: String) {
+        performPDFWorkerOperation(operationName: "recognize", jsFunction: "recognize", workId: workId)
     }
 
-    func getFullText(fileURL: URL, pages: [Int]?) {
+    func getFullText(pages: [Int]?, workId: String) {
         performPDFWorkerOperation(
-            fileURL: fileURL,
             operationName: "getFullText",
             jsFunction: "getFullText",
-            additionalParams: pages.flatMap({ ["[\($0.map({ "\($0)" }).joined(separator: ","))]"] }) ?? []
+            additionalParams: pages.flatMap({ ["[\($0.map({ "\($0)" }).joined(separator: ","))]"] }) ?? [],
+            workId: workId
         )
     }
 
@@ -102,12 +107,12 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
 
         switch handler {
         case .recognizerData:
-            guard let data = (body as? [String: Any])?["recognizerData"] as? [String: Any] else { return }
-            observable.on(.next(.success(.recognizerData(data: data))))
+            guard let body = body as? [String: Any], let workId = body["workId"] as? String, let data = body["recognizerData"] as? [String: Any] else { return }
+            observable.on(.next((workId: workId, result: .success(.recognizerData(data: data)))))
 
         case .fullText:
-            guard let data = (body as? [String: Any])?["fullText"] as? [String: Any] else { return }
-            observable.on(.next(.success(.recognizerData(data: data))))
+            guard let body = body as? [String: Any], let workId = body["workId"] as? String, let data = body["fullText"] as? [String: Any] else { return }
+            observable.on(.next((workId: workId, result: .success(.fullText(data: data)))))
 
         case .log:
             DDLogInfo("PDFWorkerWebViewHandler: JSLOG - \(body)")

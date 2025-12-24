@@ -32,6 +32,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
 
     private let viewModel: ViewModel<PDFReaderActionHandler>
     private unowned let pdfWorkerController: PDFWorkerController
+    private var speechWorker: PDFWorkerController.Worker?
     let disposeBag: DisposeBag
 
     var state: PDFReaderState { return viewModel.state }
@@ -383,6 +384,9 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
     }
 
     deinit {
+        if let speechWorker {
+            pdfWorkerController.cleanupWorker(speechWorker)
+        }
         viewModel.process(action: .changeIdleTimerDisabled(false))
         DDLogInfo("PDFReaderViewController deinitialized")
     }
@@ -1032,8 +1036,10 @@ extension PDFReaderViewController: SpeechmanagerDelegate {
             completion(nil)
             return
         }
+        let speechWorker = speechWorker ?? PDFWorkerController.Worker(file: file as! FileData, priority: .high)
+        self.speechWorker = speechWorker
         let start = CFAbsoluteTimeGetCurrent()
-        pdfWorkerController.queue(work: .init(file: file as! FileData, kind: .fullText(pages: indices.map({ Int($0) }))))
+        pdfWorkerController.queue(work: .fullText(pages: indices.map({ Int($0) })), in: speechWorker)
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { update in
                 switch update.kind {
