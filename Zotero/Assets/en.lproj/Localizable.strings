@@ -150,7 +150,7 @@
 "items.creator_summary.etal" = "%@ et al.";
 "items.retrieving_metadata" = "Retrieving Metadata";
 
-"lookup.title" = "Enter ISBNs, DOls, PMIDs, arXiv IDs, or ADS Bibcodes to add to your library:";
+"lookup.title" = "Enter ISBNs, DOIs, PMIDs, arXiv IDs, or ADS Bibcodes to add to your library:";
 
 "citation.title" = "Citation Preview";
 "citation.copy_citation" = "Copy Citation";
