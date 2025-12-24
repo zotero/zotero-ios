@@ -363,8 +363,8 @@
 "settings.export_db" = "Export Database File";
 "settings.full_sync_debug" = "Advanced";
 "settings.full_sync.start" = "Start Full Sync Debugging";
-"settings.full_sync.other_in_progress" = "Sync is already in progress. Wait for it to finish.";
-"settings.full_sync.in_progress" = "A full sync is in progress. Wait for it to finish and post the Debug ID to the Zotero Forums.";
+"settings.full_sync.other_in_progress" = "A sync is already in progress. Please wait for it to finish.";
+"settings.full_sync.in_progress" = "A full sync is in progress. Please wait for it to finish and post the Debug ID to the Zotero Forums.";
 "settings.annotation_tools" = "Annotation Tools";
 "settings.annotation_tools.pdf" = "PDF";
 "settings.annotation_tools.html_epub" = "HTML / EPUB";
@@ -491,9 +491,9 @@
 "errors.shareext.webdav_error" = "Error uploading attachment to WebDAV server";
 "errors.shareext.personal_quota_reached" = "You have reached your Zotero Storage quota, and the file could not be uploaded. See your account settings for additional storage options.\n\nThe file was saved to your local library.";
 "errors.shareext.group_quota_reached" = "The group “%@” has reached its Zotero Storage quota, and the file could not be uploaded. The group owner can view their account settings for additional storage options.\n\nThe file was saved to the local library.";
-"errors.shareext.forbidden" = "You don’t have necessary rights to submit this item to %@.";
+"errors.shareext.forbidden" = "You don’t have the necessary permissions to add this item to %@.";
 "errors.shareext.webdav_not_verified" = "WebDAV verification error";
-"errors.shareext.requires_browser" = "This page or app requires to be loaded in a browser in order to be shared with Zotero. Open it in your browser and use the browser's Share action.";
+"errors.shareext.requires_browser" = "This content must be loaded in a browser to be shared with Zotero. Open it in your browser and use the browser’s Share button.";
 "errors.db_failure" = "Error creating database. Please try logging in again.";
 "errors.logging.title" = "Debugging Error";
 "errors.logging.start" = "Unable to start debug logging";
@@ -501,12 +501,12 @@
 "errors.logging.no_logs_recorded" = "No debug output occurred during logging";
 "errors.logging.upload" = "Could not upload logs. Please try again.";
 "errors.logging.response_parsing" = "Unexpected response from server";
-"errors.translators.bundle_loading" = "Could not update translators from bundle. Would you like to try again?";
+"errors.translators.bundle_loading" = "Could not update translators. Try again?";
 "errors.translators.bundle_reset" = "Could not load bundled translators.";
 "errors.styles.addition" = "Could not add style “%@”";
 "errors.styles.deletion" = "Could not delete style “%@”";
 "errors.styles.loading" = "Could not load styles";
-"errors.styles_search.loading" = "Could not load styles. Do you want to try again?";
+"errors.styles_search.loading" = "Could not load styles. Try again?";
 "errors.citation.generate_citation" = "Could not generate citation";
 "errors.citation.generate_bibliography" = "Could not generate bibliography";
 "errors.citation.invalid_types" = "Invalid item types selected";
