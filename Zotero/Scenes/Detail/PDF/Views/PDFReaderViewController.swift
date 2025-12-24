@@ -62,7 +62,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         }
     }
     private var previousTraitCollection: UITraitCollection?
-    private var accessibilityHandler: AccessibilityViewHandler<PDFReaderViewController>!
+    private var accessibilityHandler: AccessibilityViewHandler<PDFReaderViewController>?
     var isSidebarVisible: Bool { return sidebarControllerLeft?.constant == 0 }
     var isToolbarVisible: Bool { return toolbarState.visible }
     var isDocumentLocked: Bool { return viewModel.state.document.isLocked }
@@ -208,15 +208,17 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         viewModel.process(action: .changeIdleTimerDisabled(true))
         view.backgroundColor = .systemGray6
         setupViews()
-        accessibilityHandler = AccessibilityViewHandler(
-            key: viewModel.state.key,
-            libraryId: viewModel.state.library.identifier,
-            viewController: self,
-            documentContainer: documentController!.view,
-            delegate: self,
-            dbStorage: viewModel.handler.dbStorage
-        )
-        accessibilityHandler.delegate = self
+        if FeatureGates.enabled.contains(.speech) {
+            accessibilityHandler = AccessibilityViewHandler(
+                key: viewModel.state.key,
+                libraryId: viewModel.state.library.identifier,
+                viewController: self,
+                documentContainer: documentController!.view,
+                delegate: self,
+                dbStorage: viewModel.handler.dbStorage
+            )
+            accessibilityHandler?.delegate = self
+        }
         setupObserving()
 
         if !viewModel.state.document.isLocked, let documentController {
@@ -332,8 +334,21 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
             closeButton.accessibilityLabel = L10n.close
             closeButton.rx.tap.subscribe(onNext: { [weak self] _ in self?.close() }).disposed(by: disposeBag)
 
-            let accessibilityButton = accessibilityHandler.createAccessibilityButton(isSelected: false, isFilled: false, isEnabled: !viewModel.state.document.isLocked)
-            
+            let accessibilityButton: UIBarButtonItem
+            if FeatureGates.enabled.contains(.speech), let accessibilityHandler {
+                accessibilityButton = accessibilityHandler.createAccessibilityButton(isSelected: false, isFilled: false, isEnabled: !viewModel.state.document.isLocked)
+            } else {
+                accessibilityButton = UIBarButtonItem(image: Asset.Images.pdfRawReader.image, style: .plain, target: nil, action: nil)
+                accessibilityButton.isEnabled = !viewModel.state.document.isLocked
+                accessibilityButton.accessibilityLabel = L10n.Accessibility.showReader
+                accessibilityButton.title = L10n.Accessibility.showReader
+                accessibilityButton.rx.tap
+                    .subscribe(onNext: { [weak self] _ in
+                        guard let self else { return }
+                        coordinatorDelegate?.showReader(document: viewModel.state.document, userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle)
+                    })
+                    .disposed(by: disposeBag)
+            }
             navigationItem.leftBarButtonItems = [closeButton, sidebarButton, accessibilityButton]
             navigationItem.rightBarButtonItems = createRightBarButtonItems()
         }
@@ -404,7 +419,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
         updateUserInterfaceStyleIfNeeded(previousTraitCollection: previousTraitCollection)
-        accessibilityHandler.accessibilityControlsShouldChange(isNavbarHidden: isNavigationBarHidden)
+        accessibilityHandler?.accessibilityControlsShouldChange(isNavbarHidden: isNavigationBarHidden)
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
@@ -749,9 +764,9 @@ extension PDFReaderViewController: AnnotationToolbarHandlerDelegate {
     
     func annotationToolbarWillChange(state: AnnotationToolbarHandler.State, statusBarVisible: Bool) {
         if state.visible && state.position == .pinned {
-            accessibilityHandler.accessibilityControlsShouldChange(isNavbarHidden: true)
+            accessibilityHandler?.accessibilityControlsShouldChange(isNavbarHidden: true)
         } else {
-            accessibilityHandler.accessibilityControlsShouldChange(isNavbarHidden: !statusBarVisible)
+            accessibilityHandler?.accessibilityControlsShouldChange(isNavbarHidden: !statusBarVisible)
         }
     }
 
@@ -912,7 +927,7 @@ extension PDFReaderViewController: PDFDocumentDelegate {
         intraDocumentNavigationHandler?.interfaceIsVisible = !isHidden
         annotationToolbarHandler?.interfaceVisibilityDidChange()
         if shouldChangeNavigationBarVisibility {
-            accessibilityHandler.accessibilityControlsShouldChange(isNavbarHidden: isHidden)
+            accessibilityHandler?.accessibilityControlsShouldChange(isNavbarHidden: isHidden)
         }
 
         UIView.animate(withDuration: 0.15, animations: { [weak self] in
