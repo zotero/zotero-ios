@@ -43,6 +43,8 @@ class BaseItemsViewController: UIViewController {
         disposeBag = DisposeBag()
         #if DEBUG
         debugReaderQueue = DispatchQueue(label: "org.zotero.DebugReaderQueue", qos: .userInteractive)
+        #else
+        debugReaderQueue = nil
         #endif
         super.init(nibName: nil, bundle: nil)
     }
