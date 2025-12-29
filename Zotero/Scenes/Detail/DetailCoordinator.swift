@@ -818,7 +818,11 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
 extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
     func showAttachmentPicker(save: @escaping ([URL]) -> Void) {
         guard let navigationController else { return }
-        let controller = DocumentPickerViewController(forOpeningContentTypes: [.pdf, .png, .jpeg], asCopy: true)
+        var contentTypes: [UTType] = [.pdf, .png, .jpeg]
+        if FeatureGates.enabled.contains(.htmlEpubReader) {
+            contentTypes.append(.epub)
+        }
+        let controller = DocumentPickerViewController(forOpeningContentTypes: contentTypes, asCopy: true)
         controller.popoverPresentationController?.sourceItem = navigationController.visibleViewController?.view
         controller.observable
                   .observe(on: MainScheduler.instance)
