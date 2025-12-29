@@ -11,16 +11,16 @@ on:
 jobs:
   tests:
     name: Run Xcode Tests
-    runs-on: macos-15
+    runs-on: macos-26
     strategy:
       matrix:
-        xcode: ["16.3"]
-        ios_version: ["18.4"]
-        device_name: ["iPhone 16"]
+        xcode: ["26.2"]
+        ios_version: ["26.2"]
+        device_name: ["iPhone 17"]
         
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: recursive
 
@@ -41,7 +41,7 @@ jobs:
           xcode-version: ${{ matrix.xcode }}
 
       - name: Clean & Build & Test
-        uses: sersoft-gmbh/xcodebuild-action@v3.1
+        uses: sersoft-gmbh/xcodebuild-action@v4.0
         with:
           project: Zotero.xcodeproj
           scheme: Zotero
