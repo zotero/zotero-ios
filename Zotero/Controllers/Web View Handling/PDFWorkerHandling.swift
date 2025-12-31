@@ -16,6 +16,7 @@ enum PDFWorkerData {
 
 protocol PDFWorkerHandling: AnyObject {
     var workFile: File? { get set }
+    var shouldCacheWorkData: Bool { get set }
     var observable: PublishSubject<(workId: String, result: Result<PDFWorkerData, Swift.Error>)> { get }
 
     func recognize(workId: String)

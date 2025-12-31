@@ -30,6 +30,7 @@ final class PDFWorkerWebViewHandler: WebViewHandler, PDFWorkerHandling {
     private let disposeBag: DisposeBag
     let temporaryDirectory: File
     var workFile: File?
+    var shouldCacheWorkData: Bool = false
     private let cleanup: (() -> Void)?
     let observable: PublishSubject<(workId: String, result: Result<PDFWorkerData, Swift.Error>)>
 
