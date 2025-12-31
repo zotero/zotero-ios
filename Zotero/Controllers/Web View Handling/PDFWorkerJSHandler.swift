@@ -23,6 +23,7 @@ final class PDFWorkerJSHandler: PDFWorkerHandling {
     }
 
     var workFile: File?
+    var shouldCacheWorkData: Bool = false
     let observable: PublishSubject<(workId: String, result: Result<PDFWorkerData, Swift.Error>)>
 
     private let engine: PDFWorkerJSEngine
@@ -32,6 +33,7 @@ final class PDFWorkerJSHandler: PDFWorkerHandling {
     private var nextMessageId: Int
     private var pending: [Int: (Result<Any, Swift.Error>) -> Void]
     private var loadError: Swift.Error?
+    private var cachedWorkData: Data?
 
     init(bundle: Bundle = .main, warmUp: Bool = true) {
         queueLabel = "org.zotero.PDFWorkerJSHandler.queue"
@@ -43,6 +45,7 @@ final class PDFWorkerJSHandler: PDFWorkerHandling {
         nextMessageId = 1
         pending = [:]
         loadError = nil
+        cachedWorkData = nil
 
         engine.onPostMessage = { [weak self] message, _ in
             guard let self else { return }
@@ -208,7 +211,7 @@ final class PDFWorkerJSHandler: PDFWorkerHandling {
             }
             let url = workFile.createUrl()
             do {
-                let data = try Data(contentsOf: url)
+                let data = try loadWorkData(from: url)
                 guard let buffer = engine.makeArrayBuffer(from: data) else {
                     throw Error.invalidMessage
                 }
@@ -250,6 +253,21 @@ final class PDFWorkerJSHandler: PDFWorkerHandling {
             } catch {
                 deferredError = error
             }
+        }
+
+        func loadWorkData(from url: URL) throws -> Data {
+            if shouldCacheWorkData, let cachedWorkData {
+                return cachedWorkData
+            }
+            let data: Data
+            if shouldCacheWorkData {
+                data = try Data(contentsOf: url, options: [.mappedIfSafe])
+                cachedWorkData = data
+            } else {
+                data = try Data(contentsOf: url)
+                cachedWorkData = nil
+            }
+            return data
         }
     }
 }

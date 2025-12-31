@@ -66,7 +66,7 @@ final class PDFWorkerControllerSpec: QuickSpec {
 
                 it("can extract recognizer data") {
                     let work: PDFWorkerController.Work = .recognizer
-                    let worker = PDFWorkerController.Worker(file: file, priority: .default)
+                    let worker = PDFWorkerController.Worker(file: file, shouldCacheData: false, priority: .default)
                     var emittedUpdates: [PDFWorkerController.Update.Kind] = []
 
                     waitUntil(timeout: .seconds(10)) { completion in
@@ -91,7 +91,7 @@ final class PDFWorkerControllerSpec: QuickSpec {
 
                 it("can extract full text") {
                     let work: PDFWorkerController.Work = .fullText(pages: nil)
-                    let worker = PDFWorkerController.Worker(file: file, priority: .default)
+                    let worker = PDFWorkerController.Worker(file: file, shouldCacheData: false, priority: .default)
                     var emittedUpdates: [PDFWorkerController.Update.Kind] = []
 
                     waitUntil(timeout: .seconds(20)) { completion in
@@ -116,7 +116,7 @@ final class PDFWorkerControllerSpec: QuickSpec {
 
                 it("can extract text from a single page") {
                     let work: PDFWorkerController.Work = .fullText(pages: [0])
-                    let worker = PDFWorkerController.Worker(file: file, priority: .default)
+                    let worker = PDFWorkerController.Worker(file: file, shouldCacheData: false, priority: .default)
                     var emittedUpdates: [PDFWorkerController.Update.Kind] = []
 
                     waitUntil(timeout: .seconds(20)) { completion in
@@ -141,7 +141,7 @@ final class PDFWorkerControllerSpec: QuickSpec {
 
                 it("can extract text from two pages") {
                     let work: PDFWorkerController.Work = .fullText(pages: [0, 1])
-                    let worker = PDFWorkerController.Worker(file: file, priority: .default)
+                    let worker = PDFWorkerController.Worker(file: file, shouldCacheData: false, priority: .default)
                     var emittedUpdates: [PDFWorkerController.Update.Kind] = []
 
                     waitUntil(timeout: .seconds(20)) { completion in
