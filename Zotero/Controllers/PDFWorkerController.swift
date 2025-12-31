@@ -45,13 +45,15 @@ final class PDFWorkerController {
 
         let id = UUID()
         let file: FileData
+        let shouldCacheData: Bool
         let priority: Priority
         fileprivate(set) var state: State = .pending
         fileprivate var subjectsByWork: OrderedDictionary<Work, PublishSubject<Update>> = [:]
         fileprivate var handler: PDFWorkerHandling?
 
-        init(file: FileData, priority: Priority) {
+        init(file: FileData, shouldCacheData: Bool, priority: Priority) {
             self.file = file
+            self.shouldCacheData = shouldCacheData
             self.priority = priority
         }
 
@@ -226,6 +228,7 @@ final class PDFWorkerController {
 
     private func setup(pdfWorkerHandler: PDFWorkerHandling, for worker: Worker) {
         pdfWorkerHandler.workFile = worker.file
+        pdfWorkerHandler.shouldCacheWorkData = worker.shouldCacheData
         setupObserver(in: worker, for: pdfWorkerHandler)
         worker.handler = pdfWorkerHandler
 
