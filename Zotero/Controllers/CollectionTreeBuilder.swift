@@ -28,7 +28,7 @@ struct CollectionTreeBuilder {
         let nodes: [CollectionTree.Node] = self.collections(for: nil, from: rCollections, libraryId: libraryId, includeItemCounts: includeItemCounts, allCollections: &collections, collapsedState: &collapsed)
         return CollectionTree(nodes: nodes, collections: collections, collapsed: collapsed)
     }
-    
+
     static func collections(from rItem: RItem, allCollections allRCollections: Results<RCollection>) -> CollectionTree {
         var collections: [CollectionIdentifier: Collection] = [:]
         var nodes: [CollectionTree.Node] = []
@@ -39,7 +39,7 @@ struct CollectionTreeBuilder {
             nodes = merge(branchNode: nodesToRoot, toAllNodes: nodes)
         }
         return CollectionTree(nodes: nodes, collections: collections, collapsed: [:])
-        
+
         func getNodes(fromCollectionToRoot rCollection: RCollection, allCollections: inout [CollectionIdentifier: Collection]) -> CollectionTree.Node {
             let node = CollectionTree.Node(identifier: .collection(rCollection.key), parent: rCollection.parentKey.flatMap({ .collection($0) }), children: [])
             return getParentNodeIfAvailable(from: node, parentKey: rCollection.parentKey)
@@ -48,7 +48,7 @@ struct CollectionTreeBuilder {
                 // Find parent if available, otherwise just return self
                 guard let parentKey, let parent = allRCollections.filter(.key(parentKey)).first else { return childNode }
                 // Create new Collection if needed
-                if allCollections[.collection(rCollection.key)] == nil {
+                if allCollections[.collection(parent.key)] == nil {
                     let collection = Collection(object: parent, isInItem: false)
                     allCollections[collection.id] = collection
                 }
@@ -56,13 +56,16 @@ struct CollectionTreeBuilder {
                 return getParentNodeIfAvailable(from: node, parentKey: parent.parentKey)
             }
         }
-        
+
         func merge(branchNode: CollectionTree.Node, toAllNodes allNodes: [CollectionTree.Node]) -> [CollectionTree.Node] {
+            if allNodes.isEmpty {
+                return [branchNode]
+            }
             return allNodes.map { currentNode in
                 return merge(node: currentNode, withBranch: branchNode)
             }
         }
-        
+
         func merge(node: CollectionTree.Node, withBranch branchNode: CollectionTree.Node) -> CollectionTree.Node {
             if node.identifier == branchNode.identifier {
                 let children = branchNode.children.isEmpty ?
