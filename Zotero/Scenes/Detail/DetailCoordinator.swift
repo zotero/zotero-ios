@@ -1083,7 +1083,7 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
         }))
         self.navigationController?.present(controller, animated: true, completion: nil)
     }
-    
+
     func show(collection: Collection, libraryId: LibraryIdentifier) {
         (navigationController?.splitViewController as? MainViewController)?.masterCoordinator?.showCollections(for: libraryId, preselectedCollection: collection.identifier, animated: true)
     }
