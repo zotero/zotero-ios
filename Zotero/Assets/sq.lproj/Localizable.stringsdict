@@ -12,9 +12,9 @@
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
             <key>one</key>
-            <string>1 Collection Selected</string>
+            <string>U përzgjodh 1 Koleksion</string>
             <key>other</key>
-            <string>%d Collections Selected</string>
+            <string>U përzgjodhën %d Koleksione</string>
         </dict>
     </dict>
     <key>items.delete_question</key>
@@ -28,9 +28,9 @@
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
             <key>one</key>
-            <string>Are you sure you want to delete the selected item?</string>
+            <string>Jeni i sigurt se doni të fshihet objekti i përzgjedhur?</string>
             <key>other</key>
-            <string>Are you sure you want to delete the selected items?</string>
+            <string>Jeni i sigurt se doni të fshihen objektet e përzgjedhur?</string>
         </dict>
     </dict>
     <key>items.remove_from_collection_question</key>
@@ -44,9 +44,9 @@
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
             <key>one</key>
-            <string>Are you sure you want to remove the selected item from this collection?</string>
+            <string>Jeni i sigurt se doni të hiqet nga ky koleksion objekti i përzgjedhur?</string>
             <key>other</key>
-            <string>Are you sure you want to remove the selected items from this collection?</string>
+            <string>Jeni i sigurt se doni të hiqen nga ky koleksion objektet e përzgjedhur?</string>
         </dict>
     </dict>
     <key>items.toolbar_filter</key>
@@ -60,9 +60,9 @@
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
             <key>one</key>
-            <string>Filter: 1 item</string>
+            <string>Filtro 1 objekt</string>
             <key>other</key>
-            <string>Filter: %d items</string>
+            <string>Filtro %d objekte</string>
         </dict>
     </dict>
     <key>pdf.search.matches</key>
@@ -76,15 +76,15 @@
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
             <key>one</key>
-            <string>Found 1 match</string>
+            <string>U gjet 1 përkim</string>
             <key>other</key>
-            <string>Found %d matches</string>
+            <string>U gjetën %d përkime</string>
         </dict>
     </dict>
     <key>settings.storage.files_size_and_unit</key>
     <dict>
         <key>NSStringLocalizedFormatKey</key>
-        <string>%#@files@ (%.2f %@)</string>
+        <string>%#@files@</string>
         <key>files</key>
         <dict>
             <key>NSStringFormatSpecTypeKey</key>
@@ -92,9 +92,9 @@
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
             <key>one</key>
-            <string>1 file</string>
+            <string>1 kartelë (%.2f %@)</string>
             <key>other</key>
-            <string>%d files</string>
+            <string>%d kartela (%.2f %@)</string>
         </dict>
     </dict>
     <key>errors.sync_toolbar.errors</key>
@@ -108,9 +108,9 @@
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
             <key>one</key>
-            <string>1 issue</string>
+            <string>1 problem</string>
             <key>other</key>
-            <string>%d issues</string>
+            <string>%d probleme</string>
         </dict>
     </dict>
     <key>tag_picker.tags_selected</key>
@@ -124,9 +124,9 @@
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
             <key>one</key>
-            <string>1 tag selected</string>
+            <string>U përzgjodh 1 etiketë</string>
             <key>other</key>
-            <string>%d tags selected</string>
+            <string>U përzgjodhën %d etiketa</string>
         </dict>
     </dict>
     <key>tag_picker.confirm_deletion</key>
@@ -140,9 +140,9 @@
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
             <key>one</key>
-            <string>Are you sure you want to delete 1 automatic tag in this library?\n\nThis action cannot be undone.</string>
+            <string>Jeni i sigurt se doni të fshihet 1 etiketë automatike në këtë bibliotekë?\n\nKy veprim s’mund të zhbëhet.</string>
             <key>other</key>
-            <string>Are you sure you want to delete %d automatic tags in this library?\n\nThis action cannot be undone.</string>
+            <string>Jeni i sigurt se doni të fshihen %d etiketa automatike në këtë bibliotekë?\n\nKy veprim s’mund të zhbëhet.</string>
         </dict>
     </dict>
     <key>settings.lines_logged</key>
@@ -156,9 +156,9 @@
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
             <key>one</key>
-            <string>1 line logged</string>
+            <string>U regjistrua 1 rresht</string>
             <key>other</key>
-            <string>%d lines logged</string>
+            <string>U regjistruan %d rreshta</string>
         </dict>
     </dict>
     <key>settings.lines</key>
@@ -172,9 +172,9 @@
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
             <key>one</key>
-            <string>1 line</string>
+            <string>1 rresht</string>
             <key>other</key>
-            <string>%d lines</string>
+            <string>%d rreshta</string>
         </dict>
     </dict>
     <key>errors.sync_toolbar.webdav_error2</key>
@@ -188,9 +188,9 @@
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
             <key>one</key>
-            <string>Could not delete 1 file from your WebDAV server</string>
+            <string>S’u fshi dot 1 kartelë nga shërbyesi juaj WebDAV</string>
             <key>other</key>
-            <string>Could not delete %d files from your WebDAV server</string>
+            <string>S’u fshinë dot %d kartela nga shërbyesi juaj WebDAV</string>
         </dict>
     </dict>
     <key>settings.general.after_x_days</key>
@@ -204,9 +204,9 @@
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
             <key>one</key>
-            <string>After 1 Day</string>
+            <string>Pas 1 Dite</string>
             <key>other</key>
-            <string>After %d Days</string>
+            <string>Pas %d Ditësh</string>
         </dict>
     </dict>
   </dict>

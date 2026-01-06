@@ -78,7 +78,7 @@
 "login.repeat_password" = "Repeat password";
 "login.forgot_password" = "Forgot Password?";
 
-"libraries.my_library" = "My Library";
+"libraries.my_library" = "Oma kirjasto";
 "libraries.group_libraries" = "Group Libraries";
 "libraries.delete_question" = "Do you really want to delete “%@”?";
 

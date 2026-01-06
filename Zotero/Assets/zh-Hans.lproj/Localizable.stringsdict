@@ -11,10 +11,8 @@
             <string>NSStringPluralRuleType</string>
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
-            <key>one</key>
-            <string>1 Collection Selected</string>
             <key>other</key>
-            <string>%d Collections Selected</string>
+            <string>已选中 %d 个分类</string>
         </dict>
     </dict>
     <key>items.delete_question</key>
@@ -27,10 +25,8 @@
             <string>NSStringPluralRuleType</string>
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
-            <key>one</key>
-            <string>Are you sure you want to delete the selected item?</string>
             <key>other</key>
-            <string>Are you sure you want to delete the selected items?</string>
+            <string>确定要删除选中的条目？</string>
         </dict>
     </dict>
     <key>items.remove_from_collection_question</key>
@@ -43,10 +39,8 @@
             <string>NSStringPluralRuleType</string>
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
-            <key>one</key>
-            <string>Are you sure you want to remove the selected item from this collection?</string>
             <key>other</key>
-            <string>Are you sure you want to remove the selected items from this collection?</string>
+            <string>确定要从此分类中删除选中的条目吗？</string>
         </dict>
     </dict>
     <key>items.toolbar_filter</key>
@@ -59,10 +53,8 @@
             <string>NSStringPluralRuleType</string>
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
-            <key>one</key>
-            <string>Filter: 1 item</string>
             <key>other</key>
-            <string>Filter: %d items</string>
+            <string>筛选：%d 个条目</string>
         </dict>
     </dict>
     <key>pdf.search.matches</key>
@@ -75,43 +67,28 @@
             <string>NSStringPluralRuleType</string>
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
-            <key>one</key>
-            <string>Found 1 match</string>
             <key>other</key>
-            <string>Found %d matches</string>
+            <string>找到 %d 个匹配项</string>
         </dict>
     </dict>
     <key>settings.storage.files_size_and_unit</key>
     <dict>
         <key>NSStringLocalizedFormatKey</key>
-        <string>%#@files@ (%.2f %@)</string>
+        <string>%#@files@</string>
         <key>files</key>
         <dict>
             <key>NSStringFormatSpecTypeKey</key>
             <string>NSStringPluralRuleType</string>
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
-            <key>one</key>
-            <string>1 file</string>
             <key>other</key>
-            <string>%d files</string>
+            <string>%d 个文件 (%.2f %@)</string>
         </dict>
     </dict>
     <key>errors.sync_toolbar.errors</key>
     <dict>
         <key>NSStringLocalizedFormatKey</key>
         <string>%#@errors@</string>
-        <key>errors</key>
-        <dict>
-            <key>NSStringFormatSpecTypeKey</key>
-            <string>NSStringPluralRuleType</string>
-            <key>NSStringFormatValueTypeKey</key>
-            <string>d</string>
-            <key>one</key>
-            <string>1 issue</string>
-            <key>other</key>
-            <string>%d issues</string>
-        </dict>
     </dict>
     <key>tag_picker.tags_selected</key>
     <dict>
@@ -123,10 +100,8 @@
             <string>NSStringPluralRuleType</string>
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
-            <key>one</key>
-            <string>1 tag selected</string>
             <key>other</key>
-            <string>%d tags selected</string>
+            <string>已选中 %d 个标签</string>
         </dict>
     </dict>
     <key>tag_picker.confirm_deletion</key>
@@ -139,10 +114,8 @@
             <string>NSStringPluralRuleType</string>
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
-            <key>one</key>
-            <string>Are you sure you want to delete 1 automatic tag in this library?\n\nThis action cannot be undone.</string>
             <key>other</key>
-            <string>Are you sure you want to delete %d automatic tags in this library?\n\nThis action cannot be undone.</string>
+            <string>确定要删除此文库中的 %d 个自动标签吗？\n\n该操作无法撤消。</string>
         </dict>
     </dict>
     <key>settings.lines_logged</key>
@@ -155,10 +128,8 @@
             <string>NSStringPluralRuleType</string>
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
-            <key>one</key>
-            <string>1 line logged</string>
             <key>other</key>
-            <string>%d lines logged</string>
+            <string>已记录 %d 行</string>
         </dict>
     </dict>
     <key>settings.lines</key>
@@ -171,10 +142,8 @@
             <string>NSStringPluralRuleType</string>
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
-            <key>one</key>
-            <string>1 line</string>
             <key>other</key>
-            <string>%d lines</string>
+            <string>%d 行</string>
         </dict>
     </dict>
     <key>errors.sync_toolbar.webdav_error2</key>
@@ -187,10 +156,8 @@
             <string>NSStringPluralRuleType</string>
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
-            <key>one</key>
-            <string>Could not delete 1 file from your WebDAV server</string>
             <key>other</key>
-            <string>Could not delete %d files from your WebDAV server</string>
+            <string>无法从 WebDAV 服务器中删除 %d 个文件</string>
         </dict>
     </dict>
     <key>settings.general.after_x_days</key>
@@ -203,10 +170,8 @@
             <string>NSStringPluralRuleType</string>
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
-            <key>one</key>
-            <string>After 1 Day</string>
             <key>other</key>
-            <string>After %d Days</string>
+            <string>%d 天后</string>
         </dict>
     </dict>
   </dict>

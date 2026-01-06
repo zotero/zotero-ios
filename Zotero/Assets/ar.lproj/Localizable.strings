@@ -6,9 +6,9 @@
   Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 */
 
-"close" = "Close";
-"delete" = "Delete";
-"edit" = "Edit";
+"close" = "إغلاق";
+"delete" = "حذف";
+"edit" = "تحرير";
 "last_updated" = "Last Updated";
 "name" = "Name";
 "save" = "Save";
