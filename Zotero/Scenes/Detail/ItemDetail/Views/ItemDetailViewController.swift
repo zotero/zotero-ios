@@ -209,6 +209,9 @@ final class ItemDetailViewController: UIViewController {
         case .openDoi(let doi):
             guard let encoded = FieldKeys.Item.clean(doi: doi).addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else { return }
             coordinatorDelegate?.show(doi: encoded)
+            
+        case .openCollection(let identifier):
+            coordinatorDelegate?.showCollection(identifier: identifier, libraryId: viewModel.state.library.identifier)
         }
     }
 

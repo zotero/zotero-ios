@@ -8,6 +8,7 @@
 
 import Foundation
 
+import CocoaLumberjackSwift
 import RealmSwift
 
 struct CollectionTreeBuilder {
@@ -30,54 +31,68 @@ struct CollectionTreeBuilder {
     }
 
     static func collections(from rItem: RItem, allCollections allRCollections: Results<RCollection>) -> CollectionTree {
+        guard let libraryId = rItem.libraryId else {
+            DDLogError("CollectionTreeBuilder: tried creating tree from item with no library \(rItem.key)")
+            return CollectionTree(nodes: [], collections: [:], collapsed: [:])
+        }
+
         var collections: [CollectionIdentifier: Collection] = [:]
-        var nodes: [CollectionTree.Node] = []
-        for rCollection in rItem.collections {
-            let collection = Collection(object: rCollection, isInItem: true)
-            collections[collection.identifier] = collection
-            let nodesToRoot = getNodes(fromCollectionToRoot: rCollection, allCollections: &collections)
-            nodes = merge(branchNode: nodesToRoot, toAllNodes: nodes)
-        }
-        return CollectionTree(nodes: nodes, collections: collections, collapsed: [:])
-
-        func getNodes(fromCollectionToRoot rCollection: RCollection, allCollections: inout [CollectionIdentifier: Collection]) -> CollectionTree.Node {
-            let node = CollectionTree.Node(identifier: .collection(rCollection.key), parent: rCollection.parentKey.flatMap({ .collection($0) }), children: [])
-            return getParentNodeIfAvailable(from: node, parentKey: rCollection.parentKey)
-
-            func getParentNodeIfAvailable(from childNode: CollectionTree.Node, parentKey: String?) -> CollectionTree.Node {
-                // Find parent if available, otherwise just return self
-                guard let parentKey, let parent = allRCollections.filter(.key(parentKey)).first else { return childNode }
-                // Create new Collection if needed
-                if allCollections[.collection(parent.key)] == nil {
-                    let collection = Collection(object: parent, isInItem: false)
-                    allCollections[collection.id] = collection
+        var rootIds: Set<CollectionIdentifier> = []
+        var allChildren: [CollectionIdentifier: [CollectionIdentifier]] = [:]
+        var stack = Array(rItem.collections.filter(.notTrashedOrDeleted).map({ Collection(object: $0, isInItem: true) }))
+        while let collection = stack.popLast() {
+            guard let key = collection.id.key else {
+                DDLogInfo("CollectionTreeBuilder: creating tree from non-collection - \(collection.id)")
+                continue
+            }
+            if let existingCollection = collections[collection.id] {
+                // Only process collections which were not processed yet, but if a collection has been processed and the `isInItem` flag isn't set properly, update collection
+                if !existingCollection.isInItem && collection.isInItem {
+                    collections[collection.id] = collection
                 }
-                let node = CollectionTree.Node(identifier: .collection(parentKey), parent: parent.parentKey.flatMap({ .collection($0) }), children: [childNode])
-                return getParentNodeIfAvailable(from: node, parentKey: parent.parentKey)
+                continue
             }
-        }
-
-        func merge(branchNode: CollectionTree.Node, toAllNodes allNodes: [CollectionTree.Node]) -> [CollectionTree.Node] {
-            if allNodes.isEmpty {
-                return [branchNode]
+            guard let rCollection = allRCollections.filter(.key(key, in: libraryId)).first else {
+                DDLogInfo("CollectionTreeBuilder: item contained collection not in all collections results - \(collection.id)")
+                continue
             }
-            return allNodes.map { currentNode in
-                return merge(node: currentNode, withBranch: branchNode)
-            }
-        }
-
-        func merge(node: CollectionTree.Node, withBranch branchNode: CollectionTree.Node) -> CollectionTree.Node {
-            if node.identifier == branchNode.identifier {
-                let children = branchNode.children.isEmpty ?
-                    node.children :
-                    merge(branchNode: branchNode.children[0], toAllNodes: node.children)
-                return CollectionTree.Node(identifier: node.identifier, parent: node.parent, children: children)
+            collections[collection.id] = collection
+            if let parentKey = rCollection.parentKey {
+                guard let rParent = allRCollections.filter(.key(parentKey, in: libraryId)).first else {
+                    DDLogError("CollectionTreeBuilder: parent missing in all collections - \(parentKey), \(libraryId)")
+                    continue
+                }
+                if var children = allChildren[.collection(parentKey)] {
+                    children.append(collection.id)
+                    allChildren[.collection(parentKey)] = children
+                } else {
+                    allChildren[.collection(parentKey)] = [collection.id]
+                }
+                stack.append(Collection(object: rParent, isInItem: false))
             } else {
-                let children = node.children.map { child in
-                    return merge(node: child, withBranch: branchNode)
-                }
-                return CollectionTree.Node(identifier: node.identifier, parent: node.parent, children: children)
+                rootIds.insert(.collection(key))
             }
+        }
+
+        var nodes: [CollectionTree.Node] = []
+        for id in rootIds {
+            let node = buildNode(identifier: id, parentId: nil)
+            let index = insertionIndex(for: node, in: nodes, collections: collections)
+            nodes.insert(node, at: index)
+        }
+
+        return CollectionTree(nodes: nodes, collections: collections, collapsed: [:])
+        
+        func buildNode(identifier: CollectionIdentifier, parentId: CollectionIdentifier?) -> CollectionTree.Node {
+            var childNodes: [CollectionTree.Node] = []
+            if let children = allChildren[identifier] {
+                for childId in children {
+                    let node = buildNode(identifier: childId, parentId: identifier)
+                    let index = insertionIndex(for: node, in: childNodes, collections: collections)
+                    childNodes.insert(node, at: index)
+                }
+            }
+            return CollectionTree.Node(identifier: identifier, parent: parentId, children: childNodes)
         }
     }
 

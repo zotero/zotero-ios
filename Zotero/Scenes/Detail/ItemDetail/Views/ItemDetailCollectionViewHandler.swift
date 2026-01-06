@@ -32,6 +32,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
         case openFilePicker
         case openUrl(String)
         case openDoi(String)
+        case openCollection(CollectionIdentifier)
     }
 
     /// Sections that are shown in `tableView`.
@@ -322,7 +323,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
                     view.setup(with: L10n.ItemDetail.tags)
 
                 case .collections:
-                    view.setup(with: "Libraries and Collections")
+                    view.setup(with: L10n.ItemDetail.librariesAndCollections)
 
                 default: break
                 }
@@ -383,6 +384,9 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
                         case .creator where self.viewModel.state.isEditing:
                             title = L10n.delete
+                            
+                        case .collection(let collection) where collection.isInItem:
+                            title = L10n.delete
 
                         default:
                             return nil
@@ -412,8 +416,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
                             self.viewModel.process(action: .deleteNote(key: key))
                             
                         case .collection(let collection):
-                            // TODO: delete collection
-                            break
+                            self.viewModel.process(action: .deleteCollection(collection.identifier))
 
                         case .title, .abstract, .addAttachment, .addCreator, .addNote, .addTag, .dateAdded, .dateModified, .type, .field, .library:
                             break
@@ -501,12 +504,12 @@ final class ItemDetailCollectionViewHandler: NSObject {
                 self?.collectionView.isEditing = state.isEditing
                 completion?()
             }
-//            if let collectionsSection, let snapshot = state.data.collections?.createSnapshot(selectedId: nil, collapseState: .expandedAll) {
-//                dataSource.apply(snapshot, to: collectionsSection, animatingDifferences: true) { [weak self] in
-//                    self?.collectionView.isEditing = state.isEditing
-//                    completion?()
-//                }
-//            }
+            if let collectionsSection, let snapshot = state.data.collections?.createSnapshot(parent: .library(state.library), resultTransformer: { Row.collection($0) }) {
+                dataSource.apply(snapshot, to: collectionsSection, animatingDifferences: true) { [weak self] in
+                    self?.collectionView.isEditing = state.isEditing
+                    completion?()
+                }
+            }
         }
 
         /// Creates array of visible sections for current state data.
@@ -574,18 +577,34 @@ final class ItemDetailCollectionViewHandler: NSObject {
             guard let self else { return }
             var snapshot = dataSource.snapshot()
             guard let sectionType = snapshot.sectionIdentifiers.first(where: { $0.section == section }) else { return }
-
-            let oldRows = snapshot.itemIdentifiers(inSection: sectionType)
-            let newRows = rows(for: section, state: state)
-            snapshot.deleteItems(oldRows)
-            snapshot.appendItems(newRows, toSection: sectionType)
-
-            let toReload = rowsToReload(from: oldRows, to: newRows, in: section)
-            if !toReload.isEmpty {
-                snapshot.reconfigureItems(toReload)
+            
+            if case .collections = section {
+                // Collections section is nested, requires separate handling
+                snapshot.deleteItems(snapshot.itemIdentifiers(inSection: sectionType))
+                var contentOffset: CGPoint = .zero
+                DispatchQueue.main.sync {
+                    contentOffset = self.collectionView.contentOffset
+                }
+                dataSource.apply(snapshot, animatingDifferences: animated) {
+                    // Since we're removing items, the collection view jumps up, but we're immediately re-adding them, so force the content offset to stay down
+                    // TODO: - collection view jumps up and down, try finding solution
+                    self.collectionView.setContentOffset(contentOffset, animated: true)
+                }
+                if let subSnapshot = state.data.collections?.createSnapshot(parent: .library(state.library), resultTransformer: { Row.collection($0) }) {
+                    dataSource.apply(subSnapshot, to: sectionType, animatingDifferences: true)
+                }
+            } else {
+                // Only handle rows for sections which are not nested
+                let oldRows = snapshot.itemIdentifiers(inSection: sectionType)
+                let newRows = rows(for: section, state: state)
+                snapshot.deleteItems(oldRows)
+                snapshot.appendItems(newRows, toSection: sectionType)
+                let toReload = rowsToReload(from: oldRows, to: newRows, in: section)
+                if !toReload.isEmpty {
+                    snapshot.reconfigureItems(toReload)
+                }
+                dataSource.apply(snapshot, animatingDifferences: animated)
             }
-
-            dataSource.apply(snapshot, animatingDifferences: animated)
         }
 
         /// Returns an array of rows which need to be reloaded manually. Some sections are "special" because their rows don't hold the values which they show in collection view, they just hold their
@@ -1008,8 +1027,8 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
             }
             
         case .collection(let collection):
-            // TODO: - show collection
-            break
+            guard !viewModel.state.isEditing else { return }
+            observer.on(.next(.openCollection(collection.identifier)))
 
         case .title, .dateAdded, .dateModified, .tag, .library:
             break

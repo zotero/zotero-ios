@@ -95,8 +95,10 @@ final class CollectionCellContentView: UIView {
 
     private func setup(with collection: Collection) {
         iconImage.image = UIImage(named: collection.iconName)?.withRenderingMode(.alwaysTemplate)
+        iconImage.alpha = collection.isInItem ? 1 : 0.6
         titleLabel.text = collection.name
         titleLabel.accessibilityLabel = collection.name
+        titleLabel.alpha = collection.isInItem ? 1 : 0.6
     }
 
     private var badgeBackgroundColor: UIColor {
