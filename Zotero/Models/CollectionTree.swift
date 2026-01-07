@@ -59,7 +59,7 @@ extension CollectionTree {
         self.collapsed[collection.identifier] = collapsed
         self.nodes.insert(Node(identifier: collection.identifier, parent: nil, children: []), at: index)
     }
-    
+
     func remove(identifier: CollectionIdentifier) {
         let idsToRemove = idsToRemove(for: identifier)
         let newNodes = remove(identifier: identifier, in: nodes)
@@ -75,13 +75,13 @@ extension CollectionTree {
             return array.compactMap { node in
                 guard node.identifier != identifier else { return nil }
                 let children = remove(identifier: identifier, in: node.children)
-                if children.isEmpty, let collection = collections[node.identifier], !collection.isInItem {
+                if children.isEmpty, let collection = collections[node.identifier], !collection.isAvailable {
                     return nil
                 }
                 return Node(identifier: node.identifier, parent: node.parent, children: children)
             }
         }
-        
+
         func idsToRemove(for identifier: CollectionIdentifier) -> [CollectionIdentifier] {
             var node: Node?
             var queue: [Node] = nodes

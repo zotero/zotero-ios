@@ -39,15 +39,15 @@ struct CollectionTreeBuilder {
         var collections: [CollectionIdentifier: Collection] = [:]
         var rootIds: Set<CollectionIdentifier> = []
         var allChildren: [CollectionIdentifier: [CollectionIdentifier]] = [:]
-        var stack = Array(rItem.collections.filter(.notTrashedOrDeleted).map({ Collection(object: $0, isInItem: true) }))
+        var stack = Array(rItem.collections.filter(.notTrashedOrDeleted).map({ Collection(object: $0, isAvailable: true) }))
         while let collection = stack.popLast() {
             guard let key = collection.id.key else {
                 DDLogInfo("CollectionTreeBuilder: creating tree from non-collection - \(collection.id)")
                 continue
             }
             if let existingCollection = collections[collection.id] {
-                // Only process collections which were not processed yet, but if a collection has been processed and the `isInItem` flag isn't set properly, update collection
-                if !existingCollection.isInItem && collection.isInItem {
+                // Only process collections which were not processed yet, but if a collection has been processed and the `isAvailable` flag isn't set properly, update collection
+                if !existingCollection.isAvailable && collection.isAvailable {
                     collections[collection.id] = collection
                 }
                 continue
@@ -68,7 +68,7 @@ struct CollectionTreeBuilder {
                 } else {
                     allChildren[.collection(parentKey)] = [collection.id]
                 }
-                stack.append(Collection(object: rParent, isInItem: false))
+                stack.append(Collection(object: rParent, isAvailable: false))
             } else {
                 rootIds.insert(.collection(key))
             }

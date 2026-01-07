@@ -14,7 +14,7 @@ struct Collection: Identifiable, Equatable, Hashable {
     let identifier: CollectionIdentifier
     let name: String
     var itemCount: Int
-    let isInItem: Bool
+    let isAvailable: Bool
 
     var id: CollectionIdentifier {
         return identifier
@@ -42,24 +42,24 @@ struct Collection: Identifiable, Equatable, Hashable {
         }
     }
 
-    init(object: RCollection, itemCount: Int = 0, isInItem: Bool = false) {
+    init(object: RCollection, itemCount: Int = 0, isAvailable: Bool = true) {
         identifier = .collection(object.key)
         name = object.name
         self.itemCount = itemCount
-        self.isInItem = isInItem
+        self.isAvailable = isAvailable
     }
 
     init(object: RSearch) {
         identifier = .search(object.key)
         name = object.name
         itemCount = 0
-        isInItem = false
+        isAvailable = true
     }
 
     init(custom type: CollectionIdentifier.CustomType, itemCount: Int = 0) {
         self.itemCount = itemCount
         identifier = .custom(type)
-        isInItem = false
+        isAvailable = true
 
         switch type {
         case .all:
@@ -76,11 +76,11 @@ struct Collection: Identifiable, Equatable, Hashable {
         }
     }
 
-    private init(identifier: CollectionIdentifier, name: String, itemCount: Int, isInItem: Bool) {
+    private init(identifier: CollectionIdentifier, name: String, itemCount: Int, isAvailable: Bool) {
         self.identifier = identifier
         self.name = name
         self.itemCount = itemCount
-        self.isInItem = isInItem
+        self.isAvailable = isAvailable
     }
 
     func isCustom(type: CollectionIdentifier.CustomType) -> Bool {
@@ -104,6 +104,6 @@ struct Collection: Identifiable, Equatable, Hashable {
     }
 
     func copy(with itemCount: Int) -> Collection {
-        return Collection(identifier: identifier, name: name, itemCount: itemCount, isInItem: isInItem)
+        return Collection(identifier: identifier, name: name, itemCount: itemCount, isAvailable: isAvailable)
     }
 }

@@ -66,7 +66,7 @@ protocol DetailItemDetailCoordinatorDelegate: AnyObject {
     func show(error: ItemDetailError, viewModel: ViewModel<ItemDetailActionHandler>)
     func showDataReloaded(completion: @escaping () -> Void)
     func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier, readerURL: URL?)
-    func showCollection(identifier: CollectionIdentifier, libraryId: LibraryIdentifier)
+    func show(collection: Collection, libraryId: LibraryIdentifier)
 }
 
 protocol DetailNoteEditorCoordinatorDelegate: AnyObject {
@@ -1084,8 +1084,8 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
         self.navigationController?.present(controller, animated: true, completion: nil)
     }
     
-    func showCollection(identifier: CollectionIdentifier, libraryId: LibraryIdentifier) {
-        // TODO: - show collection
+    func show(collection: Collection, libraryId: LibraryIdentifier) {
+        (navigationController?.splitViewController as? MainViewController)?.masterCoordinator?.showCollections(for: libraryId, preselectedCollection: collection.identifier, animated: true)
     }
 }
 

@@ -32,7 +32,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
         case openFilePicker
         case openUrl(String)
         case openDoi(String)
-        case openCollection(CollectionIdentifier)
+        case openCollection(Collection)
     }
 
     /// Sections that are shown in `tableView`.
@@ -385,7 +385,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
                         case .creator where self.viewModel.state.isEditing:
                             title = L10n.delete
                             
-                        case .collection(let collection) where collection.isInItem:
+                        case .collection(let collection) where collection.isAvailable:
                             title = L10n.delete
 
                         default:
@@ -580,16 +580,6 @@ final class ItemDetailCollectionViewHandler: NSObject {
             
             if case .collections = section {
                 // Collections section is nested, requires separate handling
-                snapshot.deleteItems(snapshot.itemIdentifiers(inSection: sectionType))
-                var contentOffset: CGPoint = .zero
-                DispatchQueue.main.sync {
-                    contentOffset = self.collectionView.contentOffset
-                }
-                dataSource.apply(snapshot, animatingDifferences: animated) {
-                    // Since we're removing items, the collection view jumps up, but we're immediately re-adding them, so force the content offset to stay down
-                    // TODO: - collection view jumps up and down, try finding solution
-                    self.collectionView.setContentOffset(contentOffset, animated: true)
-                }
                 if let subSnapshot = state.data.collections?.createSnapshot(parent: .library(state.library), resultTransformer: { Row.collection($0) }) {
                     dataSource.apply(subSnapshot, to: sectionType, animatingDifferences: true)
                 }
@@ -1028,7 +1018,7 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
             
         case .collection(let collection):
             guard !viewModel.state.isEditing else { return }
-            observer.on(.next(.openCollection(collection.identifier)))
+            observer.on(.next(.openCollection(collection)))
 
         case .title, .dateAdded, .dateModified, .tag, .library:
             break
@@ -1073,6 +1063,9 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
 
         case .note(let key, _, _):
             menu = createContextMenuForNote(key: key)
+            
+        case .collection(let collection) where collection.isAvailable:
+            menu = createContextMenu(for: collection)
 
         default:
             return nil
@@ -1125,6 +1118,14 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
             return UIMenu(title: "", children: [UIAction(title: L10n.copy, handler: { _ in
                 UIPasteboard.general.string = field.value
             })])
+        }
+        
+        func createContextMenu(for collection: Collection) -> UIMenu? {
+            var actions: [UIAction] = []
+            actions.append(UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
+                self?.viewModel.process(action: .deleteCollection(collection.id))
+            })
+            return UIMenu(title: "", children: actions)
         }
     }
 }
