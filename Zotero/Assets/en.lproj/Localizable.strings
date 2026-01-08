@@ -60,6 +60,8 @@
 "close_without_saving" = "Close without saving";
 "stay" = "Stay";
 
+"beta_wipe_title" = "Resync Required";
+"beta_wipe_message" = "Due to a beta update, your data must be redownloaded from zotero.org.";
 "migration_debug" = "The app failed to initialize and cannot function properly. Please report Debug ID %@ in the Zotero Forums.";
 "login_debug" = "The app failed to log in. Please log in again and report Debug ID %@ in the Zotero Forums.";
 "full_sync_debug" = "Full sync has finished. Please report Debug ID %@ in the Zotero Forums.";
@@ -147,6 +149,7 @@
 "items.creator_summary.and" = "%@ and %@";
 "items.creator_summary.etal" = "%@ et al.";
 "items.retrieving_metadata" = "Retrieving Metadata";
+"items.collections_select_prompt" = "Select a Collection";
 
 "lookup.title" = "Enter ISBNs, DOIs, PMIDs, arXiv IDs, or ADS Bibcodes to add to your library:";
 
@@ -474,9 +477,15 @@
 "errors.shareext.cant_load_schema" = "An error occurred. Please open the Zotero app, sync, and try again.";
 "errors.shareext.download_failed" = "Could not download file";
 "errors.shareext.items_not_found" = "No items found on page";
+"errors.shareext.parsing_error" = "Error parsing translator response";
 "errors.shareext.schema_error" = "Some data could not be downloaded. It may have been saved with a newer version of Zotero.";
+"errors.shareext.incompatible_item" = "No data returned";
+"errors.shareext.javascript_failed" = "JS call failed";
 "errors.shareext.translation_failed" = "Saving failed";
+"errors.shareext.missing_base_files" = "Translator missing";
 "errors.shareext.response_missing_data" = "An error occurred. Please try again.";
+"errors.shareext.missing_file" = "Could not find file to upload";
+"errors.shareext.background_uploader_failure" = "Background uploader not initialized";
 "errors.shareext.failed_additional" = "You can still save this page as a webpage item.";
 "errors.shareext.file_not_pdf" = "Unable to save PDF";
 "errors.shareext.api_error" = "Error uploading item. The item was saved to your local library.";
@@ -489,10 +498,12 @@
 "errors.db_failure" = "Error creating database. Please try logging in again.";
 "errors.logging.title" = "Debugging Error";
 "errors.logging.start" = "Unable to start debug logging";
+"errors.logging.content_reading" = "Log files could not be found";
 "errors.logging.no_logs_recorded" = "No debug output occurred during logging";
 "errors.logging.upload" = "Could not upload logs. Please try again.";
 "errors.logging.response_parsing" = "Unexpected response from server";
 "errors.translators.bundle_loading" = "Could not update translators. Try again?";
+"errors.translators.bundle_reset" = "Could not load bundled translators.";
 "errors.styles.addition" = "Could not add style “%@”";
 "errors.styles.deletion" = "Could not delete style “%@”";
 "errors.styles.loading" = "Could not load styles";
