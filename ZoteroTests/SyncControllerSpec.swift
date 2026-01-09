@@ -98,6 +98,7 @@ final class SyncControllerSpec: QuickSpec {
                                 
                             case .trash:
                                 versionResponses[object] = ["BBBBBBBB": 3]
+
                             case .settings: break
                             }
                         }
@@ -293,6 +294,7 @@ final class SyncControllerSpec: QuickSpec {
                                 
                             case .trash:
                                 versionResponses[object] = ["BBBBBBBB": 3]
+
                             case .settings: break
                             }
                         }
@@ -939,6 +941,7 @@ final class SyncControllerSpec: QuickSpec {
                                 versionResponses[object] = ["DDDDDDDD": 1,
                                                             "EEEEEEEE": 1,
                                                             "FFFFFFFF": 1]
+
                             case .trash, .settings: break
                             }
                         }
@@ -1001,6 +1004,7 @@ final class SyncControllerSpec: QuickSpec {
                                                             "library": ["id": 0, "type": "user", "name": "A"] as [String: Any],
                                                             "data": ["note": "This is a note", "itemType": "note",
                                                                      "tags": [] as [Any], "parentItem": "EEEEEEEE"] as [String: Any]]]
+
                             case .trash, .settings: break
                             }
                         }

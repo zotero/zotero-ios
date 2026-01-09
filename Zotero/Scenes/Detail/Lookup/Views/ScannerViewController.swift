@@ -105,6 +105,7 @@ final class ScannerViewController: UIViewController {
 
         case .landscapeRight:
             self.previewLayer?.connection?.videoOrientation = .landscapeRight
+
         case .unknown: break
         @unknown default: break
         }

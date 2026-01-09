@@ -309,6 +309,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
                 case .tags:
                     view.setup(with: L10n.ItemDetail.tags)
+
                 default: break
                 }
             }

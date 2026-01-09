@@ -60,6 +60,7 @@ struct SubmitDeletionSyncAction: SyncAction {
 
                     case .search:
                         requests.insert(DeleteObjectsDbRequest<RSearch>(keys: self.keys, libraryId: self.libraryId), at: 0)
+
                     case .settings: break
                     }
 

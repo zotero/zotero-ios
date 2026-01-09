@@ -245,8 +245,10 @@ extension NSPredicate {
             switch type {
             case .unfiled:
                 predicates.append(NSPredicate(format: "collections.@count == 0"))
+
             case .all, .publications, .trash: break
             }
+
         case .search: break
         }
 
@@ -279,6 +281,7 @@ extension NSPredicate {
             let selfInCollection = NSPredicate(format: "any collections.key = %@", key)
             let parentInCollection = NSPredicate(format: "any parent.collections.key = %@", key)
             predicates.append(NSCompoundPredicate(orPredicateWithSubpredicates: [selfInCollection, parentInCollection]))
+
         case .search, .custom: break
         }
 

@@ -58,6 +58,7 @@ final class StyleParserDelegate: NSObject, XMLParserDelegate {
                     
                 case "independent-parent":
                     self.dependencyHref = attributeDict["href"]
+
                 default: break
                 }
             }
@@ -97,6 +98,7 @@ final class StyleParserDelegate: NSObject, XMLParserDelegate {
 
         case .bibliography:
             self.supportsBibliography = true
+
         case .link, .style: break
         }
 
