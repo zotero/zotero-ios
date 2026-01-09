@@ -200,6 +200,9 @@ final class PDFWorkerController {
                 // Setup handler for worker, consume preloaded handler, just in case it was used, assign queued state and place in proper queue.
                 setup(pdfWorkerHandler: pdfWorkerHandler, for: worker)
                 preloadedPDFWorkerHandler = nil
+                accessQueue.async(flags: .barrier) { [weak self] in
+                    self?.preloadPDFWorkerIfIdle()
+                }
                 updateStateAndQueues(for: worker, state: .queued)
                 // Start work if needed to run queued worker.
                 startWorkIfNeeded()
