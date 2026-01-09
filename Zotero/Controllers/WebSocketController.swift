@@ -117,6 +117,7 @@ final class WebSocketController {
             DDLogWarn("WebSocketController: tried to connect while \(self.connectionState.value)")
             completed?()
             return
+
         case .connecting, .disconnected: break
         }
 
@@ -230,6 +231,7 @@ final class WebSocketController {
                 self.subscribe(apiKey: apiKey, completion: { [weak self] error in
                     self?.processConnectionResponse(with: error, apiKey: apiKey)
                 })
+
             case .connected: break
             }
 
