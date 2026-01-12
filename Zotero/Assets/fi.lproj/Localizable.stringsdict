@@ -5,16 +5,49 @@
     <dict>
         <key>NSStringLocalizedFormatKey</key>
         <string>%#@collections_selected@</string>
+        <key>collections_selected</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>1 kokoelma valittu</string>
+            <key>other</key>
+            <string>%d kokoelmaa valittu</string>
+        </dict>
     </dict>
     <key>items.delete_question</key>
     <dict>
         <key>NSStringLocalizedFormatKey</key>
         <string>%#@delete_question@</string>
+        <key>delete_question</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>Haluatko varmasti poistaa valitun nimikkeen?</string>
+            <key>other</key>
+            <string>Haluatko varmasti poistaa valitut nimikkeet?</string>
+        </dict>
     </dict>
     <key>items.remove_from_collection_question</key>
     <dict>
         <key>NSStringLocalizedFormatKey</key>
         <string>%#@remove_from_collection_question@</string>
+        <key>remove_from_collection_question</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>Haluatko varmasti poistaa valitun nimikkeen tästä kokoelmasta?</string>
+            <key>other</key>
+            <string>Haluatko varmasti poistaa valitut nimikkeet tästä kokoelmasta?</string>
+        </dict>
     </dict>
     <key>items.toolbar_filter</key>
     <dict>
@@ -25,6 +58,17 @@
     <dict>
         <key>NSStringLocalizedFormatKey</key>
         <string>%#@matches@</string>
+        <key>matches</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>1 hakuosuma löydetty</string>
+            <key>other</key>
+            <string>%d hakuosumaa löydetty</string>
+        </dict>
     </dict>
     <key>settings.storage.files_size_and_unit</key>
     <dict>
@@ -35,11 +79,33 @@
     <dict>
         <key>NSStringLocalizedFormatKey</key>
         <string>%#@errors@</string>
+        <key>errors</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>1 ongelma</string>
+            <key>other</key>
+            <string>%d ongelmaa</string>
+        </dict>
     </dict>
     <key>tag_picker.tags_selected</key>
     <dict>
         <key>NSStringLocalizedFormatKey</key>
         <string>%#@tags_selected@</string>
+        <key>tags_selected</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>1 avainsana valittu</string>
+            <key>other</key>
+            <string>%d avainsanaa valittu</string>
+        </dict>
     </dict>
     <key>tag_picker.confirm_deletion</key>
     <dict>

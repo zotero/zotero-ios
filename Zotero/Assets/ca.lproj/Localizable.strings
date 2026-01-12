@@ -72,20 +72,20 @@
 "onboarding.share" = "<b>Tap to collect</b> articles and books directly from the web, including their PDFs and full metadata.";
 "onboarding.sign_in" = "Sign In";
 "onboarding.create_account" = "Sign Up";
-"login.username" = "Username";
-"login.password" = "Password";
+"login.username" = "Nom d'usuari";
+"login.password" = "Contrasenya";
 "login.email" = "Email";
 "login.repeat_password" = "Repeat password";
 "login.forgot_password" = "Forgot Password?";
 
-"libraries.my_library" = "My Library";
+"libraries.my_library" = "La meva biblioteca";
 "libraries.group_libraries" = "Group Libraries";
 "libraries.delete_question" = "Do you really want to delete “%@”?";
 
 "collections.search_title" = "Find Collection";
 "collections.all_items" = "All Items";
-"collections.my_publications" = "My Publications";
-"collections.trash" = "Trash";
+"collections.my_publications" = "Les meves publicacions";
+"collections.trash" = "Paperera";
 "collections.unfiled" = "Unfiled Items";
 "collections.new_subcollection" = "New Subcollection";
 "collections.edit_title" = "Edit Collection";
@@ -151,7 +151,7 @@
 "lookup.title" = "Enter ISBNs, DOIs, PMIDs, arXiv IDs, or ADS Bibcodes to add to your library:";
 
 "citation.title" = "Citation Preview";
-"citation.copy_citation" = "Copy Citation";
+"citation.copy_citation" = "Copia la citació";
 "citation.copy_bibliography" = "Copy Bibliography";
 "citation.preview" = "Preview";
 "citation.omit_author" = "Omit Author";
@@ -159,12 +159,12 @@
 "citation.locator.page" = "Pàgina";
 "citation.locator.book" = "Book";
 "citation.locator.chapter" = "Chapter";
-"citation.locator.column" = "Column";
+"citation.locator.column" = "Columna";
 "citation.locator.figure" = "Figure";
 "citation.locator.folio" = "Folio";
 "citation.locator.issue" = "Issue";
 "citation.locator.line" = "Line";
-"citation.locator.note" = "Note";
+"citation.locator.note" = "Nota";
 "citation.locator.opus" = "Opus";
 "citation.locator.paragraph" = "Paragraph";
 "citation.locator.part" = "Part";
@@ -244,7 +244,7 @@
 "pdf.annotation_share.image.large" = "Large";
 "pdf.annotation_toolbar.eraser" = "Eraser";
 "pdf.annotation_toolbar.highlight" = "Highlight";
-"pdf.annotation_toolbar.note" = "Note";
+"pdf.annotation_toolbar.note" = "Nota";
 "pdf.annotation_toolbar.image" = "Image";
 "pdf.annotation_toolbar.ink" = "Ink";
 "pdf.annotation_toolbar.underline" = "Underline";
@@ -302,8 +302,8 @@
 "settings.sync.account" = "Account";
 "settings.sync.manage_account" = "Manage Account";
 "settings.sync.delete_account" = "Delete Account";
-"settings.sync.username" = "Username";
-"settings.sync.password" = "Password";
+"settings.sync.username" = "Nom d'usuari";
+"settings.sync.password" = "Contrasenya";
 "settings.sync.verify" = "Verify Server";
 "settings.sync.directory_not_found.title" = "Directory not found";
 "settings.sync.directory_not_found.message" = "%@ does not exist.\n\nDo you want to create it now?";
