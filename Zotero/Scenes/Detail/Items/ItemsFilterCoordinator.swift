@@ -28,13 +28,21 @@ final class ItemsFilterCoordinator: NSObject, Coordinator {
     private let filters: [ItemsFilter]
     private unowned let controllers: Controllers
     private weak var filtersDelegate: BaseItemsViewController?
+    private weak var sharedTagFilterViewModel: ViewModel<TagFilterActionHandler>?
 
-    init(filters: [ItemsFilter], filtersDelegate: BaseItemsViewController, navigationController: NavigationViewController, controllers: Controllers) {
+    init(
+        filters: [ItemsFilter],
+        filtersDelegate: BaseItemsViewController,
+        navigationController: NavigationViewController,
+        controllers: Controllers,
+        sharedTagFilterViewModel: ViewModel<TagFilterActionHandler>?
+    ) {
         self.filters = filters
         self.navigationController = navigationController
         self.controllers = controllers
         self.filtersDelegate = filtersDelegate
         childCoordinators = []
+        self.sharedTagFilterViewModel = sharedTagFilterViewModel
 
         super.init()
 
@@ -45,11 +53,16 @@ final class ItemsFilterCoordinator: NSObject, Coordinator {
     }
 
     func start(animated: Bool) {
-        guard let dbStorage = controllers.userControllers?.dbStorage else { return }
-        let tags = filters.compactMap({ $0.tags }).first
-        let state = TagFilterState(selectedTags: tags ?? [], showAutomatic: Defaults.shared.tagPickerShowAutomaticTags, displayAll: Defaults.shared.tagPickerDisplayAllTags)
-        let handler = TagFilterActionHandler(dbStorage: dbStorage)
-        let tagController = TagFilterViewController(viewModel: ViewModel(initialState: state, handler: handler))
+        let tagController: TagFilterViewController
+        if let sharedTagFilterViewModel {
+            tagController = TagFilterViewController(viewModel: sharedTagFilterViewModel)
+        } else {
+            guard let dbStorage = controllers.userControllers?.dbStorage else { return }
+            let tags = filters.compactMap({ $0.tags }).first
+            let state = TagFilterState(selectedTags: tags ?? [], showAutomatic: Defaults.shared.tagPickerShowAutomaticTags, displayAll: Defaults.shared.tagPickerDisplayAllTags)
+            let handler = TagFilterActionHandler(dbStorage: dbStorage)
+            tagController = TagFilterViewController(viewModel: ViewModel(initialState: state, handler: handler))
+        }
         tagController.view.translatesAutoresizingMaskIntoConstraints = false
         tagController.delegate = filtersDelegate
         filtersDelegate?.tagFilterDelegate = tagController

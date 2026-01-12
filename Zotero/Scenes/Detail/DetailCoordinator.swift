@@ -88,6 +88,7 @@ final class DetailCoordinator: Coordinator {
     weak var itemsTagFilterDelegate: ItemsTagFilterDelegate?
     weak var navigationController: UINavigationController?
     private var tmpAudioDelegate: AVPlayerDelegate?
+    private let sharedTagFilterViewModel: ViewModel<TagFilterActionHandler>?
 
     let collection: Collection
     let libraryId: LibraryIdentifier
@@ -101,6 +102,7 @@ final class DetailCoordinator: Coordinator {
         searchItemKeys: [String]?,
         navigationController: UINavigationController,
         itemsTagFilterDelegate: ItemsTagFilterDelegate?,
+        sharedTagFilterViewModel: ViewModel<TagFilterActionHandler>?,
         controllers: Controllers
     ) {
         self.libraryId = libraryId
@@ -108,6 +110,7 @@ final class DetailCoordinator: Coordinator {
         self.searchItemKeys = searchItemKeys
         self.navigationController = navigationController
         self.itemsTagFilterDelegate = itemsTagFilterDelegate
+        self.sharedTagFilterViewModel = sharedTagFilterViewModel
         self.controllers = controllers
         self.childCoordinators = []
         self.disposeBag = DisposeBag()
@@ -672,7 +675,13 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         navigationController.modalPresentationStyle = .popover
         navigationController.popoverPresentationController?.sourceItem = button
 
-        let coordinator = ItemsFilterCoordinator(filters: filters, filtersDelegate: filtersDelegate, navigationController: navigationController, controllers: controllers)
+        let coordinator = ItemsFilterCoordinator(
+            filters: filters,
+            filtersDelegate: filtersDelegate,
+            navigationController: navigationController,
+            controllers: controllers,
+            sharedTagFilterViewModel: sharedTagFilterViewModel
+        )
         coordinator.parentCoordinator = self
         childCoordinators.append(coordinator)
         coordinator.start(animated: false)

@@ -113,6 +113,7 @@ final class MainViewController: UISplitViewController {
     private func showItems(for collection: Collection, in libraryId: LibraryIdentifier, searchItemKeys: [String]?) {
         let navigationController = UINavigationController()
         let tagFilterController = (viewControllers.first as? MasterContainerViewController)?.bottomController as? ItemsTagFilterDelegate
+        let sharedTagFilterViewModel = (viewControllers.first as? MasterContainerViewController)?.coordinatorDelegate?.sharedTagFilterViewModel
 
         let newDetailCoordinator = DetailCoordinator(
             libraryId: libraryId,
@@ -120,6 +121,7 @@ final class MainViewController: UISplitViewController {
             searchItemKeys: searchItemKeys,
             navigationController: navigationController,
             itemsTagFilterDelegate: tagFilterController,
+            sharedTagFilterViewModel: sharedTagFilterViewModel,
             controllers: controllers
         )
         newDetailCoordinator.start(animated: false)

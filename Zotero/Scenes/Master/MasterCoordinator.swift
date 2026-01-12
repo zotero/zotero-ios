@@ -33,6 +33,7 @@ protocol MasterCollectionsCoordinatorDelegate: MainCoordinatorDelegate {
 protocol MasterContainerCoordinatorDelegate: AnyObject {
     func showDefaultCollection()
     func createBottomController() -> DraggableViewController?
+    var sharedTagFilterViewModel: ViewModel<TagFilterActionHandler>? { get }
 }
 
 final class MasterCoordinator: NSObject, Coordinator {
@@ -42,6 +43,12 @@ final class MasterCoordinator: NSObject, Coordinator {
 
     private unowned let controllers: Controllers
     private unowned let mainCoordinatorDelegate: MainCoordinatorDelegate
+    private lazy var tagFilterViewModel: ViewModel<TagFilterActionHandler>? = {
+        guard let dbStorage = controllers.userControllers?.dbStorage else { return nil }
+        let state = TagFilterState(selectedTags: [], showAutomatic: Defaults.shared.tagPickerShowAutomaticTags, displayAll: Defaults.shared.tagPickerDisplayAllTags)
+        let handler = TagFilterActionHandler(dbStorage: dbStorage)
+        return ViewModel(initialState: state, handler: handler)
+    }()
 
     init(navigationController: UINavigationController, mainCoordinatorDelegate: MainCoordinatorDelegate, controllers: Controllers) {
         self.navigationController = navigationController
@@ -301,11 +308,10 @@ extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
 }
 
 extension MasterCoordinator: MasterContainerCoordinatorDelegate {
+    var sharedTagFilterViewModel: ViewModel<TagFilterActionHandler>? { tagFilterViewModel }
+
     func createBottomController() -> DraggableViewController? {
-        guard UIDevice.current.userInterfaceIdiom == .pad, let dbStorage = controllers.userControllers?.dbStorage else { return nil }
-        let state = TagFilterState(selectedTags: [], showAutomatic: Defaults.shared.tagPickerShowAutomaticTags, displayAll: Defaults.shared.tagPickerDisplayAllTags)
-        let handler = TagFilterActionHandler(dbStorage: dbStorage)
-        let viewModel = ViewModel(initialState: state, handler: handler)
-        return TagFilterViewController(viewModel: viewModel)
+        guard UIDevice.current.userInterfaceIdiom == .pad, let tagFilterViewModel else { return nil }
+        return TagFilterViewController(viewModel: tagFilterViewModel)
     }
 }
