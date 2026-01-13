@@ -67,6 +67,7 @@ protocol DetailItemDetailCoordinatorDelegate: AnyObject {
     func showDataReloaded(completion: @escaping () -> Void)
     func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier, readerURL: URL?)
     func show(collection: Collection, libraryId: LibraryIdentifier)
+    func show(library: LibraryIdentifier)
 }
 
 protocol DetailNoteEditorCoordinatorDelegate: AnyObject {
@@ -1086,6 +1087,10 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
 
     func show(collection: Collection, libraryId: LibraryIdentifier) {
         (navigationController?.splitViewController as? MainViewController)?.masterCoordinator?.showCollections(for: libraryId, preselectedCollection: collection.identifier, animated: true)
+    }
+    
+    func show(library: LibraryIdentifier) {
+        (navigationController?.splitViewController as? MainViewController)?.masterCoordinator?.showCollections(for: libraryId, preselectedCollection: .custom(.all), animated: true)
     }
 }
 

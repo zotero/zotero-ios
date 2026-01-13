@@ -212,6 +212,9 @@ final class ItemDetailViewController: UIViewController {
 
         case .openCollection(let collection):
             coordinatorDelegate?.show(collection: collection, libraryId: viewModel.state.library.identifier)
+
+        case .openLibrary(let library):
+            coordinatorDelegate?.show(library: library.identifier)
         }
     }
 

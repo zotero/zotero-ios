@@ -33,6 +33,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
         case openUrl(String)
         case openDoi(String)
         case openCollection(Collection)
+        case openLibrary(Library)
     }
 
     /// Sections that are shown in `tableView`.
@@ -1023,8 +1024,12 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
         case .collection(let collection):
             guard !viewModel.state.isEditing else { return }
             observer.on(.next(.openCollection(collection)))
+            
+        case .library(let library):
+            guard !viewModel.state.isEditing else { return }
+            observer.on(.next(.openLibrary(library)))
 
-        case .title, .dateAdded, .dateModified, .tag, .library:
+        case .title, .dateAdded, .dateModified, .tag:
             break
         }
     }
