@@ -26,23 +26,23 @@ final class ItemsFilterCoordinator: NSObject, Coordinator {
     weak var navigationController: UINavigationController?
 
     private let filters: [ItemsFilter]
+    private unowned let mainCoordinatorDelegate: MainCoordinatorDelegate
     private unowned let controllers: Controllers
     private weak var filtersDelegate: BaseItemsViewController?
-    private weak var sharedTagFilterViewModel: ViewModel<TagFilterActionHandler>?
 
     init(
         filters: [ItemsFilter],
         filtersDelegate: BaseItemsViewController,
         navigationController: NavigationViewController,
-        controllers: Controllers,
-        sharedTagFilterViewModel: ViewModel<TagFilterActionHandler>?
+        mainCoordinatorDelegate: MainCoordinatorDelegate,
+        controllers: Controllers
     ) {
         self.filters = filters
         self.navigationController = navigationController
+        self.mainCoordinatorDelegate = mainCoordinatorDelegate
         self.controllers = controllers
         self.filtersDelegate = filtersDelegate
         childCoordinators = []
-        self.sharedTagFilterViewModel = sharedTagFilterViewModel
 
         super.init()
 
@@ -53,8 +53,8 @@ final class ItemsFilterCoordinator: NSObject, Coordinator {
     }
 
     func start(animated: Bool) {
-        guard let sharedTagFilterViewModel else { return }
-        let tagController = TagFilterViewController(viewModel: sharedTagFilterViewModel)
+        guard let viewModel = mainCoordinatorDelegate.sharedTagFilterViewModel else { return }
+        let tagController = TagFilterViewController(viewModel: viewModel)
         tagController.view.translatesAutoresizingMaskIntoConstraints = false
         tagController.delegate = filtersDelegate
         filtersDelegate?.tagFilterDelegate = tagController

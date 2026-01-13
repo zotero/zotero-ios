@@ -85,10 +85,10 @@ final class DetailCoordinator: Coordinator {
     weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
     private var transitionDelegate: EmptyTransitioningDelegate?
+    private unowned let mainCoordinatorDelegate: MainCoordinatorDelegate
     weak var itemsTagFilterDelegate: ItemsTagFilterDelegate?
     weak var navigationController: UINavigationController?
     private var tmpAudioDelegate: AVPlayerDelegate?
-    private let sharedTagFilterViewModel: ViewModel<TagFilterActionHandler>?
 
     let collection: Collection
     let libraryId: LibraryIdentifier
@@ -101,16 +101,16 @@ final class DetailCoordinator: Coordinator {
         collection: Collection,
         searchItemKeys: [String]?,
         navigationController: UINavigationController,
+        mainCoordinatorDelegate: MainCoordinatorDelegate,
         itemsTagFilterDelegate: ItemsTagFilterDelegate?,
-        sharedTagFilterViewModel: ViewModel<TagFilterActionHandler>?,
         controllers: Controllers
     ) {
         self.libraryId = libraryId
         self.collection = collection
         self.searchItemKeys = searchItemKeys
         self.navigationController = navigationController
+        self.mainCoordinatorDelegate = mainCoordinatorDelegate
         self.itemsTagFilterDelegate = itemsTagFilterDelegate
-        self.sharedTagFilterViewModel = sharedTagFilterViewModel
         self.controllers = controllers
         self.childCoordinators = []
         self.disposeBag = DisposeBag()
@@ -679,8 +679,8 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
             filters: filters,
             filtersDelegate: filtersDelegate,
             navigationController: navigationController,
-            controllers: controllers,
-            sharedTagFilterViewModel: sharedTagFilterViewModel
+            mainCoordinatorDelegate: mainCoordinatorDelegate,
+            controllers: controllers
         )
         coordinator.parentCoordinator = self
         childCoordinators.append(coordinator)
