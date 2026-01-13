@@ -154,7 +154,13 @@ extension MainViewController: MainCoordinatorDelegate {
     var sharedTagFilterViewModel: ViewModel<TagFilterActionHandler>? { tagFilterViewModel }
 
     func showItems(for collection: Collection, in libraryId: LibraryIdentifier) {
-        guard isCollapsed || detailCoordinator?.libraryId != libraryId || detailCoordinator?.collection.identifier != collection.identifier else { return }
+        if !isCollapsed && detailCoordinator?.libraryId == libraryId && detailCoordinator?.collection.identifier == collection.identifier {
+            if (detailCoordinator?.navigationController?.viewControllers.count ?? 1) > 1 {
+                // Extraneous controllers are visible, pop to root to show items for given collection
+                detailCoordinator?.navigationController?.popToRootViewController(animated: true)
+            }
+            return
+        }
         showItems(for: collection, in: libraryId, searchItemKeys: nil)
     }
 }
