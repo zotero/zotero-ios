@@ -38,10 +38,7 @@ final class CollectionTree: Equatable {
     }
     
     static func == (lhs: CollectionTree, rhs: CollectionTree) -> Bool {
-        if lhs.nodes != rhs.nodes {
-            return false
-        }
-        return true
+        return lhs.nodes == rhs.nodes
     }
 }
 
