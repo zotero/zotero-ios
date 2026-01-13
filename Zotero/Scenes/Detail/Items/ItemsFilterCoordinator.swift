@@ -53,16 +53,8 @@ final class ItemsFilterCoordinator: NSObject, Coordinator {
     }
 
     func start(animated: Bool) {
-        let tagController: TagFilterViewController
-        if let sharedTagFilterViewModel {
-            tagController = TagFilterViewController(viewModel: sharedTagFilterViewModel)
-        } else {
-            guard let dbStorage = controllers.userControllers?.dbStorage else { return }
-            let tags = filters.compactMap({ $0.tags }).first
-            let state = TagFilterState(selectedTags: tags ?? [], showAutomatic: Defaults.shared.tagPickerShowAutomaticTags, displayAll: Defaults.shared.tagPickerDisplayAllTags)
-            let handler = TagFilterActionHandler(dbStorage: dbStorage)
-            tagController = TagFilterViewController(viewModel: ViewModel(initialState: state, handler: handler))
-        }
+        guard let sharedTagFilterViewModel else { return }
+        let tagController = TagFilterViewController(viewModel: sharedTagFilterViewModel)
         tagController.view.translatesAutoresizingMaskIntoConstraints = false
         tagController.delegate = filtersDelegate
         filtersDelegate?.tagFilterDelegate = tagController
