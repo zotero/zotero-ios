@@ -85,6 +85,7 @@ final class DetailCoordinator: Coordinator {
     weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
     private var transitionDelegate: EmptyTransitioningDelegate?
+    private unowned let mainCoordinatorDelegate: MainCoordinatorDelegate
     weak var itemsTagFilterDelegate: ItemsTagFilterDelegate?
     weak var navigationController: UINavigationController?
     private var tmpAudioDelegate: AVPlayerDelegate?
@@ -100,6 +101,7 @@ final class DetailCoordinator: Coordinator {
         collection: Collection,
         searchItemKeys: [String]?,
         navigationController: UINavigationController,
+        mainCoordinatorDelegate: MainCoordinatorDelegate,
         itemsTagFilterDelegate: ItemsTagFilterDelegate?,
         controllers: Controllers
     ) {
@@ -107,6 +109,7 @@ final class DetailCoordinator: Coordinator {
         self.collection = collection
         self.searchItemKeys = searchItemKeys
         self.navigationController = navigationController
+        self.mainCoordinatorDelegate = mainCoordinatorDelegate
         self.itemsTagFilterDelegate = itemsTagFilterDelegate
         self.controllers = controllers
         self.childCoordinators = []
@@ -672,7 +675,13 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         navigationController.modalPresentationStyle = .popover
         navigationController.popoverPresentationController?.sourceItem = button
 
-        let coordinator = ItemsFilterCoordinator(filters: filters, filtersDelegate: filtersDelegate, navigationController: navigationController, controllers: controllers)
+        let coordinator = ItemsFilterCoordinator(
+            filters: filters,
+            filtersDelegate: filtersDelegate,
+            navigationController: navigationController,
+            mainCoordinatorDelegate: mainCoordinatorDelegate,
+            controllers: controllers
+        )
         coordinator.parentCoordinator = self
         childCoordinators.append(coordinator)
         coordinator.start(animated: false)

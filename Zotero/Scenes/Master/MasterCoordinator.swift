@@ -246,6 +246,10 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
 }
 
 extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
+    var sharedTagFilterViewModel: ViewModel<TagFilterActionHandler>? {
+        return mainCoordinatorDelegate.sharedTagFilterViewModel
+    }
+    
     func showEditView(for data: CollectionStateEditingData, library: Library) {
         guard let navigationController else { return }
         let editNavigationController = UINavigationController()
@@ -302,10 +306,7 @@ extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
 
 extension MasterCoordinator: MasterContainerCoordinatorDelegate {
     func createBottomController() -> DraggableViewController? {
-        guard UIDevice.current.userInterfaceIdiom == .pad, let dbStorage = controllers.userControllers?.dbStorage else { return nil }
-        let state = TagFilterState(selectedTags: [], showAutomatic: Defaults.shared.tagPickerShowAutomaticTags, displayAll: Defaults.shared.tagPickerDisplayAllTags)
-        let handler = TagFilterActionHandler(dbStorage: dbStorage)
-        let viewModel = ViewModel(initialState: state, handler: handler)
+        guard UIDevice.current.userInterfaceIdiom == .pad, let viewModel = mainCoordinatorDelegate.sharedTagFilterViewModel else { return nil }
         return TagFilterViewController(viewModel: viewModel)
     }
 }
