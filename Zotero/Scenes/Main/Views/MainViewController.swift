@@ -15,6 +15,8 @@ import CocoaLumberjackSwift
 import RxSwift
 
 protocol MainCoordinatorDelegate: AnyObject {
+    var sharedTagFilterViewModel: ViewModel<TagFilterActionHandler>? { get }
+    
     func showItems(for collection: Collection, in libraryId: LibraryIdentifier)
 }
 
@@ -44,6 +46,12 @@ final class MainViewController: UISplitViewController {
         }
     }
     private var detailCoordinatorGetter: (libraryId: LibraryIdentifier?, collectionId: CollectionIdentifier?, completion: (DetailCoordinator) -> Void)?
+    private lazy var tagFilterViewModel: ViewModel<TagFilterActionHandler>? = {
+        guard let dbStorage = controllers.userControllers?.dbStorage else { return nil }
+        let state = TagFilterState(selectedTags: [], showAutomatic: Defaults.shared.tagPickerShowAutomaticTags, displayAll: Defaults.shared.tagPickerDisplayAllTags)
+        let handler = TagFilterActionHandler(dbStorage: dbStorage)
+        return ViewModel(initialState: state, handler: handler)
+    }()
 
     // MARK: - Lifecycle
 
@@ -119,6 +127,7 @@ final class MainViewController: UISplitViewController {
             collection: collection,
             searchItemKeys: searchItemKeys,
             navigationController: navigationController,
+            mainCoordinatorDelegate: self,
             itemsTagFilterDelegate: tagFilterController,
             controllers: controllers
         )
@@ -142,6 +151,8 @@ final class MainViewController: UISplitViewController {
 extension MainViewController: UISplitViewControllerDelegate { }
 
 extension MainViewController: MainCoordinatorDelegate {
+    var sharedTagFilterViewModel: ViewModel<TagFilterActionHandler>? { tagFilterViewModel }
+
     func showItems(for collection: Collection, in libraryId: LibraryIdentifier) {
         guard isCollapsed || detailCoordinator?.libraryId != libraryId || detailCoordinator?.collection.identifier != collection.identifier else { return }
         showItems(for: collection, in: libraryId, searchItemKeys: nil)
