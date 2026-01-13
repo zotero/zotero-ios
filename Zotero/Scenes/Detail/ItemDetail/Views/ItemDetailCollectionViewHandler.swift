@@ -1086,7 +1086,7 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
                 })
             }
 
-            if !viewModel.state.data.isAttachment, !viewModel.state.isTrash {
+            if viewModel.state.library.metadataEditable, !viewModel.state.data.isAttachment, !viewModel.state.isTrash {
                 if case .file = attachment.type {
                     actions.append(UIAction(title: L10n.ItemDetail.moveToStandaloneAttachment, image: UIImage(systemName: "arrow.up.to.line"), attributes: []) { [weak self] _ in
                         self?.viewModel.process(action: .moveAttachmentToStandalone(attachment))
@@ -1102,6 +1102,7 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
         }
 
         func createContextMenuForNote(key: String) -> UIMenu? {
+            guard viewModel.state.library.metadataEditable else { return nil }
             var actions: [UIAction] = []
             actions.append(UIAction(title: L10n.moveToTrash, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
                 self?.viewModel.process(action: .deleteNote(key: key))
@@ -1110,6 +1111,7 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
         }
 
         func createContextMenu(for tag: Tag) -> UIMenu? {
+            guard viewModel.state.library.metadataEditable else { return nil }
             var actions: [UIAction] = []
             actions.append(UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
                 self?.viewModel.process(action: .deleteTag(tag))
@@ -1125,6 +1127,7 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
         }
         
         func createContextMenu(for collection: Collection) -> UIMenu? {
+            guard viewModel.state.library.metadataEditable else { return nil }
             var actions: [UIAction] = []
             actions.append(UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
                 self?.viewModel.process(action: .deleteCollection(collection.id))
