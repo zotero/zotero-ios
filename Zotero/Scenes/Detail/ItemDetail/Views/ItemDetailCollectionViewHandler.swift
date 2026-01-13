@@ -498,16 +498,20 @@ final class ItemDetailCollectionViewHandler: NSObject {
                     snapshot.appendItems(rows(for: section.section, state: state), toSection: section)
                 }
             }
-            dataSource.apply(snapshot, animatingDifferences: animated) { [weak self] in
-                guard collectionsSection == nil else { return }
+            let reloadCompletion: () -> Void = { [weak self] in
                 // Setting isEditing will trigger reconfiguration of cells, before the new snapshot has been applied, so it is done afterwards to avoid e.g. flickering the old text in a text view.
                 self?.collectionView.isEditing = state.isEditing
                 completion?()
             }
-            if let collectionsSection, let snapshot = state.data.collections?.createSnapshot(parent: .library(state.library), resultTransformer: { Row.collection($0) }) {
-                dataSource.apply(snapshot, to: collectionsSection, animatingDifferences: true) { [weak self] in
-                    self?.collectionView.isEditing = state.isEditing
-                    completion?()
+            dataSource.apply(snapshot, animatingDifferences: animated) {
+                guard collectionsSection == nil else { return }
+                reloadCompletion()
+            }
+            if let collectionsSection {
+                if let snapshot = state.data.collections?.createSnapshot(parent: .library(state.library), resultTransformer: { Row.collection($0) }) {
+                    dataSource.apply(snapshot, to: collectionsSection, animatingDifferences: true, completion: reloadCompletion)
+                } else {
+                    reloadCompletion()
                 }
             }
         }
