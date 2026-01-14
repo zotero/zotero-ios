@@ -203,6 +203,7 @@
 "item_detail.deleted_title" = "Deleted";
 "item_detail.deleted_message" = "This item has been deleted. Do you want to restore it?";
 "item_detail.move_to_standalone_attachment" = "Convert to Standalone Attachment";
+"item_detail.libraries_and_collections" = "Libraries and Collections";
 
 "tag_picker.title" = "%d selected";
 "tag_picker.placeholder" = "Tag name";
@@ -455,6 +456,7 @@
 "errors.item_detail.cant_save_changes" = "Could not save changes";
 "errors.item_detail.cant_trash_item" = "Could not move item to trash";
 "errors.item_detail.cant_save_tags" = "Could not save tags";
+"errors.item_detail.cant_remove_collection" = "Could not remove item from collection.";
 "errors.item_detail.unsupported_type" = "Type \"%@\" not supported";
 "errors.settings.storage" = "Could not collect storage data";
 "errors.settings.webdav.file_missing_after_upload" = "A potential problem was found with your WebDAV server.\n\nAn uploaded file was not immediately available for download. There may be a short delay between when you upload files and when they become available, particularly if you are using a cloud storage service.\n\nIf Zotero file syncing appears to work normally, you can ignore this message. If you have trouble, please post to the Zotero Forums.";
