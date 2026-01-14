@@ -8,8 +8,8 @@
 
 import UIKit
 
-final class CollectionTree {
-    struct Node: Hashable {
+final class CollectionTree: Equatable {
+    struct Node: Hashable, Equatable {
         let identifier: CollectionIdentifier
         let parent: CollectionIdentifier?
         let children: [Node]
@@ -36,6 +36,10 @@ final class CollectionTree {
         self.collapsed = collapsed
         self.filtered = [:]
     }
+    
+    static func == (lhs: CollectionTree, rhs: CollectionTree) -> Bool {
+        return lhs.nodes == rhs.nodes
+    }
 }
 
 // MARK: - Editing
@@ -51,6 +55,49 @@ extension CollectionTree {
         self.collections[collection.identifier] = collection
         self.collapsed[collection.identifier] = collapsed
         self.nodes.insert(Node(identifier: collection.identifier, parent: nil, children: []), at: index)
+    }
+
+    func remove(identifier: CollectionIdentifier) {
+        let idsToRemove = idsToRemove(for: identifier)
+        let newNodes = remove(identifier: identifier, in: nodes)
+        nodes = newNodes
+
+        for id in idsToRemove {
+            collections[id] = nil
+            collapsed[id] = nil
+            filtered[id] = nil
+        }
+
+        func remove(identifier: CollectionIdentifier, in array: [Node]) -> [Node] {
+            return array.compactMap { node in
+                guard node.identifier != identifier else { return nil }
+                let children = remove(identifier: identifier, in: node.children)
+                if children.isEmpty, let collection = collections[node.identifier], !collection.isAvailable {
+                    return nil
+                }
+                return Node(identifier: node.identifier, parent: node.parent, children: children)
+            }
+        }
+
+        func idsToRemove(for identifier: CollectionIdentifier) -> [CollectionIdentifier] {
+            var node: Node?
+            var queue: [Node] = nodes
+            while !queue.isEmpty {
+                let current = queue.removeFirst()
+                if current.identifier == identifier {
+                    node = current
+                    break
+                }
+                queue.append(contentsOf: current.children)
+            }
+            
+            guard let node else { return [] }
+            return allIdentifiers(from: node)
+            
+            func allIdentifiers(from node: Node) -> [CollectionIdentifier] {
+                return [node.identifier] + node.children.flatMap({ allIdentifiers(from: $0) })
+            }
+        }
     }
 }
 
@@ -170,23 +217,42 @@ extension CollectionTree {
 // MARK: - Diffable Data Source
 
 extension CollectionTree {
-    func createSnapshot(selectedId: CollectionIdentifier? = nil, collapseState: CollapseState = .basedOnDb) -> NSDiffableDataSourceSectionSnapshot<Collection> {
+    func createSnapshot(
+        selectedId: CollectionIdentifier? = nil,
+        collapseState: CollapseState = .basedOnDb
+    ) -> NSDiffableDataSourceSectionSnapshot<Collection> {
         var snapshot = NSDiffableDataSourceSectionSnapshot<Collection>()
         self.add(nodes: self.nodes, to: nil, in: &snapshot, allCollections: self.collections)
         self.apply(selectedId: selectedId, collapseState: collapseState, to: &snapshot)
         return snapshot
     }
+    
+    func createSnapshot<Result>(parent: Result? = nil, resultTransformer: (Collection) -> Result = { $0 }) -> NSDiffableDataSourceSectionSnapshot<Result> {
+        var snapshot = NSDiffableDataSourceSectionSnapshot<Result>()
+        if let parent {
+            snapshot.append([parent])
+        }
+        self.add(nodes: self.nodes, to: parent, in: &snapshot, allCollections: self.collections, resultTransformer: resultTransformer)
+        snapshot.expand(snapshot.items)
+        return snapshot
+    }
 
-    private func add<T>(nodes: [Node], to parent: T?, in snapshot: inout NSDiffableDataSourceSectionSnapshot<T>, allCollections: [CollectionIdentifier: T]) {
+    private func add<Result: Hashable, Transformed>(
+        nodes: [Node],
+        to parent: Transformed?,
+        in snapshot: inout NSDiffableDataSourceSectionSnapshot<Transformed>,
+        allCollections: [CollectionIdentifier: Result],
+        resultTransformer: (Result) -> Transformed = { (result: Result) in result }
+    ) {
         guard !nodes.isEmpty else { return }
 
         let collections = nodes.map({ allCollections[$0.identifier] })
-        snapshot.append(collections.compactMap({ $0 }), to: parent)
+        snapshot.append(collections.compactMap({ $0 }).map(resultTransformer), to: parent)
 
         for (idx, collection) in collections.enumerated() {
             guard let collection = collection else { continue }
             let node = nodes[idx]
-            self.add(nodes: node.children, to: collection, in: &snapshot, allCollections: allCollections)
+            self.add(nodes: node.children, to: resultTransformer(collection), in: &snapshot, allCollections: allCollections, resultTransformer: resultTransformer)
         }
     }
 

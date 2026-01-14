@@ -217,18 +217,14 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
             }
         } else if let controller = navigationController.viewControllers[1] as? CollectionsViewController {
             // There is a Collections screen in the stack.
-            var modifiedViewControllers = false
             if count > 2 {
                 // Remove any extraneous controllers.
                 var viewControllers = navigationController.viewControllers
                 viewControllers.removeLast(viewControllers.count - 2)
                 navigationController.setViewControllers(viewControllers, animated: animated)
-                modifiedViewControllers = true
             }
-            if controller.selectedCollectionId != collectionId || modifiedViewControllers {
-                // Select proper collection.
-                controller.viewModel.process(action: .select(collectionId))
-            }
+            // Select proper collection.
+            controller.viewModel.process(action: .select(collectionId))
         }
     }
 
