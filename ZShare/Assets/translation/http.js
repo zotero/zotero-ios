@@ -315,16 +315,14 @@ Zotero.HTTP = new function() {
      * @returns {DOMParserSupportedType}
      */
     this.determineDOMParserContentType = function(contentType) {
-        if (Zotero.HTTP.VALID_DOM_PARSER_CONTENT_TYPES.has(contentType)) {
+        if (!contentType) {
+            return "text/html";
+        } else if (Zotero.HTTP.VALID_DOM_PARSER_CONTENT_TYPES.has(contentType)) {
             return contentType;
-        }
-        else {
-            if (contentType.includes('xml')) {
-                return "text/xml";
-            }
-            else {
-                return "text/html";
-            }
+        } else if (contentType.includes('xml')) {
+            return "text/xml";
+        } else {
+            return "text/html";
         }
     }
 }
