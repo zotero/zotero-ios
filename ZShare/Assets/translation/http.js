@@ -41,6 +41,13 @@ Zotero.HTTP = new function() {
 		this.message = `HTTP request has timed out after ${ms}ms`;
 	};
 	this.TimeoutError.prototype = Object.create(Error.prototype);
+    this.VALID_DOM_PARSER_CONTENT_TYPES = new Set([
+        "text/html",
+        "text/xml",
+        "application/xml",
+        "application/xhtml+xml",
+        "image/svg+xml"
+    ]);
 	
 	/**
 	 * Get a promise for a HTTP request
@@ -104,10 +111,7 @@ Zotero.HTTP = new function() {
         case "document":
             let parser = new DOMParser();
             var contentType = headers["content-type"];
-            if (contentType != 'application/xml' && contentType != 'text/xml') {
-                contentType = 'text/html';
-            }
-            let doc = parser.parseFromString(responseText, contentType);
+            let doc = parser.parseFromString(responseText, this.determineDOMParserContentType(contentType));
             response = doc;
             break;
 
@@ -305,4 +309,22 @@ Zotero.HTTP = new function() {
 		};
 		return deferred.promise;
 	};
+    
+    /**
+     * @param contentType {String}
+     * @returns {DOMParserSupportedType}
+     */
+    this.determineDOMParserContentType = function(contentType) {
+        if (Zotero.HTTP.VALID_DOM_PARSER_CONTENT_TYPES.has(contentType)) {
+            return contentType;
+        }
+        else {
+            if (contentType.includes('xml')) {
+                return "text/xml";
+            }
+            else {
+                return "text/html";
+            }
+        }
+    }
 }
