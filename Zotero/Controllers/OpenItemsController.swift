@@ -185,7 +185,7 @@ final class OpenItemsController {
     private var itemsTokenBySessionIdentifier: [String: NotificationToken] = [:]
     private var observableBySessionIdentifier: [String: PublishSubject<[Item]>] = [:]
     private let disposeBag: DisposeBag
-    private var downloadDisposeBag: DisposeBag?
+    private var downloadDisposeBagsByAttachmentKey: [String: DisposeBag] = [:]
 
     // MARK: Object Lifecycle
     init(dbStorage: DbStorage, fileStorage: FileStorage, attachmentDownloader: AttachmentDownloader) {
@@ -649,6 +649,7 @@ final class OpenItemsController {
 
                 case .localAndChangedRemotely, .remote:
                     let disposeBag = DisposeBag()
+                    downloadDisposeBagsByAttachmentKey[attachment.key] = disposeBag
                     attachmentDownloader.observable
                         .observe(on: MainScheduler.instance)
                         .subscribe(onNext: { [weak self] update in
@@ -665,18 +666,17 @@ final class OpenItemsController {
                                     preselectedAnnotationKey: preselectedAnnotationKey,
                                     previewRects: previewRects
                                 ))
-                                downloadDisposeBag = nil
+                                downloadDisposeBagsByAttachmentKey[attachment.key] = nil
 
                             case .cancelled, .failed:
                                 completion(nil)
-                                downloadDisposeBag = nil
+                                downloadDisposeBagsByAttachmentKey[attachment.key] = nil
 
                             case .progress:
                                 break
                             }
                         })
                         .disposed(by: disposeBag)
-                    downloadDisposeBag = disposeBag
                     attachmentDownloader.downloadIfNeeded(attachment: attachment, parentKey: parentKey)
 
                 case .remoteMissing:
