@@ -10,7 +10,7 @@ import UIKit
 
 import RxSwift
 
-final class AccessibilitySpeechControlsStackView<Delegate: SpeechmanagerDelegate>: UIStackView {
+final class AccessibilitySpeechControlsStackView<Delegate: SpeechManagerDelegate>: UIStackView {
     private let disposeBag: DisposeBag = DisposeBag()
 
     weak var playButton: UIButton!
@@ -91,7 +91,7 @@ final class AccessibilitySpeechControlsStackView<Delegate: SpeechmanagerDelegate
         super.init(coder: coder)
     }
 
-    private func update(state: SpeechManager<Delegate>.State) {
+    private func update(state: SpeechState) {
         switch state {
         case .loading:
             playButton.isHidden = true
