@@ -1875,8 +1875,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
             observeDocument(in: viewModel)
         } catch let error {
-            // TODO: - Show error
             DDLogError("PDFReaderActionHandler: failed to load PDF: \(error)")
+            update(viewModel: viewModel) { state in
+                state.error = (error as? PDFReaderState.Error) ?? .unknownLoading
+            }
         }
 
         func observe(library: Library, viewModel: ViewModel<PDFReaderActionHandler>, handler: PDFReaderActionHandler) {
@@ -1935,7 +1937,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
             try dbStorage.perform(on: .main, with: { coordinator in
                 item = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
-                pageStr = try coordinator.perform(request: ReadDocumentDataDbRequest(attachmentKey: key, libraryId: libraryId))
+                pageStr = try coordinator.perform(request: ReadDocumentDataDbRequest(attachmentKey: key, libraryId: libraryId, defaultPageValue: "0"))
                 results = try coordinator.perform(request: ReadAnnotationsDbRequest(attachmentKey: key, libraryId: libraryId))
             })
 
