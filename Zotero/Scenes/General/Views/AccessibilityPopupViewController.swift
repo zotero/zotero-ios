@@ -18,7 +18,7 @@ protocol AccessibilityPopoupCoordinatorDelegate: AnyObject {
     func showVoicePicker(for voice: AVSpeechSynthesisVoice, userInterfaceStyle: UIUserInterfaceStyle, selectionChanged: @escaping (AVSpeechSynthesisVoice) -> Void)
 }
 
-final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: UIViewController, UIPopoverPresentationControllerDelegate {
+final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: UIViewController, UIPopoverPresentationControllerDelegate {
     private unowned let speechManager: SpeechManager<Delegate>
     private let speedNumberFormatter: NumberFormatter
     private let disposeBag: DisposeBag
@@ -114,16 +114,16 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
             controlsView.setContentHuggingPriority(.defaultLow, for: .vertical)
             speechContainer.addSubview(controlsView)
 
-            let currentVoice = speechManager.currentVoice
+//            let currentVoice = speechManager.currentVoice
             var voiceConfiguration = UIButton.Configuration.filled()
-            voiceConfiguration.title = currentVoice.flatMap({ self.voiceTitle(from: $0) }) ?? "Voice"
+//            voiceConfiguration.title = currentVoice.flatMap({ self.voiceTitle(from: $0) }) ?? "Voice"
             voiceConfiguration.titleLineBreakMode = .byTruncatingMiddle
             voiceConfiguration.baseBackgroundColor = .systemGray5
             voiceConfiguration.baseForegroundColor = .label
             voiceConfiguration.cornerStyle = .capsule
             voiceConfiguration.contentInsets = .init(top: 6, leading: 10, bottom: 6, trailing: 10)
             let voiceButton = UIButton(configuration: voiceConfiguration)
-            voiceButton.isEnabled = currentVoice != nil
+//            voiceButton.isEnabled = currentVoice != nil
             voiceButton.setContentHuggingPriority(.required, for: .vertical)
             voiceButton.setContentHuggingPriority(.required, for: .horizontal)
             voiceButton.addAction(UIAction(handler: { [weak self] _ in self?.showVoiceOptions() }), for: .touchUpInside)
@@ -296,14 +296,14 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
     }
 
     private func showVoiceOptions() {
-        guard let voice = speechManager.currentVoice else { return }
-        if speechManager.isSpeaking {
-            speechManager.pause()
-        }
-        coordinatorDelegate?.showVoicePicker(for: voice, userInterfaceStyle: overrideUserInterfaceStyle, selectionChanged: { [weak self] voice in
-            self?.update(voice: voice)
-            self?.voiceChangeAction(voice)
-        })
+//        guard let voice = speechManager.currentVoice else { return }
+//        if speechManager.isSpeaking {
+//            speechManager.pause()
+//        }
+//        coordinatorDelegate?.showVoicePicker(for: voice, userInterfaceStyle: overrideUserInterfaceStyle, selectionChanged: { [weak self] voice in
+//            self?.update(voice: voice)
+//            self?.voiceChangeAction(voice)
+//        })
     }
 
     private func formatted(modifier: Float) -> String {
@@ -326,7 +326,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
 
     // MARK: - SpeechManager State
 
-    private func process(state: SpeechManager<Delegate>.State) {
+    private func process(state: SpeechState) {
         guard let data = updateToState() else { return }
         view.layoutIfNeeded()
         data.toShow.alpha = 0
@@ -350,14 +350,14 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
                 return loadingSpeakingContainerState()
 
             case .speaking:
-                if !voiceButton.isEnabled, let voice = speechManager.currentVoice {
-                    // TODO: - change title when page changes
-                    var config = voiceButton.configuration
-                    config?.title = voiceTitle(from: voice)
-                    voiceButton.configuration = config
-                    voiceButton.isEnabled = true
-                    speedButton.isEnabled = true
-                }
+//                if !voiceButton.isEnabled, let voice = speechManager.currentVoice {
+//                    // TODO: - change title when page changes
+//                    var config = voiceButton.configuration
+//                    config?.title = voiceTitle(from: voice)
+//                    voiceButton.configuration = config
+//                    voiceButton.isEnabled = true
+//                    speedButton.isEnabled = true
+//                }
                 return loadingSpeakingContainerState()
 
             case .stopped:
