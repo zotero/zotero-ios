@@ -1,18 +1,17 @@
 //
-//  VoicesRequest.swift
+//  ReadAloudAudioRequest.swift
 //  Zotero
 //
-//  Created by Michal Rentka on 14.01.2026.
+//  Created by Michal Rentka on 15.01.2026.
 //  Copyright © 2026 Corporation for Digital Scholarship. All rights reserved.
 //
 
-import Foundation
-
-struct VoicesRequest: ApiResponseRequest {
-    typealias Response = [RemoteVoice]
+struct ReadAloudAudioRequest: ApiRequest {
+    let voiceId: String
+    let text: String
 
     var endpoint: ApiEndpoint {
-        return .zotero(path: "tts/voices")
+        return .zotero(path: "tts/speak")
     }
 
     var httpMethod: ApiHttpMethod {
@@ -24,7 +23,7 @@ struct VoicesRequest: ApiResponseRequest {
     }
 
     var parameters: [String: Any]? {
-        return nil
+        return ["text": text, "voice": voiceId]
     }
 
     var headers: [String: String]? {

@@ -27,7 +27,7 @@ protocol PdfReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarC
     func showFontSizePicker(sender: UIView, picked: @escaping (CGFloat) -> Void)
     func showDeleteAlertForAnnotation(sender: UIView, delete: @escaping () -> Void)
     func showDocumentChangedAlert(completed: @escaping () -> Void)
-    func showAccessibility<Delegate: SpeechmanagerDelegate>(
+    func showAccessibility<Delegate: SpeechManagerDelegate>(
         speechManager: SpeechManager<Delegate>,
         document: Document,
         userInterfaceStyle: UIUserInterfaceStyle,
@@ -281,7 +281,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         navigationController?.present(controller, animated: true)
     }
 
-    func showAccessibility<Delegate: SpeechmanagerDelegate>(
+    func showAccessibility<Delegate: SpeechManagerDelegate>(
         speechManager: SpeechManager<Delegate>,
         document: Document,
         userInterfaceStyle: UIUserInterfaceStyle,
