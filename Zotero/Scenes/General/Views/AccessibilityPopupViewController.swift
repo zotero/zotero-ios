@@ -37,6 +37,7 @@ protocol AccessibilityPopoupCoordinatorDelegate: AnyObject {
     )
 }
 
+
 final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: UIViewController, UIPopoverPresentationControllerDelegate {
     private unowned let speechManager: SpeechManager<Delegate>
     private let speedNumberFormatter: NumberFormatter

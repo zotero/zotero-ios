@@ -1138,6 +1138,7 @@ extension PDFReaderViewController: SpeechManagerDelegate {
         return viewModel.state.title
     }
 
+
     func getCurrentPageIndex() -> UInt {
         return documentController?.currentPage ?? 0
     }
