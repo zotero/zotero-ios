@@ -91,6 +91,10 @@ struct HtmlEpubReaderState: ViewModelState {
                 return L10n.Errors.unknown
             }
         }
+        
+        var documentShouldClose: Bool {
+            return false
+        }
     }
 
     let readerURL: URL?

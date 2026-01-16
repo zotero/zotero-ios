@@ -13,6 +13,8 @@ import RxSwift
 protocol ReaderError: Error {
     var title: String { get }
     var message: String { get }
+    
+    var documentShouldClose: Bool { get }
 }
 
 protocol ReaderState {
@@ -100,7 +102,13 @@ protocol ReaderCoordinator: Coordinator, ReaderCoordinatorDelegate, ReaderSideba
 extension ReaderCoordinator {
     func show(error: ReaderError) {
         let controller = UIAlertController(title: error.title, message: error.message, preferredStyle: .alert)
-        controller.addAction(UIAlertAction(title: L10n.ok, style: .default))
+        if error.documentShouldClose {
+            controller.addAction(UIAlertAction(title: L10n.close, style: .default, handler: { [weak self] _ in
+                self?.navigationController?.dismiss(animated: true)
+            }))
+        } else {
+            controller.addAction(UIAlertAction(title: L10n.ok, style: .default))
+        }
         navigationController?.present(controller, animated: true)
     }
 
