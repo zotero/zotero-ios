@@ -8,7 +8,7 @@
 
 import UIKit
 
-final class AccessibilitySpeechControlsView<Delegate: SpeechmanagerDelegate>: UIView, AnnotationToolbarLeadingView {
+final class AccessibilitySpeechControlsView<Delegate: SpeechManagerDelegate>: UIView, AnnotationToolbarLeadingView {
     enum Kind {
         case annotationToolbar, bottomToolbar, navbar
     }
