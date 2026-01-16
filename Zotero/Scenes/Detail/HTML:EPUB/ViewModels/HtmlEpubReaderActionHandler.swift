@@ -790,7 +790,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             do {
                 let itemRequest = ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: viewModel.state.key)
                 let item = try dbStorage.perform(request: itemRequest, on: .main)
-                let pageIndexRequest = ReadDocumentDataDbRequest(attachmentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
+                let pageIndexRequest = ReadDocumentDataDbRequest(attachmentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, defaultValue: "")
                 let pageIndex = try dbStorage.perform(request: pageIndexRequest, on: .main)
                 let annotationsRequest = ReadAnnotationsDbRequest(attachmentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
                 let items = try dbStorage.perform(request: annotationsRequest, on: .main)

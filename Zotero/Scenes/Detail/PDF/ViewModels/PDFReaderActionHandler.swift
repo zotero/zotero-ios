@@ -1935,7 +1935,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
             try dbStorage.perform(on: .main, with: { coordinator in
                 item = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
-                pageStr = try coordinator.perform(request: ReadDocumentDataDbRequest(attachmentKey: key, libraryId: libraryId))
+                pageStr = try coordinator.perform(request: ReadDocumentDataDbRequest(attachmentKey: key, libraryId: libraryId, defaultValue: "0"))
                 results = try coordinator.perform(request: ReadAnnotationsDbRequest(attachmentKey: key, libraryId: libraryId))
             })
 
