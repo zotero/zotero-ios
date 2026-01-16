@@ -788,9 +788,10 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
 
         func loadItemAnnotationsAndPage(in viewModel: ViewModel<HtmlEpubReaderActionHandler>) -> (RItem, Results<RItem>, String)? {
             do {
+                let defaultPageValue = defaultPageValue(forExt: viewModel.state.documentFile.ext.lowercased())
                 let itemRequest = ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: viewModel.state.key)
                 let item = try dbStorage.perform(request: itemRequest, on: .main)
-                let pageIndexRequest = ReadDocumentDataDbRequest(attachmentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, defaultValue: "")
+                let pageIndexRequest = ReadDocumentDataDbRequest(attachmentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, defaultPageValue: defaultPageValue)
                 let pageIndex = try dbStorage.perform(request: pageIndexRequest, on: .main)
                 let annotationsRequest = ReadAnnotationsDbRequest(attachmentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
                 let items = try dbStorage.perform(request: annotationsRequest, on: .main)
@@ -798,6 +799,19 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
             } catch let error {
                 DDLogError("HtmlEpubReaderActionHandler: can't load annotations - \(error)")
                 return nil
+            }
+            
+            func defaultPageValue(forExt ext: String) -> String {
+                switch ext {
+                case "epub":
+                    return "_start"
+
+                case "html", "htm":
+                    return "0"
+
+                default:
+                    return ""
+                }
             }
         }
 
@@ -818,11 +832,10 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         func loadTypeAndPage(from file: File, rawPage: String) throws -> (String, HtmlEpubReaderState.DocumentData.Page?) {
             switch viewModel.state.documentFile.ext.lowercased() {
             case "epub":
-                let cfi = rawPage.isEmpty ? "_start" : rawPage
-                return ("epub", .epub(cfi: cfi))
+                return ("epub", .epub(cfi: rawPage))
 
             case "html", "htm":
-                if let scrollYPercent = Double(rawPage.isEmpty ? "0" : rawPage) {
+                if let scrollYPercent = Double(rawPage) {
                     return ("snapshot", .html(scrollYPercent: scrollYPercent))
                 } else {
                     DDLogError("HtmlEPubReaderActionHandler: incompatible lastIndexPage stored for \(viewModel.state.key) - \(rawPage)")
