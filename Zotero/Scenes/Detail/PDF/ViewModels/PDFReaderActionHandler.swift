@@ -1876,14 +1876,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             observeDocument(in: viewModel)
         } catch let error {
             DDLogError("PDFReaderActionHandler: failed to load PDF: \(error)")
-            if let error = error as? PDFReaderState.Error {
-                update(viewModel: viewModel) { state in
-                    state.error = error
-                }
-            } else {
-                update(viewModel: viewModel) { state in
-                    state.error = .unknownLoading
-                }
+            update(viewModel: viewModel) { state in
+                state.error = (error as? PDFReaderState.Error) ?? .unknownLoading
             }
         }
 
