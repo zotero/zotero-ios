@@ -11,7 +11,7 @@ import UIKit
 
 protocol AccessibilityViewDelegate: AnyObject {
     var isNavigationBarHidden: Bool { get }
-    func showAccessibilityPopup<Delegate: SpeechmanagerDelegate>(
+    func showAccessibilityPopup<Delegate: SpeechManagerDelegate>(
         speechManager: SpeechManager<Delegate>,
         sender: UIBarButtonItem,
         animated: Bool,
@@ -24,7 +24,7 @@ protocol AccessibilityViewDelegate: AnyObject {
     func removeAccessibilityControlsViewFromAnnotationToolbar()
 }
 
-final class AccessibilityViewHandler<Delegate: SpeechmanagerDelegate> {
+final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
     let navbarButtonTag = 4
     private unowned let viewController: UIViewController
     private unowned let documentContainer: UIView
@@ -116,7 +116,7 @@ final class AccessibilityViewHandler<Delegate: SpeechmanagerDelegate> {
 
     private func processVoiceChange(toVoice voice: AVSpeechSynthesisVoice) {
         try? dbStorage.perform(request: SetSpeechLanguageDbRequest(key: key, libraryId: libraryId, language: voice.baseLanguage), on: .main)
-        speechManager.set(voice: voice)
+        speechManager.set(voice: .local(voice))
     }
 
     private func reloadSpeechButton(isSelected: Bool) {
