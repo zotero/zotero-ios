@@ -1005,7 +1005,7 @@ extension PDFReaderViewController: ParentWithSidebarController {
     }
 }
 
-extension PDFReaderViewController: SpeechmanagerDelegate {
+extension PDFReaderViewController: SpeechManagerDelegate {
     func getCurrentPageIndex() -> UInt {
         return documentController?.currentPage ?? 0
     }
@@ -1088,7 +1088,7 @@ extension PDFReaderViewController: AccessibilityViewDelegate {
         documentControllerBottom?.constant = height
     }
     
-    func showAccessibilityPopup<Delegate: SpeechmanagerDelegate>(
+    func showAccessibilityPopup<Delegate: SpeechManagerDelegate>(
         speechManager: SpeechManager<Delegate>,
         sender: UIBarButtonItem,
         animated: Bool,
