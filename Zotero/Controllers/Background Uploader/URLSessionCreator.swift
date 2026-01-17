@@ -47,7 +47,13 @@ final class URLSessionCreator {
     }
 }
 
-class BackgroundSessionDelegate: NSObject {
+/// Base delegate that forwards URLSession events to another delegate.
+///
+/// **Thread Safety (@unchecked Sendable):**
+/// - All properties are weak references (no owned mutable state)
+/// - URLSession ensures delegate methods are called serially
+/// - Forwarding is a simple method invocation, no synchronization needed
+class BackgroundSessionDelegate: NSObject, @unchecked Sendable {
     weak var forwardingDelegate: URLSessionDelegate?
     weak var forwardingTaskDelegate: URLSessionTaskDelegate?
     weak var forwardingDownloadDelegate: URLSessionDownloadDelegate?
@@ -57,14 +63,20 @@ class BackgroundSessionDelegate: NSObject {
     }
 }
 
-class BackgroundSessionTaskDelegate: BackgroundSessionDelegate {
+/// Task delegate that forwards URLSessionTask events.
+///
+/// **Thread Safety:** Inherits thread-safety from BackgroundSessionDelegate.
+class BackgroundSessionTaskDelegate: BackgroundSessionDelegate, @unchecked Sendable {
     init(forwardingTaskDelegate: URLSessionTaskDelegate) {
         super.init(forwardingDelegate: forwardingTaskDelegate)
         self.forwardingTaskDelegate = forwardingTaskDelegate
     }
 }
 
-class BackgroundSessionDownloadDelegate: BackgroundSessionTaskDelegate {
+/// Download delegate that forwards URLSessionDownloadTask events.
+///
+/// **Thread Safety:** Inherits thread-safety from BackgroundSessionDelegate.
+class BackgroundSessionDownloadDelegate: BackgroundSessionTaskDelegate, @unchecked Sendable {
     init(forwardingDownloadDelegate: URLSessionDownloadDelegate) {
         super.init(forwardingTaskDelegate: forwardingDownloadDelegate)
         self.forwardingDownloadDelegate = forwardingDownloadDelegate
@@ -79,13 +91,14 @@ extension BackgroundSessionDelegate: URLSessionDelegate {
     func urlSession(_ session: URLSession, didBecomeInvalidWithError error: (any Error)?) {
         forwardingDelegate?.urlSession?(session, didBecomeInvalidWithError: error)
     }
-
+    
     func urlSession(
         _ session: URLSession,
         didReceive challenge: URLAuthenticationChallenge,
-        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+        completionHandler: @escaping @Sendable (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
     ) {
-        guard let forwardingDelegate, forwardingDelegate.responds(to: #selector(URLSessionDelegate.urlSession(_:didReceive:completionHandler:))) else {
+        guard let forwardingDelegate,
+              forwardingDelegate.responds(to: #selector(URLSessionDelegate.urlSession(_:didReceive:completionHandler:))) else {
             completionHandler(.performDefaultHandling, nil)
             return
         }
@@ -94,21 +107,22 @@ extension BackgroundSessionDelegate: URLSessionDelegate {
 }
 
 extension BackgroundSessionTaskDelegate: URLSessionTaskDelegate {
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Swift.Error?) {
+        forwardingTaskDelegate?.urlSession?(session, task: task, didCompleteWithError: error)
+    }
+    
     func urlSession(
         _ session: URLSession,
         task: URLSessionTask,
         didReceive challenge: URLAuthenticationChallenge,
         completionHandler: @escaping @Sendable (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
     ) {
-        guard let forwardingTaskDelegate, forwardingTaskDelegate.responds(to: #selector(URLSessionTaskDelegate.urlSession(_:task:didReceive:completionHandler:))) else {
+        guard let forwardingTaskDelegate,
+              forwardingTaskDelegate.responds(to: #selector(URLSessionTaskDelegate.urlSession(_:task:didReceive:completionHandler:))) else {
             completionHandler(.performDefaultHandling, nil)
             return
         }
         forwardingTaskDelegate.urlSession?(session, task: task, didReceive: challenge, completionHandler: completionHandler)
-    }
-
-    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Swift.Error?) {
-        forwardingTaskDelegate?.urlSession?(session, task: task, didCompleteWithError: error)
     }
 
     func urlSession(

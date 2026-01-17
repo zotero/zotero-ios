@@ -24,6 +24,7 @@ protocol AccessibilityViewDelegate: AnyObject {
     func removeAccessibilityControlsViewFromAnnotationToolbar()
 }
 
+@MainActor
 final class AccessibilityViewHandler<Delegate: SpeechmanagerDelegate> {
     let navbarButtonTag = 4
     private unowned let viewController: UIViewController

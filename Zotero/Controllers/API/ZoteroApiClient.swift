@@ -53,8 +53,14 @@ private enum ApiAuthType {
 final class ZoteroApiClient: ApiClient {
     private let url: URL
     private let manager: Alamofire.Session
+    private let sessionDelegate = ZoteroSessionDelegate()
 
     private var token: ApiAuthType?
+    
+    var onTrustChallenge: ((SecTrust, String, @escaping (Bool) -> Void) -> Void)? {
+        get { sessionDelegate.onTrustChallenge }
+        set { sessionDelegate.onTrustChallenge = newValue }
+    }
 
     init(baseUrl: String, configuration: URLSessionConfiguration) {
         guard let url = URL(string: baseUrl) else {
@@ -62,7 +68,7 @@ final class ZoteroApiClient: ApiClient {
         }
 
         self.url = url
-        self.manager = Alamofire.Session(configuration: configuration, delegate: SessionDelegate())
+        self.manager = Alamofire.Session(configuration: configuration, delegate: sessionDelegate)
     }
 
     func set(authToken: String?) {
@@ -191,5 +197,126 @@ extension ResponseHeaders {
     var lastModifiedVersion: Int {
         // Workaround for broken headers (stored in case-sensitive dictionary)
         return (self.value(forCaseInsensitive: "last-modified-version") as? String).flatMap(Int.init) ?? 0
+    }
+}
+
+/// Delegates URLSession challenges to handle server trust validation for WebDAV connections.
+///
+/// This delegate intercepts server trust challenges and allows the application to implement
+/// certificate pinning for WebDAV servers with self-signed or untrusted certificates.
+///
+/// **Certificate Trust Flow:**
+/// 1. Server presents certificate during TLS handshake
+/// 2. System finds certificate untrusted (not in system trust store)
+/// 3. URLSession calls this delegate with server trust challenge
+/// 4. Delegate invokes `onTrustChallenge` callback (typically shows UI to user)
+/// 5. User decides whether to trust the certificate
+/// 6. If trusted, certificate is pinned for future validation
+/// 7. Connection proceeds with accepted credential
+///
+/// **Thread Safety (@unchecked Sendable):**
+/// This class is marked as @unchecked Sendable because:
+/// - Inherits from Alamofire's SessionDelegate which manages internal synchronization
+/// - `onTrustChallenge` closure access is protected by NSLock for thread-safe reads/writes
+/// - URLSession guarantees delegate methods are called serially (not concurrently)
+/// - Challenge timeout uses thread-safe DispatchQueue.global() + NSLock
+/// - Completion handlers are designed for concurrent invocation (with lock protection)
+///
+/// **Timeout Protection:** 60-second timeout prevents indefinite hangs if UI doesn't respond.
+class ZoteroSessionDelegate: SessionDelegate, @unchecked Sendable {
+    private var _onTrustChallenge: ((SecTrust, String, @escaping (Bool) -> Void) -> Void)?
+    private let trustChallengeLock = NSLock()
+    private let challengeTimeout: TimeInterval = 60.0
+    
+    var onTrustChallenge: ((SecTrust, String, @escaping (Bool) -> Void) -> Void)? {
+        get {
+            trustChallengeLock.lock()
+            defer { trustChallengeLock.unlock() }
+            return _onTrustChallenge
+        }
+        set {
+            trustChallengeLock.lock()
+            defer { trustChallengeLock.unlock() }
+            _onTrustChallenge = newValue
+        }
+    }
+
+    // SESSION-LEVEL CHALLENGE: Handle challenges at the session level
+    // Some servers trigger session-level challenges before task-level challenges
+    // Note: Not overriding - implementing URLSessionDelegate protocol method directly
+    func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+        if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
+           let trust = challenge.protectionSpace.serverTrust,
+           let host = challenge.protectionSpace.host as String?,
+           onTrustChallenge != nil {
+            handleTrustChallenge(trust: trust, host: host, completionHandler: completionHandler)
+            return
+        }
+        
+        completionHandler(.performDefaultHandling, nil)
+    }
+    
+    // TASK-LEVEL CHALLENGE: Handle challenges at the task level
+    // This is called for authentication challenges and is the primary entry point for certificate validation
+    override func urlSession(_ session: URLSession, task: URLSessionTask, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+        // CERTIFICATE PINNING ENTRY POINT: Intercept server trust challenges
+        // This is the first point where we can validate server certificates
+        // before establishing the connection
+        if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
+           let trust = challenge.protectionSpace.serverTrust,
+           let host = challenge.protectionSpace.host as String?,
+           onTrustChallenge != nil {
+            // Call the handler - it will decide whether to handle this host or reject
+            handleTrustChallenge(trust: trust, host: host, completionHandler: completionHandler)
+            return
+        }
+
+        // DELEGATE FORWARDING: Use default handling for all other cases
+        // This includes non-trust challenges and trust challenges when no handler is set
+        completionHandler(.performDefaultHandling, nil)
+    }
+    
+    // SHARED CHALLENGE HANDLER: Common logic for both session and task-level challenges
+    // Handles certificate trust with timeout protection and user callback
+    // The handler itself decides whether to handle this host or reject
+    private func handleTrustChallenge(trust: SecTrust, host: String, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+        guard let onTrustChallenge = onTrustChallenge else {
+            completionHandler(.performDefaultHandling, nil)
+            return
+        }
+        
+        var completed = false
+        let lock = NSLock()
+        
+        // TIMEOUT PROTECTION: Prevent indefinite hangs if UI doesn't respond
+        // After 60 seconds, automatically reject the challenge to prevent resource leaks
+        DispatchQueue.global().asyncAfter(deadline: .now() + challengeTimeout) {
+            lock.lock()
+            defer { lock.unlock() }
+            if !completed {
+                completed = true
+                DDLogWarn("ZoteroSessionDelegate: trust challenge timed out for \(host)")
+                completionHandler(.cancelAuthenticationChallenge, nil)
+            }
+        }
+        
+        // CALLBACK TO UI: Let application decide whether to trust this certificate
+        // The handler can reject by returning false if the host doesn't match its configuration
+        onTrustChallenge(trust, host) { shouldTrust in
+            lock.lock()
+            defer { lock.unlock() }
+            guard !completed else { return }
+            completed = true
+            
+            if shouldTrust {
+                // HANDLER ACCEPTED: Certificate will be pinned by WebDavController
+                // Return credential to proceed with connection
+                completionHandler(.useCredential, URLCredential(trust: trust))
+            } else {
+                // HANDLER REJECTED: Fall back to default handling
+                // This happens when host doesn't match WebDAV configuration or user rejected
+                completionHandler(.performDefaultHandling, nil)
+            }
+        }
     }
 }

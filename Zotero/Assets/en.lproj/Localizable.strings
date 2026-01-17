@@ -312,6 +312,17 @@
 "settings.sync.directory_not_found.title" = "Directory not found";
 "settings.sync.directory_not_found.message" = "%@ does not exist.\n\nDo you want to create it now?";
 "settings.sync.verified" = "Verified";
+"settings.sync.certificate.untrusted.title" = "Untrusted Certificate";
+"settings.sync.certificate.untrusted.message" = "The certificate for %@ is not trusted by the system.";
+"settings.sync.certificate.data_header" = "Certificate Data:";
+"settings.sync.certificate.common_name" = "Common Name: %@";
+"settings.sync.certificate.fingerprint" = "SHA-256 Fingerprint: %@";
+"settings.sync.certificate.trust.question" = "Would you like to trust this certificate? This will allow connections to this server.";
+"settings.sync.certificate.trust.action" = "Trust";
+"settings.sync.certificate.changed.title" = "Certificate Changed";
+"settings.sync.certificate.changed.message" = "The certificate for %@ has changed. This could indicate a security issue. Please verify the server and re-authenticate.";
+"settings.sync.certificate.expired.title" = "Certificate Expired";
+"settings.sync.certificate.expired.message" = "The certificate for %@ has expired. Please contact your server administrator.";
 "settings.permission" = "User Permission";
 "settings.permission_subtitle" = "Ask for user permission for each write action";
 "settings.translators" = "Translators";

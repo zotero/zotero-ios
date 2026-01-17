@@ -262,12 +262,15 @@ final class DetailCoordinator: Coordinator {
                 }
 
             default:
-                if AVURLAsset(url: url).isPlayable {
-                    DDLogInfo("DetailCoordinator: show video \(attachment.key)")
-                    showVideo(for: url)
-                } else {
-                    DDLogInfo("DetailCoordinator: share attachment \(attachment.key)")
-                    share(item: file.createUrl(), sourceItem: sourceItem)
+                Task { @MainActor in
+                    let isPlayable = (try? await AVURLAsset(url: url).load(.isPlayable)) ?? false
+                    if isPlayable {
+                        DDLogInfo("DetailCoordinator: show video \(attachment.key)")
+                        showVideo(for: url)
+                    } else {
+                        DDLogInfo("DetailCoordinator: share attachment \(attachment.key)")
+                        share(item: file.createUrl(), sourceItem: sourceItem)
+                    }
                 }
             }
         }

@@ -29,6 +29,9 @@ protocol SettingsCoordinatorDelegate: AnyObject {
     func showLogoutAlert(viewModel: ViewModel<SyncSettingsActionHandler>)
     func showSchemePicker(viewModel: ViewModel<SyncSettingsActionHandler>)
     func promptZoteroDirCreation(url: String, create: @escaping () -> Void, cancel: @escaping () -> Void)
+    func promptServerTrust(trust: SecTrust, host: String, completion: @escaping (Bool) -> Void)
+    func showCertificateChangedAlert(host: String)
+    func showCertificateExpiredAlert(host: String)
     func showWeb(url: URL, completion: @escaping () -> Void)
     func showAnnotationToolsSettings()
 }
@@ -85,6 +88,30 @@ final class SettingsCoordinator: NSObject, Coordinator {
         navigationController.dismissHandler = {
             self.parentCoordinator?.childDidFinish(self)
         }
+        
+        setupWebDavCertificateNotifications()
+    }
+    
+    private func setupWebDavCertificateNotifications() {
+        // Observe certificate change notifications
+        NotificationCenter.default.rx
+            .notification(.webDavCertificateChanged)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] notification in
+                guard let host = notification.userInfo?["host"] as? String else { return }
+                self?.showCertificateChangedAlert(host: host)
+            })
+            .disposed(by: disposeBag)
+        
+        // Observe certificate expiration notifications
+        NotificationCenter.default.rx
+            .notification(.webDavCertificateExpired)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] notification in
+                guard let host = notification.userInfo?["host"] as? String else { return }
+                self?.showCertificateExpiredAlert(host: host)
+            })
+            .disposed(by: disposeBag)
     }
 
     func start(animated: Bool) {
@@ -363,6 +390,70 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
         controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: { _ in cancel() }))
         controller.addAction(UIAlertAction(title: L10n.create, style: .default, handler: { _ in create() }))
         self.navigationController?.present(controller, animated: true, completion: nil)
+    }
+
+    func promptServerTrust(trust: SecTrust, host: String, completion: @escaping (Bool) -> Void) {
+        var messageComponents: [String] = [
+            L10n.Settings.Sync.Certificate.Untrusted.message(host)
+        ]
+        
+        // Add certificate details if available
+        if let certificateChain = SecTrustCopyCertificateChain(trust) as? [SecCertificate],
+           let cert = certificateChain.first {
+            var certDetails: [String] = [L10n.Settings.Sync.Certificate.dataHeader]
+            
+            // Common Name (Subject)
+            if let commonName = CertificateValidator.extractSubject(from: cert) {
+                certDetails.append(L10n.Settings.Sync.Certificate.commonName(commonName))
+            }
+            
+            // SHA-256 Fingerprint
+            if let fingerprint = CertificateValidator.calculateFingerprint(from: cert) {
+                certDetails.append(L10n.Settings.Sync.Certificate.fingerprint(fingerprint))
+            }
+            
+            messageComponents.append(certDetails.joined(separator: "\n"))
+        }
+        
+        messageComponents.append(L10n.Settings.Sync.Certificate.Trust.question)
+        
+        let controller = UIAlertController(
+            title: L10n.Settings.Sync.Certificate.Untrusted.title,
+            message: messageComponents.joined(separator: "\n\n"),
+            preferredStyle: .alert
+        )
+        
+        controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: { _ in
+            completion(false)
+        }))
+        
+        controller.addAction(UIAlertAction(title: L10n.Settings.Sync.Certificate.Trust.action, style: .default, handler: { _ in
+            completion(true)
+        }))
+        
+        navigationController?.present(controller, animated: true)
+    }
+
+    func showCertificateChangedAlert(host: String) {
+        let message = L10n.Settings.Sync.Certificate.Changed.message(host)
+        let alert = UIAlertController(
+            title: L10n.Settings.Sync.Certificate.Changed.title,
+            message: message,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: L10n.ok, style: .default))
+        navigationController?.present(alert, animated: true)
+    }
+    
+    func showCertificateExpiredAlert(host: String) {
+        let message = L10n.Settings.Sync.Certificate.Expired.message(host)
+        let alert = UIAlertController(
+            title: L10n.Settings.Sync.Certificate.Expired.title,
+            message: message,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: L10n.ok, style: .default))
+        navigationController?.present(alert, animated: true)
     }
 
     func showWeb(url: URL, completion: @escaping () -> Void) {
