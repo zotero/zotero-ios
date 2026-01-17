@@ -22,7 +22,8 @@ protocol SpeechmanagerDelegate: AnyObject {
     func moved(to pageIndex: Index)
 }
 
-final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSynthesizerDelegate {
+@MainActor
+final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, @preconcurrency AVSpeechSynthesizerDelegate {
     enum State {
         case speaking, paused, stopped, loading
 

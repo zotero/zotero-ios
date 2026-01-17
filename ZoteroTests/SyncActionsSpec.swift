@@ -121,7 +121,7 @@ final class SyncActionsSpec: QuickSpec {
                         dateModified: Date(),
                         dateAdded: Date()
                     )
-                    
+
                     let changeRequest = EditItemFromDetailDbRequest(
                         libraryId: .custom(.myLibrary),
                         itemKey: "AAAAAAAA",
@@ -810,6 +810,7 @@ private class WebDavTestController: WebDavController {
 
     let sessionStorage: WebDavSessionStorage
     var authToken: String?
+    var onServerTrustChallenge: ((SecTrust, String, @escaping (Bool) -> Void) -> Void)?
 
     init() {
         self.sessionStorage = WebDavSession()
@@ -861,6 +862,7 @@ private class WebDavSession: WebDavSessionStorage {
     var url: String = ""
     var scheme: WebDavScheme = .http
     var password: String = ""
+    var trustedCertificateData: Data?
 
     func createToken() throws -> String {
         return "\(self.username):\(self.password)".data(using: .utf8).flatMap({ $0.base64EncodedString(options: []) }) ?? ""

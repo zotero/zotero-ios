@@ -14,26 +14,16 @@ final class FormattedTextView: TextKit1TextView {
     let didBecomeActiveObservable: PublishSubject<Void>
 
     private let defaultFont: UIFont
-    private let menuItems: [UIMenuItem]
     private let disposeBag: DisposeBag
 
     init(defaultFont: UIFont) {
         attributedTextObservable = PublishSubject()
         didBecomeActiveObservable = PublishSubject()
         self.defaultFont = defaultFont
-        menuItems = createMenuItems()
         disposeBag = DisposeBag()
         super.init(frame: CGRect(), textContainer: nil)
         font = defaultFont
         setupObservers()
-
-        func createMenuItems() -> [UIMenuItem] {
-            let bold = UIMenuItem(title: "Bold", action: #selector(Self.toggleBoldface(_:)))
-            let italics = UIMenuItem(title: "Italics", action: #selector(Self.toggleItalics(_:)))
-            let superscript = UIMenuItem(title: "Superscript", action: #selector(Self.toggleSuperscript(_:)))
-            let `subscript` = UIMenuItem(title: "Subscript", action: #selector(Self.toggleSubscript(_:)))
-            return [bold, italics, superscript, `subscript`]
-        }
 
         func setupObservers() {
             NotificationCenter.default
@@ -42,7 +32,6 @@ final class FormattedTextView: TextKit1TextView {
                 .observe(on: MainScheduler.instance)
                 .subscribe(onNext: { [weak self] _ in
                     guard let self else { return }
-                    UIMenuController.shared.menuItems = menuItems
                     didBecomeActiveObservable.onNext(())
                 })
                 .disposed(by: disposeBag)
@@ -56,16 +45,22 @@ final class FormattedTextView: TextKit1TextView {
                     attributedTextObservable.onNext(attributedText)
                 })
                 .disposed(by: disposeBag)
-
-            NotificationCenter.default
-                .rx
-                .notification(Self.textDidEndEditingNotification, object: self)
-                .observe(on: MainScheduler.instance)
-                .subscribe(onNext: { _ in
-                    UIMenuController.shared.menuItems = nil
-                })
-                .disposed(by: disposeBag)
         }
+    }
+
+    override func editMenu(for textRange: UITextRange, suggestedActions: [UIMenuElement]) -> UIMenu? {
+        let bold = UIAction(title: "Bold") { [weak self] _ in self?.toggleBoldface(nil) }
+        let italics = UIAction(title: "Italics") { [weak self] _ in self?.toggleItalics(nil) }
+        let superscript = UIAction(title: "Superscript") { [weak self] _ in self?.toggleSuperscript(nil) }
+        let subscriptAction = UIAction(title: "Subscript") { [weak self] _ in self?.toggleSubscript(nil) }
+
+        var actions = suggestedActions
+        actions.append(bold)
+        actions.append(italics)
+        actions.append(superscript)
+        actions.append(subscriptAction)
+
+        return UIMenu(children: actions)
     }
 
     required init?(coder: NSCoder) {

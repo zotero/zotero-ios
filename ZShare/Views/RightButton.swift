@@ -9,17 +9,19 @@
 import UIKit
 
 class RightButton: UIButton {
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        self.alignImageToRight()
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setup()
     }
-
-    private func alignImageToRight() {
-        guard let imageView = self.imageView else { return }
-
-        let imageOffset = self.frame.width - imageView.frame.size.width
-
-        self.titleEdgeInsets = UIEdgeInsets(top: 0, left: -1 * imageView.frame.size.width, bottom: 0, right: imageView.frame.size.width)
-        self.imageEdgeInsets = UIEdgeInsets(top: 0, left: imageOffset, bottom: 0, right: -1 * imageOffset)
+    
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setup()
+    }
+    
+    private func setup() {
+        var config = self.configuration ?? UIButton.Configuration.plain()
+        config.imagePlacement = .trailing
+        self.configuration = config
     }
 }
