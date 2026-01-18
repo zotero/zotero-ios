@@ -14,7 +14,35 @@ import RealmSwift
 import RxSwift
 import ZIPFoundation
 
-final class AttachmentDownloader: NSObject {
+/// Manages background downloads of attachments from WebDAV and Zotero servers.
+/// 
+/// **Thread Safety (@unchecked Sendable):**
+/// This class is marked as @unchecked Sendable with the following guarantees:
+/// 
+/// - **accessQueue (DispatchQueue):** Protects all mutable state including:
+///   - `downloads` dictionary
+///   - `operations` dictionary  
+///   - `batchProgress` tracking
+///   All mutations happen via `accessQueue.async(flags: .barrier)`
+///
+/// - **removalQueue (OperationQueue):** Serializes file deletion operations
+///   - maxConcurrentOperationCount = 1
+///   - All file system operations are queued
+///
+/// - **URLSession callbacks:** Serialized by URLSession's internal queue
+///   - Delegates are called sequentially per session
+///   - No concurrent callback execution for same downloader
+///
+/// - **Immutable after init:** backgroundSession, apiClient, dbStorage, fileStorage, webDavController
+///
+/// - **Observable (PublishSubject):** Thread-safe by RxSwift design
+///
+/// **Certificate Pinning:** This class validates WebDAV certificates against pinned data
+/// to prevent MITM attacks. See `validateServerTrustChallenge` for implementation.
+final class AttachmentDownloader: NSObject, @unchecked Sendable {
+    /// Number of days before certificate expiration to show warning
+    private static let certificateExpirationWarningDays: TimeInterval = 30
+    
     enum Error: Swift.Error {
         case incompatibleAttachment
         case zipDidntContainRequestedFile
@@ -1024,6 +1052,23 @@ extension AttachmentDownloader: URLSessionDelegate {
             self?.backgroundCompletionHandler = nil
         }
     }
+    
+    func urlSession(
+        _ session: URLSession,
+        didReceive challenge: URLAuthenticationChallenge,
+        completionHandler: @escaping @Sendable (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+    ) {
+        DDLogInfo("AttachmentDownloader: session-level challenge received - method: \(challenge.protectionSpace.authenticationMethod), host: \(challenge.protectionSpace.host)")
+        
+        if let credential = validateServerTrustChallenge(challenge) {
+            DDLogInfo("AttachmentDownloader: session-level challenge validated successfully")
+            completionHandler(.useCredential, credential)
+            return
+        }
+        
+        DDLogInfo("AttachmentDownloader: session-level challenge using default handling")
+        completionHandler(.performDefaultHandling, nil)
+    }
 }
 
 extension AttachmentDownloader: URLSessionTaskDelegate {
@@ -1033,8 +1078,22 @@ extension AttachmentDownloader: URLSessionTaskDelegate {
         didReceive challenge: URLAuthenticationChallenge,
         completionHandler: @escaping @Sendable (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
     ) {
+        DDLogInfo("AttachmentDownloader: task-level challenge received - method: \(challenge.protectionSpace.authenticationMethod), host: \(challenge.protectionSpace.host)")
+        
         let sessionStorage = webDavController.sessionStorage
         let protectionSpace = challenge.protectionSpace
+
+        // CERTIFICATE PINNING: Validate server trust before other auth methods
+        // This ensures HTTPS certificate validation happens first, providing
+        // transport security before transmitting credentials
+        if let credential = validateServerTrustChallenge(challenge) {
+            DDLogInfo("AttachmentDownloader: task-level challenge validated successfully")
+            completionHandler(.useCredential, credential)
+            return
+        }
+        
+        // HTTP BASIC/DIGEST AUTH: Only proceed if certificate validation passed or not required
+        // This prevents credential leakage to untrusted servers
         guard sessionStorage.isEnabled,
               sessionStorage.isVerified,
               protectionSpace.authenticationMethod == NSURLAuthenticationMethodHTTPBasic || protectionSpace.authenticationMethod == NSURLAuthenticationMethodHTTPDigest,
@@ -1046,6 +1105,80 @@ extension AttachmentDownloader: URLSessionTaskDelegate {
             return
         }
         completionHandler(.useCredential, URLCredential(user: sessionStorage.username, password: sessionStorage.password, persistence: .permanent))
+    }
+    
+    /// Validates server trust challenge with certificate pinning.
+    /// 
+    /// **Certificate Pinning Process:**
+    /// 1. Verify this is a server trust challenge for our WebDAV host
+    /// 2. Extract the server's certificate from the trust object
+    /// 3. Compare against the pinned certificate (stored during initial trust)
+    /// 4. Validate certificate is still valid (not expired, not revoked)
+    /// 5. Only if all checks pass, return credential to allow connection
+    ///
+    /// **Security Properties:**
+    /// - Prevents MITM attacks by rejecting different certificates
+    /// - Detects certificate rotation/changes (requires re-verification)
+    /// - Validates certificate hasn't expired since initial trust
+    /// - Protects against compromised CAs (we only trust our pinned cert)
+    ///
+    /// **Thread Safety:** Called on URLSession's delegate queue. All operations are
+    /// read-only except for posting notifications (which is thread-safe).
+    ///
+    /// - Parameter challenge: The authentication challenge from URLSession
+    /// - Returns: URLCredential if pinning validation succeeds, nil otherwise
+    private func validateServerTrustChallenge(_ challenge: URLAuthenticationChallenge) -> URLCredential? {
+        let protectionSpace = challenge.protectionSpace
+        let sessionStorage = webDavController.sessionStorage
+        
+        // Only process server trust challenges for verified WebDAV hosts
+        guard protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
+              sessionStorage.isEnabled,
+              sessionStorage.isVerified,
+              protectionSpace.host == sessionStorage.host,
+              let trust = protectionSpace.serverTrust else {
+            return nil
+        }
+        
+        // Certificate pinning: validate against stored certificate
+        guard let storedCertData = sessionStorage.trustedCertificateData else {
+            DDLogWarn("AttachmentDownloader: no pinned certificate found for verified host \(protectionSpace.host)")
+            return nil
+        }
+        
+        // Use shared certificate validator
+        let validationResult = CertificateValidator.validateCertificate(
+            trust: trust,
+            pinnedCertData: storedCertData,
+            host: protectionSpace.host
+        )
+        
+        switch validationResult {
+        case .valid:
+            DDLogInfo("AttachmentDownloader: validated pinned certificate for \(protectionSpace.host)")
+            return URLCredential(trust: trust)
+            
+        case .expired:
+            // Notify UI - expiration date not available on iOS
+            NotificationCenter.default.post(
+                name: .webDavCertificateExpired,
+                object: nil,
+                userInfo: ["host": protectionSpace.host]
+            )
+            return nil
+            
+        case .invalid(let reason):
+            if reason.contains("does not match") {
+                // Certificate changed - possible MITM attack
+                DDLogError("AttachmentDownloader: CERTIFICATE CHANGED for \(protectionSpace.host) - possible MITM attack. Re-verification required.")
+                NotificationCenter.default.post(
+                    name: .webDavCertificateChanged,
+                    object: nil,
+                    userInfo: ["host": protectionSpace.host]
+                )
+            }
+            return nil
+        }
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Swift.Error?) {

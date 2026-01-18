@@ -43,7 +43,7 @@ extension FreeTextAnnotationView {
         let previousTextBoundingBox = annotation.textBoundingBox
         super.textViewDidEndEditing(textView)
         annotation.sizeToFit()
-        var newTextBoundingBox = annotation.textBoundingBox
+        let newTextBoundingBox = annotation.textBoundingBox
         let minX = min(previousTextBoundingBox.minX, newTextBoundingBox.minX)
         let maxX = max(previousTextBoundingBox.maxX, newTextBoundingBox.maxX)
         let minY = min(previousTextBoundingBox.minY, newTextBoundingBox.minY)
@@ -116,10 +116,11 @@ final class FreeTextInputAccessory: UIView {
 
         // Can't use the Configuration API for tagButton because it ignores number of lines and just always adds multiple lines
         let tagButton = UIButton()
+        var tagConfiguration = UIButton.Configuration.plain()
+        tagConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20)
+        tagConfiguration.titleLineBreakMode = .byTruncatingTail
+        tagButton.configuration = tagConfiguration
         tagButton.setAttributedTitle(attributedString(from: delegate.getTags(for: key) ?? []), for: .normal)
-        tagButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20)
-        tagButton.titleLabel?.numberOfLines = 1
-        tagButton.titleLabel?.lineBreakMode = .byTruncatingTail
         tagButton.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
         tagButton.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
         tagButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)

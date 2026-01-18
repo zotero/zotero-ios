@@ -101,6 +101,7 @@ final class SyncActionsSpec: QuickSpec {
                         creators: [:],
                         fields: [:],
                         abstract: "New abstract",
+                        library: Library(identifier: .custom(.myLibrary), name: "My Library", metadataEditable: true, filesEditable: true),
                         dateModified: Date(),
                         dateAdded: Date()
                     )
@@ -111,6 +112,7 @@ final class SyncActionsSpec: QuickSpec {
                         creators: [:],
                         fields: [:],
                         abstract: "Some note",
+                        library: Library(identifier: .custom(.myLibrary), name: "My Library", metadataEditable: true, filesEditable: true),
                         dateModified: Date(),
                         dateAdded: Date()
                     )
@@ -358,6 +360,7 @@ final class SyncActionsSpec: QuickSpec {
                         creators: [:],
                         fields: [:],
                         abstract: "New abstract",
+                        library: Library(identifier: .custom(.myLibrary), name: "My Library", metadataEditable: true, filesEditable: true),
                         dateModified: Date(),
                         dateAdded: Date()
                     )
@@ -368,6 +371,7 @@ final class SyncActionsSpec: QuickSpec {
                         creators: [:],
                         fields: [:],
                         abstract: "Some note",
+                        library: Library(identifier: .custom(.myLibrary), name: "My Library", metadataEditable: true, filesEditable: true),
                         dateModified: Date(),
                         dateAdded: Date()
                     )
@@ -756,6 +760,7 @@ private class WebDavTestController: WebDavController {
 
     let sessionStorage: WebDavSessionStorage
     var authToken: String?
+    var onServerTrustChallenge: ((SecTrust, String, @escaping (Bool) -> Void) -> Void)?
 
     init() {
         self.sessionStorage = WebDavSession()
@@ -807,6 +812,7 @@ private class WebDavSession: WebDavSessionStorage {
     var url: String = ""
     var scheme: WebDavScheme = .http
     var password: String = ""
+    var trustedCertificateData: Data?
 
     func createToken() throws -> String {
         return "\(self.username):\(self.password)".data(using: .utf8).flatMap({ $0.base64EncodedString(options: []) }) ?? ""

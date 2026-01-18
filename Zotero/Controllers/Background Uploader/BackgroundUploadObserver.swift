@@ -18,7 +18,25 @@ private struct FinishedTask {
     let didFail: Bool
 }
 
-final class BackgroundUploadObserver: NSObject {
+/// Observes URLSession background upload events and processes completed uploads.
+///
+/// **Thread Safety (@unchecked Sendable):**
+/// This class is marked as @unchecked Sendable with the following guarantees:
+///
+/// - **coordinatorQueue (DispatchQueue):** Serializes access to mutable state:
+///   - `tasks` dictionary
+///   - `finishedTasks` set
+///   - All state mutations happen on coordinatorQueue
+///
+/// - **URLSession callbacks:** Called serially by URLSession on its delegate queue
+///   - No concurrent execution of delegate methods for same observer
+///   - Delegates immediately dispatch to coordinatorQueue for safety
+///
+/// - **Immutable properties:** context, backgroundTaskController, processor
+///   - Set during init and never modified
+///
+/// - **NotificationCenter:** Thread-safe by design, used for cross-component communication
+final class BackgroundUploadObserver: NSObject, @unchecked Sendable {
     let context: BackgroundUploaderContext
     private let backgroundTaskController: BackgroundTaskController
     private let processor: BackgroundUploadProcessor
@@ -276,8 +294,11 @@ extension BackgroundUploadObserver: URLSessionDelegate {
         self.context.deleteShareExtensionSession(with: sessionId)
     }
 
-    func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
-        completionHandler(.performDefaultHandling, nil)
+    func urlSession(
+        _ session: URLSession,
+        didReceive challenge: URLAuthenticationChallenge
+    ) async -> (URLSession.AuthChallengeDisposition, URLCredential?) {
+        return (.performDefaultHandling, nil)
     }
 }
 

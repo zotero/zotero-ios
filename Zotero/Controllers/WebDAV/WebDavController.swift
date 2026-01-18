@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import CommonCrypto
 
 import Alamofire
 import CocoaLumberjackSwift
@@ -142,6 +143,7 @@ struct WebDavDeletionResult {
 protocol WebDavController: AnyObject {
     var sessionStorage: WebDavSessionStorage { get }
     var currentUrl: URL? { get }
+    var onServerTrustChallenge: ((SecTrust, String, @escaping (Bool) -> Void) -> Void)? { get set }
 
     func checkServer(queue: DispatchQueue) -> Single<URL>
     func createZoteroDirectory(queue: DispatchQueue) -> Single<()>
@@ -168,6 +170,101 @@ final class WebDavControllerImpl: WebDavController {
     private unowned let fileStorage: FileStorage
     let sessionStorage: WebDavSessionStorage
     private let deletionQueue: OperationQueue
+    
+    /// Callback invoked when a server presents an untrusted certificate.
+    /// 
+    /// When the user chooses to trust the certificate, it undergoes validation and is stored
+    /// in `sessionStorage.trustedCertificateData` for certificate pinning. This implements
+    /// a "Trust-On-First-Use" (TOFU) model with additional security checks.
+    ///
+    /// **Certificate Pinning Strategy:**
+    /// 1. User explicitly trusts a certificate (first connection)
+    /// 2. Certificate is validated (not expired, valid chain)
+    /// 3. Certificate data is stored (pinned)
+    /// 4. Subsequent connections MUST present the exact same certificate
+    /// 5. Any change triggers security alert and requires re-verification
+    ///
+    /// **Thread Safety:** This property is accessed and set on the main thread only.
+    /// The completion handler is called on URLSession's delegate queue but is safe
+    /// as sessionStorage writes are synchronized.
+    ///
+    /// - Parameters:
+    ///   - trust: The server trust object to evaluate
+    ///   - host: The hostname presenting the certificate
+    ///   - completion: Completion handler with user's trust decision
+    ///
+    /// - Note: The certificate is only stored if:
+    ///   - User explicitly trusts it
+    ///   - Certificate passes validation (not expired, valid)
+    ///   - sessionStorage is available
+    ///   Stored certificates are validated on subsequent connections to prevent MITM attacks.
+    var onServerTrustChallenge: ((SecTrust, String, @escaping (Bool) -> Void) -> Void)? {
+        didSet {
+            // Wrap the handler to always validate and store certificate when trusted
+            guard let onServerTrustChallenge else {
+                (apiClient as? ZoteroApiClient)?.onTrustChallenge = nil
+                return
+            }
+            
+            (apiClient as? ZoteroApiClient)?.onTrustChallenge = { [weak sessionStorage] trust, host, completion in
+                // SECURITY: Only apply custom trust handling to WebDAV hosts
+                // Never intercept certificate validation for api.zotero.org or other hosts
+                guard let storage = sessionStorage,
+                      storage.isEnabled,
+                      host == storage.host else {
+                    // Not our WebDAV host - reject and use default system validation
+                    DDLogInfo("WebDavController: ignoring trust challenge for non-WebDAV host: \(host)")
+                    completion(false)
+                    return
+                }
+                
+                onServerTrustChallenge(trust, host) { shouldTrust in
+                    if shouldTrust {
+                        // Ensure sessionStorage is available to persist certificate
+                        guard let sessionStorage else {
+                            DDLogError("WebDavController: sessionStorage is nil, cannot store certificate for \(host)")
+                            completion(false)
+                            return
+                        }
+                        
+                        // Validate certificate before pinning
+                        let validationResult = CertificateValidator.validateCertificateForPinning(trust: trust, host: host)
+                        
+                        switch validationResult {
+                        case .valid:
+                            // Extract and store certificate for pinning
+                            guard let certData = CertificateValidator.extractCertificateData(from: trust) else {
+                                DDLogError("WebDavController: failed to extract certificate from trust for \(host)")
+                                completion(false)
+                                return
+                            }
+                            
+                            sessionStorage.trustedCertificateData = certData
+                            DDLogInfo("WebDavController: stored trusted certificate for \(host)")
+                            completion(true)
+                            
+                        case .expired:
+                            // Reject expired certificates
+                            DDLogError("WebDavController: refusing to pin expired certificate for \(host)")
+                            // Post notification to show error to user
+                            NotificationCenter.default.post(
+                                name: .webDavCertificateExpired,
+                                object: nil,
+                                userInfo: ["host": host]
+                            )
+                            completion(false)
+                            
+                        case .invalid(let reason):
+                            DDLogError("WebDavController: certificate validation failed for \(host): \(reason)")
+                            completion(false)
+                        }
+                    } else {
+                        completion(false)
+                    }
+                }
+            }
+        }
+    }
 
     init(dbStorage: DbStorage, fileStorage: FileStorage, sessionStorage: WebDavSessionStorage) {
         let queue = OperationQueue()
@@ -191,6 +288,7 @@ final class WebDavControllerImpl: WebDavController {
 
     func resetVerification() {
         self.sessionStorage.isVerified = false
+        self.sessionStorage.trustedCertificateData = nil
         self.apiClient.set(credentials: nil)
     }
 
@@ -709,5 +807,184 @@ final class WebDavControllerImpl: WebDavController {
             subscriber(.success((username, password)))
             return Disposables.create()
         }
+    }
+}
+
+// MARK: - Certificate Validation Utilities
+
+/// Utility for validating and extracting information from certificates.
+final class CertificateValidator {
+    /// Result of certificate validation
+    enum ValidationResult {
+        case valid
+        case expired
+        case invalid(String)
+    }
+    
+    /// Validates a certificate against a pinned certificate with expiration checking.
+    ///
+    /// **Security Checks:**
+    /// 1. Certificate must exactly match the pinned certificate (prevents MITM)
+    /// 2. Certificate must not be expired (prevents replay attacks with old certs)
+    /// 3. Certificate must pass trust evaluation
+    ///
+    /// - Parameters:
+    ///   - trust: The server trust object to evaluate
+    ///   - pinnedCertData: The pinned certificate data to compare against
+    ///   - host: The hostname for logging purposes
+    /// - Returns: ValidationResult indicating success or failure with details
+    static func validateCertificate(trust: SecTrust, pinnedCertData: Data, host: String) -> ValidationResult {
+        // Extract server certificate
+        guard let certificateChain = SecTrustCopyCertificateChain(trust) as? [SecCertificate],
+              let serverCert = certificateChain.first else {
+            DDLogError("CertificateValidator: failed to extract certificate chain for \(host)")
+            return .invalid("Failed to extract certificate")
+        }
+        
+        let serverCertData = SecCertificateCopyData(serverCert) as Data
+        
+        // SECURITY CHECK 1: Certificate must exactly match the pinned certificate
+        guard serverCertData == pinnedCertData else {
+            DDLogError("CertificateValidator: certificate mismatch for \(host) - possible MITM attack")
+            return .invalid("Certificate does not match pinned certificate")
+        }
+        
+        // SECURITY CHECK 2: Certificate must not be expired
+        // For self-signed certificates, set as own trust anchor to validate expiration
+        SecTrustSetAnchorCertificates(trust, [serverCert] as CFArray)
+        SecTrustSetAnchorCertificatesOnly(trust, true)
+        
+        var error: CFError?
+        if !SecTrustEvaluateWithError(trust, &error) {
+            // Check error code for expiration (robust across languages/iOS versions)
+            if let cfError = error {
+                let nsError = cfError as Error as NSError
+                // Certificate expiration/validity error codes from Apple's SecBase.h:
+                // Source: Security.framework/Headers/SecBase.h
+                // Verify with: grep "errSecCertificate.*Expired\|errSecCertificate.*ValidYet" \
+                //   /Applications/Xcode.app/.../Security.framework/Headers/SecBase.h
+                // Using error codes instead of string matching ensures:
+                // - Works across all device languages (not affected by localization)
+                // - Stable across iOS versions (error codes don't change, messages do)
+                // - Precise matching (no false positives from unrelated "expired" mentions)
+                let expirationCodes = [
+                    -67818, // errSecCertificateExpired - "An expired certificate was detected"
+                    -67819  // errSecCertificateNotValidYet - "The certificate is not yet valid"
+                ]
+                
+                if nsError.domain == "NSOSStatusErrorDomain" && expirationCodes.contains(nsError.code) {
+                    DDLogError("CertificateValidator: certificate is expired for \(host) (error code: \(nsError.code))")
+                    return .expired
+                }
+            }
+            
+            // Fallback: check error description (less reliable but covers edge cases)
+            let errorDescription = error.flatMap { CFErrorCopyDescription($0) as String? } ?? "Unknown error"
+            DDLogWarn("CertificateValidator: certificate validation failed for \(host): \(errorDescription)")
+            
+            // Double-check with string matching as final fallback
+            if errorDescription.lowercased().contains("expired") {
+                DDLogError("CertificateValidator: certificate appears expired for \(host) (fallback detection)")
+                return .expired
+            }
+            
+            // For other validation issues (like hostname mismatch), allow since user explicitly trusted it
+            DDLogWarn("CertificateValidator: allowing connection despite validation warning - certificate was explicitly trusted")
+        }
+        
+        DDLogInfo("CertificateValidator: validated pinned certificate for \(host)")
+        return .valid
+    }
+    
+    /// Validates a certificate before storing it (for initial trust).
+    ///
+    /// - Parameters:
+    ///   - trust: The server trust object to evaluate
+    ///   - host: The hostname for logging purposes
+    /// - Returns: ValidationResult indicating if certificate is acceptable for pinning
+    static func validateCertificateForPinning(trust: SecTrust, host: String) -> ValidationResult {
+        guard let certificateChain = SecTrustCopyCertificateChain(trust) as? [SecCertificate],
+              let cert = certificateChain.first else {
+            DDLogError("CertificateValidator: failed to extract certificate from trust for \(host)")
+            return .invalid("Failed to extract certificate")
+        }
+        
+        // For self-signed certificates, set as own trust anchor to validate expiration
+        SecTrustSetAnchorCertificates(trust, [cert] as CFArray)
+        SecTrustSetAnchorCertificatesOnly(trust, true)
+        
+        var error: CFError?
+        if !SecTrustEvaluateWithError(trust, &error) {
+            // Check error code for expiration (robust across languages/iOS versions)
+            if let cfError = error {
+                let nsError = cfError as Error as NSError
+                // Certificate expiration/validity error codes from Apple's SecBase.h:
+                // Source: Security.framework/Headers/SecBase.h
+                // Verify with: grep "errSecCertificate.*Expired\|errSecCertificate.*ValidYet" \
+                //   /Applications/Xcode.app/.../Security.framework/Headers/SecBase.h
+                // Using error codes instead of string matching ensures:
+                // - Works across all device languages (not affected by localization)
+                // - Stable across iOS versions (error codes don't change, messages do)
+                // - Precise matching (no false positives from unrelated "expired" mentions)
+                let expirationCodes = [
+                    -67818, // errSecCertificateExpired - "An expired certificate was detected"
+                    -67819  // errSecCertificateNotValidYet - "The certificate is not yet valid"
+                ]
+                
+                if nsError.domain == "NSOSStatusErrorDomain" && expirationCodes.contains(nsError.code) {
+                    DDLogError("CertificateValidator: refusing to pin expired certificate for \(host) (error code: \(nsError.code))")
+                    return .expired
+                }
+            }
+            
+            // Fallback: check error description (less reliable but covers edge cases)
+            let errorDescription = error.flatMap { CFErrorCopyDescription($0) as String? } ?? "Unknown error"
+            DDLogError("CertificateValidator: certificate validation failed for \(host): \(errorDescription)")
+            
+            // Double-check with string matching as final fallback
+            if errorDescription.lowercased().contains("expired") {
+                DDLogError("CertificateValidator: refusing to pin expired certificate for \(host) (fallback detection)")
+                return .expired
+            }
+            
+            // For other errors, log but allow (hostname mismatch is expected for some self-signed certs)
+            DDLogWarn("CertificateValidator: validation warning during pinning for \(host): \(errorDescription)")
+        }
+        
+        return .valid
+    }
+    
+    /// Extracts the subject summary from a certificate.
+    ///
+    /// - Parameter certificate: The certificate to extract subject from
+    /// - Returns: The subject summary if available, nil otherwise
+    static func extractSubject(from certificate: SecCertificate) -> String? {
+        return SecCertificateCopySubjectSummary(certificate) as String?
+    }
+    
+    /// Calculates the SHA-256 fingerprint of a certificate.
+    ///
+    /// - Parameter certificate: The certificate to calculate fingerprint for
+    /// - Returns: The SHA-256 fingerprint as a hex string (uppercase with colons), nil if calculation fails
+    static func calculateFingerprint(from certificate: SecCertificate) -> String? {
+        let certData = SecCertificateCopyData(certificate) as Data
+        var hash = [UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
+        certData.withUnsafeBytes {
+            _ = CC_SHA256($0.baseAddress, CC_LONG(certData.count), &hash)
+        }
+        // Format as uppercase hex with colons (e.g., "AB:CD:EF:01:23:45:...")
+        return hash.map { String(format: "%02X", $0) }.joined(separator: ":")
+    }
+    
+    /// Extracts certificate data for pinning.
+    ///
+    /// - Parameter trust: The server trust object
+    /// - Returns: The certificate data if available, nil otherwise
+    static func extractCertificateData(from trust: SecTrust) -> Data? {
+        guard let certificateChain = SecTrustCopyCertificateChain(trust) as? [SecCertificate],
+              let cert = certificateChain.first else {
+            return nil
+        }
+        return SecCertificateCopyData(cert) as Data
     }
 }

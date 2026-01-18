@@ -18,6 +18,7 @@ protocol WebDavSessionStorage: AnyObject {
     var port: Int { get }
     var scheme: WebDavScheme { get set }
     var password: String { get set }
+    var trustedCertificateData: Data? { get set }
 }
 
 extension WebDavSessionStorage {
@@ -94,6 +95,16 @@ final class SecureWebDavSessionStorage: WebDavSessionStorage {
 
         set {
             self.secureStorage.webDavPassword = newValue.isEmpty ? nil : newValue
+        }
+    }
+
+    var trustedCertificateData: Data? {
+        get {
+            return Defaults.shared.webDavTrustedCertificateData
+        }
+
+        set {
+            Defaults.shared.webDavTrustedCertificateData = newValue
         }
     }
 }

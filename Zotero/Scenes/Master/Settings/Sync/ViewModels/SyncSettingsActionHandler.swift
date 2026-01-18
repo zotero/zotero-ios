@@ -32,6 +32,13 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
         self.syncScheduler = syncScheduler
         self.coordinatorDelegate = coordinatorDelegate
         self.backgroundQueue = DispatchQueue(label: "org.zotero.SyncSettingsActionHandler.background", qos: .userInteractive)
+        
+        // Certificate storage now handled automatically by WebDavController
+        self.webDavController.onServerTrustChallenge = { [weak coordinatorDelegate] trust, host, completion in
+            DispatchQueue.main.async {
+                coordinatorDelegate?.promptServerTrust(trust: trust, host: host, completion: completion)
+            }
+        }
     }
 
     func process(action: SyncSettingsAction, in viewModel: ViewModel<SyncSettingsActionHandler>) {

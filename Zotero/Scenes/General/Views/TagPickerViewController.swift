@@ -68,7 +68,7 @@ final class TagPickerViewController: UIViewController {
             self.select(selected: state.selectedTags, tags: state.tags, focusTagName: state.addedTagName)
         }
 
-        if let error = state.error {
+        if state.error != nil {
             // TODO: - show error
         }
     }

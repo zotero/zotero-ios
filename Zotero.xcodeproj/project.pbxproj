@@ -1282,6 +1282,8 @@
 		B3FE4B9C268DDE6100CE123F /* CitationBibliographyExportCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3FE4B9B268DDE6100CE123F /* CitationBibliographyExportCoordinator.swift */; };
 		B3FE79E32B332E5E009FBDBD /* CreateEditDownloadDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30548F52B331B1A00853966 /* CreateEditDownloadDbRequest.swift */; };
 		B3FE79E42B333030009FBDBD /* DeleteDownloadDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30548F72B331B2500853966 /* DeleteDownloadDbRequest.swift */; };
+		FD801AC32F1CFDFB001771BC /* WebDavCertificatePinningSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD801AC22F1CFDFB001771BC /* WebDavCertificatePinningSpec.swift */; };
+		FD801ACB2F1D1836001771BC /* WebDavCertificatePinningIntegrationSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD801ACA2F1D1836001771BC /* WebDavCertificatePinningIntegrationSpec.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -2458,6 +2460,8 @@
 		B3FE4B94268DDE4900CE123F /* CitationBibliographyExportState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CitationBibliographyExportState.swift; sourceTree = "<group>"; };
 		B3FE4B96268DDE4900CE123F /* CitationBibliographyExportView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CitationBibliographyExportView.swift; sourceTree = "<group>"; };
 		B3FE4B9B268DDE6100CE123F /* CitationBibliographyExportCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CitationBibliographyExportCoordinator.swift; sourceTree = "<group>"; };
+		FD801AC22F1CFDFB001771BC /* WebDavCertificatePinningSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavCertificatePinningSpec.swift; sourceTree = "<group>"; };
+		FD801ACA2F1D1836001771BC /* WebDavCertificatePinningIntegrationSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavCertificatePinningIntegrationSpec.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -3180,6 +3184,7 @@
 		B30D596E2206F60500884C4A /* ZoteroTests */ = {
 			isa = PBXGroup;
 			children = (
+				FD801ACA2F1D1836001771BC /* WebDavCertificatePinningIntegrationSpec.swift */,
 				B3F47C04243B4BC0004F8B1E /* Bundled */,
 				B3202C662710486900485BE4 /* Extensions */,
 				B32A3C83248008A2009E2C5D /* JSONs */,
@@ -3205,6 +3210,7 @@
 				B3202C6B271048FF00485BE4 /* WebDavControllerSpec.swift */,
 				B31DDAA02729A7DC002CFA05 /* WebDavCredentials.swift */,
 				61AD977C2D67F42A000FDF45 /* PDFWorkerControllerSpec.swift */,
+				FD801AC22F1CFDFB001771BC /* WebDavCertificatePinningSpec.swift */,
 			);
 			path = ZoteroTests;
 			sourceTree = "<group>";
@@ -5108,7 +5114,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "swiftgen config lint\nswiftgen config run\n";
+			shellScript = "export PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"\nswiftgen config lint\nswiftgen config run\n";
 		};
 		6185A1A82D9C266100285385 /* Bundle Utilities */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -5167,7 +5173,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "swiftlint\n";
+			shellScript = "export PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"\nswiftlint\n";
 		};
 		B3052A912C412E12008C8596 /* Bundle Reader */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -6156,8 +6162,10 @@
 				B3518DA72AEBCB5E00D983B4 /* SettingsResponseSpec.swift in Sources */,
 				6144B5D82A4ADDC400914B3C /* ItemTitleFormatterSpec.swift in Sources */,
 				61FB13D72EECBE0A00329563 /* bitcoin_pdf_page_0_text.json in Sources */,
+				FD801AC32F1CFDFB001771BC /* WebDavCertificatePinningSpec.swift in Sources */,
 				6144B5DF2A4AE48F00914B3C /* SyncControllerSpec.swift in Sources */,
 				B3243BC82A5EB2740033A7D6 /* HtmlAttributedStringConverterSpec.swift in Sources */,
+				FD801ACB2F1D1836001771BC /* WebDavCertificatePinningIntegrationSpec.swift in Sources */,
 				61AD977D2D67F42A000FDF45 /* PDFWorkerControllerSpec.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -15,4 +15,8 @@ extension Notification.Name {
     static let attachmentDeleted = Notification.Name(rawValue: "org.zotero.AttachmentsDeleted")
     // Sent when Defaults.shared.showSubcollectionItems changes.
     static let showSubcollectionItemsChanged = Notification.Name(rawValue: "org.zotero.Defaults.shared.showSubcollectionItemsChanged")
+    // Sent when WebDAV certificate changes (possible MITM attack). Used to alert user to re-verify.
+    static let webDavCertificateChanged = Notification.Name(rawValue: "org.zotero.WebDavCertificateChanged")
+    // Sent when WebDAV certificate is expired. Used to alert user to update certificate.
+    static let webDavCertificateExpired = Notification.Name(rawValue: "org.zotero.WebDavCertificateExpired")
 }

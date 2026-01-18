@@ -42,6 +42,9 @@ final class Defaults {
     @OptionalUserDefault(key: "webDavUrl")
     var webDavUrl: String?
 
+    @OptionalUserDefault(key: "webDavTrustedCertificateData")
+    var webDavTrustedCertificateData: Data?
+
     // MARK: - Settings
 
     @UserDefault(key: "ShareExtensionIncludeTags", defaultValue: true)
