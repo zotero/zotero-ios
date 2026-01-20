@@ -593,6 +593,8 @@
 "accessibility.pdf.toggle_annotation_toolbar" = "Toggle annotation toolbar";
 "accessibility.pdf.show_more_tools" = "Show more";
 "accessibility.pdf.open_items" = "Open Items";
+"accessibility.pdf.item_notes" = "Item Notes";
+"accessibility.pdf.item_attachments" = "Item Attachments";
 "accessibility.pdf.current_item" = "Current Item";
 "accessibility.pdf.current_item_close" = "Close";
 "accessibility.pdf.current_item_move_to_start" = "Move to start";

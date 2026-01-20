@@ -322,8 +322,8 @@ final class OpenItemsController {
         setItemsSortedByUserIndex(existingItems, for: sessionIdentifier, validate: false)
     }
 
-    func restore(_ item: Item, using presenter: OpenItemsPresenter, completion: @escaping (Bool) -> Void) {
-        loadPresentation(for: item.kind) { [weak presenter] presentation in
+    func restore(_ kind: Item.Kind, using presenter: OpenItemsPresenter, completion: @escaping (Bool) -> Void) {
+        loadPresentation(for: kind) { [weak presenter] presentation in
             guard let presenter, let presentation else {
                 completion(false)
                 return
@@ -380,7 +380,7 @@ final class OpenItemsController {
         openItemPresenterProvider: @escaping () -> OpenItemsPresenter?,
         completion: @escaping (_ changedCurrentItem: Bool, _ openItemsChanged: Bool) -> Void
     ) -> UIDeferredMenuElement {
-        UIDeferredMenuElement.uncached { [weak self] elementProvider in
+        return UIDeferredMenuElement.uncached { [weak self] elementProvider in
             guard let self else {
                 elementProvider([])
                 return
@@ -392,7 +392,7 @@ final class OpenItemsController {
             let itemsCount = itemTuples.count
             for (index, (item, rItem)) in itemTuples.enumerated() {
                 if item == openItem {
-                    var currentItemActions: [UIAction] = []
+                    var currentItemActions: [UIMenuElement] = []
                     let closeAction = UIAction(title: L10n.Accessibility.Pdf.currentItemClose, image: .init(systemName: "xmark.circle")) { [weak self] _ in
                         guard let self else { return }
                         close(item.kind, for: sessionIdentifier)
@@ -429,17 +429,17 @@ final class OpenItemsController {
                         }
                         currentItemActions.append(closeOtherAction)
                     }
+                    if let siblingNotesMenu = siblingNotesMenu(rItem: rItem) {
+                        currentItemActions.append(siblingNotesMenu)
+                    }
+                    if let siblingAttachmentsMenu = siblingAttachmentsMenu(rItem: rItem) {
+                        currentItemActions.append(siblingAttachmentsMenu)
+                    }
                     let currentItemMenu = UIMenu(title: L10n.Accessibility.Pdf.currentItem, options: [.displayInline], children: currentItemActions)
                     let currentItemElement = UIMenu(title: rItem.displayTitle, image: item.kind.icon, children: [currentItemMenu])
                     elements.append(currentItemElement)
                 } else {
-                    let itemAction = UIAction(title: rItem.displayTitle, image: item.kind.icon) { [weak self] _ in
-                        guard let self, let presenter = openItemPresenterProvider() else { return }
-                        restore(item, using: presenter) { restored in
-                            completion(restored, false)
-                        }
-                    }
-                    elements.append(itemAction)
+                    elements.append(createKindAction(title: rItem.displayTitle, kind: item.kind, openItemsChanged: false))
                 }
             }
 
@@ -453,6 +453,68 @@ final class OpenItemsController {
             elements.append(closeAllElement)
 
             elementProvider(elements)
+        }
+
+        func siblingNotesMenu(rItem: RItem) -> UIMenu? {
+            guard let parent = rItem.parent else { return nil }
+            let notes = Array(parent.children.filter(.items(type: ItemTypes.note, notSyncState: .dirty, trash: false)).sorted(byKeyPath: "displayTitle"))
+            let actions: [UIAction] = notes.compactMap({
+                guard $0.key != rItem.key else { return nil }
+                let kind = Item.Kind.note(libraryId: $0.libraryIdentifier, key: $0.key)
+                return createKindAction(title: $0.displayTitle, kind: kind, openItemsChanged: true)
+            })
+            guard !actions.isEmpty else { return nil }
+            return UIMenu(title: L10n.Accessibility.Pdf.itemNotes, children: actions)
+        }
+
+        func siblingAttachmentsMenu(rItem: RItem) -> UIMenu? {
+            guard let parent = rItem.parent else { return nil }
+            let attachments: [Attachment] = Array(
+                parent.children.filter(.items(type: ItemTypes.attachment, notSyncState: .dirty, trash: false))
+                    .sorted(byKeyPath: "displayTitle")
+                    .compactMap({ [weak fileStorage] in
+                        guard let fileStorage else { return nil }
+                        return AttachmentCreator.attachment(for: $0, fileStorage: fileStorage, urlDetector: nil)
+                    })
+            )
+            let titleAndKindTuples: [(String, Item.Kind)] = attachments.compactMap({
+                guard $0.key != rItem.key else { return nil }
+                let kind: Item.Kind
+                switch $0.type {
+                case .file(_, let contentType, _, _, _):
+                    switch contentType {
+                    case "application/pdf":
+                        kind = .pdf(libraryId: $0.libraryId, key: $0.key)
+
+                    case "text/html":
+                        guard FeatureGates.enabled.contains(.htmlEpubReader) else { return nil }
+                        kind = .html(libraryId: $0.libraryId, key: $0.key)
+
+                    case "application/epub+zip":
+                        guard FeatureGates.enabled.contains(.htmlEpubReader) else { return nil }
+                        kind = .epub(libraryId: $0.libraryId, key: $0.key)
+
+                    default:
+                        return nil
+                    }
+
+                case .url:
+                    return nil
+                }
+                return ($0.title, kind)
+            })
+            let actions = titleAndKindTuples.map({ createKindAction(title: $0.0, kind: $0.1, openItemsChanged: true) })
+            guard !actions.isEmpty else { return nil }
+            return UIMenu(title: L10n.Accessibility.Pdf.itemAttachments, children: actions)
+        }
+
+        func createKindAction(title: String, kind: Item.Kind, openItemsChanged: Bool) -> UIAction {
+            return UIAction(title: title, image: kind.icon) { [weak self] _ in
+                guard let self, let presenter = openItemPresenterProvider() else { return }
+                restore(kind, using: presenter) { restored in
+                    completion(restored, openItemsChanged)
+                }
+            }
         }
     }
 
