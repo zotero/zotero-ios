@@ -36,39 +36,32 @@ enum SpeechState {
     }
 }
 
+private struct SpeechData {
+    let startIndex: Int
+    let speakingRange: NSRange
+
+    func copy(with localRange: NSRange) -> SpeechData {
+        return SpeechData(startIndex: startIndex, speakingRange: localRange)
+    }
+
+    var globalRange: NSRange {
+        return NSRange(location: startIndex + speakingRange.location, length: speakingRange.length)
+    }
+}
+
 enum SpeechVoice {
     case local(AVSpeechSynthesisVoice)
     case remote(RemoteVoice)
 }
 
-final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, AVSpeechSynthesizerDelegate {
+final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProcessorDelegate {
     private enum Error: Swift.Error {
         case cantGetText
     }
 
-    private struct SpeechData {
-        let startIndex: Int
-        let speakingRange: NSRange
-
-        func copy(with localRange: NSRange) -> SpeechData {
-            return SpeechData(startIndex: startIndex, speakingRange: localRange)
-        }
-
-        var globalRange: NSRange {
-            return NSRange(location: startIndex + speakingRange.location, length: speakingRange.length)
-        }
-    }
-
-    private struct PageData {
-        // Text to read
-        let text: String
-        // Voice used for this page
-        let voice: AVSpeechSynthesisVoice
-    }
-
-    private var processor: VoiceProcessor
-    private var speech: SpeechData?
-    private var cachedPages: [Delegate.Index: PageData]
+    private var processor: VoiceProcessor!
+    fileprivate var speech: SpeechData?
+    private var cachedPages: [Delegate.Index: String]
     private var currentIndex: Delegate.Index?
     private weak var delegate: Delegate?
     private lazy var paragraphRegex: NSRegularExpression? = {
@@ -76,17 +69,19 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, AVSpeechSy
     }()
     private var overrideLanguage: String?
     
-    var state: BehaviorRelay<SpeechState> { processor.state }
+    let state: BehaviorRelay<SpeechState>
     var isSpeaking: Bool { processor.isSpeaking }
     var isPaused: Bool { processor.isPaused }
     var voice: SpeechVoice { processor.speechVoice }
+    var speechRateModifier: Float { processor.speechRateModifier }
 
-    init(delegate: Delegate, speechRateModifier: Float, voiceLanguage: String? = nil) {
-        cachedPages = [:]
-        processor = LocalVoiceProcessor(voice: .init(), speechRateModifier: speechRateModifier)
-        overrideLanguage = voiceLanguage
+    init(delegate: Delegate, voiceLanguage: String? = nil) {
         self.delegate = delegate
+        cachedPages = [:]
+        state = BehaviorRelay(value: .loading)
+        overrideLanguage = voiceLanguage
         super.init()
+        processor = LocalVoiceProcessor(speechRateModifier: 1, state: state, delegate: self)
         processor.speechRateModifier = speechRateModifier
     }
 
@@ -131,10 +126,22 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, AVSpeechSy
     func set(voice: SpeechVoice) {
         switch voice {
         case .local(let voice):
-            processor = LocalVoiceProcessor(voice: voice, speechRateModifier: processor.speechRateModifier)
+            if let processor = processor as? LocalVoiceProcessor {
+                processor.set(voice: voice)
+            } else {
+                let _processor = LocalVoiceProcessor(speechRateModifier: processor.speechRateModifier, state: state, delegate: self)
+                _processor.set(voice: voice)
+                processor = _processor
+            }
             
         case .remote(let voice):
-            processor = RemoteVoiceProcessor(voice: voice, speechRateModifier: processor.speechRateModifier)
+            if let processor = processor as? RemoteVoiceProcessor {
+                processor.set(voice: voice)
+            } else {
+                let _processor = RemoteVoiceProcessor(speechRateModifier: processor.speechRateModifier, state: state)
+                _processor.set(voice: voice)
+                processor = _processor
+            }
         }
     }
 
@@ -142,65 +149,33 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, AVSpeechSy
         processor.speechRateModifier = rateModifier
     }
 
-    private func getData(for indices: [Delegate.Index], from delegate: Delegate, completion: @escaping (([Delegate.Index: PageData])?) -> Void) {
+    private func getData(for indices: [Delegate.Index], from delegate: Delegate, completion: @escaping (([Delegate.Index: String])?) -> Void) {
         delegate.text(for: indices) { texts in
             guard let texts, texts.count == indices.count else {
                 completion(nil)
                 return
             }
-            
-            var pages: [Delegate.Index: PageData] = [:]
-            for index in indices {
-                guard let text = texts[index] else {
-                    completion(nil)
-                    return
-                }
-                pages[index] = PageData(text: text, voice: voice(for: text))
-            }
-            completion(pages)
-        }
-
-        func voice(for text: String) -> AVSpeechSynthesisVoice {
-            if let overrideLanguage {
-                return findVoice(for: overrideLanguage)
-            }
-
-            let recognizer = NLLanguageRecognizer()
-            recognizer.processString(text)
-            let language = recognizer.dominantLanguage?.rawValue ?? "en"
-            return findVoice(for: language)
+            completion(texts)
         }
     }
 
-    private func findVoice(for language: String) -> AVSpeechSynthesisVoice {
-        let voiceId = Defaults.shared.defaultVoiceForLanguage[language]
-        return AVSpeechSynthesisVoice.speechVoices().first(where: isProperVoice) ?? AVSpeechSynthesisVoice(identifier: "en-US")!
-
-        func isProperVoice(_ voice: AVSpeechSynthesisVoice) -> Bool {
-            if let voiceId {
-                return voice.identifier == voiceId
-            }
-            return voice.language.starts(with: language)
-        }
-    }
-
-    private func go(to page: PageData, pageIndex: Delegate.Index, speechStartIndex: Int? = nil, reportPageChange: Bool = true) {
+    private func go(to page: String, pageIndex: Delegate.Index, speechStartIndex: Int? = nil, reportPageChange: Bool = true) {
         let text: String
         if let index = speechStartIndex {
-            text = String(page.text[page.text.index(page.text.startIndex, offsetBy: index)..<page.text.endIndex])
+            text = String(page[page.index(page.startIndex, offsetBy: index)..<page.endIndex])
         } else {
-            text = page.text
+            text = page
         }
         currentIndex = pageIndex
         speech = SpeechData(startIndex: speechStartIndex ?? 0, speakingRange: NSRange(location: 0, length: 0))
-        speak(text: text, voice: page.voice)
-        
+        processor.speak(text: text, shouldDetectVoice: true)
+
         guard let delegate else { return }
-        
+
         if reportPageChange {
             delegate.moved(to: pageIndex)
         }
-        
+
         // Cache next/previous page after page change if needed
         var indices: [Delegate.Index] = []
         if let index = delegate.getPreviousPageIndex(from: pageIndex), cachedPages[index] == nil {
@@ -219,14 +194,10 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, AVSpeechSy
         }
     }
 
-    private func skip(to index: Int, on page: PageData) {
+    private func skip(to index: Int, on page: String) {
         speech = SpeechData(startIndex: index, speakingRange: NSRange(location: 0, length: 0))
-        let text = page.text[page.text.index(page.text.startIndex, offsetBy: index)..<page.text.endIndex]
-//        speechSynthesizer(synthesizer, willSpeakRangeOfSpeechString: NSRange(location: 0, length: 0), utterance: AVSpeechUtterance())
-        speak(text: String(text), voice: page.voice)
-    }
-
-    private func speak(text: String, voice: AVSpeechSynthesisVoice) {
+        let text = page[page.index(page.startIndex, offsetBy: index)..<page.endIndex]
+        processor.speak(text: String(text), shouldDetectVoice: false)
     }
 
     func forward() {
@@ -241,9 +212,9 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, AVSpeechSy
             stop()
         }
 
-        func findNextIndex(on page: PageData, speechRange: NSRange) -> Int? {
+        func findNextIndex(on page: String, speechRange: NSRange) -> Int? {
             guard let paragraphRegex else { return nil }
-            let matches = paragraphRegex.matches(in: page.text, range: NSRange(page.text.index(page.text.startIndex, offsetBy: speechRange.location + speechRange.length)..., in: page.text))
+            let matches = paragraphRegex.matches(in: page, range: NSRange(page.index(page.startIndex, offsetBy: speechRange.location + speechRange.length)..., in: page))
             guard let range = matches.first?.range else { return nil }
             return range.location + range.length
         }
@@ -252,14 +223,14 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, AVSpeechSy
     func backward() {
         guard let currentIndex, let currentPage = cachedPages[currentIndex], let speech else { return }
   
-        if let index = findPreviousIndex(in: currentPage.text, endIndex: currentPage.text.index(currentPage.text.startIndex, offsetBy: speech.globalRange.location)) {
+        if let index = findPreviousIndex(in: currentPage, endIndex: currentPage.index(currentPage.startIndex, offsetBy: speech.globalRange.location)) {
             DDLogInfo("SpeechManager: backward to \(index); \(speech.startIndex); \(speech.speakingRange.location); \(speech.speakingRange.length)")
             skip(to: index, on: currentPage)
         } else if speech.startIndex != 0 {
             skip(to: 0, on: currentPage)
         } else if let previousIndex = delegate?.getPreviousPageIndex(from: currentIndex),
                   let previousPage = cachedPages[previousIndex],
-                  let speechIndex = findPreviousIndex(in: previousPage.text, endIndex: previousPage.text.endIndex) {
+                  let speechIndex = findPreviousIndex(in: previousPage, endIndex: previousPage.endIndex) {
             go(to: previousPage, pageIndex: previousIndex, speechStartIndex: speechIndex)
         } else {
             stop()
@@ -282,6 +253,33 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, AVSpeechSy
         currentIndex = nil
         cachedPages = [:]
     }
+    
+    // MARK: - VoiceProcessorDelegate
+    
+    var currentPageText: String? {
+        return currentIndex.flatMap({ cachedPages[$0] })
+    }
+    
+    var nextPageText: String? {
+        return currentIndex.flatMap({ delegate?.getNextPageIndex(from: $0) }).flatMap({ cachedPages[$0] })
+    }
+    
+    func didFinishSpeaking() {
+        cleanup()
+    }
+    
+    func goToNextPageIfAvailable() -> Bool {
+        guard let currentIndex, let nextIndex = delegate?.getNextPageIndex(from: currentIndex), let page = cachedPages[nextIndex] else {
+            return false
+        }
+        go(to: page, pageIndex: nextIndex)
+        return true
+    }
+    
+    func speechRangeWillChange(to range: NSRange) {
+        guard currentIndex != nil else { return }
+        speech = speech?.copy(with: range)
+    }
 }
 
 extension AVSpeechSynthesisVoice {
@@ -293,21 +291,30 @@ extension AVSpeechSynthesisVoice {
     }
 }
 
-protocol VoiceProcessor {
+private protocol VoiceProcessor {
     var isSpeaking: Bool { get }
     var isPaused: Bool { get }
     var state: BehaviorRelay<SpeechState> { get }
     var speechVoice: SpeechVoice { get }
     var speechRateModifier: Float { get set }
     
-    func speak(text: String)
+    func speak(text: String, shouldDetectVoice: Bool)
     func pause()
     func resume()
     func stop()
 }
 
-// swiftlint:disable private_over_fileprivate
-fileprivate final class LocalVoiceProcessor: NSObject, VoiceProcessor {
+private protocol VoiceProcessorDelegate: AnyObject {
+    var currentPageText: String? { get }
+    var nextPageText: String? { get }
+    var speech: SpeechData? { get }
+
+    func goToNextPageIfAvailable() -> Bool
+    func didFinishSpeaking()
+    func speechRangeWillChange(to range: NSRange)
+}
+
+private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
     private struct PageData {
         // Text to read
         let text: String
@@ -316,9 +323,10 @@ fileprivate final class LocalVoiceProcessor: NSObject, VoiceProcessor {
     }
 
     let state: BehaviorRelay<SpeechState>
-    private let voice: AVSpeechSynthesisVoice
     private let synthesizer: AVSpeechSynthesizer
+    private unowned let delegate: VoiceProcessorDelegate
 
+    private var voice: AVSpeechSynthesisVoice?
     private var shouldReloadUtteranceOnResume = false
     private var ignoreFinishCallCount = 0
     var speechRateModifier: Float {
@@ -333,22 +341,32 @@ fileprivate final class LocalVoiceProcessor: NSObject, VoiceProcessor {
         return synthesizer.isPaused
     }
     var speechVoice: SpeechVoice {
-        return .local(voice)
+        if let voice {
+            return .local(voice)
+        } else if let text = delegate.currentPageText {
+            return .local(voice(for: text))
+        } else {
+            return .local(.init())
+        }
     }
 
-    init(voice: AVSpeechSynthesisVoice, speechRateModifier: Float) {
-        self.voice = voice
+    init(speechRateModifier: Float, state: BehaviorRelay<SpeechState>, delegate: VoiceProcessorDelegate) {
         self.speechRateModifier = speechRateModifier
-        state = .init(value: .loading)
+        self.delegate = delegate
+        self.state = state
         synthesizer = AVSpeechSynthesizer()
         super.init()
         synthesizer.delegate = self
     }
 
-    func speak(text: String) {
+    func speak(text: String, shouldDetectVoice: Bool) {
         if synthesizer.isSpeaking {
             ignoreFinishCallCount += 1
             synthesizer.stopSpeaking(at: .immediate)
+        }
+        
+        if voice == nil || shouldDetectVoice {
+            voice = voice(for: text)
         }
 
         let utterance = AVSpeechUtterance(string: text)
@@ -385,29 +403,12 @@ fileprivate final class LocalVoiceProcessor: NSObject, VoiceProcessor {
     }
 
     func set(voice: AVSpeechSynthesisVoice) {
-//        Defaults.shared.defaultVoiceForLanguage[voice.baseLanguage] = voice.identifier
-//
-//        guard let currentVoice else { return }
-//
-//        let newBaseLanguage = voice.baseLanguage
-//        if currentVoice.baseLanguage != newBaseLanguage {
-//            set(overrideLanguage: newBaseLanguage, voice: voice)
-//        } else {
-//            for (key, value) in cachedPages {
-//                guard value.voice.baseLanguage == newBaseLanguage else { continue }
-//                cachedPages[key] = PageData(text: value.text, voice: voice)
-//            }
-//        }
-//        utteranceChanged()
-//
-//        func set(overrideLanguage: String, voice: AVSpeechSynthesisVoice) {
-//            self.overrideLanguage = overrideLanguage
-//            for (key, value) in cachedPages {
-//                cachedPages[key] = PageData(text: value.text, voice: voice)
-//            }
-//        }
+        guard self.voice?.identifier != voice.identifier else { return }
+        Defaults.shared.defaultLocalVoiceForLanguage[voice.baseLanguage] = voice.identifier
+        self.voice = voice
+        utteranceChanged()
     }
-    
+
     private func utteranceChanged() {
         if synthesizer.isPaused {
             shouldReloadUtteranceOnResume = true
@@ -417,56 +418,72 @@ fileprivate final class LocalVoiceProcessor: NSObject, VoiceProcessor {
     }
 
     private func reloadUtterance() {
-//        guard let currentIndex, let page = cachedPages[currentIndex], let speech else { return }
-//        if synthesizer.isSpeaking {
-//            synthesizer.pauseSpeaking(at: .immediate)
-//        }
-//        let text = String(page.text[page.text.index(page.text.startIndex, offsetBy: speech.globalRange.location)..<page.text.endIndex])
-//        speak(text: text)
+        guard let pageText = delegate.currentPageText, let speech = delegate.speech else { return }
+        if synthesizer.isSpeaking {
+            synthesizer.pauseSpeaking(at: .immediate)
+        }
+        let text = String(pageText[pageText.index(pageText.startIndex, offsetBy: speech.globalRange.location)..<pageText.endIndex])
+        speak(text: text, shouldDetectVoice: false)
+    }
+
+    private func voice(for text: String) -> AVSpeechSynthesisVoice {
+        let recognizer = NLLanguageRecognizer()
+        recognizer.processString(text)
+        let language = recognizer.dominantLanguage?.rawValue ?? "en"
+        return findVoice(for: language)
+    }
+
+    private func findVoice(for language: String) -> AVSpeechSynthesisVoice {
+        let voiceId = Defaults.shared.defaultLocalVoiceForLanguage[language]
+        return AVSpeechSynthesisVoice.speechVoices().first(where: isProperVoice) ?? AVSpeechSynthesisVoice(identifier: "en-US")!
+
+        func isProperVoice(_ voice: AVSpeechSynthesisVoice) -> Bool {
+            if let voiceId {
+                return voice.identifier == voiceId
+            }
+            return voice.language.starts(with: language)
+        }
     }
 }
 
 extension LocalVoiceProcessor: AVSpeechSynthesizerDelegate {
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
-//        cleanup()
-//        state.accept(.stopped)
+        delegate.didFinishSpeaking()
+        state.accept(.stopped)
     }
     
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didPause utterance: AVSpeechUtterance) {
-//        state.accept(.paused)
+        state.accept(.paused)
     }
     
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
-//        state.accept(.speaking)
+        state.accept(.speaking)
     }
     
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didContinue utterance: AVSpeechUtterance) {
-//        state.accept(.speaking)
+        state.accept(.speaking)
     }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-//        guard ignoreFinishCallCount <= 0 else {
-//            ignoreFinishCallCount -= 1
-//            return
-//        }
-//
-//        if let currentIndex, let nextIndex = delegate?.getNextPageIndex(from: currentIndex), let page = cachedPages[nextIndex] {
-//            go(to: page, pageIndex: nextIndex)
-//        } else {
-//            cleanup()
-//            state.accept(.stopped)
-//        }
+        guard ignoreFinishCallCount <= 0 else {
+            ignoreFinishCallCount -= 1
+            return
+        }
+
+        if !delegate.goToNextPageIfAvailable() {
+            delegate.didFinishSpeaking()
+            state.accept(.stopped)
+        }
     }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, willSpeakRangeOfSpeechString characterRange: NSRange, utterance: AVSpeechUtterance) {
-//        guard currentIndex != nil && characterRange.length > 0 else { return }
-//        speech = speech?.copy(with: characterRange)
+        guard characterRange.length > 0 else { return }
+        delegate.speechRangeWillChange(to: characterRange)
     }
 }
 
-fileprivate final class RemoteVoiceProcessor: VoiceProcessor {
+private final class RemoteVoiceProcessor: VoiceProcessor {
     let state: BehaviorRelay<SpeechState>
-    private let voice: RemoteVoice
 
     var speechRateModifier: Float
     var isSpeaking: Bool {
@@ -476,16 +493,18 @@ fileprivate final class RemoteVoiceProcessor: VoiceProcessor {
         return false
     }
     var speechVoice: SpeechVoice {
-        return .remote(voice)
+        return .remote(.init(id: "", label: "", creditsPerSecond: 0, segmentGranularity: ""))
     }
 
-    init(voice: RemoteVoice, speechRateModifier: Float) {
-        self.voice = voice
+    init(speechRateModifier: Float, state: BehaviorRelay<SpeechState>) {
         self.speechRateModifier = speechRateModifier
-        state = .init(value: .loading)
+        self.state = state
+    }
+    
+    func set(voice: RemoteVoice) {
     }
 
-    func speak(text: String) {
+    func speak(text: String, shouldDetectVoice: Bool) {
     }
 
     func pause() {
@@ -497,4 +516,3 @@ fileprivate final class RemoteVoiceProcessor: VoiceProcessor {
     func stop() {
     }
 }
-// swiftlint:enable private_over_fileprivate
