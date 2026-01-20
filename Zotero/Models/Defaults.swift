@@ -159,12 +159,12 @@ final class Defaults {
     #endif
 
     // MARK: - Speech
-
-    @UserDefault(key: "SpeechDefaultVoiceForLanguage", defaultValue: [:])
-    var defaultVoiceForLanguage: [String: String]
-
-    @UserDefault(key: "SpeechRateModifier", defaultValue: 1)
-    var speechRateModifier: Float
+    
+    @UserDefault(key: "SpeechDefaultLocalVoiceForLanguage", defaultValue: [:])
+    var defaultLocalVoiceForLanguage: [String: String]
+    
+    @UserDefault(key: "SpeechDefaultRemoteVoiceForLanguage", defaultValue: [:])
+    var defaultRemoteVoiceForLanguage: [String: String]
 
     // MARK: - Citation / Bibliography Export
 

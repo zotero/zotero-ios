@@ -135,7 +135,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
 
             let speedActions = [2, 1.75, 1.5, 1.25, 1, 0.75].map({ [unowned self] val in UIAction(title: formatted(modifier: val), handler: { [weak self] _ in self?.set(rateModifier: val) }) })
             var speedConfiguration = UIButton.Configuration.filled()
-            speedConfiguration.title = formatted(modifier: Defaults.shared.speechRateModifier)
+            speedConfiguration.title = formatted(modifier: speechManager.speechRateModifier)
             speedConfiguration.baseBackgroundColor = .systemGray5
             speedConfiguration.baseForegroundColor = .label
             speedConfiguration.cornerStyle = .capsule
@@ -313,7 +313,6 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
     private func set(rateModifier: Float) {
         speechManager.set(rateModifier: rateModifier)
         speedButton.configuration?.title = formatted(modifier: rateModifier)
-        Defaults.shared.speechRateModifier = rateModifier
     }
 
     func baseHeight(isPopover: Bool) -> CGFloat {
