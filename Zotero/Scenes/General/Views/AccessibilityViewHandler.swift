@@ -56,7 +56,7 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
         self.documentContainer = documentContainer
         self.dbStorage = dbStorage
         let language = try? dbStorage.perform(request: ReadSpeechLanguageDbRequest(key: key, libraryId: libraryId), on: .main)
-        speechManager = SpeechManager(delegate: delegate, speechRateModifier: Defaults.shared.speechRateModifier, voiceLanguage: language)
+        speechManager = SpeechManager(delegate: delegate, voiceLanguage: language)
     }
 
     func createAccessibilityButton(isSelected: Bool, isFilled: Bool, isEnabled: Bool = true) -> UIBarButtonItem {
