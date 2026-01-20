@@ -9,6 +9,7 @@
 struct ReadAloudAudioRequest: ApiRequest {
     let voiceId: String
     let text: String
+    let language: String
 
     var endpoint: ApiEndpoint {
         return .zotero(path: "tts/speak")
@@ -23,7 +24,7 @@ struct ReadAloudAudioRequest: ApiRequest {
     }
 
     var parameters: [String: Any]? {
-        return ["text": text, "voice": voiceId]
+        return ["text": text, "voice": voiceId, "lang": language]
     }
 
     var headers: [String: String]? {
@@ -33,6 +34,7 @@ struct ReadAloudAudioRequest: ApiRequest {
 
 struct ReadAloudSampleRequest: ApiRequest {
     let voiceId: String
+    let language: String
 
     var endpoint: ApiEndpoint {
         return .zotero(path: "tts/sample")
@@ -47,7 +49,7 @@ struct ReadAloudSampleRequest: ApiRequest {
     }
 
     var parameters: [String: Any]? {
-        return ["voice": voiceId]
+        return ["voice": voiceId, "lang": language]
     }
 
     var headers: [String: String]? {
