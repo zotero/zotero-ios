@@ -11,8 +11,6 @@
             <string>NSStringPluralRuleType</string>
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
-            <key>zero</key>
-            <string>Select a Collection</string>
             <key>one</key>
             <string>1 Collection Selected</string>
             <key>other</key>

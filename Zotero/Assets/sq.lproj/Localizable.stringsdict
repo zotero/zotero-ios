@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0">
+  <dict>
+    <key>items.collections_selected</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@collections_selected@</string>
+        <key>collections_selected</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>U përzgjodh 1 Koleksion</string>
+            <key>other</key>
+            <string>U përzgjodhën %d Koleksione</string>
+        </dict>
+    </dict>
+    <key>items.delete_question</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@delete_question@</string>
+        <key>delete_question</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>Jeni i sigurt se doni të fshihet objekti i përzgjedhur?</string>
+            <key>other</key>
+            <string>Jeni i sigurt se doni të fshihen objektet e përzgjedhur?</string>
+        </dict>
+    </dict>
+    <key>items.remove_from_collection_question</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@remove_from_collection_question@</string>
+        <key>remove_from_collection_question</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>Jeni i sigurt se doni të hiqet nga ky koleksion objekti i përzgjedhur?</string>
+            <key>other</key>
+            <string>Jeni i sigurt se doni të hiqen nga ky koleksion objektet e përzgjedhur?</string>
+        </dict>
+    </dict>
+    <key>items.toolbar_filter</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@toolbar_filter@</string>
+        <key>toolbar_filter</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>Filtro 1 objekt</string>
+            <key>other</key>
+            <string>Filtro %d objekte</string>
+        </dict>
+    </dict>
+    <key>pdf.search.matches</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@matches@</string>
+        <key>matches</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>U gjet 1 përkim</string>
+            <key>other</key>
+            <string>U gjetën %d përkime</string>
+        </dict>
+    </dict>
+    <key>settings.storage.files_size_and_unit</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@files@</string>
+        <key>files</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>1 kartelë (%.2f %@)</string>
+            <key>other</key>
+            <string>%d kartela (%.2f %@)</string>
+        </dict>
+    </dict>
+    <key>errors.sync_toolbar.errors</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@errors@</string>
+        <key>errors</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>1 problem</string>
+            <key>other</key>
+            <string>%d probleme</string>
+        </dict>
+    </dict>
+    <key>tag_picker.tags_selected</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@tags_selected@</string>
+        <key>tags_selected</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>U përzgjodh 1 etiketë</string>
+            <key>other</key>
+            <string>U përzgjodhën %d etiketa</string>
+        </dict>
+    </dict>
+    <key>tag_picker.confirm_deletion</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@confirm_deletion@</string>
+        <key>confirm_deletion</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>Jeni i sigurt se doni të fshihet 1 etiketë automatike në këtë bibliotekë?\n\nKy veprim s’mund të zhbëhet.</string>
+            <key>other</key>
+            <string>Jeni i sigurt se doni të fshihen %d etiketa automatike në këtë bibliotekë?\n\nKy veprim s’mund të zhbëhet.</string>
+        </dict>
+    </dict>
+    <key>settings.lines_logged</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@lines_logged@</string>
+        <key>lines_logged</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>U regjistrua 1 rresht</string>
+            <key>other</key>
+            <string>U regjistruan %d rreshta</string>
+        </dict>
+    </dict>
+    <key>settings.lines</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@lines@</string>
+        <key>lines</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>1 rresht</string>
+            <key>other</key>
+            <string>%d rreshta</string>
+        </dict>
+    </dict>
+    <key>errors.sync_toolbar.webdav_error2</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@webdav_error2@</string>
+        <key>webdav_error2</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>S’u fshi dot 1 kartelë nga shërbyesi juaj WebDAV</string>
+            <key>other</key>
+            <string>S’u fshinë dot %d kartela nga shërbyesi juaj WebDAV</string>
+        </dict>
+    </dict>
+    <key>settings.general.after_x_days</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@after_x_days@</string>
+        <key>after_x_days</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>Pas 1 Dite</string>
+            <key>other</key>
+            <string>Pas %d Ditësh</string>
+        </dict>
+    </dict>
+  </dict>
+</plist>

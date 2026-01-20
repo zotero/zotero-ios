@@ -114,7 +114,7 @@ final class ItemDetailViewController: UIViewController {
                     switch update.kind {
                     case .ready:
                         viewModel.process(action: .attachmentOpened(update.key))
-                        coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId)
+                        coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId, readerURL: nil)
 
                     case .failed(let error):
                         viewModel.process(action: .attachmentOpened(update.key))
@@ -209,6 +209,12 @@ final class ItemDetailViewController: UIViewController {
         case .openDoi(let doi):
             guard let encoded = FieldKeys.Item.clean(doi: doi).addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else { return }
             coordinatorDelegate?.show(doi: encoded)
+
+        case .openCollection(let collection):
+            coordinatorDelegate?.show(collection: collection, libraryId: viewModel.state.library.identifier)
+
+        case .openLibrary(let library):
+            coordinatorDelegate?.show(library: library.identifier)
         }
     }
 

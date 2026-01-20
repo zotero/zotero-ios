@@ -6,6 +6,7 @@
 //  Copyright © 2023 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import AVFAudio
 import UIKit
 import SwiftUI
 
@@ -26,6 +27,16 @@ protocol PdfReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarC
     func showFontSizePicker(sender: UIView, picked: @escaping (CGFloat) -> Void)
     func showDeleteAlertForAnnotation(sender: UIView, delete: @escaping () -> Void)
     func showDocumentChangedAlert(completed: @escaping () -> Void)
+    func showAccessibility<Delegate: SpeechmanagerDelegate>(
+        speechManager: SpeechManager<Delegate>,
+        document: Document,
+        userInterfaceStyle: UIUserInterfaceStyle,
+        sender: UIBarButtonItem,
+        animated: Bool,
+        isFormSheet: @escaping () -> Bool,
+        dismissAction: @escaping () -> Void,
+        voiceChangeAction: @escaping (AVSpeechSynthesisVoice) -> Void
+    )
 }
 
 protocol PdfAnnotationsCoordinatorDelegate: ReaderSidebarCoordinatorDelegate {
@@ -45,6 +56,7 @@ final class PDFCoordinator: ReaderCoordinator {
     private let page: Int?
     private let preselectedAnnotationKey: String?
     private let previewRects: [CGRect]?
+    private let sessionIdentifier: String
     internal unowned let controllers: Controllers
     private let disposeBag: DisposeBag
 
@@ -57,6 +69,7 @@ final class PDFCoordinator: ReaderCoordinator {
         preselectedAnnotationKey: String?,
         previewRects: [CGRect]?,
         navigationController: NavigationViewController,
+        sessionIdentifier: String,
         controllers: Controllers
     ) {
         self.key = key
@@ -67,6 +80,7 @@ final class PDFCoordinator: ReaderCoordinator {
         self.preselectedAnnotationKey = preselectedAnnotationKey
         self.previewRects = previewRects
         self.navigationController = navigationController
+        self.sessionIdentifier = sessionIdentifier
         self.controllers = controllers
         self.childCoordinators = []
         self.disposeBag = DisposeBag()
@@ -83,10 +97,11 @@ final class PDFCoordinator: ReaderCoordinator {
 
     func start(animated: Bool) {
         let username = Defaults.shared.username
-        guard let dbStorage = self.controllers.userControllers?.dbStorage,
-              let userId = self.controllers.sessionController.sessionData?.userId,
+        guard let userControllers = controllers.userControllers,
+              let userId = controllers.sessionController.sessionData?.userId,
               !username.isEmpty,
-              let parentNavigationController = self.parentCoordinator?.navigationController
+              let parentNavigationController = parentCoordinator?.navigationController,
+              let openItemsController = controllers.userControllers?.openItemsController
         else { return }
 
         let settings = Defaults.shared.pdfSettings
@@ -98,19 +113,19 @@ final class PDFCoordinator: ReaderCoordinator {
             DDLogWarn("PDFCoordinator: displayName is empty")
         }
         let handler = PDFReaderActionHandler(
-            dbStorage: dbStorage,
-            annotationPreviewController: self.controllers.annotationPreviewController,
-            pdfThumbnailController: self.controllers.pdfThumbnailController,
-            htmlAttributedStringConverter: self.controllers.htmlAttributedStringConverter,
-            schemaController: self.controllers.schemaController,
-            fileStorage: self.controllers.fileStorage,
-            idleTimerController: self.controllers.idleTimerController,
-            dateParser: self.controllers.dateParser
+            dbStorage: userControllers.dbStorage,
+            annotationPreviewController: controllers.annotationPreviewController,
+            pdfThumbnailController: controllers.pdfThumbnailController,
+            htmlAttributedStringConverter: controllers.htmlAttributedStringConverter,
+            schemaController: controllers.schemaController,
+            fileStorage: controllers.fileStorage,
+            idleTimerController: controllers.idleTimerController,
+            dateParser: controllers.dateParser
         )
         let state = PDFReaderState(
-            url: self.url,
-            key: self.key,
-            parentKey: self.parentKey,
+            url: url,
+            key: key,
+            parentKey: parentKey,
             title: try? controllers.userControllers?.dbStorage.perform(request: ReadFilenameDbRequest(libraryId: libraryId, key: key), on: .main),
             libraryId: libraryId,
             initialPage: page,
@@ -119,16 +134,20 @@ final class PDFCoordinator: ReaderCoordinator {
             settings: settings,
             userId: userId,
             username: username,
-            interfaceStyle: settings.appearanceMode == .automatic ? parentNavigationController.view.traitCollection.userInterfaceStyle : settings.appearanceMode.userInterfaceStyle
+            displayName: displayName,
+            interfaceStyle: settings.appearanceMode == .automatic ? parentNavigationController.view.traitCollection.userInterfaceStyle : settings.appearanceMode.userInterfaceStyle,
+            openItemsCount: openItemsController.getItems(for: sessionIdentifier).count
         )
         let controller = PDFReaderViewController(
             viewModel: ViewModel(initialState: state, handler: handler),
-            compactSize: UIDevice.current.isCompactWidth(size: parentNavigationController.view.frame.size)
+            pdfWorkerController: userControllers.pdfWorkerController,
+            compactSize: UIDevice.current.isCompactWidth(size: parentNavigationController.view.frame.size),
+            openItemsController: openItemsController
         )
         controller.coordinatorDelegate = self
         handler.delegate = controller
 
-        self.navigationController?.setViewControllers([controller], animated: false)
+        navigationController?.setViewControllers([controller], animated: false)
     }
 }
 
@@ -268,6 +287,68 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: { _ in completed() }))
         navigationController?.present(controller, animated: true)
     }
+
+    func showAccessibility<Delegate: SpeechmanagerDelegate>(
+        speechManager: SpeechManager<Delegate>,
+        document: Document,
+        userInterfaceStyle: UIUserInterfaceStyle,
+        sender: UIBarButtonItem,
+        animated: Bool,
+        isFormSheet: @escaping () -> Bool,
+        dismissAction: @escaping () -> Void,
+        voiceChangeAction: @escaping (AVSpeechSynthesisVoice) -> Void
+    ) {
+        guard let navigationController else { return }
+        let readerAction = { [weak self] in
+            guard let self else { return }
+            self.navigationController?.dismiss(animated: true)
+            showReader(document: document, userInterfaceStyle: userInterfaceStyle)
+        }
+        let controller = AccessibilityPopupViewController(
+            speechManager: speechManager,
+            isFormSheet: isFormSheet,
+            readerAction: readerAction,
+            dismissAction: dismissAction,
+            voiceChangeAction: voiceChangeAction
+        )
+        controller.overrideUserInterfaceStyle = userInterfaceStyle
+        controller.coordinatorDelegate = self
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            controller.modalPresentationStyle = .popover
+            controller.popoverPresentationController?.delegate = controller
+            if #available(iOS 17, *) {
+                controller.popoverPresentationController?.sourceItem = sender
+            } else {
+                controller.popoverPresentationController?.barButtonItem = sender
+            }
+        } else {
+            controller.modalPresentationStyle = .formSheet
+        }
+        navigationController.present(controller, animated: animated)
+    }
+}
+
+extension PDFCoordinator: AccessibilityPopoupCoordinatorDelegate {
+    func showVoicePicker(for voice: AVSpeechSynthesisVoice, userInterfaceStyle: UIUserInterfaceStyle, selectionChanged: @escaping (AVSpeechSynthesisVoice) -> Void) {
+        guard let navigationController else { return }
+        let view = SpeechVoicePickerView(selectedVoice: voice, dismiss: { voice in
+            selectionChanged(voice)
+            if let presentedViewController = navigationController.presentedViewController as? AccessibilityPopupViewController<PDFReaderViewController> {
+                presentedViewController.dismiss(animated: true)
+            } else {
+                navigationController.dismiss(animated: true)
+            }
+        })
+        let controller = UIHostingController(rootView: view)
+        controller.overrideUserInterfaceStyle = userInterfaceStyle
+        controller.modalPresentationStyle = .formSheet
+        controller.isModalInPresentation = true
+        if let presentedController = navigationController.presentedViewController {
+            presentedController.present(controller, animated: true)
+        } else {
+            navigationController.present(controller, animated: true)
+        }
+    }
 }
 
 extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
@@ -361,3 +442,9 @@ extension PDFCoordinator: DetailCitationCoordinatorDelegate {
 }
 
 extension PDFCoordinator: DetailCopyBibliographyCoordinatorDelegate { }
+
+extension PDFCoordinator: OpenItemsPresenter {
+    func showItem(with presentation: ItemPresentation?) {
+        (parentCoordinator as? OpenItemsPresenter)?.showItem(with: presentation)
+    }
+}

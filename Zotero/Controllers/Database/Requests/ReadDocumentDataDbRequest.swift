@@ -15,11 +15,12 @@ struct ReadDocumentDataDbRequest: DbResponseRequest {
 
     let attachmentKey: String
     let libraryId: LibraryIdentifier
+    let defaultPageValue: String
 
     var needsWrite: Bool { return false }
 
     func process(in database: Realm) throws -> String {
-        guard let pageIndex = database.objects(RPageIndex.self).uniqueObject(key: attachmentKey, libraryId: libraryId) else { return "0" }
+        guard let pageIndex = database.objects(RPageIndex.self).uniqueObject(key: attachmentKey, libraryId: libraryId) else { return defaultPageValue }
         return pageIndex.index
     }
 }

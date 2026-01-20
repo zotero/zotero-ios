@@ -44,6 +44,7 @@ struct CitationBibliographyExportView: View {
 
             case .styleOrLocaleMissing:
                 return nil
+
             default: break
             }
         }

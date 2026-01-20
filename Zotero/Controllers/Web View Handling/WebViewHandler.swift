@@ -236,33 +236,54 @@ class WebViewHandler: NSObject {
 
         DDLogInfo("WebViewHandler: send request to \(url.absoluteString)")
 
-        session.set(cookies: cookies, domain: url.host ?? "")
+        let domain = url.host() ?? ""
+        session.set(cookies: cookies, domain: domain)
 
         var request = URLRequest(url: url)
         request.httpMethod = method
-        headers.forEach { key, value in
-            request.setValue(value, forHTTPHeaderField: key)
-        }
-        if headers["User-Agent"] == nil, let userAgent {
-            request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
-        }
-        if headers["Referer"] == nil, let referer, !referer.isEmpty {
-            request.setValue(referer, forHTTPHeaderField: "Referer")
-        }
         request.httpBody = body?.data(using: .utf8)
         request.timeoutInterval = timeout
 
-        let task = session.dataTask(with: request) { [weak self] data, response, error in
+        addCloudflareCookie(domain: domain, existingHeaders: headers) { [weak self] headers in
             guard let self else { return }
-            if let response = response as? HTTPURLResponse {
-                sendHttpResponse(data: data, statusCode: response.statusCode, url: response.url, successCodes: successCodes, headers: response.allHeaderFields, for: messageId)
-            } else if let error {
-                sendHttpResponse(data: error.localizedDescription.data(using: .utf8), statusCode: -1, url: nil, successCodes: successCodes, headers: [:], for: messageId)
-            } else {
-                sendHttpResponse(data: "unknown error".data(using: .utf8), statusCode: -1, url: nil, successCodes: successCodes, headers: [:], for: messageId)
+            headers.forEach { key, value in
+                request.setValue(value, forHTTPHeaderField: key)
+            }
+            if headers["User-Agent"] == nil, let userAgent {
+                request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
+            }
+            if headers["Referer"] == nil, let referer, !referer.isEmpty {
+                request.setValue(referer, forHTTPHeaderField: "Referer")
+            }
+
+            let task = session.dataTask(with: request) { [weak self] data, response, error in
+                guard let self else { return }
+                if let response = response as? HTTPURLResponse {
+                    sendHttpResponse(data: data, statusCode: response.statusCode, url: response.url, successCodes: successCodes, headers: response.allHeaderFields, for: messageId)
+                } else if let error {
+                    sendHttpResponse(data: error.localizedDescription.data(using: .utf8), statusCode: -1, url: nil, successCodes: successCodes, headers: [:], for: messageId)
+                } else {
+                    sendHttpResponse(data: "unknown error".data(using: .utf8), statusCode: -1, url: nil, successCodes: successCodes, headers: [:], for: messageId)
+                }
+            }
+            task.resume()
+        }
+
+        func addCloudflareCookie(domain: String, existingHeaders: [String: String], completion: @escaping ([String: String]) -> Void) {
+            guard let webView else { return completion(existingHeaders) }
+            let store = webView.configuration.websiteDataStore.httpCookieStore
+            store.getAllCookies { cookies in
+                let cloudflareCookies = cookies.filter({ $0.name == "cf_clearance" && $0.domain.hasSuffix(domain) })
+                guard !cloudflareCookies.isEmpty else { return completion(existingHeaders) }
+                var cookieString = cloudflareCookies.map({ "\($0.name)=\($0.value)" }).joined(separator: "; ")
+                var headers = existingHeaders
+                if let existingCookie = headers["Cookie"], !existingCookie.isEmpty {
+                    cookieString = existingCookie + "; " + cookieString
+                }
+                headers["Cookie"] = cookieString
+                completion(headers)
             }
         }
-        task.resume()
     }
 }
 

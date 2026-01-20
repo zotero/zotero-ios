@@ -41,11 +41,17 @@ struct SettingsListView: View {
                 }, label: {
                     SettingsListButtonRow(text: L10n.Settings.Cite.title, detailText: nil, enabled: true)
                 })
-
+                
                 Button(action: {
                     self.coordinatorDelegate?.showSavingSettings()
                 }, label: {
                     SettingsListButtonRow(text: L10n.Settings.Saving.title, detailText: nil, enabled: true)
+                })
+                
+                Button(action: {
+                    self.coordinatorDelegate?.showAnnotationToolsSettings()
+                }, label: {
+                    SettingsListButtonRow(text: L10n.Settings.annotationTools, detailText: nil, enabled: true)
                 })
 
                 Button(action: {

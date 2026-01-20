@@ -32,6 +32,7 @@ struct HtmlEpubReaderState: ViewModelState {
         static let outline = Changes(rawValue: 1 << 13)
         static let appearance = Changes(rawValue: 1 << 14)
         static let searchResults = Changes(rawValue: 1 << 15)
+        static let openItems = Changes(rawValue: 1 << 16)
     }
 
     struct DocumentData {
@@ -44,6 +45,7 @@ struct HtmlEpubReaderState: ViewModelState {
         let url: URL
         let annotationsJson: String
         let page: Page?
+        let selectedAnnotationKey: String?
     }
 
     struct DocumentUpdate {
@@ -90,10 +92,15 @@ struct HtmlEpubReaderState: ViewModelState {
                 return L10n.Errors.unknown
             }
         }
+        
+        var documentShouldClose: Bool {
+            return false
+        }
     }
 
+    let readerURL: URL?
     let originalFile: File
-    let readerFile: File
+    let readerDirectory: File
     let documentFile: File
     let key: String
     let parentKey: String?
@@ -141,13 +148,31 @@ struct HtmlEpubReaderState: ViewModelState {
     var outlines: [Outline]
     var outlineSearch: String
     var interfaceStyle: UIUserInterfaceStyle
+    var openItemsCount: Int
 
-    init(url: URL, key: String, parentKey: String?, title: String?, settings: HtmlEpubSettings, libraryId: LibraryIdentifier, userId: Int, username: String, interfaceStyle: UIUserInterfaceStyle) {
+    var readerFile: File {
+        readerDirectory.copy(withName: "view", ext: "html")
+    }
+
+    init(
+        readerURL: URL?,
+        url: URL,
+        key: String,
+        parentKey: String?,
+        title: String?,
+        preselectedAnnotationKey: String?,
+        settings: HtmlEpubSettings,
+        libraryId: LibraryIdentifier,
+        userId: Int,
+        username: String,
+        interfaceStyle: UIUserInterfaceStyle,
+        openItemsCount: Int
+    ) {
+        self.readerURL = readerURL ?? Bundle.main.url(forResource: "reader", withExtension: nil, subdirectory: "Bundled")
         let originalFile = Files.file(from: url)
-        let temporaryDirectory = Files.tmpReaderDirectory
         self.originalFile = originalFile
-        readerFile = temporaryDirectory.copy(withName: "view", ext: "html")
-        documentFile = temporaryDirectory.appending(relativeComponent: "content").copy(withName: originalFile.name, ext: originalFile.ext)
+        readerDirectory = Files.temporaryDirectory
+        documentFile = readerDirectory.appending(relativeComponent: "content").copy(withName: originalFile.name, ext: originalFile.ext)
         self.key = key
         self.parentKey = parentKey
         self.title = title
@@ -155,6 +180,8 @@ struct HtmlEpubReaderState: ViewModelState {
         self.userId = userId
         self.username = username
         self.interfaceStyle = interfaceStyle
+        selectedAnnotationKey = preselectedAnnotationKey
+        self.openItemsCount = openItemsCount
         sortedKeys = []
         annotations = [:]
         comments = [:]

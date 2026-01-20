@@ -1061,6 +1061,7 @@ final class SyncController: SynchronizationController {
                     if updateIds.contains(groupId) {
                         idsToSync.append(groupId)
                     }
+
                 case .custom: break
                 }
             }
@@ -1963,6 +1964,7 @@ final class SyncController: SynchronizationController {
         case .submitDeleteBatch(let batch):
             let updatedBatch = batch.copy(withVersion: version)
             self.queue[0] = .submitDeleteBatch(updatedBatch)
+
         default: break
         }
     }
@@ -1981,6 +1983,7 @@ final class SyncController: SynchronizationController {
                 guard actionLibraryId == libraryId else { continue }
                 self.queue[idx] = .storeDeletionVersion(libraryId: libraryId, version: version)
                 return
+
             default: continue
             }
         }
@@ -2114,6 +2117,7 @@ final class SyncController: SynchronizationController {
             } else {
                 return .fatal(.apiError(response: error.localizedDescription, data: data))
             }
+
         case .multipartEncodingFailed,
              .parameterEncodingFailed,
              .parameterEncoderFailed,
@@ -2331,6 +2335,7 @@ fileprivate extension SyncController.Action {
 
         case .uploadAttachment(let upload):
             return upload.libraryId
+
         case .resolveDeletedGroup(let groupId, _),
              .resolveGroupMetadataWritePermission(let groupId, _),
              .deleteGroup(let groupId),
@@ -2338,6 +2343,7 @@ fileprivate extension SyncController.Action {
              .syncGroupToDb(let groupId),
              .resolveGroupFileWritePermission(let groupId, _):
             return .group(groupId)
+
         case .syncVersions(let libraryId, _, _, _),
              .storeVersion(_, let libraryId, _),
              .syncDeletions(let libraryId, _),
@@ -2360,6 +2366,7 @@ fileprivate extension SyncController.Action {
         switch self {
         case .resolveDeletedGroup, .resolveGroupMetadataWritePermission, .syncDeletions, .resolveGroupFileWritePermission:
             return true
+
         case .loadKeyPermissions,
              .createLibraryActions,
              .syncSettings,
@@ -2391,6 +2398,7 @@ fileprivate extension SyncController.Action {
         switch self {
         case .submitDeleteBatch, .submitWriteBatch, .uploadAttachment:
             return true
+
         case .loadKeyPermissions,
              .createLibraryActions,
              .syncSettings,

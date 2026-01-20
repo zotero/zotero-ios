@@ -101,6 +101,7 @@ struct SubmitUpdateSyncAction: SyncAction {
                 case .item, .trash:
                     // Cache JSONs locally for later use (in CR)
                     self.storeIndividualItemJsonObjects(from: Array(response.successfulJsonObjects.values), libraryId: self.libraryId)
+
                 case .collection, .search, .settings: break
                 }
             }
@@ -180,6 +181,7 @@ struct SubmitUpdateSyncAction: SyncAction {
                 case .search:
                     let response = try SearchResponse(response: json)
                     changedSearches.append(response)
+
                 case .settings: break
                 }
             } catch let error {
@@ -210,6 +212,7 @@ struct SubmitUpdateSyncAction: SyncAction {
 
             case .search:
                 requests.append(MarkObjectsAsSyncedDbRequest<RSearch>(libraryId: self.libraryId, keys: unchangedKeys, changeUuids: self.changeUuids, version: version))
+
             case .settings: break
             }
         }
@@ -225,6 +228,7 @@ struct SubmitUpdateSyncAction: SyncAction {
 
             case .search:
                 requests.append(MarkForResyncDbAction<RSearch>(libraryId: self.libraryId, keys: unchangedKeys))
+
             case .settings: break
             }
         }

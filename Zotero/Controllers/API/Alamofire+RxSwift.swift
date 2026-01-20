@@ -57,8 +57,10 @@ extension ObservableType where Element == (Data?, HTTPURLResponse) {
                         return .progressive()
                     }
                     return nil
+
                 default: return nil
                 }
+
             default: return nil
             }
         })

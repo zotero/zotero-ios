@@ -70,14 +70,19 @@ struct DebuggingView: View {
                 }
             }
 
-            Section {
-                Button {
-                    viewModel.process(action: .showFullSyncDebugging)
-                } label: {
-                    SettingsListButtonRow(text: L10n.Settings.fullSyncDebug, detailText: nil, enabled: true)
+            if viewModel.state.advancedVisible {
+                Section {
+                    Button {
+                        viewModel.process(action: .showFullSyncDebugging)
+                    } label: {
+                        SettingsListButtonRow(text: L10n.Settings.fullSyncDebug, detailText: nil, enabled: true)
+                    }
                 }
             }
         }
+        .onTapGesture(count: 6, perform: {
+            self.viewModel.process(action: .setAdvancedVisible(true))
+        })
         .navigationBarTitle(L10n.Settings.debug)
     }
 }

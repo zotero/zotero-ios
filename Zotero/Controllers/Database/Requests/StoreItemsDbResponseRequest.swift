@@ -248,6 +248,7 @@ struct StoreItemDbRequest: DbResponseRequest {
 
             case (FieldKeys.Item.Attachment.contentType, _), (_, FieldKeys.Item.Attachment.contentType):
                 contentType = value
+
             default: break
             }
         }

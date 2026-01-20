@@ -52,7 +52,9 @@ final class RealmObjectUserChangeObserver: ObjectUserChangeObserver {
                 guard !insertions.isEmpty || !modifications.isEmpty else { return }
                 // Settings are always reported by user library, even if they belong to groups.
                 self?.observable.on(.next([.custom(.myLibrary)]))
+
             case .initial: break // ignore the initial change, initially a full sync is performed anyway
+
             case .error(let error):
                 DDLogError("RealmObjectChangeObserver: RPageIndex observing error - \(error)")
             }
@@ -67,7 +69,9 @@ final class RealmObjectUserChangeObserver: ObjectUserChangeObserver {
                 let correctedModifications = Database.correctedModifications(from: modifications, insertions: insertions, deletions: deletions)
                 let updated = (insertions + correctedModifications).map({ results[$0] })
                 self?.reportChangedLibraries(for: updated)
+
             case .initial: break // ignore the initial change, initially a full sync is performed anyway
+
             case .error(let error):
                 DDLogError("RealmObjectChangeObserver: \(Obj.self) observing error - \(error)")
             }

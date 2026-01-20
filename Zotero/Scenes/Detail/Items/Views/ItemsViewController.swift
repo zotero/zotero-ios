@@ -31,9 +31,14 @@ final class ItemsViewController: BaseItemsViewController {
         return toolbarData(from: viewModel.state)
     }
 
-    init(viewModel: ViewModel<ItemsActionHandler>, controllers: Controllers, coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)) {
+    init(
+        viewModel: ViewModel<ItemsActionHandler>,
+        controllers: Controllers,
+        coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate),
+        presenter: OpenItemsPresenter
+    ) {
         self.viewModel = viewModel
-        super.init(controllers: controllers, coordinatorDelegate: coordinatorDelegate)
+        super.init(controllers: controllers, coordinatorDelegate: coordinatorDelegate, presenter: presenter)
         viewModel.process(action: .loadInitialState)
     }
 
@@ -62,6 +67,7 @@ final class ItemsViewController: BaseItemsViewController {
         setupRecognizerObserver()
         setupAppStateObserver()
         setupSettingsObserver()
+        setupOpenItemsObserving()
 
         if let term = viewModel.state.searchTerm, !term.isEmpty {
             navigationItem.searchController?.searchBar.text = term
@@ -165,6 +171,16 @@ final class ItemsViewController: BaseItemsViewController {
                 })
                 .disposed(by: disposeBag)
         }
+
+        func setupOpenItemsObserving() {
+            guard let controller = controllers.userControllers?.openItemsController, let sessionIdentifier else { return }
+            controller.observable(for: sessionIdentifier)
+                .observe(on: MainScheduler.instance)
+                .subscribe(onNext: { [weak self] items in
+                    self?.viewModel.process(action: .updateOpenItems(items: items))
+                })
+                .disposed(by: disposeBag)
+        }
     }
 
     deinit {
@@ -210,6 +226,10 @@ final class ItemsViewController: BaseItemsViewController {
 
         if state.changes.contains(.filters) || state.changes.contains(.batchData) {
             toolbarController?.reloadToolbarItems(for: toolbarData(from: state))
+        }
+        
+        if state.changes.contains(.openItems) {
+            setupRightBarButtonItems(expectedItems: rightBarButtonItemTypes(for: state))
         }
 
         if let key = state.itemKeyToDuplicate {
@@ -340,6 +360,9 @@ final class ItemsViewController: BaseItemsViewController {
 
         case .removeDownload:
             viewModel.process(action: .removeDownloads(selectedKeys))
+
+        case .debugReader:
+            break
         }
     }
 
@@ -359,6 +382,9 @@ final class ItemsViewController: BaseItemsViewController {
 
         case .select:
             viewModel.process(action: .startEditing)
+
+        case .restoreOpenItems:
+            super.process(barButtonItemAction: barButtonItemAction, sender: sender)
         }
     }
 
@@ -371,9 +397,10 @@ final class ItemsViewController: BaseItemsViewController {
                 updateTagFilter(filters: viewModel.state.filters, collectionId: collection.identifier, libraryId: library.identifier)
 
             case .update(let results, let deletions, let insertions, let modifications):
+                let frozenResults = results.freeze()
                 let correctedModifications = Database.correctedModifications(from: modifications, insertions: insertions, deletions: deletions)
-                viewModel.process(action: .updateKeys(items: results, deletions: deletions, insertions: insertions, modifications: correctedModifications))
-                dataSource.apply(snapshot: results.freeze(), modifications: modifications, insertions: insertions, deletions: deletions) { [weak self] in
+                viewModel.process(action: .updateKeys(items: frozenResults, deletions: deletions, insertions: insertions, modifications: correctedModifications))
+                dataSource.apply(snapshot: frozenResults, modifications: modifications, insertions: insertions, deletions: deletions) { [weak self] in
                     guard let self else { return }
                     updateTagFilter(filters: viewModel.state.filters, collectionId: collection.identifier, libraryId: library.identifier)
                 }
@@ -419,9 +446,27 @@ final class ItemsViewController: BaseItemsViewController {
         )
     }
 
+    override func setupRightBarButtonItems(expectedItems: [RightBarButtonItem]) {
+        defer {
+            updateRestoreOpenItemsButton(withCount: viewModel.state.openItemsCount)
+        }
+        super.setupRightBarButtonItems(expectedItems: expectedItems)
+
+        func updateRestoreOpenItemsButton(withCount count: Int) {
+            guard let item = navigationItem.rightBarButtonItems?.first(where: { button in RightBarButtonItem(rawValue: button.tag) == .restoreOpenItems }) else { return }
+            item.image = .openItemsImage(count: count)
+        }
+    }
+
     private func rightBarButtonItemTypes(for state: ItemsState) -> [RightBarButtonItem] {
-        let selectItems = rightBarButtonSelectItemTypes(for: state)
-        return state.library.metadataEditable ? [.add] + selectItems : selectItems
+        var items = rightBarButtonSelectItemTypes(for: state)
+        if state.library.metadataEditable {
+            items = [.add] + items
+        }
+        if FeatureGates.enabled.contains(.multipleOpenItems), state.openItemsCount > 0 {
+            items = [.restoreOpenItems] + items
+        }
+        return items
 
         func rightBarButtonSelectItemTypes(for state: ItemsState) -> [RightBarButtonItem] {
             if !state.isEditing {
@@ -478,8 +523,15 @@ extension ItemsViewController: ItemsTableViewHandlerDelegate {
         }
     }
 
-    func process(action: ItemAction.Kind, at index: Int, completionAction: ((Bool) -> Void)?) {
-        guard let object = dataSource.object(at: index) else { return }
+    func process(action: ItemAction.Kind, at indexPath: IndexPath, completionAction: ((Bool) -> Void)?) {
+        if action == .debugReader {
+            guard let tapAction = dataSource.tapAction(for: indexPath) else { return }
+            processDebugReaderAction(tapAction: tapAction) { [weak self] in
+                self?.process(tapAction: tapAction)
+            }
+            return
+        }
+        guard let object = dataSource.object(at: indexPath.row) else { return }
         process(action: action, for: [object.key], button: nil, completionAction: completionAction)
     }
 

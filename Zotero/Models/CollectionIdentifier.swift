@@ -51,6 +51,7 @@ extension CollectionIdentifier {
             case .trash: return true
             case .all, .publications, .unfiled: return false
             }
+
         default: return false
         }
     }

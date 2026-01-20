@@ -164,6 +164,7 @@ final class ExtensionViewModel {
                     default:
                         return true
                     }
+
                 default: return false
                 }
             }
@@ -427,6 +428,7 @@ final class ExtensionViewModel {
         case .itemWithAttachment(_, _, let file), .file(let file, _):
             // Remove temporary local file if it exists
             try? self.fileStorage.remove(file)
+
         case .item: break
         }
     }
@@ -1023,6 +1025,7 @@ final class ExtensionViewModel {
                            switch self.state.attachmentState {
                            case .downloading:
                                self.state.attachmentState = .downloading(progress.fractionCompleted)
+
                            default: break
                            }
                        })

@@ -17,7 +17,7 @@ protocol ItemsTableViewHandlerDelegate: AnyObject {
     var collectionKey: String? { get }
     var library: Library { get }
 
-    func process(action: ItemAction.Kind, at index: Int, completionAction: ((Bool) -> Void)?)
+    func process(action: ItemAction.Kind, at indexPath: IndexPath, completionAction: ((Bool) -> Void)?)
     func process(tapAction action: ItemsTableViewHandler.TapAction)
     func process(dragAndDropAction action: ItemsTableViewHandler.DragAndDropAction)
 }
@@ -104,7 +104,7 @@ final class ItemsTableViewHandler: NSObject {
     private func createContextMenu(at indexPath: IndexPath) -> UIMenu {
         let actions: [UIAction] = dataSource.createContextMenuActions(at: indexPath.row).map({ action in
             return UIAction(title: action.title, image: action.image, attributes: (action.isDestructive ? .destructive : [])) { [weak self] _ in
-                self?.delegate.process(action: action.type, at: indexPath.row, completionAction: nil)
+                self?.delegate.process(action: action.type, at: indexPath, completionAction: nil)
             }
         })
         return UIMenu(title: "", children: actions)
@@ -118,7 +118,7 @@ final class ItemsTableViewHandler: NSObject {
                     completion(false)
                     return
                 }
-                delegate.process(action: action.type, at: indexPath.row, completionAction: completion)
+                delegate.process(action: action.type, at: indexPath, completionAction: completion)
             })
             contextualAction.image = action.image
             switch action.type {
@@ -133,7 +133,9 @@ final class ItemsTableViewHandler: NSObject {
 
             case .removeFromCollection:
                 contextualAction.backgroundColor = .systemPurple
-            case .sort, .filter, .copyCitation, .copyBibliography, .share, .download, .removeDownload: break
+
+            case .sort, .filter, .copyCitation, .copyBibliography, .share, .download, .removeDownload, .debugReader:
+                break
             }
             return contextualAction
         })

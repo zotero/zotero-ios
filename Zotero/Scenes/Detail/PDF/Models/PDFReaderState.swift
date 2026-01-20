@@ -52,6 +52,7 @@ struct PDFReaderState: ViewModelState {
         static let library = Changes(rawValue: 1 << 15)
         static let md5 = Changes(rawValue: 1 << 16)
         static let appearance = Changes(rawValue: 1 << 17)
+        static let openItems = Changes(rawValue: 1 << 18)
     }
 
     enum Error: ReaderError {
@@ -62,10 +63,11 @@ struct PDFReaderState: ViewModelState {
         case pageNotInt
         case unknown
         case documentEmpty
+        case unknownLoading
 
         var title: String {
             switch self {
-            case .cantDeleteAnnotation, .cantAddAnnotations, .cantUpdateAnnotation, .pageNotInt, .unknown, .documentEmpty:
+            case .cantDeleteAnnotation, .cantAddAnnotations, .cantUpdateAnnotation, .pageNotInt, .unknown, .documentEmpty, .unknownLoading:
                 return L10n.error
 
             case .mergeTooBig:
@@ -90,11 +92,21 @@ struct PDFReaderState: ViewModelState {
             case .pageNotInt:
                 return L10n.Errors.Pdf.pageIndexNotInt
 
-            case .unknown:
+            case .unknown, .unknownLoading:
                 return L10n.Errors.unknown
 
             case .documentEmpty:
                 return L10n.Errors.Pdf.emptyDocument
+            }
+        }
+        
+        var documentShouldClose: Bool {
+            switch self {
+            case .documentEmpty, .pageNotInt, .unknownLoading:
+                return true
+                
+            case .cantDeleteAnnotation, .cantAddAnnotations, .cantUpdateAnnotation, .mergeTooBig, .unknown:
+                return false
             }
         }
     }
@@ -176,6 +188,8 @@ struct PDFReaderState: ViewModelState {
     var previewRects: [CGRect]?
     var unlockSuccessful: Bool?
 
+    var openItemsCount: Int
+
     init(
         url: URL,
         key: String,
@@ -188,7 +202,9 @@ struct PDFReaderState: ViewModelState {
         settings: PDFSettings,
         userId: Int,
         username: String,
-        interfaceStyle: UIUserInterfaceStyle
+        displayName: String,
+        interfaceStyle: UIUserInterfaceStyle,
+        openItemsCount: Int
     ) {
         self.key = key
         self.parentKey = parentKey
@@ -226,6 +242,7 @@ struct PDFReaderState: ViewModelState {
         self.activeFontSize = CGFloat(Defaults.shared.activeFontSize)
         self.deletionEnabled = false
         self.mergingEnabled = false
+        self.openItemsCount = openItemsCount
 
         self.previewCache.totalCostLimit = 1024 * 1024 * 10 // Cache object limit - 10 MB
 

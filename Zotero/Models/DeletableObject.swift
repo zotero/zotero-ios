@@ -80,6 +80,7 @@ extension RItem: Deletable {
 
         case ItemTypes.annotation:
             self.cleanupAnnotationFiles()
+
         default: break
         }
     }

@@ -10,7 +10,6 @@ import Foundation
 import WebKit
 
 import CocoaLumberjackSwift
-import RxCocoa
 import RxSwift
 
 final class PDFWorkerWebViewHandler: WebViewHandler {
@@ -25,7 +24,7 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
     }
 
     enum Error: Swift.Error {
-        case cantFindFile(String)
+        case cantFindWorkFile
     }
 
     enum PDFWorkerData {
@@ -34,12 +33,14 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
     }
 
     private let disposeBag: DisposeBag
-    private unowned let fileStorage: FileStorage
-    private var temporaryDirectory: File?
-    let observable: PublishSubject<Result<PDFWorkerData, Swift.Error>>
+    let temporaryDirectory: File
+    var workFile: File?
+    private let cleanup: (() -> Void)?
+    let observable: PublishSubject<(workId: String, result: Result<PDFWorkerData, Swift.Error>)>
 
-    init(webView: WKWebView, fileStorage: FileStorage) {
-        self.fileStorage = fileStorage
+    init(webView: WKWebView, temporaryDirectory: File, cleanup: (() -> Void)?) {
+        self.temporaryDirectory = temporaryDirectory
+        self.cleanup = cleanup
         observable = PublishSubject()
         disposeBag = DisposeBag()
 
@@ -51,73 +52,52 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
     }
 
     deinit {
-        guard let temporaryDirectory else { return }
-        try? fileStorage.remove(temporaryDirectory)
+        cleanup?()
     }
 
     override func initializeWebView() -> Single<()> {
         DDLogInfo("PDFWorkerWebViewHandler: initialize web view")
-        return createTemporaryWorker()
-            .flatMap { _ in
-                return loadIndex()
-            }
-
-        func createTemporaryWorker() -> Single<()> {
-            guard let workerHtmlUrl = Bundle.main.url(forResource: "worker", withExtension: "html") else {
-                return .error(Error.cantFindFile("worker.html"))
-            }
-            guard let workerJsUrl = Bundle.main.url(forResource: "worker", withExtension: "js", subdirectory: "Bundled/pdf_worker") else {
-                return .error(Error.cantFindFile("worker.js"))
-            }
-            let temporaryDirectory = Files.tmpReaderDirectory
-            self.temporaryDirectory = temporaryDirectory
-            do {
-                try fileStorage.copy(from: workerHtmlUrl.path, to: temporaryDirectory.copy(withName: "worker", ext: "html"))
-                try fileStorage.copy(from: workerJsUrl.path, to: temporaryDirectory.copy(withName: "worker", ext: "js"))
-                let cmapsDirectory = Files.file(from: workerJsUrl).directory.appending(relativeComponent: "cmaps")
-                try fileStorage.copyContents(of: cmapsDirectory, to: temporaryDirectory.appending(relativeComponent: "cmaps"))
-                let standardFontsDirectory = Files.file(from: workerJsUrl).directory.appending(relativeComponent: "standard_fonts")
-                try fileStorage.copyContents(of: standardFontsDirectory, to: temporaryDirectory.appending(relativeComponent: "standard_fonts"))
-            } catch let error {
-                return .error(error)
-            }
-            return Single.just(Void())
-        }
-
-        func loadIndex() -> Single<()> {
-            guard let temporaryDirectory else {
-                return .error(Error.cantFindFile("temporary directory"))
-            }
-            let indexUrl = temporaryDirectory.copy(withName: "worker", ext: "html").createUrl()
-            return load(fileUrl: indexUrl)
-        }
+        return load(fileUrl: temporaryDirectory.copy(withName: "worker", ext: "html").createUrl())
     }
 
-    private func performPDFWorkerOperation(file: FileData, operationName: String, jsFunction: String) {
+    private func performPDFWorkerOperation(operationName: String, jsFunction: String, additionalParams: [String] = [], workId: String) {
         performAfterInitialization()
+            .observe(on: MainScheduler.instance)
             .flatMap { [weak self] _ -> Single<Any> in
-                guard let self, let temporaryDirectory else { return .never() }
-                do {
-                    try fileStorage.copy(from: file.createUrl().path, to: temporaryDirectory.copy(withName: file.name, ext: file.ext))
-                } catch let error {
-                    return .error(error)
-                }
+                guard let self else { return .never() }
+                guard let workFile else { return .error(Error.cantFindWorkFile) }
                 DDLogInfo("PDFWorkerWebViewHandler: call \(operationName) js")
-                return call(javascript: "\(jsFunction)('\(file.fileName)');")
+                var javascript = "\(jsFunction)('\(workId)', '\(escapeJavaScriptString(workFile.fileName))'"
+                if !additionalParams.isEmpty {
+                    javascript += ", " + additionalParams.joined(separator: ", ")
+                }
+                javascript += ");"
+                return call(javascript: javascript)
             }
             .subscribe(onFailure: { [weak self] error in
                 DDLogError("PDFWorkerWebViewHandler: \(operationName) failed - \(error)")
-                self?.observable.on(.next(.failure(error)))
+                self?.observable.on(.next((workId: workId, result: .failure(error))))
             })
             .disposed(by: disposeBag)
+
+        func escapeJavaScriptString(_ string: String) -> String {
+            return string
+                .replacingOccurrences(of: "\\", with: "\\\\")
+                .replacingOccurrences(of: "'", with: "\\'")
+        }
     }
 
-    func recognize(file: FileData) {
-        performPDFWorkerOperation(file: file, operationName: "recognize", jsFunction: "recognize")
+    func recognize(workId: String) {
+        performPDFWorkerOperation(operationName: "recognize", jsFunction: "recognize", workId: workId)
     }
 
-    func getFullText(file: FileData) {
-        performPDFWorkerOperation(file: file, operationName: "getFullText", jsFunction: "getFullText")
+    func getFullText(pages: [Int]?, workId: String) {
+        performPDFWorkerOperation(
+            operationName: "getFullText",
+            jsFunction: "getFullText",
+            additionalParams: pages.flatMap({ ["[\($0.map({ "\($0)" }).joined(separator: ","))]"] }) ?? [],
+            workId: workId
+        )
     }
 
     /// Communication with JS in `webView`. The `webView` sends a message through one of the registered `JSHandlers`, which is received here.
@@ -127,12 +107,12 @@ final class PDFWorkerWebViewHandler: WebViewHandler {
 
         switch handler {
         case .recognizerData:
-            guard let data = (body as? [String: Any])?["recognizerData"] as? [String: Any] else { return }
-            observable.on(.next(.success(.recognizerData(data: data))))
+            guard let body = body as? [String: Any], let workId = body["workId"] as? String, let data = body["recognizerData"] as? [String: Any] else { return }
+            observable.on(.next((workId: workId, result: .success(.recognizerData(data: data)))))
 
         case .fullText:
-            guard let data = (body as? [String: Any])?["fullText"] as? [String: Any] else { return }
-            observable.on(.next(.success(.recognizerData(data: data))))
+            guard let body = body as? [String: Any], let workId = body["workId"] as? String, let data = body["fullText"] as? [String: Any] else { return }
+            observable.on(.next((workId: workId, result: .success(.fullText(data: data)))))
 
         case .log:
             DDLogInfo("PDFWorkerWebViewHandler: JSLOG - \(body)")

@@ -30,6 +30,7 @@ protocol SettingsCoordinatorDelegate: AnyObject {
     func showSchemePicker(viewModel: ViewModel<SyncSettingsActionHandler>)
     func promptZoteroDirCreation(url: String, create: @escaping () -> Void, cancel: @escaping () -> Void)
     func showWeb(url: URL, completion: @escaping () -> Void)
+    func showAnnotationToolsSettings()
 }
 
 protocol CitationStyleSearchSettingsCoordinatorDelegate: AnyObject {
@@ -320,6 +321,13 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
         let viewModel = ViewModel(initialState: GeneralSettingsState(), handler: GeneralSettingsActionHandler())
         let view = GeneralSettingsView().environmentObject(viewModel)
         self.pushDefaultSize(view: view)
+    }
+    
+    func showAnnotationToolsSettings() {
+        let state = AnnotationToolsSettingsState(pdfAnnotationTools: Defaults.shared.pdfAnnotationTools, htmlEpubAnnotationTools: Defaults.shared.htmlEpubAnnotationTools)
+        let viewModel = ViewModel(initialState: state, handler: AnnotationToolsSettingsViewModel())
+        let view = AnnotationToolsSettingsView().environmentObject(viewModel)
+        pushDefaultSize(view: view)
     }
 
     func dismiss() {

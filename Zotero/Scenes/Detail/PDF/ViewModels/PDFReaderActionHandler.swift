@@ -267,6 +267,13 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             update(viewModel: viewModel) { state in
                 state.unlockSuccessful = result
             }
+
+        case .updateOpenItems(let items):
+            guard viewModel.state.openItemsCount != items.count else { return }
+            update(viewModel: viewModel) { state in
+                state.openItemsCount = items.count
+                state.changes = .openItems
+            }
         }
     }
 
@@ -1797,6 +1804,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             let (item, liveAnnotations, storedPage) = try loadItemAnnotationsAndPage(for: key, libraryId: viewModel.state.library.identifier)
 
             if checkWhetherMd5Changed(forItem: item, andUpdateViewModel: viewModel, handler: self) {
+                DDLogWarn("PDFReaderActionHandler: MD5 has changed, before PDF was loaded")
                 return
             }
 
@@ -1874,7 +1882,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
             observeDocument(in: viewModel)
         } catch let error {
-            // TODO: - Show error
+            DDLogError("PDFReaderActionHandler: failed to load PDF: \(error)")
+            update(viewModel: viewModel) { state in
+                state.error = (error as? PDFReaderState.Error) ?? .unknownLoading
+            }
         }
 
         func observe(library: Library, viewModel: ViewModel<PDFReaderActionHandler>, handler: PDFReaderActionHandler) {
@@ -1933,7 +1944,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
             try dbStorage.perform(on: .main, with: { coordinator in
                 item = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
-                pageStr = try coordinator.perform(request: ReadDocumentDataDbRequest(attachmentKey: key, libraryId: libraryId))
+                pageStr = try coordinator.perform(request: ReadDocumentDataDbRequest(attachmentKey: key, libraryId: libraryId, defaultPageValue: "0"))
                 results = try coordinator.perform(request: ReadAnnotationsDbRequest(attachmentKey: key, libraryId: libraryId))
             })
 

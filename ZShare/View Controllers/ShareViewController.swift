@@ -503,6 +503,7 @@ final class ShareViewController: UIViewController {
 
             case .noSuccessfulTranslators:
                 return nil
+
             case .cantFindFile, .webExtractionMissingJs: // should never happen
                 return L10n.Errors.Shareext.missingBaseFiles
 

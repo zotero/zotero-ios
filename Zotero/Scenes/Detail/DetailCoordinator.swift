@@ -48,7 +48,7 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showCitation(using presenter: UIViewController?, for itemIds: Set<String>, libraryId: LibraryIdentifier, delegate: DetailCitationCoordinatorDelegate?)
     func copyBibliography(using presenter: UIViewController, for itemIds: Set<String>, libraryId: LibraryIdentifier, delegate: DetailCopyBibliographyCoordinatorDelegate?)
     func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier)
-    func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier)
+    func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier, readerURL: URL?)
     func show(error: ItemsError)
     func showLookup()
 }
@@ -65,7 +65,9 @@ protocol DetailItemDetailCoordinatorDelegate: AnyObject {
     func showDeletedAlertForItem(completion: @escaping (Bool) -> Void)
     func show(error: ItemDetailError, viewModel: ViewModel<ItemDetailActionHandler>)
     func showDataReloaded(completion: @escaping () -> Void)
-    func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier)
+    func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier, readerURL: URL?)
+    func show(collection: Collection, libraryId: LibraryIdentifier)
+    func show(library: LibraryIdentifier)
 }
 
 protocol DetailNoteEditorCoordinatorDelegate: AnyObject {
@@ -85,13 +87,16 @@ final class DetailCoordinator: Coordinator {
     weak var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
     private var transitionDelegate: EmptyTransitioningDelegate?
+    private unowned let mainCoordinatorDelegate: MainCoordinatorDelegate
     weak var itemsTagFilterDelegate: ItemsTagFilterDelegate?
     weak var navigationController: UINavigationController?
     private var tmpAudioDelegate: AVPlayerDelegate?
+    var presentedRestoredControllerWindow: UIWindow?
 
     let collection: Collection
     let libraryId: LibraryIdentifier
     let searchItemKeys: [String]?
+    let sessionIdentifier: String
     private unowned let controllers: Controllers
     private let disposeBag: DisposeBag
 
@@ -100,14 +105,18 @@ final class DetailCoordinator: Coordinator {
         collection: Collection,
         searchItemKeys: [String]?,
         navigationController: UINavigationController,
+        mainCoordinatorDelegate: MainCoordinatorDelegate,
         itemsTagFilterDelegate: ItemsTagFilterDelegate?,
+        sessionIdentifier: String,
         controllers: Controllers
     ) {
         self.libraryId = libraryId
         self.collection = collection
         self.searchItemKeys = searchItemKeys
         self.navigationController = navigationController
+        self.mainCoordinatorDelegate = mainCoordinatorDelegate
         self.itemsTagFilterDelegate = itemsTagFilterDelegate
+        self.sessionIdentifier = sessionIdentifier
         self.controllers = controllers
         self.childCoordinators = []
         self.disposeBag = DisposeBag()
@@ -144,7 +153,14 @@ final class DetailCoordinator: Coordinator {
             let searchTerm = searchItemKeys?.joined(separator: " ")
             let sortType = Defaults.shared.itemsSortType
             let downloadBatchData = ItemsState.DownloadBatchData(batchData: userControllers.fileDownloader.batchData)
-            let state = TrashState(libraryId: libraryId, sortType: sortType, searchTerm: searchTerm, filters: [], downloadBatchData: downloadBatchData)
+            let state = TrashState(
+                libraryId: libraryId,
+                sortType: sortType,
+                searchTerm: searchTerm,
+                filters: [],
+                downloadBatchData: downloadBatchData,
+                openItemsCount: userControllers.openItemsController.getItems(for: sessionIdentifier).count
+            )
             let handler = TrashActionHandler(
                 dbStorage: userControllers.dbStorage,
                 schemaController: controllers.schemaController,
@@ -154,7 +170,7 @@ final class DetailCoordinator: Coordinator {
                 htmlAttributedStringConverter: controllers.htmlAttributedStringConverter,
                 fileCleanupController: userControllers.fileCleanupController
             )
-            let controller = TrashViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: controllers, coordinatorDelegate: self)
+            let controller = TrashViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: controllers, coordinatorDelegate: self, presenter: self)
             controller.tagFilterDelegate = itemsTagFilterDelegate
             itemsTagFilterDelegate?.delegate = controller
             return controller
@@ -183,7 +199,8 @@ final class DetailCoordinator: Coordinator {
                 downloadBatchData: downloadBatchData,
                 remoteDownloadBatchData: remoteDownloadBatchData,
                 identifierLookupBatchData: identifierLookupBatchData,
-                error: nil
+                error: nil,
+                openItemsCount: userControllers.openItemsController.getItems(for: sessionIdentifier).count
             )
             let handler = ItemsActionHandler(
                 dbStorage: userControllers.dbStorage,
@@ -196,22 +213,22 @@ final class DetailCoordinator: Coordinator {
                 htmlAttributedStringConverter: controllers.htmlAttributedStringConverter,
                 recognizerController: userControllers.recognizerController
             )
-            let controller = ItemsViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: controllers, coordinatorDelegate: self)
+            let controller = ItemsViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: controllers, coordinatorDelegate: self, presenter: self)
             controller.tagFilterDelegate = itemsTagFilterDelegate
             itemsTagFilterDelegate?.delegate = controller
             return controller
         }
     }
 
-    func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier) {
+    func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier, readerURL: URL?) {
         guard let (attachment, sourceItem) = navigationController?.viewControllers.reversed()
             .compactMap({ ($0 as? DetailCoordinatorAttachmentProvider)?.attachment(for: key, parentKey: parentKey, libraryId: libraryId) })
             .first
         else { return }
-        show(attachment: attachment, parentKey: parentKey, libraryId: libraryId, sourceItem: sourceItem)
+        show(attachment: attachment, parentKey: parentKey, libraryId: libraryId, sourceItem: sourceItem, readerURL: readerURL)
     }
 
-    private func show(attachment: Attachment, parentKey: String?, libraryId: LibraryIdentifier, sourceItem: UIPopoverPresentationControllerSourceItem) {
+    private func show(attachment: Attachment, parentKey: String?, libraryId: LibraryIdentifier, sourceItem: UIPopoverPresentationControllerSourceItem, readerURL: URL?) {
         switch attachment.type {
         case .url(let url):
             show(url: url)
@@ -223,14 +240,20 @@ final class DetailCoordinator: Coordinator {
             switch contentType {
             case "application/pdf":
                 DDLogInfo("DetailCoordinator: show PDF \(attachment.key)")
-                showPdf(at: url, key: attachment.key, parentKey: parentKey, libraryId: libraryId)
+                showPDF(at: url, key: attachment.key, parentKey: parentKey, libraryId: libraryId, page: nil, preselectedAnnotationKey: nil, previewRects: nil)
 
-            case "text/html", "application/epub+zip":
+            case "text/html":
                 if FeatureGates.enabled.contains(.htmlEpubReader) {
-                    DDLogInfo("DetailCoordinator: show HTML / EPUB \(attachment.key)")
-                    showHtmlEpubReader(for: url, key: attachment.key, parentKey: parentKey, libraryId: libraryId)
-                } else if contentType == "text/html" {
+                    DDLogInfo("DetailCoordinator: show HTML \(attachment.key)")
+                    showHTML(at: url, key: attachment.key, parentKey: parentKey, libraryId: libraryId, readerURL: readerURL)
+                } else {
                     showWebView(for: url)
+                }
+
+            case "application/epub+zip":
+                if FeatureGates.enabled.contains(.htmlEpubReader) {
+                    DDLogInfo("DetailCoordinator: show EPUB \(attachment.key)")
+                    showEpub(at: url, key: attachment.key, parentKey: parentKey, libraryId: libraryId, readerURL: readerURL)
                 } else {
                     DDLogInfo("DetailCoordinator: share attachment \(attachment.key)")
                     share(item: file.createUrl(), sourceItem: sourceItem)
@@ -330,6 +353,19 @@ final class DetailCoordinator: Coordinator {
         navigationController.present(controller, animated: true, completion: nil)
     }
 
+    private func showDetail(presentedBy presenter: UIViewController, detailControllerProvider: () -> DetailNavigationViewController) {
+        if let presentedViewController = presenter.presentedViewController {
+            if let presentedDetailNavigationController = presentedViewController as? DetailNavigationViewController {
+                presentedDetailNavigationController.replaceContents(with: detailControllerProvider(), animated: false)
+                return
+            }
+            guard let window = presentedViewController.view.window else { return }
+            show(viewControllerProvider: detailControllerProvider, by: presenter, in: window, animated: false)
+            return
+        }
+        presenter.present(detailControllerProvider(), animated: true)
+    }
+
     func createPDFController(
         key: String,
         parentKey: String?,
@@ -338,8 +374,8 @@ final class DetailCoordinator: Coordinator {
         page: Int? = nil,
         preselectedAnnotationKey: String? = nil,
         previewRects: [CGRect]? = nil
-    ) -> NavigationViewController {
-        let navigationController = NavigationViewController()
+    ) -> DetailNavigationViewController {
+        let navigationController = DetailNavigationViewController()
         navigationController.modalPresentationStyle = .fullScreen
 
         let coordinator = PDFCoordinator(
@@ -351,8 +387,10 @@ final class DetailCoordinator: Coordinator {
             preselectedAnnotationKey: preselectedAnnotationKey,
             previewRects: previewRects,
             navigationController: navigationController,
+            sessionIdentifier: sessionIdentifier,
             controllers: controllers
         )
+        navigationController.coordinator = coordinator
         coordinator.parentCoordinator = self
         childCoordinators.append(coordinator)
         coordinator.start(animated: false)
@@ -360,24 +398,74 @@ final class DetailCoordinator: Coordinator {
         return navigationController
     }
 
-    func createHtmlEpubController(key: String, parentKey: String?, libraryId: LibraryIdentifier, url: URL) -> NavigationViewController {
-        let navigationController = NavigationViewController()
+    func createHtmlEpubController(key: String, parentKey: String?, libraryId: LibraryIdentifier, url: URL, readerURL: URL?, preselectedAnnotationKey: String? = nil) -> DetailNavigationViewController {
+        let navigationController = DetailNavigationViewController()
         navigationController.modalPresentationStyle = .fullScreen
-        let coordinator = HtmlEpubCoordinator(key: key, parentKey: parentKey, libraryId: libraryId, url: url, navigationController: navigationController, controllers: controllers)
+
+        let coordinator = HtmlEpubCoordinator(
+            key: key,
+            parentKey: parentKey,
+            libraryId: libraryId,
+            url: url,
+            readerURL: readerURL,
+            preselectedAnnotationKey: preselectedAnnotationKey,
+            navigationController: navigationController,
+            sessionIdentifier: sessionIdentifier,
+            controllers: controllers
+        )
+        navigationController.coordinator = coordinator
         coordinator.parentCoordinator = self
-        self.childCoordinators.append(coordinator)
+        childCoordinators.append(coordinator)
         coordinator.start(animated: false)
+
         return navigationController
     }
 
-    private func showPdf(at url: URL, key: String, parentKey: String?, libraryId: LibraryIdentifier) {
-        let controller = createPDFController(key: key, parentKey: parentKey, libraryId: libraryId, url: url)
-        navigationController?.present(controller, animated: true, completion: nil)
+    private func show(_ kind: OpenItem.Kind, collectionId: CollectionIdentifier, targetSessionIdentifier: String, sourceSessionIdentifier: String, openItemsController: OpenItemsController) {
+        let application = UIApplication.shared
+        guard let itemSession = application.openSessions.first(where: { $0.persistentIdentifier == targetSessionIdentifier }) else { return }
+        openItemsController.open(kind, for: targetSessionIdentifier)
+        let userActivity = openItemsController.openItemsUserActivity(for: targetSessionIdentifier, libraryId: kind.libraryId, collectionId: collectionId)
+        let options = UIScene.ActivationRequestOptions()
+        options.requestingScene = application.connectedScenes.first(where: { $0.session.persistentIdentifier == sourceSessionIdentifier })
+        let errorHandler: (any Error) -> Void = { error in
+            DDLogError("DetailCoordinator: failed to activate scene session: \(itemSession) - \(error)")
+        }
+        if #available(iOS 17.0, *) {
+            let request = UISceneSessionActivationRequest(session: itemSession, userActivity: userActivity, options: options)
+            application.activateSceneSession(for: request, errorHandler: errorHandler)
+        } else {
+            application.requestSceneSessionActivation(itemSession, userActivity: userActivity, options: options, errorHandler: errorHandler)
+        }
     }
 
-    private func showHtmlEpubReader(for url: URL, key: String, parentKey: String?, libraryId: LibraryIdentifier) {
-        let controller = createHtmlEpubController(key: key, parentKey: parentKey, libraryId: libraryId, url: url)
-        self.navigationController?.present(controller, animated: true, completion: nil)
+    private func showReaderItem(kind: OpenItem.Kind, detailControllerProvider: () -> DetailNavigationViewController) {
+        guard let navigationController, let openItemsController = controllers.userControllers?.openItemsController else { return }
+        if let existingSessionIdentifier = openItemsController.sessionIdentifier(for: kind), existingSessionIdentifier != sessionIdentifier {
+            show(kind, collectionId: collection.id, targetSessionIdentifier: existingSessionIdentifier, sourceSessionIdentifier: sessionIdentifier, openItemsController: openItemsController)
+            return
+        }
+        openItemsController.open(kind, for: sessionIdentifier)
+
+        showDetail(presentedBy: navigationController, detailControllerProvider: detailControllerProvider)
+    }
+
+    private func showPDF(at url: URL, key: String, parentKey: String?, libraryId: LibraryIdentifier, page: Int?, preselectedAnnotationKey: String?, previewRects: [CGRect]?) {
+        showReaderItem(kind: .pdf(libraryId: libraryId, key: key)) {
+            self.createPDFController(key: key, parentKey: parentKey, libraryId: libraryId, url: url, page: page, preselectedAnnotationKey: preselectedAnnotationKey, previewRects: previewRects)
+        }
+    }
+
+    private func showHTML(at url: URL, key: String, parentKey: String?, libraryId: LibraryIdentifier, readerURL: URL? = nil) {
+        showReaderItem(kind: .html(libraryId: libraryId, key: key)) {
+            self.createHtmlEpubController(key: key, parentKey: parentKey, libraryId: libraryId, url: url, readerURL: readerURL)
+        }
+    }
+
+    private func showEpub(at url: URL, key: String, parentKey: String?, libraryId: LibraryIdentifier, readerURL: URL? = nil) {
+        showReaderItem(kind: .epub(libraryId: libraryId, key: key)) {
+            self.createHtmlEpubController(key: key, parentKey: parentKey, libraryId: libraryId, url: url, readerURL: readerURL)
+        }
     }
 
     private func showWebView(for url: URL) {
@@ -466,7 +554,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
 
         controller.addAction(UIAlertAction(title: L10n.Items.newNote, style: .default, handler: { [weak self, weak viewModel] _ in
             guard let self, let viewModel else { return }
-            showNote(library: viewModel.state.library, kind: .standaloneCreation(collection: viewModel.state.collection), saveCallback: nil)
+            showNote(library: viewModel.state.library, kind: .standaloneCreation(collection: viewModel.state.collection))
         }))
 
         if viewModel.state.library.filesEditable {
@@ -549,8 +637,8 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         tags: [Tag],
         parentTitleData: NoteEditorState.TitleData?,
         title: String?
-    ) -> NavigationViewController {
-        return createNoteController(library: library, kind: kind, text: text, tags: tags, parentTitleData: parentTitleData, title: title).0
+    ) -> DetailNavigationViewController {
+        createNoteController(library: library, kind: kind, text: text, tags: tags, parentTitleData: parentTitleData, title: title).0
     }
 
     private func createNoteController(
@@ -560,8 +648,8 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         tags: [Tag],
         parentTitleData: NoteEditorState.TitleData?,
         title: String?
-    ) -> (NavigationViewController, ViewModel<NoteEditorActionHandler>) {
-        let navigationController = NavigationViewController()
+    ) -> (DetailNavigationViewController, ViewModel<NoteEditorActionHandler>) {
+        let navigationController = DetailNavigationViewController()
         navigationController.modalPresentationStyle = .fullScreen
         navigationController.isModalInPresentation = true
 
@@ -573,8 +661,10 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
             parentTitleData: parentTitleData,
             title: title,
             navigationController: navigationController,
+            sessionIdentifier: sessionIdentifier,
             controllers: controllers
         )
+        navigationController.coordinator = coordinator
         coordinator.parentCoordinator = self
         childCoordinators.append(coordinator)
         coordinator.start(animated: false)
@@ -595,8 +685,8 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
                 previewRects: previewRects
             )
 
-        case .html(let library, let key, let parentKey, let url), .epub(let library, let key, let parentKey, let url):
-            return createHtmlEpubController(key: key, parentKey: parentKey, libraryId: library.identifier, url: url)
+        case .html(let library, let key, let parentKey, let url, let preselectedAnnotationKey), .epub(let library, let key, let parentKey, let url, let preselectedAnnotationKey):
+            return createHtmlEpubController(key: key, parentKey: parentKey, libraryId: library.identifier, url: url, readerURL: nil, preselectedAnnotationKey: preselectedAnnotationKey)
 
         case .note(let library, let key, let text, let tags, let parentTitleData, let title):
             let kind: NoteEditorKind = library.metadataEditable ? .edit(key: key) : .readOnly(key: key)
@@ -663,7 +753,13 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         navigationController.modalPresentationStyle = .popover
         navigationController.popoverPresentationController?.sourceItem = button
 
-        let coordinator = ItemsFilterCoordinator(filters: filters, filtersDelegate: filtersDelegate, navigationController: navigationController, controllers: controllers)
+        let coordinator = ItemsFilterCoordinator(
+            filters: filters,
+            filtersDelegate: filtersDelegate,
+            navigationController: navigationController,
+            mainCoordinatorDelegate: mainCoordinatorDelegate,
+            controllers: controllers
+        )
         coordinator.parentCoordinator = self
         childCoordinators.append(coordinator)
         coordinator.start(animated: false)
@@ -809,7 +905,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
 extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
     func showAttachmentPicker(save: @escaping ([URL]) -> Void) {
         guard let navigationController else { return }
-        let controller = DocumentPickerViewController(forOpeningContentTypes: [.pdf, .png, .jpeg], asCopy: true)
+        let controller = DocumentPickerViewController(forOpeningContentTypes: [.item], asCopy: true)
         controller.popoverPresentationController?.sourceItem = navigationController.visibleViewController?.view
         controller.observable
                   .observe(on: MainScheduler.instance)
@@ -1038,6 +1134,10 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
         case .cantRemoveItem, .cantRemoveParent:
             title = L10n.error
             message = L10n.Errors.unknown
+            
+        case .cantRemoveCollection:
+            title = L10n.error
+            message = L10n.Errors.ItemDetail.cantRemoveCollection
         }
 
         let controller = UIAlertController(title: title, message: message, preferredStyle: .alert)
@@ -1060,6 +1160,14 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
         }))
         self.navigationController?.present(controller, animated: true, completion: nil)
     }
+
+    func show(collection: Collection, libraryId: LibraryIdentifier) {
+        (navigationController?.splitViewController as? MainViewController)?.masterCoordinator?.showCollections(for: libraryId, preselectedCollection: collection.identifier, animated: true)
+    }
+    
+    func show(library: LibraryIdentifier) {
+        (navigationController?.splitViewController as? MainViewController)?.masterCoordinator?.showCollections(for: libraryId, preselectedCollection: .custom(.all), animated: true)
+    }
 }
 
 extension DetailCoordinator: DetailNoteEditorCoordinatorDelegate {
@@ -1070,27 +1178,47 @@ extension DetailCoordinator: DetailNoteEditorCoordinatorDelegate {
         tags: [Tag] = [],
         parentTitleData: NoteEditorState.TitleData? = nil,
         title: String? = nil,
-        saveCallback: ((Note) -> Void)?
+        saveCallback: ((Note) -> Void)? = nil
     ) {
         guard let navigationController else { return }
+        var creationCallback: ((Note) -> Void)?
         switch kind {
         case .itemCreation, .standaloneCreation:
             DDLogInfo("DetailCoordinator: show note creation")
+            creationCallback = { [weak self] note in
+                guard let self, let openItemsController = controllers.userControllers?.openItemsController else { return }
+                openItemsController.open(.note(libraryId: library.identifier, key: note.key), for: sessionIdentifier)
+            }
 
         case .edit(let key), .readOnly(let key):
             DDLogInfo("DetailCoordinator: show note \(key)")
+            guard let openItemsController = controllers.userControllers?.openItemsController else { return }
+            let kind: OpenItem.Kind = .note(libraryId: library.identifier, key: key)
+            if let existingSessionIdentifier = openItemsController.sessionIdentifier(for: kind), existingSessionIdentifier != sessionIdentifier {
+                show(kind, collectionId: collection.id, targetSessionIdentifier: existingSessionIdentifier, sourceSessionIdentifier: sessionIdentifier, openItemsController: openItemsController)
+                return
+            }
+            openItemsController.open(kind, for: sessionIdentifier)
         }
-        let (controller, viewModel) = createNoteController(library: library, kind: kind, text: text, tags: tags, parentTitleData: parentTitleData, title: title)
-        navigationController.present(controller, animated: true)
 
-        if let saveCallback {
-            viewModel.stateObservable
-                .observe(on: MainScheduler.instance)
-                .subscribe(onNext: { state in
-                    guard state.changes.contains(.saved), case .edit(let key) = state.kind else { return }
-                    saveCallback(Note(key: key, text: state.text, tags: state.tags))
-                })
-                .disposed(by: disposeBag)
+        showDetail(presentedBy: navigationController) {
+            let (controller, viewModel) = self.createNoteController(library: library, kind: kind, text: text, tags: tags, parentTitleData: parentTitleData, title: title)
+
+            if saveCallback != nil || creationCallback != nil {
+                viewModel.stateObservable
+                    .observe(on: MainScheduler.instance)
+                    .subscribe(onNext: { state in
+                        guard state.changes.contains(.saved), case .edit(let key) = state.kind else { return }
+                        let note = Note(key: key, text: state.text, tags: state.tags)
+                        if state.changes.contains(.kind) {
+                            creationCallback?(note)
+                        }
+                        saveCallback?(note)
+                    })
+                    .disposed(by: disposeBag)
+            }
+
+            return controller
         }
     }
 }
@@ -1123,6 +1251,30 @@ extension DetailCoordinator: DetailCitationCoordinatorDelegate {
 }
 
 extension DetailCoordinator: DetailCopyBibliographyCoordinatorDelegate { }
+
+extension DetailCoordinator: OpenItemsPresenter {
+    func showItem(with presentation: ItemPresentation?) {
+        switch presentation {
+        case .pdf(let library, let key, let parentKey, let url, let page, let preselectedAnnotationKey, let previewRects):
+            showPDF(at: url, key: key, parentKey: parentKey, libraryId: library.identifier, page: page, preselectedAnnotationKey: preselectedAnnotationKey, previewRects: previewRects)
+
+        case .html(let library, let key, let parentKey, let url, let preselectedAnnotationKey):
+            showHTML(at: url, key: key, parentKey: parentKey, libraryId: library.identifier)
+
+        case .epub(let library, let key, let parentKey, let url, let preselectedAnnotationKey):
+            showEpub(at: url, key: key, parentKey: parentKey, libraryId: library.identifier)
+
+        case .note(let library, let key, let text, let tags, let parentTitleData, let title):
+            let kind: NoteEditorKind = library.metadataEditable ? .edit(key: key) : .readOnly(key: key)
+            showNote(library: library, kind: kind, text: text, tags: tags, parentTitleData: parentTitleData, title: title)
+
+        case .none:
+            navigationController?.dismiss(animated: true)
+        }
+    }
+}
+
+extension DetailCoordinator: InstantPresenter { }
 
 // swiftlint:disable private_over_fileprivate
 fileprivate class AVPlayerDelegate: NSObject, AVPlayerViewControllerDelegate {

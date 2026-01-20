@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0">
+  <dict>
+    <key>items.collections_selected</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@collections_selected@</string>
+        <key>collections_selected</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>1 collezione selezionata</string>
+            <key>many</key>
+            <string>%d collezioni selezionate</string>
+            <key>other</key>
+            <string>%d collezioni selezionate</string>
+        </dict>
+    </dict>
+    <key>items.delete_question</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@delete_question@</string>
+        <key>delete_question</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>Vuoi eliminare l'elemento selezionato?</string>
+            <key>many</key>
+            <string>Vuoi eliminare gli elementi selezionati?</string>
+            <key>other</key>
+            <string>Vuoi eliminare gli elementi selezionati?</string>
+        </dict>
+    </dict>
+    <key>items.remove_from_collection_question</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@remove_from_collection_question@</string>
+        <key>remove_from_collection_question</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>Vuoi rimuovere l'elemento selezionato da questa collezione?</string>
+            <key>many</key>
+            <string>Vuoi rimuovere gli elementi selezionati da questa collezione?</string>
+            <key>other</key>
+            <string>Vuoi rimuovere gli elementi selezionati da questa collezione?</string>
+        </dict>
+    </dict>
+    <key>items.toolbar_filter</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@toolbar_filter@</string>
+        <key>toolbar_filter</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>Filtro: 1 elemento</string>
+            <key>many</key>
+            <string>Filtro: %d elementi</string>
+            <key>other</key>
+            <string>Filtro: %d elementi</string>
+        </dict>
+    </dict>
+    <key>pdf.search.matches</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@matches@</string>
+        <key>matches</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>Trovata 1 corrispondenza</string>
+            <key>many</key>
+            <string>Trovate %d corrispondenze</string>
+            <key>other</key>
+            <string>Trovate %d corrispondenze</string>
+        </dict>
+    </dict>
+    <key>settings.storage.files_size_and_unit</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@files@</string>
+        <key>files</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>1 file (%.2f %@)</string>
+            <key>many</key>
+            <string>%d file (%.2f %@)</string>
+            <key>other</key>
+            <string>%d file (%.2f %@)</string>
+        </dict>
+    </dict>
+    <key>errors.sync_toolbar.errors</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@errors@</string>
+        <key>errors</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>1 problema</string>
+            <key>many</key>
+            <string>%d problemi</string>
+            <key>other</key>
+            <string>%d problemi</string>
+        </dict>
+    </dict>
+    <key>tag_picker.tags_selected</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@tags_selected@</string>
+        <key>tags_selected</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>1 tag selezionato</string>
+            <key>many</key>
+            <string>%d tag selezionati</string>
+            <key>other</key>
+            <string>%d tag selezionati</string>
+        </dict>
+    </dict>
+    <key>tag_picker.confirm_deletion</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@confirm_deletion@</string>
+        <key>confirm_deletion</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>Vuoi eliminare 1 tag automatico in questa biblioteca?\n\nQuesta operazione non può essere annullata.</string>
+            <key>many</key>
+            <string>Vuoi eliminare %d tag automatici in questa biblioteca?\n\nQuesta operazione non può essere annullata.</string>
+            <key>other</key>
+            <string>Vuoi eliminare %d tag automatici in questa biblioteca?\n\nQuesta operazione non può essere annullata.</string>
+        </dict>
+    </dict>
+    <key>settings.lines_logged</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@lines_logged@</string>
+        <key>lines_logged</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>1 linea registrata</string>
+            <key>many</key>
+            <string>%d linee registrate</string>
+            <key>other</key>
+            <string>%d linee registrate</string>
+        </dict>
+    </dict>
+    <key>settings.lines</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@lines@</string>
+        <key>lines</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>1 linea</string>
+            <key>many</key>
+            <string>%d linee</string>
+            <key>other</key>
+            <string>%d linee</string>
+        </dict>
+    </dict>
+    <key>errors.sync_toolbar.webdav_error2</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@webdav_error2@</string>
+        <key>webdav_error2</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>Impossibile eliminare 1 file dal tuo server WebDAV</string>
+            <key>many</key>
+            <string>Impossibile eliminare %d file dal tuo server WebDAV</string>
+            <key>other</key>
+            <string>Impossibile eliminare %d file dal tuo server WebDAV</string>
+        </dict>
+    </dict>
+    <key>settings.general.after_x_days</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@after_x_days@</string>
+        <key>after_x_days</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>Dopo 1 giorno</string>
+            <key>many</key>
+            <string>Dopo %d giorni</string>
+            <key>other</key>
+            <string>Dopo %d giorni</string>
+        </dict>
+    </dict>
+  </dict>
+</plist>

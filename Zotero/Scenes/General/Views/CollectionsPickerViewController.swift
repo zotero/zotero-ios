@@ -125,7 +125,11 @@ class CollectionsPickerViewController: UICollectionViewController {
     }
 
     private func updateTitle(with selectedCount: Int) {
-        title = L10n.Items.collectionsSelected(selectedCount)
+        if selectedCount == 0 {
+            title = L10n.Items.collectionsSelectPrompt
+        } else {
+            title = L10n.Items.collectionsSelected(selectedCount)
+        }
     }
 
     private func updateDataSource(with state: CollectionsPickerState, animated: Bool) {
