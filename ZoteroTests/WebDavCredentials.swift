@@ -17,6 +17,7 @@ class WebDavCredentials: WebDavSessionStorage {
     var url: String
     var scheme: WebDavScheme
     var password: String
+    var trustedCertificateData: Data?
 
     func createToken() throws -> String {
         return "\(self.username):\(self.password)".data(using: .utf8)!.base64EncodedString()
@@ -29,5 +30,6 @@ class WebDavCredentials: WebDavSessionStorage {
         self.password = password
         self.scheme = scheme
         self.url = url
+        self.trustedCertificateData = nil
     }
 }

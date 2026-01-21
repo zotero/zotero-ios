@@ -9,9 +9,23 @@
 import Foundation
 
 import CocoaLumberjackSwift
-import RxSwift
+@preconcurrency import RxSwift
 
-final class RemoteAttachmentDownloader {
+/// Downloads attachments from Zotero's remote servers.
+///
+/// **Thread Safety (@unchecked Sendable - implicitly via accessQueue):**
+/// All mutable state is protected by `accessQueue` (serial DispatchQueue):
+/// - `downloads` - set of active downloads
+/// - `operations` - dictionary of download operations
+/// - `progressObservers` - dictionary of progress observers
+/// - `errors` - dictionary of download errors
+/// - `batchCount` and `totalBatchCount` - batch tracking
+///
+/// All mutations use `accessQueue.async(flags: .barrier)` for exclusive access.
+/// Reads may use regular async or sync depending on requirements.
+///
+/// **RxSwift Integration:** Observable subjects are thread-safe by design.
+final class RemoteAttachmentDownloader: @unchecked Sendable {
     struct Download: Hashable {
         let key: String
         let parentKey: String
@@ -121,14 +135,45 @@ final class RemoteAttachmentDownloader {
 
             let progress = Progress(totalUnitCount: 100)
             let operation = RemoteAttachmentDownloadOperation(url: url, file: file, progress: progress, apiClient: apiClient, fileStorage: fileStorage, queue: processingQueue)
+            
+            // Capture self weakly to avoid retain cycles
             operation.finishedDownload = { [weak self] result in
-                self?.accessQueue.async(flags: .barrier) {
-                    finish(download: download, file: file, attachment: attachment, parentKey: parentKey, result: result)
+                guard let self = self else { return }
+                
+                self.accessQueue.async(flags: .barrier) {
+                    self.operations[download] = nil
+                    self.progressObservers[download] = nil
+                    self.resetBatchDataIfNeeded()
+
+                    switch result {
+                    case .success:
+                        DDLogInfo("RemoteAttachmentDownloader: finished downloading \(download.key)")
+                        self.observable.on(.next(Update(download: download, kind: .ready(attachment))))
+                        self.errors[download] = nil
+
+                    case .failure(let error):
+                        DDLogError("RemoteAttachmentDownloader: failed to download attachment \(download.key), \(download.libraryId) - \(error)")
+
+                        let isCancelError = (error as? RemoteAttachmentDownloadOperation.Error) == .cancelled
+                        self.errors[download] = isCancelError ? nil : error
+
+                        if isCancelError {
+                            self.observable.on(.next(Update(download: download, kind: .cancelled)))
+                        } else {
+                            self.observable.on(.next(Update(download: download, kind: .failed)))
+                        }
+                    }
                 }
             }
+            
             operation.progressHandler = { [weak self] progress in
-                self?.accessQueue.async(flags: .barrier) {
-                    observe(progress: progress, attachment: attachment, download: download)
+                guard let self = self else { return }
+                
+                self.accessQueue.async(flags: .barrier) {
+                    let observer = progress.observe(\.fractionCompleted) { [weak self] progress, _ in
+                        self?.observable.on(.next(Update(download: download, kind: .progress(CGFloat(progress.fractionCompleted)))))
+                    }
+                    self.progressObservers[download] = observer
                 }
             }
 
@@ -145,38 +190,6 @@ final class RemoteAttachmentDownloader {
             }
 
             return (download, operation)
-            
-            @Sendable func finish(download: Download, file: File, attachment: Attachment, parentKey: String, result: Result<(), Swift.Error>) {
-                operations[download] = nil
-                progressObservers[download] = nil
-                resetBatchDataIfNeeded()
-
-                switch result {
-                case .success:
-                    DDLogInfo("RemoteAttachmentDownloader: finished downloading \(download.key)")
-                    observable.on(.next(Update(download: download, kind: .ready(attachment))))
-                    errors[download] = nil
-
-                case .failure(let error):
-                    DDLogError("RemoteAttachmentDownloader: failed to download attachment \(download.key), \(download.libraryId) - \(error)")
-
-                    let isCancelError = (error as? RemoteAttachmentDownloadOperation.Error) == .cancelled
-                    errors[download] = isCancelError ? nil : error
-
-                    if isCancelError {
-                        observable.on(.next(Update(download: download, kind: .cancelled)))
-                    } else {
-                        observable.on(.next(Update(download: download, kind: .failed)))
-                    }
-                }
-            }
-            
-            @Sendable func observe(progress: Progress, attachment: Attachment, download: Download) {
-                let observer = progress.observe(\.fractionCompleted) { [weak self] progress, _ in
-                    self?.observable.on(.next(Update(download: download, kind: .progress(CGFloat(progress.fractionCompleted)))))
-                }
-                progressObservers[download] = observer
-            }
         }
     }
     

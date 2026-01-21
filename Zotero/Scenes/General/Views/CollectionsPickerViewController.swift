@@ -119,7 +119,7 @@ class CollectionsPickerViewController: UICollectionViewController {
             updateTitle(with: state.selected.count)
         }
 
-        if let error = state.error {
+        if state.error != nil {
             // TODO: - show error
         }
     }

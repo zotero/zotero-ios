@@ -387,7 +387,7 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
                         DDLogInfo("PDFCoordinator: share pdf annotation image - activity type: \(String(describing: activityType)) completed: \(completed) error: \(String(describing: error))")
                     }
                     
-                    ((childCoordinators.last as? AnnotationPopoverCoordinator) ?? (self as? Coordinator))?.share(item: shareableImage, sourceItem: sender, completionWithItemsHandler: completion)
+                    ((childCoordinators.last as? AnnotationPopoverCoordinator) ?? (self as Coordinator))?.share(item: shareableImage, sourceItem: sender, completionWithItemsHandler: completion)
                 }
                 action.accessibilityLabel = L10n.Accessibility.Pdf.shareAnnotationImage + " " + title
                 action.isAccessibilityElement = true
