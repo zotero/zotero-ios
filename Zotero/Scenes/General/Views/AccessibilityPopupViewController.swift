@@ -15,7 +15,13 @@ import RxSwift
 import CocoaLumberjackSwift
 
 protocol AccessibilityPopoupCoordinatorDelegate: AnyObject {
-    func showVoicePicker(for voice: AVSpeechSynthesisVoice, userInterfaceStyle: UIUserInterfaceStyle, selectionChanged: @escaping (AVSpeechSynthesisVoice) -> Void)
+    func showVoicePicker(
+        for voice: SpeechVoice,
+        language: String?,
+        detectedLanguage: String,
+        userInterfaceStyle: UIUserInterfaceStyle,
+        selectionChanged: @escaping (SpeechVoice, String?) -> Void
+    )
 }
 
 final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: UIViewController, UIPopoverPresentationControllerDelegate {
@@ -25,7 +31,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
     private let readerAction: () -> Void
     private let dismissAction: () -> Void
     private let isFormSheet: () -> Bool
-    private let voiceChangeAction: (AVSpeechSynthesisVoice) -> Void
+    private let voiceChangeAction: (SpeechVoice, String?) -> Void
     private var containerTop: NSLayoutConstraint!
     private var containerHeight: NSLayoutConstraint!
     private weak var speechButton: UIButton!
@@ -46,7 +52,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
         isFormSheet: @escaping () -> Bool,
         readerAction: @escaping () -> Void,
         dismissAction: @escaping () -> Void,
-        voiceChangeAction: @escaping (AVSpeechSynthesisVoice) -> Void
+        voiceChangeAction: @escaping (SpeechVoice, String?) -> Void
     ) {
         self.speechManager = speechManager
         self.isFormSheet = isFormSheet
@@ -114,16 +120,15 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
             controlsView.setContentHuggingPriority(.defaultLow, for: .vertical)
             speechContainer.addSubview(controlsView)
 
-//            let currentVoice = speechManager.currentVoice
             var voiceConfiguration = UIButton.Configuration.filled()
-//            voiceConfiguration.title = currentVoice.flatMap({ self.voiceTitle(from: $0) }) ?? "Voice"
+            voiceConfiguration.title = speechManager.voice.flatMap({ voiceTitle(from: $0) }) ?? "Voice"
             voiceConfiguration.titleLineBreakMode = .byTruncatingMiddle
             voiceConfiguration.baseBackgroundColor = .systemGray5
             voiceConfiguration.baseForegroundColor = .label
             voiceConfiguration.cornerStyle = .capsule
             voiceConfiguration.contentInsets = .init(top: 6, leading: 10, bottom: 6, trailing: 10)
             let voiceButton = UIButton(configuration: voiceConfiguration)
-//            voiceButton.isEnabled = currentVoice != nil
+            voiceButton.isEnabled = false
             voiceButton.setContentHuggingPriority(.required, for: .vertical)
             voiceButton.setContentHuggingPriority(.required, for: .horizontal)
             voiceButton.addAction(UIAction(handler: { [weak self] _ in self?.showVoiceOptions() }), for: .touchUpInside)
@@ -291,19 +296,31 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
 
     // MARK: - Actions
 
-    private func voiceTitle(from voice: AVSpeechSynthesisVoice) -> String {
-        return Locale.current.localizedString(forIdentifier: voice.language) ?? voice.language// + " - " + voice.name
+    private func voiceTitle(from voice: SpeechVoice) -> String {
+        switch voice {
+        case .local(let voice):
+            return voice.name
+            
+        case .remote(let voice):
+            return voice.label
+        }
     }
 
     private func showVoiceOptions() {
-//        guard let voice = speechManager.currentVoice else { return }
-//        if speechManager.isSpeaking {
-//            speechManager.pause()
-//        }
-//        coordinatorDelegate?.showVoicePicker(for: voice, userInterfaceStyle: overrideUserInterfaceStyle, selectionChanged: { [weak self] voice in
-//            self?.update(voice: voice)
-//            self?.voiceChangeAction(voice)
-//        })
+        guard let voice = speechManager.voice else { return }
+        if speechManager.isSpeaking {
+            speechManager.pause()
+        }
+        coordinatorDelegate?.showVoicePicker(
+            for: voice,
+            language: speechManager.language,
+            detectedLanguage: speechManager.detectedLanguage,
+            userInterfaceStyle: overrideUserInterfaceStyle,
+            selectionChanged: { [weak self] voice, language in
+                self?.update(voice: voice)
+                self?.voiceChangeAction(voice, language)
+            }
+        )
     }
 
     private func formatted(modifier: Float) -> String {
@@ -349,14 +366,14 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
                 return loadingSpeakingContainerState()
 
             case .speaking:
-//                if !voiceButton.isEnabled, let voice = speechManager.currentVoice {
-//                    // TODO: - change title when page changes
-//                    var config = voiceButton.configuration
-//                    config?.title = voiceTitle(from: voice)
-//                    voiceButton.configuration = config
-//                    voiceButton.isEnabled = true
-//                    speedButton.isEnabled = true
-//                }
+                if !voiceButton.isEnabled, let voice = speechManager.voice {
+                    // TODO: - change title when page changes
+                    var config = voiceButton.configuration
+                    config?.title = voiceTitle(from: voice)
+                    voiceButton.configuration = config
+                    voiceButton.isEnabled = true
+                    speedButton.isEnabled = true
+                }
                 return loadingSpeakingContainerState()
 
             case .stopped:
@@ -390,7 +407,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
         }
     }
 
-    private func update(voice: AVSpeechSynthesisVoice) {
+    private func update(voice: SpeechVoice) {
         var config = voiceButton.configuration
         config?.title = voiceTitle(from: voice)
         voiceButton.configuration = config

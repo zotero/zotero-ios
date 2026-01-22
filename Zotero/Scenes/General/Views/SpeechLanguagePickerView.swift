@@ -16,33 +16,44 @@ struct SpeechLanguagePickerView: View {
     }
 
     private let languages: [Language]
-    @Binding private var selectedLanguage: String
+    @Binding private var selectedLanguage: SpeechVoicePickerView.Language
     @Binding private var navigationPath: NavigationPath
 
-    init(selectedLanguage: Binding<String>, navigationPath: Binding<NavigationPath>) {
+    init(selectedLanguage: Binding<SpeechVoicePickerView.Language>, languages: [String], navigationPath: Binding<NavigationPath>) {
         _selectedLanguage = selectedLanguage
         _navigationPath = navigationPath
         let voices = AVSpeechSynthesisVoice.speechVoices()
-        languages = Locale.availableIdentifiers
-            .filter({ languageId in !languageId.contains("_") && voices.contains(where: { $0.language.contains(languageId) }) })
-            .map({ Language(id: $0, name: Locale.current.localizedString(forIdentifier: $0) ?? $0) })
+        self.languages = languages.map({ Language(id: $0, name: Locale.current.localizedString(forIdentifier: $0) ?? $0) })
             .sorted(by: { $0.name.caseInsensitiveCompare($1.name) == .orderedAscending })
     }
 
     var body: some View {
         List {
             Section {
+                HStack {
+                    Text("Auto")
+                    Spacer()
+                    if case .auto = selectedLanguage {
+                        Image(systemName: "checkmark").foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUIColor)
+                    }
+                }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    selectedLanguage = .auto
+                    navigationPath.removeLast()
+                }
+                
                 ForEach(languages) { language in
                     HStack {
                         Text(language.name)
                         Spacer()
-                        if selectedLanguage == language.id {
+                        if case .language(let code) = selectedLanguage, code == language.id {
                             Image(systemName: "checkmark").foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUIColor)
                         }
                     }
                     .contentShape(Rectangle())
                     .onTapGesture {
-                        selectedLanguage = language.id
+                        selectedLanguage = .language(language.id)
                         navigationPath.removeLast()
                     }
                 }
@@ -52,5 +63,5 @@ struct SpeechLanguagePickerView: View {
 }
 
 #Preview {
-    SpeechLanguagePickerView(selectedLanguage: .constant("en"), navigationPath: .constant(.init()))
+    SpeechLanguagePickerView(selectedLanguage: .constant(.auto), languages: ["en"], navigationPath: .constant(.init()))
 }
