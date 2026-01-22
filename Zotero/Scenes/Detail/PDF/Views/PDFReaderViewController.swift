@@ -1104,7 +1104,7 @@ extension PDFReaderViewController: AccessibilityViewDelegate {
         animated: Bool,
         isFormSheet: @escaping () -> Bool,
         dismissAction: @escaping () -> Void,
-        voiceChangeAction: @escaping (AVSpeechSynthesisVoice) -> Void
+        voiceChangeAction: @escaping (SpeechVoice, String?) -> Void
     ) {
         coordinatorDelegate?.showAccessibility(
             speechManager: speechManager,

@@ -165,6 +165,9 @@ final class Defaults {
     
     @UserDefault(key: "SpeechDefaultRemoteVoiceForLanguage", defaultValue: [:])
     var defaultRemoteVoiceForLanguage: [String: String]
+    
+    @UserDefault(key: "SpeechIsUsingRemoteVoice", defaultValue: false)
+    var isUsingRemoteVoice: Bool
 
     // MARK: - Citation / Bibliography Export
 
