@@ -67,21 +67,30 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     private lazy var paragraphRegex: NSRegularExpression? = {
         return try? NSRegularExpression(pattern: "[\r\n]{1,}")
     }()
-    private var overrideLanguage: String?
     
     let state: BehaviorRelay<SpeechState>
     var isSpeaking: Bool { processor.isSpeaking }
     var isPaused: Bool { processor.isPaused }
-    var voice: SpeechVoice { processor.speechVoice }
+    var voice: SpeechVoice? { processor.speechVoice }
+    var language: String? { processor.preferredLanguage }
     var speechRateModifier: Float { processor.speechRateModifier }
+    var detectedLanguage: String {
+        guard let text = currentPageText else { return "en" }
+        let recognizer = NLLanguageRecognizer()
+        recognizer.processString(text)
+        return recognizer.dominantLanguage?.rawValue ?? "en"
+    }
 
-    init(delegate: Delegate, voiceLanguage: String? = nil) {
+    init(delegate: Delegate, voiceLanguage: String?, useRemoteVoices: Bool) {
         self.delegate = delegate
         cachedPages = [:]
         state = BehaviorRelay(value: .loading)
-        overrideLanguage = voiceLanguage
         super.init()
-        processor = LocalVoiceProcessor(speechRateModifier: 1, state: state, delegate: self)
+        if useRemoteVoices {
+            processor = RemoteVoiceProcessor(language: voiceLanguage, speechRateModifier: 1, state: state)
+        } else {
+            processor = LocalVoiceProcessor(language: voiceLanguage, speechRateModifier: 1, state: state, delegate: self)
+        }
         processor.speechRateModifier = speechRateModifier
     }
 
@@ -123,23 +132,32 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         processor.stop()
     }
 
-    func set(voice: SpeechVoice) {
+    func set(voice: SpeechVoice, preferredLanguage: String?) {
         switch voice {
         case .local(let voice):
             if let processor = processor as? LocalVoiceProcessor {
-                processor.set(voice: voice)
+                processor.set(voice: voice, preferredLanguage: preferredLanguage)
             } else {
-                let _processor = LocalVoiceProcessor(speechRateModifier: processor.speechRateModifier, state: state, delegate: self)
-                _processor.set(voice: voice)
+                let _processor = LocalVoiceProcessor(
+                    language: preferredLanguage,
+                    speechRateModifier: processor.speechRateModifier,
+                    state: state,
+                    delegate: self
+                )
+                _processor.set(voice: voice, preferredLanguage: preferredLanguage)
                 processor = _processor
             }
             
         case .remote(let voice):
             if let processor = processor as? RemoteVoiceProcessor {
-                processor.set(voice: voice)
+                processor.set(voice: voice, preferredLanguage: preferredLanguage)
             } else {
-                let _processor = RemoteVoiceProcessor(speechRateModifier: processor.speechRateModifier, state: state)
-                _processor.set(voice: voice)
+                let _processor = RemoteVoiceProcessor(
+                    language: preferredLanguage,
+                    speechRateModifier: processor.speechRateModifier,
+                    state: state
+                )
+                _processor.set(voice: voice, preferredLanguage: preferredLanguage)
                 processor = _processor
             }
         }
@@ -295,7 +313,8 @@ private protocol VoiceProcessor {
     var isSpeaking: Bool { get }
     var isPaused: Bool { get }
     var state: BehaviorRelay<SpeechState> { get }
-    var speechVoice: SpeechVoice { get }
+    var speechVoice: SpeechVoice? { get }
+    var preferredLanguage: String? { get }
     var speechRateModifier: Float { get set }
     
     func speak(text: String, shouldDetectVoice: Bool)
@@ -326,6 +345,7 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
     private let synthesizer: AVSpeechSynthesizer
     private unowned let delegate: VoiceProcessorDelegate
 
+    private(set) var preferredLanguage: String?
     private var voice: AVSpeechSynthesisVoice?
     private var shouldReloadUtteranceOnResume = false
     private var ignoreFinishCallCount = 0
@@ -340,17 +360,12 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
     var isPaused: Bool {
         return synthesizer.isPaused
     }
-    var speechVoice: SpeechVoice {
-        if let voice {
-            return .local(voice)
-        } else if let text = delegate.currentPageText {
-            return .local(voice(for: text))
-        } else {
-            return .local(.init())
-        }
+    var speechVoice: SpeechVoice? {
+        return voice.flatMap({ .local($0) })
     }
 
-    init(speechRateModifier: Float, state: BehaviorRelay<SpeechState>, delegate: VoiceProcessorDelegate) {
+    init(language: String?, speechRateModifier: Float, state: BehaviorRelay<SpeechState>, delegate: VoiceProcessorDelegate) {
+        preferredLanguage = language
         self.speechRateModifier = speechRateModifier
         self.delegate = delegate
         self.state = state
@@ -402,9 +417,10 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
         }
     }
 
-    func set(voice: AVSpeechSynthesisVoice) {
+    func set(voice: AVSpeechSynthesisVoice, preferredLanguage: String?) {
         guard self.voice?.identifier != voice.identifier else { return }
         Defaults.shared.defaultLocalVoiceForLanguage[voice.baseLanguage] = voice.identifier
+        self.preferredLanguage = preferredLanguage
         self.voice = voice
         utteranceChanged()
     }
@@ -427,6 +443,9 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
     }
 
     private func voice(for text: String) -> AVSpeechSynthesisVoice {
+        if let preferredLanguage {
+            return findVoice(for: preferredLanguage)
+        }
         let recognizer = NLLanguageRecognizer()
         recognizer.processString(text)
         let language = recognizer.dominantLanguage?.rawValue ?? "en"
@@ -484,7 +503,8 @@ extension LocalVoiceProcessor: AVSpeechSynthesizerDelegate {
 
 private final class RemoteVoiceProcessor: VoiceProcessor {
     let state: BehaviorRelay<SpeechState>
-
+    
+    var preferredLanguage: String?
     var speechRateModifier: Float
     var isSpeaking: Bool {
         return false
@@ -492,16 +512,18 @@ private final class RemoteVoiceProcessor: VoiceProcessor {
     var isPaused: Bool {
         return false
     }
-    var speechVoice: SpeechVoice {
-        return .remote(.init(id: "", label: "", creditsPerSecond: 0, segmentGranularity: ""))
+    var speechVoice: SpeechVoice? {
+        return nil
     }
 
-    init(speechRateModifier: Float, state: BehaviorRelay<SpeechState>) {
+    init(language: String?, speechRateModifier: Float, state: BehaviorRelay<SpeechState>) {
+        preferredLanguage = language
         self.speechRateModifier = speechRateModifier
         self.state = state
     }
     
-    func set(voice: RemoteVoice) {
+    func set(voice: RemoteVoice, preferredLanguage: String?) {
+        self.preferredLanguage = preferredLanguage
     }
 
     func speak(text: String, shouldDetectVoice: Bool) {

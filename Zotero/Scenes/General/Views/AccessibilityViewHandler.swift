@@ -17,7 +17,7 @@ protocol AccessibilityViewDelegate: AnyObject {
         animated: Bool,
         isFormSheet: @escaping () -> Bool,
         dismissAction: @escaping () -> Void,
-        voiceChangeAction: @escaping (AVSpeechSynthesisVoice) -> Void
+        voiceChangeAction: @escaping (SpeechVoice, String?) -> Void
     )
     func accessibilityToolbarChanged(height: CGFloat)
     func addAccessibilityControlsViewToAnnotationToolbar(view: AnnotationToolbarLeadingView)
@@ -56,7 +56,7 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
         self.documentContainer = documentContainer
         self.dbStorage = dbStorage
         let language = try? dbStorage.perform(request: ReadSpeechLanguageDbRequest(key: key, libraryId: libraryId), on: .main)
-        speechManager = SpeechManager(delegate: delegate, voiceLanguage: language)
+        speechManager = SpeechManager(delegate: delegate, voiceLanguage: language, useRemoteVoices: Defaults.shared.isUsingRemoteVoice)
     }
 
     func createAccessibilityButton(isSelected: Bool, isFilled: Bool, isEnabled: Bool = true) -> UIBarButtonItem {
@@ -98,8 +98,8 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
                 showOverlayIfNeeded(forType: currentOverlayType(controller: self))
                 reloadSpeechButton(isSelected: false)
             },
-            voiceChangeAction: { [weak self] voice in
-                self?.processVoiceChange(toVoice: voice)
+            voiceChangeAction: { [weak self] voice, language in
+                self?.processVoiceChange(toVoice: voice, language: language)
             }
         )
         
@@ -114,9 +114,16 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
         }
     }
 
-    private func processVoiceChange(toVoice voice: AVSpeechSynthesisVoice) {
-        try? dbStorage.perform(request: SetSpeechLanguageDbRequest(key: key, libraryId: libraryId, language: voice.baseLanguage), on: .main)
-        speechManager.set(voice: .local(voice))
+    private func processVoiceChange(toVoice voice: SpeechVoice, language: String?) {
+        try? dbStorage.perform(request: SetSpeechLanguageDbRequest(key: key, libraryId: libraryId, language: language), on: .main)
+        speechManager.set(voice: voice, preferredLanguage: language)
+        switch voice {
+        case .local:
+            Defaults.shared.isUsingRemoteVoice = false
+            
+        case .remote:
+            Defaults.shared.isUsingRemoteVoice = true
+        }
     }
 
     private func reloadSpeechButton(isSelected: Bool) {
