@@ -10,6 +10,7 @@ import AVFAudio
 import SwiftUI
 
 import CocoaLumberjackSwift
+import RxSwift
 
 struct SpeechVoicePickerView: View {
     enum Language: Identifiable, Equatable {
@@ -41,9 +42,10 @@ struct SpeechVoicePickerView: View {
         case remote, local
     }
 
-//    private unowned let apiClient: ApiClient
+    private unowned let apiClient: ApiClient
     private let detectedLanguage: String
     private let dismiss: (SpeechVoice, String?) -> Void
+    private let disposeBag: DisposeBag
 
     @State private var type: VoiceType
     @State private var language: Language
@@ -51,15 +53,21 @@ struct SpeechVoicePickerView: View {
     @State private var localVoices: [AVSpeechSynthesisVoice]
     @State private var remoteVoices: [RemoteVoice]
     @State private var navigationPath: NavigationPath
+    @State private var allRemoteVoices: [RemoteVoice]
+    @State private var supportedRemoteLanguages: Set<String>
 
-    init(selectedVoice: SpeechVoice, language: String?, detectedLanguage: String, dismiss: @escaping (SpeechVoice, String?) -> Void) {
+    init(selectedVoice: SpeechVoice, language: String?, detectedLanguage: String, apiClient: ApiClient, dismiss: @escaping (SpeechVoice, String?) -> Void) {
         self.selectedVoice = selectedVoice
         self.language = language.flatMap({ .language($0) }) ?? .auto
         self.detectedLanguage = detectedLanguage
+        self.apiClient = apiClient
         self.dismiss = dismiss
         navigationPath = NavigationPath()
         localVoices = Self.localVoices(for: language ?? detectedLanguage)
         remoteVoices = []
+        allRemoteVoices = []
+        supportedRemoteLanguages = []
+        disposeBag = .init()
         switch selectedVoice {
         case .local:
             type = .local
@@ -75,13 +83,19 @@ struct SpeechVoicePickerView: View {
         NavigationStack(path: $navigationPath) {
             List {
                 TypeSection(type: $type)
-                LanguageSection(language: $language, navigationPath: $navigationPath)
+                if canShowLanguage {
+                    LanguageSection(language: $language, navigationPath: $navigationPath)
+                }
                 switch type {
                 case .local:
                     LocalVoicesSection(voices: $localVoices, selectedVoice: $selectedVoice)
                     
                 case .remote:
-                    RemoteVoicesSection(voices: $remoteVoices, selectedVoice: $selectedVoice)
+                    if !allRemoteVoices.isEmpty {
+                        RemoteVoicesSection(voices: $remoteVoices, selectedVoice: $selectedVoice, apiClient: apiClient)
+                    } else {
+                        ActivityIndicatorView(style: .large, isAnimating: .constant(true))
+                    }
                 }
             }
             .listStyle(.grouped)
@@ -93,8 +107,9 @@ struct SpeechVoicePickerView: View {
                 }
             })
             .onChange(of: language) { newValue in
-                localVoices = Self.localVoices(for: newValue.code(detectedLanguage: detectedLanguage))
-                // TODO: - remoteVoices = allRemoteVoices[newValue.code(detectedLanguage: detectedLanguage)] ?? []
+                let language = newValue.code(detectedLanguage: detectedLanguage)
+                localVoices = Self.localVoices(for: language)
+                remoteVoices = allRemoteVoices.filter({ voice in voice.locales.contains(where: { $0.contains(language) }) })
                 
                 switch type {
                 case .local:
@@ -121,6 +136,31 @@ struct SpeechVoicePickerView: View {
                     }
                 }
             }
+            .onAppear {
+                apiClient.send(request: VoicesRequest())
+                    .subscribe(
+                        onSuccess: { (data: [RemoteVoice], _) in
+                            allRemoteVoices = data
+                            let language = language.code(detectedLanguage: detectedLanguage)
+                            remoteVoices = allRemoteVoices.filter({ voice in voice.locales.contains(where: { $0.contains(language) }) })
+                            supportedRemoteLanguages.removeAll()
+                            data.forEach({ supportedRemoteLanguages.formUnion($0.locales) })
+                        }, onFailure: { error in
+                            DDLogError("Test: \(error)")
+                        }
+                    )
+                    .disposed(by: disposeBag)
+            }
+        }
+    }
+    
+    private var canShowLanguage: Bool {
+        switch type {
+        case .local:
+            return true
+            
+        case .remote:
+            return !allRemoteVoices.isEmpty
         }
     }
     
@@ -138,7 +178,7 @@ struct SpeechVoicePickerView: View {
 
     private static func localVoices(for language: String) -> [AVSpeechSynthesisVoice] {
         return AVSpeechSynthesisVoice.speechVoices()
-            .filter({ $0.language == language })
+            .filter({ $0.language.contains(language) })
             .sorted(by: { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending })
     }
 }
@@ -205,16 +245,29 @@ fileprivate struct LanguageSection: View {
 }
 
 fileprivate struct LocalVoicesSection: View {
-    private let synthetizer: AVSpeechSynthesizer = .init()
+    private let synthetizer: AVSpeechSynthesizer
+    private let shouldShowVariation: Bool
 
     @Binding var voices: [AVSpeechSynthesisVoice]
     @Binding var selectedVoice: SpeechVoice
+
+    init(voices: Binding<[AVSpeechSynthesisVoice]>, selectedVoice: Binding<SpeechVoice>) {
+        self._voices = voices
+        self._selectedVoice = selectedVoice
+        synthetizer = .init()
+        shouldShowVariation = voices.count > 1 && Set(voices.wrappedValue.map({ $0.languageVariation })).count > 1
+    }
 
     var body: some View {
         Section("VOICES") {
             ForEach(voices) { voice in
                 HStack {
                     Text(voice.name)
+                        .foregroundStyle(.primary)
+                    if shouldShowVariation {
+                        Text("(\(voice.languageVariation))")
+                            .foregroundStyle(.secondary)
+                    }
                     Spacer()
                     if case .local(let localVoice) = selectedVoice, localVoice == voice {
                         Image(systemName: "checkmark").foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUIColor)
@@ -244,6 +297,8 @@ extension RemoteVoice: Identifiable {}
 fileprivate struct RemoteVoicesSection: View {
     @Binding var voices: [RemoteVoice]
     @Binding var selectedVoice: SpeechVoice
+    
+    unowned let apiClient: ApiClient
 
     var body: some View {
         Section("VOICES") {
@@ -275,11 +330,19 @@ fileprivate struct RemoteVoicesSection: View {
         selectedVoice: .local(AVSpeechSynthesisVoice.speechVoices().first!),
         language: nil,
         detectedLanguage: "en",
-//        apiClient: ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: .default),
+        apiClient: ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: .default),
         dismiss: { _, _ in }
     )
 }
 
 extension AVSpeechSynthesisVoice: @retroactive Identifiable {
     public var id: String { identifier }
+
+    fileprivate var languageVariation: String {
+        let locale = Locale.current
+        guard let localized = locale.localizedString(forIdentifier: language) else { return name }
+        guard let localizedLanguage = locale.localizedString(forLanguageCode: language), localized.starts(with: localizedLanguage) else { return name }
+        return String(localized[localized.index(localized.startIndex, offsetBy: localizedLanguage.count)..<localized.endIndex])
+            .trimmingCharacters(in: CharacterSet(charactersIn: " ()"))
+    }
 }

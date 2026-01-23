@@ -330,7 +330,7 @@ extension PDFCoordinator: AccessibilityPopoupCoordinatorDelegate {
         selectionChanged: @escaping (SpeechVoice, String?) -> Void
     ) {
         guard let navigationController else { return }
-        let view = SpeechVoicePickerView(selectedVoice: voice, language: language, detectedLanguage: detectedLanguage, dismiss: { voice, language in
+        let view = SpeechVoicePickerView(selectedVoice: voice, language: language, detectedLanguage: detectedLanguage, apiClient: controllers.apiClient, dismiss: { voice, language in
             selectionChanged(voice, language)
             if let presentedViewController = navigationController.presentedViewController as? AccessibilityPopupViewController<PDFReaderViewController> {
                 presentedViewController.dismiss(animated: true)
