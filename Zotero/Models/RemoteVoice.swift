@@ -11,7 +11,8 @@ struct RemoteVoice: Decodable, Equatable {
     let label: String
     let creditsPerSecond: Int
     let segmentGranularity: String
-    
+    let locales: [String]
+
     static func ==(lhs: RemoteVoice, rhs: RemoteVoice) -> Bool {
         return lhs.id == rhs.id
     }
