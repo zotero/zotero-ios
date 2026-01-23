@@ -520,6 +520,7 @@ private final class RemoteVoiceProcessor: VoiceProcessor {
         preferredLanguage = language
         self.speechRateModifier = speechRateModifier
         self.state = state
+        // TODO: - Create remote voices controller to load all voices, load speech audio, load sample... use shared controller in here & accessibility popup
     }
     
     func set(voice: RemoteVoice, preferredLanguage: String?) {
