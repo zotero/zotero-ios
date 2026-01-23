@@ -17,6 +17,9 @@ struct ReadSpeechLanguageDbRequest: DbResponseRequest {
     var needsWrite: Bool { return false }
 
     func process(in database: Realm) throws -> String? {
-        return database.objects(RItem.self).filter(.key(key, in: libraryId)).first?.speechLanguage
+        if let language = database.objects(RItem.self).filter(.key(key, in: libraryId)).first?.speechLanguage, !language.isEmpty {
+            return language
+        }
+        return nil
     }
 }
