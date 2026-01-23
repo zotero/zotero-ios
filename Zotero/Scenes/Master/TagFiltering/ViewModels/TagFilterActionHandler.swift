@@ -171,7 +171,7 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
             }
 
             try dbStorage.perform(on: backgroundQueue) { [weak viewModel] coordinator in
-                guard let viewModel else {
+                guard viewModel != nil else {
                     coordinator.invalidate()
                     return
                 }
