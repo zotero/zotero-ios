@@ -18,7 +18,7 @@ struct AnnotationsConfig {
     static let defaultActiveColor = "#ffd400"
     static let allColors: [String] = ["#ffd400", "#ff6666", "#5fb236", "#2ea8e5", "#a28ae5", "#e56eee", "#f19837", "#aaaaaa", "#000000"]
     static let typesWithColorVariation: [AnnotationType?] = [.none, .highlight, .underline]
-    static let appearancesWithVarition: [Appearance] = [.light, .dark, .sepia]
+    static let appearancesWithVariation: [Appearance] = [.light, .dark, .sepia]
     static let colorNames: [String: String] = [
         "#ffd400": "Yellow",
         "#ff6666": "Red",
@@ -33,6 +33,7 @@ struct AnnotationsConfig {
     // Maps different variations colors to their base color
     static let colorVariationMap: [String: String] = createColorVariationMap()
     static let keyKey = "Zotero:Key"
+    static let baseColorKey = "Zotero:BaseColor"
     // Line width of image annotation in PDF document.
     static let imageAnnotationLineWidth: CGFloat = 2
     // Free text annotation font size minimum, maximum, increment and rounding
@@ -62,7 +63,7 @@ struct AnnotationsConfig {
         for hexBaseColor in allColors {
             let baseColor = UIColor(hex: hexBaseColor)
             for type in typesWithColorVariation {
-                for appearance in appearancesWithVarition {
+                for appearance in appearancesWithVariation {
                     let variation = AnnotationColorGenerator.color(from: baseColor, type: type, appearance: appearance).color
                     map[variation.hexString] = hexBaseColor
                 }
