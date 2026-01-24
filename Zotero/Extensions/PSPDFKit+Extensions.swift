@@ -34,6 +34,26 @@ extension PSPDFKit.Annotation {
         }
     }
 
+    var baseColor: String {
+        get {
+            if let customBaseColor = customData?[AnnotationsConfig.baseColorKey] as? String, !customBaseColor.isEmpty {
+                return customBaseColor
+            }
+            if let currentColorHex = color?.hexString {
+                return AnnotationsConfig.colorVariationMap[currentColorHex] ?? currentColorHex
+            }
+            return AnnotationsConfig.defaultActiveColor
+        }
+
+        set {
+            if customData == nil {
+                customData = [AnnotationsConfig.baseColorKey: newValue]
+            } else {
+                customData?[AnnotationsConfig.baseColorKey] = newValue
+            }
+        }
+    }
+
     @objc var previewBoundingBox: CGRect {
         return self.boundingBox
     }
