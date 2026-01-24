@@ -13,6 +13,7 @@ import PSPDFKitUI
 import RealmSwift
 
 typealias AnnotationDocumentLocation = (page: Int, boundingBox: CGRect)
+typealias PDFReaderAnnotationKey = PDFReaderState.AnnotationKey
 
 struct PDFReaderState: ViewModelState {
     struct AnnotationKey: Equatable, Hashable, Identifiable {
@@ -22,10 +23,26 @@ struct PDFReaderState: ViewModelState {
         }
 
         let key: String
+        let sortIndex: String
         let type: Kind
 
         var id: String {
-            return self.key
+            return key
+        }
+
+        init(key: String, sortIndex: String = "", type: Kind) {
+            self.key = key
+            self.sortIndex = sortIndex
+            self.type = type
+        }
+
+        static func == (lhs: AnnotationKey, rhs: AnnotationKey) -> Bool {
+            return lhs.key == rhs.key && lhs.type == rhs.type
+        }
+
+        func hash(into hasher: inout Hasher) {
+            hasher.combine(key)
+            hasher.combine(type)
         }
     }
 
@@ -136,11 +153,14 @@ struct PDFReaderState: ViewModelState {
     var library: Library
     var libraryToken: NotificationToken?
     var sortedKeys: [AnnotationKey]
+    var annotationPages: IndexSet
     var snapshotKeys: [AnnotationKey]?
     var token: NotificationToken?
     var itemToken: NotificationToken?
     var databaseAnnotations: Results<RItem>!
-    var documentAnnotations: [String: PDFDocumentAnnotation]
+    var documentAnnotations: Results<RDocumentAnnotation>!
+    var documentAnnotationKeys: [AnnotationKey]
+    var documentAnnotationUniqueBaseColors: [String]
     var defaultAnnotationPageLabel: DefaultAnnotationPageLabel
     var texts: [String: (String, [UIFont: NSAttributedString])]
     var comments: [String: NSAttributedString]
@@ -205,12 +225,20 @@ struct PDFReaderState: ViewModelState {
         self.parentKey = parentKey
         self.document = Document(url: url)
         document.overrideClass(PSPDFKit.AnnotationManager.self, with: AnnotationManager.self)
+        document.overrideClass(PSPDFKit.HighlightAnnotation.self, with: HighlightAnnotation.self)
+        document.overrideClass(PSPDFKit.NoteAnnotation.self, with: NoteAnnotation.self)
+        document.overrideClass(PSPDFKit.SquareAnnotation.self, with: SquareAnnotation.self)
+        document.overrideClass(PSPDFKit.UnderlineAnnotation.self, with: UnderlineAnnotation.self)
+        document.overrideClass(PSPDFKitUI.FreeTextAnnotationView.self, with: FreeTextAnnotationView.self)
         self.title = title
         self.previewCache = NSCache()
         self.userId = userId
         self.username = username
         self.sortedKeys = []
-        self.documentAnnotations = [:]
+        self.annotationPages = IndexSet()
+        self.documentAnnotations = nil
+        self.documentAnnotationKeys = []
+        self.documentAnnotationUniqueBaseColors = []
         self.defaultAnnotationPageLabel = .commonPageOffset(offset: 1)
         self.texts = [:]
         self.comments = [:]
@@ -252,21 +280,11 @@ struct PDFReaderState: ViewModelState {
     func annotation(for key: AnnotationKey) -> PDFAnnotation? {
         switch key.type {
         case .database:
-            return self.databaseAnnotations.filter(.key(key.key)).first.flatMap({ PDFDatabaseAnnotation(item: $0) })
+            return databaseAnnotations.filter(.key(key.key)).first.flatMap({ PDFDatabaseAnnotation(item: $0) })
 
         case .document:
-            return self.documentAnnotations[key.key]
+            return documentAnnotations?.filter(.key(key.key)).first.flatMap({ PDFDocumentAnnotation(annotation: $0, displayName: displayName, username: username) })
         }
-    }
-
-    func hasAnnotation(with key: String) -> Bool {
-        if self.documentAnnotations[key] != nil {
-            return true
-        }
-        if self.databaseAnnotations.filter(.key(key)).first != nil {
-            return true
-        }
-        return false
     }
 
     mutating func cleanup() {

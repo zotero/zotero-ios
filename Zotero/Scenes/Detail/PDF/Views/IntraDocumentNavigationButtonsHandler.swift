@@ -72,16 +72,20 @@ final class IntraDocumentNavigationButtonsHandler {
         updateVisibility(pageChange: pageChange)
     }
 
+    func updateButtonsZPosition() {
+        if let sidebarView = delegate.sidebarView {
+            backButton.superview?.insertSubview(backButton, belowSubview: sidebarView)
+            backButton.superview?.insertSubview(forwardButton, belowSubview: sidebarView)
+        } else {
+            backButton.superview?.bringSubviewToFront(backButton)
+            forwardButton.superview?.bringSubviewToFront(forwardButton)
+        }
+    }
+
     static private let disappearingDelay: DispatchTimeInterval = .milliseconds(3000)
     private func updateVisibility(pageChange: PageChange? = nil) {
         defer {
-            if let sidebarView = delegate.sidebarView {
-                backButton.superview?.insertSubview(backButton, belowSubview: sidebarView)
-                backButton.superview?.insertSubview(forwardButton, belowSubview: sidebarView)
-            } else {
-                backButton.superview?.bringSubviewToFront(backButton)
-                forwardButton.superview?.bringSubviewToFront(forwardButton)
-            }
+            updateButtonsZPosition()
         }
         if interfaceIsVisible || (!hasBackActions && !hasForwardActions) {
             resetBothDisappearingTimers()
