@@ -17,7 +17,7 @@ protocol AccessibilityViewDelegate: AnyObject {
         animated: Bool,
         isFormSheet: @escaping () -> Bool,
         dismissAction: @escaping () -> Void,
-        voiceChangeAction: @escaping (SpeechVoice, String?) -> Void
+        voiceChangeAction: @escaping (SpeechVoice, String, String?) -> Void
     )
     func accessibilityToolbarChanged(height: CGFloat)
     func addAccessibilityControlsViewToAnnotationToolbar(view: AnnotationToolbarLeadingView)
@@ -98,8 +98,8 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
                 showOverlayIfNeeded(forType: currentOverlayType(controller: self))
                 reloadSpeechButton(isSelected: false)
             },
-            voiceChangeAction: { [weak self] voice, language in
-                self?.processVoiceChange(toVoice: voice, language: language)
+            voiceChangeAction: { [weak self] voice, voiceLanguage, language in
+                self?.processVoiceChange(toVoice: voice, voiceLanguage: voiceLanguage, language: language)
             }
         )
         
@@ -114,16 +114,9 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
         }
     }
 
-    private func processVoiceChange(toVoice voice: SpeechVoice, language: String?) {
+    private func processVoiceChange(toVoice voice: SpeechVoice, voiceLanguage: String, language: String?) {
         try? dbStorage.perform(request: SetSpeechLanguageDbRequest(key: key, libraryId: libraryId, language: language), on: .main)
-        speechManager.set(voice: voice, preferredLanguage: language)
-        switch voice {
-        case .local:
-            Defaults.shared.isUsingRemoteVoice = false
-            
-        case .remote:
-            Defaults.shared.isUsingRemoteVoice = true
-        }
+        speechManager.set(voice: voice, voiceLanguage: voiceLanguage, preferredLanguage: language)
     }
 
     private func reloadSpeechButton(isSelected: Bool) {
