@@ -11,6 +11,7 @@ import NaturalLanguage
 
 import CocoaLumberjackSwift
 import RxCocoa
+import RxSwift
 
 protocol SpeechManagerDelegate: AnyObject {
     associatedtype Index: Hashable
@@ -65,11 +66,11 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     private enum Error: Swift.Error {
         case cantGetText
     }
-    
+
     struct SpeechData {
         let index: Delegate.Index
         let range: NSRange
-        
+
         func copy(range: NSRange) -> SpeechData {
             return SpeechData(index: index, range: range)
         }
@@ -79,6 +80,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     private var speechData: SpeechData?
     private var cachedPages: [Delegate.Index: String]
     private weak var delegate: Delegate?
+    private unowned let remoteVoicesController: RemoteVoicesController
     private lazy var paragraphRegex: NSRegularExpression? = {
         return try? NSRegularExpression(pattern: "[\r\n]{1,}")
     }()
@@ -97,13 +99,14 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         return speechData?.range
     }
 
-    init(delegate: Delegate, voiceLanguage: String?, useRemoteVoices: Bool) {
+    init(delegate: Delegate, voiceLanguage: String?, useRemoteVoices: Bool, remoteVoicesController: RemoteVoicesController) {
         self.delegate = delegate
+        self.remoteVoicesController = remoteVoicesController
         cachedPages = [:]
         state = BehaviorRelay(value: .loading)
         super.init()
         if useRemoteVoices {
-            processor = RemoteVoiceProcessor(language: voiceLanguage, speechRateModifier: 1, delegate: self)
+            processor = RemoteVoiceProcessor(language: voiceLanguage, speechRateModifier: 1, delegate: self, remoteVoicesController: remoteVoicesController)
         } else {
             processor = LocalVoiceProcessor(language: voiceLanguage, speechRateModifier: 1, delegate: self)
         }
@@ -171,7 +174,8 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                 let _processor = RemoteVoiceProcessor(
                     language: preferredLanguage,
                     speechRateModifier: processor.speechRateModifier,
-                    delegate: self
+                    delegate: self,
+                    remoteVoicesController: remoteVoicesController
                 )
                 _processor.set(voice: voice, voiceLanguage: voiceLanguage, preferredLanguage: preferredLanguage)
                 // TODO: - start speaking?
@@ -495,49 +499,220 @@ extension LocalVoiceProcessor: AVSpeechSynthesizerDelegate {
     }
 }
 
-private final class RemoteVoiceProcessor: VoiceProcessor {
+private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
+    enum Error: Swift.Error {
+        case cancelled
+        case missingVoices
+    }
+    
+    struct VoiceData {
+        let voice: RemoteVoice
+        let language: String
+    }
+    
     private unowned let delegate: VoiceProcessorDelegate
+    private unowned let remoteVoicesController: RemoteVoicesController
 
     private var text: String?
     private(set) var preferredLanguage: String?
-    private var voice: RemoteVoice?
+    private var voiceData: VoiceData?
+    private var player: AVAudioPlayer?
+    private var availableVoices: [RemoteVoice]?
+    private var disposeBag = DisposeBag()
     var speechRateModifier: Float
     var speechVoice: SpeechVoice? {
-        return voice.flatMap({ .remote($0) })
+        return voiceData.flatMap({ .remote($0.voice) })
     }
 
-    init(language: String?, speechRateModifier: Float, delegate: VoiceProcessorDelegate) {
+    init(language: String?, speechRateModifier: Float, delegate: VoiceProcessorDelegate, remoteVoicesController: RemoteVoicesController) {
         preferredLanguage = language
         self.speechRateModifier = speechRateModifier
         self.delegate = delegate
+        self.remoteVoicesController = remoteVoicesController
+        super.init()
     }
 
     func set(voice: RemoteVoice, voiceLanguage: String, preferredLanguage: String?) {
         self.preferredLanguage = preferredLanguage
-        self.voice = voice
+        self.voiceData = VoiceData(voice: voice, language: voiceLanguage)
         Defaults.shared.defaultRemoteVoiceForLanguage[voiceLanguage] = voice
         Defaults.shared.isUsingRemoteVoice = true
     }
 
     func speak(text: String, startIndex: Int, shouldDetectVoice: Bool) {
         self.text = text
-        delegate.state.accept(.speaking)
+
+        if player?.isPlaying == true {
+            player?.stop()
+        }
+        disposeBag = DisposeBag()
+
+        let getVoice: Single<VoiceData>
+        if let voiceData, !shouldDetectVoice {
+            getVoice = Single.just(voiceData)
+        } else {
+            getVoice = loadVoice(forText: text)
+        }
+        
+        getVoice
+            .flatMap({ [weak self] voiceData -> Single<()> in
+                guard let self else {
+                    return .error(Error.cancelled)
+                }
+                return speak(text: text, startIndex: startIndex, voice: voiceData.voice, language: voiceData.language)
+            })
+            .subscribe()
+            .disposed(by: disposeBag)
     }
 
     func pause() {
+        guard player?.isPlaying == true else { return }
+        player?.pause()
         delegate.state.accept(.paused)
     }
 
     func resume() {
+        guard let player, !player.isPlaying else { return }
+        player.play()
         delegate.state.accept(.speaking)
     }
 
     func stop() {
-        guard delegate.state.value == .loading else { return } // TODO: - check for active speaking
-        if delegate.state.value == .loading {
-            delegate.state.accept(.stopped)
-        } else {
+        player?.stop()
+        player = nil
+        text = nil
+        disposeBag = DisposeBag()
+        delegate.didFinishSpeaking()
+        delegate.state.accept(.stopped)
+    }
+    
+    private func loadVoice(forText text: String) -> Single<VoiceData> {
+        if let availableVoices, !availableVoices.isEmpty {
+            return loadVoice(forText: text, voices: availableVoices, preferredLanguage: preferredLanguage)
+        }
+        return remoteVoicesController.loadVoices()
+            .do(onSuccess: { [weak self] voices in
+                self?.availableVoices = voices
+            })
+            .flatMap({ [weak self] voices in
+                guard let self else {
+                    return Single.error(Error.cancelled)
+                }
+                return loadVoice(forText: text, voices: voices, preferredLanguage: preferredLanguage)
+            })
+
+        func loadVoice(forText text: String, voices: [RemoteVoice], preferredLanguage: String?) -> Single<VoiceData> {
+            return Single.create { [weak self] subscriber in
+                guard let self else {
+                    subscriber(.failure(Error.cancelled))
+                    return Disposables.create()
+                }
+                
+                guard !voices.isEmpty else {
+                    subscriber(.failure(Error.missingVoices))
+                    return Disposables.create()
+                }
+                
+                if let preferredLanguage {
+                    subscriber(.success(VoiceData(voice: findVoice(for: preferredLanguage), language: preferredLanguage)))
+                } else {
+                    let recognizer = NLLanguageRecognizer()
+                    recognizer.processString(text)
+                    let language = recognizer.dominantLanguage?.rawValue ?? "en"
+                    subscriber(.success(VoiceData(voice: findVoice(for: language), language: language)))
+                }
+                
+                return Disposables.create()
+            }
+    
+            func findVoice(for language: String) -> RemoteVoice {
+                if let voice = Defaults.shared.defaultRemoteVoiceForLanguage[language] {
+                    return voice
+                }
+                return voices.first(where: { voice in voice.locales.contains(where: { $0.contains(language) }) }) ?? voices[0]
+            }
+        }
+    }
+    
+    private func speak(text: String, startIndex: Int, voice: RemoteVoice, language: String) -> Single<()> {
+        guard let (text, range) = extractTextPart(from: text, startIndex: startIndex, granularity: voice.granularity) else {
+            // TODO: - go to next page
+            return .just(())
+        }
+        
+        delegate.speechRangeWillChange(to: range)
+        delegate.state.accept(.loading)
+        
+        remoteVoicesController.downloadSound(forText: text, voiceId: voice.id, language: language)
+            .observe(on: MainScheduler.instance)
+            .subscribe(
+                onSuccess: { [weak self] data in
+                    guard let self else { return }
+                    play(data: data)
+                },
+                onFailure: { [weak self] error in
+                    DDLogError("RemoteVoiceProcessor: can't download sound - \(error)")
+                    self?.delegate.state.accept(.stopped)
+                }
+            )
+            .disposed(by: disposeBag)
+    }
+
+    private func extractTextPart(from text: String, startIndex: Int, granularity: RemoteVoice.Granularity) -> (String, NSRange)? {
+        guard startIndex < text.count else { return nil }
+
+        let searchStartIndex = text.index(text.startIndex, offsetBy: startIndex)
+        let remainingText = String(text[searchStartIndex...])
+        let trimmedRemainingText = remainingText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedRemainingText.isEmpty else { return nil }
+
+        let tokenizer = NLTokenizer(unit: granularity == .sentence ? .sentence : .paragraph)
+        tokenizer.string = remainingText
+
+        if let tokenRange = tokenizer.tokenRange(at: remainingText.startIndex) {
+            let extractedText = String(remainingText[tokenRange]).trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !extractedText.isEmpty else { return nil }
+            let location = startIndex + remainingText.distance(from: remainingText.startIndex, to: tokenRange.lowerBound)
+            let length = remainingText.distance(from: tokenRange.lowerBound, to: tokenRange.upperBound)
+            return (extractedText, NSRange(location: location, length: length))
+        }
+
+        return nil
+    }
+
+    private func play(data: Data) {
+        do {
+            player = try AVAudioPlayer(data: data)
+            player?.delegate = self
+            player?.prepareToPlay()
+            player?.play()
+            delegate.state.accept(.speaking)
+        } catch {
+            DDLogError("RemoteVoiceProcessor: can't play audio - \(error)")
             delegate.state.accept(.stopped)
         }
+    }
+
+    private func finishSpeaking() {
+        text = nil
+        player = nil
+        delegate.didFinishSpeaking()
+        delegate.state.accept(.stopped)
+    }
+}
+
+extension RemoteVoiceProcessor: AVAudioPlayerDelegate {
+    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        guard flag, text != nil else {
+            finishSpeaking()
+            return
+        }
+//        speakWithVoice()
+        // TODO: - continue to next line/paragraph
+    }
+
+    func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: (any Swift.Error)?) {
+        DDLogError("RemoteVoiceProcessor: decode error - \(String(describing: error))")
+        finishSpeaking()
     }
 }
