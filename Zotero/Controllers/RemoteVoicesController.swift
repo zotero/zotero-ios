@@ -36,4 +36,16 @@ final class RemoteVoicesController {
                 }
             })
     }
+    
+    func downloadSound(forText text: String, voiceId: String, language: String) -> Single<Data> {
+        return apiClient
+            .send(request: ReadAloudAudioRequest(voiceId: voiceId, text: text, language: language))
+            .flatMap({ (data, _) in
+                if let data = data.audioData {
+                    return .just(data)
+                } else {
+                    return .error(Error.noData)
+                }
+            })
+    }
 }
