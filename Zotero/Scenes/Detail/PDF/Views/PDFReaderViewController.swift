@@ -32,7 +32,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
 
     private let viewModel: ViewModel<PDFReaderActionHandler>
     private unowned let documentWorkerController: DocumentWorkerController
-    private var speechWorker: DocumentWorkerController.Worker?
+    private unowned let remoteVoicesController: RemoteVoicesController
     let disposeBag: DisposeBag
 
     var state: PDFReaderState { return viewModel.state }
@@ -42,6 +42,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
     weak var documentControllerLeft: NSLayoutConstraint?
     weak var documentControllerBottom: NSLayoutConstraint?
     weak var annotationToolbarController: AnnotationToolbarViewController?
+    private var speechWorker: DocumentWorkerController.Worker?
     private var documentTop: NSLayoutConstraint!
     var annotationToolbarHandler: AnnotationToolbarHandler?
     private var intraDocumentNavigationHandler: IntraDocumentNavigationButtonsHandler?
@@ -186,9 +187,10 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         return false
     }
 
-    init(viewModel: ViewModel<PDFReaderActionHandler>, documentWorkerController: DocumentWorkerController, compactSize: Bool) {
+    init(viewModel: ViewModel<PDFReaderActionHandler>, documentWorkerController: DocumentWorkerController, remoteVoicesController: RemoteVoicesController, compactSize: Bool) {
         self.viewModel = viewModel
         self.documentWorkerController = documentWorkerController
+        self.remoteVoicesController = remoteVoicesController
         isCompactWidth = compactSize
         disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
@@ -215,7 +217,8 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
                 viewController: self,
                 documentContainer: documentController!.view,
                 delegate: self,
-                dbStorage: viewModel.handler.dbStorage
+                dbStorage: viewModel.handler.dbStorage,
+                remoteVoicesController: remoteVoicesController
             )
             accessibilityHandler?.delegate = self
         }
