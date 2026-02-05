@@ -6,7 +6,9 @@
 //  Copyright © 2026 Corporation for Digital Scholarship. All rights reserved.
 //
 
-struct ReadAloudAudioRequest: ApiRequest {
+struct ReadAloudAudioRequest: ApiResponseRequest {
+    typealias Response = ReadAloudAudioResponse
+
     let voiceId: String
     let text: String
     let language: String
@@ -32,7 +34,9 @@ struct ReadAloudAudioRequest: ApiRequest {
     }
 }
 
-struct ReadAloudSampleRequest: ApiRequest {
+struct ReadAloudSampleRequest: ApiResponseRequest {
+    typealias Response = ReadAloudAudioResponse
+    
     let voiceId: String
     let language: String
 

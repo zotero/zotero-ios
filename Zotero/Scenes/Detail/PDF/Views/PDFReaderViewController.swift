@@ -1036,15 +1036,6 @@ extension PDFReaderViewController: SpeechManagerDelegate {
     }
     
     func text(for indices: [UInt], completion: @escaping ([UInt: String]?) -> Void) {
-//        var result: [UInt: String] = [:]
-//        for index in indices {
-//            guard let parser = viewModel.state.document.textParserForPage(at: index) else {
-//                completion(nil)
-//                return
-//            }
-//            result[index] = parser.text
-//        }
-//        completion(result)
         DDLogInfo("PDFReaderViewController: text for \(indices)")
         guard let file = viewModel.state.document.fileURL.flatMap({ Files.file(from: $0) }) else {
             DDLogInfo("PDFReaderViewController: document url not found")
@@ -1104,7 +1095,7 @@ extension PDFReaderViewController: AccessibilityViewDelegate {
         animated: Bool,
         isFormSheet: @escaping () -> Bool,
         dismissAction: @escaping () -> Void,
-        voiceChangeAction: @escaping (SpeechVoice, String?) -> Void
+        voiceChangeAction: @escaping (SpeechVoice, String, String?) -> Void
     ) {
         coordinatorDelegate?.showAccessibility(
             speechManager: speechManager,

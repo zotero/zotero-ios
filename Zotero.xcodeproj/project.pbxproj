@@ -628,6 +628,9 @@
 		B34DF1BE2576956F0019CCD1 /* SwitchCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B34DF1BC2576956F0019CCD1 /* SwitchCell.xib */; };
 		B34F3566275A46BC008B9C76 /* RedirectWebViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F3565275A46BC008B9C76 /* RedirectWebViewHandler.swift */; };
 		B3501F5425139B40007961DB /* Rounding+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340692124A60D6A009ECE48 /* Rounding+Extensions.swift */; };
+		B35104102F2A327C008C8187 /* RemoteVoicesController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B351040F2F2A3278008C8187 /* RemoteVoicesController.swift */; };
+		B35104122F2B7917008C8187 /* ReadAloudSampleResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35104112F2B7911008C8187 /* ReadAloudSampleResponse.swift */; };
+		B35104132F2B7917008C8187 /* ReadAloudSampleResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35104112F2B7911008C8187 /* ReadAloudSampleResponse.swift */; };
 		B3518DA72AEBCB5E00D983B4 /* SettingsResponseSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3518DA62AEBCB5E00D983B4 /* SettingsResponseSpec.swift */; };
 		B351BD0E25EF7E78000451E2 /* ItemAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B351BD0D25EF7E78000451E2 /* ItemAction.swift */; };
 		B352FFCC2CBE944400D0887B /* AutoEmptyTrashDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B352FFCB2CBE943B00D0887B /* AutoEmptyTrashDbRequest.swift */; };
@@ -1772,6 +1775,8 @@
 		B34F3565275A46BC008B9C76 /* RedirectWebViewHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedirectWebViewHandler.swift; sourceTree = "<group>"; };
 		B34F9FA223743C36004ED34C /* CreatorSummaryFormatterSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatorSummaryFormatterSpec.swift; sourceTree = "<group>"; };
 		B34F9FA423743C42004ED34C /* ItemTitleFormatterSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemTitleFormatterSpec.swift; sourceTree = "<group>"; };
+		B351040F2F2A3278008C8187 /* RemoteVoicesController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteVoicesController.swift; sourceTree = "<group>"; };
+		B35104112F2B7911008C8187 /* ReadAloudSampleResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAloudSampleResponse.swift; sourceTree = "<group>"; };
 		B3518DA62AEBCB5E00D983B4 /* SettingsResponseSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsResponseSpec.swift; sourceTree = "<group>"; };
 		B351BD0D25EF7E78000451E2 /* ItemAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemAction.swift; sourceTree = "<group>"; };
 		B352FFCB2CBE943B00D0887B /* AutoEmptyTrashDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoEmptyTrashDbRequest.swift; sourceTree = "<group>"; };
@@ -2643,6 +2648,7 @@
 				61168F602D50D4B6005495E8 /* PDFWorkerController.swift */,
 				B3C6D551261C9F2E0068B9FE /* PlaceholderTextViewDelegate.swift */,
 				615C10E02D5BA17A001F1E8E /* RecognizerController.swift */,
+				B351040F2F2A3278008C8187 /* RemoteVoicesController.swift */,
 				B378F4CC242CD45700B88A05 /* RepoParserDelegate.swift */,
 				B305646A23FC051E003304F2 /* RItemLocaleController.swift */,
 				B305646B23FC051E003304F2 /* SchemaController.swift */,
@@ -3073,6 +3079,7 @@
 				B305654823FC051E003304F2 /* LibraryResponse.swift */,
 				B305654D23FC051E003304F2 /* LinksResponse.swift */,
 				B305654E23FC051E003304F2 /* LoginResponse.swift */,
+				B35104112F2B7911008C8187 /* ReadAloudSampleResponse.swift */,
 				6102D2B72D6CCDD300505E6A /* RemoteRecognizerResponse.swift */,
 				B3A2AEDD26565211004BF3A4 /* RemoteStylesResponse.swift */,
 				B305655223FC051E003304F2 /* SchemaResponse.swift */,
@@ -5892,6 +5899,7 @@
 				B3B557162C884DD600BD6325 /* ZoteroURIConverter.swift in Sources */,
 				B305660323FC051E003304F2 /* ZoteroApiClient.swift in Sources */,
 				B3B78C42266FAED500E91D02 /* CitationController.swift in Sources */,
+				B35104132F2B7917008C8187 /* ReadAloudSampleResponse.swift in Sources */,
 				B3B41F1A2848E5A90017CA4B /* AnnotationsFilterAction.swift in Sources */,
 				B305667623FC051F003304F2 /* UIColor+Custom.swift in Sources */,
 				B30565B823FC051E003304F2 /* ReadUserChangedObjectsDbRequest.swift in Sources */,
@@ -5934,6 +5942,7 @@
 				B34DF1AC25768AD40019CCD1 /* AnnotationPageLabelState.swift in Sources */,
 				B3593F20241A61C700760E20 /* ItemDetailError.swift in Sources */,
 				B3E8FE082714292E00F51458 /* StorageSettingsListView.swift in Sources */,
+				B35104102F2A327C008C8187 /* RemoteVoicesController.swift in Sources */,
 				B30566A523FC051F003304F2 /* SyncableObject.swift in Sources */,
 				B324277225C82DBF00567504 /* SubscribeWsMessage.swift in Sources */,
 				B3E8FE7A2714357000F51458 /* GeneralSettingsAction.swift in Sources */,
@@ -6243,6 +6252,7 @@
 				B3A27ACD25BEE91A00DE0BB2 /* TranslationWebViewHandler.swift in Sources */,
 				B3593F1D2668EAD900FA4BB2 /* SyncStylesDbRequest.swift in Sources */,
 				B377F29F2493722100022943 /* AttachmentCreator.swift in Sources */,
+				B35104122F2B7917008C8187 /* ReadAloudSampleResponse.swift in Sources */,
 				B3F0FDCA2888179E00949BC9 /* AttachmentDownloader.swift in Sources */,
 				B3A081CE25D2B73B0088EC24 /* PerformDeletionsSyncAction.swift in Sources */,
 				B3F0FDC92888179100949BC9 /* CreateTranslatedItemsDbRequest.swift in Sources */,
