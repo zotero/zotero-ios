@@ -42,9 +42,9 @@ struct SpeechVoicePickerView: View {
         case remote, local
     }
 
-    private unowned let apiClient: ApiClient
+    private unowned let remoteVoicesController: RemoteVoicesController
     private let detectedLanguage: String
-    private let dismiss: (SpeechVoice, String?) -> Void
+    private let dismiss: (SpeechVoice, String, String?) -> Void
     private let disposeBag: DisposeBag
 
     @State private var type: VoiceType
@@ -55,12 +55,22 @@ struct SpeechVoicePickerView: View {
     @State private var navigationPath: NavigationPath
     @State private var allRemoteVoices: [RemoteVoice]
     @State private var supportedRemoteLanguages: Set<String>
+    
+    private var languageCode: String {
+        return language.code(detectedLanguage: detectedLanguage)
+    }
 
-    init(selectedVoice: SpeechVoice, language: String?, detectedLanguage: String, apiClient: ApiClient, dismiss: @escaping (SpeechVoice, String?) -> Void) {
+    init(
+        selectedVoice: SpeechVoice,
+        language: String?,
+        detectedLanguage: String,
+        remoteVoicesController: RemoteVoicesController,
+        dismiss: @escaping (SpeechVoice, String, String?) -> Void
+    ) {
         self.selectedVoice = selectedVoice
         self.language = language.flatMap({ .language($0) }) ?? .auto
         self.detectedLanguage = detectedLanguage
-        self.apiClient = apiClient
+        self.remoteVoicesController = remoteVoicesController
         self.dismiss = dismiss
         navigationPath = NavigationPath()
         localVoices = Self.localVoices(for: language ?? detectedLanguage)
@@ -92,7 +102,7 @@ struct SpeechVoicePickerView: View {
                     
                 case .remote:
                     if !allRemoteVoices.isEmpty {
-                        RemoteVoicesSection(voices: $remoteVoices, selectedVoice: $selectedVoice, apiClient: apiClient)
+                        RemoteVoicesSection(voices: $remoteVoices, selectedVoice: $selectedVoice, language: languageCode, remoteVoicesController: remoteVoicesController)
                     } else {
                         ActivityIndicatorView(style: .large, isAnimating: .constant(true))
                     }
@@ -130,28 +140,31 @@ struct SpeechVoicePickerView: View {
                         case .language(let code):
                             selectedCode = code
                         }
-                        dismiss(selectedVoice, selectedCode)
+                        dismiss(selectedVoice, (selectedCode ?? detectedLanguage), selectedCode)
                     } label: {
                         Text("Close")
                     }
                 }
             }
             .onAppear {
-                apiClient.send(request: VoicesRequest())
-                    .subscribe(
-                        onSuccess: { (data: [RemoteVoice], _) in
-                            allRemoteVoices = data
-                            let language = language.code(detectedLanguage: detectedLanguage)
-                            remoteVoices = allRemoteVoices.filter({ voice in voice.locales.contains(where: { $0.contains(language) }) })
-                            supportedRemoteLanguages.removeAll()
-                            data.forEach({ supportedRemoteLanguages.formUnion($0.locales) })
-                        }, onFailure: { error in
-                            DDLogError("Test: \(error)")
-                        }
-                    )
-                    .disposed(by: disposeBag)
+                loadVoices()
             }
         }
+    }
+    
+    private func loadVoices() {
+        remoteVoicesController.loadVoices()
+            .subscribe(
+                onSuccess: { voices in
+                    allRemoteVoices = voices
+                    supportedRemoteLanguages.removeAll()
+                    voices.forEach({ supportedRemoteLanguages.formUnion($0.locales) })
+                    remoteVoices = allRemoteVoices.filter({ voice in voice.locales.contains(where: { $0.contains(languageCode) }) })
+                }, onFailure: { error in
+                    DDLogError("SpeechVoicePickerView: can't load remote voices - \(error)")
+                }
+            )
+            .disposed(by: disposeBag)
     }
     
     private var canShowLanguage: Bool {
@@ -297,8 +310,12 @@ extension RemoteVoice: Identifiable {}
 fileprivate struct RemoteVoicesSection: View {
     @Binding var voices: [RemoteVoice]
     @Binding var selectedVoice: SpeechVoice
-    
-    unowned let apiClient: ApiClient
+    @State private var player: AVAudioPlayer?
+    @State private var isLoading: Bool = false
+
+    let language: String
+    unowned let remoteVoicesController: RemoteVoicesController
+    private let disposeBag: DisposeBag = .init()
 
     var body: some View {
         Section("VOICES") {
@@ -307,20 +324,49 @@ fileprivate struct RemoteVoicesSection: View {
                     Text(voice.label)
                     Spacer()
                     if case .remote(let remoteVoice) = selectedVoice, remoteVoice == voice {
-                        Image(systemName: "checkmark").foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUIColor)
+                        if isLoading {
+                            ActivityIndicatorView(style: .medium, isAnimating: .constant(true))
+                        } else {
+                            Image(systemName: "checkmark").foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUIColor)
+                        }
                     }
                 }
                 .contentShape(Rectangle())
                 .onTapGesture {
+                    guard !isLoading else { return }
+                    player?.stop()
                     selectedVoice = .remote(voice)
                     playSample(withVoice: voice)
                 }
             }
         }
+        .onDisappear {
+            player?.stop()
+        }
     }
 
     private func playSample(withVoice voice: RemoteVoice) {
-        // TODO: - Add speech manager sample
+        isLoading = true
+        remoteVoicesController.downloadSample(voiceId: voice.id, language: "en-US")
+            .subscribe(onSuccess: { data in
+                play(data: data)
+            }, onFailure: { error in
+                DDLogError("RemoteVoicesSection: can't load sample - \(error)")
+                isLoading = false
+            })
+            .disposed(by: disposeBag)
+
+        func play(data: Data) {
+            do {
+                player = try AVAudioPlayer(data: data)
+                player?.prepareToPlay()
+                player?.play()
+            } catch let error {
+                DDLogError("RemoteVoicesSection: can't play data - \(error)")
+            }
+            
+            isLoading = false
+        }
     }
 }
 // swiftlint:enable private_over_fileprivate
@@ -330,8 +376,8 @@ fileprivate struct RemoteVoicesSection: View {
         selectedVoice: .local(AVSpeechSynthesisVoice.speechVoices().first!),
         language: nil,
         detectedLanguage: "en",
-        apiClient: ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: .default),
-        dismiss: { _, _ in }
+        remoteVoicesController: RemoteVoicesController(apiClient: ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: .default)),
+        dismiss: { _, _, _ in }
     )
 }
 
