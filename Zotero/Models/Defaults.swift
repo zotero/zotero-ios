@@ -159,7 +159,6 @@ final class Defaults {
         defaults: .standard
     )
     var htmlEpubAnnotationTools: [AnnotationToolButton]
-    #endif
 
     // MARK: - Speech
     
@@ -167,10 +166,12 @@ final class Defaults {
     var defaultLocalVoiceForLanguage: [String: String]
     
     @UserDefault(key: "SpeechDefaultRemoteVoiceForLanguage", defaultValue: [:])
-    var defaultRemoteVoiceForLanguage: [String: String]
+    var defaultRemoteVoiceForLanguage: [String: RemoteVoice]
     
     @UserDefault(key: "SpeechIsUsingRemoteVoice", defaultValue: false)
     var isUsingRemoteVoice: Bool
+    
+    #endif
 
     // MARK: - Citation / Bibliography Export
 
