@@ -49,14 +49,14 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
         }
     }
 
-    init(key: String, libraryId: LibraryIdentifier, viewController: UIViewController, documentContainer: UIView, delegate: Delegate, dbStorage: DbStorage) {
+    init(key: String, libraryId: LibraryIdentifier, viewController: UIViewController, documentContainer: UIView, delegate: Delegate, dbStorage: DbStorage, remoteVoicesController: RemoteVoicesController) {
         self.key = key
         self.libraryId = libraryId
         self.viewController = viewController
         self.documentContainer = documentContainer
         self.dbStorage = dbStorage
         let language = try? dbStorage.perform(request: ReadSpeechLanguageDbRequest(key: key, libraryId: libraryId), on: .main)
-        speechManager = SpeechManager(delegate: delegate, voiceLanguage: language, useRemoteVoices: Defaults.shared.isUsingRemoteVoice)
+        speechManager = SpeechManager(delegate: delegate, voiceLanguage: language, useRemoteVoices: Defaults.shared.isUsingRemoteVoice, remoteVoicesController: remoteVoicesController)
     }
 
     func createAccessibilityButton(isSelected: Bool, isFilled: Bool, isEnabled: Bool = true) -> UIBarButtonItem {
