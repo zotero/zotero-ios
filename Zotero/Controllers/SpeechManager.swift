@@ -503,12 +503,15 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     enum Error: Swift.Error {
         case cancelled
         case missingVoices
+        case endOfPage
     }
-    
+
     struct VoiceData {
         let voice: RemoteVoice
         let language: String
     }
+
+    private static let preloadTimeBeforeEnd: TimeInterval = 2.0
     
     private unowned let delegate: VoiceProcessorDelegate
     private unowned let remoteVoicesController: RemoteVoicesController
@@ -519,6 +522,10 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     private var player: AVAudioPlayer?
     private var availableVoices: [RemoteVoice]?
     private var disposeBag = DisposeBag()
+    private var preloadTimer: Timer?
+    private var preloadStartIndex: Int?
+    private var preloadSubject: ReplaySubject<(Data, NSRange)>?
+    private var shouldReloadOnResume = false
     var speechRateModifier: Float
     var speechVoice: SpeechVoice? {
         return voiceData.flatMap({ .remote($0.voice) })
@@ -533,10 +540,23 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     }
 
     func set(voice: RemoteVoice, voiceLanguage: String, preferredLanguage: String?) {
+        let voiceChanged = self.voiceData?.voice.id != voice.id
         self.preferredLanguage = preferredLanguage
         self.voiceData = VoiceData(voice: voice, language: voiceLanguage)
         Defaults.shared.defaultRemoteVoiceForLanguage[voiceLanguage] = voice
         Defaults.shared.isUsingRemoteVoice = true
+        
+        if voiceChanged {
+            // Clear preloaded data since it was loaded with old voice
+            preloadSubject?.onCompleted()
+            preloadSubject = nil
+            preloadStartIndex = nil
+            
+            // Mark that we need to reload current segment on resume
+            if player != nil {
+                shouldReloadOnResume = true
+            }
+        }
     }
 
     func speak(text: String, startIndex: Int, shouldDetectVoice: Bool) {
@@ -553,37 +573,57 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         } else {
             getVoice = loadVoice(forText: text)
         }
-        
+
         getVoice
-            .flatMap({ [weak self] voiceData -> Single<()> in
+            .flatMap({ [weak self] voiceData -> Single<(Data, NSRange)> in
                 guard let self else {
                     return .error(Error.cancelled)
                 }
-                return speak(text: text, startIndex: startIndex, voice: voiceData.voice, language: voiceData.language)
+                return loadSpeechData(text: text, startIndex: startIndex, voice: voiceData.voice, language: voiceData.language)
             })
-            .subscribe()
+            .observe(on: MainScheduler.instance)
+            .subscribe(
+                onSuccess: { [weak self] data, range in
+                    self?.handleSpeechSuccess(data: data, range: range)
+                },
+                onFailure: { [weak self] error in
+                    self?.handleSpeechFailure(error: error)
+                }
+            )
             .disposed(by: disposeBag)
     }
 
     func pause() {
         guard player?.isPlaying == true else { return }
         player?.pause()
+        preloadTimer?.invalidate()
+        preloadTimer = nil
         delegate.state.accept(.paused)
     }
 
     func resume() {
-        guard let player, !player.isPlaying else { return }
-        player.play()
-        delegate.state.accept(.speaking)
+        guard let player, delegate.state.value == .paused else { return }
+        
+        if shouldReloadOnResume {
+            shouldReloadOnResume = false
+            reloadCurrentSegment()
+        } else {
+            player.play()
+            delegate.state.accept(.speaking)
+            schedulePreload()
+        }
     }
-
-    func stop() {
+    
+    private func reloadCurrentSegment() {
+        guard let text, let voiceData, let speechRange = delegate.speechRange else { return }
         player?.stop()
         player = nil
-        text = nil
+        speak(text: text, startIndex: speechRange.location, voice: voiceData.voice, language: voiceData.language)
+    }
+    
+    func stop() {
+        finishSpeaking()
         disposeBag = DisposeBag()
-        delegate.didFinishSpeaking()
-        delegate.state.accept(.stopped)
     }
     
     private func loadVoice(forText text: String) -> Single<VoiceData> {
@@ -600,14 +640,12 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
                 }
                 return loadVoice(forText: text, voices: voices, preferredLanguage: preferredLanguage)
             })
-
+            .do(onSuccess: { [weak self] voiceData in
+                self?.voiceData = voiceData
+            })
+        
         func loadVoice(forText text: String, voices: [RemoteVoice], preferredLanguage: String?) -> Single<VoiceData> {
-            return Single.create { [weak self] subscriber in
-                guard let self else {
-                    subscriber(.failure(Error.cancelled))
-                    return Disposables.create()
-                }
-                
+            return Single.create { subscriber in
                 guard !voices.isEmpty else {
                     subscriber(.failure(Error.missingVoices))
                     return Disposables.create()
@@ -624,7 +662,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
                 
                 return Disposables.create()
             }
-    
+            
             func findVoice(for language: String) -> RemoteVoice {
                 if let voice = Defaults.shared.defaultRemoteVoiceForLanguage[language] {
                     return voice
@@ -634,52 +672,83 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         }
     }
     
-    private func speak(text: String, startIndex: Int, voice: RemoteVoice, language: String) -> Single<()> {
-        guard let (text, range) = extractTextPart(from: text, startIndex: startIndex, granularity: voice.granularity) else {
-            // TODO: - go to next page
-            return .just(())
-        }
-        
-        delegate.speechRangeWillChange(to: range)
-        delegate.state.accept(.loading)
-        
-        remoteVoicesController.downloadSound(forText: text, voiceId: voice.id, language: language)
+    private func speak(text: String, startIndex: Int, voice: RemoteVoice, language: String) {
+        loadSpeech(forText: text, startIndex: startIndex, voice: voice, language: language)
             .observe(on: MainScheduler.instance)
             .subscribe(
-                onSuccess: { [weak self] data in
-                    guard let self else { return }
-                    play(data: data)
+                onSuccess: { [weak self] data, range in
+                    self?.handleSpeechSuccess(data: data, range: range)
                 },
                 onFailure: { [weak self] error in
-                    DDLogError("RemoteVoiceProcessor: can't download sound - \(error)")
-                    self?.delegate.state.accept(.stopped)
+                    self?.handleSpeechFailure(error: error)
                 }
             )
             .disposed(by: disposeBag)
+        
+        func loadSpeech(forText text: String, startIndex: Int, voice: RemoteVoice, language: String) -> Single<(Data, NSRange)> {
+            // Check if we have preloaded data or in-progress preload for this start index
+            delegate.state.accept(.loading)
+            if preloadStartIndex == startIndex, let preloadSubject {
+                preloadStartIndex = nil
+                let subject = preloadSubject
+                self.preloadSubject = nil
+                return subject.asSingle()
+            }
+            return loadSpeechData(text: text, startIndex: startIndex, voice: voice, language: language)
+        }
     }
-
+    
+    private func loadSpeechData(text: String, startIndex: Int, voice: RemoteVoice, language: String) -> Single<(Data, NSRange)> {
+        return Single.create { [weak self] (subscriber: (SingleEvent<(String, NSRange)>) -> Void) in
+            guard let self else {
+                subscriber(.failure(Error.cancelled))
+                return Disposables.create()
+            }
+            guard let (text, range) = extractTextPart(from: text, startIndex: startIndex, granularity: voice.granularity) else {
+                subscriber(.failure(Error.endOfPage))
+                return Disposables.create()
+            }
+            
+            subscriber(.success((text, range)))
+            
+            return Disposables.create()
+        }
+        .flatMap({ [weak self] text, range -> Single<(Data, NSRange)> in
+            guard let self else {
+                return Single.error(Error.cancelled)
+            }
+            return remoteVoicesController.downloadSound(forText: text, voiceId: voice.id, language: language)
+                .flatMap({ .just(($0, range)) })
+        })
+    }
+    
     private func extractTextPart(from text: String, startIndex: Int, granularity: RemoteVoice.Granularity) -> (String, NSRange)? {
         guard startIndex < text.count else { return nil }
-
+        
         let searchStartIndex = text.index(text.startIndex, offsetBy: startIndex)
         let remainingText = String(text[searchStartIndex...])
         let trimmedRemainingText = remainingText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedRemainingText.isEmpty else { return nil }
-
+        
         let tokenizer = NLTokenizer(unit: granularity == .sentence ? .sentence : .paragraph)
         tokenizer.string = remainingText
-
-        if let tokenRange = tokenizer.tokenRange(at: remainingText.startIndex) {
-            let extractedText = String(remainingText[tokenRange]).trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !extractedText.isEmpty else { return nil }
+        
+        let tokenRange = tokenizer.tokenRange(at: remainingText.startIndex)
+        let extractedText = String(remainingText[tokenRange]).trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        if !extractedText.isEmpty {
             let location = startIndex + remainingText.distance(from: remainingText.startIndex, to: tokenRange.lowerBound)
             let length = remainingText.distance(from: tokenRange.lowerBound, to: tokenRange.upperBound)
             return (extractedText, NSRange(location: location, length: length))
         }
-
-        return nil
+        
+        // NLTokenizer didn't find a meaningful token (e.g., text without ending punctuation), return the entire trimmed remaining text
+        let trimmedRange = remainingText.range(of: trimmedRemainingText)!
+        let location = startIndex + remainingText.distance(from: remainingText.startIndex, to: trimmedRange.lowerBound)
+        let length = trimmedRemainingText.count
+        return (trimmedRemainingText, NSRange(location: location, length: length))
     }
-
+    
     private func play(data: Data) {
         do {
             player = try AVAudioPlayer(data: data)
@@ -687,28 +756,96 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
             player?.prepareToPlay()
             player?.play()
             delegate.state.accept(.speaking)
+            schedulePreload()
         } catch {
             DDLogError("RemoteVoiceProcessor: can't play audio - \(error)")
             delegate.state.accept(.stopped)
         }
     }
-
+    
+    private func schedulePreload() {
+        preloadTimer?.invalidate()
+        preloadTimer = nil
+        
+        guard let player, let text, let voiceData, let speechRange = delegate.speechRange else { return }
+        
+        let preloadDelay = max(0, player.duration - Self.preloadTimeBeforeEnd)
+        let nextStartIndex = speechRange.location + speechRange.length
+        
+        if preloadDelay == 0 {
+            preloadNextPart(text: text, startIndex: nextStartIndex, voiceData: voiceData)
+        } else {
+            preloadTimer = Timer.scheduledTimer(withTimeInterval: preloadDelay, repeats: false) { [weak self] _ in
+                guard let self else { return }
+                preloadNextPart(text: text, startIndex: nextStartIndex, voiceData: voiceData)
+            }
+        }
+    }
+    
+    private func preloadNextPart(text: String, startIndex: Int, voiceData: VoiceData) {
+        preloadSubject?.onCompleted()
+        let subject = ReplaySubject<(Data, NSRange)>.create(bufferSize: 1)
+        preloadSubject = subject
+        preloadStartIndex = startIndex
+        
+        loadSpeechData(text: text, startIndex: startIndex, voice: voiceData.voice, language: voiceData.language)
+            .observe(on: MainScheduler.instance)
+            .subscribe(
+                onSuccess: { data, range in
+                    subject.onNext((data, range))
+                    subject.onCompleted()
+                },
+                onFailure: { error in
+                    subject.onError(error)
+                }
+            )
+            .disposed(by: disposeBag)
+    }
+    
     private func finishSpeaking() {
         text = nil
+        player?.stop()
         player = nil
+        preloadTimer?.invalidate()
+        preloadTimer = nil
+        preloadSubject?.onCompleted()
+        preloadSubject = nil
+        preloadStartIndex = nil
+        shouldReloadOnResume = false
         delegate.didFinishSpeaking()
         delegate.state.accept(.stopped)
+    }
+    
+    private func handleSpeechSuccess(data: Data, range: NSRange) {
+        delegate.speechRangeWillChange(to: range)
+        play(data: data)
+    }
+    
+    private func handleSpeechFailure(error: Swift.Error) {
+        if case Error.endOfPage = error {
+            // Reached end of current page, try to go to next page
+            if !delegate.goToNextPageIfAvailable() {
+                finishSpeaking()
+            }
+        } else {
+            DDLogError("RemoteVoiceProcessor: can't download sound - \(error)")
+            delegate.state.accept(.stopped)
+        }
     }
 }
 
 extension RemoteVoiceProcessor: AVAudioPlayerDelegate {
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        guard flag, text != nil else {
+        preloadTimer?.invalidate()
+        preloadTimer = nil
+        
+        guard flag, let text, let voiceData, let speechRange = delegate.speechRange else {
             finishSpeaking()
             return
         }
-//        speakWithVoice()
-        // TODO: - continue to next line/paragraph
+
+        let nextStartIndex = speechRange.location + speechRange.length
+        speak(text: text, startIndex: nextStartIndex, voice: voiceData.voice, language: voiceData.language)
     }
 
     func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: (any Swift.Error)?) {
