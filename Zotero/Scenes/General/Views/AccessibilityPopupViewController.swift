@@ -99,6 +99,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
         createView()
         updatePopup(toHeight: currentHeight)
         observeState()
+        speechManager.start()
 
         func createView() {
             // Speech container
