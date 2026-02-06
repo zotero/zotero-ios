@@ -78,6 +78,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
         createView()
         updatePopup(toHeight: currentHeight)
         observeState()
+        speechManager.start()
 
         func createView() {
             // Speech container
@@ -101,7 +102,6 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
             xConfiguration.baseBackgroundColor = .systemGray5
             xConfiguration.baseForegroundColor = .darkGray
             xConfiguration.cornerStyle = .capsule
-            //            speedConfiguration.contentInsets = .init(top: 6, leading: 16, bottom: 6, trailing: 16)
             let xButton = UIButton(configuration: xConfiguration)
             xButton.setContentHuggingPriority(.required, for: .vertical)
             xButton.setContentHuggingPriority(.required, for: .horizontal)
