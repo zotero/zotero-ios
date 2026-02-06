@@ -6,7 +6,7 @@
 //  Copyright © 2026 Corporation for Digital Scholarship. All rights reserved.
 //
 
-struct RemoteVoice: Decodable, Equatable {
+struct RemoteVoice: Codable, Equatable {
     enum Granularity {
         case sentence, paragraph
     }
