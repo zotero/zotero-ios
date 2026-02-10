@@ -54,48 +54,46 @@ enum TextTokenizer {
 
         let location = startIndex + remainingText.distance(from: remainingText.startIndex, to: tokenRange.lowerBound)
 
-        // Try to find a natural split point (e.g., ".5" or ".A" patterns) or enforce max length
+        // Try to find a split point which was ignored by NLTokenizer (for example when footnotes are included, sentences end with a dot and a number, "sentence end.5 New sentence")
+        // or enforce max length
         if let (splitText, splitLength) = findSentenceSplitPoint(in: extractedText) {
             return (splitText, NSRange(location: location, length: splitLength))
         }
 
         return (extractedText, NSRange(location: location, length: length))
-    }
+        
+        func findSentenceSplitPoint(in text: String) -> (text: String, length: Int)? {
+            let range = NSRange(text.startIndex..., in: text)
 
-    /// Finds a split point in the text, either at a natural sentence boundary that NLTokenizer missed,
-    /// or at the maximum length if the text is too long.
-    /// Returns nil if no splitting is needed.
-    private static func findSentenceSplitPoint(in text: String) -> (text: String, length: Int)? {
-        let range = NSRange(text.startIndex..., in: text)
-
-        // Look for natural split points (punctuation followed by digit, e.g., footnote markers)
-        if let match = sentenceEndPattern.firstMatch(in: text, range: range) {
-            let matchEndLocation = match.range.location + match.range.length
-            // Only split if it's not near the end of the text (leave at least a few characters for next sentence)
-            if matchEndLocation < text.count - 1 {
-                let endIndex = text.index(text.startIndex, offsetBy: matchEndLocation)
-                let splitText = String(text[..<endIndex]).trimmingCharacters(in: .whitespacesAndNewlines)
-                if !splitText.isEmpty {
-                    return (splitText, matchEndLocation)
+            // Look for natural split points (punctuation followed by digit, e.g., footnote markers)
+            if let match = sentenceEndPattern.firstMatch(in: text, range: range) {
+                let matchEndLocation = match.range.location + match.range.length
+                // Only split if it's not near the end of the text (leave at least a few characters for next sentence)
+                if matchEndLocation < text.count - 1 {
+                    let endIndex = text.index(text.startIndex, offsetBy: matchEndLocation)
+                    let splitText = String(text[..<endIndex]).trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !splitText.isEmpty {
+                        return (splitText, matchEndLocation)
+                    }
                 }
             }
-        }
 
-        // If no natural split point and text doesn't exceed max length, no splitting needed
-        guard text.count > maxSentenceLength else { return nil }
+            // If no natural split point and text doesn't exceed max length, no splitting needed
+            guard text.count > maxSentenceLength else { return nil }
 
-        // Text exceeds max length - split at the last space before maxLength
-        let truncated = String(text.prefix(maxSentenceLength))
-        if let lastSpaceIndex = truncated.lastIndex(of: " ") {
-            let splitText = String(truncated[..<lastSpaceIndex]).trimmingCharacters(in: .whitespacesAndNewlines)
-            let splitLength = text.distance(from: text.startIndex, to: lastSpaceIndex)
-            if !splitText.isEmpty {
-                return (splitText, splitLength)
+            // Text exceeds max length - split at the last space before maxLength
+            let truncated = String(text.prefix(maxSentenceLength))
+            if let lastSpaceIndex = truncated.lastIndex(of: " ") {
+                let splitText = String(truncated[..<lastSpaceIndex]).trimmingCharacters(in: .whitespacesAndNewlines)
+                let splitLength = text.distance(from: text.startIndex, to: lastSpaceIndex)
+                if !splitText.isEmpty {
+                    return (splitText, splitLength)
+                }
             }
-        }
 
-        // Ultimate fallback: just truncate at maxLength
-        return (truncated.trimmingCharacters(in: .whitespacesAndNewlines), maxSentenceLength)
+            // Just truncate at maxLength
+            return (truncated.trimmingCharacters(in: .whitespacesAndNewlines), maxSentenceLength)
+        }
     }
 
     /// Finds the paragraph at the given index.
