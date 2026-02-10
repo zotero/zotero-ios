@@ -43,6 +43,8 @@ final class PDFDocumentViewController: UIViewController {
     private static var toolHistory: [PSPDFKit.Annotation.Tool?] = []
     
     private var selectionView: SelectionView?
+    private var speechHighlightView: SpeechHighlightView?
+    private var currentSpeechHighlightPage: PageIndex?
     // Used to decide whether text annotation should start editing on tap
     private var selectedAnnotationWasSelectedBefore: Bool
     private var searchResults: [SearchResult] = []
@@ -169,6 +171,57 @@ final class PDFDocumentViewController: UIViewController {
                 searchHighlightViewManager?.animateSearchHighlight(result)
             }
         }
+    }
+
+    /// Updates the speech highlight to show the currently spoken text
+    /// - Parameters:
+    ///   - text: The text currently being spoken
+    ///   - page: The page index where the text is located
+    func updateSpeechHighlight(text: String, page: PageIndex) {
+        guard let pdfController else { return }
+
+        // Get the page view for the target page
+        guard let pageView = pdfController.pageViewForPage(at: page) else {
+            // Page not visible, clear any existing highlight but don't reset search position
+            speechHighlightView?.clearHighlight()
+            return
+        }
+
+        // If page changed, remove highlight from old page and reset search position
+        if currentSpeechHighlightPage != page {
+            clearSpeechHighlight()
+            currentSpeechHighlightPage = page
+        }
+
+        // Get frames for the spoken text by searching in glyphs
+        guard let frames = speechHighlightFrames(for: text, page: page, pageView: pageView), !frames.isEmpty else {
+            // Just hide highlight, don't reset position - might find next text
+            speechHighlightView?.clearHighlight()
+            return
+        }
+
+        // Create or update the highlight view
+        if speechHighlightView == nil {
+            let highlightView = SpeechHighlightView(frame: pageView.bounds)
+            highlightView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            pageView.contentView.addSubview(highlightView)
+            speechHighlightView = highlightView
+        } else if speechHighlightView?.superview !== pageView.contentView {
+            // Move to correct page view if needed
+            speechHighlightView?.removeFromSuperview()
+            speechHighlightView?.frame = pageView.bounds
+            pageView.contentView.addSubview(speechHighlightView!)
+        }
+
+        speechHighlightView?.updateHighlight(frames: frames)
+    }
+
+    /// Clears the speech highlight
+    func clearSpeechHighlight() {
+        speechHighlightView?.clearHighlight()
+        speechHighlightView?.removeFromSuperview()
+        speechHighlightView = nil
+        currentSpeechHighlightPage = nil
     }
 
     func disableAnnotationTools() {
@@ -1059,6 +1112,110 @@ extension PDFDocumentViewController: AnnotationBoundingBoxConverter {
 
         return textOffset
     }
+
+    /// Searches for the given text in PSPDFKit's glyphs and returns their bounding boxes.
+    /// Whitespace is ignored during comparison since PDFWorker and PSPDFKit handle
+    /// line breaks and spacing differently, but the actual text content is identical.
+    /// Returns rects in PDF coordinate space.
+    func findGlyphRects(for searchText: String, page: PageIndex) -> [CGRect] {
+        guard let parser = viewModel.state.document.textParserForPage(at: page), !parser.glyphs.isEmpty else { return [] }
+        guard !searchText.isEmpty else { return [] }
+
+        // Build parallel structures for whitespace-agnostic text matching:
+        // - glyphIndices: maps each character position to its source glyph index
+        // - glyphTextNoSpaces: text with all whitespace removed (for searching)
+        // - noSpaceToOriginalIndex: maps indices in glyphTextNoSpaces back to glyphIndices positions
+        var characterCount = 0
+        var glyphIndices: [Int] = []
+        var glyphTextNoSpaces = ""
+        var noSpaceToOriginalIndex: [Int] = []
+
+        for (index, glyph) in parser.glyphs.enumerated() {
+            let content = glyph.content
+            if !content.isEmpty {
+                for char in content where char != "\r" && char != "\n" {
+                    let currentIndex = characterCount
+                    characterCount += 1
+                    glyphIndices.append(index)
+
+                    if !char.isWhitespace {
+                        glyphTextNoSpaces.append(char)
+                        noSpaceToOriginalIndex.append(currentIndex)
+                    }
+                }
+            } else if glyph.isWordOrLineBreaker {
+                characterCount += 1
+                glyphIndices.append(index)
+            }
+        }
+
+        let searchNoSpaces = searchText.filter { !$0.isWhitespace }
+        guard !searchNoSpaces.isEmpty else { return [] }
+        guard let range = glyphTextNoSpaces.range(of: searchNoSpaces) else { return [] }
+
+        // Map whitespace-free range back to original character positions
+        let startIdxNoSpace = glyphTextNoSpaces.distance(from: glyphTextNoSpaces.startIndex, to: range.lowerBound)
+        let endIdxNoSpace = glyphTextNoSpaces.distance(from: glyphTextNoSpaces.startIndex, to: range.upperBound)
+        let startIdx = noSpaceToOriginalIndex[startIdxNoSpace]
+        let endIdx = endIdxNoSpace < noSpaceToOriginalIndex.count ? noSpaceToOriginalIndex[endIdxNoSpace - 1] + 1 : characterCount
+
+        // Collect unique glyph indices and get their frames
+        var uniqueGlyphIndices = Set<Int>()
+        for i in startIdx..<min(endIdx, glyphIndices.count) {
+            uniqueGlyphIndices.insert(glyphIndices[i])
+        }
+
+        return uniqueGlyphIndices.sorted().compactMap { glyphIndex in
+            let glyph = parser.glyphs[glyphIndex]
+            return glyph.isWordOrLineBreaker ? nil : glyph.frame
+        }
+    }
+
+    /// Returns view-space frames for speech highlighting on the given page.
+    /// Searches for the text in PSPDFKit's glyphs to find the correct positions.
+    /// Returns nil if the page is not currently visible.
+    func speechHighlightFrames(for text: String, page: PageIndex, pageView: PDFPageView) -> [CGRect]? {
+        let pdfRects = findGlyphRects(for: text, page: page)
+        guard !pdfRects.isEmpty else { return nil }
+
+        // Merge adjacent rects on the same line into larger rects for cleaner highlighting
+        let mergedRects = mergeAdjacentRects(pdfRects)
+
+        // Convert from PDF coordinate space to view coordinate space
+        return mergedRects.map { pageView.convert($0, from: pageView.pdfCoordinateSpace) }
+    }
+
+    /// Merges adjacent glyph rects that are on the same line into continuous highlight regions
+    private func mergeAdjacentRects(_ rects: [CGRect]) -> [CGRect] {
+        guard !rects.isEmpty else { return [] }
+        guard rects.count > 1 else { return rects }
+
+        var merged: [CGRect] = []
+        var currentRect = rects[0]
+
+        for i in 1..<rects.count {
+            let nextRect = rects[i]
+
+            // Check if rects are on the same line (similar y position) and adjacent horizontally
+            let sameLineThreshold: CGFloat = currentRect.height * 0.5
+            let horizontalGapThreshold: CGFloat = currentRect.height * 0.3
+
+            let sameLine = abs(currentRect.midY - nextRect.midY) < sameLineThreshold
+            let adjacent = nextRect.minX - currentRect.maxX < horizontalGapThreshold
+
+            if sameLine && adjacent {
+                // Merge the rects
+                currentRect = currentRect.union(nextRect)
+            } else {
+                // Start a new rect
+                merged.append(currentRect)
+                currentRect = nextRect
+            }
+        }
+
+        merged.append(currentRect)
+        return merged
+    }
 }
 
 extension PDFDocumentViewController: FreeTextInputDelegate {
@@ -1157,6 +1314,49 @@ final class AnnotationPreviewView: SelectionView {
         view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         view.frame = rect
         addSubview(view)
+    }
+}
+
+/// View that highlights text being spoken during text-to-speech
+final class SpeechHighlightView: UIView {
+    private var highlightLayers: [CALayer] = []
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        commonSetup()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        commonSetup()
+    }
+
+    private func commonSetup() {
+        backgroundColor = .clear
+        isUserInteractionEnabled = false
+    }
+
+    /// Updates the highlight to cover the given frames (in this view's coordinate space)
+    func updateHighlight(frames: [CGRect]) {
+        // Remove old highlight layers
+        highlightLayers.forEach { $0.removeFromSuperlayer() }
+        highlightLayers.removeAll()
+
+        // Create new highlight layers for each frame
+        for frame in frames {
+            let highlightLayer = CALayer()
+            highlightLayer.frame = frame
+            highlightLayer.backgroundColor = UIColor.systemYellow.withAlphaComponent(0.4).cgColor
+            highlightLayer.cornerRadius = 2
+            layer.addSublayer(highlightLayer)
+            highlightLayers.append(highlightLayer)
+        }
+    }
+
+    /// Clears all highlights
+    func clearHighlight() {
+        highlightLayers.forEach { $0.removeFromSuperlayer() }
+        highlightLayers.removeAll()
     }
 }
 

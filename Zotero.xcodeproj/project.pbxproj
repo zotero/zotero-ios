@@ -839,6 +839,8 @@
 		B379D92E2BB2EE1200AF5025 /* FullSyncDebuggingAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B379D92D2BB2EE1200AF5025 /* FullSyncDebuggingAction.swift */; };
 		B379D9302BB2EE1C00AF5025 /* FullSyncDebuggingState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B379D92F2BB2EE1C00AF5025 /* FullSyncDebuggingState.swift */; };
 		B379D9322BB30E6600AF5025 /* FullSyncDebugger.swift in Sources */ = {isa = PBXBuildFile; fileRef = B379D9312BB30E6600AF5025 /* FullSyncDebugger.swift */; };
+		B37A01C52F3A16A6002FF725 /* TextTokenizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37A01C42F3A16A6002FF725 /* TextTokenizer.swift */; };
+		B37A01C72F3A16FE002FF725 /* TextTokenizerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37A01C62F3A16FE002FF725 /* TextTokenizerSpec.swift */; };
 		B37AA2802899093900A1C643 /* ItemDetailCollectionViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37AA27F2899093900A1C643 /* ItemDetailCollectionViewHandler.swift */; };
 		B37AA28228990F6300A1C643 /* ItemDetailTitleContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37AA28128990F6300A1C643 /* ItemDetailTitleContentView.swift */; };
 		B37AA2842899123C00A1C643 /* UICollectionViewListCell+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37AA2832899123C00A1C643 /* UICollectionViewListCell+Extensions.swift */; };
@@ -1928,6 +1930,8 @@
 		B379D92D2BB2EE1200AF5025 /* FullSyncDebuggingAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullSyncDebuggingAction.swift; sourceTree = "<group>"; };
 		B379D92F2BB2EE1C00AF5025 /* FullSyncDebuggingState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullSyncDebuggingState.swift; sourceTree = "<group>"; };
 		B379D9312BB30E6600AF5025 /* FullSyncDebugger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullSyncDebugger.swift; sourceTree = "<group>"; };
+		B37A01C42F3A16A6002FF725 /* TextTokenizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextTokenizer.swift; sourceTree = "<group>"; };
+		B37A01C62F3A16FE002FF725 /* TextTokenizerSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextTokenizerSpec.swift; sourceTree = "<group>"; };
 		B37AA27F2899093900A1C643 /* ItemDetailCollectionViewHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailCollectionViewHandler.swift; sourceTree = "<group>"; };
 		B37AA28128990F6300A1C643 /* ItemDetailTitleContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailTitleContentView.swift; sourceTree = "<group>"; };
 		B37AA2832899123C00A1C643 /* UICollectionViewListCell+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UICollectionViewListCell+Extensions.swift"; sourceTree = "<group>"; };
@@ -2660,6 +2664,7 @@
 				B355B12B2850B6C400BAE2C5 /* TableViewDiffableDataSource.swift */,
 				B36BEC7224485FC700A60552 /* TagColorGenerator.swift */,
 				61FA14CD2B05081D00E7D423 /* TextConverter.swift */,
+				B37A01C42F3A16A6002FF725 /* TextTokenizer.swift */,
 				B36A988C2428E059005D5790 /* TranslatorsAndStylesController.swift */,
 				B3972688247D403200A8B469 /* UrlDetector.swift */,
 				B324276C25C81F2000567504 /* WebSocketController.swift */,
@@ -3222,6 +3227,7 @@
 				B3202C6B271048FF00485BE4 /* WebDavControllerSpec.swift */,
 				B31DDAA02729A7DC002CFA05 /* WebDavCredentials.swift */,
 				61AD977C2D67F42A000FDF45 /* PDFWorkerControllerSpec.swift */,
+				B37A01C62F3A16FE002FF725 /* TextTokenizerSpec.swift */,
 			);
 			path = ZoteroTests;
 			sourceTree = "<group>";
@@ -5507,6 +5513,7 @@
 				B37BF0AB25A5E2AD00AE0268 /* SquareAnnotation.swift in Sources */,
 				B3EA5A1B2B7251EE00E283D7 /* CitationLocatorContentView.swift in Sources */,
 				B361820024C9A7C000B30D56 /* LoginAction.swift in Sources */,
+				B37A01C52F3A16A6002FF725 /* TextTokenizer.swift in Sources */,
 				B305660523FC051E003304F2 /* DeletionsRequest.swift in Sources */,
 				B394A0E226A709A900CA307F /* NoteEditorTitleView.swift in Sources */,
 				B305667523FC051F003304F2 /* String+Extensions.swift in Sources */,
@@ -6173,6 +6180,7 @@
 				6144B5DB2A4ADEEB00914B3C /* SearchResponseSpec.swift in Sources */,
 				6144B5D62A4ADD7E00914B3C /* ItemResponseSpec.swift in Sources */,
 				6144B5D42A4ADCDE00914B3C /* CreatorSummaryFormatterSpec.swift in Sources */,
+				B37A01C72F3A16FE002FF725 /* TextTokenizerSpec.swift in Sources */,
 				B3F4E4EC2A4DAA7D00820718 /* UpdatableObjectSpec.swift in Sources */,
 				6144B5E12A4AE95E00914B3C /* WebDavControllerSpec.swift in Sources */,
 				B3518DA72AEBCB5E00D983B4 /* SettingsResponseSpec.swift in Sources */,
