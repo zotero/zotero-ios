@@ -358,6 +358,17 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
                     }
                 })
                 .disposed(by: disposeBag)
+
+            // Observe speech state to clear highlight when speech stops
+            accessibilityHandler?.speechManager.state
+                .observe(on: MainScheduler.instance)
+                .subscribe(onNext: { [weak self] state in
+                    guard let self else { return }
+                    if state.isStopped {
+                        documentController?.clearSpeechHighlight()
+                    }
+                })
+                .disposed(by: disposeBag)
         }
     }
 
@@ -1074,6 +1085,10 @@ extension PDFReaderViewController: SpeechManagerDelegate {
 
     func moved(to pageIndex: UInt) {
         documentController?.focus(page: pageIndex)
+    }
+
+    func speechTextChanged(text: String, pageIndex: UInt) {
+        documentController?.updateSpeechHighlight(text: text, page: PageIndex(pageIndex))
     }
 }
 
