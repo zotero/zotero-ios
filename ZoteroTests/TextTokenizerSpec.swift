@@ -17,105 +17,248 @@ import Quick
 final class TextTokenizerSpec: QuickSpec {
     override class func spec() {
         describe("TextTokenizer") {
-            describe("find next") {
-                context("with paragraphs") {
-                    it("finds first paragraph from start") {
-                        let text = "First paragraph.\n\nSecond paragraph."
-                        let result = TextTokenizer.find(.paragraph, startingAt: 0, in: text)
-                        
+            describe("findSentence") {
+                it("finds first sentence from start") {
+                    let text = "First sentence. Second sentence."
+                    let result = TextTokenizer.findSentence(startingAt: 0, in: text)
+
+                    expect(result).notTo(beNil())
+                    expect(result?.text).to(equal("First sentence."))
+                }
+
+                it("finds remaining string from current sentence") {
+                    let text = "First sentence. Second sentence."
+                    let result = TextTokenizer.findSentence(startingAt: 3, in: text)
+
+                    expect(result).notTo(beNil())
+                    expect(result?.text).to(equal("st sentence."))
+                }
+
+                it("finds second sentence after first") {
+                    let text = "First sentence. Second sentence."
+                    let result = TextTokenizer.findSentence(startingAt: 16, in: text)
+
+                    expect(result).notTo(beNil())
+                    expect(result?.text).to(equal("Second sentence."))
+                }
+
+                it("handles multiple sentences in a paragraph") {
+                    let text = "One. Two. Three."
+
+                    let first = TextTokenizer.findSentence(startingAt: 0, in: text)
+                    expect(first?.text).to(equal("One."))
+
+                    let second = TextTokenizer.findSentence(startingAt: first!.range.location + first!.range.length, in: text)
+                    expect(second?.text).to(equal("Two."))
+
+                    let third = TextTokenizer.findSentence(startingAt: second!.range.location + second!.range.length, in: text)
+                    expect(third?.text).to(equal("Three."))
+                }
+
+                it("returns nil when starting past end of text") {
+                    let text = "First sentence."
+                    let result = TextTokenizer.findSentence(startingAt: 100, in: text)
+
+                    expect(result).to(beNil())
+                }
+
+                it("returns nil for empty text") {
+                    let result = TextTokenizer.findSentence(startingAt: 0, in: "")
+
+                    expect(result).to(beNil())
+                }
+
+                it("returns nil for whitespace-only text") {
+                    let result = TextTokenizer.findSentence(startingAt: 0, in: "   \n\n   ")
+
+                    expect(result).to(beNil())
+                }
+
+                it("handles text with leading whitespace") {
+                    let text = "   \n\nFirst sentence."
+                    let result = TextTokenizer.findSentence(startingAt: 0, in: text)
+
+                    expect(result).notTo(beNil())
+                    expect(result?.text).to(equal("First sentence."))
+                }
+
+                it("handles text without ending punctuation") {
+                    let text = "Some text without punctuation"
+                    let result = TextTokenizer.findSentence(startingAt: 0, in: text)
+
+                    expect(result).notTo(beNil())
+                    expect(result?.text).to(equal("Some text without punctuation"))
+                }
+
+                context("long sentence splitting") {
+                    it("splits sentence with footnote number after period") {
+                        let text = "This is a sentence.5 Another sentence here."
+                        let result = TextTokenizer.findSentence(startingAt: 0, in: text)
+
                         expect(result).notTo(beNil())
-                        expect(result?.text).to(equal("First paragraph."))
-                        expect(result?.range.location).to(equal(0))
+                        expect(result?.text).to(equal("This is a sentence."))
+                        expect(result?.range.length).to(equal(19)) // "This is a sentence." is 19 characters
                     }
-                    
-                    it("finds remaining string from current paragraph") {
-                        let text = "First paragraph.\n\nSecond paragraph."
-                        let result = TextTokenizer.find(.paragraph, startingAt: 3, in: text)
-                        
+
+                    it("does not split abbreviations like U.S.") {
+                        let text = "The U.S. government announced new policies."
+                        let result = TextTokenizer.findSentence(startingAt: 0, in: text)
+
                         expect(result).notTo(beNil())
-                        expect(result?.text).to(equal("st paragraph."))
+                        expect(result?.text).to(equal(text))
                     }
-                    
-                    it("finds second paragraph after first") {
-                        let text = "First paragraph.\n\nSecond paragraph."
-                        let result = TextTokenizer.find(.paragraph, startingAt: 18, in: text)
-                        
+
+                    it("does not split short sentences") {
+                        let text = "Short sentence."
+                        let result = TextTokenizer.findSentence(startingAt: 0, in: text)
+
                         expect(result).notTo(beNil())
-                        expect(result?.text).to(equal("Second paragraph."))
+                        expect(result?.text).to(equal("Short sentence."))
                     }
-                    
-                    it("returns nil when starting past end of text") {
-                        let text = "First paragraph."
-                        let result = TextTokenizer.find(.paragraph, startingAt: 100, in: text)
-                        
-                        expect(result).to(beNil())
-                    }
-                    
-                    it("returns nil for empty text") {
-                        let result = TextTokenizer.find(.paragraph, startingAt: 0, in: "")
-                        
-                        expect(result).to(beNil())
-                    }
-                    
-                    it("returns nil for whitespace-only text") {
-                        let result = TextTokenizer.find(.paragraph, startingAt: 0, in: "   \n\n   ")
-                        
-                        expect(result).to(beNil())
-                    }
-                    
-                    it("handles text with leading whitespace") {
-                        let text = "   \n\nFirst paragraph."
-                        let result = TextTokenizer.find(.paragraph, startingAt: 0, in: text)
-                        
+
+                    it("splits very long sentence at natural break point") {
+                        // Create a sentence longer than maxSentenceLength with a period+digit pattern
+                        let longText = String(repeating: "word ", count: 60) + "end.1 More text here."
+                        let result = TextTokenizer.findSentence(startingAt: 0, in: longText)
+
                         expect(result).notTo(beNil())
-                        expect(result?.text).to(equal("First paragraph."))
+                        expect(result?.text.hasSuffix("end.")).to(beTrue())
+                        expect(result?.text.count).to(beLessThanOrEqualTo(TextTokenizer.maxSentenceLength))
                     }
-                    
-                    it("handles text without ending punctuation") {
-                        let text = "Some text without punctuation"
-                        let result = TextTokenizer.find(.paragraph, startingAt: 0, in: text)
-                        
+
+                    it("splits at last space when no natural break point exists") {
+                        // Create a very long sentence with no period+digit pattern
+                        let longText = String(repeating: "word ", count: 100) + "ending"
+                        let result = TextTokenizer.findSentence(startingAt: 0, in: longText)
+
                         expect(result).notTo(beNil())
-                        expect(result?.text).to(equal("Some text without punctuation"))
+                        expect(result?.text.count).to(beLessThanOrEqualTo(TextTokenizer.maxSentenceLength))
+                        // Should end at a word boundary (no partial words)
+                        expect(result?.text.hasSuffix("word")).to(beTrue())
+                    }
+
+                    it("iterates through text with footnotes correctly") {
+                        let text = "First sentence.1 Second sentence.2 Third sentence."
+
+                        let first = TextTokenizer.findSentence(startingAt: 0, in: text)
+                        expect(first?.text).to(equal("First sentence."))
+
+                        let second = TextTokenizer.findSentence(startingAt: first!.range.location + first!.range.length, in: text)
+                        expect(second?.text).to(equal("1 Second sentence."))
+
+                        let third = TextTokenizer.findSentence(startingAt: second!.range.location + second!.range.length, in: text)
+                        expect(third?.text).to(equal("2 Third sentence."))
+                    }
+
+                    it("handles exclamation mark followed by digit") {
+                        let text = "Amazing discovery!5 The research continues."
+                        let result = TextTokenizer.findSentence(startingAt: 0, in: text)
+
+                        expect(result).notTo(beNil())
+                        expect(result?.text).to(equal("Amazing discovery!"))
+                    }
+
+                    it("handles question mark followed by digit") {
+                        let text = "Is this true?5 Yes it is."
+                        let result = TextTokenizer.findSentence(startingAt: 0, in: text)
+
+                        expect(result).notTo(beNil())
+                        expect(result?.text).to(equal("Is this true?"))
                     }
                 }
-                
+            }
+
+            describe("findIndex ofNext") {
                 context("with sentences") {
-                    it("finds first sentence from start") {
+                    it("finds index of next sentence from start") {
                         let text = "First sentence. Second sentence."
-                        let result = TextTokenizer.find(.sentence, startingAt: 0, in: text)
-                        
+                        let result = TextTokenizer.findIndex(ofNext: .sentence, startingAt: 0, in: text)
+
                         expect(result).notTo(beNil())
-                        expect(result?.text).to(equal("First sentence."))
+                        expect(result).to(equal(16)) // Position after "First sentence. "
                     }
-                    
-                    it("finds remaining string from current sentence") {
-                        let text = "First sentence. Second sentence."
-                        let result = TextTokenizer.find(.sentence, startingAt: 3, in: text)
-                        
+
+                    it("finds index of next sentence from middle of current") {
+                        let text = "First sentence. Second sentence. Third."
+                        // Start from middle of first sentence
+                        let result = TextTokenizer.findIndex(ofNext: .sentence, startingAt: 5, in: text)
+
+                        // Should return end of current partial sentence
                         expect(result).notTo(beNil())
-                        expect(result?.text).to(equal("st sentence."))
+                        expect(result).to(equal(16))
                     }
-                    
-                    it("finds second sentence after first") {
-                        let text = "First sentence. Second sentence."
-                        let result = TextTokenizer.find(.sentence, startingAt: 16, in: text)
-                        
+
+                    it("finds index of next sentence after second") {
+                        let text = "First. Second. Third."
+                        let result = TextTokenizer.findIndex(ofNext: .sentence, startingAt: 7, in: text)
+
                         expect(result).notTo(beNil())
-                        expect(result?.text).to(equal("Second sentence."))
+                        expect(result).to(equal(15)) // Position after "Second. "
                     }
-                    
-                    it("handles multiple sentences in a paragraph") {
-                        let text = "One. Two. Three."
-                        
-                        let first = TextTokenizer.find(.sentence, startingAt: 0, in: text)
-                        expect(first?.text).to(equal("One."))
-                        
-                        let second = TextTokenizer.find(.sentence, startingAt: first!.range.location + first!.range.length, in: text)
-                        expect(second?.text).to(equal("Two."))
-                        
-                        let third = TextTokenizer.find(.sentence, startingAt: second!.range.location + second!.range.length, in: text)
-                        expect(third?.text).to(equal("Three."))
+
+                    it("returns nil when starting past end of text") {
+                        let text = "First sentence."
+                        let result = TextTokenizer.findIndex(ofNext: .sentence, startingAt: 100, in: text)
+
+                        expect(result).to(beNil())
+                    }
+
+                    it("returns nil for empty text") {
+                        let result = TextTokenizer.findIndex(ofNext: .sentence, startingAt: 0, in: "")
+
+                        expect(result).to(beNil())
+                    }
+
+                    it("returns nil for whitespace-only text") {
+                        let result = TextTokenizer.findIndex(ofNext: .sentence, startingAt: 0, in: "   \n\n   ")
+
+                        expect(result).to(beNil())
+                    }
+                }
+
+                context("with paragraphs") {
+                    it("finds index of next paragraph from start") {
+                        let text = "First paragraph.\n\nSecond paragraph."
+                        let result = TextTokenizer.findIndex(ofNext: .paragraph, startingAt: 0, in: text)
+
+                        expect(result).notTo(beNil())
+                        expect(result).to(equal(18)) // Position after "First paragraph.\n\n"
+                    }
+
+                    it("finds index of next paragraph after second") {
+                        let text = "Para 1.\n\nPara 2.\n\nPara 3."
+                        let result = TextTokenizer.findIndex(ofNext: .paragraph, startingAt: 9, in: text)
+
+                        expect(result).notTo(beNil())
+                        expect(result).to(equal(18)) // Position after "Para 2.\n\n"
+                    }
+
+                    it("allows stepping forward through paragraphs") {
+                        let text = "Para 1.\n\nPara 2.\n\nPara 3.\n\nPara 4."
+
+                        var index = 0
+
+                        // First forward: skip Para 1, should go to start of Para 2
+                        if let nextIndex = TextTokenizer.findIndex(ofNext: .paragraph, startingAt: index, in: text) {
+                            index = nextIndex
+                            expect(index).to(equal(9))
+                        }
+
+                        // Second forward: skip Para 2, should go to start of Para 3
+                        if let nextIndex = TextTokenizer.findIndex(ofNext: .paragraph, startingAt: index, in: text) {
+                            index = nextIndex
+                            expect(index).to(equal(18))
+                        }
+
+                        // Third forward: skip Para 3, should go to start of Para 4
+                        if let nextIndex = TextTokenizer.findIndex(ofNext: .paragraph, startingAt: index, in: text) {
+                            index = nextIndex
+                            expect(index).to(equal(27))
+                        }
+
+                        // Fourth forward: at Para 4, should return nil (no more paragraphs)
+                        let result = TextTokenizer.findIndex(ofNext: .paragraph, startingAt: index, in: text)
+                        expect(result).to(equal(text.count))
                     }
                 }
             }

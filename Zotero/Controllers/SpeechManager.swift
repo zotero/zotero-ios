@@ -236,9 +236,9 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         guard let speechData, let currentPage = cachedPages[speechData.index] else { return }
 
         let currentEndIndex = speechData.range.location + speechData.range.length
-        if let (_, range) = TextTokenizer.find(.paragraph, startingAt: currentEndIndex, in: currentPage) {
-            DDLogInfo("SpeechManager: forward to \(range.location); \(speechData.range.location); \(speechData.range.length)")
-            skip(to: range.location, on: currentPage)
+        if let index = TextTokenizer.findIndex(ofNext: .paragraph, startingAt: currentEndIndex, in: currentPage) {
+            DDLogInfo("SpeechManager: forward to \(index); \(speechData.range.location); \(speechData.range.length)")
+            skip(to: index, on: currentPage)
         } else if let nextIndex = delegate?.getNextPageIndex(from: speechData.index), let page = cachedPages[nextIndex] {
             go(to: page, pageIndex: nextIndex)
         } else {
@@ -692,8 +692,13 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     
     private func loadSpeechData(text: String, startIndex: Int, voice: RemoteVoice, language: String) -> Single<(Data, NSRange)> {
         return Single.create { (subscriber: (SingleEvent<(String, NSRange)>) -> Void) in
-            let granularity: NLTokenUnit = voice.granularity == .sentence ? .sentence : .paragraph
-            guard let (extractedText, range) = TextTokenizer.find(granularity, startingAt: startIndex, in: text) else {
+            let result: (text: String, range: NSRange)?
+            if voice.granularity == .sentence {
+                result = TextTokenizer.findSentence(startingAt: startIndex, in: text)
+            } else {
+                result = TextTokenizer.findParagraph(startingAt: startIndex, in: text)
+            }
+            guard let (extractedText, range) = result else {
                 subscriber(.failure(Error.endOfPage))
                 return Disposables.create()
             }
