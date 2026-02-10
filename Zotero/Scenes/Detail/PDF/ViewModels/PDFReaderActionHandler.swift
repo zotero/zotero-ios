@@ -1818,8 +1818,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
     private func prepareDocumentProvider(in viewModel: ViewModel<PDFReaderActionHandler>) {
         appearance = .from(appearanceMode: viewModel.state.settings.appearanceMode, interfaceStyle: viewModel.state.interfaceStyle)
-        viewModel.state.document.didCreateDocumentProviderBlock = { [weak self] documentProvider in
-            guard let self, let fileAnnotationProvider = documentProvider.annotationManager.fileAnnotationProvider else { return }
+        viewModel.state.document.didCreateDocumentProviderBlock = { [weak self, weak viewModel] documentProvider in
+            guard let self, let viewModel, let fileAnnotationProvider = documentProvider.annotationManager.fileAnnotationProvider else { return }
             let provider = PDFReaderAnnotationProvider(
                 documentProvider: documentProvider,
                 fileAnnotationProvider: fileAnnotationProvider,
@@ -2018,6 +2018,14 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             }
 
             return (item, results, page)
+        }
+
+        func deleteDocumentAnnotationsCache(for key: String, libraryId: LibraryIdentifier) {
+            let request = DeleteDocumentAnnotationsCacheDbRequest(attachmentKey: key, libraryId: libraryId)
+            perform(request: request) { error in
+                guard let error else { return }
+                DDLogError("PDFReaderActionHandler: failed to delete document annotations cache - \(error)")
+            }
         }
     }
 
@@ -2596,12 +2604,4 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     }
 }
 
-extension PDFReaderActionHandler: PDFReaderAnnotationProviderDelegate {
-    func deleteDocumentAnnotationsCache(for key: String, libraryId: LibraryIdentifier) {
-        let request = DeleteDocumentAnnotationsCacheDbRequest(attachmentKey: key, libraryId: libraryId)
-        perform(request: request) { error in
-            guard let error else { return }
-            DDLogError("PDFReaderActionHandler: failed to delete document annotation cache - \(error)")
-        }
-    }
-}
+extension PDFReaderActionHandler: PDFReaderAnnotationProviderDelegate { }
