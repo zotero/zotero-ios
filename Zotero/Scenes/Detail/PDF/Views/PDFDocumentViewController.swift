@@ -1185,29 +1185,37 @@ extension PDFDocumentViewController: AnnotationBoundingBoxConverter {
         return mergedRects.map { pageView.convert($0, from: pageView.pdfCoordinateSpace) }
     }
 
-    /// Merges adjacent glyph rects that are on the same line into continuous highlight regions
+    /// Merges glyph rects that are on the same line into continuous highlight regions.
+    /// Groups rects by line first, then merges each line into a single rect.
     private func mergeAdjacentRects(_ rects: [CGRect]) -> [CGRect] {
         guard !rects.isEmpty else { return [] }
         guard rects.count > 1 else { return rects }
 
+        // Sort rects by Y position (top to bottom), then by X position (left to right)
+        let sortedRects = rects.sorted { rect1, rect2 in
+            // If on different lines (Y difference > half height), sort by Y
+            if abs(rect1.midY - rect2.midY) > rect1.height * 0.5 {
+                return rect1.midY < rect2.midY
+            }
+            // Same line - sort by X
+            return rect1.minX < rect2.minX
+        }
+
         var merged: [CGRect] = []
-        var currentRect = rects[0]
+        var currentRect = sortedRects[0]
 
-        for i in 1..<rects.count {
-            let nextRect = rects[i]
+        for i in 1..<sortedRects.count {
+            let nextRect = sortedRects[i]
 
-            // Check if rects are on the same line (similar y position) and adjacent horizontally
+            // Check if rects are on the same line (similar y position)
             let sameLineThreshold: CGFloat = currentRect.height * 0.5
-            let horizontalGapThreshold: CGFloat = currentRect.height * 0.3
-
             let sameLine = abs(currentRect.midY - nextRect.midY) < sameLineThreshold
-            let adjacent = nextRect.minX - currentRect.maxX < horizontalGapThreshold
 
-            if sameLine && adjacent {
-                // Merge the rects
+            if sameLine {
+                // Same line - merge into a single rect spanning from leftmost to rightmost
                 currentRect = currentRect.union(nextRect)
             } else {
-                // Start a new rect
+                // Different line - save current and start new
                 merged.append(currentRect)
                 currentRect = nextRect
             }
