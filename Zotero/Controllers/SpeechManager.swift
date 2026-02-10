@@ -21,6 +21,11 @@ protocol SpeechManagerDelegate: AnyObject {
     func getPreviousPageIndex(from currentPageIndex: Index) -> Index?
     func text(for indices: [Index], completion: @escaping ([Index: String]?) -> Void)
     func moved(to pageIndex: Index)
+    /// Called when the speech range changes during text-to-speech playback
+    /// - Parameters:
+    ///   - text: The text currently being spoken
+    ///   - pageIndex: The page index where the text is located
+    func speechTextChanged(text: String, pageIndex: Index)
 }
 
 enum SpeechState {
@@ -81,9 +86,6 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     private var cachedPages: [Delegate.Index: String]
     private weak var delegate: Delegate?
     private unowned let remoteVoicesController: RemoteVoicesController
-    private lazy var paragraphRegex: NSRegularExpression? = {
-        return try? NSRegularExpression(pattern: "[\r\n]{1,}")
-    }()
 
     let state: BehaviorRelay<SpeechState>
     var voice: SpeechVoice? { processor.speechVoice }
@@ -233,48 +235,31 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     func forward() {
         guard let speechData, let currentPage = cachedPages[speechData.index] else { return }
 
-        if let index = findNextIndex(on: currentPage, speechRange: speechData.range) {
-            DDLogInfo("SpeechManager: forward to \(index); \(speechData.range.location); \(speechData.range.length)")
-            skip(to: index, on: currentPage)
+        let currentEndIndex = speechData.range.location + speechData.range.length
+        if let (_, range) = TextTokenizer.find(.paragraph, startingAt: currentEndIndex, in: currentPage) {
+            DDLogInfo("SpeechManager: forward to \(range.location); \(speechData.range.location); \(speechData.range.length)")
+            skip(to: range.location, on: currentPage)
         } else if let nextIndex = delegate?.getNextPageIndex(from: speechData.index), let page = cachedPages[nextIndex] {
             go(to: page, pageIndex: nextIndex)
         } else {
             stop()
-        }
-
-        func findNextIndex(on page: String, speechRange: NSRange) -> Int? {
-            guard let paragraphRegex else { return nil }
-            let matches = paragraphRegex.matches(in: page, range: NSRange(page.index(page.startIndex, offsetBy: speechRange.location + speechRange.length)..., in: page))
-            guard let range = matches.first?.range else { return nil }
-            return range.location + range.length
         }
     }
 
     func backward() {
         guard let speechData, let currentPage = cachedPages[speechData.index] else { return }
   
-        if let index = findPreviousIndex(in: currentPage, endIndex: currentPage.index(currentPage.startIndex, offsetBy: speechData.range.location)) {
+        if let index = TextTokenizer.findIndex(ofPreviousWhole: .paragraph, beforeIndex: speechData.range.location, in: currentPage) {
             DDLogInfo("SpeechManager: backward to \(index); \(speechData.range.location); \(speechData.range.length)")
             skip(to: index, on: currentPage)
         } else if speechData.range.location != 0 {
             skip(to: 0, on: currentPage)
         } else if let previousIndex = delegate?.getPreviousPageIndex(from: speechData.index),
                   let previousPage = cachedPages[previousIndex],
-                  let speechIndex = findPreviousIndex(in: previousPage, endIndex: previousPage.endIndex) {
+                  let speechIndex = TextTokenizer.findIndex(ofPreviousWhole: .paragraph, beforeIndex: previousPage.count, in: previousPage) {
             go(to: previousPage, pageIndex: previousIndex, speechStartIndex: speechIndex)
         } else {
             stop()
-        }
-
-        func findPreviousIndex(in text: String, endIndex: String.Index) -> Int? {
-            guard let paragraphRegex else { return nil }
-            let range = NSRange(text.startIndex..<endIndex, in: text)
-            let matches = paragraphRegex.matches(in: text, range: range)
-            if matches.count > 1 {
-                let matchRange = matches[matches.count - 2].range
-                return matchRange.location + matchRange.length
-            }
-            return nil
         }
     }
     
@@ -296,6 +281,13 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     func speechRangeWillChange(to range: NSRange) {
         guard let speechData else { return }
         self.speechData = speechData.copy(range: range)
+        
+        // Extract the actual text being spoken and pass it to the delegate
+        if let pageText = cachedPages[speechData.index],
+           let textRange = Range(range, in: pageText) {
+            let spokenText = String(pageText[textRange])
+            delegate?.speechTextChanged(text: spokenText, pageIndex: speechData.index)
+        }
     }
 }
 
@@ -699,17 +691,14 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     }
     
     private func loadSpeechData(text: String, startIndex: Int, voice: RemoteVoice, language: String) -> Single<(Data, NSRange)> {
-        return Single.create { [weak self] (subscriber: (SingleEvent<(String, NSRange)>) -> Void) in
-            guard let self else {
-                subscriber(.failure(Error.cancelled))
-                return Disposables.create()
-            }
-            guard let (text, range) = extractTextPart(from: text, startIndex: startIndex, granularity: voice.granularity) else {
+        return Single.create { (subscriber: (SingleEvent<(String, NSRange)>) -> Void) in
+            let granularity: NLTokenUnit = voice.granularity == .sentence ? .sentence : .paragraph
+            guard let (extractedText, range) = TextTokenizer.find(granularity, startingAt: startIndex, in: text) else {
                 subscriber(.failure(Error.endOfPage))
                 return Disposables.create()
             }
             
-            subscriber(.success((text, range)))
+            subscriber(.success((extractedText, range)))
             
             return Disposables.create()
         }
@@ -720,33 +709,6 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
             return remoteVoicesController.downloadSound(forText: text, voiceId: voice.id, language: language)
                 .flatMap({ .just(($0, range)) })
         })
-    }
-    
-    private func extractTextPart(from text: String, startIndex: Int, granularity: RemoteVoice.Granularity) -> (String, NSRange)? {
-        guard startIndex < text.count else { return nil }
-        
-        let searchStartIndex = text.index(text.startIndex, offsetBy: startIndex)
-        let remainingText = String(text[searchStartIndex...])
-        let trimmedRemainingText = remainingText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedRemainingText.isEmpty else { return nil }
-        
-        let tokenizer = NLTokenizer(unit: granularity == .sentence ? .sentence : .paragraph)
-        tokenizer.string = remainingText
-        
-        let tokenRange = tokenizer.tokenRange(at: remainingText.startIndex)
-        let extractedText = String(remainingText[tokenRange]).trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        if !extractedText.isEmpty {
-            let location = startIndex + remainingText.distance(from: remainingText.startIndex, to: tokenRange.lowerBound)
-            let length = remainingText.distance(from: tokenRange.lowerBound, to: tokenRange.upperBound)
-            return (extractedText, NSRange(location: location, length: length))
-        }
-        
-        // NLTokenizer didn't find a meaningful token (e.g., text without ending punctuation), return the entire trimmed remaining text
-        let trimmedRange = remainingText.range(of: trimmedRemainingText)!
-        let location = startIndex + remainingText.distance(from: remainingText.startIndex, to: trimmedRange.lowerBound)
-        let length = trimmedRemainingText.count
-        return (trimmedRemainingText, NSRange(location: location, length: length))
     }
     
     private func play(data: Data) {
