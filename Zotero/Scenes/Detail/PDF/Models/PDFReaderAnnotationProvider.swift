@@ -13,7 +13,6 @@ import PSPDFKit
 import RealmSwift
 
 protocol PDFReaderAnnotationProviderDelegate: AnyObject {
-    func deleteDocumentAnnotationsCache(for key: String, libraryId: LibraryIdentifier)
     var appearance: Appearance { get }
 }
 
@@ -222,16 +221,18 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
             guard let md5, !md5.isEmpty else { return nil }
             var response: ReadDocumentAnnotationsCacheInfoAndAnnotationsDbRequest.Response!
             do {
-                try dbStorage.perform(on: .main, with: { coordinator in
-                    response = try coordinator.perform(request: ReadDocumentAnnotationsCacheInfoAndAnnotationsDbRequest(attachmentKey: attachmentKey, libraryId: libraryId, page: nil))
-                })
+                response = try dbStorage.perform(request: ReadDocumentAnnotationsCacheInfoAndAnnotationsDbRequest(attachmentKey: attachmentKey, libraryId: libraryId, page: nil), on: .main)
             } catch {
                 DDLogError("PDFReaderAnnotationProvider: failed to read document annotations cache - \(error)")
                 return nil
             }
             guard let (cacheInfo, cachedAnnotations) = response else { return nil }
             guard cacheInfo.md5 == md5 else {
-                pdfReaderAnnotationProviderDelegate?.deleteDocumentAnnotationsCache(for: attachmentKey, libraryId: libraryId)
+                do {
+                    try dbStorage.perform(request: DeleteDocumentAnnotationsCacheDbRequest(attachmentKey: attachmentKey, libraryId: libraryId), on: .main)
+                } catch {
+                    DDLogError("PDFReaderAnnotationProvider: failed to delete document annotations cache - \(error)")
+                }
                 return nil
             }
 
