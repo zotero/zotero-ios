@@ -193,8 +193,8 @@ final class PDFDocumentViewController: UIViewController {
             currentSpeechHighlightPage = page
         }
 
-        // Get frames for the spoken text by searching in glyphs
-        guard let frames = speechHighlightFrames(for: text, page: page, pageView: pageView), !frames.isEmpty else {
+        // Get PDF frames for the spoken text by searching in glyphs
+        guard let pdfFrames = speechHighlightPDFFrames(for: text, page: page), !pdfFrames.isEmpty else {
             // Just hide highlight, don't reset position - might find next text
             speechHighlightView?.clearHighlight()
             return
@@ -213,7 +213,7 @@ final class PDFDocumentViewController: UIViewController {
             pageView.contentView.addSubview(speechHighlightView!)
         }
 
-        speechHighlightView?.updateHighlight(frames: frames)
+        speechHighlightView?.updateHighlight(pdfFrames: pdfFrames, pageView: pageView)
     }
 
     /// Clears the speech highlight
@@ -1171,18 +1171,14 @@ extension PDFDocumentViewController: AnnotationBoundingBoxConverter {
         }
     }
 
-    /// Returns view-space frames for speech highlighting on the given page.
+    /// Returns PDF-space frames for speech highlighting on the given page.
     /// Searches for the text in PSPDFKit's glyphs to find the correct positions.
-    /// Returns nil if the page is not currently visible.
-    func speechHighlightFrames(for text: String, page: PageIndex, pageView: PDFPageView) -> [CGRect]? {
+    func speechHighlightPDFFrames(for text: String, page: PageIndex) -> [CGRect]? {
         let pdfRects = findGlyphRects(for: text, page: page)
         guard !pdfRects.isEmpty else { return nil }
 
         // Merge adjacent rects on the same line into larger rects for cleaner highlighting
-        let mergedRects = mergeAdjacentRects(pdfRects)
-
-        // Convert from PDF coordinate space to view coordinate space
-        return mergedRects.map { pageView.convert($0, from: pageView.pdfCoordinateSpace) }
+        return mergeAdjacentRects(pdfRects)
     }
 
     /// Merges glyph rects that are on the same line into continuous highlight regions.
@@ -1328,6 +1324,10 @@ final class AnnotationPreviewView: SelectionView {
 /// View that highlights text being spoken during text-to-speech
 final class SpeechHighlightView: UIView {
     private var highlightLayers: [CALayer] = []
+    /// Frames in PDF coordinate space - stored to recalculate on layout changes
+    private var pdfFrames: [CGRect] = []
+    /// Reference to the page view for coordinate conversion
+    private weak var pageView: PDFPageView?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -1344,16 +1344,34 @@ final class SpeechHighlightView: UIView {
         isUserInteractionEnabled = false
     }
 
-    /// Updates the highlight to cover the given frames (in this view's coordinate space)
-    func updateHighlight(frames: [CGRect]) {
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        // Recalculate highlight positions when layout changes (rotation, resize, etc.)
+        updateHighlightLayerFrames()
+    }
+
+    /// Updates the highlight to cover the given frames.
+    /// - Parameters:
+    ///   - pdfFrames: Frames in PDF coordinate space
+    ///   - pageView: The page view used for coordinate conversion
+    func updateHighlight(pdfFrames: [CGRect], pageView: PDFPageView) {
+        self.pdfFrames = pdfFrames
+        self.pageView = pageView
+        updateHighlightLayerFrames()
+    }
+
+    private func updateHighlightLayerFrames() {
         // Remove old highlight layers
         highlightLayers.forEach { $0.removeFromSuperlayer() }
         highlightLayers.removeAll()
 
-        // Create new highlight layers for each frame
-        for frame in frames {
+        guard let pageView, !pdfFrames.isEmpty else { return }
+
+        // Convert PDF frames to view coordinates and create layers
+        for pdfFrame in pdfFrames {
+            let viewFrame = pageView.convert(pdfFrame, from: pageView.pdfCoordinateSpace)
             let highlightLayer = CALayer()
-            highlightLayer.frame = frame
+            highlightLayer.frame = viewFrame
             highlightLayer.backgroundColor = UIColor.systemYellow.withAlphaComponent(0.4).cgColor
             highlightLayer.cornerRadius = 2
             layer.addSublayer(highlightLayer)
@@ -1363,6 +1381,8 @@ final class SpeechHighlightView: UIView {
 
     /// Clears all highlights
     func clearHighlight() {
+        pdfFrames = []
+        pageView = nil
         highlightLayers.forEach { $0.removeFromSuperlayer() }
         highlightLayers.removeAll()
     }
