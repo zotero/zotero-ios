@@ -8,6 +8,7 @@
 
 import Foundation
 
+import CocoaLumberjackSwift
 import RxSwift
 
 final class RemoteVoicesController {
@@ -21,8 +22,11 @@ final class RemoteVoicesController {
         self.apiClient = apiClient
     }
 
-    func loadVoices() -> Single<[RemoteVoice]> {
-        return apiClient.send(request: VoicesRequest()).flatMap({ (voices: [RemoteVoice], _) in return .just(voices) })
+    func loadVoices() -> Single<([RemoteVoice], Int)> {
+        return apiClient.send(request: VoicesRequest()).flatMap({ (voices: [RemoteVoice], response: HTTPURLResponse) in
+            let remaining = (response.allHeaderFields["zotero-tts-credits-remaining"] as? String).flatMap({ Int($0) }) ?? 0
+            return .just((voices, remaining))
+        })
     }
     
     func downloadSample(voiceId: String, language: String) -> Single<Data> {
@@ -37,12 +41,13 @@ final class RemoteVoicesController {
             })
     }
     
-    func downloadSound(forText text: String, voiceId: String, language: String) -> Single<Data> {
+    func downloadSound(forText text: String, voiceId: String, language: String) -> Single<(Data, Int)> {
         return apiClient
             .send(request: ReadAloudAudioRequest(voiceId: voiceId, text: text, language: "en-US"))
-            .flatMap({ (data, _) in
+            .flatMap({ (data, response) in
                 if let data = data.audioData {
-                    return .just(data)
+                    let remaining = (response.allHeaderFields["zotero-tts-credits-remaining"] as? String).flatMap({ Int($0) }) ?? 0
+                    return .just((data, remaining))
                 } else {
                     return .error(Error.noData)
                 }
