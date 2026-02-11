@@ -88,6 +88,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     private unowned let remoteVoicesController: RemoteVoicesController
 
     let state: BehaviorRelay<SpeechState>
+    let remainingTime: BehaviorRelay<TimeInterval?>
     var voice: SpeechVoice? { processor.speechVoice }
     var language: String? { processor.preferredLanguage }
     var speechRateModifier: Float { processor.speechRateModifier }
@@ -106,6 +107,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         self.remoteVoicesController = remoteVoicesController
         cachedPages = [:]
         state = BehaviorRelay(value: .loading)
+        remainingTime = BehaviorRelay(value: nil)
         super.init()
         if useRemoteVoices {
             processor = RemoteVoiceProcessor(language: voiceLanguage, speechRateModifier: 1, delegate: self, remoteVoicesController: remoteVoicesController)
@@ -167,6 +169,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                 _processor.set(voice: voice, voiceLanguage: voiceLanguage, preferredLanguage: preferredLanguage)
                 // TODO: - start speaking?
                 processor = _processor
+                remainingTime.accept(nil)
             }
             
         case .remote(let voice):
@@ -313,6 +316,7 @@ private protocol VoiceProcessor {
 
 private protocol VoiceProcessorDelegate: AnyObject {
     var state: BehaviorRelay<SpeechState> { get }
+    var remainingTime: BehaviorRelay<TimeInterval?> { get }
     var speechRange: NSRange? { get }
 
     func goToNextPageIfAvailable() -> Bool
@@ -332,6 +336,10 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
     private unowned let delegate: VoiceProcessorDelegate
 
     private var text: String?
+    /// The start index offset in the original text where the current utterance begins.
+    /// AVSpeechSynthesizer reports ranges relative to the utterance text, so we need this
+    /// to convert back to ranges in the original full text.
+    private var utteranceStartIndex: Int = 0
     private(set) var preferredLanguage: String?
     private var voice: AVSpeechSynthesisVoice?
     private var shouldReloadUtteranceOnResume = false
@@ -361,6 +369,7 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
         }
 
         self.text = text
+        self.utteranceStartIndex = startIndex
         let remainingText = String(text[text.index(text.startIndex, offsetBy: startIndex)..<text.endIndex])
 
         if voice == nil || shouldDetectVoice {
@@ -449,6 +458,7 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
     
     private func finishSpeaking() {
         text = nil
+        utteranceStartIndex = 0
         voice = nil
         shouldReloadUtteranceOnResume = false
         ignoreFinishCallCount = 0
@@ -487,7 +497,11 @@ extension LocalVoiceProcessor: AVSpeechSynthesizerDelegate {
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, willSpeakRangeOfSpeechString characterRange: NSRange, utterance: AVSpeechUtterance) {
         guard characterRange.length > 0 else { return }
-        delegate.speechRangeWillChange(to: characterRange)
+        // AVSpeechSynthesizer reports ranges relative to the utterance text, which may be a substring
+        // of the original text starting at utteranceStartIndex. Adjust the range to be relative to
+        // the original full text.
+        let adjustedRange = NSRange(location: characterRange.location + utteranceStartIndex, length: characterRange.length)
+        delegate.speechRangeWillChange(to: adjustedRange)
     }
 }
 
@@ -503,7 +517,8 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         let language: String
     }
 
-    private static let preloadTimeBeforeEnd: TimeInterval = 2.0
+    private static let preloadTimeBeforeEnd: TimeInterval = 3.0
+    private static let remainingTimeUpdateInterval: TimeInterval = 0.5
     
     private unowned let delegate: VoiceProcessorDelegate
     private unowned let remoteVoicesController: RemoteVoicesController
@@ -516,8 +531,11 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     private var disposeBag = DisposeBag()
     private var preloadTimer: Timer?
     private var preloadStartIndex: Int?
-    private var preloadSubject: ReplaySubject<(Data, NSRange)>?
+    private var preloadSubject: ReplaySubject<(Data, NSRange, Int)>?
     private var shouldReloadOnResume = false
+    private var remainingTimeTimer: Timer?
+    /// Base remaining time in seconds (from server credits), excluding current audio segment
+    private var baseRemainingTime: TimeInterval = 0
     var speechRateModifier: Float
     var speechVoice: SpeechVoice? {
         return voiceData.flatMap({ .remote($0.voice) })
@@ -557,6 +575,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         if player?.isPlaying == true {
             player?.stop()
         }
+        player = nil
         disposeBag = DisposeBag()
 
         let getVoice: Single<VoiceData>
@@ -567,7 +586,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         }
 
         getVoice
-            .flatMap({ [weak self] voiceData -> Single<(Data, NSRange)> in
+            .flatMap({ [weak self] voiceData -> Single<(Data, NSRange, Int)> in
                 guard let self else {
                     return .error(Error.cancelled)
                 }
@@ -575,8 +594,8 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
             })
             .observe(on: MainScheduler.instance)
             .subscribe(
-                onSuccess: { [weak self] data, range in
-                    self?.handleSpeechSuccess(data: data, range: range)
+                onSuccess: { [weak self] data, range, remainingCredits in
+                    self?.handleSpeechSuccess(data: data, range: range, remainingCredits: remainingCredits)
                 },
                 onFailure: { [weak self] error in
                     self?.handleSpeechFailure(error: error)
@@ -590,6 +609,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         player?.pause()
         preloadTimer?.invalidate()
         preloadTimer = nil
+        stopRemainingTimeTimer()
         delegate.state.accept(.paused)
     }
 
@@ -603,6 +623,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
             player.play()
             delegate.state.accept(.speaking)
             schedulePreload()
+            startRemainingTimeTimer()
         }
     }
     
@@ -623,10 +644,11 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
             return loadVoice(forText: text, voices: availableVoices, preferredLanguage: preferredLanguage)
         }
         return remoteVoicesController.loadVoices()
-            .do(onSuccess: { [weak self] voices in
+            .do(onSuccess: { [weak self] (voices, remainingCredits) in
                 self?.availableVoices = voices
+                self?.updateRemainingTime(credits: remainingCredits)
             })
-            .flatMap({ [weak self] voices in
+            .flatMap({ [weak self] (voices, _) in
                 guard let self else {
                     return Single.error(Error.cancelled)
                 }
@@ -668,8 +690,8 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         loadSpeech(forText: text, startIndex: startIndex, voice: voice, language: language)
             .observe(on: MainScheduler.instance)
             .subscribe(
-                onSuccess: { [weak self] data, range in
-                    self?.handleSpeechSuccess(data: data, range: range)
+                onSuccess: { [weak self] data, range, remainingCredits in
+                    self?.handleSpeechSuccess(data: data, range: range, remainingCredits: remainingCredits)
                 },
                 onFailure: { [weak self] error in
                     self?.handleSpeechFailure(error: error)
@@ -677,8 +699,9 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
             )
             .disposed(by: disposeBag)
         
-        func loadSpeech(forText text: String, startIndex: Int, voice: RemoteVoice, language: String) -> Single<(Data, NSRange)> {
+        func loadSpeech(forText text: String, startIndex: Int, voice: RemoteVoice, language: String) -> Single<(Data, NSRange, Int)> {
             // Check if we have preloaded data or in-progress preload for this start index
+            stopRemainingTimeTimer()
             delegate.state.accept(.loading)
             if preloadStartIndex == startIndex, let preloadSubject {
                 preloadStartIndex = nil
@@ -690,7 +713,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         }
     }
     
-    private func loadSpeechData(text: String, startIndex: Int, voice: RemoteVoice, language: String) -> Single<(Data, NSRange)> {
+    private func loadSpeechData(text: String, startIndex: Int, voice: RemoteVoice, language: String) -> Single<(Data, NSRange, Int)> {
         return Single.create { (subscriber: (SingleEvent<(String, NSRange)>) -> Void) in
             let result: (text: String, range: NSRange)?
             if voice.granularity == .sentence {
@@ -707,12 +730,12 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
             
             return Disposables.create()
         }
-        .flatMap({ [weak self] text, range -> Single<(Data, NSRange)> in
+        .flatMap({ [weak self] text, range -> Single<(Data, NSRange, Int)> in
             guard let self else {
                 return Single.error(Error.cancelled)
             }
             return remoteVoicesController.downloadSound(forText: text, voiceId: voice.id, language: language)
-                .flatMap({ .just(($0, range)) })
+                .flatMap({ .just(($0.0, range, $0.1)) })
         })
     }
     
@@ -751,15 +774,15 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     
     private func preloadNextPart(text: String, startIndex: Int, voiceData: VoiceData) {
         preloadSubject?.onCompleted()
-        let subject = ReplaySubject<(Data, NSRange)>.create(bufferSize: 1)
+        let subject = ReplaySubject<(Data, NSRange, Int)>.create(bufferSize: 1)
         preloadSubject = subject
         preloadStartIndex = startIndex
         
         loadSpeechData(text: text, startIndex: startIndex, voice: voiceData.voice, language: voiceData.language)
             .observe(on: MainScheduler.instance)
             .subscribe(
-                onSuccess: { data, range in
-                    subject.onNext((data, range))
+                onSuccess: { data, range, remainingCredits in
+                    subject.onNext((data, range, remainingCredits))
                     subject.onCompleted()
                 },
                 onFailure: { error in
@@ -767,6 +790,44 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
                 }
             )
             .disposed(by: disposeBag)
+    }
+    
+    private func updateRemainingTime(credits: Int) {
+        guard let creditsPerSecond = voiceData?.voice.creditsPerSecond, creditsPerSecond > 0 else { return }
+        baseRemainingTime = TimeInterval(credits) / TimeInterval(creditsPerSecond)
+        updateRemainingTimeDisplay()
+        startRemainingTimeTimer()
+    }
+    
+    private func updateRemainingTime(remainingCredits: Int) {
+        guard let creditsPerSecond = voiceData?.voice.creditsPerSecond, creditsPerSecond > 0 else { return }
+        // The remainingCredits returned by downloadSound is the credit count AFTER the audio was charged.
+        // Store the base remaining time (excluding current audio segment).
+        baseRemainingTime = TimeInterval(remainingCredits) / TimeInterval(creditsPerSecond)
+        updateRemainingTimeDisplay()
+        startRemainingTimeTimer()
+    }
+    
+    private func updateRemainingTimeDisplay() {
+        // Calculate total remaining time: base time + remaining time in current audio
+        var totalRemainingTime = baseRemainingTime
+        if let player {
+            let remainingInCurrentAudio = max(0, player.duration - player.currentTime)
+            totalRemainingTime += remainingInCurrentAudio
+        }
+        delegate.remainingTime.accept(totalRemainingTime)
+    }
+    
+    private func startRemainingTimeTimer() {
+        remainingTimeTimer?.invalidate()
+        remainingTimeTimer = Timer.scheduledTimer(withTimeInterval: Self.remainingTimeUpdateInterval, repeats: true) { [weak self] _ in
+            self?.updateRemainingTimeDisplay()
+        }
+    }
+    
+    private func stopRemainingTimeTimer() {
+        remainingTimeTimer?.invalidate()
+        remainingTimeTimer = nil
     }
     
     private func finishSpeaking() {
@@ -779,13 +840,15 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         preloadSubject = nil
         preloadStartIndex = nil
         shouldReloadOnResume = false
+        stopRemainingTimeTimer()
         delegate.didFinishSpeaking()
         delegate.state.accept(.stopped)
     }
     
-    private func handleSpeechSuccess(data: Data, range: NSRange) {
+    private func handleSpeechSuccess(data: Data, range: NSRange, remainingCredits: Int) {
         delegate.speechRangeWillChange(to: range)
         play(data: data)
+        updateRemainingTime(remainingCredits: remainingCredits)
     }
     
     private func handleSpeechFailure(error: Swift.Error) {
