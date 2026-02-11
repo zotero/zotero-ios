@@ -969,6 +969,7 @@ extension PDFReaderViewController: PDFDocumentDelegate {
             // Manual page scrolling and page change due to a link, are differentiated by this heuristic.
             // When a link is tapped, a sequence of page index changes event are triggered, with the final ones maintaining the page index.
             intraDocumentNavigationHandler?.pageChanged((event.oldPageIndex == event.pageIndex) ? .link : .manual)
+            accessibilityHandler?.speechManager.stop()
         }
     }
 
