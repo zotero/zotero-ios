@@ -132,7 +132,7 @@ class HtmlEpubDocumentViewController: UIViewController {
             .subscribe()
             .disposed(by: disposeBag)
     }
-    
+
     func updateLastKnownPosition(cfi: String?, offset: Double?) {
         lastKnownCFI = cfi
         lastKnownOffset = offset
