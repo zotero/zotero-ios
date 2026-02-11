@@ -155,7 +155,7 @@ struct SpeechVoicePickerView: View {
     private func loadVoices() {
         remoteVoicesController.loadVoices()
             .subscribe(
-                onSuccess: { voices in
+                onSuccess: { (voices, _) in
                     allRemoteVoices = voices
                     supportedRemoteLanguages.removeAll()
                     voices.forEach({ supportedRemoteLanguages.formUnion($0.locales) })
