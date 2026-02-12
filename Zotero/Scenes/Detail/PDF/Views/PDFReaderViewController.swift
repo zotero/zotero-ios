@@ -389,13 +389,22 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
                 })
                 .disposed(by: disposeBag)
 
-            // Observe speech state to clear highlight when speech stops
+            // Observe speech state to clear highlight when speech stops and show popup when out of credits
             accessibilityHandler?.speechManager.state
                 .observe(on: MainScheduler.instance)
                 .subscribe(onNext: { [weak self] state in
                     guard let self else { return }
-                    if state.isStopped {
+                    switch state {
+                    case .stopped:
                         documentController?.clearSpeechHighlight()
+                        
+                    case .outOfCredits:
+                        if presentedViewController == nil {
+                            accessibilityHandler?.showSpeech()
+                        }
+                        
+                    case .speaking, .paused, .loading:
+                        break
                     }
                 })
                 .disposed(by: disposeBag)
