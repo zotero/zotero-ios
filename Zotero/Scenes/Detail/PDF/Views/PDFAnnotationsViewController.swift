@@ -163,13 +163,27 @@ final class PDFAnnotationsViewController: UIViewController {
     private func updateUI(state: PDFReaderState, animatedDifferences: Bool = true, completion: (() -> Void)? = nil) {
         updateQueue.async { [weak self] in
             guard let self else { return }
-            var snapshot = NSDiffableDataSourceSnapshot<Int, PDFReaderState.AnnotationKey>()
-            snapshot.appendSections([0])
-            snapshot.appendItems(state.sortedKeys)
+            var snapshot = buildSnapshot(state: state)
             if let keys = state.updatedAnnotationKeys?.filter({ snapshot.itemIdentifiers.contains($0) }), !keys.isEmpty {
                 snapshot.reconfigureItems(keys)
             }
             dataSource.apply(snapshot, animatingDifferences: animatedDifferences, completion: completion)
+        }
+
+        func buildSnapshot(state: PDFReaderState) -> NSDiffableDataSourceSnapshot<Int, PDFReaderState.AnnotationKey> {
+            var itemsByPage: [Int: [PDFReaderState.AnnotationKey]] = [:]
+            for key in state.sortedKeys {
+                guard let annotation = state.annotation(for: key) else { continue }
+                itemsByPage[annotation.page, default: []].append(key)
+            }
+            var snapshot = NSDiffableDataSourceSnapshot<Int, PDFReaderState.AnnotationKey>()
+            for page in state.annotationPages {
+                if let items = itemsByPage[page], !items.isEmpty {
+                    snapshot.appendSections([page])
+                    snapshot.appendItems(items, toSection: page)
+                }
+            }
+            return snapshot
         }
     }
 
@@ -218,7 +232,7 @@ final class PDFAnnotationsViewController: UIViewController {
                 updateQueue.async { [weak self] in
                     guard let self, !dataSource.snapshot().sectionIdentifiers.isEmpty else { return }
                     var snapshot = dataSource.snapshot()
-                    snapshot.reloadSections([0])
+                    snapshot.reloadSections(snapshot.sectionIdentifiers)
                     dataSource.apply(snapshot, animatingDifferences: isVisible, completion: completion)
                 }
                 return
@@ -364,21 +378,13 @@ final class PDFAnnotationsViewController: UIViewController {
     private func showFilterPopup(from barButton: UIBarButtonItem) {
         var colors: Set<String> = []
         var tags: Set<Tag> = []
-
-        let processAnnotation: (PDFAnnotation) -> Void = { annotation in
-            colors.insert(annotation.color)
-            for tag in annotation.tags {
-                tags.insert(tag)
-            }
-        }
-
         for dbAnnotation in viewModel.state.databaseAnnotations {
             guard let annotation = PDFDatabaseAnnotation(item: dbAnnotation) else { continue }
-            processAnnotation(annotation)
+            colors.insert(annotation.color)
+            tags.formUnion(annotation.tags)
         }
-        for annotation in viewModel.state.documentAnnotations.values {
-            processAnnotation(annotation)
-        }
+        // We can safely ignore document annotation tags, as they are empty, so we just use their unique base colors.
+        let documentAnnotationColors = Set(viewModel.state.documentAnnotationUniqueBaseColors)
 
         let sortedTags = tags.sorted(by: { lTag, rTag -> Bool in
             if lTag.color.isEmpty == rTag.color.isEmpty {
@@ -391,10 +397,13 @@ final class PDFAnnotationsViewController: UIViewController {
         })
         var sortedColors: [String] = []
         AnnotationsConfig.allColors.forEach { color in
-            if colors.contains(color) {
+            if colors.contains(color) || documentAnnotationColors.contains(color) {
                 sortedColors.append(color)
             }
         }
+        let defaultColors = Set(AnnotationsConfig.allColors)
+        let extraColors = documentAnnotationColors.subtracting(defaultColors).sorted()
+        sortedColors.append(contentsOf: extraColors)
 
         coordinatorDelegate?.showFilterPopup(
             from: barButton,
@@ -428,6 +437,9 @@ final class PDFAnnotationsViewController: UIViewController {
         tableView.delegate = self
         tableView.prefetchDataSource = self
         tableView.separatorStyle = .none
+        tableView.sectionHeaderHeight = 0
+        tableView.sectionFooterHeight = 0
+        tableView.sectionHeaderTopPadding = 0
         tableView.backgroundColor = .systemGray6
         tableView.backgroundView?.backgroundColor = .systemGray6
         tableView.register(AnnotationCell.self, forCellReuseIdentifier: Self.cellId)
