@@ -29,11 +29,11 @@ protocol SpeechManagerDelegate: AnyObject {
 }
 
 enum SpeechState {
-    case speaking, paused, stopped, loading
+    case speaking, paused, stopped, loading, outOfCredits
 
     var isStopped: Bool {
         switch self {
-        case .speaking, .loading, .paused:
+        case .speaking, .loading, .paused, .outOfCredits:
             return false
 
         case .stopped:
@@ -43,7 +43,7 @@ enum SpeechState {
     
     var isPaused: Bool {
         switch self {
-        case .speaking, .loading, .stopped:
+        case .speaking, .loading, .stopped, .outOfCredits:
             return false
 
         case .paused:
@@ -53,7 +53,7 @@ enum SpeechState {
     
     var isSpeaking: Bool {
         switch self {
-        case .stopped, .loading, .paused:
+        case .stopped, .loading, .paused, .outOfCredits:
             return false
 
         case .speaking:
@@ -518,7 +518,12 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     }
 
     private static let preloadTimeBeforeEnd: TimeInterval = 3.0
-    private static let remainingTimeUpdateInterval: TimeInterval = 0.5
+    /// Update interval when remaining time is above the threshold
+    private static let normalUpdateInterval: TimeInterval = 6
+    /// Update interval when remaining time is below the threshold
+    private static let frequentUpdateInterval: TimeInterval = 1
+    /// Threshold below which we switch to more frequent updates
+    private static let frequentUpdateThreshold: TimeInterval = 5 * 60
     
     private unowned let delegate: VoiceProcessorDelegate
     private unowned let remoteVoicesController: RemoteVoicesController
@@ -606,15 +611,19 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
 
     func pause() {
         guard player?.isPlaying == true else { return }
+        pause(withState: .paused)
+    }
+    
+    private func pause(withState state: SpeechState) {
         player?.pause()
         preloadTimer?.invalidate()
         preloadTimer = nil
         stopRemainingTimeTimer()
-        delegate.state.accept(.paused)
+        delegate.state.accept(state)
     }
 
     func resume() {
-        guard let player, delegate.state.value == .paused else { return }
+        guard let player, delegate.state.value == .paused || delegate.state.value == .outOfCredits else { return }
         
         if shouldReloadOnResume {
             shouldReloadOnResume = false
@@ -793,22 +802,24 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     }
     
     private func updateRemainingTime(credits: Int) {
-        guard let creditsPerSecond = voiceData?.voice.creditsPerSecond, creditsPerSecond > 0 else { return }
+        guard let creditsPerSecond = voiceData?.voice.creditsPerSecond else { return }
+        guard creditsPerSecond > 0 else {
+            // Unlimited voice - report nil remaining time
+            delegate.remainingTime.accept(nil)
+            return
+        }
+        if credits <= 0 {
+            pause(withState: .outOfCredits)
+            delegate.remainingTime.accept(0)
+            return
+        }
         baseRemainingTime = TimeInterval(credits) / TimeInterval(creditsPerSecond)
         updateRemainingTimeDisplay()
         startRemainingTimeTimer()
     }
     
-    private func updateRemainingTime(remainingCredits: Int) {
-        guard let creditsPerSecond = voiceData?.voice.creditsPerSecond, creditsPerSecond > 0 else { return }
-        // The remainingCredits returned by downloadSound is the credit count AFTER the audio was charged.
-        // Store the base remaining time (excluding current audio segment).
-        baseRemainingTime = TimeInterval(remainingCredits) / TimeInterval(creditsPerSecond)
-        updateRemainingTimeDisplay()
-        startRemainingTimeTimer()
-    }
-    
     private func updateRemainingTimeDisplay() {
+        guard let creditsPerSecond = voiceData?.voice.creditsPerSecond, creditsPerSecond > 0 else { return }
         // Calculate total remaining time: base time + remaining time in current audio
         var totalRemainingTime = baseRemainingTime
         if let player {
@@ -819,9 +830,12 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     }
     
     private func startRemainingTimeTimer() {
+        let interval = baseRemainingTime < Self.frequentUpdateThreshold ? Self.frequentUpdateInterval : Self.normalUpdateInterval
+        guard remainingTimeTimer?.timeInterval != interval else { return }
         remainingTimeTimer?.invalidate()
-        remainingTimeTimer = Timer.scheduledTimer(withTimeInterval: Self.remainingTimeUpdateInterval, repeats: true) { [weak self] _ in
+        remainingTimeTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
             self?.updateRemainingTimeDisplay()
+            self?.startRemainingTimeTimer()
         }
     }
     
@@ -848,7 +862,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     private func handleSpeechSuccess(data: Data, range: NSRange, remainingCredits: Int) {
         delegate.speechRangeWillChange(to: range)
         play(data: data)
-        updateRemainingTime(remainingCredits: remainingCredits)
+        updateRemainingTime(credits: remainingCredits)
     }
     
     private func handleSpeechFailure(error: Swift.Error) {
