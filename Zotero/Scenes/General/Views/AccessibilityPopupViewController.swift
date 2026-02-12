@@ -385,7 +385,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
                 speechButtonBottom.isActive = true
                 return (speechContainer, speechButton, baseHeight(isPopover: !isFormSheet()))
 
-            case .paused:
+            case .paused, .outOfCredits:
                 return nil
             }
         }
@@ -423,6 +423,17 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
 // MARK: - VoiceButtonView
 
 private final class VoiceButtonView: UIControl {
+    /// Threshold in seconds below which the remaining time indicator turns red
+    private static let warningThresholdSeconds: TimeInterval = 180
+    
+    private static let timeFormatter: DateComponentsFormatter = {
+        let formatter = DateComponentsFormatter()
+        formatter.allowedUnits = [.hour, .minute]
+        formatter.unitsStyle = .abbreviated
+        formatter.zeroFormattingBehavior = .dropLeading
+        return formatter
+    }()
+    
     private let titleLabel: UILabel = {
         let label = UILabel()
         label.font = .preferredFont(forTextStyle: .subheadline)
@@ -449,6 +460,9 @@ private final class VoiceButtonView: UIControl {
         return label
     }()
     
+    /// Tracks the last displayed minute value to avoid unnecessary updates
+    private var lastDisplayedMinute: Int?
+    
     var title: String? {
         get { titleLabel.text }
         set { titleLabel.text = newValue }
@@ -456,14 +470,24 @@ private final class VoiceButtonView: UIControl {
     
     var remainingTime: TimeInterval? {
         didSet {
-            if let time = remainingTime {
-                clockImageView.isHidden = false
-                timeLabel.isHidden = false
-                timeLabel.text = formatted(remainingTime: time)
-            } else {
+            guard let time = remainingTime else {
                 clockImageView.isHidden = true
                 timeLabel.isHidden = true
+                lastDisplayedMinute = nil
+                return
             }
+            
+            let totalMinutes = Int(ceil(time / 60))
+            guard lastDisplayedMinute != totalMinutes else { return }
+            lastDisplayedMinute = totalMinutes
+            
+            clockImageView.isHidden = false
+            timeLabel.isHidden = false
+            timeLabel.text = formatted(remainingTime: time)
+            
+            let timeColor: UIColor = time < Self.warningThresholdSeconds ? .systemRed : .secondaryLabel
+            clockImageView.tintColor = timeColor
+            timeLabel.textColor = timeColor
         }
     }
     
@@ -515,12 +539,7 @@ private final class VoiceButtonView: UIControl {
     }
     
     private func formatted(remainingTime: TimeInterval) -> String {
-        let hours = Int(remainingTime) / 3600
-        let minutes = (Int(remainingTime) % 3600) / 60
-        let seconds = Int(remainingTime) % 60
-        if hours > 0 {
-            return String(format: "%d:%02d:%02d", hours, minutes, seconds)
-        }
-        return String(format: "%d:%02d", minutes, seconds)
+        let roundedUpSeconds = ceil(remainingTime / 60) * 60
+        return Self.timeFormatter.string(from: roundedUpSeconds) ?? ""
     }
 }

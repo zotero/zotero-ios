@@ -108,7 +108,7 @@ final class AccessibilitySpeechControlsStackView<Delegate: SpeechManagerDelegate
             forwardButton.isEnabled = true
             backwardButton.isEnabled = true
 
-        case .stopped, .paused:
+        case .stopped, .paused, .outOfCredits:
             if activityIndicator.isAnimating {
                 activityIndicator.stopAnimating()
             }
