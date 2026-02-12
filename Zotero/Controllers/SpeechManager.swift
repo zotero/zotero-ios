@@ -516,8 +516,17 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         let voice: RemoteVoice
         let language: String
     }
+    
+    /// Cached speech segment audio data, keyed by range
+    struct CachedSegment {
+        let data: Data
+        let range: NSRange
+        /// Duration of this audio segment in seconds
+        let duration: TimeInterval
+    }
 
-    private static let preloadTimeBeforeEnd: TimeInterval = 3.0
+    /// Number of segments to keep preloaded ahead of current playback
+    private static let preloadAheadCount = 2
     /// Update interval when remaining time is above the threshold
     private static let normalUpdateInterval: TimeInterval = 6
     /// Update interval when remaining time is below the threshold
@@ -534,13 +543,16 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     private var player: AVAudioPlayer?
     private var availableVoices: [RemoteVoice]?
     private var disposeBag = DisposeBag()
-    private var preloadTimer: Timer?
-    private var preloadStartIndex: Int?
-    private var preloadSubject: ReplaySubject<(Data, NSRange, Int)>?
+    /// Cache of downloaded segments keyed by their range
+    private var segmentCache: [NSRange: CachedSegment] = [:]
+    /// Set of ranges currently being loaded
+    private var loadingSegments: Set<NSRange> = []
+    /// Range that should start playing as soon as it's loaded (when waiting for an in-progress preload)
+    private var pendingPlaybackRange: NSRange?
     private var shouldReloadOnResume = false
     private var remainingTimeTimer: Timer?
-    /// Base remaining time in seconds (from server credits), excluding current audio segment
-    private var baseRemainingTime: TimeInterval = 0
+    /// Minimum remaining credits seen from server responses
+    private var minRemainingCredits: Int?
     var speechRateModifier: Float
     var speechVoice: SpeechVoice? {
         return voiceData.flatMap({ .remote($0.voice) })
@@ -562,10 +574,11 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         Defaults.shared.isUsingRemoteVoice = true
         
         if voiceChanged {
-            // Clear preloaded data since it was loaded with old voice
-            preloadSubject?.onCompleted()
-            preloadSubject = nil
-            preloadStartIndex = nil
+            // Clear cached data since it was loaded with old voice
+            segmentCache.removeAll()
+            loadingSegments.removeAll()
+            pendingPlaybackRange = nil
+            minRemainingCredits = nil
             
             // Mark that we need to reload current segment on resume
             if player != nil {
@@ -575,8 +588,12 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     }
 
     func speak(text: String, startIndex: Int, shouldDetectVoice: Bool) {
-        self.text = text
+        // Clear preload cache if text changed (new page) or skipping within same text (forward/backward)
+        if self.text != text || startIndex != 0 {
+            clearPreloadCache()
+        }
 
+        self.text = text
         if player?.isPlaying == true {
             player?.stop()
         }
@@ -591,22 +608,108 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         }
 
         getVoice
-            .flatMap({ [weak self] voiceData -> Single<(Data, NSRange, Int)> in
-                guard let self else {
-                    return .error(Error.cancelled)
-                }
-                return loadSpeechData(text: text, startIndex: startIndex, voice: voiceData.voice, language: voiceData.language)
-            })
             .observe(on: MainScheduler.instance)
             .subscribe(
-                onSuccess: { [weak self] data, range, remainingCredits in
-                    self?.handleSpeechSuccess(data: data, range: range, remainingCredits: remainingCredits)
+                onSuccess: { [weak self] voiceData in
+                    self?.startSpeaking(text: text, startIndex: startIndex, voiceData: voiceData)
                 },
                 onFailure: { [weak self] error in
                     self?.handleSpeechFailure(error: error)
                 }
             )
             .disposed(by: disposeBag)
+        
+        func clearPreloadCache() {
+            segmentCache.removeAll()
+            loadingSegments.removeAll()
+            pendingPlaybackRange = nil
+        }
+    }
+    
+    private func startSpeaking(text: String, startIndex: Int, voiceData: VoiceData) {
+        // Find the range for the segment at startIndex
+        guard let range = findNextRange(startingAt: startIndex, voiceData: voiceData, in: text) else {
+            handleSpeechFailure(error: Error.endOfPage)
+            return
+        }
+
+        // Check if we already have the segment cached
+        if let cached = segmentCache[range] {
+            handleSpeechSuccess(data: cached.data, range: cached.range)
+            ensureSegmentsPreloaded(after: cached.range, text: text, voiceData: voiceData)
+            return
+        }
+        
+        // Check if this segment is already being loaded (preload in progress)
+        if loadingSegments.contains(range) {
+            // Mark this range as pending playback - it will start playing when the preload completes
+            pendingPlaybackRange = range
+            delegate.state.accept(.loading)
+            return
+        }
+        
+        // Check if we're out of credits before trying to load
+        if checkOutOfCredits() {
+            return
+        }
+        
+        // Load segment and start playing as soon as it's ready, while preloading others
+        delegate.state.accept(.loading)
+        loadAndPlaySegment(range: range, text: text, voiceData: voiceData)
+    }
+    
+    private func findNextRange(startingAt index: Int, voiceData: VoiceData, in text: String) -> NSRange? {
+        let result: (text: String, range: NSRange)?
+        if voiceData.voice.granularity == .sentence {
+            result = TextTokenizer.findSentence(startingAt: index, in: text)
+        } else {
+            result = TextTokenizer.findParagraph(startingAt: index, in: text)
+        }
+        return result?.range
+    }
+    
+    private func loadAndPlaySegment(range: NSRange, text: String, voiceData: VoiceData) {
+        // Mark as loading
+        loadingSegments.insert(range)
+        
+        // Start loading the segment we need to play
+        loadSegment(for: range, in: text, voiceData: voiceData)
+            .observe(on: MainScheduler.instance)
+            .subscribe(
+                onSuccess: { [weak self] segment in
+                    guard let self else { return }
+                    loadingSegments.remove(range)
+                    // Play immediately
+                    handleSpeechSuccess(data: segment.data, range: segment.range)
+                    ensureSegmentsPreloaded(after: segment.range, text: text, voiceData: voiceData)
+                },
+                onFailure: { [weak self] error in
+                    self?.loadingSegments.remove(range)
+                    self?.handleSpeechFailure(error: error)
+                }
+            )
+            .disposed(by: disposeBag)
+        
+        // Start preloading next segments concurrently
+        ensureSegmentsPreloaded(after: range, text: text, voiceData: voiceData)
+    }
+    
+    private func loadSegment(for range: NSRange, in text: String, voiceData: VoiceData) -> Single<CachedSegment> {
+        guard let textRange = Range(range, in: text) else {
+            return .error(Error.endOfPage)
+        }
+        let segmentText = String(text[textRange])
+        
+        return remoteVoicesController.downloadSound(forText: segmentText, voiceId: voiceData.voice.id, language: voiceData.language)
+            .observe(on: MainScheduler.instance)
+            .do(onSuccess: { [weak self] _, remainingCredits in
+                self?.updateMinRemainingCredits(remainingCredits)
+            })
+            .map { data, _ in
+                // Calculate duration from the audio data
+                let duration = (try? AVAudioPlayer(data: data))?.duration ?? 0
+                return CachedSegment(data: data, range: range, duration: duration)
+            }
     }
 
     func pause() {
@@ -616,8 +719,6 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     
     private func pause(withState state: SpeechState) {
         player?.pause()
-        preloadTimer?.invalidate()
-        preloadTimer = nil
         stopRemainingTimeTimer()
         delegate.state.accept(state)
     }
@@ -631,16 +732,18 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         } else {
             player.play()
             delegate.state.accept(.speaking)
-            schedulePreload()
             startRemainingTimeTimer()
         }
     }
     
     private func reloadCurrentSegment() {
         guard let text, let voiceData, let speechRange = delegate.speechRange else { return }
+        // Clear cache since voice changed
+        segmentCache.removeAll()
+        loadingSegments.removeAll()
         player?.stop()
         player = nil
-        speak(text: text, startIndex: speechRange.location, voice: voiceData.voice, language: voiceData.language)
+        startSpeaking(text: text, startIndex: speechRange.location, voiceData: voiceData)
     }
     
     func stop() {
@@ -655,7 +758,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         return remoteVoicesController.loadVoices()
             .do(onSuccess: { [weak self] (voices, remainingCredits) in
                 self?.availableVoices = voices
-                self?.updateRemainingTime(credits: remainingCredits)
+                self?.updateMinRemainingCredits(remainingCredits)
             })
             .flatMap({ [weak self] (voices, _) in
                 guard let self else {
@@ -695,59 +798,6 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         }
     }
     
-    private func speak(text: String, startIndex: Int, voice: RemoteVoice, language: String) {
-        loadSpeech(forText: text, startIndex: startIndex, voice: voice, language: language)
-            .observe(on: MainScheduler.instance)
-            .subscribe(
-                onSuccess: { [weak self] data, range, remainingCredits in
-                    self?.handleSpeechSuccess(data: data, range: range, remainingCredits: remainingCredits)
-                },
-                onFailure: { [weak self] error in
-                    self?.handleSpeechFailure(error: error)
-                }
-            )
-            .disposed(by: disposeBag)
-        
-        func loadSpeech(forText text: String, startIndex: Int, voice: RemoteVoice, language: String) -> Single<(Data, NSRange, Int)> {
-            // Check if we have preloaded data or in-progress preload for this start index
-            stopRemainingTimeTimer()
-            delegate.state.accept(.loading)
-            if preloadStartIndex == startIndex, let preloadSubject {
-                preloadStartIndex = nil
-                let subject = preloadSubject
-                self.preloadSubject = nil
-                return subject.asSingle()
-            }
-            return loadSpeechData(text: text, startIndex: startIndex, voice: voice, language: language)
-        }
-    }
-    
-    private func loadSpeechData(text: String, startIndex: Int, voice: RemoteVoice, language: String) -> Single<(Data, NSRange, Int)> {
-        return Single.create { (subscriber: (SingleEvent<(String, NSRange)>) -> Void) in
-            let result: (text: String, range: NSRange)?
-            if voice.granularity == .sentence {
-                result = TextTokenizer.findSentence(startingAt: startIndex, in: text)
-            } else {
-                result = TextTokenizer.findParagraph(startingAt: startIndex, in: text)
-            }
-            guard let (extractedText, range) = result else {
-                subscriber(.failure(Error.endOfPage))
-                return Disposables.create()
-            }
-            
-            subscriber(.success((extractedText, range)))
-            
-            return Disposables.create()
-        }
-        .flatMap({ [weak self] text, range -> Single<(Data, NSRange, Int)> in
-            guard let self else {
-                return Single.error(Error.cancelled)
-            }
-            return remoteVoicesController.downloadSound(forText: text, voiceId: voice.id, language: language)
-                .flatMap({ .just(($0.0, range, $0.1)) })
-        })
-    }
-    
     private func play(data: Data) {
         do {
             player = try AVAudioPlayer(data: data)
@@ -755,82 +805,116 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
             player?.prepareToPlay()
             player?.play()
             delegate.state.accept(.speaking)
-            schedulePreload()
         } catch {
             DDLogError("RemoteVoiceProcessor: can't play audio - \(error)")
             delegate.state.accept(.stopped)
         }
     }
     
-    private func schedulePreload() {
-        preloadTimer?.invalidate()
-        preloadTimer = nil
+    private func ensureSegmentsPreloaded(after currentRange: NSRange, text: String, voiceData: VoiceData) {
+        // Calculate how many more segments we need to preload
+        let currentlyBuffered = segmentCache.count + loadingSegments.count
+        let segmentsToLoad = Self.preloadAheadCount - currentlyBuffered
+        guard segmentsToLoad > 0 else { return }
         
-        guard let player, let text, let voiceData, let speechRange = delegate.speechRange else { return }
+        var nextIndex = currentRange.location + currentRange.length
+        var loaded = 0
         
-        let preloadDelay = max(0, player.duration - Self.preloadTimeBeforeEnd)
-        let nextStartIndex = speechRange.location + speechRange.length
-        
-        if preloadDelay == 0 {
-            preloadNextPart(text: text, startIndex: nextStartIndex, voiceData: voiceData)
-        } else {
-            preloadTimer = Timer.scheduledTimer(withTimeInterval: preloadDelay, repeats: false) { [weak self] _ in
-                guard let self else { return }
-                preloadNextPart(text: text, startIndex: nextStartIndex, voiceData: voiceData)
+        while loaded < segmentsToLoad {
+            guard let range = findNextRange(startingAt: nextIndex, voiceData: voiceData, in: text) else { break }
+            
+            // Skip if already cached or being loaded
+            if segmentCache[range] != nil || loadingSegments.contains(range) {
+                nextIndex = range.location + range.length
+                continue
             }
+            
+            // Mark as loading and start download
+            loadingSegments.insert(range)
+            
+            loadSegment(for: range, in: text, voiceData: voiceData)
+                .observe(on: MainScheduler.instance)
+                .subscribe(
+                    onSuccess: { [weak self] segment in
+                        guard let self else { return }
+                        loadingSegments.remove(range)
+                        // Check if this segment was requested for playback while loading
+                        if pendingPlaybackRange == segment.range {
+                            pendingPlaybackRange = nil
+                            handleSpeechSuccess(data: segment.data, range: segment.range)
+                        } else {
+                            segmentCache[segment.range] = segment
+                        }
+                        ensureSegmentsPreloaded(after: segment.range, text: text, voiceData: voiceData)
+                    },
+                    onFailure: { [weak self] error in
+                        guard let self else { return }
+                        loadingSegments.remove(range)
+                        // If this was pending for playback, report the failure
+                        if pendingPlaybackRange == range {
+                            pendingPlaybackRange = nil
+                            handleSpeechFailure(error: error)
+                        }
+                    }
+                )
+                .disposed(by: disposeBag)
+            
+            nextIndex = range.location + range.length
+            loaded += 1
         }
     }
     
-    private func preloadNextPart(text: String, startIndex: Int, voiceData: VoiceData) {
-        preloadSubject?.onCompleted()
-        let subject = ReplaySubject<(Data, NSRange, Int)>.create(bufferSize: 1)
-        preloadSubject = subject
-        preloadStartIndex = startIndex
-        
-        loadSpeechData(text: text, startIndex: startIndex, voice: voiceData.voice, language: voiceData.language)
-            .observe(on: MainScheduler.instance)
-            .subscribe(
-                onSuccess: { data, range, remainingCredits in
-                    subject.onNext((data, range, remainingCredits))
-                    subject.onCompleted()
-                },
-                onFailure: { error in
-                    subject.onError(error)
-                }
-            )
-            .disposed(by: disposeBag)
+    private func updateMinRemainingCredits(_ credits: Int) {
+        if let current = minRemainingCredits {
+            minRemainingCredits = min(current, credits)
+        } else {
+            minRemainingCredits = credits
+        }
     }
     
-    private func updateRemainingTime(credits: Int) {
+    private func checkOutOfCredits() -> Bool {
+        guard let creditsPerSecond = voiceData?.voice.creditsPerSecond, creditsPerSecond > 0 else { return false }
+        guard let minCredits = minRemainingCredits, minCredits <= 0 else { return false }
+        // Only pause if we have no cached segments left to play
+        guard segmentCache.isEmpty else { return false }
+        pause(withState: .outOfCredits)
+        delegate.remainingTime.accept(0)
+        return true
+    }
+    
+    private func updateRemainingTimeDisplay() {
         guard let creditsPerSecond = voiceData?.voice.creditsPerSecond else { return }
         guard creditsPerSecond > 0 else {
             // Unlimited voice - report nil remaining time
             delegate.remainingTime.accept(nil)
             return
         }
-        if credits <= 0 {
-            pause(withState: .outOfCredits)
-            delegate.remainingTime.accept(0)
-            return
-        }
-        baseRemainingTime = TimeInterval(credits) / TimeInterval(creditsPerSecond)
-        updateRemainingTimeDisplay()
-        startRemainingTimeTimer()
-    }
-    
-    private func updateRemainingTimeDisplay() {
-        guard let creditsPerSecond = voiceData?.voice.creditsPerSecond, creditsPerSecond > 0 else { return }
-        // Calculate total remaining time: base time + remaining time in current audio
-        var totalRemainingTime = baseRemainingTime
+        guard let minCredits = minRemainingCredits else { return }
+        
+        // Calculate base time from minimum credits seen
+        let baseTime = TimeInterval(minCredits) / TimeInterval(creditsPerSecond)
+        
+        // Add remaining time in current audio segment
+        var totalRemainingTime = baseTime
         if let player {
             let remainingInCurrentAudio = max(0, player.duration - player.currentTime)
             totalRemainingTime += remainingInCurrentAudio
         }
+        
+        // Add durations of all cached segments (they represent pre-paid time)
+        for segment in segmentCache.values {
+            totalRemainingTime += segment.duration
+        }
+        
         delegate.remainingTime.accept(totalRemainingTime)
     }
     
     private func startRemainingTimeTimer() {
-        let interval = baseRemainingTime < Self.frequentUpdateThreshold ? Self.frequentUpdateInterval : Self.normalUpdateInterval
+        guard let creditsPerSecond = voiceData?.voice.creditsPerSecond, creditsPerSecond > 0 else { return }
+        guard let minCredits = minRemainingCredits else { return }
+        
+        let baseTime = TimeInterval(minCredits) / TimeInterval(creditsPerSecond)
+        let interval = baseTime < Self.frequentUpdateThreshold ? Self.frequentUpdateInterval : Self.normalUpdateInterval
         guard remainingTimeTimer?.timeInterval != interval else { return }
         remainingTimeTimer?.invalidate()
         remainingTimeTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
@@ -848,21 +932,23 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         text = nil
         player?.stop()
         player = nil
-        preloadTimer?.invalidate()
-        preloadTimer = nil
-        preloadSubject?.onCompleted()
-        preloadSubject = nil
-        preloadStartIndex = nil
+        segmentCache.removeAll()
+        loadingSegments.removeAll()
+        pendingPlaybackRange = nil
+        minRemainingCredits = nil
         shouldReloadOnResume = false
         stopRemainingTimeTimer()
         delegate.didFinishSpeaking()
         delegate.state.accept(.stopped)
     }
     
-    private func handleSpeechSuccess(data: Data, range: NSRange, remainingCredits: Int) {
+    private func handleSpeechSuccess(data: Data, range: NSRange) {
+        // Remove this segment from cache since we're now playing it
+        segmentCache.removeValue(forKey: range)
         delegate.speechRangeWillChange(to: range)
         play(data: data)
-        updateRemainingTime(credits: remainingCredits)
+        updateRemainingTimeDisplay()
+        startRemainingTimeTimer()
     }
     
     private func handleSpeechFailure(error: Swift.Error) {
@@ -880,16 +966,13 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
 
 extension RemoteVoiceProcessor: AVAudioPlayerDelegate {
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        preloadTimer?.invalidate()
-        preloadTimer = nil
-        
         guard flag, let text, let voiceData, let speechRange = delegate.speechRange else {
             finishSpeaking()
             return
         }
 
         let nextStartIndex = speechRange.location + speechRange.length
-        speak(text: text, startIndex: nextStartIndex, voice: voiceData.voice, language: voiceData.language)
+        startSpeaking(text: text, startIndex: nextStartIndex, voiceData: voiceData)
     }
 
     func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: (any Swift.Error)?) {
