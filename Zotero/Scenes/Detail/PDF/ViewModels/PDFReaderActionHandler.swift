@@ -1818,6 +1818,25 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
     private func prepareDocumentProvider(in viewModel: ViewModel<PDFReaderActionHandler>) {
         appearance = .from(appearanceMode: viewModel.state.settings.appearanceMode, interfaceStyle: viewModel.state.interfaceStyle)
+        let libraryId = viewModel.state.library.identifier
+        let attachmentKey = viewModel.state.key
+        let documentMD5: String?
+        do {
+            let item = try dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: attachmentKey), on: .main)
+            let changed: Bool?
+            (documentMD5, _, changed) = checkWhetherMd5Changed(forItem: item, andUpdateViewModel: viewModel)
+            if changed == true {
+                DDLogWarn("PDFReaderActionHandler: MD5 has changed, before PDF was loaded")
+                return
+            }
+        } catch {
+            DDLogError("PDFReaderActionHandler: failed to load item: \(error)")
+            update(viewModel: viewModel) { state in
+                state.error = (error as? PDFReaderState.Error) ?? .unknownLoading
+            }
+            return
+        }
+
         viewModel.state.document.didCreateDocumentProviderBlock = { [weak self, weak viewModel] documentProvider in
             guard let self, let viewModel, let fileAnnotationProvider = documentProvider.annotationManager.fileAnnotationProvider else { return }
             let provider = PDFReaderAnnotationProvider(
@@ -1828,6 +1847,13 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 username: viewModel.state.username
             )
             provider.pdfReaderAnnotationProviderDelegate = self
+            provider.loadCache(
+                attachmentKey: attachmentKey,
+                libraryId: libraryId,
+                documentMD5: documentMD5,
+                pageCount: Int(viewModel.state.document.pageCount),
+                boundingBoxConverter: delegate
+            )
             annotationProvider = provider
             documentProvider.annotationManager.annotationProviders = [provider]
         }
@@ -1835,6 +1861,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
     /// Loads annotations from DB, converts them to Zotero annotations and adds matching PSPDFKit annotations to document.
     private func loadDocumentData(boundingBoxConverter: AnnotationBoundingBoxConverter, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        guard viewModel.state.documentMD5Changed != true else { return }
         do {
             let pageCount = viewModel.state.document.pageCount
             guard let boundingBoxConverter = delegate, pageCount > 0 else { throw PDFReaderState.Error.documentEmpty }
@@ -1843,12 +1870,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
             let key = viewModel.state.key
             let (item, liveAnnotations, storedPage) = try loadItemAnnotationsAndPage(for: key, libraryId: viewModel.state.library.identifier)
-
-            let (documentMD5, _, changed) = checkWhetherMd5Changed(forItem: item, andUpdateViewModel: viewModel, handler: self)
-            if changed == true {
-                DDLogWarn("PDFReaderActionHandler: MD5 has changed, before PDF was loaded")
-                return
-            }
 
             let (library, libraryToken) = try viewModel.state.library.identifier.observe(in: dbStorage, changes: { [weak self, weak viewModel] library in
                 guard let self, let viewModel else { return }
@@ -1859,17 +1880,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             let databaseAnnotations = liveAnnotations.freeze()
 
             let loadDocumentAnnotationsStartTime = CFAbsoluteTimeGetCurrent()
-            if let annotationProvider {
-                annotationProvider.createCacheIfNeeded(
-                    attachmentKey: key,
-                    libraryId: library.identifier,
-                    documentMD5: documentMD5,
-                    pageCount: Int(viewModel.state.document.pageCount),
-                    boundingBoxConverter: boundingBoxConverter
-                )
-            } else {
-                DDLogWarn("PDFReaderActionHandler: annotation provider not initialized before loading document data")
-            }
 
             let allDocumentAnnotations = viewModel.state.document.allAnnotations(of: .all).values.flatMap({ $0 })
             annotationPreviewController.store(annotations: allDocumentAnnotations, parentKey: key, libraryId: library.identifier, appearance: appearance)
@@ -1973,33 +1983,12 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 guard let self, let viewModel else { return }
                 switch change {
                 case .change(let item, _):
-                    checkWhetherMd5Changed(forItem: item, andUpdateViewModel: viewModel, handler: self)
+                    checkWhetherMd5Changed(forItem: item, andUpdateViewModel: viewModel)
 
                 case .deleted, .error:
                     break
                 }
             }
-        }
-
-        @discardableResult
-        func checkWhetherMd5Changed(
-            forItem item: RItem,
-            andUpdateViewModel viewModel: ViewModel<PDFReaderActionHandler>,
-            handler: PDFReaderActionHandler
-        ) -> (documentMD5: String?, backendMD5: String?, changed: Bool?) {
-            var documentMD5: String?
-            if let documentURL = viewModel.state.document.fileURL {
-                documentMD5 = cachedMD5(from: documentURL, using: fileStorage.fileManager)
-            }
-            let backendMD5 = !item.backendMd5.isEmpty ? item.backendMd5 : nil
-            guard let documentMD5 else { return (documentMD5: nil, backendMD5: backendMD5, changed: nil) }
-            guard backendMD5 != documentMD5 else { return (documentMD5: documentMD5, backendMD5: backendMD5, changed: false) }
-            deleteDocumentAnnotationsCache(for: viewModel.state.key, libraryId: viewModel.state.library.identifier)
-            annotationPreviewController.deleteAll(parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
-            handler.update(viewModel: viewModel) { state in
-                state.changes = .md5
-            }
-            return (documentMD5: documentMD5, backendMD5: backendMD5, changed: true)
         }
 
         func loadItemAnnotationsAndPage(for key: String, libraryId: LibraryIdentifier) throws -> (RItem, Results<RItem>, Int) {
@@ -2019,6 +2008,34 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
             return (item, results, page)
         }
+    }
+
+    @discardableResult
+    private func checkWhetherMd5Changed(forItem item: RItem, andUpdateViewModel viewModel: ViewModel<PDFReaderActionHandler>) -> (documentMD5: String?, backendMD5: String?, changed: Bool?) {
+        var documentMD5: String?
+        if let documentURL = viewModel.state.document.fileURL {
+            documentMD5 = cachedMD5(from: documentURL, using: fileStorage.fileManager)
+        }
+        let backendMD5 = !item.backendMd5.isEmpty ? item.backendMd5 : nil
+        guard let documentMD5 else {
+            update(viewModel: viewModel) { state in
+                state.documentMD5Changed = nil
+            }
+            return (documentMD5: nil, backendMD5: backendMD5, changed: nil)
+        }
+        guard backendMD5 != documentMD5 else {
+            update(viewModel: viewModel) { state in
+                state.documentMD5Changed = false
+            }
+            return (documentMD5: documentMD5, backendMD5: backendMD5, changed: false)
+        }
+        deleteDocumentAnnotationsCache(for: viewModel.state.key, libraryId: viewModel.state.library.identifier)
+        annotationPreviewController.deleteAll(parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier)
+        update(viewModel: viewModel) { state in
+            state.documentMD5Changed = true
+            state.changes = .md5
+        }
+        return (documentMD5: documentMD5, backendMD5: backendMD5, changed: true)
 
         func deleteDocumentAnnotationsCache(for key: String, libraryId: LibraryIdentifier) {
             let request = DeleteDocumentAnnotationsCacheDbRequest(attachmentKey: key, libraryId: libraryId)

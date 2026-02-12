@@ -17,10 +17,10 @@ protocol PDFReaderAnnotationProviderDelegate: AnyObject {
 }
 
 final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
-    private enum Source {
+    private enum CacheStatus {
         case unresolved
-        case resolving
-        case resolved
+        case loading
+        case loaded(results: Results<RDocumentAnnotation>)
         case failed
     }
 
@@ -29,12 +29,20 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
     private let displayName: String
     private let username: String
 
-    public private(set) var results: Results<RDocumentAnnotation>?
+    var results: Results<RDocumentAnnotation>? {
+        switch cacheStatus {
+        case .unresolved, .loading, .failed:
+            return nil
+
+        case .loaded(let results):
+            return results
+        }
+    }
     public private(set) var keys: [PDFReaderState.AnnotationKey] = []
     public private(set) var uniqueBaseColors: [String] = []
     public weak var pdfReaderAnnotationProviderDelegate: PDFReaderAnnotationProviderDelegate?
 
-    private var source: Source = .unresolved
+    private var cacheStatus: CacheStatus = .unresolved
     private var loadedFilePageIndices = Set<PageIndex>()
     private var loadedCachePageIndices = Set<PageIndex>()
 
@@ -60,6 +68,15 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
 
     override func hasLoadedAnnotationsForPage(at pageIndex: PageIndex) -> Bool {
         return performRead { loadedFilePageIndices.contains(pageIndex) && loadedCachePageIndices.contains(pageIndex) }
+    }
+
+    private func annotation(from cachedAnnotation: RDocumentAnnotation) -> Annotation? {
+        guard let documentAnnotation = PDFDocumentAnnotation(annotation: cachedAnnotation, displayName: displayName, username: username) else { return nil }
+        let appearance = pdfReaderAnnotationProviderDelegate?.appearance ?? .light
+
+        let annotation = AnnotationConverter.annotation(from: documentAnnotation, appearance: appearance, displayName: displayName, username: username)
+        annotation.flags.update(with: [.locked, .readOnly])
+        return annotation
     }
 
     private func loadFilePage(pageIndex: PageIndex) -> (removedAnnotations: [Annotation], remainingAnnotations: [Annotation]) {
@@ -103,50 +120,53 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
             }
             return (pageFileAnnotations ?? []) + (cachePageAnnotations ?? [])
         }
-        return performWriteAndWait {// () -> [Annotation]? in
+        return performWriteAndWait {
             // Because we had to leave the critical region from reading to writing, another thread could have raced here before us.
             // In order to prevent caching the same annotations multiple times, we check again our indices first.
-            let pageFileAnnotations: [Annotation]?
+
+            // First the index for the document annotations that are read from the file (unsupported types which inculde links).
+            let filePageAnnotations: [Annotation]?
             if loadedFilePageIndices.contains(pageIndex) {
-                pageFileAnnotations = fileAnnotationProvider.annotationsForPage(at: pageIndex)
+                filePageAnnotations = fileAnnotationProvider.annotationsForPage(at: pageIndex)
             } else {
-                (_, pageFileAnnotations) = loadFilePage(pageIndex: pageIndex)
+                (_, filePageAnnotations) = loadFilePage(pageIndex: pageIndex)
             }
 
+            // Then the index for the document annoations that are read from the database cache.
             if !loadedCachePageIndices.contains(pageIndex) {
-                // Annotations from database cache not loaded yet.
-                if let cachedDocumentAnnotations = results.flatMap({ Array($0.filter("page = %d", Int(pageIndex))) }), !cachedDocumentAnnotations.isEmpty {
-                    // There are cached document annotations for this page, add them to provider cache
-                    var annotationsToAdd: [Annotation] = []
-                    for cachedDocumentAnnotation in cachedDocumentAnnotations {
-                        guard let annotation = annotation(from: cachedDocumentAnnotation) else { continue }
-                        annotationsToAdd.append(annotation)
+                switch cacheStatus {
+                case .loaded(let results):
+                    // Database cache is loaded, load annotations to provider cache.
+                    let cachedDocumentAnnotations = Array(results.filter("page = %d", Int(pageIndex)))
+                    if !cachedDocumentAnnotations.isEmpty {
+                        // There are document annotations for this page in the database cache, add them to provider cache.
+                        var annotationsToAdd: [Annotation] = []
+                        for cachedDocumentAnnotation in cachedDocumentAnnotations {
+                            guard let annotation = annotation(from: cachedDocumentAnnotation) else { continue }
+                            annotationsToAdd.append(annotation)
+                        }
+                        if !annotationsToAdd.isEmpty {
+                            _ = super.add(annotationsToAdd, options: [.suppressNotifications: true])
+                        }
                     }
                     loadedCachePageIndices.insert(pageIndex)
-                    if !annotationsToAdd.isEmpty {
-                        _ = super.add(annotationsToAdd, options: [.suppressNotifications: true])
-                    }
+
+                case .failed:
+                    // Database cache failed to load. Mark page in provider cache as loaded.
+                    loadedCachePageIndices.insert(pageIndex)
+
+                case .unresolved, .loading:
+                    // Defer marking page in provider cache as loaded, so it can be revisited after database cache resolution.
+                    break
                 }
-                // In any case, this page is considered loaded.
-                loadedCachePageIndices.insert(pageIndex)
             }
-            // Annotations are fetched from super, as apart from cached document annotations, more may have been added before it was accessed here.
+            // Annotations are fetched from super, apart from cached document annotations, as more may have been added before it was accessed here.
             let cachePageAnnotations = super.annotationsForPage(at: pageIndex)
 
-            if pageFileAnnotations == nil, cachePageAnnotations == nil {
+            if filePageAnnotations == nil, cachePageAnnotations == nil {
                 return nil
             }
-            return (pageFileAnnotations ?? []) + (cachePageAnnotations ?? [])
-        }
-
-        func annotation(from cachedAnnotation: RDocumentAnnotation) -> Annotation? {
-            guard let documentAnnotation = PDFDocumentAnnotation(annotation: cachedAnnotation, displayName: displayName, username: username)
-            else { return nil }
-            let appearance = pdfReaderAnnotationProviderDelegate?.appearance ?? .light
-
-            let annotation = AnnotationConverter.annotation(from: documentAnnotation, appearance: appearance, displayName: displayName, username: username)
-            annotation.flags.update(with: [.locked, .readOnly])
-            return annotation
+            return (filePageAnnotations ?? []) + (cachePageAnnotations ?? [])
         }
     }
 
@@ -160,27 +180,26 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
 
     // MARK: - Public Actions
 
-    public func createCacheIfNeeded(
+    public func loadCache(
         attachmentKey: String,
         libraryId: LibraryIdentifier,
         documentMD5: String?,
         pageCount: Int,
         boundingBoxConverter: AnnotationBoundingBoxConverter?
     ) {
-        var shouldResolve = false
+        var shouldLoad = false
         performWriteAndWait {
-            guard case .unresolved = source else { return }
-            source = .resolving
-            shouldResolve = true
+            guard case .unresolved = cacheStatus else { return }
+            cacheStatus = .loading
+            shouldLoad = true
         }
-        guard shouldResolve else { return }
+        guard shouldLoad else { return }
 
         if let cachedDocumentAnnotationsTuple = loadCachedDocumentAnnotations(attachmentKey: attachmentKey, libraryId: libraryId, md5: documentMD5) {
             performWriteAndWait {
-                results = cachedDocumentAnnotationsTuple.results
                 keys = cachedDocumentAnnotationsTuple.keys
                 uniqueBaseColors = cachedDocumentAnnotationsTuple.uniqueBaseColors
-                source = .resolved
+                cacheStatus = .loaded(results: cachedDocumentAnnotationsTuple.results)
             }
             return
         }
@@ -200,17 +219,16 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
             )
             if storeSucceeded, let cachedDocumentAnnotationsTuple = loadCachedDocumentAnnotations(attachmentKey: attachmentKey, libraryId: libraryId, md5: documentMD5) {
                 performWriteAndWait {
-                    results = cachedDocumentAnnotationsTuple.results
                     keys = cachedDocumentAnnotationsTuple.keys
                     uniqueBaseColors = cachedDocumentAnnotationsTuple.uniqueBaseColors
-                    source = .resolved
+                    cacheStatus = .loaded(results: cachedDocumentAnnotationsTuple.results)
                 }
                 return
             }
         }
 
-        performWrite { [weak self] in
-            self?.source = .failed
+        performWriteAndWait {
+            cacheStatus = .failed
         }
 
         func loadCachedDocumentAnnotations(
