@@ -206,7 +206,6 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
             .set(title: viewModel.state.title)
         )
         viewModel.process(action: .changeIdleTimerDisabled(true))
-        viewModel.process(action: .prepareDocumentProvider)
         view.backgroundColor = .systemGray6
         setupViews()
         if FeatureGates.enabled.contains(.speech) {
@@ -221,6 +220,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
             accessibilityHandler?.delegate = self
         }
         setupObserving()
+        viewModel.process(action: .prepareDocumentProvider)
 
         if !viewModel.state.document.isLocked, let documentController {
             viewModel.process(action: .loadDocumentData(boundingBoxConverter: documentController))

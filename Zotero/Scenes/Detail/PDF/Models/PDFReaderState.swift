@@ -172,6 +172,7 @@ struct PDFReaderState: ViewModelState {
     var changes: Changes
     var error: Error?
     var pdfNotification: Notification?
+    var documentMD5Changed: Bool?
 
     /// Selected annotation when annotations are not being edited in sidebar
     var selectedAnnotationKey: AnnotationKey?
