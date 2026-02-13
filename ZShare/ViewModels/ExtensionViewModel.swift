@@ -79,6 +79,8 @@ final class ExtensionViewModel {
                 case quotaLimit(LibraryIdentifier)
                 case forbidden(LibraryIdentifier)
                 case webDavNotVerified
+                case webDavUnauthorized
+                case webDavForbidden
                 case webDavFailure
                 case md5Missing
                 case mtimeMissing
@@ -106,6 +108,8 @@ final class ExtensionViewModel {
                          .webViewError,
                          .quotaLimit,
                          .webDavNotVerified,
+                         .webDavUnauthorized,
+                         .webDavForbidden,
                          .webDavFailure:
                         return false
                     }
@@ -1260,6 +1264,24 @@ final class ExtensionViewModel {
         if let error = error as? State.AttachmentState.Error {
             return error
         }
+        if let error = error as? WebDavError.Verification {
+            DDLogError("ExtensionViewModel: webdav verification failed - \(error)")
+            return .webDavNotVerified
+        }
+        if let error = error as? WebDavError.Upload {
+            DDLogError("ExtensionViewModel: webdav upload failed - \(error)")
+            switch error {
+            case .cantCreatePropData:
+                return .webDavFailure
+
+            case .apiError(let alamoError, _):
+                return webDavError(from: alamoError)
+            }
+        }
+        if let error = error as? WebDavError.Download {
+            DDLogError("ExtensionViewModel: webdav download failed - \(error)")
+            return .webDavFailure
+        }
         if let error = error as? Parsing.Error {
             DDLogError("ExtensionViewModel: could not parse item - \(error)")
             return .parseError(error)
@@ -1298,6 +1320,32 @@ final class ExtensionViewModel {
             return .requiresBrowser
         }
         return .unknown
+
+        func webDavError(from error: AFError) -> State.AttachmentState.Error {
+            switch error {
+            case .responseValidationFailed(let reason):
+                switch reason {
+                case .unacceptableStatusCode(let code):
+                    switch code {
+                    case 401:
+                        return .webDavUnauthorized
+                        
+                    case 403:
+                        return .webDavForbidden
+
+                    default:
+                        break
+                    }
+
+                default:
+                    break
+                }
+
+            default:
+                break
+            }
+            return .webDavFailure
+        }
 
         func alamoErrorRequiresAbort(_ error: AFError, url: URL?, libraryId: LibraryIdentifier?) -> State.AttachmentState.Error {
             let defaultError: State.AttachmentState.Error = (url?.absoluteString ?? ApiConstants.baseUrlString).contains(ApiConstants.baseUrlString) ? .apiFailure : .webDavFailure

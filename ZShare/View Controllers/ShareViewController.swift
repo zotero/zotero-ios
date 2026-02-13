@@ -373,7 +373,7 @@ final class ShareViewController: UIViewController {
     private func updateNavigationItems(for state: ExtensionViewModel.State.AttachmentState, isSubmitting: Bool) {
         if let error = state.error {
             switch error {
-            case .quotaLimit, .webDavFailure, .apiFailure, .forbidden:
+            case .quotaLimit, .webDavFailure, .webDavUnauthorized, .webDavForbidden, .apiFailure, .forbidden:
                 self.navigationItem.leftBarButtonItem = nil
                 self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(ShareViewController.cancel))
                 return
@@ -474,6 +474,12 @@ final class ShareViewController: UIViewController {
         switch error {
         case .webDavNotVerified:
             return L10n.Errors.Shareext.webdavNotVerified
+
+        case .webDavUnauthorized:
+            return L10n.Errors.Settings.Webdav.unauthorized
+
+        case .webDavForbidden:
+            return L10n.Errors.Settings.Webdav.forbidden
 
         case .cantLoadSchema:
             return L10n.Errors.Shareext.cantLoadSchema
