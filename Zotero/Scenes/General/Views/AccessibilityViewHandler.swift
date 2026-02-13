@@ -17,7 +17,7 @@ protocol AccessibilityViewDelegate: AnyObject {
         animated: Bool,
         isFormSheet: @escaping () -> Bool,
         dismissAction: @escaping () -> Void,
-        voiceChangeAction: @escaping (SpeechVoice, String, String?) -> Void
+        voiceChangeAction: @escaping (AccessibilityPopupVoiceChange) -> Void
     )
     func accessibilityToolbarChanged(height: CGFloat)
     func addAccessibilityControlsViewToAnnotationToolbar(view: AnnotationToolbarLeadingView)
@@ -98,8 +98,8 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
                 showOverlayIfNeeded(forType: currentOverlayType(controller: self))
                 reloadSpeechButton(isSelected: false)
             },
-            voiceChangeAction: { [weak self] voice, voiceLanguage, language in
-                self?.processVoiceChange(toVoice: voice, voiceLanguage: voiceLanguage, language: language)
+            voiceChangeAction: { [weak self] change in
+                self?.processVoiceChange(change)
             }
         )
         
@@ -114,9 +114,9 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
         }
     }
 
-    private func processVoiceChange(toVoice voice: SpeechVoice, voiceLanguage: String, language: String?) {
-        try? dbStorage.perform(request: SetSpeechLanguageDbRequest(key: key, libraryId: libraryId, language: language), on: .main)
-        speechManager.set(voice: voice, voiceLanguage: voiceLanguage, preferredLanguage: language)
+    private func processVoiceChange(_ change: AccessibilityPopupVoiceChange) {
+        try? dbStorage.perform(request: SetSpeechLanguageDbRequest(key: key, libraryId: libraryId, language: change.preferredLanguage), on: .main)
+        speechManager.set(voice: change.voice, voiceLanguage: change.voiceLanguage, preferredLanguage: change.preferredLanguage, remainingCredits: change.remainingCredits)
     }
 
     private func reloadSpeechButton(isSelected: Bool) {
