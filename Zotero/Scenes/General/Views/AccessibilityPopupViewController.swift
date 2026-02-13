@@ -6,6 +6,7 @@
 //  Copyright © 2025 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import NaturalLanguage
 import UIKit
 
 import AVFAudio
@@ -299,6 +300,46 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
         updatePopup(toHeight: currentHeight)
+    }
+
+    // MARK: - Keyboard Commands
+
+    override var keyCommands: [UIKeyCommand]? {
+        var commands: [UIKeyCommand] = [
+            .init(title: L10n.Accessibility.Speech.forward, action: #selector(speechForwardByParagraph), input: UIKeyCommand.inputRightArrow, modifierFlags: []),
+            .init(title: L10n.Accessibility.Speech.backward, action: #selector(speechBackwardByParagraph), input: UIKeyCommand.inputLeftArrow, modifierFlags: []),
+            .init(title: L10n.Accessibility.Speech.forward, action: #selector(speechForwardBySentence), input: UIKeyCommand.inputRightArrow, modifierFlags: [.alternate]),
+            .init(title: L10n.Accessibility.Speech.backward, action: #selector(speechBackwardBySentence), input: UIKeyCommand.inputLeftArrow, modifierFlags: [.alternate])
+        ]
+        if speechManager.state.value.isSpeaking || speechManager.state.value.isPaused {
+            let title = speechManager.state.value.isSpeaking ? L10n.Accessibility.Speech.pause : L10n.Accessibility.Speech.play
+            commands.append(.init(title: title, action: #selector(togglePlayPause), input: " ", modifierFlags: []))
+        }
+        return commands
+    }
+
+    @objc private func speechForwardByParagraph() {
+        speechManager.forward(by: .paragraph)
+    }
+
+    @objc private func speechBackwardByParagraph() {
+        speechManager.backward(by: .paragraph)
+    }
+
+    @objc private func speechForwardBySentence() {
+        speechManager.forward(by: .sentence)
+    }
+
+    @objc private func speechBackwardBySentence() {
+        speechManager.backward(by: .sentence)
+    }
+
+    @objc private func togglePlayPause() {
+        if speechManager.state.value.isSpeaking {
+            speechManager.pause()
+        } else if speechManager.state.value.isPaused {
+            speechManager.resume()
+        }
     }
 
     // MARK: - Actions
