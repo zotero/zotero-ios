@@ -55,7 +55,6 @@ struct SpeechVoicePickerView: View {
     @State private var navigationPath: NavigationPath
     @State private var allRemoteVoices: [RemoteVoice]
     @State private var supportedRemoteLanguages: Set<String>
-    @State private var remainingCredits: Int?
     
     private var languageCode: String {
         return language.code(detectedLanguage: detectedLanguage)
@@ -141,7 +140,7 @@ struct SpeechVoicePickerView: View {
                         case .language(let code):
                             selectedCode = code
                         }
-                        dismiss(AccessibilityPopupVoiceChange(voice: selectedVoice, voiceLanguage: (selectedCode ?? detectedLanguage), preferredLanguage: selectedCode, remainingCredits: remainingCredits))
+                        dismiss(AccessibilityPopupVoiceChange(voice: selectedVoice, voiceLanguage: (selectedCode ?? detectedLanguage), preferredLanguage: selectedCode))
                     } label: {
                         Text("Close")
                     }
@@ -156,9 +155,8 @@ struct SpeechVoicePickerView: View {
     private func loadVoices() {
         remoteVoicesController.loadVoices()
             .subscribe(
-                onSuccess: { (voices, credits) in
+                onSuccess: { voices in
                     allRemoteVoices = voices
-                    remainingCredits = credits
                     supportedRemoteLanguages.removeAll()
                     voices.forEach({ supportedRemoteLanguages.formUnion($0.locales) })
                     remoteVoices = allRemoteVoices.filter({ voice in voice.locales.contains(where: { $0.contains(languageCode) }) })
