@@ -629,8 +629,6 @@
 		B34F3566275A46BC008B9C76 /* RedirectWebViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F3565275A46BC008B9C76 /* RedirectWebViewHandler.swift */; };
 		B3501F5425139B40007961DB /* Rounding+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340692124A60D6A009ECE48 /* Rounding+Extensions.swift */; };
 		B35104102F2A327C008C8187 /* RemoteVoicesController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B351040F2F2A3278008C8187 /* RemoteVoicesController.swift */; };
-		B35104122F2B7917008C8187 /* ReadAloudSampleResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35104112F2B7911008C8187 /* ReadAloudSampleResponse.swift */; };
-		B35104132F2B7917008C8187 /* ReadAloudSampleResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35104112F2B7911008C8187 /* ReadAloudSampleResponse.swift */; };
 		B3518DA72AEBCB5E00D983B4 /* SettingsResponseSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3518DA62AEBCB5E00D983B4 /* SettingsResponseSpec.swift */; };
 		B351BD0E25EF7E78000451E2 /* ItemAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B351BD0D25EF7E78000451E2 /* ItemAction.swift */; };
 		B352FFCC2CBE944400D0887B /* AutoEmptyTrashDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B352FFCB2CBE943B00D0887B /* AutoEmptyTrashDbRequest.swift */; };
@@ -841,6 +839,10 @@
 		B379D9322BB30E6600AF5025 /* FullSyncDebugger.swift in Sources */ = {isa = PBXBuildFile; fileRef = B379D9312BB30E6600AF5025 /* FullSyncDebugger.swift */; };
 		B37A01C52F3A16A6002FF725 /* TextTokenizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37A01C42F3A16A6002FF725 /* TextTokenizer.swift */; };
 		B37A01C72F3A16FE002FF725 /* TextTokenizerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37A01C62F3A16FE002FF725 /* TextTokenizerSpec.swift */; };
+		B37A01CF2F3F26D1002FF725 /* CreditsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37A01CE2F3F26CD002FF725 /* CreditsRequest.swift */; };
+		B37A01D02F3F26D1002FF725 /* CreditsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37A01CE2F3F26CD002FF725 /* CreditsRequest.swift */; };
+		B37A01D22F3F26F3002FF725 /* CreditsResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37A01D12F3F26F1002FF725 /* CreditsResponse.swift */; };
+		B37A01D32F3F26F3002FF725 /* CreditsResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37A01D12F3F26F1002FF725 /* CreditsResponse.swift */; };
 		B37AA2802899093900A1C643 /* ItemDetailCollectionViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37AA27F2899093900A1C643 /* ItemDetailCollectionViewHandler.swift */; };
 		B37AA28228990F6300A1C643 /* ItemDetailTitleContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37AA28128990F6300A1C643 /* ItemDetailTitleContentView.swift */; };
 		B37AA2842899123C00A1C643 /* UICollectionViewListCell+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37AA2832899123C00A1C643 /* UICollectionViewListCell+Extensions.swift */; };
@@ -1778,7 +1780,6 @@
 		B34F9FA223743C36004ED34C /* CreatorSummaryFormatterSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatorSummaryFormatterSpec.swift; sourceTree = "<group>"; };
 		B34F9FA423743C42004ED34C /* ItemTitleFormatterSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemTitleFormatterSpec.swift; sourceTree = "<group>"; };
 		B351040F2F2A3278008C8187 /* RemoteVoicesController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteVoicesController.swift; sourceTree = "<group>"; };
-		B35104112F2B7911008C8187 /* ReadAloudSampleResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAloudSampleResponse.swift; sourceTree = "<group>"; };
 		B3518DA62AEBCB5E00D983B4 /* SettingsResponseSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsResponseSpec.swift; sourceTree = "<group>"; };
 		B351BD0D25EF7E78000451E2 /* ItemAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemAction.swift; sourceTree = "<group>"; };
 		B352FFCB2CBE943B00D0887B /* AutoEmptyTrashDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoEmptyTrashDbRequest.swift; sourceTree = "<group>"; };
@@ -1932,6 +1933,8 @@
 		B379D9312BB30E6600AF5025 /* FullSyncDebugger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullSyncDebugger.swift; sourceTree = "<group>"; };
 		B37A01C42F3A16A6002FF725 /* TextTokenizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextTokenizer.swift; sourceTree = "<group>"; };
 		B37A01C62F3A16FE002FF725 /* TextTokenizerSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextTokenizerSpec.swift; sourceTree = "<group>"; };
+		B37A01CE2F3F26CD002FF725 /* CreditsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreditsRequest.swift; sourceTree = "<group>"; };
+		B37A01D12F3F26F1002FF725 /* CreditsResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreditsResponse.swift; sourceTree = "<group>"; };
 		B37AA27F2899093900A1C643 /* ItemDetailCollectionViewHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailCollectionViewHandler.swift; sourceTree = "<group>"; };
 		B37AA28128990F6300A1C643 /* ItemDetailTitleContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailTitleContentView.swift; sourceTree = "<group>"; };
 		B37AA2832899123C00A1C643 /* UICollectionViewListCell+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UICollectionViewListCell+Extensions.swift"; sourceTree = "<group>"; };
@@ -2849,6 +2852,7 @@
 				B305649723FC051E003304F2 /* AttachmentUploadRequest.swift */,
 				B305649B23FC051E003304F2 /* AuthorizeUploadRequest.swift */,
 				B305649923FC051E003304F2 /* CrashUploadRequest.swift */,
+				B37A01CE2F3F26CD002FF725 /* CreditsRequest.swift */,
 				B3D58D5525ED856F00D8FA31 /* DebugLogUploadRequest.swift */,
 				B305648F23FC051E003304F2 /* DeletionsRequest.swift */,
 				B31DFE7C2746917A005CD69B /* FileRequest.swift */,
@@ -3077,6 +3081,7 @@
 			children = (
 				B305654923FC051E003304F2 /* AuthorizeUploadResponse.swift */,
 				B305654C23FC051E003304F2 /* CollectionResponse.swift */,
+				B37A01D12F3F26F1002FF725 /* CreditsResponse.swift */,
 				B305654F23FC051E003304F2 /* DeletionsResponse.swift */,
 				B305655023FC051E003304F2 /* GroupResponse.swift */,
 				B305654623FC051E003304F2 /* ItemResponse.swift */,
@@ -3084,7 +3089,6 @@
 				B305654823FC051E003304F2 /* LibraryResponse.swift */,
 				B305654D23FC051E003304F2 /* LinksResponse.swift */,
 				B305654E23FC051E003304F2 /* LoginResponse.swift */,
-				B35104112F2B7911008C8187 /* ReadAloudSampleResponse.swift */,
 				6102D2B72D6CCDD300505E6A /* RemoteRecognizerResponse.swift */,
 				B3A2AEDD26565211004BF3A4 /* RemoteStylesResponse.swift */,
 				B305655223FC051E003304F2 /* SchemaResponse.swift */,
@@ -5857,6 +5861,7 @@
 				B3A17D1927FC33B800322CAD /* LowPowerModeController.swift in Sources */,
 				B31CC57B286468780055C114 /* ManualLookupViewController.swift in Sources */,
 				B3863FC82AD819AB005082F0 /* EndItemCreationDbRequest.swift in Sources */,
+				B37A01D02F3F26D1002FF725 /* CreditsRequest.swift in Sources */,
 				B3DDDAAC24CAD6810014DF99 /* InsetLabel.swift in Sources */,
 				B3329A552B738C4E00F17636 /* CitationAuthorCell.swift in Sources */,
 				B3A71F4D2EEC39BA0006A737 /* AnnotationToolsSettingsActionHandler.swift in Sources */,
@@ -5906,7 +5911,6 @@
 				B3B557162C884DD600BD6325 /* ZoteroURIConverter.swift in Sources */,
 				B305660323FC051E003304F2 /* ZoteroApiClient.swift in Sources */,
 				B3B78C42266FAED500E91D02 /* CitationController.swift in Sources */,
-				B35104132F2B7917008C8187 /* ReadAloudSampleResponse.swift in Sources */,
 				B3B41F1A2848E5A90017CA4B /* AnnotationsFilterAction.swift in Sources */,
 				B305667623FC051F003304F2 /* UIColor+Custom.swift in Sources */,
 				B30565B823FC051E003304F2 /* ReadUserChangedObjectsDbRequest.swift in Sources */,
@@ -6084,6 +6088,7 @@
 				B30565B323FC051E003304F2 /* DeleteObjectsDbRequest.swift in Sources */,
 				6102D2B92D6CCDD300505E6A /* RemoteRecognizerResponse.swift in Sources */,
 				B390EE2C29B5F419004F979B /* PDFCoordinator.swift in Sources */,
+				B37A01D22F3F26F3002FF725 /* CreditsResponse.swift in Sources */,
 				B305662323FC051F003304F2 /* MarkForResyncSyncAction.swift in Sources */,
 				B32EBFC1276A89190003897E /* URLSessionCreator.swift in Sources */,
 				B30565D423FC051E003304F2 /* ReadItemsDbRequest.swift in Sources */,
@@ -6248,6 +6253,7 @@
 				B305674523FC09AF003304F2 /* GroupResponse.swift in Sources */,
 				B3F0FDCB2888185D00949BC9 /* MarkFileAsDownloadedDbRequest.swift in Sources */,
 				B305674623FC09AF003304F2 /* SearchesResponse.swift in Sources */,
+				B37A01CF2F3F26D1002FF725 /* CreditsRequest.swift in Sources */,
 				B305674723FC09AF003304F2 /* SchemaResponse.swift in Sources */,
 				615C10E22D5E22F1001F1E8E /* RecognizerController.swift in Sources */,
 				B300B3362429234C00C1FE1E /* TranslatorMetadata.swift in Sources */,
@@ -6260,7 +6266,6 @@
 				B3A27ACD25BEE91A00DE0BB2 /* TranslationWebViewHandler.swift in Sources */,
 				B3593F1D2668EAD900FA4BB2 /* SyncStylesDbRequest.swift in Sources */,
 				B377F29F2493722100022943 /* AttachmentCreator.swift in Sources */,
-				B35104122F2B7917008C8187 /* ReadAloudSampleResponse.swift in Sources */,
 				B3F0FDCA2888179E00949BC9 /* AttachmentDownloader.swift in Sources */,
 				B3A081CE25D2B73B0088EC24 /* PerformDeletionsSyncAction.swift in Sources */,
 				B3F0FDC92888179100949BC9 /* CreateTranslatedItemsDbRequest.swift in Sources */,
@@ -6294,6 +6299,7 @@
 				B3A081CB25D2B7320088EC24 /* LoadDeletionsSyncAction.swift in Sources */,
 				B305672223FC08F3003304F2 /* CoordinatedFileStorage.swift in Sources */,
 				B30566F923FC085A003304F2 /* InitializeCustomLibrariesDbRequest.swift in Sources */,
+				B37A01D32F3F26F3002FF725 /* CreditsResponse.swift in Sources */,
 				B305671B23FC08DC003304F2 /* StoreSearchesDbRequest.swift in Sources */,
 				B30566FE23FC0867003304F2 /* MarkGroupAsLocalOnlyDbRequest.swift in Sources */,
 				B3AB38A9238EC060008A1ABB /* AllCollectionPickerActionHandler.swift in Sources */,
