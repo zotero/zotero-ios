@@ -35,7 +35,7 @@ protocol PdfReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarC
         animated: Bool,
         isFormSheet: @escaping () -> Bool,
         dismissAction: @escaping () -> Void,
-        voiceChangeAction: @escaping (SpeechVoice, String, String?) -> Void
+        voiceChangeAction: @escaping (AccessibilityPopupVoiceChange) -> Void
     )
 }
 
@@ -293,7 +293,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         animated: Bool,
         isFormSheet: @escaping () -> Bool,
         dismissAction: @escaping () -> Void,
-        voiceChangeAction: @escaping (SpeechVoice, String, String?) -> Void
+        voiceChangeAction: @escaping (AccessibilityPopupVoiceChange) -> Void
     ) {
         guard let navigationController else { return }
         let readerAction = { [weak self] in
@@ -331,7 +331,7 @@ extension PDFCoordinator: AccessibilityPopoupCoordinatorDelegate {
         language: String?,
         detectedLanguage: String,
         userInterfaceStyle: UIUserInterfaceStyle,
-        selectionChanged: @escaping (SpeechVoice, String, String?) -> Void
+        selectionChanged: @escaping (AccessibilityPopupVoiceChange) -> Void
     ) {
         guard let navigationController else { return }
         let view = SpeechVoicePickerView(
@@ -339,8 +339,8 @@ extension PDFCoordinator: AccessibilityPopoupCoordinatorDelegate {
             language: language,
             detectedLanguage: detectedLanguage,
             remoteVoicesController: remoteVoicesController,
-            dismiss: { voice, voiceLanguage, language in
-                selectionChanged(voice, voiceLanguage, language)
+            dismiss: { change in
+                selectionChanged(change)
                 if let presentedViewController = navigationController.presentedViewController as? AccessibilityPopupViewController<PDFReaderViewController> {
                     presentedViewController.dismiss(animated: true)
                 } else {
