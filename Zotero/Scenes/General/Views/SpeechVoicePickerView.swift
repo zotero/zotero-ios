@@ -44,7 +44,7 @@ struct SpeechVoicePickerView: View {
 
     private unowned let remoteVoicesController: RemoteVoicesController
     private let detectedLanguage: String
-    private let dismiss: (SpeechVoice, String, String?) -> Void
+    private let dismiss: (AccessibilityPopupVoiceChange) -> Void
     private let disposeBag: DisposeBag
 
     @State private var type: VoiceType
@@ -55,6 +55,7 @@ struct SpeechVoicePickerView: View {
     @State private var navigationPath: NavigationPath
     @State private var allRemoteVoices: [RemoteVoice]
     @State private var supportedRemoteLanguages: Set<String>
+    @State private var remainingCredits: Int?
     
     private var languageCode: String {
         return language.code(detectedLanguage: detectedLanguage)
@@ -65,7 +66,7 @@ struct SpeechVoicePickerView: View {
         language: String?,
         detectedLanguage: String,
         remoteVoicesController: RemoteVoicesController,
-        dismiss: @escaping (SpeechVoice, String, String?) -> Void
+        dismiss: @escaping (AccessibilityPopupVoiceChange) -> Void
     ) {
         self.selectedVoice = selectedVoice
         self.language = language.flatMap({ .language($0) }) ?? .auto
@@ -140,7 +141,7 @@ struct SpeechVoicePickerView: View {
                         case .language(let code):
                             selectedCode = code
                         }
-                        dismiss(selectedVoice, (selectedCode ?? detectedLanguage), selectedCode)
+                        dismiss(AccessibilityPopupVoiceChange(voice: selectedVoice, voiceLanguage: (selectedCode ?? detectedLanguage), preferredLanguage: selectedCode, remainingCredits: remainingCredits))
                     } label: {
                         Text("Close")
                     }
@@ -155,8 +156,9 @@ struct SpeechVoicePickerView: View {
     private func loadVoices() {
         remoteVoicesController.loadVoices()
             .subscribe(
-                onSuccess: { (voices, _) in
+                onSuccess: { (voices, credits) in
                     allRemoteVoices = voices
+                    remainingCredits = credits
                     supportedRemoteLanguages.removeAll()
                     voices.forEach({ supportedRemoteLanguages.formUnion($0.locales) })
                     remoteVoices = allRemoteVoices.filter({ voice in voice.locales.contains(where: { $0.contains(languageCode) }) })
@@ -377,7 +379,7 @@ fileprivate struct RemoteVoicesSection: View {
         language: nil,
         detectedLanguage: "en",
         remoteVoicesController: RemoteVoicesController(apiClient: ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: .default)),
-        dismiss: { _, _, _ in }
+        dismiss: { _ in }
     )
 }
 
