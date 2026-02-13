@@ -14,13 +14,20 @@ import RxSwift
 
 import CocoaLumberjackSwift
 
+struct AccessibilityPopupVoiceChange {
+    let voice: SpeechVoice
+    let voiceLanguage: String
+    let preferredLanguage: String?
+    let remainingCredits: Int?
+}
+
 protocol AccessibilityPopoupCoordinatorDelegate: AnyObject {
     func showVoicePicker(
         for voice: SpeechVoice,
         language: String?,
         detectedLanguage: String,
         userInterfaceStyle: UIUserInterfaceStyle,
-        selectionChanged: @escaping (SpeechVoice, String, String?) -> Void
+        selectionChanged: @escaping (AccessibilityPopupVoiceChange) -> Void
     )
 }
 
@@ -31,7 +38,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
     private let readerAction: () -> Void
     private let dismissAction: () -> Void
     private let isFormSheet: () -> Bool
-    private let voiceChangeAction: (SpeechVoice, String, String?) -> Void
+    private let voiceChangeAction: (AccessibilityPopupVoiceChange) -> Void
     private var containerTop: NSLayoutConstraint!
     private var containerHeight: NSLayoutConstraint!
     private weak var speechButton: UIButton!
@@ -52,7 +59,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
         isFormSheet: @escaping () -> Bool,
         readerAction: @escaping () -> Void,
         dismissAction: @escaping () -> Void,
-        voiceChangeAction: @escaping (SpeechVoice, String, String?) -> Void
+        voiceChangeAction: @escaping (AccessibilityPopupVoiceChange) -> Void
     ) {
         self.speechManager = speechManager
         self.isFormSheet = isFormSheet
@@ -317,9 +324,9 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
             language: speechManager.language,
             detectedLanguage: speechManager.detectedLanguage,
             userInterfaceStyle: overrideUserInterfaceStyle,
-            selectionChanged: { [weak self] voice, voiceLanguage, language in
-                self?.update(voice: voice)
-                self?.voiceChangeAction(voice, voiceLanguage, language)
+            selectionChanged: { [weak self] change in
+                self?.update(voice: change.voice)
+                self?.voiceChangeAction(change)
             }
         )
     }
