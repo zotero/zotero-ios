@@ -22,18 +22,21 @@ final class RemoteVoicesController {
         self.apiClient = apiClient
     }
 
-    func loadVoices() -> Single<([RemoteVoice], Int)> {
-        return apiClient.send(request: VoicesRequest()).flatMap({ (voices: [RemoteVoice], response: HTTPURLResponse) in
-            let remaining = (response.allHeaderFields["zotero-tts-credits-remaining"] as? String).flatMap({ Int($0) }) ?? 0
-            return .just((voices, remaining))
+    func loadVoices() -> Single<[RemoteVoice]> {
+        return apiClient.send(request: VoicesRequest()).flatMap({ (voices: [RemoteVoice], _) in
+            return .just(voices)
         })
+    }
+    
+    func loadCredits() -> Single<Int> {
+        return apiClient.send(request: CreditsRequest()).flatMap({ response, _ in return .just(response.creditsRemaining) })
     }
     
     func downloadSample(voiceId: String, language: String) -> Single<Data> {
         return apiClient
             .send(request: ReadAloudSampleRequest(voiceId: voiceId, language: language))
             .flatMap({ (data, _) in
-                if let data = data.audioData {
+                if let data = data {
                     return .just(data)
                 } else {
                     return .error(Error.noData)
@@ -41,13 +44,12 @@ final class RemoteVoicesController {
             })
     }
     
-    func downloadSound(forText text: String, voiceId: String, language: String) -> Single<(Data, Int)> {
+    func downloadSound(forText text: String, voiceId: String, language: String) -> Single<Data> {
         return apiClient
             .send(request: ReadAloudAudioRequest(voiceId: voiceId, text: text, language: "en-US"))
-            .flatMap({ (data, response) in
-                if let data = data.audioData {
-                    let remaining = (response.allHeaderFields["zotero-tts-credits-remaining"] as? String).flatMap({ Int($0) }) ?? 0
-                    return .just((data, remaining))
+            .flatMap({ (data, _) in
+                if let data = data {
+                    return .just(data)
                 } else {
                     return .error(Error.noData)
                 }
