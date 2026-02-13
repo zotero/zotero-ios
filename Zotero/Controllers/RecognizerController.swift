@@ -182,7 +182,7 @@ final class RecognizerController {
             statesByTask[task] = .recognitionInProgress
             emmitUpdate(for: task, subject: subject, kind: .inProgress)
 
-            let worker = PDFWorkerController.Worker(file: task.file, priority: .default)
+            let worker = PDFWorkerController.Worker(file: task.file, shouldCacheData: false, priority: .default)
             pdfWorkerController.queue(work: .recognizer, in: worker)
                 .subscribe(onNext: { [weak self] update in
                     guard let self else { return }
