@@ -6,6 +6,7 @@
 //  Copyright © 2022 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import NaturalLanguage
 import UIKit
 
 import CocoaLumberjackSwift
@@ -162,6 +163,14 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
                 .init(title: L10n.forward, action: #selector(performForwardAction), input: UIKeyCommand.inputRightArrow, modifierFlags: [.command])
             ]
         }
+        if accessibilityHandler?.speechManager.state.value.isSpeaking == true || accessibilityHandler?.speechManager.state.value.isPaused == true {
+            keyCommands += [
+                .init(title: L10n.Accessibility.Speech.forward, action: #selector(speechForwardByParagraph), input: UIKeyCommand.inputRightArrow, modifierFlags: []),
+                .init(title: L10n.Accessibility.Speech.backward, action: #selector(speechBackwardByParagraph), input: UIKeyCommand.inputLeftArrow, modifierFlags: []),
+                .init(title: L10n.Accessibility.Speech.forward, action: #selector(speechForwardBySentence), input: UIKeyCommand.inputRightArrow, modifierFlags: [.alternate]),
+                .init(title: L10n.Accessibility.Speech.backward, action: #selector(speechBackwardBySentence), input: UIKeyCommand.inputLeftArrow, modifierFlags: [.alternate])
+            ]
+        }
         return keyCommands
     }
 
@@ -179,6 +188,9 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
 
             case #selector(redo(_:)):
                 return canRedo
+
+            case #selector(speechForwardByParagraph), #selector(speechBackwardByParagraph), #selector(speechForwardBySentence), #selector(speechBackwardBySentence):
+                return true
 
             default:
                 break
@@ -705,6 +717,22 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
 
     @objc private func performForwardAction() {
         documentController?.performForwardAction()
+    }
+
+    @objc private func speechForwardByParagraph() {
+        accessibilityHandler?.speechManager.forward(by: .paragraph)
+    }
+
+    @objc private func speechBackwardByParagraph() {
+        accessibilityHandler?.speechManager.backward(by: .paragraph)
+    }
+
+    @objc private func speechForwardBySentence() {
+        accessibilityHandler?.speechManager.forward(by: .sentence)
+    }
+
+    @objc private func speechBackwardBySentence() {
+        accessibilityHandler?.speechManager.backward(by: .sentence)
     }
 
     @objc private func undo(_ sender: Any?) {

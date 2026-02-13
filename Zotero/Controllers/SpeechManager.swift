@@ -140,7 +140,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
 
         let index = delegate.getCurrentPageIndex()
         if let page = cachedPages[index] {
-            go(to: page, pageIndex: index, reportPageChange: false)
+            startSpeaking(page: page, pageIndex: index, reportPageChange: false)
             return
         }
 
@@ -152,7 +152,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             }
             cachedPages = pages
             guard state.value == .loading else { return }
-            go(to: page, pageIndex: index, reportPageChange: false)
+            startSpeaking(page: page, pageIndex: index, reportPageChange: false)
         }
     }
     
@@ -216,17 +216,85 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         }
     }
 
-    private func go(to page: String, pageIndex: Delegate.Index, speechStartIndex: Int? = nil, reportPageChange: Bool = true) {
+    func forward(by unit: NLTokenUnit) {
+        guard let speechData, let currentPage = cachedPages[speechData.index] else { return }
+
+        let currentEndIndex = speechData.range.location + speechData.range.length
+        if let index = TextTokenizer.findIndex(ofNext: unit, startingAt: currentEndIndex, in: currentPage) {
+            DDLogInfo("SpeechManager: forward to \(index); \(speechData.range.location); \(speechData.range.length)")
+            if state.value.isPaused {
+                moveTo(index: index, on: currentPage, pageIndex: speechData.index)
+            } else {
+                startSpeaking(at: index, on: currentPage)
+            }
+        } else if let nextIndex = delegate?.getNextPageIndex(from: speechData.index), let page = cachedPages[nextIndex] {
+            if state.value.isPaused {
+                moveTo(index: 0, on: page, pageIndex: nextIndex)
+            } else {
+                startSpeaking(page: page, pageIndex: nextIndex)
+            }
+        } else {
+            stop()
+        }
+    }
+
+    func backward(by unit: NLTokenUnit) {
+        guard let speechData, let currentPage = cachedPages[speechData.index] else { return }
+  
+        if let index = TextTokenizer.findIndex(ofPreviousWhole: unit, beforeIndex: speechData.range.location, in: currentPage) {
+            DDLogInfo("SpeechManager: backward to \(index); \(speechData.range.location); \(speechData.range.length)")
+            if state.value.isPaused {
+                moveTo(index: index, on: currentPage, pageIndex: speechData.index)
+            } else {
+                startSpeaking(at: index, on: currentPage)
+            }
+        } else if speechData.range.location != 0 {
+            if state.value.isPaused {
+                moveTo(index: 0, on: currentPage, pageIndex: speechData.index)
+            } else {
+                startSpeaking(at: 0, on: currentPage)
+            }
+        } else if let previousIndex = delegate?.getPreviousPageIndex(from: speechData.index),
+                  let previousPage = cachedPages[previousIndex],
+                  let speechIndex = TextTokenizer.findIndex(ofPreviousWhole: unit, beforeIndex: previousPage.count, in: previousPage) {
+            if state.value.isPaused {
+                moveTo(index: speechIndex, on: previousPage, pageIndex: previousIndex)
+            } else {
+                startSpeaking(page: previousPage, pageIndex: previousIndex, speechStartIndex: speechIndex)
+            }
+        } else {
+            stop()
+        }
+    }
+    
+    private func startSpeaking(at index: Int, on page: String) {
+        processor.speak(text: page, startIndex: index, shouldDetectVoice: false)
+    }
+
+    private func startSpeaking(page: String, pageIndex: Delegate.Index, speechStartIndex: Int? = nil, reportPageChange: Bool = true) {
         speechData = SpeechData(index: pageIndex, range: NSRange())
         processor.speak(text: page, startIndex: speechStartIndex ?? 0, shouldDetectVoice: true)
-
-        guard let delegate else { return }
-
         if reportPageChange {
-            delegate.moved(to: pageIndex)
+            delegate?.moved(to: pageIndex)
         }
+        cacheAdjacentPages(for: pageIndex)
+    }
+    
+    /// Moves the current speech position without starting playback.
+    /// Used when navigating while paused to update the highlight position.
+    private func moveTo(index: Int, on page: String, pageIndex: Delegate.Index) {
+        guard let data = TextTokenizer.findSentence(startingAt: index, in: page) else { return }
+        let pageDidChange = speechData?.index != pageIndex
+        speechData = SpeechData(index: pageIndex, range: data.range)
+        delegate?.speechTextChanged(text: data.text, pageIndex: pageIndex)
+        if pageDidChange {
+            delegate?.moved(to: pageIndex)
+            cacheAdjacentPages(for: pageIndex)
+        }
+    }
 
-        // Cache next/previous page after page change if needed
+    private func cacheAdjacentPages(for pageIndex: Delegate.Index) {
+        guard let delegate else { return }
         var indices: [Delegate.Index] = []
         if let index = delegate.getPreviousPageIndex(from: pageIndex), cachedPages[index] == nil {
             indices.append(index)
@@ -243,41 +311,6 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             }
         }
     }
-
-    private func skip(to index: Int, on page: String) {
-        processor.speak(text: page, startIndex: index, shouldDetectVoice: false)
-    }
-
-    func forward() {
-        guard let speechData, let currentPage = cachedPages[speechData.index] else { return }
-
-        let currentEndIndex = speechData.range.location + speechData.range.length
-        if let index = TextTokenizer.findIndex(ofNext: .paragraph, startingAt: currentEndIndex, in: currentPage) {
-            DDLogInfo("SpeechManager: forward to \(index); \(speechData.range.location); \(speechData.range.length)")
-            skip(to: index, on: currentPage)
-        } else if let nextIndex = delegate?.getNextPageIndex(from: speechData.index), let page = cachedPages[nextIndex] {
-            go(to: page, pageIndex: nextIndex)
-        } else {
-            stop()
-        }
-    }
-
-    func backward() {
-        guard let speechData, let currentPage = cachedPages[speechData.index] else { return }
-  
-        if let index = TextTokenizer.findIndex(ofPreviousWhole: .paragraph, beforeIndex: speechData.range.location, in: currentPage) {
-            DDLogInfo("SpeechManager: backward to \(index); \(speechData.range.location); \(speechData.range.length)")
-            skip(to: index, on: currentPage)
-        } else if speechData.range.location != 0 {
-            skip(to: 0, on: currentPage)
-        } else if let previousIndex = delegate?.getPreviousPageIndex(from: speechData.index),
-                  let previousPage = cachedPages[previousIndex],
-                  let speechIndex = TextTokenizer.findIndex(ofPreviousWhole: .paragraph, beforeIndex: previousPage.count, in: previousPage) {
-            go(to: previousPage, pageIndex: previousIndex, speechStartIndex: speechIndex)
-        } else {
-            stop()
-        }
-    }
     
     // MARK: - VoiceProcessorDelegate
 
@@ -285,7 +318,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         guard let speechData, let nextIndex = delegate?.getNextPageIndex(from: speechData.index), let page = cachedPages[nextIndex] else {
             return false
         }
-        go(to: page, pageIndex: nextIndex)
+        startSpeaking(page: page, pageIndex: nextIndex)
         return true
     }
     
