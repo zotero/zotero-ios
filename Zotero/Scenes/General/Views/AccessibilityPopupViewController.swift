@@ -18,7 +18,6 @@ struct AccessibilityPopupVoiceChange {
     let voice: SpeechVoice
     let voiceLanguage: String
     let preferredLanguage: String?
-    let remainingCredits: Int?
 }
 
 protocol AccessibilityPopoupCoordinatorDelegate: AnyObject {
@@ -128,7 +127,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
             speechContainer.addSubview(controlsView)
 
             let voiceButton = VoiceButtonView()
-            voiceButton.title = speechManager.voice.flatMap({ voiceTitle(from: $0) }) ?? "Voice"
+            voiceButton.title = speechManager.voice.flatMap({ voiceTitle(from: $0) }) ?? L10n.Accessibility.Speech.unknownVoice
             voiceButton.isEnabled = false
             voiceButton.setContentHuggingPriority(.required, for: .vertical)
             voiceButton.addAction(UIAction(handler: { [weak self] _ in self?.showVoiceOptions() }), for: .touchUpInside)
@@ -336,6 +335,9 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
     }
     
     private func updateRemainingTime(_ remainingTime: TimeInterval?) {
+        if voiceButton.title == L10n.Accessibility.Speech.unknownVoice, let voice = speechManager.voice {
+            voiceButton.title = voiceTitle(from: voice)
+        }
         voiceButton.remainingTime = remainingTime
     }
 
@@ -547,6 +549,12 @@ private final class VoiceButtonView: UIControl {
     
     private func formatted(remainingTime: TimeInterval) -> String {
         let roundedUpSeconds = ceil(remainingTime / 60) * 60
-        return Self.timeFormatter.string(from: roundedUpSeconds) ?? ""
+        if roundedUpSeconds == 0 {
+            return "0m"
+        } else if roundedUpSeconds < 60 {
+            return "<1m"
+        } else {
+            return Self.timeFormatter.string(from: roundedUpSeconds) ?? ""
+        }
     }
 }
