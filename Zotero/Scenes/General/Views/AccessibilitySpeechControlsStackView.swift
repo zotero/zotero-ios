@@ -6,6 +6,7 @@
 //  Copyright © 2025 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import NaturalLanguage
 import UIKit
 
 import RxSwift
@@ -58,8 +59,8 @@ final class AccessibilitySpeechControlsStackView<Delegate: SpeechManagerDelegate
         distribution = .fillEqually
         playButton.addAction(UIAction(handler: { [weak speechManager] _ in playOrResume(speechManager: speechManager) }), for: .touchUpInside)
         pauseButton.addAction(UIAction(handler: { [weak speechManager] _ in speechManager?.pause() }), for: .touchUpInside)
-        forwardButton.addAction(UIAction(handler: { [weak speechManager] _ in speechManager?.forward() }), for: .touchUpInside)
-        backwardButton.addAction(UIAction(handler: { [weak speechManager] _ in speechManager?.backward() }), for: .touchUpInside)
+        forwardButton.addAction(UIAction(handler: { [weak speechManager] _ in speechManager?.forward(by: .sentence) }), for: .touchUpInside)
+        backwardButton.addAction(UIAction(handler: { [weak speechManager] _ in speechManager?.backward(by: .sentence) }), for: .touchUpInside)
         self.playButton = playButton
         self.pauseButton = pauseButton
         self.forwardButton = forwardButton
@@ -108,7 +109,16 @@ final class AccessibilitySpeechControlsStackView<Delegate: SpeechManagerDelegate
             forwardButton.isEnabled = true
             backwardButton.isEnabled = true
 
-        case .stopped, .paused, .outOfCredits:
+        case .paused:
+            if activityIndicator.isAnimating {
+                activityIndicator.stopAnimating()
+            }
+            pauseButton.isHidden = true
+            playButton.isHidden = false
+            forwardButton.isEnabled = true
+            backwardButton.isEnabled = true
+
+        case .stopped, .outOfCredits:
             if activityIndicator.isAnimating {
                 activityIndicator.stopAnimating()
             }
