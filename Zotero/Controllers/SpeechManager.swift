@@ -155,7 +155,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         processor.stop()
     }
 
-    func set(voice: SpeechVoice, voiceLanguage: String, preferredLanguage: String?) {
+    func set(voice: SpeechVoice, voiceLanguage: String, preferredLanguage: String?, remainingCredits: Int?) {
         switch voice {
         case .local(let voice):
             if let processor = processor as? LocalVoiceProcessor {
@@ -174,7 +174,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             
         case .remote(let voice):
             if let processor = processor as? RemoteVoiceProcessor {
-                processor.set(voice: voice, voiceLanguage: voiceLanguage, preferredLanguage: preferredLanguage)
+                processor.set(voice: voice, voiceLanguage: voiceLanguage, preferredLanguage: preferredLanguage, remainingCredits: remainingCredits)
             } else {
                 let _processor = RemoteVoiceProcessor(
                     language: preferredLanguage,
@@ -182,7 +182,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                     delegate: self,
                     remoteVoicesController: remoteVoicesController
                 )
-                _processor.set(voice: voice, voiceLanguage: voiceLanguage, preferredLanguage: preferredLanguage)
+                _processor.set(voice: voice, voiceLanguage: voiceLanguage, preferredLanguage: preferredLanguage, remainingCredits: remainingCredits)
                 // TODO: - start speaking?
                 processor = _processor
             }
@@ -566,7 +566,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         super.init()
     }
 
-    func set(voice: RemoteVoice, voiceLanguage: String, preferredLanguage: String?) {
+    func set(voice: RemoteVoice, voiceLanguage: String, preferredLanguage: String?, remainingCredits: Int?) {
         let voiceChanged = self.voiceData?.voice.id != voice.id
         self.preferredLanguage = preferredLanguage
         self.voiceData = VoiceData(voice: voice, language: voiceLanguage)
@@ -574,12 +574,12 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         Defaults.shared.isUsingRemoteVoice = true
         
         if voiceChanged {
-            // Clear cached data since it was loaded with old voice
-            segmentCache.removeAll()
-            loadingSegments.removeAll()
-            pendingPlaybackRange = nil
-            minRemainingCredits = nil
-            
+            // Clear cached data and cancel pending requests since it was loaded with old voice
+            clearPreloadCache()
+            // Set remaining credits from voice picker if provided
+            minRemainingCredits = remainingCredits
+            // Update remaining time display for new voice (e.g., unlimited vs limited)
+            updateRemainingTimeDisplay()
             // Mark that we need to reload current segment on resume
             if player != nil {
                 shouldReloadOnResume = true
@@ -592,8 +592,8 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         if self.text != text || startIndex != 0 {
             clearPreloadCache()
         }
-
         self.text = text
+
         if player?.isPlaying == true {
             player?.stop()
         }
@@ -618,12 +618,6 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
                 }
             )
             .disposed(by: disposeBag)
-        
-        func clearPreloadCache() {
-            segmentCache.removeAll()
-            loadingSegments.removeAll()
-            pendingPlaybackRange = nil
-        }
     }
     
     private func startSpeaking(text: String, startIndex: Int, voiceData: VoiceData) {
@@ -749,6 +743,13 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     func stop() {
         finishSpeaking()
         disposeBag = DisposeBag()
+    }
+    
+    private func clearPreloadCache() {
+        disposeBag = DisposeBag()
+        segmentCache.removeAll()
+        loadingSegments.removeAll()
+        pendingPlaybackRange = nil
     }
     
     private func loadVoice(forText text: String) -> Single<VoiceData> {
