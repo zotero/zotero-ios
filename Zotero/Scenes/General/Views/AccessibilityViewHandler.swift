@@ -116,7 +116,7 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
 
     private func processVoiceChange(_ change: AccessibilityPopupVoiceChange) {
         try? dbStorage.perform(request: SetSpeechLanguageDbRequest(key: key, libraryId: libraryId, language: change.preferredLanguage), on: .main)
-        speechManager.set(voice: change.voice, voiceLanguage: change.voiceLanguage, preferredLanguage: change.preferredLanguage, remainingCredits: change.remainingCredits)
+        speechManager.set(voice: change.voice, voiceLanguage: change.voiceLanguage, preferredLanguage: change.preferredLanguage)
     }
 
     private func reloadSpeechButton(isSelected: Bool) {
