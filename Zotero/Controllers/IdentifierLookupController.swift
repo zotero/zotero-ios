@@ -410,8 +410,11 @@ final class IdentifierLookupController {
 
                     let attachments = ((itemData["attachments"] as? [[String: Any]]) ?? []).compactMap { data -> (Attachment, URL)? in
                         // We can't process snapshots yet, so ignore all text/html attachments
-                        guard let mimeType = data["mimeType"] as? String, mimeType != "text/html", let ext = mimeType.extensionFromMimeType,
-                              let urlString = data["url"] as? String, let url = URL(string: urlString)
+                        guard let mimeType = data["mimeType"] as? String,
+                              mimeType != "text/html",
+                              let ext = mimeType.extensionFromMimeType,
+                              let urlString = data["url"] as? String,
+                              let url = URL(string: urlString)
                         else { return nil }
 
                         let key = KeyGenerator.newKey
@@ -423,13 +426,25 @@ final class IdentifierLookupController {
                             libraryId: libraryId
                         )
 
-                        return (attachment, url)
+                        return (attachment, normalizeURL(url))
                     }
 
                     return (item, attachments)
                 } catch let error {
                     DDLogError("IdentifierLookupController: can't parse data - \(error)")
                     return nil
+                }
+
+                func normalizeURL(_ url: URL) -> URL {
+                    guard url.scheme?.lowercased() == "http",
+                          let host = url.host?.lowercased(),
+                          host == "arxiv.org" || host.hasSuffix(".arxiv.org") || host == "xxx.lanl.gov",
+                          var components = URLComponents(url: url, resolvingAgainstBaseURL: true)
+                    else { return url }
+                    components.scheme = "https"
+                    guard let normalizedURL = components.url else { return url }
+                    DDLogWarn("IdentifierLookupController: normalized URL \(url) to \(normalizedURL)")
+                    return normalizedURL
                 }
             }
 
