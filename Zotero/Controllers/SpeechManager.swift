@@ -86,6 +86,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     let remainingTime: BehaviorRelay<TimeInterval?>
     private let disposeBag: DisposeBag
     private unowned let remoteVoicesController: RemoteVoicesController
+    private let nowPlayingManager: NowPlayingManager
     
     private var processor: VoiceProcessor!
     private var speechData: SpeechData?
@@ -111,6 +112,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         state = BehaviorRelay(value: .loading)
         remainingTime = BehaviorRelay(value: nil)
         disposeBag = DisposeBag()
+        nowPlayingManager = NowPlayingManager()
         super.init()
         if useRemoteVoices {
             processor = RemoteVoiceProcessor(language: voiceLanguage, speechRateModifier: 1, delegate: self, remoteVoicesController: remoteVoicesController)
@@ -119,15 +121,48 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         }
         processor.speechRateModifier = speechRateModifier
         
+        setupNowPlayingManager()
+        
         state
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] state in
-                if let self, state.isStopped {
+                guard let self else { return }
+                switch state {
+                case .speaking:
+                    nowPlayingManager.updatePlaybackState(isPlaying: true)
+                    
+                case .paused, .loading, .outOfCredits:
+                    nowPlayingManager.updatePlaybackState(isPlaying: false)
+                    
+                case .stopped:
                     speechData = nil
                     cachedPages = [:]
+                    nowPlayingManager.deactivate()
                 }
             })
             .disposed(by: disposeBag)
+    }
+    
+    private func setupNowPlayingManager() {
+        nowPlayingManager.playPauseHandler = { [weak self] in
+            guard let self else { return }
+            switch state.value {
+            case .paused, .outOfCredits:
+                resume()
+                
+            case .speaking:
+                pause()
+                
+            case .loading, .stopped:
+                break
+            }
+        }
+        nowPlayingManager.forwardHandler = { [weak self] in
+            self?.forward(by: .paragraph)
+        }
+        nowPlayingManager.backwardHandler = { [weak self] in
+            self?.backward(by: .paragraph)
+        }
     }
 
     // MARK: - Actions
@@ -137,6 +172,8 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             DDLogError("SpeechManager: can't get delegate")
             return
         }
+
+        nowPlayingManager.activate()
 
         let index = delegate.getCurrentPageIndex()
         if let page = cachedPages[index] {
@@ -161,7 +198,11 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     }
 
     func resume() {
-        processor.resume()
+        if processor.canResume {
+            processor.resume()
+        } else {
+            start()
+        }
     }
 
     func stop() {
@@ -180,9 +221,9 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                     delegate: self
                 )
                 _processor.set(voice: voice, voiceLanguage: voiceLanguage, preferredLanguage: preferredLanguage)
-                // TODO: - start speaking?
                 processor = _processor
                 remainingTime.accept(nil)
+                nowPlayingManager.reconfigureAudioSession()
             }
             
         case .remote(let voice):
@@ -196,8 +237,8 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                     remoteVoicesController: remoteVoicesController
                 )
                 _processor.set(voice: voice, voiceLanguage: voiceLanguage, preferredLanguage: preferredLanguage)
-                // TODO: - start speaking?
                 processor = _processor
+                nowPlayingManager.reconfigureAudioSession()
             }
         }
     }
@@ -349,6 +390,7 @@ private protocol VoiceProcessor {
     var speechVoice: SpeechVoice? { get }
     var preferredLanguage: String? { get }
     var speechRateModifier: Float { get set }
+    var canResume: Bool { get }
     
     func speak(text: String, startIndex: Int, shouldDetectVoice: Bool)
     func pause()
@@ -395,6 +437,9 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
     }
     var speechVoice: SpeechVoice? {
         return voice.flatMap({ .local($0) })
+    }
+    var canResume: Bool {
+        return synthesizer.isPaused
     }
 
     init(language: String?, speechRateModifier: Float, delegate: VoiceProcessorDelegate) {
@@ -590,6 +635,9 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     var speechVoice: SpeechVoice? {
         return voiceData.flatMap({ .remote($0.voice) })
     }
+    var canResume: Bool {
+        return player != nil
+    }
 
     init(language: String?, speechRateModifier: Float, delegate: VoiceProcessorDelegate, remoteVoicesController: RemoteVoicesController) {
         preferredLanguage = language
@@ -700,7 +748,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         loadingSegments.removeAll()
         pendingPlaybackRange = nil
     }
-    
+
     // MARK: - Voices
     
     private func loadVoice(forText text: String) -> Single<VoiceData> {
