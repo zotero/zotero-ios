@@ -115,11 +115,11 @@ final class IdentifierLookupController {
     private unowned let remoteFileDownloader: RemoteAttachmentDownloader
     private let disposeBag: DisposeBag
     
-    private var lookupData: OrderedDictionary<String, LookupData> = [:]
+    private var lookupDataByIdentifier: OrderedDictionary<String, LookupData> = [:]
     private var lookupSavedCount = 0
     private var lookupFailedCount = 0
     private var lookupTotalCount: Int {
-        lookupData.count
+        lookupDataByIdentifier.count
     }
     private var lookupRemainingCount: Int {
         lookupTotalCount - lookupSavedCount - lookupFailedCount
@@ -167,14 +167,14 @@ final class IdentifierLookupController {
         self.dateParser = dateParser
         self.remoteFileDownloader = remoteFileDownloader
         
-        self.dispatchSpecificKey = DispatchSpecificKey<String>()
-        self.accessQueueLabel = "org.zotero.IdentifierLookupController.accessQueue"
-        self.accessQueue = DispatchQueue(label: accessQueueLabel, qos: .userInteractive, attributes: .concurrent)
+        dispatchSpecificKey = DispatchSpecificKey<String>()
+        accessQueueLabel = "org.zotero.IdentifierLookupController.accessQueue"
+        accessQueue = DispatchQueue(label: accessQueueLabel, qos: .userInteractive, attributes: .concurrent)
         accessQueue.setSpecific(key: dispatchSpecificKey, value: accessQueueLabel)
-        self.backgroundQueue = DispatchQueue(label: "org.zotero.IdentifierLookupController.backgroundProcessing", qos: .userInitiated)
-        self.backgroundScheduler = SerialDispatchQueueScheduler(queue: backgroundQueue, internalSerialQueueName: "org.zotero.IdentifierLookupController.backgroundScheduler")
-        self.observable = PublishSubject()
-        self.disposeBag = DisposeBag()
+        backgroundQueue = DispatchQueue(label: "org.zotero.IdentifierLookupController.backgroundProcessing", qos: .userInitiated)
+        backgroundScheduler = SerialDispatchQueueScheduler(queue: backgroundQueue, internalSerialQueueName: "org.zotero.IdentifierLookupController.backgroundScheduler")
+        observable = PublishSubject()
+        disposeBag = DisposeBag()
         
         setupObservers()
     }
@@ -189,14 +189,13 @@ final class IdentifierLookupController {
             guard let self else { return }
             let lookupSettings = LookupSettings(libraryIdentifier: libraryId, collectionKeys: collectionKeys)
             if lookupWebViewHandlersByLookupSettings[lookupSettings] != nil {
-                lookupData = Array(self.lookupData.values)
+                lookupData = Array(lookupDataByIdentifier.values)
                 return
             }
             var lookupWebViewHandler: LookupWebViewHandler?
-            inMainThread(sync: true) {
-                if let webView = self.webViewProvider?.addWebView(configuration: nil) {
-                    lookupWebViewHandler = LookupWebViewHandler(webView: webView, translatorsController: self.translatorsController, types: .all)
-                }
+            inMainThread(sync: true) { [weak self] in
+                guard let self, let webView = webViewProvider?.addWebView(configuration: nil) else { return }
+                lookupWebViewHandler = LookupWebViewHandler(webView: webView, translatorsController: translatorsController, types: .all)
             }
             guard let lookupWebViewHandler else {
                 DDLogError("IdentifierLookupController: can't create LookupWebViewHandler instance")
@@ -204,7 +203,7 @@ final class IdentifierLookupController {
             }
             lookupWebViewHandlersByLookupSettings[lookupSettings] = lookupWebViewHandler
             setupObserver(for: lookupWebViewHandler, libraryId: libraryId, collectionKeys: collectionKeys)
-            lookupData = Array(self.lookupData.values)
+            lookupData = Array(lookupDataByIdentifier.values)
         }
     }
     
@@ -226,11 +225,10 @@ final class IdentifierLookupController {
                 lookupWebViewHandlersByLookupSettings.removeValue(forKey: key)?.removeFromSuperviewAsynchronously()
             }
             remoteFileDownloader.stop()
-            let lookupData = self.lookupData
             cleanupLookupIfNeeded(force: true) { [weak self] _ in
                 self?.observable.on(.next(Update(kind: .finishedAllLookups, lookupData: [])))
             }
-            let storedItemResponses: [(ItemResponse, LibraryIdentifier)] = lookupData.values.compactMap {
+            let storedItemResponses: [(ItemResponse, LibraryIdentifier)] = lookupDataByIdentifier.values.compactMap {
                 switch $0.state {
                 case .translated(let translatedLookupData):
                     return (translatedLookupData.response, translatedLookupData.libraryId)
@@ -255,298 +253,302 @@ final class IdentifierLookupController {
     private func setupObservers() {
         remoteFileDownloader.observable
             .observe(on: backgroundScheduler)
-            .subscribe { [weak self] update in
-                var cleanupLookupIfNeeded = false
+            .subscribe { [weak self] (update: RemoteAttachmentDownloader.Update) in
+                guard let self else { return }
+                var cleanupLookup = false
                 switch update.kind {
                 case .ready(let attachment):
-                    finish(download: update.download, attachment: attachment)
-                    cleanupLookupIfNeeded = true
+                    let localizedType = schemaController.localized(itemType: ItemTypes.attachment) ?? ItemTypes.attachment
+                    do {
+                        let request = CreateAttachmentDbRequest(
+                            attachment: attachment,
+                            parentKey: update.download.parentKey,
+                            localizedType: localizedType,
+                            includeAccessDate: attachment.hasUrl,
+                            collections: [],
+                            tags: []
+                        )
+                        _ = try dbStorage.perform(request: request, on: backgroundQueue)
+                    } catch let error {
+                        DDLogError("IdentifierLookupController: can't store attachment after download - \(error)")
+
+                        // Storing item failed, remove downloaded file
+                        guard let file = attachment.file else { return }
+                        try? fileStorage.remove(file)
+                    }
+
+                    cleanupLookup = true
 
                 case .cancelled, .failed:
-                    cleanupLookupIfNeeded = true
+                    cleanupLookup = true
                     
                 case .progress:
                     break
                 }
-                guard cleanupLookupIfNeeded else { return }
-                self?.cleanupLookupIfNeeded(force: false) { [weak self] _ in
+                guard cleanupLookup else { return }
+                cleanupLookupIfNeeded(force: false) { [weak self] _ in
                     guard let self else { return }
                     observable.on(.next(Update(kind: .finishedAllLookups, lookupData: [])))
                 }
             }
-            .disposed(by: self.disposeBag)
-        
-        func finish(download: RemoteAttachmentDownloader.Download, attachment: Attachment) {
-            let localizedType = schemaController.localized(itemType: ItemTypes.attachment) ?? ItemTypes.attachment
-            do {
-                let request = CreateAttachmentDbRequest(
-                    attachment: attachment,
-                    parentKey: download.parentKey,
-                    localizedType: localizedType,
-                    includeAccessDate: attachment.hasUrl,
-                    collections: [],
-                    tags: []
-                )
-                _ = try self.dbStorage.perform(request: request, on: self.backgroundQueue)
-            } catch let error {
-                DDLogError("IdentifierLookupController: can't store attachment after download - \(error)")
-                
-                // Storing item failed, remove downloaded file
-                guard let file = attachment.file else { return }
-                try? self.fileStorage.remove(file)
-            }
-        }
+            .disposed(by: disposeBag)
     }
     
     private func setupObserver(for lookupWebViewHandler: LookupWebViewHandler, libraryId: LibraryIdentifier, collectionKeys: Set<String>) {
         lookupWebViewHandler.observable
-            .subscribe { result in
-                process(result: result)
+            .subscribe { [weak self] result in
+                self?.process(result: result, libraryId: libraryId, collectionKeys: collectionKeys)
             }
-            .disposed(by: self.disposeBag)
-        
-        func process(result: Result<LookupWebViewHandler.LookupData, Error>) {
-            switch result {
-            case .success(let data):
-                process(data: data)
-                
-            case .failure(let error):
-                DDLogError("IdentifierLookupController: lookup failed - \(error)")
-                cleanupLookupIfNeeded(force: false) { [weak self] _ in
+            .disposed(by: disposeBag)
+    }
+
+    private func process(result: Result<LookupWebViewHandler.LookupData, Error>, libraryId: LibraryIdentifier, collectionKeys: Set<String>) {
+        switch result {
+        case .success(let data):
+            process(data: data)
+
+        case .failure(let error):
+            DDLogError("IdentifierLookupController: lookup failed - \(error)")
+            cleanupLookupIfNeeded(force: false) { [weak self] _ in
+                guard let self else { return }
+                observable.on(.next(Update(kind: .lookupError(error: error), lookupData: Array(lookupDataByIdentifier.values))))
+            }
+        }
+
+        func process(data: LookupWebViewHandler.LookupData) {
+            switch data {
+            case .identifiers(let identifiers):
+                let enqueuedIdentifiers = identifiers.map({ identifier(from: $0) })
+                enqueueLookup(for: enqueuedIdentifiers) { [weak self] validIdentifiers in
                     guard let self else { return }
-                    observable.on(.next(Update(kind: .lookupError(error: error), lookupData: Array(lookupData.values))))
+                    if validIdentifiers.isEmpty {
+                        cleanupLookupIfNeeded(force: false) { [weak self] _ in
+                            guard let self else { return }
+                            observable.on(.next(Update(kind: .identifiersDetected(identifiers: []), lookupData: Array(lookupDataByIdentifier.values))))
+                        }
+                    }
+                    observable.on(.next(Update(kind: .identifiersDetected(identifiers: validIdentifiers), lookupData: Array(lookupDataByIdentifier.values))))
+                }
+
+            case .item(let data):
+                guard let lookupId = data["identifier"] as? [String: String] else {
+                    DDLogWarn("IdentifierLookupController: lookup item data don't contain identifier")
+                    return
+                }
+                let identifier = identifier(from: lookupId)
+                var currentState: LookupData.State?
+                accessQueue.sync { [weak self] in
+                    guard let self, let currentLookupData = lookupDataByIdentifier[identifier] else { return }
+                    currentState = currentLookupData.state
+                }
+                guard currentState?.canTransition == true else {
+                    DDLogWarn("IdentifierLookupController: \(identifier) lookup item can't transition from state: \(String(describing: currentState))")
+                    return
+                }
+
+                if data.keys.count == 1 {
+                    changeLookup(for: identifier, to: .inProgress) { [weak self] didChange in
+                        guard let self, didChange else { return }
+                        observable.on(.next(Update(kind: .lookupInProgress(identifier: identifier), lookupData: Array(lookupDataByIdentifier.values))))
+                        // Since at least one identifier lookup is in progress, there is no need to cleanup if needed.
+                    }
+                    return
+                }
+
+                if let error = data["error"] {
+                    DDLogError("IdentifierLookupController: \(identifier) lookup failed - \(error)")
+                    changeLookup(for: identifier, to: .failed) { [weak self] didChange in
+                        guard let self, didChange else { return }
+                        observable.on(.next(Update(kind: .lookupFailed(identifier: identifier), lookupData: Array(lookupDataByIdentifier.values))))
+                        cleanupLookupIfNeeded(force: false) { [weak self] cleaned in
+                            guard let self, cleaned else { return }
+                            observable.on(.next(Update(kind: .finishedAllLookups, lookupData: [])))
+                        }
+                    }
+                    return
+                }
+
+                guard let itemData = data["data"] as? [[String: Any]],
+                      let item = itemData.first,
+                      let (response, attachments) = parse(item, libraryId: libraryId, collectionKeys: collectionKeys, schemaController: schemaController, dateParser: dateParser)
+                else {
+                    changeLookup(for: identifier, to: .failed) { [weak self] didChange in
+                        guard let self, didChange else { return }
+                        observable.on(.next(Update(kind: .parseFailed(identifier: identifier), lookupData: Array(lookupDataByIdentifier.values))))
+                        cleanupLookupIfNeeded(force: false) { [weak self] cleaned in
+                            guard let self, cleaned else { return }
+                            observable.on(.next(Update(kind: .finishedAllLookups, lookupData: [])))
+                        }
+                    }
+                    return
+                }
+
+                process(identifier: identifier, response: response, attachments: attachments, libraryId: libraryId, collectionKeys: collectionKeys)
+            }
+
+            func identifier(from data: [String: String]) -> String {
+                var result = ""
+                for (key, value) in data {
+                    result += key + ":" + value
+                }
+                return result
+            }
+
+            /// Tries to parse `ItemResponse` from data returned by translation server. It prioritizes items with attachments if there are multiple items.
+            /// - parameter itemData: Data to parse
+            /// - parameter schemaController: SchemaController which is used for validating item type and field types
+            /// - returns: `ItemResponse` of parsed item and optional attachment dictionary with title and url.
+            func parse(
+                _ itemData: [String: Any],
+                libraryId: LibraryIdentifier,
+                collectionKeys: Set<String>,
+                schemaController: SchemaController,
+                dateParser: DateParser
+            ) -> (ItemResponse, [(Attachment, URL)])? {
+                do {
+                    let item = try ItemResponse(translatorResponse: itemData, schemaController: schemaController).copy(libraryId: libraryId, collectionKeys: collectionKeys, tags: [])
+
+                    let attachments = ((itemData["attachments"] as? [[String: Any]]) ?? []).compactMap { data -> (Attachment, URL)? in
+                        // We can't process snapshots yet, so ignore all text/html attachments
+                        guard let mimeType = data["mimeType"] as? String, mimeType != "text/html", let ext = mimeType.extensionFromMimeType,
+                              let urlString = data["url"] as? String, let url = URL(string: urlString)
+                        else { return nil }
+
+                        let key = KeyGenerator.newKey
+                        let filename = FilenameFormatter.filename(from: item, defaultTitle: "Full Text", ext: ext, dateParser: dateParser)
+                        let attachment = Attachment(
+                            type: .file(filename: filename, contentType: mimeType, location: .local, linkType: .importedFile, compressed: false),
+                            title: filename,
+                            key: key,
+                            libraryId: libraryId
+                        )
+
+                        return (attachment, url)
+                    }
+
+                    return (item, attachments)
+                } catch let error {
+                    DDLogError("IdentifierLookupController: can't parse data - \(error)")
+                    return nil
                 }
             }
-            
-            func process(data: LookupWebViewHandler.LookupData) {
-                switch data {
-                case .identifiers(let identifiers):
-                    let enqueuedIdentifiers = identifiers.map({ identifier(from: $0) })
-                    enqueueLookup(for: enqueuedIdentifiers) { [weak self] validIdentifiers in
-                        guard let self else { return }
-                        if validIdentifiers.isEmpty {
-                            cleanupLookupIfNeeded(force: false) { [weak self] _ in
-                                guard let self else { return }
-                                observable.on(.next(Update(kind: .identifiersDetected(identifiers: []), lookupData: Array(lookupData.values))))
-                            }
-                        }
-                        observable.on(.next(Update(kind: .identifiersDetected(identifiers: validIdentifiers), lookupData: Array(lookupData.values))))
-                    }
-                    
-                case .item(let data):
-                    guard let lookupId = data["identifier"] as? [String: String] else {
-                        DDLogWarn("IdentifierLookupController: lookup item data don't contain identifier")
-                        return
-                    }
-                    let identifier = identifier(from: lookupId)
-                    var currentState: LookupData.State?
-                    accessQueue.sync { [weak self] in
-                        guard let self, let currentLookupData = lookupData[identifier] else { return }
-                        currentState = currentLookupData.state
-                    }
-                    guard currentState?.canTransition == true else {
-                        DDLogWarn("IdentifierLookupController: \(identifier) lookup item can't transition from state: \(String(describing: currentState))")
-                        return
-                    }
 
-                    if data.keys.count == 1 {
-                        changeLookup(for: identifier, to: .inProgress) { [weak self] didChange in
-                            guard let self, didChange else { return }
-                            observable.on(.next(Update(kind: .lookupInProgress(identifier: identifier), lookupData: Array(lookupData.values))))
-                            // Since at least one identifier lookup is in progress, there is no need to cleanup if needed.
-                        }
-                        return
-                    }
-
-                    if let error = data["error"] {
-                        DDLogError("IdentifierLookupController: \(identifier) lookup failed - \(error)")
-                        changeLookup(for: identifier, to: .failed) { [weak self] didChange in
-                            guard let self, didChange else { return }
-                            observable.on(.next(Update(kind: .lookupFailed(identifier: identifier), lookupData: Array(lookupData.values))))
-                            cleanupLookupIfNeeded(force: false) { [weak self] cleaned in
-                                guard let self, cleaned else { return }
-                                observable.on(.next(Update(kind: .finishedAllLookups, lookupData: [])))
-                            }
-                        }
-                        return
-                    }
-
-                    guard let itemData = data["data"] as? [[String: Any]],
-                          let item = itemData.first,
-                          let (response, attachments) = parse(item, libraryId: libraryId, collectionKeys: collectionKeys, schemaController: schemaController, dateParser: dateParser)
-                    else {
-                        changeLookup(for: identifier, to: .failed) { [weak self] didChange in
-                            guard let self, didChange else { return }
-                            observable.on(.next(Update(kind: .parseFailed(identifier: identifier), lookupData: Array(lookupData.values))))
-                            cleanupLookupIfNeeded(force: false) { [weak self] cleaned in
-                                guard let self, cleaned else { return }
-                                observable.on(.next(Update(kind: .finishedAllLookups, lookupData: [])))
-                            }
-                        }
-                        return
-                    }
-
-                    process(identifier: identifier, response: response, attachments: attachments, libraryId: libraryId, collectionKeys: collectionKeys)
-                }
-                
-                func identifier(from data: [String: String]) -> String {
-                    var result = ""
-                    for (key, value) in data {
-                        result += key + ":" + value
-                    }
-                    return result
-                }
-
-                /// Tries to parse `ItemResponse` from data returned by translation server. It prioritizes items with attachments if there are multiple items.
-                /// - parameter itemData: Data to parse
-                /// - parameter schemaController: SchemaController which is used for validating item type and field types
-                /// - returns: `ItemResponse` of parsed item and optional attachment dictionary with title and url.
-                func parse(
-                    _ itemData: [String: Any],
-                    libraryId: LibraryIdentifier,
-                    collectionKeys: Set<String>,
-                    schemaController: SchemaController,
-                    dateParser: DateParser
-                ) -> (ItemResponse, [(Attachment, URL)])? {
+            func process(identifier: String, response: ItemResponse, attachments: [(Attachment, URL)], libraryId: LibraryIdentifier, collectionKeys: Set<String>) {
+                backgroundQueue.async { [weak self] in
+                    guard let self else { return }
                     do {
-                        let item = try ItemResponse(translatorResponse: itemData, schemaController: schemaController).copy(libraryId: libraryId, collectionKeys: collectionKeys, tags: [])
-
-                        let attachments = ((itemData["attachments"] as? [[String: Any]]) ?? []).compactMap { data -> (Attachment, URL)? in
-                            // We can't process snapshots yet, so ignore all text/html attachments
-                            guard let mimeType = data["mimeType"] as? String, mimeType != "text/html", let ext = mimeType.extensionFromMimeType,
-                                  let urlString = data["url"] as? String, let url = URL(string: urlString)
-                            else { return nil }
-
-                            let key = KeyGenerator.newKey
-                            let filename = FilenameFormatter.filename(from: item, defaultTitle: "Full Text", ext: ext, dateParser: dateParser)
-                            let attachment = Attachment(
-                                type: .file(filename: filename, contentType: mimeType, location: .local, linkType: .importedFile, compressed: false),
-                                title: filename,
-                                key: key,
-                                libraryId: libraryId
-                            )
-
-                            return (attachment, url)
-                        }
-
-                        return (item, attachments)
+                        try storeDataAndDownloadAttachmentIfNecessary(identifier: identifier, response: response, attachments: attachments)
                     } catch let error {
-                        DDLogError("IdentifierLookupController: can't parse data - \(error)")
-                        return nil
-                    }
-                }
-                
-                func process(identifier: String, response: ItemResponse, attachments: [(Attachment, URL)], libraryId: LibraryIdentifier, collectionKeys: Set<String>) {
-                    backgroundQueue.async { [weak self] in
-                        guard let self else { return }
-                        do {
-                            try storeDataAndDownloadAttachmentIfNecessary(identifier: identifier, response: response, attachments: attachments)
-                        } catch let error {
-                            DDLogError("IdentifierLookupController: can't create item(s) - \(error)")
-                            changeLookup(for: identifier, to: .failed) { [weak self] didChange in
-                                guard let self, didChange else { return }
-                                observable.on(.next(Update(kind: .itemCreationFailed(identifier: identifier, response: response, attachments: attachments), lookupData: Array(lookupData.values))))
-                                cleanupLookupIfNeeded(force: false) { [weak self] cleaned in
-                                    guard let self, cleaned else { return }
-                                    observable.on(.next(Update(kind: .finishedAllLookups, lookupData: [])))
-                                }
-                            }
-                        }
-                    }
-                    
-                    func storeDataAndDownloadAttachmentIfNecessary(identifier: String, response: ItemResponse, attachments: [(Attachment, URL)]) throws {
-                        var library: Library?
-                        try dbStorage.perform(on: backgroundQueue) { coordinator in
-                            _ = try coordinator.perform(request: CreateTranslatedItemsDbRequest(responses: [response], schemaController: schemaController, dateParser: dateParser))
-                            library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
-                        }
-                        changeLookup(
-                            for: identifier,
-                            to: .translated(.init(response: response, attachments: attachments, libraryId: libraryId, collectionKeys: collectionKeys))
-                        ) { [weak self] didChange in
+                        DDLogError("IdentifierLookupController: can't create item(s) - \(error)")
+                        changeLookup(for: identifier, to: .failed) { [weak self] didChange in
                             guard let self, didChange else { return }
-                            observable.on(.next(Update(kind: .itemStored(identifier: identifier, response: response, attachments: attachments), lookupData: Array(lookupData.values))))
-                            
-                            if Defaults.shared.shareExtensionIncludeAttachment, library?.filesEditable == true, !attachments.isEmpty {
-                                let downloadData = attachments.map({ ($0, $1, response.key) })
-                                remoteFileDownloader.download(data: downloadData)
-                                observable.on(.next(Update(kind: .pendingAttachments(identifier: identifier, response: response, attachments: attachments), lookupData: Array(lookupData.values))))
-                            }
-                            
+                            observable.on(.next(Update(
+                                kind: .itemCreationFailed(identifier: identifier, response: response, attachments: attachments),
+                                lookupData: Array(lookupDataByIdentifier.values))
+                            ))
                             cleanupLookupIfNeeded(force: false) { [weak self] cleaned in
                                 guard let self, cleaned else { return }
                                 observable.on(.next(Update(kind: .finishedAllLookups, lookupData: [])))
                             }
+                        }
+                    }
+                }
+
+                func storeDataAndDownloadAttachmentIfNecessary(identifier: String, response: ItemResponse, attachments: [(Attachment, URL)]) throws {
+                    var library: Library?
+                    try dbStorage.perform(on: backgroundQueue) { coordinator in
+                        _ = try coordinator.perform(request: CreateTranslatedItemsDbRequest(responses: [response], schemaController: schemaController, dateParser: dateParser))
+                        library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
+                    }
+                    changeLookup(
+                        for: identifier,
+                        to: .translated(.init(response: response, attachments: attachments, libraryId: libraryId, collectionKeys: collectionKeys))
+                    ) { [weak self] didChange in
+                        guard let self, didChange else { return }
+                        observable.on(.next(Update(kind: .itemStored(identifier: identifier, response: response, attachments: attachments), lookupData: Array(lookupDataByIdentifier.values))))
+
+                        if Defaults.shared.shareExtensionIncludeAttachment, library?.filesEditable == true, !attachments.isEmpty {
+                            let downloadData = attachments.map({ ($0, $1, response.key) })
+                            remoteFileDownloader.download(data: downloadData)
+                            observable.on(.next(Update(
+                                kind: .pendingAttachments(identifier: identifier, response: response, attachments: attachments),
+                                lookupData: Array(lookupDataByIdentifier.values))
+                            ))
+                        }
+
+                        cleanupLookupIfNeeded(force: false) { [weak self] cleaned in
+                            guard let self, cleaned else { return }
+                            observable.on(.next(Update(kind: .finishedAllLookups, lookupData: [])))
                         }
                     }
                 }
             }
         }
     }
-    
+
     // MARK: Lookup Data
     private func cleanupLookupIfNeeded(force: Bool, completion: @escaping (Bool) -> Void) {
         if DispatchQueue.getSpecific(key: dispatchSpecificKey) == accessQueueLabel {
             cleanupLookup(force: force, completion: completion)
         } else {
-            accessQueue.async(flags: .barrier) {
-                cleanupLookup(force: force, completion: completion)
-            }
-        }
-
-        func cleanupLookup(force: Bool, completion: @escaping (Bool) -> Void) {
-            if force {
-                // If forced, cleanup and return
-                cleanup(completion: completion)
-                return
-            }
-            guard lookupRemainingCount == 0, remoteFileDownloader.batchData.2 == 0 else {
-                // If there are remaining lookups, or downloading attachments, then just return
-                completion(false)
-                return
-            }
-            guard let presenter else {
-                // If no presenter is assigned, then cleanup and return
-                cleanup(completion: completion)
-                return
-            }
-            // Presenter is assigned
-            DispatchQueue.main.async { [weak self] in
-                // Checking if it is presenting in main queue.
-                // Doing so asynchronously, to not cause a deadlock if cleanupLookupIfNeeded is already called from the main thread.
-                guard !presenter.isPresenting(), let self else {
-                    completion(false)
-                    return
-                }
-                // It is not presenting, then cleanup
-                self.accessQueue.async(flags: .barrier) {
-                    cleanup(completion: completion)
-                }
-            }
-
-            @Sendable func cleanup(completion: @escaping (Bool) -> Void) {
-                lookupData = [:]
-                lookupSavedCount = 0
-                lookupFailedCount = 0
-                DDLogInfo("IdentifierLookupController: cleaned up lookup data")
-                let keys = lookupWebViewHandlersByLookupSettings.keys
-                for key in keys {
-                    lookupWebViewHandlersByLookupSettings.removeValue(forKey: key)?.removeFromSuperviewAsynchronously()
-                }
-                completion(true)
+            accessQueue.async(flags: .barrier) { [weak self] in
+                self?.cleanupLookup(force: force, completion: completion)
             }
         }
     }
-    
+
+    private func cleanupLookup(force: Bool, completion: @escaping (Bool) -> Void) {
+        if force {
+            // If forced, cleanup and return
+            cleanup(completion: completion)
+            return
+        }
+        guard lookupRemainingCount == 0, remoteFileDownloader.batchData.2 == 0 else {
+            // If there are remaining lookups, or downloading attachments, then just return
+            completion(false)
+            return
+        }
+        guard let presenter else {
+            // If no presenter is assigned, then cleanup and return
+            cleanup(completion: completion)
+            return
+        }
+        // Presenter is assigned
+        DispatchQueue.main.async { [weak self] in
+            // Checking if it is presenting in main queue.
+            // Doing so asynchronously, to not cause a deadlock if cleanupLookupIfNeeded is already called from the main thread.
+            guard !presenter.isPresenting(), let self else {
+                completion(false)
+                return
+            }
+            // It is not presenting, then cleanup
+            accessQueue.async(flags: .barrier) { [weak self] in
+                self?.cleanup(completion: completion)
+            }
+        }
+    }
+
+    private func cleanup(completion: @escaping (Bool) -> Void) {
+        lookupDataByIdentifier = [:]
+        lookupSavedCount = 0
+        lookupFailedCount = 0
+        DDLogInfo("IdentifierLookupController: cleaned up lookup data")
+        let keys = lookupWebViewHandlersByLookupSettings.keys
+        for key in keys {
+            lookupWebViewHandlersByLookupSettings.removeValue(forKey: key)?.removeFromSuperviewAsynchronously()
+        }
+        completion(true)
+    }
+
     private func enqueueLookup(for identifiers: [String], completion: @escaping ([String]) -> Void) {
         accessQueue.async(flags: .barrier) { [weak self] in
             guard let self else { return }
             var newUniqueIdentifiers: [String] = []
             var index = 0
             for identifier in identifiers {
-                guard lookupData[identifier] == nil else { continue }
+                guard lookupDataByIdentifier[identifier] == nil else { continue }
                 newUniqueIdentifiers.append(identifier)
-                lookupData.updateValue(.init(identifier: identifier, state: .enqueued), forKey: identifier, insertingAt: index)
+                lookupDataByIdentifier.updateValue(.init(identifier: identifier, state: .enqueued), forKey: identifier, insertingAt: index)
                 index += 1
             }
             completion(newUniqueIdentifiers)
@@ -560,14 +562,14 @@ final class IdentifierLookupController {
             defer {
                 completion(didChange)
             }
-            guard let currentLookupData = lookupData[identifier] else { return }
+            guard let currentLookupData = lookupDataByIdentifier[identifier] else { return }
             let currentState = currentLookupData.state
             let isTransitionValid = LookupData.State.isTransitionValid(from: currentState, to: state)
             guard isTransitionValid else {
                 DDLogWarn("IdentifierLookupController: \(identifier) lookup item won't transition from state: \(String(describing: currentState)) to state: \(String(describing: state))")
                 return
             }
-            lookupData[identifier] = .init(identifier: identifier, state: state)
+            lookupDataByIdentifier[identifier] = .init(identifier: identifier, state: state)
             didChange = true
             switch state {
             case .failed:
