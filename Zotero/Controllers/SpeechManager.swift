@@ -286,6 +286,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         guard let data = TextTokenizer.findSentence(startingAt: index, in: page) else { return }
         let pageDidChange = speechData?.index != pageIndex
         speechData = SpeechData(index: pageIndex, range: data.range)
+        processor.invalidateCurrentPlayback()
         delegate?.speechTextChanged(text: data.text, pageIndex: pageIndex)
         if pageDidChange {
             delegate?.moved(to: pageIndex)
@@ -353,6 +354,9 @@ private protocol VoiceProcessor {
     func pause()
     func resume()
     func stop()
+    /// Called when the speech position changes while paused (e.g., via forward/backward navigation).
+    /// The processor should invalidate current playback state so that resume() starts from the new position.
+    func invalidateCurrentPlayback()
 }
 
 private protocol VoiceProcessorDelegate: AnyObject {
@@ -447,6 +451,10 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
             synthesizer.stopSpeaking(at: .immediate)
             finishSpeaking()
         }
+    }
+
+    func invalidateCurrentPlayback() {
+        shouldReloadUtteranceOnResume = true
     }
 
     func set(voice: AVSpeechSynthesisVoice, voiceLanguage: String, preferredLanguage: String?) {
@@ -680,6 +688,10 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     func stop() {
         finishSpeaking()
         disposeBag = DisposeBag()
+    }
+
+    func invalidateCurrentPlayback() {
+        shouldReloadOnResume = true
     }
     
     private func stopPreloadingAndClearCache() {
