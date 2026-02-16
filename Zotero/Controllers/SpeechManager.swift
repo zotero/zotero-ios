@@ -91,6 +91,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     private var processor: VoiceProcessor!
     private var speechData: SpeechData?
     private var cachedPages: [Delegate.Index: String]
+    private var debouncedSpeakWorkItem: DispatchWorkItem?
     private weak var delegate: Delegate?
     var voice: SpeechVoice? { processor.speechVoice }
     var language: String? { processor.preferredLanguage }
@@ -309,16 +310,27 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     }
     
     private func startSpeaking(at index: Int, on page: String) {
-        processor.speak(text: page, startIndex: index, shouldDetectVoice: false)
+        debouncedSpeakWorkItem?.cancel()
+        let workItem = DispatchWorkItem { [weak self] in
+            self?.processor.speak(text: page, startIndex: index, shouldDetectVoice: false)
+        }
+        debouncedSpeakWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: workItem)
     }
 
     private func startSpeaking(page: String, pageIndex: Delegate.Index, speechStartIndex: Int? = nil, reportPageChange: Bool = true) {
         speechData = SpeechData(index: pageIndex, range: NSRange())
-        processor.speak(text: page, startIndex: speechStartIndex ?? 0, shouldDetectVoice: true)
         if reportPageChange {
             delegate?.moved(to: pageIndex)
         }
         cacheAdjacentPages(for: pageIndex)
+        
+        debouncedSpeakWorkItem?.cancel()
+        let workItem = DispatchWorkItem { [weak self] in
+            self?.processor.speak(text: page, startIndex: speechStartIndex ?? 0, shouldDetectVoice: true)
+        }
+        debouncedSpeakWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: workItem)
     }
     
     /// Moves the current speech position without starting playback.
