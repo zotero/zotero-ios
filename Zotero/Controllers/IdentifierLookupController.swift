@@ -438,7 +438,8 @@ final class IdentifierLookupController {
                 func normalizeURL(_ url: URL) -> URL {
                     guard url.scheme?.lowercased() == "http",
                           let host = url.host?.lowercased(),
-                          host == "arxiv.org" || host.hasSuffix(".arxiv.org") || host == "xxx.lanl.gov",
+                          host == "arxiv.org" || host.hasSuffix(".arxiv.org")
+                              || host == "xxx.lanl.gov" || host.hasSuffix(".xxx.lanl.gov"),
                           var components = URLComponents(url: url, resolvingAgainstBaseURL: true)
                     else { return url }
                     components.scheme = "https"
