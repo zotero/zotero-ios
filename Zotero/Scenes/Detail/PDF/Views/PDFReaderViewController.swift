@@ -1124,7 +1124,7 @@ extension PDFReaderViewController: SpeechManagerDelegate {
         documentController?.focus(page: pageIndex)
     }
 
-    func speechTextChanged(text: String, pageIndex: UInt) {
+    func highlightTextChanged(text: String, pageIndex: UInt) {
         documentController?.updateSpeechHighlight(text: text, page: PageIndex(pageIndex))
     }
 }
