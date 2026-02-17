@@ -1545,7 +1545,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             // TODO: Remove if issues are fixed in PSPDFKit
             /// Transforms highlight/underline annotation if needed.
             /// (a) Merges rects that are in the same text line.
-            /// (b) Trims different line rects that overlap. (only for highlight annotations)
+            /// (b) Trims different line rects that overlap. This is needed only for highlight annotations.
+            ///     PSPDFKit 26.5.0 fixed the highlight annotation rendering so that overlapping rects don't blend,
+            ///     but rects values are exactly the same as before, so we still need to transform them for our needs.
             /// If not a higlight/underline annotation, or transformations are not needed, it returns nil.
             /// Issue appeared in PSPDFKit 13.5.0
             /// - parameter annotation: Annotation to be transformed if needed
