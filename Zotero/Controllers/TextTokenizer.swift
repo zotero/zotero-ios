@@ -126,6 +126,27 @@ enum TextTokenizer {
         return (trimmedRemainingText, NSRange(location: location, length: length))
     }
 
+    /// Finds the full paragraph containing the given index.
+    /// Unlike `findParagraph(startingAt:)`, this returns the entire paragraph from its beginning to its end,
+    /// even if the index is in the middle of the paragraph.
+    /// Returns the extracted text and its range in the original string.
+    static func findParagraphContaining(index: Int, in text: String) -> (text: String, range: NSRange)? {
+        guard index < text.count else { return nil }
+
+        let tokenizer = NLTokenizer(unit: .paragraph)
+        tokenizer.string = text
+
+        let indexPosition = text.index(text.startIndex, offsetBy: index)
+        let tokenRange = tokenizer.tokenRange(at: indexPosition)
+        let extractedText = String(text[tokenRange]).trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !extractedText.isEmpty else { return nil }
+
+        let location = text.distance(from: text.startIndex, to: tokenRange.lowerBound)
+        let length = text.distance(from: tokenRange.lowerBound, to: tokenRange.upperBound)
+        return (extractedText, NSRange(location: location, length: length))
+    }
+
     /// Finds the start index of the next sentence or paragraph after the current one.
     static func findIndex(ofNext granularity: NLTokenUnit, startingAt startIndex: Int, in text: String) -> Int? {
         guard startIndex < text.count else { return nil }

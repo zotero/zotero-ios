@@ -22,11 +22,12 @@ protocol SpeechManagerDelegate: AnyObject {
     func getPreviousPageIndex(from currentPageIndex: Index) -> Index?
     func text(for indices: [Index], completion: @escaping ([Index: String]?) -> Void)
     func moved(to pageIndex: Index)
-    /// Called when the speech range changes during text-to-speech playback
+    /// Called when the highlighted paragraph changes during text-to-speech playback.
+    /// The highlight covers the entire paragraph containing the currently spoken sentence.
     /// - Parameters:
-    ///   - text: The text currently being spoken
+    ///   - text: The paragraph text to highlight
     ///   - pageIndex: The page index where the text is located
-    func speechTextChanged(text: String, pageIndex: Index)
+    func highlightTextChanged(text: String, pageIndex: Index)
 }
 
 enum SpeechState {
@@ -75,10 +76,13 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
 
     struct SpeechData {
         let index: Delegate.Index
+        /// The range of the currently spoken sentence/segment
         let range: NSRange
+        /// The range of the paragraph containing the current sentence (used for highlighting)
+        let paragraphRange: NSRange
 
-        func copy(range: NSRange) -> SpeechData {
-            return SpeechData(index: index, range: range)
+        func copy(range: NSRange, paragraphRange: NSRange) -> SpeechData {
+            return SpeechData(index: index, range: range, paragraphRange: paragraphRange)
         }
     }
 
@@ -319,7 +323,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     }
 
     private func startSpeaking(page: String, pageIndex: Delegate.Index, speechStartIndex: Int? = nil, reportPageChange: Bool = true) {
-        speechData = SpeechData(index: pageIndex, range: NSRange())
+        speechData = SpeechData(index: pageIndex, range: NSRange(), paragraphRange: NSRange())
         if reportPageChange {
             delegate?.moved(to: pageIndex)
         }
@@ -336,11 +340,40 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     /// Moves the current speech position without starting playback.
     /// Used when navigating while paused to update the highlight position.
     private func moveTo(index: Int, on page: String, pageIndex: Delegate.Index) {
-        guard let data = TextTokenizer.findSentence(startingAt: index, in: page) else { return }
+        guard let sentenceData = TextTokenizer.findSentence(startingAt: index, in: page) else { return }
+        
         let pageDidChange = speechData?.index != pageIndex
-        speechData = SpeechData(index: pageIndex, range: data.range)
+        let previousParagraphRange = speechData?.paragraphRange
+        
+        // Check if the new position is still within the current paragraph
+        let isInCurrentParagraph: Bool
+        if let previousParagraphRange, previousParagraphRange.length > 0 {
+            isInCurrentParagraph = !pageDidChange && NSLocationInRange(index, previousParagraphRange)
+        } else {
+            isInCurrentParagraph = false
+        }
+        
+        let newParagraphRange: NSRange
+        let highlightText: String?
+        if isInCurrentParagraph, let previousParagraphRange {
+            // Still in the same paragraph, keep the existing range
+            newParagraphRange = previousParagraphRange
+            highlightText = nil
+        } else {
+            // Find the full paragraph containing this position
+            let paragraphData = TextTokenizer.findParagraphContaining(index: index, in: page)
+            newParagraphRange = paragraphData?.range ?? sentenceData.range
+            highlightText = paragraphData?.text ?? sentenceData.text
+        }
+        
+        speechData = SpeechData(index: pageIndex, range: sentenceData.range, paragraphRange: newParagraphRange)
         processor.invalidateCurrentPlayback()
-        delegate?.speechTextChanged(text: data.text, pageIndex: pageIndex)
+        
+        // Only notify delegate if the paragraph changed
+        if let highlightText {
+            delegate?.highlightTextChanged(text: highlightText, pageIndex: pageIndex)
+        }
+        
         if pageDidChange {
             delegate?.moved(to: pageIndex)
             cacheAdjacentPages(for: pageIndex)
@@ -378,13 +411,25 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     
     func speechRangeWillChange(to range: NSRange) {
         guard let speechData else { return }
-        self.speechData = speechData.copy(range: range)
+        guard let pageText = cachedPages[speechData.index] else { return }
         
-        // Extract the actual text being spoken and pass it to the delegate
-        if let pageText = cachedPages[speechData.index],
-           let textRange = Range(range, in: pageText) {
-            let spokenText = String(pageText[textRange])
-            delegate?.speechTextChanged(text: spokenText, pageIndex: speechData.index)
+        // Check if the new range is still within the current paragraph
+        if NSLocationInRange(range.location, speechData.paragraphRange) {
+            // Still in the same paragraph, just update the speech range
+            self.speechData = speechData.copy(range: range, paragraphRange: speechData.paragraphRange)
+            return
+        }
+        
+        // New range is outside current paragraph, find the new paragraph
+        let paragraphResult = TextTokenizer.findParagraphContaining(index: range.location, in: pageText)
+        let newParagraphRange = paragraphResult?.range ?? range
+        
+        // Update speech data with the new range and paragraph range
+        self.speechData = speechData.copy(range: range, paragraphRange: newParagraphRange)
+        
+        // Notify delegate of the paragraph change
+        if let paragraphText = paragraphResult?.text {
+            delegate?.highlightTextChanged(text: paragraphText, pageIndex: speechData.index)
         }
     }
 }

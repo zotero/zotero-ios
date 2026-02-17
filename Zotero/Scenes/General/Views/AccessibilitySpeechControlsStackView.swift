@@ -59,8 +59,8 @@ final class AccessibilitySpeechControlsStackView<Delegate: SpeechManagerDelegate
         distribution = .fillEqually
         playButton.addAction(UIAction(handler: { [weak speechManager] _ in playOrResume(speechManager: speechManager) }), for: .touchUpInside)
         pauseButton.addAction(UIAction(handler: { [weak speechManager] _ in speechManager?.pause() }), for: .touchUpInside)
-        forwardButton.addAction(UIAction(handler: { [weak speechManager] _ in speechManager?.forward(by: .sentence) }), for: .touchUpInside)
-        backwardButton.addAction(UIAction(handler: { [weak speechManager] _ in speechManager?.backward(by: .sentence) }), for: .touchUpInside)
+        forwardButton.addAction(UIAction(handler: { [weak speechManager] _ in speechManager?.forward(by: .paragraph) }), for: .touchUpInside)
+        backwardButton.addAction(UIAction(handler: { [weak speechManager] _ in speechManager?.backward(by: .paragraph) }), for: .touchUpInside)
         self.playButton = playButton
         self.pauseButton = pauseButton
         self.forwardButton = forwardButton
