@@ -16,7 +16,6 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
     typealias State = TagFilterState
 
     let backgroundQueue: DispatchQueue
-    // No need for unowned, as ViewModel -> TagFilterActionHandler -> DbStorage is one-way, hence no retain cycle.
     let dbStorage: DbStorage
 
     init(dbStorage: DbStorage) {
