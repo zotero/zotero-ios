@@ -16,7 +16,7 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
     typealias State = TagFilterState
 
     let backgroundQueue: DispatchQueue
-    unowned let dbStorage: DbStorage
+    let dbStorage: DbStorage
 
     init(dbStorage: DbStorage) {
         self.dbStorage = dbStorage
