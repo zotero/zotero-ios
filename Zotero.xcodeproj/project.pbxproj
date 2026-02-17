@@ -663,7 +663,6 @@
 		B357DEE7241661E300E06153 /* DebugLogging.swift in Sources */ = {isa = PBXBuildFile; fileRef = B357DEE124165DEE00E06153 /* DebugLogging.swift */; };
 		B357DEE8241661E500E06153 /* DebugLogFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B357DEE524165E0B00E06153 /* DebugLogFormatter.swift */; };
 		B3588C6925FF7A800049D484 /* SetCollectionCollapsedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3588C6825FF7A800049D484 /* SetCollectionCollapsedDbRequest.swift */; };
-		B358D3B4279590C200A67054 /* CheckAnyItemIsInTrashDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B358D3B3279590C200A67054 /* CheckAnyItemIsInTrashDbRequest.swift */; };
 		B3593ADC24B60A7600CA0B57 /* UISearchBar+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593ADB24B60A7600CA0B57 /* UISearchBar+Extensions.swift */; };
 		B3593F162668E29C00FA4BB2 /* Style.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593F152668E29C00FA4BB2 /* Style.swift */; };
 		B3593F182668E6A700FA4BB2 /* StyleParserDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593F172668E6A700FA4BB2 /* StyleParserDelegate.swift */; };
@@ -1785,7 +1784,6 @@
 		B357DEE224165DEE00E06153 /* CrashReporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CrashReporter.swift; sourceTree = "<group>"; };
 		B357DEE524165E0B00E06153 /* DebugLogFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLogFormatter.swift; sourceTree = "<group>"; };
 		B3588C6825FF7A800049D484 /* SetCollectionCollapsedDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetCollectionCollapsedDbRequest.swift; sourceTree = "<group>"; };
-		B358D3B3279590C200A67054 /* CheckAnyItemIsInTrashDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckAnyItemIsInTrashDbRequest.swift; sourceTree = "<group>"; };
 		B3593ADB24B60A7600CA0B57 /* UISearchBar+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UISearchBar+Extensions.swift"; sourceTree = "<group>"; };
 		B3593EC5241A61C700760E20 /* ItemDetailActionHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemDetailActionHandler.swift; sourceTree = "<group>"; };
 		B3593EC9241A61C700760E20 /* ItemDetailState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemDetailState.swift; sourceTree = "<group>"; };
@@ -2674,7 +2672,6 @@
 				B305CEBA29E6E67600B9E2B4 /* AssignItemsToTagDbRequest.swift */,
 				B352FFCB2CBE943B00D0887B /* AutoEmptyTrashDbRequest.swift */,
 				B37D21352AD6D8AB004A6496 /* CancelParentCreationDbRequest.swift */,
-				B358D3B3279590C200A67054 /* CheckAnyItemIsInTrashDbRequest.swift */,
 				B305644423FC051E003304F2 /* CheckItemIsChangedDbRequest.swift */,
 				B3E34888283CFA92002A8A06 /* CleanupUnusedTags.swift */,
 				B3BD2F8F2BBEE38900EDDDD6 /* CountObjectsDbRequest.swift */,
@@ -5845,7 +5842,6 @@
 				B3DCDF18240917500039ED0D /* ItemTypePickerViewModelCreator.swift in Sources */,
 				B3A2AECE26553DD8004BF3A4 /* NavigationViewController.swift in Sources */,
 				6135EF9C2C2ABDD1008DA17B /* AnnotationManager.swift in Sources */,
-				B358D3B4279590C200A67054 /* CheckAnyItemIsInTrashDbRequest.swift in Sources */,
 				B3B398542E4CCB20009C59F5 /* DocumentSearchCell.swift in Sources */,
 				B3B398552E4CCB20009C59F5 /* DocumentSearchViewController.swift in Sources */,
 				B3866A582417C1BC006693C4 /* ViewModel.swift in Sources */,
