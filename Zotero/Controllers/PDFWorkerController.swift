@@ -49,7 +49,7 @@ final class PDFWorkerController {
         let priority: Priority
         fileprivate(set) var state: State = .pending
         fileprivate var subjectsByWork: OrderedDictionary<Work, PublishSubject<Update>> = [:]
-        fileprivate var handler: PDFWorkerHandling?
+        fileprivate var handler: PDFWorkerJSHandler?
 
         init(file: FileData, shouldCacheData: Bool, priority: Priority) {
             self.file = file
@@ -129,7 +129,7 @@ final class PDFWorkerController {
     private var queuedByPriority: [Priority: OrderedSet<Worker>] = [:]
     private var runningByPriority: [Priority: OrderedSet<Worker>] = [:]
     private var failed: Set<Worker> = []
-    private var preloadedPDFWorkerHandler: PDFWorkerHandling?
+    private var preloadedPDFWorkerHandler: PDFWorkerJSHandler?
 
     // MARK: Object Lifecycle
     init(fileStorage: FileStorage) {
@@ -193,10 +193,7 @@ final class PDFWorkerController {
                 // Assign preparing state and place in proper queue, then prepare worker handler.
                 updateStateAndQueues(for: worker, state: .preparing)
                 // Prepare worker handler.
-                guard let pdfWorkerHandler = preloadedPDFWorkerHandler ?? createPDFWorkerHandler() else {
-                    updateStateAndQueues(for: worker, state: .failed)
-                    return
-                }
+                let pdfWorkerHandler = preloadedPDFWorkerHandler ?? PDFWorkerJSHandler()
                 // Setup handler for worker, consume preloaded handler, just in case it was used, assign queued state and place in proper queue.
                 setup(pdfWorkerHandler: pdfWorkerHandler, for: worker)
                 preloadedPDFWorkerHandler = nil
@@ -229,13 +226,13 @@ final class PDFWorkerController {
         return subject.asObservable()
     }
 
-    private func setup(pdfWorkerHandler: PDFWorkerHandling, for worker: Worker) {
+    private func setup(pdfWorkerHandler: PDFWorkerJSHandler, for worker: Worker) {
         pdfWorkerHandler.workFile = worker.file
         pdfWorkerHandler.shouldCacheWorkData = worker.shouldCacheData
         setupObserver(in: worker, for: pdfWorkerHandler)
         worker.handler = pdfWorkerHandler
 
-        func setupObserver(in worker: Worker, for pdfWorkerHandler: PDFWorkerHandling) {
+        func setupObserver(in worker: Worker, for pdfWorkerHandler: PDFWorkerJSHandler) {
             pdfWorkerHandler.observable.subscribe(onNext: { [weak self, weak worker] event in
                 guard let self else { return }
                 accessQueue.async(flags: .barrier) { [weak self, weak worker] in
@@ -367,10 +364,6 @@ final class PDFWorkerController {
               preparing.isEmpty,
               !Priority.inDescendingOrder.contains(where: { !queuedByPriority[$0, default: []].isEmpty || !runningByPriority[$0, default: []].isEmpty })
         else { return }
-        preloadedPDFWorkerHandler = createPDFWorkerHandler()
-    }
-
-    private func createPDFWorkerHandler() -> PDFWorkerHandling? {
-        return PDFWorkerJSHandler()
+        preloadedPDFWorkerHandler = PDFWorkerJSHandler()
     }
 }

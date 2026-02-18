@@ -10,7 +10,12 @@ import Foundation
 import CocoaLumberjackSwift
 import RxSwift
 
-final class PDFWorkerJSHandler: PDFWorkerHandling {
+enum PDFWorkerData {
+    case recognizerData(data: [String: Any])
+    case fullText(data: [String: Any])
+}
+
+final class PDFWorkerJSHandler {
     enum Error: Swift.Error {
         case engineNotLoaded
         case missingWorkFile
@@ -211,7 +216,18 @@ final class PDFWorkerJSHandler: PDFWorkerHandling {
             }
             let url = workFile.createUrl()
             do {
-                let data = try loadWorkData(from: url)
+                let data: Data
+                if shouldCacheWorkData {
+                    if let cachedWorkData {
+                        data = cachedWorkData
+                    } else {
+                        data = try Data(contentsOf: url, options: [.mappedIfSafe])
+                        cachedWorkData = data
+                    }
+                } else {
+                    data = try Data(contentsOf: url)
+                    cachedWorkData = nil
+                }
                 guard let buffer = engine.makeArrayBuffer(from: data) else {
                     throw Error.invalidMessage
                 }
@@ -253,21 +269,6 @@ final class PDFWorkerJSHandler: PDFWorkerHandling {
             } catch {
                 deferredError = error
             }
-        }
-
-        func loadWorkData(from url: URL) throws -> Data {
-            if shouldCacheWorkData, let cachedWorkData {
-                return cachedWorkData
-            }
-            let data: Data
-            if shouldCacheWorkData {
-                data = try Data(contentsOf: url, options: [.mappedIfSafe])
-                cachedWorkData = data
-            } else {
-                data = try Data(contentsOf: url)
-                cachedWorkData = nil
-            }
-            return data
         }
     }
 }
