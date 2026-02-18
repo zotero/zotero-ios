@@ -9,6 +9,8 @@
 import AVFAudio
 import UIKit
 
+import RxSwift
+
 protocol AccessibilityViewDelegate: AnyObject {
     var isNavigationBarHidden: Bool { get }
     func showAccessibilityPopup<Delegate: SpeechManagerDelegate>(
@@ -22,6 +24,7 @@ protocol AccessibilityViewDelegate: AnyObject {
     func accessibilityToolbarChanged(height: CGFloat)
     func addAccessibilityControlsViewToAnnotationToolbar(view: AnnotationToolbarLeadingView)
     func removeAccessibilityControlsViewFromAnnotationToolbar()
+    func clearSpeechHighlight()
 }
 
 final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
@@ -32,6 +35,7 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
     let speechManager: SpeechManager<Delegate>
     private let key: String
     private let libraryId: LibraryIdentifier
+    private let disposeBag: DisposeBag
 
     private weak var activeOverlay: AccessibilitySpeechControlsView<Delegate>?
     weak var delegate: AccessibilityViewDelegate?
@@ -49,14 +53,45 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
         }
     }
 
-    init(key: String, libraryId: LibraryIdentifier, viewController: UIViewController, documentContainer: UIView, delegate: Delegate, dbStorage: DbStorage, remoteVoicesController: RemoteVoicesController) {
+    init(
+        key: String,
+        libraryId: LibraryIdentifier,
+        viewController: UIViewController,
+        documentContainer: UIView,
+        delegate: Delegate,
+        dbStorage: DbStorage,
+        remoteVoicesController: RemoteVoicesController
+    ) {
         self.key = key
         self.libraryId = libraryId
         self.viewController = viewController
         self.documentContainer = documentContainer
         self.dbStorage = dbStorage
+        disposeBag = DisposeBag()
         let language = try? dbStorage.perform(request: ReadSpeechLanguageDbRequest(key: key, libraryId: libraryId), on: .main)
-        speechManager = SpeechManager(delegate: delegate, voiceLanguage: language, useRemoteVoices: Defaults.shared.isUsingRemoteVoice, remoteVoicesController: remoteVoicesController)
+        speechManager = SpeechManager(
+            delegate: delegate,
+            voiceLanguage: language,
+            useRemoteVoices: Defaults.shared.isUsingRemoteVoice,
+            remoteVoicesController: remoteVoicesController
+        )
+        
+        speechManager.state
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] state in
+                guard let self else { return }
+                switch state {
+                case .stopped:
+                    self.delegate?.clearSpeechHighlight()
+                    
+                case .outOfCredits:
+                    showSpeech()
+                    
+                case .speaking, .paused, .loading:
+                    showOverlayIfNeeded(forType: currentOverlayType(controller: self), state: state)
+                }
+            })
+            .disposed(by: disposeBag)
     }
 
     func createAccessibilityButton(isSelected: Bool, isFilled: Bool, isEnabled: Bool = true) -> UIBarButtonItem {
@@ -95,22 +130,22 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
             isFormSheet: { [weak self] in self?.isFormSheet ?? false },
             dismissAction: { [weak self] in
                 guard let self else { return }
-                showOverlayIfNeeded(forType: currentOverlayType(controller: self))
+                showOverlayIfNeeded(forType: currentOverlayType(controller: self), state: speechManager.state.value)
                 reloadSpeechButton(isSelected: false)
             },
             voiceChangeAction: { [weak self] change in
                 self?.processVoiceChange(change)
             }
         )
-        
-        func currentOverlayType(controller: AccessibilityViewHandler<Delegate>) -> AccessibilitySpeechControlsView<Delegate>.Kind {
-            if controller.isFormSheet {
-                return .bottomToolbar
-            } else if !(controller.delegate?.isNavigationBarHidden ?? true) {
-                return .navbar
-            } else {
-                return .annotationToolbar
-            }
+    }
+    
+    private func currentOverlayType(controller: AccessibilityViewHandler<Delegate>) -> AccessibilitySpeechControlsView<Delegate>.Kind {
+        if controller.isFormSheet {
+            return .bottomToolbar
+        } else if !(controller.delegate?.isNavigationBarHidden ?? true) {
+            return .navbar
+        } else {
+            return .annotationToolbar
         }
     }
 
@@ -134,11 +169,11 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
         } else {
             type = .annotationToolbar
         }
-        showOverlayIfNeeded(forType: type)
+        showOverlayIfNeeded(forType: type, state: speechManager.state.value)
     }
 
-    private func showOverlayIfNeeded(forType type: AccessibilitySpeechControlsView<Delegate>.Kind) {
-        guard speechManager.state.value != .stopped, activeOverlay?.type != type else { return }
+    private func showOverlayIfNeeded(forType type: AccessibilitySpeechControlsView<Delegate>.Kind, state: SpeechState) {
+        guard state != .stopped, !(viewController.presentedViewController is AccessibilityPopupViewController<Delegate>), activeOverlay?.type != type else { return }
         
         if let activeOverlay {
             remove(activeControls: activeOverlay)
