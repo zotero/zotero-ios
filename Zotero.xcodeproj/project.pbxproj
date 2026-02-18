@@ -64,6 +64,7 @@
 		618D83E82BAAC88C00E7966B /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 618D83E62BAAC88C00E7966B /* PrivacyInfo.xcprivacy */; };
 		61933F242E7218B500F4547F /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 61933F232E7218B500F4547F /* AppIcon.icon */; };
 		61A0C8472B8F669C0048FF92 /* PSPDFKitUI+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61A0C8462B8F669B0048FF92 /* PSPDFKitUI+Extensions.swift */; };
+		61A9B1632F4662BD004FF769 /* pdf_worker_shim.js in Resources */ = {isa = PBXBuildFile; fileRef = 61F0A1A12F9C0A1B00ABCDEF /* pdf_worker_shim.js */; };
 		61ABA7512A6137D1002A4219 /* ShareableImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61ABA7502A6137D1002A4219 /* ShareableImage.swift */; };
 		61AD977D2D67F42A000FDF45 /* PDFWorkerControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61AD977C2D67F42A000FDF45 /* PDFWorkerControllerSpec.swift */; };
 		61BD13952A5831EF008A0704 /* TextKit1TextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61BD13942A5831EF008A0704 /* TextKit1TextView.swift */; };
@@ -5092,6 +5093,7 @@
 				B32AB57E25ADCEED003CF0C6 /* Bundled in Resources */,
 				B3AB38B9238ED023008A1ABB /* ExtensionScript.js in Resources */,
 				B3CE697624DD7D6A00D333AF /* Colors.xcassets in Resources */,
+				61A9B1632F4662BD004FF769 /* pdf_worker_shim.js in Resources */,
 				B3B6759B26205A48003231A5 /* CollectionRowView.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
