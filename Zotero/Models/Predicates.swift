@@ -316,10 +316,15 @@ extension NSPredicate {
     }
 
     static func itemsNotChangedAndNeedUpload(in libraryId: LibraryIdentifier) -> NSPredicate {
-        return NSCompoundPredicate(andPredicateWithSubpredicates: [.notChanged,
-                                                                   .attachmentNeedsUpload,
-                                                                   .item(type: ItemTypes.attachment),
-                                                                   .library(with: libraryId)])
+        let parentNotDeleted = NSPredicate(format: "parent = nil or parent.deleted = false")
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [
+            .notChanged,
+            .attachmentNeedsUpload,
+            .item(type: ItemTypes.attachment),
+            .library(with: libraryId),
+            .deleted(false),
+            parentNotDeleted
+        ])
     }
 
     static func itemSearch(for components: [String]) -> NSPredicate {

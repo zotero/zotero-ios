@@ -21,7 +21,7 @@ protocol MainCoordinatorDelegate: AnyObject {
 }
 
 protocol MainCoordinatorSyncToolbarDelegate: AnyObject {
-    func showItems(with keys: [String], in libraryId: LibraryIdentifier)
+    func showItems(with keys: [String], in libraryId: LibraryIdentifier, collectionType: CollectionIdentifier.CustomType)
 }
 
 final class MainViewController: UISplitViewController {
@@ -166,23 +166,8 @@ extension MainViewController: MainCoordinatorDelegate {
 }
 
 extension MainViewController: MainCoordinatorSyncToolbarDelegate {
-    func showItems(with keys: [String], in libraryId: LibraryIdentifier) {
-        guard let dbStorage = controllers.userControllers?.dbStorage else { return }
-
-        do {
-            var collectionType: CollectionIdentifier.CustomType?
-
-            try dbStorage.perform(on: .main, with: { coordinator in
-                let isAnyInTrash = try coordinator.perform(request: CheckAnyItemIsInTrashDbRequest(libraryId: libraryId, keys: keys))
-                collectionType = isAnyInTrash ? .trash : .all
-            })
-
-            guard let collectionType else { return }
-
-            masterCoordinator?.showCollections(for: libraryId, preselectedCollection: .custom(collectionType), animated: true)
-            showItems(for: Collection(custom: collectionType), in: libraryId, searchItemKeys: keys)
-        } catch let error {
-            DDLogError("MainViewController: can't load searched keys - \(error)")
-        }
+    func showItems(with keys: [String], in libraryId: LibraryIdentifier, collectionType: CollectionIdentifier.CustomType) {
+        masterCoordinator?.showCollections(for: libraryId, preselectedCollection: .custom(collectionType), animated: true)
+        showItems(for: Collection(custom: collectionType), in: libraryId, searchItemKeys: keys)
     }
 }

@@ -22,6 +22,16 @@ struct ReadAttachmentUploadsDbRequest: DbResponseRequest {
     func process(in database: Realm) throws -> [AttachmentUpload] {
         let items = database.objects(RItem.self).filter(.itemsNotChangedAndNeedUpload(in: self.libraryId))
         let uploads = items.compactMap({ item -> AttachmentUpload? in
+            guard !item.deleted else {
+                // This shouldn't happen based on itemsNotChangedAndNeedUpload filter.
+                DDLogInfo("ReadAttachmentUploadsDbRequest: skipping deleted attachment \(item.key)")
+                return nil
+            }
+            if item.parent?.deleted == true {
+                // This shouldn't happen based on itemsNotChangedAndNeedUpload filter.
+                DDLogInfo("ReadAttachmentUploadsDbRequest: skipping attachment with deleted parent \(item.key)")
+                return nil
+            }
             guard let contentType = item.fields.filter(.key(FieldKeys.Item.Attachment.contentType)).first?.value else {
                 DDLogError("ReadAttachmentUploadsDbRequest: contentType field missing !!!")
                 return nil
