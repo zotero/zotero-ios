@@ -20,7 +20,7 @@ protocol PDFReaderContainerDelegate: AnyObject {
     var documentTopOffset: CGFloat { get }
 
     func showSearch(text: String?)
-    func speakFromSelection(pageIndex: PageIndex, text: String, boundingBox: CGRect)
+    func speak(glyphs: GlyphSequence, pageIndex: PageIndex)
 }
 
 class PDFReaderViewController: UIViewController, ReaderViewController {
@@ -641,8 +641,9 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         )
     }
 
-    func speakFromSelection(pageIndex: PageIndex, text: String, boundingBox: CGRect) {
-        let approximateOffset = documentController?.textOffset(rect: boundingBox, page: pageIndex)
+    func speak(glyphs: GlyphSequence, pageIndex: PageIndex) {
+        let text = glyphs.text
+        let approximateOffset = documentController?.textOffset(rect: glyphs.boundingBox, page: pageIndex)
         accessibilityHandler?.speechManager.start(mapStartIndexToPage: { page in
             return textOffset(for: text, approximateOffset: approximateOffset, in: page) ?? 0
         })
