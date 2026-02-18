@@ -20,7 +20,7 @@ protocol PDFReaderContainerDelegate: AnyObject {
     var documentTopOffset: CGFloat { get }
 
     func showSearch(text: String?)
-    func speakFromSelection(pageIndex: PageIndex, boundingBox: CGRect)
+    func speakFromSelection(pageIndex: PageIndex, text: String, boundingBox: CGRect)
 }
 
 class PDFReaderViewController: UIViewController, ReaderViewController {
@@ -641,8 +641,33 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         )
     }
 
-    func speakFromSelection(pageIndex: PageIndex, boundingBox: CGRect) {
-        accessibilityHandler?.speechManager.start(from: pageIndex, boundingBox: boundingBox)
+    func speakFromSelection(pageIndex: PageIndex, text: String, boundingBox: CGRect) {
+        let approximateOffset = documentController?.textOffset(rect: boundingBox, page: pageIndex)
+        accessibilityHandler?.speechManager.start(mapStartIndexToPage: { page in
+            return textOffset(for: text, approximateOffset: approximateOffset, in: page) ?? 0
+        })
+        
+        func textOffset(for selectedText: String?, approximateOffset: Int?, in pageText: String) -> Int? {
+            guard let selectedText, let approximateOffset else { return nil }
+            
+            // Use first word for searching to handle whitespace differences between PSPDFKit and PDF Worker
+            let normalizedSelected = selectedText.components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }.joined(separator: " ")
+            guard let firstWord = normalizedSelected.components(separatedBy: " ").first, !firstWord.isEmpty else { return nil }
+            
+            // Find all occurrences
+            var occurrences: [Int] = []
+            var searchRange = pageText.startIndex..<pageText.endIndex
+            while let range = pageText.range(of: firstWord, range: searchRange) {
+                let offset = pageText.distance(from: pageText.startIndex, to: range.lowerBound)
+                occurrences.append(offset)
+                searchRange = range.upperBound..<pageText.endIndex
+            }
+            
+            guard !occurrences.isEmpty else { return nil }
+            
+            // Find the occurrence closest to the approximate offset
+            return occurrences.min(by: { abs($0 - approximateOffset) < abs($1 - approximateOffset) })
+        }
     }
 
     private func showSettings(sender: UIBarButtonItem) {
@@ -1122,10 +1147,6 @@ extension PDFReaderViewController: SpeechManagerDelegate {
 
     func highlightTextChanged(text: String, pageIndex: UInt) {
         documentController?.updateSpeechHighlight(text: text, page: PageIndex(pageIndex))
-    }
-
-    func textOffset(for boundingBox: CGRect, pageIndex: UInt, in pageText: String) -> Int? {
-        return documentController?.textOffset(rect: boundingBox, page: PageIndex(pageIndex))
     }
 }
 
