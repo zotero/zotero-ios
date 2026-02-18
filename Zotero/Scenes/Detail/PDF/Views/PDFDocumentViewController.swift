@@ -907,7 +907,7 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
             switch menu.identifier {
             case .speech:
                 return UIAction(title: L10n.Accessibility.Speech.speak, image: menu.image) { [weak self] _ in
-                    self?.parentDelegate?.speakFromSelection(pageIndex: pageView.pageIndex, boundingBox: glyphs.boundingBox)
+                    self?.parentDelegate?.speakFromSelection(pageIndex: pageView.pageIndex, text: glyphs.text, boundingBox: glyphs.boundingBox)
                 }
                 
             default:
