@@ -114,7 +114,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         self.delegate = delegate
         self.remoteVoicesController = remoteVoicesController
         cachedPages = [:]
-        state = BehaviorRelay(value: .loading)
+        state = BehaviorRelay(value: .stopped)
         remainingTime = BehaviorRelay(value: nil)
         disposeBag = DisposeBag()
         nowPlayingManager = NowPlayingManager()
