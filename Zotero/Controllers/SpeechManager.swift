@@ -28,13 +28,6 @@ protocol SpeechManagerDelegate: AnyObject {
     ///   - text: The paragraph text to highlight
     ///   - pageIndex: The page index where the text is located
     func highlightTextChanged(text: String, pageIndex: Index)
-    /// Returns the text offset in PDF Worker extracted text for the given bounding box.
-    /// - Parameters:
-    ///   - boundingBox: The bounding box in PDF coordinate space
-    ///   - pageIndex: The page index
-    ///   - pageText: The full page text extracted by PDF Worker
-    /// - Returns: The character offset in pageText, or nil if not found
-    func textOffset(for boundingBox: CGRect, pageIndex: Index, in pageText: String) -> Int?
 }
 
 enum SpeechState {
@@ -179,15 +172,9 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
 
     // MARK: - Actions
 
-    func start() {
-        guard let delegate else {
-            DDLogError("SpeechManager: can't get delegate")
-            return
-        }
-        start(from: delegate.getCurrentPageIndex(), boundingBox: nil)
-    }
-
-    func start(from pageIndex: Delegate.Index, boundingBox: CGRect?) {
+    // Start speech
+    // - parameter mapStartIndexToPage: Used to map startIndex from PSPDFKit document to PDFWorker-extracted page.
+    func start(mapStartIndexToPage: ((String) -> Int)? = nil) {
         guard let delegate else {
             DDLogError("SpeechManager: can't get delegate")
             return
@@ -195,9 +182,10 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
 
         nowPlayingManager.activate()
 
+        let pageIndex = delegate.getCurrentPageIndex()
         if let page = cachedPages[pageIndex] {
-            let textOffset = boundingBox.flatMap { delegate.textOffset(for: $0, pageIndex: pageIndex, in: page) }
-            startSpeaking(page: page, pageIndex: pageIndex, speechStartIndex: textOffset, reportPageChange: boundingBox != nil)
+            let startIndex = mapStartIndexToPage?(page) ?? 0
+            startSpeaking(at: startIndex, page: page, pageIndex: pageIndex, reportPageChange: false, shouldDetectVoice: true)
             return
         }
 
@@ -209,9 +197,15 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             }
             cachedPages = pages
             guard state.value == .loading else { return }
-            let textOffset = boundingBox.flatMap { delegate.textOffset(for: $0, pageIndex: pageIndex, in: page) }
-            startSpeaking(page: page, pageIndex: pageIndex, speechStartIndex: textOffset, reportPageChange: boundingBox != nil)
+            let startIndex = mapStartIndexToPage?(page) ?? 0
+            startSpeaking(at: startIndex, page: page, pageIndex: pageIndex, reportPageChange: false, shouldDetectVoice: true)
         }
+    }
+    
+    // Start speech
+    // - parameter startIndex: Start speaking at given index.
+    func start(startIndex: Int) {
+        start(mapStartIndexToPage: { _ in startIndex })
     }
     
     func pause() {
@@ -287,13 +281,13 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             if state.value.isPaused {
                 moveTo(index: index, on: currentPage, pageIndex: speechData.index)
             } else {
-                startSpeaking(at: index, on: currentPage)
+                startSpeaking(at: index, page: currentPage, pageIndex: speechData.index, reportPageChange: false, shouldDetectVoice: false)
             }
         } else if let nextIndex = delegate?.getNextPageIndex(from: speechData.index), let page = cachedPages[nextIndex] {
             if state.value.isPaused {
                 moveTo(index: 0, on: page, pageIndex: nextIndex)
             } else {
-                startSpeaking(page: page, pageIndex: nextIndex)
+                startSpeaking(page: currentPage, pageIndex: nextIndex, reportPageChange: true, shouldDetectVoice: true)
             }
         } else {
             stop()
@@ -308,13 +302,13 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             if state.value.isPaused {
                 moveTo(index: index, on: currentPage, pageIndex: speechData.index)
             } else {
-                startSpeaking(at: index, on: currentPage)
+                startSpeaking(at: index, page: currentPage, pageIndex: speechData.index, reportPageChange: false, shouldDetectVoice: false)
             }
         } else if speechData.range.location != 0 {
             if state.value.isPaused {
                 moveTo(index: 0, on: currentPage, pageIndex: speechData.index)
             } else {
-                startSpeaking(at: 0, on: currentPage)
+                startSpeaking(page: currentPage, pageIndex: speechData.index, reportPageChange: false, shouldDetectVoice: false)
             }
         } else if let previousIndex = delegate?.getPreviousPageIndex(from: speechData.index),
                   let previousPage = cachedPages[previousIndex],
@@ -322,24 +316,17 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             if state.value.isPaused {
                 moveTo(index: speechIndex, on: previousPage, pageIndex: previousIndex)
             } else {
-                startSpeaking(page: previousPage, pageIndex: previousIndex, speechStartIndex: speechIndex)
+                startSpeaking(page: previousPage, pageIndex: previousIndex, reportPageChange: true, shouldDetectVoice: true)
             }
         } else {
             stop()
         }
     }
-    
-    private func startSpeaking(at index: Int, on page: String) {
-        debouncedSpeakWorkItem?.cancel()
-        let workItem = DispatchWorkItem { [weak self] in
-            self?.processor.speak(text: page, startIndex: index, shouldDetectVoice: false)
-        }
-        debouncedSpeakWorkItem = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: workItem)
-    }
 
-    private func startSpeaking(page: String, pageIndex: Delegate.Index, speechStartIndex: Int? = nil, reportPageChange: Bool = true) {
-        speechData = SpeechData(index: pageIndex, range: NSRange(), paragraphRange: NSRange())
+    private func startSpeaking(at index: Int = 0, page: String, pageIndex: Delegate.Index, reportPageChange: Bool, shouldDetectVoice: Bool) {
+        if speechData?.index != pageIndex {
+            speechData = SpeechData(index: pageIndex, range: NSRange(), paragraphRange: NSRange())
+        }
         if reportPageChange {
             delegate?.moved(to: pageIndex)
         }
@@ -347,7 +334,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         
         debouncedSpeakWorkItem?.cancel()
         let workItem = DispatchWorkItem { [weak self] in
-            self?.processor.speak(text: page, startIndex: speechStartIndex ?? 0, shouldDetectVoice: true)
+            self?.processor.speak(text: page, startIndex: index, shouldDetectVoice: shouldDetectVoice)
         }
         debouncedSpeakWorkItem = workItem
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: workItem)
@@ -421,7 +408,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         guard let speechData, let nextIndex = delegate?.getNextPageIndex(from: speechData.index), let page = cachedPages[nextIndex] else {
             return false
         }
-        startSpeaking(page: page, pageIndex: nextIndex)
+        startSpeaking(page: page, pageIndex: nextIndex, reportPageChange: true, shouldDetectVoice: true)
         return true
     }
     
