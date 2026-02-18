@@ -20,6 +20,7 @@ protocol PDFReaderContainerDelegate: AnyObject {
     var documentTopOffset: CGFloat { get }
 
     func showSearch(text: String?)
+    func speakFromSelection(pageIndex: PageIndex, boundingBox: CGRect)
 }
 
 class PDFReaderViewController: UIViewController, ReaderViewController {
@@ -400,26 +401,6 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
                     }
                 })
                 .disposed(by: disposeBag)
-
-            // Observe speech state to clear highlight when speech stops and show popup when out of credits
-            accessibilityHandler?.speechManager.state
-                .observe(on: MainScheduler.instance)
-                .subscribe(onNext: { [weak self] state in
-                    guard let self else { return }
-                    switch state {
-                    case .stopped:
-                        documentController?.clearSpeechHighlight()
-                        
-                    case .outOfCredits:
-                        if presentedViewController == nil {
-                            accessibilityHandler?.showSpeech()
-                        }
-                        
-                    case .speaking, .paused, .loading:
-                        break
-                    }
-                })
-                .disposed(by: disposeBag)
         }
     }
 
@@ -658,6 +639,10 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
             sender: searchButton,
             userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle
         )
+    }
+
+    func speakFromSelection(pageIndex: PageIndex, boundingBox: CGRect) {
+        accessibilityHandler?.speechManager.start(from: pageIndex, boundingBox: boundingBox)
     }
 
     private func showSettings(sender: UIBarButtonItem) {
@@ -1138,6 +1123,10 @@ extension PDFReaderViewController: SpeechManagerDelegate {
     func highlightTextChanged(text: String, pageIndex: UInt) {
         documentController?.updateSpeechHighlight(text: text, page: PageIndex(pageIndex))
     }
+
+    func textOffset(for boundingBox: CGRect, pageIndex: UInt, in pageText: String) -> Int? {
+        return documentController?.textOffset(rect: boundingBox, page: PageIndex(pageIndex))
+    }
 }
 
 extension PDFReaderViewController: AccessibilityViewDelegate {
@@ -1171,5 +1160,9 @@ extension PDFReaderViewController: AccessibilityViewDelegate {
     
     func removeAccessibilityControlsViewFromAnnotationToolbar() {
         annotationToolbarHandler?.setLeadingView(view: nil)
+    }
+    
+    func clearSpeechHighlight() {
+        documentController?.clearSpeechHighlight()
     }
 }
