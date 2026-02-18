@@ -28,6 +28,13 @@ protocol SpeechManagerDelegate: AnyObject {
     ///   - text: The paragraph text to highlight
     ///   - pageIndex: The page index where the text is located
     func highlightTextChanged(text: String, pageIndex: Index)
+    /// Returns the text offset in PDF Worker extracted text for the given bounding box.
+    /// - Parameters:
+    ///   - boundingBox: The bounding box in PDF coordinate space
+    ///   - pageIndex: The page index
+    ///   - pageText: The full page text extracted by PDF Worker
+    /// - Returns: The character offset in pageText, or nil if not found
+    func textOffset(for boundingBox: CGRect, pageIndex: Index, in pageText: String) -> Int?
 }
 
 enum SpeechState {
@@ -177,24 +184,33 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             DDLogError("SpeechManager: can't get delegate")
             return
         }
+        start(from: delegate.getCurrentPageIndex(), boundingBox: nil)
+    }
+
+    func start(from pageIndex: Delegate.Index, boundingBox: CGRect?) {
+        guard let delegate else {
+            DDLogError("SpeechManager: can't get delegate")
+            return
+        }
 
         nowPlayingManager.activate()
 
-        let index = delegate.getCurrentPageIndex()
-        if let page = cachedPages[index] {
-            startSpeaking(page: page, pageIndex: index, reportPageChange: false)
+        if let page = cachedPages[pageIndex] {
+            let textOffset = boundingBox.flatMap { delegate.textOffset(for: $0, pageIndex: pageIndex, in: page) }
+            startSpeaking(page: page, pageIndex: pageIndex, speechStartIndex: textOffset, reportPageChange: boundingBox != nil)
             return
         }
 
         state.accept(.loading)
-        getData(for: [index], from: delegate) { [weak self] pages in
-            guard let self, let pages, let page = pages[index] else {
+        getData(for: [pageIndex], from: delegate) { [weak self] pages in
+            guard let self, let pages, let page = pages[pageIndex] else {
                 self?.state.accept(.stopped)
                 return
             }
             cachedPages = pages
             guard state.value == .loading else { return }
-            startSpeaking(page: page, pageIndex: index, reportPageChange: false)
+            let textOffset = boundingBox.flatMap { delegate.textOffset(for: $0, pageIndex: pageIndex, in: page) }
+            startSpeaking(page: page, pageIndex: pageIndex, speechStartIndex: textOffset, reportPageChange: boundingBox != nil)
         }
     }
     

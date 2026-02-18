@@ -599,6 +599,7 @@
 "accessibility.speech.backward" = "Skip backward";
 "accessibility.speech.title" = "Read Aloud";
 "accessibility.speech.unknown_voice" = "Voice";
+"accessibility.speech.speak" = "Speak";
 "accessibility.show_reader" = "Reading Mode";
 "accessibility.show_reader_accessibility_label" = "Switch to reading mode";
 "accessibility.show_speech" = "Read Aloud";
