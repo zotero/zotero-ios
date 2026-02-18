@@ -173,8 +173,9 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
     }
 
     private func showOverlayIfNeeded(forType type: AccessibilitySpeechControlsView<Delegate>.Kind, state: SpeechState) {
-        guard state != .stopped, !(viewController.presentedViewController is AccessibilityPopupViewController<Delegate>), activeOverlay?.type != type else { return }
-        
+        let isAccessibilityPopupPresented = (viewController.presentedViewController as? AccessibilityPopupViewController<Delegate>)?.isBeingDismissed == false
+        guard !isAccessibilityPopupPresented, state != .stopped, activeOverlay?.type != type else { return }
+
         if let activeOverlay {
             remove(activeControls: activeOverlay)
         }
