@@ -39,9 +39,30 @@ struct SpeechVoicePickerView: View {
     }
     
     fileprivate enum VoiceType {
-        case remote, local
+        case advanced, basic, local
+        
+        var isRemote: Bool {
+            switch self {
+            case .advanced, .basic:
+                return true
+                
+            case .local:
+                return false
+            }
+        }
     }
 
+    /// Threshold in seconds below which the remaining time indicator turns red
+    private static let warningThresholdSeconds: TimeInterval = 180
+    
+    private static let timeFormatter: DateComponentsFormatter = {
+        let formatter = DateComponentsFormatter()
+        formatter.allowedUnits = [.hour, .minute]
+        formatter.unitsStyle = .abbreviated
+        formatter.zeroFormattingBehavior = .dropLeading
+        return formatter
+    }()
+    
     private unowned let remoteVoicesController: RemoteVoicesController
     private let detectedLanguage: String
     private let dismiss: (AccessibilityPopupVoiceChange) -> Void
@@ -55,9 +76,25 @@ struct SpeechVoicePickerView: View {
     @State private var navigationPath: NavigationPath
     @State private var allRemoteVoices: [RemoteVoice]
     @State private var supportedRemoteLanguages: Set<String>
+    @State private var remainingCredits: Int?
+    @State private var isLoading: Bool = false
+    @State private var loadError: Bool = false
     
     private var languageCode: String {
         return language.code(detectedLanguage: detectedLanguage)
+    }
+
+    /// Calculates remaining time based on remaining credits and the selected voice's credits per second.
+    /// Returns nil if type is local, no remote voice is selected, or creditsPerSecond is 0.
+    private var remainingTime: TimeInterval? {
+        guard type.isRemote,
+              case .remote(let voice) = selectedVoice,
+              voice.creditsPerSecond > 0,
+              let credits = remainingCredits
+        else {
+            return nil
+        }
+        return TimeInterval(credits) / TimeInterval(voice.creditsPerSecond)
     }
 
     init(
@@ -77,33 +114,37 @@ struct SpeechVoicePickerView: View {
         remoteVoices = []
         allRemoteVoices = []
         supportedRemoteLanguages = []
+        remainingCredits = nil
         disposeBag = .init()
         switch selectedVoice {
         case .local:
             type = .local
             
-        case .remote:
-            type = .remote
+        case .remote(let voice):
+            type = voice.tier == .advanced ? .advanced : .basic
         }
-        
-        // TODO: Load remote voices
     }
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
             List {
                 TypeSection(type: $type)
+                if let remainingTime {
+                    RemainingTimeSection(remainingTime: remainingTime, warningThreshold: Self.warningThresholdSeconds, formatter: Self.timeFormatter)
+                }
                 if canShowLanguage {
                     LanguageSection(language: $language, navigationPath: $navigationPath)
                 }
                 switch type {
                 case .local:
-                    LocalVoicesSection(voices: $localVoices, selectedVoice: $selectedVoice)
+                    LocalVoicesSection(voices: $localVoices, selectedVoice: $selectedVoice, language: languageCode)
                     
-                case .remote:
-                    if !allRemoteVoices.isEmpty {
+                case .advanced, .basic:
+                    if loadError {
+                        LoadErrorSection(retryAction: loadVoices)
+                    } else if !allRemoteVoices.isEmpty {
                         RemoteVoicesSection(voices: $remoteVoices, selectedVoice: $selectedVoice, language: languageCode, remoteVoicesController: remoteVoicesController)
-                    } else {
+                    } else if isLoading {
                         ActivityIndicatorView(style: .large, isAnimating: .constant(true))
                     }
                 }
@@ -118,15 +159,28 @@ struct SpeechVoicePickerView: View {
             })
             .onChange(of: language) { newValue in
                 let language = newValue.code(detectedLanguage: detectedLanguage)
-                localVoices = Self.localVoices(for: language)
-                remoteVoices = allRemoteVoices.filter({ voice in voice.locales.contains(where: { $0.contains(language) }) })
+                let newLocalVoices = Self.localVoices(for: language)
+                let newRemoteVoices = remoteVoices(for: language, tier: type == .advanced ? .advanced : .basic, from: allRemoteVoices)
+                localVoices = newLocalVoices
+                remoteVoices = newRemoteVoices
                 
                 switch type {
                 case .local:
-                    selectedVoice = localVoices.first.flatMap({ .local($0) }) ?? selectedVoice
+                    selectedVoice = defaultLocalVoice(for: language, from: newLocalVoices) ?? selectedVoice
                     
-                case .remote:
-                    selectedVoice = remoteVoices.first.flatMap({ .remote($0) }) ?? selectedVoice
+                case .advanced, .basic:
+                    selectedVoice = defaultRemoteVoice(for: language, from: newRemoteVoices) ?? selectedVoice
+                }
+            }
+            .onChange(of: type) { newValue in
+                switch newValue {
+                case .local:
+                    selectedVoice = defaultLocalVoice(for: languageCode, from: localVoices) ?? selectedVoice
+                    
+                case .advanced, .basic:
+                    let newRemoteVoices = remoteVoices(for: languageCode, tier: newValue == .advanced ? .advanced : .basic, from: allRemoteVoices)
+                    remoteVoices = newRemoteVoices
+                    selectedVoice = defaultRemoteVoice(for: languageCode, from: newRemoteVoices) ?? selectedVoice
                 }
             }
             .toolbar {
@@ -153,15 +207,21 @@ struct SpeechVoicePickerView: View {
     }
     
     private func loadVoices() {
-        remoteVoicesController.loadVoices()
+        isLoading = true
+        loadError = false
+        Single.zip(remoteVoicesController.loadVoices(), remoteVoicesController.loadCredits())
             .subscribe(
-                onSuccess: { voices in
+                onSuccess: { voices, credits in
                     allRemoteVoices = voices
                     supportedRemoteLanguages.removeAll()
                     voices.forEach({ supportedRemoteLanguages.formUnion($0.locales) })
-                    remoteVoices = allRemoteVoices.filter({ voice in voice.locales.contains(where: { $0.contains(languageCode) }) })
+                    remainingCredits = credits
+                    remoteVoices = remoteVoices(for: languageCode, tier: type == .advanced ? .advanced : .basic, from: allRemoteVoices)
+                    isLoading = false
                 }, onFailure: { error in
-                    DDLogError("SpeechVoicePickerView: can't load remote voices - \(error)")
+                    DDLogError("SpeechVoicePickerView: can't load remote voices or credits - \(error)")
+                    isLoading = false
+                    loadError = true
                 }
             )
             .disposed(by: disposeBag)
@@ -172,7 +232,7 @@ struct SpeechVoicePickerView: View {
         case .local:
             return true
             
-        case .remote:
+        case .advanced, .basic:
             return !allRemoteVoices.isEmpty
         }
     }
@@ -184,7 +244,7 @@ struct SpeechVoicePickerView: View {
             return Locale.availableIdentifiers
                 .filter({ languageId in !languageId.contains("_") && voices.contains(where: { $0.language.contains(languageId) }) })
             
-        case .remote:
+        case .advanced, .basic:
             return []
         }
     }
@@ -193,6 +253,30 @@ struct SpeechVoicePickerView: View {
         return AVSpeechSynthesisVoice.speechVoices()
             .filter({ $0.language.contains(language) })
             .sorted(by: { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending })
+    }
+    
+    private func remoteVoices(for language: String, tier: RemoteVoice.Tier, from voices: [RemoteVoice]) -> [RemoteVoice] {
+        return voices.filter({ voice in
+            voice.tier == tier && voice.locales.contains(where: { $0.contains(language) })
+        })
+    }
+    
+    /// Returns the default local voice for the given language from Defaults, or the first available voice.
+    private func defaultLocalVoice(for language: String, from voices: [AVSpeechSynthesisVoice]) -> SpeechVoice? {
+        if let voiceId = Defaults.shared.defaultLocalVoiceForLanguage[language],
+           let voice = voices.first(where: { $0.identifier == voiceId }) {
+            return .local(voice)
+        }
+        return voices.first.flatMap({ .local($0) })
+    }
+    
+    /// Returns the default remote voice for the given language from Defaults, or the first available voice.
+    private func defaultRemoteVoice(for language: String, from voices: [RemoteVoice]) -> SpeechVoice? {
+        if let defaultVoice = Defaults.shared.defaultRemoteVoiceForLanguage[language],
+           let voice = voices.first(where: { $0.id == defaultVoice.id }) {
+            return .remote(voice)
+        }
+        return voices.first.flatMap({ .remote($0) })
     }
 }
 
@@ -203,19 +287,31 @@ fileprivate struct TypeSection: View {
     var body: some View {
         Section {
             HStack {
-                Text("Zotero Voices")
+                Text("Advanced")
                 Spacer()
-                if case .remote = type {
+                if case .advanced = type {
                     Image(systemName: "checkmark").foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUIColor)
                 }
             }
             .contentShape(Rectangle())
             .onTapGesture {
-                type = .remote
+                type = .advanced
             }
             
             HStack {
-                Text("Local Voices")
+                Text("Basic")
+                Spacer()
+                if case .basic = type {
+                    Image(systemName: "checkmark").foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUIColor)
+                }
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                type = .basic
+            }
+            
+            HStack {
+                Text("Local")
                 Spacer()
                 if case .local = type {
                     Image(systemName: "checkmark").foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUIColor)
@@ -257,18 +353,73 @@ fileprivate struct LanguageSection: View {
     }
 }
 
+fileprivate struct RemainingTimeSection: View {
+    let remainingTime: TimeInterval
+    let warningThreshold: TimeInterval
+    let formatter: DateComponentsFormatter
+    
+    private var formattedTime: String {
+        let roundedUpSeconds = ceil(remainingTime / 60) * 60
+        if roundedUpSeconds == 0 {
+            return "0m"
+        } else if roundedUpSeconds < 60 {
+            return "<1m"
+        } else {
+            return formatter.string(from: roundedUpSeconds) ?? ""
+        }
+    }
+    
+    private var timeColor: Color {
+        remainingTime < warningThreshold ? .red : .secondary
+    }
+    
+    var body: some View {
+        Section {
+            HStack {
+                Text("Remaining Time")
+                Spacer()
+                Text(formattedTime)
+                    .foregroundColor(timeColor)
+            }
+        }
+    }
+}
+
+fileprivate struct LoadErrorSection: View {
+    let retryAction: () -> Void
+    
+    var body: some View {
+        Section {
+            VStack(spacing: 16) {
+                Text(L10n.Errors.Shareext.cantLoadData)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                
+                Button(action: retryAction) {
+                    Text(L10n.retry)
+                }
+                .buttonStyle(.borderedProminent)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 20)
+        }
+    }
+}
+
 fileprivate struct LocalVoicesSection: View {
     private let synthetizer: AVSpeechSynthesizer
     private let shouldShowVariation: Bool
+    private let language: String
 
     @Binding var voices: [AVSpeechSynthesisVoice]
     @Binding var selectedVoice: SpeechVoice
 
-    init(voices: Binding<[AVSpeechSynthesisVoice]>, selectedVoice: Binding<SpeechVoice>) {
+    init(voices: Binding<[AVSpeechSynthesisVoice]>, selectedVoice: Binding<SpeechVoice>, language: String) {
         self._voices = voices
         self._selectedVoice = selectedVoice
         synthetizer = .init()
         shouldShowVariation = voices.count > 1 && Set(voices.wrappedValue.map({ $0.languageVariation })).count > 1
+        self.language = language
     }
 
     var body: some View {
@@ -289,6 +440,8 @@ fileprivate struct LocalVoicesSection: View {
                 .contentShape(Rectangle())
                 .onTapGesture {
                     selectedVoice = .local(voice)
+                    Defaults.shared.defaultLocalVoiceForLanguage[language] = voice.identifier
+                    Defaults.shared.isUsingRemoteVoice = false
                     playSample(withVoice: voice)
                 }
             }
@@ -336,6 +489,8 @@ fileprivate struct RemoteVoicesSection: View {
                     guard !isLoading else { return }
                     player?.stop()
                     selectedVoice = .remote(voice)
+                    Defaults.shared.defaultRemoteVoiceForLanguage[language] = voice
+                    Defaults.shared.isUsingRemoteVoice = true
                     playSample(withVoice: voice)
                 }
             }
