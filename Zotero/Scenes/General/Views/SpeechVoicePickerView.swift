@@ -133,7 +133,7 @@ struct SpeechVoicePickerView: View {
                     RemainingTimeSection(remainingTime: remainingTime, warningThreshold: Self.warningThresholdSeconds, formatter: Self.timeFormatter)
                 }
                 if canShowLanguage {
-                    LanguageSection(language: $language, navigationPath: $navigationPath)
+                    LanguageSection(language: $language, detectedLanguage: detectedLanguage, navigationPath: $navigationPath)
                 }
                 switch type {
                 case .local:
@@ -154,7 +154,12 @@ struct SpeechVoicePickerView: View {
             .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(for: String.self, destination: { value in
                 if value == "languages" {
-                    SpeechLanguagePickerView(selectedLanguage: $language, languages: createLanguages(), navigationPath: $navigationPath)
+                    SpeechLanguagePickerView(
+                        selectedLanguage: $language,
+                        detectedLanguage: detectedLanguage,
+                        languages: createLanguages(),
+                        navigationPath: $navigationPath
+                    )
                 }
             })
             .onChange(of: language) { newValue in
@@ -237,16 +242,79 @@ struct SpeechVoicePickerView: View {
         }
     }
     
-    private func createLanguages() -> [String] {
+    private func createLanguages() -> [SpeechLanguagePickerView.Language] {
         switch type {
         case .local:
-            let voices = AVSpeechSynthesisVoice.speechVoices()
-            return Locale.availableIdentifiers
-                .filter({ languageId in !languageId.contains("_") && voices.contains(where: { $0.language.contains(languageId) }) })
+            return createLocalLanguages()
             
-        case .advanced, .basic:
-            return []
+        case .advanced:
+            return createRemoteLanguages(for: .advanced)
+            
+        case .basic:
+            return createRemoteLanguages(for: .basic)
         }
+    }
+    
+    private func createLocalLanguages() -> [SpeechLanguagePickerView.Language] {
+        let voices = AVSpeechSynthesisVoice.speechVoices()
+        var languageVariations: [String: [SpeechLanguagePickerView.LanguageVariation]] = [:]
+        
+        for voice in voices {
+            let baseCode = String(voice.language.prefix(2))
+            let variationName = Self.variationName(for: voice.language, baseLanguage: baseCode)
+            let variation = SpeechLanguagePickerView.LanguageVariation(id: voice.language, name: variationName)
+            
+            if languageVariations[baseCode] == nil {
+                languageVariations[baseCode] = []
+            }
+            if !languageVariations[baseCode]!.contains(where: { $0.id == variation.id }) {
+                languageVariations[baseCode]!.append(variation)
+            }
+        }
+        
+        return languageVariations.keys
+            .compactMap { baseCode -> SpeechLanguagePickerView.Language? in
+                guard let name = Locale.current.localizedString(forLanguageCode: baseCode) else { return nil }
+                let variations = languageVariations[baseCode]?.sorted(by: { $0.name.caseInsensitiveCompare($1.name) == .orderedAscending }) ?? []
+                return SpeechLanguagePickerView.Language(id: baseCode, name: name, variations: variations)
+            }
+            .sorted(by: { $0.name.caseInsensitiveCompare($1.name) == .orderedAscending })
+    }
+    
+    private func createRemoteLanguages(for tier: RemoteVoice.Tier) -> [SpeechLanguagePickerView.Language] {
+        var languageVariations: [String: [SpeechLanguagePickerView.LanguageVariation]] = [:]
+        
+        for voice in allRemoteVoices where voice.tier == tier {
+            for locale in voice.locales {
+                let baseCode = String(locale.prefix(2))
+                let variationName = Self.variationName(for: locale, baseLanguage: baseCode)
+                let variation = SpeechLanguagePickerView.LanguageVariation(id: locale, name: variationName)
+                
+                if languageVariations[baseCode] == nil {
+                    languageVariations[baseCode] = []
+                }
+                if !languageVariations[baseCode]!.contains(where: { $0.id == variation.id }) {
+                    languageVariations[baseCode]!.append(variation)
+                }
+            }
+        }
+        
+        return languageVariations.keys
+            .compactMap { baseCode -> SpeechLanguagePickerView.Language? in
+                guard let name = Locale.current.localizedString(forLanguageCode: baseCode) else { return nil }
+                let variations = languageVariations[baseCode]?.sorted(by: { $0.name.caseInsensitiveCompare($1.name) == .orderedAscending }) ?? []
+                return SpeechLanguagePickerView.Language(id: baseCode, name: name, variations: variations)
+            }
+            .sorted(by: { $0.name.caseInsensitiveCompare($1.name) == .orderedAscending })
+    }
+    
+    private static func variationName(for languageCode: String, baseLanguage: String) -> String {
+        let locale = Locale.current
+        guard let localized = locale.localizedString(forIdentifier: languageCode) else { return languageCode }
+        guard let localizedLanguage = locale.localizedString(forLanguageCode: baseLanguage), localized.hasPrefix(localizedLanguage) else { return localized }
+        let suffix = String(localized[localized.index(localized.startIndex, offsetBy: localizedLanguage.count)..<localized.endIndex])
+            .trimmingCharacters(in: CharacterSet(charactersIn: " ()"))
+        return suffix.isEmpty ? localized : suffix
     }
 
     private static func localVoices(for language: String) -> [AVSpeechSynthesisVoice] {
@@ -327,7 +395,12 @@ fileprivate struct TypeSection: View {
 
 fileprivate struct LanguageSection: View {
     @Binding var language: SpeechVoicePickerView.Language
+    let detectedLanguage: String
     @Binding var navigationPath: NavigationPath
+    
+    private var detectedLanguageName: String {
+        Locale.current.localizedString(forIdentifier: detectedLanguage) ?? detectedLanguage
+    }
 
     var body: some View {
         Section {
@@ -336,10 +409,10 @@ fileprivate struct LanguageSection: View {
                 Spacer()
                 switch language {
                 case .auto:
-                    Text("Auto").foregroundColor(.gray)
+                    Text("Auto (\(detectedLanguageName))").foregroundColor(.gray)
                     
                 case .language(let code):
-                    Text(Locale.current.localizedString(forLanguageCode: code) ?? "Unknown").foregroundColor(.gray)
+                    Text(Locale.current.localizedString(forIdentifier: code) ?? "Unknown").foregroundColor(.gray)
                 }
                 Image(systemName: "chevron.right")
                     .foregroundColor(.gray)
