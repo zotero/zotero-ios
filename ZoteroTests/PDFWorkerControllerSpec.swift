@@ -53,14 +53,14 @@ final class PDFWorkerControllerSpec: QuickSpec {
             }
 
             context("with a valid PDF URL") {
-                let fileΝame = "bitcoin"
+                let fileName = "bitcoin"
                 let fileExtension = "pdf"
                 let contentType = "application/pdf"
                 let key = "aaaaaaaa"
-                let fileURL = Bundle(for: Self.self).url(forResource: fileΝame, withExtension: fileExtension)!
+                let fileURL = Bundle(for: Self.self).url(forResource: fileName, withExtension: fileExtension)!
                 let data = try! Data(contentsOf: fileURL)
                 let libraryId = LibraryIdentifier.custom(.myLibrary)
-                let file = Files.attachmentFile(in: libraryId, key: key, filename: fileΝame, contentType: contentType) as! FileData
+                let file = Files.attachmentFile(in: libraryId, key: key, filename: fileName, contentType: contentType) as! FileData
                 try! TestControllers.fileStorage.write(data, to: file, options: .atomic)
                 expect(TestControllers.fileStorage.has(file)).to(beTrue())
 
@@ -163,23 +163,61 @@ final class PDFWorkerControllerSpec: QuickSpec {
                     expect(emittedUpdates.count).toEventually(equal(2), timeout: .seconds(20))
                     process(updates: emittedUpdates, jsonFileName: "bitcoin_pdf_pages_0_1_text")
                 }
+            }
 
-                func process(updates: [PDFWorkerController.Update.Kind], jsonFileName: String) {
-                    for (index, update) in updates.enumerated() {
-                        switch update {
-                        case .inProgress:
-                            expect(index).to(equal(0))
+            context("with a valid CMap PDF URL") {
+                let fileName = "cmap"
+                let fileExtension = "pdf"
+                let contentType = "application/pdf"
+                let key = "bbbbbbbb"
+                let fileURL = Bundle(for: Self.self).url(forResource: fileName, withExtension: fileExtension)!
+                let data = try! Data(contentsOf: fileURL)
+                let libraryId = LibraryIdentifier.custom(.myLibrary)
+                let file = Files.attachmentFile(in: libraryId, key: key, filename: fileName, contentType: contentType) as! FileData
+                try! TestControllers.fileStorage.write(data, to: file, options: .atomic)
+                expect(TestControllers.fileStorage.has(file)).to(beTrue())
 
-                        case .extractedData(let data):
-                            expect(index).to(equal(1))
-                            let url = Bundle(for: Self.self).url(forResource: jsonFileName, withExtension: "json")!
-                            let expectedData = try! Data(contentsOf: url)
-                            let expectedJSONData = try! JSONSerialization.jsonObject(with: expectedData, options: .allowFragments) as! [String: Any]
-                            compareJSONObjects(actual: data, expected: expectedJSONData, context: jsonFileName)
+                it("can extract full text") {
+                    let work: PDFWorkerController.Work = .fullText(pages: nil)
+                    let worker = PDFWorkerController.Worker(file: file, shouldCacheData: false, priority: .default)
+                    var emittedUpdates: [PDFWorkerController.Update.Kind] = []
 
-                        default:
-                            fail("unexpected update \(index): \(update)")
-                        }
+                    waitUntil(timeout: .seconds(20)) { completion in
+                        pdfWorkerController.queue(work: work, in: worker)
+                            .subscribe(onNext: { update in
+                                expect(update.work).to(equal(work))
+                                emittedUpdates.append(update.kind)
+                                switch update.kind {
+                                case .failed, .cancelled, .extractedData:
+                                    completion()
+
+                                case .inProgress:
+                                    break
+                                }
+                            })
+                            .disposed(by: disposeBag)
+                    }
+
+                    expect(emittedUpdates.count).toEventually(equal(2), timeout: .seconds(20))
+                    process(updates: emittedUpdates, jsonFileName: "cmap_pdf_full_text")
+                }
+            }
+
+            func process(updates: [PDFWorkerController.Update.Kind], jsonFileName: String) {
+                for (index, update) in updates.enumerated() {
+                    switch update {
+                    case .inProgress:
+                        expect(index).to(equal(0))
+
+                    case .extractedData(let data):
+                        expect(index).to(equal(1))
+                        let url = Bundle(for: Self.self).url(forResource: jsonFileName, withExtension: "json")!
+                        let expectedData = try! Data(contentsOf: url)
+                        let expectedJSONData = try! JSONSerialization.jsonObject(with: expectedData, options: .allowFragments) as! [String: Any]
+                        compareJSONObjects(actual: data, expected: expectedJSONData, context: jsonFileName)
+
+                    default:
+                        fail("unexpected update \(index): \(update)")
                     }
                 }
 
