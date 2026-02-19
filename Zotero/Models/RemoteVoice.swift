@@ -12,7 +12,7 @@ struct RemoteVoice: Equatable {
         case paragraph
     }
 
-    enum Tier: String {
+    enum Tier: String, Codable {
         case basic
         case advanced
     }

@@ -165,8 +165,8 @@ final class Defaults {
     @CodableUserDefault(key: "SpeechDefaultRemoteVoiceForLanguage", defaultValue: [:], encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
     var defaultRemoteVoiceForLanguage: [String: RemoteVoice]
     
-    @UserDefault(key: "SpeechIsUsingRemoteVoice", defaultValue: false)
-    var isUsingRemoteVoice: Bool
+    @CodableUserDefault(key: "SpeechRemoteVoiceTier", defaultValue: nil, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
+    var remoteVoiceTier: RemoteVoice.Tier?
     
     #endif
 
