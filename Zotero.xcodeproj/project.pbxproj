@@ -67,6 +67,8 @@
 		61A9B1632F4662BD004FF769 /* pdf_worker_shim.js in Resources */ = {isa = PBXBuildFile; fileRef = 61F0A1A12F9C0A1B00ABCDEF /* pdf_worker_shim.js */; };
 		61A9B1652F471F75004FF769 /* cmap.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 61A9B1642F471F75004FF769 /* cmap.pdf */; };
 		61A9B1672F47295D004FF769 /* cmap_pdf_full_text.json in Resources */ = {isa = PBXBuildFile; fileRef = 61A9B1662F47295D004FF769 /* cmap_pdf_full_text.json */; };
+		61A9B1692F476D36004FF769 /* font_data.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 61A9B1682F476D36004FF769 /* font_data.pdf */; };
+		61A9B16B2F476DA6004FF769 /* font_data_pdf_full_text.json in Resources */ = {isa = PBXBuildFile; fileRef = 61A9B16A2F476D95004FF769 /* font_data_pdf_full_text.json */; };
 		61ABA7512A6137D1002A4219 /* ShareableImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61ABA7502A6137D1002A4219 /* ShareableImage.swift */; };
 		61AD977D2D67F42A000FDF45 /* PDFWorkerControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61AD977C2D67F42A000FDF45 /* PDFWorkerControllerSpec.swift */; };
 		61BD13952A5831EF008A0704 /* TextKit1TextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61BD13942A5831EF008A0704 /* TextKit1TextView.swift */; };
@@ -1390,6 +1392,8 @@
 		61A0C8462B8F669B0048FF92 /* PSPDFKitUI+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PSPDFKitUI+Extensions.swift"; sourceTree = "<group>"; };
 		61A9B1642F471F75004FF769 /* cmap.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = cmap.pdf; sourceTree = "<group>"; };
 		61A9B1662F47295D004FF769 /* cmap_pdf_full_text.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = cmap_pdf_full_text.json; sourceTree = "<group>"; };
+		61A9B1682F476D36004FF769 /* font_data.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = font_data.pdf; sourceTree = "<group>"; };
+		61A9B16A2F476D95004FF769 /* font_data_pdf_full_text.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = font_data_pdf_full_text.json; sourceTree = "<group>"; };
 		61ABA7502A6137D1002A4219 /* ShareableImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareableImage.swift; sourceTree = "<group>"; };
 		61AD977C2D67F42A000FDF45 /* PDFWorkerControllerSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFWorkerControllerSpec.swift; sourceTree = "<group>"; };
 		61BD13942A5831EF008A0704 /* TextKit1TextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextKit1TextView.swift; sourceTree = "<group>"; };
@@ -3337,6 +3341,7 @@
 				61A9B1662F47295D004FF769 /* cmap_pdf_full_text.json */,
 				B3B1EDFB2502498100D8BC1E /* collectionresponse_knownfields.json */,
 				B3B1EDFC2502498100D8BC1E /* collectionresponse_unknownfields.json */,
+				61A9B16A2F476D95004FF769 /* font_data_pdf_full_text.json */,
 				B3B1EDF32502456000D8BC1E /* itemresponse_knownfields.json */,
 				B3B1EDF22502455F00D8BC1E /* itemresponse_unknownfields.json */,
 				B3AAABD62502A40900031065 /* searchresponse_knownfields.json */,
@@ -4063,6 +4068,7 @@
 				B36EBFF4273162DD00CD788D /* bitcoin.zip */,
 				B3B1C5882665258400883597 /* bitcoin.pdf */,
 				61A9B1642F471F75004FF769 /* cmap.pdf */,
+				61A9B1682F476D36004FF769 /* font_data.pdf */,
 			);
 			path = PDFs;
 			sourceTree = "<group>";
@@ -5041,6 +5047,7 @@
 				61FB13D82EED6D6E00329563 /* bitcoin_pdf_page_0_text.json in Resources */,
 				B32A3C90248008A2009E2C5D /* translators.xml in Resources */,
 				B3B1C5892665258400883597 /* bitcoin.pdf in Resources */,
+				61A9B1692F476D36004FF769 /* font_data.pdf in Resources */,
 				6102D2B22D68ABF100505E6A /* bitcoin_pdf_recognizer_data.json in Resources */,
 				B32A3C8C248008A2009E2C5D /* test_collection.json in Resources */,
 				B32A3C8D248008A2009E2C5D /* test_search.json in Resources */,
@@ -5049,6 +5056,7 @@
 				B32A3C8F248008A2009E2C5D /* translators_delete.xml in Resources */,
 				B36B8A552A4C2E930038BA1C /* test_annotation_array_position.json in Resources */,
 				B3DF44122A408339005AF766 /* test_item_attachment.json in Resources */,
+				61A9B16B2F476DA6004FF769 /* font_data_pdf_full_text.json in Resources */,
 				B32A3C8E248008A2009E2C5D /* test_thesis_item.json in Resources */,
 				B3B1EDFA2502493700D8BC1E /* Bundled in Resources */,
 				B3AAABD72502A40900031065 /* searchresponse_unknownfields.json in Resources */,
