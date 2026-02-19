@@ -514,7 +514,7 @@ fileprivate struct LocalVoicesSection: View {
                 .onTapGesture {
                     selectedVoice = .local(voice)
                     Defaults.shared.defaultLocalVoiceForLanguage[language] = voice.identifier
-                    Defaults.shared.isUsingRemoteVoice = false
+                    Defaults.shared.remoteVoiceTier = nil
                     playSample(withVoice: voice)
                 }
             }
@@ -563,7 +563,7 @@ fileprivate struct RemoteVoicesSection: View {
                     player?.stop()
                     selectedVoice = .remote(voice)
                     Defaults.shared.defaultRemoteVoiceForLanguage[language] = voice
-                    Defaults.shared.isUsingRemoteVoice = true
+                    Defaults.shared.remoteVoiceTier = voice.tier
                     playSample(withVoice: voice)
                 }
             }

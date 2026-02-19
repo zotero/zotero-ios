@@ -110,7 +110,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         return speechData?.range
     }
 
-    init(delegate: Delegate, voiceLanguage: String?, useRemoteVoices: Bool, remoteVoicesController: RemoteVoicesController) {
+    init(delegate: Delegate, voiceLanguage: String?, remoteVoiceTier: RemoteVoice.Tier?, remoteVoicesController: RemoteVoicesController) {
         self.delegate = delegate
         self.remoteVoicesController = remoteVoicesController
         cachedPages = [:]
@@ -119,8 +119,8 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         disposeBag = DisposeBag()
         nowPlayingManager = NowPlayingManager()
         super.init()
-        if useRemoteVoices {
-            processor = RemoteVoiceProcessor(language: voiceLanguage, speechRateModifier: 1, delegate: self, remoteVoicesController: remoteVoicesController)
+        if let remoteVoiceTier {
+            processor = RemoteVoiceProcessor(language: voiceLanguage, tier: remoteVoiceTier, speechRateModifier: 1, delegate: self, remoteVoicesController: remoteVoicesController)
         } else {
             processor = LocalVoiceProcessor(language: voiceLanguage, speechRateModifier: 1, delegate: self)
         }
@@ -247,6 +247,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             } else {
                 let _processor = RemoteVoiceProcessor(
                     language: preferredLanguage,
+                    tier: voice.tier,
                     speechRateModifier: processor.speechRateModifier,
                     delegate: self,
                     remoteVoicesController: remoteVoicesController
@@ -674,11 +675,13 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     
     private unowned let delegate: VoiceProcessorDelegate
     private unowned let remoteVoicesController: RemoteVoicesController
+    private var tier: RemoteVoice.Tier
 
     private var text: String?
     private(set) var preferredLanguage: String?
     private var voiceData: VoiceData?
     private var player: AVAudioPlayer?
+    private var allAvailableVoices: [RemoteVoice]?
     private var availableVoices: [RemoteVoice]?
     private var disposeBag = DisposeBag()
     /// Cache of downloaded audio data keyed by their text range
@@ -697,8 +700,9 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         return player != nil
     }
 
-    init(language: String?, speechRateModifier: Float, delegate: VoiceProcessorDelegate, remoteVoicesController: RemoteVoicesController) {
+    init(language: String?, tier: RemoteVoice.Tier, speechRateModifier: Float, delegate: VoiceProcessorDelegate, remoteVoicesController: RemoteVoicesController) {
         preferredLanguage = language
+        self.tier = tier
         self.speechRateModifier = speechRateModifier
         self.delegate = delegate
         self.remoteVoicesController = remoteVoicesController
@@ -711,6 +715,11 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         let voiceChanged = self.voiceData?.voice.id != voice.id
         self.preferredLanguage = preferredLanguage
         self.voiceData = VoiceData(voice: voice, language: voiceLanguage)
+        
+        if self.tier != voice.tier {
+            self.tier = voice.tier
+            availableVoices = allAvailableVoices?.filter({ $0.tier == voice.tier })
+        }
         
         if voiceChanged {
             stopPreloadingAndClearCache()
@@ -812,6 +821,13 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
             return loadVoice(forText: text, voices: availableVoices, preferredLanguage: preferredLanguage)
         }
         return remoteVoicesController.loadVoices()
+            .do(onSuccess: { [weak self] voices in
+                self?.allAvailableVoices = voices
+            })
+            .map({ [weak self] voices in
+                guard let self else { return voices }
+                return voices.filter({ $0.tier == self.tier })
+            })
             .do(onSuccess: { [weak self] voices in
                 self?.availableVoices = voices
             })
