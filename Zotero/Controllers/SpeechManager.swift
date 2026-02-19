@@ -101,10 +101,8 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     var language: String? { processor.preferredLanguage }
     var speechRateModifier: Float { processor.speechRateModifier }
     var detectedLanguage: String {
-        guard let text = speechData.flatMap({ cachedPages[$0.index] }) else { return "en" }
-        let recognizer = NLLanguageRecognizer()
-        recognizer.processString(text)
-        return recognizer.dominantLanguage?.rawValue ?? "en"
+        guard let text = speechData.flatMap({ cachedPages[$0.index] }) else { return "en-US" }
+        return LanguageDetector.detectLanguage(from: text)
     }
     fileprivate var speechRange: NSRange? {
         return speechData?.range
@@ -587,25 +585,31 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
     }
 
     private func voice(for text: String) -> AVSpeechSynthesisVoice {
-        if let preferredLanguage {
-            return findVoice(for: preferredLanguage)
-        }
-        let recognizer = NLLanguageRecognizer()
-        recognizer.processString(text)
-        let language = recognizer.dominantLanguage?.rawValue ?? "en"
-        return findVoice(for: language)
+        let allVoices = AVSpeechSynthesisVoice.speechVoices()
+        let language = preferredLanguage ?? LanguageDetector.detectLanguage(from: text)
+        return findVoice(for: language, from: allVoices)
     }
 
-    private func findVoice(for language: String) -> AVSpeechSynthesisVoice {
-        let voiceId = Defaults.shared.defaultLocalVoiceForLanguage[language]
-        return AVSpeechSynthesisVoice.speechVoices().first(where: isProperVoice) ?? AVSpeechSynthesisVoice(identifier: "en-US")!
-
-        func isProperVoice(_ voice: AVSpeechSynthesisVoice) -> Bool {
-            if let voiceId {
-                return voice.identifier == voiceId
-            }
-            return voice.language.starts(with: language)
+    private func findVoice(for language: String, from voices: [AVSpeechSynthesisVoice]) -> AVSpeechSynthesisVoice {
+        // First check if user has a saved voice for this exact language
+        if let voiceId = Defaults.shared.defaultLocalVoiceForLanguage[language],
+           let savedVoice = voices.first(where: { $0.identifier == voiceId }) {
+            return savedVoice
         }
+        
+        // Try to find exact locale match
+        if let exactMatch = voices.first(where: { $0.language == language }) {
+            return exactMatch
+        }
+        
+        // Fall back to any voice matching the base language
+        let baseLanguage = String(language.prefix(2))
+        if let baseMatch = voices.first(where: { $0.language.hasPrefix(baseLanguage) }) {
+            return baseMatch
+        }
+        
+        // Ultimate fallback to en-US
+        return AVSpeechSynthesisVoice(identifier: "en-US")!
     }
     
     private func finishSpeaking() {
@@ -848,23 +852,31 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
                     return Disposables.create()
                 }
                 
-                if let preferredLanguage {
-                    subscriber(.success(VoiceData(voice: findVoice(for: preferredLanguage), language: preferredLanguage)))
-                } else {
-                    let recognizer = NLLanguageRecognizer()
-                    recognizer.processString(text)
-                    let language = recognizer.dominantLanguage?.rawValue ?? "en"
-                    subscriber(.success(VoiceData(voice: findVoice(for: language), language: language)))
-                }
+                let language = preferredLanguage ?? LanguageDetector.detectLanguage(from: text)
+                subscriber(.success(VoiceData(voice: findVoice(for: language), language: language)))
                 
                 return Disposables.create()
             }
             
             func findVoice(for language: String) -> RemoteVoice {
-                if let voice = Defaults.shared.defaultRemoteVoiceForLanguage[language] {
-                    return voice
+                // First check if user has a saved voice for this exact language
+                if let savedVoice = Defaults.shared.defaultRemoteVoiceForLanguage[language] {
+                    return savedVoice
                 }
-                return voices.first(where: { voice in voice.locales.contains(where: { $0.contains(language) }) }) ?? voices[0]
+                
+                // Try to find exact locale match
+                if let exactMatch = voices.first(where: { $0.locales.contains(language) }) {
+                    return exactMatch
+                }
+                
+                // Fall back to any voice matching the base language
+                let baseLanguage = String(language.prefix(2))
+                if let baseMatch = voices.first(where: { voice in voice.locales.contains(where: { $0.hasPrefix(baseLanguage) }) }) {
+                    return baseMatch
+                }
+                
+                // Ultimate fallback to first available voice
+                return voices[0]
             }
         }
     }
