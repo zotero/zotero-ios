@@ -565,8 +565,6 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
 
     func set(voice: AVSpeechSynthesisVoice, voiceLanguage: String, preferredLanguage: String?) {
         guard self.voice?.identifier != voice.identifier else { return }
-        Defaults.shared.defaultLocalVoiceForLanguage[voiceLanguage] = voice.identifier
-        Defaults.shared.isUsingRemoteVoice = false
         self.preferredLanguage = preferredLanguage
         self.voice = voice
         utteranceChanged()
@@ -714,8 +712,6 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         let voiceChanged = self.voiceData?.voice.id != voice.id
         self.preferredLanguage = preferredLanguage
         self.voiceData = VoiceData(voice: voice, language: voiceLanguage)
-        Defaults.shared.defaultRemoteVoiceForLanguage[voiceLanguage] = voice
-        Defaults.shared.isUsingRemoteVoice = true
         
         if voiceChanged {
             stopPreloadingAndClearCache()
