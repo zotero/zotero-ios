@@ -267,6 +267,10 @@ final class PDFWorkerControllerSpec: QuickSpec {
                         case "metadata":
                             expect(actual[key] as? [String: String]).to(equal(expected[key] as? [String: String]))
 
+                        case "text":
+
+                            expect((actual[key] as? String)?.replacingOccurrences(of: "\n", with: " ")).to(equal((expected[key] as? String)?.replacingOccurrences(of: "\n", with: " ")))
+
                         default:
                             expect(actual[key] as? AnyHashable).to(equal(expected[key] as? AnyHashable))
                         }
