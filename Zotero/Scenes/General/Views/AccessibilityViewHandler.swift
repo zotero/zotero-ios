@@ -72,7 +72,7 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
         speechManager = SpeechManager(
             delegate: delegate,
             voiceLanguage: language,
-            useRemoteVoices: Defaults.shared.isUsingRemoteVoice,
+            remoteVoiceTier: Defaults.shared.remoteVoiceTier,
             remoteVoicesController: remoteVoicesController
         )
         
