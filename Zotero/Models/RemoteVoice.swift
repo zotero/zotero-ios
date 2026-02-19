@@ -78,4 +78,3 @@ extension RemoteVoice: Codable {
         try container.encode(tier.rawValue, forKey: .tier)
     }
 }
-
