@@ -30,11 +30,10 @@ enum LanguageDetector {
     /// - Parameter text: The text to analyze
     /// - Returns: A locale string with variation (e.g., "en-US")
     static func detectLanguage(from text: String) -> String {
-        return "en-AU"
-//        let recognizer = NLLanguageRecognizer()
-//        recognizer.processString(text)
-//        let baseLanguage = recognizer.dominantLanguage?.rawValue ?? "en"
-//        return resolveVariation(for: baseLanguage)
+        let recognizer = NLLanguageRecognizer()
+        recognizer.processString(text)
+        let baseLanguage = recognizer.dominantLanguage?.rawValue ?? "en"
+        return resolveVariation(for: baseLanguage)
     }
     
     /// Resolves a base language to a specific variation.
