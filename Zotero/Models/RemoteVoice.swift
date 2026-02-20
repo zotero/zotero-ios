@@ -19,7 +19,7 @@ struct RemoteVoice: Equatable {
 
     let id: String
     let label: String
-    let creditsPerSecond: Int
+    let creditsPerMinute: Int
     let granularity: Granularity
     let tier: Tier
     let locales: [String]
@@ -32,7 +32,7 @@ extension RemoteVoice: Codable {
     enum CodingKeys: String, CodingKey {
         case id
         case label
-        case creditsPerSecond
+        case creditsPerMinute
         case segmentGranularity
         case locales
         case tier
@@ -42,7 +42,7 @@ extension RemoteVoice: Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
         label = try container.decode(String.self, forKey: .label)
-        creditsPerSecond = try container.decode(Int.self, forKey: .creditsPerSecond)
+        creditsPerMinute = try container.decode(Int.self, forKey: .creditsPerMinute)
         locales = try container.decode([String].self, forKey: .locales)
 
         let granularityString = try container.decode(String.self, forKey: .segmentGranularity)
@@ -72,7 +72,7 @@ extension RemoteVoice: Codable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
         try container.encode(label, forKey: .label)
-        try container.encode(creditsPerSecond, forKey: .creditsPerSecond)
+        try container.encode(creditsPerMinute, forKey: .creditsPerMinute)
         try container.encode(granularity.rawValue, forKey: .segmentGranularity)
         try container.encode(locales, forKey: .locales)
         try container.encode(tier.rawValue, forKey: .tier)
