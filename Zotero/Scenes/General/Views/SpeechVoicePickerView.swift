@@ -352,7 +352,10 @@ struct SpeechVoicePickerView: View {
     
     /// Returns the default remote voice for the given language from Defaults, or the first available voice.
     private func defaultRemoteVoice(for language: String, from voices: [RemoteVoice]) -> SpeechVoice? {
-        if let defaultVoice = Defaults.shared.defaultRemoteVoiceForLanguage[language],
+        let savedVoices = type == .advanced
+            ? Defaults.shared.defaultAdvancedRemoteVoiceForLanguage
+            : Defaults.shared.defaultBasicRemoteVoiceForLanguage
+        if let defaultVoice = savedVoices[language],
            let voice = voices.first(where: { $0.id == defaultVoice.id }) {
             return .remote(voice)
         }
@@ -574,7 +577,13 @@ fileprivate struct RemoteVoicesSection: View {
                     guard !isLoading else { return }
                     player?.stop()
                     selectedVoice = .remote(voice)
-                    Defaults.shared.defaultRemoteVoiceForLanguage[language] = voice
+                    switch voice.tier {
+                    case .advanced:
+                        Defaults.shared.defaultAdvancedRemoteVoiceForLanguage[language] = voice
+
+                    case .basic:
+                        Defaults.shared.defaultBasicRemoteVoiceForLanguage[language] = voice
+                    }
                     Defaults.shared.remoteVoiceTier = voice.tier
                     playSample(withVoice: voice)
                 }
