@@ -10,7 +10,22 @@ import UIKit
 
 struct ItemAction {
     enum Kind {
-        case addToCollection, delete, duplicate, removeFromCollection, restore, trash, sort, filter, createParent, retrieveMetadata, copyCitation, copyBibliography, share, download, removeDownload
+        case addToCollection
+        case delete
+        case duplicate
+        case removeFromCollection
+        case restore
+        case trash
+        case sort
+        case filter
+        case createParent
+        case retrieveMetadata
+        case copyCitation
+        case copyBibliography
+        case share
+        case download
+        case removeDownload
+        case debugReader
     }
 
     private enum Image {
@@ -32,8 +47,11 @@ struct ItemAction {
     }
     var isDestructive: Bool {
         switch self.type {
-        case .delete, .trash: return true
-        case .addToCollection, .duplicate, .removeFromCollection, .restore, .sort, .filter, .createParent, .retrieveMetadata, .copyCitation, .copyBibliography, .share, .download, .removeDownload: return false
+        case .delete, .trash:
+            return true
+
+        case .addToCollection, .duplicate, .removeFromCollection, .restore, .sort, .filter, .createParent, .retrieveMetadata, .copyCitation, .copyBibliography, .share, .download, .removeDownload, .debugReader:
+            return false
         }
     }
 
@@ -100,6 +118,10 @@ struct ItemAction {
         case .removeDownload:
             self.title = L10n.Items.Action.removeDownload
             self._image = .system("arrow.down.circle.dotted")
+
+        case .debugReader:
+            self.title = "Debug Reader"
+            self._image = .system("ladybug")
         }
     }
 }

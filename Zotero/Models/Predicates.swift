@@ -43,6 +43,10 @@ extension NSPredicate {
                                                                    .library(with: libraryId)])
     }
 
+    static func keysByLibraryIdentifier(_ keysByLibraryIdentifier: [LibraryIdentifier: Set<String>]) -> NSPredicate {
+        NSCompoundPredicate(orPredicateWithSubpredicates: keysByLibraryIdentifier.map({ .keys($0.value, in: $0.key) }))
+    }
+
     static func key(notIn keys: [String], in libraryId: LibraryIdentifier) -> NSPredicate {
         return NSCompoundPredicate(andPredicateWithSubpredicates: [.library(with: libraryId), .key(notIn: keys)])
     }
@@ -219,6 +223,11 @@ extension NSPredicate {
         let predicates: [NSPredicate] = [.library(with: libraryId), .deleted(false), .isTrash(true), .notSyncState(.dirty)]
         return NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
     }
+    
+    static var notTrashedOrDeleted: NSPredicate {
+        let predicates: [NSPredicate] = [.deleted(false), .isTrash(false), .notSyncState(.dirty)]
+        return NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
+    }
 
     private static func baseItemPredicates(isTrash: Bool, libraryId: LibraryIdentifier) -> [NSPredicate] {
         var predicates: [NSPredicate] = [.library(with: libraryId), .notSyncState(.dirty), .deleted(false), .isTrash(isTrash)]
@@ -245,8 +254,10 @@ extension NSPredicate {
             switch type {
             case .unfiled:
                 predicates.append(NSPredicate(format: "collections.@count == 0"))
+
             case .all, .publications, .trash: break
             }
+
         case .search: break
         }
 
@@ -279,6 +290,7 @@ extension NSPredicate {
             let selfInCollection = NSPredicate(format: "any collections.key = %@", key)
             let parentInCollection = NSPredicate(format: "any parent.collections.key = %@", key)
             predicates.append(NSCompoundPredicate(orPredicateWithSubpredicates: [selfInCollection, parentInCollection]))
+
         case .search, .custom: break
         }
 
@@ -308,10 +320,15 @@ extension NSPredicate {
     }
 
     static func itemsNotChangedAndNeedUpload(in libraryId: LibraryIdentifier) -> NSPredicate {
-        return NSCompoundPredicate(andPredicateWithSubpredicates: [.notChanged,
-                                                                   .attachmentNeedsUpload,
-                                                                   .item(type: ItemTypes.attachment),
-                                                                   .library(with: libraryId)])
+        let parentNotDeleted = NSPredicate(format: "parent = nil or parent.deleted = false")
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [
+            .notChanged,
+            .attachmentNeedsUpload,
+            .item(type: ItemTypes.attachment),
+            .library(with: libraryId),
+            .deleted(false),
+            parentNotDeleted
+        ])
     }
 
     static func itemSearch(for components: [String]) -> NSPredicate {

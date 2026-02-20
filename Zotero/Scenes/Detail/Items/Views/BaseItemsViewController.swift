@@ -12,6 +12,7 @@ import CocoaLumberjackSwift
 import RealmSwift
 import RxSwift
 import WebKit
+import ZIPFoundation
 
 class BaseItemsViewController: UIViewController {
     enum RightBarButtonItem: Int {
@@ -21,6 +22,7 @@ class BaseItemsViewController: UIViewController {
         case deselectAll
         case add
         case emptyTrash
+        case restoreOpenItems
     }
 
     private static let itemBatchingLimit = 150
@@ -33,11 +35,20 @@ class BaseItemsViewController: UIViewController {
     var handler: ItemsTableViewHandler?
     weak var tagFilterDelegate: ItemsTagFilterDelegate?
     weak var coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)?
+    weak var presenter: OpenItemsPresenter?
+    private let debugReaderQueue: DispatchQueue?
+    private var readerURL: URL?
 
-    init(controllers: Controllers, coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate)) {
+    init(controllers: Controllers, coordinatorDelegate: (DetailItemsCoordinatorDelegate & DetailNoteEditorCoordinatorDelegate), presenter: OpenItemsPresenter) {
         self.controllers = controllers
         self.coordinatorDelegate = coordinatorDelegate
-        self.disposeBag = DisposeBag()
+        self.presenter = presenter
+        disposeBag = DisposeBag()
+        #if DEBUG
+        debugReaderQueue = DispatchQueue(label: "org.zotero.DebugReaderQueue", qos: .userInteractive)
+        #else
+        debugReaderQueue = nil
+        #endif
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -154,13 +165,113 @@ class BaseItemsViewController: UIViewController {
 
         switch update.kind {
         case .ready:
-            coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId)
+            coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId, readerURL: readerURL)
+            readerURL = nil
 
         case .failed(let error):
             coordinatorDelegate?.showAttachmentError(error)
 
         case .progress, .cancelled:
             break
+        }
+    }
+
+    private enum DebugReaderError: LocalizedError {
+        case invalidInput
+        
+        var errorDescription: String? {
+            switch self {
+            case .invalidInput:
+                return "Please enter a valid reader commit hash or build zip URL."
+            }
+        }
+    }
+
+    func processDebugReaderAction(tapAction: ItemsTableViewHandler.TapAction, completion: @escaping (() -> Void)) {
+        guard case .attachment = tapAction else { return }
+        let alertController = UIAlertController(title: "Debug Reader", message: "Enter <reader commit hash> or <build zip URL>", preferredStyle: .alert)
+        alertController.addTextField { textField in
+            textField.placeholder = "<reader commit hash> or <build zip URL>"
+            textField.autocapitalizationType = .none
+            textField.autocorrectionType = .no
+            textField.keyboardType = .default
+            textField.text = Defaults.shared.lastDebugReaderHashOrURL
+        }
+        alertController.addAction(UIAlertAction(title: L10n.cancel, style: .cancel))
+        alertController.addAction(UIAlertAction(title: L10n.ok, style: .default) { [weak self, weak alertController] _ in
+            guard let self, let hashOrURL = alertController?.textFields?.first?.text?.trimmingCharacters(in: .whitespacesAndNewlines), !hashOrURL.isEmpty else {
+                showError(DebugReaderError.invalidInput)
+                return
+            }
+            let url: URL?
+            var hash: String?
+            if hashOrURL.starts(with: "http://") || hashOrURL.starts(with: "https://") {
+                url = URL(string: hashOrURL)
+            } else if let uuidString = Defaults.shared.debugReaderUUIDByHash[hashOrURL] {
+                Defaults.shared.lastDebugReaderHashOrURL = hashOrURL
+                readerURL = FileData.directory(rootPath: Files.cachesRootPath, relativeComponents: ["Zotero", uuidString, "ios"]).createUrl()
+                completion()
+                return
+            } else {
+                url = URL(string: "https://zotero-download.s3.amazonaws.com/ci/reader/\(hashOrURL).zip")
+                hash = hashOrURL
+            }
+            guard let url, let debugReaderQueue else {
+                cache(uuidString: nil, for: hash, hashOrURL: nil)
+                showError(DebugReaderError.invalidInput)
+                return
+            }
+            let temporaryDirectory = Files.temporaryDirectory
+            let fileExtension = url.pathExtension
+            let fileName = url.deletingPathExtension().lastPathComponent
+            let zipFile = FileData(rootPath: temporaryDirectory.rootPath, relativeComponents: temporaryDirectory.relativeComponents, name: fileName, ext: fileExtension)
+            let request = FileRequest(url: url, destination: zipFile)
+            controllers.apiClient
+                .download(request: request, queue: debugReaderQueue)
+                .subscribe(onNext: { request in
+                    request.resume()
+                }, onError: { [weak self] error in
+                    cache(uuidString: nil, for: hash, hashOrURL: nil)
+                    guard let self else { return }
+                    readerURL = nil
+                    showError(error)
+                }, onCompleted: { [weak self] in
+                    guard let self else { return }
+                    do {
+                        let destinationURL = zipFile.createRelativeUrl()
+                        try FileManager.default.unzipItem(at: zipFile.createUrl(), to: destinationURL)
+                        try? controllers.fileStorage.remove(zipFile)
+                        cache(uuidString: destinationURL.lastPathComponent, for: hash, hashOrURL: hashOrURL)
+                        readerURL = destinationURL.appending(path: "ios")
+                        DispatchQueue.main.async {
+                            completion()
+                        }
+                    } catch {
+                        cache(uuidString: nil, for: hash, hashOrURL: nil)
+                        readerURL = nil
+                        showError(error)
+                    }
+                })
+                .disposed(by: disposeBag)
+        })
+        present(alertController, animated: true)
+
+        func cache(uuidString: String?, for hash: String?, hashOrURL: String?) {
+            if let hash {
+                var debugReaderUUIDByHash = Defaults.shared.debugReaderUUIDByHash
+                debugReaderUUIDByHash[hash] = uuidString
+                Defaults.shared.debugReaderUUIDByHash = debugReaderUUIDByHash
+            }
+            Defaults.shared.lastDebugReaderHashOrURL = hashOrURL
+        }
+
+        func showError(_ error: Error) {
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                let alert = UIAlertController(title: L10n.error, message: error.localizedDescription, preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: L10n.ok, style: .cancel))
+                present(alert, animated: true)
+            }
         }
     }
 
@@ -190,7 +301,20 @@ class BaseItemsViewController: UIViewController {
 
     func tagSelectionDidChange(selected: Set<String>) {}
 
-    func process(barButtonItemAction: RightBarButtonItem, sender: UIBarButtonItem) {}
+    func process(barButtonItemAction: RightBarButtonItem, sender: UIBarButtonItem) {
+        switch barButtonItemAction {
+        case .select, .done, .selectAll, .deselectAll, .add, .emptyTrash:
+            break
+
+        case .restoreOpenItems:
+            guard let presenter, let controller = controllers.userControllers?.openItemsController, let sessionIdentifier else { return }
+            controller.restoreMostRecentlyOpenedItem(using: presenter, sessionIdentifier: sessionIdentifier) { item in
+                if item == nil {
+                    DDLogInfo("ItemsViewController: no open item to restore")
+                }
+            }
+        }
+    }
 
     func downloadsFilterDidChange(enabled: Bool) {}
 
@@ -218,7 +342,7 @@ class BaseItemsViewController: UIViewController {
     }
 
     func setupRightBarButtonItems(expectedItems: [RightBarButtonItem]) {
-        let currentItems = (self.navigationItem.rightBarButtonItems ?? []).compactMap({ RightBarButtonItem(rawValue: $0.tag) })
+        let currentItems = (navigationItem.rightBarButtonItems ?? []).compactMap({ RightBarButtonItem(rawValue: $0.tag) })
         guard currentItems != expectedItems else { return }
         self.navigationItem.rightBarButtonItems = expectedItems.compactMap({ createRightBarButtonItem($0) }).reversed()
 
@@ -226,6 +350,7 @@ class BaseItemsViewController: UIViewController {
             var image: UIImage?
             var title: String?
             let accessibilityLabel: String
+            var menu: UIMenu?
 
             switch type {
             case .deselectAll:
@@ -252,13 +377,34 @@ class BaseItemsViewController: UIViewController {
             case .emptyTrash:
                 title = L10n.Collections.emptyTrash
                 accessibilityLabel = L10n.Collections.emptyTrash
+
+            case .restoreOpenItems:
+                image = .openItemsImage(count: 0)
+                accessibilityLabel = L10n.Items.restoreOpen
+                if let controller = controllers.userControllers?.openItemsController, let sessionIdentifier {
+                    let deferredOpenItemsMenuElement = controller.deferredOpenItemsMenuElement(
+                        for: sessionIdentifier,
+                        showMenuForCurrentItem: false,
+                        openItemPresenterProvider: { [weak self] in
+                            self?.presenter
+                        },
+                        completion: { [weak self] _, openItemsChanged in
+                            guard let self, openItemsChanged else { return }
+                            set(userActivity: .mainActivity(with: controllers.userControllers?.openItemsController.getItems(for: sessionIdentifier) ?? [])
+                                .set(title: coordinatorDelegate?.displayTitle)
+                            )
+                        }
+                    )
+                    let openItemsMenu = UIMenu(title: L10n.Accessibility.Pdf.openItems, options: [.displayInline], children: [deferredOpenItemsMenuElement])
+                    menu = UIMenu(children: [openItemsMenu])
+                }
             }
 
             let primaryAction = UIAction { [weak self] action in
                 guard let self, let sender = action.sender as? UIBarButtonItem else { return }
                 process(barButtonItemAction: type, sender: sender)
             }
-            let item = UIBarButtonItem(title: title, image: image, primaryAction: primaryAction)
+            let item = UIBarButtonItem(title: title, image: image, primaryAction: primaryAction, menu: menu)
             item.tag = type.rawValue
             item.accessibilityLabel = accessibilityLabel
             return item

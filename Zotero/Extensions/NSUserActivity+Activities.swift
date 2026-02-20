@@ -14,8 +14,8 @@ struct RestoredStateData {
     let openItems: [OpenItem]
     let restoreMostRecentlyOpenedItem: Bool
 
-    static func myLibrary() -> Self {
-        .init(libraryId: .custom(.myLibrary), collectionId: .custom(.all), openItems: [], restoreMostRecentlyOpenedItem: false)
+    static func myLibrary(openItems: [OpenItem] = []) -> Self {
+        .init(libraryId: .custom(.myLibrary), collectionId: .custom(.all), openItems: openItems, restoreMostRecentlyOpenedItem: false)
     }
 }
 
@@ -29,9 +29,9 @@ extension NSUserActivity {
     private static let openItemsKey = "openItems"
     private static let restoreMostRecentlyOpenedItemKey = "restoreMostRecentlyOpenedItem"
     
-    static func mainActivity() -> NSUserActivity {
+    static func mainActivity(with openItems: [OpenItem]) -> NSUserActivity {
         return NSUserActivity(activityType: self.mainId)
-            .addUserInfoEntries(openItems: [])
+            .addUserInfoEntries(openItems: openItems)
             .addUserInfoEntries(restoreMostRecentlyOpened: false)
     }
 

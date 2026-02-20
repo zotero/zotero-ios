@@ -54,11 +54,12 @@ final class PDFWorkerControllerSpec: QuickSpec {
                 expect(TestControllers.fileStorage.has(file)).to(beTrue())
 
                 it("can extract recognizer data") {
-                    let work = PDFWorkerController.PDFWork(file: file, kind: .recognizer)
+                    let work: PDFWorkerController.Work = .recognizer
+                    let worker = PDFWorkerController.Worker(file: file, priority: .default)
                     var emittedUpdates: [PDFWorkerController.Update.Kind] = []
 
                     waitUntil(timeout: .seconds(10)) { completion in
-                        pdfWorkerController.queue(work: work)
+                        pdfWorkerController.queue(work: work, in: worker)
                             .subscribe(onNext: { update in
                                 expect(update.work).to(equal(work))
                                 emittedUpdates.append(update.kind)
@@ -74,30 +75,16 @@ final class PDFWorkerControllerSpec: QuickSpec {
                     }
 
                     expect(emittedUpdates.count).toEventually(equal(2), timeout: .seconds(20))
-                    for (index, update) in emittedUpdates.enumerated() {
-                        switch update {
-                        case .inProgress:
-                            expect(index).to(equal(0))
-
-                        case .extractedData(let data):
-                            expect(index).to(equal(1))
-                            let recognizerDataURL = Bundle(for: Self.self).url(forResource: "bitcoin_pdf_recognizer_data", withExtension: "json")!
-                            let recognizerData = try! Data(contentsOf: recognizerDataURL)
-                            let recognizerJSONData = try! JSONSerialization.jsonObject(with: recognizerData, options: .allowFragments) as! [String: Any]
-                            expect(data as? [String: AnyHashable]).to(equal(recognizerJSONData as! [String: AnyHashable]))
-
-                        default:
-                            fail("unexpected update \(index): \(update)")
-                        }
-                    }
+                    process(updates: emittedUpdates, jsonFileName: "bitcoin_pdf_recognizer_data")
                 }
 
                 it("can extract full text") {
-                    let work = PDFWorkerController.PDFWork(file: file, kind: .fullText)
+                    let work: PDFWorkerController.Work = .fullText(pages: nil)
+                    let worker = PDFWorkerController.Worker(file: file, priority: .default)
                     var emittedUpdates: [PDFWorkerController.Update.Kind] = []
 
                     waitUntil(timeout: .seconds(20)) { completion in
-                        pdfWorkerController.queue(work: work)
+                        pdfWorkerController.queue(work: work, in: worker)
                             .subscribe(onNext: { update in
                                 expect(update.work).to(equal(work))
                                 emittedUpdates.append(update.kind)
@@ -113,17 +100,71 @@ final class PDFWorkerControllerSpec: QuickSpec {
                     }
 
                     expect(emittedUpdates.count).toEventually(equal(2), timeout: .seconds(20))
-                    for (index, update) in emittedUpdates.enumerated() {
+                    process(updates: emittedUpdates, jsonFileName: "bitcoin_pdf_full_text")
+                }
+
+                it("can extract text from a single page") {
+                    let work: PDFWorkerController.Work = .fullText(pages: [0])
+                    let worker = PDFWorkerController.Worker(file: file, priority: .default)
+                    var emittedUpdates: [PDFWorkerController.Update.Kind] = []
+
+                    waitUntil(timeout: .seconds(20)) { completion in
+                        pdfWorkerController.queue(work: work, in: worker)
+                            .subscribe(onNext: { update in
+                                expect(update.work).to(equal(work))
+                                emittedUpdates.append(update.kind)
+                                switch update.kind {
+                                case .failed, .cancelled, .extractedData:
+                                    completion()
+
+                                case .inProgress:
+                                    break
+                                }
+                            })
+                            .disposed(by: disposeBag)
+                    }
+
+                    expect(emittedUpdates.count).toEventually(equal(2), timeout: .seconds(20))
+                    process(updates: emittedUpdates, jsonFileName: "bitcoin_pdf_page_0_text")
+                }
+
+                it("can extract text from two pages") {
+                    let work: PDFWorkerController.Work = .fullText(pages: [0, 1])
+                    let worker = PDFWorkerController.Worker(file: file, priority: .default)
+                    var emittedUpdates: [PDFWorkerController.Update.Kind] = []
+
+                    waitUntil(timeout: .seconds(20)) { completion in
+                        pdfWorkerController.queue(work: work, in: worker)
+                            .subscribe(onNext: { update in
+                                expect(update.work).to(equal(work))
+                                emittedUpdates.append(update.kind)
+                                switch update.kind {
+                                case .failed, .cancelled, .extractedData:
+                                    completion()
+
+                                case .inProgress:
+                                    break
+                                }
+                            })
+                            .disposed(by: disposeBag)
+                    }
+
+                    expect(emittedUpdates.count).toEventually(equal(2), timeout: .seconds(20))
+                    process(updates: emittedUpdates, jsonFileName: "bitcoin_pdf_pages_0_1_text")
+                }
+
+                func process(updates: [PDFWorkerController.Update.Kind], jsonFileName: String) {
+                    for (index, update) in updates.enumerated() {
                         switch update {
                         case .inProgress:
                             expect(index).to(equal(0))
 
                         case .extractedData(let data):
                             expect(index).to(equal(1))
-                            let fullTextURL = Bundle(for: Self.self).url(forResource: "bitcoin_pdf_full_text", withExtension: "json")!
-                            let fullTextData = try! Data(contentsOf: fullTextURL)
-                            let fullTextJSONData = try! JSONSerialization.jsonObject(with: fullTextData, options: .allowFragments) as! [String: Any]
-                            expect(data as? [String: AnyHashable]).to(equal(fullTextJSONData as! [String: AnyHashable]))
+                            let url = Bundle(for: Self.self).url(forResource: jsonFileName, withExtension: "json")!
+                            let expectedData = try! Data(contentsOf: url)
+                            let expectedJSONData = try! JSONSerialization.jsonObject(with: expectedData, options: .allowFragments) as! [String: Any]
+                            expect(data as? [String: AnyHashable]).to(equal(expectedJSONData as! [String: AnyHashable]))
 
                         default:
                             fail("unexpected update \(index): \(update)")

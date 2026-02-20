@@ -15,11 +15,13 @@ import CocoaLumberjackSwift
 import RxSwift
 
 protocol MainCoordinatorDelegate: AnyObject {
+    var sharedTagFilterViewModel: ViewModel<TagFilterActionHandler>? { get }
+    
     func showItems(for collection: Collection, in libraryId: LibraryIdentifier)
 }
 
 protocol MainCoordinatorSyncToolbarDelegate: AnyObject {
-    func showItems(with keys: [String], in libraryId: LibraryIdentifier)
+    func showItems(with keys: [String], in libraryId: LibraryIdentifier, collectionType: CollectionIdentifier.CustomType)
 }
 
 final class MainViewController: UISplitViewController {
@@ -32,7 +34,11 @@ final class MainViewController: UISplitViewController {
     private var detailCoordinator: DetailCoordinator? {
         didSet {
             guard let detailCoordinator else { return }
-            set(userActivity: .mainActivity().set(title: detailCoordinator.displayTitle))
+            var openItems: [OpenItem] = []
+            if let openItemsController = controllers.userControllers?.openItemsController, let sessionIdentifier {
+                openItems = openItemsController.getItems(for: sessionIdentifier)
+            }
+            set(userActivity: .mainActivity(with: openItems).set(title: detailCoordinator.displayTitle))
             if let detailCoordinatorGetter,
                detailCoordinatorGetter.libraryId == nil || detailCoordinatorGetter.libraryId == detailCoordinator.libraryId,
                detailCoordinatorGetter.collectionId == nil || detailCoordinatorGetter.collectionId == detailCoordinator.collection.identifier {
@@ -44,6 +50,12 @@ final class MainViewController: UISplitViewController {
         }
     }
     private var detailCoordinatorGetter: (libraryId: LibraryIdentifier?, collectionId: CollectionIdentifier?, completion: (DetailCoordinator) -> Void)?
+    private lazy var tagFilterViewModel: ViewModel<TagFilterActionHandler>? = {
+        guard let dbStorage = controllers.userControllers?.dbStorage else { return nil }
+        let state = TagFilterState(selectedTags: [], showAutomatic: Defaults.shared.tagPickerShowAutomaticTags, displayAll: Defaults.shared.tagPickerDisplayAllTags)
+        let handler = TagFilterActionHandler(dbStorage: dbStorage)
+        return ViewModel(initialState: state, handler: handler)
+    }()
 
     // MARK: - Lifecycle
 
@@ -99,7 +111,15 @@ final class MainViewController: UISplitViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         guard let detailCoordinator else { return }
-        set(userActivity: .mainActivity().set(title: detailCoordinator.displayTitle))
+        var openItems: [OpenItem] = []
+        if let openItemsController = controllers.userControllers?.openItemsController, let sessionIdentifier {
+            if FeatureGates.enabled.contains(.multipleOpenItems) {
+                openItems = openItemsController.getItems(for: sessionIdentifier)
+            } else {
+                openItemsController.set(items: [], for: sessionIdentifier, validate: false)
+            }
+        }
+        set(userActivity: .mainActivity(with: openItems).set(title: detailCoordinator.displayTitle))
     }
 
     func getDetailCoordinator(for libraryId: LibraryIdentifier?, and collectionId: CollectionIdentifier?, completion: @escaping (DetailCoordinator) -> Void) {
@@ -111,6 +131,7 @@ final class MainViewController: UISplitViewController {
     }
 
     private func showItems(for collection: Collection, in libraryId: LibraryIdentifier, searchItemKeys: [String]?) {
+        guard let sessionIdentifier else { return }
         let navigationController = UINavigationController()
         let tagFilterController = (viewControllers.first as? MasterContainerViewController)?.bottomController as? ItemsTagFilterDelegate
 
@@ -119,7 +140,9 @@ final class MainViewController: UISplitViewController {
             collection: collection,
             searchItemKeys: searchItemKeys,
             navigationController: navigationController,
+            mainCoordinatorDelegate: self,
             itemsTagFilterDelegate: tagFilterController,
+            sessionIdentifier: sessionIdentifier,
             controllers: controllers
         )
         newDetailCoordinator.start(animated: false)
@@ -142,30 +165,23 @@ final class MainViewController: UISplitViewController {
 extension MainViewController: UISplitViewControllerDelegate { }
 
 extension MainViewController: MainCoordinatorDelegate {
+    var sharedTagFilterViewModel: ViewModel<TagFilterActionHandler>? { tagFilterViewModel }
+
     func showItems(for collection: Collection, in libraryId: LibraryIdentifier) {
-        guard isCollapsed || detailCoordinator?.libraryId != libraryId || detailCoordinator?.collection.identifier != collection.identifier else { return }
+        if !isCollapsed && detailCoordinator?.libraryId == libraryId && detailCoordinator?.collection.identifier == collection.identifier {
+            if (detailCoordinator?.navigationController?.viewControllers.count ?? 1) > 1 {
+                // Extraneous controllers are visible, pop to root to show items for given collection
+                detailCoordinator?.navigationController?.popToRootViewController(animated: true)
+            }
+            return
+        }
         showItems(for: collection, in: libraryId, searchItemKeys: nil)
     }
 }
 
 extension MainViewController: MainCoordinatorSyncToolbarDelegate {
-    func showItems(with keys: [String], in libraryId: LibraryIdentifier) {
-        guard let dbStorage = controllers.userControllers?.dbStorage else { return }
-
-        do {
-            var collectionType: CollectionIdentifier.CustomType?
-
-            try dbStorage.perform(on: .main, with: { coordinator in
-                let isAnyInTrash = try coordinator.perform(request: CheckAnyItemIsInTrashDbRequest(libraryId: libraryId, keys: keys))
-                collectionType = isAnyInTrash ? .trash : .all
-            })
-
-            guard let collectionType else { return }
-
-            masterCoordinator?.showCollections(for: libraryId, preselectedCollection: .custom(collectionType), animated: true)
-            showItems(for: Collection(custom: collectionType), in: libraryId, searchItemKeys: keys)
-        } catch let error {
-            DDLogError("MainViewController: can't load searched keys - \(error)")
-        }
+    func showItems(with keys: [String], in libraryId: LibraryIdentifier, collectionType: CollectionIdentifier.CustomType) {
+        masterCoordinator?.showCollections(for: libraryId, preselectedCollection: .custom(collectionType), animated: true)
+        showItems(for: Collection(custom: collectionType), in: libraryId, searchItemKeys: keys)
     }
 }

@@ -8,6 +8,7 @@
 
 import UIKit
 
+import CocoaLumberjackSwift
 import RxSwift
 
 final class SyncToolbarController {
@@ -115,19 +116,44 @@ final class SyncToolbarController {
 
         guard let error = errors.first else { return }
         
-        let (message, data) = alertMessage(from: error)
+        var (message, data) = alertMessage(from: error)
+        var showItemsData: (keys: [String], libraryId: LibraryIdentifier, collectionCustomType: CollectionIdentifier.CustomType)?
+
+        if let data, let keys = data.itemKeys, !keys.isEmpty {
+            if let collectionCustomType = getItemsCollectionCustomType(for: keys, libraryId: data.libraryId, dbStorage: dbStorage) {
+                showItemsData = (keys, data.libraryId, collectionCustomType)
+            } else {
+                message += "\n\n\(L10n.notFound)"
+            }
+        }
 
         let controller = UIAlertController(title: L10n.error, message: message, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: { [weak self] _ in
             self?.pendingErrors = nil
         }))
-        if let data = data, let keys = data.itemKeys, !keys.isEmpty {
-            let title = keys.count == 1 ? L10n.Errors.SyncToolbar.showItem : L10n.Errors.SyncToolbar.showItems
+        if let showItemsData {
+            let title = showItemsData.keys.count == 1 ? L10n.Errors.SyncToolbar.showItem : L10n.Errors.SyncToolbar.showItems
             controller.addAction(UIAlertAction(title: title, style: .default, handler: { [weak self] _ in
-                self?.coordinatorDelegate?.showItems(with: keys, in: data.libraryId)
+                self?.coordinatorDelegate?.showItems(with: showItemsData.keys, in: showItemsData.libraryId, collectionType: showItemsData.collectionCustomType)
             }))
         }
         viewController.present(controller, animated: true, completion: nil)
+
+        func getItemsCollectionCustomType(for keys: [String], libraryId: LibraryIdentifier, dbStorage: DbStorage) -> CollectionIdentifier.CustomType? {
+            do {
+                let all = try dbStorage.perform(request: ReadItemsDbRequest(collectionId: .custom(.all), libraryId: libraryId, searchTextComponents: keys), on: .main)
+                if !all.isEmpty {
+                    return .all
+                }
+                let trash = try dbStorage.perform(request: ReadItemsDbRequest(collectionId: .custom(.trash), libraryId: libraryId, searchTextComponents: keys), on: .main)
+                if !trash.isEmpty {
+                    return .trash
+                }
+            } catch let error {
+                DDLogError("SyncToolbarController: can't resolve items collection custom type - \(error)")
+            }
+            return nil
+        }
     }
 
     private func alertMessage(from error: Error) -> (message: String, additionalData: SyncError.ErrorData?) {

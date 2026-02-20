@@ -217,18 +217,14 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
             }
         } else if let controller = navigationController.viewControllers[1] as? CollectionsViewController {
             // There is a Collections screen in the stack.
-            var modifiedViewControllers = false
             if count > 2 {
                 // Remove any extraneous controllers.
                 var viewControllers = navigationController.viewControllers
                 viewControllers.removeLast(viewControllers.count - 2)
                 navigationController.setViewControllers(viewControllers, animated: animated)
-                modifiedViewControllers = true
             }
-            if controller.selectedCollectionId != collectionId || modifiedViewControllers {
-                // Select proper collection.
-                controller.viewModel.process(action: .select(collectionId))
-            }
+            // Select proper collection.
+            controller.viewModel.process(action: .select(collectionId))
         }
     }
 
@@ -246,6 +242,10 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
 }
 
 extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
+    var sharedTagFilterViewModel: ViewModel<TagFilterActionHandler>? {
+        return mainCoordinatorDelegate.sharedTagFilterViewModel
+    }
+    
     func showEditView(for data: CollectionStateEditingData, library: Library) {
         guard let navigationController else { return }
         let editNavigationController = UINavigationController()
@@ -302,10 +302,7 @@ extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
 
 extension MasterCoordinator: MasterContainerCoordinatorDelegate {
     func createBottomController() -> DraggableViewController? {
-        guard UIDevice.current.userInterfaceIdiom == .pad, let dbStorage = controllers.userControllers?.dbStorage else { return nil }
-        let state = TagFilterState(selectedTags: [], showAutomatic: Defaults.shared.tagPickerShowAutomaticTags, displayAll: Defaults.shared.tagPickerDisplayAllTags)
-        let handler = TagFilterActionHandler(dbStorage: dbStorage)
-        let viewModel = ViewModel(initialState: state, handler: handler)
+        guard UIDevice.current.userInterfaceIdiom == .pad, let viewModel = mainCoordinatorDelegate.sharedTagFilterViewModel else { return nil }
         return TagFilterViewController(viewModel: viewModel)
     }
 }

@@ -45,6 +45,7 @@ struct NoteEditorState: ViewModelState {
 
         static let tags = Changes(rawValue: 1 << 0)
         static let shouldSave = Changes(rawValue: 1 << 1)
+        static let openItems = Changes(rawValue: 1 << 2)
         static let kind = Changes(rawValue: 1 << 3)
         static let title = Changes(rawValue: 1 << 4)
         static let saved = Changes(rawValue: 1 << 5)
@@ -70,16 +71,18 @@ struct NoteEditorState: ViewModelState {
     var downloadedResource: Resource?
     var createdImages: [CreatedImage]
     var changes: Changes
+    var openItemsCount: Int
     var title: String?
     var isClosing: Bool
     var error: Swift.Error?
 
-    init(kind: Kind, library: Library, parentTitleData: TitleData?, text: String, tags: [Tag], title: String?) {
+    init(kind: Kind, library: Library, parentTitleData: TitleData?, text: String, tags: [Tag], openItemsCount: Int, title: String?) {
         self.kind = kind
         self.text = text
         self.tags = tags
         self.library = library
         self.parentTitleData = parentTitleData
+        self.openItemsCount = openItemsCount
         self.title = title
         isClosing = false
         changes = []

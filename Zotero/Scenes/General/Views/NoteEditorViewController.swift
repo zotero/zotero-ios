@@ -18,6 +18,11 @@ final class NoteEditorViewController: UIViewController {
         case messageHandler
         case logHandler
     }
+    private enum RightBarButtonItem: Int {
+        case done
+        case closing
+        case restoreOpenItems
+    }
 
     @IBOutlet private weak var webView: WKWebView!
     @IBOutlet private weak var webViewBottom: NSLayoutConstraint!
@@ -33,20 +38,23 @@ final class NoteEditorViewController: UIViewController {
     private let disposeBag: DisposeBag
 
     private var debounceDisposeBag: DisposeBag?
-    weak var coordinatorDelegate: NoteEditorCoordinatorDelegate?
+    private unowned let openItemsController: OpenItemsController
+    weak var coordinatorDelegate: (NoteEditorCoordinatorDelegate & OpenItemsPresenter)?
 
     init(
         viewModel: ViewModel<NoteEditorActionHandler>,
         htmlAttributedStringConverter: HtmlAttributedStringConverter,
         dbStorage: DbStorage,
         fileStorage: FileStorage,
-        uriConverter: ZoteroURIConverter
+        uriConverter: ZoteroURIConverter,
+        openItemsController: OpenItemsController
     ) {
         self.viewModel = viewModel
         self.htmlAttributedStringConverter = htmlAttributedStringConverter
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
         self.uriConverter = uriConverter
+        self.openItemsController = openItemsController
         disposeBag = DisposeBag()
         super.init(nibName: "NoteEditorViewController", bundle: nil)
     }
@@ -58,24 +66,16 @@ final class NoteEditorViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        switch viewModel.state.kind {
-        case .edit(let key), .readOnly(let key):
-            let openItem = OpenItem(kind: .note(libraryId: viewModel.state.library.identifier, key: key), userIndex: 0)
-            set(userActivity: .contentActivity(with: [openItem], libraryId: viewModel.state.library.identifier, collectionId: Defaults.shared.selectedCollectionId)
-                .set(title: viewModel.state.title)
-            )
-
-        case.itemCreation, .standaloneCreation:
-            break
-        }
+        openItemsController.setOpenItemsUserActivity(from: self, libraryId: viewModel.state.library.identifier, title: viewModel.state.title)
 
         if let parentTitleData = viewModel.state.parentTitleData {
             navigationItem.titleView = NoteEditorTitleView(type: parentTitleData.type, title: htmlAttributedStringConverter.convert(text: parentTitleData.title).string)
         }
 
-        setupNavbarItems(isClosing: false)
+        setupNavbarItems(for: viewModel.state, isClosing: false)
         setupKeyboard()
         setupWebView()
+        setupOpenItemsObserving()
         update(tags: viewModel.state.tags)
 
         viewModel.stateObservable
@@ -97,6 +97,16 @@ final class NoteEditorViewController: UIViewController {
                 return
             }
             webView.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
+        }
+
+        func setupOpenItemsObserving() {
+            guard let sessionIdentifier else { return }
+            openItemsController.observable(for: sessionIdentifier)
+                .observe(on: MainScheduler.instance)
+                .subscribe(onNext: { [weak self] items in
+                    self?.viewModel.process(action: .updateOpenItems(items: items))
+                })
+                .disposed(by: disposeBag)
         }
 
         func setupKeyboard() {
@@ -134,33 +144,73 @@ final class NoteEditorViewController: UIViewController {
 
     // MARK: - Actions
 
-    private func setupNavbarItems(isClosing: Bool) {
-        if isClosing {
-            let activityIndicator = UIActivityIndicatorView(style: .medium)
-            activityIndicator.color = .gray
-            activityIndicator.startAnimating()
-            navigationItem.rightBarButtonItem = UIBarButtonItem(customView: activityIndicator)
-            return
+    private func setupNavbarItems(for state: NoteEditorState, isClosing: Bool) {
+        defer {
+            updateRestoreOpenItemsButton(withCount: state.openItemsCount)
+        }
+        let currentItems = (self.navigationItem.rightBarButtonItems ?? []).compactMap({ RightBarButtonItem(rawValue: $0.tag) })
+        let expectedItems = rightBarButtonItemTypes(for: state, isClosing: isClosing)
+        guard currentItems != expectedItems else { return }
+        navigationItem.rightBarButtonItems = expectedItems.map({ createRightBarButtonItem($0) }).reversed()
+
+        func rightBarButtonItemTypes(for state: NoteEditorState, isClosing: Bool) -> [RightBarButtonItem] {
+            var items: [RightBarButtonItem] = [isClosing ? .closing : .done]
+            if FeatureGates.enabled.contains(.multipleOpenItems), state.openItemsCount > 0 {
+                items = [.restoreOpenItems] + items
+            }
+            return items
         }
 
-        let done = UIBarButtonItem(title: L10n.done, style: .done, target: nil, action: nil)
-        done.rx
-            .tap
-            .subscribe(onNext: { [weak self] _ in
-                guard let self else { return }
-                closeAndSaveIfNeeded(controller: self)
-            })
-            .disposed(by: disposeBag)
-        navigationItem.rightBarButtonItem = done
+        func createRightBarButtonItem(_ type: RightBarButtonItem) -> UIBarButtonItem {
+            let item: UIBarButtonItem
+            switch type {
+            case .done:
+                let done = UIBarButtonItem(title: L10n.done, style: .done, target: nil, action: nil)
+                done.rx.tap
+                    .subscribe(onNext: { [weak self] _ in
+                        guard let self else { return }
+                        closeAndSaveIfNeeded()
+                    })
+                    .disposed(by: disposeBag)
+                item = done
 
-        func closeAndSaveIfNeeded(controller: NoteEditorViewController) {
-            if controller.debounceDisposeBag == nil {
-                controller.close()
-                return
+            case .closing:
+                let activityIndicator = UIActivityIndicatorView(style: .medium)
+                activityIndicator.color = .gray
+                activityIndicator.startAnimating()
+                item = UIBarButtonItem(customView: activityIndicator)
+
+            case .restoreOpenItems:
+                let openItems = UIBarButtonItem.openItemsBarButtonItem()
+                if let sessionIdentifier {
+                    let deferredOpenItemsMenuElement = openItemsController.deferredOpenItemsMenuElement(
+                        for: sessionIdentifier,
+                        showMenuForCurrentItem: true,
+                        openItemPresenterProvider: { [weak self] in
+                            self?.coordinatorDelegate
+                        },
+                        completion: { [weak self] changedCurrentItem, openItemsChanged in
+                            guard let self else { return }
+                            if changedCurrentItem {
+                                closeAndSaveIfNeeded()
+                            } else if openItemsChanged {
+                                openItemsController.setOpenItemsUserActivity(from: self, libraryId: viewModel.state.library.identifier, title: viewModel.state.title)
+                            }
+                        }
+                    )
+                    let openItemsMenu = UIMenu(title: L10n.Accessibility.Pdf.openItems, options: [.displayInline], children: [deferredOpenItemsMenuElement])
+                    openItems.menu = UIMenu(children: [openItemsMenu])
+                }
+                item = openItems
             }
 
-            controller.debounceDisposeBag = nil
-            controller.viewModel.process(action: .saveBeforeClosing)
+            item.tag = type.rawValue
+            return item
+        }
+
+        func updateRestoreOpenItemsButton(withCount count: Int) {
+            guard let item = navigationItem.rightBarButtonItems?.first(where: { button in RightBarButtonItem(rawValue: button.tag) == .restoreOpenItems }) else { return }
+            item.image = .openItemsImage(count: count)
         }
     }
 
@@ -181,21 +231,19 @@ final class NoteEditorViewController: UIViewController {
         if state.changes.contains(.shouldSave) {
             debounceSave()
         }
+
         if state.changes.contains(.kind) || state.changes.contains(.title) {
             switch state.kind {
-            case .edit(let key), .readOnly(let key):
-                let openItem = OpenItem(kind: .note(libraryId: state.library.identifier, key: key), userIndex: 0)
-                set(userActivity: .contentActivity(with: [openItem], libraryId: state.library.identifier, collectionId: Defaults.shared.selectedCollectionId)
-                    .set(title: state.title)
-                )
+            case .edit, .readOnly:
+                openItemsController.setOpenItemsUserActivity(from: self, libraryId: state.library.identifier, title: state.title)
 
             case.itemCreation, .standaloneCreation:
                 break
             }
         }
 
-        if state.changes.contains(.closing) {
-            setupNavbarItems(isClosing: state.isClosing)
+        if state.changes.contains(.openItems) || state.changes.contains(.closing) {
+            setupNavbarItems(for: state, isClosing: state.isClosing)
         }
 
         if !state.createdImages.isEmpty {
@@ -280,15 +328,15 @@ final class NoteEditorViewController: UIViewController {
                 return CGRect(x: doubles[0], y: doubles[1], width: doubles[2] - doubles[0], height: doubles[3] - doubles[1])
             })
             let preview = AnnotationPreview(parentKey: key, libraryId: libraryId, pageIndex: pageIndex, rects: rects)
-            coordinatorDelegate?.showPdf(withPreview: preview)
+            coordinatorDelegate?.showItem(withPreview: preview, completion: createCloseCompletion())
 
         case "openCitationPage":
             guard let citation = data["citation"] as? [String: Any], let metadata = parseCitation(from: citation) else { return }
-            coordinatorDelegate?.showPdf(withCitation: metadata)
+            coordinatorDelegate?.showItem(withCitation: metadata, completion: createCloseCompletion())
 
         case "showCitationItem":
             guard let citation = data["citation"] as? [String: Any], let metadata = parseCitation(from: citation) else { return }
-            coordinatorDelegate?.showItemDetail(withCitation: metadata)
+            coordinatorDelegate?.showItemDetail(withCitation: metadata, completion: createCloseCompletion())
 
         default:
             DDLogWarn("NoteEditorViewController JS: unknown action \(action); \(data)")
@@ -306,6 +354,14 @@ final class NoteEditorViewController: UIViewController {
                 let attachment = AttachmentCreator.mainAttachment(for: item, fileStorage: fileStorage, urlDetector: nil)
             else { return nil }
             return CitationMetadata(attachmentKey: attachment.key, parentKey: key, libraryId: libraryId, locator: locator)
+        }
+
+        func createCloseCompletion() -> ((Bool) -> Void) {
+            return { [weak self] closed in
+                guard closed, let self, debounceDisposeBag != nil else { return }
+                debounceDisposeBag = nil
+                viewModel.process(action: .save)
+            }
         }
     }
 
@@ -339,6 +395,16 @@ final class NoteEditorViewController: UIViewController {
         coordinatorDelegate?.showTagPicker(libraryId: viewModel.state.library.identifier, selected: selected, picked: { [weak self] tags in
             self?.viewModel.process(action: .setTags(tags))
         })
+    }
+
+    private func closeAndSaveIfNeeded() {
+        if debounceDisposeBag == nil {
+            close()
+            return
+        }
+
+        debounceDisposeBag = nil
+        viewModel.process(action: .saveBeforeClosing)
     }
 }
 

@@ -32,6 +32,8 @@ final class ItemDetailCollectionViewHandler: NSObject {
         case openFilePicker
         case openUrl(String)
         case openDoi(String)
+        case openCollection(Collection)
+        case openLibrary(Library)
     }
 
     /// Sections that are shown in `tableView`.
@@ -45,6 +47,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
         case tags
         case title
         case type
+        case collections
     }
 
     /// `UICollectionViewDiffableDataSource` has a bug where it doesn't reload sections which are in `reloadSections` of its snapshot, but if sections are actually different, the snapshot will reload them.
@@ -61,10 +64,12 @@ final class ItemDetailCollectionViewHandler: NSObject {
         case addTag
         case abstract
         case attachment(attachment: Attachment, type: ItemDetailAttachmentCell.Kind)
+        case collection(Collection)
         case creator(ItemDetailState.Creator)
         case dateAdded(Date)
         case dateModified(Date)
         case field(key: String, multiline: Bool)
+        case library(Library)
         case note(key: String, title: String, isProcessing: Bool)
         case tag(id: UUID, tag: Tag, isProcessing: Bool)
         case title
@@ -175,6 +180,8 @@ final class ItemDetailCollectionViewHandler: NSObject {
             let noteRegistration = self.noteRegistration
             let tagRegistration = self.tagRegistration
             let attachmentRegistration = self.attachmentRegistration
+            let libraryRegistration = self.libraryRegistration
+            let collectionRegistration = self.collectionRegistration
 
             dataSource = UICollectionViewDiffableDataSource(collectionView: collectionView, cellProvider: { [weak self] collectionView, indexPath, row in
                 guard let self else { return collectionView.dequeueConfiguredReusableCell(using: emptyRegistration, for: indexPath, item: ()) }
@@ -239,6 +246,12 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
                 case .type(let type):
                     return collectionView.dequeueConfiguredReusableCell(using: fieldRegistration, for: indexPath, item: (.value(value: type, title: L10n.itemType), titleWidth))
+                    
+                case .collection(let collection):
+                    return collectionView.dequeueConfiguredReusableCell(using: collectionRegistration, for: indexPath, item: collection)
+                    
+                case .library(let library):
+                    return collectionView.dequeueConfiguredReusableCell(using: libraryRegistration, for: indexPath, item: library)
                 }
             })
 
@@ -309,6 +322,10 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
                 case .tags:
                     view.setup(with: L10n.ItemDetail.tags)
+
+                case .collections:
+                    view.setup(with: L10n.ItemDetail.librariesAndCollections)
+
                 default: break
                 }
             }
@@ -338,7 +355,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
                 func createHeader(for section: Section) -> NSCollectionLayoutBoundarySupplementaryItem? {
                     switch section {
-                    case .attachments, .tags, .notes:
+                    case .attachments, .tags, .notes, .collections:
                         let height = ItemDetailLayout.sectionHeaderHeight - ItemDetailLayout.separatorHeight
                         return NSCollectionLayoutBoundarySupplementaryItem(
                             layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .absolute(height)),
@@ -368,6 +385,9 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
                         case .creator where self.viewModel.state.isEditing:
                             title = L10n.delete
+                            
+                        case .collection(let collection) where collection.isAvailable:
+                            title = L10n.delete
 
                         default:
                             return nil
@@ -395,8 +415,11 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
                         case .note(let key, _, _):
                             self.viewModel.process(action: .deleteNote(key: key))
+                            
+                        case .collection(let collection):
+                            self.viewModel.process(action: .deleteCollection(collection.identifier))
 
-                        case .title, .abstract, .addAttachment, .addCreator, .addNote, .addTag, .dateAdded, .dateModified, .type, .field:
+                        case .title, .abstract, .addAttachment, .addCreator, .addNote, .addTag, .dateAdded, .dateModified, .type, .field, .library:
                             break
                         }
                     }
@@ -426,7 +449,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
                     case .type, .fields, .creators:
                         return isEditing
 
-                    case .attachments, .notes, .tags:
+                    case .attachments, .notes, .tags, .collections:
                         return !isLastRow
 
                     case .dates:
@@ -436,7 +459,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
                 func separatorLeftInset(for section: Section) -> CGFloat {
                     switch section {
-                    case .notes, .attachments, .tags:
+                    case .notes, .attachments, .tags, .collections:
                         return ItemDetailLayout.iconWidth + ItemDetailLayout.horizontalInset + 17
 
                     case .abstract, .creators, .dates, .fields, .title, .type:
@@ -468,13 +491,29 @@ final class ItemDetailCollectionViewHandler: NSObject {
             if #available(iOS 26.0, *) {
                 snapshot.reloadSections(sections)
             }
+            var collectionsSection: SectionType?
             for section in sections {
-                snapshot.appendItems(rows(for: section.section, state: state), toSection: section)
+                if section.section == .collections {
+                    collectionsSection = section
+                } else {
+                    snapshot.appendItems(rows(for: section.section, state: state), toSection: section)
+                }
             }
-            dataSource.apply(snapshot, animatingDifferences: animated) { [weak self] in
+            let reloadCompletion: () -> Void = { [weak self] in
                 // Setting isEditing will trigger reconfiguration of cells, before the new snapshot has been applied, so it is done afterwards to avoid e.g. flickering the old text in a text view.
                 self?.collectionView.isEditing = state.isEditing
                 completion?()
+            }
+            dataSource.apply(snapshot, animatingDifferences: animated) {
+                guard collectionsSection == nil else { return }
+                reloadCompletion()
+            }
+            if let collectionsSection {
+                if let snapshot = state.data.collections?.createSnapshot(parent: .library(state.library), resultTransformer: { Row.collection($0) }) {
+                    dataSource.apply(snapshot, to: collectionsSection, animatingDifferences: true, completion: reloadCompletion)
+                } else {
+                    reloadCompletion()
+                }
             }
         }
 
@@ -520,6 +559,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
             if library.metadataAndFilesEditable || !state.attachments.isEmpty {
                 sections.append(.attachments)
             }
+            sections.append(.collections)
 
             return sections
         }
@@ -542,18 +582,24 @@ final class ItemDetailCollectionViewHandler: NSObject {
             guard let self else { return }
             var snapshot = dataSource.snapshot()
             guard let sectionType = snapshot.sectionIdentifiers.first(where: { $0.section == section }) else { return }
-
-            let oldRows = snapshot.itemIdentifiers(inSection: sectionType)
-            let newRows = rows(for: section, state: state)
-            snapshot.deleteItems(oldRows)
-            snapshot.appendItems(newRows, toSection: sectionType)
-
-            let toReload = rowsToReload(from: oldRows, to: newRows, in: section)
-            if !toReload.isEmpty {
-                snapshot.reconfigureItems(toReload)
+            
+            if case .collections = section {
+                // Collections section is nested, requires separate handling
+                if let subSnapshot = state.data.collections?.createSnapshot(parent: .library(state.library), resultTransformer: { Row.collection($0) }) {
+                    dataSource.apply(subSnapshot, to: sectionType, animatingDifferences: true)
+                }
+            } else {
+                // Only handle rows for sections which are not nested
+                let oldRows = snapshot.itemIdentifiers(inSection: sectionType)
+                let newRows = rows(for: section, state: state)
+                snapshot.deleteItems(oldRows)
+                snapshot.appendItems(newRows, toSection: sectionType)
+                let toReload = rowsToReload(from: oldRows, to: newRows, in: section)
+                if !toReload.isEmpty {
+                    snapshot.reconfigureItems(toReload)
+                }
+                dataSource.apply(snapshot, animatingDifferences: animated)
             }
-
-            dataSource.apply(snapshot, animatingDifferences: animated)
         }
 
         /// Returns an array of rows which need to be reloaded manually. Some sections are "special" because their rows don't hold the values which they show in collection view, they just hold their
@@ -733,6 +779,10 @@ final class ItemDetailCollectionViewHandler: NSObject {
 
         case .type:
             return [.type(state.data.localizedType)]
+            
+        case .collections:
+            // This section is handled separately
+            return []
         }
     }
 
@@ -787,6 +837,28 @@ final class ItemDetailCollectionViewHandler: NSObject {
     }
 
     // MARK: - Cells
+    
+    private lazy var libraryRegistration: UICollectionView.CellRegistration<CollectionCell, Library> = {
+        return UICollectionView.CellRegistration<CollectionCell, Library> { [weak self] cell, _, library in
+            var configuration = CollectionCell.LibraryContentConfiguration(name: library.name, accessories: [])
+            cell.contentConfiguration = configuration
+            cell.backgroundConfiguration = .listPlainCell()
+        }
+    }()
+    
+    private lazy var collectionRegistration: UICollectionView.CellRegistration<CollectionCell, Collection> = {
+        return UICollectionView.CellRegistration<CollectionCell, Collection> { [weak self] cell, _, collection in
+            guard let self, let sectionType = self.dataSource.snapshot().sectionIdentifiers.first(where: { $0.section == .collections }) else { return }
+            
+            let snapshot = self.dataSource.snapshot(for: sectionType)
+            let hasChildren = snapshot.contains(.collection(collection)) && !snapshot.snapshot(of: .collection(collection), includingParent: false).items.isEmpty
+            var configuration = CollectionCell.ContentConfiguration(collection: collection, hasChildren: hasChildren, accessories: [])
+            configuration.isCollapsedProvider = { false }
+
+            cell.contentConfiguration = configuration
+            cell.backgroundConfiguration = .listPlainCell()
+        }
+    }()
 
     private lazy var titleRegistration: UICollectionView.CellRegistration<ItemDetailTitleCell, (NSAttributedString, Bool)> = {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
@@ -949,6 +1021,14 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
                 break
             }
 
+        case .collection(let collection):
+            guard !viewModel.state.isEditing else { return }
+            observer.on(.next(.openCollection(collection)))
+            
+        case .library(let library):
+            guard !viewModel.state.isEditing else { return }
+            observer.on(.next(.openLibrary(library)))
+
         case .title, .dateAdded, .dateModified, .tag:
             break
         }
@@ -992,6 +1072,9 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
 
         case .note(let key, _, _):
             menu = createContextMenuForNote(key: key)
+            
+        case .collection(let collection) where collection.isAvailable:
+            menu = createContextMenu(for: collection)
 
         default:
             return nil
@@ -1008,7 +1091,7 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
                 })
             }
 
-            if !viewModel.state.data.isAttachment, !viewModel.state.isTrash {
+            if viewModel.state.library.metadataEditable, !viewModel.state.data.isAttachment, !viewModel.state.isTrash {
                 if case .file = attachment.type {
                     actions.append(UIAction(title: L10n.ItemDetail.moveToStandaloneAttachment, image: UIImage(systemName: "arrow.up.to.line"), attributes: []) { [weak self] _ in
                         self?.viewModel.process(action: .moveAttachmentToStandalone(attachment))
@@ -1024,6 +1107,7 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
         }
 
         func createContextMenuForNote(key: String) -> UIMenu? {
+            guard viewModel.state.library.metadataEditable else { return nil }
             var actions: [UIAction] = []
             actions.append(UIAction(title: L10n.moveToTrash, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
                 self?.viewModel.process(action: .deleteNote(key: key))
@@ -1032,6 +1116,7 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
         }
 
         func createContextMenu(for tag: Tag) -> UIMenu? {
+            guard viewModel.state.library.metadataEditable else { return nil }
             var actions: [UIAction] = []
             actions.append(UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
                 self?.viewModel.process(action: .deleteTag(tag))
@@ -1044,6 +1129,15 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
             return UIMenu(title: "", children: [UIAction(title: L10n.copy, handler: { _ in
                 UIPasteboard.general.string = field.value
             })])
+        }
+        
+        func createContextMenu(for collection: Collection) -> UIMenu? {
+            guard viewModel.state.library.metadataEditable else { return nil }
+            var actions: [UIAction] = []
+            actions.append(UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
+                self?.viewModel.process(action: .deleteCollection(collection.id))
+            })
+            return UIMenu(title: "", children: actions)
         }
     }
 }

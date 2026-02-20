@@ -28,6 +28,7 @@ final class SyncActionsSpec: QuickSpec {
             let webDavController: WebDavController = WebDavTestController()
             var dbStorage: DbStorage!
             let disposeBag: DisposeBag = DisposeBag()
+            let myLibrary = Library(identifier: .custom(.myLibrary), name: L10n.Libraries.myLibrary, metadataEditable: true, filesEditable: true)
 
             beforeSuite {
                 let config = Realm.Configuration(inMemoryIdentifier: "TestsRealmConfig")
@@ -69,8 +70,10 @@ final class SyncActionsSpec: QuickSpec {
                     try! FileManager.default.createMissingDirectories(for: collectionFile.createUrl().deletingLastPathComponent())
                     try! collectionData.write(to: collectionFile.createUrl())
                     let searchFile = Files.jsonCacheFile(for: .search, libraryId: .custom(.myLibrary), key: "CCCCCCCC")
+                    try! FileManager.default.createMissingDirectories(for: searchFile.createUrl().deletingLastPathComponent())
                     try! searchData.write(to: searchFile.createUrl())
                     let itemFile = Files.jsonCacheFile(for: .item, libraryId: .custom(.myLibrary), key: "AAAAAAAA")
+                    try! FileManager.default.createMissingDirectories(for: itemFile.createUrl().deletingLastPathComponent())
                     try! itemData.write(to: itemFile.createUrl())
                     
                     // Create response models
@@ -101,6 +104,8 @@ final class SyncActionsSpec: QuickSpec {
                         creators: [:],
                         fields: [:],
                         abstract: "New abstract",
+                        library: myLibrary,
+                        collections: nil,
                         dateModified: Date(),
                         dateAdded: Date()
                     )
@@ -111,6 +116,8 @@ final class SyncActionsSpec: QuickSpec {
                         creators: [:],
                         fields: [:],
                         abstract: "Some note",
+                        library: myLibrary,
+                        collections: nil,
                         dateModified: Date(),
                         dateAdded: Date()
                     )
@@ -213,6 +220,7 @@ final class SyncActionsSpec: QuickSpec {
                     try? FileStorageController().remove(Files.jsonCacheFile(for: .item, libraryId: .custom(.myLibrary), key: "BBBBBBBB"))
                     // Write original json files to directory folder for SyncActionHandler to use when reverting
                     let itemFile = Files.jsonCacheFile(for: .item, libraryId: .custom(.myLibrary), key: "AAAAAAAA")
+                    try! FileManager.default.createMissingDirectories(for: itemFile.createUrl().deletingLastPathComponent())
                     try! itemData.write(to: itemFile.createUrl())
                     
                     // Create response models
@@ -358,6 +366,8 @@ final class SyncActionsSpec: QuickSpec {
                         creators: [:],
                         fields: [:],
                         abstract: "New abstract",
+                        library: myLibrary,
+                        collections: nil,
                         dateModified: Date(),
                         dateAdded: Date()
                     )
@@ -368,6 +378,8 @@ final class SyncActionsSpec: QuickSpec {
                         creators: [:],
                         fields: [:],
                         abstract: "Some note",
+                        library: myLibrary,
+                        collections: nil,
                         dateModified: Date(),
                         dateAdded: Date()
                     )

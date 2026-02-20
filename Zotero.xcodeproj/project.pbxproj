@@ -15,6 +15,7 @@
 		6102D2BD2D6CCF7600505E6A /* RecognizerRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6102D2BB2D6CCF7600505E6A /* RecognizerRequest.swift */; };
 		6102D2BF2D6E23D100505E6A /* worker.html in Resources */ = {isa = PBXBuildFile; fileRef = 6102D2BE2D6E23C400505E6A /* worker.html */; };
 		6102D2C02D6E23D100505E6A /* worker.html in Resources */ = {isa = PBXBuildFile; fileRef = 6102D2BE2D6E23C400505E6A /* worker.html */; };
+		6108CF432EF1E80C00036576 /* bitcoin_pdf_pages_0_1_text.json in Resources */ = {isa = PBXBuildFile; fileRef = 6108CF422EF1E80C00036576 /* bitcoin_pdf_pages_0_1_text.json */; };
 		61099E6E2C91BAF300EDD92C /* NSDecimalNumber+Rounding.m in Sources */ = {isa = PBXBuildFile; fileRef = 61099E6D2C91BAF300EDD92C /* NSDecimalNumber+Rounding.m */; };
 		61099E6F2C91BAF300EDD92C /* NSDecimalNumber+Rounding.m in Sources */ = {isa = PBXBuildFile; fileRef = 61099E6D2C91BAF300EDD92C /* NSDecimalNumber+Rounding.m */; };
 		61168F612D50D4B6005495E8 /* PDFWorkerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61168F602D50D4B6005495E8 /* PDFWorkerController.swift */; };
@@ -34,6 +35,7 @@
 		6144B5D62A4ADD7E00914B3C /* ItemResponseSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EDEC250242DB00D8BC1E /* ItemResponseSpec.swift */; };
 		6144B5D72A4ADD8400914B3C /* TestControllers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3202C6427103DEE00485BE4 /* TestControllers.swift */; };
 		6144B5D82A4ADDC400914B3C /* ItemTitleFormatterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F9FA423743C42004ED34C /* ItemTitleFormatterSpec.swift */; };
+		561E08F0D1D341A09184D875 /* ReadAttachmentUploadsDbRequestSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6869C0F7335B4F30B5D8C9EC /* ReadAttachmentUploadsDbRequestSpec.swift */; };
 		6144B5D92A4ADEB500914B3C /* ReadUpdatedItemUpdateParametersSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39C7BDD251237D600C2CCF1 /* ReadUpdatedItemUpdateParametersSpec.swift */; };
 		6144B5DA2A4ADEBD00914B3C /* WebDavCredentials.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31DDAA02729A7DC002CFA05 /* WebDavCredentials.swift */; };
 		6144B5DB2A4ADEEB00914B3C /* SearchResponseSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EDF0250242F700D8BC1E /* SearchResponseSpec.swift */; };
@@ -76,6 +78,8 @@
 		61EB05B42C9D8EA200152482 /* CreateReaderAnnotationsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61EB05B22C9D8EA200152482 /* CreateReaderAnnotationsDbRequest.swift */; };
 		61FA14CE2B05081D00E7D423 /* TextConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61FA14CD2B05081D00E7D423 /* TextConverter.swift */; };
 		61FA14D02B08E24A00E7D423 /* ColorPickerStackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61FA14CF2B08E24A00E7D423 /* ColorPickerStackView.swift */; };
+		61FB13D72EECBE0A00329563 /* bitcoin_pdf_page_0_text.json in Sources */ = {isa = PBXBuildFile; fileRef = 61FB13D62EECBE0700329563 /* bitcoin_pdf_page_0_text.json */; };
+		61FB13D82EED6D6E00329563 /* bitcoin_pdf_page_0_text.json in Resources */ = {isa = PBXBuildFile; fileRef = 61FB13D62EECBE0700329563 /* bitcoin_pdf_page_0_text.json */; };
 		B300B33324291C8D00C1FE1E /* RTranslatorMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300B33224291C8D00C1FE1E /* RTranslatorMetadata.swift */; };
 		B300B3352429222B00C1FE1E /* TranslatorMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300B3342429222B00C1FE1E /* TranslatorMetadata.swift */; };
 		B300B3362429234C00C1FE1E /* TranslatorMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300B3342429222B00C1FE1E /* TranslatorMetadata.swift */; };
@@ -660,7 +664,6 @@
 		B357DEE7241661E300E06153 /* DebugLogging.swift in Sources */ = {isa = PBXBuildFile; fileRef = B357DEE124165DEE00E06153 /* DebugLogging.swift */; };
 		B357DEE8241661E500E06153 /* DebugLogFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B357DEE524165E0B00E06153 /* DebugLogFormatter.swift */; };
 		B3588C6925FF7A800049D484 /* SetCollectionCollapsedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3588C6825FF7A800049D484 /* SetCollectionCollapsedDbRequest.swift */; };
-		B358D3B4279590C200A67054 /* CheckAnyItemIsInTrashDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B358D3B3279590C200A67054 /* CheckAnyItemIsInTrashDbRequest.swift */; };
 		B3593ADC24B60A7600CA0B57 /* UISearchBar+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593ADB24B60A7600CA0B57 /* UISearchBar+Extensions.swift */; };
 		B3593F162668E29C00FA4BB2 /* Style.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593F152668E29C00FA4BB2 /* Style.swift */; };
 		B3593F182668E6A700FA4BB2 /* StyleParserDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593F172668E6A700FA4BB2 /* StyleParserDelegate.swift */; };
@@ -799,9 +802,15 @@
 		B372CEE7248673DF00B423AE /* GroupRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B372CEE22486512500B423AE /* GroupRequest.swift */; };
 		B372CEE92486748500B423AE /* MarkGroupForResyncSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B372CEE82486748500B423AE /* MarkGroupForResyncSyncAction.swift */; };
 		B372CEEA248675A200B423AE /* MarkGroupForResyncSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B372CEE82486748500B423AE /* MarkGroupForResyncSyncAction.swift */; };
+		B37352AF2E140DF10078BB00 /* AccessibilityViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37352AE2E140DE70078BB00 /* AccessibilityViewHandler.swift */; };
+		B37352B12E141F9F0078BB00 /* AccessibilitySpeechControlsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37352B02E141F990078BB00 /* AccessibilitySpeechControlsView.swift */; };
 		B373877328FEA0C7004E5031 /* PDFSidebarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B373877228FEA0C7004E5031 /* PDFSidebarViewController.swift */; };
 		B373B1B82BBD74F400DCF893 /* DeleteFailedItemsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B373B1B62BBD748600DCF893 /* DeleteFailedItemsDbRequest.swift */; };
 		B373C98F2B1F5431007FD56C /* PDFThumbnailsLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = B373C98E2B1F5431007FD56C /* PDFThumbnailsLayout.swift */; };
+		B37434C72E38C5A800D8FAC2 /* SetSpeechLanguageDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37434C62E38C59A00D8FAC2 /* SetSpeechLanguageDbRequest.swift */; };
+		B37434C82E38C5A800D8FAC2 /* SetSpeechLanguageDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37434C62E38C59A00D8FAC2 /* SetSpeechLanguageDbRequest.swift */; };
+		B37434CA2E38C5B100D8FAC2 /* ReadSpeechLanguageDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37434C92E38C5AB00D8FAC2 /* ReadSpeechLanguageDbRequest.swift */; };
+		B37434CB2E38C5B100D8FAC2 /* ReadSpeechLanguageDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37434C92E38C5AB00D8FAC2 /* ReadSpeechLanguageDbRequest.swift */; };
 		B3748D2026566F4800ED05F8 /* ContainerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3748D1F26566F4800ED05F8 /* ContainerViewController.swift */; };
 		B3748D2226566F6900ED05F8 /* ContainerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3748D2126566F6900ED05F8 /* ContainerViewController.swift */; };
 		B3756E8F2B835BDC0001CD0A /* IntraDocumentNavigationButtonsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3756E8E2B835BDC0001CD0A /* IntraDocumentNavigationButtonsHandler.swift */; };
@@ -854,6 +863,7 @@
 		B3830CEA255451DC00910FE0 /* TagPickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CE8255451DC00910FE0 /* TagPickerViewController.swift */; };
 		B3830CF625545EE400910FE0 /* TagPickerCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CF425545EE400910FE0 /* TagPickerCell.swift */; };
 		B3830CF725545EE400910FE0 /* TagPickerCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3830CF525545EE400910FE0 /* TagPickerCell.xib */; };
+		B384B5C22E1539D000D023C6 /* AccessibilitySpeechControlsStackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B384B5C12E1539C900D023C6 /* AccessibilitySpeechControlsStackView.swift */; };
 		B385B70E25C03E7E0073CA6F /* PDFExportState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385B70D25C03E7E0073CA6F /* PDFExportState.swift */; };
 		B386328626C5499900183062 /* TranslatorsAndStylesController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36A988C2428E059005D5790 /* TranslatorsAndStylesController.swift */; };
 		B3863FC82AD819AB005082F0 /* EndItemCreationDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3863FC72AD819AB005082F0 /* EndItemCreationDbRequest.swift */; };
@@ -884,6 +894,7 @@
 		B395EFE725494B2300CEBD9F /* CreatorEditState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B395EFE625494B2300CEBD9F /* CreatorEditState.swift */; };
 		B395EFEB25494B3200CEBD9F /* CreatorEditActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B395EFEA25494B3200CEBD9F /* CreatorEditActionHandler.swift */; };
 		B39649182869B0D0000BCB6C /* ISBNParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39649172869B0D0000BCB6C /* ISBNParser.swift */; };
+		B3969A402DE9AAEF00425FF3 /* AccessibilityPopupViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3969A3F2DE9AAEF00425FF3 /* AccessibilityPopupViewController.swift */; };
 		B3972689247D403200A8B469 /* UrlDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3972688247D403200A8B469 /* UrlDetector.swift */; };
 		B3981427257A5A16002C755C /* AnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3981426257A5A16002C755C /* AnnotationView.swift */; };
 		B398142E257A649D002C755C /* TextContentEditCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B398142C257A649D002C755C /* TextContentEditCell.swift */; };
@@ -903,6 +914,7 @@
 		B39D42DF29C0CE7D0035CDA9 /* TagsFlowLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39D42DE29C0CE7D0035CDA9 /* TagsFlowLayout.swift */; };
 		B39DBFF32D7EF2C600454486 /* FeatureGates.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39DBFF22D7EF2C600454486 /* FeatureGates.swift */; };
 		B39DBFF42D7EF2C600454486 /* FeatureGates.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39DBFF22D7EF2C600454486 /* FeatureGates.swift */; };
+		B39DBFF62D8036A000454486 /* SpeechManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39DBFF52D80369C00454486 /* SpeechManager.swift */; };
 		B39E0132283276830091CE4A /* WebViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39E0131283276830091CE4A /* WebViewHandler.swift */; };
 		B39E013328327CAC0091CE4A /* WebViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39E0131283276830091CE4A /* WebViewHandler.swift */; };
 		B39EE32B223A5E3500302E29 /* TestAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39EE32A223A5E3500302E29 /* TestAppDelegate.swift */; };
@@ -939,6 +951,10 @@
 		B3A47C3A29015FE800E7D90D /* TableOfContentsState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A47C3929015FE800E7D90D /* TableOfContentsState.swift */; };
 		B3A53FF72B14CDB2004BB9D7 /* ReadEmojiTagsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A53FF62B14CDB2004BB9D7 /* ReadEmojiTagsDbRequest.swift */; };
 		B3A6C59F252CA08300F24CBE /* PSPDFKit in Frameworks */ = {isa = PBXBuildFile; productRef = B3A6C59E252CA08300F24CBE /* PSPDFKit */; };
+		B3A71F4B2EEC39A80006A737 /* AnnotationToolsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A71F4A2EEC39A20006A737 /* AnnotationToolsSettingsView.swift */; };
+		B3A71F4D2EEC39BA0006A737 /* AnnotationToolsSettingsActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A71F4C2EEC39B50006A737 /* AnnotationToolsSettingsActionHandler.swift */; };
+		B3A71F4F2EEC39CD0006A737 /* AnnotationToolsSettingsState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A71F4E2EEC39CA0006A737 /* AnnotationToolsSettingsState.swift */; };
+		B3A71F512EEC39D90006A737 /* AnnotationToolsSettingsAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A71F502EEC39D60006A737 /* AnnotationToolsSettingsAction.swift */; };
 		B3A94B4A2462F5D300BC7910 /* PSPDFKit+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A94B492462F5D300BC7910 /* PSPDFKit+Extensions.swift */; };
 		B3A95DAA29194BDE00BCCF11 /* DashedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A95DA929194BDE00BCCF11 /* DashedView.swift */; };
 		B3AAABD72502A40900031065 /* searchresponse_unknownfields.json in Resources */ = {isa = PBXBuildFile; fileRef = B3AAABD52502A40600031065 /* searchresponse_unknownfields.json */; };
@@ -1215,6 +1231,7 @@
 		B3F3D63C255EC98600F310C2 /* AnnotationViewButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F3D63B255EC98600F310C2 /* AnnotationViewButton.swift */; };
 		B3F3D640255ECA4700F310C2 /* AnnotationViewText.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F3D63F255ECA4700F310C2 /* AnnotationViewText.swift */; };
 		B3F3D644255ECF3500F310C2 /* AnnotationViewSeparator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F3D643255ECF3500F310C2 /* AnnotationViewSeparator.swift */; };
+		B3F451E72E2A57380051E377 /* SpeechVoicePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F451E62E2A57380051E377 /* SpeechVoicePickerView.swift */; };
 		B3F47E0025B5F550006FA96F /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B30B550424B85A6200F94B59 /* Images.xcassets */; };
 		B3F49FB628B8C3F600A1F3E8 /* AnnotationEditability.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F49FB528B8C3F600A1F3E8 /* AnnotationEditability.swift */; };
 		B3F4E4EC2A4DAA7D00820718 /* UpdatableObjectSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F4E4EB2A4DAA7D00820718 /* UpdatableObjectSpec.swift */; };
@@ -1234,6 +1251,7 @@
 		B3F7B0732524A8D500E51377 /* KeychainSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B3F7B0722524A8D500E51377 /* KeychainSwift */; };
 		B3F7B0752524A8D800E51377 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = B3F7B0742524A8D800E51377 /* ZIPFoundation */; };
 		B3F83808263960FA00E128A6 /* ItemAccessory.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F83807263960FA00E128A6 /* ItemAccessory.swift */; };
+		B3F874232E2F84B6004A2D71 /* SpeechLanguagePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F874222E2F84B6004A2D71 /* SpeechLanguagePickerView.swift */; };
 		B3F9A4B82B04C97A00684030 /* HtmlEpubSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F9A4B72B04C97A00684030 /* HtmlEpubSettings.swift */; };
 		B3F9A4BD2B04CEC300684030 /* ReaderSettingsSegmentedCellContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F9A4BA2B04CEC300684030 /* ReaderSettingsSegmentedCellContentView.swift */; };
 		B3F9A4BE2B04CEC300684030 /* ReaderSettingsSegmentedCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F9A4BB2B04CEC300684030 /* ReaderSettingsSegmentedCell.swift */; };
@@ -1340,6 +1358,7 @@
 		6102D2B72D6CCDD300505E6A /* RemoteRecognizerResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteRecognizerResponse.swift; sourceTree = "<group>"; };
 		6102D2BB2D6CCF7600505E6A /* RecognizerRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecognizerRequest.swift; sourceTree = "<group>"; };
 		6102D2BE2D6E23C400505E6A /* worker.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = worker.html; sourceTree = "<group>"; };
+		6108CF422EF1E80C00036576 /* bitcoin_pdf_pages_0_1_text.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = bitcoin_pdf_pages_0_1_text.json; sourceTree = "<group>"; };
 		61099E6A2C91BAF300EDD92C /* Zotero-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Zotero-Bridging-Header.h"; sourceTree = "<group>"; };
 		61099E6B2C91BAF300EDD92C /* ZShare-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "ZShare-Bridging-Header.h"; sourceTree = "<group>"; };
 		61099E6C2C91BAF300EDD92C /* NSDecimalNumber+Rounding.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSDecimalNumber+Rounding.h"; sourceTree = "<group>"; };
@@ -1376,6 +1395,7 @@
 		61EB05B22C9D8EA200152482 /* CreateReaderAnnotationsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateReaderAnnotationsDbRequest.swift; sourceTree = "<group>"; };
 		61FA14CD2B05081D00E7D423 /* TextConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextConverter.swift; sourceTree = "<group>"; };
 		61FA14CF2B08E24A00E7D423 /* ColorPickerStackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPickerStackView.swift; sourceTree = "<group>"; };
+		61FB13D62EECBE0700329563 /* bitcoin_pdf_page_0_text.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = bitcoin_pdf_page_0_text.json; sourceTree = "<group>"; };
 		B300B33224291C8D00C1FE1E /* RTranslatorMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RTranslatorMetadata.swift; sourceTree = "<group>"; };
 		B300B3342429222B00C1FE1E /* TranslatorMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorMetadata.swift; sourceTree = "<group>"; };
 		B300B3372429254900C1FE1E /* SyncTranslatorsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncTranslatorsDbRequest.swift; sourceTree = "<group>"; };
@@ -1765,7 +1785,6 @@
 		B357DEE224165DEE00E06153 /* CrashReporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CrashReporter.swift; sourceTree = "<group>"; };
 		B357DEE524165E0B00E06153 /* DebugLogFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLogFormatter.swift; sourceTree = "<group>"; };
 		B3588C6825FF7A800049D484 /* SetCollectionCollapsedDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetCollectionCollapsedDbRequest.swift; sourceTree = "<group>"; };
-		B358D3B3279590C200A67054 /* CheckAnyItemIsInTrashDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckAnyItemIsInTrashDbRequest.swift; sourceTree = "<group>"; };
 		B3593ADB24B60A7600CA0B57 /* UISearchBar+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UISearchBar+Extensions.swift"; sourceTree = "<group>"; };
 		B3593EC5241A61C700760E20 /* ItemDetailActionHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemDetailActionHandler.swift; sourceTree = "<group>"; };
 		B3593EC9241A61C700760E20 /* ItemDetailState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemDetailState.swift; sourceTree = "<group>"; };
@@ -1875,9 +1894,13 @@
 		B372CEE22486512500B423AE /* GroupRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupRequest.swift; sourceTree = "<group>"; };
 		B372CEE4248670AF00B423AE /* FetchAndStoreGroupSyncAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FetchAndStoreGroupSyncAction.swift; sourceTree = "<group>"; };
 		B372CEE82486748500B423AE /* MarkGroupForResyncSyncAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkGroupForResyncSyncAction.swift; sourceTree = "<group>"; };
+		B37352AE2E140DE70078BB00 /* AccessibilityViewHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityViewHandler.swift; sourceTree = "<group>"; };
+		B37352B02E141F990078BB00 /* AccessibilitySpeechControlsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilitySpeechControlsView.swift; sourceTree = "<group>"; };
 		B373877228FEA0C7004E5031 /* PDFSidebarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFSidebarViewController.swift; sourceTree = "<group>"; };
 		B373B1B62BBD748600DCF893 /* DeleteFailedItemsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteFailedItemsDbRequest.swift; sourceTree = "<group>"; };
 		B373C98E2B1F5431007FD56C /* PDFThumbnailsLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFThumbnailsLayout.swift; sourceTree = "<group>"; };
+		B37434C62E38C59A00D8FAC2 /* SetSpeechLanguageDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetSpeechLanguageDbRequest.swift; sourceTree = "<group>"; };
+		B37434C92E38C5AB00D8FAC2 /* ReadSpeechLanguageDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadSpeechLanguageDbRequest.swift; sourceTree = "<group>"; };
 		B3748D1F26566F4800ED05F8 /* ContainerViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ContainerViewController.swift; sourceTree = "<group>"; };
 		B3748D2126566F6900ED05F8 /* ContainerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContainerViewController.swift; sourceTree = "<group>"; };
 		B3756E8E2B835BDC0001CD0A /* IntraDocumentNavigationButtonsHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntraDocumentNavigationButtonsHandler.swift; sourceTree = "<group>"; };
@@ -1922,6 +1945,7 @@
 		B3830CE8255451DC00910FE0 /* TagPickerViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TagPickerViewController.swift; sourceTree = "<group>"; };
 		B3830CF425545EE400910FE0 /* TagPickerCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagPickerCell.swift; sourceTree = "<group>"; };
 		B3830CF525545EE400910FE0 /* TagPickerCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = TagPickerCell.xib; sourceTree = "<group>"; };
+		B384B5C12E1539C900D023C6 /* AccessibilitySpeechControlsStackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilitySpeechControlsStackView.swift; sourceTree = "<group>"; };
 		B385B70D25C03E7E0073CA6F /* PDFExportState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFExportState.swift; sourceTree = "<group>"; };
 		B3863FC72AD819AB005082F0 /* EndItemCreationDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EndItemCreationDbRequest.swift; sourceTree = "<group>"; };
 		B3863FC92AD830DE005082F0 /* DeleteCreatorItemDetailDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteCreatorItemDetailDbRequest.swift; sourceTree = "<group>"; };
@@ -1932,6 +1956,171 @@
 		B3866A592417C1C7006693C4 /* Coordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Coordinator.swift; sourceTree = "<group>"; };
 		B3868536270D90640068A022 /* RawDataEncoding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RawDataEncoding.swift; sourceTree = "<group>"; };
 		B386853F270DC3AA0068A022 /* WebDavScheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavScheme.swift; sourceTree = "<group>"; };
+		B3877D282F0F9B4200D25D4C /* ar */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ar; path = ar.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D292F0F9B4200D25D4C /* ar */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ar; path = ar.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877D2A2F0F9B4200D25D4C /* ar */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = ar; path = ar.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877D2B2F0F9BDB00D25D4C /* af */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = af; path = af.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D2C2F0F9BDC00D25D4C /* af */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = af; path = af.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877D2D2F0F9BDC00D25D4C /* af */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = af; path = af.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877D2E2F0F9BFC00D25D4C /* am */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = am; path = am.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D2F2F0F9BFC00D25D4C /* am */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = am; path = am.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877D302F0F9BFC00D25D4C /* am */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = am; path = am.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877D312F0F9C2000D25D4C /* ast */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ast; path = ast.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D322F0F9C2100D25D4C /* ast */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ast; path = ast.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877D332F0F9C2100D25D4C /* ast */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = ast; path = ast.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877D342F0F9C4500D25D4C /* bg */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = bg; path = bg.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D352F0F9C4500D25D4C /* bg */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = bg; path = bg.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877D362F0F9C4500D25D4C /* bg */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = bg; path = bg.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877D372F0F9C5D00D25D4C /* bn */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = bn; path = bn.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D382F0F9C5D00D25D4C /* bn */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = bn; path = bn.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877D392F0F9C5D00D25D4C /* bn */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = bn; path = bn.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877D3A2F0F9C8600D25D4C /* br */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = br; path = br.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D3B2F0F9C8600D25D4C /* br */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = br; path = br.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877D3C2F0F9C8600D25D4C /* br */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = br; path = br.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877D3D2F0F9C9100D25D4C /* ca */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ca; path = ca.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D3E2F0F9C9100D25D4C /* ca */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ca; path = ca.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877D3F2F0F9C9100D25D4C /* ca */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = ca; path = ca.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877D402F0F9C9B00D25D4C /* cs */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = cs; path = cs.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D412F0F9C9B00D25D4C /* cs */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = cs; path = cs.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877D422F0F9C9B00D25D4C /* cs */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = cs; path = cs.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877D432F0F9CFE00D25D4C /* cy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = cy; path = cy.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D442F0F9CFE00D25D4C /* cy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = cy; path = cy.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877D452F0F9CFE00D25D4C /* cy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = cy; path = cy.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877D462F0F9D0900D25D4C /* da */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = da; path = da.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D472F0F9D0900D25D4C /* da */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = da; path = da.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877D482F0F9D0A00D25D4C /* da */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = da; path = da.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877D492F0F9D1900D25D4C /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D4A2F0F9D1900D25D4C /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877D4B2F0F9D1900D25D4C /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = de; path = de.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877D4C2F0F9D4200D25D4C /* el */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = el; path = el.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D4D2F0F9D4200D25D4C /* el */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = el; path = el.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877D4E2F0F9D4200D25D4C /* el */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = el; path = el.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877D4F2F0F9D4F00D25D4C /* en-GB */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "en-GB"; path = "en-GB.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		B3877D502F0F9D5000D25D4C /* en-GB */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "en-GB"; path = "en-GB.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		B3877D512F0F9D5000D25D4C /* en-GB */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = "en-GB"; path = "en-GB.lproj/Localizable.stringsdict"; sourceTree = "<group>"; };
+		B3877D522F0F9D6D00D25D4C /* es-AR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "es-AR"; path = "es-AR.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		B3877D532F0F9D6D00D25D4C /* es-AR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "es-AR"; path = "es-AR.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		B3877D542F0F9D8300D25D4C /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D552F0F9D8300D25D4C /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877D562F0F9DB200D25D4C /* et */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = et; path = et.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D572F0F9DB200D25D4C /* et */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = et; path = et.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877D582F0F9DB200D25D4C /* et */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = et; path = et.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877D592F0F9DD200D25D4C /* eu */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = eu; path = eu.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D5A2F0F9DD200D25D4C /* eu */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = eu; path = eu.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877D5B2F0F9DD300D25D4C /* eu */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = eu; path = eu.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877D5C2F0F9E0500D25D4C /* fa */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fa; path = fa.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D5D2F0F9E0500D25D4C /* fa */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fa; path = fa.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877D5E2F0F9E1400D25D4C /* fi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fi; path = fi.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D5F2F0F9E1600D25D4C /* fi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = fi; path = fi.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877D602F0F9E2000D25D4C /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D612F0F9E2000D25D4C /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877D622F0F9E2000D25D4C /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = fr; path = fr.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877D632F0F9E3F00D25D4C /* gl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = gl; path = gl.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877D642F0F9E3F00D25D4C /* gl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = gl; path = gl.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877D652F0F9E5300D25D4C /* he */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = he; path = he.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D662F0F9E5300D25D4C /* he */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = he; path = he.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877D672F0F9E5300D25D4C /* he */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = he; path = he.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877D682F0F9E7000D25D4C /* hr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = hr; path = hr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D692F0F9E7000D25D4C /* hr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = hr; path = hr.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877D6A2F0F9E7000D25D4C /* hr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = hr; path = hr.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877D6B2F0F9E7B00D25D4C /* hu */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = hu; path = hu.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D6C2F0F9E7B00D25D4C /* hu */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = hu; path = hu.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877D6D2F0F9E9400D25D4C /* hy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = hy; path = hy.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877D6E2F0F9E9500D25D4C /* hy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = hy; path = hy.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877D6F2F0F9EB000D25D4C /* id */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = id; path = id.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D702F0F9EB000D25D4C /* id */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = id; path = id.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877D712F0F9EB000D25D4C /* id */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = id; path = id.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877D722F0F9ED000D25D4C /* ig */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ig; path = ig.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D732F0F9ED000D25D4C /* ig */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ig; path = ig.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877D742F0F9ED000D25D4C /* ig */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = ig; path = ig.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877D752F0F9EF600D25D4C /* is */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = is; path = is.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D762F0F9EF600D25D4C /* is */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = is; path = is.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877D772F0F9EF600D25D4C /* is */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = is; path = is.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877D782F0F9F0D00D25D4C /* it */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = it; path = it.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D792F0F9F0D00D25D4C /* it */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = it; path = it.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877D7A2F0F9F0D00D25D4C /* it */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = it; path = it.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877D7B2F0F9F2C00D25D4C /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D7C2F0F9F6A00D25D4C /* jv */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = jv; path = jv.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D7D2F0F9F6A00D25D4C /* jv */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = jv; path = jv.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877D7E2F0F9F6A00D25D4C /* jv */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = jv; path = jv.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877D7F2F0F9F8B00D25D4C /* ka */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ka; path = ka.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D802F0F9F8B00D25D4C /* ka */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ka; path = ka.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877D812F0F9F8B00D25D4C /* ka */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = ka; path = ka.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877D822F0F9FA800D25D4C /* kk */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = kk; path = kk.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D832F0F9FA800D25D4C /* kk */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = kk; path = kk.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877D842F0F9FA800D25D4C /* kk */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = kk; path = kk.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877D852F0F9FE800D25D4C /* km */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = km; path = km.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D862F0F9FE800D25D4C /* km */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = km; path = km.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877D872F0F9FE800D25D4C /* km */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = km; path = km.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877D882F0FA00100D25D4C /* kn */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = kn; path = kn.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D892F0FA00500D25D4C /* kn */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = kn; path = kn.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877D8A2F0FA04800D25D4C /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D8B2F0FA04800D25D4C /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877D8C2F0FA04800D25D4C /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = ko; path = ko.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877D8D2F0FA05900D25D4C /* lt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = lt; path = lt.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D8E2F0FA05B00D25D4C /* lt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = lt; path = lt.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877D8F2F0FA07A00D25D4C /* mk */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = mk; path = mk.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D902F0FA07A00D25D4C /* mk */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = mk; path = mk.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877D912F0FA07A00D25D4C /* mk */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = mk; path = mk.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877D922F0FA08F00D25D4C /* mn */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = mn; path = mn.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D932F0FA08F00D25D4C /* mn */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = mn; path = mn.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877D942F0FA08F00D25D4C /* mn */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = mn; path = mn.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877D952F0FA0B500D25D4C /* nb-NO */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "nb-NO"; path = "nb-NO.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		B3877D962F0FA0B500D25D4C /* nb-NO */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "nb-NO"; path = "nb-NO.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		B3877D972F0FA0B600D25D4C /* nb-NO */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = "nb-NO"; path = "nb-NO.lproj/Localizable.stringsdict"; sourceTree = "<group>"; };
+		B3877D982F0FA0D700D25D4C /* nl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = nl; path = nl.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D992F0FA0D700D25D4C /* nl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = nl; path = nl.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877D9A2F0FA0D700D25D4C /* nl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = nl; path = nl.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877D9B2F0FA0EA00D25D4C /* nn-NO */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "nn-NO"; path = "nn-NO.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		B3877D9C2F0FA0EA00D25D4C /* nn-NO */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "nn-NO"; path = "nn-NO.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		B3877D9D2F0FA0EA00D25D4C /* nn-NO */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = "nn-NO"; path = "nn-NO.lproj/Localizable.stringsdict"; sourceTree = "<group>"; };
+		B3877D9E2F0FA10700D25D4C /* oc */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = oc; path = oc.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877D9F2F0FA10800D25D4C /* oc */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = oc; path = oc.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877DA02F0FA10800D25D4C /* oc */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = oc; path = oc.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877DA12F0FA12200D25D4C /* pl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pl; path = pl.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877DA22F0FA12200D25D4C /* pl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pl; path = pl.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877DA32F0FA12300D25D4C /* pl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = pl; path = pl.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877DA42F0FA13800D25D4C /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "pt-BR.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		B3877DA52F0FA13900D25D4C /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "pt-BR.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		B3877DA62F0FA13900D25D4C /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = "pt-BR"; path = "pt-BR.lproj/Localizable.stringsdict"; sourceTree = "<group>"; };
+		B3877DA72F0FA14200D25D4C /* pt-PT */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-PT"; path = "pt-PT.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		B3877DA82F0FA14200D25D4C /* pt-PT */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-PT"; path = "pt-PT.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		B3877DA92F0FA14200D25D4C /* pt-PT */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = "pt-PT"; path = "pt-PT.lproj/Localizable.stringsdict"; sourceTree = "<group>"; };
+		B3877DAA2F0FA15300D25D4C /* ro */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ro; path = ro.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877DAB2F0FA15300D25D4C /* ro */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ro; path = ro.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877DAC2F0FA16300D25D4C /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877DAD2F0FA16400D25D4C /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877DAE2F0FA16400D25D4C /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = ru; path = ru.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877DAF2F0FA17300D25D4C /* sk */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = sk; path = sk.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877DB02F0FA17500D25D4C /* sk */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = sk; path = sk.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877DB12F0FA18300D25D4C /* sl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = sl; path = sl.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877DB22F0FA18300D25D4C /* sl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = sl; path = sl.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877DB32F0FA18300D25D4C /* sl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = sl; path = sl.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877DB42F0FA19A00D25D4C /* sq */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = sq; path = sq.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877DB52F0FA19A00D25D4C /* sq */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = sq; path = sq.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877DB62F0FA19A00D25D4C /* sq */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = sq; path = sq.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877DB72F0FA1CC00D25D4C /* sr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = sr; path = sr.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877DB82F0FA1FA00D25D4C /* sv */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = sv; path = sv.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877DB92F0FA1FA00D25D4C /* sv */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = sv; path = sv.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877DBA2F0FA21800D25D4C /* ta */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ta; path = ta.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877DBB2F0FA21800D25D4C /* ta */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ta; path = ta.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877DBC2F0FA22700D25D4C /* th */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = th; path = th.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877DBD2F0FA22700D25D4C /* th */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = th; path = th.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877DBE2F0FA23000D25D4C /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877DBF2F0FA23300D25D4C /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = tr; path = tr.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877DC02F0FA23E00D25D4C /* uk */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = uk; path = uk.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877DC12F0FA23E00D25D4C /* uk */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = uk; path = uk.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B3877DC22F0FA23E00D25D4C /* uk */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = uk; path = uk.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877DC32F0FA24900D25D4C /* vi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = vi; path = vi.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B3877DC42F0FA24B00D25D4C /* vi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = vi; path = vi.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		B3877DC52F0FA26000D25D4C /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		B3877DC62F0FA26100D25D4C /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		B3877DC72F0FA26100D25D4C /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.stringsdict"; sourceTree = "<group>"; };
+		B3877DC82F0FA26700D25D4C /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		B3877DC92F0FA26700D25D4C /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		B3877DCA2F0FA26700D25D4C /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = "zh-Hant"; path = "zh-Hant.lproj/Localizable.stringsdict"; sourceTree = "<group>"; };
+		B3877DCB2F0FA28700D25D4C /* yue-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "yue-Hans"; path = "yue-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		B3877DCC2F0FA28700D25D4C /* yue-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = "yue-Hans"; path = "yue-Hans.lproj/Localizable.stringsdict"; sourceTree = "<group>"; };
 		B38B24B826E7664400BDD1BB /* AnnotationToolOptionsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationToolOptionsViewController.swift; sourceTree = "<group>"; };
 		B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeysResponseProcessor.swift; sourceTree = "<group>"; };
 		B390EE2B29B5F419004F979B /* PDFCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFCoordinator.swift; sourceTree = "<group>"; };
@@ -1945,6 +2134,7 @@
 		B395EFE625494B2300CEBD9F /* CreatorEditState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatorEditState.swift; sourceTree = "<group>"; };
 		B395EFEA25494B3200CEBD9F /* CreatorEditActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatorEditActionHandler.swift; sourceTree = "<group>"; };
 		B39649172869B0D0000BCB6C /* ISBNParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ISBNParser.swift; sourceTree = "<group>"; };
+		B3969A3F2DE9AAEF00425FF3 /* AccessibilityPopupViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityPopupViewController.swift; sourceTree = "<group>"; };
 		B3972688247D403200A8B469 /* UrlDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UrlDetector.swift; sourceTree = "<group>"; };
 		B3981426257A5A16002C755C /* AnnotationView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnnotationView.swift; sourceTree = "<group>"; };
 		B398142C257A649D002C755C /* TextContentEditCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextContentEditCell.swift; sourceTree = "<group>"; };
@@ -1956,6 +2146,7 @@
 		B399A9182CC6802E00731B21 /* TrashObject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrashObject.swift; sourceTree = "<group>"; };
 		B39AF553290033CD001F400F /* TableOfContentsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableOfContentsViewController.swift; sourceTree = "<group>"; };
 		B39B18E7223947050019F467 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		6869C0F7335B4F30B5D8C9EC /* ReadAttachmentUploadsDbRequestSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAttachmentUploadsDbRequestSpec.swift; sourceTree = "<group>"; };
 		B39C7BDD251237D600C2CCF1 /* ReadUpdatedItemUpdateParametersSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadUpdatedItemUpdateParametersSpec.swift; sourceTree = "<group>"; };
 		B39D336723FFD96C00EF2ACB /* Note.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Note.swift; sourceTree = "<group>"; };
 		B39D33702400150B00EF2ACB /* CreateAttachmentsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateAttachmentsDbRequest.swift; sourceTree = "<group>"; };
@@ -1963,6 +2154,7 @@
 		B39D42D829C0B82F0035CDA9 /* TagFilterCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = TagFilterCell.xib; sourceTree = "<group>"; };
 		B39D42DE29C0CE7D0035CDA9 /* TagsFlowLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagsFlowLayout.swift; sourceTree = "<group>"; };
 		B39DBFF22D7EF2C600454486 /* FeatureGates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureGates.swift; sourceTree = "<group>"; };
+		B39DBFF52D80369C00454486 /* SpeechManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechManager.swift; sourceTree = "<group>"; };
 		B39E0131283276830091CE4A /* WebViewHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewHandler.swift; sourceTree = "<group>"; };
 		B39EE32A223A5E3500302E29 /* TestAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestAppDelegate.swift; sourceTree = "<group>"; };
 		B3A05E94261492150077CCCC /* UpdateCollectionLastUsedDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCollectionLastUsedDbRequest.swift; sourceTree = "<group>"; };
@@ -1994,6 +2186,10 @@
 		B3A47C3729015FDD00E7D90D /* TableOfContentsAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableOfContentsAction.swift; sourceTree = "<group>"; };
 		B3A47C3929015FE800E7D90D /* TableOfContentsState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableOfContentsState.swift; sourceTree = "<group>"; };
 		B3A53FF62B14CDB2004BB9D7 /* ReadEmojiTagsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadEmojiTagsDbRequest.swift; sourceTree = "<group>"; };
+		B3A71F4A2EEC39A20006A737 /* AnnotationToolsSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationToolsSettingsView.swift; sourceTree = "<group>"; };
+		B3A71F4C2EEC39B50006A737 /* AnnotationToolsSettingsActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationToolsSettingsActionHandler.swift; sourceTree = "<group>"; };
+		B3A71F4E2EEC39CA0006A737 /* AnnotationToolsSettingsState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationToolsSettingsState.swift; sourceTree = "<group>"; };
+		B3A71F502EEC39D60006A737 /* AnnotationToolsSettingsAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationToolsSettingsAction.swift; sourceTree = "<group>"; };
 		B3A94B492462F5D300BC7910 /* PSPDFKit+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PSPDFKit+Extensions.swift"; sourceTree = "<group>"; };
 		B3A95DA929194BDE00BCCF11 /* DashedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashedView.swift; sourceTree = "<group>"; };
 		B3AAABD52502A40600031065 /* searchresponse_unknownfields.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = searchresponse_unknownfields.json; sourceTree = "<group>"; };
@@ -2228,6 +2424,7 @@
 		B3F3D63B255EC98600F310C2 /* AnnotationViewButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationViewButton.swift; sourceTree = "<group>"; };
 		B3F3D63F255ECA4700F310C2 /* AnnotationViewText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationViewText.swift; sourceTree = "<group>"; };
 		B3F3D643255ECF3500F310C2 /* AnnotationViewSeparator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationViewSeparator.swift; sourceTree = "<group>"; };
+		B3F451E62E2A57380051E377 /* SpeechVoicePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechVoicePickerView.swift; sourceTree = "<group>"; };
 		B3F47C00243B339F004F8B1E /* TranslatorsControllerSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorsControllerSpec.swift; sourceTree = "<group>"; };
 		B3F47C04243B4BC0004F8B1E /* Bundled */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Bundled; sourceTree = "<group>"; };
 		B3F49FB528B8C3F600A1F3E8 /* AnnotationEditability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationEditability.swift; sourceTree = "<group>"; };
@@ -2243,6 +2440,7 @@
 		B3F6AA392AB30663005BC22E /* AnnotationTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationTool.swift; sourceTree = "<group>"; };
 		B3F6AA3B2AB30CDA005BC22E /* HtmlEpubReaderAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HtmlEpubReaderAction.swift; sourceTree = "<group>"; };
 		B3F83807263960FA00E128A6 /* ItemAccessory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemAccessory.swift; sourceTree = "<group>"; };
+		B3F874222E2F84B6004A2D71 /* SpeechLanguagePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechLanguagePickerView.swift; sourceTree = "<group>"; };
 		B3F9A4B72B04C97A00684030 /* HtmlEpubSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HtmlEpubSettings.swift; sourceTree = "<group>"; };
 		B3F9A4BA2B04CEC300684030 /* ReaderSettingsSegmentedCellContentView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReaderSettingsSegmentedCellContentView.swift; sourceTree = "<group>"; };
 		B3F9A4BB2B04CEC300684030 /* ReaderSettingsSegmentedCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReaderSettingsSegmentedCell.swift; sourceTree = "<group>"; };
@@ -2420,8 +2618,8 @@
 				B3D3FCA8267762EC008E243A /* ExportLocaleReader.swift */,
 				B305648123FC051E003304F2 /* Formatter.swift */,
 				B379D9312BB30E6600AF5025 /* FullSyncDebugger.swift */,
-				B367330C24ACB63300E0CDA8 /* HtmlAttributedStringConverter.swift */,
 				618404252A4456A9005AAF22 /* IdentifierLookupController.swift */,
+				B367330C24ACB63300E0CDA8 /* HtmlAttributedStringConverter.swift */,
 				B307A2722704A87D005986B3 /* IdleTimerController.swift */,
 				61639F842AE03B8500026003 /* InstantPresenter.swift */,
 				B39649172869B0D0000BCB6C /* ISBNParser.swift */,
@@ -2444,6 +2642,7 @@
 				B305646F23FC051E003304F2 /* SecureStorage.swift */,
 				B305646E23FC051E003304F2 /* SessionController.swift */,
 				61ABA7502A6137D1002A4219 /* ShareableImage.swift */,
+				B39DBFF52D80369C00454486 /* SpeechManager.swift */,
 				B3593F172668E6A700FA4BB2 /* StyleParserDelegate.swift */,
 				B355B12B2850B6C400BAE2C5 /* TableViewDiffableDataSource.swift */,
 				B36BEC7224485FC700A60552 /* TagColorGenerator.swift */,
@@ -2475,7 +2674,6 @@
 				B305CEBA29E6E67600B9E2B4 /* AssignItemsToTagDbRequest.swift */,
 				B352FFCB2CBE943B00D0887B /* AutoEmptyTrashDbRequest.swift */,
 				B37D21352AD6D8AB004A6496 /* CancelParentCreationDbRequest.swift */,
-				B358D3B3279590C200A67054 /* CheckAnyItemIsInTrashDbRequest.swift */,
 				B305644423FC051E003304F2 /* CheckItemIsChangedDbRequest.swift */,
 				B3E34888283CFA92002A8A06 /* CleanupUnusedTags.swift */,
 				B3BD2F8F2BBEE38900EDDDD6 /* CountObjectsDbRequest.swift */,
@@ -2564,6 +2762,7 @@
 				B34341A4260A16AB00093E63 /* ReadLibraryDbRequest.swift */,
 				B305645023FC051E003304F2 /* ReadSearchDbRequest.swift */,
 				B305646423FC051E003304F2 /* ReadSearchesDbRequest.swift */,
+				B37434C92E38C5AB00D8FAC2 /* ReadSpeechLanguageDbRequest.swift */,
 				B322B4762673A41200BC3D08 /* ReadStyleDbRequest.swift */,
 				B331F9B4265400D70099F6A6 /* ReadStylesDbRequest.swift */,
 				B305644723FC051E003304F2 /* ReadTagPickerTagsDbRequest.swift */,
@@ -2572,10 +2771,12 @@
 				B349182A25E00771006C3313 /* ReadVersionDbRequest.swift */,
 				B3100920272C0960003FC743 /* ReadWebDavDeletionsDbRequest.swift */,
 				B35DD74229813AA6004CC34D /* RemoveItemFromParentDbRequest.swift */,
+				617999712D8089200051D35E /* RenameAttachmentFilenameDbRequest.swift */,
 				B3863FCD2AD830FE005082F0 /* ReorderCreatorsItemDetailDbRequest.swift */,
 				B361C2B329DECB220035BF7E /* ResetSettingsVersionDbRequest.swift */,
 				B353F1FA242E21880062EE24 /* ResetTranslatorsDbRequest.swift */,
 				B3588C6825FF7A800049D484 /* SetCollectionCollapsedDbRequest.swift */,
+				B37434C62E38C59A00D8FAC2 /* SetSpeechLanguageDbRequest.swift */,
 				B3E8B24E27DA3969001825F8 /* SplitAnnotationsDbRequest.swift */,
 				B305646723FC051E003304F2 /* StoreCollectionsDbRequest.swift */,
 				B305645323FC051E003304F2 /* StoreGroupDbRequest.swift */,
@@ -2593,7 +2794,6 @@
 				B3D84BEC27917E3D005DDD7C /* UpdateCreatorSummaryFormatDbRequest.swift */,
 				B305644E23FC051E003304F2 /* UpdateItemLocaleDbRequest.swift */,
 				B305645F23FC051E003304F2 /* UpdateVersionsDbRequest.swift */,
-				617999712D8089200051D35E /* RenameAttachmentFilenameDbRequest.swift */,
 			);
 			path = Requests;
 			sourceTree = "<group>";
@@ -2992,6 +3192,7 @@
 				B3243BC72A5EB2740033A7D6 /* HtmlAttributedStringConverterSpec.swift */,
 				B3B1EDEC250242DB00D8BC1E /* ItemResponseSpec.swift */,
 				B34F9FA423743C42004ED34C /* ItemTitleFormatterSpec.swift */,
+				6869C0F7335B4F30B5D8C9EC /* ReadAttachmentUploadsDbRequestSpec.swift */,
 				B39C7BDD251237D600C2CCF1 /* ReadUpdatedItemUpdateParametersSpec.swift */,
 				B3B1EDF0250242F700D8BC1E /* SearchResponseSpec.swift */,
 				B3518DA62AEBCB5E00D983B4 /* SettingsResponseSpec.swift */,
@@ -3123,6 +3324,8 @@
 			children = (
 				6102D2B12D68ABD900505E6A /* bitcoin_pdf_recognizer_data.json */,
 				6102D2B52D68B5DE00505E6A /* bitcoin_pdf_full_text.json */,
+				61FB13D62EECBE0700329563 /* bitcoin_pdf_page_0_text.json */,
+				6108CF422EF1E80C00036576 /* bitcoin_pdf_pages_0_1_text.json */,
 				B3B1EDFB2502498100D8BC1E /* collectionresponse_knownfields.json */,
 				B3B1EDFC2502498100D8BC1E /* collectionresponse_unknownfields.json */,
 				B3B1EDF32502456000D8BC1E /* itemresponse_knownfields.json */,
@@ -3651,6 +3854,7 @@
 		B374911F2488D7040042FF85 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				B3A71F462EEC397C0006A737 /* Annotation Tools */,
 				B3E8FE092714297200F51458 /* Cite */,
 				B3E8FE4327142B0A00F51458 /* Debugging */,
 				B3E8FE1F271429C300F51458 /* Export */,
@@ -3713,6 +3917,41 @@
 				B3A27ACC25BEE91A00DE0BB2 /* TranslationWebViewHandler.swift */,
 			);
 			path = Controllers;
+			sourceTree = "<group>";
+		};
+		B3A71F462EEC397C0006A737 /* Annotation Tools */ = {
+			isa = PBXGroup;
+			children = (
+				B3A71F472EEC39950006A737 /* Models */,
+				B3A71F482EEC39950006A737 /* ViewModels */,
+				B3A71F492EEC39950006A737 /* Views */,
+			);
+			path = "Annotation Tools";
+			sourceTree = "<group>";
+		};
+		B3A71F472EEC39950006A737 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				B3A71F502EEC39D60006A737 /* AnnotationToolsSettingsAction.swift */,
+				B3A71F4E2EEC39CA0006A737 /* AnnotationToolsSettingsState.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		B3A71F482EEC39950006A737 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				B3A71F4C2EEC39B50006A737 /* AnnotationToolsSettingsActionHandler.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		B3A71F492EEC39950006A737 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				B3A71F4A2EEC39A20006A737 /* AnnotationToolsSettingsView.swift */,
+			);
+			path = Views;
 			sourceTree = "<group>";
 		};
 		B3AB389F238EC02D008A1ABB /* View Controllers */ = {
@@ -3978,6 +4217,10 @@
 		B3DCDF00240912060039ED0D /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				B3969A3F2DE9AAEF00425FF3 /* AccessibilityPopupViewController.swift */,
+				B384B5C12E1539C900D023C6 /* AccessibilitySpeechControlsStackView.swift */,
+				B37352B02E141F990078BB00 /* AccessibilitySpeechControlsView.swift */,
+				B37352AE2E140DE70078BB00 /* AccessibilityViewHandler.swift */,
 				B3DCDF03240912060039ED0D /* ActivityIndicatorView.swift */,
 				B347F2B924DC4D5D000D5FF6 /* CapHeightLabel.swift */,
 				B3D58D6A25EE437700D8FA31 /* CircularProgressView.swift */,
@@ -4010,6 +4253,8 @@
 				B361820E24C9B9E800B30D56 /* SelectableTextField.swift */,
 				B3DCDF1A24091EBE0039ED0D /* SinglePickerRow.swift */,
 				B3DCDF1C24091EC40039ED0D /* SinglePickerView.swift */,
+				B3F874222E2F84B6004A2D71 /* SpeechLanguagePickerView.swift */,
+				B3F451E62E2A57380051E377 /* SpeechVoicePickerView.swift */,
 				B32B4F942475544700F78A05 /* SyncToolbarController.swift */,
 				B3830CF425545EE400910FE0 /* TagPickerCell.swift */,
 				B3830CF525545EE400910FE0 /* TagPickerCell.xib */,
@@ -4623,6 +4868,68 @@
 			knownRegions = (
 				en,
 				Base,
+				ar,
+				af,
+				am,
+				ast,
+				bg,
+				bn,
+				br,
+				ca,
+				cs,
+				cy,
+				da,
+				de,
+				el,
+				"en-GB",
+				"es-AR",
+				es,
+				et,
+				eu,
+				fa,
+				fi,
+				fr,
+				gl,
+				he,
+				hr,
+				hu,
+				hy,
+				id,
+				ig,
+				is,
+				it,
+				ja,
+				jv,
+				ka,
+				kk,
+				km,
+				kn,
+				ko,
+				lt,
+				mk,
+				mn,
+				"nb-NO",
+				nl,
+				"nn-NO",
+				oc,
+				pl,
+				"pt-BR",
+				"pt-PT",
+				ro,
+				ru,
+				sk,
+				sl,
+				sq,
+				sr,
+				sv,
+				ta,
+				th,
+				tr,
+				uk,
+				vi,
+				"zh-Hans",
+				"zh-Hant",
+				"yue-Hans",
 			);
 			mainGroup = B30D594C2206F60400884C4A;
 			packageReferences = (
@@ -4721,6 +5028,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				61FB13D82EED6D6E00329563 /* bitcoin_pdf_page_0_text.json in Resources */,
 				B32A3C90248008A2009E2C5D /* translators.xml in Resources */,
 				B3B1C5892665258400883597 /* bitcoin.pdf in Resources */,
 				6102D2B22D68ABF100505E6A /* bitcoin_pdf_recognizer_data.json in Resources */,
@@ -4742,6 +5050,7 @@
 				B3B1EDF52502456000D8BC1E /* itemresponse_knownfields.json in Resources */,
 				B36B8A542A4C2E930038BA1C /* test_annotation_dictionary_position.json in Resources */,
 				6102D2B62D68B5E800505E6A /* bitcoin_pdf_full_text.json in Resources */,
+				6108CF432EF1E80C00036576 /* bitcoin_pdf_pages_0_1_text.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -5028,11 +5337,13 @@
 				B3A95DAA29194BDE00BCCF11 /* DashedView.swift in Sources */,
 				B3593F1C2668E86100FA4BB2 /* SyncStylesDbRequest.swift in Sources */,
 				B3E9180C25ECE30A002B77AF /* CoreGraphics+Extensions.swift in Sources */,
+				B37434C72E38C5A800D8FAC2 /* SetSpeechLanguageDbRequest.swift in Sources */,
 				B30565CD23FC051E003304F2 /* InitializeCustomLibrariesDbRequest.swift in Sources */,
 				B3866A5A2417C1C7006693C4 /* Coordinator.swift in Sources */,
 				B305661023FC051E003304F2 /* SchemaRequest.swift in Sources */,
 				B305660223FC051E003304F2 /* ApiClient.swift in Sources */,
 				B312BB4125519DD30023300A /* ItemDetailLayout.swift in Sources */,
+				B37352B12E141F9F0078BB00 /* AccessibilitySpeechControlsView.swift in Sources */,
 				B331F9B5265400D70099F6A6 /* ReadStylesDbRequest.swift in Sources */,
 				B39D33712400150B00EF2ACB /* CreateAttachmentsDbRequest.swift in Sources */,
 				B3A081E125D2D8050088EC24 /* CollectionEditHostingViewController.swift in Sources */,
@@ -5040,6 +5351,7 @@
 				B336FE812A2F6D9E00B52F4A /* UploadFixSyncAction.swift in Sources */,
 				B3486B8B26CFAFEA0036A267 /* SingleCitationAction.swift in Sources */,
 				B3593F3C241A61C700760E20 /* ItemsSortType.swift in Sources */,
+				B37434CA2E38C5B100D8FAC2 /* ReadSpeechLanguageDbRequest.swift in Sources */,
 				B372CEE92486748500B423AE /* MarkGroupForResyncSyncAction.swift in Sources */,
 				B340831328F983CF0087D1A1 /* URL+Extensions.swift in Sources */,
 				B378F4C9242CC8EF00B88A05 /* Translator.swift in Sources */,
@@ -5087,6 +5399,7 @@
 				B3C9D60C24DA9DEA003EA1EE /* CollectionsSearchActionHandler.swift in Sources */,
 				B324277825C82E6500567504 /* UnsubscribeWsMessage.swift in Sources */,
 				B3593F3D241A61C700760E20 /* ItemsState.swift in Sources */,
+				B3A71F4B2EEC39A80006A737 /* AnnotationToolsSettingsView.swift in Sources */,
 				B30566AE23FC051F003304F2 /* SettingsResponse.swift in Sources */,
 				B3422F46289BADD800C53DD2 /* ItemDetailFieldEditContentView.swift in Sources */,
 				B3FE4B99268DDE4900CE123F /* CitationBibliographyExportState.swift in Sources */,
@@ -5115,6 +5428,7 @@
 				61EB05B42C9D8EA200152482 /* CreateReaderAnnotationsDbRequest.swift in Sources */,
 				B3229FD128C0A07500DAF3B7 /* EditAnnotationRectsDbRequest.swift in Sources */,
 				B3DF9AD22747AAD2007933CB /* ApiRequest.swift in Sources */,
+				B384B5C22E1539D000D023C6 /* AccessibilitySpeechControlsStackView.swift in Sources */,
 				615FD8772C8B475A00808C1D /* ReaderCoordinator.swift in Sources */,
 				B3DCDF0E240912500039ED0D /* SinglePickerActionHandler.swift in Sources */,
 				B3593F162668E29C00FA4BB2 /* Style.swift in Sources */,
@@ -5169,6 +5483,7 @@
 				B305661323FC051E003304F2 /* ArrayEncoding.swift in Sources */,
 				B305667723FC051F003304F2 /* UIFont+Extensions.swift in Sources */,
 				B3DF9AD52747AB4F007933CB /* ApiEndpoint.swift in Sources */,
+				B3A71F4F2EEC39CD0006A737 /* AnnotationToolsSettingsState.swift in Sources */,
 				B322B4772673A41200BC3D08 /* ReadStyleDbRequest.swift in Sources */,
 				B3E8FE8827143BDD00F51458 /* SyncSettingsAction.swift in Sources */,
 				B3F9A4B82B04C97A00684030 /* HtmlEpubSettings.swift in Sources */,
@@ -5380,6 +5695,7 @@
 				B3DAF84D2AC5AA5C00F9AB6A /* PDFDocumentAnnotation.swift in Sources */,
 				B361C2B429DECB220035BF7E /* ResetSettingsVersionDbRequest.swift in Sources */,
 				B30565B623FC051E003304F2 /* StoreItemsDbResponseRequest.swift in Sources */,
+				B37352AF2E140DF10078BB00 /* AccessibilityViewHandler.swift in Sources */,
 				B395EFEB25494B3200CEBD9F /* CreatorEditActionHandler.swift in Sources */,
 				B30565E623FC051E003304F2 /* SchemaController.swift in Sources */,
 				B339459126DE6C2A00E59A02 /* AttachmentFileDeletedNotification.swift in Sources */,
@@ -5467,6 +5783,7 @@
 				B3DEAAA728AD01CA00F72D90 /* URLSession+Extensions.swift in Sources */,
 				B36FD9B32A7929C8002D77E8 /* FontSizeCell.swift in Sources */,
 				B357A28C285B73BD00E73CA1 /* ScannerState.swift in Sources */,
+				B3969A402DE9AAEF00425FF3 /* AccessibilityPopupViewController.swift in Sources */,
 				B3E8FE5A2714325200F51458 /* SavingSettingsActionHandler.swift in Sources */,
 				B30566B623FC051F003304F2 /* DeletionsResponse.swift in Sources */,
 				B30566C423FC051F003304F2 /* DeleteBatch.swift in Sources */,
@@ -5486,6 +5803,7 @@
 				B34341B4260A496200093E63 /* ReadCollectionAndLibraryDbRequest.swift in Sources */,
 				B30566BA23FC051F003304F2 /* Defaults.swift in Sources */,
 				B3325F6F27B41D69007C7137 /* CollectionTree.swift in Sources */,
+				B39DBFF62D8036A000454486 /* SpeechManager.swift in Sources */,
 				B30565E423FC051E003304F2 /* RealmDbStorage.swift in Sources */,
 				B3E8FE742714344D00F51458 /* SettingsListView.swift in Sources */,
 				B3343079282A563B00FB41BC /* NSUserActivity+Activities.swift in Sources */,
@@ -5515,8 +5833,10 @@
 				B3863FC82AD819AB005082F0 /* EndItemCreationDbRequest.swift in Sources */,
 				B3DDDAAC24CAD6810014DF99 /* InsetLabel.swift in Sources */,
 				B3329A552B738C4E00F17636 /* CitationAuthorCell.swift in Sources */,
+				B3A71F4D2EEC39BA0006A737 /* AnnotationToolsSettingsActionHandler.swift in Sources */,
 				B3E8FE8927143BDD00F51458 /* SyncSettingsView.swift in Sources */,
 				B3593F7A241A76E600760E20 /* CollectionEditState.swift in Sources */,
+				B3F874232E2F84B6004A2D71 /* SpeechLanguagePickerView.swift in Sources */,
 				B3C6AB28248E1B720009AC96 /* SyncBatchProcessor.swift in Sources */,
 				B351BD0E25EF7E78000451E2 /* ItemAction.swift in Sources */,
 				B30565E823FC051E003304F2 /* CreatorSummaryFormatter.swift in Sources */,
@@ -5525,7 +5845,6 @@
 				B3DCDF18240917500039ED0D /* ItemTypePickerViewModelCreator.swift in Sources */,
 				B3A2AECE26553DD8004BF3A4 /* NavigationViewController.swift in Sources */,
 				6135EF9C2C2ABDD1008DA17B /* AnnotationManager.swift in Sources */,
-				B358D3B4279590C200A67054 /* CheckAnyItemIsInTrashDbRequest.swift in Sources */,
 				B3B398542E4CCB20009C59F5 /* DocumentSearchCell.swift in Sources */,
 				B3B398552E4CCB20009C59F5 /* DocumentSearchViewController.swift in Sources */,
 				B3866A582417C1BC006693C4 /* ViewModel.swift in Sources */,
@@ -5542,6 +5861,7 @@
 				B31FACD225DBC7E900DD5F14 /* ActiveObjectDeletedConflictReceiverHandler.swift in Sources */,
 				B3EA5A192B724E9400E283D7 /* CitationLocatorCell.swift in Sources */,
 				B36181FF24C9A7C000B30D56 /* LoginState.swift in Sources */,
+				B3A71F512EEC39D90006A737 /* AnnotationToolsSettingsAction.swift in Sources */,
 				B3E8FE3627142A0900F51458 /* RemoteStyle.swift in Sources */,
 				B3F55A1729EED04700A6716E /* ReadFilteredTagsDbRequest.swift in Sources */,
 				B34A9F5E25BF12F7007C9A4A /* ReadFilenameDbRequest.swift in Sources */,
@@ -5709,6 +6029,7 @@
 				618404262A4456A9005AAF22 /* IdentifierLookupController.swift in Sources */,
 				B305662223FC051F003304F2 /* StoreVersionSyncAction.swift in Sources */,
 				B3BC25CD247E6BA000AC27B5 /* DateParser.swift in Sources */,
+				B3F451E72E2A57380051E377 /* SpeechVoicePickerView.swift in Sources */,
 				B305662523FC051F003304F2 /* RevertLibraryUpdatesSyncAction.swift in Sources */,
 				B361820D24C9B9D900B30D56 /* NoRotationHostingController.swift in Sources */,
 				B3ED79372C9C6678004F5C9A /* ItemsTableViewObject.swift in Sources */,
@@ -5816,6 +6137,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				6144B5E02A4AE49800914B3C /* TranslatorsControllerSpec.swift in Sources */,
+				561E08F0D1D341A09184D875 /* ReadAttachmentUploadsDbRequestSpec.swift in Sources */,
 				6144B5D92A4ADEB500914B3C /* ReadUpdatedItemUpdateParametersSpec.swift in Sources */,
 				B3EFC60B2B0F503E00CB71A0 /* EmojiExtractorSpec.swift in Sources */,
 				61C817F22A49B5D30085B1E6 /* CollectionResponseSpec.swift in Sources */,
@@ -5833,6 +6155,7 @@
 				6144B5E12A4AE95E00914B3C /* WebDavControllerSpec.swift in Sources */,
 				B3518DA72AEBCB5E00D983B4 /* SettingsResponseSpec.swift in Sources */,
 				6144B5D82A4ADDC400914B3C /* ItemTitleFormatterSpec.swift in Sources */,
+				61FB13D72EECBE0A00329563 /* bitcoin_pdf_page_0_text.json in Sources */,
 				6144B5DF2A4AE48F00914B3C /* SyncControllerSpec.swift in Sources */,
 				B3243BC82A5EB2740033A7D6 /* HtmlAttributedStringConverterSpec.swift in Sources */,
 				61AD977D2D67F42A000FDF45 /* PDFWorkerControllerSpec.swift in Sources */,
@@ -6044,6 +6367,7 @@
 				B3DCDF19240918E50039ED0D /* ActivityIndicatorView.swift in Sources */,
 				B3593F1A2668E75700FA4BB2 /* StyleParserDelegate.swift in Sources */,
 				B32EBFC6276A89390003897E /* BackgroundUpload.swift in Sources */,
+				B37434CB2E38C5B100D8FAC2 /* ReadSpeechLanguageDbRequest.swift in Sources */,
 				B341C8D425CBFF8A005562E5 /* LibraryIdentifier.swift in Sources */,
 				B30566FF23FC0869003304F2 /* MarkItemsAsTrashedDbRequest.swift in Sources */,
 				B305671D23FC08E2003304F2 /* SyncVersionsDbRequest.swift in Sources */,
@@ -6170,6 +6494,7 @@
 				B30566FC23FC0862003304F2 /* MarkCollectionAndItemsAsDeletedDbRequest.swift in Sources */,
 				B3F9A4CC2B04F2AC00684030 /* WebViewEncoder.swift in Sources */,
 				B3D59F142A38A6C100F6BB7D /* RevertLibraryFilesSyncAction.swift in Sources */,
+				B37434C82E38C5A800D8FAC2 /* SetSpeechLanguageDbRequest.swift in Sources */,
 				B377F2A02493725E00022943 /* UrlDetector.swift in Sources */,
 				B305670A23FC08B5003304F2 /* ReadCollectionsDbRequest.swift in Sources */,
 				B305672A23FC0914003304F2 /* LoadUploadDataSyncAction.swift in Sources */,
@@ -6201,6 +6526,63 @@
 			isa = PBXVariantGroup;
 			children = (
 				613F32782C1086950088EF70 /* en */,
+				B3877D282F0F9B4200D25D4C /* ar */,
+				B3877D2B2F0F9BDB00D25D4C /* af */,
+				B3877D2E2F0F9BFC00D25D4C /* am */,
+				B3877D312F0F9C2000D25D4C /* ast */,
+				B3877D342F0F9C4500D25D4C /* bg */,
+				B3877D372F0F9C5D00D25D4C /* bn */,
+				B3877D3A2F0F9C8600D25D4C /* br */,
+				B3877D3D2F0F9C9100D25D4C /* ca */,
+				B3877D402F0F9C9B00D25D4C /* cs */,
+				B3877D432F0F9CFE00D25D4C /* cy */,
+				B3877D462F0F9D0900D25D4C /* da */,
+				B3877D492F0F9D1900D25D4C /* de */,
+				B3877D4C2F0F9D4200D25D4C /* el */,
+				B3877D4F2F0F9D4F00D25D4C /* en-GB */,
+				B3877D522F0F9D6D00D25D4C /* es-AR */,
+				B3877D542F0F9D8300D25D4C /* es */,
+				B3877D562F0F9DB200D25D4C /* et */,
+				B3877D592F0F9DD200D25D4C /* eu */,
+				B3877D5C2F0F9E0500D25D4C /* fa */,
+				B3877D5E2F0F9E1400D25D4C /* fi */,
+				B3877D602F0F9E2000D25D4C /* fr */,
+				B3877D652F0F9E5300D25D4C /* he */,
+				B3877D682F0F9E7000D25D4C /* hr */,
+				B3877D6B2F0F9E7B00D25D4C /* hu */,
+				B3877D6F2F0F9EB000D25D4C /* id */,
+				B3877D722F0F9ED000D25D4C /* ig */,
+				B3877D752F0F9EF600D25D4C /* is */,
+				B3877D782F0F9F0D00D25D4C /* it */,
+				B3877D7B2F0F9F2C00D25D4C /* ja */,
+				B3877D7C2F0F9F6A00D25D4C /* jv */,
+				B3877D7F2F0F9F8B00D25D4C /* ka */,
+				B3877D822F0F9FA800D25D4C /* kk */,
+				B3877D852F0F9FE800D25D4C /* km */,
+				B3877D882F0FA00100D25D4C /* kn */,
+				B3877D8A2F0FA04800D25D4C /* ko */,
+				B3877D8D2F0FA05900D25D4C /* lt */,
+				B3877D8F2F0FA07A00D25D4C /* mk */,
+				B3877D922F0FA08F00D25D4C /* mn */,
+				B3877D952F0FA0B500D25D4C /* nb-NO */,
+				B3877D982F0FA0D700D25D4C /* nl */,
+				B3877D9B2F0FA0EA00D25D4C /* nn-NO */,
+				B3877D9E2F0FA10700D25D4C /* oc */,
+				B3877DA12F0FA12200D25D4C /* pl */,
+				B3877DA42F0FA13800D25D4C /* pt-BR */,
+				B3877DA72F0FA14200D25D4C /* pt-PT */,
+				B3877DAA2F0FA15300D25D4C /* ro */,
+				B3877DAC2F0FA16300D25D4C /* ru */,
+				B3877DAF2F0FA17300D25D4C /* sk */,
+				B3877DB12F0FA18300D25D4C /* sl */,
+				B3877DB42F0FA19A00D25D4C /* sq */,
+				B3877DB82F0FA1FA00D25D4C /* sv */,
+				B3877DBA2F0FA21800D25D4C /* ta */,
+				B3877DBE2F0FA23000D25D4C /* tr */,
+				B3877DC02F0FA23E00D25D4C /* uk */,
+				B3877DC32F0FA24900D25D4C /* vi */,
+				B3877DC52F0FA26000D25D4C /* zh-Hans */,
+				B3877DC82F0FA26700D25D4C /* zh-Hant */,
 			);
 			name = InfoPlist.strings;
 			sourceTree = "<group>";
@@ -6209,6 +6591,59 @@
 			isa = PBXVariantGroup;
 			children = (
 				614D65812A79C9AC007CF449 /* en */,
+				B3877D2A2F0F9B4200D25D4C /* ar */,
+				B3877D2D2F0F9BDC00D25D4C /* af */,
+				B3877D302F0F9BFC00D25D4C /* am */,
+				B3877D332F0F9C2100D25D4C /* ast */,
+				B3877D362F0F9C4500D25D4C /* bg */,
+				B3877D392F0F9C5D00D25D4C /* bn */,
+				B3877D3C2F0F9C8600D25D4C /* br */,
+				B3877D3F2F0F9C9100D25D4C /* ca */,
+				B3877D422F0F9C9B00D25D4C /* cs */,
+				B3877D452F0F9CFE00D25D4C /* cy */,
+				B3877D482F0F9D0A00D25D4C /* da */,
+				B3877D4B2F0F9D1900D25D4C /* de */,
+				B3877D4E2F0F9D4200D25D4C /* el */,
+				B3877D512F0F9D5000D25D4C /* en-GB */,
+				B3877D582F0F9DB200D25D4C /* et */,
+				B3877D5B2F0F9DD300D25D4C /* eu */,
+				B3877D5F2F0F9E1600D25D4C /* fi */,
+				B3877D622F0F9E2000D25D4C /* fr */,
+				B3877D642F0F9E3F00D25D4C /* gl */,
+				B3877D672F0F9E5300D25D4C /* he */,
+				B3877D6A2F0F9E7000D25D4C /* hr */,
+				B3877D6E2F0F9E9500D25D4C /* hy */,
+				B3877D712F0F9EB000D25D4C /* id */,
+				B3877D742F0F9ED000D25D4C /* ig */,
+				B3877D772F0F9EF600D25D4C /* is */,
+				B3877D7A2F0F9F0D00D25D4C /* it */,
+				B3877D7E2F0F9F6A00D25D4C /* jv */,
+				B3877D812F0F9F8B00D25D4C /* ka */,
+				B3877D842F0F9FA800D25D4C /* kk */,
+				B3877D872F0F9FE800D25D4C /* km */,
+				B3877D892F0FA00500D25D4C /* kn */,
+				B3877D8C2F0FA04800D25D4C /* ko */,
+				B3877D8E2F0FA05B00D25D4C /* lt */,
+				B3877D912F0FA07A00D25D4C /* mk */,
+				B3877D942F0FA08F00D25D4C /* mn */,
+				B3877D972F0FA0B600D25D4C /* nb-NO */,
+				B3877D9A2F0FA0D700D25D4C /* nl */,
+				B3877D9D2F0FA0EA00D25D4C /* nn-NO */,
+				B3877DA02F0FA10800D25D4C /* oc */,
+				B3877DA32F0FA12300D25D4C /* pl */,
+				B3877DA62F0FA13900D25D4C /* pt-BR */,
+				B3877DA92F0FA14200D25D4C /* pt-PT */,
+				B3877DAE2F0FA16400D25D4C /* ru */,
+				B3877DB02F0FA17500D25D4C /* sk */,
+				B3877DB32F0FA18300D25D4C /* sl */,
+				B3877DB62F0FA19A00D25D4C /* sq */,
+				B3877DBD2F0FA22700D25D4C /* th */,
+				B3877DBF2F0FA23300D25D4C /* tr */,
+				B3877DC22F0FA23E00D25D4C /* uk */,
+				B3877DC42F0FA24B00D25D4C /* vi */,
+				B3877DC72F0FA26100D25D4C /* zh-Hans */,
+				B3877DCA2F0FA26700D25D4C /* zh-Hant */,
+				B3877DCC2F0FA28700D25D4C /* yue-Hans */,
 			);
 			name = Localizable.stringsdict;
 			sourceTree = "<group>";
@@ -6233,6 +6668,61 @@
 			isa = PBXVariantGroup;
 			children = (
 				B337A5A9244F1DEB00AFD13D /* en */,
+				B3877D292F0F9B4200D25D4C /* ar */,
+				B3877D2C2F0F9BDC00D25D4C /* af */,
+				B3877D2F2F0F9BFC00D25D4C /* am */,
+				B3877D322F0F9C2100D25D4C /* ast */,
+				B3877D352F0F9C4500D25D4C /* bg */,
+				B3877D382F0F9C5D00D25D4C /* bn */,
+				B3877D3B2F0F9C8600D25D4C /* br */,
+				B3877D3E2F0F9C9100D25D4C /* ca */,
+				B3877D412F0F9C9B00D25D4C /* cs */,
+				B3877D442F0F9CFE00D25D4C /* cy */,
+				B3877D472F0F9D0900D25D4C /* da */,
+				B3877D4A2F0F9D1900D25D4C /* de */,
+				B3877D4D2F0F9D4200D25D4C /* el */,
+				B3877D502F0F9D5000D25D4C /* en-GB */,
+				B3877D532F0F9D6D00D25D4C /* es-AR */,
+				B3877D552F0F9D8300D25D4C /* es */,
+				B3877D572F0F9DB200D25D4C /* et */,
+				B3877D5A2F0F9DD200D25D4C /* eu */,
+				B3877D5D2F0F9E0500D25D4C /* fa */,
+				B3877D612F0F9E2000D25D4C /* fr */,
+				B3877D632F0F9E3F00D25D4C /* gl */,
+				B3877D662F0F9E5300D25D4C /* he */,
+				B3877D692F0F9E7000D25D4C /* hr */,
+				B3877D6C2F0F9E7B00D25D4C /* hu */,
+				B3877D6D2F0F9E9400D25D4C /* hy */,
+				B3877D702F0F9EB000D25D4C /* id */,
+				B3877D732F0F9ED000D25D4C /* ig */,
+				B3877D762F0F9EF600D25D4C /* is */,
+				B3877D792F0F9F0D00D25D4C /* it */,
+				B3877D7D2F0F9F6A00D25D4C /* jv */,
+				B3877D802F0F9F8B00D25D4C /* ka */,
+				B3877D832F0F9FA800D25D4C /* kk */,
+				B3877D862F0F9FE800D25D4C /* km */,
+				B3877D8B2F0FA04800D25D4C /* ko */,
+				B3877D902F0FA07A00D25D4C /* mk */,
+				B3877D932F0FA08F00D25D4C /* mn */,
+				B3877D962F0FA0B500D25D4C /* nb-NO */,
+				B3877D992F0FA0D700D25D4C /* nl */,
+				B3877D9C2F0FA0EA00D25D4C /* nn-NO */,
+				B3877D9F2F0FA10800D25D4C /* oc */,
+				B3877DA22F0FA12200D25D4C /* pl */,
+				B3877DA52F0FA13900D25D4C /* pt-BR */,
+				B3877DA82F0FA14200D25D4C /* pt-PT */,
+				B3877DAB2F0FA15300D25D4C /* ro */,
+				B3877DAD2F0FA16400D25D4C /* ru */,
+				B3877DB22F0FA18300D25D4C /* sl */,
+				B3877DB52F0FA19A00D25D4C /* sq */,
+				B3877DB72F0FA1CC00D25D4C /* sr */,
+				B3877DB92F0FA1FA00D25D4C /* sv */,
+				B3877DBB2F0FA21800D25D4C /* ta */,
+				B3877DBC2F0FA22700D25D4C /* th */,
+				B3877DC12F0FA23E00D25D4C /* uk */,
+				B3877DC62F0FA26100D25D4C /* zh-Hans */,
+				B3877DC92F0FA26700D25D4C /* zh-Hant */,
+				B3877DCB2F0FA28700D25D4C /* yue-Hans */,
 			);
 			name = Localizable.strings;
 			sourceTree = "<group>";
@@ -6246,6 +6736,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_OTHER_FLAGS = "--enable-icon-stack-fallback-generation=disabled";
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -6313,6 +6804,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_OTHER_FLAGS = "--enable-icon-stack-fallback-generation=disabled";
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -6633,6 +7125,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_OTHER_FLAGS = "--enable-icon-stack-fallback-generation=disabled";
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -6888,7 +7381,7 @@
 			repositoryURL = "https://github.com/apple/swift-collections.git";
 			requirement = {
 				kind = exactVersion;
-				version = 1.2.1;
+				version = 1.3.0;
 			};
 		};
 		B3445F4426EF5EE9007D4009 /* XCRemoteSwiftPackageReference "plcrashreporter" */ = {
@@ -6896,7 +7389,7 @@
 			repositoryURL = "https://github.com/microsoft/plcrashreporter";
 			requirement = {
 				kind = exactVersion;
-				version = 1.11.3;
+				version = 1.12.2;
 			};
 		};
 		B356A361252490B3003F1943 /* XCRemoteSwiftPackageReference "Alamofire" */ = {
@@ -6904,7 +7397,7 @@
 			repositoryURL = "https://github.com/Alamofire/Alamofire";
 			requirement = {
 				kind = exactVersion;
-				version = 5.10.1;
+				version = 5.11.1;
 			};
 		};
 		B356A367252490DB003F1943 /* XCRemoteSwiftPackageReference "keychain-swift" */ = {
@@ -6936,7 +7429,7 @@
 			repositoryURL = "https://github.com/weichsel/ZIPFoundation";
 			requirement = {
 				kind = exactVersion;
-				version = 0.9.19;
+				version = 0.9.20;
 			};
 		};
 		B356A3882524A698003F1943 /* XCRemoteSwiftPackageReference "Nimble" */ = {
@@ -6944,7 +7437,7 @@
 			repositoryURL = "https://github.com/Quick/Nimble";
 			requirement = {
 				kind = exactVersion;
-				version = 13.7.1;
+				version = 14.0.0;
 			};
 		};
 		B356A38E2524A6BA003F1943 /* XCRemoteSwiftPackageReference "Quick" */ = {
@@ -6976,7 +7469,7 @@
 			repositoryURL = "https://github.com/realm/realm-swift";
 			requirement = {
 				kind = exactVersion;
-				version = 10.54.5;
+				version = 10.54.6;
 			};
 		};
 		B35E4B8B25248B3C000EA134 /* XCRemoteSwiftPackageReference "RxSwift" */ = {
@@ -6984,7 +7477,7 @@
 			repositoryURL = "https://github.com/ReactiveX/RxSwift";
 			requirement = {
 				kind = exactVersion;
-				version = 6.9.0;
+				version = 6.10.1;
 			};
 		};
 		B3A6C59D252CA08200F24CBE /* XCRemoteSwiftPackageReference "PSPDFKit-SP" */ = {
@@ -6992,7 +7485,7 @@
 			repositoryURL = "https://github.com/PSPDFKit/PSPDFKit-SP";
 			requirement = {
 				kind = exactVersion;
-				version = 26.0.0;
+				version = 26.5.0;
 			};
 		};
 		B3D84BEE27919FDE005DDD7C /* XCRemoteSwiftPackageReference "Starscream" */ = {

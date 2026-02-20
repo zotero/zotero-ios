@@ -190,6 +190,12 @@ extension RItemsTableViewDataSource: ItemsTableViewDataSource {
         }
         actions.append(ItemAction(type: .trash))
 
+        #if DEBUG
+        if let attachment, case .file(_, let contentType, _, _, _) = attachment.type, contentType == "application/epub+zip" || contentType == "text/html" {
+            actions.append(ItemAction(type: .debugReader))
+        }
+        #endif
+
         return actions
     }
 }

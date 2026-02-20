@@ -46,6 +46,8 @@ struct CollectionsState: ViewModelState {
     var trashItemsCountToken: NotificationToken?
     var trashCollectionsCountToken: NotificationToken?
     var itemsChangesToken: NotificationToken?
+    var cachedTrashItemsCount: Int
+    var cachedTrashCollectionsCount: Int
     var error: CollectionsError?
     // Used when user wants to create bibliography from whole collection.
     var itemKeysForBibliography: Swift.Result<Set<String>, Error>?
@@ -54,7 +56,9 @@ struct CollectionsState: ViewModelState {
         self.selectedCollectionId = selectedCollectionId
         self.changes = []
         self.collectionTree = CollectionTree(nodes: [], collections: [:], collapsed: [:])
-
+        self.cachedTrashItemsCount = 0
+        self.cachedTrashCollectionsCount = 0
+        
         switch libraryId {
         case .custom:
             library = Library(identifier: libraryId, name: L10n.Libraries.myLibrary, metadataEditable: true, filesEditable: true)

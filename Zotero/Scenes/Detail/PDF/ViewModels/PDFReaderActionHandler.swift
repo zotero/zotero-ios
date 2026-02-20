@@ -267,6 +267,13 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             update(viewModel: viewModel) { state in
                 state.unlockSuccessful = result
             }
+
+        case .updateOpenItems(let items):
+            guard viewModel.state.openItemsCount != items.count else { return }
+            update(viewModel: viewModel) { state in
+                state.openItemsCount = items.count
+                state.changes = .openItems
+            }
         }
     }
 
@@ -1545,7 +1552,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             // TODO: Remove if issues are fixed in PSPDFKit
             /// Transforms highlight/underline annotation if needed.
             /// (a) Merges rects that are in the same text line.
-            /// (b) Trims different line rects that overlap. (only for highlight annotations)
+            /// (b) Trims different line rects that overlap. This is needed only for highlight annotations.
+            ///     PSPDFKit 26.5.0 fixed the highlight annotation rendering so that overlapping rects don't blend,
+            ///     but rects values are exactly the same as before, so we still need to transform them for our needs.
             /// If not a higlight/underline annotation, or transformations are not needed, it returns nil.
             /// Issue appeared in PSPDFKit 13.5.0
             /// - parameter annotation: Annotation to be transformed if needed
@@ -1797,6 +1806,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             let (item, liveAnnotations, storedPage) = try loadItemAnnotationsAndPage(for: key, libraryId: viewModel.state.library.identifier)
 
             if checkWhetherMd5Changed(forItem: item, andUpdateViewModel: viewModel, handler: self) {
+                DDLogWarn("PDFReaderActionHandler: MD5 has changed, before PDF was loaded")
                 return
             }
 
@@ -1874,7 +1884,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
             observeDocument(in: viewModel)
         } catch let error {
-            // TODO: - Show error
+            DDLogError("PDFReaderActionHandler: failed to load PDF: \(error)")
+            update(viewModel: viewModel) { state in
+                state.error = (error as? PDFReaderState.Error) ?? .unknownLoading
+            }
         }
 
         func observe(library: Library, viewModel: ViewModel<PDFReaderActionHandler>, handler: PDFReaderActionHandler) {
@@ -1933,7 +1946,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
             try dbStorage.perform(on: .main, with: { coordinator in
                 item = try coordinator.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key))
-                pageStr = try coordinator.perform(request: ReadDocumentDataDbRequest(attachmentKey: key, libraryId: libraryId))
+                pageStr = try coordinator.perform(request: ReadDocumentDataDbRequest(attachmentKey: key, libraryId: libraryId, defaultPageValue: "0"))
                 results = try coordinator.perform(request: ReadAnnotationsDbRequest(attachmentKey: key, libraryId: libraryId))
             })
 
