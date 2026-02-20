@@ -950,8 +950,11 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
             }
             
             func findVoice(for language: String) -> RemoteVoice {
-                // First check if user has a saved voice for this exact language
-                if let savedVoice = Defaults.shared.defaultRemoteVoiceForLanguage[language] {
+                // First check if user has a saved voice for this exact language and tier
+                let savedVoices = self.tier == .advanced
+                    ? Defaults.shared.defaultAdvancedRemoteVoiceForLanguage
+                    : Defaults.shared.defaultBasicRemoteVoiceForLanguage
+                if let savedVoice = savedVoices[language] {
                     return savedVoice
                 }
                 
