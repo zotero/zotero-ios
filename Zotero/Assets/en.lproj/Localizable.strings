@@ -600,6 +600,8 @@
 "accessibility.speech.title" = "Read Aloud";
 "accessibility.speech.unknown_voice" = "Voice";
 "accessibility.speech.speak" = "Speak";
+"accessibility.speech.automatic" = "Automatic";
+"accessibility.speech.no_voices_for_tier" = "No voices found for detected language %@ in this tier. Pick a different tier or choose language manually.";
 "accessibility.show_reader" = "Reading Mode";
 "accessibility.show_reader_accessibility_label" = "Switch to reading mode";
 "accessibility.show_speech" = "Read Aloud";

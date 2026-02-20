@@ -890,6 +890,7 @@
 		B3868541270DC3AA0068A022 /* WebDavScheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B386853F270DC3AA0068A022 /* WebDavScheme.swift */; };
 		B387AE0D2F4343E6009D0DD5 /* NowPlayingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B387AE0C2F4343E6009D0DD5 /* NowPlayingManager.swift */; };
 		B387AE612F4759CC009D0DD5 /* LanguageDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = B387AE602F4759C9009D0DD5 /* LanguageDetector.swift */; };
+		B387AE632F4878E3009D0DD5 /* VoiceFinder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B387AE622F4878E3009D0DD5 /* VoiceFinder.swift */; };
 		B38B24B926E7664400BDD1BB /* AnnotationToolOptionsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38B24B826E7664400BDD1BB /* AnnotationToolOptionsViewController.swift */; };
 		B38CD21E241128D4004299EA /* KeysResponseProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */; };
 		B38CD21F241128FE004299EA /* KeysResponseProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */; };
@@ -2144,6 +2145,7 @@
 		B3877DCC2F0FA28700D25D4C /* yue-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = "yue-Hans"; path = "yue-Hans.lproj/Localizable.stringsdict"; sourceTree = "<group>"; };
 		B387AE0C2F4343E6009D0DD5 /* NowPlayingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingManager.swift; sourceTree = "<group>"; };
 		B387AE602F4759C9009D0DD5 /* LanguageDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguageDetector.swift; sourceTree = "<group>"; };
+		B387AE622F4878E3009D0DD5 /* VoiceFinder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceFinder.swift; sourceTree = "<group>"; };
 		B38B24B826E7664400BDD1BB /* AnnotationToolOptionsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationToolOptionsViewController.swift; sourceTree = "<group>"; };
 		B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeysResponseProcessor.swift; sourceTree = "<group>"; };
 		B390EE2B29B5F419004F979B /* PDFCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFCoordinator.swift; sourceTree = "<group>"; };
@@ -2641,8 +2643,8 @@
 				B3D3FCA8267762EC008E243A /* ExportLocaleReader.swift */,
 				B305648123FC051E003304F2 /* Formatter.swift */,
 				B379D9312BB30E6600AF5025 /* FullSyncDebugger.swift */,
-				618404252A4456A9005AAF22 /* IdentifierLookupController.swift */,
 				B367330C24ACB63300E0CDA8 /* HtmlAttributedStringConverter.swift */,
+				618404252A4456A9005AAF22 /* IdentifierLookupController.swift */,
 				B307A2722704A87D005986B3 /* IdleTimerController.swift */,
 				61639F842AE03B8500026003 /* InstantPresenter.swift */,
 				B39649172869B0D0000BCB6C /* ISBNParser.swift */,
@@ -2653,6 +2655,7 @@
 				B305649E23FC051E003304F2 /* Licenses.swift */,
 				B3A17D1827FC33B800322CAD /* LowPowerModeController.swift */,
 				B3C43C1F28589F300007076D /* NotePreviewGenerator.swift */,
+				B387AE0C2F4343E6009D0DD5 /* NowPlayingManager.swift */,
 				B305646C23FC051E003304F2 /* ObjectUserChangeObserver.swift */,
 				61E24DCB2ABB385E00D75F50 /* OpenItemsController.swift */,
 				B34A9F6325BF1ABB007C9A4A /* PDFDocumentExporter.swift */,
@@ -2675,10 +2678,10 @@
 				B37A01C42F3A16A6002FF725 /* TextTokenizer.swift */,
 				B36A988C2428E059005D5790 /* TranslatorsAndStylesController.swift */,
 				B3972688247D403200A8B469 /* UrlDetector.swift */,
+				B387AE622F4878E3009D0DD5 /* VoiceFinder.swift */,
 				B324276C25C81F2000567504 /* WebSocketController.swift */,
 				B3F9A4CA2B04F28400684030 /* WebViewEncoder.swift */,
 				B3B557152C884DD200BD6325 /* ZoteroURIConverter.swift */,
-				B387AE0C2F4343E6009D0DD5 /* NowPlayingManager.swift */,
 			);
 			path = Controllers;
 			sourceTree = "<group>";
@@ -6050,6 +6053,7 @@
 				B30565B423FC051E003304F2 /* MarkForResyncDbAction.swift in Sources */,
 				B30D59592206F60400884C4A /* AppDelegate.swift in Sources */,
 				B357A292285B786E00E73CA1 /* LookupCoordinator.swift in Sources */,
+				B387AE632F4878E3009D0DD5 /* VoiceFinder.swift in Sources */,
 				B34A9F6425BF1ABB007C9A4A /* PDFDocumentExporter.swift in Sources */,
 				B340AB3D2F18FAF4004B45ED /* ReadAloudAudioRequest.swift in Sources */,
 				B377F2A5249373F300022943 /* AttachmentFileCleanupController.swift in Sources */,
