@@ -22,14 +22,16 @@ final class RemoteVoicesController {
         self.apiClient = apiClient
     }
 
-    func loadVoices() -> Single<[RemoteVoice]> {
-        return apiClient.send(request: VoicesRequest()).flatMap({ (voices: [RemoteVoice], _) in
-            return .just(voices)
+    func loadVoices() -> Single<(voices: [RemoteVoice], credits: (basic: Int, advanced: Int))> {
+        return apiClient.send(request: VoicesRequest()).flatMap({ (voices: [RemoteVoice], response: HTTPURLResponse) in
+            let basicCredits = (response.value(forHTTPHeaderField: "zotero-tts-basic-credits-remaining") as NSString?)?.integerValue ?? 0
+            let advancedCredits = (response.value(forHTTPHeaderField: "zotero-tts-advanced-credits-remaining") as NSString?)?.integerValue ?? 0
+            return .just((voices: voices, credits: (basic: basicCredits, advanced: advancedCredits)))
         })
     }
     
-    func loadCredits() -> Single<Int> {
-        return apiClient.send(request: CreditsRequest()).flatMap({ response, _ in return .just(response.creditsRemaining) })
+    func loadCredits() -> Single<(basic: Int, advanced: Int)> {
+        return apiClient.send(request: CreditsRequest()).flatMap({ response, _ in return .just((basic: response.basicCreditsRemaining, advanced: response.advancedCreditsRemaining)) })
     }
     
     func downloadSample(voiceId: String, language: String) -> Single<Data> {
