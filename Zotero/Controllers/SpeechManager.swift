@@ -30,8 +30,14 @@ protocol SpeechManagerDelegate: AnyObject {
     func highlightTextChanged(text: String, pageIndex: Index)
 }
 
-enum SpeechState {
-    case speaking, paused, stopped, loading, outOfCredits
+enum SpeechState: Equatable {
+    enum OutOfCreditsReason {
+        case dailyLimitExceeded
+        case quotaExceeded
+    }
+
+    case speaking, paused, stopped, loading
+    case outOfCredits(OutOfCreditsReason)
 
     var isStopped: Bool {
         switch self {
@@ -59,6 +65,16 @@ enum SpeechState {
             return false
 
         case .speaking:
+            return true
+        }
+    }
+
+    var isOutOfCredits: Bool {
+        switch self {
+        case .speaking, .loading, .paused, .stopped:
+            return false
+
+        case .outOfCredits:
             return true
         }
     }
@@ -134,8 +150,14 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                 case .speaking:
                     nowPlayingManager.updatePlaybackState(isPlaying: true)
                     
-                case .paused, .loading, .outOfCredits:
+                case .paused, .loading:
                     nowPlayingManager.updatePlaybackState(isPlaying: false)
+
+                case .outOfCredits(let reason):
+                    nowPlayingManager.updatePlaybackState(isPlaying: false)
+                    if reason == .quotaExceeded {
+                        downgradeVoiceTierAndContinue()
+                    }
                     
                 case .stopped:
                     speechData = nil
@@ -259,6 +281,56 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
 
     func set(rateModifier: Float) {
         processor.speechRateModifier = rateModifier
+    }
+
+    /// Downgrades the voice to a lower tier and continues playback.
+    /// - If currently using advanced remote voice, switches to basic remote voice
+    /// - If currently using basic remote voice, switches to local voice
+    /// - If already using local voice, does nothing
+    private func downgradeVoiceTierAndContinue() {
+        guard let voice else { return }
+        
+        let language = language ?? detectedLanguage
+        
+        switch voice {
+        case .remote(let remoteVoice):
+            switch remoteVoice.tier {
+            case .advanced:
+                // Downgrade from advanced to basic
+                guard let remoteProcessor = processor as? RemoteVoiceProcessor,
+                      let basicVoice = remoteProcessor.basicVoice(for: language) else {
+                    // No basic voice available, fall through to local
+                    downgradeToLocalVoice(language: language)
+                    return
+                }
+                Defaults.shared.remoteVoiceTier = .basic
+                remoteProcessor.set(voice: basicVoice, voiceLanguage: language, preferredLanguage: remoteProcessor.preferredLanguage)
+                resume()
+
+            case .basic:
+                // Downgrade from basic to local voice
+                downgradeToLocalVoice(language: language)
+            }
+
+        case .local:
+            // Already at lowest tier, nothing to downgrade to
+            break
+        }
+        
+        func downgradeToLocalVoice(language: String) {
+            Defaults.shared.remoteVoiceTier = nil
+            let newProcessor = LocalVoiceProcessor(
+                language: language,
+                speechRateModifier: processor.speechRateModifier,
+                delegate: self
+            )
+            let voice = newProcessor.findVoice(for: language, from: AVSpeechSynthesisVoice.speechVoices())
+            newProcessor.set(voice: voice, voiceLanguage: language, preferredLanguage: processor.preferredLanguage)
+            processor = newProcessor
+            remainingTime.accept(nil)
+            nowPlayingManager.reconfigureAudioSession()
+            resume()
+        }
     }
 
     private func getData(for indices: [Delegate.Index], from delegate: Delegate, completion: @escaping (([Delegate.Index: String])?) -> Void) {
@@ -590,7 +662,7 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
         return findVoice(for: language, from: allVoices)
     }
 
-    private func findVoice(for language: String, from voices: [AVSpeechSynthesisVoice]) -> AVSpeechSynthesisVoice {
+    func findVoice(for language: String, from voices: [AVSpeechSynthesisVoice]) -> AVSpeechSynthesisVoice {
         // First check if user has a saved voice for this exact language
         if let voiceId = Defaults.shared.defaultLocalVoiceForLanguage[language],
            let savedVoice = voices.first(where: { $0.identifier == voiceId }) {
@@ -728,7 +800,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         if voiceChanged {
             stopPreloadingAndClearCache()
             delegate.remainingTime.accept(nil)
-            if voice.creditsPerSecond > 0 {
+            if voice.creditsPerMinute > 0 {
                 loadCredits()
             }
             if let player {
@@ -738,6 +810,25 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
                 shouldReloadOnResume = true
             }
         }
+    }
+
+    /// Attempts to downgrade to basic tier using cached voices.
+    /// Returns the voice and language if successful, nil if no basic voice is available.
+    func basicVoice(for language: String) -> RemoteVoice? {
+        guard let allVoices = allAvailableVoices else { return nil }
+        // Find a basic voice for the current language
+        let basicVoices = allVoices.filter { $0.tier == .basic }
+        guard !basicVoices.isEmpty else { return nil }
+        // Try to find a voice matching the current language
+        if let matchingVoice = basicVoices.first(where: { $0.locales.contains(language) }) {
+            return matchingVoice
+        }
+        // Try base language match
+        let baseLanguage = String(language.prefix(2))
+        if let baseMatch = basicVoices.first(where: { $0.locales.contains(where: { $0.hasPrefix(baseLanguage) }) }) {
+            return baseMatch
+        }
+        return basicVoices.first
     }
 
     func speak(text: String, startIndex: Int, shouldDetectVoice: Bool) {
@@ -780,7 +871,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     }
 
     func resume() {
-        guard let player, delegate.state.value == .paused || delegate.state.value == .outOfCredits else { return }
+        guard let player, delegate.state.value == .paused || delegate.state.value.isOutOfCredits else { return }
         
         if shouldReloadOnResume {
             shouldReloadOnResume = false
@@ -825,12 +916,12 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
             return loadVoice(forText: text, voices: availableVoices, preferredLanguage: preferredLanguage)
         }
         return remoteVoicesController.loadVoices()
-            .do(onSuccess: { [weak self] voices in
-                self?.allAvailableVoices = voices
+            .do(onSuccess: { [weak self] result in
+                self?.allAvailableVoices = result.voices
             })
-            .map({ [weak self] voices in
-                guard let self else { return voices }
-                return voices.filter({ $0.tier == self.tier })
+            .map({ [weak self] result in
+                guard let self else { return result.voices }
+                return result.voices.filter({ $0.tier == self.tier })
             })
             .do(onSuccess: { [weak self] voices in
                 self?.availableVoices = voices
@@ -1016,9 +1107,15 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
                   case .responseValidationFailed(let reason) = responseError.error,
                   case .unacceptableStatusCode(let code) = reason,
                   code == 402 {
-            // Out of credits - update state
-            updateRemainingTimeDisplay(credits: 0)
-            delegate.state.accept(.outOfCredits)
+            // Out of credits - determine reason from response
+            let outOfCreditsReason: SpeechState.OutOfCreditsReason
+            if responseError.response.contains("daily_limit_exceeded") {
+                outOfCreditsReason = .dailyLimitExceeded
+            } else {
+                outOfCreditsReason = .quotaExceeded
+            }
+            updateRemainingTimeDisplay(credits: (basic: 0, advanced: 0))
+            delegate.state.accept(.outOfCredits(outOfCreditsReason))
         } else {
             DDLogError("RemoteVoiceProcessor: can't download sound - \(error)")
             delegate.state.accept(.stopped)
@@ -1041,7 +1138,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     // MARK: - Credits
     
     private func startCreditPollTimer() {
-        guard voiceData?.voice.creditsPerSecond ?? 0 > 0, creditPollTimer == nil else { return }
+        guard voiceData?.voice.creditsPerMinute ?? 0 > 0, creditPollTimer == nil else { return }
         // Load credits immediately
         loadCredits()
         // Then poll every 60 seconds
@@ -1069,14 +1166,23 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
             .disposed(by: disposeBag)
     }
     
-    private func updateRemainingTimeDisplay(credits: Int) {
-        guard let creditsPerSecond = voiceData?.voice.creditsPerSecond, creditsPerSecond > 0 else {
+    private func updateRemainingTimeDisplay(credits: (basic: Int, advanced: Int)) {
+        guard let voice = voiceData?.voice, voice.creditsPerMinute > 0 else {
             // Unlimited voice - report nil remaining time
             delegate.remainingTime.accept(nil)
             return
         }
-        // Calculate remaining time from credits
-        let remainingTime = TimeInterval(credits) / TimeInterval(creditsPerSecond)
+        // Select credits based on voice tier
+        let tierCredits: Int
+        switch voice.tier {
+        case .basic:
+            tierCredits = credits.basic
+
+        case .advanced:
+            tierCredits = credits.advanced
+        }
+        // Calculate remaining time from credits (creditsPerMinute means credits per minute of audio)
+        let remainingTime = (TimeInterval(tierCredits) / TimeInterval(voice.creditsPerMinute)) * 60
         delegate.remainingTime.accept(remainingTime)
     }
     
