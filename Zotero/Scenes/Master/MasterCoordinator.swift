@@ -57,7 +57,6 @@ final class MasterCoordinator: NSObject, Coordinator {
         let librariesController = createLibrariesViewController(dbStorage: userControllers.dbStorage, syncScheduler: userControllers.syncScheduler)
         userControllers.identifierLookupController.webViewProvider = librariesController
         userControllers.citationController.webViewProvider = librariesController
-        userControllers.pdfWorkerController.webViewProvider = librariesController
         userControllers.recognizerController.webViewProvider = librariesController
         let collectionsController = createCollectionsViewController(
             libraryId: Defaults.shared.selectedLibraryId,
