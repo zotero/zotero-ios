@@ -76,7 +76,8 @@ struct SpeechVoicePickerView: View {
     @State private var navigationPath: NavigationPath
     @State private var allRemoteVoices: [RemoteVoice]
     @State private var supportedRemoteLanguages: Set<String>
-    @State private var remainingCredits: Int?
+    @State private var basicCreditsRemaining: Int?
+    @State private var advancedCreditsRemaining: Int?
     @State private var isLoading: Bool = false
     @State private var loadError: Bool = false
     
@@ -84,17 +85,26 @@ struct SpeechVoicePickerView: View {
         return language.code(detectedLanguage: detectedLanguage)
     }
 
-    /// Calculates remaining time based on remaining credits and the selected voice's credits per second.
-    /// Returns nil if type is local, no remote voice is selected, or creditsPerSecond is 0.
+    /// Calculates remaining time based on remaining credits and the selected voice's credits per minute.
+    /// Returns nil if type is local, no remote voice is selected, or creditsPerMinute is 0.
     private var remainingTime: TimeInterval? {
         guard type.isRemote,
               case .remote(let voice) = selectedVoice,
-              voice.creditsPerSecond > 0,
-              let credits = remainingCredits
+              voice.creditsPerMinute > 0
         else {
             return nil
         }
-        return TimeInterval(credits) / TimeInterval(voice.creditsPerSecond)
+        let credits: Int?
+        switch voice.tier {
+        case .basic:
+            credits = basicCreditsRemaining
+
+        case .advanced:
+            credits = advancedCreditsRemaining
+        }
+        guard let credits else { return nil }
+        // creditsPerMinute means credits consumed per minute of audio, so remaining time in seconds = (credits / creditsPerMinute) * 60
+        return (TimeInterval(credits) / TimeInterval(voice.creditsPerMinute)) * 60
     }
 
     init(
@@ -114,7 +124,8 @@ struct SpeechVoicePickerView: View {
         remoteVoices = []
         allRemoteVoices = []
         supportedRemoteLanguages = []
-        remainingCredits = nil
+        basicCreditsRemaining = nil
+        advancedCreditsRemaining = nil
         disposeBag = .init()
         switch selectedVoice {
         case .local:
@@ -214,17 +225,18 @@ struct SpeechVoicePickerView: View {
     private func loadVoices() {
         isLoading = true
         loadError = false
-        Single.zip(remoteVoicesController.loadVoices(), remoteVoicesController.loadCredits())
+        remoteVoicesController.loadVoices()
             .subscribe(
-                onSuccess: { voices, credits in
-                    allRemoteVoices = voices
+                onSuccess: { result in
+                    allRemoteVoices = result.voices
                     supportedRemoteLanguages.removeAll()
-                    voices.forEach({ supportedRemoteLanguages.formUnion($0.locales) })
-                    remainingCredits = credits
+                    result.voices.forEach({ supportedRemoteLanguages.formUnion($0.locales) })
+                    basicCreditsRemaining = result.credits.basic
+                    advancedCreditsRemaining = result.credits.advanced
                     remoteVoices = remoteVoices(for: languageCode, tier: type == .advanced ? .advanced : .basic, from: allRemoteVoices)
                     isLoading = false
                 }, onFailure: { error in
-                    DDLogError("SpeechVoicePickerView: can't load remote voices or credits - \(error)")
+                    DDLogError("SpeechVoicePickerView: can't load remote voices - \(error)")
                     isLoading = false
                     loadError = true
                 }
