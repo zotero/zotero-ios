@@ -84,8 +84,11 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
                 case .stopped:
                     self.delegate?.clearSpeechHighlight()
                     
-                case .outOfCredits:
-                    showSpeech()
+                case .outOfCredits(let reason):
+                    // Only show popup for daily limit - quota exceeded is handled internally by SpeechManager
+                    if reason == .dailyLimitExceeded {
+                        showSpeech()
+                    }
                     
                 case .speaking, .paused, .loading:
                     showOverlayIfNeeded(forType: currentOverlayType(controller: self), state: state)
