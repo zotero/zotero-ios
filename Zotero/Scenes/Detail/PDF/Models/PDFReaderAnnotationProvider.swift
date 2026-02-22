@@ -306,7 +306,7 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
                 try dbStorage.perform(request: request, on: .main)
                 return true
             } catch {
-                DDLogError("PDFReaderAnnotationProbvider: failed to store document annotation cache - \(error)")
+                DDLogError("PDFReaderAnnotationProvider: failed to store document annotation cache - \(error)")
                 return false
             }
         }
