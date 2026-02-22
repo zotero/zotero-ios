@@ -2178,7 +2178,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             keys.append(PDFReaderState.AnnotationKey(key: item.key, sortIndex: item.annotationSortIndex, type: .database))
         }
         keys.append(contentsOf: documentAnnotationKeys)
-//        keys.sort(by: { $0.sortIndex < $1.sortIndex })
         keys.sort(by: { lhs, rhs in
             if lhs.sortIndex != rhs.sortIndex {
                 return lhs.sortIndex < rhs.sortIndex

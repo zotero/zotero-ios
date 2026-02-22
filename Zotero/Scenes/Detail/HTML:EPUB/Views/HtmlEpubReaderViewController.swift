@@ -567,7 +567,6 @@ extension HtmlEpubReaderViewController: ParentWithSidebarController {
 
         self.sidebarController = sidebarController
         sidebarControllerLeft = sidebarLeftConstraint
-//        sidebarSeparator = separator
         view.layoutIfNeeded()
     }
 }
