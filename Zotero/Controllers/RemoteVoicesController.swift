@@ -44,6 +44,7 @@ final class RemoteVoicesController {
                     return .error(Error.noData)
                 }
             })
+            .map({ try OggOpusConverter.convertToPlayableFormat($0) })
     }
     
     func downloadSound(forText text: String, voiceId: String, language: String) -> Single<Data> {
@@ -56,5 +57,6 @@ final class RemoteVoicesController {
                     return .error(Error.noData)
                 }
             })
+            .map({ try OggOpusConverter.convertToPlayableFormat($0) })
     }
 }
