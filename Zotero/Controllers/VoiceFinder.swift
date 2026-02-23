@@ -43,9 +43,9 @@ enum VoiceFinder {
     /// Priority: 1. User's saved default voice for tier, 2. Exact locale match, 3. Base language match, 4. First available
     static func findRemoteVoice(for language: String, tier: RemoteVoice.Tier, from voices: [RemoteVoice]) -> RemoteVoice? {
         // Check if user has a saved voice for this language and tier
-        let savedVoices = tier == .advanced
-            ? Defaults.shared.defaultAdvancedRemoteVoiceForLanguage
-            : Defaults.shared.defaultBasicRemoteVoiceForLanguage
+        let savedVoices = tier == .premium
+            ? Defaults.shared.defaultPremiumRemoteVoiceForLanguage
+            : Defaults.shared.defaultStandardRemoteVoiceForLanguage
         if let savedVoice = savedVoices[language], savedVoice.tier == tier, voices.contains(where: { $0.id == savedVoice.id }) {
             return savedVoice
         }
