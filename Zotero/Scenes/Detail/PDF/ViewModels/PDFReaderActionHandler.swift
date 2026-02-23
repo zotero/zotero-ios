@@ -1837,6 +1837,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             return
         }
 
+        guard viewModel.state.documentMD5Changed != true, viewModel.state.error == nil else { return }
         viewModel.state.document.didCreateDocumentProviderBlock = { [weak self, weak viewModel] documentProvider in
             guard let self, let viewModel, let fileAnnotationProvider = documentProvider.annotationManager.fileAnnotationProvider else { return }
             let provider = PDFReaderAnnotationProvider(
