@@ -86,11 +86,11 @@ struct SpeechVoicePickerView: View {
     }
 
     /// Calculates remaining time based on remaining credits and the selected voice's credits per minute.
-    /// Returns nil if type is local, no remote voice is selected, or creditsPerMinute is 0.
+    /// Returns nil if type is local, no remote voice is selected, or voice is standard tier (unlimited).
     private var remainingTime: TimeInterval? {
         guard type.isRemote,
               case .remote(let voice) = selectedVoice,
-              voice.creditsPerMinute > 0
+              voice.tier != .standard
         else {
             return nil
         }
