@@ -1128,8 +1128,8 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     }
     
     private func updateRemainingTimeDisplay(credits: (standard: Int, premium: Int)) {
-        guard let voice = voiceData?.voice, voice.creditsPerMinute > 0 else {
-            // Unlimited voice - report nil remaining time
+        guard let voice = voiceData?.voice, voice.tier != .standard else {
+            // Standard tier voice - report nil remaining time (unlimited)
             delegate.remainingTime.accept(nil)
             return
         }
