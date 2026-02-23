@@ -284,8 +284,8 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     }
 
     /// Downgrades the voice to a lower tier and continues playback.
-    /// - If currently using advanced remote voice, switches to basic remote voice
-    /// - If currently using basic remote voice, switches to local voice
+    /// - If currently using premium remote voice, switches to standard remote voice
+    /// - If currently using standard remote voice, switches to local voice
     /// - If already using local voice, does nothing
     private func downgradeVoiceTierAndContinue() {
         guard let voice else { return }
@@ -295,20 +295,20 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         switch voice {
         case .remote(let remoteVoice):
             switch remoteVoice.tier {
-            case .advanced:
-                // Downgrade from advanced to basic
+            case .premium:
+                // Downgrade from premium to standard
                 guard let remoteProcessor = processor as? RemoteVoiceProcessor,
-                      let basicVoice = remoteProcessor.basicVoice(for: language) else {
-                    // No basic voice available, fall through to local
+                      let standardVoice = remoteProcessor.standardVoice(for: language) else {
+                    // No standard voice available, fall through to local
                     downgradeToLocalVoice(language: language)
                     return
                 }
-                Defaults.shared.remoteVoiceTier = .basic
-                remoteProcessor.set(voice: basicVoice, voiceLanguage: language, preferredLanguage: remoteProcessor.preferredLanguage)
+                Defaults.shared.remoteVoiceTier = .standard
+                remoteProcessor.set(voice: standardVoice, voiceLanguage: language, preferredLanguage: remoteProcessor.preferredLanguage)
                 resume()
 
-            case .basic:
-                // Downgrade from basic to local voice
+            case .standard:
+                // Downgrade from standard to local voice
                 downgradeToLocalVoice(language: language)
             }
 
@@ -777,7 +777,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         if voiceChanged {
             stopPreloadingAndClearCache()
             delegate.remainingTime.accept(nil)
-            if voice.creditsPerMinute > 0 {
+            if voice.tier != .standard {
                 loadCredits()
             }
             if let player {
@@ -789,23 +789,23 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         }
     }
 
-    /// Attempts to downgrade to basic tier using cached voices.
-    /// Returns the voice and language if successful, nil if no basic voice is available.
-    func basicVoice(for language: String) -> RemoteVoice? {
+    /// Attempts to downgrade to standard tier using cached voices.
+    /// Returns the voice and language if successful, nil if no standard voice is available.
+    func standardVoice(for language: String) -> RemoteVoice? {
         guard let allVoices = allAvailableVoices else { return nil }
-        // Find a basic voice for the current language
-        let basicVoices = allVoices.filter { $0.tier == .basic }
-        guard !basicVoices.isEmpty else { return nil }
+        // Find a standard voice for the current language
+        let standardVoices = allVoices.filter { $0.tier == .standard }
+        guard !standardVoices.isEmpty else { return nil }
         // Try to find a voice matching the current language
-        if let matchingVoice = basicVoices.first(where: { $0.locales.contains(language) }) {
+        if let matchingVoice = standardVoices.first(where: { $0.locales.contains(language) }) {
             return matchingVoice
         }
         // Try base language match
         let baseLanguage = String(language.prefix(2))
-        if let baseMatch = basicVoices.first(where: { $0.locales.contains(where: { $0.hasPrefix(baseLanguage) }) }) {
+        if let baseMatch = standardVoices.first(where: { $0.locales.contains(where: { $0.hasPrefix(baseLanguage) }) }) {
             return baseMatch
         }
-        return basicVoices.first
+        return standardVoices.first
     }
 
     func speak(text: String, startIndex: Int, shouldDetectVoice: Bool) {
@@ -1075,7 +1075,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
             } else {
                 outOfCreditsReason = .quotaExceeded
             }
-            updateRemainingTimeDisplay(credits: (basic: 0, advanced: 0))
+            updateRemainingTimeDisplay(credits: (standard: 0, premium: 0))
             delegate.state.accept(.outOfCredits(outOfCreditsReason))
         } else {
             DDLogError("RemoteVoiceProcessor: can't download sound - \(error)")
@@ -1099,7 +1099,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     // MARK: - Credits
     
     private func startCreditPollTimer() {
-        guard voiceData?.voice.creditsPerMinute ?? 0 > 0, creditPollTimer == nil else { return }
+        guard voiceData?.voice.tier != .standard, creditPollTimer == nil else { return }
         // Load credits immediately
         loadCredits()
         // Then poll every 60 seconds
@@ -1127,7 +1127,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
             .disposed(by: disposeBag)
     }
     
-    private func updateRemainingTimeDisplay(credits: (basic: Int, advanced: Int)) {
+    private func updateRemainingTimeDisplay(credits: (standard: Int, premium: Int)) {
         guard let voice = voiceData?.voice, voice.creditsPerMinute > 0 else {
             // Unlimited voice - report nil remaining time
             delegate.remainingTime.accept(nil)
@@ -1136,11 +1136,11 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         // Select credits based on voice tier
         let tierCredits: Int
         switch voice.tier {
-        case .basic:
-            tierCredits = credits.basic
+        case .standard:
+            tierCredits = credits.standard
 
-        case .advanced:
-            tierCredits = credits.advanced
+        case .premium:
+            tierCredits = credits.premium
         }
         // Calculate remaining time from credits (creditsPerMinute means credits per minute of audio)
         let remainingTime = (TimeInterval(tierCredits) / TimeInterval(voice.creditsPerMinute)) * 60
