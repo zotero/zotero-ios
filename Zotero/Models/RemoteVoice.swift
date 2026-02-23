@@ -13,8 +13,8 @@ struct RemoteVoice: Equatable {
     }
 
     enum Tier: String, Codable {
-        case basic
-        case advanced
+        case standard
+        case premium
     }
 
     let id: String

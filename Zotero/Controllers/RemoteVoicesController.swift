@@ -22,16 +22,16 @@ final class RemoteVoicesController {
         self.apiClient = apiClient
     }
 
-    func loadVoices() -> Single<(voices: [RemoteVoice], credits: (basic: Int, advanced: Int))> {
+    func loadVoices() -> Single<(voices: [RemoteVoice], credits: (standard: Int, premium: Int))> {
         return apiClient.send(request: VoicesRequest()).flatMap({ (voices: [RemoteVoice], response: HTTPURLResponse) in
-            let basicCredits = (response.value(forHTTPHeaderField: "zotero-tts-basic-credits-remaining") as NSString?)?.integerValue ?? 0
-            let advancedCredits = (response.value(forHTTPHeaderField: "zotero-tts-advanced-credits-remaining") as NSString?)?.integerValue ?? 0
-            return .just((voices: voices, credits: (basic: basicCredits, advanced: advancedCredits)))
+            let standardCredits = (response.value(forHTTPHeaderField: "zotero-tts-standard-credits-remaining") as NSString?)?.integerValue ?? 0
+            let premiumCredits = (response.value(forHTTPHeaderField: "zotero-tts-premium-credits-remaining") as NSString?)?.integerValue ?? 0
+            return .just((voices: voices, credits: (standard: standardCredits, premium: premiumCredits)))
         })
     }
     
-    func loadCredits() -> Single<(basic: Int, advanced: Int)> {
-        return apiClient.send(request: CreditsRequest()).flatMap({ response, _ in return .just((basic: response.basicCreditsRemaining, advanced: response.advancedCreditsRemaining)) })
+    func loadCredits() -> Single<(standard: Int, premium: Int)> {
+        return apiClient.send(request: CreditsRequest()).flatMap({ response, _ in return .just((standard: response.standardCreditsRemaining, premium: response.premiumCreditsRemaining)) })
     }
     
     func downloadSample(voiceId: String, language: String) -> Single<Data> {

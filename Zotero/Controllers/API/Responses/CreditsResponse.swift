@@ -9,6 +9,6 @@
 import Foundation
 
 struct CreditsResponse: Decodable {
-    let basicCreditsRemaining: Int
-    let advancedCreditsRemaining: Int
+    let standardCreditsRemaining: Int
+    let premiumCreditsRemaining: Int
 }
