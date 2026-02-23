@@ -867,6 +867,8 @@
 		B37EFDBC2A73EEA8008507C5 /* EditAnnotationRotationDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37EFDBB2A73EEA8008507C5 /* EditAnnotationRotationDbRequest.swift */; };
 		B37F58662672229D00C4089B /* InstallStyleDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37F58652672229D00C4089B /* InstallStyleDbRequest.swift */; };
 		B37F7ABC23955031008A51B4 /* CreateItemRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37F7ABB23955031008A51B4 /* CreateItemRequest.swift */; };
+		B3825F7F2F4C86BD00D0578A /* OggOpusConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3825F7E2F4C86BC00D0578A /* OggOpusConverter.swift */; };
+		B3825F812F4C873300D0578A /* SwiftOGG in Frameworks */ = {isa = PBXBuildFile; productRef = B3825F802F4C873300D0578A /* SwiftOGG */; };
 		B3830CDB255451AB00910FE0 /* TagPickerAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CD8255451AA00910FE0 /* TagPickerAction.swift */; };
 		B3830CDC255451AB00910FE0 /* TagPickerState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CD9255451AA00910FE0 /* TagPickerState.swift */; };
 		B3830CE2255451C200910FE0 /* TagPickerActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CE1255451C200910FE0 /* TagPickerActionHandler.swift */; };
@@ -1960,6 +1962,7 @@
 		B37EFDBB2A73EEA8008507C5 /* EditAnnotationRotationDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditAnnotationRotationDbRequest.swift; sourceTree = "<group>"; };
 		B37F58652672229D00C4089B /* InstallStyleDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallStyleDbRequest.swift; sourceTree = "<group>"; };
 		B37F7ABB23955031008A51B4 /* CreateItemRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateItemRequest.swift; sourceTree = "<group>"; };
+		B3825F7E2F4C86BC00D0578A /* OggOpusConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OggOpusConverter.swift; sourceTree = "<group>"; };
 		B3830CD8255451AA00910FE0 /* TagPickerAction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TagPickerAction.swift; sourceTree = "<group>"; };
 		B3830CD9255451AA00910FE0 /* TagPickerState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TagPickerState.swift; sourceTree = "<group>"; };
 		B3830CE1255451C200910FE0 /* TagPickerActionHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TagPickerActionHandler.swift; sourceTree = "<group>"; };
@@ -2498,6 +2501,7 @@
 				B356A369252490DB003F1943 /* KeychainSwift in Frameworks */,
 				614D65872A8030C9007CF449 /* OrderedCollections in Frameworks */,
 				B356A37B2524A63D003F1943 /* SwiftyGif in Frameworks */,
+				B3825F812F4C873300D0578A /* SwiftOGG in Frameworks */,
 				B356A3A02524A703003F1943 /* CocoaLumberjack in Frameworks */,
 				B35C9C082642A0BC0004C47E /* RealmSwift in Frameworks */,
 				B35E4B9725248BAD000EA134 /* RxRelay in Frameworks */,
@@ -2657,6 +2661,7 @@
 				B3C43C1F28589F300007076D /* NotePreviewGenerator.swift */,
 				B387AE0C2F4343E6009D0DD5 /* NowPlayingManager.swift */,
 				B305646C23FC051E003304F2 /* ObjectUserChangeObserver.swift */,
+				B3825F7E2F4C86BC00D0578A /* OggOpusConverter.swift */,
 				61E24DCB2ABB385E00D75F50 /* OpenItemsController.swift */,
 				B34A9F6325BF1ABB007C9A4A /* PDFDocumentExporter.swift */,
 				B32B8A562B18A08900A9A741 /* PDFThumbnailController.swift */,
@@ -4774,6 +4779,7 @@
 				B3445F4526EF5EE9007D4009 /* CrashReporter */,
 				B3D84BEF27919FDE005DDD7C /* Starscream */,
 				614D65862A8030C9007CF449 /* OrderedCollections */,
+				B3825F802F4C873300D0578A /* SwiftOGG */,
 			);
 			productName = Zotero;
 			productReference = B30D59552206F60400884C4A /* Zotero.app */;
@@ -4984,6 +4990,7 @@
 				B3445F4426EF5EE9007D4009 /* XCRemoteSwiftPackageReference "plcrashreporter" */,
 				B3D84BEE27919FDE005DDD7C /* XCRemoteSwiftPackageReference "Starscream" */,
 				614D65852A8030C9007CF449 /* XCRemoteSwiftPackageReference "swift-collections" */,
+				B3825F7D2F4C864C00D0578A /* XCRemoteSwiftPackageReference "swift-ogg" */,
 			);
 			productRefGroup = B30D59562206F60400884C4A /* Products */;
 			projectDirPath = "";
@@ -5638,6 +5645,7 @@
 				B3DCDF12240914F10039ED0D /* SinglePickerModel.swift in Sources */,
 				B3593F79241A76E600760E20 /* CollectionEditAction.swift in Sources */,
 				B3593F25241A61C700760E20 /* ItemDetailTagCell.swift in Sources */,
+				B3825F7F2F4C86BD00D0578A /* OggOpusConverter.swift in Sources */,
 				B305660E23FC051E003304F2 /* ObjectsRequest.swift in Sources */,
 				B30565DB23FC051E003304F2 /* ReadAllCustomLibrariesDbRequest.swift in Sources */,
 				B30565EA23FC051E003304F2 /* SecureStorage.swift in Sources */,
@@ -7530,6 +7538,14 @@
 				version = 6.10.1;
 			};
 		};
+		B3825F7D2F4C864C00D0578A /* XCRemoteSwiftPackageReference "swift-ogg" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/element-hq/swift-ogg";
+			requirement = {
+				kind = exactVersion;
+				version = 0.0.3;
+			};
+		};
 		B3A6C59D252CA08200F24CBE /* XCRemoteSwiftPackageReference "PSPDFKit-SP" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/PSPDFKit/PSPDFKit-SP";
@@ -7673,6 +7689,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B35E4B8B25248B3C000EA134 /* XCRemoteSwiftPackageReference "RxSwift" */;
 			productName = RxRelay;
+		};
+		B3825F802F4C873300D0578A /* SwiftOGG */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B3825F7D2F4C864C00D0578A /* XCRemoteSwiftPackageReference "swift-ogg" */;
+			productName = SwiftOGG;
 		};
 		B3A6C59E252CA08300F24CBE /* PSPDFKit */ = {
 			isa = XCSwiftPackageProductDependency;
