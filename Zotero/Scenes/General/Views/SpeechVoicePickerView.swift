@@ -39,11 +39,11 @@ struct SpeechVoicePickerView: View {
     }
     
     fileprivate enum VoiceType {
-        case advanced, basic, local
+        case premium, standard, local
         
         var isRemote: Bool {
             switch self {
-            case .advanced, .basic:
+            case .premium, .standard:
                 return true
                 
             case .local:
@@ -76,8 +76,8 @@ struct SpeechVoicePickerView: View {
     @State private var navigationPath: NavigationPath
     @State private var allRemoteVoices: [RemoteVoice]
     @State private var supportedRemoteLanguages: Set<String>
-    @State private var basicCreditsRemaining: Int?
-    @State private var advancedCreditsRemaining: Int?
+    @State private var standardCreditsRemaining: Int?
+    @State private var premiumCreditsRemaining: Int?
     @State private var isLoading: Bool = false
     @State private var loadError: Bool = false
     
@@ -96,11 +96,11 @@ struct SpeechVoicePickerView: View {
         }
         let credits: Int?
         switch voice.tier {
-        case .basic:
-            credits = basicCreditsRemaining
+        case .standard:
+            credits = standardCreditsRemaining
 
-        case .advanced:
-            credits = advancedCreditsRemaining
+        case .premium:
+            credits = premiumCreditsRemaining
         }
         guard let credits else { return nil }
         // creditsPerMinute means credits consumed per minute of audio, so remaining time in seconds = (credits / creditsPerMinute) * 60
@@ -124,15 +124,15 @@ struct SpeechVoicePickerView: View {
         remoteVoices = []
         allRemoteVoices = []
         supportedRemoteLanguages = []
-        basicCreditsRemaining = nil
-        advancedCreditsRemaining = nil
+        standardCreditsRemaining = nil
+        premiumCreditsRemaining = nil
         disposeBag = .init()
         switch selectedVoice {
         case .local:
             type = .local
             
         case .remote(let voice):
-            type = voice.tier == .advanced ? .advanced : .basic
+            type = voice.tier == .premium ? .premium : .standard
         }
     }
 
@@ -150,7 +150,7 @@ struct SpeechVoicePickerView: View {
                 case .local:
                     LocalVoicesSection(voices: $localVoices, selectedVoice: $selectedVoice, language: languageCode)
                     
-                case .advanced, .basic:
+                case .premium, .standard:
                     if loadError {
                         LoadErrorSection(retryAction: loadVoices)
                     } else if !allRemoteVoices.isEmpty {
@@ -180,7 +180,7 @@ struct SpeechVoicePickerView: View {
             .onChange(of: language) { newValue in
                 let language = newValue.code(detectedLanguage: detectedLanguage)
                 localVoices = VoiceFinder.localVoices(for: language)
-                remoteVoices = VoiceFinder.remoteVoices(for: languageCode, tier: (type == .advanced ? .advanced : .basic), from: allRemoteVoices)
+                remoteVoices = VoiceFinder.remoteVoices(for: languageCode, tier: (type == .premium ? .premium : .standard), from: allRemoteVoices)
 
                 switch type {
                 case .local:
@@ -188,8 +188,8 @@ struct SpeechVoicePickerView: View {
                         selectedVoice = .local(voice)
                     }
                     
-                case .advanced, .basic:
-                    if let voice = VoiceFinder.findRemoteVoice(for: language, tier: (type == .advanced ? .advanced : .basic), from: remoteVoices) {
+                case .premium, .standard:
+                    if let voice = VoiceFinder.findRemoteVoice(for: language, tier: (type == .premium ? .premium : .standard), from: remoteVoices) {
                         selectedVoice = .remote(voice)
                     }
                 }
@@ -201,8 +201,8 @@ struct SpeechVoicePickerView: View {
                         selectedVoice = .local(voice)
                     }
                     
-                case .advanced, .basic:
-                    let tier: RemoteVoice.Tier = newValue == .advanced ? .advanced : .basic
+                case .premium, .standard:
+                    let tier: RemoteVoice.Tier = newValue == .premium ? .premium : .standard
                     remoteVoices = VoiceFinder.remoteVoices(for: languageCode, tier: tier, from: allRemoteVoices)
                     if let voice = VoiceFinder.findRemoteVoice(for: languageCode, tier: tier, from: remoteVoices) {
                         selectedVoice = .remote(voice)
@@ -217,11 +217,11 @@ struct SpeechVoicePickerView: View {
                     
                 case .remote(let voice):
                     switch voice.tier {
-                    case .advanced:
-                        Defaults.shared.defaultAdvancedRemoteVoiceForLanguage[languageCode] = voice
+                    case .premium:
+                        Defaults.shared.defaultPremiumRemoteVoiceForLanguage[languageCode] = voice
 
-                    case .basic:
-                        Defaults.shared.defaultBasicRemoteVoiceForLanguage[languageCode] = voice
+                    case .standard:
+                        Defaults.shared.defaultStandardRemoteVoiceForLanguage[languageCode] = voice
                     }
                     Defaults.shared.remoteVoiceTier = voice.tier
                 }
@@ -258,9 +258,9 @@ struct SpeechVoicePickerView: View {
                     allRemoteVoices = result.voices
                     supportedRemoteLanguages.removeAll()
                     result.voices.forEach({ supportedRemoteLanguages.formUnion($0.locales) })
-                    basicCreditsRemaining = result.credits.basic
-                    advancedCreditsRemaining = result.credits.advanced
-                    remoteVoices = VoiceFinder.remoteVoices(for: languageCode, tier: (type == .advanced ? .advanced : .basic), from: allRemoteVoices)
+                    standardCreditsRemaining = result.credits.standard
+                    premiumCreditsRemaining = result.credits.premium
+                    remoteVoices = VoiceFinder.remoteVoices(for: languageCode, tier: (type == .premium ? .premium : .standard), from: allRemoteVoices)
                     isLoading = false
                 }, onFailure: { error in
                     DDLogError("SpeechVoicePickerView: can't load remote voices - \(error)")
@@ -276,7 +276,7 @@ struct SpeechVoicePickerView: View {
         case .local:
             return true
             
-        case .advanced, .basic:
+        case .premium, .standard:
             return !allRemoteVoices.isEmpty
         }
     }
@@ -286,11 +286,11 @@ struct SpeechVoicePickerView: View {
         case .local:
             return createLocalLanguages()
             
-        case .advanced:
-            return createRemoteLanguages(for: .advanced)
+        case .premium:
+            return createRemoteLanguages(for: .premium)
             
-        case .basic:
-            return createRemoteLanguages(for: .basic)
+        case .standard:
+            return createRemoteLanguages(for: .standard)
         }
     }
     
@@ -364,27 +364,27 @@ fileprivate struct TypeSection: View {
     var body: some View {
         Section {
             HStack {
-                Text("Advanced")
+                Text("Premium")
                 Spacer()
-                if case .advanced = type {
+                if case .premium = type {
                     Image(systemName: "checkmark").foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUIColor)
                 }
             }
             .contentShape(Rectangle())
             .onTapGesture {
-                type = .advanced
+                type = .premium
             }
             
             HStack {
-                Text("Basic")
+                Text("Standard")
                 Spacer()
-                if case .basic = type {
+                if case .standard = type {
                     Image(systemName: "checkmark").foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUIColor)
                 }
             }
             .contentShape(Rectangle())
             .onTapGesture {
-                type = .basic
+                type = .standard
             }
             
             HStack {
