@@ -112,54 +112,24 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
         let filePageIsLoaded = performRead { loadedFilePageIndices.contains(pageIndex) }
         let cachePageIsLoaded = performRead { loadedCachePageIndices.contains(pageIndex) }
         if filePageIsLoaded && cachePageIsLoaded {
-            let pageFileAnnotations = fileAnnotationProvider.annotationsForPage(at: pageIndex)
+            let filePageAnnotations = fileAnnotationProvider.annotationsForPage(at: pageIndex)
             let cachePageAnnotations = super.annotationsForPage(at: pageIndex)
 
-            if pageFileAnnotations == nil, cachePageAnnotations == nil {
+            if filePageAnnotations == nil, cachePageAnnotations == nil {
                 return nil
             }
-            return (pageFileAnnotations ?? []) + (cachePageAnnotations ?? [])
+            return (filePageAnnotations ?? []) + (cachePageAnnotations ?? [])
         }
         return performWriteAndWait {
             // Because we had to leave the critical region from reading to writing, another thread could have raced here before us.
             // In order to prevent caching the same annotations multiple times, we check again our indices first.
 
-            // First the index for the document annotations that are read from the file (unsupported types which inculde links).
-            let filePageAnnotations: [Annotation]?
-            if loadedFilePageIndices.contains(pageIndex) {
-                filePageAnnotations = fileAnnotationProvider.annotationsForPage(at: pageIndex)
-            } else {
-                (_, filePageAnnotations) = loadFilePage(pageIndex: pageIndex)
-            }
+            // First the index for the document annotations that are read from the file (unsupported types which include links).
+            let filePageAnnotations = fileAnnotationsForPage(at: pageIndex)
 
-            // Then the index for the document annoations that are read from the database cache.
-            if !loadedCachePageIndices.contains(pageIndex) {
-                switch cacheStatus {
-                case .loaded(let results):
-                    // Database cache is loaded, load annotations to provider cache.
-                    let cachedDocumentAnnotations = Array(results.filter("page = %d", Int(pageIndex)))
-                    if !cachedDocumentAnnotations.isEmpty {
-                        // There are document annotations for this page in the database cache, add them to provider cache.
-                        var annotationsToAdd: [Annotation] = []
-                        for cachedDocumentAnnotation in cachedDocumentAnnotations {
-                            guard let annotation = annotation(from: cachedDocumentAnnotation) else { continue }
-                            annotationsToAdd.append(annotation)
-                        }
-                        if !annotationsToAdd.isEmpty {
-                            _ = super.add(annotationsToAdd, options: [.suppressNotifications: true])
-                        }
-                    }
-                    loadedCachePageIndices.insert(pageIndex)
+            // Then the index for the document annotations that are read from the database cache.
+            loadCachedDocumentAnnotationsIfNeededForPage(at: pageIndex)
 
-                case .failed:
-                    // Database cache failed to load. Mark page in provider cache as loaded.
-                    loadedCachePageIndices.insert(pageIndex)
-
-                case .unresolved, .loading:
-                    // Defer marking page in provider cache as loaded, so it can be revisited after database cache resolution.
-                    break
-                }
-            }
             // Annotations are fetched from super, apart from cached document annotations, as more may have been added before it was accessed here.
             let cachePageAnnotations = super.annotationsForPage(at: pageIndex)
 
@@ -167,6 +137,45 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
                 return nil
             }
             return (filePageAnnotations ?? []) + (cachePageAnnotations ?? [])
+        }
+
+        func fileAnnotationsForPage(at pageIndex: PageIndex) -> [Annotation]? {
+            let annotations: [Annotation]?
+            if loadedFilePageIndices.contains(pageIndex) {
+                annotations = fileAnnotationProvider.annotationsForPage(at: pageIndex)
+            } else {
+                (_, annotations) = loadFilePage(pageIndex: pageIndex)
+            }
+            return annotations
+        }
+
+        func loadCachedDocumentAnnotationsIfNeededForPage(at pageIndex: PageIndex) {
+            guard !loadedCachePageIndices.contains(pageIndex) else { return }
+            switch cacheStatus {
+            case .loaded(let results):
+                // Database cache is loaded, load annotations to provider cache.
+                let cachedDocumentAnnotations = Array(results.filter("page = %d", Int(pageIndex)))
+                if !cachedDocumentAnnotations.isEmpty {
+                    // There are document annotations for this page in the database cache, add them to provider cache.
+                    var annotationsToAdd: [Annotation] = []
+                    for cachedDocumentAnnotation in cachedDocumentAnnotations {
+                        guard let annotation = annotation(from: cachedDocumentAnnotation) else { continue }
+                        annotationsToAdd.append(annotation)
+                    }
+                    if !annotationsToAdd.isEmpty {
+                        _ = super.add(annotationsToAdd, options: [.suppressNotifications: true])
+                    }
+                }
+                loadedCachePageIndices.insert(pageIndex)
+
+            case .failed:
+                // Database cache failed to load. Mark page in provider cache as loaded.
+                loadedCachePageIndices.insert(pageIndex)
+
+            case .unresolved, .loading:
+                // Defer marking page in provider cache as loaded, so it can be revisited after database cache resolution.
+                return
+            }
         }
     }
 
