@@ -171,6 +171,9 @@ final class Defaults {
     @CodableUserDefault(key: "SpeechRemoteVoiceTier", defaultValue: nil, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
     var remoteVoiceTier: RemoteVoice.Tier?
     
+    @UserDefault(key: "DidShowReadAloudOnboarding", defaultValue: false)
+    var didShowReadAloudOnboarding: Bool
+    
     #endif
 
     // MARK: - Citation / Bibliography Export
