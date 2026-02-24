@@ -412,6 +412,23 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        showReadAloudOnboardingIfNeeded()
+    }
+
+    private func showReadAloudOnboardingIfNeeded() {
+        guard FeatureGates.enabled.contains(.speech),
+//              !Defaults.shared.didShowReadAloudOnboarding,
+              !viewModel.state.document.isLocked,
+              let speechManager = accessibilityHandler?.speechManager
+        else { return }
+
+        Defaults.shared.didShowReadAloudOnboarding = true
+        let language = speechManager.language ?? speechManager.detectedLanguage
+        coordinatorDelegate?.showReadAloudOnboarding(language: language, userInterfaceStyle: overrideUserInterfaceStyle) { [weak self] selectedVoice in
+            if let selectedVoice, let self {
+                self.accessibilityHandler?.set(initialVoice: selectedVoice, language: language)
+            }
+        }
     }
 
     deinit {

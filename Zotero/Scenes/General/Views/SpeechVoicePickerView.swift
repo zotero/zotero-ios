@@ -501,7 +501,7 @@ fileprivate struct LocalVoicesSection: View {
     }
 
     var body: some View {
-        Section("VOICES") {
+        Section(L10n.Accessibility.Speech.voices.uppercased()) {
             ForEach(voices) { voice in
                 HStack {
                     Text(voice.name)
@@ -528,7 +528,7 @@ fileprivate struct LocalVoicesSection: View {
         if synthetizer.isSpeaking {
             synthetizer.stopSpeaking(at: .immediate)
         }
-        let utterance = AVSpeechUtterance(string: "My name is \(voice.name) and this is my voice")
+        let utterance = AVSpeechUtterance(string: L10n.Accessibility.Speech.localSample(voice.name))
         utterance.voice = voice
         synthetizer.speak(utterance)
     }
@@ -547,7 +547,7 @@ fileprivate struct RemoteVoicesSection: View {
     private let disposeBag: DisposeBag = .init()
 
     var body: some View {
-        Section("VOICES") {
+        Section(L10n.Accessibility.Speech.voices.uppercased()) {
             ForEach(voices) { voice in
                 HStack {
                     Text(voice.label)
