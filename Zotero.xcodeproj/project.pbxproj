@@ -869,6 +869,8 @@
 		B37F7ABC23955031008A51B4 /* CreateItemRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37F7ABB23955031008A51B4 /* CreateItemRequest.swift */; };
 		B3825F7F2F4C86BD00D0578A /* OggOpusConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3825F7E2F4C86BC00D0578A /* OggOpusConverter.swift */; };
 		B3825F812F4C873300D0578A /* SwiftOGG in Frameworks */ = {isa = PBXBuildFile; productRef = B3825F802F4C873300D0578A /* SwiftOGG */; };
+		B3825F832F4DB21400D0578A /* RemainingTimeFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3825F822F4DB21400D0578A /* RemainingTimeFormatter.swift */; };
+		B3825F842F4DB21400D0578A /* RemainingTimeFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3825F822F4DB21400D0578A /* RemainingTimeFormatter.swift */; };
 		B3830CDB255451AB00910FE0 /* TagPickerAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CD8255451AA00910FE0 /* TagPickerAction.swift */; };
 		B3830CDC255451AB00910FE0 /* TagPickerState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CD9255451AA00910FE0 /* TagPickerState.swift */; };
 		B3830CE2255451C200910FE0 /* TagPickerActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3830CE1255451C200910FE0 /* TagPickerActionHandler.swift */; };
@@ -1963,6 +1965,7 @@
 		B37F58652672229D00C4089B /* InstallStyleDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallStyleDbRequest.swift; sourceTree = "<group>"; };
 		B37F7ABB23955031008A51B4 /* CreateItemRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateItemRequest.swift; sourceTree = "<group>"; };
 		B3825F7E2F4C86BC00D0578A /* OggOpusConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OggOpusConverter.swift; sourceTree = "<group>"; };
+		B3825F822F4DB21400D0578A /* RemainingTimeFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemainingTimeFormatter.swift; sourceTree = "<group>"; };
 		B3830CD8255451AA00910FE0 /* TagPickerAction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TagPickerAction.swift; sourceTree = "<group>"; };
 		B3830CD9255451AA00910FE0 /* TagPickerState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TagPickerState.swift; sourceTree = "<group>"; };
 		B3830CE1255451C200910FE0 /* TagPickerActionHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TagPickerActionHandler.swift; sourceTree = "<group>"; };
@@ -2967,6 +2970,7 @@
 				B3A94B492462F5D300BC7910 /* PSPDFKit+Extensions.swift */,
 				61A0C8462B8F669B0048FF92 /* PSPDFKitUI+Extensions.swift */,
 				B3DDC0CA2667824D00B2DFD1 /* RegularExpression+Extensions.swift */,
+				B3825F822F4DB21400D0578A /* RemainingTimeFormatter.swift */,
 				B340692124A60D6A009ECE48 /* Rounding+Extensions.swift */,
 				B305650823FC051E003304F2 /* String+Extensions.swift */,
 				B305650423FC051E003304F2 /* Threading+Extras.swift */,
@@ -5457,6 +5461,7 @@
 				B3F9A4C52B04D0D900684030 /* ReaderSettingsAction.swift in Sources */,
 				B3A351E527157EC6002E597A /* WebDavPropParserDelegate.swift in Sources */,
 				B3A2AECC26552248004BF3A4 /* SettingsCoordinator.swift in Sources */,
+				B3825F842F4DB21400D0578A /* RemainingTimeFormatter.swift in Sources */,
 				B32B8A572B18A08900A9A741 /* PDFThumbnailController.swift in Sources */,
 				B3E8FE6A2714344D00F51458 /* SettingsActionHandler.swift in Sources */,
 				B3E8FE3C27142A9900F51458 /* StylePickerAction.swift in Sources */,
@@ -6529,6 +6534,7 @@
 				B305671123FC08C5003304F2 /* ReadTagPickerTagsDbRequest.swift in Sources */,
 				B30B551124B8689900F94B59 /* Assets+SwiftUI.swift in Sources */,
 				B3B1EE072502680000D8BC1E /* Parsing.swift in Sources */,
+				B3825F832F4DB21400D0578A /* RemainingTimeFormatter.swift in Sources */,
 				B34341AE260A48C200093E63 /* ReadAllWritableGroupsDbRequest.swift in Sources */,
 				B32EBFC4276A89330003897E /* BackgroundUploaderContext.swift in Sources */,
 				B3C6AB30248E6FFA0009AC96 /* SyncBatchProcessor.swift in Sources */,
