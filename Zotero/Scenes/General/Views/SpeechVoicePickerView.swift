@@ -51,9 +51,6 @@ struct SpeechVoicePickerView: View {
             }
         }
     }
-
-    /// Threshold in seconds below which the remaining time indicator turns red
-    private static let warningThresholdSeconds: TimeInterval = 180
     
     private unowned let remoteVoicesController: RemoteVoicesController
     private let detectedLanguage: String
@@ -135,7 +132,7 @@ struct SpeechVoicePickerView: View {
             List {
                 TypeSection(type: $type)
                 if let remainingTime {
-                    RemainingTimeSection(remainingTime: remainingTime, warningThreshold: Self.warningThresholdSeconds)
+                    RemainingTimeSection(remainingTime: remainingTime)
                 }
                 if canShowLanguage {
                     LanguageSection(language: $language, detectedLanguage: detectedLanguage, navigationPath: $navigationPath)
@@ -431,10 +428,9 @@ fileprivate struct LanguageSection: View {
 
 fileprivate struct RemainingTimeSection: View {
     let remainingTime: TimeInterval
-    let warningThreshold: TimeInterval
     
     private var timeColor: Color {
-        remainingTime < warningThreshold ? .red : .secondary
+        RemainingTimeFormatter.isWarning(remainingTime) ? .red : .secondary
     }
     
     var body: some View {
