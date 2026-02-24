@@ -1132,6 +1132,7 @@
 		B3DAF84D2AC5AA5C00F9AB6A /* PDFDocumentAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DAF84A2AC5AA5C00F9AB6A /* PDFDocumentAnnotation.swift */; };
 		B3DAF84E2AC5AA5C00F9AB6A /* PDFAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DAF84B2AC5AA5C00F9AB6A /* PDFAnnotation.swift */; };
 		B3DAF84F2AC5AA5C00F9AB6A /* PDFDatabaseAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DAF84C2AC5AA5C00F9AB6A /* PDFDatabaseAnnotation.swift */; };
+		B3DCC4882F4DBE6E006B3744 /* ReadAloudOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCC4872F4DBE6E006B3744 /* ReadAloudOnboardingView.swift */; };
 		B3DCDEE12408F5200039ED0D /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDEE02408F5200039ED0D /* MainViewController.swift */; };
 		B3DCDF06240912060039ED0D /* DocumentPickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDF01240912060039ED0D /* DocumentPickerViewController.swift */; };
 		B3DCDF07240912060039ED0D /* NoteEditorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDF02240912060039ED0D /* NoteEditorViewController.swift */; };
@@ -2364,6 +2365,7 @@
 		B3DAF84A2AC5AA5C00F9AB6A /* PDFDocumentAnnotation.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PDFDocumentAnnotation.swift; sourceTree = "<group>"; };
 		B3DAF84B2AC5AA5C00F9AB6A /* PDFAnnotation.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PDFAnnotation.swift; sourceTree = "<group>"; };
 		B3DAF84C2AC5AA5C00F9AB6A /* PDFDatabaseAnnotation.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PDFDatabaseAnnotation.swift; sourceTree = "<group>"; };
+		B3DCC4872F4DBE6E006B3744 /* ReadAloudOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAloudOnboardingView.swift; sourceTree = "<group>"; };
 		B3DCDEE02408F5200039ED0D /* MainViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
 		B3DCDF01240912060039ED0D /* DocumentPickerViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DocumentPickerViewController.swift; sourceTree = "<group>"; };
 		B3DCDF02240912060039ED0D /* NoteEditorViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NoteEditorViewController.swift; sourceTree = "<group>"; };
@@ -4322,6 +4324,7 @@
 				B3DCDF02240912060039ED0D /* NoteEditorViewController.swift */,
 				B37C5B6E26454130009A37E5 /* NoteEditorViewController.xib */,
 				B32DE61E26320271000287EC /* PopoverNavigationViewController.swift */,
+				B3DCC4872F4DBE6E006B3744 /* ReadAloudOnboardingView.swift */,
 				B3F9A4BB2B04CEC300684030 /* ReaderSettingsSegmentedCell.swift */,
 				B3F9A4BA2B04CEC300684030 /* ReaderSettingsSegmentedCellContentView.swift */,
 				B3F9A4C02B04CED600684030 /* ReaderSettingsSegmentedCellContentView.xib */,
@@ -5721,6 +5724,7 @@
 				B3574E3F2AC5C53E009234BE /* HtmlEpubCoordinator.swift in Sources */,
 				B340AB372F179489004B45ED /* VoicesRequest.swift in Sources */,
 				B30566A923FC051F003304F2 /* File.swift in Sources */,
+				B3DCC4882F4DBE6E006B3744 /* ReadAloudOnboardingView.swift in Sources */,
 				B305669B23FC051F003304F2 /* RSearch.swift in Sources */,
 				B37AA28C289960FF00A1C643 /* ItemDetailNoteContentView.swift in Sources */,
 				B30BE127297AAD9E000AED6A /* AnnotationToolOptionsActionHandler.swift in Sources */,
