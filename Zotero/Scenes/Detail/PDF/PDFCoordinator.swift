@@ -37,6 +37,7 @@ protocol PdfReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarC
         dismissAction: @escaping () -> Void,
         voiceChangeAction: @escaping (AccessibilityPopupVoiceChange) -> Void
     )
+    func showReadAloudOnboarding(language: String, userInterfaceStyle: UIUserInterfaceStyle, completion: @escaping (SpeechVoice?) -> Void)
 }
 
 protocol PdfAnnotationsCoordinatorDelegate: ReaderSidebarCoordinatorDelegate {
@@ -282,6 +283,23 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         let controller = UIAlertController(title: L10n.warning, message: L10n.Errors.Pdf.documentChanged, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: { _ in completed() }))
         navigationController?.present(controller, animated: true)
+    }
+
+    func showReadAloudOnboarding(language: String, userInterfaceStyle: UIUserInterfaceStyle, completion: @escaping (SpeechVoice?) -> Void) {
+        guard let navigationController else { return }
+        let view = ReadAloudOnboardingView(
+            language: language,
+            remoteVoicesController: remoteVoicesController,
+            dismiss: { selectedVoice in
+                navigationController.dismiss(animated: true) {
+                    completion(selectedVoice)
+                }
+            }
+        )
+        let controller = UIHostingController(rootView: view)
+        controller.overrideUserInterfaceStyle = userInterfaceStyle
+        controller.modalPresentationStyle = .formSheet
+        navigationController.present(controller, animated: true)
     }
 
     func showAccessibility<Delegate: SpeechManagerDelegate>(
