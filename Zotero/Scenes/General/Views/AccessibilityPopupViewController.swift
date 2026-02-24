@@ -479,14 +479,6 @@ private final class VoiceButtonView: UIControl {
     /// Threshold in seconds below which the remaining time indicator turns red
     private static let warningThresholdSeconds: TimeInterval = 180
     
-    private static let timeFormatter: DateComponentsFormatter = {
-        let formatter = DateComponentsFormatter()
-        formatter.allowedUnits = [.hour, .minute]
-        formatter.unitsStyle = .abbreviated
-        formatter.zeroFormattingBehavior = .dropLeading
-        return formatter
-    }()
-    
     private let titleLabel: UILabel = {
         let label = UILabel()
         label.font = .preferredFont(forTextStyle: .subheadline)
@@ -523,7 +515,8 @@ private final class VoiceButtonView: UIControl {
     
     var remainingTime: TimeInterval? {
         didSet {
-            guard let time = remainingTime else {
+            // Hide if no time or if time exceeds 90 days
+            guard let time = remainingTime, RemainingTimeFormatter.shouldDisplay(time) else {
                 clockImageView.isHidden = true
                 timeLabel.isHidden = true
                 lastDisplayedMinute = nil
@@ -536,7 +529,7 @@ private final class VoiceButtonView: UIControl {
             
             clockImageView.isHidden = false
             timeLabel.isHidden = false
-            timeLabel.text = formatted(remainingTime: time)
+            timeLabel.text = RemainingTimeFormatter.formatted(time)
             
             let timeColor: UIColor = time < Self.warningThresholdSeconds ? .systemRed : .secondaryLabel
             clockImageView.tintColor = timeColor
@@ -589,16 +582,5 @@ private final class VoiceButtonView: UIControl {
         
         clockImageView.isHidden = true
         timeLabel.isHidden = true
-    }
-    
-    private func formatted(remainingTime: TimeInterval) -> String {
-        let roundedUpSeconds = ceil(remainingTime / 60) * 60
-        if roundedUpSeconds == 0 {
-            return "0m"
-        } else if roundedUpSeconds < 60 {
-            return "<1m"
-        } else {
-            return Self.timeFormatter.string(from: roundedUpSeconds) ?? ""
-        }
     }
 }
