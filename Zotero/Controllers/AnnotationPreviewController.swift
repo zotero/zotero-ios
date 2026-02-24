@@ -1,5 +1,5 @@
 //
-//  SquareAnnotationPreviewController.swift
+//  AnnotationPreviewController.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 27/04/2020.
@@ -11,7 +11,7 @@ import UIKit
 import CocoaLumberjackSwift
 import RxSwift
 
-typealias AnnotationPreviewUpdate = (annotationKey: String, pdfKey: String, image: UIImage)
+typealias AnnotationPreviewUpdate = (annotationKey: String, attachmentKey: String, image: UIImage)
 
 final class AnnotationPreviewController: NSObject {
     fileprivate struct EnqueuedData {

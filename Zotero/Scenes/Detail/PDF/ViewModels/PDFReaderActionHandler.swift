@@ -81,7 +81,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     }
 
     unowned let dbStorage: DbStorage
-    private unowned let annotationPreviewController: AnnotationPreviewController
+    unowned let annotationPreviewController: AnnotationPreviewController
     unowned let pdfThumbnailController: PDFThumbnailController
     private unowned let htmlAttributedStringConverter: HtmlAttributedStringConverter
     private unowned let schemaController: SchemaController
@@ -97,7 +97,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     private var freeTextAnnotationRotationDebounceDisposeBagByKey: [String: DisposeBag]
     private var debouncedFreeTextAnnotationAndChangesByKey: [String: ([String], PSPDFKit.FreeTextAnnotation)]
     weak var delegate: PDFReaderContainerDelegate?
-    private var annotationProvider: PDFReaderAnnotationProvider?
+    private(set) var annotationProvider: PDFReaderAnnotationProvider?
     private(set) var appearance: Appearance = .light
 
     init(
@@ -139,9 +139,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         case .loadDocumentData:
             loadDocumentData(in: viewModel)
 
-        case .startObservingAnnotationPreviewChanges:
-            observePreviews(in: viewModel)
-
         case .searchAnnotations(let term):
             search(for: term, in: viewModel)
 
@@ -171,9 +168,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         case .mergeSelectedAnnotations:
             guard viewModel.state.sidebarEditingEnabled else { return }
             mergeSelectedAnnotations(in: viewModel)
-
-        case .requestPreviews(let keys, let notify):
-            loadPreviews(for: keys, notify: notify, in: viewModel)
 
         case .parseAndCacheText(let key, let text, let font):
             updateTextCache(key: key, text: text, font: font, viewModel: viewModel, notifyListeners: false)
@@ -304,7 +298,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     }
 
     private func updateAnnotations(to appearance: Appearance, in viewModel: ViewModel<PDFReaderActionHandler>) {
-        viewModel.state.previewCache.removeAllObjects()
         for (_, annotations) in viewModel.state.document.allAnnotations(of: AnnotationsConfig.supported) {
             for annotation in annotations {
                 let baseColor = annotation.baseColor
@@ -1097,72 +1090,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             var updatedAnnotationKeys = state.updatedAnnotationKeys ?? []
             updatedAnnotationKeys.append(key)
             state.updatedAnnotationKeys = updatedAnnotationKeys
-        }
-    }
-
-    // MARK: - Annotation previews
-
-    /// Starts observing preview controller. If new preview is stored, it will be cached immediately.
-    /// - parameter viewModel: ViewModel.
-    private func observePreviews(in viewModel: ViewModel<PDFReaderActionHandler>) {
-        annotationPreviewController
-            .observable
-            .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { [weak self, weak viewModel] annotationKey, parentKey, image in
-                guard let self, let viewModel, viewModel.state.key == parentKey else { return }
-                update(viewModel: viewModel) { state in
-                    state.previewCache.setObject(image, forKey: (annotationKey as NSString))
-                    state.loadedPreviewImageAnnotationKeys = [annotationKey]
-                }
-            })
-            .disposed(by: disposeBag)
-    }
-
-    /// Loads previews for given keys and notifies view about them if needed.
-    /// - parameter keys: Keys that should load previews.
-    /// - parameter notify: If `true`, index paths for loaded images will be found and view will be notified about changes.
-    ///                     If `false`, images are loaded and no notification is sent.
-    /// - parameter viewModel: ViewModel.
-    private func loadPreviews(for keys: [String], notify: Bool, in viewModel: ViewModel<PDFReaderActionHandler>) {
-        guard !keys.isEmpty else { return }
-
-        let group = DispatchGroup()
-        let libraryId = viewModel.state.library.identifier
-
-        var loadedKeys: Set<String> = []
-
-        for key in keys {
-            let nsKey = key as NSString
-            guard viewModel.state.previewCache.object(forKey: nsKey) == nil else { continue }
-
-            group.enter()
-            annotationPreviewController.preview(for: key, parentKey: viewModel.state.key, libraryId: libraryId, appearance: appearance) { [weak self, weak viewModel] image in
-                if let image {
-                    viewModel?.state.previewCache.setObject(image, forKey: nsKey)
-                    loadedKeys.insert(key)
-                } else if let self, let viewModel {
-                    generatePreviewIfPossible(for: key, notify: notify, in: viewModel, handler: self)
-                }
-                group.leave()
-            }
-        }
-
-        guard notify else { return }
-
-        group.notify(queue: .main) { [weak self, weak viewModel] in
-            guard !loadedKeys.isEmpty, let self, let viewModel else { return }
-            update(viewModel: viewModel) { state in
-                state.loadedPreviewImageAnnotationKeys = loadedKeys
-            }
-        }
-
-        func generatePreviewIfPossible(for key: String, notify: Bool, in viewModel: ViewModel<PDFReaderActionHandler>, handler: PDFReaderActionHandler) {
-            guard let annotation = handler.annotationProvider?.loadedAnnotation(with: key), annotation.shouldRenderPreview else { return }
-            if notify {
-                handler.annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key, libraryId: libraryId, appearance: handler.appearance)
-            } else {
-                handler.annotationPreviewController.store(annotations: [annotation], parentKey: viewModel.state.key, libraryId: libraryId, appearance: handler.appearance)
-            }
         }
     }
 
