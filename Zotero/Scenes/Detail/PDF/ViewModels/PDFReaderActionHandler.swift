@@ -220,6 +220,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             userInterfaceChanged(interfaceStyle: interfaceStyle, in: viewModel)
 
         case .updateAnnotationPreviews:
+            appearance = .from(appearanceMode: viewModel.state.settings.appearanceMode, interfaceStyle: viewModel.state.interfaceStyle)
             storeAnnotationPreviewsIfNeeded(appearance: appearance, in: viewModel)
 
         case .setToolOptions(let hex, let size, let tool):
