@@ -1157,22 +1157,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
 
         func generatePreviewIfPossible(for key: String, notify: Bool, in viewModel: ViewModel<PDFReaderActionHandler>, handler: PDFReaderActionHandler) {
-            let databaseKey = PDFReaderState.AnnotationKey(key: key, type: .database)
-            let documentKey = PDFReaderState.AnnotationKey(key: key, type: .document)
-            guard let annotation = viewModel.state.annotation(for: databaseKey) ?? viewModel.state.annotation(for: documentKey) else { return }
-
-            let pageIndex = PageIndex(annotation.page)
-            if let annotationProvider = handler.annotationProvider, !annotationProvider.hasLoadedAnnotationsForPage(at: pageIndex) {
-                // Keep preview generation aligned with provider-lazy loading.
-                // Off-page annotations can get their previews when the page is loaded later.
-                return
-            }
-            guard let pdfAnnotation = viewModel.state.document.annotation(at: pageIndex, with: key), pdfAnnotation.shouldRenderPreview else { return }
-
+            guard let annotation = handler.annotationProvider?.loadedAnnotation(with: key), annotation.shouldRenderPreview else { return }
             if notify {
-                handler.annotationPreviewController.store(for: pdfAnnotation, parentKey: viewModel.state.key, libraryId: libraryId, appearance: handler.appearance)
+                handler.annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key, libraryId: libraryId, appearance: handler.appearance)
             } else {
-                handler.annotationPreviewController.store(annotations: [pdfAnnotation], parentKey: viewModel.state.key, libraryId: libraryId, appearance: handler.appearance)
+                handler.annotationPreviewController.store(annotations: [annotation], parentKey: viewModel.state.key, libraryId: libraryId, appearance: handler.appearance)
             }
         }
     }
