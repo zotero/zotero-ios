@@ -57,6 +57,8 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
     private var loadedFilePageIndices = Set<PageIndex>()
     private var loadedDocumentCachePageIndices = Set<PageIndex>()
     private var loadedDatabaseCachePageIndices = Set<PageIndex>()
+    private var loadedAnnotationsByPageByKey: [PageIndex: [String: Annotation]] = [:]
+    private var loadedAnnotationsByKey: [String: Annotation] = [:]
 
     init(
         documentProvider: PDFDocumentProvider,
@@ -202,7 +204,7 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
                         annotationsToAdd.append(annotation)
                     }
                     if !annotationsToAdd.isEmpty {
-                        _ = super.add(annotationsToAdd, options: [.suppressNotifications: true])
+                        _ = add(annotationsToAdd, options: [.suppressNotifications: true])
                     }
                 }
                 loadedDocumentCachePageIndices.insert(pageIndex)
@@ -250,18 +252,44 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
                 annotation.source = .database
             }
             if !annotationsToAdd.isEmpty {
-                _ = super.add(annotationsToAdd, options: [.suppressNotifications: true])
+                _ = add(annotationsToAdd, options: [.suppressNotifications: true])
             }
             loadedDatabaseCachePageIndices.insert(pageIndex)
         }
     }
 
     override func add(_ annotations: [Annotation], options: [AnnotationManager.ChangeBehaviorKey: Any]? = nil) -> [Annotation]? {
-        return super.add(annotations, options: options)
+        return performWriteAndWait {
+            let addedAnnotations = super.add(annotations, options: options)
+            for annotation in addedAnnotations ?? [] {
+                index(annotation: annotation)
+            }
+            return addedAnnotations
+
+            func index(annotation: Annotation) {
+                let key = annotation.key ?? annotation.uuid
+                let pageIndex = annotation.pageIndex
+                loadedAnnotationsByPageByKey[pageIndex, default: [:]][key] = annotation
+                loadedAnnotationsByKey[key] = annotation
+            }
+        }
     }
 
     override func remove(_ annotations: [Annotation], options: [AnnotationManager.ChangeBehaviorKey: Any]? = nil) -> [Annotation]? {
-        return super.remove(annotations, options: options)
+        return performWriteAndWait {
+            let removedAnnotations = super.remove(annotations, options: options)
+            for annotation in removedAnnotations ?? [] {
+                deindex(annotation: annotation)
+            }
+            return removedAnnotations
+
+            func deindex(annotation: Annotation) {
+                let key = annotation.key ?? annotation.uuid
+                let pageIndex = annotation.pageIndex
+                loadedAnnotationsByPageByKey[pageIndex]?[key] = nil
+                loadedAnnotationsByKey[key] = nil
+            }
+        }
     }
 
     // MARK: - Public Actions
@@ -301,6 +329,18 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
             case .group:
                 return annotation.createdByUserId != userId
             }
+        }
+    }
+
+    func loadedAnnotation(with key: String) -> Annotation? {
+        return performRead {
+            loadedAnnotationsByKey[key]
+        }
+    }
+
+    func loadedAnnotation(at pageIndex: PageIndex, with key: String) -> Annotation? {
+        return performRead {
+            loadedAnnotationsByPageByKey[pageIndex]?[key]
         }
     }
 
