@@ -476,9 +476,6 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
 // MARK: - VoiceButtonView
 
 private final class VoiceButtonView: UIControl {
-    /// Threshold in seconds below which the remaining time indicator turns red
-    private static let warningThresholdSeconds: TimeInterval = 180
-    
     private let titleLabel: UILabel = {
         let label = UILabel()
         label.font = .preferredFont(forTextStyle: .subheadline)
@@ -531,7 +528,7 @@ private final class VoiceButtonView: UIControl {
             timeLabel.isHidden = false
             timeLabel.text = RemainingTimeFormatter.formatted(time)
             
-            let timeColor: UIColor = time < Self.warningThresholdSeconds ? .systemRed : .secondaryLabel
+            let timeColor: UIColor = RemainingTimeFormatter.isWarning(time) ? .systemRed : .secondaryLabel
             clockImageView.tintColor = timeColor
             timeLabel.textColor = timeColor
         }
