@@ -55,14 +55,6 @@ struct SpeechVoicePickerView: View {
     /// Threshold in seconds below which the remaining time indicator turns red
     private static let warningThresholdSeconds: TimeInterval = 180
     
-    private static let timeFormatter: DateComponentsFormatter = {
-        let formatter = DateComponentsFormatter()
-        formatter.allowedUnits = [.hour, .minute]
-        formatter.unitsStyle = .abbreviated
-        formatter.zeroFormattingBehavior = .dropLeading
-        return formatter
-    }()
-    
     private unowned let remoteVoicesController: RemoteVoicesController
     private let detectedLanguage: String
     private let dismiss: (AccessibilityPopupVoiceChange) -> Void
@@ -86,11 +78,10 @@ struct SpeechVoicePickerView: View {
     }
 
     /// Calculates remaining time based on remaining credits and the selected voice's credits per minute.
-    /// Returns nil if type is local, no remote voice is selected, or voice is standard tier (unlimited).
+    /// Returns nil if type is local, no remote voice is selected, voice is standard tier (unlimited), or remaining time exceeds 90 days.
     private var remainingTime: TimeInterval? {
         guard type.isRemote,
-              case .remote(let voice) = selectedVoice,
-              voice.tier != .standard
+              case .remote(let voice) = selectedVoice
         else {
             return nil
         }
@@ -104,7 +95,10 @@ struct SpeechVoicePickerView: View {
         }
         guard let credits else { return nil }
         // creditsPerMinute means credits consumed per minute of audio, so remaining time in seconds = (credits / creditsPerMinute) * 60
-        return (TimeInterval(credits) / TimeInterval(voice.creditsPerMinute)) * 60
+        let time = (TimeInterval(credits) / TimeInterval(voice.creditsPerMinute)) * 60
+        // Don't display if remaining time exceeds 90 days
+        guard RemainingTimeFormatter.shouldDisplay(time) else { return nil }
+        return time
     }
 
     init(
@@ -141,7 +135,7 @@ struct SpeechVoicePickerView: View {
             List {
                 TypeSection(type: $type)
                 if let remainingTime {
-                    RemainingTimeSection(remainingTime: remainingTime, warningThreshold: Self.warningThresholdSeconds, formatter: Self.timeFormatter)
+                    RemainingTimeSection(remainingTime: remainingTime, warningThreshold: Self.warningThresholdSeconds)
                 }
                 if canShowLanguage {
                     LanguageSection(language: $language, detectedLanguage: detectedLanguage, navigationPath: $navigationPath)
@@ -438,18 +432,6 @@ fileprivate struct LanguageSection: View {
 fileprivate struct RemainingTimeSection: View {
     let remainingTime: TimeInterval
     let warningThreshold: TimeInterval
-    let formatter: DateComponentsFormatter
-    
-    private var formattedTime: String {
-        let roundedUpSeconds = ceil(remainingTime / 60) * 60
-        if roundedUpSeconds == 0 {
-            return "0m"
-        } else if roundedUpSeconds < 60 {
-            return "<1m"
-        } else {
-            return formatter.string(from: roundedUpSeconds) ?? ""
-        }
-    }
     
     private var timeColor: Color {
         remainingTime < warningThreshold ? .red : .secondary
@@ -460,7 +442,7 @@ fileprivate struct RemainingTimeSection: View {
             HStack {
                 Text("Remaining Time")
                 Spacer()
-                Text(formattedTime)
+                Text(RemainingTimeFormatter.formatted(remainingTime))
                     .foregroundColor(timeColor)
             }
         }
