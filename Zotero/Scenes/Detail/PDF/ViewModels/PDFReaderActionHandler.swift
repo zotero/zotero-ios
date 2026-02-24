@@ -216,10 +216,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         case .userInterfaceStyleChanged(let interfaceStyle):
             userInterfaceChanged(interfaceStyle: interfaceStyle, in: viewModel)
 
-        case .updateAnnotationPreviews:
-            appearance = .from(appearanceMode: viewModel.state.settings.appearanceMode, interfaceStyle: viewModel.state.interfaceStyle)
-            storeAnnotationPreviewsIfNeeded(appearance: appearance, in: viewModel)
-
         case .setToolOptions(let hex, let size, let tool):
             setToolOptions(hex: hex, size: size, tool: tool, in: viewModel)
 
@@ -311,18 +307,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 if let blendMode {
                     annotation.blendMode = blendMode
                 }
-            }
-        }
-        storeAnnotationPreviewsIfNeeded(appearance: appearance, in: viewModel)
-    }
-
-    private func storeAnnotationPreviewsIfNeeded(appearance: Appearance, in viewModel: ViewModel<PDFReaderActionHandler>) {
-        let libraryId = viewModel.state.library.identifier
-        // Load annotation previews if needed.
-        for (_, annotations) in viewModel.state.document.allAnnotations(of: [.square, .ink, .freeText]) {
-            for annotation in annotations {
-                guard !annotationPreviewController.hasPreview(for: annotation.previewId, parentKey: viewModel.state.key, libraryId: libraryId, appearance: appearance) else { continue }
-                annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key, libraryId: libraryId, appearance: appearance)
             }
         }
     }

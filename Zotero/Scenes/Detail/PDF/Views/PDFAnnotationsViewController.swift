@@ -95,7 +95,16 @@ final class PDFAnnotationsViewController: UIViewController {
                 self?.update(state: state)
             })
             .disposed(by: disposeBag)
+
+        NotificationCenter.default.rx
+            .notification(UIApplication.didBecomeActiveNotification)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] _ in
+                self?.refreshVisibleAndPrefetchPreviews()
+            })
+            .disposed(by: disposeBag)
         previewHandler.startObserving()
+        refreshVisibleAndPrefetchPreviews()
     }
 
     deinit {
@@ -205,6 +214,7 @@ final class PDFAnnotationsViewController: UIViewController {
     private func update(state: PDFReaderState) {
         if state.changes.contains(.appearance) {
             previewHandler.setAppearance(.from(appearanceMode: state.settings.appearanceMode, interfaceStyle: state.interfaceStyle))
+            refreshVisibleAndPrefetchPreviews()
         }
         if state.changes.contains(.annotations) {
             tableView.isHidden = (state.snapshotKeys ?? state.sortedKeys).isEmpty
@@ -298,6 +308,29 @@ final class PDFAnnotationsViewController: UIViewController {
         for cell in cells {
             cell.updatePreview(image: previewHandler.image(for: cell.key))
         }
+    }
+
+    private func refreshVisibleAndPrefetchPreviews() {
+        guard isViewLoaded, view.window != nil, !view.isHidden, parentDelegate?.isSidebarVisible ?? false else { return }
+        let visibleIndexPaths = tableView.indexPathsForVisibleRows ?? []
+        guard !visibleIndexPaths.isEmpty else { return }
+        requestPreviews(at: visibleIndexPaths, notify: true)
+    }
+
+    private func requestPreviews(at indexPaths: [IndexPath], notify: Bool) {
+        let keys = indexPaths.compactMap({ dataSource.itemIdentifier(for: $0) })
+            .filter({ key in
+                guard let annotation = viewModel.state.annotation(for: key) else { return false }
+                switch annotation.type {
+                case .image, .ink, .freeText:
+                    return true
+
+                case .note, .highlight, .underline:
+                    return false
+                }
+            })
+            .map({ $0.key })
+        previewHandler.requestPreviews(keys: keys, notify: notify)
     }
 
     /// Scrolls to selected cell if it's not visible.
@@ -616,19 +649,7 @@ final class PDFAnnotationsViewController: UIViewController {
 
 extension PDFAnnotationsViewController: UITableViewDelegate, UITableViewDataSourcePrefetching {
     func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath]) {
-        let keys = indexPaths.compactMap({ dataSource.itemIdentifier(for: $0) })
-            .filter({ key in
-                guard let annotation = viewModel.state.annotation(for: key) else { return false }
-                switch annotation.type {
-                case .image, .ink, .freeText:
-                    return true
-
-                case .note, .highlight, .underline:
-                    return false
-                }
-            })
-            .map({ $0.key })
-        previewHandler.requestPreviews(keys: keys, notify: false)
+        requestPreviews(at: indexPaths, notify: false)
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
