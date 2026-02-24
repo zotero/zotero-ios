@@ -13,7 +13,6 @@ import PSPDFKitUI
 import RealmSwift
 
 enum PDFReaderAction {
-    case startObservingAnnotationPreviewChanges
     case prepareDocumentProvider
     case loadDocumentData
     case searchAnnotations(String)
@@ -25,7 +24,6 @@ enum PDFReaderAction {
     case removeAnnotation(PDFReaderState.AnnotationKey)
     case removeSelectedAnnotations
     case mergeSelectedAnnotations
-    case requestPreviews(keys: [String], notify: Bool)
     case setTags(key: String, tags: [Tag])
     case setColor(key: String, color: String)
     case setLineWidth(key: String, width: CGFloat)

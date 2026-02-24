@@ -217,7 +217,7 @@ final class PDFDocumentViewController: UIViewController {
             default:
                 type = nil
             }
-            let appearance = Appearance.from(appearanceMode: viewModel.state.settings.appearanceMode, interfaceStyle: viewModel.state.interfaceStyle)
+            let appearance = viewModel.handler.appearance
             let (_color, _, blendMode) = AnnotationColorGenerator.color(from: color, type: type, appearance: appearance)
             stateManager.drawColor = _color
             stateManager.blendMode = blendMode ?? .normal

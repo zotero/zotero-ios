@@ -132,7 +132,6 @@ struct PDFReaderState: ViewModelState {
     let parentKey: String?
     let document: PSPDFKit.Document
     let title: String?
-    let previewCache: NSCache<NSString, UIImage>
     let userId: Int
     let username: String
 
@@ -186,8 +185,6 @@ struct PDFReaderState: ViewModelState {
     var focusSidebarKey: AnnotationKey?
     /// Annotation keys in sidebar that need to reload (for example cell height)
     var updatedAnnotationKeys: [AnnotationKey]?
-    /// Annotations that loaded their preview images and need to show them
-    var loadedPreviewImageAnnotationKeys: Set<String>?
     /// Page that should be shown initially, instead of stored page
     var initialPage: Int?
     /// Rects that should be highlighted initially, used by note editor to highlight original annotation position
@@ -219,7 +216,6 @@ struct PDFReaderState: ViewModelState {
         document.overrideClass(PSPDFKit.UnderlineAnnotation.self, with: UnderlineAnnotation.self)
         document.overrideClass(PSPDFKitUI.FreeTextAnnotationView.self, with: FreeTextAnnotationView.self)
         self.title = title
-        self.previewCache = NSCache()
         self.userId = userId
         self.username = username
         self.sortedKeys = []
@@ -255,8 +251,6 @@ struct PDFReaderState: ViewModelState {
         self.deletionEnabled = false
         self.mergingEnabled = false
 
-        self.previewCache.totalCostLimit = 1024 * 1024 * 10 // Cache object limit - 10 MB
-
         switch libraryId {
         case .custom:
             library = Library(identifier: libraryId, name: L10n.Libraries.myLibrary, metadataEditable: true, filesEditable: true)
@@ -282,7 +276,6 @@ struct PDFReaderState: ViewModelState {
         self.focusDocumentLocation = nil
         self.focusSidebarKey = nil
         self.updatedAnnotationKeys = nil
-        self.loadedPreviewImageAnnotationKeys = nil
         self.error = nil
         self.pdfNotification = nil
         self.changedColorForTool = nil
