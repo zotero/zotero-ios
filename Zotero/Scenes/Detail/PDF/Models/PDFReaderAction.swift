@@ -39,7 +39,6 @@ enum PDFReaderAction {
         higlightFont: UIFont
     )
     case userInterfaceStyleChanged(UIUserInterfaceStyle)
-    case updateAnnotationPreviews
     case setToolOptions(color: String?, size: CGFloat?, tool: PSPDFKit.Annotation.Tool)
     case createNote(pageIndex: PageIndex, origin: CGPoint)
     case createImage(pageIndex: PageIndex, origin: CGPoint)

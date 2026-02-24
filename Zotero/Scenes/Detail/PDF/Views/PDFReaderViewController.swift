@@ -340,7 +340,6 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
                     if let previousTraitCollection {
                         updateUserInterfaceStyleIfNeeded(previousTraitCollection: previousTraitCollection)
                     }
-                    viewModel.process(action: .updateAnnotationPreviews)
                     documentController?.didBecomeActive()
                 })
                 .disposed(by: disposeBag)
