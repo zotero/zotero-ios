@@ -157,6 +157,10 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
         speechManager.set(voice: change.voice, voiceLanguage: change.voiceLanguage, preferredLanguage: change.preferredLanguage)
     }
 
+    func set(initialVoice voice: SpeechVoice, language: String) {
+        speechManager.set(voice: voice, voiceLanguage: language, preferredLanguage: nil)
+    }
+
     private func reloadSpeechButton(isSelected: Bool) {
         guard let index = viewController.navigationItem.leftBarButtonItems?.firstIndex(where: { $0.tag == navbarButtonTag }) else { return }
         (viewController.navigationItem.leftBarButtonItems?[index].customView as? CheckboxButton)?.isSelected = isSelected
