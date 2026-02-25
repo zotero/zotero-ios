@@ -87,7 +87,7 @@ struct ReadAloudOnboardingView: View {
                 
                 // Segmented control for tier selection
                 Picker("", selection: $selectedTier) {
-                    ForEach(VoiceTier.allCases, id: \.self) { tier in
+                    ForEach([VoiceTier.standard, VoiceTier.premium, VoiceTier.local], id: \.self) { tier in
                         Text(tier.title).tag(tier)
                     }
                 }
