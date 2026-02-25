@@ -12,19 +12,20 @@ import NaturalLanguage
 /// NLLanguageRecognizer only detects base language (e.g., "en"), not regional variations (e.g., "en-US").
 /// This utility adds variation detection using device locale fallback and prominent variation defaults.
 enum LanguageDetector {
-    /// Default/prominent variations for languages that have multiple regional variants.
-    /// These are commonly used variations that serve as reasonable defaults.
-    private static let prominentVariations: [String: String] = [
-        "en": "en-US",
-        "es": "es-ES",
-        "pt": "pt-BR",
-        "zh": "zh-CN",
-        "fr": "fr-FR",
-        "de": "de-DE",
-        "ar": "ar-SA",
-        "nl": "nl-NL"
-    ]
-    
+    /// Returns the canonical variation for a base language using CLDR likely subtags.
+    /// e.g., "en" -> "en-US", "pt" -> "pt-BR", "zh" -> "zh-CN"
+    static func canonicalVariation(for baseLanguage: String) -> String? {
+        let language = Locale.Language(identifier: baseLanguage)
+        let maximal = Locale.Language(identifier: language.maximalIdentifier)
+        guard let region = maximal.region else { return nil }
+        return "\(baseLanguage)-\(region.identifier)"
+    }
+
+    /// Device locale formatted with dashes (e.g. "en-US").
+    static var deviceLocale: String {
+        Locale.current.identifier.replacingOccurrences(of: "_", with: "-")
+    }
+
     /// Detects language with variation from the given text.
     /// - Parameter text: The text to analyze
     /// - Returns: A locale string with variation (e.g., "en-US")
@@ -57,15 +58,15 @@ enum LanguageDetector {
         }
         
         // Check if device locale matches the base language - if so, use device's variation
-        let deviceLocale = Locale.current.identifier.replacingOccurrences(of: "_", with: "-")
+        let deviceLocale = self.deviceLocale
         let deviceBaseLanguage = String(deviceLocale.prefix(2))
         if deviceBaseLanguage == baseLanguage, availableVariations.contains(deviceLocale) {
             return deviceLocale
         }
-        
-        // Use prominent variation if available
-        if let prominentVariation = prominentVariations[baseLanguage], availableVariations.contains(prominentVariation) {
-            return prominentVariation
+
+        // Use canonical variation if available
+        if let canonicalVariation = canonicalVariation(for: baseLanguage), availableVariations.contains(canonicalVariation) {
+            return canonicalVariation
         }
         
         // Fall back to first available variation
