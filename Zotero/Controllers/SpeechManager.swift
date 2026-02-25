@@ -793,19 +793,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     /// Returns the voice and language if successful, nil if no standard voice is available.
     func standardVoice(for language: String) -> RemoteVoice? {
         guard let allVoices = allAvailableVoices else { return nil }
-        // Find a standard voice for the current language
-        let standardVoices = allVoices.filter { $0.tier == .standard }
-        guard !standardVoices.isEmpty else { return nil }
-        // Try to find a voice matching the current language
-        if let matchingVoice = standardVoices.first(where: { $0.locales.contains(language) }) {
-            return matchingVoice
-        }
-        // Try base language match
-        let baseLanguage = String(language.prefix(2))
-        if let baseMatch = standardVoices.first(where: { $0.locales.contains(where: { $0.hasPrefix(baseLanguage) }) }) {
-            return baseMatch
-        }
-        return standardVoices.first
+        return VoiceFinder.findRemoteVoice(for: language, tier: .standard, from: allVoices)
     }
 
     func speak(text: String, startIndex: Int, shouldDetectVoice: Bool) {
