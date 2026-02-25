@@ -6,7 +6,6 @@
 //  Copyright © 2026 Corporation for Digital Scholarship. All rights reserved.
 //
 
-import AVFAudio
 import NaturalLanguage
 
 /// Detects language with regional variation from text.
@@ -38,13 +37,14 @@ enum LanguageDetector {
     
     /// Resolves a base language to a specific variation.
     /// Uses device locale if it matches the base language, otherwise falls back to prominent variations,
-    /// then to the first available system voice locale for that language.
+    /// then to the first available system locale for that language.
     /// - Parameter baseLanguage: The base language code (e.g., "en")
     /// - Returns: A locale string with variation (e.g., "en-US")
     static func resolveVariation(for baseLanguage: String) -> String {
-        // Get all available variations for this language from system voices
-        let systemLocales = AVSpeechSynthesisVoice.speechVoices().map { $0.language }
-        let availableVariations = systemLocales.filter { $0.hasPrefix(baseLanguage) }
+        // Get all available variations for this language from known system locales
+        let availableVariations = Locale.availableIdentifiers
+            .map { $0.replacingOccurrences(of: "_", with: "-") }
+            .filter { $0.hasPrefix(baseLanguage + "-") }
         
         // If no variations available, fall back to en-US
         guard !availableVariations.isEmpty else {
