@@ -355,18 +355,6 @@ fileprivate struct TypeSection: View {
     var body: some View {
         Section {
             HStack {
-                Text("Premium")
-                Spacer()
-                if case .premium = type {
-                    Image(systemName: "checkmark").foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUIColor)
-                }
-            }
-            .contentShape(Rectangle())
-            .onTapGesture {
-                type = .premium
-            }
-            
-            HStack {
                 Text("Standard")
                 Spacer()
                 if case .standard = type {
@@ -376,6 +364,18 @@ fileprivate struct TypeSection: View {
             .contentShape(Rectangle())
             .onTapGesture {
                 type = .standard
+            }
+            
+            HStack {
+                Text("Premium")
+                Spacer()
+                if case .premium = type {
+                    Image(systemName: "checkmark").foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUIColor)
+                }
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                type = .premium
             }
             
             HStack {
