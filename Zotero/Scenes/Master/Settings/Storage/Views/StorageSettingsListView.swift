@@ -15,6 +15,24 @@ struct StorageSettingsListView: View {
 
     var body: some View {
         Form {
+            Section(header: Text("Attachment storage")) {
+                Picker("Attachment storage", selection: Binding(get: {
+                    self.viewModel.state.storagePreference
+                }, set: { newValue in
+                    self.viewModel.process(action: .setStoragePreference(newValue))
+                })) {
+                    Text("On this device").tag(AttachmentStoragePreference.appGroup)
+                    Text("iCloud").tag(AttachmentStoragePreference.iCloud).disabled(!self.viewModel.state.iCloudAvailable)
+                }
+                .pickerStyle(SegmentedPickerStyle())
+
+                if !self.viewModel.state.iCloudAvailable {
+                    Text("iCloud is unavailable for this account/device.")
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                }
+            }
+
             Section {
                 ForEach(self.viewModel.state.libraries) { library in
                     StorageSettingsRow(title: library.name, data: self.viewModel.state.storageData[library.identifier], deleteAction: {

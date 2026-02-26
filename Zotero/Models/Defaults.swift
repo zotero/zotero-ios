@@ -8,6 +8,11 @@
 
 import Foundation
 
+enum AttachmentStoragePreference: String, Codable, Hashable {
+    case appGroup
+    case iCloud
+}
+
 final class Defaults {
     static let shared = Defaults()
 
@@ -41,6 +46,9 @@ final class Defaults {
 
     @OptionalUserDefault(key: "webDavUrl")
     var webDavUrl: String?
+
+    @CodableUserDefault(key: "AttachmentStoragePreference", defaultValue: .appGroup, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
+    var attachmentStoragePreference: AttachmentStoragePreference
 
     // MARK: - Settings
 

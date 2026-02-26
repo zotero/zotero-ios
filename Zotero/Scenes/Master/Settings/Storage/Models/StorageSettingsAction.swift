@@ -12,4 +12,5 @@ enum StorageSettingsAction {
     case loadData
     case deleteAll
     case deleteInLibrary(LibraryIdentifier)
+    case setStoragePreference(AttachmentStoragePreference)
 }
