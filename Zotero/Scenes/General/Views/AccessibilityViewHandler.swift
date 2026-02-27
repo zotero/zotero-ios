@@ -154,11 +154,11 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
 
     private func processVoiceChange(_ change: AccessibilityPopupVoiceChange) {
         try? dbStorage.perform(request: SetSpeechLanguageDbRequest(key: key, libraryId: libraryId, language: change.preferredLanguage), on: .main)
-        speechManager.set(voice: change.voice, voiceLanguage: change.voiceLanguage, preferredLanguage: change.preferredLanguage)
+        speechManager.set(voice: change.voice, preferredLanguage: change.preferredLanguage)
     }
 
-    func set(initialVoice voice: SpeechVoice, language: String) {
-        speechManager.set(voice: voice, voiceLanguage: language, preferredLanguage: nil)
+    func set(initialVoice voice: SpeechVoice) {
+        speechManager.set(voice: voice, preferredLanguage: nil)
     }
 
     private func reloadSpeechButton(isSelected: Bool) {
