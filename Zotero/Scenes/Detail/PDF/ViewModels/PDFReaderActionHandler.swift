@@ -294,21 +294,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     }
 
     private func updateAnnotations(to appearance: Appearance, in viewModel: ViewModel<PDFReaderActionHandler>) {
-        for (_, annotations) in viewModel.state.document.allAnnotations(of: AnnotationsConfig.supported) {
-            for annotation in annotations {
-                let baseColor = annotation.baseColor
-                let (color, alpha, blendMode) = AnnotationColorGenerator.color(
-                    from: UIColor(hex: baseColor),
-                    type: annotation.type.annotationType,
-                    appearance: appearance
-                )
-                annotation.color = color
-                annotation.alpha = alpha
-                if let blendMode {
-                    annotation.blendMode = blendMode
-                }
-            }
-        }
+        annotationProvider?.update(appearance: appearance)
     }
 
     // MARK: - Reader actions
@@ -1726,7 +1712,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 username: viewModel.state.username,
                 documentPageCount: viewModel.state.document.pageCount,
                 metadataEditable: viewModel.state.library.metadataEditable,
-                boundingBoxConverter: viewModel.state.document
+                boundingBoxConverter: viewModel.state.document,
+                appearance: appearance
             )
             provider.pdfReaderAnnotationProviderDelegate = self
             provider.loadDocumentAnnotationsDatabaseCache(documentMD5: documentMD5)
