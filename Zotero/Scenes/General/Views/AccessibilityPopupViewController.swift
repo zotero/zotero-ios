@@ -17,7 +17,6 @@ import CocoaLumberjackSwift
 
 struct AccessibilityPopupVoiceChange {
     let voice: SpeechVoice
-    let voiceLanguage: String
     let preferredLanguage: String?
 }
 
