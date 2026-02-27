@@ -8,9 +8,7 @@
 
 import Foundation
 
-struct VoicesRequest: ApiResponseRequest {
-    typealias Response = [RemoteVoice]
-
+struct VoicesRequest: ApiRequest {
     var endpoint: ApiEndpoint {
         return .zotero(path: "tts/voices")
     }
@@ -24,7 +22,7 @@ struct VoicesRequest: ApiResponseRequest {
     }
 
     var parameters: [String: Any]? {
-        return nil
+        return ["version": 1]
     }
 
     var headers: [String: String]? {
