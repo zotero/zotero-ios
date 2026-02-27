@@ -255,11 +255,6 @@ extension AnnotationPreviewController {
         case .light:
             break
         }
-        // Document render options stack with the request options, so we need to make certain that the default values are used.
-        data.document.updateRenderOptions(for: .page) { options in
-            options.invertRenderColor = false
-            options.filters = []
-        }
 
         let request = MutableRenderRequest(document: data.document)
         request.pageIndex = data.pageIndex
