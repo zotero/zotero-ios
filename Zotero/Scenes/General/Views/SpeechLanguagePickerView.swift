@@ -10,41 +10,115 @@ import AVFAudio
 import SwiftUI
 
 struct SpeechLanguagePickerView: View {
-    private struct Language: Identifiable {
+    struct LanguageVariation: Identifiable {
         let id: String
         let name: String
     }
+    
+    struct Language: Identifiable {
+        let id: String
+        let name: String
+        let variations: [LanguageVariation]
+    }
 
     private let languages: [Language]
-    @Binding private var selectedLanguage: String
+    private let detectedLanguage: String
+    @Binding private var selectedLanguage: SpeechVoicePickerView.Language
     @Binding private var navigationPath: NavigationPath
+    @State private var variations: [LanguageVariation]
+    @State private var isAutoEnabled: Bool
+    
+    private var detectedLanguageName: String {
+        Locale.current.localizedString(forIdentifier: detectedLanguage) ?? detectedLanguage
+    }
 
-    init(selectedLanguage: Binding<String>, navigationPath: Binding<NavigationPath>) {
+    init(
+        selectedLanguage: Binding<SpeechVoicePickerView.Language>,
+        detectedLanguage: String,
+        languages: [Language],
+        navigationPath: Binding<NavigationPath>
+    ) {
         _selectedLanguage = selectedLanguage
+        self.detectedLanguage = detectedLanguage
+        self.languages = languages
         _navigationPath = navigationPath
-        let voices = AVSpeechSynthesisVoice.speechVoices()
-        languages = Locale.availableIdentifiers
-            .filter({ languageId in !languageId.contains("_") && voices.contains(where: { $0.language.contains(languageId) }) })
-            .map({ Language(id: $0, name: Locale.current.localizedString(forIdentifier: $0) ?? $0) })
-            .sorted(by: { $0.name.caseInsensitiveCompare($1.name) == .orderedAscending })
+        
+        let initialVariations: [LanguageVariation]
+        if case .language(let code) = selectedLanguage.wrappedValue {
+            let baseCode = String(code.prefix(2))
+            initialVariations = languages.first(where: { $0.id == baseCode })?.variations ?? []
+        } else {
+            initialVariations = []
+        }
+        _variations = State(initialValue: initialVariations)
+        _isAutoEnabled = State(initialValue: selectedLanguage.wrappedValue == .auto)
+    }
+    
+    private var selectedBaseLanguage: String? {
+        guard case .language(let code) = selectedLanguage else { return nil }
+        return String(code.prefix(2))
     }
 
     var body: some View {
         List {
             Section {
-                ForEach(languages) { language in
-                    HStack {
-                        Text(language.name)
-                        Spacer()
-                        if selectedLanguage == language.id {
-                            Image(systemName: "checkmark").foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUIColor)
+                Toggle("\(L10n.Accessibility.Speech.automatic) - \(detectedLanguageName)", isOn: $isAutoEnabled)
+                    .tint(Asset.Colors.zoteroBlueWithDarkMode.swiftUIColor)
+            }
+            
+            if !isAutoEnabled {
+                if variations.count > 1 {
+                    Section(header: Text("VARIATION")) {
+                        ForEach(variations) { variation in
+                            HStack {
+                                Text(variation.name)
+                                Spacer()
+                                if case .language(let code) = selectedLanguage, code == variation.id {
+                                    Image(systemName: "checkmark").foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUIColor)
+                                }
+                            }
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                selectedLanguage = .language(variation.id)
+                            }
                         }
                     }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        selectedLanguage = language.id
-                        navigationPath.removeLast()
+                }
+                
+                Section(header: Text("LANGUAGE")) {
+                    ForEach(languages) { language in
+                        HStack {
+                            Text(language.name)
+                            Spacer()
+                            if selectedBaseLanguage == language.id {
+                                Image(systemName: "checkmark").foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUIColor)
+                            }
+                        }
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            variations = language.variations
+                            if let firstVariation = language.variations.first {
+                                selectedLanguage = .language(firstVariation.id)
+                            } else {
+                                selectedLanguage = .language(language.id)
+                            }
+                        }
                     }
+                }
+            }
+        }
+        .navigationTitle("Language")
+        .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: isAutoEnabled) { newValue in
+            if newValue {
+                selectedLanguage = .auto
+                variations = []
+            } else if let firstLanguage = languages.first {
+                variations = firstLanguage.variations
+                if let firstVariation = firstLanguage.variations.first {
+                    selectedLanguage = .language(firstVariation.id)
+                } else {
+                    selectedLanguage = .language(firstLanguage.id)
                 }
             }
         }
@@ -52,5 +126,17 @@ struct SpeechLanguagePickerView: View {
 }
 
 #Preview {
-    SpeechLanguagePickerView(selectedLanguage: .constant("en"), navigationPath: .constant(.init()))
+    SpeechLanguagePickerView(
+        selectedLanguage: .constant(.language("en-US")),
+        detectedLanguage: "en-US",
+        languages: [
+            .init(id: "en", name: "English", variations: [
+                .init(id: "en-US", name: "United States"),
+                .init(id: "en-GB", name: "United Kingdom")
+            ]),
+            .init(id: "cs", name: "Czech", variations: []),
+            .init(id: "de", name: "German", variations: [])
+        ],
+        navigationPath: .constant(.init())
+    )
 }

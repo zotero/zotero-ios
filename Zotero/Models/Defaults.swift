@@ -156,15 +156,25 @@ final class Defaults {
         defaults: .standard
     )
     var htmlEpubAnnotationTools: [AnnotationToolButton]
-    #endif
 
     // MARK: - Speech
-
-    @UserDefault(key: "SpeechDefaultVoiceForLanguage", defaultValue: [:])
-    var defaultVoiceForLanguage: [String: String]
-
-    @UserDefault(key: "SpeechRateModifier", defaultValue: 1)
-    var speechRateModifier: Float
+    
+    @UserDefault(key: "SpeechDefaultLocalVoiceForLanguage", defaultValue: [:])
+    var defaultLocalVoiceForLanguage: [String: String]
+    
+    @CodableUserDefault(key: "SpeechDefaultStandardRemoteVoiceForLanguage", defaultValue: [:], encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
+    var defaultStandardRemoteVoiceForLanguage: [String: RemoteVoice]
+    
+    @CodableUserDefault(key: "SpeechDefaultPremiumRemoteVoiceForLanguage", defaultValue: [:], encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
+    var defaultPremiumRemoteVoiceForLanguage: [String: RemoteVoice]
+    
+    @CodableUserDefault(key: "SpeechRemoteVoiceTier", defaultValue: nil, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
+    var remoteVoiceTier: RemoteVoice.Tier?
+    
+    @UserDefault(key: "DidShowReadAloudOnboarding", defaultValue: false)
+    var didShowReadAloudOnboarding: Bool
+    
+    #endif
 
     // MARK: - Citation / Bibliography Export
 

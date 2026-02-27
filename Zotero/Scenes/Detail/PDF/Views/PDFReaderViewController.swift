@@ -6,6 +6,7 @@
 //  Copyright © 2022 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import NaturalLanguage
 import UIKit
 
 import CocoaLumberjackSwift
@@ -19,6 +20,7 @@ protocol PDFReaderContainerDelegate: AnyObject {
     var documentTopOffset: CGFloat { get }
 
     func showSearch(text: String?)
+    func speak(glyphs: GlyphSequence, pageIndex: PageIndex)
 }
 
 class PDFReaderViewController: UIViewController, ReaderViewController {
@@ -32,6 +34,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
 
     private let viewModel: ViewModel<PDFReaderActionHandler>
     private unowned let pdfWorkerController: PDFWorkerController
+    private unowned let remoteVoicesController: RemoteVoicesController
     private var speechWorker: PDFWorkerController.Worker?
     let disposeBag: DisposeBag
 
@@ -161,6 +164,14 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
                 .init(title: L10n.forward, action: #selector(performForwardAction), input: UIKeyCommand.inputRightArrow, modifierFlags: [.command])
             ]
         }
+        if accessibilityHandler?.speechManager.state.value.isSpeaking == true || accessibilityHandler?.speechManager.state.value.isPaused == true {
+            keyCommands += [
+                .init(title: L10n.Accessibility.Speech.forward, action: #selector(speechForwardByParagraph), input: UIKeyCommand.inputRightArrow, modifierFlags: []),
+                .init(title: L10n.Accessibility.Speech.backward, action: #selector(speechBackwardByParagraph), input: UIKeyCommand.inputLeftArrow, modifierFlags: []),
+                .init(title: L10n.Accessibility.Speech.forward, action: #selector(speechForwardBySentence), input: UIKeyCommand.inputRightArrow, modifierFlags: [.alternate]),
+                .init(title: L10n.Accessibility.Speech.backward, action: #selector(speechBackwardBySentence), input: UIKeyCommand.inputLeftArrow, modifierFlags: [.alternate])
+            ]
+        }
         return keyCommands
     }
 
@@ -179,6 +190,9 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
             case #selector(redo(_:)):
                 return canRedo
 
+            case #selector(speechForwardByParagraph), #selector(speechBackwardByParagraph), #selector(speechForwardBySentence), #selector(speechBackwardBySentence):
+                return true
+
             default:
                 break
             }
@@ -186,9 +200,10 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         return false
     }
 
-    init(viewModel: ViewModel<PDFReaderActionHandler>, pdfWorkerController: PDFWorkerController, compactSize: Bool) {
+    init(viewModel: ViewModel<PDFReaderActionHandler>, pdfWorkerController: PDFWorkerController, remoteVoicesController: RemoteVoicesController, compactSize: Bool) {
         self.viewModel = viewModel
         self.pdfWorkerController = pdfWorkerController
+        self.remoteVoicesController = remoteVoicesController
         isCompactWidth = compactSize
         disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
@@ -215,7 +230,8 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
                 viewController: self,
                 documentContainer: documentController!.view,
                 delegate: self,
-                dbStorage: viewModel.handler.dbStorage
+                dbStorage: viewModel.handler.dbStorage,
+                remoteVoicesController: remoteVoicesController
             )
             accessibilityHandler?.delegate = self
         }
@@ -396,6 +412,23 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        showReadAloudOnboardingIfNeeded()
+    }
+
+    private func showReadAloudOnboardingIfNeeded() {
+        guard FeatureGates.enabled.contains(.speech),
+//              !Defaults.shared.didShowReadAloudOnboarding,
+              !viewModel.state.document.isLocked,
+              let speechManager = accessibilityHandler?.speechManager
+        else { return }
+
+        Defaults.shared.didShowReadAloudOnboarding = true
+        let language = speechManager.language ?? speechManager.detectedLanguage
+        coordinatorDelegate?.showReadAloudOnboarding(language: language, userInterfaceStyle: overrideUserInterfaceStyle) { [weak self] selectedVoice in
+            if let selectedVoice, let self {
+                self.accessibilityHandler?.set(initialVoice: selectedVoice)
+            }
+        }
     }
 
     deinit {
@@ -625,6 +658,36 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         )
     }
 
+    func speak(glyphs: GlyphSequence, pageIndex: PageIndex) {
+        let text = glyphs.text
+        let approximateOffset = documentController?.textOffset(rect: glyphs.boundingBox, page: pageIndex)
+        accessibilityHandler?.speechManager.start(mapStartIndexToPage: { page in
+            return textOffset(for: text, approximateOffset: approximateOffset, in: page) ?? 0
+        })
+        
+        func textOffset(for selectedText: String?, approximateOffset: Int?, in pageText: String) -> Int? {
+            guard let selectedText, let approximateOffset else { return nil }
+            
+            // Use first word for searching to handle whitespace differences between PSPDFKit and PDF Worker
+            let normalizedSelected = selectedText.components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }.joined(separator: " ")
+            guard let firstWord = normalizedSelected.components(separatedBy: " ").first, !firstWord.isEmpty else { return nil }
+            
+            // Find all occurrences
+            var occurrences: [Int] = []
+            var searchRange = pageText.startIndex..<pageText.endIndex
+            while let range = pageText.range(of: firstWord, range: searchRange) {
+                let offset = pageText.distance(from: pageText.startIndex, to: range.lowerBound)
+                occurrences.append(offset)
+                searchRange = range.upperBound..<pageText.endIndex
+            }
+            
+            guard !occurrences.isEmpty else { return nil }
+            
+            // Find the occurrence closest to the approximate offset
+            return occurrences.min(by: { abs($0 - approximateOffset) < abs($1 - approximateOffset) })
+        }
+    }
+
     private func showSettings(sender: UIBarButtonItem) {
         guard let settingsViewModel = coordinatorDelegate?.showSettings(with: viewModel.state.settings, sender: sender) else { return }
         settingsViewModel.stateObservable
@@ -682,6 +745,22 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
 
     @objc private func performForwardAction() {
         documentController?.performForwardAction()
+    }
+
+    @objc private func speechForwardByParagraph() {
+        accessibilityHandler?.speechManager.forward(by: .paragraph)
+    }
+
+    @objc private func speechBackwardByParagraph() {
+        accessibilityHandler?.speechManager.backward(by: .paragraph)
+    }
+
+    @objc private func speechForwardBySentence() {
+        accessibilityHandler?.speechManager.forward(by: .sentence)
+    }
+
+    @objc private func speechBackwardBySentence() {
+        accessibilityHandler?.speechManager.backward(by: .sentence)
     }
 
     @objc private func undo(_ sender: Any?) {
@@ -955,6 +1034,7 @@ extension PDFReaderViewController: PDFDocumentDelegate {
             // Manual page scrolling and page change due to a link, are differentiated by this heuristic.
             // When a link is tapped, a sequence of page index changes event are triggered, with the final ones maintaining the page index.
             intraDocumentNavigationHandler?.pageChanged((event.oldPageIndex == event.pageIndex) ? .link : .manual)
+            accessibilityHandler?.speechManager.stop()
         }
     }
 
@@ -1020,7 +1100,7 @@ extension PDFReaderViewController: IntraDocumentNavigationButtonsHandlerDelegate
 
 extension PDFReaderViewController: ParentWithSidebarController {}
 
-extension PDFReaderViewController: SpeechmanagerDelegate {
+extension PDFReaderViewController: SpeechManagerDelegate {
     func getCurrentPageIndex() -> UInt {
         return documentController?.currentPage ?? 0
     }
@@ -1036,15 +1116,6 @@ extension PDFReaderViewController: SpeechmanagerDelegate {
     }
     
     func text(for indices: [UInt], completion: @escaping ([UInt: String]?) -> Void) {
-//        var result: [UInt: String] = [:]
-//        for index in indices {
-//            guard let parser = viewModel.state.document.textParserForPage(at: index) else {
-//                completion(nil)
-//                return
-//            }
-//            result[index] = parser.text
-//        }
-//        completion(result)
         DDLogInfo("PDFReaderViewController: text for \(indices)")
         guard let file = viewModel.state.document.fileURL.flatMap({ Files.file(from: $0) }) else {
             DDLogInfo("PDFReaderViewController: document url not found")
@@ -1091,6 +1162,10 @@ extension PDFReaderViewController: SpeechmanagerDelegate {
     func moved(to pageIndex: UInt) {
         documentController?.focus(page: pageIndex)
     }
+
+    func highlightTextChanged(text: String, pageIndex: UInt) {
+        documentController?.updateSpeechHighlight(text: text, page: PageIndex(pageIndex))
+    }
 }
 
 extension PDFReaderViewController: AccessibilityViewDelegate {
@@ -1098,13 +1173,13 @@ extension PDFReaderViewController: AccessibilityViewDelegate {
         documentControllerBottom?.constant = height
     }
     
-    func showAccessibilityPopup<Delegate: SpeechmanagerDelegate>(
+    func showAccessibilityPopup<Delegate: SpeechManagerDelegate>(
         speechManager: SpeechManager<Delegate>,
         sender: UIBarButtonItem,
         animated: Bool,
         isFormSheet: @escaping () -> Bool,
         dismissAction: @escaping () -> Void,
-        voiceChangeAction: @escaping (AVSpeechSynthesisVoice) -> Void
+        voiceChangeAction: @escaping (AccessibilityPopupVoiceChange) -> Void
     ) {
         coordinatorDelegate?.showAccessibility(
             speechManager: speechManager,
@@ -1124,5 +1199,9 @@ extension PDFReaderViewController: AccessibilityViewDelegate {
     
     func removeAccessibilityControlsViewFromAnnotationToolbar() {
         annotationToolbarHandler?.setLeadingView(view: nil)
+    }
+    
+    func clearSpeechHighlight() {
+        documentController?.clearSpeechHighlight()
     }
 }

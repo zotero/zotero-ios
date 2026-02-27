@@ -20,7 +20,7 @@ struct FeatureGates: OptionSet {
     static let speech = FeatureGates(rawValue: 1 << 4)
 
     static var enabled: FeatureGates {
-        var gates: FeatureGates = []
+        var gates: FeatureGates = [.speech]
 
 #if FEATURE_GATE_ALL
         gates.insert(.multipleOpenItems)
