@@ -244,18 +244,18 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         processor.stop()
     }
 
-    func set(voice: SpeechVoice, voiceLanguage: String, preferredLanguage: String?) {
+    func set(voice: SpeechVoice, preferredLanguage: String?) {
         switch voice {
         case .local(let voice):
             if let processor = processor as? LocalVoiceProcessor {
-                processor.set(voice: voice, voiceLanguage: voiceLanguage, preferredLanguage: preferredLanguage)
+                processor.set(voice: voice, preferredLanguage: preferredLanguage)
             } else {
                 let _processor = LocalVoiceProcessor(
                     language: preferredLanguage,
                     speechRateModifier: processor.speechRateModifier,
                     delegate: self
                 )
-                _processor.set(voice: voice, voiceLanguage: voiceLanguage, preferredLanguage: preferredLanguage)
+                _processor.set(voice: voice, preferredLanguage: preferredLanguage)
                 processor = _processor
                 remainingTime.accept(nil)
                 nowPlayingManager.reconfigureAudioSession()
@@ -263,7 +263,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             
         case .remote(let voice):
             if let processor = processor as? RemoteVoiceProcessor {
-                processor.set(voice: voice, voiceLanguage: voiceLanguage, preferredLanguage: preferredLanguage)
+                processor.set(voice: voice, preferredLanguage: preferredLanguage)
             } else {
                 let _processor = RemoteVoiceProcessor(
                     language: preferredLanguage,
@@ -272,7 +272,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                     delegate: self,
                     remoteVoicesController: remoteVoicesController
                 )
-                _processor.set(voice: voice, voiceLanguage: voiceLanguage, preferredLanguage: preferredLanguage)
+                _processor.set(voice: voice, preferredLanguage: preferredLanguage)
                 processor = _processor
                 nowPlayingManager.reconfigureAudioSession()
             }
@@ -304,7 +304,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                     return
                 }
                 Defaults.shared.remoteVoiceTier = .standard
-                remoteProcessor.set(voice: standardVoice, voiceLanguage: language, preferredLanguage: remoteProcessor.preferredLanguage)
+                remoteProcessor.set(voice: standardVoice, preferredLanguage: remoteProcessor.preferredLanguage)
                 resume()
 
             case .standard:
@@ -325,7 +325,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                 delegate: self
             )
             let voice = VoiceFinder.findLocalVoice(for: language) ?? AVSpeechSynthesisVoice(language: "en-US")!
-            newProcessor.set(voice: voice, voiceLanguage: language, preferredLanguage: processor.preferredLanguage)
+            newProcessor.set(voice: voice, preferredLanguage: processor.preferredLanguage)
             processor = newProcessor
             remainingTime.accept(nil)
             nowPlayingManager.reconfigureAudioSession()
@@ -633,7 +633,7 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
         shouldReloadUtteranceOnResume = true
     }
 
-    func set(voice: AVSpeechSynthesisVoice, voiceLanguage: String, preferredLanguage: String?) {
+    func set(voice: AVSpeechSynthesisVoice, preferredLanguage: String?) {
         guard self.voice?.identifier != voice.identifier else { return }
         self.preferredLanguage = preferredLanguage
         self.voice = voice
@@ -716,11 +716,6 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         case endOfPage
     }
 
-    struct VoiceData {
-        let voice: RemoteVoice
-        let language: String
-    }
-
     /// Number of segments to keep preloaded ahead of current playback
     private static let preloadAheadCount = 2
     /// Interval for polling remaining credits from the server
@@ -732,10 +727,9 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
 
     private var text: String?
     private(set) var preferredLanguage: String?
-    private var voiceData: VoiceData?
+    private var voice: RemoteVoice?
     private var player: AVAudioPlayer?
-    private var allAvailableVoices: [RemoteVoice]?
-    private var availableVoices: [RemoteVoice]?
+    private var allAvailableVoices: VoicesResponse?
     private var disposeBag = DisposeBag()
     /// Cache of downloaded audio data keyed by their text range
     private var segmentCache: [NSRange: Data] = [:]
@@ -747,7 +741,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     private var creditPollTimer: Timer?
     var speechRateModifier: Float
     var speechVoice: SpeechVoice? {
-        return voiceData.flatMap({ .remote($0.voice) })
+        return voice.flatMap({ .remote($0) })
     }
     var canResume: Bool {
         return player != nil
@@ -764,22 +758,15 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     
     // MARK: - Actions
 
-    func set(voice: RemoteVoice, voiceLanguage: String, preferredLanguage: String?) {
-        let voiceChanged = self.voiceData?.voice.id != voice.id
+    func set(voice: RemoteVoice, preferredLanguage: String?) {
+        let voiceChanged = self.voice?.id != voice.id
         self.preferredLanguage = preferredLanguage
-        self.voiceData = VoiceData(voice: voice, language: voiceLanguage)
-        
-        if self.tier != voice.tier {
-            self.tier = voice.tier
-            availableVoices = allAvailableVoices?.filter({ $0.tier == voice.tier })
-        }
-        
+        self.voice = voice
+
         if voiceChanged {
             stopPreloadingAndClearCache()
             delegate.remainingTime.accept(nil)
-            if voice.tier != .standard {
-                loadCredits()
-            }
+            loadCredits()
             if let player {
                 if player.isPlaying {
                     player.pause()
@@ -792,8 +779,8 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     /// Attempts to downgrade to standard tier using cached voices.
     /// Returns the voice and language if successful, nil if no standard voice is available.
     func standardVoice(for language: String) -> RemoteVoice? {
-        guard let allVoices = allAvailableVoices else { return nil }
-        return VoiceFinder.findRemoteVoice(for: language, tier: .standard, from: allVoices)
+        guard let allAvailableVoices else { return nil }
+        return VoiceFinder.findRemoteVoice(for: language, tier: .standard, response: allAvailableVoices)
     }
 
     func speak(text: String, startIndex: Int, shouldDetectVoice: Bool) {
@@ -808,9 +795,9 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         player = nil
         disposeBag = DisposeBag()
 
-        let getVoice: Single<VoiceData>
-        if let voiceData, !shouldDetectVoice {
-            getVoice = Single.just(voiceData)
+        let getVoice: Single<RemoteVoice>
+        if let voice, !shouldDetectVoice {
+            getVoice = Single.just(voice)
         } else {
             getVoice = loadVoice(forText: text)
         }
@@ -818,8 +805,8 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         getVoice
             .observe(on: MainScheduler.instance)
             .subscribe(
-                onSuccess: { [weak self] voiceData in
-                    self?.startSpeaking(text: text, startIndex: startIndex, voiceData: voiceData)
+                onSuccess: { [weak self] voice in
+                    self?.startSpeaking(text: text, startIndex: startIndex, voice: voice)
                 },
                 onFailure: { [weak self] error in
                     self?.handleSpeechFailure(error: error)
@@ -848,13 +835,13 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         }
         
         func reloadCurrentSegment() {
-            guard let text, let voiceData, let speechRange = delegate.speechRange else { return }
+            guard let text, let voice, let speechRange = delegate.speechRange else { return }
             // Clear cache since voice changed
             segmentCache.removeAll()
             loadingSegments.removeAll()
             player.stop()
             self.player = nil
-            startSpeaking(text: text, startIndex: speechRange.location, voiceData: voiceData)
+            startSpeaking(text: text, startIndex: speechRange.location, voice: voice)
         }
     }
     
@@ -876,56 +863,42 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
 
     // MARK: - Voices
     
-    private func loadVoice(forText text: String) -> Single<VoiceData> {
-        if let availableVoices, !availableVoices.isEmpty {
-            return loadVoice(forText: text, voices: availableVoices, preferredLanguage: preferredLanguage)
+    private func loadVoice(forText text: String) -> Single<RemoteVoice> {
+        if let allAvailableVoices {
+            return loadVoice(forText: text, preferredLanguage: preferredLanguage, tier: tier, allVoices: allAvailableVoices)
         }
         return remoteVoicesController.loadVoices()
             .do(onSuccess: { [weak self] result in
-                self?.allAvailableVoices = result.voices
+                self?.allAvailableVoices = result.response
             })
-            .map({ [weak self] result in
-                guard let self else { return result.voices }
-                return result.voices.filter({ $0.tier == self.tier })
-            })
-            .do(onSuccess: { [weak self] voices in
-                self?.availableVoices = voices
-            })
-            .flatMap({ [weak self] voices in
+            .flatMap({ [weak self] result in
                 guard let self else {
                     return Single.error(Error.cancelled)
                 }
-                return loadVoice(forText: text, voices: voices, preferredLanguage: preferredLanguage)
+                return loadVoice(forText: text, preferredLanguage: preferredLanguage, tier: tier, allVoices: result.response)
             })
-            .do(onSuccess: { [weak self] voiceData in
-                self?.voiceData = voiceData
+            .do(onSuccess: { [weak self] voice in
+                self?.voice = voice
             })
         
-        func loadVoice(forText text: String, voices: [RemoteVoice], preferredLanguage: String?) -> Single<VoiceData> {
-            return Single.create { [weak self] subscriber in
-                guard let self else {
-                    subscriber(.failure(Error.cancelled))
-                    return Disposables.create()
-                }
-                guard !voices.isEmpty else {
-                    subscriber(.failure(Error.missingVoices))
-                    return Disposables.create()
-                }
-                
+        func loadVoice(forText text: String, preferredLanguage: String?, tier: RemoteVoice.Tier, allVoices: VoicesResponse) -> Single<RemoteVoice> {
+            return Single.create { subscriber in
                 let language = preferredLanguage ?? LanguageDetector.detectLanguage(from: text)
-                let voice = VoiceFinder.findRemoteVoice(for: language, tier: tier, from: voices) ?? voices[0]
-                subscriber(.success(VoiceData(voice: voice, language: language)))
-                
+                if let voice = VoiceFinder.findRemoteVoice(for: language, tier: tier, response: allVoices) ?? allVoices.firstVoice(for: tier) {
+                    subscriber(.success(voice))
+                } else {
+                    subscriber(.failure(Error.missingVoices))
+                }
                 return Disposables.create()
             }
         }
     }
-    
+
     // MARK: - Speech
     
-    private func startSpeaking(text: String, startIndex: Int, voiceData: VoiceData) {
+    private func startSpeaking(text: String, startIndex: Int, voice: RemoteVoice) {
         // Find the range for the segment at startIndex
-        guard let range = findNextRange(startingAt: startIndex, voiceData: voiceData, in: text) else {
+        guard let range = findNextRange(startingAt: startIndex, voice: voice, in: text) else {
             handleSpeechFailure(error: Error.endOfPage)
             return
         }
@@ -933,7 +906,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         // Check if we already have the segment cached
         if let cachedData = segmentCache[range] {
             handleSpeechSuccess(data: cachedData, range: range)
-            ensureSegmentsPreloaded(after: range, text: text, voiceData: voiceData)
+            ensureSegmentsPreloaded(after: range, text: text, voice: voice)
             return
         }
         
@@ -948,14 +921,14 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         // Load segment and start playing as soon as it's ready, while preloading others
         delegate.state.accept(.loading)
         startCreditPollTimer()
-        loadAndPlaySegment(range: range, text: text, voiceData: voiceData)
-        
-        func loadAndPlaySegment(range: NSRange, text: String, voiceData: VoiceData) {
+        loadAndPlaySegment(range: range, text: text, voice: voice)
+
+        func loadAndPlaySegment(range: NSRange, text: String, voice: RemoteVoice) {
             // Mark as loading
             loadingSegments.insert(range)
             
             // Start loading the segment we need to play
-            loadSegment(for: range, in: text, voiceData: voiceData)
+            loadSegment(for: range, in: text, voice: voice)
                 .observe(on: MainScheduler.instance)
                 .subscribe(
                     onSuccess: { [weak self] data in
@@ -963,7 +936,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
                         loadingSegments.remove(range)
                         // Play immediately
                         handleSpeechSuccess(data: data, range: range)
-                        ensureSegmentsPreloaded(after: range, text: text, voiceData: voiceData)
+                        ensureSegmentsPreloaded(after: range, text: text, voice: voice)
                     },
                     onFailure: { [weak self] error in
                         self?.loadingSegments.remove(range)
@@ -973,20 +946,19 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
                 .disposed(by: disposeBag)
             
             // Start preloading next segments concurrently
-            ensureSegmentsPreloaded(after: range, text: text, voiceData: voiceData)
+            ensureSegmentsPreloaded(after: range, text: text, voice: voice)
         }
     }
 
-    private func loadSegment(for range: NSRange, in text: String, voiceData: VoiceData) -> Single<Data> {
+    private func loadSegment(for range: NSRange, in text: String, voice: RemoteVoice) -> Single<Data> {
         guard let textRange = Range(range, in: text) else {
             return .error(Error.endOfPage)
         }
         let segmentText = String(text[textRange])
-        
-        return remoteVoicesController.downloadSound(forText: segmentText, voiceId: voiceData.voice.id, language: voiceData.language)
+        return remoteVoicesController.downloadSound(forText: segmentText, voiceId: voice.id)
     }
     
-    private func ensureSegmentsPreloaded(after currentRange: NSRange, text: String, voiceData: VoiceData) {
+    private func ensureSegmentsPreloaded(after currentRange: NSRange, text: String, voice: RemoteVoice) {
         // Calculate how many more segments we need to preload
         let currentlyBuffered = segmentCache.count + loadingSegments.count
         let segmentsToLoad = Self.preloadAheadCount - currentlyBuffered
@@ -996,8 +968,8 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         var loaded = 0
         
         while loaded < segmentsToLoad {
-            guard let range = findNextRange(startingAt: nextIndex, voiceData: voiceData, in: text) else { break }
-            
+            guard let range = findNextRange(startingAt: nextIndex, voice: voice, in: text) else { break }
+
             // Skip if already cached or being loaded
             if segmentCache[range] != nil || loadingSegments.contains(range) {
                 nextIndex = range.location + range.length
@@ -1007,7 +979,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
             // Mark as loading and start download
             loadingSegments.insert(range)
             
-            loadSegment(for: range, in: text, voiceData: voiceData)
+            loadSegment(for: range, in: text, voice: voice)
                 .observe(on: MainScheduler.instance)
                 .subscribe(
                     onSuccess: { [weak self] data in
@@ -1020,7 +992,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
                         } else {
                             segmentCache[range] = data
                         }
-                        ensureSegmentsPreloaded(after: range, text: text, voiceData: voiceData)
+                        ensureSegmentsPreloaded(after: range, text: text, voice: voice)
                     },
                     onFailure: { [weak self] error in
                         guard let self else { return }
@@ -1087,7 +1059,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     // MARK: - Credits
     
     private func startCreditPollTimer() {
-        guard voiceData?.voice.tier != .standard, creditPollTimer == nil else { return }
+        guard creditPollTimer == nil else { return }
         // Load credits immediately
         loadCredits()
         // Then poll every 60 seconds
@@ -1116,7 +1088,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     }
     
     private func updateRemainingTimeDisplay(credits: (standard: Int, premium: Int)) {
-        guard let voice = voiceData?.voice, voice.tier != .standard else {
+        guard let voice, voice.tier != .standard else {
             // Standard tier voice - report nil remaining time (unlimited)
             delegate.remainingTime.accept(nil)
             return
@@ -1137,9 +1109,9 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     
     // MARK: - Helpers
     
-    private func findNextRange(startingAt index: Int, voiceData: VoiceData, in text: String) -> NSRange? {
+    private func findNextRange(startingAt index: Int, voice: RemoteVoice, in text: String) -> NSRange? {
         let result: (text: String, range: NSRange)?
-        if voiceData.voice.granularity == .sentence {
+        if voice.granularity == .sentence {
             result = TextTokenizer.findSentence(startingAt: index, in: text)
         } else {
             result = TextTokenizer.findParagraph(startingAt: index, in: text)
@@ -1162,13 +1134,13 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
 
 extension RemoteVoiceProcessor: AVAudioPlayerDelegate {
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        guard flag, let text, let voiceData, let speechRange = delegate.speechRange else {
+        guard flag, let text, let voice, let speechRange = delegate.speechRange else {
             finishSpeaking()
             return
         }
 
         let nextStartIndex = speechRange.location + speechRange.length
-        startSpeaking(text: text, startIndex: nextStartIndex, voiceData: voiceData)
+        startSpeaking(text: text, startIndex: nextStartIndex, voice: voice)
     }
 
     func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: (any Swift.Error)?) {
