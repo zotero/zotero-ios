@@ -494,6 +494,12 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     }
 
     private func set(page: Int, userActionFromDocument: Bool, fromThumbnailList: Bool, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        let pageCount = viewModel.state.document.pageCount
+        guard page >= 0, page < pageCount else {
+            // PSPDFKit may set Int.max as the page when zooming on a one page document.
+            DDLogWarn("PDFReaderActionHandler: ignored setting page: \(page) because it is out of bounds \(0)..<\(pageCount)")
+            return
+        }
         guard viewModel.state.visiblePage != page else { return }
         annotationProvider?.setVisiblePage(PageIndex(page))
 
