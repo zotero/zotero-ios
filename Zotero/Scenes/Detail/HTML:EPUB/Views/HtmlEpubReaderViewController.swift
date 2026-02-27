@@ -20,7 +20,7 @@ protocol HtmlEpubReaderContainerDelegate: AnyObject {
     func toggleInterfaceVisibility()
 }
 
-class HtmlEpubReaderViewController: UIViewController, ReaderViewController, ParentWithSidebarController {
+class HtmlEpubReaderViewController: UIViewController, ReaderViewController {
     typealias DocumentController = HtmlEpubDocumentViewController
     typealias SidebarController = HtmlEpubSidebarViewController
 
@@ -158,56 +158,27 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
             let annotationToolbar = AnnotationToolbarViewController(tools: Defaults.shared.htmlEpubAnnotationTools.map({ $0.type }), undoRedoEnabled: false, size: navigationBarHeight)
             annotationToolbar.delegate = self
 
-            let sidebarController = HtmlEpubSidebarViewController(viewModel: viewModel)
-            sidebarController.parentDelegate = self
-            sidebarController.coordinatorDelegate = coordinatorDelegate
-            sidebarController.view.translatesAutoresizingMaskIntoConstraints = false
-
-            let separator = UIView()
-            separator.translatesAutoresizingMaskIntoConstraints = false
-            separator.backgroundColor = Asset.Colors.annotationSidebarBorderColor.color
-
             add(controller: documentController)
             add(controller: annotationToolbar)
-            add(controller: sidebarController)
             view.addSubview(documentController.view)
             view.addSubview(annotationToolbar.view)
-            view.addSubview(sidebarController.view)
-            view.addSubview(separator)
 
             let documentLeftConstraint = documentController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor)
-            let sidebarLeftConstraint = sidebarController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: -PDFReaderLayout.sidebarWidth)
             let documentTopConstraint = documentController.view.topAnchor.constraint(equalTo: view.topAnchor)
 
             NSLayoutConstraint.activate([
                 documentTopConstraint,
                 view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: documentController.view.bottomAnchor),
                 view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: documentController.view.trailingAnchor),
-                sidebarController.view.topAnchor.constraint(equalTo: view.topAnchor),
-                sidebarController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-                sidebarController.view.widthAnchor.constraint(equalToConstant: PDFReaderLayout.sidebarWidth),
-                sidebarLeftConstraint,
-                separator.widthAnchor.constraint(equalToConstant: PDFReaderLayout.separatorWidth),
-                separator.leadingAnchor.constraint(equalTo: sidebarController.view.trailingAnchor),
-                separator.topAnchor.constraint(equalTo: view.topAnchor),
-                separator.bottomAnchor.constraint(equalTo: view.bottomAnchor),
                 documentLeftConstraint
             ])
 
             self.documentController = documentController
-            self.sidebarController = sidebarController
             annotationToolbarController = annotationToolbar
             documentControllerTop = documentTopConstraint
             documentControllerLeft = documentLeftConstraint
-            sidebarControllerLeft = sidebarLeftConstraint
             annotationToolbarHandler = AnnotationToolbarHandler(controller: annotationToolbar, delegate: self)
             annotationToolbarHandler!.performInitialLayout()
-
-            func add(controller: UIViewController) {
-                controller.willMove(toParent: self)
-                addChild(controller)
-                controller.didMove(toParent: self)
-            }
         }
 
         func setActivity() {
@@ -563,6 +534,40 @@ extension HtmlEpubReaderViewController: HtmlEpubReaderContainerDelegate {
         if isHidden && isSidebarVisible {
             toggleSidebar(animated: true)
         }
+    }
+}
+
+extension HtmlEpubReaderViewController: ParentWithSidebarController {
+    func initializeSidebarIfNeeded() {
+        guard sidebarController == nil, let annotationToolbarController else { return }
+        let sidebarController = HtmlEpubSidebarViewController(viewModel: viewModel)
+        sidebarController.parentDelegate = self
+        sidebarController.coordinatorDelegate = coordinatorDelegate
+        sidebarController.view.translatesAutoresizingMaskIntoConstraints = false
+
+        let separator = UIView()
+        separator.translatesAutoresizingMaskIntoConstraints = false
+        separator.backgroundColor = Asset.Colors.annotationSidebarBorderColor.color
+
+        add(controller: sidebarController)
+        view.insertSubview(sidebarController.view, aboveSubview: annotationToolbarController.view)
+        view.insertSubview(separator, aboveSubview: sidebarController.view)
+
+        let sidebarLeftConstraint = sidebarController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: -PDFReaderLayout.sidebarWidth)
+        NSLayoutConstraint.activate([
+            sidebarController.view.topAnchor.constraint(equalTo: view.topAnchor),
+            sidebarController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            sidebarController.view.widthAnchor.constraint(equalToConstant: PDFReaderLayout.sidebarWidth),
+            sidebarLeftConstraint,
+            separator.widthAnchor.constraint(equalToConstant: PDFReaderLayout.separatorWidth),
+            separator.leadingAnchor.constraint(equalTo: sidebarController.view.trailingAnchor),
+            separator.topAnchor.constraint(equalTo: view.topAnchor),
+            separator.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+
+        self.sidebarController = sidebarController
+        sidebarControllerLeft = sidebarLeftConstraint
+        view.layoutIfNeeded()
     }
 }
 

@@ -33,6 +33,14 @@ extension NSPredicate {
         return NSCompoundPredicate(andPredicateWithSubpredicates: [.key(key), .library(with: libraryId)])
     }
 
+    static func attachmentKey(_ key: String) -> NSPredicate {
+        return NSPredicate(format: "attachmentKey = %@", key)
+    }
+
+    static func attachmentKey(_ key: String, in libraryId: LibraryIdentifier) -> NSPredicate {
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [.attachmentKey(key), .library(with: libraryId)])
+    }
+
     static func keys(_ keys: [String], in libraryId: LibraryIdentifier) -> NSPredicate {
         return NSCompoundPredicate(andPredicateWithSubpredicates: [.key(in: keys),
                                                                    .library(with: libraryId)])

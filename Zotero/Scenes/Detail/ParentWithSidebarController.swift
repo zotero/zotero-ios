@@ -34,8 +34,10 @@ protocol ParentWithSidebarController: UIViewController {
 
     func createToolbarButton() -> UIBarButtonItem
     func closeAnnotationToolbar()
+    func initializeSidebarIfNeeded()
     func toggleSidebar(animated: Bool, sidebarButtonTag: Int)
     func setupAccessibility(forSidebarButton button: UIBarButtonItem)
+    func add(controller: UIViewController)
 }
 
 extension ParentWithSidebarController {
@@ -84,6 +86,9 @@ extension ParentWithSidebarController {
 
     func toggleSidebar(animated: Bool, sidebarButtonTag: Int) {
         let visible = !isSidebarVisible
+        if visible {
+            initializeSidebarIfNeeded()
+        }
         // If the layout is compact, show annotation sidebar above pdf document.
         if !isCompactWidth {
             documentControllerLeft?.constant = visible ? PDFReaderLayout.sidebarWidth : 0
@@ -133,5 +138,11 @@ extension ParentWithSidebarController {
     func setupAccessibility(forSidebarButton button: UIBarButtonItem) {
         button.accessibilityLabel = isSidebarVisible ? L10n.Accessibility.Pdf.sidebarClose : L10n.Accessibility.Pdf.sidebarOpen
         button.title = isSidebarVisible ? L10n.Accessibility.Pdf.sidebarClose : L10n.Accessibility.Pdf.sidebarOpen
+    }
+
+    func add(controller: UIViewController) {
+        controller.willMove(toParent: self)
+        addChild(controller)
+        controller.didMove(toParent: self)
     }
 }
