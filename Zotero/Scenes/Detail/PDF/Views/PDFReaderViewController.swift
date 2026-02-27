@@ -417,7 +417,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
         let language = speechManager.language ?? speechManager.detectedLanguage
         coordinatorDelegate?.showReadAloudOnboarding(language: language, userInterfaceStyle: overrideUserInterfaceStyle) { [weak self] selectedVoice in
             if let selectedVoice, let self {
-                self.accessibilityHandler?.set(initialVoice: selectedVoice, language: language)
+                self.accessibilityHandler?.set(initialVoice: selectedVoice)
             }
         }
     }
