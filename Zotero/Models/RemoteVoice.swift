@@ -21,8 +21,8 @@ struct RemoteVoice: Equatable {
     let label: String
     let creditsPerMinute: Int
     let granularity: Granularity
+    let sentenceDelay: Int
     let tier: Tier
-    let locales: [String]
 
     static func ==(lhs: RemoteVoice, rhs: RemoteVoice) -> Bool {
         return lhs.id == rhs.id
@@ -34,7 +34,7 @@ extension RemoteVoice: Codable {
         case label
         case creditsPerMinute
         case segmentGranularity
-        case locales
+        case sentenceDelay
         case tier
     }
 
@@ -43,7 +43,7 @@ extension RemoteVoice: Codable {
         id = try container.decode(String.self, forKey: .id)
         label = try container.decode(String.self, forKey: .label)
         creditsPerMinute = try container.decode(Int.self, forKey: .creditsPerMinute)
-        locales = try container.decode([String].self, forKey: .locales)
+        sentenceDelay = try container.decode(Int.self, forKey: .sentenceDelay)
 
         let granularityString = try container.decode(String.self, forKey: .segmentGranularity)
         guard let granularity = Granularity(rawValue: granularityString) else {
@@ -74,7 +74,7 @@ extension RemoteVoice: Codable {
         try container.encode(label, forKey: .label)
         try container.encode(creditsPerMinute, forKey: .creditsPerMinute)
         try container.encode(granularity.rawValue, forKey: .segmentGranularity)
-        try container.encode(locales, forKey: .locales)
+        try container.encode(sentenceDelay, forKey: .sentenceDelay)
         try container.encode(tier.rawValue, forKey: .tier)
     }
 }
