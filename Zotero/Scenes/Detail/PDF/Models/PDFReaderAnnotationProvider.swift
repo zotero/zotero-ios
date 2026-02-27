@@ -14,7 +14,6 @@ import RealmSwift
 
 protocol PDFReaderAnnotationProviderDelegate: AnyObject {
     var displayName: String { get }
-    var appearance: Appearance { get }
 }
 
 final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
@@ -88,6 +87,7 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
     private var loadedAnnotationsByKey: [String: Annotation] = [:]
     private var visiblePageIndex: PageIndex?
     private var currentFilterContext: FilterContext = .empty
+    private var currentAppearance: Appearance
 
     override var allAnnotations: [Annotation] {
         return performRead { super.allAnnotations }
@@ -104,7 +104,8 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
         username: String,
         documentPageCount: PageCount,
         metadataEditable: Bool,
-        boundingBoxConverter: AnnotationBoundingBoxConverter
+        boundingBoxConverter: AnnotationBoundingBoxConverter,
+        appearance: Appearance
     ) {
         self.fileAnnotationProvider = fileAnnotationProvider
         self.dbStorage = dbStorage
@@ -117,6 +118,7 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
         self.documentPageCount = documentPageCount
         self.metadataEditable = metadataEditable
         self.boundingBoxConverter = boundingBoxConverter
+        currentAppearance = appearance
         dbQueue.setSpecific(key: dbQueueSpecificKey, value: ())
         super.init(documentProvider: documentProvider)
     }
@@ -187,6 +189,7 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
             if !currentFilterContext.isEmpty {
                 applyCurrentFilterForPage(at: pageIndex, notify: true)
             }
+            // TODO: Check if current apperance needs to be applied to the file page annotations.
 
             if filePageAnnotations == nil, cachePageAnnotations == nil {
                 return nil
@@ -234,8 +237,7 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
 
             func annotation(from cachedAnnotation: RDocumentAnnotation) -> Annotation? {
                 guard let documentAnnotation = PDFDocumentAnnotation(annotation: cachedAnnotation, displayName: displayName, username: username) else { return nil }
-                let appearance = pdfReaderAnnotationProviderDelegate?.appearance ?? .light
-                let annotation = AnnotationConverter.annotation(from: documentAnnotation, appearance: appearance, displayName: displayName, username: username)
+                let annotation = AnnotationConverter.annotation(from: documentAnnotation, appearance: currentAppearance, displayName: displayName, username: username)
                 annotation.flags.update(with: [.locked, .readOnly])
                 annotation.source = .document
                 return annotation
@@ -259,7 +261,7 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
                 }
                 annotationsToAdd.append(contentsOf: AnnotationConverter.annotations(
                     from: items,
-                    appearance: pdfReaderAnnotationProviderDelegate.appearance,
+                    appearance: currentAppearance,
                     currentUserId: userId,
                     libraryId: libraryId,
                     metadataEditable: metadataEditable,
@@ -319,7 +321,8 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
 
     public func setVisiblePage(_ pageIndex: PageIndex) {
         performWrite { [weak self] in
-            guard let self, pageIndex != visiblePageIndex else { return }
+            guard let self else { return }
+            guard pageIndex != visiblePageIndex else { return }
             visiblePageIndex = pageIndex
         }
     }
@@ -393,6 +396,43 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
             case .group:
                 return annotation.createdByUserId != userId
             }
+        }
+    }
+
+    public func update(appearance: Appearance) {
+        // Appearance update happens on the calling thread without notifying of the changes.
+        var shouldUpdate = false
+        performWriteAndWait {
+            guard appearance != currentAppearance else { return }
+            currentAppearance = appearance
+            shouldUpdate = true
+        }
+        guard shouldUpdate else { return }
+
+        let loadedPageIndices = performRead {
+            return loadedFilePageIndices
+                .intersection(loadedDocumentCachePageIndices)
+                .intersection(loadedDatabaseCachePageIndices)
+        }
+        guard !loadedPageIndices.isEmpty else { return }
+
+        var orderedPageIndices: [PageIndex] = []
+        var remainingPageIndices = loadedPageIndices
+
+        if let visiblePageIndex, documentPageCount > 0 {
+            for offset in [0, -1, 1, -2, 2] {
+                let rawPage = Int(visiblePageIndex) + offset
+                guard rawPage >= 0, rawPage < Int(documentPageCount) else { continue }
+                let pageIndex = PageIndex(rawPage)
+                guard remainingPageIndices.contains(pageIndex) else { continue }
+                orderedPageIndices.append(pageIndex)
+                remainingPageIndices.remove(pageIndex)
+            }
+        }
+
+        orderedPageIndices.append(contentsOf: remainingPageIndices.sorted())
+        for pageIndex in orderedPageIndices {
+            applyCurrentAppearanceForPage(at: pageIndex, notify: false)
         }
     }
 
@@ -610,6 +650,59 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
                 changedAnnotations.append(annotation)
             }
             return changedAnnotations
+        }
+    }
+
+    // MARK: Appearance
+
+    private func applyCurrentAppearanceForPage(at pageIndex: PageIndex, notify: Bool) {
+        performWriteAndWait {
+            let changedFileAnnotations = applyToFileNonLinkAnnotations(at: pageIndex, appearance: currentAppearance)
+            let changedCacheAnnotations = applyToCacheAnnotations(at: pageIndex, appearance: currentAppearance)
+            guard notify else { return }
+            notifyAnnotationsChanged(changedFileAnnotations + changedCacheAnnotations, changes: ["color", "alpha", "blendMode"])
+        }
+
+        func applyToFileNonLinkAnnotations(at pageIndex: PageIndex, appearance: Appearance) -> [Annotation] {
+            var changedAnnotations: [Annotation] = []
+            for annotation in loadedFileNonLinkAnnotationsByPage[pageIndex] ?? [] {
+                guard change(annotation, to: appearance) else { continue }
+                changedAnnotations.append(annotation)
+            }
+            return changedAnnotations
+        }
+
+        func applyToCacheAnnotations(at pageIndex: PageIndex, appearance: Appearance) -> [Annotation] {
+            var changedAnnotations: [Annotation] = []
+            for annotation in (loadedAnnotationsByPageByKey[pageIndex] ?? [:]).values {
+                guard change(annotation, to: appearance) else { continue }
+                changedAnnotations.append(annotation)
+            }
+            return changedAnnotations
+        }
+
+        func change(_ annotation: Annotation, to appearance: Appearance) -> Bool {
+            guard AnnotationsConfig.supported.contains(annotation.type),
+                  let annotationType = annotation.type.annotationType
+            else { return false }
+
+            let baseColor = annotation.baseColor
+            let (color, alpha, blendMode) = AnnotationColorGenerator.color(
+                from: UIColor(hex: baseColor),
+                type: annotationType,
+                appearance: currentAppearance
+            )
+
+            let normalizedBlendMode = blendMode ?? .normal
+            guard annotation.color != color ||
+                  annotation.alpha != alpha ||
+                  annotation.blendMode != normalizedBlendMode
+            else { return false }
+
+            annotation.color = color
+            annotation.alpha = alpha
+            annotation.blendMode = normalizedBlendMode
+            return true
         }
     }
 
