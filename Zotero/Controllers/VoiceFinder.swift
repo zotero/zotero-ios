@@ -18,13 +18,12 @@ enum VoiceFinder {
     static func findLocalVoice(for language: String, from voices: [AVSpeechSynthesisVoice] = AVSpeechSynthesisVoice.speechVoices()) -> AVSpeechSynthesisVoice? {
         return findVoice(
             for: language,
-            from: voices,
-            storedDefault: { language, voices in
+            storedDefault: { language in
                 guard let voiceId = Defaults.shared.defaultLocalVoiceForLanguage[language] else { return nil }
                 return voices.first(where: { $0.identifier == voiceId })
             },
-            matchesLocale: { voice, locale in
-                voice.language == locale
+            voiceForLocale: { locale in
+                voices.first(where: { $0.language == locale })
             }
         )
     }
@@ -33,29 +32,39 @@ enum VoiceFinder {
 
     /// Finds a remote voice for the given language and tier.
     /// Uses a unified 6-step priority chain: stored default, exact match, canonical variation, device locale, canonical device locale, en-US fallback.
-    static func findRemoteVoice(for language: String, tier: RemoteVoice.Tier, from voices: [RemoteVoice]) -> RemoteVoice? {
-        let tierVoices = voices.filter { $0.tier == tier }
+    static func findRemoteVoice(for language: String, tier: RemoteVoice.Tier, response: VoicesResponse) -> RemoteVoice? {
+        guard let tierData = response.tiers[tier], !tierData.isEmpty else { return nil }
         return findVoice(
             for: language,
-            from: tierVoices,
-            storedDefault: { language, voices in
+            storedDefault: { language in
                 let savedVoices = tier == .premium
                     ? Defaults.shared.defaultPremiumRemoteVoiceForLanguage
                     : Defaults.shared.defaultStandardRemoteVoiceForLanguage
-                guard let savedVoice = savedVoices[language], savedVoice.tier == tier, voices.contains(where: { $0.id == savedVoice.id }) else { return nil }
+                guard let savedVoice = savedVoices[language], savedVoice.tier == tier, tierData.first(where: { $0.voices[savedVoice.id] != nil }) != nil else { return nil }
                 return savedVoice
             },
-            matchesLocale: { voice, locale in
-                voice.locales.contains(locale)
+            voiceForLocale: { locale in
+                for data in tierData {
+                    if let locale = data.locales[locale], (!locale.default.isEmpty || !locale.other.isEmpty) {
+                        let voiceId: String
+                        if !locale.default.isEmpty {
+                            voiceId = locale.default[0]
+                        } else {
+                            voiceId = locale.other[0]
+                        }
+                        let label = data.voices[voiceId] ?? ""
+                        return RemoteVoice(id: voiceId, label: label, creditsPerMinute: data.creditsPerMinute, granularity: data.sentenceGranularity, sentenceDelay: data.sentenceDelay, tier: tier)
+                    }
+                }
+                return nil
             }
         )
     }
 
     /// Filters remote voices by language and tier.
     static func remoteVoices(for language: String, tier: RemoteVoice.Tier, from voices: [RemoteVoice]) -> [RemoteVoice] {
-        return voices.filter { voice in
-            voice.tier == tier && voice.locales.contains(where: { $0 == language })
-        }
+        // TODO: - remove
+        return []
     }
 
     /// Filters local voices by language.
@@ -76,31 +85,30 @@ enum VoiceFinder {
     /// 6. en-US fallback
     private static func findVoice<V>(
         for language: String,
-        from voices: [V],
-        storedDefault: (String, [V]) -> V?,
-        matchesLocale: (V, String) -> Bool
+        storedDefault: (String) -> V?,
+        voiceForLocale: (String) -> V?
     ) -> V? {
         // 1. Stored default
-        if let voice = storedDefault(language, voices) {
+        if let voice = storedDefault(language) {
             return voice
         }
 
         let baseLanguage = String(language.prefix(while: { $0 != "-" }))
 
         // 2. Exact variation match
-        if let voice = voices.first(where: { matchesLocale($0, language) }) {
+        if let voice = voiceForLocale(language) {
             return voice
         }
 
         // 3. Canonical variation
         if let canonical = LanguageDetector.canonicalVariation(for: baseLanguage), canonical != language,
-           let voice = voices.first(where: { matchesLocale($0, canonical) }) {
+           let voice = voiceForLocale(canonical) {
             return voice
         }
 
         // 4. Device locale
         let deviceLocale = LanguageDetector.deviceLocale
-        if deviceLocale != language, let voice = voices.first(where: { matchesLocale($0, deviceLocale) }) {
+        if deviceLocale != language, let voice = voiceForLocale(deviceLocale) {
             return voice
         }
 
@@ -108,11 +116,11 @@ enum VoiceFinder {
         let deviceBase = String(deviceLocale.prefix(while: { $0 != "-" }))
         if deviceBase != baseLanguage,
            let canonicalDevice = LanguageDetector.canonicalVariation(for: deviceBase), canonicalDevice != deviceLocale,
-           let voice = voices.first(where: { matchesLocale($0, canonicalDevice) }) {
+           let voice = voiceForLocale(canonicalDevice) {
             return voice
         }
 
         // 6. en-US fallback
-        return voices.first(where: { matchesLocale($0, "en-US") })
+        return voiceForLocale("en-US")
     }
 }

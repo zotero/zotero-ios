@@ -49,7 +49,7 @@ struct ReadAloudOnboardingView: View {
     
     @State private var selectedTier: VoiceTier = .standard
     @State private var selectedVoice: SpeechVoice?
-    @State private var remoteVoices: [RemoteVoice] = []
+    @State private var remoteVoices: VoicesResponse?
     @State private var localVoices: [AVSpeechSynthesisVoice] = []
     @State private var isLoading: Bool = false
     @State private var loadError: Bool = false
@@ -57,10 +57,12 @@ struct ReadAloudOnboardingView: View {
     private var voicesForSelectedTier: [VoiceItem] {
         switch selectedTier {
         case .premium:
-            return VoiceFinder.remoteVoices(for: language, tier: .premium, from: remoteVoices).map { .remote($0) }
-            
+            return []
+//            return VoiceFinder.remoteVoices(for: language, tier: .premium, from: remoteVoices).map { .remote($0) }
+
         case .standard:
-            return VoiceFinder.remoteVoices(for: language, tier: .standard, from: remoteVoices).map { .remote($0) }
+            return []
+//            return VoiceFinder.remoteVoices(for: language, tier: .standard, from: remoteVoices).map { .remote($0) }
             
         case .local:
             return localVoices.map { .local($0) }
@@ -104,7 +106,7 @@ struct ReadAloudOnboardingView: View {
                     }
                     
                     // Voices section
-                    if selectedTier == .local || !remoteVoices.isEmpty {
+                    if selectedTier == .local {
                         VoicesSection(
                             voices: voicesForSelectedTier,
                             selectedVoice: $selectedVoice,
@@ -171,7 +173,7 @@ struct ReadAloudOnboardingView: View {
         remoteVoicesController.loadVoices()
             .subscribe(
                 onSuccess: { result in
-                    remoteVoices = result.voices
+                    remoteVoices = result.response
                     isLoading = false
                     updateSelectedVoiceForTier()
                 },
@@ -186,12 +188,12 @@ struct ReadAloudOnboardingView: View {
     private func updateSelectedVoiceForTier() {
         switch selectedTier {
         case .premium:
-            if let voice = VoiceFinder.findRemoteVoice(for: language, tier: .premium, from: remoteVoices) {
+            if let remoteVoices, let voice = VoiceFinder.findRemoteVoice(for: language, tier: .premium, response: remoteVoices) {
                 selectedVoice = .remote(voice)
             }
             
         case .standard:
-            if let voice = VoiceFinder.findRemoteVoice(for: language, tier: .standard, from: remoteVoices) {
+            if let remoteVoices, let voice = VoiceFinder.findRemoteVoice(for: language, tier: .standard, response: remoteVoices) {
                 selectedVoice = .remote(voice)
             }
             
@@ -338,7 +340,7 @@ private struct VoicesSection: View {
             
         case .remote(let remoteVoice):
             loadingVoiceId = voice.id
-            remoteVoicesController.downloadSample(voiceId: remoteVoice.id, language: "en-US")
+            remoteVoicesController.downloadSample(voiceId: remoteVoice.id)
                 .subscribe(
                     onSuccess: { data in
                         loadingVoiceId = nil
