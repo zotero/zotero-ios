@@ -28,6 +28,16 @@ enum VoiceFinder {
         )
     }
 
+    /// Filters local voices by exact locale.
+    static func localVoices(for language: String) -> [AVSpeechSynthesisVoice] {
+        filterLocalVoices { $0.language == language }
+    }
+
+    /// Filters local voices by base language, matching all locales starting with that base.
+    static func localVoices(forBaseLanguage baseLanguage: String) -> [AVSpeechSynthesisVoice] {
+        filterLocalVoices { Self.baseLanguage(of: $0.language) == baseLanguage }
+    }
+
     // MARK: - Remote Voices
 
     /// Finds a remote voice for the given language and tier.
@@ -40,20 +50,14 @@ enum VoiceFinder {
                 let savedVoices = tier == .premium
                     ? Defaults.shared.defaultPremiumRemoteVoiceForLanguage
                     : Defaults.shared.defaultStandardRemoteVoiceForLanguage
-                guard let savedVoice = savedVoices[language], savedVoice.tier == tier, tierData.first(where: { $0.voices[savedVoice.id] != nil }) != nil else { return nil }
+                guard let savedVoice = savedVoices[language], savedVoice.tier == tier, tierData.contains(where: { $0.voices[savedVoice.id] != nil }) else { return nil }
                 return savedVoice
             },
             voiceForLocale: { locale in
                 for data in tierData {
-                    if let locale = data.locales[locale], (!locale.default.isEmpty || !locale.other.isEmpty) {
-                        let voiceId: String
-                        if !locale.default.isEmpty {
-                            voiceId = locale.default[0]
-                        } else {
-                            voiceId = locale.other[0]
-                        }
-                        let label = data.voices[voiceId] ?? ""
-                        return RemoteVoice(id: voiceId, label: label, creditsPerMinute: data.creditsPerMinute, granularity: data.sentenceGranularity, sentenceDelay: data.sentenceDelay, tier: tier)
+                    if let localeData = data.locales[locale], !localeData.default.isEmpty || !localeData.other.isEmpty {
+                        let voiceId = localeData.default.first ?? localeData.other[0]
+                        return data.makeVoice(id: voiceId, tier: tier)
                     }
                 }
                 return nil
@@ -61,20 +65,47 @@ enum VoiceFinder {
         )
     }
 
-    /// Filters remote voices by language and tier.
-    static func remoteVoices(for language: String, tier: RemoteVoice.Tier, from voices: [RemoteVoice]) -> [RemoteVoice] {
-        // TODO: - remove
-        return []
+    /// Filters remote voices by exact locale and tier.
+    /// Takes a full locale (e.g., "en-US") and matches that exact locale in the tier data.
+    static func remoteVoices(for language: String, tier: RemoteVoice.Tier, fromResponse response: VoicesResponse) -> [RemoteVoice] {
+        guard let tierData = response.tiers[tier] else { return [] }
+        var seen: Set<String> = []
+        var result: [RemoteVoice] = []
+        for data in tierData {
+            guard let localeData = data.locales[language] else { continue }
+            for voiceId in (localeData.default + localeData.other) where !seen.contains(voiceId) {
+                seen.insert(voiceId)
+                result.append(data.makeVoice(id: voiceId, tier: tier))
+            }
+        }
+        return result.sorted { $0.label.localizedCaseInsensitiveCompare($1.label) == .orderedAscending }
     }
 
-    /// Filters local voices by language.
-    static func localVoices(for language: String) -> [AVSpeechSynthesisVoice] {
-        return AVSpeechSynthesisVoice.speechVoices()
-            .filter { $0.language == language }
-            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    // MARK: - Helpers
+
+    /// Extracts the display name for a locale variation (e.g., "en-US" → "United States").
+    static func variationName(for languageCode: String, baseLanguage: String) -> String {
+        let locale = Locale.current
+        guard let localized = locale.localizedString(forIdentifier: languageCode) else { return languageCode }
+        guard let localizedLanguage = locale.localizedString(forLanguageCode: baseLanguage), localized.hasPrefix(localizedLanguage) else { return localized }
+        let suffix = String(localized[localized.index(localized.startIndex, offsetBy: localizedLanguage.count)..<localized.endIndex])
+            .trimmingCharacters(in: CharacterSet(charactersIn: " ()"))
+        return suffix.isEmpty ? localized : suffix
     }
 
     // MARK: - Private
+
+    /// Extracts the base language code from a locale string (e.g., "en-US" → "en").
+    private static func baseLanguage(of locale: String) -> String {
+        String(locale.prefix(while: { $0 != "-" }))
+    }
+
+    /// Filters and sorts system local voices by a predicate.
+    private static func filterLocalVoices(matching predicate: (AVSpeechSynthesisVoice) -> Bool) -> [AVSpeechSynthesisVoice] {
+        AVSpeechSynthesisVoice.speechVoices()
+            .filter(predicate)
+            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
 
     /// Unified 6-step voice selection chain.
     /// 1. Stored default
@@ -93,7 +124,7 @@ enum VoiceFinder {
             return voice
         }
 
-        let baseLanguage = String(language.prefix(while: { $0 != "-" }))
+        let base = baseLanguage(of: language)
 
         // 2. Exact variation match
         if let voice = voiceForLocale(language) {
@@ -101,7 +132,7 @@ enum VoiceFinder {
         }
 
         // 3. Canonical variation
-        if let canonical = LanguageDetector.canonicalVariation(for: baseLanguage), canonical != language,
+        if let canonical = LanguageDetector.canonicalVariation(for: base), canonical != language,
            let voice = voiceForLocale(canonical) {
             return voice
         }
@@ -113,8 +144,8 @@ enum VoiceFinder {
         }
 
         // 5. Canonical variation of device locale's base language
-        let deviceBase = String(deviceLocale.prefix(while: { $0 != "-" }))
-        if deviceBase != baseLanguage,
+        let deviceBase = baseLanguage(of: deviceLocale)
+        if deviceBase != base,
            let canonicalDevice = LanguageDetector.canonicalVariation(for: deviceBase), canonicalDevice != deviceLocale,
            let voice = voiceForLocale(canonicalDevice) {
             return voice
@@ -122,5 +153,13 @@ enum VoiceFinder {
 
         // 6. en-US fallback
         return voiceForLocale("en-US")
+    }
+}
+
+// MARK: - VoicesResponse.Data convenience
+
+private extension VoicesResponse.Data {
+    func makeVoice(id: String, tier: RemoteVoice.Tier) -> RemoteVoice {
+        RemoteVoice(id: id, label: voices[id] ?? "", creditsPerMinute: creditsPerMinute, granularity: sentenceGranularity, sentenceDelay: sentenceDelay, tier: tier)
     }
 }
