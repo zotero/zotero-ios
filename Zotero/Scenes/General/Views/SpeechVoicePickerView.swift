@@ -576,7 +576,7 @@ fileprivate struct RemoteVoicesSection: View {
 
     private func playSample(withVoice voice: RemoteVoice) {
         isLoading = true
-        remoteVoicesController.downloadSample(voiceId: voice.id, language: "en-US")
+        remoteVoicesController.downloadSample(voiceId: voice.id)
             .subscribe(onSuccess: { data in
                 play(data: data)
             }, onFailure: { error in
