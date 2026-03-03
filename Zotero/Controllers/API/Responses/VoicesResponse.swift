@@ -25,13 +25,13 @@ struct VoicesResponse {
         let locales: OrderedDictionary<String, Locale>
 
         init(response: [String: Any]) throws {
-            let rawGranularity: String = try response.apiGet(key: "sentenceGranularity", caller: Self.self)
+            let rawGranularity: String = try response.apiGet(key: "segmentGranularity", caller: Self.self)
             guard let granularity = RemoteVoice.Granularity(rawValue: rawGranularity) else {
-                throw Parsing.Error.incompatibleValue("sentenceGranularity=\(rawGranularity)")
+                throw Parsing.Error.incompatibleValue("segmentGranularity=\(rawGranularity)")
             }
             creditsPerMinute = try response.apiGet(key: "creditsPerMinute", caller: Self.self)
             sentenceGranularity = granularity
-            sentenceDelay = try response.apiGet(key: "sentenceDelay", caller: Self.self)
+            sentenceDelay = (try? response.apiGet(key: "sentenceDelay", caller: Self.self)) ?? 0
 
             guard let voicesData = response["voices"] as? [String: Any] else {
                 throw Parsing.Error.missingKey("voices")
