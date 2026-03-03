@@ -57,13 +57,11 @@ struct ReadAloudOnboardingView: View {
     private var voicesForSelectedTier: [VoiceItem] {
         switch selectedTier {
         case .premium:
-            return []
-//            return VoiceFinder.remoteVoices(for: language, tier: .premium, from: remoteVoices).map { .remote($0) }
+            return remoteVoices.flatMap({ response in VoiceFinder.remoteVoices(for: language, tier: .premium, fromResponse: response).map { .remote($0) } }) ?? []
 
         case .standard:
-            return []
-//            return VoiceFinder.remoteVoices(for: language, tier: .standard, from: remoteVoices).map { .remote($0) }
-            
+            return remoteVoices.flatMap({ response in VoiceFinder.remoteVoices(for: language, tier: .standard, fromResponse: response).map { .remote($0) } }) ?? []
+
         case .local:
             return localVoices.map { .local($0) }
         }
