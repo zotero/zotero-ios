@@ -408,7 +408,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
 
     private func showReadAloudOnboardingIfNeeded() {
         guard FeatureGates.enabled.contains(.speech),
-//              !Defaults.shared.didShowReadAloudOnboarding,
+              !Defaults.shared.didShowReadAloudOnboarding,
               !viewModel.state.document.isLocked,
               let speechManager = accessibilityHandler?.speechManager
         else { return }
