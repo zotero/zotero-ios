@@ -591,9 +591,12 @@
 "accessibility.speech.onboarding.tier_premium" = "Premium";
 "accessibility.speech.onboarding.tier_standard" = "Standard";
 "accessibility.speech.onboarding.tier_local" = "Local";
-"accessibility.speech.onboarding.description_premium" = "Premium voices description placeholder";
-"accessibility.speech.onboarding.description_standard" = "Standard voices description placeholder";
-"accessibility.speech.onboarding.description_local" = "Local voices description placeholder";
+"accessibility.speech.onboarding.description_premium_1" = "Premium bullet point 1";
+"accessibility.speech.onboarding.description_premium_2" = "Premium bullet point 2";
+"accessibility.speech.onboarding.description_premium_3" = "Premium bullet point 3";
+"accessibility.speech.onboarding.description_standard_1" = "Standard bullet point 1";
+"accessibility.speech.onboarding.description_standard_2" = "Standard bullet point 2";
+"accessibility.speech.onboarding.description_local_1" = "Local bullet point 1";
 "accessibility.speech.voices" = "Voices";
 "accessibility.speech.local_sample" = "I am the local voice %@.";
 "accessibility.show_reader" = "Reading Mode";

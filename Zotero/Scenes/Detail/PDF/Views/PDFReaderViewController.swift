@@ -422,10 +422,11 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
               let speechManager = accessibilityHandler?.speechManager
         else { return }
 
-        Defaults.shared.didShowReadAloudOnboarding = true
         let language = speechManager.language ?? speechManager.detectedLanguage
         coordinatorDelegate?.showReadAloudOnboarding(language: language, userInterfaceStyle: overrideUserInterfaceStyle) { [weak self] selectedVoice in
-            if let selectedVoice, let self {
+            guard let self else { return }
+            if let selectedVoice {
+                Defaults.shared.didShowReadAloudOnboarding = true
                 self.accessibilityHandler?.set(initialVoice: selectedVoice)
             }
         }
