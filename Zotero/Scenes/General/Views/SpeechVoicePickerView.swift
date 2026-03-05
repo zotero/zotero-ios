@@ -22,7 +22,7 @@ struct SpeechVoicePickerView: View {
 
     enum Language: Identifiable, Equatable {
         case auto
-        case language(String)  // base language code, e.g., "en"
+        case language(String)
 
         var id: String {
             switch self {
@@ -58,7 +58,6 @@ struct SpeechVoicePickerView: View {
     @State private var language: Language
     @State private var selectedVoice: SpeechVoice
     @State private var localVoices: [AVSpeechSynthesisVoice]
-    @State private var activeLocales: [String]
     @State private var groupedVoices: [LocaleVoiceGroup]
     @State private var voicesResponse: VoicesResponse?
     @State private var navigationPath: NavigationPath
@@ -126,7 +125,6 @@ struct SpeechVoicePickerView: View {
         navigationPath = NavigationPath()
         let baseLang = language.flatMap({ String($0.prefix(while: { $0 != "-" })) }) ?? String(detectedLanguage.prefix(while: { $0 != "-" }))
         localVoices = VoiceFinder.localVoices(forBaseLanguage: baseLang)
-        activeLocales = []
         groupedVoices = []
         voicesResponse = nil
         standardCreditsRemaining = nil
@@ -184,15 +182,16 @@ struct SpeechVoicePickerView: View {
                         languages: createLanguages(),
                         navigationPath: $navigationPath,
                         onLanguageSelected: { selectedLanguage in
+                            let locales: [String]
                             if let selectedLanguage {
                                 language = .language(selectedLanguage.id)
-                                activeLocales = selectedLanguage.locales
+                                locales = selectedLanguage.locales
                             } else {
                                 language = .auto
-                                activeLocales = remoteLocales(forBaseLanguage: baseLanguage)
+                                locales = remoteLocales(forBaseLanguage: baseLanguage)
                             }
                             reloadLocalVoices()
-                            reloadGroupedVoices()
+                            reloadGroupedVoices(locales: locales)
                             switch type {
                             case .local:
                                 if let voice = VoiceFinder.findLocalVoice(for: resolvedLocale, from: localVoices) {
@@ -214,8 +213,7 @@ struct SpeechVoicePickerView: View {
                     }
 
                 case .premium, .standard:
-                    activeLocales = remoteLocales(forBaseLanguage: baseLanguage)
-                    reloadGroupedVoices()
+                    reloadGroupedVoices(locales: remoteLocales(forBaseLanguage: baseLanguage))
                     autoSelectVoice()
                 }
             }
@@ -269,8 +267,7 @@ struct SpeechVoicePickerView: View {
                     voicesResponse = result.response
                     standardCreditsRemaining = result.credits.standard
                     premiumCreditsRemaining = result.credits.premium
-                    activeLocales = remoteLocales(forBaseLanguage: baseLanguage)
-                    reloadGroupedVoices()
+                    reloadGroupedVoices(locales: remoteLocales(forBaseLanguage: baseLanguage))
                     isLoading = false
                 }, onFailure: { error in
                     DDLogError("SpeechVoicePickerView: can't load remote voices - \(error)")
@@ -281,14 +278,14 @@ struct SpeechVoicePickerView: View {
             .disposed(by: disposeBag)
     }
 
-    private func reloadGroupedVoices() {
+    private func reloadGroupedVoices(locales: [String]) {
         guard let response = voicesResponse else {
             groupedVoices = []
             return
         }
         let tier: RemoteVoice.Tier = type == .premium ? .premium : .standard
         let base = baseLanguage
-        groupedVoices = activeLocales.compactMap { locale in
+        groupedVoices = locales.compactMap { locale in
             let voices = VoiceFinder.remoteVoices(for: locale, tier: tier, fromResponse: response)
             guard !voices.isEmpty else { return nil }
             return LocaleVoiceGroup(locale: locale, displayName: VoiceFinder.variationName(for: locale, baseLanguage: base), voices: voices)
