@@ -28,17 +28,27 @@ struct ReadAloudOnboardingView: View {
             }
         }
         
-        var description: String {
+        var descriptionBulletPoints: [String] {
+            let prefix: String
             switch self {
             case .premium:
-                return L10n.Accessibility.Speech.Onboarding.descriptionPremium
-                
+                prefix = "accessibility.speech.onboarding.description_premium"
             case .standard:
-                return L10n.Accessibility.Speech.Onboarding.descriptionStandard
-                
+                prefix = "accessibility.speech.onboarding.description_standard"
             case .local:
-                return L10n.Accessibility.Speech.Onboarding.descriptionLocal
+                prefix = "accessibility.speech.onboarding.description_local"
             }
+            let bundle = Bundle(for: AppDelegate.self)
+            var results: [String] = []
+            var index = 1
+            while true {
+                let key = "\(prefix)_\(index)"
+                let localized = bundle.localizedString(forKey: key, value: nil, table: "Localizable")
+                guard localized != key && !localized.isEmpty else { break }
+                results.append(localized)
+                index += 1
+            }
+            return results
         }
     }
     
@@ -98,20 +108,18 @@ struct ReadAloudOnboardingView: View {
                 List {
                     // Description section
                     Section {
-                        Text(selectedTier.description)
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
+                        ForEach(selectedTier.descriptionBulletPoints, id: \.self) { point in
+                            HStack(alignment: .top, spacing: 8) {
+                                Text("•")
+                                Text(point)
+                            }
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
+                        }
                     }
                     
                     // Voices section
-                    if selectedTier == .local {
-                        VoicesSection(
-                            voices: voicesForSelectedTier,
-                            selectedVoice: $selectedVoice,
-                            remoteVoicesController: remoteVoicesController,
-                            language: language
-                        )
-                    } else if isLoading {
+                    if isLoading {
                         Section(L10n.Accessibility.Speech.voices.uppercased()) {
                             HStack {
                                 Spacer()
@@ -135,6 +143,13 @@ struct ReadAloudOnboardingView: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 20)
                         }
+                    } else {
+                        VoicesSection(
+                            voices: voicesForSelectedTier,
+                            selectedVoice: $selectedVoice,
+                            remoteVoicesController: remoteVoicesController,
+                            language: language
+                        )
                     }
                 }
                 .listStyle(.insetGrouped)
