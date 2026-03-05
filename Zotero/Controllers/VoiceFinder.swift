@@ -78,7 +78,7 @@ enum VoiceFinder {
                 result.append(data.makeVoice(id: voiceId, tier: tier))
             }
         }
-        return result.sorted { $0.label.localizedCaseInsensitiveCompare($1.label) == .orderedAscending }
+        return result
     }
 
     // MARK: - Helpers
@@ -100,11 +100,30 @@ enum VoiceFinder {
         String(locale.prefix(while: { $0 != "-" }))
     }
 
-    /// Filters and sorts system local voices by a predicate.
+    /// Filters and sorts system local voices by a predicate. Sorted by quality (premium > enhanced > other), then by name.
     private static func filterLocalVoices(matching predicate: (AVSpeechSynthesisVoice) -> Bool) -> [AVSpeechSynthesisVoice] {
         AVSpeechSynthesisVoice.speechVoices()
             .filter(predicate)
-            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+            .sorted {
+                let q0 = qualitySortOrder($0.quality)
+                let q1 = qualitySortOrder($1.quality)
+                if q0 != q1 { return q0 < q1 }
+                return $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+            }
+    }
+
+    /// Returns sort order for voice quality (lower = better).
+    private static func qualitySortOrder(_ quality: AVSpeechSynthesisVoiceQuality) -> Int {
+        switch quality {
+        case .premium:
+            return 0
+            
+        case .enhanced:
+            return 1
+
+        default:
+            return 2
+        }
     }
 
     /// Unified 6-step voice selection chain.
