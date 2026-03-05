@@ -86,30 +86,6 @@ struct SpeechVoicePickerView: View {
         }
     }
 
-    /// Calculates remaining time based on remaining credits and the selected voice's credits per minute.
-    /// Returns nil if type is local, no remote voice is selected, voice is standard tier (unlimited), or remaining time exceeds 90 days.
-    private var remainingTime: TimeInterval? {
-        guard type.isRemote,
-              case .remote(let voice) = selectedVoice
-        else {
-            return nil
-        }
-        let credits: Int?
-        switch voice.tier {
-        case .standard:
-            credits = standardCreditsRemaining
-
-        case .premium:
-            credits = premiumCreditsRemaining
-        }
-        guard let credits else { return nil }
-        // creditsPerMinute means credits consumed per minute of audio, so remaining time in seconds = (credits / creditsPerMinute) * 60
-        let time = (TimeInterval(credits) / TimeInterval(voice.creditsPerMinute)) * 60
-        // Don't display if remaining time exceeds 90 days
-        guard RemainingTimeFormatter.shouldDisplay(time) else { return nil }
-        return time
-    }
-
     init(
         selectedVoice: SpeechVoice,
         language: String?,
@@ -143,9 +119,6 @@ struct SpeechVoicePickerView: View {
         NavigationStack(path: $navigationPath) {
             List {
                 TypeSection(type: $type)
-                if let remainingTime {
-                    RemainingTimeSection(remainingTime: remainingTime)
-                }
                 if canShowLanguage {
                     LanguageSection(language: $language, detectedLanguage: detectedLanguage, navigationPath: $navigationPath)
                 }
@@ -163,6 +136,7 @@ struct SpeechVoicePickerView: View {
                             RemoteVoicesSection(
                                 groups: groupedVoices,
                                 selectedVoice: $selectedVoice,
+                                creditsRemaining: type == .premium ? premiumCreditsRemaining : standardCreditsRemaining,
                                 remoteVoicesController: remoteVoicesController
                             )
                         }
@@ -452,25 +426,6 @@ fileprivate struct LanguageSection: View {
     }
 }
 
-fileprivate struct RemainingTimeSection: View {
-    let remainingTime: TimeInterval
-
-    private var timeColor: Color {
-        RemainingTimeFormatter.isWarning(remainingTime) ? .red : .secondary
-    }
-
-    var body: some View {
-        Section {
-            HStack {
-                Text("Remaining Time")
-                Spacer()
-                Text(RemainingTimeFormatter.formatted(remainingTime))
-                    .foregroundColor(timeColor)
-            }
-        }
-    }
-}
-
 fileprivate struct LoadErrorSection: View {
     let retryAction: () -> Void
 
@@ -565,6 +520,7 @@ extension RemoteVoice: Identifiable {}
 fileprivate struct RemoteVoicesSection: View {
     let groups: [SpeechVoicePickerView.LocaleVoiceGroup]
     @Binding var selectedVoice: SpeechVoice
+    let creditsRemaining: Int?
     @State private var player: AVAudioPlayer?
     @State private var isLoading: Bool = false
 
@@ -585,6 +541,11 @@ fileprivate struct RemoteVoicesSection: View {
                                 Image(systemName: "checkmark").foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUIColor)
                             }
                         }
+                        if let remainingTime = remainingTime(for: voice) {
+                            Text(RemainingTimeFormatter.formatted(remainingTime))
+                                .foregroundColor(RemainingTimeFormatter.isWarning(remainingTime) ? .red : .secondary)
+                                .font(.subheadline)
+                        }
                     }
                     .contentShape(Rectangle())
                     .onTapGesture {
@@ -599,6 +560,13 @@ fileprivate struct RemoteVoicesSection: View {
         .onDisappear {
             player?.stop()
         }
+    }
+
+    private func remainingTime(for voice: RemoteVoice) -> TimeInterval? {
+        guard let creditsRemaining, voice.creditsPerMinute > 0 else { return nil }
+        let time = (TimeInterval(creditsRemaining) / TimeInterval(voice.creditsPerMinute)) * 60
+        guard RemainingTimeFormatter.shouldDisplay(time) else { return nil }
+        return time
     }
 
     private func playSample(withVoice voice: RemoteVoice) {
