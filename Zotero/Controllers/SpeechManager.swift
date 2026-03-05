@@ -739,7 +739,11 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     private var pendingPlaybackRange: NSRange?
     private var shouldReloadOnResume = false
     private var creditPollTimer: Timer?
-    var speechRateModifier: Float
+    var speechRateModifier: Float {
+        didSet {
+            player?.rate = speechRateModifier
+        }
+    }
     var speechVoice: SpeechVoice? {
         return voice.flatMap({ .remote($0) })
     }
@@ -1045,10 +1049,13 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     
     private func play(data: Data) {
         do {
-            player = try AVAudioPlayer(data: data)
-            player?.delegate = self
-            player?.prepareToPlay()
-            player?.play()
+            let audioPlayer = try AVAudioPlayer(data: data)
+            audioPlayer.delegate = self
+            audioPlayer.enableRate = true
+            audioPlayer.rate = speechRateModifier
+            audioPlayer.prepareToPlay()
+            audioPlayer.play()
+            player = audioPlayer
             delegate.state.accept(.speaking)
         } catch {
             DDLogError("RemoteVoiceProcessor: can't play audio - \(error)")
