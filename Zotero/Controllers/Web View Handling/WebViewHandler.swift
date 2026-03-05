@@ -170,10 +170,13 @@ class WebViewHandler: NSObject {
         }
     }
 
-    func sendHttpResponse(data: Data?, statusCode: Int, url: URL?, successCodes: [Int], headers: [AnyHashable: Any], for messageId: Int) {
+    private func sendHttpResponse(data: Data?, statusCode: Int, url: URL?, successCodes: [Int], headers: [AnyHashable: Any], for messageId: Int) {
         let isSuccess = successCodes.isEmpty ? 200..<300 ~= statusCode : successCodes.contains(statusCode)
         let responseText = data.flatMap({ String(data: $0, encoding: .utf8) }) ?? ""
+        sendHttpResponse(responseText: responseText, statusCode: statusCode, url: url, isSuccess: isSuccess, headers: headers, for: messageId)
+    }
 
+    func sendHttpResponse(responseText: String, statusCode: Int, url: URL?, isSuccess: Bool, headers: [AnyHashable: Any], for messageId: Int) {
         var payload: [String: Any]
         if isSuccess {
             payload = ["status": statusCode, "responseText": responseText, "headers": headers, "url": url?.absoluteString ?? ""]
