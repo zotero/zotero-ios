@@ -27,7 +27,7 @@ protocol PdfReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarC
     func showFontSizePicker(sender: UIView, picked: @escaping (CGFloat) -> Void)
     func showDeleteAlertForAnnotation(sender: UIView, delete: @escaping () -> Void)
     func showDocumentChangedAlert(completed: @escaping () -> Void)
-    func showAccessibility<Delegate: SpeechmanagerDelegate>(
+    func showAccessibility<Delegate: SpeechManagerDelegate>(
         speechManager: SpeechManager<Delegate>,
         document: Document,
         userInterfaceStyle: UIUserInterfaceStyle,
@@ -35,8 +35,9 @@ protocol PdfReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarC
         animated: Bool,
         isFormSheet: @escaping () -> Bool,
         dismissAction: @escaping () -> Void,
-        voiceChangeAction: @escaping (AVSpeechSynthesisVoice) -> Void
+        voiceChangeAction: @escaping (AccessibilityPopupVoiceChange) -> Void
     )
+    func showReadAloudOnboarding(language: String, userInterfaceStyle: UIUserInterfaceStyle, completion: @escaping (SpeechVoice?) -> Void)
 }
 
 protocol PdfAnnotationsCoordinatorDelegate: ReaderSidebarCoordinatorDelegate {
@@ -57,6 +58,7 @@ final class PDFCoordinator: ReaderCoordinator {
     private let preselectedAnnotationKey: String?
     private let previewRects: [CGRect]?
     internal unowned let controllers: Controllers
+    private let remoteVoicesController: RemoteVoicesController
     private let disposeBag: DisposeBag
 
     init(
@@ -79,8 +81,9 @@ final class PDFCoordinator: ReaderCoordinator {
         self.previewRects = previewRects
         self.navigationController = navigationController
         self.controllers = controllers
-        self.childCoordinators = []
-        self.disposeBag = DisposeBag()
+        childCoordinators = []
+        disposeBag = DisposeBag()
+        remoteVoicesController = RemoteVoicesController(apiClient: controllers.apiClient)
 
         navigationController.dismissHandler = { [weak self] in
             guard let self else { return }
@@ -135,6 +138,7 @@ final class PDFCoordinator: ReaderCoordinator {
         let controller = PDFReaderViewController(
             viewModel: ViewModel(initialState: state, handler: handler),
             pdfWorkerController: userControllers.pdfWorkerController,
+            remoteVoicesController: remoteVoicesController,
             compactSize: UIDevice.current.isCompactWidth(size: parentNavigationController.view.frame.size)
         )
         controller.coordinatorDelegate = self
@@ -281,7 +285,24 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         navigationController?.present(controller, animated: true)
     }
 
-    func showAccessibility<Delegate: SpeechmanagerDelegate>(
+    func showReadAloudOnboarding(language: String, userInterfaceStyle: UIUserInterfaceStyle, completion: @escaping (SpeechVoice?) -> Void) {
+        guard let navigationController else { return }
+        let view = ReadAloudOnboardingView(
+            language: language,
+            remoteVoicesController: remoteVoicesController,
+            dismiss: { selectedVoice in
+                navigationController.dismiss(animated: true) {
+                    completion(selectedVoice)
+                }
+            }
+        )
+        let controller = UIHostingController(rootView: view)
+        controller.overrideUserInterfaceStyle = userInterfaceStyle
+        controller.modalPresentationStyle = .formSheet
+        navigationController.present(controller, animated: true)
+    }
+
+    func showAccessibility<Delegate: SpeechManagerDelegate>(
         speechManager: SpeechManager<Delegate>,
         document: Document,
         userInterfaceStyle: UIUserInterfaceStyle,
@@ -289,7 +310,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         animated: Bool,
         isFormSheet: @escaping () -> Bool,
         dismissAction: @escaping () -> Void,
-        voiceChangeAction: @escaping (AVSpeechSynthesisVoice) -> Void
+        voiceChangeAction: @escaping (AccessibilityPopupVoiceChange) -> Void
     ) {
         guard let navigationController else { return }
         let readerAction = { [weak self] in
@@ -322,16 +343,28 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
 }
 
 extension PDFCoordinator: AccessibilityPopoupCoordinatorDelegate {
-    func showVoicePicker(for voice: AVSpeechSynthesisVoice, userInterfaceStyle: UIUserInterfaceStyle, selectionChanged: @escaping (AVSpeechSynthesisVoice) -> Void) {
+    func showVoicePicker(
+        for voice: SpeechVoice,
+        language: String?,
+        detectedLanguage: String,
+        userInterfaceStyle: UIUserInterfaceStyle,
+        selectionChanged: @escaping (AccessibilityPopupVoiceChange) -> Void
+    ) {
         guard let navigationController else { return }
-        let view = SpeechVoicePickerView(selectedVoice: voice, dismiss: { voice in
-            selectionChanged(voice)
-            if let presentedViewController = navigationController.presentedViewController as? AccessibilityPopupViewController<PDFReaderViewController> {
-                presentedViewController.dismiss(animated: true)
-            } else {
-                navigationController.dismiss(animated: true)
+        let view = SpeechVoicePickerView(
+            selectedVoice: voice,
+            language: language,
+            detectedLanguage: detectedLanguage,
+            remoteVoicesController: remoteVoicesController,
+            dismiss: { change in
+                selectionChanged(change)
+                if let presentedViewController = navigationController.presentedViewController as? AccessibilityPopupViewController<PDFReaderViewController> {
+                    presentedViewController.dismiss(animated: true)
+                } else {
+                    navigationController.dismiss(animated: true)
+                }
             }
-        })
+        )
         let controller = UIHostingController(rootView: view)
         controller.overrideUserInterfaceStyle = userInterfaceStyle
         controller.modalPresentationStyle = .formSheet
