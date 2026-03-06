@@ -373,6 +373,7 @@
 "settings.annotation_tools.reset" = "Reset";
 
 "shareext.save" = "Save to Zotero";
+"shareext.resolve_challenge" = "Resolve Challenge";
 "shareext.decoding_attachment" = "Searching for items";
 "shareext.translation.item_selection" = "Choose an item";
 "shareext.translation.translating_with" = "Saving with %@";

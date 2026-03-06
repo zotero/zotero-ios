@@ -80,6 +80,16 @@ final class ShareViewController: UIViewController {
     private static let width: CGFloat = 468
     private static let pickerSize = CGSize(width: width, height: 500.0)
 
+    lazy private var cancelButton: UIBarButtonItem = {
+        .init(barButtonSystemItem: .cancel, target: self, action: #selector(ShareViewController.cancel))
+    }()
+    lazy private var doneButton: UIBarButtonItem = {
+        .init(title: L10n.Shareext.save, style: .done, target: self, action: #selector(ShareViewController.done))
+    }()
+    lazy private var continueButton: UIBarButtonItem = {
+        .init(title: L10n.Shareext.resolveChallenge, style: .done, target: self, action: #selector(ShareViewController.continueAfterChallenge))
+    }()
+
     // MARK: - Lifecycle
 
     override func viewDidLoad() {
@@ -214,6 +224,10 @@ final class ShareViewController: UIViewController {
         self.viewModel?.submit()
     }
 
+    @objc private func continueAfterChallenge() {
+        viewModel?.continueAfterChallenge()
+    }
+
     @objc private func cancel() {
         self.viewModel?.cancel()
         self.debugLogging.storeLogs { [unowned self] in
@@ -277,6 +291,9 @@ final class ShareViewController: UIViewController {
 
         case .translating(let name):
             DDLogInfo("State: translating with \(name)")
+
+        case .challengePending:
+            DDLogInfo("State: challenge pending")
         }
 
         if let state = itemState {
@@ -371,11 +388,17 @@ final class ShareViewController: UIViewController {
     }
 
     private func updateNavigationItems(for state: ExtensionViewModel.State.AttachmentState, isSubmitting: Bool) {
+        if case .challengePending = state {
+            navigationItem.leftBarButtonItem?.isEnabled = !isSubmitting
+            navigationItem.rightBarButtonItem = continueButton
+            return
+        }
+
         if let error = state.error {
             switch error {
             case .quotaLimit, .webDavFailure, .webDavUnauthorized, .webDavForbidden, .apiFailure, .forbidden:
-                self.navigationItem.leftBarButtonItem = nil
-                self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(ShareViewController.cancel))
+                navigationItem.leftBarButtonItem = nil
+                navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(ShareViewController.cancel))
                 return
 
             default:
@@ -383,8 +406,9 @@ final class ShareViewController: UIViewController {
             }
         }
 
-        self.navigationItem.leftBarButtonItem?.isEnabled = !isSubmitting
-        self.navigationItem.rightBarButtonItem?.isEnabled = !isSubmitting && state.isSubmittable
+        doneButton.isEnabled = !isSubmitting && state.isSubmittable
+        navigationItem.rightBarButtonItem = doneButton
+        navigationItem.leftBarButtonItem?.isEnabled = !isSubmitting
     }
 
     private func updateBottomProgress(for state: ExtensionViewModel.State.AttachmentState, itemState: ExtensionViewModel.State.ItemPickerState?, hasItem: Bool, isSubmitting: Bool) {
@@ -407,7 +431,7 @@ final class ShareViewController: UIViewController {
                 message = L10n.Shareext.decodingAttachment
                 showActivityIndicator = true
 
-            case .processed:
+            case .processed, .challengePending:
                 message = nil
                 showActivityIndicator = false
 
@@ -701,15 +725,11 @@ final class ShareViewController: UIViewController {
     }
 
     private func setupNavbar(loggedIn: Bool) {
-        self.navigationController?.navigationBar.tintColor = Asset.Colors.zoteroBlue.color
-
-        let cancel = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(ShareViewController.cancel))
-        self.navigationItem.leftBarButtonItem = cancel
-
+        navigationController?.navigationBar.tintColor = Asset.Colors.zoteroBlue.color
+        navigationItem.leftBarButtonItem = cancelButton
         if loggedIn {
-            let done = UIBarButtonItem(title: L10n.Shareext.save, style: .done, target: self, action: #selector(ShareViewController.done))
-            done.isEnabled = false
-            self.navigationItem.rightBarButtonItem = done
+            doneButton.isEnabled = false
+            navigationItem.rightBarButtonItem = doneButton
         }
     }
 
