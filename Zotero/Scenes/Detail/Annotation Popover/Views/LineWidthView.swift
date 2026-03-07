@@ -30,6 +30,8 @@ final class LineWidthView: UIView {
     private weak var titleLabel: UILabel!
     private weak var valueLabel: UILabel!
     private weak var slider: UISlider!
+    private weak var minusButton: UIButton!
+    private weak var plusButton: UIButton!
 
     var value: Float {
         get {
@@ -41,6 +43,7 @@ final class LineWidthView: UIView {
             let index = steps.enumerated().min(by: { abs($0.element - newValue) < abs($1.element - newValue) })?.offset ?? 0
             slider.value = Float(index)
             valueLabel.text = String(format: "%0.1f", steps[index])
+            updateButtons()
         }
     }
     var valueObservable: Observable<Float> {
@@ -60,6 +63,13 @@ final class LineWidthView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
+    // MARK: - Actions
+
+    private func updateButtons() {
+        minusButton.isEnabled = slider.value > slider.minimumValue
+        plusButton.isEnabled = slider.value < slider.maximumValue
+    }
+
     // MARK: - Setups
 
     private func setup(title: String, settings: Settings) {
@@ -73,8 +83,31 @@ final class LineWidthView: UIView {
             slider.value = roundedValue
             guard let self else { return }
             self.valueLabel.text = String(format: "%0.1f", value)
+            updateButtons()
         }, for: .valueChanged)
         self.slider = slider
+
+        let minusButton = UIButton(type: .system)
+        minusButton.setImage(UIImage(systemName: "minus"), for: .normal)
+        minusButton.setContentHuggingPriority(.required, for: .horizontal)
+        minusButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        minusButton.addAction(UIAction { [weak slider] _ in
+            guard let slider, slider.value > slider.minimumValue else { return }
+            slider.value -= 1
+            slider.sendActions(for: .valueChanged)
+        }, for: .touchUpInside)
+        self.minusButton = minusButton
+
+        let plusButton = UIButton(type: .system)
+        plusButton.setImage(UIImage(systemName: "plus"), for: .normal)
+        plusButton.setContentHuggingPriority(.required, for: .horizontal)
+        plusButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        plusButton.addAction(UIAction { [weak slider] _ in
+            guard let slider, slider.value < slider.maximumValue else { return }
+            slider.value += 1
+            slider.sendActions(for: .valueChanged)
+        }, for: .touchUpInside)
+        self.plusButton = plusButton
 
         let titleLabel = UILabel()
         titleLabel.font = .preferredFont(forTextStyle: .body)
@@ -90,7 +123,7 @@ final class LineWidthView: UIView {
         valueLabel.text = String(format: "%0.1f", value)
         self.valueLabel = valueLabel
 
-        let container = UIStackView(arrangedSubviews: [titleLabel, slider, valueLabel])
+        let container = UIStackView(arrangedSubviews: [titleLabel, minusButton, slider, plusButton, valueLabel])
         container.axis = .horizontal
         container.spacing = 12
         container.translatesAutoresizingMaskIntoConstraints = false
