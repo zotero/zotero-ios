@@ -9,115 +9,99 @@
 import UIKit
 
 import RxSwift
-import RxCocoa
 
 final class LineWidthView: UIView {
     struct Settings {
-        let minValue: Float
-        let maxValue: Float
-        let stepFunction: (Float) -> Float
+        let steps: [Float]
 
         static var lineWidth: Settings {
-            return LineWidthView.Settings(minValue: 0.2, maxValue: 25, stepFunction: { value in
-                if value < 1 {
-                    return value.rounded(to: 1)
-                }
-                if value < 10 {
-                    return ceil(value * 2) / 2
-                }
-                return ceil(value)
-            })
+            let steps: [Float] = Array(stride(from: Float(0.2), through: Float(1.0), by: Float(0.2))) + Array(stride(from: Float(1.5), through: Float(25.0), by: Float(0.5)))
+            return .init(steps: steps)
         }
 
         static var fontSize: Settings {
-            return LineWidthView.Settings(minValue: 1, maxValue: 300, stepFunction: { value in
-                return round(value)
-            })
+            return .init(steps: [6, 8, 10, 12, 14, 18, 24, 36, 48, 64, 72, 96, 144, 192])
         }
     }
 
     private let contentInsets: UIEdgeInsets
-    private let stepFunction: (Float) -> Float
-    private let disposeBag: DisposeBag
+    private let steps: [Float]
 
-    var title: String = "" {
-        didSet {
-            self.valueLabel.text = self.title
-        }
-    }
     private weak var titleLabel: UILabel!
     private weak var valueLabel: UILabel!
     private weak var slider: UISlider!
 
     var value: Float {
         get {
-            return self.slider.value
+            let index = min(max(Int(slider.value.rounded()), 0), steps.count - 1)
+            return steps[Int(index)]
         }
 
         set {
-            self.step(value: newValue)
+            let index = steps.enumerated().min(by: { abs($0.element - newValue) < abs($1.element - newValue) })?.offset ?? 0
+            slider.value = Float(index)
+            valueLabel.text = String(format: "%0.1f", steps[index])
         }
     }
-    var valueObservable: Observable<Float> { return self.slider.rx.value.skip(1) }
+    var valueObservable: Observable<Float> {
+        return slider.rx.value.skip(1).map { [weak self] _ in
+            return self?.value ?? 0
+        }
+    }
 
     init(title: String, settings: Settings, contentInsets: UIEdgeInsets) {
-        self.title = title
         self.contentInsets = contentInsets
-        self.stepFunction = settings.stepFunction
-        self.disposeBag = DisposeBag()
+        steps = settings.steps
         super.init(frame: CGRect())
-        self.setup(settings: settings)
+        setup(title: title, settings: settings)
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    // MARK: - Actions
-
-    private func step(value: Float) {
-        self.slider.value = self.stepFunction(value)
-        self.valueLabel.text = String(format: "%0.1f", self.slider.value)
-    }
-
     // MARK: - Setups
 
-    private func setup(settings: Settings) {
+    private func setup(title: String, settings: Settings) {
         let slider = UISlider()
-        slider.minimumValue = settings.minValue
-        slider.maximumValue = settings.maxValue
-        slider.rx.value.skip(1).subscribe(with: self, onNext: { `self`, value in
-            self.step(value: value)
-        })
-        .disposed(by: self.disposeBag)
+        slider.minimumValue = 0
+        slider.maximumValue = Float(settings.steps.count - 1)
+        slider.isContinuous = true
+        slider.addAction(UIAction { [weak self] action in
+            guard let slider = action.sender as? UISlider else { return }
+            let roundedValue = slider.value.rounded()
+            slider.value = roundedValue
+            guard let self else { return }
+            self.valueLabel.text = String(format: "%0.1f", value)
+        }, for: .valueChanged)
         self.slider = slider
 
-        let title = UILabel()
-        title.font = .preferredFont(forTextStyle: .body)
-        title.adjustsFontForContentSizeCategory = true
-        title.textColor = Asset.Colors.annotationText.color
-        title.text = self.title
-        self.titleLabel = title
+        let titleLabel = UILabel()
+        titleLabel.font = .preferredFont(forTextStyle: .body)
+        titleLabel.adjustsFontForContentSizeCategory = true
+        titleLabel.textColor = Asset.Colors.annotationText.color
+        titleLabel.text = title
+        self.titleLabel = titleLabel
 
-        let value = UILabel()
-        value.adjustsFontForContentSizeCategory = true
-        value.font = .preferredFont(forTextStyle: .body)
-        value.textColor = .systemGray
-        value.text = String(format: "%0.1f", self.slider.value)
-        self.valueLabel = value
+        let valueLabel = UILabel()
+        valueLabel.adjustsFontForContentSizeCategory = true
+        valueLabel.font = .preferredFont(forTextStyle: .body)
+        valueLabel.textColor = .systemGray
+        valueLabel.text = String(format: "%0.1f", value)
+        self.valueLabel = valueLabel
 
-        let container = UIStackView(arrangedSubviews: [title, slider, value])
+        let container = UIStackView(arrangedSubviews: [titleLabel, slider, valueLabel])
         container.axis = .horizontal
         container.spacing = 12
         container.translatesAutoresizingMaskIntoConstraints = false
 
-        self.addSubview(container)
+        addSubview(container)
 
         NSLayoutConstraint.activate([
-            container.topAnchor.constraint(equalTo: self.topAnchor, constant: self.contentInsets.top),
-            self.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: self.contentInsets.bottom),
-            container.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: self.contentInsets.left),
-            self.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: self.contentInsets.right)
+            container.topAnchor.constraint(equalTo: topAnchor, constant: contentInsets.top),
+            bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: contentInsets.bottom),
+            container.leadingAnchor.constraint(equalTo: leadingAnchor, constant: contentInsets.left),
+            trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: contentInsets.right)
         ])
     }
 }
