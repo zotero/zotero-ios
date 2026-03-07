@@ -17,10 +17,6 @@ final class LineWidthView: UIView {
         let maxValue: Float
         let stepFunction: (Float) -> Float
 
-        static var `default`: Settings {
-            return Settings(minValue: 1, maxValue: 10, stepFunction: { $0 })
-        }
-
         static var lineWidth: Settings {
             return LineWidthView.Settings(minValue: 0.2, maxValue: 25, stepFunction: { value in
                 if value < 1 {
@@ -74,12 +70,7 @@ final class LineWidthView: UIView {
     }
 
     required init?(coder: NSCoder) {
-        let settings = Settings.default
-        self.stepFunction = settings.stepFunction
-        self.contentInsets = UIEdgeInsets(top: 8, left: 16, bottom: 8, right: 16)
-        self.disposeBag = DisposeBag()
-        super.init(coder: coder)
-        self.setup(settings: settings)
+        fatalError("init(coder:) has not been implemented")
     }
 
     // MARK: - Actions
