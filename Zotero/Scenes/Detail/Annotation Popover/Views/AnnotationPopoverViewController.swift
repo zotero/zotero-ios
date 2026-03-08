@@ -208,7 +208,7 @@ final class AnnotationPopoverViewController: UIViewController {
             colorPickerContainer.backgroundColor = Asset.Colors.defaultCellBackground.color
             colorPickerContainer.accessibilityLabel = L10n.Accessibility.Pdf.colorPicker
 
-            let hexColors = AnnotationsConfig.colors(for: viewModel.state.type)
+            let hexColors = viewModel.state.type.colors
             let colorPicker = ColorPickerStackView(
                 hexColors: hexColors,
                 columnsDistribution: .fixed(numberOfColumns: hexColors.count),

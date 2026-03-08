@@ -61,7 +61,7 @@ final class ColorPickerCell: RxTableViewCell {
 
     func setup(selectedColor: String, annotationType: AnnotationType) {
         guard let colorPicker else { return }
-        let colors = AnnotationsConfig.colors(for: annotationType)
+        let colors = annotationType.colors
         for view in colorPicker.arrangedSubviews {
             guard let colorRow = view as? UIStackView else { continue }
             for view in colorRow.arrangedSubviews {

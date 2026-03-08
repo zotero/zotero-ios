@@ -12,7 +12,6 @@ import PSPDFKit
 import RxSwift
 
 class AnnotationToolOptionsViewController: UIViewController {
-    private static let width: CGFloat = 230
     private static let circleSize: CGFloat = 44
     private static let circleOffset: CGFloat = 8
     private static let verticalInset: CGFloat = 15
@@ -59,10 +58,12 @@ class AnnotationToolOptionsViewController: UIViewController {
         func setupView() {
             var subviews: [UIView] = []
 
+            let hasSize = viewModel.state.size != nil
+
             if let color = viewModel.state.colorHex {
                 let colorPicker = ColorPickerStackView(
-                    hexColors: colors(for: viewModel.state.tool),
-                    columnsDistribution: UIDevice.current.userInterfaceIdiom == .pad ? .fixed(numberOfColumns: 4) : .fitInWidth(width: UIScreen.main.bounds.width - (2 * Self.horizontalInset)),
+                    hexColors: viewModel.state.tool.annotationType?.colors ?? [],
+                    columnsDistribution: UIDevice.current.userInterfaceIdiom == .pad ? .fixed(numberOfColumns: hasSize ? 5 : 4) : .fitInWidth(width: UIScreen.main.bounds.width - (2 * Self.horizontalInset)),
                     allowsMultipleSelection: false,
                     circleBackgroundColor: Asset.Colors.annotationPopoverBackground.color,
                     circleSize: Self.circleSize,
@@ -70,9 +71,9 @@ class AnnotationToolOptionsViewController: UIViewController {
                     circleSelectionLineWidth: 3,
                     circleSelectionInset: UIEdgeInsets(top: 4, left: 4, bottom: 4, right: 4),
                     trailingSpacerViewProvider: {
-                        guard UIDevice.current.userInterfaceIdiom == .phone else { return nil }
+                        guard UIDevice.current.userInterfaceIdiom == .phone || hasSize else { return nil }
                         let spacerView = UIView()
-                        spacerView.setContentHuggingPriority(.defaultLow, for: .horizontal)
+                        spacerView.setContentHuggingPriority(.fittingSizeLevel, for: .horizontal)
                         return spacerView
                     },
                     hexColorToggled: { [weak self] hexColor in
@@ -127,18 +128,6 @@ class AnnotationToolOptionsViewController: UIViewController {
                 container.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: Self.horizontalInset),
                 view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: Self.horizontalInset)
             ])
-
-            func colors(for tool: AnnotationTool) -> [String] {
-                switch tool {
-                case .ink: return AnnotationsConfig.colors(for: .ink)
-                case .note: return AnnotationsConfig.colors(for: .note)
-                case .highlight: return AnnotationsConfig.colors(for: .highlight)
-                case .image: return AnnotationsConfig.colors(for: .image)
-                case .freeText: return AnnotationsConfig.colors(for: .freeText)
-                case .underline: return AnnotationsConfig.colors(for: .underline)
-                default: return []
-                }
-            }
         }
 
         func setupNavigationBar() {
@@ -165,9 +154,11 @@ class AnnotationToolOptionsViewController: UIViewController {
         updateContentSizeIfNeeded()
 
         func updateContentSizeIfNeeded() {
-            guard UIDevice.current.userInterfaceIdiom == .pad, var size = container?.systemLayoutSizeFitting(CGSize(width: Self.width, height: .greatestFiniteMagnitude)) else { return }
+            let hasSize = viewModel.state.size != nil
+            let width: CGFloat = hasSize ? 294 : 230
+            guard UIDevice.current.userInterfaceIdiom == .pad, var size = container?.systemLayoutSizeFitting(CGSize(width: width, height: .greatestFiniteMagnitude)) else { return }
             size.height += 2 * Self.verticalInset
-            preferredContentSize = CGSize(width: Self.width, height: size.height)
+            preferredContentSize = CGSize(width: width, height: size.height)
         }
     }
 
