@@ -13,14 +13,15 @@ import RxSwift
 final class LineWidthView: UIView {
     struct Settings {
         let steps: [Float]
+        let maxText: Float
 
         static var lineWidth: Settings {
-            let steps: [Float] = Array(stride(from: Float(0.2), through: Float(1.0), by: Float(0.2))) + Array(stride(from: Float(1.5), through: Float(25.0), by: Float(0.5)))
-            return .init(steps: steps)
+            let steps: [Float] = Array(stride(from: Float(0.2), through: Float(1), by: Float(0.2))) + Array(stride(from: Float(1.5), through: Float(25), by: Float(0.5)))
+            return .init(steps: steps, maxText: 25)
         }
 
         static var fontSize: Settings {
-            return .init(steps: [6, 8, 10, 12, 14, 18, 24, 36, 48, 64, 72, 96, 144, 192])
+            return .init(steps: [6, 8, 10, 12, 14, 18, 24, 36, 48, 64, 72, 96, 144, 192], maxText: 144)
         }
     }
 
@@ -118,9 +119,15 @@ final class LineWidthView: UIView {
 
         let valueLabel = UILabel()
         valueLabel.adjustsFontForContentSizeCategory = true
-        valueLabel.font = .preferredFont(forTextStyle: .body)
+        let valueLabelFont: UIFont = .preferredFont(forTextStyle: .body)
+        valueLabel.font = valueLabelFont
         valueLabel.textColor = .systemGray
+        valueLabel.textAlignment = .right
         valueLabel.text = String(format: "%0.1f", value)
+        // Set fixed width to that of the largest value so layout doesn't shift.
+        let maxText = String(format: "%0.1f", settings.maxText)
+        let maxWidth = (maxText as NSString).size(withAttributes: [.font: valueLabelFont]).width
+        valueLabel.widthAnchor.constraint(equalToConstant: ceil(maxWidth) + 1.0).isActive = true
         self.valueLabel = valueLabel
 
         let container = UIStackView(arrangedSubviews: [titleLabel, minusButton, slider, plusButton, valueLabel])
