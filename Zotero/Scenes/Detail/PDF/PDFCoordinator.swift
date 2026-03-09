@@ -35,6 +35,7 @@ protocol PdfReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarC
         animated: Bool,
         isFormSheet: @escaping () -> Bool,
         dismissAction: @escaping () -> Void,
+        highlighterAction: @escaping () -> Void,
         voiceChangeAction: @escaping (AccessibilityPopupVoiceChange) -> Void
     )
     func showReadAloudOnboarding(language: String, userInterfaceStyle: UIUserInterfaceStyle, completion: @escaping (SpeechVoice?) -> Void)
@@ -317,6 +318,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         animated: Bool,
         isFormSheet: @escaping () -> Bool,
         dismissAction: @escaping () -> Void,
+        highlighterAction: @escaping () -> Void,
         voiceChangeAction: @escaping (AccessibilityPopupVoiceChange) -> Void
     ) {
         guard let navigationController else { return }
@@ -330,6 +332,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
             isFormSheet: isFormSheet,
             readerAction: readerAction,
             dismissAction: dismissAction,
+            highlighterAction: highlighterAction,
             voiceChangeAction: voiceChangeAction
         )
         controller.overrideUserInterfaceStyle = userInterfaceStyle
