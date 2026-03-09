@@ -835,6 +835,7 @@
 		B372CEEA248675A200B423AE /* MarkGroupForResyncSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B372CEE82486748500B423AE /* MarkGroupForResyncSyncAction.swift */; };
 		B37352AF2E140DF10078BB00 /* AccessibilityViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37352AE2E140DE70078BB00 /* AccessibilityViewHandler.swift */; };
 		B37352B12E141F9F0078BB00 /* AccessibilitySpeechControlsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37352B02E141F990078BB00 /* AccessibilitySpeechControlsView.swift */; };
+		B3AABB001234567890ABCD01 /* SpeechHighlighterOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AABB001234567890ABCD00 /* SpeechHighlighterOverlayView.swift */; };
 		B373877328FEA0C7004E5031 /* PDFSidebarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B373877228FEA0C7004E5031 /* PDFSidebarViewController.swift */; };
 		B373B1B82BBD74F400DCF893 /* DeleteFailedItemsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B373B1B62BBD748600DCF893 /* DeleteFailedItemsDbRequest.swift */; };
 		B373C98F2B1F5431007FD56C /* PDFThumbnailsLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = B373C98E2B1F5431007FD56C /* PDFThumbnailsLayout.swift */; };
@@ -1963,6 +1964,7 @@
 		B372CEE82486748500B423AE /* MarkGroupForResyncSyncAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkGroupForResyncSyncAction.swift; sourceTree = "<group>"; };
 		B37352AE2E140DE70078BB00 /* AccessibilityViewHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityViewHandler.swift; sourceTree = "<group>"; };
 		B37352B02E141F990078BB00 /* AccessibilitySpeechControlsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilitySpeechControlsView.swift; sourceTree = "<group>"; };
+		B3AABB001234567890ABCD00 /* SpeechHighlighterOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechHighlighterOverlayView.swift; sourceTree = "<group>"; };
 		B373877228FEA0C7004E5031 /* PDFSidebarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFSidebarViewController.swift; sourceTree = "<group>"; };
 		B373B1B62BBD748600DCF893 /* DeleteFailedItemsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteFailedItemsDbRequest.swift; sourceTree = "<group>"; };
 		B373C98E2B1F5431007FD56C /* PDFThumbnailsLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFThumbnailsLayout.swift; sourceTree = "<group>"; };
@@ -4330,6 +4332,7 @@
 				B384B5C12E1539C900D023C6 /* AccessibilitySpeechControlsStackView.swift */,
 				B37352B02E141F990078BB00 /* AccessibilitySpeechControlsView.swift */,
 				B37352AE2E140DE70078BB00 /* AccessibilityViewHandler.swift */,
+				B3AABB001234567890ABCD00 /* SpeechHighlighterOverlayView.swift */,
 				B3DCDF03240912060039ED0D /* ActivityIndicatorView.swift */,
 				B347F2B924DC4D5D000D5FF6 /* CapHeightLabel.swift */,
 				B3D58D6A25EE437700D8FA31 /* CircularProgressView.swift */,
