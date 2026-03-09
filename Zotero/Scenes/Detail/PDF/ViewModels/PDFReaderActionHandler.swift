@@ -97,7 +97,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     private var debouncedFreeTextAnnotationAndChangesByKey: [String: ([String], PSPDFKit.FreeTextAnnotation)]
     weak var delegate: (PDFReaderContainerDelegate & AnnotationBoundingBoxConverter)?
     private var annotationProvider: PDFReaderAnnotationProvider?
-    internal var appearance: Appearance = .light
+    private(set) var appearance: Appearance = .light
 
     init(
         dbStorage: DbStorage,
