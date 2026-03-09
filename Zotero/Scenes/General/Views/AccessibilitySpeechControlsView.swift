@@ -25,7 +25,7 @@ final class AccessibilitySpeechControlsView<Delegate: SpeechManagerDelegate>: UI
     private weak var remainingTimeClockImageView: UIImageView?
     private let disposeBag = DisposeBag()
 
-    init(type: Kind, speechManager: SpeechManager<Delegate>, settingsAction: (() -> Void)? = nil) {
+    init(type: Kind, speechManager: SpeechManager<Delegate>, settingsAction: (() -> Void)? = nil, highlighterAction: (() -> Void)? = nil) {
         let controls = AccessibilitySpeechControlsStackView(speechManager: speechManager)
         self.type = type
         controlsView = controls
@@ -39,10 +39,10 @@ final class AccessibilitySpeechControlsView<Delegate: SpeechManagerDelegate>: UI
             setupAnnotationToolbar(controls: controls)
 
         case .navbar:
-            setupNavbar(controls: controls, speechManager: speechManager, settingsAction: settingsAction)
+            setupNavbar(controls: controls, speechManager: speechManager, settingsAction: settingsAction, highlighterAction: highlighterAction)
 
         case .bottomToolbar:
-            setupBottomToolbar(controls: controls, speechManager: speechManager, settingsAction: settingsAction)
+            setupBottomToolbar(controls: controls, speechManager: speechManager, settingsAction: settingsAction, highlighterAction: highlighterAction)
         }
     }
 
@@ -84,9 +84,9 @@ final class AccessibilitySpeechControlsView<Delegate: SpeechManagerDelegate>: UI
         widthConstraint = width
     }
 
-    private func setupNavbar(controls: AccessibilitySpeechControlsStackView<Delegate>, speechManager: SpeechManager<Delegate>, settingsAction: (() -> Void)?) {
+    private func setupNavbar(controls: AccessibilitySpeechControlsStackView<Delegate>, speechManager: SpeechManager<Delegate>, settingsAction: (() -> Void)?, highlighterAction: (() -> Void)?) {
         let (leftView, settingsBtn, timeLabel, clockImage) = createLeftView(settingsAction: settingsAction)
-        let highlighterButton = createHighlighterButton()
+        let highlighterButton = createHighlighterButton(action: highlighterAction)
         let leftSpacer = UIView()
         let rightSpacer = UIView()
         leftSpacer.translatesAutoresizingMaskIntoConstraints = false
@@ -120,9 +120,9 @@ final class AccessibilitySpeechControlsView<Delegate: SpeechManagerDelegate>: UI
         observeRemainingTime(speechManager: speechManager)
     }
 
-    private func setupBottomToolbar(controls: AccessibilitySpeechControlsStackView<Delegate>, speechManager: SpeechManager<Delegate>, settingsAction: (() -> Void)?) {
+    private func setupBottomToolbar(controls: AccessibilitySpeechControlsStackView<Delegate>, speechManager: SpeechManager<Delegate>, settingsAction: (() -> Void)?, highlighterAction: (() -> Void)?) {
         let (leftView, settingsBtn, timeLabel, clockImage) = createLeftView(settingsAction: settingsAction)
-        let highlighterButton = createHighlighterButton()
+        let highlighterButton = createHighlighterButton(action: highlighterAction)
 
         let outerStack = UIStackView(arrangedSubviews: [leftView, controls, highlighterButton])
         outerStack.translatesAutoresizingMaskIntoConstraints = false
@@ -201,13 +201,16 @@ final class AccessibilitySpeechControlsView<Delegate: SpeechManagerDelegate>: UI
 
     // MARK: - Highlighter Button
 
-    private func createHighlighterButton() -> UIButton {
+    private func createHighlighterButton(action: (() -> Void)? = nil) -> UIButton {
         let imageConfig = UIImage.SymbolConfiguration(scale: .large)
         var config = UIButton.Configuration.plain()
         config.image = UIImage(systemName: "highlighter", withConfiguration: imageConfig)
         config.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8)
         let button = UIButton(configuration: config)
         button.translatesAutoresizingMaskIntoConstraints = false
+        if let action {
+            button.addAction(UIAction(handler: { _ in action() }), for: .touchUpInside)
+        }
         return button
     }
 
