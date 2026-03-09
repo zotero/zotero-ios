@@ -66,6 +66,8 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
     }
     private var previousTraitCollection: UITraitCollection?
     private var accessibilityHandler: AccessibilityViewHandler<PDFReaderViewController>?
+    private var speechHighlighterTopOffset: CGFloat = 0
+    private weak var speechHighlighterTopConstraint: NSLayoutConstraint?
     var isSidebarVisible: Bool { return sidebarControllerLeft?.constant == 0 }
     var isToolbarVisible: Bool { return toolbarState.visible }
     var isDocumentLocked: Bool { return viewModel.state.document.isLocked }
@@ -861,21 +863,24 @@ extension PDFReaderViewController: AnnotationToolbarHandlerDelegate {
         guard let annotationToolbarHandler, let annotationToolbarController else { return }
         let (statusBarOffset, _, totalOffset) = annotationToolbarHandler.topOffsets(statusBarVisible: statusBarVisible)
 
+        let baseOffset: CGFloat
         if !state.visible {
-            documentTop.constant = totalOffset
-            return
+            baseOffset = totalOffset
+        } else {
+            switch state.position {
+            case .pinned:
+                baseOffset = statusBarOffset + annotationToolbarController.size
+
+            case .top:
+                baseOffset = totalOffset + annotationToolbarController.size
+
+            case .trailing, .leading:
+                baseOffset = totalOffset
+            }
         }
 
-        switch state.position {
-        case .pinned:
-            documentTop.constant = statusBarOffset + annotationToolbarController.size
-
-        case .top:
-            documentTop.constant = totalOffset + annotationToolbarController.size
-
-        case .trailing, .leading:
-            documentTop.constant = totalOffset
-        }
+        speechHighlighterTopConstraint?.constant = baseOffset
+        documentTop.constant = baseOffset + speechHighlighterTopOffset
     }
 
     func hideSidebarIfNeeded(forPosition position: AnnotationToolbarHandler.State.Position, isToolbarSmallerThanMinWidth: Bool, animated: Bool) {
@@ -1017,7 +1022,7 @@ extension PDFReaderViewController: PDFDocumentDelegate {
             accessibilityHandler?.accessibilityControlsShouldChange(isNavbarHidden: isHidden)
         }
 
-        UIView.animate(withDuration: 0.15, animations: { [weak self] in
+        UIView.animate(withDuration: 0.25, animations: { [weak self] in
             guard let self else { return }
             updateStatusBar()
             view.layoutIfNeeded()
@@ -1187,6 +1192,7 @@ extension PDFReaderViewController: AccessibilityViewDelegate {
         animated: Bool,
         isFormSheet: @escaping () -> Bool,
         dismissAction: @escaping () -> Void,
+        highlighterAction: @escaping () -> Void,
         voiceChangeAction: @escaping (AccessibilityPopupVoiceChange) -> Void
     ) {
         coordinatorDelegate?.showAccessibility(
@@ -1197,6 +1203,7 @@ extension PDFReaderViewController: AccessibilityViewDelegate {
             animated: animated,
             isFormSheet: isFormSheet,
             dismissAction: dismissAction,
+            highlighterAction: highlighterAction,
             voiceChangeAction: voiceChangeAction
         )
     }
@@ -1211,5 +1218,105 @@ extension PDFReaderViewController: AccessibilityViewDelegate {
     
     func clearSpeechHighlight() {
         documentController?.clearSpeechHighlight()
+    }
+
+    func showSpeechHighlighterOverlay(_ overlay: SpeechHighlighterOverlayView, isCompact: Bool, speechControlsView: UIView?) {
+        view.addSubview(overlay)
+        overlay.alpha = 0
+
+        if isCompact {
+            // iPhone / compact: full width, anchored above the speech controls overlay
+            let bottomAnchor: NSLayoutYAxisAnchor
+            if let speechControlsView, speechControlsView.superview != nil {
+                bottomAnchor = speechControlsView.topAnchor
+            } else {
+                bottomAnchor = view.safeAreaLayoutGuide.bottomAnchor
+            }
+            NSLayoutConstraint.activate([
+                overlay.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                overlay.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                overlay.bottomAnchor.constraint(equalTo: bottomAnchor)
+            ])
+            view.layoutIfNeeded()
+            UIView.animate(withDuration: 0.15, delay: 0, options: .curveEaseOut) {
+                overlay.alpha = 1
+            }
+        } else {
+            // iPad / regular: fixed at the current document top position, centered horizontally in the document area.
+            // Anchor to view.topAnchor with the current documentTop offset so the overlay stays fixed when the document moves down.
+            let topOffset = documentTop.constant
+            let documentView = documentController?.view
+            let topConstraint = overlay.topAnchor.constraint(equalTo: view.topAnchor, constant: topOffset)
+            speechHighlighterTopConstraint = topConstraint
+            NSLayoutConstraint.activate([
+                topConstraint,
+                overlay.centerXAnchor.constraint(equalTo: documentView?.centerXAnchor ?? view.centerXAnchor),
+                overlay.widthAnchor.constraint(greaterThanOrEqualToConstant: 320),
+                overlay.widthAnchor.constraint(lessThanOrEqualToConstant: 500)
+            ])
+
+            // Layout to get the overlay height, then push document below it
+            view.layoutIfNeeded()
+            let overlayHeight = overlay.frame.height
+            speechHighlighterTopOffset = overlayHeight
+            documentTop.constant += overlayHeight
+            UIView.animate(withDuration: 0.15, delay: 0, options: .curveEaseOut) {
+                overlay.alpha = 1
+                self.view.layoutIfNeeded()
+            }
+        }
+    }
+
+    func hideSpeechHighlighterOverlay(_ overlay: SpeechHighlighterOverlayView) {
+        speechHighlighterTopConstraint = nil
+        let hasTopOffset = speechHighlighterTopOffset > 0
+        if hasTopOffset {
+            documentTop.constant -= speechHighlighterTopOffset
+            speechHighlighterTopOffset = 0
+        }
+        UIView.animate(withDuration: 0.15, delay: 0, options: .curveEaseIn, animations: {
+            overlay.alpha = 0
+            if hasTopOffset {
+                self.view.layoutIfNeeded()
+            }
+        }, completion: { _ in
+            overlay.removeFromSuperview()
+        })
+    }
+
+    func repositionSpeechHighlighterOverlay(_ overlay: SpeechHighlighterOverlayView, isCompact: Bool, speechControlsView: UIView?) {
+        view.addSubview(overlay)
+
+        if isCompact {
+            let bottomAnchor: NSLayoutYAxisAnchor
+            if let speechControlsView, speechControlsView.superview != nil {
+                bottomAnchor = speechControlsView.topAnchor
+            } else {
+                bottomAnchor = view.safeAreaLayoutGuide.bottomAnchor
+            }
+            NSLayoutConstraint.activate([
+                overlay.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                overlay.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                overlay.bottomAnchor.constraint(equalTo: bottomAnchor)
+            ])
+        } else {
+            let topOffset = documentTop.constant
+            let documentView = documentController?.view
+            let topConstraint = overlay.topAnchor.constraint(equalTo: view.topAnchor, constant: topOffset)
+            speechHighlighterTopConstraint = topConstraint
+            NSLayoutConstraint.activate([
+                topConstraint,
+                overlay.centerXAnchor.constraint(equalTo: documentView?.centerXAnchor ?? view.centerXAnchor),
+                overlay.widthAnchor.constraint(greaterThanOrEqualToConstant: 320),
+                overlay.widthAnchor.constraint(lessThanOrEqualToConstant: 500)
+            ])
+
+            view.layoutIfNeeded()
+            let overlayHeight = overlay.frame.height
+            speechHighlighterTopOffset = overlayHeight
+            documentTop.constant += overlayHeight
+        }
+
+        view.layoutIfNeeded()
     }
 }
