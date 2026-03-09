@@ -2019,11 +2019,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             documentMD5 = cachedMD5(from: documentURL, using: fileStorage.fileManager)
         }
         let backendMD5 = !item.backendMd5.isEmpty ? item.backendMd5 : nil
-        guard let documentMD5 else {
+        guard let documentMD5, let backendMD5 else {
             update(viewModel: viewModel) { state in
                 state.documentMD5Changed = nil
             }
-            return (documentMD5: nil, backendMD5: backendMD5, changed: nil)
+            return (documentMD5: documentMD5, backendMD5: backendMD5, changed: nil)
         }
         guard backendMD5 != documentMD5 else {
             update(viewModel: viewModel) { state in
