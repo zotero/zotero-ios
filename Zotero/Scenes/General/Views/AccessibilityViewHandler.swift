@@ -187,7 +187,15 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
             remove(activeControls: activeOverlay)
         }
 
-        let overlay = AccessibilitySpeechControlsView(type: type, speechManager: speechManager)
+        let settingsAction: (() -> Void)?
+        switch type {
+        case .navbar, .bottomToolbar:
+            settingsAction = { [weak self] in self?.showSpeech() }
+            
+        case .annotationToolbar:
+            settingsAction = nil
+        }
+        let overlay = AccessibilitySpeechControlsView(type: type, speechManager: speechManager, settingsAction: settingsAction)
         activeOverlay = overlay
 
         switch type {
@@ -207,8 +215,7 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
             NSLayoutConstraint.activate([
                 overlay.bottomAnchor.constraint(equalTo: viewController.view.bottomAnchor),
                 overlay.leadingAnchor.constraint(equalTo: documentContainer.leadingAnchor),
-                overlay.trailingAnchor.constraint(equalTo: documentContainer.trailingAnchor),
-                overlay.controlsView.bottomAnchor.constraint(equalTo: viewController.view.safeAreaLayoutGuide.bottomAnchor)
+                overlay.trailingAnchor.constraint(equalTo: documentContainer.trailingAnchor)
             ])
 
             delegate?.accessibilityToolbarChanged(height: overlay.frame.height)
