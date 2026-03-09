@@ -36,6 +36,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
     private let disposeBag: DisposeBag
     private let readerAction: () -> Void
     private let dismissAction: () -> Void
+    private let highlighterAction: () -> Void
     private let isFormSheet: () -> Bool
     private let voiceChangeAction: (AccessibilityPopupVoiceChange) -> Void
     private var containerTop: NSLayoutConstraint!
@@ -58,12 +59,14 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
         isFormSheet: @escaping () -> Bool,
         readerAction: @escaping () -> Void,
         dismissAction: @escaping () -> Void,
+        highlighterAction: @escaping () -> Void,
         voiceChangeAction: @escaping (AccessibilityPopupVoiceChange) -> Void
     ) {
         self.speechManager = speechManager
         self.isFormSheet = isFormSheet
         self.readerAction = readerAction
         self.dismissAction = dismissAction
+        self.highlighterAction = highlighterAction
         self.voiceChangeAction = voiceChangeAction
         speedNumberFormatter = NumberFormatter()
         disposeBag = DisposeBag()
@@ -121,13 +124,39 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
             titleStackView.axis = .horizontal
             titleStackView.alignment = .fill
             titleStackView.distribution = .fill
+            titleStackView.spacing = 8
             titleStackView.setContentHuggingPriority(.required, for: .vertical)
             titleStackView.translatesAutoresizingMaskIntoConstraints = false
             speechContainer.addSubview(titleStackView)
 
             let controlsView = AccessibilitySpeechControlsStackView(speechManager: speechManager)
             controlsView.setContentHuggingPriority(.defaultLow, for: .vertical)
-            speechContainer.addSubview(controlsView)
+
+            var highlighterConfiguration = UIButton.Configuration.plain()
+            highlighterConfiguration.image = UIImage(systemName: "highlighter", withConfiguration: UIImage.SymbolConfiguration(scale: .large))
+            highlighterConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8)
+            let highlighterButton = UIButton(configuration: highlighterConfiguration)
+            highlighterButton.translatesAutoresizingMaskIntoConstraints = false
+            highlighterButton.addAction(UIAction(handler: { [weak self] _ in
+                guard let self else { return }
+                let action = highlighterAction
+                presentingViewController?.dismiss(animated: true) {
+                    action()
+                }
+            }), for: .touchUpInside)
+
+            let controlsContainer = UIView()
+            controlsContainer.translatesAutoresizingMaskIntoConstraints = false
+            controlsContainer.addSubview(controlsView)
+            controlsContainer.addSubview(highlighterButton)
+            NSLayoutConstraint.activate([
+                controlsView.centerXAnchor.constraint(equalTo: controlsContainer.centerXAnchor),
+                controlsView.topAnchor.constraint(equalTo: controlsContainer.topAnchor),
+                controlsView.bottomAnchor.constraint(equalTo: controlsContainer.bottomAnchor),
+                highlighterButton.trailingAnchor.constraint(equalTo: controlsContainer.trailingAnchor),
+                highlighterButton.centerYAnchor.constraint(equalTo: controlsContainer.centerYAnchor)
+            ])
+            speechContainer.addSubview(controlsContainer)
 
             let voiceButton = VoiceButtonView()
             voiceButton.title = speechManager.voice.flatMap({ voiceTitle(from: $0) }) ?? L10n.Accessibility.Speech.unknownVoice
@@ -256,11 +285,11 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
                 titleStackView.leadingAnchor.constraint(equalTo: speechContainer.leadingAnchor, constant: 16),
                 speechContainer.trailingAnchor.constraint(equalTo: titleStackView.trailingAnchor, constant: 16),
                 // Speech Controls
-                controlsView.leadingAnchor.constraint(equalTo: speechContainer.leadingAnchor, constant: 16),
-                speechContainer.trailingAnchor.constraint(equalTo: controlsView.trailingAnchor, constant: 16),
-                titleStackView.bottomAnchor.constraint(equalTo: controlsView.topAnchor),
+                controlsContainer.leadingAnchor.constraint(equalTo: speechContainer.leadingAnchor, constant: 16),
+                speechContainer.trailingAnchor.constraint(equalTo: controlsContainer.trailingAnchor, constant: 16),
+                titleStackView.bottomAnchor.constraint(equalTo: controlsContainer.topAnchor),
                 // Speech Additional Controls
-                controlsView.bottomAnchor.constraint(equalTo: additionalControlsStackView.topAnchor),
+                controlsContainer.bottomAnchor.constraint(equalTo: additionalControlsStackView.topAnchor),
                 additionalControlsStackView.leadingAnchor.constraint(equalTo: speechContainer.leadingAnchor, constant: 16),
                 speechContainer.trailingAnchor.constraint(equalTo: additionalControlsStackView.trailingAnchor, constant: 16),
                 speechContainer.bottomAnchor.constraint(equalTo: additionalControlsStackView.bottomAnchor, constant: 16)
