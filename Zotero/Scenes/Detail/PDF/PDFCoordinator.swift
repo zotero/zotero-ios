@@ -40,7 +40,13 @@ protocol PdfReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarC
 }
 
 protocol PdfAnnotationsCoordinatorDelegate: ReaderSidebarCoordinatorDelegate {
-    func createShareAnnotationMenu(state: PDFReaderState, annotation: PDFAnnotation, sender: UIButton) -> UIMenu?
+    func createShareAnnotationMenu(
+        document: PSPDFKit.Document,
+        attachmentKey: String,
+        libraryId: LibraryIdentifier,
+        annotation: PDFAnnotation,
+        sender: UIButton
+    ) -> UIMenu?
 }
 
 final class PDFCoordinator: ReaderCoordinator {
@@ -347,16 +353,15 @@ extension PDFCoordinator: AccessibilityPopoupCoordinatorDelegate {
 
 extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
     private func deferredShareImageMenuElement(
-        state: PDFReaderState,
+        document: PSPDFKit.Document,
+        attachmentKey: String,
+        libraryId: LibraryIdentifier,
         annotation: PDFAnnotation,
         sender: UIButton,
         boundingBoxConverter: AnnotationBoundingBoxConverter,
         scale: CGFloat,
         title: String
     ) -> UIDeferredMenuElement {
-        let document = state.document
-        let key = state.key
-        let library = state.library
         return UIDeferredMenuElement { [weak self, weak boundingBoxConverter, weak document] elementProvider in
             guard let self, let boundingBoxConverter, let document else {
                 elementProvider([])
@@ -375,8 +380,8 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
                 imageSize: size,
                 imageScale: 1.0,
                 key: annotation.key,
-                parentKey: key,
-                libraryId: library.id
+                parentKey: attachmentKey,
+                libraryId: libraryId
             )
             .observe(on: MainScheduler.instance)
             .subscribe { [weak self] image in
@@ -402,20 +407,44 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
     }
 
     func createShareAnnotationMenuForSelectedAnnotation(sender: UIButton) -> UIMenu? {
-        guard let pdfController = self.navigationController?.viewControllers.first as? PDFReaderViewController, let annotation = pdfController.state.selectedAnnotation else { return nil }
-        return createShareAnnotationMenu(state: pdfController.state, annotation: annotation, sender: sender)
+        guard let pdfController = navigationController?.viewControllers.first as? PDFReaderViewController,
+              let annotation = pdfController.state.selectedAnnotation
+        else { return nil }
+        let state = pdfController.state
+        return createShareAnnotationMenu(
+            document: state.document,
+            attachmentKey: state.key,
+            libraryId: state.library.identifier,
+            annotation: annotation,
+            sender: sender
+        )
     }
 
-    func createShareAnnotationMenu(state: PDFReaderState, annotation: PDFAnnotation, sender: UIButton) -> UIMenu? {
+    func createShareAnnotationMenu(
+        document: PSPDFKit.Document,
+        attachmentKey: String,
+        libraryId: LibraryIdentifier,
+        annotation: PDFAnnotation,
+        sender: UIButton
+    ) -> UIMenu? {
         guard annotation.type == .image else { return nil }
-        let boundingBoxConverter = state.document
+        let boundingBoxConverter = document
         var children: [UIMenuElement] = []
         var shareImageMenuChildren: [UIMenuElement] = []
         for (scale, title) in [
             (300.0 / 72.0, L10n.Pdf.AnnotationShare.Image.medium),
             (600.0 / 72.0, L10n.Pdf.AnnotationShare.Image.large)
         ] {
-            let menuElement = deferredShareImageMenuElement(state: state, annotation: annotation, sender: sender, boundingBoxConverter: boundingBoxConverter, scale: scale, title: title)
+            let menuElement = deferredShareImageMenuElement(
+                document: document,
+                attachmentKey: attachmentKey,
+                libraryId: libraryId,
+                annotation: annotation,
+                sender: sender,
+                boundingBoxConverter: boundingBoxConverter,
+                scale: scale,
+                title: title
+            )
             shareImageMenuChildren.append(menuElement)
         }
         let shareImageMenu = UIMenu(title: L10n.Pdf.AnnotationShare.Image.share, options: [.displayInline], children: shareImageMenuChildren)
