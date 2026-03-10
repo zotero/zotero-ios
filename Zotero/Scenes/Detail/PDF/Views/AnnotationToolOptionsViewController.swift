@@ -13,7 +13,7 @@ import RxSwift
 
 class AnnotationToolOptionsViewController: UIViewController {
     private static let circleSize: CGFloat = 44
-    private static let circleOffset: CGFloat = 8
+    private static let circleOffset: CGFloat = 16
     private static let verticalInset: CGFloat = 15
     private static let horizontalInset: CGFloat = 15
     private let viewModel: ViewModel<AnnotationToolOptionsActionHandler>
@@ -63,7 +63,7 @@ class AnnotationToolOptionsViewController: UIViewController {
             if let color = viewModel.state.colorHex {
                 let colorPicker = ColorPickerStackView(
                     hexColors: viewModel.state.tool.annotationType?.colors ?? [],
-                    columnsDistribution: UIDevice.current.userInterfaceIdiom == .pad ? .fixed(numberOfColumns: hasSize ? 5 : 4) : .fitInWidth(width: UIScreen.main.bounds.width - (2 * Self.horizontalInset)),
+                    columnsDistribution: UIDevice.current.userInterfaceIdiom == .pad ? .fixed(numberOfColumns: 4) : .fitInWidth(width: UIScreen.main.bounds.width - (2 * Self.horizontalInset)),
                     allowsMultipleSelection: false,
                     circleBackgroundColor: Asset.Colors.annotationPopoverBackground.color,
                     circleSize: Self.circleSize,
@@ -154,9 +154,10 @@ class AnnotationToolOptionsViewController: UIViewController {
         updateContentSizeIfNeeded()
 
         func updateContentSizeIfNeeded() {
+            guard UIDevice.current.userInterfaceIdiom == .pad, let container else { return }
             let hasSize = viewModel.state.size != nil
-            let width: CGFloat = hasSize ? 294 : 230
-            guard UIDevice.current.userInterfaceIdiom == .pad, var size = container?.systemLayoutSizeFitting(CGSize(width: width, height: .greatestFiniteMagnitude)) else { return }
+            let width: CGFloat = hasSize ? 294 : 254
+            var size = container.systemLayoutSizeFitting(CGSize(width: width, height: .greatestFiniteMagnitude))
             size.height += 2 * Self.verticalInset
             preferredContentSize = CGSize(width: width, height: size.height)
         }
