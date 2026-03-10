@@ -1179,6 +1179,12 @@ extension PDFReaderViewController: SpeechManagerDelegate {
     func highlightTextChanged(text: String, pageIndex: UInt) {
         documentController?.updateSpeechHighlight(text: text, page: PageIndex(pageIndex))
     }
+
+    func createHighlightAnnotation(forSentence text: String, onPage pageIndex: UInt) {
+        let page = PageIndex(pageIndex)
+        guard let rects = documentController?.speechHighlightPDFFrames(for: text, page: page), !rects.isEmpty else { return }
+        viewModel.process(action: .createHighlight(pageIndex: page, rects: rects))
+    }
 }
 
 extension PDFReaderViewController: AccessibilityViewDelegate {
