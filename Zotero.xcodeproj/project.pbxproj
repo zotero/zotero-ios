@@ -823,7 +823,6 @@
 		B372CEEA248675A200B423AE /* MarkGroupForResyncSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B372CEE82486748500B423AE /* MarkGroupForResyncSyncAction.swift */; };
 		B37352AF2E140DF10078BB00 /* AccessibilityViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37352AE2E140DE70078BB00 /* AccessibilityViewHandler.swift */; };
 		B37352B12E141F9F0078BB00 /* AccessibilitySpeechControlsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37352B02E141F990078BB00 /* AccessibilitySpeechControlsView.swift */; };
-		B3AABB001234567890ABCD01 /* SpeechHighlighterOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AABB001234567890ABCD00 /* SpeechHighlighterOverlayView.swift */; };
 		B373877328FEA0C7004E5031 /* PDFSidebarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B373877228FEA0C7004E5031 /* PDFSidebarViewController.swift */; };
 		B373B1B82BBD74F400DCF893 /* DeleteFailedItemsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B373B1B62BBD748600DCF893 /* DeleteFailedItemsDbRequest.swift */; };
 		B373C98F2B1F5431007FD56C /* PDFThumbnailsLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = B373C98E2B1F5431007FD56C /* PDFThumbnailsLayout.swift */; };
@@ -994,6 +993,7 @@
 		B3AAABD82502A40900031065 /* searchresponse_knownfields.json in Resources */ = {isa = PBXBuildFile; fileRef = B3AAABD62502A40900031065 /* searchresponse_knownfields.json */; };
 		B3AAB0F8283B9915008188D6 /* LookupItemCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AAB0F6283B9915008188D6 /* LookupItemCell.swift */; };
 		B3AAB0F9283B9915008188D6 /* LookupItemCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3AAB0F7283B9915008188D6 /* LookupItemCell.xib */; };
+		B3AABB001234567890ABCD01 /* SpeechHighlighterOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AABB001234567890ABCD00 /* SpeechHighlighterOverlayView.swift */; };
 		B3AAD70D23CE16010042C4AB /* CreateBackendItemDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AAD70C23CE16010042C4AB /* CreateBackendItemDbRequest.swift */; };
 		B3AB38A5238EC02D008A1ABB /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AB38A0238EC02D008A1ABB /* ShareViewController.swift */; };
 		B3AB38A7238EC02D008A1ABB /* ExtensionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AB38A4238EC02D008A1ABB /* ExtensionViewModel.swift */; };
@@ -1944,7 +1944,6 @@
 		B372CEE82486748500B423AE /* MarkGroupForResyncSyncAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkGroupForResyncSyncAction.swift; sourceTree = "<group>"; };
 		B37352AE2E140DE70078BB00 /* AccessibilityViewHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityViewHandler.swift; sourceTree = "<group>"; };
 		B37352B02E141F990078BB00 /* AccessibilitySpeechControlsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilitySpeechControlsView.swift; sourceTree = "<group>"; };
-		B3AABB001234567890ABCD00 /* SpeechHighlighterOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechHighlighterOverlayView.swift; sourceTree = "<group>"; };
 		B373877228FEA0C7004E5031 /* PDFSidebarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFSidebarViewController.swift; sourceTree = "<group>"; };
 		B373B1B62BBD748600DCF893 /* DeleteFailedItemsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteFailedItemsDbRequest.swift; sourceTree = "<group>"; };
 		B373C98E2B1F5431007FD56C /* PDFThumbnailsLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFThumbnailsLayout.swift; sourceTree = "<group>"; };
@@ -2253,6 +2252,7 @@
 		B3AAABD62502A40900031065 /* searchresponse_knownfields.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = searchresponse_knownfields.json; sourceTree = "<group>"; };
 		B3AAB0F6283B9915008188D6 /* LookupItemCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookupItemCell.swift; sourceTree = "<group>"; };
 		B3AAB0F7283B9915008188D6 /* LookupItemCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = LookupItemCell.xib; sourceTree = "<group>"; };
+		B3AABB001234567890ABCD00 /* SpeechHighlighterOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechHighlighterOverlayView.swift; sourceTree = "<group>"; };
 		B3AAD70C23CE16010042C4AB /* CreateBackendItemDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateBackendItemDbRequest.swift; sourceTree = "<group>"; };
 		B3AB38A0238EC02D008A1ABB /* ShareViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		B3AB38A4238EC02D008A1ABB /* ExtensionViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExtensionViewModel.swift; sourceTree = "<group>"; };
@@ -4301,7 +4301,6 @@
 				B384B5C12E1539C900D023C6 /* AccessibilitySpeechControlsStackView.swift */,
 				B37352B02E141F990078BB00 /* AccessibilitySpeechControlsView.swift */,
 				B37352AE2E140DE70078BB00 /* AccessibilityViewHandler.swift */,
-				B3AABB001234567890ABCD00 /* SpeechHighlighterOverlayView.swift */,
 				B3DCDF03240912060039ED0D /* ActivityIndicatorView.swift */,
 				B347F2B924DC4D5D000D5FF6 /* CapHeightLabel.swift */,
 				B3D58D6A25EE437700D8FA31 /* CircularProgressView.swift */,
@@ -4335,6 +4334,7 @@
 				B361820E24C9B9E800B30D56 /* SelectableTextField.swift */,
 				B3DCDF1A24091EBE0039ED0D /* SinglePickerRow.swift */,
 				B3DCDF1C24091EC40039ED0D /* SinglePickerView.swift */,
+				B3AABB001234567890ABCD00 /* SpeechHighlighterOverlayView.swift */,
 				B3F874222E2F84B6004A2D71 /* SpeechLanguagePickerView.swift */,
 				B3F451E62E2A57380051E377 /* SpeechVoicePickerView.swift */,
 				B32B4F942475544700F78A05 /* SyncToolbarController.swift */,
