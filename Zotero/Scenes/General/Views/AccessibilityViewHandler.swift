@@ -259,7 +259,9 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
             highlighterOverlay = nil
             return
         }
+        guard let result = speechManager.requestHighlightForCurrentSentence() else { return }
         let overlay = SpeechHighlighterOverlayView(isCompact: isFormSheet)
+        overlay.update(text: result.text)
         highlighterOverlay = overlay
         delegate?.showSpeechHighlighterOverlay(overlay, isCompact: isFormSheet, speechControlsView: activeOverlay)
     }
