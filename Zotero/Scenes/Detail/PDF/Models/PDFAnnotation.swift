@@ -9,7 +9,7 @@
 import UIKit
 
 protocol PDFAnnotation: ReaderAnnotation {
-    var readerKey: PDFReaderState.AnnotationKey { get }
+    var readerKey: PDFReaderAnnotationKey { get }
     var page: Int { get }
     var rotation: UInt? { get }
     var isSyncable: Bool { get }

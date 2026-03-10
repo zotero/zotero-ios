@@ -15,8 +15,6 @@ import RealmSwift
 typealias AnnotationDocumentLocation = (page: Int, boundingBox: CGRect)
 
 struct PDFReaderState: ViewModelState {
-    typealias AnnotationKey = PDFReaderAnnotationKey
-
     struct Changes: OptionSet {
         typealias RawValue = UInt32
 
@@ -25,22 +23,18 @@ struct PDFReaderState: ViewModelState {
         static let annotations = Changes(rawValue: 1 << 0)
         static let selection = Changes(rawValue: 1 << 1)
         static let settings = Changes(rawValue: 1 << 2)
-        static let activeComment = Changes(rawValue: 1 << 3)
-        static let export = Changes(rawValue: 1 << 4)
-        static let activeLineWidth = Changes(rawValue: 1 << 5)
-        static let sidebarEditing = Changes(rawValue: 1 << 6)
-        static let sidebarEditingSelection = Changes(rawValue: 1 << 7)
-        static let filter = Changes(rawValue: 1 << 8)
-        static let activeEraserSize = Changes(rawValue: 1 << 9)
-        static let initialDataLoaded = Changes(rawValue: 1 << 10)
-        static let visiblePageFromDocument = Changes(rawValue: 1 << 11)
-        static let visiblePageFromThumbnailList = Changes(rawValue: 1 << 12)
-        static let visiblePage = Changes(rawValue: 1 << 13)
-        static let selectionDeletion = Changes(rawValue: 1 << 14)
-        static let activeFontSize = Changes(rawValue: 1 << 15)
-        static let library = Changes(rawValue: 1 << 16)
-        static let md5 = Changes(rawValue: 1 << 17)
-        static let appearance = Changes(rawValue: 1 << 18)
+        static let export = Changes(rawValue: 1 << 3)
+        static let activeLineWidth = Changes(rawValue: 1 << 4)
+        static let activeEraserSize = Changes(rawValue: 1 << 5)
+        static let initialDataLoaded = Changes(rawValue: 1 << 6)
+        static let visiblePageFromDocument = Changes(rawValue: 1 << 7)
+        static let visiblePageFromThumbnailList = Changes(rawValue: 1 << 8)
+        static let visiblePage = Changes(rawValue: 1 << 9)
+        static let selectionDeletion = Changes(rawValue: 1 << 10)
+        static let activeFontSize = Changes(rawValue: 1 << 11)
+        static let library = Changes(rawValue: 1 << 12)
+        static let md5 = Changes(rawValue: 1 << 13)
+        static let appearance = Changes(rawValue: 1 << 14)
     }
 
     enum Error: ReaderError {
@@ -108,15 +102,11 @@ struct PDFReaderState: ViewModelState {
 
     var library: Library
     var libraryToken: NotificationToken?
-    var sortedKeys: [AnnotationKey]
     var annotationPages: IndexSet
-    var snapshotKeys: [AnnotationKey]?
     var token: NotificationToken?
     var itemToken: NotificationToken?
     var databaseAnnotations: Results<RItem>!
     var documentAnnotations: Results<RDocumentAnnotation>!
-    var documentAnnotationKeys: [AnnotationKey]
-    var documentAnnotationUniqueBaseColors: [String]
     var defaultAnnotationPageLabel: DefaultAnnotationPageLabel
     var texts: [String: (String, [UIFont: NSAttributedString])]
     var comments: [String: NSAttributedString]
@@ -131,13 +121,11 @@ struct PDFReaderState: ViewModelState {
     var documentMD5Changed: Bool?
 
     /// Selected annotation when annotations are not being edited in sidebar
-    var selectedAnnotationKey: AnnotationKey?
+    var selectedAnnotationKey: PDFReaderAnnotationKey?
     var selectedAnnotation: PDFAnnotation? {
         return self.selectedAnnotationKey.flatMap({ self.annotation(for: $0) })
     }
     var selectedAnnotationCommentActive: Bool
-    /// Selected annotations when annotations are being edited in sidebar
-    var selectedAnnotationsDuringEditing: Set<PDFReaderState.AnnotationKey>
 
     var interfaceStyle: UIUserInterfaceStyle
     var sidebarEditingEnabled: Bool
@@ -147,15 +135,12 @@ struct PDFReaderState: ViewModelState {
     var activeEraserSize: CGFloat
     var activeFontSize: CGFloat
 
-    var deletionEnabled: Bool
-    var mergingEnabled: Bool
-
     /// Location to focus in document
     var focusDocumentLocation: AnnotationDocumentLocation?
-    /// Annotation key to focus in annotation sidebar
-    var focusSidebarKey: AnnotationKey?
-    /// Annotation keys in sidebar that need to reload (for example cell height)
-    var updatedAnnotationKeys: [AnnotationKey]?
+    /// Whether the latest selection originated in the document and should be focused in the sidebar.
+    var selectionFromDocument: Bool
+    /// Annotation keys changed by the latest annotation update.
+    var changedAnnotationKeys: [PDFReaderAnnotationKey]?
     /// Page that should be shown initially, instead of stored page
     var initialPage: Int?
     /// Rects that should be highlighted initially, used by note editor to highlight original annotation position
@@ -189,23 +174,19 @@ struct PDFReaderState: ViewModelState {
         self.title = title
         self.userId = userId
         self.username = username
-        self.sortedKeys = []
         self.annotationPages = IndexSet()
         self.documentAnnotations = nil
-        self.documentAnnotationKeys = []
-        self.documentAnnotationUniqueBaseColors = []
         self.defaultAnnotationPageLabel = .commonPageOffset(offset: 1)
         self.texts = [:]
         self.comments = [:]
         self.visiblePage = 0
         self.initialPage = initialPage
         self.settings = settings
-        self.selectedAnnotationKey = preselectedAnnotationKey.flatMap({ AnnotationKey(key: $0, type: .database) })
+        self.selectedAnnotationKey = preselectedAnnotationKey.flatMap({ PDFReaderAnnotationKey(key: $0, type: .database) })
         self.previewRects = previewRects
         self.unlockPassword = nil
         self.changes = []
         self.selectedAnnotationCommentActive = false
-        self.selectedAnnotationsDuringEditing = []
         self.interfaceStyle = interfaceStyle
         self.sidebarEditingEnabled = false
         self.toolColors = [
@@ -219,8 +200,7 @@ struct PDFReaderState: ViewModelState {
         self.activeLineWidth = CGFloat(Defaults.shared.activeLineWidth)
         self.activeEraserSize = CGFloat(Defaults.shared.activeEraserSize)
         self.activeFontSize = CGFloat(Defaults.shared.activeFontSize)
-        self.deletionEnabled = false
-        self.mergingEnabled = false
+        self.selectionFromDocument = false
 
         switch libraryId {
         case .custom:
@@ -231,7 +211,7 @@ struct PDFReaderState: ViewModelState {
         }
     }
 
-    func annotation(for key: AnnotationKey) -> PDFAnnotation? {
+    func annotation(for key: PDFReaderAnnotationKey) -> PDFAnnotation? {
         switch key.type {
         case .database:
             return databaseAnnotations.filter(.key(key.key)).first.flatMap({ PDFDatabaseAnnotation(item: $0) })
@@ -245,8 +225,8 @@ struct PDFReaderState: ViewModelState {
         self.changes = []
         self.exportState = nil
         self.focusDocumentLocation = nil
-        self.focusSidebarKey = nil
-        self.updatedAnnotationKeys = nil
+        selectionFromDocument = false
+        self.changedAnnotationKeys = nil
         self.error = nil
         self.pdfNotification = nil
         self.changedColorForTool = nil

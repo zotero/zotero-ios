@@ -29,7 +29,7 @@ struct PDFDocumentAnnotation {
 }
 
 extension PDFDocumentAnnotation: PDFAnnotation {
-    var readerKey: PDFReaderState.AnnotationKey {
+    var readerKey: PDFReaderAnnotationKey {
         return .init(key: self.key, type: .document)
     }
 
