@@ -45,6 +45,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
     private weak var speechContainer: UIView!
     private weak var voiceButton: VoiceButtonView!
     private weak var speedButton: UIButton!
+    private weak var highlighterButton: UIButton!
     private weak var controlsView: AccessibilitySpeechControlsStackView<Delegate>!
     private var speechButtonBottom: NSLayoutConstraint!
     private var speechContainerBottom: NSLayoutConstraint!
@@ -137,6 +138,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
             highlighterConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8)
             let highlighterButton = UIButton(configuration: highlighterConfiguration)
             highlighterButton.translatesAutoresizingMaskIntoConstraints = false
+            highlighterButton.isEnabled = speechManager.state.value.isSpeaking || speechManager.state.value.isPaused
             highlighterButton.addAction(UIAction(handler: { [weak self] _ in
                 guard let self else { return }
                 let action = highlighterAction
@@ -194,6 +196,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
             speechContainer.addSubview(additionalControlsStackView)
 
             self.controlsView = controlsView
+            self.highlighterButton = highlighterButton
             self.voiceButton = voiceButton
             self.speedButton = speedButton
             self.speechContainer = speechContainer
@@ -448,6 +451,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
                 if voiceButton.isEnabled {
                     voiceButton.isEnabled = false
                     speedButton.isEnabled = false
+                    highlighterButton.isEnabled = false
                 }
                 return loadingSpeakingContainerState()
 
@@ -457,6 +461,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
                     voiceButton.title = voiceTitle(from: voice)
                     voiceButton.isEnabled = true
                     speedButton.isEnabled = true
+                    highlighterButton.isEnabled = true
                 }
                 return loadingSpeakingContainerState()
 
