@@ -28,6 +28,9 @@ protocol SpeechManagerDelegate: AnyObject {
     ///   - text: The paragraph text to highlight
     ///   - pageIndex: The page index where the text is located
     func highlightTextChanged(text: String, pageIndex: Index)
+    /// Called when the user requests a highlight annotation for the sentence being read.
+    /// The delegate should create a highlight annotation from this sentence text on the given page.
+    func createHighlightAnnotation(forSentence text: String, onPage pageIndex: Index)
 }
 
 enum SpeechState: Equatable {
@@ -283,6 +286,93 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         processor.speechRateModifier = rateModifier
     }
 
+    /// Returns the sentence or paragraph that should be highlighted based on current speech position.
+    /// For local voices and remote voices with sentence granularity, highlights sentences.
+    /// For remote voices with paragraph granularity, highlights paragraphs.
+    /// If less than 50% of the current segment has been read or less than 3 seconds have elapsed,
+    /// returns the previous unit. Otherwise returns the current unit.
+    func sentenceForHighlight() -> (text: String, pageIndex: Delegate.Index)? {
+        guard state.value.isSpeaking || state.value.isPaused,
+              let speechData,
+              let pageText = cachedPages[speechData.index] else { return nil }
+
+        // Determine granularity and whether to go back based on voice type
+        let granularity: NLTokenUnit
+        let shouldGoBack: Bool
+
+        switch processor.speechVoice {
+        case .remote(let remoteVoice):
+            granularity = remoteVoice.granularity == .paragraph ? .paragraph : .sentence
+            let progress = processor.segmentAudioProgress
+            let elapsedTime = processor.segmentAudioElapsedTime
+            shouldGoBack = progress < 0.5 || elapsedTime < 3.0
+
+        case .local:
+            granularity = .sentence
+            // Local voice: speechData.range is the current word, compute sentence progress from character position
+            let clampedPosition = min(max(speechData.range.location, 0), max(pageText.count - 1, 0))
+            if let sentence = TextTokenizer.findSentenceContaining(index: clampedPosition, in: pageText), sentence.range.length > 0 {
+                let posInSentence = max(0, clampedPosition - sentence.range.location)
+                shouldGoBack = Float(posInSentence) / Float(sentence.range.length) < 0.5
+            } else {
+                shouldGoBack = false
+            }
+
+        case .none:
+            return nil
+        }
+
+        // Find current unit (sentence or paragraph) at speech position
+        let position = min(max(speechData.range.location, 0), max(pageText.count - 1, 0))
+        let currentUnit: (text: String, range: NSRange)?
+        if granularity == .paragraph {
+            currentUnit = TextTokenizer.findParagraphContaining(index: position, in: pageText)
+        } else {
+            currentUnit = TextTokenizer.findSentenceContaining(index: position, in: pageText)
+        }
+
+        guard let currentUnit else { return nil }
+
+        if shouldGoBack {
+            // Try to find previous unit on this page
+            if let prevIdx = TextTokenizer.findIndex(ofPreviousWhole: granularity, beforeIndex: currentUnit.range.location, in: pageText) {
+                let prev: (text: String, range: NSRange)?
+                if granularity == .paragraph {
+                    prev = TextTokenizer.findParagraph(startingAt: prevIdx, in: pageText)
+                } else {
+                    prev = TextTokenizer.findSentence(startingAt: prevIdx, in: pageText)
+                }
+                if let prev {
+                    return (prev.text, speechData.index)
+                }
+            }
+            // No previous unit on this page - check previous page
+            if let prevPageIndex = delegate?.getPreviousPageIndex(from: speechData.index),
+               let prevPageText = cachedPages[prevPageIndex],
+               let lastIdx = TextTokenizer.findIndex(ofPreviousWhole: granularity, beforeIndex: prevPageText.count, in: prevPageText) {
+                let last: (text: String, range: NSRange)?
+                if granularity == .paragraph {
+                    last = TextTokenizer.findParagraph(startingAt: lastIdx, in: prevPageText)
+                } else {
+                    last = TextTokenizer.findSentence(startingAt: lastIdx, in: prevPageText)
+                }
+                if let last {
+                    return (last.text, prevPageIndex)
+                }
+            }
+        }
+
+        return (currentUnit.text, speechData.index)
+    }
+
+    /// Requests a highlight annotation for the sentence at the current speech position.
+    /// Finds the appropriate sentence, notifies the delegate to create the annotation, and returns the sentence text and page index.
+    func requestHighlightForCurrentSentence() -> (text: String, pageIndex: Delegate.Index)? {
+        guard let result = sentenceForHighlight() else { return nil }
+        delegate?.createHighlightAnnotation(forSentence: result.text, onPage: result.pageIndex)
+        return result
+    }
+
     /// Downgrades the voice to a lower tier and continues playback.
     /// - If currently using premium remote voice, switches to standard remote voice
     /// - If currently using standard remote voice, switches to local voice
@@ -522,7 +612,11 @@ private protocol VoiceProcessor {
     var preferredLanguage: String? { get }
     var speechRateModifier: Float { get set }
     var canResume: Bool { get }
-    
+    /// Progress of current audio segment (0.0 to 1.0).
+    var segmentAudioProgress: Float { get }
+    /// Time elapsed since current audio segment started playing.
+    var segmentAudioElapsedTime: TimeInterval { get }
+
     func speak(text: String, startIndex: Int, shouldDetectVoice: Bool)
     func pause()
     func resume()
@@ -571,6 +665,15 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
     }
     var canResume: Bool {
         return synthesizer.isPaused
+    }
+    var segmentAudioProgress: Float {
+        // Local voice doesn't have audio-level segment tracking.
+        // SpeechManager computes sentence progress from character position instead.
+        return 0
+    }
+    var segmentAudioElapsedTime: TimeInterval {
+        // Local voice plays the whole page as one utterance, so elapsed time is not meaningful per-segment.
+        return 0
     }
 
     init(language: String?, speechRateModifier: Float, delegate: VoiceProcessorDelegate) {
@@ -749,6 +852,13 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     }
     var canResume: Bool {
         return player != nil
+    }
+    var segmentAudioProgress: Float {
+        guard let player, player.duration > 0 else { return 0 }
+        return Float(player.currentTime / player.duration)
+    }
+    var segmentAudioElapsedTime: TimeInterval {
+        return player?.currentTime ?? 0
     }
 
     init(language: String?, tier: RemoteVoice.Tier, speechRateModifier: Float, delegate: VoiceProcessorDelegate, remoteVoicesController: RemoteVoicesController) {
