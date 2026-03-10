@@ -17,6 +17,7 @@ final class SpeechHighlighterOverlayView: UIView {
     var forwardAction: (() -> Void)?
     var skipForwardAction: (() -> Void)?
     var colorAction: (() -> Void)?
+    var currentText: String? { textLabel?.text }
 
     init(isCompact: Bool) {
         super.init(frame: .zero)
