@@ -389,14 +389,15 @@ final class PDFAnnotationsViewController: UIViewController {
             preview: preview,
             selected: selected,
             availableWidth: PDFReaderLayout.sidebarWidth,
+            document: state.document,
+            attachmentKey: state.key,
             library: state.library,
             isEditing: state.sidebarEditingEnabled,
             currentUserId: viewModel.state.userId,
             displayName: viewModel.state.displayName,
             username: viewModel.state.username,
             boundingBoxConverter: boundingBoxConverter,
-            pdfAnnotationsCoordinatorDelegate: pdfAnnotationsCoordinatorDelegate,
-            state: state
+            pdfAnnotationsCoordinatorDelegate: pdfAnnotationsCoordinatorDelegate
         )
         if !reconfiguringForSameAnnotation {
             let actionSubscription = cell.actionPublisher.subscribe(onNext: { [weak self] action in
