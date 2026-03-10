@@ -13,38 +13,9 @@ import PSPDFKitUI
 import RealmSwift
 
 typealias AnnotationDocumentLocation = (page: Int, boundingBox: CGRect)
-typealias PDFReaderAnnotationKey = PDFReaderState.AnnotationKey
 
 struct PDFReaderState: ViewModelState {
-    struct AnnotationKey: Equatable, Hashable, Identifiable {
-        enum Kind: Equatable, Hashable {
-            case database
-            case document
-        }
-
-        let key: String
-        let sortIndex: String
-        let type: Kind
-
-        var id: String {
-            return key
-        }
-
-        init(key: String, sortIndex: String = "", type: Kind) {
-            self.key = key
-            self.sortIndex = sortIndex
-            self.type = type
-        }
-
-        static func == (lhs: AnnotationKey, rhs: AnnotationKey) -> Bool {
-            return lhs.key == rhs.key && lhs.type == rhs.type
-        }
-
-        func hash(into hasher: inout Hasher) {
-            hasher.combine(key)
-            hasher.combine(type)
-        }
-    }
+    typealias AnnotationKey = PDFReaderAnnotationKey
 
     struct Changes: OptionSet {
         typealias RawValue = UInt32
