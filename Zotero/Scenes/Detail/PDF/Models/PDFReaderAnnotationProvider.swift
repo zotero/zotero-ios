@@ -74,7 +74,7 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
             return results
         }
     }
-    public private(set) var keys: [PDFReaderState.AnnotationKey] = []
+    public private(set) var keys: [PDFReaderAnnotationKey] = []
     public private(set) var uniqueBaseColors: [String] = []
     public weak var pdfReaderAnnotationProviderDelegate: PDFReaderAnnotationProviderDelegate?
 
@@ -497,7 +497,7 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
             attachmentKey: String,
             libraryId: LibraryIdentifier,
             md5: String?
-        ) -> (results: Results<RDocumentAnnotation>, keys: [PDFReaderState.AnnotationKey], uniqueBaseColors: [String])? {
+        ) -> (results: Results<RDocumentAnnotation>, keys: [PDFReaderAnnotationKey], uniqueBaseColors: [String])? {
             guard let md5, !md5.isEmpty else { return nil }
             let frozenResponse: ReadDocumentAnnotationsCacheInfoAndAnnotationsDbRequest.Response
             do {
@@ -529,7 +529,7 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
                 return nil
             }
 
-            let keys = Array(cachedAnnotations.map({ PDFReaderState.AnnotationKey(key: $0.key, sortIndex: $0.sortIndex, type: .document) }))
+            let keys = Array(cachedAnnotations.map({ PDFReaderAnnotationKey(key: $0.key, sortIndex: $0.sortIndex, type: .document) }))
             let uniqueBaseColors = Array(cacheInfo.uniqueBaseColors)
             DDLogInfo("PDFReaderAnnotationProvider: loaded \(keys.count) cached document annotations")
             return (cachedAnnotations, keys, uniqueBaseColors)

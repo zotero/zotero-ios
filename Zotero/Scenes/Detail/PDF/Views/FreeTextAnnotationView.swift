@@ -13,18 +13,18 @@ import PSPDFKitUI
 import RxSwift
 
 protocol FreeTextInputDelegate: AnyObject {
-    func showColorPicker(sender: UIView, key: PDFReaderState.AnnotationKey, updated: @escaping (String) -> Void)
-    func showFontSizePicker(sender: UIView, key: PDFReaderState.AnnotationKey, updated: @escaping (CGFloat) -> Void)
-    func showTagPicker(sender: UIView, key: PDFReaderState.AnnotationKey, updated: @escaping ([Tag]) -> Void)
-    func deleteAnnotation(sender: UIView, key: PDFReaderState.AnnotationKey)
-    func change(fontSize: CGFloat, for key: PDFReaderState.AnnotationKey)
-    func getColor(for key: PDFReaderState.AnnotationKey) -> UIColor?
-    func getFontSize(for key: PDFReaderState.AnnotationKey) -> CGFloat?
-    func getTags(for key: PDFReaderState.AnnotationKey) -> [Tag]?
+    func showColorPicker(sender: UIView, key: PDFReaderAnnotationKey, updated: @escaping (String) -> Void)
+    func showFontSizePicker(sender: UIView, key: PDFReaderAnnotationKey, updated: @escaping (CGFloat) -> Void)
+    func showTagPicker(sender: UIView, key: PDFReaderAnnotationKey, updated: @escaping ([Tag]) -> Void)
+    func deleteAnnotation(sender: UIView, key: PDFReaderAnnotationKey)
+    func change(fontSize: CGFloat, for key: PDFReaderAnnotationKey)
+    func getColor(for key: PDFReaderAnnotationKey) -> UIColor?
+    func getFontSize(for key: PDFReaderAnnotationKey) -> CGFloat?
+    func getTags(for key: PDFReaderAnnotationKey) -> [Tag]?
 }
 
 final class FreeTextAnnotationView: PSPDFKitUI.FreeTextAnnotationView {
-    var annotationKey: PDFReaderState.AnnotationKey?
+    var annotationKey: PDFReaderAnnotationKey?
     weak var delegate: FreeTextInputDelegate?
 
     override func textViewForEditing() -> UITextView {
@@ -58,7 +58,7 @@ final class FreeTextInputAccessory: UIView {
     private weak var sizePicker: FontSizeView?
     private let disposeBag: DisposeBag
 
-    init(key: PDFReaderState.AnnotationKey, delegate: FreeTextInputDelegate) {
+    init(key: PDFReaderAnnotationKey, delegate: FreeTextInputDelegate) {
         self.delegate = delegate
         disposeBag = DisposeBag()
         super.init(frame: CGRect(x: 0, y: 0, width: 0, height: 44))

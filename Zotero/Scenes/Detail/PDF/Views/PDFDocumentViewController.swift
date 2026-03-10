@@ -704,8 +704,8 @@ final class PDFDocumentViewController: UIViewController {
 
                 interactions.selectAnnotation.addActivationCallback { [weak self] context, _, _ in
                     let key = context.annotation.key ?? context.annotation.uuid
-                    let type: PDFReaderState.AnnotationKey.Kind = context.annotation.isZoteroAnnotation ? .database : .document
-                    self?.viewModel.process(action: .selectAnnotationFromDocument(PDFReaderState.AnnotationKey(key: key, type: type)))
+                    let type: PDFReaderAnnotationKey.Kind = context.annotation.isZoteroAnnotation ? .database : .document
+                    self?.viewModel.process(action: .selectAnnotationFromDocument(PDFReaderAnnotationKey(key: key, type: type)))
                 }
 
                 interactions.toggleUserInterface.addActivationCallback { [weak self] _, _, _ in
@@ -715,7 +715,7 @@ final class PDFDocumentViewController: UIViewController {
 
                 interactions.deselectAnnotation.addActivationCondition { [weak viewModel] _, _, _ -> Bool in
                     // `interactions.deselectAnnotation.addActivationCallback` is not always called when highglight annotation tool is enabled.
-                    viewModel?.process(action: .deselectSelectedAnnotation)
+                    viewModel?.process(action: .deselectSelectedAnnotationFromDocument)
                     return true
                 }
 
@@ -1012,12 +1012,12 @@ extension PDFDocumentViewController: UIPopoverPresentationControllerDelegate {
               let type = viewModel.state.selectedAnnotation?.type,
               type == .highlight || type == .underline
         else { return }
-        viewModel.process(action: .deselectSelectedAnnotation)
+        viewModel.process(action: .deselectSelectedAnnotationFromDocument)
     }
 }
 
 extension PDFDocumentViewController: FreeTextInputDelegate {
-    func showColorPicker(sender: UIView, key: PDFReaderState.AnnotationKey, updated: @escaping (String) -> Void) {
+    func showColorPicker(sender: UIView, key: PDFReaderAnnotationKey, updated: @escaping (String) -> Void) {
         let color = viewModel.state.annotation(for: key)?.color
         coordinatorDelegate?.showToolSettings(
             tool: .freeText,
@@ -1033,14 +1033,14 @@ extension PDFDocumentViewController: FreeTextInputDelegate {
         )
     }
     
-    func showFontSizePicker(sender: UIView, key: PDFReaderState.AnnotationKey, updated: @escaping (CGFloat) -> Void) {
+    func showFontSizePicker(sender: UIView, key: PDFReaderAnnotationKey, updated: @escaping (CGFloat) -> Void) {
         coordinatorDelegate?.showFontSizePicker(sender: sender, picked: { [weak viewModel] size in
             viewModel?.process(action: .setFontSize(key: key.key, size: size))
             updated(size)
         })
     }
 
-    func showTagPicker(sender: UIView, key: PDFReaderState.AnnotationKey, updated: @escaping ([Tag]) -> Void) {
+    func showTagPicker(sender: UIView, key: PDFReaderAnnotationKey, updated: @escaping ([Tag]) -> Void) {
         let tags = Set((getTags(for: key) ?? []).compactMap({ $0.name }))
         coordinatorDelegate?.showTagPicker(libraryId: viewModel.state.library.identifier, selected: tags, userInterfaceStyle: viewModel.state.interfaceStyle, picked: { [weak viewModel] tags in
             viewModel?.process(action: .setTags(key: key.key, tags: tags))
@@ -1048,25 +1048,25 @@ extension PDFDocumentViewController: FreeTextInputDelegate {
         })
     }
 
-    func deleteAnnotation(sender: UIView, key: PDFReaderState.AnnotationKey) {
+    func deleteAnnotation(sender: UIView, key: PDFReaderAnnotationKey) {
         coordinatorDelegate?.showDeleteAlertForAnnotation(sender: sender, delete: { [weak viewModel] in
             viewModel?.process(action: .removeAnnotation(key))
         })
     }
 
-    func change(fontSize: CGFloat, for key: PDFReaderState.AnnotationKey) {
+    func change(fontSize: CGFloat, for key: PDFReaderAnnotationKey) {
         viewModel.process(action: .setFontSize(key: key.key, size: fontSize))
     }
     
-    func getFontSize(for key: PDFReaderState.AnnotationKey) -> CGFloat? {
+    func getFontSize(for key: PDFReaderAnnotationKey) -> CGFloat? {
         return viewModel.state.annotation(for: key)?.fontSize
     }
 
-    func getColor(for key: PDFReaderState.AnnotationKey) -> UIColor? {
+    func getColor(for key: PDFReaderAnnotationKey) -> UIColor? {
         return (viewModel.state.annotation(for: key)?.color).flatMap({ UIColor(hex: $0) })
     }
 
-    func getTags(for key: PDFReaderState.AnnotationKey) -> [Tag]? {
+    func getTags(for key: PDFReaderAnnotationKey) -> [Tag]? {
         return viewModel.state.annotation(for: key)?.tags
     }
 }

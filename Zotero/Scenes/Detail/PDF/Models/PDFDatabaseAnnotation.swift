@@ -180,7 +180,7 @@ struct PDFDatabaseAnnotation {
 }
 
 extension PDFDatabaseAnnotation: PDFAnnotation {
-    var readerKey: PDFReaderState.AnnotationKey {
+    var readerKey: PDFReaderAnnotationKey {
         return .init(key: key, type: .database)
     }
 
