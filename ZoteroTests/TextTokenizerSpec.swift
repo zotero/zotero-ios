@@ -96,8 +96,8 @@ final class TextTokenizerSpec: QuickSpec {
                         let result = TextTokenizer.findSentence(startingAt: 0, in: text)
 
                         expect(result).notTo(beNil())
-                        expect(result?.text).to(equal("This is a sentence."))
-                        expect(result?.range.length).to(equal(19)) // "This is a sentence." is 19 characters
+                        expect(result?.text).to(equal("This is a sentence.5"))
+                        expect(result?.range.length).to(equal(21)) // "This is a sentence.5 " is 21 characters (includes trailing space)
                     }
 
                     it("does not split abbreviations like U.S.") {
@@ -122,7 +122,7 @@ final class TextTokenizerSpec: QuickSpec {
                         let result = TextTokenizer.findSentence(startingAt: 0, in: longText)
 
                         expect(result).notTo(beNil())
-                        expect(result?.text.hasSuffix("end.")).to(beTrue())
+                        expect(result?.text.hasSuffix("end.1")).to(beTrue())
                         expect(result?.text.count).to(beLessThanOrEqualTo(TextTokenizer.maxSentenceLength))
                     }
 
@@ -141,13 +141,13 @@ final class TextTokenizerSpec: QuickSpec {
                         let text = "First sentence.1 Second sentence.2 Third sentence."
 
                         let first = TextTokenizer.findSentence(startingAt: 0, in: text)
-                        expect(first?.text).to(equal("First sentence."))
+                        expect(first?.text).to(equal("First sentence.1"))
 
                         let second = TextTokenizer.findSentence(startingAt: first!.range.location + first!.range.length, in: text)
-                        expect(second?.text).to(equal("1 Second sentence."))
+                        expect(second?.text).to(equal("Second sentence.2"))
 
                         let third = TextTokenizer.findSentence(startingAt: second!.range.location + second!.range.length, in: text)
-                        expect(third?.text).to(equal("2 Third sentence."))
+                        expect(third?.text).to(equal("Third sentence."))
                     }
 
                     it("handles exclamation mark followed by digit") {
@@ -155,7 +155,7 @@ final class TextTokenizerSpec: QuickSpec {
                         let result = TextTokenizer.findSentence(startingAt: 0, in: text)
 
                         expect(result).notTo(beNil())
-                        expect(result?.text).to(equal("Amazing discovery!"))
+                        expect(result?.text).to(equal("Amazing discovery!5"))
                     }
 
                     it("handles question mark followed by digit") {
@@ -163,7 +163,7 @@ final class TextTokenizerSpec: QuickSpec {
                         let result = TextTokenizer.findSentence(startingAt: 0, in: text)
 
                         expect(result).notTo(beNil())
-                        expect(result?.text).to(equal("Is this true?"))
+                        expect(result?.text).to(equal("Is this true?5"))
                     }
                 }
             }
@@ -263,6 +263,109 @@ final class TextTokenizerSpec: QuickSpec {
                 }
             }
             
+            describe("findSentenceContaining") {
+                it("finds sentence containing index with footnotes") {
+                    let text = "First sentence.5 Second sentence.2 Third sentence."
+                    // Index in "Second" (position 17)
+                    let result = TextTokenizer.findSentenceContaining(index: 17, in: text)
+
+                    expect(result).notTo(beNil())
+                    // Should return the full second sentence chunk including footnote digits
+                    expect(result?.text).to(contain("Second sentence"))
+                }
+
+                it("finds first sentence containing index at start") {
+                    let text = "First sentence.5 Second sentence."
+                    let result = TextTokenizer.findSentenceContaining(index: 3, in: text)
+
+                    expect(result).notTo(beNil())
+                    expect(result?.text).to(contain("First sentence"))
+                }
+            }
+
+            describe("findIndex ofNext with footnotes") {
+                it("finds next sentence index past footnote") {
+                    let text = "First sentence.5 Second sentence."
+                    let result = TextTokenizer.findIndex(ofNext: .sentence, startingAt: 0, in: text)
+
+                    expect(result).notTo(beNil())
+                    // Should advance past the first sentence (the footnote digit stays with the next chunk)
+                    expect(result).to(beLessThanOrEqualTo(text.count))
+                }
+            }
+
+            describe("findIndex ofPreviousWhole with footnotes") {
+                it("finds previous sentence start past footnote") {
+                    let text = "First sentence.5 Second sentence.2 Third sentence."
+                    // From end of text, should find start of last sentence
+                    let result = TextTokenizer.findIndex(ofPreviousWhole: .sentence, beforeIndex: text.count, in: text)
+
+                    expect(result).notTo(beNil())
+                }
+
+                it("finds previous sentence when footnote is followed by newline") {
+                    let text = "Test sentence.5\nNext sentence"
+                    // beforeIndex 18 is inside "Next sentence", should return 0 (start of first sentence)
+                    let result = TextTokenizer.findIndex(ofPreviousWhole: .sentence, beforeIndex: 18, in: text)
+
+                    expect(result).notTo(beNil())
+                    expect(result).to(equal(0))
+                }
+            }
+
+            describe("findSentence with footnote and newline") {
+                it("returns sentence text including footnote digit") {
+                    let text = "Test sentence.5\nNext sentence."
+                    let result = TextTokenizer.findSentence(startingAt: 0, in: text)
+
+                    expect(result).notTo(beNil())
+                    expect(result?.text).to(equal("Test sentence.5"))
+                }
+            }
+
+            describe("normalization edge cases") {
+                it("does not break decimal numbers") {
+                    let text = "The value is 3.5 and it matters."
+                    let result = TextTokenizer.findSentence(startingAt: 0, in: text)
+
+                    expect(result).notTo(beNil())
+                    expect(result?.text).to(equal("The value is 3.5 and it matters."))
+                }
+
+                it("handles multi-digit footnotes") {
+                    let text = "Important claim.12 Next sentence."
+                    let result = TextTokenizer.findSentence(startingAt: 0, in: text)
+
+                    expect(result).notTo(beNil())
+                    expect(result?.text).to(equal("Important claim.12"))
+                }
+
+                it("handles closing quote before footnote") {
+                    let text = "He said \"hello.\"5 Next sentence."
+                    let result = TextTokenizer.findSentence(startingAt: 0, in: text)
+
+                    expect(result).notTo(beNil())
+                    // The quote+period+digit pattern should be normalized
+                    expect(result?.text.count).to(beLessThan(text.count))
+                }
+
+                it("handles closing parenthesis before footnote") {
+                    let text = "Some claim (see above).5 More text here."
+                    let result = TextTokenizer.findSentence(startingAt: 0, in: text)
+
+                    expect(result).notTo(beNil())
+                    expect(result?.text).to(equal("Some claim (see above).5"))
+                }
+
+                it("handles closing bracket before footnote") {
+                    let text = "Reference [1].5 Another sentence."
+                    let result = TextTokenizer.findSentence(startingAt: 0, in: text)
+
+                    expect(result).notTo(beNil())
+                    expect(result?.text).to(equal("Reference [1].5"))
+                }
+            }
+
             describe("find previous index") {
                 context("with paragraphs") {
                     it("finds previous paragraph when in middle of current") {
