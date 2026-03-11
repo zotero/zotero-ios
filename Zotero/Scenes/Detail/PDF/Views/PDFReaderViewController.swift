@@ -222,8 +222,8 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
             accessibilityHandler?.delegate = self
         }
 
-        if !viewModel.state.document.isLocked, let documentController {
-            viewModel.process(action: .loadDocumentData(boundingBoxConverter: documentController))
+        if !viewModel.state.document.isLocked {
+            viewModel.process(action: .loadDocumentData)
         }
 
         setupNavigationBar()
@@ -438,7 +438,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
             return
         }
 
-        if let success = state.unlockSuccessful, success, let documentController {
+        if let success = state.unlockSuccessful, success {
             // Enable bar buttons
             for item in navigationItem.leftBarButtonItems ?? [] {
                 item.isEnabled = true
@@ -450,7 +450,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
             }
             interfaceVisibilityDidChange(to: !toolbarState.visible)
             // Load initial document data after document has been unlocked successfully
-            viewModel.process(action: .loadDocumentData(boundingBoxConverter: documentController))
+            viewModel.process(action: .loadDocumentData)
         }
 
         if state.changes.contains(.selectionDeletion) {
@@ -964,32 +964,6 @@ extension PDFReaderViewController: ConflictViewControllerReceiver {
     }
 }
 
-extension PDFReaderViewController: AnnotationBoundingBoxConverter {
-    func convertFromDb(rect: CGRect, page: PageIndex) -> CGRect? {
-        return documentController?.convertFromDb(rect: rect, page: page)
-    }
-
-    func convertFromDb(point: CGPoint, page: PageIndex) -> CGPoint? {
-        return documentController?.convertFromDb(point: point, page: page)
-    }
-
-    func convertToDb(rect: CGRect, page: PageIndex) -> CGRect? {
-        return documentController?.convertToDb(rect: rect, page: page)
-    }
-
-    func convertToDb(point: CGPoint, page: PageIndex) -> CGPoint? {
-        return documentController?.convertToDb(point: point, page: page)
-    }
-
-    func sortIndexMinY(rect: CGRect, page: PageIndex) -> CGFloat? {
-        return documentController?.sortIndexMinY(rect: rect, page: page)
-    }
-
-    func textOffset(rect: CGRect, page: PageIndex) -> Int? {
-        return documentController?.textOffset(rect: rect, page: page)
-    }
-}
-
 extension PDFReaderViewController: IntraDocumentNavigationButtonsHandlerDelegate {
     var sidebarView: UIView? {
         return sidebarController?.view
@@ -1002,7 +976,7 @@ extension PDFReaderViewController: ParentWithSidebarController {
         let sidebarController = PDFSidebarViewController(viewModel: viewModel)
         sidebarController.parentDelegate = self
         sidebarController.coordinatorDelegate = coordinatorDelegate
-        sidebarController.boundingBoxConverter = documentController
+        sidebarController.boundingBoxConverter = viewModel.state.document
         sidebarController.view.translatesAutoresizingMaskIntoConstraints = false
 
         let separator = UIView()

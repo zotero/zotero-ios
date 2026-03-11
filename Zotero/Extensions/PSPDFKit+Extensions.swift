@@ -16,6 +16,72 @@ extension Document {
     }
 }
 
+extension Document: AnnotationBoundingBoxConverter {
+    /// Converts from database to PSPDFKit rect. Database stores rects in RAW PDF Coordinate space. PSPDFKit works with Normalized PDF Coordinate Space.
+    func convertFromDb(rect: CGRect, page: PageIndex) -> CGRect? {
+        guard let pageInfo = pageInfoForPage(at: page) else { return nil }
+        return rect.applying(pageInfo.transform)
+    }
+
+    func convertFromDb(point: CGPoint, page: PageIndex) -> CGPoint? {
+        let tmpRect = CGRect(origin: point, size: CGSize(width: 1, height: 1))
+        return convertFromDb(rect: tmpRect, page: page)?.origin
+    }
+
+    /// Converts from PSPDFKit to database rect. Database stores rects in RAW PDF Coordinate space. PSPDFKit works with Normalized PDF Coordinate Space.
+    func convertToDb(rect: CGRect, page: PageIndex) -> CGRect? {
+        guard let pageInfo = pageInfoForPage(at: page) else { return nil }
+        return rect.applying(pageInfo.transform.inverted())
+    }
+
+    func convertToDb(point: CGPoint, page: PageIndex) -> CGPoint? {
+        let tmpRect = CGRect(origin: point, size: CGSize(width: 1, height: 1))
+        return convertToDb(rect: tmpRect, page: page)?.origin
+    }
+
+    /// Converts from PSPDFKit to sort index rect. PSPDFKit works with Normalized PDF Coordinate Space. Sort index stores y coordinate in RAW View Coordinate Space.
+    func sortIndexMinY(rect: CGRect, page: PageIndex) -> CGFloat? {
+        guard let pageInfo = pageInfoForPage(at: page) else { return nil }
+
+        switch pageInfo.savedRotation {
+        case .rotation0:
+            return pageInfo.size.height - rect.maxY
+
+        case .rotation180:
+            return rect.minY
+
+        case .rotation90:
+            return pageInfo.size.width - rect.minX
+
+        case .rotation270:
+            return rect.minX
+        }
+    }
+
+    func textOffset(rect: CGRect, page: PageIndex) -> Int? {
+        guard let parser = textParserForPage(at: page), !parser.glyphs.isEmpty else { return nil }
+
+        var index = 0
+        var minDistance: CGFloat = .greatestFiniteMagnitude
+        var textOffset = 0
+
+        for glyph in parser.glyphs {
+            guard !glyph.isWordOrLineBreaker else { continue }
+
+            let distance = rect.distance(to: glyph.frame)
+
+            if distance < minDistance {
+                minDistance = distance
+                textOffset = index
+            }
+
+            index += 1
+        }
+
+        return textOffset
+    }
+}
+
 extension PSPDFKit.Annotation {
     /// Defines internal Zotero key. PDFs which were previously exported by Zotero may include this flag.
     var key: String? {

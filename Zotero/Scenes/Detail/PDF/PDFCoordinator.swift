@@ -407,7 +407,8 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
     }
 
     func createShareAnnotationMenu(state: PDFReaderState, annotation: PDFAnnotation, sender: UIButton) -> UIMenu? {
-        guard annotation.type == .image, let boundingBoxConverter = self.navigationController?.viewControllers.last as? AnnotationBoundingBoxConverter else { return nil }
+        guard annotation.type == .image else { return nil }
+        let boundingBoxConverter = state.document
         var children: [UIMenuElement] = []
         var shareImageMenuChildren: [UIMenuElement] = []
         for (scale, title) in [
