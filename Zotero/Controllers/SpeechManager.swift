@@ -112,26 +112,11 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     private unowned let remoteVoicesController: RemoteVoicesController
     private let nowPlayingManager: NowPlayingManager
     
-    struct HighlightSession {
-        /// Individual unit ranges in document order. The first element is the leftmost unit, the last is the rightmost.
-        var unitRanges: [NSRange]
-        /// Index into `unitRanges` pointing to the initially selected unit.
-        let anchorIndex: Int
-        var pageIndex: Delegate.Index
-        let granularity: NLTokenUnit
-
-        /// The combined range spanning all unit ranges.
-        var range: NSRange {
-            guard let first = unitRanges.first, let last = unitRanges.last else { return NSRange() }
-            return NSRange(location: first.location, length: last.location + last.length - first.location)
-        }
-    }
-
     private var processor: VoiceProcessor!
     private var speechData: SpeechData?
     private var cachedPages: [Delegate.Index: String]
     private var debouncedSpeakWorkItem: DispatchWorkItem?
-    private(set) var highlightSession: HighlightSession?
+    let highlightSessionManager: SpeechHighlightSessionManager<SpeechManager<Delegate>>
     private weak var delegate: Delegate?
     var voice: SpeechVoice? { processor.speechVoice }
     var language: String? { processor.preferredLanguage }
@@ -148,11 +133,13 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         self.delegate = delegate
         self.remoteVoicesController = remoteVoicesController
         cachedPages = [:]
+        highlightSessionManager = SpeechHighlightSessionManager<SpeechManager<Delegate>>()
         state = BehaviorRelay(value: .stopped)
         remainingTime = BehaviorRelay(value: nil)
         disposeBag = DisposeBag()
         nowPlayingManager = NowPlayingManager()
         super.init()
+        highlightSessionManager.delegate = self
         if let remoteVoiceTier {
             processor = RemoteVoiceProcessor(language: voiceLanguage, tier: remoteVoiceTier, speechRateModifier: 1, delegate: self, remoteVoicesController: remoteVoicesController)
         } else {
@@ -182,7 +169,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                 case .stopped:
                     speechData = nil
                     cachedPages = [:]
-                    highlightSession = nil
+                    highlightSessionManager.cancelSession()
                     nowPlayingManager.deactivate()
                 }
             })
@@ -306,209 +293,70 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
 
     // MARK: - Highlight Session
 
-    /// Returns the sentence or paragraph that should be highlighted based on current speech position.
-    private func sentenceForHighlight() -> (text: String, range: NSRange, pageIndex: Delegate.Index, granularity: NLTokenUnit)? {
+    /// Starts a highlight session. Returns the initial text and page index, and shows a temporary highlight in the document.
+    func startHighlightSession() -> (text: String, pageIndex: Delegate.Index)? {
         guard state.value.isSpeaking || state.value.isPaused,
               let speechData,
               let pageText = cachedPages[speechData.index] else { return nil }
 
-        // Determine granularity and whether to go back based on voice type
-        let granularity: NLTokenUnit
-        let shouldGoBack: Bool
-
+        let voiceInfo: HighlightVoiceInfo
         switch processor.speechVoice {
         case .remote(let remoteVoice):
-            granularity = remoteVoice.granularity == .paragraph ? .paragraph : .sentence
-            let progress = processor.segmentAudioProgress
-            let elapsedTime = processor.segmentAudioElapsedTime
-            shouldGoBack = progress < 0.5 || elapsedTime < 3.0
+            let granularity: NLTokenUnit = remoteVoice.granularity == .paragraph ? .paragraph : .sentence
+            voiceInfo = .remote(granularity: granularity, audioProgress: processor.segmentAudioProgress, elapsedTime: processor.segmentAudioElapsedTime)
 
         case .local:
-            granularity = .sentence
-            let clampedPosition = min(max(speechData.range.location, 0), max(pageText.count - 1, 0))
-            if let sentence = TextTokenizer.findSentenceContaining(index: clampedPosition, in: pageText), sentence.range.length > 0 {
-                let posInSentence = max(0, clampedPosition - sentence.range.location)
-                shouldGoBack = Float(posInSentence) / Float(sentence.range.length) < 0.5
-            } else {
-                shouldGoBack = false
-            }
+            voiceInfo = .local
 
         case .none:
             return nil
         }
 
-        // Find current unit (sentence or paragraph) at speech position
-        let position = min(max(speechData.range.location, 0), max(pageText.count - 1, 0))
-        let currentUnit: (text: String, range: NSRange)?
-        if granularity == .paragraph {
-            currentUnit = TextTokenizer.findParagraphContaining(index: position, in: pageText)
-        } else {
-            currentUnit = TextTokenizer.findSentenceContaining(index: position, in: pageText)
-        }
+        guard let result = highlightSessionManager.startSession(
+            voiceInfo: voiceInfo,
+            position: speechData.range.location,
+            pageText: pageText,
+            pageIndex: speechData.index
+        ) else { return nil }
 
-        guard let currentUnit else { return nil }
-
-        if shouldGoBack {
-            if let prevIdx = TextTokenizer.findIndex(ofPreviousWhole: granularity, beforeIndex: currentUnit.range.location, in: pageText) {
-                let prev: (text: String, range: NSRange)?
-                if granularity == .paragraph {
-                    prev = TextTokenizer.findParagraph(startingAt: prevIdx, in: pageText)
-                } else {
-                    prev = TextTokenizer.findSentence(startingAt: prevIdx, in: pageText)
-                }
-                if let prev {
-                    return (prev.text, prev.range, speechData.index, granularity)
-                }
-            }
-            if let prevPageIndex = delegate?.getPreviousPageIndex(from: speechData.index),
-               let prevPageText = cachedPages[prevPageIndex],
-               let lastIdx = TextTokenizer.findIndex(ofPreviousWhole: granularity, beforeIndex: prevPageText.count, in: prevPageText) {
-                let last: (text: String, range: NSRange)?
-                if granularity == .paragraph {
-                    last = TextTokenizer.findParagraph(startingAt: lastIdx, in: prevPageText)
-                } else {
-                    last = TextTokenizer.findSentence(startingAt: lastIdx, in: prevPageText)
-                }
-                if let last {
-                    return (last.text, last.range, prevPageIndex, granularity)
-                }
-            }
-        }
-
-        return (currentUnit.text, currentUnit.range, speechData.index, granularity)
-    }
-
-    /// Starts a highlight session. Returns the initial text and page index, and shows a temporary highlight in the document.
-    func startHighlightSession() -> (text: String, pageIndex: Delegate.Index)? {
-        guard let result = sentenceForHighlight() else { return nil }
-        highlightSession = HighlightSession(unitRanges: [result.range], anchorIndex: 0, pageIndex: result.pageIndex, granularity: result.granularity)
         delegate?.highlightTextChanged(text: result.text, pageIndex: result.pageIndex)
-        return (result.text, result.pageIndex)
+        return result
     }
 
-    /// Moves to the next unit as a single selection. If anchor+1 exists in unitRanges, uses that.
-    /// Otherwise finds the next unit after the anchor in the text.
     func moveHighlightForward() -> (text: String, pageIndex: Delegate.Index)? {
-        guard let session = highlightSession, let pageText = cachedPages[session.pageIndex] else { return nil }
-
-        let newRange: NSRange
-        if session.anchorIndex + 1 < session.unitRanges.count {
-            // Next unit is already in the expanded selection
-            newRange = session.unitRanges[session.anchorIndex + 1]
-        } else {
-            // Find next unit after anchor in the text
-            let anchorRange = session.unitRanges[session.anchorIndex]
-            let anchorEnd = anchorRange.location + anchorRange.length
-            guard let next = findUnit(granularity: session.granularity, startingAt: anchorEnd, in: pageText) else { return nil }
-            newRange = next.range
-        }
-
-        highlightSession = HighlightSession(unitRanges: [newRange], anchorIndex: 0, pageIndex: session.pageIndex, granularity: session.granularity)
-        return updateHighlightText(from: pageText, pageIndex: session.pageIndex)
+        guard let result = highlightSessionManager.moveForward() else { return nil }
+        delegate?.highlightTextChanged(text: result.text, pageIndex: result.pageIndex)
+        return result
     }
 
-    /// Moves to the previous unit as a single selection. If anchor-1 exists in unitRanges, uses that.
-    /// Otherwise finds the previous unit before the anchor in the text.
     func moveHighlightBackward() -> (text: String, pageIndex: Delegate.Index)? {
-        guard let session = highlightSession, let pageText = cachedPages[session.pageIndex] else { return nil }
-
-        let newRange: NSRange
-        if session.anchorIndex - 1 >= 0 {
-            // Previous unit is already in the expanded selection
-            newRange = session.unitRanges[session.anchorIndex - 1]
-        } else {
-            // Find previous unit before anchor in the text
-            let anchorRange = session.unitRanges[session.anchorIndex]
-            guard let prevIdx = TextTokenizer.findIndex(ofPreviousWhole: session.granularity, beforeIndex: anchorRange.location, in: pageText),
-                  let prev = findUnit(granularity: session.granularity, startingAt: prevIdx, in: pageText) else { return nil }
-            newRange = prev.range
-        }
-
-        highlightSession = HighlightSession(unitRanges: [newRange], anchorIndex: 0, pageIndex: session.pageIndex, granularity: session.granularity)
-        return updateHighlightText(from: pageText, pageIndex: session.pageIndex)
+        guard let result = highlightSessionManager.moveBackward() else { return nil }
+        delegate?.highlightTextChanged(text: result.text, pageIndex: result.pageIndex)
+        return result
     }
 
-    /// Extends highlight forward: if selection was expanded backward beyond the anchor, shrinks from the start first.
-    /// Otherwise appends the next unit to the end. Returns updated text.
     func extendHighlightForward() -> (text: String, pageIndex: Delegate.Index)? {
-        guard var session = highlightSession, let pageText = cachedPages[session.pageIndex] else { return nil }
-
-        if session.anchorIndex > 0 {
-            // Selection is expanded backward — shrink from the start
-            session.unitRanges.removeFirst()
-            highlightSession = HighlightSession(unitRanges: session.unitRanges, anchorIndex: session.anchorIndex - 1, pageIndex: session.pageIndex, granularity: session.granularity)
-            return updateHighlightText(from: pageText, pageIndex: session.pageIndex)
-        }
-
-        // Expand forward — find the next unit after the last range
-        let lastRange = session.unitRanges.last!
-        let endOfLast = lastRange.location + lastRange.length
-        guard let next = findUnit(granularity: session.granularity, startingAt: endOfLast, in: pageText) else { return nil }
-
-        session.unitRanges.append(next.range)
-        highlightSession = HighlightSession(unitRanges: session.unitRanges, anchorIndex: session.anchorIndex, pageIndex: session.pageIndex, granularity: session.granularity)
-        return updateHighlightText(from: pageText, pageIndex: session.pageIndex)
+        guard let result = highlightSessionManager.extendForward() else { return nil }
+        delegate?.highlightTextChanged(text: result.text, pageIndex: result.pageIndex)
+        return result
     }
 
-    /// Extends highlight backward: if selection was expanded forward beyond the anchor, shrinks from the end first.
-    /// Otherwise prepends the previous unit to the start. Returns updated text.
     func extendHighlightBackward() -> (text: String, pageIndex: Delegate.Index)? {
-        guard var session = highlightSession, let pageText = cachedPages[session.pageIndex] else { return nil }
-
-        if session.anchorIndex < session.unitRanges.count - 1 {
-            // Selection is expanded forward — shrink from the end
-            session.unitRanges.removeLast()
-            highlightSession = HighlightSession(unitRanges: session.unitRanges, anchorIndex: session.anchorIndex, pageIndex: session.pageIndex, granularity: session.granularity)
-            return updateHighlightText(from: pageText, pageIndex: session.pageIndex)
-        }
-
-        // Expand backward — find the previous unit before the first range
-        let firstRange = session.unitRanges.first!
-        guard let prevIdx = TextTokenizer.findIndex(ofPreviousWhole: session.granularity, beforeIndex: firstRange.location, in: pageText),
-              let prev = findUnit(granularity: session.granularity, startingAt: prevIdx, in: pageText) else { return nil }
-
-        session.unitRanges.insert(prev.range, at: 0)
-        highlightSession = HighlightSession(unitRanges: session.unitRanges, anchorIndex: session.anchorIndex + 1, pageIndex: session.pageIndex, granularity: session.granularity)
-        return updateHighlightText(from: pageText, pageIndex: session.pageIndex)
+        guard let result = highlightSessionManager.extendBackward() else { return nil }
+        delegate?.highlightTextChanged(text: result.text, pageIndex: result.pageIndex)
+        return result
     }
 
-    private func updateHighlightText(from pageText: String, pageIndex: Delegate.Index) -> (text: String, pageIndex: Delegate.Index) {
-        let combinedRange = highlightSession!.range
-        let text = extractText(from: pageText, range: combinedRange)
-        delegate?.highlightTextChanged(text: text, pageIndex: pageIndex)
-        return (text, pageIndex)
-    }
-
-    private func extractText(from text: String, range: NSRange) -> String {
-        let start = text.index(text.startIndex, offsetBy: range.location)
-        let end = text.index(start, offsetBy: range.length)
-        return String(text[start..<end]).trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    /// Ends the highlight session, creating a highlight annotation and clearing the temporary document highlight.
     func endHighlightSession() {
-        guard let session = highlightSession, let pageText = cachedPages[session.pageIndex] else {
-            highlightSession = nil
-            return
+        if let result = highlightSessionManager.endSession() {
+            delegate?.createHighlightAnnotation(forText: result.text, onPage: result.pageIndex)
         }
-        let text = extractText(from: pageText, range: session.range)
-        delegate?.createHighlightAnnotation(forText: text, onPage: session.pageIndex)
-        highlightSession = nil
         delegate?.clearHighlightAnnotationPreview()
     }
 
-    /// Cancels the highlight session without creating an annotation and clears the temporary document highlight.
     func cancelHighlightSession() {
-        highlightSession = nil
+        highlightSessionManager.cancelSession()
         delegate?.clearHighlightAnnotationPreview()
-    }
-
-    private func findUnit(granularity: NLTokenUnit, startingAt index: Int, in text: String) -> (text: String, range: NSRange)? {
-        if granularity == .paragraph {
-            return TextTokenizer.findParagraph(startingAt: index, in: text)
-        } else {
-            return TextTokenizer.findSentence(startingAt: index, in: text)
-        }
     }
 
     /// Downgrades the voice to a lower tier and continues playback.
@@ -1401,5 +1249,21 @@ extension RemoteVoiceProcessor: AVAudioPlayerDelegate {
     func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: (any Swift.Error)?) {
         DDLogError("RemoteVoiceProcessor: decode error - \(String(describing: error))")
         finishSpeaking()
+    }
+}
+
+// MARK: - SpeechHighlightSessionManagerDelegate
+
+extension SpeechManager: SpeechHighlightSessionManagerDelegate {
+    func highlightSessionNextPageData(from pageIndex: Delegate.Index) -> (pageText: String, pageIndex: Delegate.Index)? {
+        guard let nextIndex = delegate?.getNextPageIndex(from: pageIndex),
+              let text = cachedPages[nextIndex] else { return nil }
+        return (text, nextIndex)
+    }
+
+    func highlightSessionPreviousPageData(from pageIndex: Delegate.Index) -> (pageText: String, pageIndex: Delegate.Index)? {
+        guard let prevIndex = delegate?.getPreviousPageIndex(from: pageIndex),
+              let text = cachedPages[prevIndex] else { return nil }
+        return (text, prevIndex)
     }
 }
