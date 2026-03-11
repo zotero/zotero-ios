@@ -386,59 +386,46 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         return (result.text, result.pageIndex)
     }
 
-    /// Moves the anchor forward by one unit, preserving the number of expanded units before/after anchor.
+    /// Moves to the next unit as a single selection. If anchor+1 exists in unitRanges, uses that.
+    /// Otherwise finds the next unit after the anchor in the text.
     func moveHighlightForward() -> (text: String, pageIndex: Delegate.Index)? {
         guard let session = highlightSession, let pageText = cachedPages[session.pageIndex] else { return nil }
-        let anchorRange = session.unitRanges[session.anchorIndex]
-        let anchorEnd = anchorRange.location + anchorRange.length
 
-        // Find the next unit to become the new anchor
-        guard let nextIdx = TextTokenizer.findIndex(ofNext: session.granularity, startingAt: anchorEnd, in: pageText),
-              let newAnchor = findUnit(granularity: session.granularity, startingAt: nextIdx, in: pageText) else { return nil }
+        let newRange: NSRange
+        if session.anchorIndex + 1 < session.unitRanges.count {
+            // Next unit is already in the expanded selection
+            newRange = session.unitRanges[session.anchorIndex + 1]
+        } else {
+            // Find next unit after anchor in the text
+            let anchorRange = session.unitRanges[session.anchorIndex]
+            let anchorEnd = anchorRange.location + anchorRange.length
+            guard let nextIdx = TextTokenizer.findIndex(ofNext: session.granularity, startingAt: anchorEnd, in: pageText),
+                  let next = findUnit(granularity: session.granularity, startingAt: nextIdx, in: pageText) else { return nil }
+            newRange = next.range
+        }
 
-        return rebuildSession(newAnchorRange: newAnchor.range, session: session, pageText: pageText)
+        highlightSession = HighlightSession(unitRanges: [newRange], anchorIndex: 0, pageIndex: session.pageIndex, granularity: session.granularity)
+        return updateHighlightText(from: pageText, pageIndex: session.pageIndex)
     }
 
-    /// Moves the anchor backward by one unit, preserving the number of expanded units before/after anchor.
+    /// Moves to the previous unit as a single selection. If anchor-1 exists in unitRanges, uses that.
+    /// Otherwise finds the previous unit before the anchor in the text.
     func moveHighlightBackward() -> (text: String, pageIndex: Delegate.Index)? {
         guard let session = highlightSession, let pageText = cachedPages[session.pageIndex] else { return nil }
-        let anchorRange = session.unitRanges[session.anchorIndex]
 
-        // Find the previous unit to become the new anchor
-        guard let prevIdx = TextTokenizer.findIndex(ofPreviousWhole: session.granularity, beforeIndex: anchorRange.location, in: pageText),
-              let newAnchor = findUnit(granularity: session.granularity, startingAt: prevIdx, in: pageText) else { return nil }
-
-        return rebuildSession(newAnchorRange: newAnchor.range, session: session, pageText: pageText)
-    }
-
-    /// Rebuilds the highlight session around a new anchor, preserving the before/after expansion counts as much as possible.
-    private func rebuildSession(newAnchorRange: NSRange, session: HighlightSession, pageText: String) -> (text: String, pageIndex: Delegate.Index) {
-        let unitsBefore = session.anchorIndex
-        let unitsAfter = session.unitRanges.count - 1 - session.anchorIndex
-        var ranges = [newAnchorRange]
-
-        // Expand backward from anchor
-        var current = newAnchorRange
-        for _ in 0..<unitsBefore {
-            guard let prevIdx = TextTokenizer.findIndex(ofPreviousWhole: session.granularity, beforeIndex: current.location, in: pageText),
-                  let prev = findUnit(granularity: session.granularity, startingAt: prevIdx, in: pageText) else { break }
-            ranges.insert(prev.range, at: 0)
-            current = prev.range
+        let newRange: NSRange
+        if session.anchorIndex - 1 >= 0 {
+            // Previous unit is already in the expanded selection
+            newRange = session.unitRanges[session.anchorIndex - 1]
+        } else {
+            // Find previous unit before anchor in the text
+            let anchorRange = session.unitRanges[session.anchorIndex]
+            guard let prevIdx = TextTokenizer.findIndex(ofPreviousWhole: session.granularity, beforeIndex: anchorRange.location, in: pageText),
+                  let prev = findUnit(granularity: session.granularity, startingAt: prevIdx, in: pageText) else { return nil }
+            newRange = prev.range
         }
 
-        let newAnchorIndex = ranges.count - 1
-
-        // Expand forward from anchor
-        current = newAnchorRange
-        for _ in 0..<unitsAfter {
-            let end = current.location + current.length
-            guard let nextIdx = TextTokenizer.findIndex(ofNext: session.granularity, startingAt: end, in: pageText),
-                  let next = findUnit(granularity: session.granularity, startingAt: nextIdx, in: pageText) else { break }
-            ranges.append(next.range)
-            current = next.range
-        }
-
-        highlightSession = HighlightSession(unitRanges: ranges, anchorIndex: newAnchorIndex, pageIndex: session.pageIndex, granularity: session.granularity)
+        highlightSession = HighlightSession(unitRanges: [newRange], anchorIndex: 0, pageIndex: session.pageIndex, granularity: session.granularity)
         return updateHighlightText(from: pageText, pageIndex: session.pageIndex)
     }
 
