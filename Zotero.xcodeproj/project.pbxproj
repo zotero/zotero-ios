@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2AEE7232A20C0644A40513F1 /* SpeechHighlightSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C42AA9D784B9E233A7F57AC5 /* SpeechHighlightSessionManager.swift */; };
+		4BBADCFA6CF912207C4A0F8A /* SpeechHighlightSessionManagerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FA2F2A8ADAA23B7B81ADE02 /* SpeechHighlightSessionManagerSpec.swift */; };
 		561E08F0D1D341A09184D875 /* ReadAttachmentUploadsDbRequestSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6869C0F7335B4F30B5D8C9EC /* ReadAttachmentUploadsDbRequestSpec.swift */; };
 		6102D2B22D68ABF100505E6A /* bitcoin_pdf_recognizer_data.json in Resources */ = {isa = PBXBuildFile; fileRef = 6102D2B12D68ABD900505E6A /* bitcoin_pdf_recognizer_data.json */; };
 		6102D2B62D68B5E800505E6A /* bitcoin_pdf_full_text.json in Resources */ = {isa = PBXBuildFile; fileRef = 6102D2B52D68B5DE00505E6A /* bitcoin_pdf_full_text.json */; };
@@ -1387,6 +1389,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		1FA2F2A8ADAA23B7B81ADE02 /* SpeechHighlightSessionManagerSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SpeechHighlightSessionManagerSpec.swift; sourceTree = "<group>"; };
 		6102D2B12D68ABD900505E6A /* bitcoin_pdf_recognizer_data.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = bitcoin_pdf_recognizer_data.json; sourceTree = "<group>"; };
 		6102D2B52D68B5DE00505E6A /* bitcoin_pdf_full_text.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = bitcoin_pdf_full_text.json; sourceTree = "<group>"; };
 		6102D2B72D6CCDD300505E6A /* RemoteRecognizerResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteRecognizerResponse.swift; sourceTree = "<group>"; };
@@ -2515,6 +2518,7 @@
 		D1E2F3A92F1C000100ABC001 /* APIWebSocketController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIWebSocketController.swift; sourceTree = "<group>"; };
 		D1E2F3AB2F1C000100ABC001 /* LoginSessionWebSocketController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginSessionWebSocketController.swift; sourceTree = "<group>"; };
 		D1E2F3AD2F1C000100ABC001 /* CancelLoginSessionRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CancelLoginSessionRequest.swift; sourceTree = "<group>"; };
+		C42AA9D784B9E233A7F57AC5 /* SpeechHighlightSessionManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SpeechHighlightSessionManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -2706,6 +2710,7 @@
 				B305646F23FC051E003304F2 /* SecureStorage.swift */,
 				B305646E23FC051E003304F2 /* SessionController.swift */,
 				61ABA7502A6137D1002A4219 /* ShareableImage.swift */,
+				C42AA9D784B9E233A7F57AC5 /* SpeechHighlightSessionManager.swift */,
 				B39DBFF52D80369C00454486 /* SpeechManager.swift */,
 				B3593F172668E6A700FA4BB2 /* StyleParserDelegate.swift */,
 				B355B12B2850B6C400BAE2C5 /* TableViewDiffableDataSource.swift */,
@@ -3284,6 +3289,7 @@
 				B31DDAA02729A7DC002CFA05 /* WebDavCredentials.swift */,
 				61AD977C2D67F42A000FDF45 /* DocumentWorkerControllerSpec.swift */,
 				B37A01C62F3A16FE002FF725 /* TextTokenizerSpec.swift */,
+				1FA2F2A8ADAA23B7B81ADE02 /* SpeechHighlightSessionManagerSpec.swift */,
 			);
 			path = ZoteroTests;
 			sourceTree = "<group>";
@@ -6233,6 +6239,7 @@
 				B3FE33732C09F44E0065C5B2 /* SyncRefreshController.swift in Sources */,
 				B385B70E25C03E7E0073CA6F /* PDFExportState.swift in Sources */,
 				B387AE612F4759CC009D0DD5 /* LanguageDetector.swift in Sources */,
+				2AEE7232A20C0644A40513F1 /* SpeechHighlightSessionManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -6264,6 +6271,7 @@
 				6144B5DF2A4AE48F00914B3C /* SyncControllerSpec.swift in Sources */,
 				B3243BC82A5EB2740033A7D6 /* HtmlAttributedStringConverterSpec.swift in Sources */,
 				61AD977D2D67F42A000FDF45 /* DocumentWorkerControllerSpec.swift in Sources */,
+				4BBADCFA6CF912207C4A0F8A /* SpeechHighlightSessionManagerSpec.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
