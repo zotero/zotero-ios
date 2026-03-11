@@ -15,7 +15,7 @@ import RealmSwift
 enum PDFReaderAction {
     case startObservingAnnotationPreviewChanges
     case prepareDocumentProvider
-    case loadDocumentData(boundingBoxConverter: AnnotationBoundingBoxConverter)
+    case loadDocumentData
     case searchAnnotations(String)
     case selectAnnotation(PDFReaderState.AnnotationKey)
     case selectAnnotationFromDocument(PDFReaderState.AnnotationKey)
