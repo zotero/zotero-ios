@@ -399,8 +399,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             // Find next unit after anchor in the text
             let anchorRange = session.unitRanges[session.anchorIndex]
             let anchorEnd = anchorRange.location + anchorRange.length
-            guard let nextIdx = TextTokenizer.findIndex(ofNext: session.granularity, startingAt: anchorEnd, in: pageText),
-                  let next = findUnit(granularity: session.granularity, startingAt: nextIdx, in: pageText) else { return nil }
+            guard let next = findUnit(granularity: session.granularity, startingAt: anchorEnd, in: pageText) else { return nil }
             newRange = next.range
         }
 
@@ -444,8 +443,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         // Expand forward — find the next unit after the last range
         let lastRange = session.unitRanges.last!
         let endOfLast = lastRange.location + lastRange.length
-        guard let nextIdx = TextTokenizer.findIndex(ofNext: session.granularity, startingAt: endOfLast, in: pageText),
-              let next = findUnit(granularity: session.granularity, startingAt: nextIdx, in: pageText) else { return nil }
+        guard let next = findUnit(granularity: session.granularity, startingAt: endOfLast, in: pageText) else { return nil }
 
         session.unitRanges.append(next.range)
         highlightSession = HighlightSession(unitRanges: session.unitRanges, anchorIndex: session.anchorIndex, pageIndex: session.pageIndex, granularity: session.granularity)
