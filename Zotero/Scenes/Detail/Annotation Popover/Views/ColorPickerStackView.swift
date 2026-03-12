@@ -25,7 +25,7 @@ class ColorPickerStackView: UIStackView {
     let circleSelectionLineWidth: CGFloat
     let circleSelectionInset: UIEdgeInsets
     let circleContentInsets: UIEdgeInsets
-    let trailingSpacerViewProvider: () -> UIView?
+    let trailingSpacerViewProvider: (_ row: Int) -> UIView?
     let accessibilityLabelProvider: (_ hexColor: String, _ isSelected: Bool) -> String?
     let hexColorToggled: (_ hexColor: String) -> Void
     private let disposeBag: DisposeBag
@@ -40,7 +40,7 @@ class ColorPickerStackView: UIStackView {
         circleSelectionLineWidth: CGFloat = 1.5,
         circleSelectionInset: UIEdgeInsets = UIEdgeInsets(top: 2, left: 2, bottom: 2, right: 2),
         circleContentInsets: UIEdgeInsets = .zero,
-        trailingSpacerViewProvider: @escaping () -> UIView? = { nil },
+        trailingSpacerViewProvider: @escaping (_ row: Int) -> UIView? = { _ in nil },
         accessibilityLabelProvider: @escaping (_ hexColor: String, _ isSelected: Bool) -> String? = { _, _ in nil },
         hexColorToggled: @escaping (_ hexColor: String) -> Void
     ) {
@@ -96,7 +96,7 @@ class ColorPickerStackView: UIStackView {
                     colorViews.append(circleView)
                 }
 
-                if let trailingSpacerView = trailingSpacerViewProvider() {
+                if let trailingSpacerView = trailingSpacerViewProvider(idx) {
                     colorViews.append(trailingSpacerView)
                 }
 
@@ -126,13 +126,9 @@ class ColorPickerStackView: UIStackView {
 
     var selectedHexColors: [String] {
         var selectedHexColors: [String] = []
-        for view in arrangedSubviews {
-            guard let colorRow = view as? UIStackView else { continue }
-            for view in colorRow.arrangedSubviews {
-                guard let pickerView = view as? ColorPickerCircleView else { continue }
-                if pickerView.isSelected {
-                    selectedHexColors.append(pickerView.hexColor)
-                }
+        for circleView in circleViews() {
+            if circleView.isSelected {
+                selectedHexColors.append(circleView.hexColor)
             }
         }
         return selectedHexColors
@@ -143,19 +139,15 @@ class ColorPickerStackView: UIStackView {
     }
 
     func setSelected(hexColors: [String]) {
-        for view in arrangedSubviews {
-            guard let colorRow = view as? UIStackView else { continue }
-            for view in colorRow.arrangedSubviews {
-                guard let circleView = view as? ColorPickerCircleView else { continue }
-                let isSelected: Bool
-                if allowsMultipleSelection {
-                    isSelected = hexColors.contains(circleView.hexColor)
-                } else {
-                    isSelected = hexColors.first == circleView.hexColor
-                }
-                circleView.isSelected = isSelected
-                circleView.accessibilityLabel = accessibilityLabelProvider(circleView.hexColor, isSelected)
+        for circleView in circleViews() {
+            let isSelected: Bool
+            if allowsMultipleSelection {
+                isSelected = hexColors.contains(circleView.hexColor)
+            } else {
+                isSelected = hexColors.first == circleView.hexColor
             }
+            circleView.isSelected = isSelected
+            circleView.accessibilityLabel = accessibilityLabelProvider(circleView.hexColor, isSelected)
         }
     }
 
@@ -165,5 +157,17 @@ class ColorPickerStackView: UIStackView {
         } else {
             setSelected(hexColors: [])
         }
+    }
+
+    private func circleViews() -> [ColorPickerCircleView] {
+        var circleViews: [ColorPickerCircleView] = []
+        for view in arrangedSubviews {
+            guard let colorRow = view as? UIStackView else { continue }
+            for view in colorRow.arrangedSubviews {
+                guard let pickerView = view as? ColorPickerCircleView else { continue }
+                circleViews.append(pickerView)
+            }
+        }
+        return circleViews
     }
 }

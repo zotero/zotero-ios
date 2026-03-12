@@ -63,15 +63,15 @@ class AnnotationToolOptionsViewController: UIViewController {
             if let color = viewModel.state.colorHex {
                 let colorPicker = ColorPickerStackView(
                     hexColors: viewModel.state.tool.annotationType?.colors ?? [],
-                    columnsDistribution: UIDevice.current.userInterfaceIdiom == .pad ? .fixed(numberOfColumns: 4) : .fitInWidth(width: UIScreen.main.bounds.width - (2 * Self.horizontalInset)),
+                    columnsDistribution: UIDevice.current.userInterfaceIdiom == .pad ? .fixed(numberOfColumns: hasSize ? 5 : 4) : .fitInWidth(width: UIScreen.main.bounds.width - (2 * Self.horizontalInset)),
                     allowsMultipleSelection: false,
                     circleBackgroundColor: Asset.Colors.annotationPopoverBackground.color,
                     circleSize: Self.circleSize,
                     circleOffset: Self.circleOffset,
                     circleSelectionLineWidth: 3,
                     circleSelectionInset: UIEdgeInsets(top: 4, left: 4, bottom: 4, right: 4),
-                    trailingSpacerViewProvider: {
-                        guard UIDevice.current.userInterfaceIdiom == .phone || hasSize else { return nil }
+                    trailingSpacerViewProvider: { row in
+                        guard UIDevice.current.userInterfaceIdiom == .phone || (hasSize && row > 0) else { return nil }
                         let spacerView = UIView()
                         spacerView.setContentHuggingPriority(.fittingSizeLevel, for: .horizontal)
                         return spacerView
@@ -87,6 +87,10 @@ class AnnotationToolOptionsViewController: UIViewController {
             }
 
             if let size = viewModel.state.size {
+                if !subviews.isEmpty {
+                    subviews.append(makeSeparatorView())
+                }
+
                 let settings: LineWidthView.Settings
                 switch self.viewModel.state.tool {
                 case .freeText:
@@ -95,7 +99,7 @@ class AnnotationToolOptionsViewController: UIViewController {
                 default:
                     settings = .lineWidth
                 }
-                let sizePicker = LineWidthView(title: L10n.size, settings: settings, contentInsets: UIEdgeInsets())
+                let sizePicker = LineWidthView(title: L10n.size, settings: settings, contentInsets: UIEdgeInsets(), layout: .stacked)
                 sizePicker.value = size
                 sizePicker.valueObservable
                     .subscribe(with: self, onNext: { `self`, value in
@@ -128,6 +132,13 @@ class AnnotationToolOptionsViewController: UIViewController {
                 container.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: Self.horizontalInset),
                 view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: Self.horizontalInset)
             ])
+
+            func makeSeparatorView() -> UIView {
+                let separator = UIView()
+                separator.backgroundColor = .separator
+                separator.heightAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale).isActive = true
+                return separator
+            }
         }
 
         func setupNavigationBar() {
@@ -156,7 +167,7 @@ class AnnotationToolOptionsViewController: UIViewController {
         func updateContentSizeIfNeeded() {
             guard UIDevice.current.userInterfaceIdiom == .pad, let container else { return }
             let hasSize = viewModel.state.size != nil
-            let width: CGFloat = hasSize ? 294 : 254
+            let width: CGFloat = hasSize ? 314 : 254
             var size = container.systemLayoutSizeFitting(CGSize(width: width, height: .greatestFiniteMagnitude))
             size.height += 2 * Self.verticalInset
             preferredContentSize = CGSize(width: width, height: size.height)

@@ -25,8 +25,14 @@ final class LineWidthView: UIView {
         }
     }
 
+    enum Layout {
+        case inline
+        case stacked
+    }
+
     private let contentInsets: UIEdgeInsets
     private let steps: [Float]
+    private let layout: Layout
 
     private weak var titleLabel: UILabel!
     private weak var valueLabel: UILabel!
@@ -53,9 +59,10 @@ final class LineWidthView: UIView {
         }
     }
 
-    init(title: String, settings: Settings, contentInsets: UIEdgeInsets) {
+    init(title: String, settings: Settings, contentInsets: UIEdgeInsets, layout: Layout) {
         self.contentInsets = contentInsets
         steps = settings.steps
+        self.layout = layout
         super.init(frame: CGRect())
         setup(title: title, settings: settings)
     }
@@ -130,8 +137,27 @@ final class LineWidthView: UIView {
         valueLabel.widthAnchor.constraint(equalToConstant: ceil(maxWidth) + 1.0).isActive = true
         self.valueLabel = valueLabel
 
-        let container = UIStackView(arrangedSubviews: [titleLabel, minusButton, slider, plusButton, valueLabel])
-        container.axis = .horizontal
+        let controlsRow = UIStackView(arrangedSubviews: [minusButton, slider, plusButton])
+        controlsRow.axis = .horizontal
+        controlsRow.spacing = 12
+
+        let container: UIStackView
+        switch layout {
+        case .inline:
+            container = UIStackView(arrangedSubviews: [titleLabel, controlsRow, valueLabel])
+            container.axis = .horizontal
+
+        case .stacked:
+            let spacer = UIView()
+            spacer.setContentHuggingPriority(.fittingSizeLevel, for: .horizontal)
+            let headerRow = UIStackView(arrangedSubviews: [titleLabel, spacer, valueLabel])
+            headerRow.axis = .horizontal
+
+            container = UIStackView(arrangedSubviews: [headerRow, controlsRow])
+            container.axis = .vertical
+            container.spacing = 12
+        }
+
         container.spacing = 12
         container.translatesAutoresizingMaskIntoConstraints = false
 
