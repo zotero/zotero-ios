@@ -864,7 +864,7 @@ final class ExtensionViewModel {
         state.processedAttachment = .item(item)
         self.state = state
 
-        addCloudflareCookie(domain: url.host ?? "", existingCookies: cookies) { [weak self] cookies in
+        addCloudflareCookie(host: url.host(percentEncoded: false) ?? "", existingCookies: cookies) { [weak self] cookies in
             guard let self else { return }
             download(url: url, to: file, cookies: cookies, userAgent: userAgent, referrer: referrer)
                 .observe(on: MainScheduler.instance)
@@ -877,11 +877,10 @@ final class ExtensionViewModel {
                 .disposed(by: disposeBag)
         }
 
-        func addCloudflareCookie(domain: String, existingCookies: String?, completion: @escaping (String?) -> Void) {
+        func addCloudflareCookie(host: String, existingCookies: String?, completion: @escaping (String?) -> Void) {
             guard let webView else { return completion(existingCookies) }
             let store = webView.configuration.websiteDataStore.httpCookieStore
-            store.getAllCookies { cookies in
-                let cloudflareCookies = cookies.filter({ $0.name == "cf_clearance" && $0.domain.hasSuffix(domain) })
+            store.getCloudflareCookies(host: host) { cloudflareCookies in
                 guard !cloudflareCookies.isEmpty else { return completion(existingCookies) }
                 var cookieString = cloudflareCookies.map({ "\($0.name)=\($0.value)" }).joined(separator: "; ")
                 if let existingCookies, !existingCookies.isEmpty {
