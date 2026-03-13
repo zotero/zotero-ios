@@ -88,7 +88,7 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
                 guard let self else { return }
                 switch state {
                 case .stopped:
-                    self.dismissHighlighterOverlay(confirm: false)
+                    self.dismissHighlighterOverlay(confirm: true)
                     self.delegate?.clearSpeechHighlight()
                     
                 case .outOfCredits(let reason):
@@ -332,6 +332,11 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
         guard let overlay = highlighterOverlay else { return }
         delegate?.hideSpeechHighlighterOverlay(overlay)
         highlighterOverlay = nil
+    }
+
+    func confirmActiveHighlightSession() {
+        guard highlighterOverlay != nil else { return }
+        dismissHighlighterOverlay(confirm: true)
     }
 
     private func hideOverlay() {
