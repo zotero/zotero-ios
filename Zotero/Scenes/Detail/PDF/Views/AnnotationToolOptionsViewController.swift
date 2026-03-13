@@ -12,14 +12,16 @@ import PSPDFKit
 import RxSwift
 
 class AnnotationToolOptionsViewController: UIViewController {
-    private static let width: CGFloat = 230
-    private static let circleSize: CGFloat = 44
-    private static let circleOffset: CGFloat = 8
+    private static let circleSize: CGFloat = 32
+    private static let circleOffset: CGFloat = 16
+    private static let circleSelectionLineWidth: CGFloat = 2.5
+    private static let circleSelectionInset: UIEdgeInsets = .init(top: 3, left: 3, bottom: 3, right: 3)
     private static let verticalInset: CGFloat = 15
     private static let horizontalInset: CGFloat = 15
     private let viewModel: ViewModel<AnnotationToolOptionsActionHandler>
     private let valueChanged: (String?, Float?) -> Void
     private let disposeBag: DisposeBag
+    private var preferredContentWidth: CGFloat?
 
     private weak var container: UIStackView?
     private weak var colorPicker: ColorPickerStackView?
@@ -59,20 +61,24 @@ class AnnotationToolOptionsViewController: UIViewController {
         func setupView() {
             var subviews: [UIView] = []
 
+            let hasSize = viewModel.state.size != nil
+            preferredContentWidth = (hasSize ? 5 : 4) * (Self.circleSize + Self.circleOffset) - Self.circleOffset + 2 * Self.horizontalInset
+
             if let color = viewModel.state.colorHex {
                 let colorPicker = ColorPickerStackView(
-                    hexColors: colors(for: viewModel.state.tool),
-                    columnsDistribution: UIDevice.current.userInterfaceIdiom == .pad ? .fixed(numberOfColumns: 4) : .fitInWidth(width: UIScreen.main.bounds.width - (2 * Self.horizontalInset)),
+                    hexColors: viewModel.state.tool.annotationType?.colors ?? [],
+                    columnsDistribution: UIDevice.current.userInterfaceIdiom == .pad ? .fixed(numberOfColumns: hasSize ? 5 : 4) : .fitInWidth(width: UIScreen.main.bounds.width - (2 * Self.horizontalInset)),
                     allowsMultipleSelection: false,
                     circleBackgroundColor: Asset.Colors.annotationPopoverBackground.color,
                     circleSize: Self.circleSize,
                     circleOffset: Self.circleOffset,
-                    circleSelectionLineWidth: 3,
-                    circleSelectionInset: UIEdgeInsets(top: 4, left: 4, bottom: 4, right: 4),
-                    trailingSpacerViewProvider: {
-                        guard UIDevice.current.userInterfaceIdiom == .phone else { return nil }
+                    circleSelectionLineWidth: Self.circleSelectionLineWidth,
+                    circleSelectionInset: Self.circleSelectionInset,
+                    circleContentInsets: .zero,
+                    trailingSpacerViewProvider: { row in
+                        guard UIDevice.current.userInterfaceIdiom == .phone || (hasSize && row > 0) else { return nil }
                         let spacerView = UIView()
-                        spacerView.setContentHuggingPriority(.defaultLow, for: .horizontal)
+                        spacerView.setContentHuggingPriority(.fittingSizeLevel, for: .horizontal)
                         return spacerView
                     },
                     hexColorToggled: { [weak self] hexColor in
@@ -86,6 +92,10 @@ class AnnotationToolOptionsViewController: UIViewController {
             }
 
             if let size = viewModel.state.size {
+                if !subviews.isEmpty {
+                    subviews.append(makeSeparatorView())
+                }
+
                 let settings: LineWidthView.Settings
                 switch self.viewModel.state.tool {
                 case .freeText:
@@ -94,7 +104,7 @@ class AnnotationToolOptionsViewController: UIViewController {
                 default:
                     settings = .lineWidth
                 }
-                let sizePicker = LineWidthView(title: L10n.size, settings: settings, contentInsets: UIEdgeInsets())
+                let sizePicker = LineWidthView(title: L10n.size, settings: settings, contentInsets: UIEdgeInsets(), layout: .stacked)
                 sizePicker.value = size
                 sizePicker.valueObservable
                     .subscribe(with: self, onNext: { `self`, value in
@@ -128,16 +138,11 @@ class AnnotationToolOptionsViewController: UIViewController {
                 view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: Self.horizontalInset)
             ])
 
-            func colors(for tool: AnnotationTool) -> [String] {
-                switch tool {
-                case .ink: return AnnotationsConfig.colors(for: .ink)
-                case .note: return AnnotationsConfig.colors(for: .note)
-                case .highlight: return AnnotationsConfig.colors(for: .highlight)
-                case .image: return AnnotationsConfig.colors(for: .image)
-                case .freeText: return AnnotationsConfig.colors(for: .freeText)
-                case .underline: return AnnotationsConfig.colors(for: .underline)
-                default: return []
-                }
+            func makeSeparatorView() -> UIView {
+                let separator = UIView()
+                separator.backgroundColor = .separator
+                separator.heightAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale).isActive = true
+                return separator
             }
         }
 
@@ -165,16 +170,17 @@ class AnnotationToolOptionsViewController: UIViewController {
         updateContentSizeIfNeeded()
 
         func updateContentSizeIfNeeded() {
-            guard UIDevice.current.userInterfaceIdiom == .pad, var size = container?.systemLayoutSizeFitting(CGSize(width: Self.width, height: .greatestFiniteMagnitude)) else { return }
+            guard UIDevice.current.userInterfaceIdiom == .pad, let container, let preferredContentWidth else { return }
+            var size = container.systemLayoutSizeFitting(CGSize(width: preferredContentWidth, height: .greatestFiniteMagnitude))
             size.height += 2 * Self.verticalInset
-            preferredContentSize = CGSize(width: Self.width, height: size.height)
+            preferredContentSize = CGSize(width: preferredContentWidth, height: size.height)
         }
     }
 
     private func update(state: AnnotationToolOptionsState) {
         valueChanged(state.colorHex, state.size)
         if state.changes.contains(.color) {
-            presentingViewController?.dismiss(animated: true)
+            colorPicker?.setSelected(hexColor: state.colorHex)
         }
     }
 }

@@ -24,7 +24,7 @@ protocol PDFDocumentDelegate: AnyObject {
     )
     func didChange(undoState undoEnabled: Bool, redoState redoEnabled: Bool)
     func interfaceVisibilityDidChange(to isHidden: Bool)
-    func showToolOptions()
+    func toggleToolOptions()
     func pageIndexChanged(event: PDFViewController.PageIndexChangeEvent)
     func backActionExecuted()
     func forwardActionExecuted()
@@ -955,7 +955,7 @@ extension PDFDocumentViewController: UIPencilInteractionDelegate {
             toggle(annotationTool: previous, color: color, tappedWithStylus: true)
 
         case .showColorPalette, .showInkAttributes, .showContextualPalette:
-            parentDelegate?.showToolOptions()
+            parentDelegate?.toggleToolOptions()
 
         case .runSystemShortcut, .ignore:
             break

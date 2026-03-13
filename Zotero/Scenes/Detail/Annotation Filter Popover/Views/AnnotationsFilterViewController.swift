@@ -73,7 +73,7 @@ class AnnotationsFilterViewController: UIViewController {
                 circleOffset: circleOffset,
                 circleSelectionLineWidth: 2.5,
                 circleContentInsets: circleContentInsets,
-                trailingSpacerViewProvider: {
+                trailingSpacerViewProvider: { _ in
                     let spacerView = UIView()
                     spacerView.setContentHuggingPriority(.defaultLow, for: .horizontal)
                     return spacerView
