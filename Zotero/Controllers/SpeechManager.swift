@@ -27,11 +27,14 @@ protocol SpeechManagerDelegate: AnyObject {
     /// - Parameters:
     ///   - text: The paragraph text to highlight
     ///   - pageIndex: The page index where the text is located
-    func highlightTextChanged(text: String, pageIndex: Index)
+    /// Called when the read-aloud highlight changes during text-to-speech playback.
+    func readAloudHighlightChanged(text: String, pageIndex: Index)
+    /// Called when the annotation preview highlight changes during a highlight session.
+    func annotationPreviewChanged(text: String, pageIndex: Index, tool: AnnotationTool, color: String)
     /// Called when the user confirms an annotation from the highlighter overlay.
     func createAnnotation(ofType tool: AnnotationTool, color: String, forText text: String, onPage pageIndex: Index)
-    /// Called when the highlight session ends, to remove the temporary document highlight.
-    func clearHighlightAnnotationPreview()
+    /// Called when the highlight session ends, to remove the annotation preview highlight.
+    func clearAnnotationPreview()
 }
 
 enum SpeechState: Equatable {
@@ -323,32 +326,36 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             pageIndex: speechData.index
         ) else { return nil }
 
-        delegate?.highlightTextChanged(text: result.text, pageIndex: result.pageIndex)
+        notifyAnnotationPreviewChanged(result)
         return result
     }
 
     func moveHighlightForward() -> (text: String, pageIndex: Delegate.Index)? {
         guard let result = highlightSessionManager.moveForward() else { return nil }
-        delegate?.highlightTextChanged(text: result.text, pageIndex: result.pageIndex)
+        notifyAnnotationPreviewChanged(result)
         return result
     }
 
     func moveHighlightBackward() -> (text: String, pageIndex: Delegate.Index)? {
         guard let result = highlightSessionManager.moveBackward() else { return nil }
-        delegate?.highlightTextChanged(text: result.text, pageIndex: result.pageIndex)
+        notifyAnnotationPreviewChanged(result)
         return result
     }
 
     func extendHighlightForward() -> (text: String, pageIndex: Delegate.Index)? {
         guard let result = highlightSessionManager.extendForward() else { return nil }
-        delegate?.highlightTextChanged(text: result.text, pageIndex: result.pageIndex)
+        notifyAnnotationPreviewChanged(result)
         return result
     }
 
     func extendHighlightBackward() -> (text: String, pageIndex: Delegate.Index)? {
         guard let result = highlightSessionManager.extendBackward() else { return nil }
-        delegate?.highlightTextChanged(text: result.text, pageIndex: result.pageIndex)
+        notifyAnnotationPreviewChanged(result)
         return result
+    }
+
+    private func notifyAnnotationPreviewChanged(_ result: (text: String, pageIndex: Delegate.Index)) {
+        delegate?.annotationPreviewChanged(text: result.text, pageIndex: result.pageIndex, tool: highlightSessionManager.annotationTool, color: highlightSessionManager.annotationColor)
     }
 
     func setHighlightAnnotationTool(_ tool: AnnotationTool) {
@@ -381,12 +388,12 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         if let result = highlightSessionManager.endSession() {
             delegate?.createAnnotation(ofType: highlightSessionManager.annotationTool, color: highlightSessionManager.annotationColor, forText: result.text, onPage: result.pageIndex)
         }
-        delegate?.clearHighlightAnnotationPreview()
+        delegate?.clearAnnotationPreview()
     }
 
     func cancelHighlightSession() {
         highlightSessionManager.cancelSession()
-        delegate?.clearHighlightAnnotationPreview()
+        delegate?.clearAnnotationPreview()
     }
 
     /// Downgrades the voice to a lower tier and continues playback.
@@ -551,7 +558,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         
         // Only notify delegate if the paragraph changed
         if let highlightText {
-            delegate?.highlightTextChanged(text: highlightText, pageIndex: pageIndex)
+            delegate?.readAloudHighlightChanged(text: highlightText, pageIndex: pageIndex)
         }
         
         if pageDidChange {
@@ -609,7 +616,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         
         // Notify delegate of the paragraph change
         if let paragraphText = paragraphResult?.text {
-            delegate?.highlightTextChanged(text: paragraphText, pageIndex: speechData.index)
+            delegate?.readAloudHighlightChanged(text: paragraphText, pageIndex: speechData.index)
         }
     }
 }
