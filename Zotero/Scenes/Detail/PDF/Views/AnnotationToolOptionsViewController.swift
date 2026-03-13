@@ -180,7 +180,7 @@ class AnnotationToolOptionsViewController: UIViewController {
     private func update(state: AnnotationToolOptionsState) {
         valueChanged(state.colorHex, state.size)
         if state.changes.contains(.color) {
-            presentingViewController?.dismiss(animated: true)
+            colorPicker?.setSelected(hexColor: state.colorHex)
         }
     }
 }
