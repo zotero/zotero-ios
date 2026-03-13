@@ -43,8 +43,10 @@ final class PDFDocumentViewController: UIViewController {
     private static var toolHistory: [PSPDFKit.Annotation.Tool?] = []
     
     private var selectionView: SelectionView?
-    private var speechHighlightView: SpeechHighlightView?
-    private var currentSpeechHighlightPage: PageIndex?
+    private var readAloudHighlightView: SpeechHighlightView?
+    private var currentReadAloudHighlightPage: PageIndex?
+    private var annotationPreviewView: SpeechHighlightView?
+    private var currentAnnotationPreviewPage: PageIndex?
     // Used to decide whether text annotation should start editing on tap
     private var selectedAnnotationWasSelectedBefore: Bool
     private var searchResults: [SearchResult] = []
@@ -175,53 +177,64 @@ final class PDFDocumentViewController: UIViewController {
 
     /// Updates the speech highlight to show the currently spoken text
     /// - Parameters:
-    ///   - text: The text currently being spoken
+    ///   - text: The text currently being read aloud
     ///   - page: The page index where the text is located
-    func updateSpeechHighlight(text: String, page: PageIndex, annotationTool: AnnotationTool, annotationColor: String) {
+    func updateReadAloudHighlight(text: String, page: PageIndex) {
+        updateHighlightView(text: text, page: page, annotationTool: .highlight, annotationColor: "#aaaaff", view: &readAloudHighlightView, currentPage: &currentReadAloudHighlightPage)
+    }
+
+    /// Clears the read-aloud highlight
+    func clearReadAloudHighlight() {
+        clearHighlightView(&readAloudHighlightView, currentPage: &currentReadAloudHighlightPage)
+    }
+
+    /// Updates the annotation preview highlight to show what will be annotated.
+    func updateAnnotationPreview(text: String, page: PageIndex, annotationTool: AnnotationTool, annotationColor: String) {
+        updateHighlightView(text: text, page: page, annotationTool: annotationTool, annotationColor: annotationColor, view: &annotationPreviewView, currentPage: &currentAnnotationPreviewPage)
+    }
+
+    /// Clears the annotation preview highlight
+    func clearAnnotationPreview() {
+        clearHighlightView(&annotationPreviewView, currentPage: &currentAnnotationPreviewPage)
+    }
+
+    private func updateHighlightView(text: String, page: PageIndex, annotationTool: AnnotationTool, annotationColor: String, view: inout SpeechHighlightView?, currentPage: inout PageIndex?) {
         guard let pdfController else { return }
 
-        // Get the page view for the target page
         guard let pageView = pdfController.pageViewForPage(at: page) else {
-            // Page not visible, clear any existing highlight but don't reset search position
-            speechHighlightView?.clearHighlight()
+            view?.clearHighlight()
             return
         }
 
-        // If page changed, remove highlight from old page and reset search position
-        if currentSpeechHighlightPage != page {
-            clearSpeechHighlight()
-            currentSpeechHighlightPage = page
+        if currentPage != page {
+            clearHighlightView(&view, currentPage: &currentPage)
+            currentPage = page
         }
 
-        // Get PDF frames for the spoken text by searching in glyphs
         guard let pdfFrames = speechHighlightPDFFrames(for: text, page: page), !pdfFrames.isEmpty else {
-            // Just hide highlight, don't reset position - might find next text
-            speechHighlightView?.clearHighlight()
+            view?.clearHighlight()
             return
         }
 
-        // Create or update the highlight view
-        if speechHighlightView == nil {
+        if view == nil {
             let highlightView = SpeechHighlightView(frame: pageView.bounds)
             highlightView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
             pageView.contentView.addSubview(highlightView)
-            speechHighlightView = highlightView
-        } else if speechHighlightView?.superview !== pageView.contentView {
-            // Move to correct page view if needed
-            speechHighlightView?.removeFromSuperview()
-            speechHighlightView?.frame = pageView.bounds
-            pageView.contentView.addSubview(speechHighlightView!)
+            view = highlightView
+        } else if view?.superview !== pageView.contentView {
+            view?.removeFromSuperview()
+            view?.frame = pageView.bounds
+            pageView.contentView.addSubview(view!)
         }
 
-        speechHighlightView?.updateHighlight(pdfFrames: pdfFrames, pageView: pageView, annotationTool: annotationTool, annotationColor: annotationColor)
+        view?.updateHighlight(pdfFrames: pdfFrames, pageView: pageView, annotationTool: annotationTool, annotationColor: annotationColor)
     }
 
-    /// Clears the speech highlight
-    func clearSpeechHighlight() {
-        speechHighlightView?.clearHighlight()
-        speechHighlightView?.removeFromSuperview()
-        speechHighlightView = nil
-        currentSpeechHighlightPage = nil
+    private func clearHighlightView(_ view: inout SpeechHighlightView?, currentPage: inout PageIndex?) {
+        view?.clearHighlight()
+        view?.removeFromSuperview()
+        view = nil
+        currentPage = nil
     }
 
     func disableAnnotationTools() {
