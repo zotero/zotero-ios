@@ -219,6 +219,10 @@ final class PDFDocumentViewController: UIViewController {
         speechHighlightView?.updateHighlight(pdfFrames: pdfFrames, pageView: pageView)
     }
 
+    func updateSpeechHighlightStyle(tool: AnnotationTool, color: String) {
+        speechHighlightView?.updateStyle(tool: tool, color: color)
+    }
+
     /// Clears the speech highlight
     func clearSpeechHighlight() {
         speechHighlightView?.clearHighlight()
@@ -1371,6 +1375,8 @@ final class SpeechHighlightView: UIView {
     private var pdfFrames: [CGRect] = []
     /// Reference to the page view for coordinate conversion
     private weak var pageView: PDFPageView?
+    private(set) var annotationTool: AnnotationTool = .highlight
+    private(set) var annotationColor: String = AnnotationsConfig.defaultActiveColor
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -1403,6 +1409,12 @@ final class SpeechHighlightView: UIView {
         updateHighlightLayerFrames()
     }
 
+    func updateStyle(tool: AnnotationTool, color: String) {
+        annotationTool = tool
+        annotationColor = color
+        updateHighlightLayerFrames()
+    }
+
     private func updateHighlightLayerFrames() {
         // Remove old highlight layers
         highlightLayers.forEach { $0.removeFromSuperlayer() }
@@ -1410,13 +1422,25 @@ final class SpeechHighlightView: UIView {
 
         guard let pageView, !pdfFrames.isEmpty else { return }
 
+        let uiColor = UIColor(hex: annotationColor)
+
         // Convert PDF frames to view coordinates and create layers
         for pdfFrame in pdfFrames {
             let viewFrame = pageView.convert(pdfFrame, from: pageView.pdfCoordinateSpace)
             let highlightLayer = CALayer()
-            highlightLayer.frame = viewFrame
-            highlightLayer.backgroundColor = UIColor.systemYellow.withAlphaComponent(0.4).cgColor
-            highlightLayer.cornerRadius = 2
+
+            switch annotationTool {
+            case .underline:
+                let underlineHeight: CGFloat = 2
+                highlightLayer.frame = CGRect(x: viewFrame.minX, y: viewFrame.maxY - underlineHeight, width: viewFrame.width, height: underlineHeight)
+                highlightLayer.backgroundColor = uiColor.cgColor
+
+            default:
+                highlightLayer.frame = viewFrame
+                highlightLayer.backgroundColor = uiColor.withAlphaComponent(0.4).cgColor
+                highlightLayer.cornerRadius = 2
+            }
+
             layer.addSublayer(highlightLayer)
             highlightLayers.append(highlightLayer)
         }
