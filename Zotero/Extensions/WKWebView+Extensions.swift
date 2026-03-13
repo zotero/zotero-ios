@@ -48,3 +48,19 @@ extension WKWebView {
         }
     }
 }
+
+extension WKHTTPCookieStore {
+    func getCloudflareCookies(host: String, _ completionHandler: @escaping @MainActor @Sendable ([HTTPCookie]) -> Void) {
+        getAllCookies { cookies in
+            let cloudflareCookies = cookies.filter { cookie in
+                guard cookie.name == "cf_clearance" else { return false }
+                if host.hasSuffix(cookie.domain) {
+                    return true
+                }
+                let cookieDomain = cookie.domain.trimmingCharacters(in: CharacterSet(charactersIn: "."))
+                return host == cookieDomain
+            }
+            completionHandler(cloudflareCookies)
+        }
+    }
+}
