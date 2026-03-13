@@ -12,10 +12,10 @@ import PSPDFKit
 import RxSwift
 
 class AnnotationToolOptionsViewController: UIViewController {
-    private static let circleSize: CGFloat = 44
+    private static let circleSize: CGFloat = 32
     private static let circleOffset: CGFloat = 16
-    private static let circleSelectionLineWidth: CGFloat = 3
-    private static let circleSelectionInset: UIEdgeInsets = .init(top: 4, left: 4, bottom: 4, right: 4)
+    private static let circleSelectionLineWidth: CGFloat = 2.5
+    private static let circleSelectionInset: UIEdgeInsets = .init(top: 3, left: 3, bottom: 3, right: 3)
     private static let verticalInset: CGFloat = 15
     private static let horizontalInset: CGFloat = 15
     private let viewModel: ViewModel<AnnotationToolOptionsActionHandler>
