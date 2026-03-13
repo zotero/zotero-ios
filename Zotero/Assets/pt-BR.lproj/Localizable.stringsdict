@@ -12,9 +12,11 @@
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
             <key>one</key>
-            <string>1 Collection Selected</string>
+            <string>1 coleção selecionada</string>
+            <key>many</key>
+            <string>%d coleções selecionadas</string>
             <key>other</key>
-            <string>%d Collections Selected</string>
+            <string>%d coleções selecionadas</string>
         </dict>
     </dict>
     <key>items.delete_question</key>
@@ -28,9 +30,11 @@
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
             <key>one</key>
-            <string>Are you sure you want to delete the selected item?</string>
+            <string>Tem certeza que deseja excluir o item selecionado?</string>
+            <key>many</key>
+            <string>Tem certeza que deseja excluir os itens selecionados?</string>
             <key>other</key>
-            <string>Are you sure you want to delete the selected items?</string>
+            <string>Tem certeza que deseja excluir os itens selecionados?</string>
         </dict>
     </dict>
     <key>items.remove_from_collection_question</key>
@@ -44,9 +48,11 @@
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
             <key>one</key>
-            <string>Are you sure you want to remove the selected item from this collection?</string>
+            <string>Tem certeza que deseja remover o item selecionado desta coleção?</string>
+            <key>many</key>
+            <string>Tem certeza que deseja remover os itens selecionados desta coleção?</string>
             <key>other</key>
-            <string>Are you sure you want to remove the selected items from this collection?</string>
+            <string>Tem certeza que deseja remover os itens selecionados desta coleção?</string>
         </dict>
     </dict>
     <key>items.toolbar_filter</key>
@@ -60,9 +66,11 @@
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
             <key>one</key>
-            <string>Filter: 1 item</string>
+            <string>Filtro: 1 item</string>
+            <key>many</key>
+            <string>Filtro: %d itens</string>
             <key>other</key>
-            <string>Filter: %d items</string>
+            <string>Filtro: %d itens</string>
         </dict>
     </dict>
     <key>pdf.search.matches</key>
@@ -76,9 +84,11 @@
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
             <key>one</key>
-            <string>Found 1 match</string>
+            <string>Encontrado 1 resultado</string>
+            <key>many</key>
+            <string>Encontrados %d resultados</string>
             <key>other</key>
-            <string>Found %d matches</string>
+            <string>Encontrados %d resultados</string>
         </dict>
     </dict>
     <key>settings.storage.files_size_and_unit</key>
@@ -92,9 +102,11 @@
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
             <key>one</key>
-            <string>1 file (%.2f %@)</string>
+            <string>1 arquivo (%.2f %@)</string>
+            <key>many</key>
+            <string>%d arquivos (%.2f %@)</string>
             <key>other</key>
-            <string>%d files (%.2f %@)</string>
+            <string>%d arquivos (%.2f %@)</string>
         </dict>
     </dict>
     <key>errors.sync_toolbar.errors</key>
@@ -108,9 +120,11 @@
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
             <key>one</key>
-            <string>1 issue</string>
+            <string>1 caso</string>
+            <key>many</key>
+            <string>%d casos</string>
             <key>other</key>
-            <string>%d issues</string>
+            <string>%d casos</string>
         </dict>
     </dict>
     <key>tag_picker.tags_selected</key>
@@ -124,9 +138,11 @@
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
             <key>one</key>
-            <string>1 tag selected</string>
+            <string>1 etiqueta selecionada</string>
+            <key>many</key>
+            <string>%d  etiquetas selecionadas</string>
             <key>other</key>
-            <string>%d tags selected</string>
+            <string>%d etiquetas selecionadas</string>
         </dict>
     </dict>
     <key>tag_picker.confirm_deletion</key>
@@ -140,9 +156,11 @@
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
             <key>one</key>
-            <string>Are you sure you want to delete 1 automatic tag in this library?\n\nThis action cannot be undone.</string>
+            <string>Você tem certeza que deseja excluir 1 etiqueta automática desta biblioteca?\n\nEsta ação não pode ser desfeita.</string>
+            <key>many</key>
+            <string>Você tem certeza que deseja excluir %d etiquetas automáticas desta biblioteca?\n\nEsta ação não pode ser desfeita.</string>
             <key>other</key>
-            <string>Are you sure you want to delete %d automatic tags in this library?\n\nThis action cannot be undone.</string>
+            <string>Você tem certeza que deseja excluir %d etiquetas automáticas desta biblioteca?\n\nEsta ação não pode ser desfeita.</string>
         </dict>
     </dict>
     <key>settings.lines_logged</key>
@@ -156,9 +174,11 @@
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
             <key>one</key>
-            <string>1 line logged</string>
+            <string>1 linha registrada</string>
+            <key>many</key>
+            <string>%d linhas registradas</string>
             <key>other</key>
-            <string>%d lines logged</string>
+            <string>%d linhas registradas</string>
         </dict>
     </dict>
     <key>settings.lines</key>
@@ -172,9 +192,11 @@
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
             <key>one</key>
-            <string>1 line</string>
+            <string>1 linha</string>
+            <key>many</key>
+            <string>%d linhas</string>
             <key>other</key>
-            <string>%d lines</string>
+            <string>%d linhas</string>
         </dict>
     </dict>
     <key>errors.sync_toolbar.webdav_error2</key>
@@ -188,9 +210,11 @@
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
             <key>one</key>
-            <string>Could not delete 1 file from your WebDAV server</string>
+            <string>Não foi possível excluir 1 arquivo do seu servidor WebDAV</string>
+            <key>many</key>
+            <string>Não foi possível excluir %d arquivos do seu servidor WebDAV</string>
             <key>other</key>
-            <string>Could not delete %d files from your WebDAV server</string>
+            <string>Não foi possível excluir %d arquivos do seu servidor WebDAV</string>
         </dict>
     </dict>
     <key>settings.general.after_x_days</key>
@@ -204,9 +228,11 @@
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
             <key>one</key>
-            <string>After 1 Day</string>
+            <string>Depois de 1 dia</string>
+            <key>many</key>
+            <string>Depois de %d dias</string>
             <key>other</key>
-            <string>After %d Days</string>
+            <string>Depois de %d dias</string>
         </dict>
     </dict>
   </dict>

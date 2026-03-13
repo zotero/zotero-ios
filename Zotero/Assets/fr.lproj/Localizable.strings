@@ -585,8 +585,8 @@
 "accessibility.speech.forward" = "Aller en avant";
 "accessibility.speech.backward" = "Revenir en arrière";
 "accessibility.speech.title" = "Lire à haute voix";
-"accessibility.show_reader" = "Mode de lecture";
-"accessibility.show_reader_accessibility_label" = "Passer au mode de lecture";
+"accessibility.show_reader" = "Mode lecture";
+"accessibility.show_reader_accessibility_label" = "Passer au mode lecture";
 "accessibility.show_speech" = "Lire à haute voix";
 "accessibility.show_speech_accessibility_label" = "Commencer à lire à haute voix";
 "accessibility.open_document_accessibility" = "Ouvrir les options d'accessibilité";
