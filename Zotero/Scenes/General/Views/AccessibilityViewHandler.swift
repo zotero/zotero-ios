@@ -9,22 +9,30 @@
 import AVFAudio
 import UIKit
 
+import RxSwift
+
 protocol AccessibilityViewDelegate: AnyObject {
     var isNavigationBarHidden: Bool { get }
-    func showAccessibilityPopup<Delegate: SpeechmanagerDelegate>(
+    func showAccessibilityPopup<Delegate: SpeechManagerDelegate>(
         speechManager: SpeechManager<Delegate>,
         sender: UIBarButtonItem,
         animated: Bool,
         isFormSheet: @escaping () -> Bool,
         dismissAction: @escaping () -> Void,
-        voiceChangeAction: @escaping (AVSpeechSynthesisVoice) -> Void
+        highlighterAction: @escaping () -> Void,
+        voiceChangeAction: @escaping (AccessibilityPopupVoiceChange) -> Void
     )
     func accessibilityToolbarChanged(height: CGFloat)
     func addAccessibilityControlsViewToAnnotationToolbar(view: AnnotationToolbarLeadingView)
     func removeAccessibilityControlsViewFromAnnotationToolbar()
+    func clearSpeechHighlight()
+    func showSpeechHighlighterOverlay(_ overlay: SpeechHighlighterOverlayView, isCompact: Bool, speechControlsView: UIView?)
+    func hideSpeechHighlighterOverlay(_ overlay: SpeechHighlighterOverlayView)
+    func repositionSpeechHighlighterOverlay(_ overlay: SpeechHighlighterOverlayView, isCompact: Bool, speechControlsView: UIView?)
+    func updateSpeechHighlightStyle(tool: AnnotationTool, color: String)
 }
 
-final class AccessibilityViewHandler<Delegate: SpeechmanagerDelegate> {
+final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
     let navbarButtonTag = 4
     private unowned let viewController: UIViewController
     private unowned let documentContainer: UIView
@@ -32,8 +40,10 @@ final class AccessibilityViewHandler<Delegate: SpeechmanagerDelegate> {
     let speechManager: SpeechManager<Delegate>
     private let key: String
     private let libraryId: LibraryIdentifier
+    private let disposeBag: DisposeBag
 
     private weak var activeOverlay: AccessibilitySpeechControlsView<Delegate>?
+    private weak var highlighterOverlay: SpeechHighlighterOverlayView?
     weak var delegate: AccessibilityViewDelegate?
     var isFormSheet: Bool {
         // Detecting horizontalSizeClass == .compact is not reliable, as the controller can still be shown as formSheet even when horizontalSizeClass is .regular. Therefore the safest way to check
@@ -49,14 +59,49 @@ final class AccessibilityViewHandler<Delegate: SpeechmanagerDelegate> {
         }
     }
 
-    init(key: String, libraryId: LibraryIdentifier, viewController: UIViewController, documentContainer: UIView, delegate: Delegate, dbStorage: DbStorage) {
+    init(
+        key: String,
+        libraryId: LibraryIdentifier,
+        viewController: UIViewController,
+        documentContainer: UIView,
+        delegate: Delegate,
+        dbStorage: DbStorage,
+        remoteVoicesController: RemoteVoicesController
+    ) {
         self.key = key
         self.libraryId = libraryId
         self.viewController = viewController
         self.documentContainer = documentContainer
         self.dbStorage = dbStorage
+        disposeBag = DisposeBag()
         let language = try? dbStorage.perform(request: ReadSpeechLanguageDbRequest(key: key, libraryId: libraryId), on: .main)
-        speechManager = SpeechManager(delegate: delegate, speechRateModifier: Defaults.shared.speechRateModifier, voiceLanguage: language)
+        speechManager = SpeechManager(
+            delegate: delegate,
+            voiceLanguage: language,
+            remoteVoiceTier: Defaults.shared.remoteVoiceTier,
+            remoteVoicesController: remoteVoicesController
+        )
+        
+        speechManager.state
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] state in
+                guard let self else { return }
+                switch state {
+                case .stopped:
+                    self.dismissHighlighterOverlay(confirm: true)
+                    self.delegate?.clearSpeechHighlight()
+                    
+                case .outOfCredits(let reason):
+                    // Only show popup for daily limit - quota exceeded is handled internally by SpeechManager
+                    if reason == .dailyLimitExceeded {
+                        showSpeech()
+                    }
+                    
+                case .speaking, .paused, .loading:
+                    showOverlayIfNeeded(forType: currentOverlayType(controller: self), state: state)
+                }
+            })
+            .disposed(by: disposeBag)
     }
 
     func createAccessibilityButton(isSelected: Bool, isFilled: Bool, isEnabled: Bool = true) -> UIBarButtonItem {
@@ -95,28 +140,35 @@ final class AccessibilityViewHandler<Delegate: SpeechmanagerDelegate> {
             isFormSheet: { [weak self] in self?.isFormSheet ?? false },
             dismissAction: { [weak self] in
                 guard let self else { return }
-                showOverlayIfNeeded(forType: currentOverlayType(controller: self))
+                showOverlayIfNeeded(forType: currentOverlayType(controller: self), state: speechManager.state.value)
                 reloadSpeechButton(isSelected: false)
             },
-            voiceChangeAction: { [weak self] voice in
-                self?.processVoiceChange(toVoice: voice)
+            highlighterAction: { [weak self] in
+                self?.toggleHighlighterOverlay()
+            },
+            voiceChangeAction: { [weak self] change in
+                self?.processVoiceChange(change)
             }
         )
-        
-        func currentOverlayType(controller: AccessibilityViewHandler<Delegate>) -> AccessibilitySpeechControlsView<Delegate>.Kind {
-            if controller.isFormSheet {
-                return .bottomToolbar
-            } else if !(controller.delegate?.isNavigationBarHidden ?? true) {
-                return .navbar
-            } else {
-                return .annotationToolbar
-            }
+    }
+    
+    private func currentOverlayType(controller: AccessibilityViewHandler<Delegate>) -> AccessibilitySpeechControlsView<Delegate>.Kind {
+        if controller.isFormSheet {
+            return .bottomToolbar
+        } else if !(controller.delegate?.isNavigationBarHidden ?? true) {
+            return .navbar
+        } else {
+            return .annotationToolbar
         }
     }
 
-    private func processVoiceChange(toVoice voice: AVSpeechSynthesisVoice) {
-        try? dbStorage.perform(request: SetSpeechLanguageDbRequest(key: key, libraryId: libraryId, language: voice.baseLanguage), on: .main)
-        speechManager.set(voice: voice)
+    private func processVoiceChange(_ change: AccessibilityPopupVoiceChange) {
+        try? dbStorage.perform(request: SetSpeechLanguageDbRequest(key: key, libraryId: libraryId, language: change.preferredLanguage), on: .main)
+        speechManager.set(voice: change.voice, preferredLanguage: change.preferredLanguage)
+    }
+
+    func set(initialVoice voice: SpeechVoice) {
+        speechManager.set(voice: voice, preferredLanguage: nil)
     }
 
     private func reloadSpeechButton(isSelected: Bool) {
@@ -134,17 +186,57 @@ final class AccessibilityViewHandler<Delegate: SpeechmanagerDelegate> {
         } else {
             type = .annotationToolbar
         }
-        showOverlayIfNeeded(forType: type)
+        showOverlayIfNeeded(forType: type, state: speechManager.state.value)
+        repositionHighlighterOverlayIfNeeded()
     }
 
-    private func showOverlayIfNeeded(forType type: AccessibilitySpeechControlsView<Delegate>.Kind) {
-        guard speechManager.state.value != .stopped, activeOverlay?.type != type else { return }
-        
+    private func repositionHighlighterOverlayIfNeeded() {
+        guard let oldOverlay = highlighterOverlay else { return }
+        delegate?.hideSpeechHighlighterOverlay(oldOverlay)
+        let newOverlay = SpeechHighlighterOverlayView(
+            isCompact: isFormSheet,
+            annotationTool: oldOverlay.selectedAnnotationTool,
+            annotationColor: oldOverlay.selectedColor
+        )
+        newOverlay.update(text: oldOverlay.currentText)
+        newOverlay.deleteAction = oldOverlay.deleteAction
+        newOverlay.backwardAction = oldOverlay.backwardAction
+        newOverlay.forwardAction = oldOverlay.forwardAction
+        newOverlay.skipBackwardAction = oldOverlay.skipBackwardAction
+        newOverlay.skipForwardAction = oldOverlay.skipForwardAction
+        newOverlay.annotationToolChanged = oldOverlay.annotationToolChanged
+        newOverlay.annotationColorChanged = oldOverlay.annotationColorChanged
+        newOverlay.onMenuPresented = oldOverlay.onMenuPresented
+        newOverlay.onMenuDismissed = oldOverlay.onMenuDismissed
+        highlighterOverlay = newOverlay
+        delegate?.repositionSpeechHighlighterOverlay(newOverlay, isCompact: isFormSheet, speechControlsView: activeOverlay)
+    }
+
+    private func showOverlayIfNeeded(forType type: AccessibilitySpeechControlsView<Delegate>.Kind, state: SpeechState) {
+        let isAccessibilityPopupPresented = (viewController.presentedViewController as? AccessibilityPopupViewController<Delegate>)?.isBeingDismissed == false
+        guard !isAccessibilityPopupPresented, state != .stopped, activeOverlay?.type != type else { return }
+
         if let activeOverlay {
             remove(activeControls: activeOverlay)
         }
 
-        let overlay = AccessibilitySpeechControlsView(type: type, speechManager: speechManager)
+        let settingsAction: (() -> Void)?
+        switch type {
+        case .navbar, .bottomToolbar:
+            settingsAction = { [weak self] in self?.showSpeech() }
+            
+        case .annotationToolbar:
+            settingsAction = nil
+        }
+        let highlighterAction: (() -> Void)?
+        switch type {
+        case .navbar, .bottomToolbar:
+            highlighterAction = { [weak self] in self?.toggleHighlighterOverlay() }
+
+        case .annotationToolbar:
+            highlighterAction = nil
+        }
+        let overlay = AccessibilitySpeechControlsView(type: type, speechManager: speechManager, settingsAction: settingsAction, highlighterAction: highlighterAction)
         activeOverlay = overlay
 
         switch type {
@@ -164,8 +256,7 @@ final class AccessibilityViewHandler<Delegate: SpeechmanagerDelegate> {
             NSLayoutConstraint.activate([
                 overlay.bottomAnchor.constraint(equalTo: viewController.view.bottomAnchor),
                 overlay.leadingAnchor.constraint(equalTo: documentContainer.leadingAnchor),
-                overlay.trailingAnchor.constraint(equalTo: documentContainer.trailingAnchor),
-                overlay.controlsView.bottomAnchor.constraint(equalTo: viewController.view.safeAreaLayoutGuide.bottomAnchor)
+                overlay.trailingAnchor.constraint(equalTo: documentContainer.trailingAnchor)
             ])
 
             delegate?.accessibilityToolbarChanged(height: overlay.frame.height)
@@ -175,6 +266,77 @@ final class AccessibilityViewHandler<Delegate: SpeechmanagerDelegate> {
         func showInNavigationBar() {
             viewController.navigationItem.titleView = overlay
         }
+    }
+
+    private func toggleHighlighterOverlay() {
+        if highlighterOverlay != nil {
+            dismissHighlighterOverlay(confirm: true)
+            return
+        }
+        guard let result = speechManager.startHighlightSession() else { return }
+        let overlay = SpeechHighlighterOverlayView(
+            isCompact: isFormSheet,
+            annotationTool: speechManager.highlightAnnotationTool,
+            annotationColor: speechManager.highlightAnnotationColor
+        )
+        overlay.update(text: result.text)
+        overlay.deleteAction = { [weak self] in
+            self?.dismissHighlighterOverlay(confirm: false)
+        }
+        overlay.backwardAction = { [weak self] in
+            guard let self, let result = speechManager.moveHighlightBackward() else { return }
+            self.highlighterOverlay?.update(text: result.text)
+        }
+        overlay.forwardAction = { [weak self] in
+            guard let self, let result = speechManager.moveHighlightForward() else { return }
+            self.highlighterOverlay?.update(text: result.text)
+        }
+        overlay.skipBackwardAction = { [weak self] in
+            guard let self, let result = speechManager.extendHighlightBackward() else { return }
+            self.highlighterOverlay?.update(text: result.text)
+        }
+        overlay.skipForwardAction = { [weak self] in
+            guard let self, let result = speechManager.extendHighlightForward() else { return }
+            self.highlighterOverlay?.update(text: result.text)
+        }
+        overlay.annotationToolChanged = { [weak self] tool in
+            guard let self else { return }
+            speechManager.setHighlightAnnotationTool(tool)
+            delegate?.updateSpeechHighlightStyle(tool: tool, color: speechManager.highlightAnnotationColor)
+        }
+        overlay.annotationColorChanged = { [weak self] color in
+            guard let self else { return }
+            speechManager.setHighlightAnnotationColor(color)
+            delegate?.updateSpeechHighlightStyle(tool: speechManager.highlightAnnotationTool, color: color)
+        }
+        overlay.onMenuPresented = { [weak self] in
+            self?.speechManager.stopHighlightInactivityTimer()
+        }
+        overlay.onMenuDismissed = { [weak self] in
+            self?.speechManager.startHighlightInactivityTimer()
+        }
+        speechManager.onHighlightSessionTimedOut = { [weak self] in
+            self?.dismissHighlighterOverlay(confirm: true)
+        }
+        highlighterOverlay = overlay
+        delegate?.showSpeechHighlighterOverlay(overlay, isCompact: isFormSheet, speechControlsView: activeOverlay)
+    }
+
+    private func dismissHighlighterOverlay(confirm: Bool) {
+        if confirm {
+            speechManager.endHighlightSession()
+        } else {
+            speechManager.cancelHighlightSession()
+        }
+        speechManager.onHighlightSessionTimedOut = nil
+        guard let overlay = highlighterOverlay else { return }
+        delegate?.hideSpeechHighlighterOverlay(overlay)
+        highlighterOverlay = nil
+    }
+
+    func confirmActiveHighlightSession() {
+        guard highlighterOverlay != nil else { return }
+        dismissHighlighterOverlay(confirm: true)
     }
 
     private func hideOverlay() {

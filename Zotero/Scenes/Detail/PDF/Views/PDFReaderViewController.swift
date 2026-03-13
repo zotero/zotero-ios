@@ -6,6 +6,7 @@
 //  Copyright © 2022 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import NaturalLanguage
 import UIKit
 
 import CocoaLumberjackSwift
@@ -19,6 +20,7 @@ protocol PDFReaderContainerDelegate: AnyObject {
     var documentTopOffset: CGFloat { get }
 
     func showSearch(text: String?)
+    func speak(glyphs: GlyphSequence, pageIndex: PageIndex)
 }
 
 class PDFReaderViewController: UIViewController, ReaderViewController {
@@ -32,6 +34,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
 
     private let viewModel: ViewModel<PDFReaderActionHandler>
     private unowned let pdfWorkerController: PDFWorkerController
+    private unowned let remoteVoicesController: RemoteVoicesController
     private var speechWorker: PDFWorkerController.Worker?
     let disposeBag: DisposeBag
 
@@ -63,6 +66,8 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
     }
     private var previousTraitCollection: UITraitCollection?
     private var accessibilityHandler: AccessibilityViewHandler<PDFReaderViewController>?
+    private var speechHighlighterTopOffset: CGFloat = 0
+    private weak var speechHighlighterTopConstraint: NSLayoutConstraint?
     var isSidebarVisible: Bool { return sidebarControllerLeft?.constant == 0 }
     var isToolbarVisible: Bool { return toolbarState.visible }
     var isDocumentLocked: Bool { return viewModel.state.document.isLocked }
@@ -161,6 +166,14 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
                 .init(title: L10n.forward, action: #selector(performForwardAction), input: UIKeyCommand.inputRightArrow, modifierFlags: [.command])
             ]
         }
+        if accessibilityHandler?.speechManager.state.value.isSpeaking == true || accessibilityHandler?.speechManager.state.value.isPaused == true {
+            keyCommands += [
+                .init(title: L10n.Accessibility.Speech.forward, action: #selector(speechForwardByParagraph), input: UIKeyCommand.inputRightArrow, modifierFlags: []),
+                .init(title: L10n.Accessibility.Speech.backward, action: #selector(speechBackwardByParagraph), input: UIKeyCommand.inputLeftArrow, modifierFlags: []),
+                .init(title: L10n.Accessibility.Speech.forward, action: #selector(speechForwardBySentence), input: UIKeyCommand.inputRightArrow, modifierFlags: [.alternate]),
+                .init(title: L10n.Accessibility.Speech.backward, action: #selector(speechBackwardBySentence), input: UIKeyCommand.inputLeftArrow, modifierFlags: [.alternate])
+            ]
+        }
         return keyCommands
     }
 
@@ -179,6 +192,9 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
             case #selector(redo(_:)):
                 return canRedo
 
+            case #selector(speechForwardByParagraph), #selector(speechBackwardByParagraph), #selector(speechForwardBySentence), #selector(speechBackwardBySentence):
+                return true
+
             default:
                 break
             }
@@ -186,9 +202,10 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         return false
     }
 
-    init(viewModel: ViewModel<PDFReaderActionHandler>, pdfWorkerController: PDFWorkerController, compactSize: Bool) {
+    init(viewModel: ViewModel<PDFReaderActionHandler>, pdfWorkerController: PDFWorkerController, remoteVoicesController: RemoteVoicesController, compactSize: Bool) {
         self.viewModel = viewModel
         self.pdfWorkerController = pdfWorkerController
+        self.remoteVoicesController = remoteVoicesController
         isCompactWidth = compactSize
         disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
@@ -215,7 +232,8 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
                 viewController: self,
                 documentContainer: documentController!.view,
                 delegate: self,
-                dbStorage: viewModel.handler.dbStorage
+                dbStorage: viewModel.handler.dbStorage,
+                remoteVoicesController: remoteVoicesController
             )
             accessibilityHandler?.delegate = self
         }
@@ -396,6 +414,24 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        showReadAloudOnboardingIfNeeded()
+    }
+
+    private func showReadAloudOnboardingIfNeeded() {
+        guard FeatureGates.enabled.contains(.speech),
+              !Defaults.shared.didShowReadAloudOnboarding,
+              !viewModel.state.document.isLocked,
+              let speechManager = accessibilityHandler?.speechManager
+        else { return }
+
+        let language = speechManager.language ?? speechManager.detectedLanguage
+        coordinatorDelegate?.showReadAloudOnboarding(language: language, userInterfaceStyle: overrideUserInterfaceStyle) { [weak self] selectedVoice in
+            guard let self else { return }
+            if let selectedVoice {
+                Defaults.shared.didShowReadAloudOnboarding = true
+                self.accessibilityHandler?.set(initialVoice: selectedVoice)
+            }
+        }
     }
 
     deinit {
@@ -404,6 +440,13 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         }
         viewModel.process(action: .changeIdleTimerDisabled(false))
         DDLogInfo("PDFReaderViewController deinitialized")
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        if isMovingFromParent || isBeingDismissed {
+            accessibilityHandler?.confirmActiveHighlightSession()
+        }
     }
 
     override func viewDidLayoutSubviews() {
@@ -625,6 +668,36 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         )
     }
 
+    func speak(glyphs: GlyphSequence, pageIndex: PageIndex) {
+        let text = glyphs.text
+        let approximateOffset = documentController?.textOffset(rect: glyphs.boundingBox, page: pageIndex)
+        accessibilityHandler?.speechManager.start(mapStartIndexToPage: { page in
+            return textOffset(for: text, approximateOffset: approximateOffset, in: page) ?? 0
+        })
+        
+        func textOffset(for selectedText: String?, approximateOffset: Int?, in pageText: String) -> Int? {
+            guard let selectedText, let approximateOffset else { return nil }
+            
+            // Use first word for searching to handle whitespace differences between PSPDFKit and PDF Worker
+            let normalizedSelected = selectedText.components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }.joined(separator: " ")
+            guard let firstWord = normalizedSelected.components(separatedBy: " ").first, !firstWord.isEmpty else { return nil }
+            
+            // Find all occurrences
+            var occurrences: [Int] = []
+            var searchRange = pageText.startIndex..<pageText.endIndex
+            while let range = pageText.range(of: firstWord, range: searchRange) {
+                let offset = pageText.distance(from: pageText.startIndex, to: range.lowerBound)
+                occurrences.append(offset)
+                searchRange = range.upperBound..<pageText.endIndex
+            }
+            
+            guard !occurrences.isEmpty else { return nil }
+            
+            // Find the occurrence closest to the approximate offset
+            return occurrences.min(by: { abs($0 - approximateOffset) < abs($1 - approximateOffset) })
+        }
+    }
+
     private func showSettings(sender: UIBarButtonItem) {
         guard let settingsViewModel = coordinatorDelegate?.showSettings(with: viewModel.state.settings, sender: sender) else { return }
         settingsViewModel.stateObservable
@@ -682,6 +755,22 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
 
     @objc private func performForwardAction() {
         documentController?.performForwardAction()
+    }
+
+    @objc private func speechForwardByParagraph() {
+        accessibilityHandler?.speechManager.forward(by: .paragraph)
+    }
+
+    @objc private func speechBackwardByParagraph() {
+        accessibilityHandler?.speechManager.backward(by: .paragraph)
+    }
+
+    @objc private func speechForwardBySentence() {
+        accessibilityHandler?.speechManager.forward(by: .sentence)
+    }
+
+    @objc private func speechBackwardBySentence() {
+        accessibilityHandler?.speechManager.backward(by: .sentence)
     }
 
     @objc private func undo(_ sender: Any?) {
@@ -774,21 +863,24 @@ extension PDFReaderViewController: AnnotationToolbarHandlerDelegate {
         guard let annotationToolbarHandler, let annotationToolbarController else { return }
         let (statusBarOffset, _, totalOffset) = annotationToolbarHandler.topOffsets(statusBarVisible: statusBarVisible)
 
+        let baseOffset: CGFloat
         if !state.visible {
-            documentTop.constant = totalOffset
-            return
+            baseOffset = totalOffset
+        } else {
+            switch state.position {
+            case .pinned:
+                baseOffset = statusBarOffset + annotationToolbarController.size
+
+            case .top:
+                baseOffset = totalOffset + annotationToolbarController.size
+
+            case .trailing, .leading:
+                baseOffset = totalOffset
+            }
         }
 
-        switch state.position {
-        case .pinned:
-            documentTop.constant = statusBarOffset + annotationToolbarController.size
-
-        case .top:
-            documentTop.constant = totalOffset + annotationToolbarController.size
-
-        case .trailing, .leading:
-            documentTop.constant = totalOffset
-        }
+        speechHighlighterTopConstraint?.constant = baseOffset
+        documentTop.constant = baseOffset + speechHighlighterTopOffset
     }
 
     func hideSidebarIfNeeded(forPosition position: AnnotationToolbarHandler.State.Position, isToolbarSmallerThanMinWidth: Bool, animated: Bool) {
@@ -930,7 +1022,7 @@ extension PDFReaderViewController: PDFDocumentDelegate {
             accessibilityHandler?.accessibilityControlsShouldChange(isNavbarHidden: isHidden)
         }
 
-        UIView.animate(withDuration: 0.15, animations: { [weak self] in
+        UIView.animate(withDuration: 0.25, animations: { [weak self] in
             guard let self else { return }
             updateStatusBar()
             view.layoutIfNeeded()
@@ -955,6 +1047,7 @@ extension PDFReaderViewController: PDFDocumentDelegate {
             // Manual page scrolling and page change due to a link, are differentiated by this heuristic.
             // When a link is tapped, a sequence of page index changes event are triggered, with the final ones maintaining the page index.
             intraDocumentNavigationHandler?.pageChanged((event.oldPageIndex == event.pageIndex) ? .link : .manual)
+            accessibilityHandler?.speechManager.stop()
         }
     }
 
@@ -1020,7 +1113,7 @@ extension PDFReaderViewController: IntraDocumentNavigationButtonsHandlerDelegate
 
 extension PDFReaderViewController: ParentWithSidebarController {}
 
-extension PDFReaderViewController: SpeechmanagerDelegate {
+extension PDFReaderViewController: SpeechManagerDelegate {
     func getCurrentPageIndex() -> UInt {
         return documentController?.currentPage ?? 0
     }
@@ -1036,15 +1129,6 @@ extension PDFReaderViewController: SpeechmanagerDelegate {
     }
     
     func text(for indices: [UInt], completion: @escaping ([UInt: String]?) -> Void) {
-//        var result: [UInt: String] = [:]
-//        for index in indices {
-//            guard let parser = viewModel.state.document.textParserForPage(at: index) else {
-//                completion(nil)
-//                return
-//            }
-//            result[index] = parser.text
-//        }
-//        completion(result)
         DDLogInfo("PDFReaderViewController: text for \(indices)")
         guard let file = viewModel.state.document.fileURL.flatMap({ Files.file(from: $0) }) else {
             DDLogInfo("PDFReaderViewController: document url not found")
@@ -1091,6 +1175,39 @@ extension PDFReaderViewController: SpeechmanagerDelegate {
     func moved(to pageIndex: UInt) {
         documentController?.focus(page: pageIndex)
     }
+
+    func readAloudHighlightChanged(text: String, pageIndex: UInt) {
+        if documentController?.currentPage != pageIndex {
+            documentController?.focus(page: pageIndex)
+        }
+        documentController?.updateReadAloudHighlight(text: text, page: PageIndex(pageIndex))
+    }
+
+    func annotationPreviewChanged(text: String, pageIndex: UInt, tool: AnnotationTool, color: String) {
+        if documentController?.currentPage != pageIndex {
+            documentController?.focus(page: pageIndex)
+        }
+        documentController?.updateAnnotationPreview(text: text, page: PageIndex(pageIndex), annotationTool: tool, annotationColor: color)
+    }
+
+    func createAnnotation(ofType tool: AnnotationTool, color: String, forText text: String, onPage pageIndex: UInt) {
+        let page = PageIndex(pageIndex)
+        guard let rects = documentController?.speechHighlightPDFFrames(for: text, page: page), !rects.isEmpty else { return }
+        switch tool {
+        case .highlight:
+            viewModel.process(action: .createHighlight(pageIndex: page, rects: rects, color: color))
+
+        case .underline:
+            viewModel.process(action: .createUnderline(pageIndex: page, rects: rects, color: color))
+
+        default:
+            break
+        }
+    }
+
+    func clearAnnotationPreview() {
+        documentController?.clearAnnotationPreview()
+    }
 }
 
 extension PDFReaderViewController: AccessibilityViewDelegate {
@@ -1098,13 +1215,14 @@ extension PDFReaderViewController: AccessibilityViewDelegate {
         documentControllerBottom?.constant = height
     }
     
-    func showAccessibilityPopup<Delegate: SpeechmanagerDelegate>(
+    func showAccessibilityPopup<Delegate: SpeechManagerDelegate>(
         speechManager: SpeechManager<Delegate>,
         sender: UIBarButtonItem,
         animated: Bool,
         isFormSheet: @escaping () -> Bool,
         dismissAction: @escaping () -> Void,
-        voiceChangeAction: @escaping (AVSpeechSynthesisVoice) -> Void
+        highlighterAction: @escaping () -> Void,
+        voiceChangeAction: @escaping (AccessibilityPopupVoiceChange) -> Void
     ) {
         coordinatorDelegate?.showAccessibility(
             speechManager: speechManager,
@@ -1114,6 +1232,7 @@ extension PDFReaderViewController: AccessibilityViewDelegate {
             animated: animated,
             isFormSheet: isFormSheet,
             dismissAction: dismissAction,
+            highlighterAction: highlighterAction,
             voiceChangeAction: voiceChangeAction
         )
     }
@@ -1124,5 +1243,116 @@ extension PDFReaderViewController: AccessibilityViewDelegate {
     
     func removeAccessibilityControlsViewFromAnnotationToolbar() {
         annotationToolbarHandler?.setLeadingView(view: nil)
+    }
+    
+    func clearSpeechHighlight() {
+        documentController?.clearReadAloudHighlight()
+        documentController?.clearAnnotationPreview()
+    }
+
+    func showSpeechHighlighterOverlay(_ overlay: SpeechHighlighterOverlayView, isCompact: Bool, speechControlsView: UIView?) {
+        view.addSubview(overlay)
+        overlay.alpha = 0
+
+        if isCompact {
+            // iPhone / compact: full width, anchored above the speech controls overlay
+            let bottomAnchor: NSLayoutYAxisAnchor
+            if let speechControlsView, speechControlsView.superview != nil {
+                bottomAnchor = speechControlsView.topAnchor
+            } else {
+                bottomAnchor = view.safeAreaLayoutGuide.bottomAnchor
+            }
+            NSLayoutConstraint.activate([
+                overlay.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                overlay.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                overlay.bottomAnchor.constraint(equalTo: bottomAnchor)
+            ])
+            view.layoutIfNeeded()
+            UIView.animate(withDuration: 0.15, delay: 0, options: .curveEaseOut) {
+                overlay.alpha = 1
+            }
+        } else {
+            // iPad / regular: fixed at the current document top position, centered horizontally in the document area.
+            // Anchor to view.topAnchor with the current documentTop offset so the overlay stays fixed when the document moves down.
+            let topOffset = documentTop.constant
+            let documentView = documentController?.view
+            let topConstraint = overlay.topAnchor.constraint(equalTo: view.topAnchor, constant: topOffset)
+            speechHighlighterTopConstraint = topConstraint
+            NSLayoutConstraint.activate([
+                topConstraint,
+                overlay.centerXAnchor.constraint(equalTo: documentView?.centerXAnchor ?? view.centerXAnchor),
+                overlay.widthAnchor.constraint(greaterThanOrEqualToConstant: 320),
+                overlay.widthAnchor.constraint(lessThanOrEqualToConstant: 500)
+            ])
+
+            // Layout to get the overlay height, then push document below it
+            view.layoutIfNeeded()
+            let overlayHeight = overlay.frame.height
+            speechHighlighterTopOffset = overlayHeight
+            documentTop.constant += overlayHeight
+            UIView.animate(withDuration: 0.15, delay: 0, options: .curveEaseOut) {
+                overlay.alpha = 1
+                self.view.layoutIfNeeded()
+            }
+        }
+    }
+
+    func hideSpeechHighlighterOverlay(_ overlay: SpeechHighlighterOverlayView) {
+        speechHighlighterTopConstraint = nil
+        let hasTopOffset = speechHighlighterTopOffset > 0
+        if hasTopOffset {
+            documentTop.constant -= speechHighlighterTopOffset
+            speechHighlighterTopOffset = 0
+        }
+        UIView.animate(withDuration: 0.15, delay: 0, options: .curveEaseIn, animations: {
+            overlay.alpha = 0
+            if hasTopOffset {
+                self.view.layoutIfNeeded()
+            }
+        }, completion: { _ in
+            overlay.removeFromSuperview()
+        })
+    }
+
+    func repositionSpeechHighlighterOverlay(_ overlay: SpeechHighlighterOverlayView, isCompact: Bool, speechControlsView: UIView?) {
+        view.addSubview(overlay)
+
+        if isCompact {
+            let bottomAnchor: NSLayoutYAxisAnchor
+            if let speechControlsView, speechControlsView.superview != nil {
+                bottomAnchor = speechControlsView.topAnchor
+            } else {
+                bottomAnchor = view.safeAreaLayoutGuide.bottomAnchor
+            }
+            NSLayoutConstraint.activate([
+                overlay.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                overlay.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                overlay.bottomAnchor.constraint(equalTo: bottomAnchor)
+            ])
+        } else {
+            let topOffset = documentTop.constant
+            let documentView = documentController?.view
+            let topConstraint = overlay.topAnchor.constraint(equalTo: view.topAnchor, constant: topOffset)
+            speechHighlighterTopConstraint = topConstraint
+            NSLayoutConstraint.activate([
+                topConstraint,
+                overlay.centerXAnchor.constraint(equalTo: documentView?.centerXAnchor ?? view.centerXAnchor),
+                overlay.widthAnchor.constraint(greaterThanOrEqualToConstant: 320),
+                overlay.widthAnchor.constraint(lessThanOrEqualToConstant: 500)
+            ])
+
+            view.layoutIfNeeded()
+            let overlayHeight = overlay.frame.height
+            speechHighlighterTopOffset = overlayHeight
+            documentTop.constant += overlayHeight
+        }
+
+        view.layoutIfNeeded()
+    }
+
+    func updateSpeechHighlightStyle(tool: AnnotationTool, color: String) {
+        guard let text = accessibilityHandler?.speechManager.highlightSessionManager.currentText(),
+              let pageIndex = accessibilityHandler?.speechManager.highlightSessionManager.session?.pageIndex else { return }
+        documentController?.updateAnnotationPreview(text: text, page: PageIndex(pageIndex), annotationTool: tool, annotationColor: color)
     }
 }
