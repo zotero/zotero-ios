@@ -180,7 +180,7 @@ final class PDFDocumentViewController: UIViewController {
     /// - Parameters:
     ///   - text: The text currently being spoken
     ///   - page: The page index where the text is located
-    func updateSpeechHighlight(text: String, page: PageIndex) {
+    func updateSpeechHighlight(text: String, page: PageIndex, annotationTool: AnnotationTool, annotationColor: String) {
         guard let pdfController else { return }
 
         // Get the page view for the target page
@@ -216,11 +216,7 @@ final class PDFDocumentViewController: UIViewController {
             pageView.contentView.addSubview(speechHighlightView!)
         }
 
-        speechHighlightView?.updateHighlight(pdfFrames: pdfFrames, pageView: pageView)
-    }
-
-    func updateSpeechHighlightStyle(tool: AnnotationTool, color: String) {
-        speechHighlightView?.updateStyle(tool: tool, color: color)
+        speechHighlightView?.updateHighlight(pdfFrames: pdfFrames, pageView: pageView, annotationTool: annotationTool, annotationColor: annotationColor)
     }
 
     /// Clears the speech highlight
@@ -1375,8 +1371,8 @@ final class SpeechHighlightView: UIView {
     private var pdfFrames: [CGRect] = []
     /// Reference to the page view for coordinate conversion
     private weak var pageView: PDFPageView?
-    private(set) var annotationTool: AnnotationTool = .highlight
-    private(set) var annotationColor: String = AnnotationsConfig.defaultActiveColor
+    private var annotationTool: AnnotationTool = .highlight
+    private var annotationColor: String = AnnotationsConfig.defaultActiveColor
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -1403,15 +1399,11 @@ final class SpeechHighlightView: UIView {
     /// - Parameters:
     ///   - pdfFrames: Frames in PDF coordinate space
     ///   - pageView: The page view used for coordinate conversion
-    func updateHighlight(pdfFrames: [CGRect], pageView: PDFPageView) {
+    func updateHighlight(pdfFrames: [CGRect], pageView: PDFPageView, annotationTool: AnnotationTool, annotationColor: String) {
         self.pdfFrames = pdfFrames
         self.pageView = pageView
-        updateHighlightLayerFrames()
-    }
-
-    func updateStyle(tool: AnnotationTool, color: String) {
-        annotationTool = tool
-        annotationColor = color
+        self.annotationTool = annotationTool
+        self.annotationColor = annotationColor
         updateHighlightLayerFrames()
     }
 
