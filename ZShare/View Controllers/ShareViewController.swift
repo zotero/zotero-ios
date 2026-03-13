@@ -518,7 +518,7 @@ final class ShareViewController: UIViewController {
             return L10n.Errors.Shareext.itemsNotFound
 
         case .parseError:
-            return L10n.Errors.Shareext.parsingError
+            return "Error parsing translator response"
 
         case .schemaError:
             return L10n.Errors.Shareext.schemaError
@@ -526,16 +526,16 @@ final class ShareViewController: UIViewController {
         case .webViewError(let error):
             switch error {
             case .incompatibleItem:
-                return L10n.Errors.Shareext.incompatibleItem
+                return "No data returned"
 
             case .javascriptCallMissingResult:
-                return L10n.Errors.Shareext.javascriptFailed
+                return "JS call failed"
 
             case .noSuccessfulTranslators:
                 return nil
 
             case .cantFindFile, .webExtractionMissingJs: // should never happen
-                return L10n.Errors.Shareext.missingBaseFiles
+                return "Translator missing"
 
             case .webExtractionMissingData:
                 return L10n.Errors.Shareext.responseMissingData
@@ -545,7 +545,7 @@ final class ShareViewController: UIViewController {
             return L10n.Errors.Shareext.unknown
 
         case .fileMissing:
-            return L10n.Errors.Shareext.missingFile
+            return "Could not find file to upload"
 
         case .apiFailure:
             return L10n.Errors.Shareext.apiError
