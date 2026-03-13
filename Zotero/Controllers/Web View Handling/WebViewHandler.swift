@@ -239,15 +239,15 @@ class WebViewHandler: NSObject {
 
         DDLogInfo("WebViewHandler: send request to \(url.absoluteString)")
 
-        let domain = url.host() ?? ""
-        session.set(cookies: cookies, domain: domain)
+        let host = url.host(percentEncoded: false) ?? ""
+        session.set(cookies: cookies, domain: host)
 
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.httpBody = body?.data(using: .utf8)
         request.timeoutInterval = timeout
 
-        addCloudflareCookie(domain: domain, existingHeaders: headers) { [weak self] headers in
+        addCloudflareCookie(host: host, existingHeaders: headers) { [weak self] headers in
             guard let self else { return }
             headers.forEach { key, value in
                 request.setValue(value, forHTTPHeaderField: key)
@@ -272,11 +272,10 @@ class WebViewHandler: NSObject {
             task.resume()
         }
 
-        func addCloudflareCookie(domain: String, existingHeaders: [String: String], completion: @escaping ([String: String]) -> Void) {
+        func addCloudflareCookie(host: String, existingHeaders: [String: String], completion: @escaping ([String: String]) -> Void) {
             guard let webView else { return completion(existingHeaders) }
             let store = webView.configuration.websiteDataStore.httpCookieStore
-            store.getAllCookies { cookies in
-                let cloudflareCookies = cookies.filter({ $0.name == "cf_clearance" && $0.domain.hasSuffix(domain) })
+            store.getCloudflareCookies(host: host) { cloudflareCookies in
                 guard !cloudflareCookies.isEmpty else { return completion(existingHeaders) }
                 var cookieString = cloudflareCookies.map({ "\($0.name)=\($0.value)" }).joined(separator: "; ")
                 var headers = existingHeaders
