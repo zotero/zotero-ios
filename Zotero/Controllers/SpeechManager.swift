@@ -28,8 +28,8 @@ protocol SpeechManagerDelegate: AnyObject {
     ///   - text: The paragraph text to highlight
     ///   - pageIndex: The page index where the text is located
     func highlightTextChanged(text: String, pageIndex: Index)
-    /// Called when the user confirms a highlight annotation from the highlighter overlay.
-    func createHighlightAnnotation(forText text: String, onPage pageIndex: Index)
+    /// Called when the user confirms an annotation from the highlighter overlay.
+    func createAnnotation(ofType tool: AnnotationTool, color: String, forText text: String, onPage pageIndex: Index)
     /// Called when the highlight session ends, to remove the temporary document highlight.
     func clearHighlightAnnotationPreview()
 }
@@ -117,6 +117,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     private var cachedPages: [Delegate.Index: String]
     private var debouncedSpeakWorkItem: DispatchWorkItem?
     let highlightSessionManager: SpeechHighlightSessionManager<SpeechManager<Delegate>>
+    var onHighlightSessionTimedOut: (() -> Void)?
     private weak var delegate: Delegate?
     var voice: SpeechVoice? { processor.speechVoice }
     var language: String? { processor.preferredLanguage }
@@ -140,6 +141,9 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         nowPlayingManager = NowPlayingManager()
         super.init()
         highlightSessionManager.delegate = self
+        highlightSessionManager.onSessionTimedOut = { [weak self] in
+            self?.onHighlightSessionTimedOut?()
+        }
         if let remoteVoiceTier {
             processor = RemoteVoiceProcessor(language: voiceLanguage, tier: remoteVoiceTier, speechRateModifier: 1, delegate: self, remoteVoicesController: remoteVoicesController)
         } else {
@@ -347,9 +351,35 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         return result
     }
 
+    func setHighlightAnnotationTool(_ tool: AnnotationTool) {
+        highlightSessionManager.annotationTool = tool
+        highlightSessionManager.startInactivityTimer()
+    }
+
+    func setHighlightAnnotationColor(_ color: String) {
+        highlightSessionManager.annotationColor = color
+        highlightSessionManager.startInactivityTimer()
+    }
+
+    func stopHighlightInactivityTimer() {
+        highlightSessionManager.stopInactivityTimer()
+    }
+
+    func startHighlightInactivityTimer() {
+        highlightSessionManager.startInactivityTimer()
+    }
+
+    var highlightAnnotationTool: AnnotationTool {
+        highlightSessionManager.annotationTool
+    }
+
+    var highlightAnnotationColor: String {
+        highlightSessionManager.annotationColor
+    }
+
     func endHighlightSession() {
         if let result = highlightSessionManager.endSession() {
-            delegate?.createHighlightAnnotation(forText: result.text, onPage: result.pageIndex)
+            delegate?.createAnnotation(ofType: highlightSessionManager.annotationTool, color: highlightSessionManager.annotationColor, forText: result.text, onPage: result.pageIndex)
         }
         delegate?.clearHighlightAnnotationPreview()
     }
