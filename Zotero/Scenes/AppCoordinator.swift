@@ -92,7 +92,7 @@ final class AppCoordinator: NSObject {
 
         func showBetaAlert() {
             guard let rootViewController = window?.rootViewController else { return }
-            let controller = UIAlertController(title: L10n.betaWipeTitle, message: L10n.betaWipeMessage, preferredStyle: .alert)
+            let controller = UIAlertController(title: "Resync Required", message: "Due to a beta update, your data must be redownloaded from zotero.org.", preferredStyle: .alert)
             controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
             rootViewController.present(controller, animated: true, completion: nil)
         }
@@ -514,7 +514,7 @@ extension AppCoordinator: DebugLoggingCoordinator {
             message = L10n.Errors.Logging.start
 
         case .contentReading, .cantCreateData:
-            message = L10n.Errors.Logging.contentReading
+            message = "Log files could not be found"
 
         case .noLogsRecorded:
             message = L10n.Errors.Logging.noLogsRecorded
@@ -736,7 +736,7 @@ extension AppCoordinator: TranslatorsControllerCoordinatorDelegate {
     }
 
     func showResetToBundleError() {
-        showAlert(title: L10n.error, message: L10n.Errors.Translators.bundleReset, actions: [UIAlertAction(title: L10n.ok, style: .cancel, handler: nil)])
+        showAlert(title: L10n.error, message: "Could not load bundled translators.", actions: [UIAlertAction(title: L10n.ok, style: .cancel, handler: nil)])
     }
 }
 
