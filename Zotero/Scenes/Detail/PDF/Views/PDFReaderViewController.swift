@@ -1258,10 +1258,19 @@ extension PDFReaderViewController: SpeechManagerDelegate {
         documentController?.clearAnnotationPreview()
     }
 
-    func createHighlightAnnotation(forText text: String, onPage pageIndex: UInt) {
+    func createAnnotation(ofType tool: AnnotationTool, color: String, forText text: String, onPage pageIndex: UInt) {
         let page = PageIndex(pageIndex)
         guard let rects = documentController?.speechHighlightPDFFrames(for: text, page: page), !rects.isEmpty else { return }
-        viewModel.process(action: .createHighlight(pageIndex: page, rects: rects))
+        switch tool {
+        case .highlight:
+            viewModel.process(action: .createHighlight(pageIndex: page, rects: rects, color: color))
+
+        case .underline:
+            viewModel.process(action: .createUnderline(pageIndex: page, rects: rects, color: color))
+
+        default:
+            break
+        }
     }
 
     func clearHighlightAnnotationPreview() {
@@ -1364,5 +1373,9 @@ extension PDFReaderViewController: AccessibilityViewDelegate {
         guard let text = accessibilityHandler?.speechManager.highlightSessionManager.currentText(),
               let pageIndex = accessibilityHandler?.speechManager.highlightSessionManager.session?.pageIndex else { return }
         documentController?.updateAnnotationPreview(text: text, page: PageIndex(pageIndex), annotationTool: tool, annotationColor: color)
+    }
+
+    func updateSpeechHighlightStyle(tool: AnnotationTool, color: String) {
+        documentController?.updateSpeechHighlightStyle(tool: tool, color: color)
     }
 }
