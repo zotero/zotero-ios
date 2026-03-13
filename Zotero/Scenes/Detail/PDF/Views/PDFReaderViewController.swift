@@ -1173,7 +1173,9 @@ extension PDFReaderViewController: SpeechManagerDelegate {
         if documentController?.currentPage != pageIndex {
             documentController?.focus(page: pageIndex)
         }
-        documentController?.updateSpeechHighlight(text: text, page: PageIndex(pageIndex))
+        let tool = accessibilityHandler?.speechManager.highlightAnnotationTool ?? .highlight
+        let color = accessibilityHandler?.speechManager.highlightAnnotationColor ?? AnnotationsConfig.defaultActiveColor
+        documentController?.updateSpeechHighlight(text: text, page: PageIndex(pageIndex), annotationTool: tool, annotationColor: color)
     }
 
     func createAnnotation(ofType tool: AnnotationTool, color: String, forText text: String, onPage pageIndex: UInt) {
@@ -1336,6 +1338,8 @@ extension PDFReaderViewController: AccessibilityViewDelegate {
     }
 
     func updateSpeechHighlightStyle(tool: AnnotationTool, color: String) {
-        documentController?.updateSpeechHighlightStyle(tool: tool, color: color)
+        guard let text = accessibilityHandler?.speechManager.highlightSessionManager.currentText(),
+              let pageIndex = accessibilityHandler?.speechManager.highlightSessionManager.session?.pageIndex else { return }
+        documentController?.updateSpeechHighlight(text: text, page: PageIndex(pageIndex), annotationTool: tool, annotationColor: color)
     }
 }
