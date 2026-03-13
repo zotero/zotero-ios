@@ -14,11 +14,14 @@ import RxSwift
 class AnnotationToolOptionsViewController: UIViewController {
     private static let circleSize: CGFloat = 44
     private static let circleOffset: CGFloat = 16
+    private static let circleSelectionLineWidth: CGFloat = 3
+    private static let circleSelectionInset: UIEdgeInsets = .init(top: 4, left: 4, bottom: 4, right: 4)
     private static let verticalInset: CGFloat = 15
     private static let horizontalInset: CGFloat = 15
     private let viewModel: ViewModel<AnnotationToolOptionsActionHandler>
     private let valueChanged: (String?, Float?) -> Void
     private let disposeBag: DisposeBag
+    private var preferredContentWidth: CGFloat?
 
     private weak var container: UIStackView?
     private weak var colorPicker: ColorPickerStackView?
@@ -59,6 +62,7 @@ class AnnotationToolOptionsViewController: UIViewController {
             var subviews: [UIView] = []
 
             let hasSize = viewModel.state.size != nil
+            preferredContentWidth = (hasSize ? 5 : 4) * (Self.circleSize + Self.circleOffset) - Self.circleOffset + 2 * Self.horizontalInset
 
             if let color = viewModel.state.colorHex {
                 let colorPicker = ColorPickerStackView(
@@ -68,8 +72,9 @@ class AnnotationToolOptionsViewController: UIViewController {
                     circleBackgroundColor: Asset.Colors.annotationPopoverBackground.color,
                     circleSize: Self.circleSize,
                     circleOffset: Self.circleOffset,
-                    circleSelectionLineWidth: 3,
-                    circleSelectionInset: UIEdgeInsets(top: 4, left: 4, bottom: 4, right: 4),
+                    circleSelectionLineWidth: Self.circleSelectionLineWidth,
+                    circleSelectionInset: Self.circleSelectionInset,
+                    circleContentInsets: .zero,
                     trailingSpacerViewProvider: { row in
                         guard UIDevice.current.userInterfaceIdiom == .phone || (hasSize && row > 0) else { return nil }
                         let spacerView = UIView()
@@ -165,12 +170,10 @@ class AnnotationToolOptionsViewController: UIViewController {
         updateContentSizeIfNeeded()
 
         func updateContentSizeIfNeeded() {
-            guard UIDevice.current.userInterfaceIdiom == .pad, let container else { return }
-            let hasSize = viewModel.state.size != nil
-            let width: CGFloat = hasSize ? 314 : 254
-            var size = container.systemLayoutSizeFitting(CGSize(width: width, height: .greatestFiniteMagnitude))
+            guard UIDevice.current.userInterfaceIdiom == .pad, let container, let preferredContentWidth else { return }
+            var size = container.systemLayoutSizeFitting(CGSize(width: preferredContentWidth, height: .greatestFiniteMagnitude))
             size.height += 2 * Self.verticalInset
-            preferredContentSize = CGSize(width: width, height: size.height)
+            preferredContentSize = CGSize(width: preferredContentWidth, height: size.height)
         }
     }
 
