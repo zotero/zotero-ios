@@ -443,6 +443,13 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         DDLogInfo("PDFReaderViewController deinitialized")
     }
 
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        if isMovingFromParent || isBeingDismissed {
+            accessibilityHandler?.confirmActiveHighlightSession()
+        }
+    }
+
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
 
