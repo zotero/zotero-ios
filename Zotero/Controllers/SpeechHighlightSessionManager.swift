@@ -41,10 +41,36 @@ final class SpeechHighlightSessionManager<Delegate: SpeechHighlightSessionManage
         }
     }
 
-    private(set) var session: Session?
+    private static var inactivityTimeout: TimeInterval { 5 }
+
+    private(set) var session: Session? {
+        didSet {
+            if session != nil {
+                startInactivityTimer()
+            } else {
+                stopInactivityTimer()
+            }
+        }
+    }
+    private var inactivityTimer: Timer?
     weak var delegate: Delegate?
+    var annotationTool: AnnotationTool = .highlight
+    var annotationColor: String = AnnotationsConfig.defaultActiveColor
+    var onSessionTimedOut: (() -> Void)?
 
     var hasActiveSession: Bool { session != nil }
+
+    func startInactivityTimer() {
+        inactivityTimer?.invalidate()
+        inactivityTimer = Timer.scheduledTimer(withTimeInterval: Self.inactivityTimeout, repeats: false) { [weak self] _ in
+            self?.onSessionTimedOut?()
+        }
+    }
+
+    func stopInactivityTimer() {
+        inactivityTimer?.invalidate()
+        inactivityTimer = nil
+    }
 
     /// Starts a new highlight session by finding the appropriate unit at the given speech position.
     /// Uses voice info to determine granularity and a "go back" heuristic (< 50% progress or < 3 seconds elapsed).

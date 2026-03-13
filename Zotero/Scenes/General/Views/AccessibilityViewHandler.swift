@@ -29,6 +29,7 @@ protocol AccessibilityViewDelegate: AnyObject {
     func showSpeechHighlighterOverlay(_ overlay: SpeechHighlighterOverlayView, isCompact: Bool, speechControlsView: UIView?)
     func hideSpeechHighlighterOverlay(_ overlay: SpeechHighlighterOverlayView)
     func repositionSpeechHighlighterOverlay(_ overlay: SpeechHighlighterOverlayView, isCompact: Bool, speechControlsView: UIView?)
+    func updateSpeechHighlightStyle(tool: AnnotationTool, color: String)
 }
 
 final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
@@ -87,7 +88,7 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
                 guard let self else { return }
                 switch state {
                 case .stopped:
-                    self.hideHighlighterOverlay()
+                    self.dismissHighlighterOverlay(confirm: false)
                     self.delegate?.clearSpeechHighlight()
                     
                 case .outOfCredits(let reason):
@@ -192,14 +193,21 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
     private func repositionHighlighterOverlayIfNeeded() {
         guard let oldOverlay = highlighterOverlay else { return }
         delegate?.hideSpeechHighlighterOverlay(oldOverlay)
-        let newOverlay = SpeechHighlighterOverlayView(isCompact: isFormSheet)
+        let newOverlay = SpeechHighlighterOverlayView(
+            isCompact: isFormSheet,
+            annotationTool: oldOverlay.selectedAnnotationTool,
+            annotationColor: oldOverlay.selectedColor
+        )
         newOverlay.update(text: oldOverlay.currentText)
         newOverlay.deleteAction = oldOverlay.deleteAction
         newOverlay.backwardAction = oldOverlay.backwardAction
         newOverlay.forwardAction = oldOverlay.forwardAction
         newOverlay.skipBackwardAction = oldOverlay.skipBackwardAction
         newOverlay.skipForwardAction = oldOverlay.skipForwardAction
-        newOverlay.colorAction = oldOverlay.colorAction
+        newOverlay.annotationToolChanged = oldOverlay.annotationToolChanged
+        newOverlay.annotationColorChanged = oldOverlay.annotationColorChanged
+        newOverlay.onMenuPresented = oldOverlay.onMenuPresented
+        newOverlay.onMenuDismissed = oldOverlay.onMenuDismissed
         highlighterOverlay = newOverlay
         delegate?.repositionSpeechHighlighterOverlay(newOverlay, isCompact: isFormSheet, speechControlsView: activeOverlay)
     }
@@ -261,18 +269,19 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
     }
 
     private func toggleHighlighterOverlay() {
-        if let existing = highlighterOverlay {
-            // Toggling off = confirm highlight
-            speechManager.endHighlightSession()
-            delegate?.hideSpeechHighlighterOverlay(existing)
-            highlighterOverlay = nil
+        if highlighterOverlay != nil {
+            dismissHighlighterOverlay(confirm: true)
             return
         }
         guard let result = speechManager.startHighlightSession() else { return }
-        let overlay = SpeechHighlighterOverlayView(isCompact: isFormSheet)
+        let overlay = SpeechHighlighterOverlayView(
+            isCompact: isFormSheet,
+            annotationTool: speechManager.highlightAnnotationTool,
+            annotationColor: speechManager.highlightAnnotationColor
+        )
         overlay.update(text: result.text)
         overlay.deleteAction = { [weak self] in
-            self?.cancelHighlighterOverlay()
+            self?.dismissHighlighterOverlay(confirm: false)
         }
         overlay.backwardAction = { [weak self] in
             guard let self, let result = speechManager.moveHighlightBackward() else { return }
@@ -290,21 +299,37 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
             guard let self, let result = speechManager.extendHighlightForward() else { return }
             self.highlighterOverlay?.update(text: result.text)
         }
+        overlay.annotationToolChanged = { [weak self] tool in
+            guard let self else { return }
+            speechManager.setHighlightAnnotationTool(tool)
+            delegate?.updateSpeechHighlightStyle(tool: tool, color: speechManager.highlightAnnotationColor)
+        }
+        overlay.annotationColorChanged = { [weak self] color in
+            guard let self else { return }
+            speechManager.setHighlightAnnotationColor(color)
+            delegate?.updateSpeechHighlightStyle(tool: speechManager.highlightAnnotationTool, color: color)
+        }
+        overlay.onMenuPresented = { [weak self] in
+            self?.speechManager.stopHighlightInactivityTimer()
+        }
+        overlay.onMenuDismissed = { [weak self] in
+            self?.speechManager.startHighlightInactivityTimer()
+        }
+        speechManager.onHighlightSessionTimedOut = { [weak self] in
+            self?.dismissHighlighterOverlay(confirm: true)
+        }
         highlighterOverlay = overlay
         delegate?.showSpeechHighlighterOverlay(overlay, isCompact: isFormSheet, speechControlsView: activeOverlay)
     }
 
-    private func cancelHighlighterOverlay() {
-        speechManager.cancelHighlightSession()
+    private func dismissHighlighterOverlay(confirm: Bool) {
+        if confirm {
+            speechManager.endHighlightSession()
+        } else {
+            speechManager.cancelHighlightSession()
+        }
+        speechManager.onHighlightSessionTimedOut = nil
         guard let overlay = highlighterOverlay else { return }
-        delegate?.hideSpeechHighlighterOverlay(overlay)
-        highlighterOverlay = nil
-    }
-
-    private func hideHighlighterOverlay() {
-        guard let overlay = highlighterOverlay else { return }
-        // Speech stopped — cancel session without creating annotation
-        speechManager.cancelHighlightSession()
         delegate?.hideSpeechHighlighterOverlay(overlay)
         highlighterOverlay = nil
     }
