@@ -229,11 +229,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         case .createNote(let pageIndex, let origin):
             addNote(onPage: pageIndex, origin: origin, in: viewModel)
 
-        case .createHighlight(let pageIndex, let rects):
-            addHighlightOrUnderline(isHighlight: true, onPage: pageIndex, rects: rects, in: viewModel)
+        case .createHighlight(let pageIndex, let rects, let color):
+            addHighlightOrUnderline(isHighlight: true, onPage: pageIndex, rects: rects, explicitColor: color, in: viewModel)
 
-        case .createUnderline(let pageIndex, let rects):
-            addHighlightOrUnderline(isHighlight: false, onPage: pageIndex, rects: rects, in: viewModel)
+        case .createUnderline(let pageIndex, let rects, let color):
+            addHighlightOrUnderline(isHighlight: false, onPage: pageIndex, rects: rects, explicitColor: color, in: viewModel)
 
         case .setVisiblePage(let page, let userActionFromDocument, let fromThumbnailList):
             set(page: page, userActionFromDocument: userActionFromDocument, fromThumbnailList: fromThumbnailList, in: viewModel)
@@ -1175,8 +1175,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
     }
 
-    private func addHighlightOrUnderline(isHighlight: Bool, onPage pageIndex: PageIndex, rects: [CGRect], in viewModel: ViewModel<PDFReaderActionHandler>) {
-        guard let activeColor = viewModel.state.toolColors[tool(from: isHighlight ? .highlight : .underline)] else { return }
+    private func addHighlightOrUnderline(isHighlight: Bool, onPage pageIndex: PageIndex, rects: [CGRect], explicitColor: String? = nil, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        guard let activeColor = explicitColor.flatMap({ UIColor(hex: $0) }) ?? viewModel.state.toolColors[tool(from: isHighlight ? .highlight : .underline)] else { return }
         let appearance = Appearance.from(appearanceMode: viewModel.state.settings.appearanceMode, interfaceStyle: viewModel.state.interfaceStyle)
         let (color, alpha, blendMode) = AnnotationColorGenerator.color(from: activeColor, type: isHighlight ? .highlight : .underline, appearance: appearance)
 
