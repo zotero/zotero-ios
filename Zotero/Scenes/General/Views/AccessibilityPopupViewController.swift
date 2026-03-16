@@ -338,13 +338,34 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
 
     // MARK: - Keyboard Commands
 
+    private lazy var keyCommandsHandler: DocumentKeyCommandsHandler = {
+        let handler = DocumentKeyCommandsHandler()
+        handler.onAction = { [weak self] action in
+            guard let self else { return }
+            switch action {
+            case .speechForwardByParagraph:
+                speechManager.forward(by: .paragraph)
+
+            case .speechBackwardByParagraph:
+                speechManager.backward(by: .paragraph)
+
+            case .speechForwardBySentence:
+                speechManager.forward(by: .sentence)
+
+            case .speechBackwardBySentence:
+                speechManager.backward(by: .sentence)
+
+            default:
+                break
+            }
+        }
+        return handler
+    }()
+
     override var keyCommands: [UIKeyCommand]? {
-        var commands: [UIKeyCommand] = [
-            .init(title: L10n.Accessibility.Speech.forward, action: #selector(speechForwardByParagraph), input: UIKeyCommand.inputRightArrow, modifierFlags: []),
-            .init(title: L10n.Accessibility.Speech.backward, action: #selector(speechBackwardByParagraph), input: UIKeyCommand.inputLeftArrow, modifierFlags: []),
-            .init(title: L10n.Accessibility.Speech.forward, action: #selector(speechForwardBySentence), input: UIKeyCommand.inputRightArrow, modifierFlags: [.alternate]),
-            .init(title: L10n.Accessibility.Speech.backward, action: #selector(speechBackwardBySentence), input: UIKeyCommand.inputLeftArrow, modifierFlags: [.alternate])
-        ]
+        var commands = keyCommandsHandler.createKeyCommands(
+            parameters: .init(isHighlighterOverlayVisible: false, isSpeechActive: true, hasBackActions: false, hasForwardActions: false)
+        )
         if speechManager.state.value.isSpeaking || speechManager.state.value.isPaused {
             let title = speechManager.state.value.isSpeaking ? L10n.Accessibility.Speech.pause : L10n.Accessibility.Speech.play
             commands.append(.init(title: title, action: #selector(togglePlayPause), input: " ", modifierFlags: []))
@@ -352,20 +373,15 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
         return commands
     }
 
-    @objc private func speechForwardByParagraph() {
-        speechManager.forward(by: .paragraph)
+    override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
+        if sender is UIKeyCommand {
+            return action == #selector(togglePlayPause) || action == DocumentKeyCommandsHandler.actionSelector
+        }
+        return super.canPerformAction(action, withSender: sender)
     }
 
-    @objc private func speechBackwardByParagraph() {
-        speechManager.backward(by: .paragraph)
-    }
-
-    @objc private func speechForwardBySentence() {
-        speechManager.forward(by: .sentence)
-    }
-
-    @objc private func speechBackwardBySentence() {
-        speechManager.backward(by: .sentence)
+    @objc func handleDocumentKeyCommand(_ sender: UIKeyCommand) {
+        keyCommandsHandler.handle(sender)
     }
 
     @objc private func togglePlayPause() {
