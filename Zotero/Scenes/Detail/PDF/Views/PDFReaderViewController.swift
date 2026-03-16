@@ -24,7 +24,7 @@ protocol PDFReaderContainerDelegate: AnyObject {
     func pageDidAppear(_ pageIndex: PageIndex)
 }
 
-class PDFReaderViewController: UIViewController, ReaderViewController {
+class PDFReaderViewController: UIViewController, ReaderViewController, DocumentKeyCommandResponder {
     typealias DocumentController = PDFDocumentViewController
     typealias SidebarController = PDFSidebarViewController
 
@@ -67,6 +67,13 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
     }
     private var previousTraitCollection: UITraitCollection?
     private var accessibilityHandler: AccessibilityViewHandler<PDFReaderViewController>?
+    private lazy var keyCommandsHandler: DocumentKeyCommandsHandler = {
+        let handler = DocumentKeyCommandsHandler()
+        handler.onAction = { [weak self] action in
+            self?.performKeyCommandAction(action)
+        }
+        return handler
+    }()
     private weak var speechHighlighterTopConstraint: NSLayoutConstraint?
     var isSidebarVisible: Bool { return sidebarControllerLeft?.constant == 0 }
     var isToolbarVisible: Bool { return toolbarState.visible }
@@ -151,30 +158,15 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
     }()
 
     override var keyCommands: [UIKeyCommand]? {
-        var keyCommands: [UIKeyCommand] = [
-            .init(title: L10n.Pdf.Search.title, action: #selector(search), input: "f", modifierFlags: [.command])
-        ]
-        if intraDocumentNavigationHandler?.hasBackActions == true {
-            keyCommands += [
-                .init(title: L10n.back, action: #selector(performBackAction), input: "[", modifierFlags: [.command]),
-                .init(title: L10n.back, action: #selector(performBackAction), input: UIKeyCommand.inputLeftArrow, modifierFlags: [.command])
-            ]
-        }
-        if intraDocumentNavigationHandler?.hasForwardActions == true {
-            keyCommands += [
-                .init(title: L10n.forward, action: #selector(performForwardAction), input: "]", modifierFlags: [.command]),
-                .init(title: L10n.forward, action: #selector(performForwardAction), input: UIKeyCommand.inputRightArrow, modifierFlags: [.command])
-            ]
-        }
-        if accessibilityHandler?.speechManager.state.value.isSpeaking == true || accessibilityHandler?.speechManager.state.value.isPaused == true {
-            keyCommands += [
-                .init(title: L10n.Accessibility.Speech.forward, action: #selector(speechForwardByParagraph), input: UIKeyCommand.inputRightArrow, modifierFlags: []),
-                .init(title: L10n.Accessibility.Speech.backward, action: #selector(speechBackwardByParagraph), input: UIKeyCommand.inputLeftArrow, modifierFlags: []),
-                .init(title: L10n.Accessibility.Speech.forward, action: #selector(speechForwardBySentence), input: UIKeyCommand.inputRightArrow, modifierFlags: [.alternate]),
-                .init(title: L10n.Accessibility.Speech.backward, action: #selector(speechBackwardBySentence), input: UIKeyCommand.inputLeftArrow, modifierFlags: [.alternate])
-            ]
-        }
-        return keyCommands
+        let speechState = accessibilityHandler?.speechManager.state.value
+        return keyCommandsHandler.createKeyCommands(
+            parameters: .init(
+                isHighlighterOverlayVisible: accessibilityHandler?.isHighlighterOverlayVisible == true,
+                isSpeechActive: speechState?.isSpeaking == true || speechState?.isPaused == true,
+                hasBackActions: intraDocumentNavigationHandler?.hasBackActions == true,
+                hasForwardActions: intraDocumentNavigationHandler?.hasForwardActions == true
+            )
+        )
     }
 
     override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
@@ -183,16 +175,13 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
             case #selector(UIResponderStandardEditActions.copy(_:)):
                 return selectedText != nil
 
-            case #selector(search), #selector(performBackAction), #selector(performForwardAction):
-                return true
-
             case #selector(undo(_:)):
                 return canUndo
 
             case #selector(redo(_:)):
                 return canRedo
 
-            case #selector(speechForwardByParagraph), #selector(speechBackwardByParagraph), #selector(speechForwardBySentence), #selector(speechBackwardBySentence):
+            case DocumentKeyCommandsHandler.actionSelector:
                 return true
 
             default:
@@ -732,8 +721,62 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
     }
 
-    @objc private func search() {
-        showSearch(text: nil)
+    // MARK: - DocumentKeyCommandResponder
+
+    func handleDocumentKeyCommand(_ sender: UIKeyCommand) {
+        keyCommandsHandler.handle(sender)
+    }
+
+    private func performKeyCommandAction(_ action: DocumentKeyCommandsHandler.Action) {
+        switch action {
+        case .search:
+            showSearch(text: nil)
+
+        case .navigateBack:
+            documentController?.performBackAction()
+
+        case .navigateForward:
+            documentController?.performForwardAction()
+
+        case .speechForwardByParagraph:
+            accessibilityHandler?.speechManager.forward(by: .paragraph)
+
+        case .speechBackwardByParagraph:
+            accessibilityHandler?.speechManager.backward(by: .paragraph)
+
+        case .speechForwardBySentence:
+            accessibilityHandler?.speechManager.forward(by: .sentence)
+
+        case .speechBackwardBySentence:
+            accessibilityHandler?.speechManager.backward(by: .sentence)
+
+        case .highlighterMoveForward:
+            accessibilityHandler?.performHighlighterAction { $0.forwardAction?() }
+
+        case .highlighterMoveBackward:
+            accessibilityHandler?.performHighlighterAction { $0.backwardAction?() }
+
+        case .highlighterExtendForward:
+            accessibilityHandler?.performHighlighterAction { $0.skipForwardAction?() }
+
+        case .highlighterExtendBackward:
+            accessibilityHandler?.performHighlighterAction { $0.skipBackwardAction?() }
+
+        case .highlighterConfirm:
+            accessibilityHandler?.confirmActiveHighlightSession()
+
+        case .highlighterCancel:
+            accessibilityHandler?.cancelActiveHighlightSession()
+
+        case .highlighterSelectHighlight:
+            accessibilityHandler?.performHighlighterAction { $0.selectAnnotationTool(.highlight) }
+
+        case .highlighterSelectUnderline:
+            accessibilityHandler?.performHighlighterAction { $0.selectAnnotationTool(.underline) }
+
+        case .highlighterSelectColor(let index):
+            accessibilityHandler?.performHighlighterAction { $0.selectColor(at: index) }
+        }
     }
 
     @objc private func previousViewportAction() {
@@ -756,29 +799,6 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         documentViewController.scrollToNextSpread(animated: true)
     }
 
-    @objc private func performBackAction() {
-        documentController?.performBackAction()
-    }
-
-    @objc private func performForwardAction() {
-        documentController?.performForwardAction()
-    }
-
-    @objc private func speechForwardByParagraph() {
-        accessibilityHandler?.speechManager.forward(by: .paragraph)
-    }
-
-    @objc private func speechBackwardByParagraph() {
-        accessibilityHandler?.speechManager.backward(by: .paragraph)
-    }
-
-    @objc private func speechForwardBySentence() {
-        accessibilityHandler?.speechManager.forward(by: .sentence)
-    }
-
-    @objc private func speechBackwardBySentence() {
-        accessibilityHandler?.speechManager.backward(by: .sentence)
-    }
 
     @objc private func undo(_ sender: Any?) {
         performUndo()
