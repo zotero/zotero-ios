@@ -8,6 +8,7 @@
 
 import AVFoundation
 import NaturalLanguage
+import UIKit
 
 import Alamofire
 import CocoaLumberjackSwift
@@ -17,6 +18,7 @@ import RxSwift
 protocol SpeechManagerDelegate: AnyObject {
     associatedtype Index: Hashable
 
+    var documentTitle: String? { get }
     func getCurrentPageIndex() -> Index
     func getNextPageIndex(from currentPageIndex: Index) -> Index?
     func getPreviousPageIndex(from currentPageIndex: Index) -> Index?
@@ -222,7 +224,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             return
         }
 
-        nowPlayingManager.activate()
+        nowPlayingManager.activate(title: delegate.documentTitle)
 
         let pageIndex = delegate.getCurrentPageIndex()
         if let page = cachedPages[pageIndex] {
@@ -685,6 +687,8 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
     private var voice: AVSpeechSynthesisVoice?
     private var shouldReloadUtteranceOnResume = false
     private var ignoreFinishCallCount = 0
+    /// Background task identifier to keep the app alive during page transitions
+    private var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
     var speechRateModifier: Float {
         didSet {
             utteranceChanged()
@@ -800,7 +804,23 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
         voice = nil
         shouldReloadUtteranceOnResume = false
         ignoreFinishCallCount = 0
+        endBackgroundTask()
         delegate.state.accept(.stopped)
+    }
+
+    // MARK: - Background Task
+
+    private func beginBackgroundTask() {
+        guard backgroundTaskID == .invalid else { return }
+        backgroundTaskID = UIApplication.shared.beginBackgroundTask(withName: "com.zotero.speech.pageTransition") { [weak self] in
+            self?.endBackgroundTask()
+        }
+    }
+
+    private func endBackgroundTask() {
+        guard backgroundTaskID != .invalid else { return }
+        UIApplication.shared.endBackgroundTask(backgroundTaskID)
+        backgroundTaskID = .invalid
     }
 }
 
@@ -814,10 +834,12 @@ extension LocalVoiceProcessor: AVSpeechSynthesizerDelegate {
     }
     
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
+        endBackgroundTask()
         delegate.state.accept(.speaking)
     }
-    
+
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didContinue utterance: AVSpeechUtterance) {
+        endBackgroundTask()
         delegate.state.accept(.speaking)
     }
 
@@ -827,6 +849,8 @@ extension LocalVoiceProcessor: AVSpeechSynthesizerDelegate {
             return
         }
 
+        // Keep the app alive while transitioning to the next page in background
+        beginBackgroundTask()
         if !delegate.goToNextPageIfAvailable() {
             finishSpeaking()
         }
@@ -853,7 +877,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     private static let preloadAheadCount = 2
     /// Interval for polling remaining credits from the server
     private static let creditPollInterval: TimeInterval = 60
-    
+
     private unowned let delegate: VoiceProcessorDelegate
     private unowned let remoteVoicesController: RemoteVoicesController
     private var tier: RemoteVoice.Tier
@@ -872,6 +896,8 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     private var pendingPlaybackRange: NSRange?
     private var shouldReloadOnResume = false
     private var creditPollTimer: Timer?
+    /// Background task identifier to keep the app alive during segment transitions
+    private var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
     var speechRateModifier: Float {
         didSet {
             player?.rate = speechRateModifier
@@ -1003,6 +1029,24 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         segmentCache.removeAll()
         loadingSegments.removeAll()
         pendingPlaybackRange = nil
+    }
+
+    // MARK: - Background Task
+
+    /// Begins a background task to keep the app alive during segment transitions.
+    /// When audio finishes and the app is in the background, iOS may suspend it before the next segment
+    /// can be downloaded and played. This gives us ~30 seconds to complete the transition.
+    private func beginBackgroundTask() {
+        guard backgroundTaskID == .invalid else { return }
+        backgroundTaskID = UIApplication.shared.beginBackgroundTask(withName: "com.zotero.speech.segmentTransition") { [weak self] in
+            self?.endBackgroundTask()
+        }
+    }
+
+    private func endBackgroundTask() {
+        guard backgroundTaskID != .invalid else { return }
+        UIApplication.shared.endBackgroundTask(backgroundTaskID)
+        backgroundTaskID = .invalid
     }
 
     // MARK: - Voices
@@ -1165,6 +1209,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     private func handleSpeechFailure(error: Swift.Error) {
         if case Error.endOfPage = error {
             // Reached end of current page, try to go to next page
+            // Background task is still active from audioPlayerDidFinishPlaying, keeping us alive for this transition
             if !delegate.goToNextPageIfAvailable() {
                 finishSpeaking()
             }
@@ -1180,9 +1225,11 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
                 outOfCreditsReason = .quotaExceeded
             }
             updateRemainingTimeDisplay(credits: (standard: 0, premium: 0))
+            endBackgroundTask()
             delegate.state.accept(.outOfCredits(outOfCreditsReason))
         } else {
             DDLogError("RemoteVoiceProcessor: can't download sound - \(error)")
+            endBackgroundTask()
             delegate.state.accept(.stopped)
         }
     }
@@ -1197,8 +1244,11 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
             audioPlayer.play()
             player = audioPlayer
             delegate.state.accept(.speaking)
+            // Audio is now playing, safe to end the background task
+            endBackgroundTask()
         } catch {
             DDLogError("RemoteVoiceProcessor: can't play audio - \(error)")
+            endBackgroundTask()
             delegate.state.accept(.stopped)
         }
     }
@@ -1275,6 +1325,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         pendingPlaybackRange = nil
         shouldReloadOnResume = false
         stopCreditPollTimer()
+        endBackgroundTask()
         delegate.state.accept(.stopped)
     }
 }
@@ -1286,6 +1337,8 @@ extension RemoteVoiceProcessor: AVAudioPlayerDelegate {
             return
         }
 
+        // Keep the app alive while transitioning to the next segment in background
+        beginBackgroundTask()
         let nextStartIndex = speechRange.location + speechRange.length
         startSpeaking(text: text, startIndex: nextStartIndex, voice: voice)
     }
