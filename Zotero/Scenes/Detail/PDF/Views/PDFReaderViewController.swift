@@ -21,6 +21,7 @@ protocol PDFReaderContainerDelegate: AnyObject {
 
     func showSearch(text: String?)
     func speak(glyphs: GlyphSequence, pageIndex: PageIndex)
+    func pageDidAppear(_ pageIndex: PageIndex)
 }
 
 class PDFReaderViewController: UIViewController, ReaderViewController {
@@ -803,6 +804,19 @@ extension PDFReaderViewController {
 extension PDFReaderViewController: PDFReaderContainerDelegate {
     var documentTopOffset: CGFloat {
         documentTop.constant
+    }
+
+    func pageDidAppear(_ pageIndex: PageIndex) {
+        guard let speechManager = accessibilityHandler?.speechManager else { return }
+        // Restore read-aloud highlight if speech is active on this page
+        if let highlight = speechManager.currentReadAloudHighlight, highlight.pageIndex == pageIndex {
+            documentController?.updateReadAloudHighlight(text: highlight.text, page: pageIndex)
+        }
+        // Restore annotation preview if highlight session is active on this page
+        let sessionManager = speechManager.highlightSessionManager
+        if let session = sessionManager.session, session.pageIndex == pageIndex, let text = sessionManager.currentText() {
+            documentController?.updateAnnotationPreview(text: text, page: pageIndex, annotationTool: sessionManager.annotationTool, annotationColor: sessionManager.annotationColor)
+        }
     }
 }
 
