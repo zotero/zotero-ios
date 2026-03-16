@@ -26,9 +26,8 @@ protocol AccessibilityViewDelegate: AnyObject {
     func addAccessibilityControlsViewToAnnotationToolbar(view: AnnotationToolbarLeadingView)
     func removeAccessibilityControlsViewFromAnnotationToolbar()
     func clearSpeechHighlight()
-    func showSpeechHighlighterOverlay(_ overlay: SpeechHighlighterOverlayView, isCompact: Bool, speechControlsView: UIView?)
+    func showSpeechHighlighterOverlay(_ overlay: SpeechHighlighterOverlayView, isCompact: Bool, speechControlsView: UIView?, animated: Bool)
     func hideSpeechHighlighterOverlay(_ overlay: SpeechHighlighterOverlayView)
-    func repositionSpeechHighlighterOverlay(_ overlay: SpeechHighlighterOverlayView, isCompact: Bool, speechControlsView: UIView?)
     func updateSpeechHighlightStyle(tool: AnnotationTool, color: String)
 }
 
@@ -209,7 +208,7 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
         newOverlay.onMenuPresented = oldOverlay.onMenuPresented
         newOverlay.onMenuDismissed = oldOverlay.onMenuDismissed
         highlighterOverlay = newOverlay
-        delegate?.repositionSpeechHighlighterOverlay(newOverlay, isCompact: isFormSheet, speechControlsView: activeOverlay)
+        delegate?.showSpeechHighlighterOverlay(newOverlay, isCompact: isFormSheet, speechControlsView: activeOverlay, animated: false)
     }
 
     private func showOverlayIfNeeded(forType type: AccessibilitySpeechControlsView<Delegate>.Kind, state: SpeechState) {
@@ -319,7 +318,7 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
             self?.dismissHighlighterOverlay(confirm: true)
         }
         highlighterOverlay = overlay
-        delegate?.showSpeechHighlighterOverlay(overlay, isCompact: isFormSheet, speechControlsView: activeOverlay)
+        delegate?.showSpeechHighlighterOverlay(overlay, isCompact: isFormSheet, speechControlsView: activeOverlay, animated: true)
     }
 
     private func dismissHighlighterOverlay(confirm: Bool) {
