@@ -46,14 +46,19 @@ final class NowPlayingManager {
 
     /// Activates the Now Playing session and registers for remote command events.
     /// Call this when speech playback starts.
-    func activate() {
+    /// - Parameter title: The document title to display on the lock screen.
+    func activate(title: String? = nil) {
         guard !isActive else { return }
         isActive = true
+
+        if let title {
+            nowPlayingInfo = NowPlayingInfo(title: title, currentText: nil)
+        }
 
         setupAudioSession()
         setupRemoteCommandCenter()
         updateNowPlayingInfo(isPlaying: false)
-        
+
         // Begin receiving remote control events - may be needed for some accessories
         UIApplication.shared.beginReceivingRemoteControlEvents()
 
@@ -170,7 +175,6 @@ final class NowPlayingManager {
             return .success
         }
         commandCenter.skipForwardCommand.isEnabled = true
-        commandCenter.skipForwardCommand.preferredIntervals = [15]
 
         // Skip backward command
         skipBackwardCommandTarget = commandCenter.skipBackwardCommand.addTarget { [weak self] _ in
@@ -178,7 +182,6 @@ final class NowPlayingManager {
             return .success
         }
         commandCenter.skipBackwardCommand.isEnabled = true
-        commandCenter.skipBackwardCommand.preferredIntervals = [15]
 
         // Disable unsupported commands
         commandCenter.changePlaybackRateCommand.isEnabled = false
