@@ -1112,6 +1112,10 @@ extension PDFReaderViewController: ParentWithSidebarController {
 }
 
 extension PDFReaderViewController: SpeechManagerDelegate {
+    var documentTitle: String? {
+        return viewModel.state.title
+    }
+
     func getCurrentPageIndex() -> UInt {
         return documentController?.currentPage ?? 0
     }
