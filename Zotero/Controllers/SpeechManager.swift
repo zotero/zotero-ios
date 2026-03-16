@@ -132,6 +132,13 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     fileprivate var speechRange: NSRange? {
         return speechData?.range
     }
+    /// Returns the current read-aloud highlight paragraph text and page index, if speech is active.
+    var currentReadAloudHighlight: (text: String, pageIndex: Delegate.Index)? {
+        guard let speechData, let pageText = cachedPages[speechData.index] else { return nil }
+        let range = speechData.paragraphRange
+        guard range.length > 0, let textRange = Range(range, in: pageText) else { return nil }
+        return (String(pageText[textRange]), speechData.index)
+    }
 
     init(delegate: Delegate, voiceLanguage: String?, remoteVoiceTier: RemoteVoice.Tier?, remoteVoicesController: RemoteVoicesController) {
         self.delegate = delegate
