@@ -58,6 +58,21 @@ final class SpeechHighlighterOverlayView: UIView {
         updateTextPreviewAppearance()
     }
 
+    // MARK: - Programmatic Updates
+
+    func selectAnnotationTool(_ tool: AnnotationTool) {
+        guard tool != selectedAnnotationTool else { return }
+        applyAnnotationTool(tool)
+    }
+
+    func selectColor(at index: Int) {
+        let colors = availableColors
+        guard index >= 0, index < colors.count else { return }
+        let hex = colors[index]
+        guard hex != selectedColor else { return }
+        applyColor(hex)
+    }
+
     // MARK: - Setup
 
     private func setup(isCompact: Bool) {
@@ -192,6 +207,8 @@ final class SpeechHighlighterOverlayView: UIView {
         return button
     }
 
+    // MARK: - Menu
+
     private func buildMenu() -> UIMenu {
         let toolActions: [UIAction] = [AnnotationTool.highlight, .underline].map { tool in
             UIAction(
@@ -199,35 +216,48 @@ final class SpeechHighlighterOverlayView: UIView {
                 image: tool.image.withRenderingMode(.alwaysTemplate),
                 state: tool == selectedAnnotationTool ? .on : .off
             ) { [weak self] _ in
-                guard let self else { return }
-                selectedAnnotationTool = tool
-                updateColorButtonAppearance()
-                updateTextPreviewAppearance()
-                colorButton?.menu = buildMenu()
-                annotationToolChanged?(tool)
+                self?.applyAnnotationTool(tool)
             }
         }
         let toolSection = UIMenu(title: "", options: .displayInline, children: toolActions)
 
-        let colors = AnnotationsConfig.colors(for: selectedAnnotationTool == .highlight ? .highlight : .underline)
-        let colorActions: [UIAction] = colors.map { hex in
+        let colorActions: [UIAction] = availableColors.map { hex in
             UIAction(
                 title: AnnotationsConfig.colorNames[hex] ?? hex,
                 image: colorSwatchImage(for: hex),
                 state: hex == selectedColor ? .on : .off
             ) { [weak self] _ in
-                guard let self else { return }
-                selectedColor = hex
-                updateColorButtonAppearance()
-                updateTextPreviewAppearance()
-                colorButton?.menu = buildMenu()
-                annotationColorChanged?(hex)
+                self?.applyColor(hex)
             }
         }
         let colorSection = UIMenu(title: "", options: .displayInline, children: colorActions)
 
         return UIMenu(children: [toolSection, colorSection])
     }
+
+    // MARK: - Shared State Updates
+
+    private var availableColors: [String] {
+        AnnotationsConfig.colors(for: selectedAnnotationTool == .highlight ? .highlight : .underline)
+    }
+
+    private func applyAnnotationTool(_ tool: AnnotationTool) {
+        selectedAnnotationTool = tool
+        updateColorButtonAppearance()
+        updateTextPreviewAppearance()
+        colorButton?.menu = buildMenu()
+        annotationToolChanged?(tool)
+    }
+
+    private func applyColor(_ hex: String) {
+        selectedColor = hex
+        updateColorButtonAppearance()
+        updateTextPreviewAppearance()
+        colorButton?.menu = buildMenu()
+        annotationColorChanged?(hex)
+    }
+
+    // MARK: - Appearance
 
     private func updateTextPreviewAppearance() {
         guard let text = textLabel?.text ?? textLabel?.attributedText?.string else { return }
