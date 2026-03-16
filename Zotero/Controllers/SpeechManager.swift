@@ -1340,7 +1340,16 @@ extension RemoteVoiceProcessor: AVAudioPlayerDelegate {
         // Keep the app alive while transitioning to the next segment in background
         beginBackgroundTask()
         let nextStartIndex = speechRange.location + speechRange.length
-        startSpeaking(text: text, startIndex: nextStartIndex, voice: voice)
+
+        let delay = voice.sentenceDelay > 0 ? TimeInterval(voice.sentenceDelay) / (1000.0 * TimeInterval(speechRateModifier)) : 0
+        if delay == 0 {
+            startSpeaking(text: text, startIndex: nextStartIndex, voice: voice)
+        } else {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                guard let self, self.delegate.state.value.isSpeaking || self.delegate.state.value == .loading else { return }
+                self.startSpeaking(text: text, startIndex: nextStartIndex, voice: voice)
+            }
+        }
     }
 
     func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: (any Swift.Error)?) {
