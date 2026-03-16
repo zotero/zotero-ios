@@ -958,6 +958,7 @@
 		B39DBFF32D7EF2C600454486 /* FeatureGates.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39DBFF22D7EF2C600454486 /* FeatureGates.swift */; };
 		B39DBFF42D7EF2C600454486 /* FeatureGates.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39DBFF22D7EF2C600454486 /* FeatureGates.swift */; };
 		B39DBFF62D8036A000454486 /* SpeechManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39DBFF52D80369C00454486 /* SpeechManager.swift */; };
+		39B480FDABABBF2D3FB95CC8 /* DocumentKeyCommandsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A58CEDE963D3EAA101BBCFE /* DocumentKeyCommandsHandler.swift */; };
 		B39E0132283276830091CE4A /* WebViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39E0131283276830091CE4A /* WebViewHandler.swift */; };
 		B39E013328327CAC0091CE4A /* WebViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39E0131283276830091CE4A /* WebViewHandler.swift */; };
 		B39EE32B223A5E3500302E29 /* TestAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39EE32A223A5E3500302E29 /* TestAppDelegate.swift */; };
@@ -2226,6 +2227,7 @@
 		B39D42DE29C0CE7D0035CDA9 /* TagsFlowLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagsFlowLayout.swift; sourceTree = "<group>"; };
 		B39DBFF22D7EF2C600454486 /* FeatureGates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureGates.swift; sourceTree = "<group>"; };
 		B39DBFF52D80369C00454486 /* SpeechManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechManager.swift; sourceTree = "<group>"; };
+		8A58CEDE963D3EAA101BBCFE /* DocumentKeyCommandsHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentKeyCommandsHandler.swift; sourceTree = "<group>"; };
 		B39E0131283276830091CE4A /* WebViewHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewHandler.swift; sourceTree = "<group>"; };
 		B39EE32A223A5E3500302E29 /* TestAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestAppDelegate.swift; sourceTree = "<group>"; };
 		B3A05E94261492150077CCCC /* UpdateCollectionLastUsedDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCollectionLastUsedDbRequest.swift; sourceTree = "<group>"; };
