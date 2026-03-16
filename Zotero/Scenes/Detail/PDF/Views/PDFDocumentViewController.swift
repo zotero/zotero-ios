@@ -807,6 +807,7 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
                 pageView?.zoomView?.setZoomScale(zoomScale, animated: false)
             }
         }
+        parentDelegate?.pageDidAppear(PageIndex(pageIndex))
     }
 
     func pdfViewController(_ pdfController: PDFViewController, shouldShow controller: UIViewController, options: [String: Any]? = nil, animated: Bool) -> Bool {
