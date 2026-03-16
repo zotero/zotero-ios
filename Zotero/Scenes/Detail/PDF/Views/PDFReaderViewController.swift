@@ -66,7 +66,6 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
     }
     private var previousTraitCollection: UITraitCollection?
     private var accessibilityHandler: AccessibilityViewHandler<PDFReaderViewController>?
-    private var speechHighlighterTopOffset: CGFloat = 0
     private weak var speechHighlighterTopConstraint: NSLayoutConstraint?
     var isSidebarVisible: Bool { return sidebarControllerLeft?.constant == 0 }
     var isToolbarVisible: Bool { return toolbarState.visible }
@@ -880,7 +879,7 @@ extension PDFReaderViewController: AnnotationToolbarHandlerDelegate {
         }
 
         speechHighlighterTopConstraint?.constant = baseOffset
-        documentTop.constant = baseOffset + speechHighlighterTopOffset
+        documentTop.constant = baseOffset
     }
 
     func hideSidebarIfNeeded(forPosition position: AnnotationToolbarHandler.State.Position, isToolbarSmallerThanMinWidth: Bool, animated: Bool) {
@@ -1250,104 +1249,53 @@ extension PDFReaderViewController: AccessibilityViewDelegate {
         documentController?.clearAnnotationPreview()
     }
 
-    func showSpeechHighlighterOverlay(_ overlay: SpeechHighlighterOverlayView, isCompact: Bool, speechControlsView: UIView?) {
+    func showSpeechHighlighterOverlay(_ overlay: SpeechHighlighterOverlayView, isCompact: Bool, speechControlsView: UIView?, animated: Bool) {
         view.addSubview(overlay)
-        overlay.alpha = 0
-
-        if isCompact {
-            // iPhone / compact: full width, anchored above the speech controls overlay
-            let bottomAnchor: NSLayoutYAxisAnchor
-            if let speechControlsView, speechControlsView.superview != nil {
-                bottomAnchor = speechControlsView.topAnchor
-            } else {
-                bottomAnchor = view.safeAreaLayoutGuide.bottomAnchor
-            }
-            NSLayoutConstraint.activate([
-                overlay.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-                overlay.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-                overlay.bottomAnchor.constraint(equalTo: bottomAnchor)
-            ])
+        setupSpeechHighlighterOverlayConstraints(overlay, isCompact: isCompact, speechControlsView: speechControlsView)
+        if !animated {
             view.layoutIfNeeded()
-            UIView.animate(withDuration: 0.15, delay: 0, options: .curveEaseOut) {
-                overlay.alpha = 1
-            }
         } else {
-            // iPad / regular: fixed at the current document top position, centered horizontally in the document area.
-            // Anchor to view.topAnchor with the current documentTop offset so the overlay stays fixed when the document moves down.
-            let topOffset = documentTop.constant
-            let documentView = documentController?.view
-            let topConstraint = overlay.topAnchor.constraint(equalTo: view.topAnchor, constant: topOffset)
-            speechHighlighterTopConstraint = topConstraint
-            NSLayoutConstraint.activate([
-                topConstraint,
-                overlay.centerXAnchor.constraint(equalTo: documentView?.centerXAnchor ?? view.centerXAnchor),
-                overlay.widthAnchor.constraint(greaterThanOrEqualToConstant: 320),
-                overlay.widthAnchor.constraint(lessThanOrEqualToConstant: 500)
-            ])
-
-            // Layout to get the overlay height, then push document below it
+            overlay.alpha = 0
             view.layoutIfNeeded()
-            let overlayHeight = overlay.frame.height
-            speechHighlighterTopOffset = overlayHeight
-            documentTop.constant += overlayHeight
             UIView.animate(withDuration: 0.15, delay: 0, options: .curveEaseOut) {
                 overlay.alpha = 1
-                self.view.layoutIfNeeded()
+            }
+        }
+
+        func setupSpeechHighlighterOverlayConstraints(_ overlay: SpeechHighlighterOverlayView, isCompact: Bool, speechControlsView: UIView?) {
+            if isCompact {
+                let bottomAnchor: NSLayoutYAxisAnchor
+                if let speechControlsView, speechControlsView.superview != nil {
+                    bottomAnchor = speechControlsView.topAnchor
+                } else {
+                    bottomAnchor = view.safeAreaLayoutGuide.bottomAnchor
+                }
+                NSLayoutConstraint.activate([
+                    overlay.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+                    overlay.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+                    overlay.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8)
+                ])
+            } else {
+                let topOffset = documentTop.constant + 20
+                let topConstraint = overlay.topAnchor.constraint(equalTo: view.topAnchor, constant: topOffset)
+                speechHighlighterTopConstraint = topConstraint
+                NSLayoutConstraint.activate([
+                    topConstraint,
+                    overlay.centerXAnchor.constraint(equalTo: documentController?.view.centerXAnchor ?? view.centerXAnchor),
+                    overlay.widthAnchor.constraint(greaterThanOrEqualToConstant: 320),
+                    overlay.widthAnchor.constraint(lessThanOrEqualToConstant: 500)
+                ])
             }
         }
     }
 
     func hideSpeechHighlighterOverlay(_ overlay: SpeechHighlighterOverlayView) {
         speechHighlighterTopConstraint = nil
-        let hasTopOffset = speechHighlighterTopOffset > 0
-        if hasTopOffset {
-            documentTop.constant -= speechHighlighterTopOffset
-            speechHighlighterTopOffset = 0
-        }
         UIView.animate(withDuration: 0.15, delay: 0, options: .curveEaseIn, animations: {
             overlay.alpha = 0
-            if hasTopOffset {
-                self.view.layoutIfNeeded()
-            }
         }, completion: { _ in
             overlay.removeFromSuperview()
         })
-    }
-
-    func repositionSpeechHighlighterOverlay(_ overlay: SpeechHighlighterOverlayView, isCompact: Bool, speechControlsView: UIView?) {
-        view.addSubview(overlay)
-
-        if isCompact {
-            let bottomAnchor: NSLayoutYAxisAnchor
-            if let speechControlsView, speechControlsView.superview != nil {
-                bottomAnchor = speechControlsView.topAnchor
-            } else {
-                bottomAnchor = view.safeAreaLayoutGuide.bottomAnchor
-            }
-            NSLayoutConstraint.activate([
-                overlay.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-                overlay.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-                overlay.bottomAnchor.constraint(equalTo: bottomAnchor)
-            ])
-        } else {
-            let topOffset = documentTop.constant
-            let documentView = documentController?.view
-            let topConstraint = overlay.topAnchor.constraint(equalTo: view.topAnchor, constant: topOffset)
-            speechHighlighterTopConstraint = topConstraint
-            NSLayoutConstraint.activate([
-                topConstraint,
-                overlay.centerXAnchor.constraint(equalTo: documentView?.centerXAnchor ?? view.centerXAnchor),
-                overlay.widthAnchor.constraint(greaterThanOrEqualToConstant: 320),
-                overlay.widthAnchor.constraint(lessThanOrEqualToConstant: 500)
-            ])
-
-            view.layoutIfNeeded()
-            let overlayHeight = overlay.frame.height
-            speechHighlighterTopOffset = overlayHeight
-            documentTop.constant += overlayHeight
-        }
-
-        view.layoutIfNeeded()
     }
 
     func updateSpeechHighlightStyle(tool: AnnotationTool, color: String) {
