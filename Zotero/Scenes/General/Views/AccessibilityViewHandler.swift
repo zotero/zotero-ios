@@ -43,6 +43,7 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
 
     private weak var activeOverlay: AccessibilitySpeechControlsView<Delegate>?
     private weak var highlighterOverlay: SpeechHighlighterOverlayView?
+    var isHighlighterOverlayVisible: Bool { highlighterOverlay != nil }
     weak var delegate: AccessibilityViewDelegate?
     var isFormSheet: Bool {
         // Detecting horizontalSizeClass == .compact is not reliable, as the controller can still be shown as formSheet even when horizontalSizeClass is .regular. Therefore the safest way to check
@@ -336,6 +337,16 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
     func confirmActiveHighlightSession() {
         guard highlighterOverlay != nil else { return }
         dismissHighlighterOverlay(confirm: true)
+    }
+
+    func cancelActiveHighlightSession() {
+        guard highlighterOverlay != nil else { return }
+        dismissHighlighterOverlay(confirm: false)
+    }
+
+    func performHighlighterAction(_ action: (SpeechHighlighterOverlayView) -> Void) {
+        guard let overlay = highlighterOverlay else { return }
+        action(overlay)
     }
 
     private func hideOverlay() {
