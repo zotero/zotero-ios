@@ -169,25 +169,13 @@ final class NowPlayingManager {
         }
         commandCenter.previousTrackCommand.isEnabled = true
 
-        // Skip forward command
-        skipForwardCommandTarget = commandCenter.skipForwardCommand.addTarget { [weak self] _ in
-            self?.forwardHandler?()
-            return .success
-        }
-        commandCenter.skipForwardCommand.isEnabled = true
-
-        // Skip backward command
-        skipBackwardCommandTarget = commandCenter.skipBackwardCommand.addTarget { [weak self] _ in
-            self?.backwardHandler?()
-            return .success
-        }
-        commandCenter.skipBackwardCommand.isEnabled = true
-
         // Disable unsupported commands
         commandCenter.changePlaybackRateCommand.isEnabled = false
         commandCenter.seekForwardCommand.isEnabled = false
         commandCenter.seekBackwardCommand.isEnabled = false
         commandCenter.changePlaybackPositionCommand.isEnabled = false
+        commandCenter.skipForwardCommand.isEnabled = false
+        commandCenter.skipBackwardCommand.isEnabled = false
     }
 
     private func removeRemoteCommandHandlers() {
@@ -214,7 +202,6 @@ final class NowPlayingManager {
         if let target = skipBackwardCommandTarget {
             commandCenter.skipBackwardCommand.removeTarget(target)
         }
-
         playCommandTarget = nil
         pauseCommandTarget = nil
         togglePlayPauseCommandTarget = nil
