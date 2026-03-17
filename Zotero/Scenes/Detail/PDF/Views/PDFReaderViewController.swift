@@ -792,7 +792,6 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
         documentViewController.scrollToNextSpread(animated: true)
     }
 
-
     @objc private func undo(_ sender: Any?) {
         performUndo()
     }
