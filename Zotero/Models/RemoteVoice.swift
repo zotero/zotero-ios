@@ -24,7 +24,7 @@ struct RemoteVoice: Equatable {
     let sentenceDelay: Int
     let tier: Tier
 
-    static func ==(lhs: RemoteVoice, rhs: RemoteVoice) -> Bool {
+    static func == (lhs: RemoteVoice, rhs: RemoteVoice) -> Bool {
         return lhs.id == rhs.id
     }
 }
