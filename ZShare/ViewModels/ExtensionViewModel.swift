@@ -1608,7 +1608,7 @@ final class ExtensionViewModel {
 
     private func handleSubmission(error: State.AttachmentState.Error, parentKey: String, libraryId: LibraryIdentifier) {
         switch error {
-        case .quotaLimit:
+        case .apiFailure, .quotaLimit:
             break
 
         default:
