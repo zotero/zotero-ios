@@ -33,8 +33,10 @@ struct ReadAloudOnboardingView: View {
             switch self {
             case .premium:
                 prefix = "accessibility.speech.onboarding.description_premium"
+
             case .standard:
                 prefix = "accessibility.speech.onboarding.description_standard"
+
             case .local:
                 prefix = "accessibility.speech.onboarding.description_local"
             }
