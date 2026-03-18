@@ -18,13 +18,13 @@ struct ReadAloudOnboardingView: View {
         var title: String {
             switch self {
             case .premium:
-                return L10n.Accessibility.Speech.Onboarding.tierPremium
+                return L10n.Speech.Onboarding.tierPremium
                 
             case .standard:
-                return L10n.Accessibility.Speech.Onboarding.tierStandard
+                return L10n.Speech.Onboarding.tierStandard
                 
             case .local:
-                return L10n.Accessibility.Speech.Onboarding.tierLocal
+                return L10n.Speech.Onboarding.tierLocal
             }
         }
         
@@ -47,7 +47,7 @@ struct ReadAloudOnboardingView: View {
                 let key = "\(prefix)_\(index)"
                 let localized = bundle.localizedString(forKey: key, value: nil, table: "Localizable")
                 guard localized != key && !localized.isEmpty else { break }
-                results.append(localized)
+                results.append(localized.replacingAppName.replacingSubscriptionName)
                 index += 1
             }
             return results
@@ -93,7 +93,7 @@ struct ReadAloudOnboardingView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                Text(L10n.Accessibility.Speech.Onboarding.title)
+                Text(L10n.Speech.Onboarding.title)
                     .font(.headline)
                     .padding(.top, 30)
                 
@@ -122,7 +122,7 @@ struct ReadAloudOnboardingView: View {
                     
                     // Voices section
                     if isLoading {
-                        Section(L10n.Accessibility.Speech.voices.uppercased()) {
+                        Section(L10n.Speech.voices.uppercased()) {
                             HStack {
                                 Spacer()
                                 ProgressView()
@@ -131,7 +131,7 @@ struct ReadAloudOnboardingView: View {
                             .padding(.vertical, 20)
                         }
                     } else if loadError {
-                        Section(L10n.Accessibility.Speech.voices.uppercased()) {
+                        Section(L10n.Speech.voices.uppercased()) {
                             VStack(spacing: 16) {
                                 Text(L10n.Errors.Shareext.cantLoadData)
                                     .foregroundColor(.secondary)
@@ -304,9 +304,9 @@ private struct VoicesSection: View {
     private let disposeBag = DisposeBag()
     
     var body: some View {
-        Section(L10n.Accessibility.Speech.voices.uppercased()) {
+        Section(L10n.Speech.voices.uppercased()) {
             if voices.isEmpty {
-                Text(L10n.Accessibility.Speech.noVoicesForTier(Locale.current.localizedString(forIdentifier: language) ?? language))
+                Text(L10n.Speech.noVoicesForTier(Locale.current.localizedString(forIdentifier: language) ?? language))
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity)
@@ -349,7 +349,7 @@ private struct VoicesSection: View {
     private func playSample(for voice: VoiceItem) {
         switch voice {
         case .local(let avVoice):
-            let utterance = AVSpeechUtterance(string: L10n.Accessibility.Speech.localSample(avVoice.name))
+            let utterance = AVSpeechUtterance(string: L10n.Speech.localSample(avVoice.name))
             utterance.voice = avVoice
             synthesizer.speak(utterance)
             

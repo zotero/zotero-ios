@@ -103,7 +103,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
             speechContainer.isHidden = speechManager.state.value.isStopped
 
             let titleLabel = UILabel()
-            titleLabel.text = L10n.Accessibility.Speech.title
+            titleLabel.text = L10n.Speech.title
             titleLabel.font = .preferredFont(forTextStyle: .headline)
 
             let spacer = UIView()
@@ -161,7 +161,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
             speechContainer.addSubview(controlsContainer)
 
             let voiceButton = VoiceButtonView()
-            voiceButton.title = speechManager.voice.flatMap({ voiceTitle(from: $0) }) ?? L10n.Accessibility.Speech.unknownVoice
+            voiceButton.title = speechManager.voice.flatMap({ voiceTitle(from: $0) }) ?? L10n.Speech.unknownVoice
             voiceButton.isEnabled = false
             voiceButton.setContentHuggingPriority(.required, for: .vertical)
             voiceButton.addAction(UIAction(handler: { [weak self] _ in self?.showVoiceOptions() }), for: .touchUpInside)
@@ -209,13 +209,13 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
             readerConfiguration.cornerStyle = .capsule
             readerConfiguration.imagePadding = 12
             readerConfiguration.image = UIImage(systemName: "text.page.fill", withConfiguration: UIImage.SymbolConfiguration(scale: .small))
-            readerConfiguration.attributedTitle = AttributedString(L10n.Accessibility.showReader, attributes: mainButtonsAttributeContainer)
+            readerConfiguration.attributedTitle = AttributedString(L10n.AccessibilityPopup.showReader, attributes: mainButtonsAttributeContainer)
             readerConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 14, leading: 0, bottom: 14, trailing: 0)
             readerConfiguration.baseBackgroundColor = Asset.Colors.zoteroBlueWithDarkMode.color
             readerConfiguration.baseForegroundColor = .white
             let readerButton = UIButton(configuration: readerConfiguration)
             readerButton.translatesAutoresizingMaskIntoConstraints = false
-            readerButton.accessibilityLabel = L10n.Accessibility.showReaderAccessibilityLabel
+            readerButton.accessibilityLabel = L10n.Accessibility.Speech.showReader
             readerButton.setContentCompressionResistancePriority(.required, for: .vertical)
             readerButton.addAction(UIAction(handler: { [weak self] _ in self?.readerAction() }), for: .touchUpInside)
 
@@ -225,14 +225,14 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
             speechConfiguration.cornerStyle = .capsule
             speechConfiguration.imagePadding = 12
             speechConfiguration.image = UIImage(systemName: "headphones", withConfiguration: UIImage.SymbolConfiguration(scale: .small))
-            speechConfiguration.attributedTitle = AttributedString(L10n.Accessibility.showSpeech, attributes: mainButtonsAttributeContainer)
+            speechConfiguration.attributedTitle = AttributedString(L10n.AccessibilityPopup.showSpeech, attributes: mainButtonsAttributeContainer)
             speechConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 14, leading: 0, bottom: 14, trailing: 0)
             speechConfiguration.baseBackgroundColor = .systemGray5
             speechConfiguration.baseForegroundColor = .label
             let speechButton = UIButton(configuration: speechConfiguration)
             speechButton.isHidden = !speechManager.state.value.isStopped
             speechButton.translatesAutoresizingMaskIntoConstraints = false
-            speechButton.accessibilityLabel = L10n.Accessibility.showSpeechAccessibilityLabel
+            speechButton.accessibilityLabel = L10n.Accessibility.Speech.showSpeech
             speechButton.addAction(UIAction(handler: { [weak self] _ in self?.speechManager.start() }), for: .touchUpInside)
             self.speechButton = speechButton
 
@@ -426,7 +426,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
     }
     
     private func updateRemainingTime(_ remainingTime: TimeInterval?) {
-        if voiceButton.title == L10n.Accessibility.Speech.unknownVoice, let voice = speechManager.voice {
+        if voiceButton.title == L10n.Speech.unknownVoice, let voice = speechManager.voice {
             voiceButton.title = voiceTitle(from: voice)
         }
         voiceButton.remainingTime = remainingTime
