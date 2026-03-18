@@ -144,4 +144,12 @@ extension String {
         }
         return str
     }
+
+    var replacingAppName: String {
+        return self.replacingOccurrences(of: "{ -app-name }", with: "Zotero")
+    }
+
+    var replacingSubscriptionName: String {
+        return self.replacingOccurrences(of: "{ -subscription-name }", with: "Zotero Storage")
+    }
 }

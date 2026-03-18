@@ -50,7 +50,7 @@ struct SpeechLanguagePickerView: View {
     var body: some View {
         List {
             Section {
-                Toggle("\(L10n.Accessibility.Speech.automatic) - \(detectedLanguageName)", isOn: $isAutoEnabled)
+                Toggle("\(L10n.Speech.automatic) - \(detectedLanguageName)", isOn: $isAutoEnabled)
                     .tint(Asset.Colors.zoteroBlueWithDarkMode.swiftUIColor)
             }
 

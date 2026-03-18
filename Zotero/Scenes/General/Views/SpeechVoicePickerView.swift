@@ -409,7 +409,7 @@ fileprivate struct LanguageSection: View {
                 Spacer()
                 switch language {
                 case .auto:
-                    Text("\(L10n.Accessibility.Speech.automatic) - \(detectedLanguageName)").foregroundColor(.gray)
+                    Text("\(L10n.Speech.automatic) - \(detectedLanguageName)").foregroundColor(.gray)
 
                 case .language(let code):
                     Text(Locale.current.localizedString(forLanguageCode: code) ?? "Unknown").foregroundColor(.gray)
@@ -456,7 +456,7 @@ fileprivate struct NoVoicesForLanguageSection: View {
 
     var body: some View {
         Section {
-            Text(L10n.Accessibility.Speech.noVoicesForTier(languageName))
+            Text(L10n.Speech.noVoicesForTier(languageName))
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
@@ -482,7 +482,7 @@ fileprivate struct LocalVoicesSection: View {
     }
 
     var body: some View {
-        Section(L10n.Accessibility.Speech.voices.uppercased()) {
+        Section(L10n.Speech.voices.uppercased()) {
             ForEach(voices) { voice in
                 HStack {
                     Text(voice.name)
@@ -509,7 +509,7 @@ fileprivate struct LocalVoicesSection: View {
         if synthetizer.isSpeaking {
             synthetizer.stopSpeaking(at: .immediate)
         }
-        let utterance = AVSpeechUtterance(string: L10n.Accessibility.Speech.localSample(voice.name))
+        let utterance = AVSpeechUtterance(string: L10n.Speech.localSample(voice.name))
         utterance.voice = voice
         synthetizer.speak(utterance)
     }
