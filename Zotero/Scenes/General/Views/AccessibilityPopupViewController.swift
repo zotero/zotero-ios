@@ -28,6 +28,12 @@ protocol AccessibilityPopoupCoordinatorDelegate: AnyObject {
         userInterfaceStyle: UIUserInterfaceStyle,
         selectionChanged: @escaping (AccessibilityPopupVoiceChange) -> Void
     )
+    func showReadAloudOnboarding(
+        from presenter: UIViewController,
+        language: String,
+        userInterfaceStyle: UIUserInterfaceStyle,
+        completion: @escaping (SpeechVoice?) -> Void
+    )
 }
 
 final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: UIViewController, UIPopoverPresentationControllerDelegate {
@@ -89,7 +95,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
         updatePopup(toHeight: currentHeight)
         observeState()
         
-        if speechManager.state.value == .stopped {
+        if speechManager.state.value == .stopped && Defaults.shared.didShowReadAloudOnboarding {
             speechManager.start()
         }
 
@@ -326,6 +332,13 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
         }
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        if speechManager.state.value == .stopped && !Defaults.shared.didShowReadAloudOnboarding {
+            showReadAloudOnboarding()
+        }
+    }
+
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         dismissAction()
@@ -393,6 +406,18 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
     }
 
     // MARK: - Actions
+
+    private func showReadAloudOnboarding() {
+        let language = speechManager.language ?? speechManager.detectedLanguage
+        coordinatorDelegate?.showReadAloudOnboarding(from: self, language: language, userInterfaceStyle: overrideUserInterfaceStyle) { [weak self] selectedVoice in
+            guard let self else { return }
+            if let selectedVoice {
+                Defaults.shared.didShowReadAloudOnboarding = true
+                speechManager.set(voice: selectedVoice, preferredLanguage: nil)
+                speechManager.start()
+            }
+        }
+    }
 
     private func voiceTitle(from voice: SpeechVoice) -> String {
         switch voice {
