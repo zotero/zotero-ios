@@ -276,6 +276,7 @@ final class Defaults {
         underlineColorHex = AnnotationsConfig.defaultActiveColor
         textColorHex = AnnotationsConfig.defaultActiveColor
         pdfSettings = PDFSettings.default
+        didShowReadAloudOnboarding = false
         #endif
     }
 }
