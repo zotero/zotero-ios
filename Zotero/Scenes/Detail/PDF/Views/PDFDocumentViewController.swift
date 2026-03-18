@@ -216,15 +216,16 @@ final class PDFDocumentViewController: UIViewController {
             return
         }
 
+        let container = pageView.annotationContainerView
         if view == nil {
-            let highlightView = SpeechHighlightView(frame: pageView.bounds)
+            let highlightView = SpeechHighlightView(frame: container.bounds)
             highlightView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-            pageView.contentView.addSubview(highlightView)
+            container.addSubview(highlightView)
             view = highlightView
-        } else if view?.superview !== pageView.contentView {
+        } else if view?.superview !== container {
             view?.removeFromSuperview()
-            view?.frame = pageView.bounds
-            pageView.contentView.addSubview(view!)
+            view?.frame = container.bounds
+            container.addSubview(view!)
         }
 
         view?.updateHighlight(pdfFrames: pdfFrames, pageView: pageView, annotationTool: annotationTool, annotationColor: annotationColor)
@@ -1384,7 +1385,6 @@ final class SpeechHighlightView: UIView {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        // Recalculate highlight positions when layout changes (rotation, resize, etc.)
         updateHighlightLayerFrames()
     }
 
@@ -1411,7 +1411,7 @@ final class SpeechHighlightView: UIView {
 
         // Convert PDF frames to view coordinates and create layers
         for pdfFrame in pdfFrames {
-            let viewFrame = pageView.convert(pdfFrame, from: pageView.pdfCoordinateSpace)
+            let viewFrame = self.convert(pdfFrame, from: pageView.pdfCoordinateSpace)
             let highlightLayer = CALayer()
 
             switch annotationTool {
