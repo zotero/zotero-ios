@@ -38,7 +38,6 @@ protocol PdfReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarC
         highlighterAction: @escaping () -> Void,
         voiceChangeAction: @escaping (AccessibilityPopupVoiceChange) -> Void
     )
-    func showReadAloudOnboarding(language: String, userInterfaceStyle: UIUserInterfaceStyle, completion: @escaping (SpeechVoice?) -> Void)
 }
 
 protocol PdfAnnotationsCoordinatorDelegate: ReaderSidebarCoordinatorDelegate {
@@ -287,23 +286,6 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         navigationController?.present(controller, animated: true)
     }
 
-    func showReadAloudOnboarding(language: String, userInterfaceStyle: UIUserInterfaceStyle, completion: @escaping (SpeechVoice?) -> Void) {
-        guard let navigationController else { return }
-        let view = ReadAloudOnboardingView(
-            language: language,
-            remoteVoicesController: remoteVoicesController,
-            dismiss: { selectedVoice in
-                navigationController.dismiss(animated: true) {
-                    completion(selectedVoice)
-                }
-            }
-        )
-        let controller = UIHostingController(rootView: view)
-        controller.overrideUserInterfaceStyle = userInterfaceStyle
-        controller.modalPresentationStyle = .formSheet
-        navigationController.present(controller, animated: true)
-    }
-
     func showAccessibility<Delegate: SpeechManagerDelegate>(
         speechManager: SpeechManager<Delegate>,
         document: Document,
@@ -378,6 +360,22 @@ extension PDFCoordinator: AccessibilityPopoupCoordinatorDelegate {
         } else {
             navigationController.present(controller, animated: true)
         }
+    }
+
+    func showReadAloudOnboarding(from presenter: UIViewController, language: String, userInterfaceStyle: UIUserInterfaceStyle, completion: @escaping (SpeechVoice?) -> Void) {
+        let view = ReadAloudOnboardingView(
+            language: language,
+            remoteVoicesController: remoteVoicesController,
+            dismiss: { selectedVoice in
+                presenter.dismiss(animated: true) {
+                    completion(selectedVoice)
+                }
+            }
+        )
+        let controller = UIHostingController(rootView: view)
+        controller.overrideUserInterfaceStyle = userInterfaceStyle
+        controller.modalPresentationStyle = .formSheet
+        presenter.present(controller, animated: true)
     }
 }
 
