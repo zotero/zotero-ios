@@ -347,8 +347,8 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
             } else {
                 accessibilityButton = UIBarButtonItem(image: Asset.Images.pdfRawReader.image, style: .plain, target: nil, action: nil)
                 accessibilityButton.isEnabled = !viewModel.state.document.isLocked
-                accessibilityButton.accessibilityLabel = L10n.Accessibility.showReader
-                accessibilityButton.title = L10n.Accessibility.showReader
+                accessibilityButton.accessibilityLabel = L10n.Accessibility.Speech.showReader
+                accessibilityButton.title = L10n.AccessibilityPopup.showReader
                 accessibilityButton.rx.tap
                     .subscribe(onNext: { [weak self] _ in
                         guard let self else { return }

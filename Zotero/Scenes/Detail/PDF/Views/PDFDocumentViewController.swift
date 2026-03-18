@@ -941,7 +941,7 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
         func replace(commandMenu menu: UIMenu) -> UIMenuElement? {
             switch menu.identifier {
             case .speech:
-                return UIAction(title: L10n.Accessibility.Speech.speak, image: menu.image) { [weak self] _ in
+                return UIAction(title: L10n.Speech.speak, image: menu.image) { [weak self] _ in
                     self?.parentDelegate?.speak(glyphs: glyphs, pageIndex: pageView.pageIndex)
                 }
                 
