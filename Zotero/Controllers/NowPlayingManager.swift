@@ -215,7 +215,7 @@ final class NowPlayingManager {
 
     private func updateNowPlayingInfo(isPlaying: Bool) {
         var info: [String: Any] = [
-            MPMediaItemPropertyTitle: nowPlayingInfo?.title ?? L10n.Accessibility.Speech.title,
+            MPMediaItemPropertyTitle: nowPlayingInfo?.title ?? L10n.Speech.title,
             MPMediaItemPropertyMediaType: MPMediaType.anyAudio.rawValue,
             MPNowPlayingInfoPropertyPlaybackRate: isPlaying ? 1.0 : 0.0,
             MPNowPlayingInfoPropertyMediaType: MPNowPlayingInfoMediaType.audio.rawValue
