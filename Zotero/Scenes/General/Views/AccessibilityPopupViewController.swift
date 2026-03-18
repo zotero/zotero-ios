@@ -94,10 +94,6 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
         createView()
         updatePopup(toHeight: currentHeight)
         observeState()
-        
-        if speechManager.state.value == .stopped && Defaults.shared.didShowReadAloudOnboarding {
-            speechManager.start()
-        }
 
         func createView() {
             // Speech container
@@ -239,7 +235,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
             speechButton.isHidden = !speechManager.state.value.isStopped
             speechButton.translatesAutoresizingMaskIntoConstraints = false
             speechButton.accessibilityLabel = L10n.Accessibility.Speech.showSpeech
-            speechButton.addAction(UIAction(handler: { [weak self] _ in self?.speechManager.start() }), for: .touchUpInside)
+            speechButton.addAction(UIAction(handler: { [weak self] _ in if let self { readAloud(controller: self) } }), for: .touchUpInside)
             self.speechButton = speechButton
 
             speechButtonBottom = view.safeAreaLayoutGuide.bottomAnchor.constraint(greaterThanOrEqualTo: speechButton.bottomAnchor, constant: 16)
@@ -311,6 +307,14 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
             }
 
             NSLayoutConstraint.activate(toActivate)
+
+            func readAloud(controller: AccessibilityPopupViewController<Delegate>) {
+                if Defaults.shared.didShowReadAloudOnboarding {
+                    controller.speechManager.start()
+                } else {
+                    controller.showReadAloudOnboarding()
+                }
+            }
         }
 
         func observeState() {
@@ -329,13 +333,6 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
                     updateRemainingTime(remainingTime)
                 })
                 .disposed(by: disposeBag)
-        }
-    }
-
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        if speechManager.state.value == .stopped && !Defaults.shared.didShowReadAloudOnboarding {
-            showReadAloudOnboarding()
         }
     }
 
