@@ -403,24 +403,6 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        showReadAloudOnboardingIfNeeded()
-    }
-
-    private func showReadAloudOnboardingIfNeeded() {
-        guard FeatureGates.enabled.contains(.speech),
-              !Defaults.shared.didShowReadAloudOnboarding,
-              !viewModel.state.document.isLocked,
-              let speechManager = accessibilityHandler?.speechManager
-        else { return }
-
-        let language = speechManager.language ?? speechManager.detectedLanguage
-        coordinatorDelegate?.showReadAloudOnboarding(language: language, userInterfaceStyle: overrideUserInterfaceStyle) { [weak self] selectedVoice in
-            guard let self else { return }
-            if let selectedVoice {
-                Defaults.shared.didShowReadAloudOnboarding = true
-                self.accessibilityHandler?.set(initialVoice: selectedVoice)
-            }
-        }
     }
 
     deinit {
