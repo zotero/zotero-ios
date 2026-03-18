@@ -32,13 +32,13 @@ struct ReadAloudOnboardingView: View {
             let prefix: String
             switch self {
             case .premium:
-                prefix = "accessibility.speech.onboarding.description_premium"
+                prefix = "speech.onboarding.description_premium"
 
             case .standard:
-                prefix = "accessibility.speech.onboarding.description_standard"
+                prefix = "speech.onboarding.description_standard"
 
             case .local:
-                prefix = "accessibility.speech.onboarding.description_local"
+                prefix = "speech.onboarding.description_local"
             }
             let bundle = Bundle(for: AppDelegate.self)
             var results: [String] = []
