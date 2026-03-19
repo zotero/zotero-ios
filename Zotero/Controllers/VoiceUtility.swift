@@ -1,5 +1,5 @@
 //
-//  VoiceFinder.swift
+//  VoiceUtility.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 20.02.2026.
@@ -8,9 +8,9 @@
 
 import AVFoundation
 
-/// Utility for finding voices based on language and user preferences.
-/// Centralizes voice lookup logic used by both SpeechManager and SpeechVoicePickerView.
-enum VoiceFinder {
+/// Utility for finding, filtering, grouping voices and building language lists.
+/// Centralizes voice logic used by SpeechManager, SpeechVoicePickerView, and ReadAloudOnboardingView.
+enum VoiceUtility {
     // MARK: - Local Voices
 
     /// Finds a local voice for the given language.
@@ -79,6 +79,75 @@ enum VoiceFinder {
             }
         }
         return result
+    }
+
+    // MARK: - Grouping
+
+    /// Groups remote voices by locale into display groups.
+    static func groupRemoteVoices(locales: [String], tier: RemoteVoice.Tier, baseLanguage: String, response: VoicesResponse) -> [LocaleRemoteVoiceGroup] {
+        locales.compactMap { locale in
+            let voices = remoteVoices(for: locale, tier: tier, fromResponse: response)
+            guard !voices.isEmpty else { return nil }
+            return LocaleRemoteVoiceGroup(locale: locale, displayName: variationName(for: locale, baseLanguage: baseLanguage), voices: voices)
+        }
+    }
+
+    /// Groups local voices by locale into display groups.
+    static func groupLocalVoices(_ voices: [AVSpeechSynthesisVoice], baseLanguage: String) -> [LocaleLocalVoiceGroup] {
+        var localeVoicesMap: [String: [AVSpeechSynthesisVoice]] = [:]
+        for voice in voices {
+            localeVoicesMap[voice.language, default: []].append(voice)
+        }
+        return localeVoicesMap.keys.sorted().compactMap { locale in
+            guard let voices = localeVoicesMap[locale], !voices.isEmpty else { return nil }
+            return LocaleLocalVoiceGroup(locale: locale, displayName: variationName(for: locale, baseLanguage: baseLanguage), voices: voices)
+        }
+    }
+
+    /// Returns all locales for a base language within a given tier.
+    static func remoteLocales(forBaseLanguage base: String, tier: RemoteVoice.Tier, response: VoicesResponse) -> [String] {
+        guard let tierData = response.tiers[tier] else { return [] }
+        var locales: Set<String> = []
+        for data in tierData {
+            for locale in data.locales.keys where String(locale.prefix(while: { $0 != "-" })) == base {
+                locales.insert(locale)
+            }
+        }
+        return locales.sorted()
+    }
+
+    /// Returns all available local languages for the language picker.
+    static func availableLocalLanguages() -> [SpeechLanguagePickerView.Language] {
+        let voices = AVSpeechSynthesisVoice.speechVoices()
+        var languageLocales: [String: Set<String>] = [:]
+        for voice in voices {
+            let baseCode = String(voice.language.prefix(while: { $0 != "-" }))
+            languageLocales[baseCode, default: []].insert(voice.language)
+        }
+        return languageLocales.keys
+            .compactMap { baseCode -> SpeechLanguagePickerView.Language? in
+                guard let name = Locale.current.localizedString(forLanguageCode: baseCode) else { return nil }
+                return SpeechLanguagePickerView.Language(id: baseCode, name: name, locales: languageLocales[baseCode]?.sorted() ?? [])
+            }
+            .sorted(by: { $0.name.caseInsensitiveCompare($1.name) == .orderedAscending })
+    }
+
+    /// Returns all available remote languages for a given tier.
+    static func availableRemoteLanguages(for tier: RemoteVoice.Tier, response: VoicesResponse) -> [SpeechLanguagePickerView.Language] {
+        guard let tierData = response.tiers[tier] else { return [] }
+        var languageLocales: [String: Set<String>] = [:]
+        for data in tierData {
+            for locale in data.locales.keys {
+                let baseCode = String(locale.prefix(while: { $0 != "-" }))
+                languageLocales[baseCode, default: []].insert(locale)
+            }
+        }
+        return languageLocales.keys
+            .compactMap { baseCode -> SpeechLanguagePickerView.Language? in
+                guard let name = Locale.current.localizedString(forLanguageCode: baseCode) else { return nil }
+                return SpeechLanguagePickerView.Language(id: baseCode, name: name, locales: languageLocales[baseCode]?.sorted() ?? [])
+            }
+            .sorted(by: { $0.name.caseInsensitiveCompare($1.name) == .orderedAscending })
     }
 
     // MARK: - Helpers
