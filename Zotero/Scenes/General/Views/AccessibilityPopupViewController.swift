@@ -30,7 +30,8 @@ protocol AccessibilityPopoupCoordinatorDelegate: AnyObject {
     )
     func showReadAloudOnboarding(
         from presenter: UIViewController,
-        language: String,
+        language: String?,
+        detectedLanguage: String,
         userInterfaceStyle: UIUserInterfaceStyle,
         completion: @escaping (SpeechVoice?) -> Void
     )
@@ -405,8 +406,12 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
     // MARK: - Actions
 
     private func showReadAloudOnboarding() {
-        let language = speechManager.language ?? speechManager.detectedLanguage
-        coordinatorDelegate?.showReadAloudOnboarding(from: self, language: language, userInterfaceStyle: overrideUserInterfaceStyle) { [weak self] selectedVoice in
+        coordinatorDelegate?.showReadAloudOnboarding(
+            from: self,
+            language: speechManager.language,
+            detectedLanguage: speechManager.detectedLanguage,
+            userInterfaceStyle: overrideUserInterfaceStyle
+        ) { [weak self] selectedVoice in
             guard let self else { return }
             if let selectedVoice {
                 Defaults.shared.didShowReadAloudOnboarding = true
