@@ -94,11 +94,21 @@ final class AccessibilitySpeechControlsStackView<Delegate: SpeechManagerDelegate
 
     private func update(state: SpeechState) {
         switch state {
+        case .initializing:
+            playButton.isHidden = true
+            pauseButton.isHidden = true
+            activityIndicator.startAnimating()
+            activityIndicator.isHidden = false
+            forwardButton.isEnabled = false
+            backwardButton.isEnabled = false
+
         case .loading:
             playButton.isHidden = true
             pauseButton.isHidden = true
             activityIndicator.startAnimating()
             activityIndicator.isHidden = false
+            forwardButton.isEnabled = true
+            backwardButton.isEnabled = true
 
         case .speaking:
             if activityIndicator.isAnimating {
