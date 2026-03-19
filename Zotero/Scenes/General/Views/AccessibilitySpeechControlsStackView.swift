@@ -20,7 +20,7 @@ final class AccessibilitySpeechControlsStackView<Delegate: SpeechManagerDelegate
     weak var forwardButton: UIButton!
     weak var activityIndicator: UIActivityIndicatorView!
 
-    convenience init(speechManager: SpeechManager<Delegate>) {
+    convenience init(speechManager: SpeechManager<Delegate>, playAction: @escaping () -> Void) {
         let imageConfiguration = UIImage.SymbolConfiguration.init(scale: .large)
 
         var playConfig = UIButton.Configuration.plain()
@@ -57,7 +57,7 @@ final class AccessibilitySpeechControlsStackView<Delegate: SpeechManagerDelegate
         axis = .horizontal
         alignment = .center
         distribution = .fillEqually
-        playButton.addAction(UIAction(handler: { [weak speechManager] _ in playOrResume(speechManager: speechManager) }), for: .touchUpInside)
+        playButton.addAction(UIAction(handler: { _ in playAction() }), for: .touchUpInside)
         pauseButton.addAction(UIAction(handler: { [weak speechManager] _ in speechManager?.pause() }), for: .touchUpInside)
         forwardButton.addAction(UIAction(handler: { [weak speechManager] _ in speechManager?.forward(by: .paragraph) }), for: .touchUpInside)
         backwardButton.addAction(UIAction(handler: { [weak speechManager] _ in speechManager?.backward(by: .paragraph) }), for: .touchUpInside)
@@ -73,15 +73,6 @@ final class AccessibilitySpeechControlsStackView<Delegate: SpeechManagerDelegate
                 self?.update(state: state)
             })
             .disposed(by: disposeBag)
-
-        func playOrResume(speechManager: SpeechManager<Delegate>?) {
-            guard let speechManager else { return }
-            if speechManager.state.value.isPaused {
-                speechManager.resume()
-            } else {
-                speechManager.start()
-            }
-        }
     }
 
     override init(frame: CGRect) {
