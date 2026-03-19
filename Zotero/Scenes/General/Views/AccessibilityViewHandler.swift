@@ -97,7 +97,7 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
                         showSpeech()
                     }
                     
-                case .speaking, .paused, .loading:
+                case .speaking, .paused, .initializing, .loading:
                     showOverlayIfNeeded(forType: currentOverlayType(controller: self), state: state)
                 }
             })
