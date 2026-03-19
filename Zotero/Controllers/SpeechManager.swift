@@ -24,6 +24,7 @@ protocol SpeechManagerDelegate: AnyObject {
     func getPreviousPageIndex(from currentPageIndex: Index) -> Index?
     func text(for indices: [Index], completion: @escaping ([Index: String]?) -> Void)
     func moved(to pageIndex: Index, from previousPageIndex: Index)
+    func focusPage(_ pageIndex: Index)
     /// Called when the highlighted paragraph changes during text-to-speech playback.
     /// The highlight covers the entire paragraph containing the currently spoken sentence.
     /// - Parameters:
@@ -487,11 +488,13 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             if !state.value.isPaused {
                 startSpeaking(at: index, page: currentPage, pageIndex: speechData.index, reportPageChange: false, shouldDetectVoice: false)
             }
+            delegate?.focusPage(speechData.index)
         } else if let nextIndex = delegate?.getNextPageIndex(from: speechData.index), let page = cachedPages[nextIndex] {
             moveTo(index: 0, on: page, pageIndex: nextIndex)
             if !state.value.isPaused {
                 startSpeaking(page: page, pageIndex: nextIndex, reportPageChange: false, shouldDetectVoice: true)
             }
+            delegate?.focusPage(nextIndex)
         } else {
             stop()
         }
@@ -506,11 +509,13 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             if !state.value.isPaused {
                 startSpeaking(at: index, page: currentPage, pageIndex: speechData.index, reportPageChange: false, shouldDetectVoice: false)
             }
+            delegate?.focusPage(speechData.index)
         } else if speechData.range.location != 0 {
             moveTo(index: 0, on: currentPage, pageIndex: speechData.index)
             if !state.value.isPaused {
                 startSpeaking(page: currentPage, pageIndex: speechData.index, reportPageChange: false, shouldDetectVoice: false)
             }
+            delegate?.focusPage(speechData.index)
         } else if let previousIndex = delegate?.getPreviousPageIndex(from: speechData.index),
                   let previousPage = cachedPages[previousIndex],
                   let speechIndex = TextTokenizer.findIndex(ofPreviousWhole: unit, beforeIndex: previousPage.count, in: previousPage) {
@@ -518,6 +523,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             if !state.value.isPaused {
                 startSpeaking(at: speechIndex, page: previousPage, pageIndex: previousIndex, reportPageChange: false, shouldDetectVoice: true)
             }
+            delegate?.focusPage(previousIndex)
         } else {
             stop()
         }
