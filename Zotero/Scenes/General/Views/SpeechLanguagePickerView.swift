@@ -18,17 +18,18 @@ struct SpeechLanguagePickerView: View {
 
     private let languages: [Language]
     private let detectedLanguage: String
-    private let currentLanguage: SpeechVoicePickerView.Language
+    private let currentLanguage: SpeechLanguageChoice
     private let onLanguageSelected: (Language?) -> Void
     @Binding private var navigationPath: NavigationPath
     @State private var isAutoEnabled: Bool
 
     private var detectedLanguageName: String {
-        Locale.current.localizedString(forIdentifier: detectedLanguage) ?? detectedLanguage
+        let baseLanguage = String(detectedLanguage.prefix(while: { $0 != "-" }))
+        return Locale.current.localizedString(forLanguageCode: baseLanguage) ?? detectedLanguage
     }
 
     init(
-        currentLanguage: SpeechVoicePickerView.Language,
+        currentLanguage: SpeechLanguageChoice,
         detectedLanguage: String,
         languages: [Language],
         navigationPath: Binding<NavigationPath>,

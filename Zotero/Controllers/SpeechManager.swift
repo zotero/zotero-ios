@@ -446,7 +446,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                 speechRateModifier: processor.speechRateModifier,
                 delegate: self
             )
-            let voice = VoiceFinder.findLocalVoice(for: language) ?? AVSpeechSynthesisVoice(language: "en-US")!
+            let voice = VoiceUtility.findLocalVoice(for: language) ?? AVSpeechSynthesisVoice(language: "en-US")!
             newProcessor.set(voice: voice, preferredLanguage: processor.preferredLanguage)
             processor = newProcessor
             remainingTime.accept(nil)
@@ -795,7 +795,7 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
 
     private func voice(for text: String) -> AVSpeechSynthesisVoice {
         let language = preferredLanguage ?? LanguageDetector.detectLanguage(from: text)
-        return VoiceFinder.findLocalVoice(for: language) ?? AVSpeechSynthesisVoice(language: "en-US")!
+        return VoiceUtility.findLocalVoice(for: language) ?? AVSpeechSynthesisVoice(language: "en-US")!
     }
     
     private func finishSpeaking() {
@@ -950,7 +950,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     /// Returns the voice and language if successful, nil if no standard voice is available.
     func standardVoice(for language: String) -> RemoteVoice? {
         guard let allAvailableVoices else { return nil }
-        return VoiceFinder.findRemoteVoice(for: language, tier: .standard, response: allAvailableVoices)
+        return VoiceUtility.findRemoteVoice(for: language, tier: .standard, response: allAvailableVoices)
     }
 
     func speak(text: String, startIndex: Int, shouldDetectVoice: Bool) {
@@ -1072,7 +1072,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         func loadVoice(forText text: String, preferredLanguage: String?, tier: RemoteVoice.Tier, allVoices: VoicesResponse) -> Single<RemoteVoice> {
             return Single.create { subscriber in
                 let language = preferredLanguage ?? LanguageDetector.detectLanguage(from: text)
-                if let voice = VoiceFinder.findRemoteVoice(for: language, tier: tier, response: allVoices) ?? allVoices.firstVoice(for: tier) {
+                if let voice = VoiceUtility.findRemoteVoice(for: language, tier: tier, response: allVoices) ?? allVoices.firstVoice(for: tier) {
                     subscriber(.success(voice))
                 } else {
                     subscriber(.failure(Error.missingVoices))
