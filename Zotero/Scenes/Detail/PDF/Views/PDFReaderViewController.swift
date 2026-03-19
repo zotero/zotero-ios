@@ -1068,7 +1068,6 @@ extension PDFReaderViewController: PDFDocumentDelegate {
             // Manual page scrolling and page change due to a link, are differentiated by this heuristic.
             // When a link is tapped, a sequence of page index changes event are triggered, with the final ones maintaining the page index.
             intraDocumentNavigationHandler?.pageChanged((event.oldPageIndex == event.pageIndex) ? .link : .manual)
-            accessibilityHandler?.speechManager.stop()
         }
     }
 
@@ -1197,14 +1196,15 @@ extension PDFReaderViewController: SpeechManagerDelegate {
             .disposed(by: disposeBag)
     }
 
-    func moved(to pageIndex: UInt) {
-        documentController?.focus(page: pageIndex)
+    func moved(to pageIndex: UInt, from previousPageIndex: UInt) {
+        // Only auto-scroll if the user is still viewing the page speech was just on.
+        // If the user manually scrolled away, don't pull them back.
+        if documentController?.currentPage == previousPageIndex {
+            documentController?.focus(page: pageIndex)
+        }
     }
 
     func readAloudHighlightChanged(text: String, pageIndex: UInt) {
-        if documentController?.currentPage != pageIndex {
-            documentController?.focus(page: pageIndex)
-        }
         documentController?.updateReadAloudHighlight(text: text, page: PageIndex(pageIndex))
     }
 
