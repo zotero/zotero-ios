@@ -45,32 +45,36 @@ enum SpeechState: Equatable {
         case quotaExceeded
     }
 
-    case speaking, paused, stopped, loading
+    /// First-time initialization (fetching text, detecting voice). All controls disabled.
+    case initializing
+    /// Loading a new segment after navigation (forward/backward). Navigation controls remain enabled.
+    case loading
+    case speaking, paused, stopped
     case outOfCredits(OutOfCreditsReason)
 
     var isStopped: Bool {
         switch self {
-        case .speaking, .loading, .paused, .outOfCredits:
+        case .speaking, .initializing, .loading, .paused, .outOfCredits:
             return false
 
         case .stopped:
             return true
         }
     }
-    
+
     var isPaused: Bool {
         switch self {
-        case .speaking, .loading, .stopped, .outOfCredits:
+        case .speaking, .initializing, .loading, .stopped, .outOfCredits:
             return false
 
         case .paused:
             return true
         }
     }
-    
+
     var isSpeaking: Bool {
         switch self {
-        case .stopped, .loading, .paused, .outOfCredits:
+        case .stopped, .initializing, .loading, .paused, .outOfCredits:
             return false
 
         case .speaking:
@@ -80,7 +84,7 @@ enum SpeechState: Equatable {
 
     var isOutOfCredits: Bool {
         switch self {
-        case .speaking, .loading, .paused, .stopped:
+        case .speaking, .initializing, .loading, .paused, .stopped:
             return false
 
         case .outOfCredits:
@@ -120,7 +124,6 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     private var processor: VoiceProcessor!
     private var speechData: SpeechData?
     private var cachedPages: [Delegate.Index: String]
-    private var debouncedSpeakWorkItem: DispatchWorkItem?
     let highlightSessionManager: SpeechHighlightSessionManager<SpeechManager<Delegate>>
     var onHighlightSessionTimedOut: (() -> Void)?
     private weak var delegate: Delegate?
@@ -173,7 +176,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                 case .speaking:
                     nowPlayingManager.updatePlaybackState(isPlaying: true)
                     
-                case .paused, .loading:
+                case .paused, .initializing, .loading:
                     nowPlayingManager.updatePlaybackState(isPlaying: false)
 
                 case .outOfCredits(let reason):
@@ -202,7 +205,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             case .speaking:
                 pause()
                 
-            case .loading, .stopped:
+            case .initializing, .loading, .stopped:
                 break
             }
         }
@@ -233,14 +236,14 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             return
         }
 
-        state.accept(.loading)
+        state.accept(.initializing)
         getData(for: [pageIndex], from: delegate) { [weak self] pages in
             guard let self, let pages, let page = pages[pageIndex] else {
                 self?.state.accept(.stopped)
                 return
             }
             cachedPages = pages
-            guard state.value == .loading else { return }
+            guard state.value == .initializing else { return }
             let startIndex = mapStartIndexToPage?(page) ?? 0
             startSpeaking(at: startIndex, page: page, pageIndex: pageIndex, reportPageChange: false, shouldDetectVoice: true)
         }
@@ -471,16 +474,14 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         let currentEndIndex = speechData.range.location + speechData.range.length
         if let index = TextTokenizer.findIndex(ofNext: unit, startingAt: currentEndIndex, in: currentPage) {
             DDLogInfo("SpeechManager: forward to \(index); \(speechData.range.location); \(speechData.range.length)")
-            if state.value.isPaused {
-                moveTo(index: index, on: currentPage, pageIndex: speechData.index)
-            } else {
+            moveTo(index: index, on: currentPage, pageIndex: speechData.index)
+            if !state.value.isPaused {
                 startSpeaking(at: index, page: currentPage, pageIndex: speechData.index, reportPageChange: false, shouldDetectVoice: false)
             }
         } else if let nextIndex = delegate?.getNextPageIndex(from: speechData.index), let page = cachedPages[nextIndex] {
-            if state.value.isPaused {
-                moveTo(index: 0, on: page, pageIndex: nextIndex)
-            } else {
-                startSpeaking(page: currentPage, pageIndex: nextIndex, reportPageChange: true, shouldDetectVoice: true)
+            moveTo(index: 0, on: page, pageIndex: nextIndex)
+            if !state.value.isPaused {
+                startSpeaking(page: page, pageIndex: nextIndex, reportPageChange: false, shouldDetectVoice: true)
             }
         } else {
             stop()
@@ -489,27 +490,24 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
 
     func backward(by unit: NLTokenUnit) {
         guard let speechData, let currentPage = cachedPages[speechData.index] else { return }
-  
+
         if let index = TextTokenizer.findIndex(ofPreviousWhole: unit, beforeIndex: speechData.range.location, in: currentPage) {
             DDLogInfo("SpeechManager: backward to \(index); \(speechData.range.location); \(speechData.range.length)")
-            if state.value.isPaused {
-                moveTo(index: index, on: currentPage, pageIndex: speechData.index)
-            } else {
+            moveTo(index: index, on: currentPage, pageIndex: speechData.index)
+            if !state.value.isPaused {
                 startSpeaking(at: index, page: currentPage, pageIndex: speechData.index, reportPageChange: false, shouldDetectVoice: false)
             }
         } else if speechData.range.location != 0 {
-            if state.value.isPaused {
-                moveTo(index: 0, on: currentPage, pageIndex: speechData.index)
-            } else {
+            moveTo(index: 0, on: currentPage, pageIndex: speechData.index)
+            if !state.value.isPaused {
                 startSpeaking(page: currentPage, pageIndex: speechData.index, reportPageChange: false, shouldDetectVoice: false)
             }
         } else if let previousIndex = delegate?.getPreviousPageIndex(from: speechData.index),
                   let previousPage = cachedPages[previousIndex],
                   let speechIndex = TextTokenizer.findIndex(ofPreviousWhole: unit, beforeIndex: previousPage.count, in: previousPage) {
-            if state.value.isPaused {
-                moveTo(index: speechIndex, on: previousPage, pageIndex: previousIndex)
-            } else {
-                startSpeaking(page: previousPage, pageIndex: previousIndex, reportPageChange: true, shouldDetectVoice: true)
+            moveTo(index: speechIndex, on: previousPage, pageIndex: previousIndex)
+            if !state.value.isPaused {
+                startSpeaking(at: speechIndex, page: previousPage, pageIndex: previousIndex, reportPageChange: false, shouldDetectVoice: true)
             }
         } else {
             stop()
@@ -525,13 +523,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             delegate?.moved(to: pageIndex, from: previousPageIndex)
         }
         cacheAdjacentPages(for: pageIndex)
-        
-        debouncedSpeakWorkItem?.cancel()
-        let workItem = DispatchWorkItem { [weak self] in
-            self?.processor.speak(text: page, startIndex: index, shouldDetectVoice: shouldDetectVoice)
-        }
-        debouncedSpeakWorkItem = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: workItem)
+        processor.speak(text: page, startIndex: index, shouldDetectVoice: shouldDetectVoice)
     }
     
     /// Moves the current speech position without starting playback.
@@ -757,8 +749,8 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
     }
 
     func stop() {
-        guard synthesizer.isSpeaking || synthesizer.isPaused || delegate.state.value == .loading else { return }
-        if delegate.state.value == .loading {
+        guard synthesizer.isSpeaking || synthesizer.isPaused || delegate.state.value == .initializing else { return }
+        if delegate.state.value == .initializing {
             finishSpeaking()
         } else {
             // Ignore finish delegate, which would move us to another page
@@ -897,6 +889,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     /// Range that should start playing as soon as it's loaded (when waiting for an in-progress preload)
     private var pendingPlaybackRange: NSRange?
     private var shouldReloadOnResume = false
+    private var debouncedSpeakWorkItem: DispatchWorkItem?
     private var creditPollTimer: Timer?
     /// Background task identifier to keep the app alive during segment transitions
     private var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
@@ -956,7 +949,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     }
 
     func speak(text: String, startIndex: Int, shouldDetectVoice: Bool) {
-        // Clear preload cache if text changed (new page) or skipping within same text (forward/backward)
+        // Immediate: stop current playback and update state
         if self.text != text || startIndex != 0 {
             stopPreloadingAndClearCache()
         }
@@ -966,7 +959,30 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         }
         player = nil
         disposeBag = DisposeBag()
+        debouncedSpeakWorkItem?.cancel()
+        debouncedSpeakWorkItem = nil
 
+        // Start .loading state unless we're already .initializing
+        if delegate.state.value != .initializing {
+            delegate.state.accept(.loading)
+        }
+
+        // If voice is not known, start loading immediately so that there is no unnecessary delay
+        if voice == nil && !shouldDetectVoice {
+            loadVoiceAndStartSpeaking(text: text, startIndex: startIndex, shouldDetectVoice: shouldDetectVoice)
+            return
+        }
+
+        // Debounce voice loading and segment download so rapid forward/backward taps don't trigger multiple network requests
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            self.loadVoiceAndStartSpeaking(text: text, startIndex: startIndex, shouldDetectVoice: shouldDetectVoice)
+        }
+        debouncedSpeakWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: workItem)
+    }
+
+    private func loadVoiceAndStartSpeaking(text: String, startIndex: Int, shouldDetectVoice: Bool) {
         let getVoice: Single<RemoteVoice>
         if let voice, !shouldDetectVoice {
             getVoice = Single.just(voice)
@@ -988,6 +1004,8 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     }
 
     func pause() {
+        debouncedSpeakWorkItem?.cancel()
+        debouncedSpeakWorkItem = nil
         guard player?.isPlaying == true else { return }
         player?.pause()
         stopCreditPollTimer()
@@ -1070,7 +1088,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
             .do(onSuccess: { [weak self] voice in
                 self?.voice = voice
             })
-        
+
         func loadVoice(forText text: String, preferredLanguage: String?, tier: RemoteVoice.Tier, allVoices: VoicesResponse) -> Single<RemoteVoice> {
             return Single.create { subscriber in
                 let language = preferredLanguage ?? LanguageDetector.detectLanguage(from: text)
@@ -1092,6 +1110,9 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
             handleSpeechFailure(error: Error.endOfPage)
             return
         }
+
+        // Report the range immediately so the highlight updates without waiting for audio to load
+        delegate.speechRangeWillChange(to: range)
 
         // Check if we already have the segment cached
         if let cachedData = segmentCache[range] {
@@ -1204,7 +1225,6 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     private func handleSpeechSuccess(data: Data, range: NSRange) {
         // Remove this segment from cache since we're now playing it
         segmentCache.removeValue(forKey: range)
-        delegate.speechRangeWillChange(to: range)
         play(data: data)
     }
     
@@ -1319,6 +1339,8 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     }
     
     private func finishSpeaking() {
+        debouncedSpeakWorkItem?.cancel()
+        debouncedSpeakWorkItem = nil
         text = nil
         player?.stop()
         player = nil
