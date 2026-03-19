@@ -42,6 +42,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
     private let speedNumberFormatter: NumberFormatter
     private let disposeBag: DisposeBag
     private let readerAction: () -> Void
+    private let playAction: () -> Void
     private let dismissAction: () -> Void
     private let highlighterAction: () -> Void
     private let isFormSheet: () -> Bool
@@ -66,6 +67,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
         speechManager: SpeechManager<Delegate>,
         isFormSheet: @escaping () -> Bool,
         readerAction: @escaping () -> Void,
+        playAction: @escaping () -> Void,
         dismissAction: @escaping () -> Void,
         highlighterAction: @escaping () -> Void,
         voiceChangeAction: @escaping (AccessibilityPopupVoiceChange) -> Void
@@ -73,6 +75,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
         self.speechManager = speechManager
         self.isFormSheet = isFormSheet
         self.readerAction = readerAction
+        self.playAction = playAction
         self.dismissAction = dismissAction
         self.highlighterAction = highlighterAction
         self.voiceChangeAction = voiceChangeAction
@@ -133,7 +136,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
             titleStackView.translatesAutoresizingMaskIntoConstraints = false
             speechContainer.addSubview(titleStackView)
 
-            let controlsView = AccessibilitySpeechControlsStackView(speechManager: speechManager)
+            let controlsView = AccessibilitySpeechControlsStackView(speechManager: speechManager, playAction: playAction)
             controlsView.setContentHuggingPriority(.defaultLow, for: .vertical)
 
             var highlighterConfiguration = UIButton.Configuration.plain()
@@ -311,7 +314,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
 
             func readAloud(controller: AccessibilityPopupViewController<Delegate>) {
                 if Defaults.shared.didShowReadAloudOnboarding {
-                    controller.speechManager.start()
+                    controller.playAction()
                 } else {
                     controller.showReadAloudOnboarding()
                 }
@@ -399,7 +402,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
         if speechManager.state.value.isSpeaking {
             speechManager.pause()
         } else if speechManager.state.value.isPaused {
-            speechManager.resume()
+            playAction()
         }
     }
 
@@ -416,7 +419,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
             if let selectedVoice {
                 Defaults.shared.didShowReadAloudOnboarding = true
                 speechManager.set(voice: selectedVoice, preferredLanguage: nil)
-                speechManager.start()
+                playAction()
             }
         }
     }
