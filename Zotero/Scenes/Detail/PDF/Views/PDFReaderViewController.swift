@@ -1227,6 +1227,7 @@ extension PDFReaderViewController: AccessibilityViewDelegate {
         sender: UIBarButtonItem,
         animated: Bool,
         isFormSheet: @escaping () -> Bool,
+        playAction: @escaping () -> Void,
         dismissAction: @escaping () -> Void,
         highlighterAction: @escaping () -> Void,
         voiceChangeAction: @escaping (AccessibilityPopupVoiceChange) -> Void
@@ -1238,6 +1239,7 @@ extension PDFReaderViewController: AccessibilityViewDelegate {
             sender: sender,
             animated: animated,
             isFormSheet: isFormSheet,
+            playAction: playAction,
             dismissAction: dismissAction,
             highlighterAction: highlighterAction,
             voiceChangeAction: voiceChangeAction

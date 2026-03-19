@@ -122,10 +122,17 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     private let nowPlayingManager: NowPlayingManager
     
     private var processor: VoiceProcessor!
-    private var speechData: SpeechData?
+    private var speechData: SpeechData? {
+        didSet {
+            if let speechData {
+                onSpeakingPositionChanged?(speechData.index, speechData.range.location)
+            }
+        }
+    }
     private var cachedPages: [Delegate.Index: String]
     let highlightSessionManager: SpeechHighlightSessionManager<SpeechManager<Delegate>>
     var onHighlightSessionTimedOut: (() -> Void)?
+    var onSpeakingPositionChanged: ((Delegate.Index, Int) -> Void)?
     private weak var delegate: Delegate?
     var voice: SpeechVoice? { processor.speechVoice }
     var language: String? { processor.preferredLanguage }
@@ -137,6 +144,8 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     fileprivate var speechRange: NSRange? {
         return speechData?.range
     }
+    var currentPageIndex: Delegate.Index? { delegate?.getCurrentPageIndex() }
+
     /// Returns the current read-aloud highlight paragraph text and page index, if speech is active.
     var currentReadAloudHighlight: (text: String, pageIndex: Delegate.Index)? {
         guard let speechData, let pageText = cachedPages[speechData.index] else { return nil }
@@ -602,7 +611,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     func speechRangeWillChange(to range: NSRange) {
         guard let speechData else { return }
         guard let pageText = cachedPages[speechData.index] else { return }
-        
+
         // Check if the new range is still within the current paragraph
         if NSLocationInRange(range.location, speechData.paragraphRange) {
             // Still in the same paragraph, just update the speech range

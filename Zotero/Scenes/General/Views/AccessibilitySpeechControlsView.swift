@@ -25,8 +25,8 @@ final class AccessibilitySpeechControlsView<Delegate: SpeechManagerDelegate>: UI
     private weak var remainingTimeClockImageView: UIImageView?
     private let disposeBag = DisposeBag()
 
-    init(type: Kind, speechManager: SpeechManager<Delegate>, settingsAction: (() -> Void)? = nil, highlighterAction: (() -> Void)? = nil) {
-        let controls = AccessibilitySpeechControlsStackView(speechManager: speechManager)
+    init(type: Kind, speechManager: SpeechManager<Delegate>, playAction: @escaping () -> Void, settingsAction: (() -> Void)? = nil, highlighterAction: (() -> Void)? = nil) {
+        let controls = AccessibilitySpeechControlsStackView(speechManager: speechManager, playAction: playAction)
         self.type = type
         controlsView = controls
         super.init(frame: .zero)

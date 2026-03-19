@@ -34,6 +34,7 @@ protocol PdfReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarC
         sender: UIBarButtonItem,
         animated: Bool,
         isFormSheet: @escaping () -> Bool,
+        playAction: @escaping () -> Void,
         dismissAction: @escaping () -> Void,
         highlighterAction: @escaping () -> Void,
         voiceChangeAction: @escaping (AccessibilityPopupVoiceChange) -> Void
@@ -299,6 +300,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         sender: UIBarButtonItem,
         animated: Bool,
         isFormSheet: @escaping () -> Bool,
+        playAction: @escaping () -> Void,
         dismissAction: @escaping () -> Void,
         highlighterAction: @escaping () -> Void,
         voiceChangeAction: @escaping (AccessibilityPopupVoiceChange) -> Void
@@ -313,6 +315,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
             speechManager: speechManager,
             isFormSheet: isFormSheet,
             readerAction: readerAction,
+            playAction: playAction,
             dismissAction: dismissAction,
             highlighterAction: highlighterAction,
             voiceChangeAction: voiceChangeAction

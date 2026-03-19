@@ -18,6 +18,7 @@ protocol AccessibilityViewDelegate: AnyObject {
         sender: UIBarButtonItem,
         animated: Bool,
         isFormSheet: @escaping () -> Bool,
+        playAction: @escaping () -> Void,
         dismissAction: @escaping () -> Void,
         highlighterAction: @escaping () -> Void,
         voiceChangeAction: @escaping (AccessibilityPopupVoiceChange) -> Void
@@ -41,6 +42,9 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
     private let libraryId: LibraryIdentifier
     private let disposeBag: DisposeBag
 
+    /// Stores the last speaking position (page index + character offset) so that speech can resume from where it left off
+    /// when the user returns to the same page. In-memory only, not persisted to disk.
+    private var lastSpeakingPosition: (index: Delegate.Index, characterIndex: Int)?
     private weak var activeOverlay: AccessibilitySpeechControlsView<Delegate>?
     private weak var highlighterOverlay: SpeechHighlighterOverlayView?
     var isHighlighterOverlayVisible: Bool { highlighterOverlay != nil }
@@ -81,7 +85,11 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
             remoteVoiceTier: Defaults.shared.remoteVoiceTier,
             remoteVoicesController: remoteVoicesController
         )
-        
+
+        speechManager.onSpeakingPositionChanged = { [weak self] pageIndex, characterIndex in
+            self?.lastSpeakingPosition = (index: pageIndex, characterIndex: characterIndex)
+        }
+
         speechManager.state
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] state in
@@ -129,6 +137,20 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
         return item
     }
 
+    func startOrResumeSpeech() {
+        if speechManager.state.value.isPaused {
+            speechManager.resume()
+        } else {
+            let startIndex = resolvedStartIndex()
+            speechManager.start(startIndex: startIndex)
+        }
+
+        func resolvedStartIndex() -> Int {
+            guard let lastSpeakingPosition, let currentPage = speechManager.currentPageIndex, lastSpeakingPosition.index == currentPage else { return 0 }
+            return lastSpeakingPosition.characterIndex
+        }
+    }
+
     func showSpeech(sender: UIBarButtonItem? = nil, isCompact: Bool = false, animated: Bool = true) {
         guard let sender = sender ?? viewController.navigationItem.leftBarButtonItems?.first(where: { $0.tag == navbarButtonTag }) else { return }
         hideOverlay()
@@ -138,6 +160,7 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
             sender: sender,
             animated: animated,
             isFormSheet: { [weak self] in self?.isFormSheet ?? false },
+            playAction: { [weak self] in self?.startOrResumeSpeech() },
             dismissAction: { [weak self] in
                 guard let self else { return }
                 showOverlayIfNeeded(forType: currentOverlayType(controller: self), state: speechManager.state.value)
@@ -232,7 +255,8 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
         case .annotationToolbar:
             highlighterAction = nil
         }
-        let overlay = AccessibilitySpeechControlsView(type: type, speechManager: speechManager, settingsAction: settingsAction, highlighterAction: highlighterAction)
+        let playAction: () -> Void = { [weak self] in self?.startOrResumeSpeech() }
+        let overlay = AccessibilitySpeechControlsView(type: type, speechManager: speechManager, playAction: playAction, settingsAction: settingsAction, highlighterAction: highlighterAction)
         activeOverlay = overlay
 
         switch type {
