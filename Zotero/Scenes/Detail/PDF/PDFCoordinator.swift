@@ -361,9 +361,10 @@ extension PDFCoordinator: AccessibilityPopoupCoordinatorDelegate {
         }
     }
 
-    func showReadAloudOnboarding(from presenter: UIViewController, language: String, userInterfaceStyle: UIUserInterfaceStyle, completion: @escaping (SpeechVoice?) -> Void) {
+    func showReadAloudOnboarding(from presenter: UIViewController, language: String?, detectedLanguage: String, userInterfaceStyle: UIUserInterfaceStyle, completion: @escaping (SpeechVoice?) -> Void) {
         let view = ReadAloudOnboardingView(
             language: language,
+            detectedLanguage: detectedLanguage,
             remoteVoicesController: remoteVoicesController,
             dismiss: { selectedVoice in
                 presenter.dismiss(animated: true) {
