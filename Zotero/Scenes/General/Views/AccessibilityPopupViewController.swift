@@ -490,22 +490,29 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
 
         func updateToState() -> (toHide: UIView, toShow: UIView, height: CGFloat)? {
             switch state {
+            case .initializing:
+                voiceButton.isEnabled = false
+                speedButton.isEnabled = false
+                highlighterButton.isEnabled = false
+                return loadingSpeakingContainerState()
+
             case .loading:
-                if voiceButton.isEnabled {
-                    voiceButton.isEnabled = false
-                    speedButton.isEnabled = false
-                    highlighterButton.isEnabled = false
+                if let voice = speechManager.voice {
+                    voiceButton.title = voiceTitle(from: voice)
                 }
+                voiceButton.isEnabled = true
+                speedButton.isEnabled = false
+                highlighterButton.isEnabled = false
                 return loadingSpeakingContainerState()
 
             case .speaking:
-                if !voiceButton.isEnabled, let voice = speechManager.voice {
+                if let voice = speechManager.voice {
                     // TODO: - change title when page changes
                     voiceButton.title = voiceTitle(from: voice)
-                    voiceButton.isEnabled = true
-                    speedButton.isEnabled = true
-                    highlighterButton.isEnabled = true
                 }
+                voiceButton.isEnabled = true
+                speedButton.isEnabled = true
+                highlighterButton.isEnabled = true
                 return loadingSpeakingContainerState()
 
             case .stopped:
