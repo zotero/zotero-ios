@@ -23,7 +23,7 @@ protocol SpeechManagerDelegate: AnyObject {
     func getNextPageIndex(from currentPageIndex: Index) -> Index?
     func getPreviousPageIndex(from currentPageIndex: Index) -> Index?
     func text(for indices: [Index], completion: @escaping ([Index: String]?) -> Void)
-    func moved(to pageIndex: Index)
+    func moved(to pageIndex: Index, from previousPageIndex: Index)
     /// Called when the highlighted paragraph changes during text-to-speech playback.
     /// The highlight covers the entire paragraph containing the currently spoken sentence.
     /// - Parameters:
@@ -517,11 +517,12 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     }
 
     private func startSpeaking(at index: Int = 0, page: String, pageIndex: Delegate.Index, reportPageChange: Bool, shouldDetectVoice: Bool) {
-        if speechData?.index != pageIndex {
+        let previousPageIndex = speechData?.index
+        if previousPageIndex != pageIndex {
             speechData = SpeechData(index: pageIndex, range: NSRange(), paragraphRange: NSRange())
         }
-        if reportPageChange {
-            delegate?.moved(to: pageIndex)
+        if reportPageChange, let previousPageIndex {
+            delegate?.moved(to: pageIndex, from: previousPageIndex)
         }
         cacheAdjacentPages(for: pageIndex)
         
@@ -538,7 +539,8 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     private func moveTo(index: Int, on page: String, pageIndex: Delegate.Index) {
         guard let sentenceData = TextTokenizer.findSentence(startingAt: index, in: page) else { return }
         
-        let pageDidChange = speechData?.index != pageIndex
+        let previousPageIndex = speechData?.index
+        let pageDidChange = previousPageIndex != pageIndex
         let previousParagraphRange = speechData?.paragraphRange
         
         // Check if the new position is still within the current paragraph
@@ -570,8 +572,8 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             delegate?.readAloudHighlightChanged(text: highlightText, pageIndex: pageIndex)
         }
         
-        if pageDidChange {
-            delegate?.moved(to: pageIndex)
+        if pageDidChange, let previousPageIndex {
+            delegate?.moved(to: pageIndex, from: previousPageIndex)
             cacheAdjacentPages(for: pageIndex)
         }
     }
