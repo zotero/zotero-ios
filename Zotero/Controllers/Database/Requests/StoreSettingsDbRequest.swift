@@ -17,21 +17,43 @@ struct StoreSettingsDbRequest: DbRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
-        if let response = self.response.tagColors {
-            self.syncTagColors(tags: response.value, in: database)
+        if let response = response.tagColors {
+            syncTagColors(tags: response.value, in: database)
         }
-        self.syncPages(pages: self.response.pageIndices.indices, in: database)
+
+        // Additional settings should be returned only by user library, just to be sure, let's ignore group sync
+        switch self.libraryId {
+        case .group:
+            return
+
+        case .custom:
+            break
+        }
+
+        syncPages(pages: response.pageIndices.indices, in: database)
+        syncLastReadValues(values: response.lastReadValues.values, in: database)
+    }
+
+    private func syncLastReadValues(values: [LastReadResponse], in database: Realm) {
+        let groupedByLibrary = Dictionary(grouping: values, by: \.libraryId)
+        for (libraryId, responses) in groupedByLibrary {
+            let keys = responses.map(\.key)
+            let valuesByKey = Dictionary(responses.map({ ($0.key, $0.value) }), uniquingKeysWith: { $1 })
+
+            let matchingItems = database.objects(RItem.self).filter(.keys(keys, in: libraryId))
+            for item in matchingItems {
+                item.lastRead = Date(timeIntervalSince1970: Double(valuesByKey[item.key] ?? 0))
+            }
+
+            let otherItems = database.objects(RItem.self).filter(.key(notIn: keys, in: libraryId))
+            for item in otherItems {
+                item.lastRead = nil
+            }
+        }
     }
 
     private func syncPages(pages: [PageIndexResponse], in database: Realm) {
-        // Pages should be returned only by user library, just to be sure, let's ignore group sync
-        switch self.libraryId {
-        case .group: return
-        case .custom: break
-        }
-
         let indices = database.objects(RPageIndex.self).filter(.library(with: self.libraryId))
-
         for index in pages {
             let rIndex: RPageIndex
             if let existing = indices.filter(.key(index.key)).first {

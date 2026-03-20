@@ -31,6 +31,7 @@ extension RItemChanges {
     static let relations = RItemChanges(rawValue: 1 << 7)
     static let rects = RItemChanges(rawValue: 1 << 8)
     static let paths = RItemChanges(rawValue: 1 << 9)
+    static let lastRead = RItemChanges(rawValue: 1 << 10)
 }
 
 final class RItem: Object {
@@ -79,6 +80,8 @@ final class RItem: Object {
     @Persisted var changesSyncPaused: Bool
     /// Date indicating when this item was moved to trash
     @Persisted var trashDate: Date?
+    /// For attachment items only, indicates when attachment has been read / opened
+    @Persisted(indexed: true) var lastRead: Date?
 
     // MARK: - Attachment data
     @Persisted var backendMd5: String

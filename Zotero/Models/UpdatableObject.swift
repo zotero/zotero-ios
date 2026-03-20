@@ -183,6 +183,9 @@ extension RItem: Updatable {
         if changes.contains(.creators) {
             parameters["creators"] = Array(self.creators.sorted(byKeyPath: "orderId").map({ $0.updateParameters }))
         }
+        if changes.contains(.lastRead) && libraryId == .custom(.myLibrary) {
+            parameters["lastRead"] = lastRead?.timeIntervalSince1970 ?? 0
+        }
         if changes.contains(.fields) {
             for field in self.fields.filter("changed = true") {
                 if field.baseKey == FieldKeys.Item.Annotation.position {
@@ -337,6 +340,9 @@ extension RItem: Updatable {
         if !self.relations.isEmpty {
             changes.insert(.relations)
         }
+        if libraryId == .custom(.myLibrary) && lastRead != nil {
+            changes.insert(.lastRead)
+        }
         return changes
     }
 }
@@ -384,4 +390,35 @@ extension RPageIndex: Updatable {
     }
 
     func markAsChanged(in database: Realm) {}
+}
+
+extension RLastReadDate: Updatable {
+    var updateParameters: [String : Any]? {
+        guard let groupKey else { return nil }
+        let libraryPart = "g\(groupKey)"
+        return ["lastPageIndex_\(libraryPart)_\(key)": ["value": date?.timeIntervalSince1970 ?? 0]]
+    }
+
+    var selfOrChildChanged: Bool {
+        return self.isChanged
+    }
+
+    func markAsChanged(in database: Realm) {}
+
+    func deleteChanges(uuids: [String], database: Realm) {
+        guard self.isChanged && !uuids.isEmpty else { return }
+        database.delete(self.changes.filter("identifier in %@", uuids))
+        if changes.isEmpty {
+            // This object is only temporary, meant to push a setting update to backend, we don't use it in the app, so after changes were submitted, we can just get rid of it
+            database.delete(self)
+        } else {
+            changeType = .syncResponse
+        }
+    }
+
+    func deleteAllChanges(database: Realm) {
+        database.delete(self.changes)
+        // This object is only temporary, meant to push a setting update to backend, we don't use it in the app, so after changes were submitted, we can just get rid of it
+        database.delete(self)
+    }
 }

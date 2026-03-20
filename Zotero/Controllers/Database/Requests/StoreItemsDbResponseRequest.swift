@@ -144,6 +144,14 @@ struct StoreItemDbRequest: DbResponseRequest {
         item.changeType = .sync
         item.libraryId = libraryId
 
+        switch libraryId {
+        case .custom(.myLibrary):
+            item.lastRead = response.lastRead
+
+        case .group:
+            break
+        }
+
         let filenameChange = self.syncFields(data: response, item: item, database: database, schemaController: schemaController, dateParser: dateParser)
         self.syncParent(key: response.parentKey, libraryId: libraryId, item: item, database: database)
         self.syncCollections(keys: response.collectionKeys, libraryId: libraryId, item: item, database: database)

@@ -13,23 +13,54 @@ import CocoaLumberjackSwift
 struct SettingsResponse {
     let tagColors: TagColorsResponse?
     let pageIndices: PageIndicesResponse
+    let lastReadValues: LastReadValuesResponse
 
     init(response: Any) throws {
         guard let json = response as? [String: Any] else {
             DDLogError("SettingsResponse: response not dictionary - \(response)")
             throw Parsing.Error.notDictionary
         }
-        self.tagColors = try (json["tagColors"] as? [String: Any]).flatMap({ $0.isEmpty ? nil : $0 }).flatMap({ try TagColorsResponse(response: $0) })
-        self.pageIndices = try PageIndicesResponse(response: json)
+        var indices: [PageIndexResponse] = []
+        var lastReadsValues: [LastReadResponse] = []
+        for (key, value) in json {
+            if let pageIndex = try PageIndexResponse(key: key, data: value) {
+                indices.append(pageIndex)
+            } else if let lastRead = try LastReadResponse(key: key, data: value) {
+                lastReadsValues.append(lastRead)
+            }
+        }
+        pageIndices = PageIndicesResponse(indices: indices)
+        lastReadValues = LastReadValuesResponse(values: lastReadsValues)
+        tagColors = try (json["tagColors"] as? [String: Any]).flatMap({ $0.isEmpty ? nil : $0 }).flatMap({ try TagColorsResponse(response: $0) })
+    }
+}
+
+struct LastReadValuesResponse {
+    let values: [LastReadResponse]
+}
+
+struct LastReadResponse {
+    let key: String
+    let value: Int
+    let libraryId: LibraryIdentifier
+
+    init?(key: String, data: Any) throws {
+        guard key.contains("lastRead") else { return nil }
+        guard let dictionary = data as? [String: Any] else {
+            DDLogError("LastReadResponse: response not dictionary for key \(key) - \(data)")
+            throw Parsing.Error.notDictionary
+        }
+
+        let (key, libraryId) = try SettingKeyParser.parse(key: key)
+
+        self.key = key
+        value = try dictionary.apiGet(key: "value", caller: Self.self)
+        self.libraryId = libraryId
     }
 }
 
 struct PageIndicesResponse {
     let indices: [PageIndexResponse]
-
-    init(response: [String: Any]) throws {
-        self.indices = try response.compactMap({ try PageIndexResponse(key: $0.key, data: $0.value) })
-    }
 }
 
 struct PageIndexResponse {
@@ -45,11 +76,11 @@ struct PageIndexResponse {
             throw Parsing.Error.notDictionary
         }
 
-        let (key, libraryId) = try PageIndexResponse.parse(key: key)
+        let (key, libraryId) = try SettingKeyParser.parse(key: key)
 
         self.key = key
-        self.value = try Self.parseValue(from: dictionary)
-        self.version = try Parsing.parse(key: "version", from: dictionary, caller: Self.self)
+        value = try Self.parseValue(from: dictionary)
+        version = try dictionary.apiGet(key: "version", caller: Self.self)
         self.libraryId = libraryId
     }
 
@@ -64,7 +95,28 @@ struct PageIndexResponse {
         }
         throw Parsing.Error.missingKey("value")
     }
+}
 
+struct TagColorsResponse {
+    let value: [TagColorResponse]
+
+    init(response: [String: Any]) throws {
+        let responses: [[String: Any]] = try response.apiGet(key: "value", caller: Self.self)
+        value = try responses.map({ try TagColorResponse(response: $0) })
+    }
+}
+
+struct TagColorResponse {
+    let name: String
+    let color: String
+
+    init(response: [String: Any]) throws {
+        name = try response.apiGet(key: "name", caller: Self.self)
+        color = try response.apiGet(key: "color", caller: Self.self)
+    }
+}
+
+fileprivate struct SettingKeyParser {
     static func parse(key: String) throws -> (String, LibraryIdentifier) {
         let parts = key.split(separator: "_")
         guard parts.count == 3 else {
@@ -78,7 +130,7 @@ struct PageIndexResponse {
         switch libraryPart[libraryPart.startIndex] {
         case "u":
             libraryId = .custom(.myLibrary)
-            
+
         case "g":
             guard let groupId = Int(libraryPart[libraryPart.index(libraryPart.startIndex, offsetBy: 1)..<libraryPart.endIndex]) else {
                 throw Parsing.Error.incompatibleValue("groupId=\(libraryPart)")
@@ -91,24 +143,5 @@ struct PageIndexResponse {
         }
 
         return (String(parts[2]), libraryId)
-    }
-}
-
-struct TagColorsResponse {
-    let value: [TagColorResponse]
-
-    init(response: [String: Any]) throws {
-        let responses: [[String: Any]] = try Parsing.parse(key: "value", from: response, caller: Self.self)
-        self.value = try responses.map({ try TagColorResponse(response: $0) })
-    }
-}
-
-struct TagColorResponse {
-    let name: String
-    let color: String
-
-    init(response: [String: Any]) throws {
-        self.name = try Parsing.parse(key: "name", from: response, caller: Self.self)
-        self.color = try Parsing.parse(key: "color", from: response, caller: Self.self)
     }
 }

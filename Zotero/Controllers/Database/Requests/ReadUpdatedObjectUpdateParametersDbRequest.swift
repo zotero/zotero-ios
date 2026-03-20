@@ -29,18 +29,22 @@ struct ReadUpdatedSettingsUpdateParametersDbRequest: DbResponseRequest {
             return ReadUpdatedParametersResponse(parameters: [], changeUuids: [:])
 
         case .custom:
-            // Page indices are submitted only for user library, even though they are assigned to groups also.
+            // Page indices and last-read dates are submitted only for user library, even though they are assigned to groups also.
             var parameters: [[String: Any]] = []
             var uuids: [String: [String]] = [:]
-            let changed = database.objects(RPageIndex.self).filter(.changed)
+            let changedIndices = database.objects(RPageIndex.self).filter(.changed)
+            update(parameters: &parameters, uuids: &uuids, forUpdatedObjects: changedIndices)
+            let changedDates = database.objects(RLastReadDate.self).filter(.changed)
+            update(parameters: &parameters, uuids: &uuids, forUpdatedObjects: changedDates)
+            return ReadUpdatedParametersResponse(parameters: parameters, changeUuids: uuids)
+        }
 
-            for object in changed {
+        func update<O: UpdatableObject>(parameters: inout [[String: Any]], uuids: inout [String: [String]], forUpdatedObjects objects: Results<O>) {
+            for object in objects {
                 guard let _parameters = object.updateParameters, let newKey = _parameters.keys.first else { continue }
                 parameters.append(_parameters)
                 uuids[newKey] = object.changes.map({ $0.identifier })
             }
-
-            return ReadUpdatedParametersResponse(parameters: parameters, changeUuids: uuids)
         }
     }
 }

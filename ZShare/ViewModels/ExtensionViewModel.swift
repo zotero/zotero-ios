@@ -1204,7 +1204,8 @@ final class ExtensionViewModel {
                 createdBy: nil,
                 lastModifiedBy: nil,
                 rects: nil,
-                paths: nil
+                paths: nil,
+                lastRead: nil
             )
 
             self.submit(
