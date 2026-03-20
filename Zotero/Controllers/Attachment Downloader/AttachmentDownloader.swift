@@ -798,14 +798,13 @@ final class AttachmentDownloader: NSObject {
                 DDLogError("AttachmentDownloader: could not remove unsuccessful task creation from db - \(error)")
             }
         }
-        startNextDownloadIfPossible()
     }
 
     private func startNextDownloadIfPossible() {
-        guard activeDownloads.count < Self.maxConcurrentDownloads && !queue.isEmpty else { return }
-
-        let enqueuedDownload = queue.removeFirst()
-        startDownloadTask(for: enqueuedDownload.download, downloadTaskTuple: createDownloadTask(from: enqueuedDownload))
+        while activeDownloads.count < Self.maxConcurrentDownloads && !queue.isEmpty {
+            let enqueuedDownload = queue.removeFirst()
+            startDownloadTask(for: enqueuedDownload.download, downloadTaskTuple: createDownloadTask(from: enqueuedDownload))
+        }
     }
 
     private func retryDownload(_ download: Download, after activeDownload: ActiveDownload) {
