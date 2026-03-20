@@ -71,12 +71,13 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
 
     func start(animated: Bool) {
         let username = Defaults.shared.username
-        guard let dbStorage = controllers.userControllers?.dbStorage,
+        guard let userControllers = controllers.userControllers,
               let userId = controllers.sessionController.sessionData?.userId,
               !username.isEmpty,
               let parentNavigationController = parentCoordinator?.navigationController
         else { return }
 
+        let dbStorage = userControllers.dbStorage
         let settings = Defaults.shared.htmlEpubSettings
         let handler = HtmlEpubReaderActionHandler(
             dbStorage: dbStorage,
@@ -84,7 +85,8 @@ final class HtmlEpubCoordinator: ReaderCoordinator {
             htmlAttributedStringConverter: controllers.htmlAttributedStringConverter,
             dateParser: controllers.dateParser,
             fileStorage: controllers.fileStorage,
-            idleTimerController: controllers.idleTimerController
+            idleTimerController: controllers.idleTimerController,
+            lastReadWatcher: userControllers.lastReadWatcher
         )
         let state = HtmlEpubReaderState(
             readerURL: readerURL,

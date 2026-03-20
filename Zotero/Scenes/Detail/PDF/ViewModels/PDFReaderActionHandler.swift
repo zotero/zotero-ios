@@ -88,6 +88,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     private unowned let fileStorage: FileStorage
     private unowned let idleTimerController: IdleTimerController
     private unowned let dateParser: DateParser
+    private unowned let lastReadWatcher: LastReadWatcher
     let backgroundQueue: DispatchQueue
     private let disposeBag: DisposeBag
 
@@ -105,7 +106,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         schemaController: SchemaController,
         fileStorage: FileStorage,
         idleTimerController: IdleTimerController,
-        dateParser: DateParser
+        dateParser: DateParser,
+        lastReadWatcher: LastReadWatcher
     ) {
         self.dbStorage = dbStorage
         self.annotationPreviewController = annotationPreviewController
@@ -115,6 +117,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         self.fileStorage = fileStorage
         self.idleTimerController = idleTimerController
         self.dateParser = dateParser
+        self.lastReadWatcher = lastReadWatcher
         backgroundQueue = DispatchQueue(label: "org.zotero.Zotero.PDFReaderActionHandler.queue", qos: .userInteractive)
         pdfDisposeBag = DisposeBag()
         freeTextAnnotationRotationDebounceDisposeBagByKey = [:]
@@ -516,6 +519,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 state.changes.insert(.visiblePageFromThumbnailList)
             }
         }
+
+        lastReadWatcher.submitAfterDelay(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, date: Date())
 
         let disposeBag = DisposeBag()
         pageDebounceDisposeBag = disposeBag
@@ -1844,6 +1849,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             let endTime = CFAbsoluteTimeGetCurrent()
 
             annotationPreviewController.store(annotations: dbToPdfAnnotations, parentKey: key, libraryId: library.identifier, appearance: appearance)
+            lastReadWatcher.submit(key: key, libraryId: library.identifier, date: Date())
 
             update(viewModel: viewModel) { state in
                 state.library = library

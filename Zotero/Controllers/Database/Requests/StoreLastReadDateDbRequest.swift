@@ -10,6 +10,22 @@ import Foundation
 
 import RealmSwift
 
+struct StoreLastReadDatesDbRequest: DbRequest {
+    struct Data {
+        let key: String
+        let libraryId: LibraryIdentifier
+        let date: Date?
+    }
+
+    let array: [Data]
+
+    var needsWrite: Bool { return true }
+
+    func process(in database: Realm) throws {
+        try array.forEach({ try StoreLastReadDateDbRequest(key: $0.key, libraryId: $0.libraryId, date: $0.date).process(in: database) })
+    }
+}
+
 struct StoreLastReadDateDbRequest: DbRequest {
     let key: String
     let libraryId: LibraryIdentifier

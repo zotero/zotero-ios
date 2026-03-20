@@ -490,6 +490,7 @@
 		B320B7EF2F6D6C3600A759DB /* RLastReadDate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B320B7ED2F6D6C2F00A759DB /* RLastReadDate.swift */; };
 		B320B7F12F6D70D900A759DB /* StoreLastReadDateDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B320B7F02F6D70D300A759DB /* StoreLastReadDateDbRequest.swift */; };
 		B320B7F22F6D70D900A759DB /* StoreLastReadDateDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B320B7F02F6D70D300A759DB /* StoreLastReadDateDbRequest.swift */; };
+		B320B7F42F6D8C6A00A759DB /* LastReadWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = B320B7F32F6D8C6A00A759DB /* LastReadWatcher.swift */; };
 		B32259A227070EBA0047598D /* PDFPlainReaderViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32259A127070EBA0047598D /* PDFPlainReaderViewController.swift */; };
 		B3229FD128C0A07500DAF3B7 /* EditAnnotationRectsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3229FD028C0A07500DAF3B7 /* EditAnnotationRectsDbRequest.swift */; };
 		B3229FD328C0A09200DAF3B7 /* EditAnnotationPathsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3229FD228C0A09200DAF3B7 /* EditAnnotationPathsDbRequest.swift */; };
@@ -1666,6 +1667,7 @@
 		B3202C6B271048FF00485BE4 /* WebDavControllerSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebDavControllerSpec.swift; sourceTree = "<group>"; };
 		B320B7ED2F6D6C2F00A759DB /* RLastReadDate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RLastReadDate.swift; sourceTree = "<group>"; };
 		B320B7F02F6D70D300A759DB /* StoreLastReadDateDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreLastReadDateDbRequest.swift; sourceTree = "<group>"; };
+		B320B7F32F6D8C6A00A759DB /* LastReadWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LastReadWatcher.swift; sourceTree = "<group>"; };
 		B32259A127070EBA0047598D /* PDFPlainReaderViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFPlainReaderViewController.swift; sourceTree = "<group>"; };
 		B3229FD028C0A07500DAF3B7 /* EditAnnotationRectsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditAnnotationRectsDbRequest.swift; sourceTree = "<group>"; };
 		B3229FD228C0A09200DAF3B7 /* EditAnnotationPathsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditAnnotationPathsDbRequest.swift; sourceTree = "<group>"; };
@@ -2652,6 +2654,7 @@
 				B30564B923FC051E003304F2 /* ItemTitleFormatter.swift */,
 				B305648023FC051E003304F2 /* KeyGenerator.swift */,
 				B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */,
+				B320B7F32F6D8C6A00A759DB /* LastReadWatcher.swift */,
 				B305649E23FC051E003304F2 /* Licenses.swift */,
 				B3A17D1827FC33B800322CAD /* LowPowerModeController.swift */,
 				B3C43C1F28589F300007076D /* NotePreviewGenerator.swift */,
@@ -5513,6 +5516,7 @@
 				B3E8FE76271434F200F51458 /* GeneralSettingsView.swift in Sources */,
 				B3329A572B738C5900F17636 /* CitationAuthorContentView.swift in Sources */,
 				B3D59F132A38A69100F6BB7D /* RevertLibraryFilesSyncAction.swift in Sources */,
+				B320B7F42F6D8C6A00A759DB /* LastReadWatcher.swift in Sources */,
 				B30566C323FC051F003304F2 /* SyncObject.swift in Sources */,
 				B325DBAF24375D8D00EFF0F5 /* Conflict.swift in Sources */,
 				B3D84BEA27917BE1005DDD7C /* CreatorTypes.swift in Sources */,
