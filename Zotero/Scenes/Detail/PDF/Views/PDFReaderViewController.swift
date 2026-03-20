@@ -569,7 +569,13 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         }
     }
 
-    func showToolOptions() {
+    func toggleToolOptions() {
+        if let presented = navigationController?.presentedViewController,
+           presented is AnnotationToolOptionsViewController || (presented as? UINavigationController)?.viewControllers.first is AnnotationToolOptionsViewController {
+            presented.dismiss(animated: true)
+            return
+        }
+
         if let annotationToolbarController, !annotationToolbarController.view.isHidden, !annotationToolbarController.colorPickerButton.isHidden {
             showToolOptions(sourceItem: annotationToolbarController.colorPickerButton)
             return

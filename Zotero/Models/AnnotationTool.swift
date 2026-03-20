@@ -91,6 +91,31 @@ enum AnnotationTool: Hashable, Codable {
             return L10n.Accessibility.Pdf.underlineAnnotationTool
         }
     }
+
+    var annotationType: AnnotationType? {
+        switch self {
+        case .ink:
+            return .ink
+
+        case .image:
+            return .image
+
+        case .note:
+            return .note
+
+        case .highlight:
+            return .highlight
+
+        case .eraser:
+            return nil
+
+        case .underline:
+            return .underline
+
+        case .freeText:
+            return  .freeText
+        }
+    }
 }
 
 struct AnnotationToolButton: Codable, Identifiable {
