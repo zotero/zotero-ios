@@ -297,7 +297,7 @@ final class UserControllers {
     let identifierLookupController: IdentifierLookupController
     let pdfWorkerController: PDFWorkerController
     let recognizerController: RecognizerController
-    let webSocketController: WebSocketController
+    let webSocketController: APIWebSocketController
     let fileCleanupController: AttachmentFileCleanupController
     let citationController: CitationController
     let dragDropController: DragDropController
@@ -337,7 +337,7 @@ final class UserControllers {
             syncDelayIntervals: DelayIntervals.sync,
             maxRetryCount: DelayIntervals.retry.count
         )
-        let webSocketController = WebSocketController(dbStorage: dbStorage, lowPowerModeController: controllers.lowPowerModeController)
+        let webSocketController = APIWebSocketController(dbStorage: dbStorage, lowPowerModeController: controllers.lowPowerModeController)
         let fileCleanupController = AttachmentFileCleanupController(fileStorage: controllers.fileStorage, dbStorage: dbStorage)
 
         var isFirstLaunch = false

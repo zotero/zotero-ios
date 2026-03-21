@@ -13,6 +13,7 @@ struct WsResponse {
         case connected = "connected"
         case subscriptionCreated = "subscriptionsCreated"
         case subscriptionDeleted = "subscriptionsDeleted"
+        case loginComplete = "loginComplete"
         case topicAdded = "topicAdded"
         case topicRemoved = "topicRemoved"
         case topicUpdated = "topicUpdated"

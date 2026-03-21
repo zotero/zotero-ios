@@ -650,7 +650,7 @@ extension AppCoordinator: AppOnboardingCoordinatorDelegate {
     func presentLogin() {
         guard let rootViewController = window?.rootViewController else { return }
         let handler = LoginActionHandler(apiClient: controllers.apiClient, sessionController: controllers.sessionController)
-        let controller = LoginViewController(viewModel: ViewModel(initialState: LoginState(), handler: handler))
+        let controller = LoginViewController(viewModel: ViewModel(initialState: LoginState(kind: .session), handler: handler))
         controller.coordinatorDelegate = self
         if UIDevice.current.userInterfaceIdiom == .pad {
             controller.modalPresentationStyle = .formSheet

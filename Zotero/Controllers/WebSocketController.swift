@@ -13,27 +13,27 @@ import RxCocoa
 import RxSwift
 import Starscream
 
-private struct Response {
-    let timer: BackgroundTimer
-    let completion: () -> Void
-
-    static func create(timeout: DispatchTimeInterval, queue: DispatchQueue, completion: @escaping (WebSocketController.Error?) -> Void) -> Response {
-        let timer = BackgroundTimer(timeInterval: timeout, queue: queue)
-        timer.eventHandler = {
-            completion(.timedOut)
-        }
-        timer.resume()
-
-        return Response(timer: timer, completion: {
-            timer.suspend()
-            completion(nil)
-        })
-    }
-}
-
 final class WebSocketController {
-    enum ConnectionState {
-        case disconnected, connecting, subscribing, connected
+    private struct Response {
+        let timer: BackgroundTimer
+        let completion: () -> Void
+
+        static func create(timeout: DispatchTimeInterval, queue: DispatchQueue, completion: @escaping (WebSocketController.Error?) -> Void) -> Response {
+            let timer = BackgroundTimer(timeInterval: timeout, queue: queue)
+            timer.eventHandler = {
+                completion(.timedOut)
+            }
+            timer.resume()
+
+            return Response(timer: timer, completion: {
+                timer.suspend()
+                completion(nil)
+            })
+        }
+    }
+
+    enum ConnectionState: Equatable {
+        case disconnected, connecting, connected
     }
 
     enum Error: Swift.Error {
@@ -42,88 +42,95 @@ final class WebSocketController {
         case notConnected
     }
 
+    fileprivate static let retryIntervals: [Int] = [
+                                                    2, 5, 10, 15, 30,      // first minute
+                                                    60, 60, 60, 60,        // every minute for 4 minutes
+                                                    120, 120, 120, 120,    // every 2 minutes for 8 minutes
+                                                    300, 300,              // every 5 minutes for 10 minutes
+                                                    600,                   // 10 minutes
+                                                    1200,                  // 20 minutes
+                                                    1800, 1800,            // 30 minutes for 1 hour
+                                                    3600, 3600, 3600,      // every hour for 3 hours
+                                                    14400, 14400, 14400,   // every 4 hours for 12 hours
+                                                    86400                  // 1 day
+                                                   ]
+
     private static let completionTimeout: Int = 1500 // miliseconds
     private static let messageTimeout: Int = 30
     private static let disconnectionTimeout: Int = 5
-    private static let retryIntervals: [Int] = [
-                                                2, 5, 10, 15, 30,      // first minute
-                                                60, 60, 60, 60,        // every minute for 4 minutes
-                                                120, 120, 120, 120,    // every 2 minutes for 8 minutes
-                                                300, 300,              // every 5 minutes for 10 minutes
-                                                600,                   // 10 minutes
-                                                1200,                  // 20 minutes
-                                                1800, 1800,            // 30 minutes for 1 hour
-                                                3600, 3600, 3600,      // every hour for 3 hours
-                                                14400, 14400, 14400,   // every 4 hours for 12 hours
-                                                86400                  // 1 day
-                                               ]
+
+    private let queue: DispatchQueue
+    private let queueKey: DispatchSpecificKey<String>
+    private let queueLabel: String
+    fileprivate let messageObservable: PublishSubject<Data>
+    fileprivate private(set) var connectionState: BehaviorRelay<ConnectionState>
 
     private let url: URL
     private let jsonDecoder: JSONDecoder
     private let jsonEncoder: JSONEncoder
-    private let queue: DispatchQueue
     private let scheduler: SerialDispatchQueueScheduler
-    private unowned let lowPowerModeController: LowPowerModeController
-    private unowned let dbStorage: DbStorage
-    let observable: PublishSubject<ChangeWsResponse.Kind>
+    private let lowPowerModeController: LowPowerModeController?
     private let disposeBag: DisposeBag
 
-    private var apiKey: String?
+    private var shouldStayConnected: Bool
+    private var redactedValues: Set<String>
     private var webSocket: WebSocket?
     private var responseListeners: [WsResponse.Event: Response]
-    private(set) var connectionState: BehaviorRelay<ConnectionState>
     private var connectionRetryCount: Int
     private var connectionTimer: BackgroundTimer?
     private var completionAction: (() -> Void)?
     private var completionTimer: BackgroundTimer?
 
-    init(dbStorage: DbStorage, lowPowerModeController: LowPowerModeController) {
-        let queue = DispatchQueue(label: "org.zotero.WebSocketQueue", qos: .userInteractive)
-        self.dbStorage = dbStorage
+    init(lowPowerModeController: LowPowerModeController?) {
+        let uuidString = UUID().uuidString
+        queueLabel = "org.zotero.WebSocketQueue." + uuidString
+        let queue = DispatchQueue(label: queueLabel, qos: .userInteractive)
+        queueKey = DispatchSpecificKey<String>()
+        queue.setSpecific(key: queueKey, value: queueLabel)
         self.lowPowerModeController = lowPowerModeController
-        self.connectionState = BehaviorRelay(value: .disconnected)
-        self.connectionRetryCount = 0
-        self.responseListeners = [:]
-        self.url = URL(string: "wss://stream.zotero.org")!
-        self.jsonDecoder = JSONDecoder()
-        self.jsonEncoder = JSONEncoder()
+        connectionState = BehaviorRelay(value: .disconnected)
+        connectionRetryCount = 0
+        responseListeners = [:]
+        url = URL(string: "wss://stream.zotero.org")!
+        jsonDecoder = JSONDecoder()
+        jsonEncoder = JSONEncoder()
         self.queue = queue
-        self.scheduler = SerialDispatchQueueScheduler(queue: queue, internalSerialQueueName: "org.zotero.WebSocketScheduler")
-        self.observable = PublishSubject()
-        self.disposeBag = DisposeBag()
+        scheduler = SerialDispatchQueueScheduler(queue: queue, internalSerialQueueName: "org.zotero.WebSocketScheduler." + uuidString)
+        messageObservable = PublishSubject()
+        disposeBag = DisposeBag()
+        shouldStayConnected = false
+        redactedValues = []
 
-        lowPowerModeController.observable
-                              .observe(on: self.scheduler)
-                              .subscribe(onNext: { [weak self] isEnabled in
-                                  self?.lowPowerModeChanged(isEnabled: isEnabled)
-                              })
-                              .disposed(by: self.disposeBag)
+        lowPowerModeController?.observable
+            .observe(on: scheduler)
+            .subscribe(onNext: { [weak self] isEnabled in
+                self?.lowPowerModeChanged(isEnabled: isEnabled)
+            })
+            .disposed(by: disposeBag)
     }
 
     // MARK: - Connection
 
-    /// Attempts to connect to server and subscribe with given api key.
-    /// - parameter apiKey: Api key to subscribe with
-    /// - parameter completed: Completion block which is called after successful subscription or after first unsuccessful retry.
-    func connect(apiKey: String, completed: (() -> Void)? = nil) {
-        self.queue.async { [weak self] in
-            self?._connect(apiKey: apiKey, completed: completed)
+    func connect(completed: (() -> Void)? = nil) {
+        perform { [weak self] in
+            self?.connectInternal(completed: completed)
         }
     }
 
-    private func _connect(apiKey: String, completed: (() -> Void)?) {
-        switch self.connectionState.value {
-        case .subscribing, .connected:
-            DDLogWarn("WebSocketController: tried to connect while \(self.connectionState.value)")
+    private func connectInternal(completed: (() -> Void)?) {
+        switch connectionState.value {
+        case .connected:
+            DDLogWarn("WebSocketController: tried to connect while \(connectionState.value)")
             completed?()
             return
 
-        case .connecting, .disconnected: break
+        case .connecting, .disconnected:
+            break
         }
 
-        self.apiKey = apiKey
+        shouldStayConnected = true
 
-        guard !self.lowPowerModeController.lowPowerModeEnabled else {
+        guard lowPowerModeController?.lowPowerModeEnabled != true else {
             completed?()
             return
         }
@@ -131,31 +138,31 @@ final class WebSocketController {
         DDLogInfo("WebSocketController: connect")
 
         // In case a reconnect was scheduled, suspend the timer
-        self.connectionTimer?.suspend()
-        self.connectionTimer = nil
+        connectionTimer?.suspend()
+        connectionTimer = nil
         // Set internal state
-        self.connectionState.accept(.connecting)
+        connectionState.accept(.connecting)
         // Start observing connected message
-        self.createResponse(for: .connected) { [weak self] error in
-            self?.processConnectionResponse(with: error, apiKey: apiKey)
+        createResponse(for: .connected) { [weak self] error in
+            self?.processConnectionResponse(with: error)
         }
         // Setup completion timeout, don't stop previous timer if completed is nil. Reconnect sets completion to nil.
-        if let completed = completed {
-            self.completionAction = completed
+        if let completed {
+            completionAction = completed
 
-            let completionTimer = BackgroundTimer(timeInterval: .milliseconds(WebSocketController.completionTimeout), queue: self.queue)
+            let completionTimer = BackgroundTimer(timeInterval: .milliseconds(WebSocketController.completionTimeout), queue: queue)
             completionTimer.eventHandler = { [weak self] in
-                guard let self = self else { return }
-                self.completionAction?()
-                self.completionAction = nil
+                guard let self else { return }
+                completionAction?()
+                completionAction = nil
                 self.completionTimer = nil
             }
             completionTimer.resume()
             self.completionTimer = completionTimer
         }
         // Start websocket connection
-        let webSocket = WebSocket(request: URLRequest(url: self.url))
-        webSocket.callbackQueue = self.queue
+        let webSocket = WebSocket(request: URLRequest(url: url))
+        webSocket.callbackQueue = queue
         webSocket.respondToPingWithPong = true
         webSocket.onEvent = { [weak self] event in
             self?.handle(event: event)
@@ -164,134 +171,182 @@ final class WebSocketController {
         self.webSocket = webSocket
     }
 
-    /// Processes response of connection or subscription. If no error occured, proceed with subscription or completion block. Otherwise retry connection/subscription as needed.
-    /// - parameter error: Error if any occured after connection/subscription, nil otherwise.
-    /// - parameter apiKey: Api key to subscribe to after successful connection.
-    /// - parameter completed: Completion block called after successful subscription or after first unsuccessful retry.
-    private func processConnectionResponse(with error: Error?, apiKey: String) {
-        if let error = error {
+    /// Processes response of connection. If no error occured, proceed with completion block. Otherwise retry connection as needed.
+    /// - parameter error: Error if any occured after connection, nil otherwise.
+    private func processConnectionResponse(with error: Error?) {
+        if let error {
             DDLogError("WebSocketController: connection error - \(error)")
-            self.retryConnection(apiKey: apiKey)
+            retryConnection()
             return
         }
 
-        switch self.connectionState.value {
+        switch connectionState.value {
         case .connecting:
-            self.connectionState.accept(.subscribing)
-            DDLogInfo("WebSocketController: subscribe")
-            self.subscribe(apiKey: apiKey) { [weak self] error in
-                self?.processConnectionResponse(with: error, apiKey: apiKey)
-            }
+            DDLogInfo("WebSocketController: connected")
 
-        case .subscribing:
-            DDLogInfo("WebSocketController: connected & subscribed")
+            connectionState.accept(.connected)
+            connectionRetryCount = 0
+            connectionTimer?.suspend()
+            connectionTimer = nil
+            completionTimer?.suspend()
+            completionTimer = nil
 
-            self.connectionState.accept(.connected)
-            self.connectionRetryCount = 0
-            self.connectionTimer?.suspend()
-            self.connectionTimer = nil
-            self.completionTimer?.suspend()
-            self.completionTimer = nil
-
-            self.completionAction?()
-            self.completionAction = nil
+            completionAction?()
+            completionAction = nil
 
         case .connected, .disconnected:
-            DDLogWarn("WebSocketController: connection response processed while already \(self.connectionState.value)")
-            self.completionAction?()
-            self.completionAction = nil
+            DDLogWarn("WebSocketController: connection response processed while already \(connectionState.value)")
+            completionAction?()
+            completionAction = nil
         }
-
-        return
     }
 
     /// Retries connection after unsuccessful attempt.
-    private func retryConnection(apiKey: String) {
-        switch self.connectionState.value {
+    private func retryConnection() {
+        switch connectionState.value {
         case .connected, .disconnected:
-            DDLogWarn("WebSocketController: tried to retry connection while already \(self.connectionState.value)")
+            DDLogWarn("WebSocketController: tried to retry connection while already \(connectionState.value)")
             return
 
-        default: break
+        case .connecting:
+            break
         }
 
-        let interval = WebSocketController.retryIntervals[min(self.connectionRetryCount, (WebSocketController.retryIntervals.count - 1))]
-        self.connectionRetryCount += 1
-        DDLogInfo("WebSocketController: schedule retry attempt \(self.connectionRetryCount) interval \(interval)")
+        let interval = WebSocketController.retryIntervals[min(connectionRetryCount, (WebSocketController.retryIntervals.count - 1))]
+        connectionRetryCount += 1
+        DDLogInfo("WebSocketController: schedule retry attempt \(connectionRetryCount) interval \(interval)")
 
-        let timer = BackgroundTimer(timeInterval: .seconds(interval), queue: self.queue)
+        let timer = BackgroundTimer(timeInterval: .seconds(interval), queue: queue)
         timer.eventHandler = { [weak self] in
-            guard let self = self else { return }
-
-            switch self.connectionState.value {
-            case .connecting, .disconnected:
-                self._connect(apiKey: apiKey, completed: nil)
-
-            case .subscribing:
-                self.subscribe(apiKey: apiKey, completion: { [weak self] error in
-                    self?.processConnectionResponse(with: error, apiKey: apiKey)
-                })
-
-            case .connected: break
+            guard let self else { return }
+            guard shouldStayConnected else {
+                connectionTimer = nil
+                return
             }
 
-            self.connectionTimer = nil
+            switch connectionState.value {
+            case .disconnected, .connecting:
+                connectInternal(completed: nil)
+
+            case .connected:
+                break
+            }
+
+            connectionTimer = nil
         }
         timer.resume()
-        self.connectionTimer = timer
+        connectionTimer = timer
     }
 
     /// Reconnects to server after disconnection.
     private func reconnect() {
-        guard self.connectionState.value == .connected else { return }
+        guard connectionState.value == .connected else { return }
 
-        self.connectionState.accept(.disconnected)
+        connectionState.accept(.disconnected)
 
-        guard let apiKey = self.apiKey else {
-            DDLogError("WebSocketController: attempting reconnect, but apiKey is missing")
+        guard shouldStayConnected else {
+            DDLogWarn("WebSocketController: websocket disconnected without reconnect intent")
             return
         }
 
         DDLogInfo("WebSocketController: schedule reconnect")
 
-        let timer = BackgroundTimer(timeInterval: .seconds(WebSocketController.disconnectionTimeout), queue: self.queue)
+        let timer = BackgroundTimer(timeInterval: .seconds(WebSocketController.disconnectionTimeout), queue: queue)
         timer.eventHandler = { [weak self] in
-            self?._connect(apiKey: apiKey, completed: nil)
-            self?.connectionTimer = nil
+            guard let self else { return }
+            connectInternal(completed: nil)
+            connectionTimer = nil
         }
         timer.resume()
-        self.connectionTimer = timer
+        connectionTimer = timer
     }
 
-    /// Unsubscribes from api key if provided and disconnects from server.
-    /// - parameter apiKey: Api key to unsubscribe from. If none is provided, websocket is just disconnected.
-    func disconnect(apiKey: String?) {
-        self.queue.async { [weak self] in
-            guard let self = self, self.connectionState.value != .disconnected else { return }
-
-            if let key = apiKey, self.connectionState.value == .connected {
-                self.unsubscribe(apiKey: key)
-            } else {
-                self.disconnect()
-            }
+    /// Disconnects from server.
+    func disconnect() {
+        perform { [weak self] in
+            guard let self else { return }
+            shouldStayConnected = false
+            disconnectInternal()
         }
     }
 
-    // MARK: - Subscription
-
-    /// Subscribes for changes for given api key.
-    /// - parameter apiKey: Api key to subscribe to.
-    private func subscribe(apiKey: String, completion: @escaping (Error?) -> Void) {
-        self.send(message: SubscribeWsMessage(apiKey: apiKey), responseEvent: .subscriptionCreated, completion: completion)
+    /// Disconnects from websocket and cleans up.
+    private func disconnectInternal() {
+        guard connectionState.value != .disconnected else { return }
+        // Set state to disconnected
+        connectionState.accept(.disconnected)
+        // Reset retry counter
+        connectionRetryCount = 0
+        // Suspend connection timer if connection is in progress
+        connectionTimer?.suspend()
+        connectionTimer = nil
+        // Suspend completion timer if completion exists
+        completionTimer?.suspend()
+        completionTimer = nil
+        // Suspend all response listeners if there are any
+        for (_, response) in responseListeners {
+            response.timer.suspend()
+        }
+        responseListeners = [:]
+        // Disconnect from websocket if connected
+        webSocket?.disconnect()
+        webSocket = nil
     }
 
-    /// Unsubscribes from changes for given api key.
-    /// - parameter apiKey: Api key to unsubscribe from.
-    private func unsubscribe(apiKey: String) {
-        self.send(message: UnsubscribeWsMessage(apiKey: apiKey), responseEvent: .subscriptionDeleted, completion: { [weak self] _ in
-            // If unsubscription was not successful, just disconnect anyway
-            self?.disconnect()
-        })
+    // MARK: - Messaging
+
+    func send<Message: Encodable>(message: Message, responseEvent: WsResponse.Event, completion: @escaping (Error?) -> Void) {
+        perform { [weak self] in
+            self?.sendInternal(message: message, responseEvent: responseEvent, completion: completion)
+        }
+    }
+
+    /// Adds a response listener to queue and sends given message.
+    /// - parameter message: Message to send
+    /// - parameter responseEvent: Event which is a response to this message.
+    /// - parameter completion: Completion block called after response message is received.
+    private func sendInternal<Message: Encodable>(message: Message, responseEvent: WsResponse.Event, completion: @escaping (Error?) -> Void) {
+        guard connectionState.value != .disconnected, let webSocket else {
+            completion(.notConnected)
+            return
+        }
+
+        do {
+            let data = try jsonEncoder.encode(message)
+            let string = String(data: data, encoding: .utf8) ?? ""
+
+            DDLogInfo("WebSocketController: send message - \(redact(logMessage: string))")
+
+            createResponse(for: responseEvent, completion: completion)
+            webSocket.write(string: string)
+        } catch let error {
+            DDLogError("WebSocketController: message error (\(redact(logMessage: "\(message)")) - \(error)")
+            completion(.cantCreateMessage)
+        }
+    }
+
+    fileprivate func setRedactedValues(_ values: Set<String>) {
+        perform { [weak self] in
+            self?.redactedValues = values
+        }
+    }
+
+    fileprivate func perform(_ action: @escaping () -> Void) {
+        if DispatchQueue.getSpecific(key: queueKey) == queueLabel {
+            action()
+        } else {
+            queue.async(execute: action)
+        }
+    }
+
+    fileprivate func createTimer(timeInterval: DispatchTimeInterval, eventHandler: @escaping () -> Void) -> BackgroundTimer {
+        let timer = BackgroundTimer(timeInterval: timeInterval, queue: queue)
+        timer.eventHandler = eventHandler
+        return timer
+    }
+
+    fileprivate func performDbRequest<Request: DbResponseRequest>(_ request: Request, in dbStorage: DbStorage, invalidateRealm: Bool) throws -> Request.Response {
+        try dbStorage.perform(request: request, on: queue, invalidateRealm: invalidateRealm)
     }
 
     // MARK: - Helpers
@@ -299,70 +354,39 @@ final class WebSocketController {
     /// Handles received websocket event.
     /// - parameter event: Websocket event to process.
     private func handle(event: WebSocketEvent) {
-        DDLogInfo("WebSocketController: WS event - \(self.redact(logMessage: "\(event)"))")
+        DDLogInfo("WebSocketController: WS event - \(redact(logMessage: "\(event)"))")
 
         switch event {
         case .ping, .pong, .viabilityChanged, .reconnectSuggested, .connected, .cancelled, .error, .peerClosed:
             break
 
         case .disconnected:
-            self.reconnect()
+            reconnect()
 
         case .binary(let data):
-            self.handle(data: data)
+            handle(data: data)
 
         case .text(let string):
             let data = string.data(using: .utf8) ?? Data()
-            self.handle(data: data)
+            handle(data: data)
         }
     }
 
     /// Handles received data. If response event is registered, appropriate completion block is called. Otherwise the received event is handled.
     private func handle(data: Data) {
         do {
-            let event = try self.jsonDecoder.decode(WsResponse.self, from: data).event
+            let event = try jsonDecoder.decode(WsResponse.self, from: data).event
 
-            if let response = self.responseListeners[event] {
+            if let response = responseListeners[event] {
                 response.completion()
                 return
             }
 
-            DDLogInfo("WebSocketController: handle event - \(self.redact(logMessage: "\(event)"))")
-
-            switch event {
-            case .topicAdded, .topicRemoved, .topicUpdated:
-                guard let changeResponse = (try? self.jsonDecoder.decode(ChangeWsResponse.self, from: data)) else { return }
-                self.publishChangeIfNeeded(response: changeResponse)
-
-            case .connected, .subscriptionCreated, .subscriptionDeleted: break
-            }
+            DDLogInfo("WebSocketController: handle event - \(redact(logMessage: "\(event)"))")
+            messageObservable.on(.next(data))
         } catch let error {
             let message = String(data: data, encoding: .utf8) ?? ""
-            DDLogError("WebSocketController: received unknown message - \(error). Original message: \(self.redact(logMessage: message))")
-        }
-    }
-
-    private func publishChangeIfNeeded(response: ChangeWsResponse) {
-        switch response.type {
-        case .translators:
-            self.observable.on(.next(response.type))
-
-        case .library(let libraryId, let version):
-            guard let version = version else {
-                // If version was not received in message, publish change.
-                self.observable.on(.next(response.type))
-                return
-            }
-
-            // If version was received in message, check whether it's higher than local one.
-
-            do {
-                let localVersion = try self.dbStorage.perform(request: ReadVersionDbRequest(libraryId: libraryId), on: self.queue, invalidateRealm: true)
-                guard localVersion < version else { return }
-                self.observable.on(.next(response.type))
-            } catch let error {
-                DDLogWarn("WebSocketController: can't read version for received message - \(error)")
-            }
+            DDLogError("WebSocketController: received unknown message - \(error). Original message: \(redact(logMessage: message))")
         }
     }
 
@@ -370,85 +394,201 @@ final class WebSocketController {
     /// - parameter event: Event to listen to.
     /// - parameter completion: Completion block to call after event is received.
     private func createResponse(for event: WsResponse.Event, completion: @escaping (Error?) -> Void) {
-        let response = Response.create(timeout: .seconds(WebSocketController.messageTimeout), queue: self.queue, completion: { [weak self] error in
+        let response = Response.create(timeout: .seconds(WebSocketController.messageTimeout), queue: queue, completion: { [weak self] error in
             self?.responseListeners[event] = nil
             completion(error)
         })
-        self.responseListeners[event] = response
-    }
-
-    /// Adds a response listener to queue and sends given message.
-    /// - parameter message: Message to send
-    /// - parameter responseEvent: Event which is a response to this message.
-    /// - parameter completion: Completion block called after response message is received.
-    private func send<Message: Encodable>(message: Message, responseEvent: WsResponse.Event, completion: @escaping (Error?) -> Void) {
-        guard self.connectionState.value != .disconnected, let webSocket = self.webSocket else {
-            completion(.notConnected)
-            return
-        }
-
-        do {
-            let data = try self.jsonEncoder.encode(message)
-            let string = String(data: data, encoding: .utf8) ?? ""
-
-            DDLogInfo("WebSocketController: send message - \(self.redact(logMessage: string))")
-
-            self.createResponse(for: responseEvent, completion: completion)
-            webSocket.write(string: string)
-        } catch let error {
-            DDLogError("WebSocketController: message error (\(self.redact(logMessage: "\(message)")) - \(error)")
-            completion(.cantCreateMessage)
-        }
-    }
-
-    /// Disconnects from websocket and cleans up.
-    private func disconnect() {
-        // Set state to disconnected
-        self.connectionState.accept(.disconnected)
-        // Reset retry counter
-        self.connectionRetryCount = 0
-        // Suspend connection timer if connection is in progress
-        self.connectionTimer?.suspend()
-        self.connectionTimer = nil
-        // Suspend completion timer if completion exists
-        self.completionTimer?.suspend()
-        self.completionTimer = nil
-        // Suspend all response listeners if there are any
-        for (_, response) in self.responseListeners {
-            response.timer.suspend()
-        }
-        self.responseListeners = [:]
-        // Disconnect from websocket if connected
-        self.webSocket?.disconnect()
-        self.webSocket = nil
-        // Clear current api key
-        self.apiKey = nil
+        responseListeners[event] = response
     }
 
     private func redact(logMessage: String) -> String {
-        guard let apiKey = self.apiKey else { return logMessage }
-        return logMessage.replacingOccurrences(of: apiKey, with: "<redacted>")
+        return redactedValues.reduce(logMessage) { partial, value in
+            partial.replacingOccurrences(of: value, with: "<redacted>")
+        }
     }
 
     // MARK: - Low Power Mode
 
     private func lowPowerModeChanged(isEnabled: Bool) {
-        if !isEnabled {
-            guard self.connectionState.value == .disconnected else { return }
+        guard connectionState.value != .disconnected else { return }
+        if isEnabled {
+            disconnectInternal()
+        } else if shouldStayConnected {
+            connectInternal(completed: nil)
+        }
+    }
+}
 
-            if let apiKey = self.apiKey {
-                self._connect(apiKey: apiKey, completed: nil)
+class SubscriptionWebSocketController {
+    private enum SubscriptionState {
+        case disconnected, subscribing, subscribed
+    }
+
+    let transport: WebSocketController
+    private let disposeBag: DisposeBag
+
+    private var subscriptionValue: String?
+    private var subscriptionState: SubscriptionState
+    private var retryCount: Int
+    private var retryTimer: BackgroundTimer?
+    private var completionAction: (() -> Void)?
+
+    init(lowPowerModeController: LowPowerModeController?) {
+        transport = WebSocketController(lowPowerModeController: lowPowerModeController)
+        disposeBag = DisposeBag()
+        subscriptionState = .disconnected
+        retryCount = 0
+
+        transport.connectionState
+            .asObservable()
+            .distinctUntilChanged()
+            .subscribe(onNext: { [weak self] state in
+                self?.connectionStateChanged(to: state)
+            })
+            .disposed(by: disposeBag)
+
+        transport.messageObservable
+            .subscribe(onNext: { [weak self] data in
+                self?.handleTransportData(data)
+            })
+            .disposed(by: disposeBag)
+    }
+
+    func connect(subscriptionValue: String, completed: (() -> Void)? = nil) {
+        transport.perform { [weak self] in
+            guard let self else { return }
+            self.subscriptionValue = subscriptionValue
+            subscriptionState = .disconnected
+            completionAction = completed
+            transport.setRedactedValues([subscriptionValue])
+
+            if transport.connectionState.value == .connected {
+                subscribeIfNeeded()
+                return
             }
 
+            transport.connect()
+        }
+    }
+
+    func disconnect(subscriptionValue: String? = nil) {
+        transport.perform { [weak self] in
+            guard let self else { return }
+
+            completionAction = nil
+            resetRetryState()
+
+            let subscriptionValue = subscriptionValue ?? self.subscriptionValue
+            guard let subscriptionValue, transport.connectionState.value == .connected else {
+                clearSubscription()
+                transport.disconnect()
+                return
+            }
+
+            unsubscribe(from: subscriptionValue) { [weak self] _ in
+                guard let self else { return }
+                clearSubscription()
+                transport.disconnect()
+            }
+        }
+    }
+
+    func handleTransportData(_ data: Data) {}
+
+    var logCategory: String {
+        fatalError("Override logCategory")
+    }
+
+    func subscribe(to subscriptionValue: String, completion: @escaping (WebSocketController.Error?) -> Void) {
+        fatalError("Override subscribe(to:completion:)")
+    }
+
+    func unsubscribe(from subscriptionValue: String, completion: @escaping (WebSocketController.Error?) -> Void) {
+        fatalError("Override unsubscribe(from:completion:)")
+    }
+
+    func didSubscribe() {}
+
+    func performDbRequest<Request: DbResponseRequest>(_ request: Request, in dbStorage: DbStorage, invalidateRealm: Bool) throws -> Request.Response {
+        try transport.performDbRequest(request, in: dbStorage, invalidateRealm: invalidateRealm)
+    }
+
+    private func connectionStateChanged(to state: WebSocketController.ConnectionState) {
+        guard subscriptionValue != nil else { return }
+
+        switch state {
+        case .connected:
+            subscribeIfNeeded()
+
+        case .connecting, .disconnected:
+            subscriptionState = .disconnected
+        }
+    }
+
+    private func subscribeIfNeeded() {
+        guard let subscriptionValue else { return }
+        guard subscriptionState != .subscribing else { return }
+
+        subscriptionState = .subscribing
+        DDLogInfo("\(logCategory): subscribe")
+
+        subscribe(to: subscriptionValue) { [weak self] error in
+            self?.processSubscriptionResponse(with: error)
+        }
+    }
+
+    private func processSubscriptionResponse(with error: WebSocketController.Error?) {
+        if let error {
+            DDLogError("\(logCategory): subscription error - \(error)")
+            subscriptionState = .disconnected
+            retrySubscriptionIfNeeded()
             return
         }
 
-        guard self.connectionState.value != .disconnected else { return }
+        DDLogInfo("\(logCategory): connected & subscribed")
+        subscriptionState = .subscribed
+        resetRetryState()
+        didSubscribe()
+        completionAction?()
+        completionAction = nil
+    }
 
-        if let key = self.apiKey {
-            self.unsubscribe(apiKey: key)
-        } else {
-            self.disconnect()
+    private func retrySubscriptionIfNeeded() {
+        guard subscriptionValue != nil else { return }
+
+        let interval = WebSocketController.retryIntervals[min(retryCount, WebSocketController.retryIntervals.count - 1)]
+        retryCount += 1
+        DDLogInfo("\(logCategory): schedule retry attempt \(retryCount) interval \(interval)")
+
+        let timer = transport.createTimer(timeInterval: .seconds(interval)) { [weak self] in
+            guard let self else { return }
+            defer { retryTimer = nil }
+            guard subscriptionValue != nil else { return }
+
+            switch transport.connectionState.value {
+            case .connected:
+                subscribeIfNeeded()
+
+            case .connecting:
+                break
+
+            case .disconnected:
+                transport.connect()
+            }
         }
+        timer.resume()
+        retryTimer = timer
+    }
+
+    private func resetRetryState() {
+        retryCount = 0
+        retryTimer?.suspend()
+        retryTimer = nil
+    }
+
+    private func clearSubscription() {
+        subscriptionValue = nil
+        subscriptionState = .disconnected
+        transport.setRedactedValues([])
     }
 }

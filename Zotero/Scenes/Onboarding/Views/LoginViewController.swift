@@ -6,6 +6,7 @@
 //  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import SafariServices
 import UIKit
 
 import RxSwift
@@ -28,6 +29,7 @@ final class LoginViewController: UIViewController {
 
     private let viewModel: ViewModel<LoginActionHandler>
     private let disposeBag: DisposeBag
+    private var presentedLoginURL: URL?
 
     weak var coordinatorDelegate: AppLoginCoordinatorDelegate?
 
@@ -46,7 +48,7 @@ final class LoginViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setup()
-        usernameField.becomeFirstResponder()
+        update(state: viewModel.state)
 
         viewModel.stateObservable
             .observe(on: MainScheduler.instance)
@@ -72,6 +74,14 @@ final class LoginViewController: UIViewController {
                 self?.viewModel.process(action: .setPassword(text))
             })
             .disposed(by: disposeBag)
+
+        switch viewModel.state.kind {
+        case .password:
+            usernameField.becomeFirstResponder()
+
+        case .session:
+            viewModel.process(action: .login)
+        }
 
         func setup() {
             // Layout
@@ -104,11 +114,8 @@ final class LoginViewController: UIViewController {
     // MARK: - UI State
 
     private func update(state: LoginState) {
-        if state.isLoading {
-            startLoadingIfNeeded()
-        } else {
-            stopLoadingIfNeeded()
-        }
+        apply(kind: state.kind)
+        applyLoadingState(for: state)
 
         if let error = state.error {
             switch error {
@@ -118,10 +125,40 @@ final class LoginViewController: UIViewController {
             case .invalidPassword:
                 passwordField.becomeFirstResponder()
 
-            case .serverError, .unknown: break
+            case .serverError, .sessionTimedOut, .unknown:
+                break
             }
 
             show(error: error)
+        }
+
+        if state.shouldDismiss {
+            dismiss()
+            return
+        }
+
+        if let loginURL = state.loginURL, presentedLoginURL != loginURL {
+            presentedLoginURL = loginURL
+            let controller = SFSafariViewController(url: loginURL)
+            controller.delegate = self
+            present(controller, animated: true, completion: nil)
+        }
+
+        func apply(kind: LoginState.Kind) {
+            let isPasswordLogin = (kind == .password)
+            usernameField.superview?.superview?.isHidden = !isPasswordLogin
+            forgotPasswordButton.isHidden = !isPasswordLogin
+        }
+
+        func applyLoadingState(for state: LoginState) {
+            if state.isLoading {
+                loginActivityView.startAnimating()
+            } else {
+                loginActivityView.stopAnimating()
+            }
+
+            loginActivityView.isHidden = !state.isLoading
+            loginButton.isHidden = (state.kind == .session) || state.isLoading
         }
     }
 
@@ -129,20 +166,6 @@ final class LoginViewController: UIViewController {
         let controller = UIAlertController(title: L10n.error, message: error.localizedDescription, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
         present(controller, animated: true, completion: nil)
-    }
-
-    private func startLoadingIfNeeded() {
-        guard loginActivityView.isHidden else { return }
-        loginActivityView.startAnimating()
-        loginActivityView.isHidden = false
-        loginButton.isHidden = true
-    }
-
-    private func stopLoadingIfNeeded() {
-        guard !loginActivityView.isHidden else { return }
-        loginActivityView.isHidden = true
-        loginActivityView.stopAnimating()
-        loginButton.isHidden = false
     }
 
     // MARK: - Actions
@@ -156,7 +179,14 @@ final class LoginViewController: UIViewController {
     }
 
     @IBAction private func dismiss() {
-        dismiss(animated: true, completion: nil)
+        viewModel.process(action: .cancelLoginSessionIfNeeded)
+        if presentedViewController != nil {
+            dismiss(animated: true) { [weak self] in
+                self?.dismiss(animated: true, completion: nil)
+            }
+        } else {
+            dismiss(animated: true, completion: nil)
+        }
     }
 
     // MARK: - Helpers
@@ -188,11 +218,19 @@ final class LoginViewController: UIViewController {
 
 extension LoginViewController: UITextFieldDelegate {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        guard viewModel.state.kind == .password else { return true }
+
         if textField == usernameField {
             passwordField.becomeFirstResponder()
         } else {
             viewModel.process(action: .login)
         }
         return true
+    }
+}
+
+extension LoginViewController: SFSafariViewControllerDelegate {
+    func safariViewControllerDidFinish(_ controller: SFSafariViewController) {
+        dismiss()
     }
 }
