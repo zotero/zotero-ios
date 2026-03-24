@@ -192,7 +192,8 @@ struct LoginActionHandler: ViewModelActionHandler {
 
         let disposable = Observable<(CheckLoginSessionResponse, HTTPURLResponse)>
             .merge(statusRequests, timeout)
-            .subscribe(onNext: { response, _ in
+            .subscribe(onNext: { [weak viewModel] response, _ in
+                guard let viewModel else { return }
                 switch response.status {
                 case .pending:
                     break
@@ -211,8 +212,9 @@ struct LoginActionHandler: ViewModelActionHandler {
                     }
                     stopSessionMonitoring(for: token)
                 }
-            }, onError: { error in
+            }, onError: { [weak viewModel] error in
                 DDLogError("LoginActionHandler: could not poll login session - \(error)")
+                guard let viewModel else { return }
                 update(viewModel: viewModel) { state in
                     state.sessionStatus = nil
                     state.error = loginError(from: error, for: .checkSession)
