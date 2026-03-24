@@ -129,7 +129,7 @@ final class LoginViewController: UIViewController {
                 break
             }
 
-            show(error: error)
+            show(error: error, dismissOnCancel: state.kind == .session)
         }
 
         if state.shouldDismiss {
@@ -146,6 +146,7 @@ final class LoginViewController: UIViewController {
 
         func apply(kind: LoginState.Kind) {
             let isPasswordLogin = (kind == .password)
+            closeButton.isHidden = !isPasswordLogin
             usernameField.superview?.superview?.isHidden = !isPasswordLogin
             forgotPasswordButton.isHidden = !isPasswordLogin
         }
@@ -162,10 +163,19 @@ final class LoginViewController: UIViewController {
         }
     }
 
-    private func show(error: LoginError) {
+    private func show(error: LoginError, dismissOnCancel: Bool) {
         let controller = UIAlertController(title: L10n.error, message: error.localizedDescription, preferredStyle: .alert)
-        controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
-        present(controller, animated: true, completion: nil)
+        controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: { [weak self] _ in
+            guard dismissOnCancel else { return }
+            self?.dismiss()
+        }))
+        if presentedViewController != nil {
+            dismiss(animated: true) { [weak self] in
+                self?.present(controller, animated: true)
+            }
+        } else {
+            present(controller, animated: true)
+        }
     }
 
     // MARK: - Actions
