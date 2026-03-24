@@ -43,6 +43,7 @@ struct LastReadResponse {
     let key: String
     let value: Int
     let libraryId: LibraryIdentifier
+    let version: Int
 
     init?(key: String, data: Any) throws {
         guard key.contains("lastRead") else { return nil }
@@ -55,6 +56,7 @@ struct LastReadResponse {
 
         self.key = key
         value = try dictionary.apiGet(key: "value", caller: Self.self)
+        version = try dictionary.apiGet(key: "version", caller: Self.self)
         self.libraryId = libraryId
     }
 }

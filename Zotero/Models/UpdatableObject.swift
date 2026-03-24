@@ -366,16 +366,7 @@ extension RCreator {
 
 extension RPageIndex: Updatable {
     var updateParameters: [String: Any]? {
-        guard let libraryId = self.libraryId else { return nil }
-        
-        let libraryPart: String
-        switch libraryId {
-        case .custom:
-            libraryPart = "u"
-
-        case .group(let groupId):
-            libraryPart = "g\(groupId)"
-        }
+        guard let libraryId else { return nil }
 
         let value: Any
         if let _value = Int(index) {
@@ -386,7 +377,7 @@ extension RPageIndex: Updatable {
             value = index
         }
 
-        return ["lastPageIndex_\(libraryPart)_\(self.key)": ["value": value]]
+        return [SettingKeyParser.uid(fromKey: key, libraryId: libraryId, prefix: "lastPageIndex"): ["value": value]]
     }
 
     var selfOrChildChanged: Bool {
@@ -404,8 +395,7 @@ extension RPageIndex: Updatable {
 extension RLastReadDate: Updatable {
     var updateParameters: [String: Any]? {
         guard let groupKey else { return nil }
-        let libraryPart = "g\(groupKey)"
-        return ["lastRead_\(libraryPart)_\(key)": ["value": Int(date.timeIntervalSince1970)]]
+        return [SettingKeyParser.uid(fromKey: key, libraryId: .group(groupKey), prefix: "lastRead"): ["value": Int(date.timeIntervalSince1970)]]
     }
 
     var selfOrChildChanged: Bool {
@@ -417,22 +407,5 @@ extension RLastReadDate: Updatable {
         self.changeType = .user
         self.deleted = false
         self.version = 0
-    }
-
-    func deleteChanges(uuids: [String], database: Realm) {
-        guard self.isChanged && !uuids.isEmpty else { return }
-        database.delete(self.changes.filter("identifier in %@", uuids))
-        if changes.isEmpty {
-            // This object is only temporary, meant to push a setting update to backend, we don't use it in the app, so after changes were submitted, we can just get rid of it
-            database.delete(self)
-        } else {
-            changeType = .syncResponse
-        }
-    }
-
-    func deleteAllChanges(database: Realm) {
-        database.delete(self.changes)
-        // This object is only temporary, meant to push a setting update to backend, we don't use it in the app, so after changes were submitted, we can just get rid of it
-        database.delete(self)
     }
 }

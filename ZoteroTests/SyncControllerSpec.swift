@@ -674,6 +674,7 @@ final class SyncControllerSpec: QuickSpec {
                             let item = RItem()
                             item.key = unsyncedItemKey
                             item.syncState = .dirty
+                            item.lastSyncDate = Date()
                             item.libraryId = .custom(.myLibrary)
                             realm.add(item)
                         }

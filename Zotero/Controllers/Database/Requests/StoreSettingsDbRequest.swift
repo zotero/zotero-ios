@@ -8,6 +8,7 @@
 
 import Foundation
 
+import CocoaLumberjackSwift
 import RealmSwift
 
 struct StoreSettingsDbRequest: DbRequest {
@@ -35,23 +36,44 @@ struct StoreSettingsDbRequest: DbRequest {
     }
 
     private func syncLastReadValues(values: [LastReadResponse], in database: Realm) {
-        let groupedByLibrary = Dictionary(grouping: values, by: \.libraryId)
-        for (libraryId, responses) in groupedByLibrary {
-            let keys = responses.map(\.key)
-            let valuesByKey = Dictionary(responses.map({ ($0.key, $0.value) }), uniquingKeysWith: { $1 })
-            let matchingItems = database.objects(RItem.self).filter(.keys(keys, in: libraryId))
-            for item in matchingItems {
-                item.lastRead = Date(timeIntervalSince1970: Double(valuesByKey[item.key] ?? 0))
+        for value in values {
+            let rDate: RLastReadDate
+            if let existing = database.objects(RLastReadDate.self).uniqueObject(key: value.key, libraryId: value.libraryId) {
+                rDate = existing
+            } else {
+                rDate = RLastReadDate()
+                database.add(rDate)
+                rDate.key = value.key
+                rDate.libraryId = value.libraryId
+            }
+            rDate.date = Date(timeIntervalSince1970: TimeInterval(value.value))
+            rDate.version = value.version
+
+            // No CR for settings, if it was changed locally, just reset it
+            rDate.deleteAllChanges(database: database)
+
+            // Assign value to item
+            if let item = database.objects(RItem.self).uniqueObject(key: value.key, libraryId: value.libraryId) {
+                item.lastRead = rDate.date
                 item.updateEffectiveLastRead()
+            } else {
+                let item = RItem()
+                item.key = value.key
+                item.libraryId = value.libraryId
+                item.lastRead = rDate.date
+                item.updateEffectiveLastRead()
+                item.syncState = .dirty
+                item.lastSyncDate = Date(timeIntervalSince1970: 0)
+                item.changeType = .sync
+                database.add(item)
             }
         }
     }
 
     private func syncPages(pages: [PageIndexResponse], in database: Realm) {
-        let indices = database.objects(RPageIndex.self).filter(.library(with: self.libraryId))
         for index in pages {
             let rIndex: RPageIndex
-            if let existing = indices.filter(.key(index.key)).first {
+            if let existing = database.objects(RPageIndex.self).uniqueObject(key: index.key, libraryId: index.libraryId) {
                 rIndex = existing
             } else {
                 rIndex = RPageIndex()

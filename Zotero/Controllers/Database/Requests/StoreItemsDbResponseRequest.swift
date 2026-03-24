@@ -371,6 +371,7 @@ struct StoreItemDbRequest: DbResponseRequest {
             parent = RItem()
             parent.key = key
             parent.syncState = .dirty
+            parent.lastSyncDate = Date(timeIntervalSince1970: 0)
             parent.libraryId = libraryId
             database.add(parent)
         }
@@ -403,6 +404,7 @@ struct StoreItemDbRequest: DbResponseRequest {
             let collection = RCollection()
             collection.key = key
             collection.syncState = .dirty
+            collection.lastSyncDate = Date(timeIntervalSince1970: 0)
             collection.libraryId = libraryId
             database.add(collection)
 

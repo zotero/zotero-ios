@@ -171,6 +171,7 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
                 collection = RCollection()
                 collection.key = key
                 collection.syncState = .dirty
+                collection.lastSyncDate = Date(timeIntervalSince1970: 0)
                 collection.libraryId = self.attachment.libraryId
                 database.add(collection)
             }
