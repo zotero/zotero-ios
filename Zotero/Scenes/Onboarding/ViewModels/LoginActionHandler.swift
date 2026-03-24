@@ -161,10 +161,12 @@ struct LoginActionHandler: ViewModelActionHandler {
     private func startStreaming(token: String, in viewModel: ViewModel<LoginActionHandler>) {
         let topic = LoginSessionWebSocketController.topic(for: token)
         let messageDisposable = webSocketController.loginObservable
+            .observe(on: scheduler)
             .filter({ $0.topic == topic })
             .take(1)
+            .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak viewModel] response in
-                guard let viewModel else { return }
+                guard let viewModel, viewModel.state.sessionStatus == .checking else { return }
                 update(viewModel: viewModel) { state in
                     state.sessionStatus = .completed
                 }
@@ -192,6 +194,7 @@ struct LoginActionHandler: ViewModelActionHandler {
 
         let disposable = Observable<(CheckLoginSessionResponse, HTTPURLResponse)>
             .merge(statusRequests, timeout)
+            .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak viewModel] response, _ in
                 guard let viewModel else { return }
                 switch response.status {
@@ -199,11 +202,13 @@ struct LoginActionHandler: ViewModelActionHandler {
                     break
 
                 case .completed(let apiKey, let userId, let username):
-                    update(viewModel: viewModel) { state in
-                        state.sessionStatus = .completed
+                    if viewModel.state.sessionStatus == .checking {
+                        update(viewModel: viewModel) { state in
+                            state.sessionStatus = .completed
+                        }
+                        stopSessionMonitoring(for: token)
+                        sessionController.register(userId: userId, username: username, displayName: "", apiToken: apiKey)
                     }
-                    stopSessionMonitoring(for: token)
-                    sessionController.register(userId: userId, username: username, displayName: "", apiToken: apiKey)
 
                 case .cancelled:
                     update(viewModel: viewModel) { state in
