@@ -393,7 +393,12 @@ extension RPageIndex: Updatable {
         return self.isChanged
     }
 
-    func markAsChanged(in database: Realm) {}
+    func markAsChanged(in database: Realm) {
+        self.changes.append(RObjectChange.create(changes: RPageIndexChanges.index))
+        self.changeType = .user
+        self.deleted = false
+        self.version = 0
+    }
 }
 
 extension RLastReadDate: Updatable {
@@ -407,7 +412,12 @@ extension RLastReadDate: Updatable {
         return self.isChanged
     }
 
-    func markAsChanged(in database: Realm) {}
+    func markAsChanged(in database: Realm) {
+        self.changes.append(RObjectChange.create(changes: RLastReadDateChanges.date))
+        self.changeType = .user
+        self.deleted = false
+        self.version = 0
+    }
 
     func deleteChanges(uuids: [String], database: Realm) {
         guard self.isChanged && !uuids.isEmpty else { return }

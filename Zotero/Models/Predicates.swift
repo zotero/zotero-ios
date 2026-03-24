@@ -166,13 +166,9 @@ extension NSPredicate {
         return NSCompoundPredicate(andPredicateWithSubpredicates: [.changedByUser, changed, .changesNotPaused])
     }
 
-    static var lastPageUserChanges: NSPredicate {
+    static var settingsChanges: NSPredicate {
         let changes = NSCompoundPredicate(orPredicateWithSubpredicates: [.changed, .deleted(true)])
         return NSCompoundPredicate(andPredicateWithSubpredicates: [.changedByUser, changes])
-    }
-
-    static var pageIndexUserChanges: NSPredicate {
-        return NSCompoundPredicate(andPredicateWithSubpredicates: [.changedByUser, .changed])
     }
 
     static var changesWithoutDeletions: NSPredicate {

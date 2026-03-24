@@ -36,6 +36,7 @@ struct StoreLastReadDateDbRequest: DbRequest {
     func process(in database: Realm) throws {
         guard let item = database.objects(RItem.self).uniqueObject(key: key, libraryId: libraryId), item.lastRead != date else { return }
         item.lastRead = date
+        item.updateEffectiveLastRead()
 
         switch libraryId {
         case .custom(let type):

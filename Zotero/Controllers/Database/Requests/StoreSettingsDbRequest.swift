@@ -42,6 +42,7 @@ struct StoreSettingsDbRequest: DbRequest {
             let matchingItems = database.objects(RItem.self).filter(.keys(keys, in: libraryId))
             for item in matchingItems {
                 item.lastRead = Date(timeIntervalSince1970: Double(valuesByKey[item.key] ?? 0))
+                item.updateEffectiveLastRead()
             }
         }
     }

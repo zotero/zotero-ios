@@ -119,3 +119,47 @@ struct PerformTagDeletionsDbRequest: DbRequest {
         database.delete(tags)
     }
 }
+
+struct PerformPageIndexDeletionsDbRequest: DbRequest {
+    let libraryId: LibraryIdentifier
+    let keys: [String]
+
+    var needsWrite: Bool { return true }
+
+    func process(in database: Realm) throws {
+        let objects = database.objects(RPageIndex.self).filter(.keys(keys, in: libraryId))
+        for object in objects {
+            guard !object.isInvalidated else { continue }
+            if object.isChanged {
+                // If remotely deleted pageIndex is changed locally, we want to keep the pageIndex, so we mark that
+                // this pageIndex is new and it will be reinserted by sync
+                object.markAsChanged(in: database)
+            } else {
+                object.willRemove(in: database)
+                database.delete(object)
+            }
+        }
+    }
+}
+
+struct PerformLastReadDeletionsDbRequest: DbRequest {
+    let libraryId: LibraryIdentifier
+    let keys: [String]
+
+    var needsWrite: Bool { return true }
+
+    func process(in database: Realm) throws {
+        let objects = database.objects(RLastReadDate.self).filter(.keys(keys, in: libraryId))
+        for object in objects {
+            guard !object.isInvalidated else { continue }
+            if object.isChanged {
+                // If remotely deleted lastRead is changed locally, we want to keep the lastRead, so we mark that
+                // this lastRead is new and it will be reinserted by sync
+                object.markAsChanged(in: database)
+            } else {
+                object.willRemove(in: database)
+                database.delete(object)
+            }
+        }
+    }
+}

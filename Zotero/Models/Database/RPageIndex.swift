@@ -44,6 +44,8 @@ final class RPageIndex: Object {
     @Persisted var syncRetries: Int
     /// Raw value for `UpdatableChangeType`, indicates whether current update of item has been made by user or sync process.
     @Persisted var changeType: UpdatableChangeType
+    /// Indicates whether the object is deleted locally and needs to be synced with backend
+    @Persisted var deleted: Bool
 
     // MARK: - Sync properties
 

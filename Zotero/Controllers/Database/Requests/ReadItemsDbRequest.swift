@@ -61,7 +61,11 @@ struct ReadItemsDbRequest: DbResponseRequest {
             }
         }
         // Sort if needed
-        return sortType.flatMap({ results.sorted(by: $0.descriptors) }) ?? results
+        if case .custom(.recentlyRead) = collectionId {
+            return results.sorted(by: [SortDescriptor(keyPath: "effectiveLastRead", ascending: false), SortDescriptor(keyPath: "sortTitle", ascending: true)])
+        } else {
+            return sortType.flatMap({ results.sorted(by: $0.descriptors) }) ?? results
+        }
     }
 }
 

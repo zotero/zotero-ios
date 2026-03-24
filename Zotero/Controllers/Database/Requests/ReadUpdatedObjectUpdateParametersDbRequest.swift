@@ -32,7 +32,7 @@ struct ReadUpdatedSettingsUpdateParametersDbRequest: DbResponseRequest {
             // Page indices and last-read dates are submitted only for user library, even though they are assigned to groups also.
             var parameters: [[String: Any]] = []
             var uuids: [String: [String]] = [:]
-            let changedIndices = database.objects(RPageIndex.self).filter(.changed)
+            let changedIndices = database.objects(RPageIndex.self).filter(.changesWithoutDeletions)
             update(parameters: &parameters, uuids: &uuids, forUpdatedObjects: changedIndices)
             let changedDates = database.objects(RLastReadDate.self).filter(.changesWithoutDeletions)
             update(parameters: &parameters, uuids: &uuids, forUpdatedObjects: changedDates)

@@ -124,6 +124,8 @@ final class RItem: Object {
     /// Indicates whether this instance has nonempty publicationTitle, helper variable, used in sorting so that we can show items with titles
     /// first and sort them in any order we want (asd/desc) and all other items later
     @Persisted var hasPublicationTitle: Bool
+    /// Most recent lastRead date considering both the item's own lastRead and all children's lastRead dates. Used for sorting in recently read collection.
+    @Persisted var effectiveLastRead: Date?
     /// Type of annotation
     @Persisted var annotationType: String
     /// Sort index for annotations
@@ -220,6 +222,13 @@ final class RItem: Object {
         self.hasParsedYear = false
         self.parsedDate = nil
         self.hasParsedDate = false
+    }
+
+    func updateEffectiveLastRead() {
+        let childrenMaxLastRead = children.compactMap(\.lastRead).max()
+        let dates = [lastRead, childrenMaxLastRead].compactMap({ $0 })
+        effectiveLastRead = dates.max()
+        parent?.updateEffectiveLastRead()
     }
 
     func updateCreatorSummary() {

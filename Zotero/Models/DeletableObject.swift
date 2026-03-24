@@ -139,3 +139,11 @@ extension RLastReadDate: Deletable {
         }
     }
 }
+
+extension RPageIndex: Deletable {
+    func willRemove(in database: Realm) {
+        if !changes.isInvalidated {
+            database.delete(changes)
+        }
+    }
+}

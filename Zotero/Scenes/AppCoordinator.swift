@@ -724,7 +724,7 @@ extension AppCoordinator: ConflictReceiver {
 
         func _resolve(conflict: Conflict, completed: @escaping (ConflictResolution?) -> Void) {
             switch conflict {
-            case .objectsRemovedRemotely(let libraryId, let collections, let items, let searches, let tags):
+            case .objectsRemovedRemotely(let libraryId, let collections, let items, let searches, let tags, let settings):
                 guard let controller = conflictReceiverAlertController else {
                     completed(
                         .remoteDeletionOfActiveObject(
@@ -734,7 +734,8 @@ extension AppCoordinator: ConflictReceiver {
                             toDeleteItems: items,
                             toRestoreItems: [],
                             searches: searches,
-                            tags: tags
+                            tags: tags,
+                            settings: settings
                         )
                     )
                     return
@@ -753,7 +754,8 @@ extension AppCoordinator: ConflictReceiver {
                             toDeleteItems: toDeleteItems,
                             toRestoreItems: toRestoreItems,
                             searches: searches,
-                            tags: tags
+                            tags: tags,
+                            settings: settings
                         )
                     )
                 }

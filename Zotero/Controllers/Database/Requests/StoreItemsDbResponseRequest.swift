@@ -147,6 +147,7 @@ struct StoreItemDbRequest: DbResponseRequest {
         switch libraryId {
         case .custom(.myLibrary):
             item.lastRead = response.lastRead
+            item.updateEffectiveLastRead()
 
         case .group:
             break

@@ -2960,9 +2960,9 @@ struct TestConflictCoordinator: ConflictReceiver & SyncRequestReceiver {
 
     func resolve(conflict: Conflict, completed: @escaping (ConflictResolution?) -> Void) {
         switch conflict {
-        case .objectsRemovedRemotely(let libraryId, let collections, let items, let searches, let tags):
+        case .objectsRemovedRemotely(let libraryId, let collections, let items, let searches, let tags, let settings):
             completed(.remoteDeletionOfActiveObject(libraryId: libraryId, toDeleteCollections: collections, toRestoreCollections: [],
-                                                    toDeleteItems: items, toRestoreItems: [], searches: searches, tags: tags))
+                                                    toDeleteItems: items, toRestoreItems: [], searches: searches, tags: tags, settings: settings))
 
         case .removedItemsHaveLocalChanges(let keys, let libraryId):
             completed(.remoteDeletionOfChangedItem(libraryId: libraryId, toDelete: keys.map({ $0.0 }), toRestore: []))
