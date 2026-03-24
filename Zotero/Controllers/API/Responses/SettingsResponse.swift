@@ -116,7 +116,7 @@ struct TagColorResponse {
     }
 }
 
-fileprivate struct SettingKeyParser {
+struct SettingKeyParser {
     static func parse(key: String) throws -> (String, LibraryIdentifier) {
         let parts = key.split(separator: "_")
         guard parts.count == 3 else {
@@ -143,5 +143,17 @@ fileprivate struct SettingKeyParser {
         }
 
         return (String(parts[2]), libraryId)
+    }
+
+    static func uid(fromKey key: String, libraryId: LibraryIdentifier, prefix: String) -> String {
+        let libraryPart: String
+        switch libraryId {
+        case .custom(.myLibrary):
+            libraryPart = "u"
+
+        case .group(let id):
+            libraryPart = "g\(id)"
+        }
+        return "\(prefix)_\(libraryPart)_\(key)"
     }
 }

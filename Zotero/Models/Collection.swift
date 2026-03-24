@@ -36,6 +36,9 @@ struct Collection: Identifiable, Equatable, Hashable {
             case .unfiled:
                 return Asset.Images.Cells.unfiled.name
 
+            case .recentlyRead:
+                return "clock"
+
             case .trash:
                 return itemCount == 0 ? Asset.Images.Cells.trashEmpty.name : Asset.Images.Cells.trash.name
             }
@@ -64,6 +67,9 @@ struct Collection: Identifiable, Equatable, Hashable {
         switch type {
         case .all:
             name = L10n.Collections.allItems
+
+        case .recentlyRead:
+            name = L10n.Collections.recentlyRead
 
         case .publications:
             name = L10n.Collections.myPublications

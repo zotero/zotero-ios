@@ -94,7 +94,9 @@ final class CollectionCellContentView: UIView {
     }
 
     private func setup(with collection: Collection) {
-        iconImage.image = UIImage(named: collection.iconName)?.withRenderingMode(.alwaysTemplate)
+        iconImage.image = UIImage(named: collection.iconName)?.withRenderingMode(.alwaysTemplate) ??
+                          UIImage(systemName: collection.iconName, withConfiguration: UIImage.SymbolConfiguration(weight: .light))?
+                            .applyingSymbolConfiguration(.init(scale: .large))?.withRenderingMode(.alwaysTemplate)
         iconImage.alpha = collection.isAvailable ? 1 : 0.6
         titleLabel.text = collection.name
         titleLabel.accessibilityLabel = collection.name

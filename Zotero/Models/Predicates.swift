@@ -166,8 +166,17 @@ extension NSPredicate {
         return NSCompoundPredicate(andPredicateWithSubpredicates: [.changedByUser, changed, .changesNotPaused])
     }
 
+    static var lastPageUserChanges: NSPredicate {
+        let changes = NSCompoundPredicate(orPredicateWithSubpredicates: [.changed, .deleted(true)])
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [.changedByUser, changes])
+    }
+
     static var pageIndexUserChanges: NSPredicate {
         return NSCompoundPredicate(andPredicateWithSubpredicates: [.changedByUser, .changed])
+    }
+
+    static var changesWithoutDeletions: NSPredicate {
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [.changed, .deleted(false)])
     }
 
     static func changesWithoutDeletions(in libraryId: LibraryIdentifier) -> NSPredicate {
@@ -250,6 +259,10 @@ extension NSPredicate {
             switch type {
             case .unfiled:
                 predicates.append(NSPredicate(format: "collections.@count == 0"))
+
+            case .recentlyRead:
+                let lastDate = Calendar.current.date(byAdding: .day, value: -14, to: Date())!
+                predicates.append(NSPredicate(format: "lastRead >= %@ or any children.lastRead >= %@", lastDate as NSDate, lastDate as NSDate))
 
             case .all, .publications, .trash: break
             }

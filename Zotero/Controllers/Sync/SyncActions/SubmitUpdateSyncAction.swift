@@ -46,13 +46,13 @@ struct SubmitUpdateSyncAction: SyncAction {
         let request = UpdatesRequest(libraryId: self.libraryId, userId: self.userId, objectType: self.object, params: self.parameters, version: self.sinceVersion)
         return self.apiClient.send(request: request, queue: self.queue)
             .observe(on: self.scheduler)
-            .flatMap({ _, response -> Single<([(String, LibraryIdentifier)], Int)> in
+            .flatMap({ _, response -> Single<([MarkSettingsAsSyncedDbRequest.Setting], Int)> in
                 let newVersion = response.allHeaderFields.lastModifiedVersion
-                var settings: [(String, LibraryIdentifier)] = []
+                var settings: [MarkSettingsAsSyncedDbRequest.Setting] = []
                 for params in self.parameters {
-                    guard let key = params.keys.first,
-                          let setting = try? PageIndexResponse.parse(key: key) else { continue }
-                    settings.append(setting)
+                    guard let uid = params.keys.first,
+                          let (key, libraryId) = try? SettingKeyParser.parse(key: uid) else { continue }
+                    settings.append(MarkSettingsAsSyncedDbRequest.Setting(uid: uid, key: key, libraryId: libraryId))
                 }
                 return Single.just((settings, newVersion))
             })

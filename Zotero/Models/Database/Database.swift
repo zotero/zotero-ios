@@ -43,7 +43,8 @@ struct Database {
             RWebDavDeletion.self,
             RVersions.self,
             RObjectChange.self,
-            RDownload.self
+            RDownload.self,
+            RLastReadDate.self
         ]
         return config
     }

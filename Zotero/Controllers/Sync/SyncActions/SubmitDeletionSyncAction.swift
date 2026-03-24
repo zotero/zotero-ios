@@ -61,7 +61,8 @@ struct SubmitDeletionSyncAction: SyncAction {
                     case .search:
                         requests.insert(DeleteObjectsDbRequest<RSearch>(keys: self.keys, libraryId: self.libraryId), at: 0)
 
-                    case .settings: break
+                    case .settings:
+                        requests.insert(DeleteObjectsDbRequest<RLastReadDate>(keys: keys, libraryId: libraryId), at: 0)
                     }
 
                     try coordinator.perform(writeRequests: requests)

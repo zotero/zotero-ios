@@ -2208,11 +2208,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     // MARK: - Translate sync (db) changes to PDF document
 
     private func update(objects: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int], viewModel: ViewModel<PDFReaderActionHandler>) {
-        guard let boundingBoxConverter = delegate else { return }
+        guard let boundingBoxConverter = delegate, let databaseAnnotations = viewModel.state.databaseAnnotations else { return }
 
         DDLogInfo("PDFReaderActionHandler: database annotation changed")
 
-        let databaseAnnotations = viewModel.state.databaseAnnotations!
         var texts = viewModel.state.texts
         var comments = viewModel.state.comments
         var selectKey: PDFReaderState.AnnotationKey?

@@ -184,7 +184,11 @@ extension RItem: Updatable {
             parameters["creators"] = Array(self.creators.sorted(byKeyPath: "orderId").map({ $0.updateParameters }))
         }
         if changes.contains(.lastRead) && libraryId == .custom(.myLibrary) {
-            parameters["lastRead"] = lastRead?.timeIntervalSince1970 ?? 0
+            if let lastRead = lastRead.flatMap({ Int($0.timeIntervalSince1970) }) {
+                parameters["lastRead"] = lastRead
+            } else {
+                parameters["lastRead"] = ""
+            }
         }
         if changes.contains(.fields) {
             for field in self.fields.filter("changed = true") {
@@ -393,10 +397,10 @@ extension RPageIndex: Updatable {
 }
 
 extension RLastReadDate: Updatable {
-    var updateParameters: [String : Any]? {
+    var updateParameters: [String: Any]? {
         guard let groupKey else { return nil }
         let libraryPart = "g\(groupKey)"
-        return ["lastPageIndex_\(libraryPart)_\(key)": ["value": date?.timeIntervalSince1970 ?? 0]]
+        return ["lastRead_\(libraryPart)_\(key)": ["value": Int(date.timeIntervalSince1970)]]
     }
 
     var selfOrChildChanged: Bool {

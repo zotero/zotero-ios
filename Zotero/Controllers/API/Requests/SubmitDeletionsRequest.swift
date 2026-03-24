@@ -28,19 +28,19 @@ struct SubmitDeletionsRequest: ApiRequest {
     }
 
     var parameters: [String: Any]? {
-        let joinedKeys = self.keys.joined(separator: ",")
         switch self.objectType {
         case .collection:
-            return ["collectionKey": joinedKeys]
+            return ["collectionKey": keys.joined(separator: ",")]
 
         case .item, .trash:
-            return ["itemKey": joinedKeys]
+            return ["itemKey": keys.joined(separator: ",")]
 
         case .search:
-            return ["searchKey": joinedKeys]
+            return ["searchKey": keys.joined(separator: ",")]
 
         case .settings:
-            return nil
+            let joinedKeys = keys.map({ SettingKeyParser.uid(fromKey: $0, libraryId: libraryId, prefix: "lastRead") }).joined(separator: ",")
+            return ["settingKey": joinedKeys]
         }
     }
 

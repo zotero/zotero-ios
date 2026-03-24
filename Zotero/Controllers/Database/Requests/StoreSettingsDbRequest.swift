@@ -39,15 +39,9 @@ struct StoreSettingsDbRequest: DbRequest {
         for (libraryId, responses) in groupedByLibrary {
             let keys = responses.map(\.key)
             let valuesByKey = Dictionary(responses.map({ ($0.key, $0.value) }), uniquingKeysWith: { $1 })
-
             let matchingItems = database.objects(RItem.self).filter(.keys(keys, in: libraryId))
             for item in matchingItems {
                 item.lastRead = Date(timeIntervalSince1970: Double(valuesByKey[item.key] ?? 0))
-            }
-
-            let otherItems = database.objects(RItem.self).filter(.key(notIn: keys, in: libraryId))
-            for item in otherItems {
-                item.lastRead = nil
             }
         }
     }

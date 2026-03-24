@@ -34,6 +34,9 @@ struct StoreLastReadDateDbRequest: DbRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
+        guard let item = database.objects(RItem.self).uniqueObject(key: key, libraryId: libraryId), item.lastRead != date else { return }
+        item.lastRead = date
+
         switch libraryId {
         case .custom(let type):
             switch type {
@@ -41,13 +44,11 @@ struct StoreLastReadDateDbRequest: DbRequest {
                 handleMyLibraryDate()
             }
 
-        case .group(let int):
+        case .group:
             handleGroupDate()
         }
 
         func handleMyLibraryDate() {
-            guard let item = database.objects(RItem.self).uniqueObject(key: key, libraryId: libraryId), item.lastRead != date else { return }
-            item.lastRead = date
             item.changes.append(RObjectChange.create(changes: RItemChanges.lastRead))
             item.changeType = .user
         }
@@ -64,10 +65,13 @@ struct StoreLastReadDateDbRequest: DbRequest {
                 lastReadDate.libraryId = libraryId
             }
 
-            lastReadDate.date = date
-            lastReadDate.changes.append(RObjectChange.create(changes: RLastReadDateChanges.date))
+            if let date {
+                lastReadDate.date = date
+                lastReadDate.changes.append(RObjectChange.create(changes: RLastReadDateChanges.date))
+            } else {
+                lastReadDate.deleted = true
+            }
             lastReadDate.changeType = .user
         }
     }
 }
-

@@ -26,7 +26,7 @@ extension RLastReadDateChanges {
 
 final class RLastReadDate: Object {
     @Persisted(indexed: true) var key: String
-    @Persisted var date: Date?
+    @Persisted var date: Date
     @Persisted var changed: Bool
     @Persisted var groupKey: Int?
     /// Indicates which local changes need to be synced to backend
@@ -43,6 +43,8 @@ final class RLastReadDate: Object {
     @Persisted var syncRetries: Int
     /// Raw value for `UpdatableChangeType`, indicates whether current update of item has been made by user or sync process.
     @Persisted var changeType: UpdatableChangeType
+    /// Indicates whether the object is deleted locally and needs to be synced with backend
+    @Persisted var deleted: Bool
 
     // MARK: - Sync properties
 

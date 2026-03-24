@@ -20,29 +20,26 @@ protocol Deletable: AnyObject {
 
 extension RCollection: Deletable {
     func willRemove(in database: Realm) {
-//        if !self.items.isInvalidated {
-//            for item in self.items {
-//                guard !item.isInvalidated else { continue }
-//                item.changedFields = .collections
-//                item.changeType = .user
-//            }
-//        }
-
-        if let libraryId = self.libraryId {
-            let children = database.objects(RCollection.self).filter(.parentKey(self.key, in: libraryId))
-            if !children.isInvalidated {
-                for child in children {
-                    guard !child.isInvalidated else { continue }
-                    child.willRemove(in: database)
-                }
-                database.delete(children)
+        guard let libraryId = self.libraryId else { return }
+        if !changes.isInvalidated {
+            database.delete(changes)
+        }
+        let children = database.objects(RCollection.self).filter(.parentKey(self.key, in: libraryId))
+        if !children.isInvalidated {
+            for child in children {
+                guard !child.isInvalidated else { continue }
+                child.willRemove(in: database)
             }
+            database.delete(children)
         }
     }
 }
 
 extension RItem: Deletable {
     func willRemove(in database: Realm) {
+        if !changes.isInvalidated {
+            database.delete(changes)
+        }
         if !self.children.isInvalidated {
             for child in self.children {
                 guard !child.isInvalidated else { continue }
@@ -128,5 +125,17 @@ extension RItem: Deletable {
 }
 
 extension RSearch: Deletable {
-    func willRemove(in database: Realm) {}
+    func willRemove(in database: Realm) {
+        if !changes.isInvalidated {
+            database.delete(changes)
+        }
+    }
+}
+
+extension RLastReadDate: Deletable {
+    func willRemove(in database: Realm) {
+        if !changes.isInvalidated {
+            database.delete(changes)
+        }
+    }
 }

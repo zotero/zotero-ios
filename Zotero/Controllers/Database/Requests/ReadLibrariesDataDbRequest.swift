@@ -108,8 +108,15 @@ struct ReadLibrariesDataDbRequest: DbResponseRequest {
                                                                                         .map({ $0.key })
                                                                                         .chunked(into: DeleteBatch.maxCount)
                                                                                         .map({ DeleteBatch(libraryId: libraryId, object: .item, version: version, keys: $0) })
+        var lastReadDeletions: [DeleteBatch] = []
+        if case .custom(.myLibrary) = libraryId {
+            lastReadDeletions = try ReadDeletedLastReadDbRequest().process(in: database)
+                                                                  .map({ $0.key })
+                                                                  .chunked(into: DeleteBatch.maxCount)
+                                                                  .map({ DeleteBatch(libraryId: libraryId, object: .settings, version: version, keys: $0) })
+        }
 
-        return collectionDeletions + searchDeletions + itemDeletions
+        return collectionDeletions + searchDeletions + itemDeletions + lastReadDeletions
     }
 
     private func updates(for libraryId: LibraryIdentifier, version: Int, database: Realm) throws -> ([WriteBatch], Bool) {

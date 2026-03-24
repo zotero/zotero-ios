@@ -208,7 +208,7 @@ extension ExpandableCollectionsCollectionViewHandler: UICollectionViewDelegate {
                         actions.append(trash)
                     }
 
-                case .publications, .all, .unfiled:
+                case .publications, .all, .unfiled, .recentlyRead:
                     actions.insert(downloadAttachmentsAction(for: collection.identifier, in: viewModel), at: 0)
                 }
 
