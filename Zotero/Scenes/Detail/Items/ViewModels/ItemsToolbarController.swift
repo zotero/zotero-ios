@@ -102,7 +102,7 @@ final class ItemsToolbarController {
             let items = actions.map({ action -> UIBarButtonItem in
                 let item = UIBarButtonItem(image: action.image, style: .plain, target: nil, action: nil)
                 switch action.type {
-                case .addToCollection, .trash, .delete, .removeFromCollection, .restore, .share, .download, .removeDownload:
+                case .addToCollection, .trash, .delete, .removeFromCollection, .restore, .share, .download, .removeDownload, .removeFromRecentlyRead:
                     item.tag = ToolbarItem.empty.tag
 
                 case .sort, .filter, .createParent, .retrieveMetadata, .copyCitation, .copyBibliography, .duplicate, .debugReader:
@@ -132,6 +132,9 @@ final class ItemsToolbarController {
 
                 case .removeDownload:
                     item.accessibilityLabel = L10n.Accessibility.Items.removeDownloads
+
+                case .removeFromRecentlyRead:
+                    item.accessibilityLabel = L10n.Accessibility.Items.removeFromRecentlyRead
 
                 case .sort, .filter, .createParent, .retrieveMetadata, .copyCitation, .copyBibliography, .duplicate, .debugReader:
                     break

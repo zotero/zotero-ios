@@ -110,10 +110,11 @@ struct ReadLibrariesDataDbRequest: DbResponseRequest {
                                                                                         .map({ DeleteBatch(libraryId: libraryId, object: .item, version: version, keys: $0) })
         var lastReadDeletions: [DeleteBatch] = []
         if case .custom(.myLibrary) = libraryId {
-            lastReadDeletions = try ReadDeletedLastReadDbRequest().process(in: database)
-                                                                  .map({ $0.key })
-                                                                  .chunked(into: DeleteBatch.maxCount)
-                                                                  .map({ DeleteBatch(libraryId: libraryId, object: .settings, version: version, keys: $0) })
+            lastReadDeletions = try ReadDeletedLastReadDbRequest()
+                .process(in: database)
+                .compactMap({ item in item.groupKey.flatMap({ SettingKeyParser.uid(fromKey: item.key, libraryId: .group($0), prefix: "lastRead") }) })
+                .chunked(into: DeleteBatch.maxCount)
+                .map({ DeleteBatch(libraryId: libraryId, object: .settings, version: version, keys: $0) })
         }
 
         return collectionDeletions + searchDeletions + itemDeletions + lastReadDeletions

@@ -26,6 +26,7 @@ struct ItemAction {
         case download
         case removeDownload
         case debugReader
+        case removeFromRecentlyRead
     }
 
     private enum Image {
@@ -47,7 +48,7 @@ struct ItemAction {
     }
     var isDestructive: Bool {
         switch self.type {
-        case .delete, .trash:
+        case .delete, .trash, .removeFromRecentlyRead:
             return true
 
         case .addToCollection, .duplicate, .removeFromCollection, .restore, .sort, .filter, .createParent, .retrieveMetadata, .copyCitation, .copyBibliography, .share, .download, .removeDownload, .debugReader:
@@ -122,6 +123,10 @@ struct ItemAction {
         case .debugReader:
             self.title = "Debug Reader"
             self._image = .system("ladybug")
+
+        case .removeFromRecentlyRead:
+            self.title = L10n.Items.Action.removeFromRecentlyRead
+            self._image = .system("trash")
         }
     }
 }

@@ -763,7 +763,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         case .deletion:
             message = L10n.Errors.Items.deletion
 
-        case .deletionFromCollection:
+        case .deletionFromCollection, .deletionFromRecentlyRead:
             message = L10n.Errors.Items.deletionFromCollection
 
         case .collectionAssignment:
