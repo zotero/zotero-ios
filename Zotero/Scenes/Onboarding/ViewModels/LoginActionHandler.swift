@@ -258,7 +258,7 @@ struct LoginActionHandler: ViewModelActionHandler {
                     state.sessionStatus = .cancelled
                 })
             }, onFailure: { [weak viewModel] error in
-                DDLogWarn("LoginActionHandler: could not cancel session - \(error)")
+                DDLogWarn("LoginActionHandler: could not cancel session - \(loginError(from: error, for: .cancelSession))")
                 guard let viewModel else { return }
                 update(viewModel: viewModel, action: { state in
                     state.sessionStatus = .cancelled
