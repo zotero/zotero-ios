@@ -16,10 +16,10 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
     typealias State = CollectionsState
 
     let backgroundQueue: DispatchQueue
-    private unowned let fileStorage: FileStorage
-    unowned let dbStorage: DbStorage
-    private unowned let attachmentDownloader: AttachmentDownloader
-    private unowned let fileCleanupController: AttachmentFileCleanupController
+    private let fileStorage: FileStorage
+    let dbStorage: DbStorage
+    private let attachmentDownloader: AttachmentDownloader
+    private let fileCleanupController: AttachmentFileCleanupController
 
     init(dbStorage: DbStorage, fileStorage: FileStorage, attachmentDownloader: AttachmentDownloader, fileCleanupController: AttachmentFileCleanupController) {
         backgroundQueue = DispatchQueue(label: "org.zotero.CollectionsActionHandler.backgroundQueue", qos: .userInitiated)
