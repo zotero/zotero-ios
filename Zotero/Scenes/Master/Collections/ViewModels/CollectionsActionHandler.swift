@@ -241,7 +241,7 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
                     cachedTrashCollectionsCount = trashCollections.count
 
                     allItemsCountToken = observeItemCount(in: allItems, for: .all, in: viewModel, handler: self)
-                    recentlyReadCountToken = observeItemCount(in: allItems, for: .all, in: viewModel, handler: self)
+                    recentlyReadCountToken = observeItemCount(in: recentlyRead, for: .recentlyRead, in: viewModel, handler: self)
                     unfiledItemsCountToken = observeItemCount(in: unfiledItems, for: .unfiled, in: viewModel, handler: self)
                     trashItemsCountToken = observeItemCount(in: trashItems, for: .trash, in: viewModel, handler: self)
                     trashCollectionsCountToken = observeTrashedCollectionCount(in: trashCollections, in: viewModel, handler: self)
