@@ -231,15 +231,8 @@ final class DetailCoordinator: Coordinator {
                 showPdf(at: url, key: attachment.key, parentKey: parentKey, libraryId: libraryId)
 
             case "text/html", "application/epub+zip":
-                if FeatureGates.enabled.contains(.htmlEpubReader) {
-                    DDLogInfo("DetailCoordinator: show HTML / EPUB \(attachment.key)")
-                    showHtmlEpubReader(for: url, key: attachment.key, parentKey: parentKey, libraryId: libraryId, readerURL: readerURL)
-                } else if contentType == "text/html" {
-                    showWebView(for: url)
-                } else {
-                    DDLogInfo("DetailCoordinator: share attachment \(attachment.key)")
-                    share(item: file.createUrl(), sourceItem: sourceItem)
-                }
+                DDLogInfo("DetailCoordinator: show HTML / EPUB \(attachment.key)")
+                showHtmlEpubReader(for: url, key: attachment.key, parentKey: parentKey, libraryId: libraryId, readerURL: readerURL)
 
             case "text/plain":
                 let text = try? String(contentsOf: url, encoding: .utf8)
@@ -392,14 +385,6 @@ final class DetailCoordinator: Coordinator {
     private func showHtmlEpubReader(for url: URL, key: String, parentKey: String?, libraryId: LibraryIdentifier, readerURL: URL?) {
         let controller = createHtmlEpubController(key: key, parentKey: parentKey, libraryId: libraryId, url: url, readerURL: readerURL)
         self.navigationController?.present(controller, animated: true, completion: nil)
-    }
-
-    private func showWebView(for url: URL) {
-        guard let currentNavigationController = self.navigationController else { return }
-        let controller = WebViewController(url: url)
-        let navigationController = UINavigationController(rootViewController: controller)
-        navigationController.modalPresentationStyle = .fullScreen
-        currentNavigationController.present(navigationController, animated: true, completion: nil)
     }
 
     func show(doi: String) {
