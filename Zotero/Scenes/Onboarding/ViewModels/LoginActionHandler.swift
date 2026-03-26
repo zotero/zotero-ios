@@ -142,7 +142,7 @@ struct LoginActionHandler: ViewModelActionHandler {
                 update(viewModel: viewModel) { state in
                     state.sessionStatus = .checking
                     state.sessionToken = sessionToken
-                    state.loginURL = loginURL
+                    state.loginURL = loginURL.appendingQueryItem(name: "app", value: "1") ?? loginURL
                 }
                 startStreaming(token: sessionToken, in: viewModel)
                 startSessionPolling(with: sessionToken, in: viewModel)

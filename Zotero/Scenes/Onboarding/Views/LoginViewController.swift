@@ -6,9 +6,10 @@
 //  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 //
 
-import SafariServices
+import AuthenticationServices
 import UIKit
 
+import CocoaLumberjackSwift
 import RxSwift
 import RxCocoa
 
@@ -30,6 +31,7 @@ final class LoginViewController: UIViewController {
     private let viewModel: ViewModel<LoginActionHandler>
     private let disposeBag: DisposeBag
     private var presentedLoginURL: URL?
+    private var authSession: ASWebAuthenticationSession?
 
     weak var coordinatorDelegate: AppLoginCoordinatorDelegate?
 
@@ -139,9 +141,26 @@ final class LoginViewController: UIViewController {
 
         if let loginURL = state.loginURL, presentedLoginURL != loginURL {
             presentedLoginURL = loginURL
-            let controller = SFSafariViewController(url: loginURL)
-            controller.delegate = self
-            present(controller, animated: true, completion: nil)
+            let authSession = ASWebAuthenticationSession(url: loginURL, callbackURLScheme: "zotero-ios", completionHandler: { [weak self] _, error in
+                guard let self else { return }
+                defer { self.authSession = nil }
+                guard let error else { return }
+                DDLogInfo("LoginViewController: login auth session completede with error - \(error)")
+                switch (error as? ASWebAuthenticationSessionError)?.code {
+                case .canceledLogin:
+                    dismiss()
+
+                case .presentationContextInvalid, .presentationContextNotProvided, .none:
+                    break
+
+                default:
+                    break
+                }
+            })
+            authSession.prefersEphemeralWebBrowserSession = true
+            authSession.presentationContextProvider = self
+            authSession.start()
+            self.authSession = authSession
         }
 
         func apply(kind: LoginState.Kind) {
@@ -190,13 +209,9 @@ final class LoginViewController: UIViewController {
 
     @IBAction private func dismiss() {
         viewModel.process(action: .cancelLoginSessionIfNeeded)
-        if presentedViewController != nil {
-            dismiss(animated: true) { [weak self] in
-                self?.dismiss(animated: true, completion: nil)
-            }
-        } else {
-            dismiss(animated: true, completion: nil)
-        }
+        authSession?.cancel()
+        authSession = nil
+        dismiss(animated: true, completion: nil)
     }
 
     // MARK: - Helpers
@@ -239,8 +254,12 @@ extension LoginViewController: UITextFieldDelegate {
     }
 }
 
-extension LoginViewController: SFSafariViewControllerDelegate {
-    func safariViewControllerDidFinish(_ controller: SFSafariViewController) {
-        dismiss()
+extension LoginViewController: ASWebAuthenticationPresentationContextProviding {
+    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        guard let window = view.window else {
+            DDLogWarn("LoginViewController: could return window as presentation anchor")
+            return ASPresentationAnchor()
+        }
+        return window
     }
 }
