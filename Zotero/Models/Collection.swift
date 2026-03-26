@@ -37,7 +37,7 @@ struct Collection: Identifiable, Equatable, Hashable {
                 return Asset.Images.Cells.unfiled.name
 
             case .recentlyRead:
-                return "clock"
+                return Asset.Images.Cells.collectionRecent.name
 
             case .trash:
                 return itemCount == 0 ? Asset.Images.Cells.trashEmpty.name : Asset.Images.Cells.trash.name
