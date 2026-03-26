@@ -142,7 +142,14 @@ final class ItemsToolbarController {
                 .disposed(by: disposeBag)
                 return item
             })
-            return [spacer] + (0..<(2 * items.count)).map({ idx -> UIBarButtonItem in idx % 2 == 0 ? items[idx / 2] : spacer })
+            var result: [UIBarButtonItem] = [spacer]
+            for (index, item) in items.enumerated() {
+                result.append(item)
+                if index < items.count - 1 {
+                    result.append(spacer)
+                }
+            }
+            return result
         }
 
         func createNormalToolbarItems(for filters: [ItemsFilter]) -> [UIBarButtonItem] {
