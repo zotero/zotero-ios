@@ -72,11 +72,6 @@
 "onboarding.share" = "<b>Toque para coletar</b> artigos e livros diretamente da web, incluindo seus PDFs e metadados.";
 "onboarding.sign_in" = "Entrar";
 "onboarding.create_account" = "Registrar";
-"login.username" = "Nome de usuário";
-"login.password" = "Senha";
-"login.email" = "e-mail";
-"login.repeat_password" = "Repetir senha";
-"login.forgot_password" = "Esqueceu a senha?";
 
 "libraries.my_library" = "Minha biblioteca";
 "libraries.group_libraries" = "Bibliotecas de grupo";
@@ -400,9 +395,6 @@
 "errors.attachments.too_many_requests" = "Too many requests. Please try again in a few minutes.";
 "errors.attachments.forbidden_webdav" = "You don’t have permission to access %@ on the WebDAV server.";
 "errors.attachments.generic_filename" = "o arquivo";
-"errors.login.invalid_password" = "Invalid password";
-"errors.login.invalid_username" = "Invalid username";
-"errors.login.invalid_credentials" = "Invalid username or password";
 "errors.libraries.cantLoad" = "Unable to load libraries";
 "errors.collections.empty_name" = "Please enter a collection name";
 "errors.collections.save_failed" = "Unable to save collection";

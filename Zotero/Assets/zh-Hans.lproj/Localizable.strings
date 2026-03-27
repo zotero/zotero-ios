@@ -72,11 +72,6 @@
 "onboarding.share" = "直接从互联网<b>点击以收录</b>文章和书籍，包括它们的 PDF 文件和完整元数据。";
 "onboarding.sign_in" = "登录";
 "onboarding.create_account" = "注册";
-"login.username" = "用户名";
-"login.password" = "密码";
-"login.email" = "邮箱";
-"login.repeat_password" = "再次输入密码";
-"login.forgot_password" = "忘记密码？";
 
 "libraries.my_library" = "我的文库";
 "libraries.group_libraries" = "群组文库";
@@ -400,9 +395,6 @@
 "errors.attachments.too_many_requests" = "Too many requests. Please try again in a few minutes.";
 "errors.attachments.forbidden_webdav" = "You don’t have permission to access %@ on the WebDAV server.";
 "errors.attachments.generic_filename" = "the file";
-"errors.login.invalid_password" = "Invalid password";
-"errors.login.invalid_username" = "Invalid username";
-"errors.login.invalid_credentials" = "Invalid username or password";
 "errors.libraries.cantLoad" = "Unable to load libraries";
 "errors.collections.empty_name" = "Please enter a collection name";
 "errors.collections.save_failed" = "Unable to save collection";

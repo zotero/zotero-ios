@@ -72,11 +72,6 @@
 "onboarding.share" = "<b>Pulse para recopilar</b>  artículos y libros directamente desde la web, incluyendo sus archivos PDF y metadatos completos.";
 "onboarding.sign_in" = "Acceder";
 "onboarding.create_account" = "Registrarse";
-"login.username" = "Nombre de usuario";
-"login.password" = "Contraseña";
-"login.email" = "Correo electrónico";
-"login.repeat_password" = "Repetir contraseña";
-"login.forgot_password" = "¿Olvidó su contraseña?";
 
 "libraries.my_library" = "Mi biblioteca";
 "libraries.group_libraries" = "Bibliotecas de grupo";
@@ -400,9 +395,6 @@
 "errors.attachments.too_many_requests" = "Demasiadas solicitudes. Vuelva a intentarlo en unos minutos.";
 "errors.attachments.forbidden_webdav" = "No tiene permiso para acceder a %@ en el servidor WebDAV.";
 "errors.attachments.generic_filename" = "el archivo";
-"errors.login.invalid_password" = "Contraseña no válida";
-"errors.login.invalid_username" = "Nombre de usuario no válido";
-"errors.login.invalid_credentials" = "Nombre de usuario o contraseña no válidos";
 "errors.libraries.cantLoad" = "No se pueden cargar las bibliotecas";
 "errors.collections.empty_name" = "Introduzca un nombre para la colección";
 "errors.collections.save_failed" = "No se puede guardar la colección";
