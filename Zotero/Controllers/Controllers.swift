@@ -216,7 +216,7 @@ final class Controllers {
             // Start logging to catch user controller issues
             debugLogging.start(type: .immediate)
             // Initialize user controllers
-            let controllers = try UserControllers(userId: data.userId, controllers: self)
+            let controllers = try UserControllers(userId: data.userId, sessionId: data.sessionId, controllers: self)
             if isLogin {
                 controllers.enableSync(apiKey: data.apiToken)
             }
@@ -233,6 +233,7 @@ final class Controllers {
             DDLogError("Controllers: can't create UserControllers - \(error)")
 
             let userId = Defaults.shared.userId
+            let sessionId = Defaults.shared.sessionId
             // Initialization failed, clear everything
             apiClient.set(authToken: nil)
             userControllers = nil
@@ -244,7 +245,7 @@ final class Controllers {
 
             if let error = error as? Realm.Error, error.code == .fail {
                 // Fatal error, remove db and let user log in again.
-                let dbFile = Files.dbFile(for: userId)
+                let dbFile = Files.dbFile(for: userId, sessionId: sessionId)
                 FileManager.default.clearDatabaseFiles(at: dbFile.createUrl())
             }
 
@@ -316,8 +317,8 @@ final class UserControllers {
     // MARK: - Lifecycle
 
     /// Instance is initialized on login or when app launches while user is logged in
-    init(userId: Int, controllers: Controllers) throws {
-        let dbStorage = try UserControllers.createDbStorage(for: userId, controllers: controllers)
+    init(userId: Int, sessionId: String?, controllers: Controllers) throws {
+        let dbStorage = try UserControllers.createDbStorage(for: userId, sessionId: sessionId, controllers: controllers)
         let webDavSession = SecureWebDavSessionStorage(secureStorage: controllers.secureStorage)
         let webDavController = WebDavControllerImpl(dbStorage: dbStorage, fileStorage: controllers.fileStorage, sessionStorage: webDavSession)
         let backgroundUploadContext = BackgroundUploaderContext()
@@ -497,8 +498,8 @@ final class UserControllers {
 
     // MARK: - Helpers
 
-    private class func createDbStorage(for userId: Int, controllers: Controllers) throws -> DbStorage {
-        let file = Files.dbFile(for: userId)
+    private class func createDbStorage(for userId: Int, sessionId: String?, controllers: Controllers) throws -> DbStorage {
+        let file = Files.dbFile(for: userId, sessionId: sessionId)
         try controllers.fileStorage.createDirectories(for: file)
         return RealmDbStorage(config: Database.mainConfiguration(url: file.createUrl(), fileStorage: controllers.fileStorage))
     }

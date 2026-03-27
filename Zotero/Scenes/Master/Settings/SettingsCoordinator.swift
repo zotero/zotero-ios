@@ -424,9 +424,9 @@ extension SettingsCoordinator: ExportSettingsCoordinatorDelegate {
 
 extension SettingsCoordinator: DebuggingSettingsSettingsCoordinatorDelegate {
     func exportDb() {
-        guard let navigationController, let userId = self.controllers.sessionController.sessionData?.userId else { return }
+        guard let navigationController, let sessionData = controllers.sessionController.sessionData else { return }
 
-        let mainUrl = Files.dbFile(for: userId).createUrl()
+        let mainUrl = Files.dbFile(for: sessionData.userId, sessionId: sessionData.sessionId).createUrl()
         let bundledUrl = Files.bundledDataDbFile.createUrl()
 
         let controller = UIActivityViewController(activityItems: [mainUrl, bundledUrl], applicationActivities: nil)
