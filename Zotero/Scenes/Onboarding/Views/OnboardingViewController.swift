@@ -306,7 +306,7 @@ extension OnboardingViewController: UIScrollViewDelegate {
 extension OnboardingViewController: ASWebAuthenticationPresentationContextProviding {
     func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
         guard let window = view.window else {
-            DDLogWarn("OnboardingViewController: could return window as presentation anchor")
+            DDLogWarn("OnboardingViewController: could not return window as presentation anchor")
             return ASPresentationAnchor()
         }
         return window
