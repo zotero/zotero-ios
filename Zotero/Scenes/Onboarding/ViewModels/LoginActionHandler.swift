@@ -13,12 +13,6 @@ import CocoaLumberjackSwift
 import RxSwift
 
 struct LoginActionHandler: ViewModelActionHandler {
-    enum Operation {
-        case createSession
-        case checkSession
-        case cancelSession
-    }
-
     typealias Action = LoginAction
     typealias State = LoginState
 
@@ -81,7 +75,7 @@ struct LoginActionHandler: ViewModelActionHandler {
                 guard let viewModel else { return }
                 update(viewModel: viewModel) { state in
                     state.sessionStatus = nil
-                    state.error = loginError(from: error, for: .createSession)
+                    state.error = loginError(from: error)
                     state.isLoading = false
                 }
             })
@@ -149,7 +143,7 @@ struct LoginActionHandler: ViewModelActionHandler {
                 guard let viewModel else { return }
                 update(viewModel: viewModel) { state in
                     state.sessionStatus = nil
-                    state.error = loginError(from: error, for: .checkSession)
+                    state.error = loginError(from: error)
                     state.isLoading = false
                 }
                 stopSessionMonitoring(for: token)
@@ -181,7 +175,7 @@ struct LoginActionHandler: ViewModelActionHandler {
                 guard let viewModel else { return }
                 reset(viewModel: viewModel)
             }, onFailure: { [weak viewModel] error in
-                DDLogWarn("LoginActionHandler: could not cancel session - \(loginError(from: error, for: .cancelSession))")
+                DDLogWarn("LoginActionHandler: could not cancel session - \(loginError(from: error))")
                 guard let viewModel else { return }
                 reset(viewModel: viewModel)
             })
@@ -197,16 +191,13 @@ struct LoginActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func loginError(from error: Error, for operation: Operation) -> LoginError {
+    private func loginError(from error: Error) -> LoginError {
         if let afError = error as? AFResponseError {
             switch afError.error {
             case .responseValidationFailed(let reason):
                 switch reason {
-                case .unacceptableStatusCode(let code):
-                    switch operation {
-                    case .createSession, .checkSession, .cancelSession:
-                        return .serverError(afError.response)
-                    }
+                case .unacceptableStatusCode:
+                    return .serverError(afError.response)
 
                 default:
                     return afError.response.isEmpty ? .unknown(error) : .serverError(afError.response)
