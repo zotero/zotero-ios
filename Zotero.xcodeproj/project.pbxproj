@@ -169,7 +169,6 @@
 		D1E2F3AC2F1C000100ABC001 /* CancelLoginSessionRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E2F3AD2F1C000100ABC001 /* CancelLoginSessionRequest.swift */; };
 		A1B2C3DA2F1A000100ABC001 /* CheckLoginSessionRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3DE2F1A000100ABC001 /* CheckLoginSessionRequest.swift */; };
 		B305660623FC051E003304F2 /* UpdatesRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305649023FC051E003304F2 /* UpdatesRequest.swift */; };
-		B305660723FC051E003304F2 /* LoginRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305649123FC051E003304F2 /* LoginRequest.swift */; };
 		B305660823FC051E003304F2 /* KeyRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305649223FC051E003304F2 /* KeyRequest.swift */; };
 		B305660923FC051E003304F2 /* SettingsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305649323FC051E003304F2 /* SettingsRequest.swift */; };
 		B305660A23FC051E003304F2 /* RegisterUploadRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305649423FC051E003304F2 /* RegisterUploadRequest.swift */; };
@@ -244,7 +243,6 @@
 		B30566B223FC051F003304F2 /* UpdatesResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305654B23FC051E003304F2 /* UpdatesResponse.swift */; };
 		B30566B323FC051F003304F2 /* CollectionResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305654C23FC051E003304F2 /* CollectionResponse.swift */; };
 		B30566B423FC051F003304F2 /* LinksResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305654D23FC051E003304F2 /* LinksResponse.swift */; };
-		B30566B523FC051F003304F2 /* LoginResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305654E23FC051E003304F2 /* LoginResponse.swift */; };
 		A1B2C3D52F1A000100ABC001 /* CreateLoginSessionResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D92F1A000100ABC001 /* CreateLoginSessionResponse.swift */; };
 		A1B2C3DB2F1A000100ABC001 /* CheckLoginSessionResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3DF2F1A000100ABC001 /* CheckLoginSessionResponse.swift */; };
 		B30566B623FC051F003304F2 /* DeletionsResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305654F23FC051E003304F2 /* DeletionsResponse.swift */; };
@@ -268,7 +266,6 @@
 		B30566DC23FC07EE003304F2 /* ItemResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305654623FC051E003304F2 /* ItemResponse.swift */; };
 		B30566E223FC0810003304F2 /* DeletionsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305648F23FC051E003304F2 /* DeletionsRequest.swift */; };
 		B30566E323FC0815003304F2 /* UpdatesRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305649023FC051E003304F2 /* UpdatesRequest.swift */; };
-		B30566E423FC081A003304F2 /* LoginRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305649123FC051E003304F2 /* LoginRequest.swift */; };
 		A1B2C3D62F1A000100ABC001 /* CreateLoginSessionRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D82F1A000100ABC001 /* CreateLoginSessionRequest.swift */; };
 		D1E2F3AE2F1C000100ABC001 /* CancelLoginSessionRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E2F3AD2F1C000100ABC001 /* CancelLoginSessionRequest.swift */; };
 		A1B2C3DC2F1A000100ABC001 /* CheckLoginSessionRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3DE2F1A000100ABC001 /* CheckLoginSessionRequest.swift */; };
@@ -353,7 +350,6 @@
 		B305674023FC09AF003304F2 /* UpdatesResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305654B23FC051E003304F2 /* UpdatesResponse.swift */; };
 		B305674123FC09AF003304F2 /* CollectionResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305654C23FC051E003304F2 /* CollectionResponse.swift */; };
 		B305674223FC09AF003304F2 /* LinksResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305654D23FC051E003304F2 /* LinksResponse.swift */; };
-		B305674323FC09AF003304F2 /* LoginResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305654E23FC051E003304F2 /* LoginResponse.swift */; };
 		A1B2C3D72F1A000100ABC001 /* CreateLoginSessionResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D92F1A000100ABC001 /* CreateLoginSessionResponse.swift */; };
 		A1B2C3DD2F1A000100ABC001 /* CheckLoginSessionResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3DF2F1A000100ABC001 /* CheckLoginSessionResponse.swift */; };
 		B305674423FC09AF003304F2 /* DeletionsResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305654F23FC051E003304F2 /* DeletionsResponse.swift */; };
@@ -1500,7 +1496,6 @@
 		B305648D23FC051E003304F2 /* Alamofire+RxSwift.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Alamofire+RxSwift.swift"; sourceTree = "<group>"; };
 		B305648F23FC051E003304F2 /* DeletionsRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DeletionsRequest.swift; sourceTree = "<group>"; };
 		B305649023FC051E003304F2 /* UpdatesRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UpdatesRequest.swift; sourceTree = "<group>"; };
-		B305649123FC051E003304F2 /* LoginRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginRequest.swift; sourceTree = "<group>"; };
 		B305649223FC051E003304F2 /* KeyRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = KeyRequest.swift; sourceTree = "<group>"; };
 		B305649323FC051E003304F2 /* SettingsRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsRequest.swift; sourceTree = "<group>"; };
 		B305649423FC051E003304F2 /* RegisterUploadRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RegisterUploadRequest.swift; sourceTree = "<group>"; };
@@ -1575,7 +1570,6 @@
 		B305654B23FC051E003304F2 /* UpdatesResponse.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UpdatesResponse.swift; sourceTree = "<group>"; };
 		B305654C23FC051E003304F2 /* CollectionResponse.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CollectionResponse.swift; sourceTree = "<group>"; };
 		B305654D23FC051E003304F2 /* LinksResponse.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LinksResponse.swift; sourceTree = "<group>"; };
-		B305654E23FC051E003304F2 /* LoginResponse.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginResponse.swift; sourceTree = "<group>"; };
 		B305654F23FC051E003304F2 /* DeletionsResponse.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DeletionsResponse.swift; sourceTree = "<group>"; };
 		B305655023FC051E003304F2 /* GroupResponse.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GroupResponse.swift; sourceTree = "<group>"; };
 		B305655123FC051E003304F2 /* SearchesResponse.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SearchesResponse.swift; sourceTree = "<group>"; };
@@ -2873,7 +2867,6 @@
 				A1B2C3D82F1A000100ABC001 /* CreateLoginSessionRequest.swift */,
 				D1E2F3AD2F1C000100ABC001 /* CancelLoginSessionRequest.swift */,
 				A1B2C3DE2F1A000100ABC001 /* CheckLoginSessionRequest.swift */,
-				B305649123FC051E003304F2 /* LoginRequest.swift */,
 				B305649823FC051E003304F2 /* ObjectsRequest.swift */,
 				B305649423FC051E003304F2 /* RegisterUploadRequest.swift */,
 				B378F4CE242D0CC200B88A05 /* RepoRequest.swift */,
@@ -3100,7 +3093,6 @@
 				B305654D23FC051E003304F2 /* LinksResponse.swift */,
 				A1B2C3D92F1A000100ABC001 /* CreateLoginSessionResponse.swift */,
 				A1B2C3DF2F1A000100ABC001 /* CheckLoginSessionResponse.swift */,
-				B305654E23FC051E003304F2 /* LoginResponse.swift */,
 				6102D2B72D6CCDD300505E6A /* RemoteRecognizerResponse.swift */,
 				B3A2AEDD26565211004BF3A4 /* RemoteStylesResponse.swift */,
 				B305655223FC051E003304F2 /* SchemaResponse.swift */,
@@ -5773,7 +5765,6 @@
 				B3F09AE629CAFF860084E4D8 /* TagFilterActionHandler.swift in Sources */,
 				A1B2C3D52F1A000100ABC001 /* CreateLoginSessionResponse.swift in Sources */,
 				A1B2C3DB2F1A000100ABC001 /* CheckLoginSessionResponse.swift in Sources */,
-				B30566B523FC051F003304F2 /* LoginResponse.swift in Sources */,
 				B3B41F1B2848E5A90017CA4B /* AnnotationsFilter.swift in Sources */,
 				B3B557192C8860E600BD6325 /* CitationMetadata.swift in Sources */,
 				B30565CB23FC051E003304F2 /* ReadSearchDbRequest.swift in Sources */,
@@ -6169,7 +6160,6 @@
 				A1B2C3D42F1A000100ABC001 /* CreateLoginSessionRequest.swift in Sources */,
 				D1E2F3AC2F1C000100ABC001 /* CancelLoginSessionRequest.swift in Sources */,
 				A1B2C3DA2F1A000100ABC001 /* CheckLoginSessionRequest.swift in Sources */,
-				B305660723FC051E003304F2 /* LoginRequest.swift in Sources */,
 				61A0C8472B8F669C0048FF92 /* PSPDFKitUI+Extensions.swift in Sources */,
 				B30566B323FC051F003304F2 /* CollectionResponse.swift in Sources */,
 				B34341AB260A48A200093E63 /* ReadAllWritableGroupsDbRequest.swift in Sources */,
@@ -6269,7 +6259,6 @@
 				B3F4E4EF2A4DC4E300820718 /* JSONSerialization+Utils.swift in Sources */,
 				A1B2C3D72F1A000100ABC001 /* CreateLoginSessionResponse.swift in Sources */,
 				A1B2C3DD2F1A000100ABC001 /* CheckLoginSessionResponse.swift in Sources */,
-				B305674323FC09AF003304F2 /* LoginResponse.swift in Sources */,
 				B305674423FC09AF003304F2 /* DeletionsResponse.swift in Sources */,
 				B31EEE5824EBCB2C00E3B3AD /* RRect.swift in Sources */,
 				B353F207242E52EE0062EE24 /* Database.swift in Sources */,
@@ -6465,7 +6454,6 @@
 				A1B2C3D62F1A000100ABC001 /* CreateLoginSessionRequest.swift in Sources */,
 				D1E2F3AE2F1C000100ABC001 /* CancelLoginSessionRequest.swift in Sources */,
 				A1B2C3DC2F1A000100ABC001 /* CheckLoginSessionRequest.swift in Sources */,
-				B30566E423FC081A003304F2 /* LoginRequest.swift in Sources */,
 				B357DEE8241661E500E06153 /* DebugLogFormatter.swift in Sources */,
 				B30DCEA22D65E9A90084C5D4 /* AnnotationsConfig.swift in Sources */,
 				B37F7ABC23955031008A51B4 /* CreateItemRequest.swift in Sources */,
