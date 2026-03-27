@@ -14,27 +14,23 @@ struct LoginState: ViewModelState {
         case checking
         case cancelling
         case completed
-        case cancelled
     }
 
     var sessionStatus: SessionStatus?
     var sessionToken: String?
     var loginURL: URL?
     var isLoading: Bool
-    var shouldDismiss: Bool
     var error: LoginError?
 
     init() {
         sessionStatus = nil
         sessionToken = nil
         loginURL = nil
-        isLoading = true
-        shouldDismiss = false
+        isLoading = false
         error = nil
     }
 
     mutating func cleanup() {
         error = nil
-        shouldDismiss = false
     }
 }

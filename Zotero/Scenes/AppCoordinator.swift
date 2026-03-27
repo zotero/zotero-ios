@@ -24,8 +24,8 @@ protocol AppDelegateCoordinatorDelegate: AnyObject {
 
 protocol AppOnboardingCoordinatorDelegate: AnyObject {
     func showAbout()
-    func presentLogin()
     func presentRegister()
+    func presentAlert(_ controller: UIAlertController)
 }
 
 final class AppCoordinator: NSObject {
@@ -115,7 +115,9 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
         var urlContext: UIOpenURLContext?
         var data: RestoredStateData?
         if !isLoggedIn {
-            let controller = OnboardingViewController(size: window.frame.size, htmlConverter: controllers.htmlAttributedStringConverter)
+            let loginHandler = LoginActionHandler(apiClient: controllers.apiClient, sessionController: controllers.sessionController)
+            let loginViewModel = ViewModel(initialState: LoginState(), handler: loginHandler)
+            let controller = OnboardingViewController(size: window.frame.size, htmlConverter: controllers.htmlAttributedStringConverter, loginViewModel: loginViewModel)
             controller.coordinatorDelegate = self
             viewController = controller
 
@@ -642,24 +644,15 @@ extension AppCoordinator: AppOnboardingCoordinatorDelegate {
         rootViewController.present(controller, animated: true, completion: nil)
     }
 
-    func presentLogin() {
-        guard let rootViewController = window?.rootViewController else { return }
-        let handler = LoginActionHandler(apiClient: controllers.apiClient, sessionController: controllers.sessionController)
-        let controller = LoginViewController(viewModel: ViewModel(initialState: LoginState(), handler: handler))
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            controller.modalPresentationStyle = .formSheet
-            controller.preferredContentSize = CGSize(width: 540, height: 620)
-        } else {
-            controller.modalPresentationStyle = .fullScreen
-        }
-        controller.isModalInPresentation = false
-        rootViewController.present(controller, animated: true, completion: nil)
-    }
-
     func presentRegister() {
         guard let rootViewController = window?.rootViewController else { return }
         let controller = SFSafariViewController(url: URL(string: "https://www.zotero.org/user/register?app=1")!)
         rootViewController.present(controller, animated: true, completion: nil)
+    }
+
+    func presentAlert(_ controller: UIAlertController) {
+        guard let rootViewController = window?.rootViewController else { return }
+        rootViewController.present(controller, animated: true)
     }
 }
 

@@ -141,11 +141,8 @@ struct LoginActionHandler: ViewModelActionHandler {
                     }
 
                 case .cancelled:
-                    update(viewModel: viewModel) { state in
-                        state.sessionStatus = .cancelled
-                        state.shouldDismiss = true
-                    }
                     stopSessionMonitoring(for: token)
+                    reset(viewModel: viewModel)
                 }
             }, onError: { [weak viewModel] error in
                 DDLogError("LoginActionHandler: could not poll login session - \(error)")
@@ -171,9 +168,7 @@ struct LoginActionHandler: ViewModelActionHandler {
     private func cancelLoginSessionIfNeeded(in viewModel: ViewModel<LoginActionHandler>) {
         guard viewModel.state.sessionStatus == .checking else { return }
         guard let token = viewModel.state.sessionToken else {
-            update(viewModel: viewModel) { state in
-                state.sessionStatus = nil
-            }
+            reset(viewModel: viewModel)
             return
         }
         update(viewModel: viewModel) { state in
@@ -184,17 +179,22 @@ struct LoginActionHandler: ViewModelActionHandler {
             .subscribe(onSuccess: { [weak viewModel] _ in
                 DDLogInfo("LoginActionHandler: cancelled session")
                 guard let viewModel else { return }
-                update(viewModel: viewModel, action: { state in
-                    state.sessionStatus = .cancelled
-                })
+                reset(viewModel: viewModel)
             }, onFailure: { [weak viewModel] error in
                 DDLogWarn("LoginActionHandler: could not cancel session - \(loginError(from: error, for: .cancelSession))")
                 guard let viewModel else { return }
-                update(viewModel: viewModel, action: { state in
-                    state.sessionStatus = .cancelled
-                })
+                reset(viewModel: viewModel)
             })
             .disposed(by: disposeBag)
+    }
+
+    private func reset(viewModel: ViewModel<LoginActionHandler>) {
+        update(viewModel: viewModel) { state in
+            state.sessionStatus = nil
+            state.sessionToken = nil
+            state.loginURL = nil
+            state.isLoading = false
+        }
     }
 
     private func loginError(from error: Error, for operation: Operation) -> LoginError {

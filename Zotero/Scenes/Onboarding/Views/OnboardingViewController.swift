@@ -6,7 +6,11 @@
 //  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import AuthenticationServices
 import UIKit
+
+import CocoaLumberjackSwift
+import RxSwift
 
 final class OnboardingViewController: UIViewController {
     @IBOutlet private weak var spacer: UIView!
@@ -24,8 +28,13 @@ final class OnboardingViewController: UIViewController {
 
     private let parentSize: CGSize
     private unowned let htmlConverter: HtmlAttributedStringConverter
+    private let loginViewModel: ViewModel<LoginActionHandler>
+    private let loginActivityIndicator: UIActivityIndicatorView
+    private let disposeBag: DisposeBag
 
     weak var coordinatorDelegate: AppOnboardingCoordinatorDelegate?
+    private var presentedLoginURL: URL?
+    private var authSession: ASWebAuthenticationSession?
 
     private var pageData: [(String, UIImage)] {
         return [(L10n.Onboarding.access, Asset.Images.Onboarding.access.image),
@@ -37,10 +46,13 @@ final class OnboardingViewController: UIViewController {
 
     // MARK: - Lifecycle
 
-    init(size: CGSize, htmlConverter: HtmlAttributedStringConverter) {
+    init(size: CGSize, htmlConverter: HtmlAttributedStringConverter, loginViewModel: ViewModel<LoginActionHandler>) {
         self.parentSize = size
         self.htmlConverter = htmlConverter
+        self.loginViewModel = loginViewModel
         self.ignoreScrollDelegate = false
+        loginActivityIndicator = UIActivityIndicatorView(style: .medium)
+        disposeBag = DisposeBag()
         super.init(nibName: "OnboardingViewController", bundle: nil)
     }
 
@@ -56,6 +68,14 @@ final class OnboardingViewController: UIViewController {
         self.setupPages(with: pages)
         self.setupPageControl(with: pages)
         self.setupLayout(with: self.parentSize)
+        updateLogin(state: loginViewModel.state)
+
+        loginViewModel.stateObservable
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] state in
+                self?.updateLogin(state: state)
+            })
+            .disposed(by: disposeBag)
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
@@ -93,7 +113,7 @@ final class OnboardingViewController: UIViewController {
     }
 
     @IBAction private func signIn() {
-        self.coordinatorDelegate?.presentLogin()
+        loginViewModel.process(action: .login)
     }
 
     @IBAction private func createAccount() {
@@ -181,6 +201,13 @@ final class OnboardingViewController: UIViewController {
         self.createAccountButton.layer.masksToBounds = true
         self.createAccountButton.setTitle(L10n.Onboarding.createAccount, for: .normal)
         self.learnMoreButton.setTitle(L10n.aboutZotero, for: .normal)
+        loginActivityIndicator.hidesWhenStopped = true
+        loginActivityIndicator.translatesAutoresizingMaskIntoConstraints = false
+        signInButton.addSubview(loginActivityIndicator)
+        NSLayoutConstraint.activate([
+            loginActivityIndicator.centerXAnchor.constraint(equalTo: signInButton.centerXAnchor),
+            loginActivityIndicator.centerYAnchor.constraint(equalTo: signInButton.centerYAnchor)
+        ])
     }
 
     private func setupPageControl(with pageData: [(String, UIImage)]) {
@@ -200,6 +227,65 @@ final class OnboardingViewController: UIViewController {
         let fontOffset = titleFont.ascender - titleFont.xHeight
         self.spacerAboveScrollViewBottom?.constant = -fontOffset
     }
+
+    private func updateLogin(state: LoginState) {
+        applyLoginState(state)
+
+        if let error = state.error {
+            show(error: error)
+        }
+
+        if let loginURL = state.loginURL, presentedLoginURL != loginURL {
+            presentedLoginURL = loginURL
+            let authSession = ASWebAuthenticationSession(url: loginURL, callbackURLScheme: "zotero-ios", completionHandler: { [weak self] _, error in
+                guard let self else { return }
+                defer { self.authSession = nil }
+                guard let error else { return }
+                DDLogInfo("OnboardingViewController: login auth session completed with error - \(error)")
+                switch (error as? ASWebAuthenticationSessionError)?.code {
+                case .canceledLogin:
+                    loginViewModel.process(action: .cancelLoginSessionIfNeeded)
+
+                case .presentationContextInvalid, .presentationContextNotProvided, .none:
+                    break
+
+                default:
+                    break
+                }
+            })
+            authSession.prefersEphemeralWebBrowserSession = true
+            authSession.presentationContextProvider = self
+            authSession.start()
+            self.authSession = authSession
+        }
+
+        func applyLoginState(_ state: LoginState) {
+            signInButton.isEnabled = !state.isLoading
+            createAccountButton.isEnabled = !state.isLoading
+            learnMoreButton.isEnabled = !state.isLoading
+            pageControl.isEnabled = !state.isLoading
+            scrollView.isScrollEnabled = !state.isLoading
+
+            if state.isLoading {
+                signInButton.setTitle(nil, for: .normal)
+                loginActivityIndicator.startAnimating()
+            } else {
+                authSession?.cancel()
+                authSession = nil
+                loginActivityIndicator.stopAnimating()
+                signInButton.setTitle(L10n.Onboarding.signIn, for: .normal)
+                presentedLoginURL = nil
+            }
+        }
+
+        func show(error: LoginError) {
+            let controller = UIAlertController(title: L10n.error, message: error.localizedDescription, preferredStyle: .alert)
+            controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel))
+            authSession?.cancel()
+            authSession = nil
+            coordinatorDelegate?.presentAlert(controller)
+        }
+    }
 }
 
 extension OnboardingViewController: UIScrollViewDelegate {
@@ -214,6 +300,16 @@ extension OnboardingViewController: UIScrollViewDelegate {
 
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
         self.ignoreScrollDelegate = false
+    }
+}
+
+extension OnboardingViewController: ASWebAuthenticationPresentationContextProviding {
+    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        guard let window = view.window else {
+            DDLogWarn("OnboardingViewController: could return window as presentation anchor")
+            return ASPresentationAnchor()
+        }
+        return window
     }
 }
 
