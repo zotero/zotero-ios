@@ -14,7 +14,6 @@ import RxSwift
 
 struct LoginActionHandler: ViewModelActionHandler {
     enum Operation {
-        case login
         case createSession
         case checkSession
         case cancelSession
@@ -49,79 +48,10 @@ struct LoginActionHandler: ViewModelActionHandler {
         case .cancelLoginSessionIfNeeded:
             stopSessionMonitoring(for: viewModel.state.sessionToken)
             cancelLoginSessionIfNeeded(in: viewModel)
-
-        case .setError(let error):
-            update(viewModel: viewModel) { state in
-                state.error = error
-            }
-
-        case .setUsername(let value):
-            update(viewModel: viewModel) { state in
-                state.username = value
-            }
-
-        case .setPassword(let value):
-            update(viewModel: viewModel) { state in
-                state.password = value
-            }
         }
     }
 
     private func login(in viewModel: ViewModel<LoginActionHandler>) {
-        switch viewModel.state.kind {
-        case .password:
-            loginWithPassword(in: viewModel)
-
-        case .session:
-            loginWithSession(in: viewModel)
-        }
-    }
-
-    private func loginWithPassword(in viewModel: ViewModel<LoginActionHandler>) {
-        if let error = isValid(username: viewModel.state.username, password: viewModel.state.password) {
-            update(viewModel: viewModel) { state in
-                state.error = error
-            }
-            return
-        }
-
-        update(viewModel: viewModel) { state in
-            state.sessionStatus = nil
-            state.sessionToken = nil
-            state.loginURL = nil
-            state.isLoading = true
-        }
-
-        let request = LoginRequest(username: viewModel.state.username, password: viewModel.state.password)
-        apiClient.send(request: request)
-            .observe(on: scheduler)
-            .flatMap { response, _ -> Single<(Int, String, String, String)> in
-                return Single.just((response.userId, response.name, response.displayName, response.key))
-            }
-            .observe(on: MainScheduler.instance)
-            .subscribe(onSuccess: { userId, username, displayName, token in
-                sessionController.register(userId: userId, username: username, displayName: displayName, apiToken: token)
-            }, onFailure: { [weak viewModel] error in
-                DDLogError("LoginActionHandler: could not log in - \(error)")
-                guard let viewModel else { return }
-                update(viewModel: viewModel, action: { state in
-                    state.error = loginError(from: error, for: .login)
-                    state.isLoading = false
-                })
-            })
-            .disposed(by: disposeBag)
-
-        func isValid(username: String, password: String) -> LoginError? {
-            if username.isEmpty {
-                return .invalidUsername
-            } else if password.isEmpty {
-                return .invalidPassword
-            }
-            return nil
-        }
-    }
-
-    private func loginWithSession(in viewModel: ViewModel<LoginActionHandler>) {
         guard viewModel.state.sessionStatus == .none else { return }
         update(viewModel: viewModel) { state in
             state.sessionStatus = .creating
@@ -274,9 +204,6 @@ struct LoginActionHandler: ViewModelActionHandler {
                 switch reason {
                 case .unacceptableStatusCode(let code):
                     switch operation {
-                    case .login:
-                        return code == 403 ? .loginFailed : .serverError(afError.response)
-
                     case .createSession, .checkSession, .cancelSession:
                         return .serverError(afError.response)
                     }

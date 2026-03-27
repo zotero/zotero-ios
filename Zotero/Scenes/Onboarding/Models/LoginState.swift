@@ -9,11 +9,6 @@
 import UIKit
 
 struct LoginState: ViewModelState {
-    enum Kind: Equatable {
-        case password
-        case session
-    }
-
     enum SessionStatus {
         case creating
         case checking
@@ -22,9 +17,6 @@ struct LoginState: ViewModelState {
         case cancelled
     }
 
-    let kind: Kind
-    var username: String
-    var password: String
     var sessionStatus: SessionStatus?
     var sessionToken: String?
     var loginURL: URL?
@@ -32,14 +24,11 @@ struct LoginState: ViewModelState {
     var shouldDismiss: Bool
     var error: LoginError?
 
-    init(kind: Kind) {
-        self.kind = kind
-        username = ""
-        password = ""
+    init() {
         sessionStatus = nil
         sessionToken = nil
         loginURL = nil
-        isLoading = (kind == .session)
+        isLoading = true
         shouldDismiss = false
         error = nil
     }

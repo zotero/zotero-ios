@@ -28,11 +28,6 @@ protocol AppOnboardingCoordinatorDelegate: AnyObject {
     func presentRegister()
 }
 
-protocol AppLoginCoordinatorDelegate: AnyObject {
-    func dismiss()
-    func showForgotPassword()
-}
-
 final class AppCoordinator: NSObject {
     private typealias Action = (UIViewController) -> Void
 
@@ -650,8 +645,7 @@ extension AppCoordinator: AppOnboardingCoordinatorDelegate {
     func presentLogin() {
         guard let rootViewController = window?.rootViewController else { return }
         let handler = LoginActionHandler(apiClient: controllers.apiClient, sessionController: controllers.sessionController)
-        let controller = LoginViewController(viewModel: ViewModel(initialState: LoginState(kind: .session), handler: handler))
-        controller.coordinatorDelegate = self
+        let controller = LoginViewController(viewModel: ViewModel(initialState: LoginState(), handler: handler))
         if UIDevice.current.userInterfaceIdiom == .pad {
             controller.modalPresentationStyle = .formSheet
             controller.preferredContentSize = CGSize(width: 540, height: 620)
@@ -666,17 +660,6 @@ extension AppCoordinator: AppOnboardingCoordinatorDelegate {
         guard let rootViewController = window?.rootViewController else { return }
         let controller = SFSafariViewController(url: URL(string: "https://www.zotero.org/user/register?app=1")!)
         rootViewController.present(controller, animated: true, completion: nil)
-    }
-}
-
-extension AppCoordinator: AppLoginCoordinatorDelegate {
-    func showForgotPassword() {
-        guard let url = URL(string: "https://www.zotero.org/user/lostpassword?app=1") else { return }
-        UIApplication.shared.open(url, options: [:], completionHandler: nil)
-    }
-
-    func dismiss() {
-        window?.rootViewController?.dismiss(animated: true, completion: nil)
     }
 }
 

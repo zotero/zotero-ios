@@ -11,7 +11,6 @@ import UIKit
 
 import CocoaLumberjackSwift
 import RxSwift
-import RxCocoa
 
 final class LoginViewController: UIViewController {
     @IBOutlet private weak var navbarHeight: NSLayoutConstraint!
@@ -20,20 +19,14 @@ final class LoginViewController: UIViewController {
     @IBOutlet private weak var containerRight: NSLayoutConstraint!
     @IBOutlet private weak var containerTop: NSLayoutConstraint!
     @IBOutlet private weak var container: UIStackView!
-    @IBOutlet private weak var usernameField: UITextField!
-    @IBOutlet private weak var passwordField: UITextField!
-    @IBOutlet private weak var loginButton: UIButton!
     @IBOutlet private weak var loginActivityView: UIActivityIndicatorView!
     @IBOutlet private weak var topSeparator: UIView!
-    @IBOutlet private weak var forgotPasswordButton: UIButton!
     @IBOutlet private weak var bottomSeparator: UIView!
 
     private let viewModel: ViewModel<LoginActionHandler>
     private let disposeBag: DisposeBag
     private var presentedLoginURL: URL?
     private var authSession: ASWebAuthenticationSession?
-
-    weak var coordinatorDelegate: AppLoginCoordinatorDelegate?
 
     // MARK: - Lifecycle
 
@@ -59,31 +52,7 @@ final class LoginViewController: UIViewController {
             })
             .disposed(by: disposeBag)
 
-        usernameField.rx
-            .text
-            .orEmpty
-            .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { [weak self] text in
-                self?.viewModel.process(action: .setUsername(text))
-            })
-            .disposed(by: disposeBag)
-
-        passwordField.rx
-            .text
-            .orEmpty
-            .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { [weak self] text in
-                self?.viewModel.process(action: .setPassword(text))
-            })
-            .disposed(by: disposeBag)
-
-        switch viewModel.state.kind {
-        case .password:
-            usernameField.becomeFirstResponder()
-
-        case .session:
-            viewModel.process(action: .login)
-        }
+        viewModel.process(action: .login)
 
         func setup() {
             // Layout
@@ -98,14 +67,6 @@ final class LoginViewController: UIViewController {
             container.spacing = spacing
             topSeparator.isHidden = !isIpad
             bottomSeparator.isHidden = isIpad
-            // Localization
-            usernameField.placeholder = L10n.Login.username
-            passwordField.placeholder = L10n.Login.password
-            loginButton.setTitle(L10n.Onboarding.signIn, for: .normal)
-            forgotPasswordButton.setTitle(L10n.Login.forgotPassword, for: .normal)
-            // Style
-            loginButton.layer.masksToBounds = true
-            loginButton.layer.cornerRadius = 12
         }
     }
 
@@ -116,22 +77,11 @@ final class LoginViewController: UIViewController {
     // MARK: - UI State
 
     private func update(state: LoginState) {
-        apply(kind: state.kind)
+        applyVisibility()
         applyLoadingState(for: state)
 
         if let error = state.error {
-            switch error {
-            case .invalidUsername, .loginFailed:
-                usernameField.becomeFirstResponder()
-
-            case .invalidPassword:
-                passwordField.becomeFirstResponder()
-
-            case .serverError, .sessionTimedOut, .unknown:
-                break
-            }
-
-            show(error: error, dismissOnCancel: state.kind == .session)
+            show(error: error, dismissOnCancel: true)
         }
 
         if state.shouldDismiss {
@@ -163,11 +113,8 @@ final class LoginViewController: UIViewController {
             self.authSession = authSession
         }
 
-        func apply(kind: LoginState.Kind) {
-            let isPasswordLogin = (kind == .password)
-            closeButton.isHidden = !isPasswordLogin
-            usernameField.superview?.superview?.isHidden = !isPasswordLogin
-            forgotPasswordButton.isHidden = !isPasswordLogin
+        func applyVisibility() {
+            closeButton.isHidden = true
         }
 
         func applyLoadingState(for state: LoginState) {
@@ -178,7 +125,6 @@ final class LoginViewController: UIViewController {
             }
 
             loginActivityView.isHidden = !state.isLoading
-            loginButton.isHidden = (state.kind == .session) || state.isLoading
         }
     }
 
@@ -198,14 +144,6 @@ final class LoginViewController: UIViewController {
     }
 
     // MARK: - Actions
-
-    @IBAction private func login() {
-        viewModel.process(action: .login)
-    }
-
-    @IBAction private func showForgotPassword() {
-        coordinatorDelegate?.showForgotPassword()
-    }
 
     @IBAction private func dismiss() {
         viewModel.process(action: .cancelLoginSessionIfNeeded)
@@ -238,19 +176,6 @@ final class LoginViewController: UIViewController {
         } else {
             return 44
         }
-    }
-}
-
-extension LoginViewController: UITextFieldDelegate {
-    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        guard viewModel.state.kind == .password else { return true }
-
-        if textField == usernameField {
-            passwordField.becomeFirstResponder()
-        } else {
-            viewModel.process(action: .login)
-        }
-        return true
     }
 }
 

@@ -18,13 +18,9 @@
                 <outlet property="containerLeft" destination="4tp-6L-ULw" id="poP-Pb-8IZ"/>
                 <outlet property="containerRight" destination="LeU-Mw-YD1" id="EUe-sz-ARR"/>
                 <outlet property="containerTop" destination="cbf-RY-vam" id="vva-hG-sU2"/>
-                <outlet property="forgotPasswordButton" destination="ZDy-pC-XwB" id="vgc-Hp-HRi"/>
                 <outlet property="loginActivityView" destination="tCV-po-R1S" id="rKR-Qy-bUm"/>
-                <outlet property="loginButton" destination="nM2-sB-zZM" id="fO5-fg-Nod"/>
                 <outlet property="navbarHeight" destination="h5D-b7-Px7" id="GA5-dK-LtD"/>
-                <outlet property="passwordField" destination="0np-e5-0VH" id="w7w-1H-Ueb"/>
                 <outlet property="topSeparator" destination="v2G-hi-7Ca" id="WLP-VH-gHQ"/>
-                <outlet property="usernameField" destination="lE2-QR-WhP" id="VMs-eO-BsA"/>
                 <outlet property="view" destination="i5M-Pr-FkT" id="sfx-zR-JGt"/>
             </connections>
         </placeholder>
@@ -65,7 +61,7 @@
                 <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="34" translatesAutoresizingMaskIntoConstraints="NO" id="9Id-3l-sbQ">
                     <rect key="frame" x="16" y="88" width="382" height="773"/>
                     <subviews>
-                        <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" translatesAutoresizingMaskIntoConstraints="NO" id="ZtA-jZ-E2m">
+                        <stackView hidden="YES" opaque="NO" contentMode="scaleToFill" axis="vertical" translatesAutoresizingMaskIntoConstraints="NO" id="ZtA-jZ-E2m">
                             <rect key="frame" x="0.0" y="0.0" width="382" height="96"/>
                             <subviews>
                                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="VL2-zu-8Yg">
@@ -78,9 +74,6 @@
                                             </constraints>
                                             <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                                             <textInputTraits key="textInputTraits" autocorrectionType="no" keyboardType="emailAddress" returnKeyType="next" textContentType="email"/>
-                                            <connections>
-                                                <outlet property="delegate" destination="-1" id="pLl-fS-jvp"/>
-                                            </connections>
                                         </textField>
                                         <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="aLM-2K-T2I">
                                             <rect key="frame" x="0.0" y="47" width="382" height="1"/>
@@ -111,9 +104,6 @@
                                             </constraints>
                                             <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                                             <textInputTraits key="textInputTraits" autocorrectionType="no" returnKeyType="done" secureTextEntry="YES" textContentType="password"/>
-                                            <connections>
-                                                <outlet property="delegate" destination="-1" id="Uey-zI-cM0"/>
-                                            </connections>
                                         </textField>
                                         <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Ne4-XH-e2g">
                                             <rect key="frame" x="0.0" y="47" width="382" height="1"/>
@@ -142,7 +132,7 @@
                                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="LhN-ht-joN">
                                     <rect key="frame" x="0.0" y="0.0" width="382" height="41"/>
                                     <subviews>
-                                        <button opaque="NO" contentMode="scaleToFill" verticalHuggingPriority="1000" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="nM2-sB-zZM">
+                                        <button hidden="YES" opaque="NO" contentMode="scaleToFill" verticalHuggingPriority="1000" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="nM2-sB-zZM">
                                             <rect key="frame" x="0.0" y="0.0" width="382" height="41"/>
                                             <color key="backgroundColor" name="zoteroBlue"/>
                                             <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
@@ -151,9 +141,6 @@
                                             <state key="normal" title="Login">
                                                 <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                             </state>
-                                            <connections>
-                                                <action selector="login" destination="-1" eventType="touchUpInside" id="vs8-ii-kyk"/>
-                                            </connections>
                                         </button>
                                         <activityIndicatorView hidden="YES" opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" style="medium" translatesAutoresizingMaskIntoConstraints="NO" id="tCV-po-R1S">
                                             <rect key="frame" x="181" y="10.5" width="20" height="20"/>
@@ -174,16 +161,13 @@
                                     <rect key="frame" x="0.0" y="41" width="382" height="0.0"/>
                                     <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                 </view>
-                                <button opaque="NO" contentMode="scaleToFill" verticalHuggingPriority="1000" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="ZDy-pC-XwB">
+                                <button hidden="YES" opaque="NO" contentMode="scaleToFill" verticalHuggingPriority="1000" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="ZDy-pC-XwB">
                                     <rect key="frame" x="0.0" y="41" width="382" height="41"/>
                                     <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                     <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                                     <color key="tintColor" name="zoteroBlue"/>
                                     <inset key="contentEdgeInsets" minX="0.0" minY="12" maxX="0.0" maxY="12"/>
                                     <state key="normal" title="Forgot Password"/>
-                                    <connections>
-                                        <action selector="showForgotPassword" destination="-1" eventType="touchUpInside" id="FRX-pd-5u4"/>
-                                    </connections>
                                 </button>
                                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="3kQ-Wx-Ver">
                                     <rect key="frame" x="0.0" y="82" width="382" height="561"/>
