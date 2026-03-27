@@ -145,7 +145,7 @@ final class LoginViewController: UIViewController {
                 guard let self else { return }
                 defer { self.authSession = nil }
                 guard let error else { return }
-                DDLogInfo("LoginViewController: login auth session completede with error - \(error)")
+                DDLogInfo("LoginViewController: login auth session completed with error - \(error)")
                 switch (error as? ASWebAuthenticationSessionError)?.code {
                 case .canceledLogin:
                     dismiss()
