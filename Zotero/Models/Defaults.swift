@@ -25,6 +25,9 @@ final class Defaults {
     @UserDefault(key: "userid", defaultValue: 0)
     var userId: Int
 
+    @OptionalUserDefault(key: "sessionId")
+    var sessionId: String?
+
     // MARK: - WebDav Session
 
     @UserDefault(key: "webDavEnabled", defaultValue: false)
@@ -234,6 +237,7 @@ final class Defaults {
         username = ""
         displayName = ""
         userId = 0
+        sessionId = nil
         shareExtensionIncludeTags = true
         shareExtensionIncludeAttachment = true
         selectedLibraryId = .custom(.myLibrary)

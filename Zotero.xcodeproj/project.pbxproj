@@ -165,6 +165,9 @@
 		B305660323FC051E003304F2 /* ZoteroApiClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305648C23FC051E003304F2 /* ZoteroApiClient.swift */; };
 		B305660423FC051E003304F2 /* Alamofire+RxSwift.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305648D23FC051E003304F2 /* Alamofire+RxSwift.swift */; };
 		B305660523FC051E003304F2 /* DeletionsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305648F23FC051E003304F2 /* DeletionsRequest.swift */; };
+		A1B2C3D42F1A000100ABC001 /* CreateLoginSessionRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D82F1A000100ABC001 /* CreateLoginSessionRequest.swift */; };
+		D1E2F3AC2F1C000100ABC001 /* CancelLoginSessionRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E2F3AD2F1C000100ABC001 /* CancelLoginSessionRequest.swift */; };
+		A1B2C3DA2F1A000100ABC001 /* CheckLoginSessionRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3DE2F1A000100ABC001 /* CheckLoginSessionRequest.swift */; };
 		B305660623FC051E003304F2 /* UpdatesRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305649023FC051E003304F2 /* UpdatesRequest.swift */; };
 		B305660723FC051E003304F2 /* LoginRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305649123FC051E003304F2 /* LoginRequest.swift */; };
 		B305660823FC051E003304F2 /* KeyRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305649223FC051E003304F2 /* KeyRequest.swift */; };
@@ -242,6 +245,8 @@
 		B30566B323FC051F003304F2 /* CollectionResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305654C23FC051E003304F2 /* CollectionResponse.swift */; };
 		B30566B423FC051F003304F2 /* LinksResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305654D23FC051E003304F2 /* LinksResponse.swift */; };
 		B30566B523FC051F003304F2 /* LoginResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305654E23FC051E003304F2 /* LoginResponse.swift */; };
+		A1B2C3D52F1A000100ABC001 /* CreateLoginSessionResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D92F1A000100ABC001 /* CreateLoginSessionResponse.swift */; };
+		A1B2C3DB2F1A000100ABC001 /* CheckLoginSessionResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3DF2F1A000100ABC001 /* CheckLoginSessionResponse.swift */; };
 		B30566B623FC051F003304F2 /* DeletionsResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305654F23FC051E003304F2 /* DeletionsResponse.swift */; };
 		B30566B723FC051F003304F2 /* GroupResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305655023FC051E003304F2 /* GroupResponse.swift */; };
 		B30566B823FC051F003304F2 /* SearchesResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305655123FC051E003304F2 /* SearchesResponse.swift */; };
@@ -264,6 +269,9 @@
 		B30566E223FC0810003304F2 /* DeletionsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305648F23FC051E003304F2 /* DeletionsRequest.swift */; };
 		B30566E323FC0815003304F2 /* UpdatesRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305649023FC051E003304F2 /* UpdatesRequest.swift */; };
 		B30566E423FC081A003304F2 /* LoginRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305649123FC051E003304F2 /* LoginRequest.swift */; };
+		A1B2C3D62F1A000100ABC001 /* CreateLoginSessionRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D82F1A000100ABC001 /* CreateLoginSessionRequest.swift */; };
+		D1E2F3AE2F1C000100ABC001 /* CancelLoginSessionRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E2F3AD2F1C000100ABC001 /* CancelLoginSessionRequest.swift */; };
+		A1B2C3DC2F1A000100ABC001 /* CheckLoginSessionRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3DE2F1A000100ABC001 /* CheckLoginSessionRequest.swift */; };
 		B30566E523FC081D003304F2 /* KeyRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305649223FC051E003304F2 /* KeyRequest.swift */; };
 		B30566E623FC081F003304F2 /* SettingsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305649323FC051E003304F2 /* SettingsRequest.swift */; };
 		B30566E723FC0821003304F2 /* RegisterUploadRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305649423FC051E003304F2 /* RegisterUploadRequest.swift */; };
@@ -346,6 +354,8 @@
 		B305674123FC09AF003304F2 /* CollectionResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305654C23FC051E003304F2 /* CollectionResponse.swift */; };
 		B305674223FC09AF003304F2 /* LinksResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305654D23FC051E003304F2 /* LinksResponse.swift */; };
 		B305674323FC09AF003304F2 /* LoginResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305654E23FC051E003304F2 /* LoginResponse.swift */; };
+		A1B2C3D72F1A000100ABC001 /* CreateLoginSessionResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D92F1A000100ABC001 /* CreateLoginSessionResponse.swift */; };
+		A1B2C3DD2F1A000100ABC001 /* CheckLoginSessionResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3DF2F1A000100ABC001 /* CheckLoginSessionResponse.swift */; };
 		B305674423FC09AF003304F2 /* DeletionsResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305654F23FC051E003304F2 /* DeletionsResponse.swift */; };
 		B305674523FC09AF003304F2 /* GroupResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305655023FC051E003304F2 /* GroupResponse.swift */; };
 		B305674623FC09AF003304F2 /* SearchesResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305655123FC051E003304F2 /* SearchesResponse.swift */; };
@@ -488,6 +498,9 @@
 		B3235C9224ADE11E0034113B /* StringAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3235C9124ADE11E0034113B /* StringAttributes.swift */; };
 		B32370402C0DC65600170779 /* LookupWebViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B323703F2C0DC65600170779 /* LookupWebViewHandler.swift */; };
 		B324276D25C81F2000567504 /* WebSocketController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B324276C25C81F2000567504 /* WebSocketController.swift */; };
+		D1E2F3A82F1C000100ABC001 /* APIWebSocketController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E2F3A92F1C000100ABC001 /* APIWebSocketController.swift */; };
+		D1E2F3A42F1C000100ABC001 /* LoginCompleteWsResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E2F3A52F1C000100ABC001 /* LoginCompleteWsResponse.swift */; };
+		D1E2F3AA2F1C000100ABC001 /* LoginSessionWebSocketController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E2F3AB2F1C000100ABC001 /* LoginSessionWebSocketController.swift */; };
 		B324277225C82DBF00567504 /* SubscribeWsMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B324277125C82DBF00567504 /* SubscribeWsMessage.swift */; };
 		B324277825C82E6500567504 /* UnsubscribeWsMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B324277725C82E6500567504 /* UnsubscribeWsMessage.swift */; };
 		B324278225C841A600567504 /* WsResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B324278125C841A600567504 /* WsResponse.swift */; };
@@ -1467,6 +1480,11 @@
 		B305646923FC051E003304F2 /* RealmDbStorage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RealmDbStorage.swift; sourceTree = "<group>"; };
 		B305646A23FC051E003304F2 /* RItemLocaleController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RItemLocaleController.swift; sourceTree = "<group>"; };
 		B305646B23FC051E003304F2 /* SchemaController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SchemaController.swift; sourceTree = "<group>"; };
+		A1B2C3D82F1A000100ABC001 /* CreateLoginSessionRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateLoginSessionRequest.swift; sourceTree = "<group>"; };
+		D1E2F3AD2F1C000100ABC001 /* CancelLoginSessionRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CancelLoginSessionRequest.swift; sourceTree = "<group>"; };
+		A1B2C3D92F1A000100ABC001 /* CreateLoginSessionResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateLoginSessionResponse.swift; sourceTree = "<group>"; };
+		A1B2C3DE2F1A000100ABC001 /* CheckLoginSessionRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckLoginSessionRequest.swift; sourceTree = "<group>"; };
+		A1B2C3DF2F1A000100ABC001 /* CheckLoginSessionResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckLoginSessionResponse.swift; sourceTree = "<group>"; };
 		B305646C23FC051E003304F2 /* ObjectUserChangeObserver.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ObjectUserChangeObserver.swift; sourceTree = "<group>"; };
 		B305646D23FC051E003304F2 /* CreatorSummaryFormatter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CreatorSummaryFormatter.swift; sourceTree = "<group>"; };
 		B305646E23FC051E003304F2 /* SessionController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SessionController.swift; sourceTree = "<group>"; };
@@ -1658,6 +1676,9 @@
 		B3235C9124ADE11E0034113B /* StringAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StringAttributes.swift; sourceTree = "<group>"; };
 		B323703F2C0DC65600170779 /* LookupWebViewHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LookupWebViewHandler.swift; sourceTree = "<group>"; };
 		B324276C25C81F2000567504 /* WebSocketController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebSocketController.swift; sourceTree = "<group>"; };
+		D1E2F3A92F1C000100ABC001 /* APIWebSocketController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIWebSocketController.swift; sourceTree = "<group>"; };
+		D1E2F3A52F1C000100ABC001 /* LoginCompleteWsResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginCompleteWsResponse.swift; sourceTree = "<group>"; };
+		D1E2F3AB2F1C000100ABC001 /* LoginSessionWebSocketController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginSessionWebSocketController.swift; sourceTree = "<group>"; };
 		B324277125C82DBF00567504 /* SubscribeWsMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscribeWsMessage.swift; sourceTree = "<group>"; };
 		B324277725C82E6500567504 /* UnsubscribeWsMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnsubscribeWsMessage.swift; sourceTree = "<group>"; };
 		B324278125C841A600567504 /* WsResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WsResponse.swift; sourceTree = "<group>"; };
@@ -2659,6 +2680,8 @@
 				61FA14CD2B05081D00E7D423 /* TextConverter.swift */,
 				B36A988C2428E059005D5790 /* TranslatorsAndStylesController.swift */,
 				B3972688247D403200A8B469 /* UrlDetector.swift */,
+				D1E2F3A92F1C000100ABC001 /* APIWebSocketController.swift */,
+				D1E2F3AB2F1C000100ABC001 /* LoginSessionWebSocketController.swift */,
 				B324276C25C81F2000567504 /* WebSocketController.swift */,
 				B3F9A4CA2B04F28400684030 /* WebViewEncoder.swift */,
 				B3B557152C884DD200BD6325 /* ZoteroURIConverter.swift */,
@@ -2847,6 +2870,9 @@
 				B372CEE22486512500B423AE /* GroupRequest.swift */,
 				B372CEDF2486504600B423AE /* GroupVersionsRequest.swift */,
 				B305649223FC051E003304F2 /* KeyRequest.swift */,
+				A1B2C3D82F1A000100ABC001 /* CreateLoginSessionRequest.swift */,
+				D1E2F3AD2F1C000100ABC001 /* CancelLoginSessionRequest.swift */,
+				A1B2C3DE2F1A000100ABC001 /* CheckLoginSessionRequest.swift */,
 				B305649123FC051E003304F2 /* LoginRequest.swift */,
 				B305649823FC051E003304F2 /* ObjectsRequest.swift */,
 				B305649423FC051E003304F2 /* RegisterUploadRequest.swift */,
@@ -3072,6 +3098,8 @@
 				B305654A23FC051E003304F2 /* KeyResponse.swift */,
 				B305654823FC051E003304F2 /* LibraryResponse.swift */,
 				B305654D23FC051E003304F2 /* LinksResponse.swift */,
+				A1B2C3D92F1A000100ABC001 /* CreateLoginSessionResponse.swift */,
+				A1B2C3DF2F1A000100ABC001 /* CheckLoginSessionResponse.swift */,
 				B305654E23FC051E003304F2 /* LoginResponse.swift */,
 				6102D2B72D6CCDD300505E6A /* RemoteRecognizerResponse.swift */,
 				B3A2AEDD26565211004BF3A4 /* RemoteStylesResponse.swift */,
@@ -3322,6 +3350,7 @@
 			isa = PBXGroup;
 			children = (
 				B341C8CE25CBFCE4005562E5 /* ChangeWsResponse.swift */,
+				D1E2F3A52F1C000100ABC001 /* LoginCompleteWsResponse.swift */,
 				B324277125C82DBF00567504 /* SubscribeWsMessage.swift */,
 				B324277725C82E6500567504 /* UnsubscribeWsMessage.swift */,
 				B324278125C841A600567504 /* WsResponse.swift */,
@@ -5742,6 +5771,8 @@
 				B3E8FE582714323200F51458 /* SavingSettingsAction.swift in Sources */,
 				B305662B23FC051F003304F2 /* SyncProgressHandler.swift in Sources */,
 				B3F09AE629CAFF860084E4D8 /* TagFilterActionHandler.swift in Sources */,
+				A1B2C3D52F1A000100ABC001 /* CreateLoginSessionResponse.swift in Sources */,
+				A1B2C3DB2F1A000100ABC001 /* CheckLoginSessionResponse.swift in Sources */,
 				B30566B523FC051F003304F2 /* LoginResponse.swift in Sources */,
 				B3B41F1B2848E5A90017CA4B /* AnnotationsFilter.swift in Sources */,
 				B3B557192C8860E600BD6325 /* CitationMetadata.swift in Sources */,
@@ -5836,6 +5867,7 @@
 				B38B24B926E7664400BDD1BB /* AnnotationToolOptionsViewController.swift in Sources */,
 				B30566A123FC051F003304F2 /* Library.swift in Sources */,
 				B324278225C841A600567504 /* WsResponse.swift in Sources */,
+				D1E2F3A42F1C000100ABC001 /* LoginCompleteWsResponse.swift in Sources */,
 				B3A47C3A29015FE800E7D90D /* TableOfContentsState.swift in Sources */,
 				B3A351DD2715774E002E597A /* WebDavNonexistentPropRequest.swift in Sources */,
 				B3E8FE30271429C300F51458 /* ExportLocalePickerAction.swift in Sources */,
@@ -5934,12 +5966,14 @@
 				B305660923FC051E003304F2 /* SettingsRequest.swift in Sources */,
 				B305662423FC051F003304F2 /* LoadLibraryDataSyncAction.swift in Sources */,
 				B324276D25C81F2000567504 /* WebSocketController.swift in Sources */,
+				D1E2F3A82F1C000100ABC001 /* APIWebSocketController.swift in Sources */,
 				B30566BC23FC051F003304F2 /* WriteBatch.swift in Sources */,
 				B3F0C3FD250A1DB8002D557A /* LibraryCell.swift in Sources */,
 				B34DF1AC25768AD40019CCD1 /* AnnotationPageLabelState.swift in Sources */,
 				B3593F20241A61C700760E20 /* ItemDetailError.swift in Sources */,
 				B3E8FE082714292E00F51458 /* StorageSettingsListView.swift in Sources */,
 				B30566A523FC051F003304F2 /* SyncableObject.swift in Sources */,
+				D1E2F3AA2F1C000100ABC001 /* LoginSessionWebSocketController.swift in Sources */,
 				B324277225C82DBF00567504 /* SubscribeWsMessage.swift in Sources */,
 				B3E8FE7A2714357000F51458 /* GeneralSettingsAction.swift in Sources */,
 				B3A2AEDE26565211004BF3A4 /* RemoteStylesResponse.swift in Sources */,
@@ -6132,6 +6166,9 @@
 				B35C529C26383BDD007BD036 /* ReadAllDownloadedItemsDbRequest.swift in Sources */,
 				611FF4E02DD47F860094184A /* RetryDelay.swift in Sources */,
 				B373C98F2B1F5431007FD56C /* PDFThumbnailsLayout.swift in Sources */,
+				A1B2C3D42F1A000100ABC001 /* CreateLoginSessionRequest.swift in Sources */,
+				D1E2F3AC2F1C000100ABC001 /* CancelLoginSessionRequest.swift in Sources */,
+				A1B2C3DA2F1A000100ABC001 /* CheckLoginSessionRequest.swift in Sources */,
 				B305660723FC051E003304F2 /* LoginRequest.swift in Sources */,
 				61A0C8472B8F669C0048FF92 /* PSPDFKitUI+Extensions.swift in Sources */,
 				B30566B323FC051F003304F2 /* CollectionResponse.swift in Sources */,
@@ -6230,6 +6267,8 @@
 				B373B1B82BBD74F400DCF893 /* DeleteFailedItemsDbRequest.swift in Sources */,
 				B386328626C5499900183062 /* TranslatorsAndStylesController.swift in Sources */,
 				B3F4E4EF2A4DC4E300820718 /* JSONSerialization+Utils.swift in Sources */,
+				A1B2C3D72F1A000100ABC001 /* CreateLoginSessionResponse.swift in Sources */,
+				A1B2C3DD2F1A000100ABC001 /* CheckLoginSessionResponse.swift in Sources */,
 				B305674323FC09AF003304F2 /* LoginResponse.swift in Sources */,
 				B305674423FC09AF003304F2 /* DeletionsResponse.swift in Sources */,
 				B31EEE5824EBCB2C00E3B3AD /* RRect.swift in Sources */,
@@ -6423,6 +6462,9 @@
 				B305670E23FC08BF003304F2 /* ReadLibrariesDataDbRequest.swift in Sources */,
 				B3A081D725D2C1680088EC24 /* ConflictCoordinator.swift in Sources */,
 				B305671223FC08C7003304F2 /* ReadUpdatedObjectUpdateParametersDbRequest.swift in Sources */,
+				A1B2C3D62F1A000100ABC001 /* CreateLoginSessionRequest.swift in Sources */,
+				D1E2F3AE2F1C000100ABC001 /* CancelLoginSessionRequest.swift in Sources */,
+				A1B2C3DC2F1A000100ABC001 /* CheckLoginSessionRequest.swift in Sources */,
 				B30566E423FC081A003304F2 /* LoginRequest.swift in Sources */,
 				B357DEE8241661E500E06153 /* DebugLogFormatter.swift in Sources */,
 				B30DCEA22D65E9A90084C5D4 /* AnnotationsConfig.swift in Sources */,

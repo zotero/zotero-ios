@@ -13,6 +13,7 @@ enum LoginError: Error {
     case invalidPassword
     case loginFailed
     case serverError(String)
+    case sessionTimedOut
     case unknown(Error)
 
     var localizedDescription: String {
@@ -28,6 +29,9 @@ enum LoginError: Error {
 
         case .serverError(let response):
             return response
+
+        case .sessionTimedOut:
+            return L10n.Errors.Login.sessionTimedOut
 
         case .unknown(let error):
             return error.localizedDescription

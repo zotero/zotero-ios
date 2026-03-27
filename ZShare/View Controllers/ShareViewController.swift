@@ -749,7 +749,7 @@ final class ShareViewController: UIViewController {
     }
 
     private func setupControllers(with session: SessionData, apiClient: ApiClient, fileStorage: FileStorage, schemaController: SchemaController) {
-        let dbUrl = Files.dbFile(for: session.userId).createUrl()
+        let dbUrl = Files.dbFile(for: session.userId, sessionId: session.sessionId).createUrl()
         let dbStorage = RealmDbStorage(config: Database.mainConfiguration(url: dbUrl, fileStorage: fileStorage))
         let configuration = Database.bundledDataConfiguration(fileStorage: fileStorage)
         let bundledDataStorage = RealmDbStorage(config: configuration)

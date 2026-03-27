@@ -650,7 +650,7 @@ extension AppCoordinator: AppOnboardingCoordinatorDelegate {
     func presentLogin() {
         guard let rootViewController = window?.rootViewController else { return }
         let handler = LoginActionHandler(apiClient: controllers.apiClient, sessionController: controllers.sessionController)
-        let controller = LoginViewController(viewModel: ViewModel(initialState: LoginState(), handler: handler))
+        let controller = LoginViewController(viewModel: ViewModel(initialState: LoginState(kind: .session), handler: handler))
         controller.coordinatorDelegate = self
         if UIDevice.current.userInterfaceIdiom == .pad {
             controller.modalPresentationStyle = .formSheet
@@ -694,7 +694,7 @@ extension AppCoordinator: CrashReporterCoordinator {
         if userId > 0 {
             let action = UIAlertAction(title: L10n.Settings.CrashAlert.exportDb, style: .default) { [weak self] _ in
                 UIPasteboard.general.string = id
-                self?.exportDb(with: userId, completion: completion)
+                self?.exportDb(with: userId, sessionId: Defaults.shared.sessionId, completion: completion)
             }
             actions.append(action)
         }
@@ -710,9 +710,9 @@ extension AppCoordinator: CrashReporterCoordinator {
         }
     }
 
-    private func exportDb(with userId: Int, completion: (() -> Void)?) {
+    private func exportDb(with userId: Int, sessionId: String?, completion: (() -> Void)?) {
         guard let viewController else { return }
-        let mainUrl = Files.dbFile(for: userId).createUrl()
+        let mainUrl = Files.dbFile(for: userId, sessionId: sessionId).createUrl()
         let bundledUrl = Files.bundledDataDbFile.createUrl()
 
         let controller = UIActivityViewController(activityItems: [mainUrl, bundledUrl], applicationActivities: nil)

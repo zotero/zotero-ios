@@ -84,8 +84,14 @@ struct Files {
 
     // MARK: - Database
 
-    static func dbFile(for userId: Int) -> File {
-        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["database"], name: "maindb_\(userId)", ext: "realm")
+    static func dbFile(for userId: Int, sessionId: String?) -> File {
+        let name: String
+        if let sessionId, !sessionId.isEmpty {
+            name = "maindb_\(userId)_\(sessionId)"
+        } else {
+            name = "maindb_\(userId)"
+        }
+        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["database"], name: name, ext: "realm")
     }
 
     static var bundledDataDbFile: File {

@@ -6,8 +6,10 @@
 //  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import AuthenticationServices
 import UIKit
 
+import CocoaLumberjackSwift
 import RxSwift
 import RxCocoa
 
@@ -28,6 +30,8 @@ final class LoginViewController: UIViewController {
 
     private let viewModel: ViewModel<LoginActionHandler>
     private let disposeBag: DisposeBag
+    private var presentedLoginURL: URL?
+    private var authSession: ASWebAuthenticationSession?
 
     weak var coordinatorDelegate: AppLoginCoordinatorDelegate?
 
@@ -46,7 +50,7 @@ final class LoginViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setup()
-        usernameField.becomeFirstResponder()
+        update(state: viewModel.state)
 
         viewModel.stateObservable
             .observe(on: MainScheduler.instance)
@@ -72,6 +76,14 @@ final class LoginViewController: UIViewController {
                 self?.viewModel.process(action: .setPassword(text))
             })
             .disposed(by: disposeBag)
+
+        switch viewModel.state.kind {
+        case .password:
+            usernameField.becomeFirstResponder()
+
+        case .session:
+            viewModel.process(action: .login)
+        }
 
         func setup() {
             // Layout
@@ -104,11 +116,8 @@ final class LoginViewController: UIViewController {
     // MARK: - UI State
 
     private func update(state: LoginState) {
-        if state.isLoading {
-            startLoadingIfNeeded()
-        } else {
-            stopLoadingIfNeeded()
-        }
+        apply(kind: state.kind)
+        applyLoadingState(for: state)
 
         if let error = state.error {
             switch error {
@@ -118,31 +127,74 @@ final class LoginViewController: UIViewController {
             case .invalidPassword:
                 passwordField.becomeFirstResponder()
 
-            case .serverError, .unknown: break
+            case .serverError, .sessionTimedOut, .unknown:
+                break
             }
 
-            show(error: error)
+            show(error: error, dismissOnCancel: state.kind == .session)
+        }
+
+        if state.shouldDismiss {
+            dismiss()
+            return
+        }
+
+        if let loginURL = state.loginURL, presentedLoginURL != loginURL {
+            presentedLoginURL = loginURL
+            let authSession = ASWebAuthenticationSession(url: loginURL, callbackURLScheme: "zotero-ios", completionHandler: { [weak self] _, error in
+                guard let self else { return }
+                defer { self.authSession = nil }
+                guard let error else { return }
+                DDLogInfo("LoginViewController: login auth session completed with error - \(error)")
+                switch (error as? ASWebAuthenticationSessionError)?.code {
+                case .canceledLogin:
+                    dismiss()
+
+                case .presentationContextInvalid, .presentationContextNotProvided, .none:
+                    break
+
+                default:
+                    break
+                }
+            })
+            authSession.prefersEphemeralWebBrowserSession = true
+            authSession.presentationContextProvider = self
+            authSession.start()
+            self.authSession = authSession
+        }
+
+        func apply(kind: LoginState.Kind) {
+            let isPasswordLogin = (kind == .password)
+            closeButton.isHidden = !isPasswordLogin
+            usernameField.superview?.superview?.isHidden = !isPasswordLogin
+            forgotPasswordButton.isHidden = !isPasswordLogin
+        }
+
+        func applyLoadingState(for state: LoginState) {
+            if state.isLoading {
+                loginActivityView.startAnimating()
+            } else {
+                loginActivityView.stopAnimating()
+            }
+
+            loginActivityView.isHidden = !state.isLoading
+            loginButton.isHidden = (state.kind == .session) || state.isLoading
         }
     }
 
-    private func show(error: LoginError) {
+    private func show(error: LoginError, dismissOnCancel: Bool) {
         let controller = UIAlertController(title: L10n.error, message: error.localizedDescription, preferredStyle: .alert)
-        controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
-        present(controller, animated: true, completion: nil)
-    }
-
-    private func startLoadingIfNeeded() {
-        guard loginActivityView.isHidden else { return }
-        loginActivityView.startAnimating()
-        loginActivityView.isHidden = false
-        loginButton.isHidden = true
-    }
-
-    private func stopLoadingIfNeeded() {
-        guard !loginActivityView.isHidden else { return }
-        loginActivityView.isHidden = true
-        loginActivityView.stopAnimating()
-        loginButton.isHidden = false
+        controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: { [weak self] _ in
+            guard dismissOnCancel else { return }
+            self?.dismiss()
+        }))
+        if presentedViewController != nil {
+            dismiss(animated: true) { [weak self] in
+                self?.present(controller, animated: true)
+            }
+        } else {
+            present(controller, animated: true)
+        }
     }
 
     // MARK: - Actions
@@ -156,6 +208,9 @@ final class LoginViewController: UIViewController {
     }
 
     @IBAction private func dismiss() {
+        viewModel.process(action: .cancelLoginSessionIfNeeded)
+        authSession?.cancel()
+        authSession = nil
         dismiss(animated: true, completion: nil)
     }
 
@@ -188,11 +243,23 @@ final class LoginViewController: UIViewController {
 
 extension LoginViewController: UITextFieldDelegate {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        guard viewModel.state.kind == .password else { return true }
+
         if textField == usernameField {
             passwordField.becomeFirstResponder()
         } else {
             viewModel.process(action: .login)
         }
         return true
+    }
+}
+
+extension LoginViewController: ASWebAuthenticationPresentationContextProviding {
+    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        guard let window = view.window else {
+            DDLogWarn("LoginViewController: could return window as presentation anchor")
+            return ASPresentationAnchor()
+        }
+        return window
     }
 }
