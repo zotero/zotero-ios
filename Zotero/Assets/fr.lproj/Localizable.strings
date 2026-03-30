@@ -72,11 +72,6 @@
 "onboarding.share" = "<b>Appuyer pour collecter</b> des articles et des livres directement depuis le Web, y compris leurs fichiers PDF et toutes leurs métadonnées. ";
 "onboarding.sign_in" = "Se connecter";
 "onboarding.create_account" = "S'enregistrer";
-"login.username" = "Nom d'utilisateur";
-"login.password" = "Mot de passe";
-"login.email" = "Courriel";
-"login.repeat_password" = "Répéter le mot de passe";
-"login.forgot_password" = "Mot de passe oublié ?";
 
 "libraries.my_library" = "Ma bibliothèque";
 "libraries.group_libraries" = "Bibliothèques de groupe";
@@ -400,9 +395,6 @@
 "errors.attachments.too_many_requests" = "Trop de requêtes. Veuillez essayer à nouveau dans quelques minutes.";
 "errors.attachments.forbidden_webdav" = "Vous n'avez pas le droit d'accéder à %@ sur le serveur WebDAV.";
 "errors.attachments.generic_filename" = "le fichier";
-"errors.login.invalid_password" = "Mot de passe non valide";
-"errors.login.invalid_username" = "Nom d'utilisateur non valide";
-"errors.login.invalid_credentials" = "Utilisateur ou mot de passe invalide";
 "errors.libraries.cantLoad" = "Impossible de charger les bibliothèques";
 "errors.collections.empty_name" = "Veuillez saisir un nom de collection";
 "errors.collections.save_failed" = "Impossible d'enregistrer la collection";

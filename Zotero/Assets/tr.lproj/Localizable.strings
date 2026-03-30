@@ -72,11 +72,6 @@
 "onboarding.share" = "İnternetten makale ve kitapların PDF ve tüm üstverilerini çekmek için<b>tıklayın.</b> ";
 "onboarding.sign_in" = "Giriş Yap";
 "onboarding.create_account" = "Kaydol";
-"login.username" = "Kullanıcı Adı";
-"login.password" = "Şifre";
-"login.email" = "E-posta";
-"login.repeat_password" = "Şifreyi yinele";
-"login.forgot_password" = "Şifremi Unuttum";
 
 "libraries.my_library" = "Kitaplığım";
 "libraries.group_libraries" = "Grup Kitaplıkları";
@@ -400,9 +395,6 @@
 "errors.attachments.too_many_requests" = "Too many requests. Please try again in a few minutes.";
 "errors.attachments.forbidden_webdav" = "You don’t have permission to access %@ on the WebDAV server.";
 "errors.attachments.generic_filename" = "dosya";
-"errors.login.invalid_password" = "Geçersiz parola";
-"errors.login.invalid_username" = "Geçersiz kullanıcı adı";
-"errors.login.invalid_credentials" = "Geçersiz kullanıcı adı veya parola";
 "errors.libraries.cantLoad" = "Unable to load libraries";
 "errors.collections.empty_name" = "Please enter a collection name";
 "errors.collections.save_failed" = "Unable to save collection";

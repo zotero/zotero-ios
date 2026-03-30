@@ -72,11 +72,6 @@
 "onboarding.share" = "<b>Tap to collect</b> articles and books directly from the web, including their PDFs and full metadata.";
 "onboarding.sign_in" = "Přihlásit se";
 "onboarding.create_account" = "Registrovat";
-"login.username" = "Uživatelské jméno";
-"login.password" = "Heslo";
-"login.email" = "E-mail";
-"login.repeat_password" = "Opakujte heslo";
-"login.forgot_password" = "Zapomněli jste heslo?";
 
 "libraries.my_library" = "Moje knihovna";
 "libraries.group_libraries" = "Skupinové knihovny";
@@ -400,9 +395,6 @@
 "errors.attachments.too_many_requests" = "Too many requests. Please try again in a few minutes.";
 "errors.attachments.forbidden_webdav" = "You don’t have permission to access %@ on the WebDAV server.";
 "errors.attachments.generic_filename" = "the file";
-"errors.login.invalid_password" = "Invalid password";
-"errors.login.invalid_username" = "Invalid username";
-"errors.login.invalid_credentials" = "Invalid username or password";
 "errors.libraries.cantLoad" = "Unable to load libraries";
 "errors.collections.empty_name" = "Please enter a collection name";
 "errors.collections.save_failed" = "Unable to save collection";

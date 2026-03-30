@@ -72,11 +72,6 @@
 "onboarding.share" = "<b>Tabs zum Sammeln</b> Artikel und Bücher direkt aus dem Internet, inklusive PDFs und Metadateien.";
 "onboarding.sign_in" = "Anmelden";
 "onboarding.create_account" = "Konto erstellen";
-"login.username" = "Benutzername";
-"login.password" = "Passwort";
-"login.email" = "E-Mail";
-"login.repeat_password" = "Passwort erneut eingeben";
-"login.forgot_password" = "Passwort vergessen?";
 
 "libraries.my_library" = "Meine Bibliothek";
 "libraries.group_libraries" = "Gruppen Bibliotheken";
@@ -400,9 +395,6 @@
 "errors.attachments.too_many_requests" = "Zu viele Anfrgen. Versuchen SIe es in einigen Minuten erneut.";
 "errors.attachments.forbidden_webdav" = "Sie haben keine Erlaubnis um auf %@ auf dem WebDAV-Server zuzugreifen";
 "errors.attachments.generic_filename" = "die Datei";
-"errors.login.invalid_password" = "Ungültiges Passwort";
-"errors.login.invalid_username" = "ungültiger Benutzername";
-"errors.login.invalid_credentials" = "Ungültiger Benutzername oder Passwort";
 "errors.libraries.cantLoad" = "Bibliotheken konnten nicht geladen werden";
 "errors.collections.empty_name" = "Geben Sie einen Sammlungs-Namen ein";
 "errors.collections.save_failed" = "Sammlung konnte nicht gespeichert werden";

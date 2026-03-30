@@ -72,11 +72,6 @@
 "onboarding.share" = "<b>Tap to collect</b> articles and books directly from the web, including their PDFs and full metadata.";
 "onboarding.sign_in" = "Kirjaudu sisään";
 "onboarding.create_account" = "Rekisteröidy";
-"login.username" = "Käyttäjänimi";
-"login.password" = "Salasana";
-"login.email" = "Sähköposti";
-"login.repeat_password" = "Salasana uudelleen";
-"login.forgot_password" = "Unohditko salasanan?";
 
 "libraries.my_library" = "Oma kirjasto";
 "libraries.group_libraries" = "Group Libraries";
@@ -400,9 +395,6 @@
 "errors.attachments.too_many_requests" = "Liian monta pyyntöä. Yritä uudelleen muutaman minuutin kuluttua.";
 "errors.attachments.forbidden_webdav" = "You don’t have permission to access %@ on the WebDAV server.";
 "errors.attachments.generic_filename" = "the file";
-"errors.login.invalid_password" = "Virheellinen salasana";
-"errors.login.invalid_username" = "Virheellinen käyttäjänimi";
-"errors.login.invalid_credentials" = "Virheellinen käyttäjänimi tai salasana";
 "errors.libraries.cantLoad" = "Kirjastoja ei voi ladata";
 "errors.collections.empty_name" = "Kirjoita kokoelman nimi";
 "errors.collections.save_failed" = "Kokoelman tallentaminen ei onnistu";

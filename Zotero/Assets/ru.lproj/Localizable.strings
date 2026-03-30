@@ -72,11 +72,6 @@
 "onboarding.share" = "<b>Нажмите, чтобы собрать</b> статьи и книги прямо из сети, включая их файлы PDF и полные метаданные.";
 "onboarding.sign_in" = "Зарегистрироваться";
 "onboarding.create_account" = "Зарегистрироваться";
-"login.username" = "Имя пользователя";
-"login.password" = "Пароль";
-"login.email" = "Email";
-"login.repeat_password" = "Повторите пароль";
-"login.forgot_password" = "Забыли пароль?";
 
 "libraries.my_library" = "Моя библиотека";
 "libraries.group_libraries" = "Групповые библиотеки";
@@ -400,9 +395,6 @@
 "errors.attachments.too_many_requests" = "Too many requests. Please try again in a few minutes.";
 "errors.attachments.forbidden_webdav" = "You don’t have permission to access %@ on the WebDAV server.";
 "errors.attachments.generic_filename" = "the file";
-"errors.login.invalid_password" = "Invalid password";
-"errors.login.invalid_username" = "Invalid username";
-"errors.login.invalid_credentials" = "Invalid username or password";
 "errors.libraries.cantLoad" = "Unable to load libraries";
 "errors.collections.empty_name" = "Please enter a collection name";
 "errors.collections.save_failed" = "Unable to save collection";

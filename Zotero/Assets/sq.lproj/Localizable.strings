@@ -72,11 +72,6 @@
 "onboarding.share" = "<b>Prekeni, që të grumbulloni</b> artikuj dhe libra drejt e nga interneti, përfshi PDF-të e tyre dhe tejtëdhëna të plota.";
 "onboarding.sign_in" = "Hyni";
 "onboarding.create_account" = "Regjistrohuni";
-"login.username" = "Emër përdoruesi";
-"login.password" = "Fjalëkalim";
-"login.email" = "Email";
-"login.repeat_password" = "Përsëriteni fjalëkalimin";
-"login.forgot_password" = "Harruat Fjalëkalimin?";
 
 "libraries.my_library" = "Biblioteka Ime";
 "libraries.group_libraries" = "Group Libraries";
@@ -400,9 +395,6 @@
 "errors.attachments.too_many_requests" = "Shumë kërkesa. Ju lutemi, riprovoni pas pak minutash.";
 "errors.attachments.forbidden_webdav" = "S’keni leje të hyni te %@ në shërbyesin WebDAV.";
 "errors.attachments.generic_filename" = "kartela";
-"errors.login.invalid_password" = "Fjalëkalim i pavlefshëm";
-"errors.login.invalid_username" = "Emër përdoruesi i pavlefshëm";
-"errors.login.invalid_credentials" = "Emër përdoruesi, ose fjalëkalim i pavlefshëm";
 "errors.libraries.cantLoad" = "S’arrihet të ngarkohen biblioteka";
 "errors.collections.empty_name" = "Ju lutemi, jepni një emër koleksioni";
 "errors.collections.save_failed" = "S’arrihet të ruhet koleksion";
