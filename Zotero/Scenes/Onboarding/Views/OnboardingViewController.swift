@@ -263,7 +263,6 @@ final class OnboardingViewController: UIViewController {
             signInButton.isEnabled = !state.isLoading
             createAccountButton.isEnabled = !state.isLoading
             learnMoreButton.isEnabled = !state.isLoading
-            pageControl.isEnabled = !state.isLoading
 
             if state.isLoading {
                 signInButton.setTitle(nil, for: .normal)
