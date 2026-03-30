@@ -264,7 +264,6 @@ final class OnboardingViewController: UIViewController {
             createAccountButton.isEnabled = !state.isLoading
             learnMoreButton.isEnabled = !state.isLoading
             pageControl.isEnabled = !state.isLoading
-            scrollView.isScrollEnabled = !state.isLoading
 
             if state.isLoading {
                 signInButton.setTitle(nil, for: .normal)
