@@ -209,6 +209,8 @@ struct LoginActionHandler: ViewModelActionHandler {
             default:
                 return afError.response.isEmpty ? .unknown(error) : .serverError(afError.response)
             }
+        } else if let error = error as? LoginError {
+            return error
         } else {
             return .unknown(error)
         }
