@@ -21,7 +21,7 @@ struct RLastReadDateChanges: OptionSet {
 }
 
 extension RLastReadDateChanges {
-    static let date = RPageIndexChanges(rawValue: 1 << 0)
+    static let date = RLastReadDateChanges(rawValue: 1 << 0)
 }
 
 final class RLastReadDate: Object {
