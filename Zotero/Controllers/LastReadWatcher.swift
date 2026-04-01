@@ -19,16 +19,13 @@ final class LastReadWatcher {
 
     init(dbStorage: DbStorage) {
         self.dbStorage = dbStorage
+        let block: ((Notification) -> Void) = { [weak self] _ in
+            self?.flushPendingAndStop()
+        }
         observers = [
-            NotificationCenter.default.addObserver(forName: UIApplication.willResignActiveNotification, object: nil, queue: .main) { [weak self] _ in
-                self?.flushPendingAndStop()
-            },
-            NotificationCenter.default.addObserver(forName: UIScene.didEnterBackgroundNotification, object: nil, queue: .main) { [weak self] _ in
-                self?.flushPendingAndStop()
-            },
-            NotificationCenter.default.addObserver(forName: UIApplication.willTerminateNotification, object: nil, queue: .main) { [weak self] _ in
-                self?.flushPendingAndStop()
-            }
+            NotificationCenter.default.addObserver(forName: UIApplication.willResignActiveNotification, object: nil, queue: .main, using: block),
+            NotificationCenter.default.addObserver(forName: UIScene.didEnterBackgroundNotification, object: nil, queue: .main, using: block),
+            NotificationCenter.default.addObserver(forName: UIApplication.willTerminateNotification, object: nil, queue: .main, using: block)
         ]
     }
 
