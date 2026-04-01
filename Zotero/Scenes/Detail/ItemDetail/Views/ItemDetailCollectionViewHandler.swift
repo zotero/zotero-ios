@@ -1060,21 +1060,39 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
         let menu: UIMenu?
 
         switch row {
-        case .field(let fieldId, _):
-            guard let field = viewModel.state.data.fields[fieldId] else { return nil }
-            menu = createContextMenu(for: field)
+        case .addNote, .addAttachment, .addCreator, .addTag, .library:
+            return nil
+
+        case .abstract:
+            menu = createCopyContextMenu(value: viewModel.state.data.abstract ?? "")
 
         case .attachment(let attachment, _):
             menu = createContextMenu(for: attachment)
 
-        case .tag(_, let tag, _):
-            menu = createContextMenu(for: tag)
+        case .collection(let collection) where collection.isAvailable:
+            menu = createContextMenu(for: collection)
+
+        case .creator(let creator):
+            menu = createCopyContextMenu(value: creator.name)
+
+        case .dateAdded(let date), .dateModified(let date):
+            menu = createCopyContextMenu(value: Formatter.dateAndTime.string(from: date))
+
+        case .field(let fieldId, _):
+            guard let field = viewModel.state.data.fields[fieldId] else { return nil }
+            menu = createContextMenu(for: field)
 
         case .note(let key, _, _):
             menu = createContextMenuForNote(key: key)
-            
-        case .collection(let collection) where collection.isAvailable:
-            menu = createContextMenu(for: collection)
+
+        case .tag(_, let tag, _):
+            menu = createContextMenu(for: tag)
+
+        case .title:
+            menu = createCopyContextMenu(value: viewModel.state.attributedTitle.string)
+
+        case .type(let type):
+            menu = createCopyContextMenu(value: type)
 
         default:
             return nil
@@ -1125,9 +1143,13 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
         }
 
         func createContextMenu(for field: ItemDetailState.Field) -> UIMenu? {
-            guard (field.key == FieldKeys.Item.doi || field.baseField == FieldKeys.Item.doi) || (field.key == FieldKeys.Item.url || field.baseField == FieldKeys.Item.url) else { return nil }
+            return createCopyContextMenu(value: field.additionalInfo?[.formattedDate] ?? field.value)
+        }
+
+        func createCopyContextMenu(value: String) -> UIMenu? {
+            guard !value.isEmpty else { return nil }
             return UIMenu(title: "", children: [UIAction(title: L10n.copy, handler: { _ in
-                UIPasteboard.general.string = field.value
+                UIPasteboard.general.string = value
             })])
         }
         
