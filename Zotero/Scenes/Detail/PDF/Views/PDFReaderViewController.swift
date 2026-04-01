@@ -403,6 +403,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
             pdfWorkerController.cleanupWorker(speechWorker)
         }
         viewModel.process(action: .changeIdleTimerDisabled(false))
+        viewModel.process(action: .deinitialiseReader)
         DDLogInfo("PDFReaderViewController deinitialized")
     }
 

@@ -751,6 +751,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
     }
 
     private func deinitialise(in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
+        lastReadWatcher.submit(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, date: Date())
         try? fileStorage.remove(viewModel.state.readerDirectory)
     }
 
