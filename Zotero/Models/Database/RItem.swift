@@ -225,9 +225,18 @@ final class RItem: Object {
     }
 
     func updateEffectiveLastRead() {
-        let childrenMaxLastRead = children.compactMap(\.lastRead).max()
-        let dates = [lastRead, childrenMaxLastRead].compactMap({ $0 })
-        effectiveLastRead = dates.max()
+        switch rawType {
+        case ItemTypes.annotation:
+            return
+
+        case ItemTypes.attachment:
+            effectiveLastRead = lastRead
+
+        default:
+            let childrenMaxLastRead = children.compactMap(\.lastRead).max()
+            let dates = [lastRead, childrenMaxLastRead].compactMap({ $0 })
+            effectiveLastRead = dates.max()
+        }
         parent?.updateEffectiveLastRead()
     }
 
