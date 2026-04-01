@@ -201,7 +201,12 @@ extension CollectionTree {
 
         if startIndex == -1 {
             // No object of given type found, if .recentlyRead is available, insert after it, otherwise insert after .all
-            let id = array.contains(where: { $0.identifier == .custom(.recentlyRead) }) ? 2 : 1
+            var id = 0
+            if array.count >= 2 && array[1].identifier == .custom(.recentlyRead) {
+                id = 2
+            } else if array.count >= 1 {
+                id = 1
+            }
             array.insert(contentsOf: newArray, at: id)
             return
         }
