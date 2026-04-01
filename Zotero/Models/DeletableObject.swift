@@ -139,6 +139,7 @@ extension RLastReadDate: Deletable {
         }
         guard let groupKey, let item = database.objects(RItem.self).filter(.key(key, in: .group(groupKey))).first else { return }
         item.lastRead = nil
+        item.updateEffectiveLastRead()
     }
 }
 
