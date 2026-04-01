@@ -688,7 +688,7 @@ final class SyncController: SynchronizationController {
 
         case .remoteDeletionOfActiveObject(let libraryId, let toDeleteCollections, let toRestoreCollections, let toDeleteItems, let toRestoreItems, let searches, let tags, let settings):
             var actions: [Action] = []
-            if !toDeleteCollections.isEmpty || !toDeleteItems.isEmpty || !searches.isEmpty || !tags.isEmpty || settings.isEmpty {
+            if !toDeleteCollections.isEmpty || !toDeleteItems.isEmpty || !searches.isEmpty || !tags.isEmpty || !settings.isEmpty {
                 actions.append(.performDeletions(libraryId: libraryId, collections: toDeleteCollections, items: toDeleteItems, searches: searches, tags: tags, settings: settings, conflictMode: .resolveConflicts))
             }
             if !toRestoreCollections.isEmpty || !toRestoreItems.isEmpty {
