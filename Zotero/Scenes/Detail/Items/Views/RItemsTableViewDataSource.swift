@@ -129,6 +129,8 @@ extension RItemsTableViewDataSource: ItemsTableViewDataSource {
         // Allow removing from collection only if item is in current collection. This can happen when "Show items from subcollection" is enabled.
         if let key = viewModel.state.collection.identifier.key, item.collections.filter(.key(key)).first != nil {
             trailingActions.insert(ItemAction(type: .removeFromCollection), at: 1)
+        } else if case .custom(.recentlyRead) = viewModel.state.collection.identifier {
+            trailingActions.insert(ItemAction(type: .removeFromRecentlyRead), at: 1)
         }
         return trailingActions
     }

@@ -126,7 +126,7 @@ struct ItemAction {
 
         case .removeFromRecentlyRead:
             self.title = L10n.Items.Action.removeFromRecentlyRead
-            self._image = .system("trash")
+            self._image = .system("folder.badge.minus")
         }
     }
 }
