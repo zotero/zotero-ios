@@ -1046,7 +1046,7 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
             
         case .cantRemoveCollection:
             title = L10n.error
-            message = L10n.Errors.ItemDetail.cantRemoveCollection
+            message = L10n.Errors.Items.deletionFromCollection
         }
 
         let controller = UIAlertController(title: title, message: message, preferredStyle: .alert)
