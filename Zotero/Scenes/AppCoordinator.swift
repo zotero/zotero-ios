@@ -24,7 +24,6 @@ protocol AppDelegateCoordinatorDelegate: AnyObject {
 
 protocol AppOnboardingCoordinatorDelegate: AnyObject {
     func showAbout()
-    func presentRegister()
     func presentAlert(_ controller: UIAlertController)
 }
 
@@ -641,12 +640,6 @@ extension AppCoordinator: AppOnboardingCoordinatorDelegate {
     func showAbout() {
         guard let rootViewController = window?.rootViewController else { return }
         let controller = SFSafariViewController(url: URL(string: "https://www.zotero.org/?app=1")!)
-        rootViewController.present(controller, animated: true, completion: nil)
-    }
-
-    func presentRegister() {
-        guard let rootViewController = window?.rootViewController else { return }
-        let controller = SFSafariViewController(url: URL(string: "https://www.zotero.org/user/register?app=1")!)
         rootViewController.present(controller, animated: true, completion: nil)
     }
 

@@ -37,7 +37,10 @@ struct LoginActionHandler: ViewModelActionHandler {
     func process(action: LoginAction, in viewModel: ViewModel<LoginActionHandler>) {
         switch action {
         case .login:
-            login(in: viewModel)
+            login(in: viewModel, kind: .login)
+
+        case .createAccount:
+            login(in: viewModel, kind: .createAccount)
 
         case .cancelLoginSessionIfNeeded:
             stopSessionMonitoring(for: viewModel.state.sessionToken)
@@ -45,9 +48,10 @@ struct LoginActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func login(in viewModel: ViewModel<LoginActionHandler>) {
+    private func login(in viewModel: ViewModel<LoginActionHandler>, kind: LoginState.RequestKind) {
         guard viewModel.state.sessionStatus == .none else { return }
         update(viewModel: viewModel) { state in
+            state.requestKind = kind
             state.sessionStatus = .creating
             state.sessionToken = nil
             state.loginURL = nil
@@ -63,10 +67,20 @@ struct LoginActionHandler: ViewModelActionHandler {
             .observe(on: MainScheduler.instance)
             .subscribe(onSuccess: { [weak viewModel] sessionToken, loginURL in
                 guard let viewModel else { return }
+                let finalURL: URL
+                switch kind {
+                case .login:
+                    finalURL = loginURL.appendingQueryItem(name: "app", value: "1") ?? loginURL
+
+                case .createAccount:
+                    let signupURL = URL(string: "https://www.zotero.org/user/register?app=1")!
+                    finalURL = signupURL.appendingQueryItem(name: "token", value: sessionToken) ?? signupURL
+                }
+
                 update(viewModel: viewModel) { state in
                     state.sessionStatus = .checking
                     state.sessionToken = sessionToken
-                    state.loginURL = loginURL.appendingQueryItem(name: "app", value: "1") ?? loginURL
+                    state.loginURL = finalURL
                 }
                 startStreaming(token: sessionToken, in: viewModel)
                 startSessionPolling(with: sessionToken, in: viewModel)
@@ -187,6 +201,7 @@ struct LoginActionHandler: ViewModelActionHandler {
             state.sessionStatus = nil
             state.sessionToken = nil
             state.loginURL = nil
+            state.requestKind = nil
             state.isLoading = false
         }
     }

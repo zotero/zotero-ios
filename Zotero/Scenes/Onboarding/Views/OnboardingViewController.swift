@@ -30,6 +30,7 @@ final class OnboardingViewController: UIViewController {
     private unowned let htmlConverter: HtmlAttributedStringConverter
     private let loginViewModel: ViewModel<LoginActionHandler>
     private let loginActivityIndicator: UIActivityIndicatorView
+    private let createAccountActivityIndicator: UIActivityIndicatorView
     private let disposeBag: DisposeBag
 
     weak var coordinatorDelegate: AppOnboardingCoordinatorDelegate?
@@ -52,6 +53,7 @@ final class OnboardingViewController: UIViewController {
         self.loginViewModel = loginViewModel
         self.ignoreScrollDelegate = false
         loginActivityIndicator = UIActivityIndicatorView(style: .medium)
+        createAccountActivityIndicator = UIActivityIndicatorView(style: .medium)
         disposeBag = DisposeBag()
         super.init(nibName: "OnboardingViewController", bundle: nil)
     }
@@ -117,7 +119,7 @@ final class OnboardingViewController: UIViewController {
     }
 
     @IBAction private func createAccount() {
-        self.coordinatorDelegate?.presentRegister()
+        loginViewModel.process(action: .createAccount)
     }
 
     @IBAction private func showAbout() {
@@ -201,13 +203,18 @@ final class OnboardingViewController: UIViewController {
         self.createAccountButton.layer.masksToBounds = true
         self.createAccountButton.setTitle(L10n.Onboarding.createAccount, for: .normal)
         self.learnMoreButton.setTitle(L10n.aboutZotero, for: .normal)
-        loginActivityIndicator.hidesWhenStopped = true
-        loginActivityIndicator.translatesAutoresizingMaskIntoConstraints = false
-        signInButton.addSubview(loginActivityIndicator)
-        NSLayoutConstraint.activate([
-            loginActivityIndicator.centerXAnchor.constraint(equalTo: signInButton.centerXAnchor),
-            loginActivityIndicator.centerYAnchor.constraint(equalTo: signInButton.centerYAnchor)
-        ])
+        setup(activityIndicator: loginActivityIndicator, in: signInButton)
+        setup(activityIndicator: createAccountActivityIndicator, in: createAccountButton)
+
+        func setup(activityIndicator: UIActivityIndicatorView, in button: UIButton) {
+            activityIndicator.hidesWhenStopped = true
+            activityIndicator.translatesAutoresizingMaskIntoConstraints = false
+            button.addSubview(activityIndicator)
+            NSLayoutConstraint.activate([
+                activityIndicator.centerXAnchor.constraint(equalTo: button.centerXAnchor),
+                activityIndicator.centerYAnchor.constraint(equalTo: button.centerYAnchor)
+            ])
+        }
     }
 
     private func setupPageControl(with pageData: [(String, UIImage)]) {
@@ -265,13 +272,24 @@ final class OnboardingViewController: UIViewController {
             learnMoreButton.isEnabled = !state.isLoading
 
             if state.isLoading {
-                signInButton.setTitle(nil, for: .normal)
-                loginActivityIndicator.startAnimating()
+                signInButton.isEnabled = false
+                createAccountButton.isEnabled = false
+                switch state.requestKind {
+                case .createAccount:
+                    createAccountButton.setTitle(nil, for: .normal)
+                    createAccountActivityIndicator.startAnimating()
+
+                case .login, .none:
+                    signInButton.setTitle(nil, for: .normal)
+                    loginActivityIndicator.startAnimating()
+                }
             } else {
                 authSession?.cancel()
                 authSession = nil
                 loginActivityIndicator.stopAnimating()
+                createAccountActivityIndicator.stopAnimating()
                 signInButton.setTitle(L10n.Onboarding.signIn, for: .normal)
+                createAccountButton.setTitle(L10n.Onboarding.createAccount, for: .normal)
                 presentedLoginURL = nil
             }
         }

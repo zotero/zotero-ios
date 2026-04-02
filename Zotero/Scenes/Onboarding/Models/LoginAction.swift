@@ -10,5 +10,6 @@ import Foundation
 
 enum LoginAction {
     case login
+    case createAccount
     case cancelLoginSessionIfNeeded
 }
