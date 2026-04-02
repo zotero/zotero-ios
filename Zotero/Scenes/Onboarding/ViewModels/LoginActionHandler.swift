@@ -74,7 +74,7 @@ struct LoginActionHandler: ViewModelActionHandler {
 
                 case .createAccount:
                     let signupURL = URL(string: "https://www.zotero.org/user/register?app=1")!
-                    finalURL = signupURL.appendingQueryItem(name: "token", value: sessionToken) ?? signupURL
+                    finalURL = signupURL.appendingQueryItem(name: "session", value: sessionToken) ?? signupURL
                 }
 
                 update(viewModel: viewModel) { state in
