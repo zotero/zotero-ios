@@ -37,7 +37,10 @@ struct LoginActionHandler: ViewModelActionHandler {
     func process(action: LoginAction, in viewModel: ViewModel<LoginActionHandler>) {
         switch action {
         case .login:
-            login(in: viewModel)
+            login(in: viewModel, kind: .login)
+
+        case .createAccount:
+            login(in: viewModel, kind: .createAccount)
 
         case .cancelLoginSessionIfNeeded:
             stopSessionMonitoring(for: viewModel.state.sessionToken)
@@ -45,9 +48,10 @@ struct LoginActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func login(in viewModel: ViewModel<LoginActionHandler>) {
+    private func login(in viewModel: ViewModel<LoginActionHandler>, kind: LoginState.RequestKind) {
         guard viewModel.state.sessionStatus == .none else { return }
         update(viewModel: viewModel) { state in
+            state.requestKind = kind
             state.sessionStatus = .creating
             state.sessionToken = nil
             state.loginURL = nil
@@ -63,10 +67,20 @@ struct LoginActionHandler: ViewModelActionHandler {
             .observe(on: MainScheduler.instance)
             .subscribe(onSuccess: { [weak viewModel] sessionToken, loginURL in
                 guard let viewModel else { return }
+                let finalURL: URL
+                switch kind {
+                case .login:
+                    finalURL = loginURL.appendingQueryItem(name: "app", value: "1") ?? loginURL
+
+                case .createAccount:
+                    let signupURL = URL(string: "https://www.zotero.org/user/register?app=1")!
+                    finalURL = signupURL.appendingQueryItem(name: "session", value: sessionToken) ?? signupURL
+                }
+
                 update(viewModel: viewModel) { state in
                     state.sessionStatus = .checking
                     state.sessionToken = sessionToken
-                    state.loginURL = loginURL.appendingQueryItem(name: "app", value: "1") ?? loginURL
+                    state.loginURL = finalURL
                 }
                 startStreaming(token: sessionToken, in: viewModel)
                 startSessionPolling(with: sessionToken, in: viewModel)
@@ -91,11 +105,18 @@ struct LoginActionHandler: ViewModelActionHandler {
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak viewModel] response in
                 guard let viewModel, viewModel.state.sessionStatus == .checking else { return }
-                update(viewModel: viewModel) { state in
-                    state.sessionStatus = .completed
+                switch response {
+                case .complete(_, let userId, let username, let apiKey):
+                    update(viewModel: viewModel) { state in
+                        state.sessionStatus = .completed
+                    }
+                    stopSessionMonitoring(for: token)
+                    sessionController.register(userId: userId, username: username, displayName: "", apiToken: apiKey)
+
+                case .cancelled:
+                    stopSessionMonitoring(for: token)
+                    reset(viewModel: viewModel)
                 }
-                stopSessionMonitoring(for: token)
-                sessionController.register(userId: response.userId, username: response.username, displayName: "", apiToken: response.apiKey)
             })
 
         loginSocketMessageDisposable.disposable = messageDisposable
@@ -103,21 +124,12 @@ struct LoginActionHandler: ViewModelActionHandler {
     }
 
     private func startSessionPolling(with token: String, in viewModel: ViewModel<LoginActionHandler>) {
-        let statusRequests: Observable<(CheckLoginSessionResponse, HTTPURLResponse)> = Observable<Int>
+        let disposable = Observable<Int>
             .interval(.seconds(3), scheduler: MainScheduler.instance)
             .flatMapLatest { _ in
                 apiClient.send(request: CheckLoginSessionRequest(token: token))
                     .asObservable()
             }
-
-        let timeout: Observable<(CheckLoginSessionResponse, HTTPURLResponse)> = Observable<Int>
-            .timer(.seconds(10 * 60), scheduler: MainScheduler.instance)
-            .flatMap { _ in
-                Observable.error(LoginError.sessionTimedOut)
-            }
-
-        let disposable = Observable<(CheckLoginSessionResponse, HTTPURLResponse)>
-            .merge(statusRequests, timeout)
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak viewModel] response, _ in
                 guard let viewModel else { return }
@@ -187,6 +199,7 @@ struct LoginActionHandler: ViewModelActionHandler {
             state.sessionStatus = nil
             state.sessionToken = nil
             state.loginURL = nil
+            state.requestKind = nil
             state.isLoading = false
         }
     }

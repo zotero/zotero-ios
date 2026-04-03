@@ -53,7 +53,7 @@ final class APIWebSocketController: SubscriptionWebSocketController {
                 guard let changeResponse = try? jsonDecoder.decode(ChangeWsResponse.self, from: data) else { return }
                 publishChangeIfNeeded(response: changeResponse)
 
-            case .connected, .subscriptionCreated, .subscriptionDeleted, .loginComplete:
+            case .connected, .subscriptionCreated, .subscriptionDeleted, .loginComplete, .loginCancelled:
                 break
             }
         } catch let error {

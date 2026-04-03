@@ -500,7 +500,7 @@
 		B32370402C0DC65600170779 /* LookupWebViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B323703F2C0DC65600170779 /* LookupWebViewHandler.swift */; };
 		B324276D25C81F2000567504 /* WebSocketController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B324276C25C81F2000567504 /* WebSocketController.swift */; };
 		D1E2F3A82F1C000100ABC001 /* APIWebSocketController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E2F3A92F1C000100ABC001 /* APIWebSocketController.swift */; };
-		D1E2F3A42F1C000100ABC001 /* LoginCompleteWsResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E2F3A52F1C000100ABC001 /* LoginCompleteWsResponse.swift */; };
+		D1E2F3A42F1C000100ABC001 /* LoginWsResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E2F3A52F1C000100ABC001 /* LoginWsResponse.swift */; };
 		D1E2F3AA2F1C000100ABC001 /* LoginSessionWebSocketController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E2F3AB2F1C000100ABC001 /* LoginSessionWebSocketController.swift */; };
 		B324277225C82DBF00567504 /* SubscribeWsMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B324277125C82DBF00567504 /* SubscribeWsMessage.swift */; };
 		B324277825C82E6500567504 /* UnsubscribeWsMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B324277725C82E6500567504 /* UnsubscribeWsMessage.swift */; };
@@ -1677,7 +1677,7 @@
 		B323703F2C0DC65600170779 /* LookupWebViewHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LookupWebViewHandler.swift; sourceTree = "<group>"; };
 		B324276C25C81F2000567504 /* WebSocketController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebSocketController.swift; sourceTree = "<group>"; };
 		D1E2F3A92F1C000100ABC001 /* APIWebSocketController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIWebSocketController.swift; sourceTree = "<group>"; };
-		D1E2F3A52F1C000100ABC001 /* LoginCompleteWsResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginCompleteWsResponse.swift; sourceTree = "<group>"; };
+		D1E2F3A52F1C000100ABC001 /* LoginWsResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginWsResponse.swift; sourceTree = "<group>"; };
 		D1E2F3AB2F1C000100ABC001 /* LoginSessionWebSocketController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginSessionWebSocketController.swift; sourceTree = "<group>"; };
 		B324277125C82DBF00567504 /* SubscribeWsMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscribeWsMessage.swift; sourceTree = "<group>"; };
 		B324277725C82E6500567504 /* UnsubscribeWsMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnsubscribeWsMessage.swift; sourceTree = "<group>"; };
@@ -3349,7 +3349,7 @@
 			isa = PBXGroup;
 			children = (
 				B341C8CE25CBFCE4005562E5 /* ChangeWsResponse.swift */,
-				D1E2F3A52F1C000100ABC001 /* LoginCompleteWsResponse.swift */,
+				D1E2F3A52F1C000100ABC001 /* LoginWsResponse.swift */,
 				B324277125C82DBF00567504 /* SubscribeWsMessage.swift */,
 				B324277725C82E6500567504 /* UnsubscribeWsMessage.swift */,
 				B324278125C841A600567504 /* WsResponse.swift */,
@@ -5864,7 +5864,7 @@
 				B38B24B926E7664400BDD1BB /* AnnotationToolOptionsViewController.swift in Sources */,
 				B30566A123FC051F003304F2 /* Library.swift in Sources */,
 				B324278225C841A600567504 /* WsResponse.swift in Sources */,
-				D1E2F3A42F1C000100ABC001 /* LoginCompleteWsResponse.swift in Sources */,
+				D1E2F3A42F1C000100ABC001 /* LoginWsResponse.swift in Sources */,
 				B3A47C3A29015FE800E7D90D /* TableOfContentsState.swift in Sources */,
 				B3A351DD2715774E002E597A /* WebDavNonexistentPropRequest.swift in Sources */,
 				B3E8FE30271429C300F51458 /* ExportLocalePickerAction.swift in Sources */,

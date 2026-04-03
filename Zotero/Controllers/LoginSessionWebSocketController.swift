@@ -14,7 +14,7 @@ import RxSwift
 final class LoginSessionWebSocketController: SubscriptionWebSocketController {
     private let jsonDecoder: JSONDecoder
 
-    let loginObservable: PublishSubject<LoginCompleteWsResponse>
+    let loginObservable: PublishSubject<LoginWsResponse.Kind>
 
     static func topic(for sessionToken: String) -> String {
         "login-session:\(sessionToken)"
@@ -51,9 +51,9 @@ final class LoginSessionWebSocketController: SubscriptionWebSocketController {
             let event = try jsonDecoder.decode(WsResponse.self, from: data).event
 
             switch event {
-            case .loginComplete:
-                guard let response = try? jsonDecoder.decode(LoginCompleteWsResponse.self, from: data) else { return }
-                loginObservable.on(.next(response))
+            case .loginComplete, .loginCancelled:
+                guard let response = try? jsonDecoder.decode(LoginWsResponse.self, from: data) else { return }
+                loginObservable.on(.next(response.kind))
 
             case .connected, .subscriptionCreated, .subscriptionDeleted, .topicAdded, .topicRemoved, .topicUpdated:
                 break

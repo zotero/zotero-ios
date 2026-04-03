@@ -9,6 +9,11 @@
 import UIKit
 
 struct LoginState: ViewModelState {
+    enum RequestKind {
+        case login
+        case createAccount
+    }
+
     enum SessionStatus {
         case creating
         case checking
@@ -19,6 +24,7 @@ struct LoginState: ViewModelState {
     var sessionStatus: SessionStatus?
     var sessionToken: String?
     var loginURL: URL?
+    var requestKind: RequestKind?
     var isLoading: Bool
     var error: LoginError?
 
@@ -26,6 +32,7 @@ struct LoginState: ViewModelState {
         sessionStatus = nil
         sessionToken = nil
         loginURL = nil
+        requestKind = nil
         isLoading = false
         error = nil
     }
