@@ -420,6 +420,7 @@ final class ItemsViewController: BaseItemsViewController {
             isEditing: state.isEditing,
             selectedItems: state.selectedItems,
             filters: state.filters,
+            allowsManualSort: state.collection.identifier.allowsManualSort,
             downloadBatchData: state.downloadBatchData,
             remoteDownloadBatchData: state.remoteDownloadBatchData,
             identifierLookupBatchData: state.identifierLookupBatchData,

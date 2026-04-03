@@ -21,6 +21,7 @@ final class ItemsToolbarController {
         let isEditing: Bool
         let selectedItems: Set<AnyHashable>
         let filters: [ItemsFilter]
+        let allowsManualSort: Bool
         let downloadBatchData: ItemsState.DownloadBatchData?
         let remoteDownloadBatchData: ItemsState.DownloadBatchData?
         let identifierLookupBatchData: ItemsState.IdentifierLookupBatchData
@@ -169,18 +170,26 @@ final class ItemsToolbarController {
             })
             .disposed(by: disposeBag)
 
-            let action = ItemAction(type: .sort)
-            let sortButton = UIBarButtonItem(image: action.image, style: .plain, target: nil, action: nil)
-            sortButton.accessibilityLabel = L10n.Accessibility.Items.sortItems
-            sortButton.rx.tap.subscribe(onNext: { [weak self] _ in
-                self?.delegate?.process(action: action.type, button: sortButton)
-            })
-            .disposed(by: disposeBag)
-
             let titleButton = UIBarButtonItem(customView: createTitleView())
             titleButton.tag = ToolbarItem.title.tag
 
-            return [fixedSpacer, filterButton, flexibleSpacer, titleButton, flexibleSpacer, sortButton, fixedSpacer]
+            var items: [UIBarButtonItem] = [fixedSpacer, filterButton, flexibleSpacer, titleButton]
+
+            if data.allowsManualSort {
+                let action = ItemAction(type: .sort)
+                let sortButton = UIBarButtonItem(image: action.image, style: .plain, target: nil, action: nil)
+                sortButton.accessibilityLabel = L10n.Accessibility.Items.sortItems
+                sortButton.rx.tap.subscribe(onNext: { [weak self] _ in
+                    self?.delegate?.process(action: action.type, button: sortButton)
+                })
+                .disposed(by: disposeBag)
+
+                items.append(contentsOf: [flexibleSpacer, sortButton, fixedSpacer])
+            } else {
+                items.append(contentsOf: [flexibleSpacer, fixedSpacer])
+            }
+
+            return items
 
             func createTitleView() -> UIStackView {
                 // Filter title label

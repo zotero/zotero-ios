@@ -223,6 +223,7 @@ final class TrashViewController: BaseItemsViewController {
             isEditing: state.isEditing,
             selectedItems: state.selectedItems,
             filters: state.filters,
+            allowsManualSort: true,
             downloadBatchData: nil,
             remoteDownloadBatchData: nil,
             identifierLookupBatchData: .init(saved: 0, total: 0),

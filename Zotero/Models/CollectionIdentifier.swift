@@ -49,8 +49,11 @@ enum CollectionIdentifier: Identifiable, Equatable, Hashable {
 extension CollectionIdentifier {
     var isCustom: Bool {
         switch self {
-        case .custom: return true
-        default: return false
+        case .custom:
+            return true
+
+        case .collection, .search:
+            return false
         }
     }
 
@@ -58,33 +61,64 @@ extension CollectionIdentifier {
         switch self {
         case .custom(let type):
             switch type {
-            case .trash: return true
-            case .all, .publications, .unfiled, .recentlyRead: return false
+            case .trash:
+                return true
+
+            case .all, .publications, .unfiled, .recentlyRead:
+                return false
             }
 
-        default: return false
+        case .collection, .search:
+            return false
         }
     }
 
     var isCollection: Bool {
         switch self {
-        case .collection: return true
-        default: return false
+        case .collection:
+            return true
+
+        case .search, .custom:
+            return false
         }
     }
 
     var isSearch: Bool {
         switch self {
-        case .search: return true
-        default: return false
+        case .search:
+            return true
+
+        case .collection, .custom:
+            return false
         }
     }
 
     var key: String? {
         switch self {
-        case .collection(let key): return key
-        case .search(let key): return key
-        case .custom: return nil
+        case .collection(let key):
+            return key
+
+        case .search(let key):
+            return key
+
+        case .custom:
+            return nil
+        }
+    }
+
+    var allowsManualSort: Bool {
+        switch self {
+        case .custom(let type):
+            switch type {
+            case .recentlyRead:
+                return false
+
+            case .all, .trash, .publications, .unfiled:
+                return true
+            }
+
+        case .collection, .search:
+            return true
         }
     }
 }

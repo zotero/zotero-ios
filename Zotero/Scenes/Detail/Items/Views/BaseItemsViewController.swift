@@ -287,6 +287,7 @@ class BaseItemsViewController: UIViewController {
             isEditing: false,
             selectedItems: [],
             filters: [],
+            allowsManualSort: true,
             downloadBatchData: nil,
             remoteDownloadBatchData: nil,
             identifierLookupBatchData: ItemsState.IdentifierLookupBatchData(saved: 0, total: 0),
