@@ -272,8 +272,6 @@ final class OnboardingViewController: UIViewController {
             learnMoreButton.isEnabled = !state.isLoading
 
             if state.isLoading {
-                signInButton.isEnabled = false
-                createAccountButton.isEnabled = false
                 switch state.requestKind {
                 case .createAccount:
                     createAccountButton.setTitle(nil, for: .normal)
