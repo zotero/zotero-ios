@@ -79,6 +79,7 @@
 
 "collections.search_title" = "Find Collection";
 "collections.all_items" = "All Items";
+"collections.recently_read" = "Recently Read";
 "collections.my_publications" = "My Publications";
 "collections.trash" = "Trash";
 "collections.unfiled" = "Unfiled Items";
@@ -128,6 +129,7 @@
 "items.remove_from_collection_title" = "Remove from Collection";
 "items.action.add_to_collection" = "Add to Collection";
 "items.action.remove_from_collection" = "Remove from Collection";
+"items.action.remove_from_recentlyRead" = "Remove from Recently Read";
 "items.action.duplicate" = "Duplicate";
 "items.action.create_parent" = "Create Parent Item";
 "items.action.download" = "Download";
@@ -529,6 +531,7 @@
 "accessibility.items.add_to_collection" = "Add selected items to collection";
 "accessibility.items.remove_from_collection" = "Remove selected items from collection";
 "accessibility.items.trash" = "Move selected items to trash";
+"accessibility.items.remove_from_recentlyRead" = "Remove selected items from recently read";
 "accessibility.items.delete" = "Delete selected items";
 "accessibility.items.restore" = "Restore selected items";
 "accessibility.items.duplicate" = "Duplicate selected item";

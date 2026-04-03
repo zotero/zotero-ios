@@ -136,7 +136,7 @@ final class TrashViewController: BaseItemsViewController {
             case .itemMove, .deletion, .deletionFromCollection:
                 dataSource.apply(snapshot: state.snapshot)
 
-            case .dataLoading, .collectionAssignment, .noteSaving, .attachmentAdding, .duplicationLoading:
+            case .dataLoading, .collectionAssignment, .noteSaving, .attachmentAdding, .duplicationLoading, .deletionFromRecentlyRead:
                 break
             }
 
@@ -151,7 +151,7 @@ final class TrashViewController: BaseItemsViewController {
 
     private func process(action: ItemAction.Kind, for selectedKeys: Set<TrashKey>, button: UIBarButtonItem?, completionAction: ((Bool) -> Void)?) {
         switch action {
-        case .createParent, .retrieveMetadata, .duplicate, .trash, .copyBibliography, .copyCitation, .share, .addToCollection, .removeFromCollection:
+        case .createParent, .retrieveMetadata, .duplicate, .trash, .copyBibliography, .copyCitation, .share, .addToCollection, .removeFromCollection, .removeFromRecentlyRead:
             // These actions are not available in trash collection
             break
 

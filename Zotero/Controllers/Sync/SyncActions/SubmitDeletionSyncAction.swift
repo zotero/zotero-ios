@@ -61,7 +61,17 @@ struct SubmitDeletionSyncAction: SyncAction {
                     case .search:
                         requests.insert(DeleteObjectsDbRequest<RSearch>(keys: self.keys, libraryId: self.libraryId), at: 0)
 
-                    case .settings: break
+                    case .settings:
+                        // RLastReadDate setting is synced in user library, but it's stored for group libraries, the key is in format "lastRead_g<id>_<key>", so we extract group ids and remove appropriate objects
+                        var groupedSettings: [LibraryIdentifier: [String]] = [:]
+                        for uid in keys {
+                            // only lastRead is deletable
+                            guard uid.starts(with: "lastRead"), let (key, libraryId) = try? SettingKeyParser.parse(key: uid) else { continue }
+                            groupedSettings[libraryId, default: []].append(key)
+                        }
+                        for (libraryId, keys) in groupedSettings {
+                            requests.insert(DeleteObjectsDbRequest<RLastReadDate>(keys: keys, libraryId: libraryId), at: 0)
+                        }
                     }
 
                     try coordinator.perform(writeRequests: requests)

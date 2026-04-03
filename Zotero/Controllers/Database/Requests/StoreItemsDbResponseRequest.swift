@@ -144,6 +144,15 @@ struct StoreItemDbRequest: DbResponseRequest {
         item.changeType = .sync
         item.libraryId = libraryId
 
+        switch libraryId {
+        case .custom(.myLibrary):
+            item.lastRead = response.lastRead
+            item.updateEffectiveLastRead()
+
+        case .group:
+            break
+        }
+
         let filenameChange = self.syncFields(data: response, item: item, database: database, schemaController: schemaController, dateParser: dateParser)
         self.syncParent(key: response.parentKey, libraryId: libraryId, item: item, database: database)
         self.syncCollections(keys: response.collectionKeys, libraryId: libraryId, item: item, database: database)
@@ -362,6 +371,7 @@ struct StoreItemDbRequest: DbResponseRequest {
             parent = RItem()
             parent.key = key
             parent.syncState = .dirty
+            parent.lastSyncDate = Date(timeIntervalSince1970: 0)
             parent.libraryId = libraryId
             database.add(parent)
         }
@@ -394,6 +404,7 @@ struct StoreItemDbRequest: DbResponseRequest {
             let collection = RCollection()
             collection.key = key
             collection.syncState = .dirty
+            collection.lastSyncDate = Date(timeIntervalSince1970: 0)
             collection.libraryId = libraryId
             database.add(collection)
 

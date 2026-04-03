@@ -211,6 +211,7 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
                 })
 
                 var allItemsCount = 0
+                var recentlyReadCount = 0
                 var unfiledItemsCount = 0
                 // If not showing item counts, trashItemsCount is set to -1, in order for the trash icon to not be shown as empty.
                 var trashTotalCount = includeItemCounts ? 0 : -1
@@ -221,10 +222,14 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
                 var trashItemsCountToken: NotificationToken?
                 var trashCollectionsCountToken: NotificationToken?
                 var itemsChangesToken: NotificationToken?
+                var recentlyReadCountToken: NotificationToken?
 
                 if includeItemCounts {
                     let allItems = try coordinator.perform(request: ReadItemsDbRequest(collectionId: .custom(.all), libraryId: libraryId))
                     allItemsCount = allItems.count
+
+                    let recentlyRead = try coordinator.perform(request: ReadItemsDbRequest(collectionId: .custom(.recentlyRead), libraryId: libraryId))
+                    recentlyReadCount = recentlyRead.count
 
                     let unfiledItems = try coordinator.perform(request: ReadItemsDbRequest(collectionId: .custom(.unfiled), libraryId: libraryId))
                     unfiledItemsCount = unfiledItems.count
@@ -236,6 +241,7 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
                     cachedTrashCollectionsCount = trashCollections.count
 
                     allItemsCountToken = observeItemCount(in: allItems, for: .all, in: viewModel, handler: self)
+                    recentlyReadCountToken = observeItemCount(in: recentlyRead, for: .recentlyRead, in: viewModel, handler: self)
                     unfiledItemsCountToken = observeItemCount(in: unfiledItems, for: .unfiled, in: viewModel, handler: self)
                     trashItemsCountToken = observeItemCount(in: trashItems, for: .trash, in: viewModel, handler: self)
                     trashCollectionsCountToken = observeTrashedCollectionCount(in: trashCollections, in: viewModel, handler: self)
@@ -246,6 +252,7 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
 
                 let collectionTree = CollectionTreeBuilder.collections(from: collections, libraryId: libraryId, includeItemCounts: includeItemCounts)
                 collectionTree.insert(collection: Collection(custom: .all, itemCount: allItemsCount), at: 0)
+                collectionTree.insert(collection: Collection(custom: .recentlyRead, itemCount: recentlyReadCount), at: 1)
                 collectionTree.append(collection: Collection(custom: .unfiled, itemCount: unfiledItemsCount))
                 collectionTree.append(collection: Collection(custom: .trash, itemCount: trashTotalCount))
 
@@ -267,6 +274,7 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
                     state.libraryToken = libraryToken
                     state.collectionsToken = collectionsToken
                     state.allItemsCountToken = allItemsCountToken
+                    state.recentlyReadCountToken = recentlyReadCountToken
                     state.unfiledItemsCountToken = unfiledItemsCountToken
                     state.trashItemsCountToken = trashItemsCountToken
                     state.trashCollectionsCountToken = trashCollectionsCountToken
@@ -297,7 +305,7 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
                     case .trash:
                         updateTrashCount(itemsCount: itemsCount, collectionsCount: nil, in: viewModel, handler: handler)
 
-                    case .all, .publications, .unfiled:
+                    case .all, .publications, .unfiled, .recentlyRead:
                         updateItemsCount(itemsCount, for: customType, in: viewModel, handler: handler)
                     }
 
@@ -322,6 +330,9 @@ final class CollectionsActionHandler: ViewModelActionHandler, BackgroundDbProces
 
                     case .trash:
                         state.changes = .trashItemCount
+
+                    case .recentlyRead:
+                        state.changes = .recentlyReadCount
 
                     case .publications:
                         break

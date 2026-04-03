@@ -21,6 +21,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
     private unowned let dateParser: DateParser
     private unowned let fileStorage: FileStorage
     private unowned let idleTimerController: IdleTimerController
+    private unowned let lastReadWatcher: LastReadWatcher
     let backgroundQueue: DispatchQueue
 
     init(
@@ -29,7 +30,8 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         htmlAttributedStringConverter: HtmlAttributedStringConverter,
         dateParser: DateParser,
         fileStorage: FileStorage,
-        idleTimerController: IdleTimerController
+        idleTimerController: IdleTimerController,
+        lastReadWatcher: LastReadWatcher
     ) {
         self.dbStorage = dbStorage
         self.schemaController = schemaController
@@ -37,6 +39,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         self.dateParser = dateParser
         self.fileStorage = fileStorage
         self.idleTimerController = idleTimerController
+        self.lastReadWatcher = lastReadWatcher
         backgroundQueue = DispatchQueue(label: "org.zotero.Zotero.HtmlEpubReaderActionHandler.queue", qos: .userInteractive)
     }
 
@@ -359,6 +362,8 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         } else {
             return
         }
+
+        lastReadWatcher.submitAfterDelay(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, date: Date())
 
         let request = StorePageForItemDbRequest(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, page: page)
         perform(request: request) { error in
@@ -735,6 +740,8 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
                 try fileStorage.copy(from: file, to: viewModel.state.documentFile.copy(withName: file.name, ext: file.ext))
             }
 
+            lastReadWatcher.submit(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, date: Date())
+
             update(viewModel: viewModel) { state in
                 state.changes.insert(.readerInitialised)
             }
@@ -744,6 +751,7 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
     }
 
     private func deinitialise(in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
+        lastReadWatcher.submit(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, date: Date())
         try? fileStorage.remove(viewModel.state.readerDirectory)
     }
 

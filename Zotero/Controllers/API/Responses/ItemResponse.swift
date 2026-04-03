@@ -38,6 +38,7 @@ struct ItemResponse {
     let lastModifiedBy: UserResponse?
     let rects: [[Double]]?
     let paths: [[Double]]?
+    let lastRead: Date?
 
     init(
         rawType: String,
@@ -58,7 +59,8 @@ struct ItemResponse {
         createdBy: UserResponse?,
         lastModifiedBy: UserResponse?,
         rects: [[Double]]?,
-        paths: [[Double]]?
+        paths: [[Double]]?,
+        lastRead: Date?
     ) {
         self.rawType = rawType
         self.key = key
@@ -80,6 +82,7 @@ struct ItemResponse {
         self.lastModifiedBy = lastModifiedBy
         self.rects = rects
         self.paths = paths
+        self.lastRead = lastRead
     }
 
     init(response: [String: Any], schemaController: SchemaController) throws {
@@ -170,6 +173,7 @@ struct ItemResponse {
         self.lastModifiedBy = lastModifiedBy
         self.rects = nil
         self.paths = nil
+        self.lastRead = (data["lastRead"] as? Int).flatMap({ Date(timeIntervalSince1970: TimeInterval($0)) })
 
         // Attachment with link mode "embedded_image" always needs a parent assigned
         if rawType == ItemTypes.attachment,
@@ -217,6 +221,7 @@ struct ItemResponse {
         self.lastModifiedBy = lastModifiedBy
         self.rects = rects
         self.paths = paths
+        self.lastRead = nil
     }
 
     init(translatorResponse response: [String: Any], schemaController: SchemaController) throws {
@@ -248,53 +253,56 @@ struct ItemResponse {
         self.lastModifiedBy = nil
         self.rects = nil
         self.paths = nil
+        self.lastRead = nil
     }
 
     func copy(libraryId: LibraryIdentifier, collectionKeys: Set<String>, tags: [TagResponse]) -> ItemResponse {
         return ItemResponse(
-            rawType: self.rawType,
-            key: self.key,
+            rawType: rawType,
+            key: key,
             library: LibraryResponse(libraryId: libraryId),
-            parentKey: self.parentKey,
+            parentKey: parentKey,
             collectionKeys: collectionKeys,
-            links: self.links,
-            parsedDate: self.parsedDate,
-            isTrash: self.isTrash,
-            version: self.version,
-            dateModified: self.dateModified,
-            dateAdded: self.dateAdded,
-            fields: self.fields,
+            links: links,
+            parsedDate: parsedDate,
+            isTrash: isTrash,
+            version: version,
+            dateModified: dateModified,
+            dateAdded: dateAdded,
+            fields: fields,
             tags: tags,
-            creators: self.creators,
-            relations: self.relations,
-            createdBy: self.createdBy,
-            lastModifiedBy: self.lastModifiedBy,
-            rects: self.rects,
-            paths: self.paths
+            creators: creators,
+            relations: relations,
+            createdBy: createdBy,
+            lastModifiedBy: lastModifiedBy,
+            rects: rects,
+            paths: paths,
+            lastRead: lastRead
         )
     }
 
     var copyWithAutomaticTags: ItemResponse {
         return ItemResponse(
-            rawType: self.rawType,
-            key: self.key,
-            library: self.library,
-            parentKey: self.parentKey,
-            collectionKeys: self.collectionKeys,
-            links: self.links,
-            parsedDate: self.parsedDate,
-            isTrash: self.isTrash,
-            version: self.version,
-            dateModified: self.dateModified,
-            dateAdded: self.dateAdded,
-            fields: self.fields,
-            tags: self.tags.map({ $0.automaticCopy }),
-            creators: self.creators,
-            relations: self.relations,
-            createdBy: self.createdBy,
-            lastModifiedBy: self.lastModifiedBy,
-            rects: self.rects,
-            paths: self.paths
+            rawType: rawType,
+            key: key,
+            library: library,
+            parentKey: parentKey,
+            collectionKeys: collectionKeys,
+            links: links,
+            parsedDate: parsedDate,
+            isTrash: isTrash,
+            version: version,
+            dateModified: dateModified,
+            dateAdded: dateAdded,
+            fields: fields,
+            tags: tags.map({ $0.automaticCopy }),
+            creators: creators,
+            relations: relations,
+            createdBy: createdBy,
+            lastModifiedBy: lastModifiedBy,
+            rects: rects,
+            paths: paths,
+            lastRead: lastRead
         )
     }
 

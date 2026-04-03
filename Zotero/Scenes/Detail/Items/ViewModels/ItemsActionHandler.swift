@@ -185,6 +185,9 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
 
         case .applySettings:
             applySettings(in: viewModel)
+
+        case .removeFromRecentlyRead(let keys):
+            deleteItemsFromRecentlyRead(keys: keys, libraryId: viewModel.state.library.identifier, completion: handleBaseActionResult)
         }
     }
 
@@ -471,6 +474,32 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
             DDLogError("BaseItemsActionHandler: can't delete items - \(error)")
             completion(.failure(.deletionFromCollection))
         }
+    }
+
+    private func deleteItemsFromRecentlyRead(keys: Set<String>, libraryId: LibraryIdentifier, completion: @escaping (Result<Void, ItemsError>) -> Void) {
+        perform(
+            with: { coordinator in
+                // For Recently Read collection we're showing parent items, even if only a child item is marked with lastRead, so we have to go through both parent and children to remove all lastRead flags.
+                let items = try coordinator.perform(request: ReadItemsWithKeysDbRequest(keys: keys, libraryId: libraryId))
+                var toRemove: [StoreLastReadDatesDbRequest.Data] = []
+                for item in items {
+                    if item.lastRead != nil {
+                        toRemove.append(StoreLastReadDatesDbRequest.Data(key: item.key, libraryId: libraryId, date: nil))
+                    }
+                    for child in item.children {
+                        if child.lastRead != nil {
+                            toRemove.append(StoreLastReadDatesDbRequest.Data(key: child.key, libraryId: libraryId, date: nil))
+                        }
+                    }
+                }
+                try coordinator.perform(request: StoreLastReadDatesDbRequest(array: toRemove))
+            },
+            completion: { result in
+                guard case .failure(let error) = result else { return }
+                DDLogError("ItemsActionHandler: can't remove items from recently read - \(error)")
+                completion(.failure(.deletionFromRecentlyRead))
+            }
+        )
     }
 
     private func set(trashed: Bool, to keys: Set<String>, libraryId: LibraryIdentifier, completion: @escaping (Result<Void, ItemsError>) -> Void) {

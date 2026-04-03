@@ -433,7 +433,8 @@ final class RecognizerController {
                 createdBy: nil,
                 lastModifiedBy: nil,
                 rects: nil,
-                paths: nil
+                paths: nil,
+                lastRead: nil
             )
             createParentIfNeeded(for: task, with: itemResponse, schemaController: schemaController, dateParser: dateParser, fileStorage: fileStorage)
         }

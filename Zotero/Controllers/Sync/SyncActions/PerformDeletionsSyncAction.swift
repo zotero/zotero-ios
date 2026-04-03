@@ -19,6 +19,7 @@ struct PerformDeletionsSyncAction: SyncAction {
     let items: [String]
     let searches: [String]
     let tags: [String]
+    let settings: [String]
     let conflictMode: PerformItemDeletionsDbRequest.ConflictResolutionMode
     unowned let dbStorage: DbStorage
     let queue: DispatchQueue
@@ -53,6 +54,36 @@ struct PerformDeletionsSyncAction: SyncAction {
                     try batch(values: items, batchSize: Self.batchSize) { batch in
                         let batchConflicts = try dbStorage.perform(request: PerformItemDeletionsDbRequest(libraryId: libraryId, keys: batch, conflictMode: conflictMode), on: queue)
                         conflicts.append(contentsOf: batchConflicts)
+                    }
+                }
+
+                let pageIndices = settings.filter({ $0.hasPrefix("lastPageIndex") })
+                let hasPageIndices = try dbStorage.perform(request: CountObjectsDbRequest<RPageIndex>(), on: queue) > 0
+                if hasPageIndices {
+                    try batch(values: pageIndices, batchSize: Self.batchSize) { uids in
+                        var groupedIndices: [LibraryIdentifier: [String]] = [:]
+                        for uid in uids {
+                            let (key, libraryId) = try SettingKeyParser.parse(key: uid)
+                            groupedIndices[libraryId, default: []].append(key)
+                        }
+                        for (libraryId, keys) in groupedIndices {
+                            try dbStorage.perform(request: PerformPageIndexDeletionsDbRequest(libraryId: libraryId, keys: keys), on: queue)
+                        }
+                    }
+                }
+
+                let lastRead = settings.filter({ $0.hasPrefix("lastRead") })
+                let hasLastRead = try dbStorage.perform(request: CountObjectsDbRequest<RLastReadDate>(), on: queue) > 0
+                if hasLastRead {
+                    try batch(values: lastRead, batchSize: Self.batchSize) { uids in
+                        var groupedIndices: [LibraryIdentifier: [String]] = [:]
+                        for uid in uids {
+                            let (key, libraryId) = try SettingKeyParser.parse(key: uid)
+                            groupedIndices[libraryId, default: []].append(key)
+                        }
+                        for (libraryId, keys) in groupedIndices {
+                            try dbStorage.perform(request: PerformLastReadDeletionsDbRequest(libraryId: libraryId, keys: keys), on: queue)
+                        }
                     }
                 }
 

@@ -116,7 +116,8 @@ final class PDFCoordinator: ReaderCoordinator {
             schemaController: controllers.schemaController,
             fileStorage: controllers.fileStorage,
             idleTimerController: controllers.idleTimerController,
-            dateParser: controllers.dateParser
+            dateParser: controllers.dateParser,
+            lastReadWatcher: userControllers.lastReadWatcher
         )
         let state = PDFReaderState(
             url: url,

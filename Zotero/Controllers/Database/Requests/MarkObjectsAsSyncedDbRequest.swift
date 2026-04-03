@@ -8,6 +8,7 @@
 
 import Foundation
 
+import CocoaLumberjackSwift
 import RealmSwift
 
 struct MarkObjectsAsSyncedDbRequest<Obj: UpdatableObject&Syncable>: DbRequest {
@@ -35,34 +36,37 @@ struct MarkObjectsAsSyncedDbRequest<Obj: UpdatableObject&Syncable>: DbRequest {
 }
 
 struct MarkSettingsAsSyncedDbRequest: DbRequest {
-    let settings: [(String, LibraryIdentifier)]
+    struct Setting {
+        let uid: String
+        let key: String
+        let libraryId: LibraryIdentifier
+    }
+
+    let settings: [Setting]
     let changeUuids: [String: [String]]
     let version: Int
 
     var needsWrite: Bool { return true }
 
-    private func uuidKey(from key: String, libraryId: LibraryIdentifier) -> String {
-        let libraryPart: String
-        switch libraryId {
-        case .custom:
-            libraryPart = "u"
-            
-        case .group(let groupId):
-            libraryPart = "g\(groupId)"
-        }
-        return "lastPageIndex_\(libraryPart)_\(key)"
-    }
-
     func process(in database: Realm) throws {
-        for setting in self.settings {
-            guard let object = database.objects(RPageIndex.self).uniqueObject(key: setting.0, libraryId: setting.1) else { continue }
-            if object.version != self.version {
-                object.version = self.version
+        for setting in settings {
+            let object: UpdatableObject&Syncable
+            if setting.uid.starts(with: "lastRead"), let lastRead = database.objects(RLastReadDate.self).uniqueObject(key: setting.key, libraryId: setting.libraryId) {
+                object = lastRead
+            } else if setting.uid.starts(with: "lastPageIndex"), let pageIndex = database.objects(RPageIndex.self).uniqueObject(key: setting.key, libraryId: setting.libraryId) {
+                object = pageIndex
+            } else {
+                DDLogError("MarkSettingsAsSyncedDbRequest: could not find setting for \(setting.uid)")
+                continue
+            }
+
+            if object.version != version {
+                object.version = version
             }
 
             object.changeType = .syncResponse
 
-            if let uuids = self.changeUuids[self.uuidKey(from: setting.0, libraryId: setting.1)] {
+            if let uuids = changeUuids[setting.uid] {
                 object.deleteChanges(uuids: uuids, database: database)
             }
         }

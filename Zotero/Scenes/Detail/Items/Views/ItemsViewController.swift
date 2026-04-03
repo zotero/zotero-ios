@@ -228,7 +228,7 @@ final class ItemsViewController: BaseItemsViewController {
         func process(error: ItemsError, state: ItemsState) {
             // Perform additional actions for individual errors if needed
             switch error {
-            case .itemMove, .deletion, .deletionFromCollection:
+            case .itemMove, .deletion, .deletionFromCollection, .deletionFromRecentlyRead:
                 if let snapshot = state.results {
                     dataSource.apply(snapshot: snapshot.freeze())
                 }
@@ -343,6 +343,10 @@ final class ItemsViewController: BaseItemsViewController {
 
         case .debugReader:
             break
+
+        case .removeFromRecentlyRead:
+            guard !selectedKeys.isEmpty else { return }
+            viewModel.process(action: .removeFromRecentlyRead(selectedKeys))
         }
     }
 

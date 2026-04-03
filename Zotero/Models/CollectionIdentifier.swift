@@ -10,7 +10,7 @@ import Foundation
 
 enum CollectionIdentifier: Identifiable, Equatable, Hashable {
     enum CustomType: Int, Equatable, Hashable, Codable {
-        case all, trash, publications, unfiled
+        case all, trash, publications, unfiled, recentlyRead
     }
 
     case collection(String)
@@ -21,10 +21,20 @@ enum CollectionIdentifier: Identifiable, Equatable, Hashable {
         switch self {
         case .custom(let type):
             switch type {
-            case .all: return "all"
-            case .publications: return "publications"
-            case .trash: return "trash"
-            case .unfiled: return "unfiled"
+            case .all:
+                return "all"
+
+            case .publications:
+                return "publications"
+
+            case .trash:
+                return "trash"
+
+            case .unfiled:
+                return "unfiled"
+
+            case .recentlyRead:
+                return "recentlyRead"
             }
 
         case .collection(let key):
@@ -49,7 +59,7 @@ extension CollectionIdentifier {
         case .custom(let type):
             switch type {
             case .trash: return true
-            case .all, .publications, .unfiled: return false
+            case .all, .publications, .unfiled, .recentlyRead: return false
             }
 
         default: return false

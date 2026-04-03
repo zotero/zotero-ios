@@ -131,7 +131,7 @@ final class ItemsTableViewHandler: NSObject {
             case .addToCollection, .createParent, .retrieveMetadata:
                 contextualAction.backgroundColor = .systemOrange
 
-            case .removeFromCollection:
+            case .removeFromCollection, .removeFromRecentlyRead:
                 contextualAction.backgroundColor = .systemPurple
 
             case .sort, .filter, .copyCitation, .copyBibliography, .share, .download, .removeDownload, .debugReader:

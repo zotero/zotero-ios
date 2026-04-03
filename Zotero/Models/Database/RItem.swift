@@ -31,6 +31,7 @@ extension RItemChanges {
     static let relations = RItemChanges(rawValue: 1 << 7)
     static let rects = RItemChanges(rawValue: 1 << 8)
     static let paths = RItemChanges(rawValue: 1 << 9)
+    static let lastRead = RItemChanges(rawValue: 1 << 10)
 }
 
 final class RItem: Object {
@@ -79,6 +80,8 @@ final class RItem: Object {
     @Persisted var changesSyncPaused: Bool
     /// Date indicating when this item was moved to trash
     @Persisted var trashDate: Date?
+    /// For attachment items only, indicates when attachment has been read / opened
+    @Persisted(indexed: true) var lastRead: Date?
 
     // MARK: - Attachment data
     @Persisted var backendMd5: String
@@ -121,6 +124,8 @@ final class RItem: Object {
     /// Indicates whether this instance has nonempty publicationTitle, helper variable, used in sorting so that we can show items with titles
     /// first and sort them in any order we want (asd/desc) and all other items later
     @Persisted var hasPublicationTitle: Bool
+    /// Most recent lastRead date considering both the item's own lastRead and all children's lastRead dates. Used for sorting in recently read collection.
+    @Persisted var effectiveLastRead: Date?
     /// Type of annotation
     @Persisted var annotationType: String
     /// Sort index for annotations
@@ -217,6 +222,22 @@ final class RItem: Object {
         self.hasParsedYear = false
         self.parsedDate = nil
         self.hasParsedDate = false
+    }
+
+    func updateEffectiveLastRead() {
+        switch rawType {
+        case ItemTypes.annotation:
+            return
+
+        case ItemTypes.attachment:
+            effectiveLastRead = lastRead
+
+        default:
+            let childrenMaxLastRead = children.compactMap(\.lastRead).max()
+            let dates = [lastRead, childrenMaxLastRead].compactMap({ $0 })
+            effectiveLastRead = dates.max()
+        }
+        parent?.updateEffectiveLastRead()
     }
 
     func updateCreatorSummary() {

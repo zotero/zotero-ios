@@ -183,6 +183,13 @@ extension RItem: Updatable {
         if changes.contains(.creators) {
             parameters["creators"] = Array(self.creators.sorted(byKeyPath: "orderId").map({ $0.updateParameters }))
         }
+        if changes.contains(.lastRead) && libraryId == .custom(.myLibrary) {
+            if let lastRead = lastRead.flatMap({ Int($0.timeIntervalSince1970) }) {
+                parameters["lastRead"] = lastRead
+            } else {
+                parameters["lastRead"] = ""
+            }
+        }
         if changes.contains(.fields) {
             for field in self.fields.filter("changed = true") {
                 if field.baseKey == FieldKeys.Item.Annotation.position {
@@ -337,6 +344,9 @@ extension RItem: Updatable {
         if !self.relations.isEmpty {
             changes.insert(.relations)
         }
+        if libraryId == .custom(.myLibrary) && lastRead != nil {
+            changes.insert(.lastRead)
+        }
         return changes
     }
 }
@@ -356,16 +366,7 @@ extension RCreator {
 
 extension RPageIndex: Updatable {
     var updateParameters: [String: Any]? {
-        guard let libraryId = self.libraryId else { return nil }
-        
-        let libraryPart: String
-        switch libraryId {
-        case .custom:
-            libraryPart = "u"
-
-        case .group(let groupId):
-            libraryPart = "g\(groupId)"
-        }
+        guard let libraryId else { return nil }
 
         let value: Any
         if let _value = Int(index) {
@@ -376,12 +377,35 @@ extension RPageIndex: Updatable {
             value = index
         }
 
-        return ["lastPageIndex_\(libraryPart)_\(self.key)": ["value": value]]
+        return [SettingKeyParser.uid(fromKey: key, libraryId: libraryId, prefix: "lastPageIndex"): ["value": value]]
     }
 
     var selfOrChildChanged: Bool {
         return self.isChanged
     }
 
-    func markAsChanged(in database: Realm) {}
+    func markAsChanged(in database: Realm) {
+        self.changes.append(RObjectChange.create(changes: RPageIndexChanges.index))
+        self.changeType = .user
+        self.deleted = false
+        self.version = 0
+    }
+}
+
+extension RLastReadDate: Updatable {
+    var updateParameters: [String: Any]? {
+        guard let groupKey else { return nil }
+        return [SettingKeyParser.uid(fromKey: key, libraryId: .group(groupKey), prefix: "lastRead"): ["value": Int(date.timeIntervalSince1970)]]
+    }
+
+    var selfOrChildChanged: Bool {
+        return self.isChanged
+    }
+
+    func markAsChanged(in database: Realm) {
+        self.changes.append(RObjectChange.create(changes: RLastReadDateChanges.date))
+        self.changeType = .user
+        self.deleted = false
+        self.version = 0
+    }
 }

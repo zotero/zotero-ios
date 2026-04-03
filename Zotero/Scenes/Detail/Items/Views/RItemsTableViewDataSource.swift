@@ -129,6 +129,8 @@ extension RItemsTableViewDataSource: ItemsTableViewDataSource {
         // Allow removing from collection only if item is in current collection. This can happen when "Show items from subcollection" is enabled.
         if let key = viewModel.state.collection.identifier.key, item.collections.filter(.key(key)).first != nil {
             trailingActions.insert(ItemAction(type: .removeFromCollection), at: 1)
+        } else if case .custom(.recentlyRead) = viewModel.state.collection.identifier {
+            trailingActions.insert(ItemAction(type: .removeFromRecentlyRead), at: 1)
         }
         return trailingActions
     }
@@ -176,19 +178,24 @@ extension RItemsTableViewDataSource: ItemsTableViewDataSource {
             break
         }
 
-        guard viewModel.state.library.metadataEditable else { return actions }
+        if viewModel.state.library.metadataEditable {
+            actions.append(ItemAction(type: .addToCollection))
 
-        actions.append(ItemAction(type: .addToCollection))
+            // Add removing from collection only if item is in current collection.
+            if let key = viewModel.state.collection.identifier.key, item.collections.filter(.key(key)).first != nil {
+                actions.append(ItemAction(type: .removeFromCollection))
+            }
 
-        // Add removing from collection only if item is in current collection.
-        if let key = viewModel.state.collection.identifier.key, item.collections.filter(.key(key)).first != nil {
-            actions.append(ItemAction(type: .removeFromCollection))
+            if item.rawType != ItemTypes.note && item.rawType != ItemTypes.attachment {
+                actions.append(ItemAction(type: .duplicate))
+            }
+            actions.append(ItemAction(type: .trash))
         }
 
-        if item.rawType != ItemTypes.note && item.rawType != ItemTypes.attachment {
-            actions.append(ItemAction(type: .duplicate))
+        if case .custom(.recentlyRead) = viewModel.state.collection.identifier {
+            let index = actions.last?.type == .trash ? actions.count - 1 : actions.count
+            actions.insert(ItemAction(type: .removeFromRecentlyRead), at: index)
         }
-        actions.append(ItemAction(type: .trash))
 
         #if DEBUG
         if let attachment, case .file(_, let contentType, _, _, _) = attachment.type, contentType == "application/epub+zip" || contentType == "text/html" {

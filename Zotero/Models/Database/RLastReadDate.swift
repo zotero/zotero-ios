@@ -1,16 +1,16 @@
 //
-//  RPageIndex.swift
+//  RLastReadDate.swift
 //  Zotero
 //
-//  Created by Michal Rentka on 18.02.2021.
-//  Copyright © 2021 Corporation for Digital Scholarship. All rights reserved.
+//  Created by Michal Rentka on 20.03.2026.
+//  Copyright © 2026 Corporation for Digital Scholarship. All rights reserved.
 //
 
 import Foundation
 
 import RealmSwift
 
-struct RPageIndexChanges: OptionSet {
+struct RLastReadDateChanges: OptionSet {
     typealias RawValue = Int16
 
     let rawValue: Int16
@@ -20,15 +20,14 @@ struct RPageIndexChanges: OptionSet {
     }
 }
 
-extension RPageIndexChanges {
-    static let index = RPageIndexChanges(rawValue: 1 << 0)
+extension RLastReadDateChanges {
+    static let date = RLastReadDateChanges(rawValue: 1 << 0)
 }
 
-final class RPageIndex: Object {
+final class RLastReadDate: Object {
     @Persisted(indexed: true) var key: String
-    @Persisted var index: String
+    @Persisted var date: Date
     @Persisted var changed: Bool
-    @Persisted var customLibraryKey: RCustomLibraryType?
     @Persisted var groupKey: Int?
     /// Indicates which local changes need to be synced to backend
     @Persisted var changes: List<RObjectChange>
@@ -49,10 +48,10 @@ final class RPageIndex: Object {
 
     // MARK: - Sync properties
 
-    var changedFields: RPageIndexChanges {
-        var changes: RPageIndexChanges = []
+    var changedFields: RLastReadDateChanges {
+        var changes: RLastReadDateChanges = []
         for change in self.changes {
-            changes.insert(RPageIndexChanges(rawValue: change.rawChanges))
+            changes.insert(RLastReadDateChanges(rawValue: change.rawChanges))
         }
         return changes
     }
