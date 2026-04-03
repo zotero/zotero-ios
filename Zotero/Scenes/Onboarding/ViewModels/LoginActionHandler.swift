@@ -117,21 +117,12 @@ struct LoginActionHandler: ViewModelActionHandler {
     }
 
     private func startSessionPolling(with token: String, in viewModel: ViewModel<LoginActionHandler>) {
-        let statusRequests: Observable<(CheckLoginSessionResponse, HTTPURLResponse)> = Observable<Int>
+        let disposable = Observable<Int>
             .interval(.seconds(3), scheduler: MainScheduler.instance)
             .flatMapLatest { _ in
                 apiClient.send(request: CheckLoginSessionRequest(token: token))
                     .asObservable()
             }
-
-        let timeout: Observable<(CheckLoginSessionResponse, HTTPURLResponse)> = Observable<Int>
-            .timer(.seconds(10 * 60), scheduler: MainScheduler.instance)
-            .flatMap { _ in
-                Observable.error(LoginError.sessionTimedOut)
-            }
-
-        let disposable = Observable<(CheckLoginSessionResponse, HTTPURLResponse)>
-            .merge(statusRequests, timeout)
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak viewModel] response, _ in
                 guard let viewModel else { return }

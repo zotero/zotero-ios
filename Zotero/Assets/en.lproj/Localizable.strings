@@ -398,7 +398,6 @@
 "errors.attachments.too_many_requests" = "Too many requests. Please try again in a few minutes.";
 "errors.attachments.forbidden_webdav" = "You don’t have permission to access %@ on the WebDAV server.";
 "errors.attachments.generic_filename" = "the file";
-"errors.login.session_timed_out" = "Login session timed out";
 "errors.libraries.cantLoad" = "Unable to load libraries";
 "errors.collections.empty_name" = "Please enter a collection name";
 "errors.collections.save_failed" = "Unable to save collection";
