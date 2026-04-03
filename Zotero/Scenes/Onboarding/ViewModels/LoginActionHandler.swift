@@ -105,11 +105,18 @@ struct LoginActionHandler: ViewModelActionHandler {
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak viewModel] response in
                 guard let viewModel, viewModel.state.sessionStatus == .checking else { return }
-                update(viewModel: viewModel) { state in
-                    state.sessionStatus = .completed
+                switch response {
+                case .complete(_, let userId, let username, let apiKey):
+                    update(viewModel: viewModel) { state in
+                        state.sessionStatus = .completed
+                    }
+                    stopSessionMonitoring(for: token)
+                    sessionController.register(userId: userId, username: username, displayName: "", apiToken: apiKey)
+
+                case .cancelled:
+                    stopSessionMonitoring(for: token)
+                    reset(viewModel: viewModel)
                 }
-                stopSessionMonitoring(for: token)
-                sessionController.register(userId: response.userId, username: response.username, displayName: "", apiToken: response.apiKey)
             })
 
         loginSocketMessageDisposable.disposable = messageDisposable
