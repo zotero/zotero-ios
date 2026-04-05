@@ -46,7 +46,7 @@ struct LastReadResponse {
     let version: Int
 
     init?(key: String, data: Any) throws {
-        guard key.contains("lastRead") else { return nil }
+        guard key.hasPrefix("lastRead_") else { return nil }
         guard let dictionary = data as? [String: Any] else {
             DDLogError("LastReadResponse: response not dictionary for key \(key) - \(data)")
             throw Parsing.Error.notDictionary
@@ -72,7 +72,7 @@ struct PageIndexResponse {
     let libraryId: LibraryIdentifier
 
     init?(key: String, data: Any) throws {
-        guard key.contains("lastPageIndex") else { return nil }
+        guard key.hasPrefix("lastPageIndex_") else { return nil }
         guard let dictionary = data as? [String: Any] else {
             DDLogError("PageIndexResponse: response not dictionary for key \(key) - \(data)")
             throw Parsing.Error.notDictionary
