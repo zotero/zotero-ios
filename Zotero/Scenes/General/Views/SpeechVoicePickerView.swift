@@ -317,18 +317,6 @@ fileprivate struct TypeSection: View {
             }
 
             HStack {
-                Text("Premium")
-                Spacer()
-                if case .premium = type {
-                    Image(systemName: "checkmark").foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUIColor)
-                }
-            }
-            .contentShape(Rectangle())
-            .onTapGesture {
-                type = .premium
-            }
-            
-            HStack {
                 Text("Local")
                 Spacer()
                 if case .local = type {
