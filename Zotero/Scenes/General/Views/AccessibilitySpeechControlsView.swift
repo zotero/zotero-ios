@@ -10,7 +10,6 @@ import UIKit
 
 import RxSwift
 
-
 final class AccessibilitySpeechControlsView<Delegate: SpeechManagerDelegate>: UIView, AnnotationToolbarLeadingView {
     enum Kind {
         case annotationToolbar, bottomToolbar, navbar
