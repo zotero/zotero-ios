@@ -21,7 +21,7 @@ struct RemainingTimeFormatter {
     static let warningThresholdSeconds: TimeInterval = 180
     /// Number of seconds in 24 hours
     private static let secondsPerDay: TimeInterval = 24 * 60 * 60
-    
+
     private static let formatterWithDays: DateComponentsFormatter = {
         let formatter = DateComponentsFormatter()
         formatter.allowedUnits = [.day, .hour]
@@ -29,7 +29,7 @@ struct RemainingTimeFormatter {
         formatter.zeroFormattingBehavior = .dropLeading
         return formatter
     }()
-    
+
     private static let formatterHoursMinutes: DateComponentsFormatter = {
         let formatter = DateComponentsFormatter()
         formatter.allowedUnits = [.hour, .minute]
@@ -37,7 +37,7 @@ struct RemainingTimeFormatter {
         formatter.zeroFormattingBehavior = .dropLeading
         return formatter
     }()
-    
+
     /// Formats the remaining time for display.
     /// - Parameter remainingTime: The remaining time in seconds.
     /// - Returns: A formatted string like "2d 2h", "2h 30m", "<1m", or "0m".
@@ -55,14 +55,14 @@ struct RemainingTimeFormatter {
             return formatterHoursMinutes.string(from: roundedUpSeconds) ?? ""
         }
     }
-    
+
     /// Checks if the remaining time should be displayed.
     /// - Parameter remainingTime: The remaining time in seconds.
     /// - Returns: `true` if time should be displayed (less than 90 days), `false` otherwise.
     static func shouldDisplay(_ remainingTime: TimeInterval) -> Bool {
         return remainingTime < maxDisplayThresholdSeconds
     }
-    
+
     /// Checks if the remaining time is below the warning threshold.
     /// - Parameter remainingTime: The remaining time in seconds.
     /// - Returns: `true` if time is below the warning threshold, `false` otherwise.

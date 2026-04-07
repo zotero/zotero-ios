@@ -39,7 +39,6 @@ protocol PdfReaderCoordinatorDelegate: ReaderCoordinatorDelegate, ReaderSidebarC
         highlighterAction: @escaping () -> Void,
         voiceChangeAction: @escaping (AccessibilityPopupVoiceChange) -> Void
     )
-    func showReadAloudOnboarding(language: String, userInterfaceStyle: UIUserInterfaceStyle, completion: @escaping (SpeechVoice?) -> Void)
 }
 
 protocol PdfAnnotationsCoordinatorDelegate: ReaderSidebarCoordinatorDelegate {
@@ -214,7 +213,7 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         case .fileError:
             // TODO: - show storage error or unknown error
             message = "Could not create PDF file."
-            
+
         case .pdfError:
             message = "Could not export PDF file."
         }
@@ -286,23 +285,6 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
         let controller = UIAlertController(title: L10n.warning, message: L10n.Errors.Pdf.documentChanged, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: { _ in completed() }))
         navigationController?.present(controller, animated: true)
-    }
-
-    func showReadAloudOnboarding(language: String, userInterfaceStyle: UIUserInterfaceStyle, completion: @escaping (SpeechVoice?) -> Void) {
-        guard let navigationController else { return }
-        let view = ReadAloudOnboardingView(
-            language: language,
-            remoteVoicesController: remoteVoicesController,
-            dismiss: { selectedVoice in
-                navigationController.dismiss(animated: true) {
-                    completion(selectedVoice)
-                }
-            }
-        )
-        let controller = UIHostingController(rootView: view)
-        controller.overrideUserInterfaceStyle = userInterfaceStyle
-        controller.modalPresentationStyle = .formSheet
-        navigationController.present(controller, animated: true)
     }
 
     func showAccessibility<Delegate: SpeechManagerDelegate>(
@@ -443,7 +425,7 @@ extension PDFCoordinator: PdfAnnotationsCoordinatorDelegate {
                     let completion = { (activityType: UIActivity.ActivityType?, completed: Bool, _: [Any]?, error: Error?) in
                         DDLogInfo("PDFCoordinator: share pdf annotation image - activity type: \(String(describing: activityType)) completed: \(completed) error: \(String(describing: error))")
                     }
-                    
+
                     ((childCoordinators.last as? AnnotationPopoverCoordinator) ?? (self as? Coordinator))?.share(item: shareableImage, sourceItem: sender, completionWithItemsHandler: completion)
                 }
                 action.accessibilityLabel = L10n.Accessibility.Pdf.shareAnnotationImage + " " + title
@@ -484,7 +466,7 @@ extension PDFCoordinator: DetailCitationCoordinatorDelegate {
         guard let coordinator = parentCoordinator as? DetailCoordinator else { return }
         coordinator.showCitationPreviewError(using: presenter, errorMessage: errorMessage)
     }
-    
+
     func showMissingStyleError(using presenter: UINavigationController?) {
         guard let coordinator = parentCoordinator as? DetailCoordinator else { return }
         coordinator.showMissingStyleError(using: navigationController)
