@@ -380,7 +380,6 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
             documentWorkerController.cleanupWorker(speechWorker)
         }
         viewModel.process(action: .changeIdleTimerDisabled(false))
-        viewModel.process(action: .deinitialiseReader)
         DDLogInfo("PDFReaderViewController deinitialized")
     }
 
@@ -622,14 +621,14 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
         accessibilityHandler?.speechManager.start(mapStartIndexToPage: { page in
             return textOffset(for: text, approximateOffset: approximateOffset, in: page) ?? 0
         })
-        
+
         func textOffset(for selectedText: String?, approximateOffset: Int?, in pageText: String) -> Int? {
             guard let selectedText, let approximateOffset else { return nil }
-            
+
             // Use first word for searching to handle whitespace differences between PSPDFKit and PDF Worker
             let normalizedSelected = selectedText.components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }.joined(separator: " ")
             guard let firstWord = normalizedSelected.components(separatedBy: " ").first, !firstWord.isEmpty else { return nil }
-            
+
             // Find all occurrences
             var occurrences: [Int] = []
             var searchRange = pageText.startIndex..<pageText.endIndex
@@ -638,9 +637,9 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
                 occurrences.append(offset)
                 searchRange = range.upperBound..<pageText.endIndex
             }
-            
+
             guard !occurrences.isEmpty else { return nil }
-            
+
             // Find the occurrence closest to the approximate offset
             return occurrences.min(by: { abs($0 - approximateOffset) < abs($1 - approximateOffset) })
         }
@@ -841,7 +840,7 @@ extension PDFReaderViewController: AnnotationToolbarHandlerDelegate {
     func setNavigationBar(alpha: CGFloat) {
         navigationController?.navigationBar.alpha = alpha
     }
-    
+
     func annotationToolbarWillChange(state: AnnotationToolbarHandler.State, statusBarVisible: Bool) {
         if state.visible && state.position == .pinned {
             accessibilityHandler?.accessibilityControlsShouldChange(isNavbarHidden: true)
@@ -1038,7 +1037,6 @@ extension PDFReaderViewController: PDFDocumentDelegate {
             // Manual page scrolling and page change due to a link, are differentiated by this heuristic.
             // When a link is tapped, a sequence of page index changes event are triggered, with the final ones maintaining the page index.
             intraDocumentNavigationHandler?.pageChanged((event.oldPageIndex == event.pageIndex) ? .link : .manual)
-            accessibilityHandler?.speechManager.stop()
         }
     }
 
@@ -1117,21 +1115,20 @@ extension PDFReaderViewController: SpeechManagerDelegate {
         return viewModel.state.title
     }
 
-
     func getCurrentPageIndex() -> UInt {
         return documentController?.currentPage ?? 0
     }
-    
+
     func getNextPageIndex(from currentPageIndex: UInt) -> UInt? {
         guard currentPageIndex + 1 < viewModel.state.document.pageCount else { return nil }
         return currentPageIndex + 1
     }
-    
+
     func getPreviousPageIndex(from currentPageIndex: UInt) -> UInt? {
         guard currentPageIndex > 0 else { return nil }
         return currentPageIndex - 1
     }
-    
+
     func text(for indices: [UInt], completion: @escaping ([UInt: String]?) -> Void) {
         DDLogInfo("PDFReaderViewController: text for \(indices)")
         guard let file = viewModel.state.document.fileURL.flatMap({ Files.file(from: $0) }) else {
@@ -1222,32 +1219,13 @@ extension PDFReaderViewController: SpeechManagerDelegate {
     func clearAnnotationPreview() {
         documentController?.clearAnnotationPreview()
     }
-
-    func createAnnotation(ofType tool: AnnotationTool, color: String, forText text: String, onPage pageIndex: UInt) {
-        let page = PageIndex(pageIndex)
-        guard let rects = documentController?.speechHighlightPDFFrames(for: text, page: page), !rects.isEmpty else { return }
-        switch tool {
-        case .highlight:
-            viewModel.process(action: .createHighlight(pageIndex: page, rects: rects, color: color))
-
-        case .underline:
-            viewModel.process(action: .createUnderline(pageIndex: page, rects: rects, color: color))
-
-        default:
-            break
-        }
-    }
-
-    func clearHighlightAnnotationPreview() {
-        documentController?.clearSpeechHighlight()
-    }
 }
 
 extension PDFReaderViewController: AccessibilityViewDelegate {
     func accessibilityToolbarChanged(height: CGFloat) {
         documentControllerBottom?.constant = height
     }
-    
+
     func showAccessibilityPopup<Delegate: SpeechManagerDelegate>(
         speechManager: SpeechManager<Delegate>,
         sender: UIBarButtonItem,
@@ -1271,15 +1249,15 @@ extension PDFReaderViewController: AccessibilityViewDelegate {
             voiceChangeAction: voiceChangeAction
         )
     }
-    
+
     func addAccessibilityControlsViewToAnnotationToolbar(view: AnnotationToolbarLeadingView) {
         annotationToolbarHandler?.setLeadingView(view: view)
     }
-    
+
     func removeAccessibilityControlsViewFromAnnotationToolbar() {
         annotationToolbarHandler?.setLeadingView(view: nil)
     }
-    
+
     func clearSpeechHighlight() {
         documentController?.clearReadAloudHighlight()
         documentController?.clearAnnotationPreview()
@@ -1338,9 +1316,5 @@ extension PDFReaderViewController: AccessibilityViewDelegate {
         guard let text = accessibilityHandler?.speechManager.highlightSessionManager.currentText(),
               let pageIndex = accessibilityHandler?.speechManager.highlightSessionManager.session?.pageIndex else { return }
         documentController?.updateAnnotationPreview(text: text, page: PageIndex(pageIndex), annotationTool: tool, annotationColor: color)
-    }
-
-    func updateSpeechHighlightStyle(tool: AnnotationTool, color: String) {
-        documentController?.updateSpeechHighlightStyle(tool: tool, color: color)
     }
 }
