@@ -487,7 +487,18 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         let sortNavigationController = UINavigationController()
         sortNavigationController.modalPresentationStyle = .popover
         sortNavigationController.popoverPresentationController?.sourceItem = button
+        let isCompact = navigationController?.traitCollection.horizontalSizeClass == .compact
+        let observer = ItemSortingObserver(showExpandedPicker: isCompact)
+        let traitObserver = TraitObserverViewController { [weak observer] traitCollection in
+            observer?.showExpandedPicker = traitCollection.horizontalSizeClass == .compact
+        }
+        navigationController?.addChild(traitObserver)
+        navigationController?.view.addSubview(traitObserver.view)
+        traitObserver.didMove(toParent: navigationController)
+        traitObserver.view.isHidden = true
+
         let view = ItemSortingView(
+            observer: observer,
             sortType: sortType,
             changed: changed,
             showPicker: { [weak sortNavigationController] view in
@@ -498,11 +509,15 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
                 sortNavigationController?.popViewController(animated: true)
             }
         )
-        let controller = createItemSortingController(for: view, navigationController: sortNavigationController)
+        let controller = createItemSortingController(for: view, navigationController: sortNavigationController, traitObserver: traitObserver)
         sortNavigationController.setViewControllers([controller], animated: false)
         navigationController?.present(sortNavigationController, animated: true, completion: nil)
 
-        func createItemSortingController(for view: ItemSortingView, navigationController: UINavigationController) -> UIHostingController<ItemSortingView> {
+        func createItemSortingController(
+            for view: ItemSortingView,
+            navigationController: UINavigationController,
+            traitObserver: TraitObserverViewController
+        ) -> UIHostingController<ItemSortingView> {
             let controller = DisappearActionHostingController(rootView: view)
             var size: CGSize?
             controller.willAppear = { [weak controller, weak navigationController] in
@@ -511,6 +526,11 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
                 size = _size
                 controller.preferredContentSize = _size
                 navigationController?.preferredContentSize = _size
+            }
+            controller.willDisappear = { [weak traitObserver] in
+                traitObserver?.willMove(toParent: nil)
+                traitObserver?.view.removeFromSuperview()
+                traitObserver?.removeFromParent()
             }
 
             if UIDevice.current.userInterfaceIdiom == .phone {
