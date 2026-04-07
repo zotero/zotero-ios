@@ -37,7 +37,6 @@ protocol AccessibilityPopoupCoordinatorDelegate: AnyObject {
     )
 }
 
-
 final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: UIViewController, UIPopoverPresentationControllerDelegate {
     private unowned let speechManager: SpeechManager<Delegate>
     private let speedNumberFormatter: NumberFormatter
@@ -99,10 +98,6 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
         createView()
         updatePopup(toHeight: currentHeight)
         observeState()
-        
-        if speechManager.state.value == .stopped {
-            speechManager.start()
-        }
 
         func createView() {
             // Speech container
@@ -334,7 +329,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
                     process(state: state)
                 })
                 .disposed(by: disposeBag)
-            
+
             speechManager.remainingTime
                 .observe(on: MainScheduler.instance)
                 .subscribe(onNext: { [weak self] remainingTime in
@@ -433,7 +428,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
         switch voice {
         case .local(let voice):
             return voice.name
-            
+
         case .remote(let voice):
             return voice.label
         }
@@ -459,7 +454,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: U
     private func formatted(modifier: Float) -> String {
         return (speedNumberFormatter.string(from: NSNumber(value: modifier)) ?? "") + "x"
     }
-    
+
     private func updateRemainingTime(_ remainingTime: TimeInterval?) {
         if voiceButton.title == L10n.Speech.unknownVoice, let voice = speechManager.voice {
             voiceButton.title = voiceTitle(from: voice)
@@ -576,7 +571,7 @@ private final class VoiceButtonView: UIControl {
         label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         return label
     }()
-    
+
     private let clockImageView: UIImageView = {
         let imageView = UIImageView(image: UIImage(systemName: "clock"))
         imageView.tintColor = .secondaryLabel
@@ -584,7 +579,7 @@ private final class VoiceButtonView: UIControl {
         imageView.setContentHuggingPriority(.required, for: .horizontal)
         return imageView
     }()
-    
+
     private let timeLabel: UILabel = {
         let label = UILabel()
         label.font = .preferredFont(forTextStyle: .subheadline)
@@ -592,15 +587,15 @@ private final class VoiceButtonView: UIControl {
         label.setContentHuggingPriority(.required, for: .horizontal)
         return label
     }()
-    
+
     /// Tracks the last displayed minute value to avoid unnecessary updates
     private var lastDisplayedMinute: Int?
-    
+
     var title: String? {
         get { titleLabel.text }
         set { titleLabel.text = newValue }
     }
-    
+
     var remainingTime: TimeInterval? {
         didSet {
             // Hide if no time or if time exceeds 90 days
@@ -610,27 +605,27 @@ private final class VoiceButtonView: UIControl {
                 lastDisplayedMinute = nil
                 return
             }
-            
+
             let totalMinutes = Int(ceil(time / 60))
             guard lastDisplayedMinute != totalMinutes else { return }
             lastDisplayedMinute = totalMinutes
-            
+
             clockImageView.isHidden = false
             timeLabel.isHidden = false
             timeLabel.text = RemainingTimeFormatter.formatted(time)
-            
+
             let timeColor: UIColor = RemainingTimeFormatter.isWarning(time) ? .systemRed : .secondaryLabel
             clockImageView.tintColor = timeColor
             timeLabel.textColor = timeColor
         }
     }
-    
+
     override var isEnabled: Bool {
         didSet {
             alpha = isEnabled ? 1.0 : 0.5
         }
     }
-    
+
     override var isHighlighted: Bool {
         didSet {
             UIView.animate(withDuration: 0.1) {
@@ -638,21 +633,21 @@ private final class VoiceButtonView: UIControl {
             }
         }
     }
-    
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         setup()
     }
-    
+
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         setup()
     }
-    
+
     private func setup() {
         backgroundColor = .systemGray5
         layer.cornerRadius = 16
-        
+
         let stackView = UIStackView(arrangedSubviews: [titleLabel, clockImageView, timeLabel])
         stackView.axis = .horizontal
         stackView.alignment = .center
@@ -660,14 +655,14 @@ private final class VoiceButtonView: UIControl {
         stackView.translatesAutoresizingMaskIntoConstraints = false
         stackView.isUserInteractionEnabled = false
         addSubview(stackView)
-        
+
         NSLayoutConstraint.activate([
             stackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
             stackView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
             stackView.topAnchor.constraint(equalTo: topAnchor, constant: 6),
             stackView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -6)
         ])
-        
+
         clockImageView.isHidden = true
         timeLabel.isHidden = true
     }
