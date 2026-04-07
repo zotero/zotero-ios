@@ -186,7 +186,7 @@ enum VoiceUtility {
         switch quality {
         case .premium:
             return 0
-            
+
         case .enhanced:
             return 1
 

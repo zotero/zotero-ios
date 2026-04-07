@@ -41,7 +41,7 @@ final class PDFDocumentViewController: UIViewController {
     private let initialUIHidden: Bool
 
     private static var toolHistory: [PSPDFKit.Annotation.Tool?] = []
-    
+
     private var selectionView: SelectionView?
     private var readAloudHighlightView: SpeechHighlightView?
     private var currentReadAloudHighlightPage: PageIndex?
@@ -864,7 +864,7 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
                 }
             }
         )
-        
+
         func replace(action: UIAction, forMenuId menuId: UIMenu.Identifier) -> UIMenuElement? {
             switch menuId {
             case .standardEdit:
@@ -917,14 +917,14 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
                 return action
             }
         }
-        
+
         func replace(commandMenu menu: UIMenu) -> UIMenuElement? {
             switch menu.identifier {
             case .speech:
                 return UIAction(title: L10n.Speech.speak, image: menu.image) { [weak self] _ in
                     self?.parentDelegate?.speak(glyphs: glyphs, pageIndex: pageView.pageIndex)
                 }
-                
+
             default:
                 return menu
             }
@@ -1275,7 +1275,7 @@ extension PDFDocumentViewController: FreeTextInputDelegate {
             }
         )
     }
-    
+
     func showFontSizePicker(sender: UIView, key: PDFReaderState.AnnotationKey, updated: @escaping (CGFloat) -> Void) {
         coordinatorDelegate?.showFontSizePicker(sender: sender, picked: { [weak viewModel] size in
             viewModel?.process(action: .setFontSize(key: key.key, size: size))
@@ -1300,7 +1300,7 @@ extension PDFDocumentViewController: FreeTextInputDelegate {
     func change(fontSize: CGFloat, for key: PDFReaderState.AnnotationKey) {
         viewModel.process(action: .setFontSize(key: key.key, size: fontSize))
     }
-    
+
     func getFontSize(for key: PDFReaderState.AnnotationKey) -> CGFloat? {
         return viewModel.state.annotation(for: key)?.fontSize
     }
