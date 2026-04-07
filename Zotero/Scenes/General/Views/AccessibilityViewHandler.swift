@@ -98,13 +98,13 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
                 case .stopped:
                     self.dismissHighlighterOverlay(confirm: true)
                     self.delegate?.clearSpeechHighlight()
-                    
+
                 case .outOfCredits(let reason):
                     // Only show popup for daily limit - quota exceeded is handled internally by SpeechManager
                     if reason == .dailyLimitExceeded {
                         showSpeech()
                     }
-                    
+
                 case .speaking, .paused, .initializing, .loading:
                     showOverlayIfNeeded(forType: currentOverlayType(controller: self), state: state)
                 }
@@ -174,7 +174,7 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
             }
         )
     }
-    
+
     private func currentOverlayType(controller: AccessibilityViewHandler<Delegate>) -> AccessibilitySpeechControlsView<Delegate>.Kind {
         if controller.isFormSheet {
             return .bottomToolbar
@@ -243,7 +243,7 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
         switch type {
         case .navbar, .bottomToolbar:
             settingsAction = { [weak self] in self?.showSpeech() }
-            
+
         case .annotationToolbar:
             settingsAction = nil
         }
@@ -375,16 +375,16 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
         self.activeOverlay = nil
         viewController.view.layoutIfNeeded()
     }
-    
+
     private func remove(activeControls: AccessibilitySpeechControlsView<Delegate>) {
         switch activeControls.type {
         case .navbar:
             viewController.navigationItem.titleView = nil
-            
+
         case .bottomToolbar:
             delegate?.accessibilityToolbarChanged(height: 0)
             activeControls.removeFromSuperview()
-            
+
         case .annotationToolbar:
             delegate?.removeAccessibilityControlsViewFromAnnotationToolbar()
         }
