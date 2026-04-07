@@ -62,7 +62,6 @@ enum SpeechState: Equatable {
             return true
         }
     }
-}
 
     var isPaused: Bool {
         switch self {
@@ -122,7 +121,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     private let disposeBag: DisposeBag
     private unowned let remoteVoicesController: RemoteVoicesController
     private let nowPlayingManager: NowPlayingManager
-    
+
     private var processor: VoiceProcessor!
     private var speechData: SpeechData? {
         didSet {
@@ -176,9 +175,9 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             processor = LocalVoiceProcessor(language: voiceLanguage, speechRateModifier: 1, delegate: self)
         }
         processor.speechRateModifier = speechRateModifier
-        
+
         setupNowPlayingManager()
-        
+
         state
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] state in
@@ -186,7 +185,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                 switch state {
                 case .speaking:
                     nowPlayingManager.updatePlaybackState(isPlaying: true)
-                    
+
                 case .paused, .initializing, .loading:
                     nowPlayingManager.updatePlaybackState(isPlaying: false)
 
@@ -195,7 +194,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                     if reason == .quotaExceeded {
                         downgradeVoiceTierAndContinue()
                     }
-                    
+
                 case .stopped:
                     speechData = nil
                     cachedPages = [:]
@@ -205,17 +204,17 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             })
             .disposed(by: disposeBag)
     }
-    
+
     private func setupNowPlayingManager() {
         nowPlayingManager.playPauseHandler = { [weak self] in
             guard let self else { return }
             switch state.value {
             case .paused, .outOfCredits:
                 resume()
-                
+
             case .speaking:
                 pause()
-                
+
             case .initializing, .loading, .stopped:
                 break
             }
@@ -259,13 +258,13 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             startSpeaking(at: startIndex, page: page, pageIndex: pageIndex, reportPageChange: false, shouldDetectVoice: true)
         }
     }
-    
+
     // Start speech
     // - parameter startIndex: Start speaking at given index.
     func start(startIndex: Int) {
         start(mapStartIndexToPage: { _ in startIndex })
     }
-    
+
     func pause() {
         processor.pause()
     }
@@ -298,7 +297,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                 remainingTime.accept(nil)
                 nowPlayingManager.reconfigureAudioSession()
             }
-            
+
         case .remote(let voice):
             if let processor = processor as? RemoteVoiceProcessor {
                 processor.set(voice: voice, preferredLanguage: preferredLanguage)
@@ -425,9 +424,9 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     /// - If already using local voice, does nothing
     private func downgradeVoiceTierAndContinue() {
         guard let voice else { return }
-        
+
         let language = language ?? detectedLanguage
-        
+
         switch voice {
         case .remote(let remoteVoice):
             switch remoteVoice.tier {
@@ -452,7 +451,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             // Already at lowest tier, nothing to downgrade to
             break
         }
-        
+
         func downgradeToLocalVoice(language: String) {
             Defaults.shared.remoteVoiceTier = nil
             let newProcessor = LocalVoiceProcessor(
@@ -541,16 +540,16 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         cacheAdjacentPages(for: pageIndex)
         processor.speak(text: page, startIndex: index, shouldDetectVoice: shouldDetectVoice)
     }
-    
+
     /// Moves the current speech position without starting playback.
     /// Used when navigating while paused to update the highlight position.
     private func moveTo(index: Int, on page: String, pageIndex: Delegate.Index) {
         guard let sentenceData = TextTokenizer.findSentence(startingAt: index, in: page) else { return }
-        
+
         let previousPageIndex = speechData?.index
         let pageDidChange = previousPageIndex != pageIndex
         let previousParagraphRange = speechData?.paragraphRange
-        
+
         // Check if the new position is still within the current paragraph
         let isInCurrentParagraph: Bool
         if let previousParagraphRange, previousParagraphRange.length > 0 {
@@ -558,7 +557,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         } else {
             isInCurrentParagraph = false
         }
-        
+
         let newParagraphRange: NSRange
         let highlightText: String?
         if isInCurrentParagraph, let previousParagraphRange {
@@ -571,15 +570,15 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             newParagraphRange = paragraphData?.range ?? sentenceData.range
             highlightText = paragraphData?.text ?? sentenceData.text
         }
-        
+
         speechData = SpeechData(index: pageIndex, range: sentenceData.range, paragraphRange: newParagraphRange)
         processor.invalidateCurrentPlayback()
-        
+
         // Only notify delegate if the paragraph changed
         if let highlightText {
             delegate?.readAloudHighlightChanged(text: highlightText, pageIndex: pageIndex)
         }
-        
+
         if pageDidChange, let previousPageIndex {
             delegate?.moved(to: pageIndex, from: previousPageIndex)
             cacheAdjacentPages(for: pageIndex)
@@ -604,7 +603,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             }
         }
     }
-    
+
     // MARK: - VoiceProcessorDelegate
 
     func goToNextPageIfAvailable() -> Bool {
@@ -614,7 +613,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         startSpeaking(page: page, pageIndex: nextIndex, reportPageChange: true, shouldDetectVoice: true)
         return true
     }
-    
+
     func speechRangeWillChange(to range: NSRange) {
         guard let speechData else { return }
         guard let pageText = cachedPages[speechData.index] else { return }
@@ -625,14 +624,14 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             self.speechData = speechData.copy(range: range, paragraphRange: speechData.paragraphRange)
             return
         }
-        
+
         // New range is outside current paragraph, find the new paragraph
         let paragraphResult = TextTokenizer.findParagraphContaining(index: range.location, in: pageText)
         let newParagraphRange = paragraphResult?.range ?? range
-        
+
         // Update speech data with the new range and paragraph range
         self.speechData = speechData.copy(range: range, paragraphRange: newParagraphRange)
-        
+
         // Notify delegate of the paragraph change
         if let paragraphText = paragraphResult?.text {
             delegate?.readAloudHighlightChanged(text: paragraphText, pageIndex: speechData.index)
@@ -726,7 +725,7 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
         self.delegate = delegate
         synthesizer = AVSpeechSynthesizer()
         super.init()
-        processor.speechRateModifier = speechRateModifier
+        synthesizer.delegate = self
     }
 
     func speak(text: String, startIndex: Int, shouldDetectVoice: Bool) {
@@ -748,13 +747,20 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
         utterance.rate = 0.5 * speechRateModifier
         synthesizer.speak(utterance)
     }
-    
+
     func pause() {
-        processor.pause()
+        guard synthesizer.isSpeaking else { return }
+        synthesizer.pauseSpeaking(at: .word)
     }
 
     func resume() {
-        processor.resume()
+        guard synthesizer.isPaused else { return }
+
+        if !shouldReloadUtteranceOnResume {
+            synthesizer.continueSpeaking()
+        } else {
+            reloadUtterance()
+        }
     }
 
     func stop() {
@@ -929,7 +935,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         self.remoteVoicesController = remoteVoicesController
         super.init()
     }
-    
+
     // MARK: - Actions
 
     func set(voice: RemoteVoice, preferredLanguage: String?) {
@@ -1023,7 +1029,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
 
     func resume() {
         guard let player, delegate.state.value == .paused || delegate.state.value.isOutOfCredits else { return }
-        
+
         if shouldReloadOnResume {
             shouldReloadOnResume = false
             reloadCurrentSegment()
@@ -1032,7 +1038,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
             delegate.state.accept(.speaking)
             startCreditPollTimer()
         }
-        
+
         func reloadCurrentSegment() {
             guard let text, let voice, let speechRange = delegate.speechRange else { return }
             // Clear cache since voice changed
@@ -1043,7 +1049,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
             startSpeaking(text: text, startIndex: speechRange.location, voice: voice)
         }
     }
-    
+
     func stop() {
         finishSpeaking()
         disposeBag = DisposeBag()
@@ -1052,7 +1058,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     func invalidateCurrentPlayback() {
         shouldReloadOnResume = true
     }
-    
+
     private func stopPreloadingAndClearCache() {
         disposeBag = DisposeBag()
         segmentCache.removeAll()
@@ -1079,7 +1085,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     }
 
     // MARK: - Voices
-    
+
     private func loadVoice(forText text: String) -> Single<RemoteVoice> {
         if let allAvailableVoices {
             return loadVoice(forText: text, preferredLanguage: preferredLanguage, tier: tier, allVoices: allAvailableVoices)
@@ -1112,7 +1118,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
     }
 
     // MARK: - Speech
-    
+
     private func startSpeaking(text: String, startIndex: Int, voice: RemoteVoice) {
         // Find the range for the segment at startIndex
         guard let range = findNextRange(startingAt: startIndex, voice: voice, in: text) else {
@@ -1129,7 +1135,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
             ensureSegmentsPreloaded(after: range, text: text, voice: voice)
             return
         }
-        
+
         // Check if this segment is already being loaded (preload in progress)
         if loadingSegments.contains(range) {
             // Mark this range as pending playback - it will start playing when the preload completes
@@ -1137,7 +1143,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
             delegate.state.accept(.loading)
             return
         }
-        
+
         // Load segment and start playing as soon as it's ready, while preloading others
         delegate.state.accept(.loading)
         startCreditPollTimer()
@@ -1146,7 +1152,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         func loadAndPlaySegment(range: NSRange, text: String, voice: RemoteVoice) {
             // Mark as loading
             loadingSegments.insert(range)
-            
+
             // Start loading the segment we need to play
             loadSegment(for: range, in: text, voice: voice)
                 .observe(on: MainScheduler.instance)
@@ -1164,7 +1170,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
                     }
                 )
                 .disposed(by: disposeBag)
-            
+
             // Start preloading next segments concurrently
             ensureSegmentsPreloaded(after: range, text: text, voice: voice)
         }
@@ -1177,16 +1183,16 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         let segmentText = String(text[textRange])
         return remoteVoicesController.downloadSound(forText: segmentText, voiceId: voice.id)
     }
-    
+
     private func ensureSegmentsPreloaded(after currentRange: NSRange, text: String, voice: RemoteVoice) {
         // Calculate how many more segments we need to preload
         let currentlyBuffered = segmentCache.count + loadingSegments.count
         let segmentsToLoad = Self.preloadAheadCount - currentlyBuffered
         guard segmentsToLoad > 0 else { return }
-        
+
         var nextIndex = currentRange.location + currentRange.length
         var loaded = 0
-        
+
         while loaded < segmentsToLoad {
             guard let range = findNextRange(startingAt: nextIndex, voice: voice, in: text) else { break }
 
@@ -1195,10 +1201,10 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
                 nextIndex = range.location + range.length
                 continue
             }
-            
+
             // Mark as loading and start download
             loadingSegments.insert(range)
-            
+
             loadSegment(for: range, in: text, voice: voice)
                 .observe(on: MainScheduler.instance)
                 .subscribe(
@@ -1225,18 +1231,18 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
                     }
                 )
                 .disposed(by: disposeBag)
-            
+
             nextIndex = range.location + range.length
             loaded += 1
         }
     }
-    
+
     private func handleSpeechSuccess(data: Data, range: NSRange) {
         // Remove this segment from cache since we're now playing it
         segmentCache.removeValue(forKey: range)
         play(data: data)
     }
-    
+
     private func handleSpeechFailure(error: Swift.Error) {
         if case Error.endOfPage = error {
             // Reached end of current page, try to go to next page
@@ -1264,7 +1270,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
             delegate.state.accept(.stopped)
         }
     }
-    
+
     private func play(data: Data) {
         do {
             let audioPlayer = try AVAudioPlayer(data: data)
@@ -1283,9 +1289,9 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
             delegate.state.accept(.stopped)
         }
     }
-    
+
     // MARK: - Credits
-    
+
     private func startCreditPollTimer() {
         guard creditPollTimer == nil else { return }
         // Load credits immediately
@@ -1300,7 +1306,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         creditPollTimer?.invalidate()
         creditPollTimer = nil
     }
-    
+
     private func loadCredits() {
         remoteVoicesController.loadCredits()
             .observe(on: MainScheduler.instance)
@@ -1314,7 +1320,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
             )
             .disposed(by: disposeBag)
     }
-    
+
     private func updateRemainingTimeDisplay(credits: (standard: Int, premium: Int)) {
         guard let voice, voice.tier != .standard else {
             // Standard tier voice - report nil remaining time (unlimited)
@@ -1334,9 +1340,9 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         let remainingTime = (TimeInterval(tierCredits) / TimeInterval(voice.creditsPerMinute)) * 60
         delegate.remainingTime.accept(remainingTime)
     }
-    
+
     // MARK: - Helpers
-    
+
     private func findNextRange(startingAt index: Int, voice: RemoteVoice, in text: String) -> NSRange? {
         let result: (text: String, range: NSRange)?
         if voice.granularity == .sentence {
@@ -1346,7 +1352,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         }
         return result?.range
     }
-    
+
     private func finishSpeaking() {
         debouncedSpeakWorkItem?.cancel()
         debouncedSpeakWorkItem = nil
@@ -1406,209 +1412,3 @@ extension SpeechManager: SpeechHighlightSessionManagerDelegate {
         return (text, prevIndex)
     }
 }
-
-protocol VoiceProcessor {
-    var isSpeaking: Bool { get }
-    var isPaused: Bool { get }
-    var state: BehaviorRelay<SpeechState> { get }
-    var speechVoice: SpeechVoice { get }
-    var speechRateModifier: Float { get set }
-    
-    func speak(text: String)
-    func pause()
-    func resume()
-    func stop()
-}
-
-// swiftlint:disable private_over_fileprivate
-fileprivate final class LocalVoiceProcessor: NSObject, VoiceProcessor {
-    private struct PageData {
-        // Text to read
-        let text: String
-        // Voice used for this page
-        let voice: AVSpeechSynthesisVoice
-    }
-
-    let state: BehaviorRelay<SpeechState>
-    private let voice: AVSpeechSynthesisVoice
-    private let synthesizer: AVSpeechSynthesizer
-
-    private var shouldReloadUtteranceOnResume = false
-    private var ignoreFinishCallCount = 0
-    var speechRateModifier: Float {
-        didSet {
-            utteranceChanged()
-        }
-    }
-    var isSpeaking: Bool {
-        return synthesizer.isSpeaking
-    }
-    var isPaused: Bool {
-        return synthesizer.isPaused
-    }
-    var speechVoice: SpeechVoice {
-        return .local(voice)
-    }
-
-    init(voice: AVSpeechSynthesisVoice, speechRateModifier: Float) {
-        self.voice = voice
-        self.speechRateModifier = speechRateModifier
-        state = .init(value: .loading)
-        synthesizer = AVSpeechSynthesizer()
-        super.init()
-        synthesizer.delegate = self
-    }
-
-    func speak(text: String) {
-        if synthesizer.isSpeaking {
-            ignoreFinishCallCount += 1
-            synthesizer.stopSpeaking(at: .immediate)
-        }
-
-        let utterance = AVSpeechUtterance(string: text)
-        utterance.voice = voice
-        utterance.rate = 0.5 * speechRateModifier
-        synthesizer.speak(utterance)
-    }
-    
-    func pause() {
-        guard synthesizer.isSpeaking else { return }
-        synthesizer.pauseSpeaking(at: .word)
-    }
-
-    func resume() {
-        guard synthesizer.isPaused else { return }
-
-        if !shouldReloadUtteranceOnResume {
-            synthesizer.continueSpeaking()
-        } else {
-            reloadUtterance()
-        }
-    }
-
-    func stop() {
-        guard synthesizer.isSpeaking || synthesizer.isPaused || state.value == .loading else { return }
-        if state.value == .loading {
-            state.accept(.stopped)
-        } else {
-            // Ignore finish delegate, which would move us to another page
-            ignoreFinishCallCount = 1
-            synthesizer.stopSpeaking(at: .immediate)
-            state.accept(.stopped)
-        }
-    }
-
-    func set(voice: AVSpeechSynthesisVoice) {
-//        Defaults.shared.defaultVoiceForLanguage[voice.baseLanguage] = voice.identifier
-//
-//        guard let currentVoice else { return }
-//
-//        let newBaseLanguage = voice.baseLanguage
-//        if currentVoice.baseLanguage != newBaseLanguage {
-//            set(overrideLanguage: newBaseLanguage, voice: voice)
-//        } else {
-//            for (key, value) in cachedPages {
-//                guard value.voice.baseLanguage == newBaseLanguage else { continue }
-//                cachedPages[key] = PageData(text: value.text, voice: voice)
-//            }
-//        }
-//        utteranceChanged()
-//
-//        func set(overrideLanguage: String, voice: AVSpeechSynthesisVoice) {
-//            self.overrideLanguage = overrideLanguage
-//            for (key, value) in cachedPages {
-//                cachedPages[key] = PageData(text: value.text, voice: voice)
-//            }
-//        }
-    }
-    
-    private func utteranceChanged() {
-        if synthesizer.isPaused {
-            shouldReloadUtteranceOnResume = true
-        } else if synthesizer.isSpeaking {
-            reloadUtterance()
-        }
-    }
-
-    private func reloadUtterance() {
-//        guard let currentIndex, let page = cachedPages[currentIndex], let speech else { return }
-//        if synthesizer.isSpeaking {
-//            synthesizer.pauseSpeaking(at: .immediate)
-//        }
-//        let text = String(page.text[page.text.index(page.text.startIndex, offsetBy: speech.globalRange.location)..<page.text.endIndex])
-//        speak(text: text)
-    }
-}
-
-extension LocalVoiceProcessor: AVSpeechSynthesizerDelegate {
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
-//        cleanup()
-//        state.accept(.stopped)
-    }
-    
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didPause utterance: AVSpeechUtterance) {
-//        state.accept(.paused)
-    }
-    
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
-//        state.accept(.speaking)
-    }
-    
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didContinue utterance: AVSpeechUtterance) {
-//        state.accept(.speaking)
-    }
-
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-//        guard ignoreFinishCallCount <= 0 else {
-//            ignoreFinishCallCount -= 1
-//            return
-//        }
-//
-//        if let currentIndex, let nextIndex = delegate?.getNextPageIndex(from: currentIndex), let page = cachedPages[nextIndex] {
-//            go(to: page, pageIndex: nextIndex)
-//        } else {
-//            cleanup()
-//            state.accept(.stopped)
-//        }
-    }
-
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, willSpeakRangeOfSpeechString characterRange: NSRange, utterance: AVSpeechUtterance) {
-//        guard currentIndex != nil && characterRange.length > 0 else { return }
-//        speech = speech?.copy(with: characterRange)
-    }
-}
-
-fileprivate final class RemoteVoiceProcessor: VoiceProcessor {
-    let state: BehaviorRelay<SpeechState>
-    private let voice: RemoteVoice
-
-    var speechRateModifier: Float
-    var isSpeaking: Bool {
-        return false
-    }
-    var isPaused: Bool {
-        return false
-    }
-    var speechVoice: SpeechVoice {
-        return .remote(voice)
-    }
-
-    init(voice: RemoteVoice, speechRateModifier: Float) {
-        self.voice = voice
-        self.speechRateModifier = speechRateModifier
-        state = .init(value: .loading)
-    }
-
-    func speak(text: String) {
-    }
-
-    func pause() {
-    }
-
-    func resume() {
-    }
-
-    func stop() {
-    }
-}
-// swiftlint:enable private_over_fileprivate

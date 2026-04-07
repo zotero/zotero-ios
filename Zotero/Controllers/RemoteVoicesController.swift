@@ -15,7 +15,7 @@ final class RemoteVoicesController {
     enum Error: Swift.Error {
         case noData
     }
-    
+
     private unowned let apiClient: ApiClient
 
     init(apiClient: ApiClient) {
@@ -42,11 +42,11 @@ final class RemoteVoicesController {
             }
         })
     }
-    
+
     func loadCredits() -> Single<(standard: Int, premium: Int)> {
         return apiClient.send(request: CreditsRequest()).flatMap({ response, _ in return .just((standard: response.standardCreditsRemaining, premium: response.premiumCreditsRemaining)) })
     }
-    
+
     func downloadSample(voiceId: String) -> Single<Data> {
         return apiClient
             .send(request: ReadAloudSampleRequest(voiceId: voiceId))
@@ -140,17 +140,5 @@ final class RemoteVoicesController {
         }
 
         return normalized
-    }
-    
-    func downloadSound(forText text: String, voiceId: String) -> Single<Data> {
-        return apiClient
-            .send(request: ReadAloudAudioRequest(voiceId: voiceId, text: text))
-            .flatMap({ (data, _) in
-                if let data = data.audioData {
-                    return .just(data)
-                } else {
-                    return .error(Error.noData)
-                }
-            })
     }
 }

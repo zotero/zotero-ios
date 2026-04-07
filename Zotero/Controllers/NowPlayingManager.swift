@@ -78,7 +78,7 @@ final class NowPlayingManager {
 
         DDLogInfo("NowPlayingManager: deactivated")
     }
-    
+
     private func deactivateAudioSession() {
         do {
             let audioSession = AVAudioSession.sharedInstance()
@@ -103,7 +103,7 @@ final class NowPlayingManager {
             updateNowPlayingInfo(isPlaying: true)
         }
     }
-    
+
     /// Reconfigures the audio session to ensure we remain the Now Playing app.
     /// Call this when switching between different audio sources (e.g., local to remote voice).
     func reconfigureAudioSession() {
