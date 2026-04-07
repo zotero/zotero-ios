@@ -35,7 +35,7 @@ enum LanguageDetector {
         let baseLanguage = recognizer.dominantLanguage?.rawValue ?? "en"
         return resolveVariation(for: baseLanguage)
     }
-    
+
     /// Resolves a base language to a specific variation.
     /// Uses device locale if it matches the base language, otherwise falls back to prominent variations,
     /// then to the first available system locale for that language.
@@ -46,17 +46,17 @@ enum LanguageDetector {
         let availableVariations = Locale.availableIdentifiers
             .map { $0.replacingOccurrences(of: "_", with: "-") }
             .filter { $0.hasPrefix(baseLanguage + "-") }
-        
+
         // If no variations available, fall back to en-US
         guard !availableVariations.isEmpty else {
             return "en-US"
         }
-        
+
         // If only one variation exists, return it directly
         if availableVariations.count == 1 {
             return availableVariations[0]
         }
-        
+
         // Check if device locale matches the base language - if so, use device's variation
         let deviceLocale = self.deviceLocale
         let deviceBaseLanguage = String(deviceLocale.prefix(2))
@@ -68,7 +68,7 @@ enum LanguageDetector {
         if let canonicalVariation = canonicalVariation(for: baseLanguage), availableVariations.contains(canonicalVariation) {
             return canonicalVariation
         }
-        
+
         // Fall back to first available variation
         return availableVariations[0]
     }
