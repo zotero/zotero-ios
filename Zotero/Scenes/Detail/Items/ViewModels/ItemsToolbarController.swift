@@ -262,7 +262,7 @@ final class ItemsToolbarController {
             newSortType.ascending = false
             self?.delegate?.sortTypeChanged(newSortType)
         }
-        let orderMenu = UIMenu(title: "", options: .displayInline, children: [ascendingAction, descendingAction])
+        let orderMenu = UIMenu(title: L10n.Items.sortOrder, options: .displayInline, children: [ascendingAction, descendingAction])
 
         let fieldActions = ItemsSortType.Field.allCases.map { field in
             UIAction(title: field.title, state: sortType.field == field ? .on : .off) { [weak self] _ in
@@ -270,7 +270,7 @@ final class ItemsToolbarController {
                 self?.delegate?.sortTypeChanged(newSortType)
             }
         }
-        let fieldsMenu = UIMenu(title: "", options: .displayInline, children: fieldActions)
+        let fieldsMenu = UIMenu(title: L10n.Items.sortBy, options: .displayInline, children: fieldActions)
 
         return UIMenu(children: [orderMenu, fieldsMenu])
     }
