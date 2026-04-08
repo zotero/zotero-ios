@@ -14,6 +14,7 @@ import RxSwift
 protocol ItemsToolbarControllerDelegate: UITraitEnvironment {
     func process(action: ItemAction.Kind, button: UIBarButtonItem)
     func showLookup()
+    func sortTypeChanged(_ sortType: ItemsSortType)
 }
 
 final class ItemsToolbarController {
@@ -21,6 +22,7 @@ final class ItemsToolbarController {
         let isEditing: Bool
         let selectedItems: Set<AnyHashable>
         let filters: [ItemsFilter]
+        let sortType: ItemsSortType
         let allowsManualSort: Bool
         let downloadBatchData: ItemsState.DownloadBatchData?
         let remoteDownloadBatchData: ItemsState.DownloadBatchData?
@@ -33,7 +35,8 @@ final class ItemsToolbarController {
         case single
         case filter
         case title
-        
+        case sort
+
         var tag: Int {
             rawValue
         }
@@ -91,6 +94,7 @@ final class ItemsToolbarController {
             viewController.toolbarItems = createNormalToolbarItems(for: filters)
             updateNormalToolbarItems(
                 for: filters,
+                sortType: data.sortType,
                 downloadBatchData: data.downloadBatchData,
                 remoteDownloadBatchData: data.remoteDownloadBatchData,
                 identifierLookupBatchData: data.identifierLookupBatchData,
@@ -175,13 +179,9 @@ final class ItemsToolbarController {
 
             if data.allowsManualSort {
                 let action = ItemAction(type: .sort)
-                let sortButton = UIBarButtonItem(image: action.image, style: .plain, target: nil, action: nil)
+                let sortButton = UIBarButtonItem(image: action.image, menu: createSortMenu(for: data.sortType))
+                sortButton.tag = ToolbarItem.sort.tag
                 sortButton.accessibilityLabel = L10n.Accessibility.Items.sortItems
-                sortButton.rx.tap.subscribe(onNext: { [weak self] _ in
-                    self?.delegate?.process(action: action.type, button: sortButton)
-                })
-                .disposed(by: disposeBag)
-
                 items.append(contentsOf: [flexibleSpacer, sortButton, fixedSpacer])
             } else {
                 items.append(contentsOf: [flexibleSpacer, fixedSpacer])
@@ -224,6 +224,7 @@ final class ItemsToolbarController {
         } else {
             updateNormalToolbarItems(
                 for: sizeClassSpecificFilters(from: data.filters),
+                sortType: data.sortType,
                 downloadBatchData: data.downloadBatchData,
                 remoteDownloadBatchData: data.remoteDownloadBatchData,
                 identifierLookupBatchData: data.identifierLookupBatchData,
@@ -250,6 +251,30 @@ final class ItemsToolbarController {
         })
     }
 
+    private func createSortMenu(for sortType: ItemsSortType) -> UIMenu {
+        let ascendingAction = UIAction(title: L10n.Items.ascending, state: sortType.ascending ? .on : .off) { [weak self] _ in
+            var newSortType = sortType
+            newSortType.ascending = true
+            self?.delegate?.sortTypeChanged(newSortType)
+        }
+        let descendingAction = UIAction(title: L10n.Items.descending, state: sortType.ascending ? .off : .on) { [weak self] _ in
+            var newSortType = sortType
+            newSortType.ascending = false
+            self?.delegate?.sortTypeChanged(newSortType)
+        }
+        let orderMenu = UIMenu(title: "", options: .displayInline, children: [ascendingAction, descendingAction])
+
+        let fieldActions = ItemsSortType.Field.allCases.map { field in
+            UIAction(title: field.title, state: sortType.field == field ? .on : .off) { [weak self] _ in
+                let newSortType = ItemsSortType(field: field, ascending: field.defaultOrderAscending)
+                self?.delegate?.sortTypeChanged(newSortType)
+            }
+        }
+        let fieldsMenu = UIMenu(title: "", options: .displayInline, children: fieldActions)
+
+        return UIMenu(children: [orderMenu, fieldsMenu])
+    }
+
     // MARK: - Helpers
 
     private func updateEditingToolbarItems(for selectedItems: Set<AnyHashable>) {
@@ -269,11 +294,16 @@ final class ItemsToolbarController {
 
     private func updateNormalToolbarItems(
         for filters: [ItemsFilter],
+        sortType: ItemsSortType,
         downloadBatchData: ItemsState.DownloadBatchData?,
         remoteDownloadBatchData: ItemsState.DownloadBatchData?,
         identifierLookupBatchData: ItemsState.IdentifierLookupBatchData,
         itemCount: Int
     ) {
+        if let item = viewController.toolbarItems?.first(where: { $0.tag == ToolbarItem.sort.tag }) {
+            item.menu = createSortMenu(for: sortType)
+        }
+
         if let item = viewController.toolbarItems?.first(where: { $0.tag == ToolbarItem.filter.tag }) {
             let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease.circle" : "line.horizontal.3.decrease.circle.fill"
             item.image = UIImage(systemName: filterImageName)

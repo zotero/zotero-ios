@@ -39,7 +39,6 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showItemDetail(for type: ItemDetailState.DetailType, libraryId: LibraryIdentifier, scrolledToKey childKey: String?, animated: Bool)
     func showAttachmentError(_ error: Error)
     func showAddActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
-    func showSortActions(sortType: ItemsSortType, button: UIBarButtonItem, changed: @escaping (ItemsSortType) -> Void)
     func show(url: URL)
     func show(doi: String)
     func showFilters(filters: [ItemsFilter], filtersDelegate: BaseItemsViewController, button: UIBarButtonItem)
@@ -479,86 +478,6 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
 
         self.navigationController?.present(controller, animated: true, completion: nil)
-    }
-
-    func showSortActions(sortType: ItemsSortType, button: UIBarButtonItem, changed: @escaping (ItemsSortType) -> Void) {
-        DDLogInfo("DetailCoordinator: show item sort popup")
-
-        let sortNavigationController = UINavigationController()
-        sortNavigationController.modalPresentationStyle = .popover
-        sortNavigationController.popoverPresentationController?.sourceItem = button
-        let isCompact = navigationController?.traitCollection.horizontalSizeClass == .compact
-        let observer = ItemSortingObserver(showExpandedPicker: isCompact)
-        let traitObserver = TraitObserverViewController { [weak observer] traitCollection in
-            observer?.showExpandedPicker = traitCollection.horizontalSizeClass == .compact
-        }
-        navigationController?.addChild(traitObserver)
-        navigationController?.view.addSubview(traitObserver.view)
-        traitObserver.didMove(toParent: navigationController)
-        traitObserver.view.isHidden = true
-
-        let view = ItemSortingView(
-            observer: observer,
-            sortType: sortType,
-            changed: changed,
-            showPicker: { [weak sortNavigationController] view in
-                guard let sortNavigationController else { return }
-                showPicker(view: view, navigationController: sortNavigationController)
-            },
-            closePicker: { [weak sortNavigationController] in
-                sortNavigationController?.popViewController(animated: true)
-            }
-        )
-        let controller = createItemSortingController(for: view, navigationController: sortNavigationController, traitObserver: traitObserver)
-        sortNavigationController.setViewControllers([controller], animated: false)
-        navigationController?.present(sortNavigationController, animated: true, completion: nil)
-
-        func createItemSortingController(
-            for view: ItemSortingView,
-            navigationController: UINavigationController,
-            traitObserver: TraitObserverViewController
-        ) -> UIHostingController<ItemSortingView> {
-            let controller = DisappearActionHostingController(rootView: view)
-            var size: CGSize?
-            controller.willAppear = { [weak controller, weak navigationController] in
-                guard let controller else { return }
-                let _size = size ?? controller.view.systemLayoutSizeFitting(CGSize(width: 400.0, height: .greatestFiniteMagnitude))
-                size = _size
-                controller.preferredContentSize = _size
-                navigationController?.preferredContentSize = _size
-            }
-            controller.willDisappear = { [weak traitObserver] in
-                traitObserver?.willMove(toParent: nil)
-                traitObserver?.view.removeFromSuperview()
-                traitObserver?.removeFromParent()
-            }
-
-            if UIDevice.current.userInterfaceIdiom == .phone {
-                controller.didLoad = { [weak self] viewController in
-                    guard let self else { return }
-                    let doneButton = UIBarButtonItem(title: L10n.done, style: .done, target: nil, action: nil)
-                    doneButton.rx.tap
-                        .subscribe({ [weak self] _ in
-                            self?.navigationController?.dismiss(animated: true)
-                        })
-                        .disposed(by: disposeBag)
-                    viewController.navigationItem.rightBarButtonItem = doneButton
-                }
-            }
-            return controller
-        }
-
-        func showPicker(view: ItemSortTypePickerView, navigationController: UINavigationController) {
-            let controller = UIHostingController(rootView: view)
-            controller.preferredContentSize = CGSize(width: 400, height: 600)
-            navigationController.preferredContentSize = controller.preferredContentSize
-            navigationController.pushViewController(controller, animated: true)
-        }
-    }
-
-    private func sortButtonTitles(for sortType: ItemsSortType) -> (field: String, order: String) {
-        let sortOrderTitle = sortType.ascending ? L10n.Items.ascending : L10n.Items.descending
-        return ("\(L10n.Items.sortBy): \(sortType.field.title)", "\(L10n.Items.sortOrder): \(sortOrderTitle)")
     }
 
     func createNoteController(
