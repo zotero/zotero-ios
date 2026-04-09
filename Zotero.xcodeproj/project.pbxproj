@@ -459,7 +459,6 @@
 		B311B3262386A39800BCF592 /* ZShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B311B31C2386A39800BCF592 /* ZShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B3129855270EE9DE002376F9 /* Error+Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3129854270EE9DE002376F9 /* Error+Helpers.swift */; };
 		B312BB4125519DD30023300A /* ItemDetailLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = B312BB4025519DD30023300A /* ItemDetailLayout.swift */; };
-		B31901942629C9CB00209E33 /* ItemsFilterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31901922629C9CB00209E33 /* ItemsFilterViewController.swift */; };
 		B31941DD24531F6600BF6296 /* PDFAnnotationsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31941DB24531F6600BF6296 /* PDFAnnotationsViewController.swift */; };
 		B319D6B6265CE05000E52132 /* ReadAllItemsForUploadDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B319D6B5265CE05000E52132 /* ReadAllItemsForUploadDbRequest.swift */; };
 		B319D6B8265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B319D6B7265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift */; };
@@ -1144,7 +1143,6 @@
 		B3DF9AD92747AB65007933CB /* ApiLogParameters.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DF9AD72747AB63007933CB /* ApiLogParameters.swift */; };
 		B3E1BEC9254B0B9500D9BB27 /* ItemDetailFieldEditCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E1BEC7254B0B9500D9BB27 /* ItemDetailFieldEditCell.swift */; };
 		B3E1BECA254B0B9500D9BB27 /* ItemDetailFieldEditContentView.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3E1BEC8254B0B9500D9BB27 /* ItemDetailFieldEditContentView.xib */; };
-		B3E2FF2029CAE1EF00F85AEB /* ItemsFilterCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E2FF1F29CAE1EF00F85AEB /* ItemsFilterCoordinator.swift */; };
 		B3E2FF2229CAE3DF00F85AEB /* NoteEditorCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E2FF2129CAE3DF00F85AEB /* NoteEditorCoordinator.swift */; };
 		B3E34889283CFA92002A8A06 /* CleanupUnusedTags.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E34888283CFA92002A8A06 /* CleanupUnusedTags.swift */; };
 		B3E381D325F2D78A00F046CE /* ApiLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E381D225F2D78A00F046CE /* ApiLogger.swift */; };
@@ -1635,7 +1633,6 @@
 		B311B3232386A39800BCF592 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B3129854270EE9DE002376F9 /* Error+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Error+Helpers.swift"; sourceTree = "<group>"; };
 		B312BB4025519DD30023300A /* ItemDetailLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailLayout.swift; sourceTree = "<group>"; };
-		B31901922629C9CB00209E33 /* ItemsFilterViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemsFilterViewController.swift; sourceTree = "<group>"; };
 		B31941DB24531F6600BF6296 /* PDFAnnotationsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PDFAnnotationsViewController.swift; sourceTree = "<group>"; };
 		B319D6B5265CE05000E52132 /* ReadAllItemsForUploadDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAllItemsForUploadDbRequest.swift; sourceTree = "<group>"; };
 		B319D6B7265CE0C200E52132 /* ReadAllDownloadedAndForUploadItemsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAllDownloadedAndForUploadItemsDbRequest.swift; sourceTree = "<group>"; };
@@ -2356,7 +2353,6 @@
 		B3DF9AD72747AB63007933CB /* ApiLogParameters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiLogParameters.swift; sourceTree = "<group>"; };
 		B3E1BEC7254B0B9500D9BB27 /* ItemDetailFieldEditCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailFieldEditCell.swift; sourceTree = "<group>"; };
 		B3E1BEC8254B0B9500D9BB27 /* ItemDetailFieldEditContentView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ItemDetailFieldEditContentView.xib; sourceTree = "<group>"; };
-		B3E2FF1F29CAE1EF00F85AEB /* ItemsFilterCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemsFilterCoordinator.swift; sourceTree = "<group>"; };
 		B3E2FF2129CAE3DF00F85AEB /* NoteEditorCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteEditorCoordinator.swift; sourceTree = "<group>"; };
 		B3E34888283CFA92002A8A06 /* CleanupUnusedTags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupUnusedTags.swift; sourceTree = "<group>"; };
 		B3E381D225F2D78A00F046CE /* ApiLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiLogger.swift; sourceTree = "<group>"; };
@@ -3653,7 +3649,6 @@
 				B3593EEA241A61C700760E20 /* Models */,
 				B3593EE8241A61C700760E20 /* ViewModels */,
 				B3593EEF241A61C700760E20 /* Views */,
-				B3E2FF1F29CAE1EF00F85AEB /* ItemsFilterCoordinator.swift */,
 			);
 			path = Items;
 			sourceTree = "<group>";
@@ -3689,7 +3684,6 @@
 				B3593EF6241A61C700760E20 /* BaseItemsViewController.swift */,
 				B3593EF2241A61C700760E20 /* ItemCell.swift */,
 				B30B405E2490CAFC00FAAF6D /* ItemCell.xib */,
-				B31901922629C9CB00209E33 /* ItemsFilterViewController.swift */,
 				B3593EF0241A61C700760E20 /* ItemsTableViewHandler.swift */,
 				B31D973B27F5E51100ED3DA2 /* ItemsToolbarDownloadProgressView.swift */,
 				B3ED793A2C9D74DF004F5C9A /* ItemsViewController.swift */,
@@ -5464,7 +5458,6 @@
 				B31941DD24531F6600BF6296 /* PDFAnnotationsViewController.swift in Sources */,
 				B3BC6B20250FA437006A8B9C /* SchemaError.swift in Sources */,
 				B3863FD02AD83698005082F0 /* EditTypeItemDetailDbRequest.swift in Sources */,
-				B31901942629C9CB00209E33 /* ItemsFilterViewController.swift in Sources */,
 				B3B41F152848E5A30017CA4B /* AnnotationsFilterActionHandler.swift in Sources */,
 				B32AB57B25ADB891003CF0C6 /* CommentIconDrawingController.swift in Sources */,
 				B3CCB8D829B72F9B0097520B /* AnnotationEditCoordinator.swift in Sources */,
@@ -5558,7 +5551,6 @@
 				B373877328FEA0C7004E5031 /* PDFSidebarViewController.swift in Sources */,
 				B3DCDF1D24091EC40039ED0D /* SinglePickerView.swift in Sources */,
 				B32EBFBD276A89190003897E /* BackgroundUploadProcessor.swift in Sources */,
-				B3E2FF2029CAE1EF00F85AEB /* ItemsFilterCoordinator.swift in Sources */,
 				B3F6AA3C2AB30CDA005BC22E /* HtmlEpubReaderAction.swift in Sources */,
 				B3593F4A241A61C700760E20 /* LibrariesState.swift in Sources */,
 				B3E8FE072714292E00F51458 /* StorageSettingsEmptyView.swift in Sources */,

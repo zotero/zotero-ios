@@ -250,7 +250,7 @@ final class ItemsViewController: BaseItemsViewController {
 
     private func process(action: ItemAction.Kind, for selectedKeys: Set<String>, button: UIBarButtonItem?, completionAction: ((Bool) -> Void)?) {
         switch action {
-        case .delete, .restore, .sort, .debugReader:
+        case .delete, .restore, .sort, .debugReader, .filter:
             break
 
         case .addToCollection:
@@ -306,10 +306,6 @@ final class ItemsViewController: BaseItemsViewController {
         case .trash:
             guard !selectedKeys.isEmpty else { return }
             viewModel.process(action: .trashItems(selectedKeys))
-
-        case .filter:
-            guard let button else { return }
-            coordinatorDelegate?.showFilters(filters: viewModel.state.filters, filtersDelegate: self, button: button)
 
         case .share:
             guard !selectedKeys.isEmpty else { return }
@@ -509,6 +505,14 @@ extension ItemsViewController: ItemsToolbarControllerDelegate {
 
     func sortTypeChanged(_ sortType: ItemsSortType) {
         viewModel.process(action: .setSortType(sortType))
+    }
+
+    func downloadsFilterChanged(enabled: Bool) {
+        if enabled {
+            viewModel.process(action: .enableFilter(.downloadedFiles))
+        } else {
+            viewModel.process(action: .disableFilter(.downloadedFiles))
+        }
     }
 }
 

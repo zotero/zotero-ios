@@ -41,7 +41,6 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showAddActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
     func show(url: URL)
     func show(doi: String)
-    func showFilters(filters: [ItemsFilter], filtersDelegate: BaseItemsViewController, button: UIBarButtonItem)
     func showDeletionQuestion(count: Int, confirmAction: @escaping () -> Void, cancelAction: @escaping () -> Void)
     func showRemoveFromCollectionQuestion(count: Int, confirmAction: @escaping () -> Void)
     func showCitation(using presenter: UIViewController?, for itemIds: Set<String>, libraryId: LibraryIdentifier, delegate: DetailCitationCoordinatorDelegate?)
@@ -591,27 +590,6 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.isModalInPresentation = true
         navigationController.modalPresentationStyle = .formSheet
-        self.navigationController?.present(navigationController, animated: true, completion: nil)
-    }
-
-    func showFilters(filters: [ItemsFilter], filtersDelegate: BaseItemsViewController, button: UIBarButtonItem) {
-        DDLogInfo("DetailCoordinator: show item filters")
-
-        let navigationController = NavigationViewController()
-        navigationController.modalPresentationStyle = .popover
-        navigationController.popoverPresentationController?.sourceItem = button
-
-        let coordinator = ItemsFilterCoordinator(
-            filters: filters,
-            filtersDelegate: filtersDelegate,
-            navigationController: navigationController,
-            mainCoordinatorDelegate: mainCoordinatorDelegate,
-            controllers: controllers
-        )
-        coordinator.parentCoordinator = self
-        childCoordinators.append(coordinator)
-        coordinator.start(animated: false)
-
         self.navigationController?.present(navigationController, animated: true, completion: nil)
     }
 

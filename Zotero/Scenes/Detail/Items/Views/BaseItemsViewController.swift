@@ -14,6 +14,14 @@ import RxSwift
 import WebKit
 import ZIPFoundation
 
+protocol FiltersDelegate: AnyObject {
+    var currentLibrary: Library { get }
+
+    func downloadsFilterDidChange(enabled: Bool)
+    func tagSelectionDidChange(selected: Set<String>)
+    func tagOptionsDidChange()
+}
+
 class BaseItemsViewController: UIViewController {
     enum RightBarButtonItem: Int {
         case select

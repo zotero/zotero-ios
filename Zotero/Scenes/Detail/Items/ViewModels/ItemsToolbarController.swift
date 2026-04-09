@@ -15,6 +15,7 @@ protocol ItemsToolbarControllerDelegate: UITraitEnvironment {
     func process(action: ItemAction.Kind, button: UIBarButtonItem)
     func showLookup()
     func sortTypeChanged(_ sortType: ItemsSortType)
+    func downloadsFilterChanged(enabled: Bool)
 }
 
 final class ItemsToolbarController {
@@ -164,13 +165,10 @@ final class ItemsToolbarController {
             let flexibleSpacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
 
             let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease.circle" : "line.horizontal.3.decrease.circle.fill"
-            let filterButton = UIBarButtonItem(image: UIImage(systemName: filterImageName), style: .plain, target: nil, action: nil)
+            let downloadsFilterEnabled = data.filters.contains(where: { $0.isDownloadedFilesFilter })
+            let filterButton = UIBarButtonItem(image: UIImage(systemName: filterImageName), menu: createFilterMenu(downloadsFilterEnabled: downloadsFilterEnabled))
             filterButton.tag = ToolbarItem.filter.tag
             filterButton.accessibilityLabel = L10n.Accessibility.Items.filterItems
-            filterButton.rx.tap.subscribe(onNext: { [weak self] _ in
-                self?.delegate?.process(action: .filter, button: filterButton)
-            })
-            .disposed(by: disposeBag)
 
             let titleButton = UIBarButtonItem(customView: createTitleView())
             titleButton.tag = ToolbarItem.title.tag
@@ -251,6 +249,13 @@ final class ItemsToolbarController {
         })
     }
 
+    private func createFilterMenu(downloadsFilterEnabled: Bool) -> UIMenu {
+        let downloadsAction = UIAction(title: L10n.Items.Filters.downloads, state: downloadsFilterEnabled ? .on : .off) { [weak self] _ in
+            self?.delegate?.downloadsFilterChanged(enabled: !downloadsFilterEnabled)
+        }
+        return UIMenu(title: L10n.Items.Filters.title, children: [downloadsAction])
+    }
+
     private func createSortMenu(for sortType: ItemsSortType) -> UIMenu {
         let ascendingAction = UIAction(title: L10n.Items.ascending, state: sortType.ascending ? .on : .off) { [weak self] _ in
             var newSortType = sortType
@@ -307,6 +312,8 @@ final class ItemsToolbarController {
         if let item = viewController.toolbarItems?.first(where: { $0.tag == ToolbarItem.filter.tag }) {
             let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease.circle" : "line.horizontal.3.decrease.circle.fill"
             item.image = UIImage(systemName: filterImageName)
+            let downloadsFilterEnabled = filters.contains(where: { $0.isDownloadedFilesFilter })
+            item.menu = createFilterMenu(downloadsFilterEnabled: downloadsFilterEnabled)
         }
 
         if let item = viewController.toolbarItems?.first(where: { $0.tag == ToolbarItem.title.tag }),
