@@ -46,7 +46,7 @@ final class AnnotationPopoverViewController: UIViewController {
         super.viewDidLoad()
 
         setupViews()
-        view.layoutSubviews()
+        view.layoutIfNeeded()
 
         viewModel.stateObservable
             .observe(on: MainScheduler.instance)
@@ -78,6 +78,7 @@ final class AnnotationPopoverViewController: UIViewController {
     private func updatePreferredContentSize() {
         guard var size = containerStackView?.systemLayoutSizeFitting(CGSize(width: AnnotationPopoverLayout.width, height: .greatestFiniteMagnitude)) else { return }
         size.width = AnnotationPopoverLayout.width
+        guard preferredContentSize != size else { return }
         preferredContentSize = size
         navigationController?.preferredContentSize = size
     }
