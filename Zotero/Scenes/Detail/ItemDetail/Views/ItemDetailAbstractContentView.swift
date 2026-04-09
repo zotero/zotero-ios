@@ -11,8 +11,10 @@ import UIKit
 class ItemDetailAbstractContentView: UIView {
     @IBOutlet private weak var titleTop: NSLayoutConstraint!
     @IBOutlet private weak var titleLabel: UILabel!
-    @IBOutlet private weak var titleToContent: NSLayoutConstraint!
-    @IBOutlet private weak var contentLabel: CollapsibleLabel!
+
+    private var contentTextView: CollapsibleTextView!
+    private var titleToContent: NSLayoutConstraint!
+    var toggleCollapse: (() -> Void)?
 
     private static let paragraphStyle: NSMutableParagraphStyle = {
         let paragraphStyle = NSMutableParagraphStyle()
@@ -42,15 +44,53 @@ class ItemDetailAbstractContentView: UIView {
         self.titleLabel.font = titleFont
         self.titleTop.constant = ItemDetailLayout.separatorHeight - (titleFont.ascender - titleFont.capHeight)
 
-        let attributes: [NSAttributedString.Key: Any] = [.font: self.showMoreLessFont,
-                                                         .foregroundColor: Asset.Colors.zoteroBlue.color,
-                                                         .paragraphStyle: ItemDetailAbstractContentView.paragraphStyle]
-        let showMore = NSMutableAttributedString(string: " ... ", attributes: [.font: self.bodyFont, .paragraphStyle: ItemDetailAbstractContentView.paragraphStyle])
-        showMore.append(NSAttributedString(string: L10n.ItemDetail.showMore, attributes: attributes))
+        setupContentTextView()
+    }
 
-        self.contentLabel.collapsedNumberOfLines = 2
-        self.contentLabel.showLessString = NSAttributedString(string: " \(L10n.ItemDetail.showLess)", attributes: attributes)
-        self.contentLabel.showMoreString = showMore
+    private func setupContentTextView() {
+        let textView = CollapsibleTextView()
+        textView.translatesAutoresizingMaskIntoConstraints = false
+        textView.adjustsFontForContentSizeCategory = true
+        textView.setContentHuggingPriority(.init(1000), for: .horizontal)
+        textView.setContentHuggingPriority(.init(750), for: .vertical)
+        textView.setContentCompressionResistancePriority(.init(250), for: .horizontal)
+        textView.setContentCompressionResistancePriority(.init(1000), for: .vertical)
+        addSubview(textView)
+
+        titleToContent = textView.topAnchor.constraint(equalTo: titleLabel.lastBaselineAnchor, constant: 15)
+        NSLayoutConstraint.activate([
+            textView.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor),
+            textView.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor),
+            titleToContent,
+            layoutMarginsGuide.bottomAnchor.constraint(equalTo: textView.bottomAnchor)
+        ])
+
+        textView.onToggle = { [weak self] in
+            self?.toggleCollapse?()
+        }
+
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: showMoreLessFont,
+            .foregroundColor: Asset.Colors.zoteroBlue.color,
+            .paragraphStyle: ItemDetailAbstractContentView.paragraphStyle
+        ]
+
+        let showMore = NSMutableAttributedString(
+            string: " ... ",
+            attributes: [.font: bodyFont, .paragraphStyle: ItemDetailAbstractContentView.paragraphStyle]
+        )
+        let showMoreLink = NSMutableAttributedString(string: L10n.ItemDetail.showMore, attributes: attributes)
+        showMoreLink.addAttribute(.link, value: CollapsibleTextView.toggleURL, range: NSRange(location: 0, length: showMoreLink.length))
+        showMore.append(showMoreLink)
+
+        let showLessLink = NSMutableAttributedString(string: " \(L10n.ItemDetail.showLess)", attributes: attributes)
+        showLessLink.addAttribute(.link, value: CollapsibleTextView.toggleURL, range: NSRange(location: 0, length: showLessLink.length))
+
+        textView.collapsedNumberOfLines = 2
+        textView.showLessString = showLessLink
+        textView.showMoreString = showMore
+
+        contentTextView = textView
     }
 
     func setup(with abstract: String, isCollapsed: Bool, maxWidth: CGFloat) {
@@ -58,7 +98,7 @@ class ItemDetailAbstractContentView: UIView {
         let attributes: [NSAttributedString.Key: Any] = [.paragraphStyle: ItemDetailAbstractContentView.paragraphStyle, .font: font]
         let hyphenatedText = NSAttributedString(string: abstract, attributes: attributes)
 
-        self.contentLabel.set(text: hyphenatedText, isCollapsed: isCollapsed, maxWidth: maxWidth)
+        self.contentTextView.set(text: hyphenatedText, isCollapsed: isCollapsed, maxWidth: maxWidth)
 
         let lineHeightOffset = (ItemDetailLayout.lineHeight - font.lineHeight)
         self.titleToContent.constant = ceil(self.layoutMargins.top - (font.ascender - font.capHeight) - lineHeightOffset)

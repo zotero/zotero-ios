@@ -859,7 +859,15 @@ final class ItemDetailCollectionViewHandler: NSObject {
         return UICollectionView.CellRegistration { [weak self] cell, indexPath, data in
             guard let self else { return }
             let width = floor(collectionView.frame.width) - (ItemDetailLayout.horizontalInset * 2)
-            cell.contentConfiguration = ItemDetailAbstractCell.ContentConfiguration(text: data.0, isCollapsed: data.1, layoutMargins: layoutMargins(for: indexPath, self: self), maxWidth: width)
+            cell.contentConfiguration = ItemDetailAbstractCell.ContentConfiguration(
+                text: data.0,
+                isCollapsed: data.1,
+                layoutMargins: layoutMargins(for: indexPath, self: self),
+                maxWidth: width,
+                toggleCollapse: { [weak self] in
+                    self?.viewModel.process(action: .toggleAbstractDetailCollapsed)
+                }
+            )
         }
     }()
 
@@ -924,10 +932,6 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
 
         case .addTag:
             observer.on(.next(.openTagPicker))
-
-        case .abstract:
-            guard !viewModel.state.isEditing else { return }
-            viewModel.process(action: .toggleAbstractDetailCollapsed)
 
         case .attachment(let attachment, let type):
             guard type != .disabled else { return }
@@ -998,11 +1002,8 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
         let menu: UIMenu?
 
         switch row {
-        case .addNote, .addAttachment, .addCreator, .addTag, .library:
+        case .addNote, .addAttachment, .addCreator, .addTag, .library, .abstract:
             return nil
-
-        case .abstract:
-            menu = createCopyContextMenu(value: viewModel.state.data.abstract ?? "")
 
         case .attachment(let attachment, _):
             menu = createContextMenu(for: attachment)
