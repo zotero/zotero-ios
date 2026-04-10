@@ -1206,7 +1206,7 @@ extension PDFDocumentViewController: AnnotationBoundingBoxConverter {
                     characterCount += 1
                     glyphIndices.append(index)
 
-                    if !char.isWhitespace {
+                    if !char.isWhitespace && char != "-" {
                         glyphTextNoSpaces.append(char)
                         noSpaceToOriginalIndex.append(currentIndex)
                     }
@@ -1217,7 +1217,7 @@ extension PDFDocumentViewController: AnnotationBoundingBoxConverter {
             }
         }
 
-        let searchNoSpaces = searchText.filter { !$0.isWhitespace }
+        let searchNoSpaces = searchText.filter { !$0.isWhitespace && $0 != "-" }
         guard !searchNoSpaces.isEmpty else { return [] }
         guard let range = glyphTextNoSpaces.range(of: searchNoSpaces) else { return [] }
 
