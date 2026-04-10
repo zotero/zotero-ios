@@ -20,7 +20,6 @@ class ManualLookupViewController: UIViewController {
     @IBOutlet private weak var scanButton: UIButton!
     @IBOutlet private weak var topConstraint: NSLayoutConstraint!
     @IBOutlet private var padBottomConstraint: NSLayoutConstraint!
-    @IBOutlet private var phoneBottomConstraint: NSLayoutConstraint!
 
     private static let width: CGFloat = 500
     private let viewModel: ViewModel<ManualLookupActionHandler>
@@ -182,11 +181,6 @@ class ManualLookupViewController: UIViewController {
         self.navigationController?.preferredContentSize = self.preferredContentSize
     }
 
-    private func updateKeyboardSize(_ data: KeyboardData) {
-        guard UIDevice.current.userInterfaceIdiom == .phone else { return }
-        self.additionalSafeAreaInsets = UIEdgeInsets(top: 0, left: 0, bottom: data.visibleHeight, right: 0)
-    }
-
     // MARK: - Setups
 
     private func setup() {
@@ -210,11 +204,12 @@ class ManualLookupViewController: UIViewController {
         }
 
         let isPhone = UIDevice.current.userInterfaceIdiom == .phone
-        self.phoneBottomConstraint.isActive = isPhone
         self.padBottomConstraint.isActive = !isPhone
         self.textView.heightAnchor.constraint(equalToConstant: 80).isActive = true
+        if isPhone {
+            container.bottomAnchor.constraint(lessThanOrEqualTo: view.keyboardLayoutGuide.topAnchor, constant: -15).isActive = true
+        }
 
-        self.setupKeyboardObserving()
         self.setupCancelDoneBarButtons()
         self.setupLookupController()
     }
@@ -242,30 +237,6 @@ class ManualLookupViewController: UIViewController {
                       self.update(state: state)
                   })
                   .disposed(by: self.disposeBag)
-    }
-
-    private func setupKeyboardObserving() {
-        guard UIDevice.current.userInterfaceIdiom == .phone else { return }
-
-        NotificationCenter.default
-                          .keyboardWillShow
-                          .observe(on: MainScheduler.instance)
-                          .subscribe(onNext: { [weak self] notification in
-                              if let data = notification.keyboardData {
-                                  self?.updateKeyboardSize(data)
-                              }
-                          })
-                          .disposed(by: self.disposeBag)
-
-        NotificationCenter.default
-                          .keyboardWillHide
-                          .observe(on: MainScheduler.instance)
-                          .subscribe(onNext: { [weak self] notification in
-                              if let data = notification.keyboardData {
-                                  self?.updateKeyboardSize(data)
-                              }
-                          })
-                          .disposed(by: self.disposeBag)
     }
 }
 

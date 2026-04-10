@@ -15,7 +15,6 @@
                 <outlet property="container" destination="CBC-9R-ZFy" id="XAp-No-ABI"/>
                 <outlet property="inputContainer" destination="iP0-0A-WQx" id="dVM-0e-kt0"/>
                 <outlet property="padBottomConstraint" destination="jdv-MM-MlB" id="VN0-ep-vqW"/>
-                <outlet property="phoneBottomConstraint" destination="JTA-yk-KBy" id="pQm-XA-MMa"/>
                 <outlet property="roundedContainer" destination="0HI-7k-AHa" id="jSc-vG-DJ7"/>
                 <outlet property="scanButton" destination="91w-UZ-Jww" id="2CJ-hH-ASe"/>
                 <outlet property="textView" destination="hcG-UE-5Wz" id="bJy-oB-qg3"/>
@@ -78,7 +77,6 @@
             <color key="backgroundColor" systemColor="systemBackgroundColor"/>
             <constraints>
                 <constraint firstItem="c30-ta-gNc" firstAttribute="trailing" secondItem="CBC-9R-ZFy" secondAttribute="trailing" constant="15" id="GND-9B-MuT"/>
-                <constraint firstItem="c30-ta-gNc" firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="CBC-9R-ZFy" secondAttribute="bottom" constant="15" id="JTA-yk-KBy"/>
                 <constraint firstItem="CBC-9R-ZFy" firstAttribute="leading" secondItem="c30-ta-gNc" secondAttribute="leading" constant="15" id="Vbv-dG-rKZ"/>
                 <constraint firstItem="CBC-9R-ZFy" firstAttribute="top" secondItem="c30-ta-gNc" secondAttribute="top" constant="15" id="dMJ-41-9SJ"/>
                 <constraint firstItem="c30-ta-gNc" firstAttribute="bottom" secondItem="CBC-9R-ZFy" secondAttribute="bottom" constant="15" id="jdv-MM-MlB"/>
