@@ -75,7 +75,6 @@ final class ItemsTableViewHandler: NSObject {
 
         dataSource.handler = self
         setupTableView()
-        setupKeyboardObserving()
     }
 
     deinit {
@@ -240,34 +239,6 @@ final class ItemsTableViewHandler: NSObject {
 
         tableView.register(UINib(nibName: "ItemCell", bundle: nil), forCellReuseIdentifier: Self.cellId)
         tableView.tableFooterView = UIView()
-    }
-
-    private func setupTableView(with keyboardData: KeyboardData) {
-        var insets = tableView.contentInset
-        insets.bottom = keyboardData.visibleHeight
-        tableView.contentInset = insets
-    }
-
-    private func setupKeyboardObserving() {
-        NotificationCenter.default
-                          .keyboardWillShow
-                          .observe(on: MainScheduler.instance)
-                          .subscribe(onNext: { [weak self] notification in
-                              if let data = notification.keyboardData {
-                                  self?.setupTableView(with: data)
-                              }
-                          })
-                          .disposed(by: self.disposeBag)
-
-        NotificationCenter.default
-                          .keyboardWillHide
-                          .observe(on: MainScheduler.instance)
-                          .subscribe(onNext: { [weak self] notification in
-                              if let data = notification.keyboardData {
-                                  self?.setupTableView(with: data)
-                              }
-                          })
-                          .disposed(by: self.disposeBag)
     }
 }
 

@@ -75,7 +75,7 @@ class BaseItemsViewController: UIViewController {
             NSLayoutConstraint.activate([
                 tableView.topAnchor.constraint(equalTo: view.topAnchor),
                 tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-                tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+                tableView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
                 tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
             ])
 
