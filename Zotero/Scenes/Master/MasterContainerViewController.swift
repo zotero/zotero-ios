@@ -63,14 +63,15 @@ final class MasterContainerViewController: UINavigationController {
     }()
     private weak var bottomContainer: UIView?
     private weak var bottomYConstraint: NSLayoutConstraint?
-    private weak var bottomContainerBottomConstraint: NSLayoutConstraint?
+    private var visibleArea: UILayoutGuide?
+    private weak var visibleAreaBottomConstraint: NSLayoutConstraint?
     // Current position of bottom container
     private var bottomPosition: BottomPosition
     // Previous position of bottom container. Used to return to previous position when drag handle is tapped.
     private var previousBottomPosition: BottomPosition?
     // Used to calculate position and velocity when dragging
     private var initialBottomMinY: CGFloat?
-    private var keyboardHeight: CGFloat = 0
+    private var lastAvailableHeight: CGFloat?
 
     weak var coordinatorDelegate: MasterContainerCoordinatorDelegate?
 
@@ -91,11 +92,13 @@ final class MasterContainerViewController: UINavigationController {
         view.backgroundColor = .clear
         delegate = self
         setupView()
-        setupKeyboardObserving()
         setBottomSheet(hidden: true)
 
         func setupView() {
             guard let bottomController else { return }
+
+            let visibleArea = UILayoutGuide()
+            view.addLayoutGuide(visibleArea)
 
             let bottomContainer = UIView()
             bottomContainer.translatesAutoresizingMaskIntoConstraints = false
@@ -128,16 +131,20 @@ final class MasterContainerViewController: UINavigationController {
             let bottomControllerBottom = bottomController.view.bottomAnchor.constraint(equalTo: bottomContainer.bottomAnchor)
             bottomControllerBottom.priority = UILayoutPriority(999)
             let bottomYConstraint = bottomContainer.topAnchor.constraint(equalTo: view.topAnchor)
-            let bottomContainerBottomConstraint = view.bottomAnchor.constraint(equalTo: bottomContainer.bottomAnchor)
 
             // bottom container contains from top to bottom:
             // --- handle background (drag icon) - bottom controller view
             //  \- separator
+            let visibleAreaBottomConstraint = visibleArea.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor)
             NSLayoutConstraint.activate([
+                visibleArea.topAnchor.constraint(equalTo: view.topAnchor),
+                visibleArea.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                visibleArea.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                visibleAreaBottomConstraint,
                 bottomYConstraint,
                 view.leadingAnchor.constraint(equalTo: bottomContainer.leadingAnchor),
                 view.trailingAnchor.constraint(equalTo: bottomContainer.trailingAnchor),
-                bottomContainerBottomConstraint,
+                bottomContainer.bottomAnchor.constraint(equalTo: visibleArea.bottomAnchor),
                 // handle background
                 handleBackground.topAnchor.constraint(equalTo: bottomContainer.topAnchor),
                 handleBackground.leadingAnchor.constraint(equalTo: bottomContainer.leadingAnchor),
@@ -161,7 +168,8 @@ final class MasterContainerViewController: UINavigationController {
 
             self.bottomContainer = bottomContainer
             self.bottomYConstraint = bottomYConstraint
-            self.bottomContainerBottomConstraint = bottomContainerBottomConstraint
+            self.visibleArea = visibleArea
+            self.visibleAreaBottomConstraint = visibleAreaBottomConstraint
 
             let bottomPanRecognizer = UIPanGestureRecognizer()
             bottomPanRecognizer.delegate = self
@@ -193,7 +201,7 @@ final class MasterContainerViewController: UINavigationController {
                     guard let initialBottomMinY else { return }
 
                     let translation = recognizer.translation(in: self.view)
-                    let availableHeight = view.frame.height
+                    let availableHeight = currentAvailableHeight()
                     var minY = initialBottomMinY + translation.y
                     let mostlyVisibleTopOffset = BottomPosition.mostlyVisible.topOffset(availableHeight: availableHeight)
                     let hiddenTopOffset = BottomPosition.hidden.topOffset(availableHeight: availableHeight)
@@ -207,12 +215,12 @@ final class MasterContainerViewController: UINavigationController {
                     view.layoutIfNeeded()
 
                 case .ended, .failed:
-                    let availableHeight = view.frame.height - keyboardHeight
+                    let availableHeight = currentAvailableHeight()
                     let dragVelocity = recognizer.velocity(in: view)
                     let newPosition = position(fromYPos: bottomYConstraint.constant, containerHeight: availableHeight, velocity: dragVelocity)
                     let velocity = velocity(from: dragVelocity, currentYPos: bottomYConstraint.constant, position: newPosition, availableHeight: availableHeight)
 
-                    set(bottomPosition: newPosition, containerHeight: view.frame.height, keyboardHeight: keyboardHeight)
+                    set(bottomPosition: newPosition, containerHeight: view.frame.height, availableHeight: availableHeight)
 
                     switch newPosition {
                     case .custom:
@@ -270,7 +278,7 @@ final class MasterContainerViewController: UINavigationController {
                     if let controller = bottomController as? TagFilterViewController, controller.searchBar.isFirstResponder {
                         // If tag picker search bar is first responder and tag picker was toggled to hide, we should deselect the search bar
                         bottomPosition = .hidden
-                        // Don't need to `set(bottomPosition:containerHeight:keyboardHeight:)` manually here, resigning search bar will send keyboard notifications and the UI will update there.
+                        // Resigning the search bar updates the keyboard layout guide and the sheet is repositioned during layout.
                         controller.searchBar.resignFirstResponder()
                         return
                     }
@@ -283,38 +291,19 @@ final class MasterContainerViewController: UINavigationController {
                 })
             }
         }
+    }
 
-        func setupKeyboardObserving() {
-            NotificationCenter.default
-                .keyboardWillShow
-                .observe(on: MainScheduler.instance)
-                .subscribe(onNext: { notification in
-                    if let data = notification.keyboardData {
-                        setupKeyboard(with: data)
-                    }
-                })
-                .disposed(by: disposeBag)
+    override func viewSafeAreaInsetsDidChange() {
+        super.viewSafeAreaInsetsDidChange()
+        visibleAreaBottomConstraint?.constant = view.safeAreaInsets.bottom
+    }
 
-            NotificationCenter.default
-                .keyboardWillHide
-                .observe(on: MainScheduler.instance)
-                .subscribe(onNext: { notification in
-                    if let data = notification.keyboardData {
-                        setupKeyboard(with: data)
-                    }
-                })
-                .disposed(by: disposeBag)
-
-            func setupKeyboard(with keyboardData: KeyboardData) {
-                keyboardHeight = keyboardData.visibleHeight
-
-                updateBottomPosition()
-                bottomContainerBottomConstraint?.constant = keyboardData.visibleHeight
-                UIView.animate(withDuration: 0.5, delay: 0, options: .curveEaseOut, animations: {
-                    self.view.layoutIfNeeded()
-                })
-            }
-        }
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        let availableHeight = currentAvailableHeight()
+        guard lastAvailableHeight != availableHeight else { return }
+        lastAvailableHeight = availableHeight
+        updateBottomPosition()
     }
 
     override func viewIsAppearing(_ animated: Bool) {
@@ -330,8 +319,6 @@ final class MasterContainerViewController: UINavigationController {
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
-
-        set(bottomPosition: bottomPosition, containerHeight: size.height, keyboardHeight: keyboardHeight)
 
         coordinator.animate { _ in
             self.view.layoutIfNeeded()
@@ -365,8 +352,7 @@ final class MasterContainerViewController: UINavigationController {
         updateBottomPosition()
     }
 
-    private func set(bottomPosition: BottomPosition, containerHeight: CGFloat, keyboardHeight: CGFloat) {
-        let availableHeight = containerHeight - keyboardHeight
+    private func set(bottomPosition: BottomPosition, containerHeight: CGFloat, availableHeight: CGFloat) {
         let topOffset = bottomPosition.topOffset(availableHeight: availableHeight)
         bottomYConstraint?.constant = topOffset
         self.bottomPosition = bottomPosition
@@ -376,11 +362,16 @@ final class MasterContainerViewController: UINavigationController {
     }
 
     private func set(bottomPosition: BottomPosition) {
-        set(bottomPosition: bottomPosition, containerHeight: view.frame.height, keyboardHeight: keyboardHeight)
+        set(bottomPosition: bottomPosition, containerHeight: view.frame.height, availableHeight: currentAvailableHeight())
     }
 
     private func updateBottomPosition() {
         set(bottomPosition: bottomPosition)
+    }
+
+    private func currentAvailableHeight() -> CGFloat {
+        let layoutFrameHeight = visibleArea?.layoutFrame.height ?? 0
+        return layoutFrameHeight > 0 ? layoutFrameHeight : view.frame.height
     }
 }
 
