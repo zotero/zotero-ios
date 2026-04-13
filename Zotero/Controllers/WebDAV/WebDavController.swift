@@ -39,25 +39,25 @@ enum WebDavError {
                 return L10n.Errors.Settings.Webdav.invalidUrl
 
             case .noPassword:
-                return L10n.Errors.Settings.Webdav.noPassword
+                return Messages.Errors.Settings.Webdav.noPassword
 
             case .noUrl:
-                return L10n.Errors.Settings.Webdav.noUrl
+                return Messages.Errors.Settings.Webdav.noUrl
 
             case .noUsername:
-                return L10n.Errors.Settings.Webdav.noUsername
+                return Messages.Errors.Settings.Webdav.noUsername
 
             case .nonExistentFileNotMissing:
-                return L10n.Errors.Settings.Webdav.nonExistentFileNotMissing
+                return Messages.Errors.Settings.Webdav.nonExistentFileNotMissing
 
             case .notDav:
                 return L10n.Errors.Settings.Webdav.notDav
 
             case .parentDirNotFound:
-                return L10n.Errors.Settings.Webdav.parentDirNotFound
+                return Messages.Errors.Settings.Webdav.parentDirNotFound
 
             case .zoteroDirNotFound:
-                return L10n.Errors.Settings.Webdav.zoteroDirNotFound
+                return Messages.Errors.Settings.Webdav.zoteroDirNotFound
             }
         }
     }
@@ -97,7 +97,7 @@ enum WebDavError {
                         return L10n.Errors.Settings.Webdav.internetConnection
 
                     case NSURLErrorCannotConnectToHost, NSURLErrorTimedOut:
-                        return L10n.Errors.Settings.Webdav.hostNotFound
+                        return Messages.Errors.Settings.Webdav.hostNotFound
 
                     case NSURLErrorAppTransportSecurityRequiresSecureConnection:
                         return L10n.Errors.Settings.Webdav.ats
@@ -114,7 +114,7 @@ enum WebDavError {
                         return L10n.Errors.Settings.Webdav.unauthorized
 
                     case 403:
-                        return L10n.Errors.Settings.Webdav.forbidden
+                        return Messages.Errors.Settings.Webdav.forbidden
 
                     default:
                         return nil
@@ -128,7 +128,7 @@ enum WebDavError {
                 break
             }
 
-            return L10n.Errors.Settings.Webdav.hostNotFound
+            return Messages.Errors.Settings.Webdav.hostNotFound
         }
     }
 }

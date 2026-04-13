@@ -147,7 +147,7 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
         switch error {
         case .cantLoadData:
             title = L10n.error
-            message = L10n.Errors.Libraries.cantLoad
+            message = Messages.Errors.Libraries.cantLoad
         }
 
         let controller = UIAlertController(title: title, message: message, preferredStyle: .alert)
@@ -277,7 +277,7 @@ extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
 
     func showCiteExportError() {
         guard let navigationController else { return }
-        let controller = UIAlertController(title: L10n.error, message: L10n.Errors.Collections.bibliographyFailed, preferredStyle: .alert)
+        let controller = UIAlertController(title: L10n.error, message: Messages.Errors.Collections.bibliographyFailed, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
         navigationController.present(controller, animated: true, completion: nil)
     }

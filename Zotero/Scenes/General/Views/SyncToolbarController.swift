@@ -163,10 +163,10 @@ final class SyncToolbarController {
                 break
 
             case .apiError(let response, let data):
-                return (L10n.Errors.api(response), data)
+                return (Messages.Errors.api(response), data)
 
             case .dbError:
-                return (L10n.Errors.db, nil)
+                return (Messages.Errors.db, nil)
 
             case .allLibrariesFetchFailed:
                 return (L10n.Errors.SyncToolbar.librariesMissing, nil)
@@ -175,7 +175,7 @@ final class SyncToolbarController {
                 return (L10n.Errors.SyncToolbar.conflictRetryLimit, nil)
 
             case .groupSyncFailed:
-                return (L10n.Errors.SyncToolbar.groupsFailed, nil)
+                return (Messages.Errors.SyncToolbar.groupsFailed, nil)
 
             case .missingGroupPermissions, .permissionLoadingFailed:
                 return (L10n.Errors.SyncToolbar.groupPermissions, nil)
@@ -190,7 +190,7 @@ final class SyncToolbarController {
                 return (L10n.Errors.SyncToolbar.forbiddenMessage, nil)
 
             case .cantSubmitAttachmentItem(let data):
-                return (L10n.Errors.db, data)
+                return (Messages.Errors.db, data)
             }
         }
 
@@ -200,16 +200,16 @@ final class SyncToolbarController {
                 return (L10n.Errors.schema, nil)
 
             case .parsing:
-                return (L10n.Errors.parsing, nil)
+                return (Messages.Errors.parsing, nil)
 
             case .apiError(let response, let data):
-                return (L10n.Errors.api(response), data)
+                return (Messages.Errors.api(response), data)
 
             case .versionMismatch:
                 return (L10n.Errors.versionMismatch, nil)
 
             case .unknown(let _message, let data):
-                return _message.isEmpty ? (L10n.Errors.unknown, data) : (_message, data)
+                return _message.isEmpty ? (Messages.Errors.unknown, data) : (_message, data)
 
             case .attachmentMissing(let key, let libraryId, let title):
                 return (L10n.Errors.SyncToolbar.attachmentMissing("\(title) (\(key))"), SyncError.ErrorData(itemKeys: [key], libraryId: libraryId))
@@ -232,7 +232,7 @@ final class SyncToolbarController {
                 return (L10n.Errors.SyncToolbar.webdavError(error), nil)
 
             case .webDavDeletion(let count, _):
-                return (L10n.Errors.SyncToolbar.webdavError2(count), nil)
+                return (Messages.Errors.SyncToolbar.webdavError2(count), nil)
 
             case .webDavVerification(let error):
                 return (error.message, nil)
@@ -240,7 +240,7 @@ final class SyncToolbarController {
             case .webDavDownload(let error):
                 switch error {
                 case .itemPropInvalid(let string):
-                    return (L10n.Errors.SyncToolbar.webdavItemProp(string), nil)
+                    return (Messages.Errors.SyncToolbar.webdavItemProp(string), nil)
 
                 case .notChanged: // Should not happen
                     break
@@ -253,7 +253,7 @@ final class SyncToolbarController {
 
                 case .apiError(let error, let httpMethod):
                     if let statusCode = error.unacceptableStatusCode {
-                        return (L10n.Errors.SyncToolbar.webdavRequestFailed(statusCode, httpMethod ?? "Unknown"), nil)
+                        return (Messages.Errors.SyncToolbar.webdavRequestFailed(statusCode, httpMethod ?? "Unknown"), nil)
                     }
                     return (WebDavError.message(for: error), nil)
                 }
@@ -357,7 +357,7 @@ final class SyncToolbarController {
             if errors.isEmpty {
                 return L10n.SyncToolbar.finished
             }
-            let issues = L10n.Errors.SyncToolbar.errors(errors.count)
+            let issues = Messages.Errors.SyncToolbar.errors(errors.count)
             return L10n.Errors.SyncToolbar.finishedWithErrors(issues)
 
         case .deletions(let name):

@@ -1,10 +1,18 @@
 strings:
-  inputs: 
-    - Zotero/Assets/en.lproj/Localizable.strings
-    - Zotero/Assets/en.lproj/Localizable.stringsdict 
-  outputs:
-    templateName: structured-swift5
-    output: Zotero/Extensions/Localizable.swift
+  - inputs:
+      - Zotero/Assets/en.lproj/Localizable.strings
+      - Zotero/Assets/en.lproj/Localizable.stringsdict
+    outputs:
+      templateName: structured-swift5
+      output: Zotero/Extensions/Localizable.swift
+  - inputs:
+      - Zotero/Assets/en.lproj/Messages.strings
+      - Zotero/Assets/en.lproj/Messages.stringsdict
+    outputs:
+      templateName: structured-swift5
+      output: Zotero/Extensions/Messages.swift
+      params:
+        enumName: Messages
 xcassets:
     inputs:
       - Zotero/Assets/Images.xcassets

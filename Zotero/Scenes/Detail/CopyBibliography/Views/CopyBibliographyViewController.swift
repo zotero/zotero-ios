@@ -123,7 +123,7 @@ class CopyBibliographyViewController: UIViewController {
                     self.coordinatorDelegate?.showMissingStyleError(using: nil)
                 }
             } else {
-                showOverlay(state: .error(L10n.Errors.Items.generatingBib))
+                showOverlay(state: .error(Messages.Errors.Items.generatingBib))
                 DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(1500)) {
                     self.dismiss(animated: true)
                 }
