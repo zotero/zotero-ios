@@ -79,7 +79,7 @@
 
 "collections.search_title" = "查找分类";
 "collections.all_items" = "所有条目";
-"collections.recently_read" = "Recently Read";
+"collections.recently_read" = "最近阅读";
 "collections.my_publications" = "我的出版物";
 "collections.trash" = "回收站";
 "collections.unfiled" = "未分类条目";

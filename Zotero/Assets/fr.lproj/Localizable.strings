@@ -79,7 +79,7 @@
 
 "collections.search_title" = "Trouver la collection";
 "collections.all_items" = "Tous les documents";
-"collections.recently_read" = "Recently Read";
+"collections.recently_read" = "Lectures récentes";
 "collections.my_publications" = "Mes publications";
 "collections.trash" = "Corbeille";
 "collections.unfiled" = "Documents non classés";
