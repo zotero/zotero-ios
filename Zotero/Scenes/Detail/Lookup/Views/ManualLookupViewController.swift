@@ -19,8 +19,9 @@ class ManualLookupViewController: UIViewController {
     @IBOutlet private weak var textView: UITextView!
     @IBOutlet private weak var scanButton: UIButton!
     @IBOutlet private weak var topConstraint: NSLayoutConstraint!
-    @IBOutlet private var padBottomConstraint: NSLayoutConstraint!
 
+    private var padBottomConstraint: NSLayoutConstraint?
+    private var compactBottomConstraint: NSLayoutConstraint?
     private static let width: CGFloat = 500
     private let viewModel: ViewModel<ManualLookupActionHandler>
     private let disposeBag: DisposeBag
@@ -58,11 +59,6 @@ class ManualLookupViewController: UIViewController {
         if !self.inputContainer.isHidden {
             self.textView.becomeFirstResponder()
         }
-    }
-
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        self.updatePreferredContentSize()
     }
 
     deinit {
@@ -175,7 +171,7 @@ class ManualLookupViewController: UIViewController {
     }
 
     private func updatePreferredContentSize() {
-        guard UIDevice.current.userInterfaceIdiom == .pad else { return }
+        guard UIDevice.current.userInterfaceIdiom == .pad, traitCollection.horizontalSizeClass != .compact else { return }
         let size = self.view.systemLayoutSizeFitting(CGSize(width: ManualLookupViewController.width, height: .greatestFiniteMagnitude))
         self.preferredContentSize = CGSize(width: ManualLookupViewController.width, height: size.height - self.view.safeAreaInsets.top)
         self.navigationController?.preferredContentSize = self.preferredContentSize
@@ -203,15 +199,34 @@ class ManualLookupViewController: UIViewController {
             self.liveTextResponder = responder
         }
 
-        let isPhone = UIDevice.current.userInterfaceIdiom == .phone
-        self.padBottomConstraint.isActive = !isPhone
-        self.textView.heightAnchor.constraint(equalToConstant: 80).isActive = true
-        if isPhone {
-            container.bottomAnchor.constraint(lessThanOrEqualTo: view.keyboardLayoutGuide.topAnchor, constant: -15).isActive = true
-        }
+        padBottomConstraint = container.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -15)
+        compactBottomConstraint = container.bottomAnchor.constraint(lessThanOrEqualTo: view.keyboardLayoutGuide.topAnchor, constant: -15)
+        titleLabel.setContentHuggingPriority(.required, for: .vertical)
+        titleLabel.setContentCompressionResistancePriority(.required, for: .vertical)
+        let textViewHeightConstraint = textView.heightAnchor.constraint(equalToConstant: 80)
+        textViewHeightConstraint.priority = .defaultLow
+        textViewHeightConstraint.isActive = true
+        scanButton.setContentHuggingPriority(.required, for: .vertical)
+        scanButton.setContentCompressionResistancePriority(.required, for: .vertical)
+        updateLayout(currentTraitCollection: presentingViewController?.traitCollection)
+        startObservingTraits()
 
         self.setupCancelDoneBarButtons()
         self.setupLookupController()
+
+        func startObservingTraits() {
+            guard #available(iOS 17.0, *) else { return }
+            presentingViewController?.registerForTraitChanges([UITraitHorizontalSizeClass.self]) { [weak self] (handler: UIViewController, _: UITraitCollection) in
+                self?.updateLayout(currentTraitCollection: handler.traitCollection)
+            }
+        }
+    }
+
+    private func updateLayout(currentTraitCollection: UITraitCollection?) {
+        let usesCompactLayout = UIDevice.current.userInterfaceIdiom == .phone || currentTraitCollection?.horizontalSizeClass == .compact
+        padBottomConstraint?.isActive = !usesCompactLayout
+        compactBottomConstraint?.isActive = usesCompactLayout
+        updatePreferredContentSize()
     }
 
     private func setupLookupController() {
