@@ -79,6 +79,7 @@
 
 "collections.search_title" = "Gjeni Koleksion";
 "collections.all_items" = "Krejt Objektet";
+"collections.recently_read" = "Recently Read";
 "collections.my_publications" = "Publikimet e mia";
 "collections.trash" = "Trash";
 "collections.unfiled" = "Unfiled Items";
@@ -128,6 +129,7 @@
 "items.remove_from_collection_title" = "Hiqe prej Koleksioni";
 "items.action.add_to_collection" = "Shtoje në Koleksion";
 "items.action.remove_from_collection" = "Hiqe prej Koleksioni";
+"items.action.remove_from_recentlyRead" = "Remove from Recently Read";
 "items.action.duplicate" = "Përsëdyte";
 "items.action.create_parent" = "Krijoni Objekt Mëmë";
 "items.action.download" = "Shkarkoje";
@@ -142,6 +144,7 @@
 "items.creator_summary.and" = "%@ dhe %@";
 "items.creator_summary.etal" = "%@ et al.";
 "items.retrieving_metadata" = "Po merren Tejtëdhëna";
+"items.collections_select_prompt" = "Select a Collection";
 
 "lookup.title" = "Jepni ISBN-ra, DOI-ra, PMID-ra, ID-ra arXiv, ose ADS Bibcodes që të shtohet te biblioteka juaj:";
 
@@ -195,6 +198,7 @@
 "item_detail.deleted_title" = "I fshirë";
 "item_detail.deleted_message" = "Ky objekt është fshirë. Doni të rikthehet?";
 "item_detail.move_to_standalone_attachment" = "Shndërroje në Bashkëngjitje Më Vete";
+"item_detail.libraries_and_collections" = "Libraries and Collections";
 
 "tag_picker.title" = "%d selected";
 "tag_picker.placeholder" = "Emër etikete";
@@ -364,6 +368,7 @@
 "settings.annotation_tools.reset" = "Reset";
 
 "shareext.save" = "Ruaje në Zotero";
+"shareext.resolve_challenge" = "Resolve Challenge";
 "shareext.decoding_attachment" = "Po kërkohet për objekte";
 "shareext.translation.item_selection" = "Zgjidhni një objekt";
 "shareext.translation.translating_with" = "Po ruhet me %@";
@@ -524,6 +529,7 @@
 "accessibility.items.add_to_collection" = "Shtoji objektet e përzgjedhur te koleksion";
 "accessibility.items.remove_from_collection" = "Hiqi objektet e përzgjedhur nga koleksioni";
 "accessibility.items.trash" = "Shpjeri objektet e përzgjedhur te hedhurinat";
+"accessibility.items.remove_from_recentlyRead" = "Remove selected items from recently read";
 "accessibility.items.delete" = "Fshiji objektet e përzgjedhur";
 "accessibility.items.restore" = "Rikthe objektet e përzgjedhur";
 "accessibility.items.duplicate" = "Përsëdyt objektin e përzgjedhur";

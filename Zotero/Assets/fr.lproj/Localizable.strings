@@ -79,6 +79,7 @@
 
 "collections.search_title" = "Trouver la collection";
 "collections.all_items" = "Tous les documents";
+"collections.recently_read" = "Recently Read";
 "collections.my_publications" = "Mes publications";
 "collections.trash" = "Corbeille";
 "collections.unfiled" = "Documents non classés";
@@ -128,6 +129,7 @@
 "items.remove_from_collection_title" = "Retirer de la collection";
 "items.action.add_to_collection" = "Ajouter à la collection";
 "items.action.remove_from_collection" = "Retirer de la collection";
+"items.action.remove_from_recentlyRead" = "Remove from Recently Read";
 "items.action.duplicate" = "Dupliquer";
 "items.action.create_parent" = "Créer un document parent";
 "items.action.download" = "Télécharger";
@@ -142,6 +144,7 @@
 "items.creator_summary.and" = "%@ et %@";
 "items.creator_summary.etal" = "%@ et al.";
 "items.retrieving_metadata" = "Récupération des métadonnées";
+"items.collections_select_prompt" = "Sélectionner une collection";
 
 "lookup.title" = "Entrer des ISBN, DOI, PMID, arXiv ID ou bibcodes ADS à ajouter à votre bibliothèque :";
 
@@ -195,6 +198,7 @@
 "item_detail.deleted_title" = "Supprimé";
 "item_detail.deleted_message" = "Ce document a été supprimé. Voulez-vous le restaurer ?";
 "item_detail.move_to_standalone_attachment" = "Convertir en pièce jointe indépendante";
+"item_detail.libraries_and_collections" = "Bibliothèques et collections";
 
 "tag_picker.title" = "%d sélectionné";
 "tag_picker.placeholder" = "Intitulé de marqueur";
@@ -364,6 +368,7 @@
 "settings.annotation_tools.reset" = "Réinitialiser";
 
 "shareext.save" = "Enregistrer dans Zotero";
+"shareext.resolve_challenge" = "Resolve Challenge";
 "shareext.decoding_attachment" = "Recherche de documents";
 "shareext.translation.item_selection" = "Choisir un document";
 "shareext.translation.translating_with" = "Enregistrement avec %@";
@@ -524,6 +529,7 @@
 "accessibility.items.add_to_collection" = "Ajouter à la collection les documents sélectionnés";
 "accessibility.items.remove_from_collection" = "Retirer de la collection les documents sélectionnés";
 "accessibility.items.trash" = "Mettre les documents sélectionnés à la corbeille";
+"accessibility.items.remove_from_recentlyRead" = "Remove selected items from recently read";
 "accessibility.items.delete" = "Supprimer les documents sélectionnés";
 "accessibility.items.restore" = "Restaurer les documents sélectionnés";
 "accessibility.items.duplicate" = "Dupliquer le document sélectionné";

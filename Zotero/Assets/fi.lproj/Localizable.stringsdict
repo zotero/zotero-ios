@@ -140,9 +140,9 @@
             <key>NSStringFormatValueTypeKey</key>
             <string>d</string>
             <key>one</key>
-            <string>Are you sure you want to delete 1 automatic tag in this library?\n\nThis action cannot be undone.</string>
+            <string>Haluatko varmasti poistaa 1 automaattisen avainsanan tästä kirjastosta?\n\nTätä toimintoa ei voi perua.</string>
             <key>other</key>
-            <string>Are you sure you want to delete %d automatic tags in this library?\n\nThis action cannot be undone.</string>
+            <string>Haluatko varmasti poistaa %d automaattista avainsanaa tästä kirjastosta?\n\nTätä toimintoa ei voi perua.</string>
         </dict>
     </dict>
     <key>settings.lines_logged</key>

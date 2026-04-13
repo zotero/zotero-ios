@@ -79,6 +79,7 @@
 
 "collections.search_title" = "Sammlung finden";
 "collections.all_items" = "Alle Einträge";
+"collections.recently_read" = "Recently Read";
 "collections.my_publications" = "Meine Publikationen";
 "collections.trash" = "Papierkorb";
 "collections.unfiled" = "Einträge ohne Sammlung";
@@ -128,6 +129,7 @@
 "items.remove_from_collection_title" = "Aus Sammlung entfernen";
 "items.action.add_to_collection" = "Zu Sammlung hinzufügen";
 "items.action.remove_from_collection" = "Aus Sammlung entfernen";
+"items.action.remove_from_recentlyRead" = "Remove from Recently Read";
 "items.action.duplicate" = "Verdoppeln";
 "items.action.create_parent" = "Übergeordneten Eintrag erstelln";
 "items.action.download" = "Herunterladen";
@@ -142,6 +144,7 @@
 "items.creator_summary.and" = "%@ und %@";
 "items.creator_summary.etal" = "%@ et al.";
 "items.retrieving_metadata" = "Metadaten werden abgerufen";
+"items.collections_select_prompt" = "Select a Collection";
 
 "lookup.title" = "ISBN, DOI, PMID, arCiv, ID, oder ADS einfügen, um zur Bibliothek hinzuzufügen";
 
@@ -195,6 +198,7 @@
 "item_detail.deleted_title" = "Gelöscht ";
 "item_detail.deleted_message" = "Dieser Eintrag wurde gelöscht. Möchten Sie ihn wiederherstellen?";
 "item_detail.move_to_standalone_attachment" = "Zu eigenem Eintrag konvertieren";
+"item_detail.libraries_and_collections" = "Libraries and Collections";
 
 "tag_picker.title" = "%d ausgewählt";
 "tag_picker.placeholder" = "Name als Tag";
@@ -364,6 +368,7 @@
 "settings.annotation_tools.reset" = "Zurücksetzen";
 
 "shareext.save" = "In Zotero speichern";
+"shareext.resolve_challenge" = "Resolve Challenge";
 "shareext.decoding_attachment" = "Nach Einträgen Suchen";
 "shareext.translation.item_selection" = "Eintrag auswählen";
 "shareext.translation.translating_with" = "Mit %@ speichern";
@@ -524,6 +529,7 @@
 "accessibility.items.add_to_collection" = "Ausgewählte Einträge zur Sammlung hinzufügen";
 "accessibility.items.remove_from_collection" = "Ausgewählte Einträge von der Sammlung entfernen";
 "accessibility.items.trash" = "Ausgewählte Einträge in den Papierkorb verschieben";
+"accessibility.items.remove_from_recentlyRead" = "Remove selected items from recently read";
 "accessibility.items.delete" = "Ausgewählte Einträge löschen";
 "accessibility.items.restore" = "Ausgewählte Einträge wiederherstellen";
 "accessibility.items.duplicate" = "Ausgewählte Einträge duplizieren";

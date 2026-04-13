@@ -79,6 +79,7 @@
 
 "collections.search_title" = "Derme Ara";
 "collections.all_items" = "Tüm Eserler";
+"collections.recently_read" = "Recently Read";
 "collections.my_publications" = "Yayınlarım";
 "collections.trash" = "Çöp Sepeti";
 "collections.unfiled" = "Dosyalanmamış Eserler";
@@ -128,6 +129,7 @@
 "items.remove_from_collection_title" = "Dermeden Kaldır";
 "items.action.add_to_collection" = "Dermeye Ekle";
 "items.action.remove_from_collection" = "Dermeden Kaldır";
+"items.action.remove_from_recentlyRead" = "Remove from Recently Read";
 "items.action.duplicate" = "Çoğalt";
 "items.action.create_parent" = "Ana Eser Oluştur";
 "items.action.download" = "İndir";
@@ -142,6 +144,7 @@
 "items.creator_summary.and" = "%@ ve %@";
 "items.creator_summary.etal" = "%@ vd.";
 "items.retrieving_metadata" = "Üstveri Alınıyor";
+"items.collections_select_prompt" = "Select a Collection";
 
 "lookup.title" = "ISBN, DOI, PMID, arXiv ID ya da ADB Bibcode tanımlayılarını girerek kitaplığınıza ekleyin:";
 
@@ -195,6 +198,7 @@
 "item_detail.deleted_title" = "Silindi";
 "item_detail.deleted_message" = "This item has been deleted. Do you want to restore it?";
 "item_detail.move_to_standalone_attachment" = "Convert to Standalone Attachment";
+"item_detail.libraries_and_collections" = "Libraries and Collections";
 
 "tag_picker.title" = "%d seçildi";
 "tag_picker.placeholder" = "Etiket adı";
@@ -364,6 +368,7 @@
 "settings.annotation_tools.reset" = "Reset";
 
 "shareext.save" = "Zotero'ya Kaydet";
+"shareext.resolve_challenge" = "Resolve Challenge";
 "shareext.decoding_attachment" = "Searching for items";
 "shareext.translation.item_selection" = "Choose an item";
 "shareext.translation.translating_with" = "Saving with %@";
@@ -524,6 +529,7 @@
 "accessibility.items.add_to_collection" = "Add selected items to collection";
 "accessibility.items.remove_from_collection" = "Remove selected items from collection";
 "accessibility.items.trash" = "Move selected items to trash";
+"accessibility.items.remove_from_recentlyRead" = "Remove selected items from recently read";
 "accessibility.items.delete" = "Delete selected items";
 "accessibility.items.restore" = "Restore selected items";
 "accessibility.items.duplicate" = "Duplicate selected item";

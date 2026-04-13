@@ -79,6 +79,7 @@
 
 "collections.search_title" = "Trova collezione";
 "collections.all_items" = "Tutti gli elementi";
+"collections.recently_read" = "Recently Read";
 "collections.my_publications" = "Le mie pubblicazioni";
 "collections.trash" = "Cestino";
 "collections.unfiled" = "Elementi non collocati";
@@ -128,6 +129,7 @@
 "items.remove_from_collection_title" = "Rimuovi dalla collezione";
 "items.action.add_to_collection" = "Aggiungi alla collezione";
 "items.action.remove_from_collection" = "Rimuovi dalla collezione";
+"items.action.remove_from_recentlyRead" = "Remove from Recently Read";
 "items.action.duplicate" = "Duplica";
 "items.action.create_parent" = "Crea elemento genitore";
 "items.action.download" = "Scarica";
@@ -142,6 +144,7 @@
 "items.creator_summary.and" = "%@ e %@";
 "items.creator_summary.etal" = "%@ et al.";
 "items.retrieving_metadata" = "Recupero metadati";
+"items.collections_select_prompt" = "Select a Collection";
 
 "lookup.title" = "Inserisci uno o più ISBN, DOI, PMID, arXiv ID o ADS Bibcode per aggiungere elementi alla tua biblioteca:";
 
@@ -195,6 +198,7 @@
 "item_detail.deleted_title" = "Eliminato";
 "item_detail.deleted_message" = "Questo elemento è stato eliminato. Vuoi ripristinarlo?";
 "item_detail.move_to_standalone_attachment" = "Converti in allegato indipendente";
+"item_detail.libraries_and_collections" = "Libraries and Collections";
 
 "tag_picker.title" = "%d selezionati";
 "tag_picker.placeholder" = "Nome tag";
@@ -364,6 +368,7 @@
 "settings.annotation_tools.reset" = "Ripristina";
 
 "shareext.save" = "Salva in Zotero";
+"shareext.resolve_challenge" = "Resolve Challenge";
 "shareext.decoding_attachment" = "Ricerca elementi";
 "shareext.translation.item_selection" = "Scegli un elemento";
 "shareext.translation.translating_with" = "Salvando con %@";
@@ -524,6 +529,7 @@
 "accessibility.items.add_to_collection" = "Aggiungi gli elementi selezionati alla collezione";
 "accessibility.items.remove_from_collection" = "Rimuovi gli elementi selezionati dalla collezione";
 "accessibility.items.trash" = "Sposta gli elementi selezionati nel cestino";
+"accessibility.items.remove_from_recentlyRead" = "Remove selected items from recently read";
 "accessibility.items.delete" = "Elimina gli elementi selezionati";
 "accessibility.items.restore" = "Ripristina gli elementi selezionati";
 "accessibility.items.duplicate" = "Duplica l'elemento selezionato";

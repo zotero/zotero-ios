@@ -79,6 +79,7 @@
 
 "collections.search_title" = "Najít kolekci";
 "collections.all_items" = "Všechny položky";
+"collections.recently_read" = "Recently Read";
 "collections.my_publications" = "Mé publikace";
 "collections.trash" = "Koš";
 "collections.unfiled" = "Nezařazené položky";
@@ -128,6 +129,7 @@
 "items.remove_from_collection_title" = "Remove from Collection";
 "items.action.add_to_collection" = "Add to Collection";
 "items.action.remove_from_collection" = "Remove from Collection";
+"items.action.remove_from_recentlyRead" = "Remove from Recently Read";
 "items.action.duplicate" = "Duplicate";
 "items.action.create_parent" = "Create Parent Item";
 "items.action.download" = "Download";
@@ -142,6 +144,7 @@
 "items.creator_summary.and" = "%@ and %@";
 "items.creator_summary.etal" = "%@ et al.";
 "items.retrieving_metadata" = "Retrieving Metadata";
+"items.collections_select_prompt" = "Select a Collection";
 
 "lookup.title" = "Enter ISBNs, DOIs, PMIDs, arXiv IDs, or ADS Bibcodes to add to your library:";
 
@@ -195,6 +198,7 @@
 "item_detail.deleted_title" = "Deleted";
 "item_detail.deleted_message" = "This item has been deleted. Do you want to restore it?";
 "item_detail.move_to_standalone_attachment" = "Convert to Standalone Attachment";
+"item_detail.libraries_and_collections" = "Libraries and Collections";
 
 "tag_picker.title" = "%d selected";
 "tag_picker.placeholder" = "Tag name";
@@ -364,6 +368,7 @@
 "settings.annotation_tools.reset" = "Reset";
 
 "shareext.save" = "Save to Zotero";
+"shareext.resolve_challenge" = "Resolve Challenge";
 "shareext.decoding_attachment" = "Searching for items";
 "shareext.translation.item_selection" = "Choose an item";
 "shareext.translation.translating_with" = "Saving with %@";
@@ -524,6 +529,7 @@
 "accessibility.items.add_to_collection" = "Add selected items to collection";
 "accessibility.items.remove_from_collection" = "Remove selected items from collection";
 "accessibility.items.trash" = "Move selected items to trash";
+"accessibility.items.remove_from_recentlyRead" = "Remove selected items from recently read";
 "accessibility.items.delete" = "Delete selected items";
 "accessibility.items.restore" = "Restore selected items";
 "accessibility.items.duplicate" = "Duplicate selected item";

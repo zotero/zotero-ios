@@ -79,6 +79,7 @@
 
 "collections.search_title" = "Buscar colección";
 "collections.all_items" = "Todos los elementos";
+"collections.recently_read" = "Recently Read";
 "collections.my_publications" = "Mis publicaciones";
 "collections.trash" = "Papelera";
 "collections.unfiled" = "Elementos sin archivar";
@@ -128,6 +129,7 @@
 "items.remove_from_collection_title" = "Eliminar de la colección";
 "items.action.add_to_collection" = "Añadir a la colección";
 "items.action.remove_from_collection" = "Eliminar de la colección";
+"items.action.remove_from_recentlyRead" = "Remove from Recently Read";
 "items.action.duplicate" = "Duplicar";
 "items.action.create_parent" = "Crear elemento principal";
 "items.action.download" = "Descargar";
@@ -142,6 +144,7 @@
 "items.creator_summary.and" = "%@ y %@";
 "items.creator_summary.etal" = "%@ et al.";
 "items.retrieving_metadata" = "Recuperación de metadatos";
+"items.collections_select_prompt" = "Selecciona una colección";
 
 "lookup.title" = "Introduzca los números ISBN, DOI, PMID, arXiv ID o ADS Bibcodes que desea añadir a su biblioteca:";
 
@@ -195,6 +198,7 @@
 "item_detail.deleted_title" = "Eliminado";
 "item_detail.deleted_message" = "Este elemento ha sido eliminado. ¿Desea restaurarlo?";
 "item_detail.move_to_standalone_attachment" = "Convertir a archivo adjunto independiente";
+"item_detail.libraries_and_collections" = "Bibliotecas y colecciones";
 
 "tag_picker.title" = "%d seleccionado";
 "tag_picker.placeholder" = "Nombre de etiqueta";
@@ -364,6 +368,7 @@
 "settings.annotation_tools.reset" = "Restablecer";
 
 "shareext.save" = "Guardar en Zotero";
+"shareext.resolve_challenge" = "Resolver conflicto";
 "shareext.decoding_attachment" = "Búsqueda de elementos";
 "shareext.translation.item_selection" = "Elija un elemento";
 "shareext.translation.translating_with" = "Guardando con %@";
@@ -524,6 +529,7 @@
 "accessibility.items.add_to_collection" = "Añadir elementos seleccionados a la colección";
 "accessibility.items.remove_from_collection" = "Eliminar elementos seleccionados de la colección";
 "accessibility.items.trash" = "Mover elementos seleccionados a la papelera";
+"accessibility.items.remove_from_recentlyRead" = "Remove selected items from recently read";
 "accessibility.items.delete" = "Eliminar elementos seleccionados";
 "accessibility.items.restore" = "Restaurar elementos seleccionados";
 "accessibility.items.duplicate" = "Duplicar elemento seleccionado";
