@@ -79,6 +79,7 @@ fastlane/test_output
 
 Zotero/Extensions/Assets.swift
 Zotero/Extensions/Localizable.swift
+Zotero/Extensions/Messages.swift
 
 # Bundled data
 
