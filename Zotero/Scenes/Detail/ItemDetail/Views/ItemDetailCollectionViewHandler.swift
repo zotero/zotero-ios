@@ -106,7 +106,6 @@ final class ItemDetailCollectionViewHandler: NSObject {
     // Width of title for field cells when editing is disabled (only non-empty fields are visible)
     private var maxNonemptyTitleWidth: CGFloat = 0
     private var dataSource: UICollectionViewDiffableDataSource<SectionType, Row>!
-    private let updateQueue: DispatchQueue
     private weak var fileDownloader: AttachmentDownloader?
     weak var delegate: ItemDetailCollectionViewHandlerDelegate?
 
@@ -126,7 +125,6 @@ final class ItemDetailCollectionViewHandler: NSObject {
         self.fileDownloader = fileDownloader
         observer = PublishSubject()
         disposeBag = DisposeBag()
-        updateQueue = DispatchQueue(label: "org.zotero.ItemDetailCollectionViewHandler.UpdateQueue")
 
         super.init()
 
@@ -480,41 +478,19 @@ final class ItemDetailCollectionViewHandler: NSObject {
     /// - parameter state: State to which we're reloading the table view.
     /// - parameter animated: `true` if the change is animated, `false` otherwise.
     func reloadAll(to state: ItemDetailState, animated: Bool, completion: (() -> Void)? = nil) {
-        updateQueue.async { [weak self] in
-            guard let self else { return }
-            // Assign new id to all sections, just reload everything
-            let id = UUID().uuidString
-            let sections = sections(for: state.data, hasVisibleFields: !state.visibleFieldIds.isEmpty, isEditing: state.isEditing, library: state.library)
-                .map({ SectionType(identifier: id, section: $0) })
-            var snapshot = NSDiffableDataSourceSnapshot<SectionType, Row>()
-            snapshot.appendSections(sections)
-            if #available(iOS 26.0, *) {
-                snapshot.reloadSections(sections)
-            }
-            var collectionsSection: SectionType?
-            for section in sections {
-                if section.section == .collections {
-                    collectionsSection = section
-                } else {
-                    snapshot.appendItems(rows(for: section.section, state: state), toSection: section)
-                }
-            }
-            let reloadCompletion: () -> Void = { [weak self] in
-                // Setting isEditing will trigger reconfiguration of cells, before the new snapshot has been applied, so it is done afterwards to avoid e.g. flickering the old text in a text view.
-                self?.collectionView.isEditing = state.isEditing
-                completion?()
-            }
-            dataSource.apply(snapshot, animatingDifferences: animated) {
-                guard collectionsSection == nil else { return }
-                reloadCompletion()
-            }
-            if let collectionsSection {
-                if let snapshot = state.data.collections?.createSnapshot(parent: .library(state.library), resultTransformer: { Row.collection($0) }) {
-                    dataSource.apply(snapshot, to: collectionsSection, animatingDifferences: true, completion: reloadCompletion)
-                } else {
-                    reloadCompletion()
-                }
-            }
+        // Assign new id to all sections, just reload everything
+        let id = UUID().uuidString
+        let sections = sections(for: state.data, hasVisibleFields: !state.visibleFieldIds.isEmpty, isEditing: state.isEditing, library: state.library)
+            .map({ SectionType(identifier: id, section: $0) })
+        var snapshot = NSDiffableDataSourceSnapshot<SectionType, Row>()
+        snapshot.appendSections(sections)
+        if #available(iOS 26.0, *) {
+            snapshot.reloadSections(sections)
+        }
+        let animated = false
+        dataSource.apply(snapshot, animatingDifferences: animated) { [weak self] in
+            // Per-section applications are chained sequentially. After the final application isEditing is set and completion is called.
+            self?.applySectionSnapshots(at: 0, in: sections, state: state, animated: animated, completion: completion)
         }
 
         /// Creates array of visible sections for current state data.
@@ -578,28 +554,14 @@ final class ItemDetailCollectionViewHandler: NSObject {
     /// - parameter state: Current item detail state.
     /// - parameter animated: `true` if change is animated, `false` otherwise.
     func reload(section: Section, state: ItemDetailState, animated: Bool) {
-        updateQueue.async { [weak self] in
-            guard let self else { return }
-            var snapshot = dataSource.snapshot()
-            guard let sectionType = snapshot.sectionIdentifiers.first(where: { $0.section == section }) else { return }
-            
-            if case .collections = section {
-                // Collections section is nested, requires separate handling
-                if let subSnapshot = state.data.collections?.createSnapshot(parent: .library(state.library), resultTransformer: { Row.collection($0) }) {
-                    dataSource.apply(subSnapshot, to: sectionType, animatingDifferences: true)
-                }
-            } else {
-                // Only handle rows for sections which are not nested
-                let oldRows = snapshot.itemIdentifiers(inSection: sectionType)
-                let newRows = rows(for: section, state: state)
-                snapshot.deleteItems(oldRows)
-                snapshot.appendItems(newRows, toSection: sectionType)
-                let toReload = rowsToReload(from: oldRows, to: newRows, in: section)
-                if !toReload.isEmpty {
-                    snapshot.reconfigureItems(toReload)
-                }
-                dataSource.apply(snapshot, animatingDifferences: animated)
-            }
+        guard let sectionType = dataSource.snapshot().sectionIdentifiers.first(where: { $0.section == section }) else { return }
+        let oldRows = dataSource.snapshot(for: sectionType).items
+        let snapshot = sectionSnapshot(for: section, state: state)
+        let newRows = snapshot.items
+        let toReload = rowsToReload(from: oldRows, to: newRows, in: section)
+        dataSource.apply(snapshot, to: sectionType, animatingDifferences: animated) { [weak self] in
+            guard let self, !toReload.isEmpty else { return }
+            reconfigure(rows: toReload)
         }
 
         /// Returns an array of rows which need to be reloaded manually. Some sections are "special" because their rows don't hold the values which they show in collection view, they just hold their
@@ -638,55 +600,31 @@ final class ItemDetailCollectionViewHandler: NSObject {
     /// Update height of updated cell and scroll to it. The cell itself doesn't need to be reloaded, since the change took place inside of it (text field or text view).
     func updateHeightAndScrollToUpdated(row: Row, state: ItemDetailState) {
         guard let indexPath = dataSource.indexPath(for: row), let cellFrame = collectionView.cellForItem(at: indexPath)?.frame else { return }
-        updateQueue.async { [weak self] in
-            guard let self else { return }
-            var snapshot = dataSource.snapshot()
-            // Reconfigure the item, otherwise the collection view will use the previously cached cells, if it needs to layout again.
-            // E.g. if you press the command key in an external keyboard, while editing, you'll see edited fields revert to their initial value,
-            // but only visually, view model hasn't changed!
-            snapshot.reconfigureItems([row])
-            dataSource.apply(snapshot, animatingDifferences: false) { [weak self] in
-                guard let self else { return }
-                let cellBottom = cellFrame.maxY - collectionView.contentOffset.y
-                let tableViewBottom = collectionView.superview!.bounds.maxY - collectionView.contentInset.bottom
-                let safeAreaTop = collectionView.superview!.safeAreaInsets.top
+        reconfigure(rows: [row])
+        let cellBottom = cellFrame.maxY - collectionView.contentOffset.y
+        let tableViewBottom = collectionView.superview!.bounds.maxY - collectionView.contentInset.bottom
+        let safeAreaTop = collectionView.superview!.safeAreaInsets.top
 
-                // Scroll either when cell bottom is below keyboard or cell top is not visible on screen
-                if cellBottom > tableViewBottom || cellFrame.minY < (safeAreaTop + collectionView.contentOffset.y) {
-                    // Scroll to top if cell is smaller than visible screen, so that it's fully visible, otherwise scroll to bottom.
-                    let position: UICollectionView.ScrollPosition = cellFrame.height + safeAreaTop < tableViewBottom ? .top : .bottom
-                    collectionView.scrollToItem(at: indexPath, at: position, animated: false)
-                }
-            }
+        // Scroll either when cell bottom is below keyboard or cell top is not visible on screen.
+        if cellBottom > tableViewBottom || cellFrame.minY < (safeAreaTop + collectionView.contentOffset.y) {
+            // Scroll to top if cell is smaller than visible screen, so that it's fully visible, otherwise scroll to bottom.
+            let position: UICollectionView.ScrollPosition = cellFrame.height + safeAreaTop < tableViewBottom ? .top : .bottom
+            collectionView.scrollToItem(at: indexPath, at: position, animated: false)
         }
     }
 
     func updateRows(rows: [Row], state: ItemDetailState) {
-        updateQueue.async { [weak self] in
-            guard let self else { return }
-            var snapshot = dataSource.snapshot()
-            snapshot.reconfigureItems(rows)
-            dataSource.apply(snapshot, animatingDifferences: false)
-        }
+        reconfigure(rows: rows)
     }
 
     func updateAttachment(with attachment: Attachment, isProcessing: Bool) {
-        updateQueue.async { [weak self] in
-            guard let self else { return }
-            var snapshot = dataSource.snapshot()
-
-            guard let section = snapshot.sectionIdentifiers.first(where: { $0.section == .attachments }) else { return }
-
-            var rows = snapshot.itemIdentifiers(inSection: section)
-
-            guard let index = rows.firstIndex(where: { $0.isAttachment(withKey: attachment.key) }) else { return }
-
-            snapshot.deleteItems(rows)
-            rows[index] = attachmentRow(for: attachment, isProcessing: isProcessing)
-            snapshot.appendItems(rows, toSection: section)
-
-            dataSource.apply(snapshot, animatingDifferences: false)
-        }
+        guard let sectionType = dataSource.snapshot().sectionIdentifiers.first(where: { $0.section == .attachments }) else { return }
+        var rows = dataSource.snapshot(for: sectionType).items
+        guard let index = rows.firstIndex(where: { $0.isAttachment(withKey: attachment.key) }) else { return }
+        rows[index] = attachmentRow(for: attachment, isProcessing: isProcessing)
+        var snapshot = NSDiffableDataSourceSectionSnapshot<Row>()
+        snapshot.append(rows)
+        dataSource.apply(snapshot, to: sectionType, animatingDifferences: false)
     }
 
     func scrollTo(itemKey: String, animated: Bool) {
@@ -711,15 +649,43 @@ final class ItemDetailCollectionViewHandler: NSObject {
     }
     
     func focus(row: Row) {
-        guard let section = dataSource.snapshot().sectionIdentifier(containingItem: row),
-              let sectionId = dataSource.snapshot().indexOfSection(section),
-              let rowId = dataSource.snapshot().indexOfItem(row),
-              let cell = collectionView.cellForItem(at: IndexPath(row: rowId, section: sectionId)) as? FocusableCell
-        else { return }
+        guard let indexPath = dataSource.indexPath(for: row), let cell = collectionView.cellForItem(at: indexPath) as? FocusableCell else { return }
         cell.focus()
     }
 
     // MARK: - Helpers
+
+    private func sectionSnapshot(for section: Section, state: ItemDetailState) -> NSDiffableDataSourceSectionSnapshot<Row> {
+        if case .collections = section, let snapshot = state.data.collections?.createSnapshot(parent: .library(state.library), resultTransformer: { Row.collection($0) }) {
+            // Collections section is a hierarchical tree built from `CollectionTree`.
+            return snapshot
+        }
+        // Every other section else is a flat list of rows.
+        var snapshot = NSDiffableDataSourceSectionSnapshot<Row>()
+        snapshot.append(rows(for: section, state: state))
+        return snapshot
+    }
+
+    private func reconfigure(rows: [Row]) {
+        var snapshot = dataSource.snapshot()
+        let presentRows = rows.filter({ snapshot.indexOfItem($0) != nil })
+        guard !presentRows.isEmpty else { return }
+        snapshot.reconfigureItems(presentRows)
+        dataSource.apply(snapshot, animatingDifferences: false)
+    }
+
+    private func applySectionSnapshots(at index: Int, in sections: [SectionType], state: ItemDetailState, animated: Bool, completion: (() -> Void)?) {
+        guard index < sections.count else {
+            collectionView.isEditing = state.isEditing
+            completion?()
+            return
+        }
+        let section = sections[index]
+        let snapshot = sectionSnapshot(for: section.section, state: state)
+        dataSource.apply(snapshot, to: section, animatingDifferences: animated) { [weak self] in
+            self?.applySectionSnapshots(at: index + 1, in: sections, state: state, animated: animated, completion: completion)
+        }
+    }
 
     func rows(for section: Section, state: ItemDetailState) -> [Row] {
         switch section {
