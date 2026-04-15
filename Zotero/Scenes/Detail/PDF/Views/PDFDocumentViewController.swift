@@ -47,6 +47,9 @@ final class PDFDocumentViewController: UIViewController {
     private var selectedAnnotationWasSelectedBefore: Bool
     private var searchResults: [SearchResult] = []
     private var pageIndexCancellable: AnyCancellable?
+    // Holds the zoom scale captured right before a corner-tap (fast scroll) page navigation, so it can be re-applied
+    // to the page that becomes visible after the scroll. `nil` means there's no pending zoom to restore.
+    private var pendingCornerTapZoomScale: CGFloat?
     var currentPage: UInt {
         return pdfController?.pageIndex ?? 0
     }
@@ -684,6 +687,16 @@ final class PDFDocumentViewController: UIViewController {
             }
 
             func setup(interactions: DocumentViewInteractions) {
+                // Preserve zoom when tapping the edges of the document to scroll between pages.
+                // PSPDFKit's default fast scroll navigates via `scrollToNextSpread`, which resets zoom on the new
+                // spread. Capture the current zoom scale here so we can re-apply it once the new page becomes visible
+                // (see `pdfViewController(_:willBeginDisplaying:forPageAt:)`). Normal scrolling is unaffected since
+                // this only fires for edge-tap navigation.
+                interactions.fastScroll.addActivationCallback { [weak self] _, _, _ in
+                    guard let self, let zoomScale = self.pdfController?.visiblePageViews.first?.zoomView?.zoomScale, zoomScale > 1 else { return }
+                    self.pendingCornerTapZoomScale = zoomScale
+                }
+
                 // Only supported annotations can be selected
                 interactions.selectAnnotation.addActivationCondition { context, _, _ -> Bool in
                     return AnnotationsConfig.supported.contains(context.annotation.type)
@@ -719,6 +732,14 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
     func pdfViewController(_ pdfController: PDFViewController, willBeginDisplaying pageView: PDFPageView, forPageAt pageIndex: Int) {
         if !searchResults.isEmpty {
             pdfController.searchHighlightViewManager.addHighlight(searchResults, animated: false)
+        }
+        // Re-apply zoom captured from the previous page when the user navigated via a corner tap.
+        // We schedule the scale change asynchronously so PSPDFKit finishes its own zoom/layout pass first.
+        if let zoomScale = pendingCornerTapZoomScale {
+            pendingCornerTapZoomScale = nil
+            DispatchQueue.main.async { [weak pageView] in
+                pageView?.zoomView?.setZoomScale(zoomScale, animated: false)
+            }
         }
     }
 
