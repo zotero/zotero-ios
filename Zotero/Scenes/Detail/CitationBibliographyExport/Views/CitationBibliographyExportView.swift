@@ -40,7 +40,7 @@ struct CitationBibliographyExportView: View {
         if let error = error as? CitationController.Error {
             switch error {
             case .invalidItemTypes:
-                return Messages.Errors.Citation.invalidTypes
+                return L10n.Errors.Citation.invalidTypes
 
             case .styleOrLocaleMissing:
                 return nil

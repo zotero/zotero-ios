@@ -1034,7 +1034,7 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
 
         case .typeNotSupported(let type):
             title = L10n.error
-            message = Messages.Errors.ItemDetail.unsupportedType(type)
+            message = L10n.Errors.ItemDetail.unsupportedType(type)
 
         case .cantSaveTags:
             title = L10n.error
@@ -1115,9 +1115,9 @@ extension DetailCoordinator: DetailNoteEditorCoordinatorDelegate {
 extension DetailCoordinator: DetailMissingStyleErrorDelegate {
     func showMissingStyleError(using presenter: UINavigationController?) {
         guard let resolvedPresenter = presenter ?? navigationController else { return }
-        let controller = UIAlertController(title: L10n.error, message: Messages.Errors.Citation.missingStyle, preferredStyle: .alert)
+        let controller = UIAlertController(title: L10n.error, message: L10n.Errors.Citation.missingStyle, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
-        controller.addAction(UIAlertAction(title: Messages.Errors.Citation.openSettings, style: .default, handler: { [weak self] _ in
+        controller.addAction(UIAlertAction(title: L10n.Errors.Citation.openSettings, style: .default, handler: { [weak self] _ in
             self?.showSettings(using: resolvedPresenter, initialScreen: .export)
         }))
 

@@ -483,7 +483,7 @@ final class ShareViewController: UIViewController {
 
             default:
                 if !hasItem {
-                    message += "\n" + Messages.Errors.Shareext.failedAdditional
+                    message += "\n" + L10n.Errors.Shareext.failedAdditional
                 }
                 self.failureLabel.textAlignment = .center
             }
@@ -497,16 +497,16 @@ final class ShareViewController: UIViewController {
     private func errorMessage(for error: ExtensionViewModel.State.AttachmentState.Error) -> String? {
         switch error {
         case .webDavNotVerified:
-            return Messages.Errors.Shareext.webdavNotVerified
+            return L10n.Errors.Shareext.webdavNotVerified
 
         case .webDavUnauthorized:
             return L10n.Errors.Settings.Webdav.unauthorized
 
         case .webDavForbidden:
-            return Messages.Errors.Settings.Webdav.forbidden
+            return L10n.Errors.Settings.Webdav.forbidden
 
         case .cantLoadSchema:
-            return Messages.Errors.Shareext.cantLoadSchema
+            return L10n.Errors.Shareext.cantLoadSchema
 
         case .cantLoadWebData:
             return Messages.Errors.Shareext.cantLoadData
@@ -548,7 +548,7 @@ final class ShareViewController: UIViewController {
             return Messages.Errors.Shareext.missingFile
 
         case .apiFailure:
-            return Messages.Errors.Shareext.apiError
+            return L10n.Errors.Shareext.apiError
 
         case .webDavFailure:
             return Messages.Errors.Shareext.webdavError

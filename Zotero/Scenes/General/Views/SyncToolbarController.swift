@@ -166,7 +166,7 @@ final class SyncToolbarController {
                 return (Messages.Errors.api(response), data)
 
             case .dbError:
-                return (Messages.Errors.db, nil)
+                return (L10n.Errors.db, nil)
 
             case .allLibrariesFetchFailed:
                 return (L10n.Errors.SyncToolbar.librariesMissing, nil)
@@ -175,7 +175,7 @@ final class SyncToolbarController {
                 return (L10n.Errors.SyncToolbar.conflictRetryLimit, nil)
 
             case .groupSyncFailed:
-                return (Messages.Errors.SyncToolbar.groupsFailed, nil)
+                return (L10n.Errors.SyncToolbar.groupsFailed, nil)
 
             case .missingGroupPermissions, .permissionLoadingFailed:
                 return (L10n.Errors.SyncToolbar.groupPermissions, nil)
@@ -190,7 +190,7 @@ final class SyncToolbarController {
                 return (L10n.Errors.SyncToolbar.forbiddenMessage, nil)
 
             case .cantSubmitAttachmentItem(let data):
-                return (Messages.Errors.db, data)
+                return (L10n.Errors.db, data)
             }
         }
 
@@ -200,7 +200,7 @@ final class SyncToolbarController {
                 return (L10n.Errors.schema, nil)
 
             case .parsing:
-                return (Messages.Errors.parsing, nil)
+                return (L10n.Errors.parsing, nil)
 
             case .apiError(let response, let data):
                 return (Messages.Errors.api(response), data)
@@ -253,7 +253,7 @@ final class SyncToolbarController {
 
                 case .apiError(let error, let httpMethod):
                     if let statusCode = error.unacceptableStatusCode {
-                        return (Messages.Errors.SyncToolbar.webdavRequestFailed(statusCode, httpMethod ?? "Unknown"), nil)
+                        return (L10n.Errors.SyncToolbar.webdavRequestFailed(statusCode, httpMethod ?? "Unknown"), nil)
                     }
                     return (WebDavError.message(for: error), nil)
                 }

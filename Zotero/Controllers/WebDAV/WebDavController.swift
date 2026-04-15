@@ -39,13 +39,13 @@ enum WebDavError {
                 return L10n.Errors.Settings.Webdav.invalidUrl
 
             case .noPassword:
-                return Messages.Errors.Settings.Webdav.noPassword
+                return L10n.Errors.Settings.Webdav.noPassword
 
             case .noUrl:
-                return Messages.Errors.Settings.Webdav.noUrl
+                return L10n.Errors.Settings.Webdav.noUrl
 
             case .noUsername:
-                return Messages.Errors.Settings.Webdav.noUsername
+                return L10n.Errors.Settings.Webdav.noUsername
 
             case .nonExistentFileNotMissing:
                 return Messages.Errors.Settings.Webdav.nonExistentFileNotMissing
@@ -97,7 +97,7 @@ enum WebDavError {
                         return L10n.Errors.Settings.Webdav.internetConnection
 
                     case NSURLErrorCannotConnectToHost, NSURLErrorTimedOut:
-                        return Messages.Errors.Settings.Webdav.hostNotFound
+                        return L10n.Errors.Settings.Webdav.hostNotFound
 
                     case NSURLErrorAppTransportSecurityRequiresSecureConnection:
                         return L10n.Errors.Settings.Webdav.ats
@@ -114,7 +114,7 @@ enum WebDavError {
                         return L10n.Errors.Settings.Webdav.unauthorized
 
                     case 403:
-                        return Messages.Errors.Settings.Webdav.forbidden
+                        return L10n.Errors.Settings.Webdav.forbidden
 
                     default:
                         return nil
@@ -128,7 +128,7 @@ enum WebDavError {
                 break
             }
 
-            return Messages.Errors.Settings.Webdav.hostNotFound
+            return L10n.Errors.Settings.Webdav.hostNotFound
         }
     }
 }
