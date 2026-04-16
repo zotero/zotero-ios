@@ -142,12 +142,18 @@ final class Controllers {
         do {
             // Try to initialize session
             try sessionController.initializeSession()
-            // Start with initialized session
-            update(with: sessionController.sessionData, isLogin: false, debugLogging: debugLogging)
-            // Start observing further session changes
-            startObservingSession()
-            completion(true)
+            finish(with: sessionController.sessionData, completed: true)
         } catch let error {
+            if let sessionError = error as? SessionController.Error,
+               case .keychainNotAccessible(let protectedDataAvailable, let lastResultCode) = sessionError,
+               protectedDataAvailable,
+               lastResultCode == errSecItemNotFound {
+                DDLogInfo("Controllers: api token missing, resetting persisted session - \(sessionError)")
+                sessionController.reset()
+                finish(with: nil, completed: false)
+                return
+            }
+
             if !failOnError {
                 // If this is first failure, start logging issues and wait for protected data
                 debugLogging.start(type: .immediate)
@@ -166,11 +172,13 @@ final class Controllers {
                 debugLogging.stop(ignoreEmptyLogs: true, userId: 0, customAlertMessage: { L10n.loginDebug($0) })
             }
 
-            // Show login screen
-            update(with: nil, isLogin: false, debugLogging: debugLogging)
-            // Start observing further session changes so that user can log in
+            finish(with: nil, completed: false)
+        }
+
+        func finish(with data: SessionData?, completed: Bool) {
+            update(with: data, isLogin: false, debugLogging: debugLogging)
             startObservingSession()
-            completion(false)
+            completion(completed)
         }
     }
 
