@@ -1218,6 +1218,7 @@
 		B3E8FE8727143BDD00F51458 /* SyncSettingsState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E8FE8227143BDD00F51458 /* SyncSettingsState.swift */; };
 		B3E8FE8827143BDD00F51458 /* SyncSettingsAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E8FE8327143BDD00F51458 /* SyncSettingsAction.swift */; };
 		B3E8FE8927143BDD00F51458 /* SyncSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E8FE8527143BDD00F51458 /* SyncSettingsView.swift */; };
+		F67027974DF649919397DAB0 /* ManageAccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EE4C604B8B948E2B8820E31 /* ManageAccountView.swift */; };
 		B3E9180C25ECE30A002B77AF /* CoreGraphics+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E9180B25ECE30A002B77AF /* CoreGraphics+Extensions.swift */; };
 		B3EA5A192B724E9400E283D7 /* CitationLocatorCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3EA5A182B724E9400E283D7 /* CitationLocatorCell.swift */; };
 		B3EA5A1B2B7251EE00E283D7 /* CitationLocatorContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3EA5A1A2B7251EE00E283D7 /* CitationLocatorContentView.swift */; };
@@ -2427,6 +2428,7 @@
 		B3E8FE8227143BDD00F51458 /* SyncSettingsState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncSettingsState.swift; sourceTree = "<group>"; };
 		B3E8FE8327143BDD00F51458 /* SyncSettingsAction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncSettingsAction.swift; sourceTree = "<group>"; };
 		B3E8FE8527143BDD00F51458 /* SyncSettingsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncSettingsView.swift; sourceTree = "<group>"; };
+		0EE4C604B8B948E2B8820E31 /* ManageAccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManageAccountView.swift; sourceTree = "<group>"; };
 		B3E9180B25ECE30A002B77AF /* CoreGraphics+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "CoreGraphics+Extensions.swift"; sourceTree = "<group>"; };
 		B3EA5A182B724E9400E283D7 /* CitationLocatorCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CitationLocatorCell.swift; sourceTree = "<group>"; };
 		B3EA5A1A2B7251EE00E283D7 /* CitationLocatorContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CitationLocatorContentView.swift; sourceTree = "<group>"; };
@@ -4682,6 +4684,7 @@
 		B3E8FE8427143BDD00F51458 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				0EE4C604B8B948E2B8820E31 /* ManageAccountView.swift */,
 				B3E8FE8527143BDD00F51458 /* SyncSettingsView.swift */,
 			);
 			path = Views;
@@ -5881,6 +5884,7 @@
 				B3329A552B738C4E00F17636 /* CitationAuthorCell.swift in Sources */,
 				B3A71F4D2EEC39BA0006A737 /* AnnotationToolsSettingsActionHandler.swift in Sources */,
 				B3E8FE8927143BDD00F51458 /* SyncSettingsView.swift in Sources */,
+				F67027974DF649919397DAB0 /* ManageAccountView.swift in Sources */,
 				B3593F7A241A76E600760E20 /* CollectionEditState.swift in Sources */,
 				B3F874232E2F84B6004A2D71 /* SpeechLanguagePickerView.swift in Sources */,
 				B3C6AB28248E1B720009AC96 /* SyncBatchProcessor.swift in Sources */,

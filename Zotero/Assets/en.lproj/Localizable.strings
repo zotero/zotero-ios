@@ -300,6 +300,7 @@
 "settings.sync.file_syncing_type_message" = "Sync attachment files in My Library using";
 "settings.sync.account" = "Account";
 "settings.sync.manage_account" = "Manage Account";
+"settings.sync.account_settings" = "Account Settings";
 "settings.sync.delete_account" = "Delete Account";
 "settings.sync.username" = "Username";
 "settings.sync.password" = "Password";

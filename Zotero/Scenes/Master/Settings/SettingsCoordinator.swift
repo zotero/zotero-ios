@@ -29,6 +29,7 @@ protocol SettingsCoordinatorDelegate: AnyObject {
     func showLogoutAlert(viewModel: ViewModel<SyncSettingsActionHandler>)
     func showSchemePicker(viewModel: ViewModel<SyncSettingsActionHandler>)
     func promptZoteroDirCreation(url: String, create: @escaping () -> Void, cancel: @escaping () -> Void)
+    func showManageAccount(viewModel: ViewModel<SyncSettingsActionHandler>)
     func showWeb(url: URL, completion: @escaping () -> Void)
     func showAnnotationToolsSettings()
 }
@@ -306,6 +307,14 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
         let viewModel = ViewModel(initialState: SavingSettingsState(), handler: SavingSettingsActionHandler())
         let view = SavingSettingsView().environmentObject(viewModel)
         self.pushDefaultSize(view: view)
+    }
+
+    func showManageAccount(viewModel: ViewModel<SyncSettingsActionHandler>) {
+        var view = ManageAccountView()
+        view.coordinatorDelegate = self
+        let controller = UIHostingController(rootView: view.environmentObject(viewModel))
+        controller.preferredContentSize = SettingsCoordinator.defaultSize
+        navigationController?.pushViewController(controller, animated: true)
     }
 
     func showLogoutAlert(viewModel: ViewModel<SyncSettingsActionHandler>) {
