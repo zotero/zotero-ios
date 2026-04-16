@@ -228,12 +228,12 @@ extension CollectionTree {
         collapseState: CollapseState = .basedOnDb
     ) -> NSDiffableDataSourceSectionSnapshot<Collection> {
         var snapshot = NSDiffableDataSourceSectionSnapshot<Collection>()
-        self.add(nodes: self.nodes, to: nil, in: &snapshot, allCollections: self.collections)
+        self.add(nodes: self.nodes, to: nil, in: &snapshot, allCollections: self.collections, resultTransformer: { $0 })
         self.apply(selectedId: selectedId, collapseState: collapseState, to: &snapshot)
         return snapshot
     }
     
-    func createSnapshot<Result>(parent: Result? = nil, resultTransformer: (Collection) -> Result = { $0 }) -> NSDiffableDataSourceSectionSnapshot<Result> {
+    func createSnapshot<Result>(parent: Result? = nil, resultTransformer: (Collection) -> Result) -> NSDiffableDataSourceSectionSnapshot<Result> {
         var snapshot = NSDiffableDataSourceSectionSnapshot<Result>()
         if let parent {
             snapshot.append([parent])
@@ -248,7 +248,7 @@ extension CollectionTree {
         to parent: Transformed?,
         in snapshot: inout NSDiffableDataSourceSectionSnapshot<Transformed>,
         allCollections: [CollectionIdentifier: Result],
-        resultTransformer: (Result) -> Transformed = { (result: Result) in result }
+        resultTransformer: (Result) -> Transformed
     ) {
         guard !nodes.isEmpty else { return }
 
@@ -354,7 +354,7 @@ extension CollectionTree {
 
     func createSearchSnapshot(collapseState: CollapseState = .expandedAll) -> NSDiffableDataSourceSectionSnapshot<SearchableCollection> {
         var snapshot = NSDiffableDataSourceSectionSnapshot<SearchableCollection>()
-        self.add(nodes: self.nodes, to: nil, in: &snapshot, allCollections: self.filtered)
+        self.add(nodes: self.nodes, to: nil, in: &snapshot, allCollections: self.filtered, resultTransformer: { $0 })
         snapshot.expand(snapshot.items)
         return snapshot
     }

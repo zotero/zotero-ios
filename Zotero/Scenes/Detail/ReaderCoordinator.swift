@@ -305,6 +305,18 @@ extension ReaderCoordinator {
         controller.modalPresentationStyle = .popover
         controller.popoverPresentationController?.sourceItem = sender
         controller.overrideUserInterfaceStyle = settings.appearance.userInterfaceStyle
+        
+        // For iPhone, configure sheet to not dim background
+        if let sheet = controller.sheetPresentationController {
+            let screenHeight = UIScreen.main.bounds.height
+            let detent = UISheetPresentationController.Detent.custom { _ in
+                return screenHeight * 0.6
+            }
+            sheet.detents = [detent]
+            sheet.prefersGrabberVisible = true
+            sheet.largestUndimmedDetentIdentifier = detent.identifier
+        }
+        
         navigationController?.present(controller, animated: true, completion: nil)
 
         return viewModel

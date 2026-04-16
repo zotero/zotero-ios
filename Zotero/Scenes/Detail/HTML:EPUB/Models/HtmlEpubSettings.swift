@@ -12,9 +12,15 @@ import PSPDFKitUI
 
 struct HtmlEpubSettings {
     var appearance: ReaderSettingsState.Appearance
+    var typesetting: TypesettingSettings
+    var customFont: String?
 
     static var `default`: HtmlEpubSettings {
-        return HtmlEpubSettings(appearance: .automatic)
+        return HtmlEpubSettings(
+            appearance: .automatic,
+            typesetting: .default,
+            customFont: nil
+        )
     }
 }
 
@@ -24,7 +30,7 @@ extension HtmlEpubSettings: ReaderSettings {
     }
 
     var rows: [ReaderSettingsViewController.Row] {
-        return [.appearance]
+        return [.appearance, .fontManagement]
     }
 
     // These don't apply to HTML/Epub, assign random values
@@ -52,16 +58,22 @@ extension HtmlEpubSettings: ReaderSettings {
 extension HtmlEpubSettings: Codable {
     enum Keys: String, CodingKey {
         case appearance
+        case typesetting
+        case customFont
     }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: Keys.self)
         let appearanceRaw = try container.decode(UInt.self, forKey: .appearance)
         appearance = ReaderSettingsState.Appearance(rawValue: appearanceRaw) ?? .automatic
+        typesetting = (try? container.decode(TypesettingSettings.self, forKey: .typesetting)) ?? .default
+        customFont = try? container.decode(String.self, forKey: .customFont)
     }
 
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: Keys.self)
         try container.encode(appearance.rawValue, forKey: .appearance)
+        try container.encode(typesetting, forKey: .typesetting)
+        try container.encodeIfPresent(customFont, forKey: .customFont)
     }
 }

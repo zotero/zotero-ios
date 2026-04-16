@@ -19,6 +19,7 @@ final class ReaderSettingsViewController: UICollectionViewController {
         case pageFitting
         case appearance
         case pageSpreads
+        case fontManagement
     }
 
     let viewModel: ViewModel<ReaderSettingsActionHandler>
@@ -48,7 +49,8 @@ final class ReaderSettingsViewController: UICollectionViewController {
         navigationController?.preferredContentSize = minimumPreferredContentSize
 
         setupNavigationBarIfNeeded()
-        collectionView.allowsSelection = false
+        collectionView.allowsSelection = true
+        collectionView.delegate = self
         collectionView.collectionViewLayout = createCollectionViewLayout()
         dataSource = createDataSource(for: collectionView)
         applySnapshot()
@@ -66,9 +68,13 @@ final class ReaderSettingsViewController: UICollectionViewController {
         updatePreferredContentSizeIfNeeded()
 
         func updatePreferredContentSizeIfNeeded() {
-            let contentHeight = max(collectionView.collectionViewLayout.collectionViewContentSize.height, minimumPreferredContentSize.height)
+            // Use 80% of screen height to allow live preview of settings
+            let screenHeight = UIScreen.main.bounds.height
+            let maxHeight = screenHeight * 0.8
+            let contentHeight = min(collectionView.collectionViewLayout.collectionViewContentSize.height, maxHeight)
+            let finalHeight = max(contentHeight, minimumPreferredContentSize.height)
             let contentWidth = minimumPreferredContentSize.width
-            let newPreferredContentSize = CGSize(width: contentWidth, height: contentHeight)
+            let newPreferredContentSize = CGSize(width: contentWidth, height: finalHeight)
             guard preferredContentSize != newPreferredContentSize else { return }
             preferredContentSize = newPreferredContentSize
             navigationController?.preferredContentSize = newPreferredContentSize
@@ -92,8 +98,13 @@ final class ReaderSettingsViewController: UICollectionViewController {
 
     private func createDataSource(for collectionView: UICollectionView) -> UICollectionViewDiffableDataSource<Int, Row> {
         let segmentedRegistration = self.segmentedRegistration
+        let fontManagementRegistration = self.fontManagementRegistration
         return UICollectionViewDiffableDataSource<Int, Row>(collectionView: collectionView, cellProvider: { collectionView, indexPath, row in
-            return collectionView.dequeueConfiguredReusableCell(using: segmentedRegistration, for: indexPath, item: row)
+            if row == .fontManagement {
+                return collectionView.dequeueConfiguredReusableCell(using: fontManagementRegistration, for: indexPath, item: row)
+            } else {
+                return collectionView.dequeueConfiguredReusableCell(using: segmentedRegistration, for: indexPath, item: row)
+            }
         })
     }
 
@@ -230,10 +241,27 @@ final class ReaderSettingsViewController: UICollectionViewController {
                         handler: { [weak self] _ in self?.viewModel.process(action: .setAppearance(.automatic)) }
                     )
                 ]
+            
+            case .fontManagement:
+                // Font management uses a different cell registration
+                fatalError("Font management should be handled by fontManagementRegistration")
             }
 
             let configuration = ReaderSettingsSegmentedCell.ContentConfiguration(title: title, actions: actions, selectedIndex: selectedIndex)
             cell.contentConfiguration = configuration
+        }
+    }()
+
+    private lazy var fontManagementRegistration: UICollectionView.CellRegistration<UICollectionViewListCell, Row> = {
+        return UICollectionView.CellRegistration<UICollectionViewListCell, Row> { [weak self] cell, _, _ in
+            guard let self else { return }
+            
+            var content = cell.defaultContentConfiguration()
+            content.text = "Custom Fonts"
+            content.secondaryText = "Import and manage fonts"
+            
+            cell.contentConfiguration = content
+            cell.accessories = [.disclosureIndicator()]
         }
     }()
 
@@ -250,5 +278,26 @@ final class ReaderSettingsViewController: UICollectionViewController {
         guard UIDevice.current.userInterfaceIdiom == .phone else { return }
         let button = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(Self.done))
         navigationItem.rightBarButtonItem = button
+    }
+    
+    // MARK: - UICollectionViewDelegate
+    
+    override func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool {
+        guard let row = dataSource.itemIdentifier(for: indexPath) else { return false }
+        return row == .fontManagement
+    }
+    
+    override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        collectionView.deselectItem(at: indexPath, animated: true)
+        guard let row = dataSource.itemIdentifier(for: indexPath) else { return }
+        
+        if row == .fontManagement {
+            showFontManagement()
+        }
+    }
+    
+    private func showFontManagement() {
+        let fontVC = FontManagementViewController(documentKey: nil)
+        navigationController?.pushViewController(fontVC, animated: true)
     }
 }

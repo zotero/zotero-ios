@@ -1259,7 +1259,6 @@
 		B3F7B0752524A8D800E51377 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = B3F7B0742524A8D800E51377 /* ZIPFoundation */; };
 		B3F83808263960FA00E128A6 /* ItemAccessory.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F83807263960FA00E128A6 /* ItemAccessory.swift */; };
 		B3F874232E2F84B6004A2D71 /* SpeechLanguagePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F874222E2F84B6004A2D71 /* SpeechLanguagePickerView.swift */; };
-		B3F9A4B82B04C97A00684030 /* HtmlEpubSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F9A4B72B04C97A00684030 /* HtmlEpubSettings.swift */; };
 		B3F9A4BD2B04CEC300684030 /* ReaderSettingsSegmentedCellContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F9A4BA2B04CEC300684030 /* ReaderSettingsSegmentedCellContentView.swift */; };
 		B3F9A4BE2B04CEC300684030 /* ReaderSettingsSegmentedCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F9A4BB2B04CEC300684030 /* ReaderSettingsSegmentedCell.swift */; };
 		B3F9A4BF2B04CEC300684030 /* ReaderSettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F9A4BC2B04CEC300684030 /* ReaderSettingsViewController.swift */; };
@@ -1294,6 +1293,15 @@
 		D1E2F3AA2F1C000100ABC001 /* LoginSessionWebSocketController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E2F3AB2F1C000100ABC001 /* LoginSessionWebSocketController.swift */; };
 		D1E2F3AC2F1C000100ABC001 /* CancelLoginSessionRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E2F3AD2F1C000100ABC001 /* CancelLoginSessionRequest.swift */; };
 		D1E2F3AE2F1C000100ABC001 /* CancelLoginSessionRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E2F3AD2F1C000100ABC001 /* CancelLoginSessionRequest.swift */; };
+		FD08FE202F1D27930045EC95 /* FontMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD08FE1F2F1D27930045EC95 /* FontMetadata.swift */; };
+		FD08FE222F1D27B50045EC95 /* FontManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD08FE212F1D27B50045EC95 /* FontManager.swift */; };
+		FD08FE242F1D27BE0045EC95 /* TypesettingApplicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD08FE232F1D27BE0045EC95 /* TypesettingApplicator.swift */; };
+		FD08FE262F1D27CC0045EC95 /* FontPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD08FE252F1D27CC0045EC95 /* FontPreferences.swift */; };
+		FD08FE282F1D27EE0045EC95 /* TypesettingSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD08FE272F1D27EE0045EC95 /* TypesettingSettings.swift */; };
+		FD08FE2A2F1D28030045EC95 /* FontManagementViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD08FE292F1D28030045EC95 /* FontManagementViewController.swift */; };
+		FD08FE2E2F1D28250045EC95 /* HtmlEpubSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD08FE2D2F1D28250045EC95 /* HtmlEpubSettings.swift */; };
+		FD08FE322F1D2A1A0045EC95 /* SystemFontPickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD08FE312F1D2A1A0045EC95 /* SystemFontPickerViewController.swift */; };
+		FD08FE362F1D2AEF0045EC95 /* TypesettingMenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD08FE352F1D2AEF0045EC95 /* TypesettingMenuViewController.swift */; };
 		FD801AC32F1CFDFB001771BC /* WebDavCertificatePinningSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD801AC22F1CFDFB001771BC /* WebDavCertificatePinningSpec.swift */; };
 		FD801ACB2F1D1836001771BC /* WebDavCertificatePinningIntegrationSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD801ACA2F1D1836001771BC /* WebDavCertificatePinningIntegrationSpec.swift */; };
 /* End PBXBuildFile section */
@@ -2457,7 +2465,6 @@
 		B3F6AA3B2AB30CDA005BC22E /* HtmlEpubReaderAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HtmlEpubReaderAction.swift; sourceTree = "<group>"; };
 		B3F83807263960FA00E128A6 /* ItemAccessory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemAccessory.swift; sourceTree = "<group>"; };
 		B3F874222E2F84B6004A2D71 /* SpeechLanguagePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechLanguagePickerView.swift; sourceTree = "<group>"; };
-		B3F9A4B72B04C97A00684030 /* HtmlEpubSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HtmlEpubSettings.swift; sourceTree = "<group>"; };
 		B3F9A4BA2B04CEC300684030 /* ReaderSettingsSegmentedCellContentView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReaderSettingsSegmentedCellContentView.swift; sourceTree = "<group>"; };
 		B3F9A4BB2B04CEC300684030 /* ReaderSettingsSegmentedCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReaderSettingsSegmentedCell.swift; sourceTree = "<group>"; };
 		B3F9A4BC2B04CEC300684030 /* ReaderSettingsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReaderSettingsViewController.swift; sourceTree = "<group>"; };
@@ -2478,6 +2485,15 @@
 		D1E2F3A92F1C000100ABC001 /* APIWebSocketController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIWebSocketController.swift; sourceTree = "<group>"; };
 		D1E2F3AB2F1C000100ABC001 /* LoginSessionWebSocketController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginSessionWebSocketController.swift; sourceTree = "<group>"; };
 		D1E2F3AD2F1C000100ABC001 /* CancelLoginSessionRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CancelLoginSessionRequest.swift; sourceTree = "<group>"; };
+		FD08FE1F2F1D27930045EC95 /* FontMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FontMetadata.swift; path = Zotero/Models/FontMetadata.swift; sourceTree = SOURCE_ROOT; };
+		FD08FE212F1D27B50045EC95 /* FontManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontManager.swift; sourceTree = "<group>"; };
+		FD08FE232F1D27BE0045EC95 /* TypesettingApplicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypesettingApplicator.swift; sourceTree = "<group>"; };
+		FD08FE252F1D27CC0045EC95 /* FontPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontPreferences.swift; sourceTree = "<group>"; };
+		FD08FE272F1D27EE0045EC95 /* TypesettingSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypesettingSettings.swift; sourceTree = "<group>"; };
+		FD08FE292F1D28030045EC95 /* FontManagementViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontManagementViewController.swift; sourceTree = "<group>"; };
+		FD08FE2D2F1D28250045EC95 /* HtmlEpubSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HtmlEpubSettings.swift; sourceTree = "<group>"; };
+		FD08FE312F1D2A1A0045EC95 /* SystemFontPickerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemFontPickerViewController.swift; sourceTree = "<group>"; };
+		FD08FE352F1D2AEF0045EC95 /* TypesettingMenuViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypesettingMenuViewController.swift; sourceTree = "<group>"; };
 		FD801AC22F1CFDFB001771BC /* WebDavCertificatePinningSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavCertificatePinningSpec.swift; sourceTree = "<group>"; };
 		FD801ACA2F1D1836001771BC /* WebDavCertificatePinningIntegrationSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavCertificatePinningIntegrationSpec.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -2678,6 +2694,8 @@
 				B324276C25C81F2000567504 /* WebSocketController.swift */,
 				B3F9A4CA2B04F28400684030 /* WebViewEncoder.swift */,
 				B3B557152C884DD200BD6325 /* ZoteroURIConverter.swift */,
+				FD08FE232F1D27BE0045EC95 /* TypesettingApplicator.swift */,
+				FD08FE212F1D27B50045EC95 /* FontManager.swift */,
 			);
 			path = Controllers;
 			sourceTree = "<group>";
@@ -3046,6 +3064,9 @@
 				B300B3342429222B00C1FE1E /* TranslatorMetadata.swift */,
 				B305653C23FC051E003304F2 /* UpdatableObject.swift */,
 				B386853F270DC3AA0068A022 /* WebDavScheme.swift */,
+				FD08FE1F2F1D27930045EC95 /* FontMetadata.swift */,
+				FD08FE252F1D27CC0045EC95 /* FontPreferences.swift */,
+				FD08FE272F1D27EE0045EC95 /* TypesettingSettings.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -4294,6 +4315,10 @@
 				61BD13942A5831EF008A0704 /* TextKit1TextView.swift */,
 				B35EDEC9263ADD0C003574AC /* TextPreviewViewController.swift */,
 				B35EDECA263ADD0C003574AC /* TextPreviewViewController.xib */,
+				B3F184A3253F067100498F32 /* WebViewController.swift */,
+				FD08FE292F1D28030045EC95 /* FontManagementViewController.swift */,
+				FD08FE312F1D2A1A0045EC95 /* SystemFontPickerViewController.swift */,
+				FD08FE352F1D2AEF0045EC95 /* TypesettingMenuViewController.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -4355,7 +4380,7 @@
 				B3574E3A2AC5AAC6009234BE /* HtmlEpubAnnotation.swift */,
 				B3F6AA3B2AB30CDA005BC22E /* HtmlEpubReaderAction.swift */,
 				B3F6AA352AB3039F005BC22E /* HtmlEpubReaderState.swift */,
-				B3F9A4B72B04C97A00684030 /* HtmlEpubSettings.swift */,
+				FD08FE2D2F1D28250045EC95 /* HtmlEpubSettings.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -5516,7 +5541,6 @@
 				B3A71F4F2EEC39CD0006A737 /* AnnotationToolsSettingsState.swift in Sources */,
 				B322B4772673A41200BC3D08 /* ReadStyleDbRequest.swift in Sources */,
 				B3E8FE8827143BDD00F51458 /* SyncSettingsAction.swift in Sources */,
-				B3F9A4B82B04C97A00684030 /* HtmlEpubSettings.swift in Sources */,
 				B37BF0AB25A5E2AD00AE0268 /* SquareAnnotation.swift in Sources */,
 				B3EA5A1B2B7251EE00E283D7 /* CitationLocatorContentView.swift in Sources */,
 				B361820024C9A7C000B30D56 /* LoginAction.swift in Sources */,
@@ -5637,6 +5661,8 @@
 				B30565EA23FC051E003304F2 /* SecureStorage.swift in Sources */,
 				B3593F3B241A61C700760E20 /* ItemsError.swift in Sources */,
 				B30566B823FC051F003304F2 /* SearchesResponse.swift in Sources */,
+				FD08FE2A2F1D28030045EC95 /* FontManagementViewController.swift in Sources */,
+				B3CBB125248A46D500C4228F /* NotificationCenter+Extensions.swift in Sources */,
 				B3F55A1929EED4CB00A6716E /* ReadAutomaticTagsDbRequest.swift in Sources */,
 				B305660C23FC051E003304F2 /* VersionsRequest.swift in Sources */,
 				B33AB488246D315F00490DDE /* CheckboxButton.swift in Sources */,
@@ -5807,6 +5833,7 @@
 				B30565C123FC051E003304F2 /* MarkObjectsAsDeletedDbRequest.swift in Sources */,
 				B3830CDC255451AB00910FE0 /* TagPickerState.swift in Sources */,
 				B39D336823FFD96C00EF2ACB /* Note.swift in Sources */,
+				FD08FE2E2F1D28250045EC95 /* HtmlEpubSettings.swift in Sources */,
 				B32DE61F26320271000287EC /* PopoverNavigationViewController.swift in Sources */,
 				B3CAE1182B0E38BA0000F8CA /* EmojiExtractor.swift in Sources */,
 				B3DEAAA728AD01CA00F72D90 /* URLSession+Extensions.swift in Sources */,
@@ -5833,6 +5860,7 @@
 				B34341B4260A496200093E63 /* ReadCollectionAndLibraryDbRequest.swift in Sources */,
 				B30566BA23FC051F003304F2 /* Defaults.swift in Sources */,
 				B3325F6F27B41D69007C7137 /* CollectionTree.swift in Sources */,
+				FD08FE362F1D2AEF0045EC95 /* TypesettingMenuViewController.swift in Sources */,
 				B39DBFF62D8036A000454486 /* SpeechManager.swift in Sources */,
 				B30565E423FC051E003304F2 /* RealmDbStorage.swift in Sources */,
 				B3E8FE742714344D00F51458 /* SettingsListView.swift in Sources */,
@@ -5915,6 +5943,7 @@
 				B3B41F1A2848E5A90017CA4B /* AnnotationsFilterAction.swift in Sources */,
 				B305667623FC051F003304F2 /* UIColor+Custom.swift in Sources */,
 				B30565B823FC051E003304F2 /* ReadUserChangedObjectsDbRequest.swift in Sources */,
+				FD08FE202F1D27930045EC95 /* FontMetadata.swift in Sources */,
 				B399A9172CC67F1600731B21 /* TrashKey.swift in Sources */,
 				B3593F54241A61C700760E20 /* CollectionsError.swift in Sources */,
 				B30565B523FC051E003304F2 /* MarkObjectsAsSyncedDbRequest.swift in Sources */,
@@ -6038,10 +6067,12 @@
 				B39D42D929C0B82F0035CDA9 /* TagFilterCell.swift in Sources */,
 				B398142E257A649D002C755C /* TextContentEditCell.swift in Sources */,
 				B32F0BDA298BFCEE00C04557 /* LogsViewController.swift in Sources */,
+				FD08FE322F1D2A1A0045EC95 /* SystemFontPickerViewController.swift in Sources */,
 				B3BC1F60254322D200BA3388 /* ItemDetailAbstractEditCell.swift in Sources */,
 				B3422F44289A9F2400C53DD2 /* ItemDetailAttachmentContentView.swift in Sources */,
 				B30566C523FC051F003304F2 /* Tag.swift in Sources */,
 				B31EEE5724EBCAF100E3B3AD /* RRect.swift in Sources */,
+				FD08FE242F1D27BE0045EC95 /* TypesettingApplicator.swift in Sources */,
 				B3E8FE562714320900F51458 /* SavingSettingsState.swift in Sources */,
 				B30565B423FC051E003304F2 /* MarkForResyncDbAction.swift in Sources */,
 				B30D59592206F60400884C4A /* AppDelegate.swift in Sources */,
@@ -6079,6 +6110,7 @@
 				B30548FF2B33275300853966 /* ReadAllDownloadsDbRequest.swift in Sources */,
 				B3C9D60A24DA9D49003EA1EE /* CollectionsSearchAction.swift in Sources */,
 				B31D973C27F5E51100ED3DA2 /* ItemsToolbarDownloadProgressView.swift in Sources */,
+				FD08FE262F1D27CC0045EC95 /* FontPreferences.swift in Sources */,
 				B3756E8F2B835BDC0001CD0A /* IntraDocumentNavigationButtonsHandler.swift in Sources */,
 				B3C9D60524DA921B003EA1EE /* CollectionsSearchViewController.swift in Sources */,
 				B3100921272C0960003FC743 /* ReadWebDavDeletionsDbRequest.swift in Sources */,
@@ -6097,6 +6129,8 @@
 				B3593F47241A61C700760E20 /* TagEmojiCirclesView.swift in Sources */,
 				B3593F2E241A61C700760E20 /* ItemDetailAttachmentCell.swift in Sources */,
 				B3DDC0CB2667824D00B2DFD1 /* RegularExpression+Extensions.swift in Sources */,
+				FD08FE222F1D27B50045EC95 /* FontManager.swift in Sources */,
+				FD08FE282F1D27EE0045EC95 /* TypesettingSettings.swift in Sources */,
 				B3B953D42459B62D00FC96DB /* AnnotationCell.swift in Sources */,
 				B34C40FF25711C990057D5F5 /* ColorPickerCell.swift in Sources */,
 				B30565FD23FC051E003304F2 /* FileStorage.swift in Sources */,
@@ -6918,7 +6952,7 @@
 				COPY_PHASE_STRIP = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = 8LAYR367YV;
+				DEVELOPMENT_TEAM = 8AM43DWW5X;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -6932,7 +6966,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0.41;
-				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ios.Zotero;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ppdms.Zotero;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTS_MACCATALYST = NO;
@@ -6957,7 +6991,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 8LAYR367YV;
+				DEVELOPMENT_TEAM = 8AM43DWW5X;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -6971,7 +7005,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0.41;
-				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ios.Zotero;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ppdms.Zotero;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTS_MACCATALYST = NO;
@@ -7104,7 +7138,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 8LAYR367YV;
+				DEVELOPMENT_TEAM = 8AM43DWW5X;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
@@ -7117,7 +7151,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0.41;
-				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ios.Zotero.ZShare;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ppdms.Zotero.ZShare;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
@@ -7139,7 +7173,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 8LAYR367YV;
+				DEVELOPMENT_TEAM = 8AM43DWW5X;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
@@ -7152,7 +7186,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0.41;
-				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ios.Zotero.ZShare;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ppdms.Zotero.ZShare;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
@@ -7244,7 +7278,7 @@
 				COPY_PHASE_STRIP = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = 8LAYR367YV;
+				DEVELOPMENT_TEAM = 8AM43DWW5X;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -7258,7 +7292,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0.41;
-				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ios.Zotero;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ppdms.Zotero;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTS_MACCATALYST = NO;
@@ -7339,7 +7373,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 8LAYR367YV;
+				DEVELOPMENT_TEAM = 8AM43DWW5X;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
@@ -7352,7 +7386,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0.41;
-				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ios.Zotero.ZShare;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ppdms.Zotero.ZShare;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;

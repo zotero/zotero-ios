@@ -195,4 +195,10 @@ final class RemoteAttachmentDownloader: @unchecked Sendable {
         DDLogInfo("RemoteAttachmentDownloader: stop")
         self.operationQueue.cancelAllOperations()
     }
+
+    private func resetBatchDataIfNeeded() {
+        guard operations.isEmpty else { return }
+        totalBatchCount = 0
+        batchProgress = nil
+    }
 }

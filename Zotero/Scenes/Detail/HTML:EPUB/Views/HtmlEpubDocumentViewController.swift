@@ -21,8 +21,8 @@ class HtmlEpubDocumentViewController: UIViewController {
     private let viewModel: ViewModel<HtmlEpubReaderActionHandler>
     private let disposeBag: DisposeBag
 
-    private weak var webView: WKWebView!
-    private var webViewHandler: WebViewHandler!
+    private(set) weak var webView: WKWebView!
+    var webViewHandler: WebViewHandler!
     weak var parentDelegate: HtmlEpubReaderContainerDelegate?
 
     init(viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
@@ -37,7 +37,8 @@ class HtmlEpubDocumentViewController: UIViewController {
 
     override func loadView() {
         view = UIView()
-        view.backgroundColor = .systemBackground
+        // Start with clear background to prevent black bar, will be updated based on appearance
+        view.backgroundColor = .clear
     }
 
     override func viewDidLoad() {
@@ -69,17 +70,30 @@ class HtmlEpubDocumentViewController: UIViewController {
             let configuration = WKWebViewConfiguration()
             configuration.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
             let webView = HtmlEpubWebView(customMenuActions: [highlightAction, underlineAction], configuration: configuration)
+            if #available(iOS 16.4, *) {
+                webView.isInspectable = true
+            }
             webView.translatesAutoresizingMaskIntoConstraints = false
+            webView.isOpaque = false
+            webView.backgroundColor = .clear
+            webView.scrollView.backgroundColor = .clear
+            webView.scrollView.contentInsetAdjustmentBehavior = .never
+            webView.scrollView.isScrollEnabled = false
+            webView.scrollView.bounces = false
+            webView.scrollView.alwaysBounceVertical = false
+            webView.scrollView.alwaysBounceHorizontal = false
+            webView.scrollView.showsVerticalScrollIndicator = false
+            webView.scrollView.showsHorizontalScrollIndicator = false
             if #available(iOS 16.4, *) {
                 webView.isInspectable = true
             }
             view.addSubview(webView)
 
             NSLayoutConstraint.activate([
-                view.safeAreaLayoutGuide.topAnchor.constraint(equalTo: webView.topAnchor),
-                view.bottomAnchor.constraint(equalTo: webView.bottomAnchor),
-                view.safeAreaLayoutGuide.leadingAnchor.constraint(equalTo: webView.leadingAnchor),
-                view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: webView.trailingAnchor)
+                webView.topAnchor.constraint(equalTo: view.topAnchor),
+                webView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+                webView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                webView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
             ])
             self.webView = webView
             webViewHandler = WebViewHandler(webView: webView, javascriptHandlers: JSHandlers.allCases.map({ $0.rawValue }))
@@ -106,6 +120,58 @@ class HtmlEpubDocumentViewController: UIViewController {
     private func deselectText() {
         webViewHandler.call(javascript: "window._view.selectAnnotations([]);").subscribe().disposed(by: disposeBag)
     }
+    
+    private var lastKnownCFI: String?
+    private var lastKnownOffset: Double?
+    private var hasInjectedToolbarInsetCSS = false
+
+    func notifyResize() {
+        guard let cfi = lastKnownCFI else { return }
+        let offsetStr = lastKnownOffset != nil ? "\(lastKnownOffset!)" : "null"
+        webViewHandler.call(javascript: "window._view.setPreResizeCFI('\(cfi)', \(offsetStr));")
+            .subscribe()
+            .disposed(by: disposeBag)
+    }
+    
+    func updateLastKnownPosition(cfi: String?, offset: Double?) {
+        lastKnownCFI = cfi
+        lastKnownOffset = offset
+    }
+
+    /// Injects CSS into the epub iframe to permanently reserve bottom space for the toolbar offset.
+    /// This ensures that when the WebView is translated down (toolbar visible), the bottom margin
+    /// of the paginated columns is preserved rather than pushed off-screen.
+    private func injectToolbarInsetCSS(cfi: String, offset: Double?) {
+        let toolbarHeight = (parentDelegate?.statusBarHeight ?? 0) + (parentDelegate?.navigationBarHeight ?? 0)
+        guard toolbarHeight > 0 else { return }
+
+        let totalBottomMargin = 40 + Int(toolbarHeight)
+        let totalVerticalDeduction = 80 + Int(toolbarHeight)
+
+        let css = "body.flow-mode-paginated:not(.fixed-layout){margin-bottom:\(totalBottomMargin)px!important}"
+            + "body.flow-mode-paginated:not(.fixed-layout)>.sections{"
+            + "max-height:calc(100vh - \(totalVerticalDeduction)px)!important;"
+            + "min-height:calc(100vh - \(totalVerticalDeduction)px)!important}"
+
+        let escapedCfi = cfi.replacingOccurrences(of: "'", with: "\\'")
+        let offsetStr = offset != nil ? "\(offset!)" : "undefined"
+
+        let js = """
+        (function(){
+            var doc=window._view&&window._view._iframeDocument;
+            if(!doc||doc.getElementById('toolbar-inset-override'))return;
+            var s=doc.createElement('style');
+            s.id='toolbar-inset-override';
+            s.textContent='\(css)';
+            doc.head.appendChild(s);
+            requestAnimationFrame(function(){
+                window._view.navigate({pageNumber:'\(escapedCfi)'},{skipHistory:true,behavior:'auto',offsetBlock:\(offsetStr)});
+            });
+        })();
+        """
+
+        webViewHandler.call(javascript: js).subscribe().disposed(by: disposeBag)
+    }
 
     private func process(state: HtmlEpubReaderState) {
         if state.changes.contains(.readerInitialised) {
@@ -115,6 +181,10 @@ class HtmlEpubDocumentViewController: UIViewController {
 
         if let data = state.documentData {
             load(documentData: data)
+            // Apply typesetting settings after document loads
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                self?.applyTypesettingSettings(from: state.settings)
+            }
             return
         }
 
@@ -143,6 +213,8 @@ class HtmlEpubDocumentViewController: UIViewController {
 
         if state.changes.contains(.appearance) {
             updateInterface(to: state.settings.appearance, userInterfaceStyle: state.interfaceStyle)
+            // Reapply typesetting when appearance changes
+            applyTypesettingSettings(from: state.settings)
         }
 
         func search(term: String) {
@@ -202,16 +274,29 @@ class HtmlEpubDocumentViewController: UIViewController {
     }
 
     private func updateInterface(to appearanceMode: ReaderSettingsState.Appearance, userInterfaceStyle: UIUserInterfaceStyle) {
+        let backgroundColor: UIColor
         switch appearanceMode {
         case .automatic:
             webView.overrideUserInterfaceStyle = userInterfaceStyle
+            backgroundColor = userInterfaceStyle == .dark ? .black : .white
 
-        case .light, .sepia:
+        case .light:
             webView.overrideUserInterfaceStyle = .light
+            backgroundColor = .white
+
+        case .sepia:
+            webView.overrideUserInterfaceStyle = .light
+            backgroundColor = UIColor(red: 0.98, green: 0.95, blue: 0.89, alpha: 1.0)
 
         case .dark:
             webView.overrideUserInterfaceStyle = .dark
+            backgroundColor = .black
         }
+        
+        view.backgroundColor = backgroundColor
+        webView.backgroundColor = backgroundColor
+        webView.scrollView.backgroundColor = backgroundColor
+        
         let appearanceString = Appearance.from(appearanceMode: appearanceMode, interfaceStyle: userInterfaceStyle).htmlEpubValue
         webView.call(javascript: "window._view.setColorScheme('\(appearanceString)');").subscribe().disposed(by: disposeBag)
     }
@@ -254,6 +339,7 @@ class HtmlEpubDocumentViewController: UIViewController {
 
             switch event {
             case "onInitialized":
+                DDLogInfo("HtmlEpubDocumentViewController: onInitialized")
                 viewModel.process(action: .loadDocument)
 
             case "onSaveAnnotations":
@@ -279,8 +365,8 @@ class HtmlEpubDocumentViewController: UIViewController {
                     return
                 }
 
-                let navigationBarInset = (parentDelegate?.statusBarHeight ?? 0) + (parentDelegate?.navigationBarHeight ?? 0)
-                let rect = CGRect(x: rectArray[0], y: rectArray[1] + navigationBarInset, width: rectArray[2] - rectArray[0], height: rectArray[3] - rectArray[1])
+                let webViewOffset = webView?.transform.ty ?? 0
+                let rect = CGRect(x: rectArray[0], y: rectArray[1] + webViewOffset, width: rectArray[2] - rectArray[0], height: rectArray[3] - rectArray[1])
                 viewModel.process(action: .showAnnotationPopover(key: key, rect: rect))
 
             case "onSelectAnnotations":
@@ -304,6 +390,18 @@ class HtmlEpubDocumentViewController: UIViewController {
                 guard let params = data["params"] as? [String: Any] else {
                     DDLogWarn("HtmlEpubDocumentViewController: event \(event) missing params - \(message)")
                     return
+                }
+                // Store the current CFI for position restoration
+                if let state = params["state"] as? [String: Any], let cfi = state["cfi"] as? String {
+                    DDLogInfo("HtmlEpubDocumentViewController: updating lastKnownCFI to: \(cfi)")
+                    let offset = state["cfiElementOffset"] as? Double
+                    updateLastKnownPosition(cfi: cfi, offset: offset)
+
+                    // Inject toolbar inset CSS on first valid position
+                    if !hasInjectedToolbarInsetCSS {
+                        hasInjectedToolbarInsetCSS = true
+                        injectToolbarInsetCSS(cfi: cfi, offset: offset)
+                    }
                 }
                 viewModel.process(action: .setViewState(params))
 
@@ -330,6 +428,31 @@ class HtmlEpubDocumentViewController: UIViewController {
         default:
             break
         }
+    }
+    
+    // MARK: - Typesetting
+    
+    private func applyTypesettingSettings(from settings: HtmlEpubSettings) {
+        guard let webView else {
+            DDLogWarn("HtmlEpubDocumentViewController: Cannot apply typesetting - webView is nil")
+            return
+        }
+        DDLogInfo("HtmlEpubDocumentViewController: Applying typesetting - font: \(settings.typesetting.fontFamily ?? "default"), customFont: \(settings.customFont ?? "none")")
+        
+        // Get fresh settings from FontManager to ensure we have latest font selections
+        let fontManager = FontManager.shared
+        var appliedSettings = settings.typesetting
+        
+        // Override font family if custom font is set
+        if let customFont = settings.customFont {
+            appliedSettings.fontFamily = customFont
+            DDLogInfo("HtmlEpubDocumentViewController: Using custom font: \(customFont)")
+        } else if let documentCustomFont = fontManager.font(forDocument: viewModel.state.key) {
+            appliedSettings.fontFamily = documentCustomFont
+            DDLogInfo("HtmlEpubDocumentViewController: Using document custom font: \(documentCustomFont)")
+        }
+        
+        TypesettingApplicator.applySettings(appliedSettings, appearance: settings.appearance, to: webView)
     }
 }
 
