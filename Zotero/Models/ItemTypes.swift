@@ -131,6 +131,9 @@ extension ItemTypes {
         case "podcast":
             return Asset.Images.ItemTypes.podcast.name
 
+        case "preprint":
+            return Asset.Images.ItemTypes.preprint.name
+
         case "presentation":
             return Asset.Images.ItemTypes.presentation.name
 
