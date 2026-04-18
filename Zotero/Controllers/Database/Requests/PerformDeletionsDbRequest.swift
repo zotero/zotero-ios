@@ -149,16 +149,36 @@ struct PerformLastReadDeletionsDbRequest: DbRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
-        let objects = database.objects(RLastReadDate.self).filter(.keys(keys, in: libraryId))
-        for object in objects {
-            guard !object.isInvalidated else { continue }
-            if object.isChanged {
-                // If remotely deleted lastRead is changed locally, we want to keep the lastRead, so we mark that
-                // this lastRead is new and it will be reinserted by sync
-                object.markAsChanged(in: database)
-            } else {
-                object.willRemove(in: database)
-                database.delete(object)
+        switch libraryId {
+        case .custom(.myLibrary):
+            let objects = database.objects(RItem.self).filter(.keys(keys, in: libraryId))
+            for object in objects {
+                guard !object.isInvalidated else { continue }
+
+                // My Library stores last-read directly on the item, so only preserve it when the field itself
+                // has an unsynced local change. Other local item changes should not block a remote last-read clear.
+                if object.changedFields.contains(.lastRead) {
+                    continue
+                }
+
+                if object.lastRead != nil {
+                    object.lastRead = nil
+                    object.updateEffectiveLastRead()
+                }
+            }
+
+        case .group:
+            let objects = database.objects(RLastReadDate.self).filter(.keys(keys, in: libraryId))
+            for object in objects {
+                guard !object.isInvalidated else { continue }
+                if object.isChanged {
+                    // If remotely deleted lastRead is changed locally, we want to keep the lastRead, so we mark that
+                    // this lastRead is new and it will be reinserted by sync
+                    object.markAsChanged(in: database)
+                } else {
+                    object.willRemove(in: database)
+                    database.delete(object)
+                }
             }
         }
     }
