@@ -140,6 +140,7 @@
 "items.filters.tags" = "Tags";
 "items.toolbar_saved" = "Saved %d / %d";
 "items.toolbar_downloaded" = "Downloaded %d / %d";
+"items.toolbar_failed" = "Failed %d";
 "items.generating_bib" = "Generating Bibliography";
 "items.creator_summary.and" = "%@ and %@";
 "items.creator_summary.etal" = "%@ et al.";

@@ -290,7 +290,7 @@ class BaseItemsViewController: UIViewController {
             allowsManualSort: true,
             downloadBatchData: nil,
             remoteDownloadBatchData: nil,
-            identifierLookupBatchData: ItemsState.IdentifierLookupBatchData(saved: 0, total: 0),
+            identifierLookupBatchData: .zero,
             itemCount: 0
         )
     }

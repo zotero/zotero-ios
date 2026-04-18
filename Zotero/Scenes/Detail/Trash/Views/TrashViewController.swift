@@ -226,7 +226,7 @@ final class TrashViewController: BaseItemsViewController {
             allowsManualSort: true,
             downloadBatchData: nil,
             remoteDownloadBatchData: nil,
-            identifierLookupBatchData: .init(saved: 0, total: 0),
+            identifierLookupBatchData: .zero,
             itemCount: state.snapshot.count
         )
     }

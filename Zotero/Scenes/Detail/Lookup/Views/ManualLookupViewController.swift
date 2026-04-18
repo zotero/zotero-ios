@@ -144,7 +144,9 @@ class ManualLookupViewController: UIViewController {
 
         let closeItem = UIBarButtonItem(title: L10n.close, style: .plain, target: nil, action: nil)
         closeItem.rx.tap.subscribe(onNext: { [weak self] in
-            self?.close()
+            guard let self else { return }
+            coordinatorDelegate?.acknowledgeFailures = true
+            close()
         }).disposed(by: self.disposeBag)
         
         let cancelAllItem = UIBarButtonItem(title: L10n.cancelAll, style: .plain, target: nil, action: nil)

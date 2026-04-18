@@ -296,12 +296,20 @@ final class ItemsToolbarController {
                 var progress: Float?
                 let remoteDownloading = remoteDownloadBatchData != nil
                 let defaultAttributes: [NSAttributedString.Key: Any] = [.foregroundColor: UIColor.label, .font: UIFont.preferredFont(forTextStyle: .footnote)]
-                if identifierLookupBatchData != .zero, !identifierLookupBatchData.isFinished || remoteDownloading {
-                    // Show "Saved x / y" only if lookup hasn't finished, or there are also ongoing remote downloads
+                if identifierLookupBatchData != .zero,
+                   !identifierLookupBatchData.isFinished || identifierLookupBatchData.failed > 0 || remoteDownloading {
+                    // Keep lookup progress visible while it is active, while remote downloads are pending,
+                    // or after hidden failures so the user can reopen lookup from the toolbar.
                     isUserInteractionEnabled = true
                     let identifierLookupText = L10n.Items.toolbarSaved(identifierLookupBatchData.saved, identifierLookupBatchData.total)
                     let identifierLookupAttributes: [NSAttributedString.Key: Any] = [.foregroundColor: Asset.Colors.zoteroBlueWithDarkMode.color, .font: UIFont.preferredFont(forTextStyle: .footnote)]
                     attributedText.append(.init(string: identifierLookupText, attributes: identifierLookupAttributes))
+                    if identifierLookupBatchData.failed > 0 {
+                        let failedText = L10n.Items.toolbarFailed(identifierLookupBatchData.failed)
+                        let failedAttributes: [NSAttributedString.Key: Any] = [.foregroundColor: UIColor.systemRed, .font: UIFont.preferredFont(forTextStyle: .footnote)]
+                        attributedText.append(.init(string: " - ", attributes: defaultAttributes))
+                        attributedText.append(.init(string: failedText, attributes: failedAttributes))
+                    }
                 }
                 if let combinedDownloadBatchData = ItemsState.DownloadBatchData.combineDownloadBatchData([downloadBatchData, remoteDownloadBatchData]) {
                     if attributedText.length > 0 {
