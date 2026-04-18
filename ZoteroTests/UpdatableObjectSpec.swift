@@ -114,6 +114,61 @@ final class UpdatableObjectSpec: QuickSpec {
                     expect(refinedBy["end"] as? Int).to(equal(1705))
                 }
             }
+
+            context("when applying My Library last-read deletions") {
+                it("clears the item's last-read value") {
+                    let key = "AAAAAAAA"
+                    let date = Date(timeIntervalSince1970: 1234)
+
+                    try! realm.write {
+                        let item = RItem()
+                        item.key = key
+                        item.rawType = ItemTypes.attachment
+                        item.customLibraryKey = .myLibrary
+                        item.dateAdded = Date()
+                        item.dateModified = item.dateAdded
+                        item.lastRead = date
+                        item.updateEffectiveLastRead()
+                        realm.add(item)
+                    }
+
+                    try! realm.write {
+                        try! PerformLastReadDeletionsDbRequest(libraryId: .custom(.myLibrary), keys: [key]).process(in: realm)
+                    }
+
+                    let item = realm.objects(RItem.self).first!
+                    expect(item.lastRead).to(beNil())
+                    expect(item.effectiveLastRead).to(beNil())
+                }
+
+                it("preserves unsynced local last-read changes") {
+                    let key = "BBBBBBBB"
+                    let date = Date(timeIntervalSince1970: 5678)
+
+                    try! realm.write {
+                        let item = RItem()
+                        item.key = key
+                        item.rawType = ItemTypes.attachment
+                        item.customLibraryKey = .myLibrary
+                        item.dateAdded = Date()
+                        item.dateModified = item.dateAdded
+                        item.lastRead = date
+                        item.updateEffectiveLastRead()
+                        item.changes.append(RObjectChange.create(changes: RItemChanges.lastRead))
+                        item.changeType = .user
+                        realm.add(item)
+                    }
+
+                    try! realm.write {
+                        try! PerformLastReadDeletionsDbRequest(libraryId: .custom(.myLibrary), keys: [key]).process(in: realm)
+                    }
+
+                    let item = realm.objects(RItem.self).first!
+                    expect(item.lastRead).to(equal(date))
+                    expect(item.effectiveLastRead).to(equal(date))
+                    expect(item.changedFields.contains(.lastRead)).to(beTrue())
+                }
+            }
         }
     }
 }
