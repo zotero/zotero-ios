@@ -116,7 +116,7 @@ final class UpdatableObjectSpec: QuickSpec {
             }
 
             context("when applying My Library last-read deletions") {
-                it("ignores them and leaves the item's last-read value unchanged") {
+                it("throws and leaves the item's last-read value unchanged") {
                     let key = "AAAAAAAA"
                     let date = Date(timeIntervalSince1970: 1234)
 
@@ -132,9 +132,11 @@ final class UpdatableObjectSpec: QuickSpec {
                         realm.add(item)
                     }
 
-                    try! realm.write {
-                        try! PerformLastReadDeletionsDbRequest(libraryId: .custom(.myLibrary), keys: [key]).process(in: realm)
-                    }
+                    expect {
+                        try realm.write {
+                            try PerformLastReadDeletionsDbRequest(libraryId: .custom(.myLibrary), keys: [key]).process(in: realm)
+                        }
+                    }.to(throwError())
 
                     let item = realm.objects(RItem.self).first!
                     expect(item.lastRead).to(equal(date))

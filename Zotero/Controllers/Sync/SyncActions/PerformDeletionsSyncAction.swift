@@ -84,12 +84,16 @@ struct PerformDeletionsSyncAction: SyncAction {
                             groupedIndices[libraryId, default: []].append(key)
                         }
                         for (libraryId, keys) in groupedIndices {
-                            switch libraryId {
-                            case .custom(.myLibrary):
-                                unexpectedMyLibraryLastReadDeletions.append(contentsOf: keys)
-                                
-                            case .group:
+                            do {
                                 try dbStorage.perform(request: PerformLastReadDeletionsDbRequest(libraryId: libraryId, keys: keys), on: queue)
+                            } catch let error {
+                                switch error {
+                                case PerformLastReadDeletionsDbRequest.Error.myLibraryNotSupported:
+                                    unexpectedMyLibraryLastReadDeletions.append(contentsOf: keys)
+
+                                default:
+                                    throw error
+                                }
                             }
                         }
                     }

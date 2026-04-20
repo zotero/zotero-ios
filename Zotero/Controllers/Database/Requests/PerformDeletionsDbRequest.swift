@@ -8,7 +8,6 @@
 
 import Foundation
 
-import CocoaLumberjackSwift
 import RealmSwift
 
 struct PerformItemDeletionsDbRequest: DbResponseRequest {
@@ -144,6 +143,10 @@ struct PerformPageIndexDeletionsDbRequest: DbRequest {
 }
 
 struct PerformLastReadDeletionsDbRequest: DbRequest {
+    enum Error: Swift.Error {
+        case myLibraryNotSupported
+    }
+
     let libraryId: LibraryIdentifier
     let keys: [String]
 
@@ -152,7 +155,7 @@ struct PerformLastReadDeletionsDbRequest: DbRequest {
     func process(in database: Realm) throws {
         switch libraryId {
         case .custom(.myLibrary):
-            DDLogWarn("PerformLastReadDeletionsDbRequest: Ignoring deletion for My Library with keys \(keys)")
+            throw Error.myLibraryNotSupported
 
         case .group:
             let objects = database.objects(RLastReadDate.self).filter(.keys(keys, in: libraryId))
