@@ -21,8 +21,14 @@ final class SyncToolbarController {
     private var toolbarBottom: NSLayoutConstraint!
     private var pendingErrors: [Error]?
     private var timerDisposeBag: DisposeBag
+    private var consecutiveErrorCount = 0
     private var toolbarIsHidden: Bool {
         return toolbarBottom.constant != 0
+    }
+    private var warningIconColor: UIColor? {
+        if consecutiveErrorCount >= 5 { return .systemRed }
+        if consecutiveErrorCount >= 3 { return .systemYellow }
+        return nil
     }
 
     weak var coordinatorDelegate: MainCoordinatorSyncToolbarDelegate?
@@ -54,7 +60,7 @@ final class SyncToolbarController {
             toolbarBottom = bottom
 
             NSLayoutConstraint.activate([
-                toolbar.heightAnchor.constraint(equalToConstant: 45),
+                toolbar.heightAnchor.constraint(equalToConstant: 50),
                 toolbar.leadingAnchor.constraint(equalTo: parent.view.leadingAnchor),
                 toolbar.trailingAnchor.constraint(equalTo: parent.view.trailingAnchor),
                 bottom
@@ -80,6 +86,7 @@ final class SyncToolbarController {
                 }
 
             default:
+                consecutiveErrorCount += 1
                 pendingErrors = [error]
                 if toolbarIsHidden {
                     setToolbar(hidden: false, animated: true)
@@ -89,6 +96,7 @@ final class SyncToolbarController {
 
         case .finished(let errors):
             if errors.isEmpty {
+                consecutiveErrorCount = 0
                 pendingErrors = nil
                 timerDisposeBag = DisposeBag()
                 if !toolbarIsHidden {
@@ -97,6 +105,7 @@ final class SyncToolbarController {
                 return
             }
 
+            consecutiveErrorCount += 1
             pendingErrors = errors
             if toolbarIsHidden {
                 setToolbar(hidden: false, animated: true)
@@ -299,20 +308,55 @@ final class SyncToolbarController {
     }
 
     private func set(progress: SyncProgress) {
-        let item = UIBarButtonItem(customView: toolbarView(with: text(for: progress)))
+        let item = UIBarButtonItem(customView: toolbarView(with: text(for: progress), warningIconColor: warningIconColor))
         toolbar.setItems([item], animated: false)
     }
 
-    private func toolbarView(with text: String) -> UIView {
+    private func toolbarView(with text: String, warningIconColor: UIColor? = nil) -> UIView {
         let textColor: UIColor = viewController.traitCollection.userInterfaceStyle == .light ? .black : .white
         let button = UIButton(frame: UIScreen.main.bounds)
         button.titleLabel?.font = .preferredFont(forTextStyle: .footnote)
         button.titleLabel?.adjustsFontSizeToFitWidth = true
         button.titleLabel?.numberOfLines = 2
-        button.setTitleColor(textColor, for: .normal)
         button.contentHorizontalAlignment = .center
         button.contentVerticalAlignment = .center
-        button.setTitle(text, for: .normal)
+
+        if let warningIconColor {
+            let symbolConfig = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
+            let imageView = UIImageView(image: UIImage(systemName: "exclamationmark.triangle", withConfiguration: symbolConfig))
+            imageView.tintColor = warningIconColor
+            imageView.contentMode = .scaleAspectFit
+            imageView.setContentHuggingPriority(.required, for: .horizontal)
+            imageView.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+            let label = UILabel()
+            label.text = text
+            let footnoteDescriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .footnote)
+            label.font = warningIconColor == .systemRed
+                ? UIFont.systemFont(ofSize: footnoteDescriptor.pointSize, weight: .medium)
+                : .preferredFont(forTextStyle: .footnote)
+            label.textColor = textColor
+            label.adjustsFontSizeToFitWidth = true
+            label.numberOfLines = 2
+
+            let stack = UIStackView(arrangedSubviews: [imageView, label])
+            stack.axis = .horizontal
+            stack.spacing = 6
+            stack.alignment = .center
+            stack.isUserInteractionEnabled = false
+            stack.translatesAutoresizingMaskIntoConstraints = false
+            button.addSubview(stack)
+
+            NSLayoutConstraint.activate([
+                stack.centerXAnchor.constraint(equalTo: button.centerXAnchor),
+                stack.centerYAnchor.constraint(equalTo: button.centerYAnchor),
+                stack.leadingAnchor.constraint(greaterThanOrEqualTo: button.leadingAnchor, constant: 8),
+                stack.trailingAnchor.constraint(lessThanOrEqualTo: button.trailingAnchor, constant: -8)
+            ])
+        } else {
+            button.setTitleColor(textColor, for: .normal)
+            button.setTitle(text, for: .normal)
+        }
 
         button
             .rx
