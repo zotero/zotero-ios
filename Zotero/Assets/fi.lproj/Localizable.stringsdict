@@ -1,213 +1,214 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
-  <dict>
-    <key>items.collections_selected</key>
-    <dict>
-        <key>NSStringLocalizedFormatKey</key>
-        <string>%#@collections_selected@</string>
-        <key>collections_selected</key>
-        <dict>
-            <key>NSStringFormatSpecTypeKey</key>
-            <string>NSStringPluralRuleType</string>
-            <key>NSStringFormatValueTypeKey</key>
-            <string>d</string>
-            <key>one</key>
-            <string>1 kokoelma valittu</string>
-            <key>other</key>
-            <string>%d kokoelmaa valittu</string>
-        </dict>
-    </dict>
-    <key>items.delete_question</key>
-    <dict>
-        <key>NSStringLocalizedFormatKey</key>
-        <string>%#@delete_question@</string>
-        <key>delete_question</key>
-        <dict>
-            <key>NSStringFormatSpecTypeKey</key>
-            <string>NSStringPluralRuleType</string>
-            <key>NSStringFormatValueTypeKey</key>
-            <string>d</string>
-            <key>one</key>
-            <string>Haluatko varmasti poistaa valitun nimikkeen?</string>
-            <key>other</key>
-            <string>Haluatko varmasti poistaa valitut nimikkeet?</string>
-        </dict>
-    </dict>
-    <key>items.remove_from_collection_question</key>
-    <dict>
-        <key>NSStringLocalizedFormatKey</key>
-        <string>%#@remove_from_collection_question@</string>
-        <key>remove_from_collection_question</key>
-        <dict>
-            <key>NSStringFormatSpecTypeKey</key>
-            <string>NSStringPluralRuleType</string>
-            <key>NSStringFormatValueTypeKey</key>
-            <string>d</string>
-            <key>one</key>
-            <string>Haluatko varmasti poistaa valitun nimikkeen tästä kokoelmasta?</string>
-            <key>other</key>
-            <string>Haluatko varmasti poistaa valitut nimikkeet tästä kokoelmasta?</string>
-        </dict>
-    </dict>
-    <key>items.toolbar_filter</key>
-    <dict>
-        <key>NSStringLocalizedFormatKey</key>
-        <string>%#@toolbar_filter@</string>
-        <key>toolbar_filter</key>
-        <dict>
-            <key>NSStringFormatSpecTypeKey</key>
-            <string>NSStringPluralRuleType</string>
-            <key>NSStringFormatValueTypeKey</key>
-            <string>d</string>
-            <key>one</key>
-            <string>Suodatin: 1 kohde</string>
-            <key>other</key>
-            <string>Suodatin: %d kohdetta</string>
-        </dict>
-    </dict>
-    <key>pdf.search.matches</key>
-    <dict>
-        <key>NSStringLocalizedFormatKey</key>
-        <string>%#@matches@</string>
-        <key>matches</key>
-        <dict>
-            <key>NSStringFormatSpecTypeKey</key>
-            <string>NSStringPluralRuleType</string>
-            <key>NSStringFormatValueTypeKey</key>
-            <string>d</string>
-            <key>one</key>
-            <string>1 hakuosuma löydetty</string>
-            <key>other</key>
-            <string>%d hakuosumaa löydetty</string>
-        </dict>
-    </dict>
-    <key>settings.storage.files_size_and_unit</key>
-    <dict>
-        <key>NSStringLocalizedFormatKey</key>
-        <string>%#@files@</string>
-        <key>files</key>
-        <dict>
-            <key>NSStringFormatSpecTypeKey</key>
-            <string>NSStringPluralRuleType</string>
-            <key>NSStringFormatValueTypeKey</key>
-            <string>d</string>
-            <key>one</key>
-            <string>1 tiedosto (%.2f %@)</string>
-            <key>other</key>
-            <string>%d tiedostoa (%.2f %@)</string>
-        </dict>
-    </dict>
-    <key>errors.sync_toolbar.errors</key>
-    <dict>
-        <key>NSStringLocalizedFormatKey</key>
-        <string>%#@errors@</string>
-        <key>errors</key>
-        <dict>
-            <key>NSStringFormatSpecTypeKey</key>
-            <string>NSStringPluralRuleType</string>
-            <key>NSStringFormatValueTypeKey</key>
-            <string>d</string>
-            <key>one</key>
-            <string>1 ongelma</string>
-            <key>other</key>
-            <string>%d ongelmaa</string>
-        </dict>
-    </dict>
-    <key>tag_picker.tags_selected</key>
-    <dict>
-        <key>NSStringLocalizedFormatKey</key>
-        <string>%#@tags_selected@</string>
-        <key>tags_selected</key>
-        <dict>
-            <key>NSStringFormatSpecTypeKey</key>
-            <string>NSStringPluralRuleType</string>
-            <key>NSStringFormatValueTypeKey</key>
-            <string>d</string>
-            <key>one</key>
-            <string>1 avainsana valittu</string>
-            <key>other</key>
-            <string>%d avainsanaa valittu</string>
-        </dict>
-    </dict>
-    <key>tag_picker.confirm_deletion</key>
-    <dict>
-        <key>NSStringLocalizedFormatKey</key>
-        <string>%#@confirm_deletion@</string>
-        <key>confirm_deletion</key>
-        <dict>
-            <key>NSStringFormatSpecTypeKey</key>
-            <string>NSStringPluralRuleType</string>
-            <key>NSStringFormatValueTypeKey</key>
-            <string>d</string>
-            <key>one</key>
-            <string>Haluatko varmasti poistaa 1 automaattisen avainsanan tästä kirjastosta?\n\nTätä toimintoa ei voi perua.</string>
-            <key>other</key>
-            <string>Haluatko varmasti poistaa %d automaattista avainsanaa tästä kirjastosta?\n\nTätä toimintoa ei voi perua.</string>
-        </dict>
-    </dict>
-    <key>settings.lines_logged</key>
-    <dict>
-        <key>NSStringLocalizedFormatKey</key>
-        <string>%#@lines_logged@</string>
-        <key>lines_logged</key>
-        <dict>
-            <key>NSStringFormatSpecTypeKey</key>
-            <string>NSStringPluralRuleType</string>
-            <key>NSStringFormatValueTypeKey</key>
-            <string>d</string>
-            <key>one</key>
-            <string>1 rivi lokitettu</string>
-            <key>other</key>
-            <string>%d riviä lokitettu</string>
-        </dict>
-    </dict>
-    <key>settings.lines</key>
-    <dict>
-        <key>NSStringLocalizedFormatKey</key>
-        <string>%#@lines@</string>
-        <key>lines</key>
-        <dict>
-            <key>NSStringFormatSpecTypeKey</key>
-            <string>NSStringPluralRuleType</string>
-            <key>NSStringFormatValueTypeKey</key>
-            <string>d</string>
-            <key>one</key>
-            <string>1 rivi</string>
-            <key>other</key>
-            <string>%d riviä</string>
-        </dict>
-    </dict>
-    <key>errors.sync_toolbar.webdav_error2</key>
-    <dict>
-        <key>NSStringLocalizedFormatKey</key>
-        <string>%#@webdav_error2@</string>
-        <key>webdav_error2</key>
-        <dict>
-            <key>NSStringFormatSpecTypeKey</key>
-            <string>NSStringPluralRuleType</string>
-            <key>NSStringFormatValueTypeKey</key>
-            <string>d</string>
-            <key>one</key>
-            <string>WebDAV-palvelimelta ei voitu poistaa yhtä tiedostoa</string>
-            <key>other</key>
-            <string>WebDAV-palvelimelta ei voitu poistaa %d tiedostoa</string>
-        </dict>
-    </dict>
-    <key>settings.general.after_x_days</key>
-    <dict>
-        <key>NSStringLocalizedFormatKey</key>
-        <string>%#@after_x_days@</string>
-        <key>after_x_days</key>
-        <dict>
-            <key>NSStringFormatSpecTypeKey</key>
-            <string>NSStringPluralRuleType</string>
-            <key>NSStringFormatValueTypeKey</key>
-            <string>d</string>
-            <key>one</key>
-            <string>1 päivän jälkeen</string>
-            <key>other</key>
-            <string>%d päivän jälkeen</string>
-        </dict>
-    </dict>
-  </dict>
+<dict>
+	<key>items.collections_selected</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@collections_selected@</string>
+		<key>collections_selected</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>1 kokoelma valittu</string>
+			<key>other</key>
+			<string>%d kokoelmaa valittu</string>
+		</dict>
+	</dict>
+	<key>items.delete_question</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@delete_question@</string>
+		<key>delete_question</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Haluatko varmasti poistaa valitun nimikkeen?</string>
+			<key>other</key>
+			<string>Haluatko varmasti poistaa valitut nimikkeet?</string>
+		</dict>
+	</dict>
+	<key>items.remove_from_collection_question</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@remove_from_collection_question@</string>
+		<key>remove_from_collection_question</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Haluatko varmasti poistaa valitun nimikkeen tästä kokoelmasta?</string>
+			<key>other</key>
+			<string>Haluatko varmasti poistaa valitut nimikkeet tästä kokoelmasta?</string>
+		</dict>
+	</dict>
+	<key>items.toolbar_filter</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@toolbar_filter@</string>
+		<key>toolbar_filter</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Suodatin: 1 kohde</string>
+			<key>other</key>
+			<string>Suodatin: %d kohdetta</string>
+		</dict>
+	</dict>
+	<key>pdf.search.matches</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@matches@</string>
+		<key>matches</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>1 hakuosuma löydetty</string>
+			<key>other</key>
+			<string>%d hakuosumaa löydetty</string>
+		</dict>
+	</dict>
+	<key>settings.storage.files_size_and_unit</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@files@ (%.2f %@)</string>
+		<key>files</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>1 tiedosto</string>
+			<key>other</key>
+			<string>%d tiedostoa</string>
+		</dict>
+	</dict>
+	<key>errors.sync_toolbar.errors</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@errors@</string>
+		<key>errors</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>1 ongelma</string>
+			<key>other</key>
+			<string>%d ongelmaa</string>
+		</dict>
+	</dict>
+	<key>tag_picker.tags_selected</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tags_selected@</string>
+		<key>tags_selected</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>1 avainsana valittu</string>
+			<key>other</key>
+			<string>%d avainsanaa valittu</string>
+		</dict>
+	</dict>
+	<key>tag_picker.confirm_deletion</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@confirm_deletion@</string>
+		<key>confirm_deletion</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Haluatko varmasti poistaa 1 automaattisen avainsanan tästä kirjastosta?\n\nTätä toimintoa ei voi perua.</string>
+			<key>other</key>
+			<string>Haluatko varmasti poistaa %d automaattista avainsanaa tästä kirjastosta?\n\nTätä toimintoa ei voi perua.</string>
+		</dict>
+	</dict>
+	<key>settings.lines_logged</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@lines_logged@</string>
+		<key>lines_logged</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>1 rivi lokitettu</string>
+			<key>other</key>
+			<string>%d riviä lokitettu</string>
+		</dict>
+	</dict>
+	<key>settings.lines</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@lines@</string>
+		<key>lines</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>1 rivi</string>
+			<key>other</key>
+			<string>%d riviä</string>
+		</dict>
+	</dict>
+	<key>errors.sync_toolbar.webdav_error2</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@webdav_error2@</string>
+		<key>webdav_error2</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>WebDAV-palvelimelta ei voitu poistaa yhtä tiedostoa</string>
+			<key>other</key>
+			<string>WebDAV-palvelimelta ei voitu poistaa %d tiedostoa</string>
+		</dict>
+	</dict>
+	<key>settings.general.after_x_days</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@after_x_days@</string>
+		<key>after_x_days</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>1 päivän jälkeen</string>
+			<key>other</key>
+			<string>%d päivän jälkeen</string>
+		</dict>
+	</dict>
+</dict>
 </plist>
