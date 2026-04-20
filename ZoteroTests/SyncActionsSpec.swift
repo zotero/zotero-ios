@@ -740,6 +740,48 @@ final class SyncActionsSpec: QuickSpec {
                     })
                 }
             }
+
+            context("remote settings deletions") {
+                it("doesn't treat lastReadAloudPosition deletions as lastRead deletions") {
+                    try! realm.write {
+                        let lastRead = RLastReadDate()
+                        lastRead.key = "EXISTINGKEY"
+                        lastRead.date = Date(timeIntervalSince1970: 1234)
+                        lastRead.groupKey = 1
+                        realm.add(lastRead)
+                    }
+
+                    waitUntil(timeout: .seconds(60), action: { doneAction in
+                        PerformDeletionsSyncAction(
+                            libraryId: .custom(.myLibrary),
+                            collections: [],
+                            items: [],
+                            searches: [],
+                            tags: [],
+                            settings: ["lastReadAloudPosition_u_R2NCC4YU"],
+                            conflictMode: .resolveConflicts,
+                            dbStorage: dbStorage,
+                            queue: .main
+                        )
+                        .result
+                        .subscribe(onSuccess: { result in
+                            expect(result.conflicts).to(beEmpty())
+                            expect(result.unexpectedMyLibraryLastReadDeletions).to(beEmpty())
+
+                            realm.refresh()
+                            let lastReadDates = realm.objects(RLastReadDate.self)
+                            expect(lastReadDates.count).to(equal(1))
+                            expect(lastReadDates.first?.key).to(equal("EXISTINGKEY"))
+
+                            doneAction()
+                        }, onFailure: { error in
+                            fail("PerformDeletionsSyncAction failed with \(error)")
+                            doneAction()
+                        })
+                        .disposed(by: disposeBag)
+                    })
+                }
+            }
         }
     }
 }

@@ -58,7 +58,7 @@ struct PerformDeletionsSyncAction: SyncAction {
                     }
                 }
 
-                let pageIndices = settings.filter({ $0.hasPrefix("lastPageIndex") })
+                let pageIndices = settings.filter({ $0.hasPrefix("lastPageIndex_") })
                 let hasPageIndices = try dbStorage.perform(request: CountObjectsDbRequest<RPageIndex>(), on: queue) > 0
                 if hasPageIndices {
                     try batch(values: pageIndices, batchSize: Self.batchSize) { uids in
@@ -74,7 +74,7 @@ struct PerformDeletionsSyncAction: SyncAction {
                 }
 
                 var unexpectedMyLibraryLastReadDeletions: [String] = []
-                let lastRead = settings.filter({ $0.hasPrefix("lastRead") })
+                let lastRead = settings.filter({ $0.hasPrefix("lastRead_") })
                 let hasLastRead = try dbStorage.perform(request: CountObjectsDbRequest<RLastReadDate>(), on: queue) > 0
                 if hasLastRead {
                     try batch(values: lastRead, batchSize: Self.batchSize) { uids in
