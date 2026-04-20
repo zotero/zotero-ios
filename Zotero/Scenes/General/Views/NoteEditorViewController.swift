@@ -20,7 +20,6 @@ final class NoteEditorViewController: UIViewController {
     }
 
     @IBOutlet private weak var webView: WKWebView!
-    @IBOutlet private weak var webViewBottom: NSLayoutConstraint!
     @IBOutlet private weak var tagsContainer: UIView!
     @IBOutlet private weak var tagsTitleLabel: UILabel!
     @IBOutlet private weak var tagsLabel: UILabel!
@@ -74,7 +73,6 @@ final class NoteEditorViewController: UIViewController {
         }
 
         setupNavbarItems(isClosing: false)
-        setupKeyboard()
         setupWebView()
         update(tags: viewModel.state.tags)
 
@@ -86,6 +84,7 @@ final class NoteEditorViewController: UIViewController {
             .disposed(by: disposeBag)
 
         func setupWebView() {
+            webView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor).isActive = true
             webView.scrollView.isScrollEnabled = false
 
             for handler in JSHandlers.allCases {
@@ -97,38 +96,6 @@ final class NoteEditorViewController: UIViewController {
                 return
             }
             webView.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
-        }
-
-        func setupKeyboard() {
-            NotificationCenter.default
-                .keyboardWillShow
-                .observe(on: MainScheduler.instance)
-                .subscribe(onNext: { [weak self] notification in
-                    guard let self, let data = notification.keyboardData else { return }
-                    moveWebView(toKeyboardData: data, controller: self)
-                })
-                .disposed(by: disposeBag)
-
-            NotificationCenter.default
-                .keyboardWillHide
-                .observe(on: MainScheduler.instance)
-                .subscribe(onNext: { [weak self] notification in
-                    guard let self, let data = notification.keyboardData else { return }
-                    moveWebView(toKeyboardData: data, controller: self)
-                })
-                .disposed(by: disposeBag)
-
-            NotificationCenter.default.removeObserver(webView!, name: UIResponder.keyboardWillChangeFrameNotification, object: nil)
-            NotificationCenter.default.removeObserver(webView!, name: UIResponder.keyboardWillShowNotification, object: nil)
-            NotificationCenter.default.removeObserver(webView!, name: UIResponder.keyboardWillHideNotification, object: nil)
-        }
-
-        func moveWebView(toKeyboardData data: KeyboardData, controller: NoteEditorViewController) {
-            let isClosing = data.endFrame.minY > data.startFrame.minY
-            controller.webViewBottom.constant = isClosing ? 0 : data.endFrame.height
-            UIView.animate(withDuration: data.animationDuration, delay: 0, options: data.animationOptions, animations: {
-                controller.view.layoutIfNeeded()
-            })
         }
     }
 

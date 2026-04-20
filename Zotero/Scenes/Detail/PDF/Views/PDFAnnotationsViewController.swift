@@ -58,7 +58,6 @@ final class PDFAnnotationsViewController: UIViewController {
         setupToolbar(to: viewModel.state)
         setupDataSource()
         setupSearchController()
-        setupKeyboardObserving()
     }
 
     override func viewIsAppearing(_ animated: Bool) {
@@ -280,16 +279,14 @@ final class PDFAnnotationsViewController: UIViewController {
     /// Scrolls to selected cell if it's not visible.
     private func focusSelectedCell() {
         guard !viewModel.state.sidebarEditingEnabled, let indexPath = tableView.indexPathForSelectedRow else { return }
-
         let cellFrame = tableView.rectForRow(at: indexPath)
-        let cellBottom = cellFrame.maxY - tableView.contentOffset.y
-        let tableViewBottom = tableView.superview!.bounds.maxY - tableView.contentInset.bottom
-        let safeAreaTop = tableView.superview!.safeAreaInsets.top
-
-        // Scroll either when cell bottom is below keyboard or cell top is not visible on screen
-        if cellBottom > tableViewBottom || cellFrame.minY < (safeAreaTop + tableView.contentOffset.y) {
+        let visibleBottom = tableView.contentOffset.y + tableView.bounds.height
+        let safeAreaTop = view.safeAreaInsets.top
+        let visibleTop = tableView.contentOffset.y + safeAreaTop
+        // Scroll when the selected cell falls outside the currently visible portion of the table view.
+        if cellFrame.maxY > visibleBottom || cellFrame.minY < visibleTop {
             // Scroll to top if cell is smaller than visible screen, so that it's fully visible, otherwise scroll to bottom.
-            let position: UITableView.ScrollPosition = cellFrame.height + safeAreaTop < tableViewBottom ? .top : .bottom
+            let position: UITableView.ScrollPosition = cellFrame.height + safeAreaTop < tableView.bounds.height ? .top : .bottom
             tableView.scrollToRow(at: indexPath, at: position, animated: false)
         }
     }
@@ -459,7 +456,7 @@ final class PDFAnnotationsViewController: UIViewController {
             toolbar.topAnchor.constraint(equalTo: toolbarContainer.topAnchor),
             toolbar.leadingAnchor.constraint(equalTo: toolbarContainer.leadingAnchor),
             toolbar.trailingAnchor.constraint(equalTo: toolbarContainer.trailingAnchor),
-            toolbar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            toolbar.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
             label.topAnchor.constraint(equalTo: view.topAnchor),
             label.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             label.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -529,34 +526,6 @@ final class PDFAnnotationsViewController: UIViewController {
             })
             .disposed(by: disposeBag)
         tableView.tableHeaderView = searchBar
-    }
-
-    private func setupTableView(with keyboardData: KeyboardData) {
-        var insets = tableView.contentInset
-        insets.bottom = keyboardData.visibleHeight
-        tableView.contentInset = insets
-    }
-
-    private func setupKeyboardObserving() {
-        NotificationCenter.default
-            .keyboardWillShow
-            .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { [weak self] notification in
-                if let data = notification.keyboardData {
-                    self?.setupTableView(with: data)
-                }
-            })
-            .disposed(by: disposeBag)
-
-        NotificationCenter.default
-            .keyboardWillHide
-            .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { [weak self] notification in
-                if let data = notification.keyboardData {
-                    self?.setupTableView(with: data)
-                }
-            })
-            .disposed(by: disposeBag)
     }
 
     private func setupToolbar(to state: PDFReaderState) {

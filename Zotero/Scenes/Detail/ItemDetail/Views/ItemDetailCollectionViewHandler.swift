@@ -132,33 +132,6 @@ final class ItemDetailCollectionViewHandler: NSObject {
         maxTitleWidth = titleWidth
         maxNonemptyTitleWidth = nonEmptyTitleWidth
         setupCollectionView()
-        setupKeyboardObserving()
-
-        func setupKeyboardObserving() {
-            NotificationCenter.default
-                .keyboardWillShow
-                .observe(on: MainScheduler.instance)
-                .subscribe(onNext: { [weak self] notification in
-                    guard let self, let data = notification.keyboardData else { return }
-                    setupCollectionView(with: data, self: self)
-                })
-                .disposed(by: disposeBag)
-
-            NotificationCenter.default
-                .keyboardWillHide
-                .observe(on: MainScheduler.instance)
-                .subscribe(onNext: { [weak self] notification in
-                    guard let self, let data = notification.keyboardData else { return }
-                    setupCollectionView(with: data, self: self)
-                })
-                .disposed(by: disposeBag)
-
-            func setupCollectionView(with keyboardData: KeyboardData, self: ItemDetailCollectionViewHandler) {
-                var insets = self.collectionView.contentInset
-                insets.bottom = keyboardData.visibleHeight
-                self.collectionView.contentInset = insets
-            }
-        }
 
         func setupCollectionView() {
             collectionView.collectionViewLayout = createCollectionViewLayout()
@@ -601,14 +574,13 @@ final class ItemDetailCollectionViewHandler: NSObject {
     func updateHeightAndScrollToUpdated(row: Row, state: ItemDetailState) {
         guard let indexPath = dataSource.indexPath(for: row), let cellFrame = collectionView.cellForItem(at: indexPath)?.frame else { return }
         reconfigure(rows: [row])
-        let cellBottom = cellFrame.maxY - collectionView.contentOffset.y
-        let tableViewBottom = collectionView.superview!.bounds.maxY - collectionView.contentInset.bottom
-        let safeAreaTop = collectionView.superview!.safeAreaInsets.top
-
-        // Scroll either when cell bottom is below keyboard or cell top is not visible on screen.
-        if cellBottom > tableViewBottom || cellFrame.minY < (safeAreaTop + collectionView.contentOffset.y) {
+        let visibleBottom = collectionView.contentOffset.y + collectionView.bounds.height
+        let safeAreaTop = collectionView.superview?.safeAreaInsets.top ?? 0
+        let visibleTop = collectionView.contentOffset.y + safeAreaTop
+        // Scroll when the updated cell falls outside the currently visible portion of the collection view.
+        if cellFrame.maxY > visibleBottom || cellFrame.minY < visibleTop {
             // Scroll to top if cell is smaller than visible screen, so that it's fully visible, otherwise scroll to bottom.
-            let position: UICollectionView.ScrollPosition = cellFrame.height + safeAreaTop < tableViewBottom ? .top : .bottom
+            let position: UICollectionView.ScrollPosition = cellFrame.height + safeAreaTop < collectionView.bounds.height ? .top : .bottom
             collectionView.scrollToItem(at: indexPath, at: position, animated: false)
         }
     }

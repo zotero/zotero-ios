@@ -71,6 +71,7 @@ final class ItemDetailViewController: UIViewController {
 
         navigationController?.setToolbarHidden(true, animated: false)
         collectionView.isHidden = true
+        collectionView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor).isActive = true
         setupFileObservers()
 
         viewModel.stateObservable
