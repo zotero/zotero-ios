@@ -266,6 +266,9 @@ final class SyncToolbarController {
 
             case .preconditionFailed(let libraryId):
                 return (L10n.Errors.SyncToolbar.conflictRetryLimit, SyncError.ErrorData(itemKeys: nil, libraryId: libraryId))
+
+            case .unexpectedMyLibraryLastReadDeletions(let keys):
+                return (L10n.Errors.SyncToolbar.unexpectedMyLibraryLastReadDeletions, SyncError.ErrorData(itemKeys: keys, libraryId: .custom(.myLibrary)))
             }
         }
 

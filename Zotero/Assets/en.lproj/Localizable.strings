@@ -418,6 +418,7 @@
 "errors.sync_toolbar.conflict_retry_limit" = "Remote sync in progress. Please try again in a few minutes.";
 "errors.sync_toolbar.group_permissions" = "You don’t have permission to edit groups.";
 "errors.sync_toolbar.internet_connection" = "Unable to connect to the network. Please try again.";
+"errors.sync_toolbar.unexpected_my_library_last_read_deletions" = "Sync received unexpected last read settings deletions for My Library.";
 "errors.sync_toolbar.personal_quota_reached" = "You have reached your Zotero Storage quota. Some files were not uploaded. Other Zotero data will continue to sync.\n\nSee your zotero.org account settings for additional storage options.";
 "errors.sync_toolbar.group_quota_reached" = "The group “%@” has reached its Zotero Storage quota. Some files were not uploaded. Other Zotero data will continue to sync.\n\nThe group owner can increase the group’s storage capacity from their storage settings on zotero.org.";
 "errors.sync_toolbar.insufficient_space" = "You have insufficient space on your WebDAV server. Some files were not uploaded. Other Zotero data will continue to sync.";

@@ -470,7 +470,8 @@ final class SyncController: SynchronizationController {
                  .webDavDeletionFailed,
                  .webDavVerification,
                  .webDavDownload,
-                 .webDavUpload:
+                 .webDavUpload,
+                 .unexpectedMyLibraryLastReadDeletions:
                 reportErrors.append(error)
             }
         }
@@ -1394,9 +1395,9 @@ final class SyncController: SynchronizationController {
             queue: self.workQueue
         )
         action.result.subscribe(on: self.workScheduler)
-                     .subscribe(onSuccess: { [weak self] conflicts in
+                     .subscribe(onSuccess: { [weak self] result in
                          self?.accessQueue.async(flags: .barrier) { [weak self] in
-                             self?.finishDeletionsSync(result: .success(conflicts), items: items, libraryId: libraryId)
+                             self?.finishDeletionsSync(result: .success(result), items: items, libraryId: libraryId)
                          }
                      }, onFailure: { [weak self] error in
                          self?.accessQueue.async(flags: .barrier) { [weak self] in
@@ -1406,9 +1407,14 @@ final class SyncController: SynchronizationController {
                      .disposed(by: self.disposeBag)
     }
 
-    private func finishDeletionsSync(result: Result<[(String, String)], Error>, items: [String]?, libraryId: LibraryIdentifier, version: Int? = nil) {
+    private func finishDeletionsSync(result: Result<PerformDeletionsSyncAction.Result, Error>, items: [String]?, libraryId: LibraryIdentifier, version: Int? = nil) {
         switch result {
-        case .success(let conflicts):
+        case .success(let result):
+            if !result.unexpectedMyLibraryLastReadDeletions.isEmpty {
+                nonFatalErrors.append(.unexpectedMyLibraryLastReadDeletions(keys: result.unexpectedMyLibraryLastReadDeletions))
+            }
+
+            let conflicts = result.conflicts
             if !conflicts.isEmpty {
                 self.resolve(conflict: .removedItemsHaveLocalChanges(keys: conflicts, libraryId: libraryId))
             } else {

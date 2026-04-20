@@ -8,10 +8,11 @@
 
 import Foundation
 
+import CocoaLumberjackSwift
 import RxSwift
 
 struct PerformDeletionsSyncAction: SyncAction {
-    typealias Result = [(String, String)]
+    typealias Result = (conflicts: [(String, String)], unexpectedMyLibraryLastReadDeletions: [String])
 
     private static let batchSize = 500
     let libraryId: LibraryIdentifier
@@ -24,7 +25,7 @@ struct PerformDeletionsSyncAction: SyncAction {
     unowned let dbStorage: DbStorage
     let queue: DispatchQueue
 
-    var result: Single<[(String, String)]> {
+    var result: Single<Result> {
         return Single.create { subscriber -> Disposable in
             do {
                 let hasCollections = try dbStorage.perform(request: CountObjectsDbRequest<RCollection>(), on: queue) > 0
@@ -72,6 +73,7 @@ struct PerformDeletionsSyncAction: SyncAction {
                     }
                 }
 
+                var unexpectedMyLibraryLastReadDeletions: [String] = []
                 let lastRead = settings.filter({ $0.hasPrefix("lastRead") })
                 let hasLastRead = try dbStorage.perform(request: CountObjectsDbRequest<RLastReadDate>(), on: queue) > 0
                 if hasLastRead {
@@ -82,12 +84,21 @@ struct PerformDeletionsSyncAction: SyncAction {
                             groupedIndices[libraryId, default: []].append(key)
                         }
                         for (libraryId, keys) in groupedIndices {
-                            try dbStorage.perform(request: PerformLastReadDeletionsDbRequest(libraryId: libraryId, keys: keys), on: queue)
+                            switch libraryId {
+                            case .custom(.myLibrary):
+                                unexpectedMyLibraryLastReadDeletions.append(contentsOf: keys)
+                                
+                            case .group:
+                                try dbStorage.perform(request: PerformLastReadDeletionsDbRequest(libraryId: libraryId, keys: keys), on: queue)
+                            }
                         }
                     }
                 }
+                if !unexpectedMyLibraryLastReadDeletions.isEmpty {
+                    DDLogWarn("PerformDeletionsSyncAction: Received unexpected My Library lastRead deletions - \(unexpectedMyLibraryLastReadDeletions)")
+                }
 
-                subscriber(.success(conflicts))
+                subscriber(.success((conflicts: conflicts, unexpectedMyLibraryLastReadDeletions: unexpectedMyLibraryLastReadDeletions)))
             } catch let error {
                 subscriber(.failure(error))
             }

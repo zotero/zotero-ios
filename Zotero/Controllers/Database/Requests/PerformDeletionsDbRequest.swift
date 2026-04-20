@@ -8,6 +8,7 @@
 
 import Foundation
 
+import CocoaLumberjackSwift
 import RealmSwift
 
 struct PerformItemDeletionsDbRequest: DbResponseRequest {
@@ -151,21 +152,7 @@ struct PerformLastReadDeletionsDbRequest: DbRequest {
     func process(in database: Realm) throws {
         switch libraryId {
         case .custom(.myLibrary):
-            let objects = database.objects(RItem.self).filter(.keys(keys, in: libraryId))
-            for object in objects {
-                guard !object.isInvalidated else { continue }
-
-                // My Library stores last-read directly on the item, so only preserve it when the field itself
-                // has an unsynced local change. Other local item changes should not block a remote last-read clear.
-                if object.changedFields.contains(.lastRead) {
-                    continue
-                }
-
-                if object.lastRead != nil {
-                    object.lastRead = nil
-                    object.updateEffectiveLastRead()
-                }
-            }
+            DDLogWarn("PerformLastReadDeletionsDbRequest: Ignoring deletion for My Library with keys \(keys)")
 
         case .group:
             let objects = database.objects(RLastReadDate.self).filter(.keys(keys, in: libraryId))
