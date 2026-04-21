@@ -65,11 +65,30 @@ final class PDFWorkerJSEngine {
     }
 
     func makeArrayBuffer(from data: Data) -> JSValue? {
-        return bufferFromArrayFunction?.call(withArguments: [Array(data)])
+        return makeBytesNoCopyValue(from: data) { contextRef, bytes, byteLength, deallocatorContext, exception in
+            JSObjectMakeArrayBufferWithBytesNoCopy(
+                contextRef,
+                bytes,
+                byteLength,
+                jsTypedArrayBytesDeallocator,
+                deallocatorContext,
+                exception
+            )
+        }
     }
 
     func makeUint8Array(from data: Data) -> JSValue? {
-        return uint8ArrayFromArrayFunction?.call(withArguments: [Array(data)])
+        return makeBytesNoCopyValue(from: data) { contextRef, bytes, byteLength, deallocatorContext, exception in
+            JSObjectMakeTypedArrayWithBytesNoCopy(
+                contextRef,
+                kJSTypedArrayTypeUint8Array,
+                bytes,
+                byteLength,
+                jsTypedArrayBytesDeallocator,
+                deallocatorContext,
+                exception
+            )
+        }
     }
 
     func postToWorker(_ message: JSValue) throws {
@@ -241,6 +260,39 @@ final class PDFWorkerJSEngine {
         intervals[id] = workItem
         queue.asyncAfter(deadline: .now() + .milliseconds(ms), execute: workItem)
     }
+
+    private typealias BytesNoCopyObjectFactory = (
+        JSContextRef,
+        UnsafeMutableRawPointer?,
+        Int,
+        UnsafeMutableRawPointer?,
+        UnsafeMutablePointer<JSValueRef?>?
+    ) -> JSObjectRef?
+
+    private func makeBytesNoCopyValue(from data: Data, using factory: BytesNoCopyObjectFactory) -> JSValue? {
+        let owner = JSDataBufferOwner(data: data)
+        let retainedOwner = Unmanaged.passRetained(owner)
+        var exception: JSValueRef?
+
+        guard let object = factory(
+            context.jsGlobalContextRef,
+            owner.bytes,
+            owner.length,
+            retainedOwner.toOpaque(),
+            &exception
+        ) else {
+            if let exception {
+                let message = JSValue(jsValueRef: exception, in: context)?.toString() ?? "Unknown JS exception"
+                lastException = message
+                onException?(message)
+            } else {
+                retainedOwner.release()
+            }
+            return nil
+        }
+
+        return JSValue(jsValueRef: object, in: context)
+    }
 }
 
 private func dataFromJSValue(_ value: JSValue) -> Data {
@@ -253,4 +305,25 @@ private func dataFromJSValue(_ value: JSValue) -> Data {
         bytes.append(UInt8(clamping: Int(byteValue)))
     }
     return Data(bytes)
+}
+
+private final class JSDataBufferOwner {
+    private let data: NSData
+
+    init(data: Data) {
+        self.data = data as NSData
+    }
+
+    var bytes: UnsafeMutableRawPointer? {
+        UnsafeMutableRawPointer(mutating: data.bytes)
+    }
+
+    var length: Int {
+        data.length
+    }
+}
+
+private func jsTypedArrayBytesDeallocator(_ bytes: UnsafeMutableRawPointer?, _ deallocatorContext: UnsafeMutableRawPointer?) {
+    guard let deallocatorContext else { return }
+    Unmanaged<JSDataBufferOwner>.fromOpaque(deallocatorContext).release()
 }

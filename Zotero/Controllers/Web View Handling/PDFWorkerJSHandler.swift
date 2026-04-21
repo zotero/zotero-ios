@@ -225,7 +225,7 @@ final class PDFWorkerJSHandler {
                         cachedWorkData = data
                     }
                 } else {
-                    data = try Data(contentsOf: url)
+                    data = try Data(contentsOf: url, options: [.mappedIfSafe])
                     cachedWorkData = nil
                 }
                 guard let buffer = engine.makeArrayBuffer(from: data) else {
