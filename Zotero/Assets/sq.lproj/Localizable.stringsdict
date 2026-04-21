@@ -93,9 +93,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>1 file</string>
+			<string>1 kartelë</string>
 			<key>other</key>
-			<string>%d files</string>
+			<string>%d kartela</string>
 		</dict>
 	</dict>
 	<key>errors.sync_toolbar.errors</key>
