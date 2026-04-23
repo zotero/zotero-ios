@@ -53,7 +53,7 @@ final class PDFWorkerJSEngine {
         guard let shimURL = bundle.url(forResource: "pdf_worker_shim", withExtension: "js") else {
             throw EngineError.missingShim
         }
-        guard let workerURL = bundle.url(forResource: "worker", withExtension: "js", subdirectory: "Bundled/pdf_worker") else {
+        guard let workerURL = bundle.url(forResource: "worker", withExtension: "js", subdirectory: "Bundled/document_worker") else {
             throw EngineError.missingWorker
         }
         try evaluateScript(at: shimURL)

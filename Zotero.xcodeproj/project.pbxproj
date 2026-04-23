@@ -4822,7 +4822,7 @@
 			buildConfigurationList = B311B32B2386A39800BCF592 /* Build configuration list for PBXNativeTarget "ZShare" */;
 			buildPhases = (
 				6179996F2D79F40B0051D35E /* SwiftGen */,
-				618D27E62DCA891900B60444 /* Bundle PDF Worker */,
+				618D27E62DCA891900B60444 /* Bundle Document Worker */,
 				B311B3182386A39800BCF592 /* Sources */,
 				B311B3192386A39800BCF592 /* Frameworks */,
 				B311B31A2386A39800BCF592 /* Resources */,
@@ -5163,7 +5163,7 @@
 			shellPath = /bin/sh;
 			shellScript = "sh \"$SCRIPT_INPUT_FILE_0\"\n";
 		};
-		618D27E62DCA891900B60444 /* Bundle PDF Worker */ = {
+		618D27E62DCA891900B60444 /* Bundle Document Worker */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -5172,9 +5172,9 @@
 			inputFileListPaths = (
 			);
 			inputPaths = (
-				"$(SRCROOT)/scripts/bundle_pdf_worker.sh",
+				"$(SRCROOT)/scripts/bundle_document_worker.sh",
 			);
-			name = "Bundle PDF Worker";
+			name = "Bundle Document Worker";
 			outputFileListPaths = (
 			);
 			outputPaths = (

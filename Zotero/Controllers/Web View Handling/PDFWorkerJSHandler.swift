@@ -137,7 +137,7 @@ final class PDFWorkerJSHandler {
         }
 
         func respondWithBuiltInCMap(to engine: PDFWorkerJSEngine, name: String, responseId: Int) {
-            let path = "Bundled/pdf_worker/cmaps"
+            let path = "Bundled/document_worker/cmaps"
             guard let url = Bundle.main.url(forResource: name, withExtension: "bcmap", subdirectory: path) else {
                 respondWithError(to: engine, id: responseId, message: "missing cmap \(name)")
                 return
@@ -164,7 +164,7 @@ final class PDFWorkerJSHandler {
         }
 
         func respondWithStandardFontData(to engine: PDFWorkerJSEngine, filename: String, responseId: Int) {
-            let path = "Bundled/pdf_worker/standard_fonts"
+            let path = "Bundled/document_worker/standard_fonts"
             guard let url = Bundle.main.url(forResource: filename, withExtension: nil, subdirectory: path) else {
                 respondWithError(to: engine, id: responseId, message: "missing font \(filename)")
                 return
