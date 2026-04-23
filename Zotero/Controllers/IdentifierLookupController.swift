@@ -140,15 +140,7 @@ final class IdentifierLookupController {
     }
 
     internal weak var webViewProvider: WebViewProvider?
-    internal weak var presenter: IdentifierLookupPresenter? {
-        didSet {
-            guard presenter == nil, oldValue != nil else { return }
-            cleanupLookupIfNeeded(force: false) { [weak self] cleaned in
-                guard let self, cleaned else { return }
-                observable.on(.next(Update(kind: .finishedAllLookups, lookupData: [])))
-            }
-        }
-    }
+    private weak var presenter: IdentifierLookupPresenter?
     private var lookupWebViewHandlersByLookupSettings: [LookupSettings: LookupWebViewHandler] = [:]
     
     // MARK: Object Lifecycle
@@ -206,7 +198,17 @@ final class IdentifierLookupController {
             lookupData = Array(lookupDataByIdentifier.values)
         }
     }
-    
+
+    func setPresenter(_ newPresenter: IdentifierLookupPresenter?, acknowledgeFailures: Bool) {
+        let oldPresenter = presenter
+        presenter = newPresenter
+        guard newPresenter == nil, oldPresenter != nil else { return }
+        cleanupLookupIfNeeded(force: false, failuresAcknowledged: acknowledgeFailures) { [weak self] cleaned in
+            guard let self, cleaned else { return }
+            observable.on(.next(Update(kind: .finishedAllLookups, lookupData: [])))
+        }
+    }
+
     func lookUp(libraryId: LibraryIdentifier, collectionKeys: Set<String>, identifier: String) {
         let lookupSettings = LookupSettings(libraryIdentifier: libraryId, collectionKeys: collectionKeys)
         guard let lookupWebViewHandler = lookupWebViewHandlersByLookupSettings[lookupSettings] else {
@@ -225,7 +227,7 @@ final class IdentifierLookupController {
                 lookupWebViewHandlersByLookupSettings.removeValue(forKey: key)?.removeFromSuperviewAsynchronously()
             }
             remoteFileDownloader.stop()
-            cleanupLookupIfNeeded(force: true) { [weak self] _ in
+            cleanupLookupIfNeeded(force: true, failuresAcknowledged: false) { [weak self] _ in
                 self?.observable.on(.next(Update(kind: .finishedAllLookups, lookupData: [])))
             }
             let storedItemResponses: [(ItemResponse, LibraryIdentifier)] = lookupDataByIdentifier.values.compactMap {
@@ -248,7 +250,7 @@ final class IdentifierLookupController {
             }
         }
     }
-    
+
     // MARK: Setups
     private func setupObservers() {
         remoteFileDownloader.observable
@@ -286,7 +288,7 @@ final class IdentifierLookupController {
                     break
                 }
                 guard cleanupLookup else { return }
-                cleanupLookupIfNeeded(force: false) { [weak self] _ in
+                cleanupLookupIfNeeded(force: false, failuresAcknowledged: false) { [weak self] _ in
                     guard let self else { return }
                     observable.on(.next(Update(kind: .finishedAllLookups, lookupData: [])))
                 }
@@ -309,7 +311,7 @@ final class IdentifierLookupController {
 
         case .failure(let error):
             DDLogError("IdentifierLookupController: lookup failed - \(error)")
-            cleanupLookupIfNeeded(force: false) { [weak self] _ in
+            cleanupLookupIfNeeded(force: false, failuresAcknowledged: false) { [weak self] _ in
                 guard let self else { return }
                 observable.on(.next(Update(kind: .lookupError(error: error), lookupData: Array(lookupDataByIdentifier.values))))
             }
@@ -322,7 +324,7 @@ final class IdentifierLookupController {
                 enqueueLookup(for: enqueuedIdentifiers) { [weak self] validIdentifiers in
                     guard let self else { return }
                     if validIdentifiers.isEmpty {
-                        cleanupLookupIfNeeded(force: false) { [weak self] _ in
+                        cleanupLookupIfNeeded(force: false, failuresAcknowledged: false) { [weak self] _ in
                             guard let self else { return }
                             observable.on(.next(Update(kind: .identifiersDetected(identifiers: []), lookupData: Array(lookupDataByIdentifier.values))))
                         }
@@ -360,10 +362,6 @@ final class IdentifierLookupController {
                     changeLookup(for: identifier, to: .failed) { [weak self] didChange in
                         guard let self, didChange else { return }
                         observable.on(.next(Update(kind: .lookupFailed(identifier: identifier), lookupData: Array(lookupDataByIdentifier.values))))
-                        cleanupLookupIfNeeded(force: false) { [weak self] cleaned in
-                            guard let self, cleaned else { return }
-                            observable.on(.next(Update(kind: .finishedAllLookups, lookupData: [])))
-                        }
                     }
                     return
                 }
@@ -375,10 +373,6 @@ final class IdentifierLookupController {
                     changeLookup(for: identifier, to: .failed) { [weak self] didChange in
                         guard let self, didChange else { return }
                         observable.on(.next(Update(kind: .parseFailed(identifier: identifier), lookupData: Array(lookupDataByIdentifier.values))))
-                        cleanupLookupIfNeeded(force: false) { [weak self] cleaned in
-                            guard let self, cleaned else { return }
-                            observable.on(.next(Update(kind: .finishedAllLookups, lookupData: [])))
-                        }
                     }
                     return
                 }
@@ -462,10 +456,6 @@ final class IdentifierLookupController {
                                 kind: .itemCreationFailed(identifier: identifier, response: response, attachments: attachments),
                                 lookupData: Array(lookupDataByIdentifier.values))
                             ))
-                            cleanupLookupIfNeeded(force: false) { [weak self] cleaned in
-                                guard let self, cleaned else { return }
-                                observable.on(.next(Update(kind: .finishedAllLookups, lookupData: [])))
-                            }
                         }
                     }
                 }
@@ -492,7 +482,7 @@ final class IdentifierLookupController {
                             ))
                         }
 
-                        cleanupLookupIfNeeded(force: false) { [weak self] cleaned in
+                        cleanupLookupIfNeeded(force: false, failuresAcknowledged: false) { [weak self] cleaned in
                             guard let self, cleaned else { return }
                             observable.on(.next(Update(kind: .finishedAllLookups, lookupData: [])))
                         }
@@ -503,24 +493,29 @@ final class IdentifierLookupController {
     }
 
     // MARK: Lookup Data
-    private func cleanupLookupIfNeeded(force: Bool, completion: @escaping (Bool) -> Void) {
+    private func cleanupLookupIfNeeded(force: Bool, failuresAcknowledged: Bool, completion: @escaping (Bool) -> Void) {
         if DispatchQueue.getSpecific(key: dispatchSpecificKey) == accessQueueLabel {
-            cleanupLookup(force: force, completion: completion)
+            cleanupLookup(force: force, failuresAcknowledged: failuresAcknowledged, completion: completion)
         } else {
             accessQueue.async(flags: .barrier) { [weak self] in
-                self?.cleanupLookup(force: force, completion: completion)
+                self?.cleanupLookup(force: force, failuresAcknowledged: failuresAcknowledged, completion: completion)
             }
         }
     }
 
-    private func cleanupLookup(force: Bool, completion: @escaping (Bool) -> Void) {
+    private func cleanupLookup(force: Bool, failuresAcknowledged: Bool, completion: @escaping (Bool) -> Void) {
         if force {
             // If forced, cleanup and return
             cleanup(completion: completion)
             return
         }
-        guard lookupRemainingCount == 0, remoteFileDownloader.batchData.2 == 0 else {
+        guard lookupRemainingCount == 0, remoteFileDownloader.batchData.totalCount == 0 else {
             // If there are remaining lookups, or downloading attachments, then just return
+            completion(false)
+            return
+        }
+        guard lookupFailedCount == 0 || failuresAcknowledged else {
+            // Failed lookups require an explicit acknowledged cleanup attempt.
             completion(false)
             return
         }

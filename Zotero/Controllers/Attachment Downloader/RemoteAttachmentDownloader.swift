@@ -44,7 +44,7 @@ final class RemoteAttachmentDownloader {
     private var batchProgress: Progress?
     private var totalBatchCount: Int = 0
 
-    var batchData: (Progress?, Int, Int) {
+    var batchData: (progress: Progress?, remainingCount: Int, totalCount: Int) {
         var progress: Progress?
         var totalBatchCount = 0
         var remainingBatchCount = 0

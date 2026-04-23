@@ -128,7 +128,9 @@ final class ScannerViewController: UIViewController {
     private func setupNavigationItems() {
         let cancelItem = UIBarButtonItem(title: L10n.close, style: .plain, target: nil, action: nil)
         cancelItem.rx.tap.subscribe(onNext: { [weak self] in
-            self?.navigationController?.presentingViewController?.dismiss(animated: true)
+            guard let self else { return }
+            coordinatorDelegate?.acknowledgeFailures = true
+            navigationController?.presentingViewController?.dismiss(animated: true)
         }).disposed(by: self.disposeBag)
         self.navigationItem.leftBarButtonItem = cancelItem
     }
