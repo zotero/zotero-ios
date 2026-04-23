@@ -76,22 +76,26 @@ class BaseItemsActionHandler: BackgroundDbProcessingActionHandler {
         }
 
         var components: [String] = []
-        for (idx, match) in matches.enumerated() {
-            if match.range.lowerBound > 0 {
-                let lowerBound = idx == 0 ? 0 : matches[idx - 1].range.upperBound
-                let precedingRange = normalizedSearchTerm.index(normalizedSearchTerm.startIndex, offsetBy: lowerBound)..<normalizedSearchTerm.index(normalizedSearchTerm.startIndex, offsetBy: match.range.lowerBound)
-                let precedingComponents = separateComponents(from: String(normalizedSearchTerm[precedingRange]))
+        var previousMatchEnd = normalizedSearchTerm.startIndex
+        for match in matches {
+            guard let matchRange = Range(match.range, in: normalizedSearchTerm) else { continue }
+
+            if matchRange.lowerBound > previousMatchEnd {
+                let precedingComponents = separateComponents(from: String(normalizedSearchTerm[previousMatchEnd..<matchRange.lowerBound]))
                 components.append(contentsOf: precedingComponents)
             }
 
-            let upperBound = normalizedSearchTerm[normalizedSearchTerm.index(normalizedSearchTerm.startIndex, offsetBy: (match.range.upperBound - 1))] == "\"" ? match.range.upperBound - 1 : match.range.upperBound
-            let range = normalizedSearchTerm.index(normalizedSearchTerm.startIndex, offsetBy: (match.range.lowerBound + 1))..<normalizedSearchTerm.index(normalizedSearchTerm.startIndex, offsetBy: upperBound)
-            components.append(String(normalizedSearchTerm[range]))
+            // Strip the opening quote, and the closing quote if present
+            var innerStart = normalizedSearchTerm.index(after: matchRange.lowerBound)
+            let innerEnd = normalizedSearchTerm[normalizedSearchTerm.index(before: matchRange.upperBound)] == "\"" ? normalizedSearchTerm.index(before: matchRange.upperBound) : matchRange.upperBound
+            if innerStart > innerEnd { innerStart = innerEnd }
+            components.append(String(normalizedSearchTerm[innerStart..<innerEnd]))
+
+            previousMatchEnd = matchRange.upperBound
         }
 
-        if let match = matches.last, match.range.upperBound != (normalizedSearchTerm.count - 1) {
-            let lastRange = normalizedSearchTerm.index(normalizedSearchTerm.startIndex, offsetBy: match.range.upperBound)..<normalizedSearchTerm.endIndex
-            let lastComponents = separateComponents(from: String(normalizedSearchTerm[lastRange]))
+        if previousMatchEnd < normalizedSearchTerm.endIndex {
+            let lastComponents = separateComponents(from: String(normalizedSearchTerm[previousMatchEnd..<normalizedSearchTerm.endIndex]))
             components.append(contentsOf: lastComponents)
         }
 
