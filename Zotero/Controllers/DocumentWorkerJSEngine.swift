@@ -1,5 +1,5 @@
 //
-//  PDFWorkerJSEngine.swift
+//  DocumentWorkerJSEngine.swift
 //  Zotero
 //
 //  Created by Miltiadis Vasilakis on 30/12/25.
@@ -10,7 +10,7 @@ import Foundation
 import JavaScriptCore
 import Security
 
-final class PDFWorkerJSEngine {
+final class DocumentWorkerJSEngine {
     enum EngineError: Swift.Error {
         case missingShim
         case missingWorker
@@ -50,7 +50,7 @@ final class PDFWorkerJSEngine {
     }
 
     func loadWorkerScripts() throws {
-        guard let shimURL = bundle.url(forResource: "pdf_worker_shim", withExtension: "js") else {
+        guard let shimURL = bundle.url(forResource: "document_worker_shim", withExtension: "js") else {
             throw EngineError.missingShim
         }
         guard let workerURL = bundle.url(forResource: "worker", withExtension: "js", subdirectory: "Bundled/document_worker") else {

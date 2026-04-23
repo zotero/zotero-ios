@@ -1,5 +1,5 @@
 //
-//  PDFWorkerController.swift
+//  DocumentWorkerController.swift
 //  Zotero
 //
 //  Created by Miltiadis Vasilakis on 3/2/25.
@@ -12,7 +12,7 @@ import OrderedCollections
 import CocoaLumberjackSwift
 import RxSwift
 
-final class PDFWorkerController {
+final class DocumentWorkerController {
     // MARK: Types
     enum Priority {
         case `default`
@@ -49,7 +49,7 @@ final class PDFWorkerController {
         let priority: Priority
         fileprivate(set) var state: State = .pending
         fileprivate var subjectsByWork: OrderedDictionary<Work, PublishSubject<Update>> = [:]
-        fileprivate var handler: PDFWorkerJSHandler?
+        fileprivate var handler: DocumentWorkerJSHandler?
 
         init(file: FileData, shouldCacheData: Bool, priority: Priority) {
             self.file = file
@@ -57,7 +57,7 @@ final class PDFWorkerController {
             self.priority = priority
         }
 
-        static func == (lhs: PDFWorkerController.Worker, rhs: PDFWorkerController.Worker) -> Bool {
+        static func == (lhs: DocumentWorkerController.Worker, rhs: DocumentWorkerController.Worker) -> Bool {
             lhs.id == rhs.id
         }
 
@@ -129,18 +129,18 @@ final class PDFWorkerController {
     private var queuedByPriority: [Priority: OrderedSet<Worker>] = [:]
     private var runningByPriority: [Priority: OrderedSet<Worker>] = [:]
     private var failed: Set<Worker> = []
-    private var preloadedPDFWorkerHandler: PDFWorkerJSHandler?
+    private var preloadedDocumentWorkerHandler: DocumentWorkerJSHandler?
 
     // MARK: Object Lifecycle
     init(fileStorage: FileStorage) {
         dispatchSpecificKey = DispatchSpecificKey<String>()
-        accessQueueLabel = "org.zotero.PDFWorkerController.accessQueue"
+        accessQueueLabel = "org.zotero.DocumentWorkerController.accessQueue"
         accessQueue = DispatchQueue(label: accessQueueLabel, qos: .userInteractive, attributes: .concurrent)
         accessQueue.setSpecific(key: dispatchSpecificKey, value: accessQueueLabel)
         self.fileStorage = fileStorage
         disposeBag = DisposeBag()
         accessQueue.async(flags: .barrier) { [weak self] in
-            self?.preloadPDFWorkerIfIdle()
+            self?.preloadDocumentWorkerIfIdle()
         }
     }
 
@@ -193,12 +193,12 @@ final class PDFWorkerController {
                 // Assign preparing state and place in proper queue, then prepare worker handler.
                 updateStateAndQueues(for: worker, state: .preparing)
                 // Prepare worker handler.
-                let pdfWorkerHandler = preloadedPDFWorkerHandler ?? PDFWorkerJSHandler()
+                let documentWorkerHandler = preloadedDocumentWorkerHandler ?? DocumentWorkerJSHandler()
                 // Setup handler for worker, consume preloaded handler, just in case it was used, assign queued state and place in proper queue.
-                setup(pdfWorkerHandler: pdfWorkerHandler, for: worker)
-                preloadedPDFWorkerHandler = nil
+                setup(documentWorkerHandler: documentWorkerHandler, for: worker)
+                preloadedDocumentWorkerHandler = nil
                 accessQueue.async(flags: .barrier) { [weak self] in
-                    self?.preloadPDFWorkerIfIdle()
+                    self?.preloadDocumentWorkerIfIdle()
                 }
                 updateStateAndQueues(for: worker, state: .queued)
                 // Start work if needed to run queued worker.
@@ -226,14 +226,14 @@ final class PDFWorkerController {
         return subject.asObservable()
     }
 
-    private func setup(pdfWorkerHandler: PDFWorkerJSHandler, for worker: Worker) {
-        pdfWorkerHandler.workFile = worker.file
-        pdfWorkerHandler.shouldCacheWorkData = worker.shouldCacheData
-        setupObserver(in: worker, for: pdfWorkerHandler)
-        worker.handler = pdfWorkerHandler
+    private func setup(documentWorkerHandler: DocumentWorkerJSHandler, for worker: Worker) {
+        documentWorkerHandler.workFile = worker.file
+        documentWorkerHandler.shouldCacheWorkData = worker.shouldCacheData
+        setupObserver(in: worker, for: documentWorkerHandler)
+        worker.handler = documentWorkerHandler
 
-        func setupObserver(in worker: Worker, for pdfWorkerHandler: PDFWorkerJSHandler) {
-            pdfWorkerHandler.observable.subscribe(onNext: { [weak self, weak worker] event in
+        func setupObserver(in worker: Worker, for documentWorkerHandler: DocumentWorkerJSHandler) {
+            documentWorkerHandler.observable.subscribe(onNext: { [weak self, weak worker] event in
                 guard let self else { return }
                 accessQueue.async(flags: .barrier) { [weak self, weak worker] in
                     guard let self, let worker, let work = Work(id: event.workId), worker.subjectsByWork[work] != nil else { return }
@@ -245,7 +245,7 @@ final class PDFWorkerController {
                         }
 
                     case .failure(let error):
-                        DDLogError("PDFWorkerController: recognizer failed - \(error)")
+                        DDLogError("DocumentWorkerController: recognizer failed - \(error)")
                         finishWork(work, in: worker) { $0?.on(.next(Update(work: work, kind: .failed))) }
                     }
                 }
@@ -266,7 +266,7 @@ final class PDFWorkerController {
             }
         }
         guard let worker else { return }
-        guard let pdfWorkerHandler = worker.handler, let work = worker.subjectsByWork.keys.first, let subject = worker.subjectsByWork[work] else {
+        guard let documentWorkerHandler = worker.handler, let work = worker.subjectsByWork.keys.first, let subject = worker.subjectsByWork[work] else {
             // This shouldn't happen, move worker back to ready state.
             updateStateAndQueues(for: worker, state: .ready)
             startWorkIfNeeded()
@@ -278,10 +278,10 @@ final class PDFWorkerController {
         subject.on(.next(Update(work: work, kind: .inProgress)))
         switch work {
         case .recognizer:
-            pdfWorkerHandler.recognize(workId: work.id)
+            documentWorkerHandler.recognize(workId: work.id)
 
         case .fullText(let pages):
-            pdfWorkerHandler.getFullText(pages: pages, workId: work.id)
+            documentWorkerHandler.getFullText(pages: pages, workId: work.id)
         }
         // Start another work if needed.
         startWorkIfNeeded()
@@ -297,17 +297,17 @@ final class PDFWorkerController {
             }
         }
 
-        func finishWork(_ work: Work, worker: Worker, completion: ((_ subject: PublishSubject<Update>?) -> Void)?, controller: PDFWorkerController) {
+        func finishWork(_ work: Work, worker: Worker, completion: ((_ subject: PublishSubject<Update>?) -> Void)?, controller: DocumentWorkerController) {
             let subject = worker.subjectsByWork.removeValue(forKey: work)
             controller.updateStateAndQueues(for: worker, state: worker.subjectsByWork.isEmpty ? .ready : .queued)
-            DDLogInfo("PDFWorkerController: finished \(work) in \(worker)")
+            DDLogInfo("DocumentWorkerController: finished \(work) in \(worker)")
             completion?(subject)
             controller.startWorkIfNeeded()
         }
     }
 
     func cancelWork(_ work: Work, in worker: Worker) {
-        DDLogInfo("PDFWorkerController: cancelled \(work) in \(worker)")
+        DDLogInfo("DocumentWorkerController: cancelled \(work) in \(worker)")
         finishWork(work, in: worker) { $0?.on(.next(Update(work: work, kind: .cancelled))) }
     }
 
@@ -321,8 +321,8 @@ final class PDFWorkerController {
             }
         }
 
-        func cancelAllWorks(in worker: Worker, startNextWorkIfNeeded: Bool, controller: PDFWorkerController) {
-            DDLogInfo("PDFWorkerController: cancel all works in \(worker)")
+        func cancelAllWorks(in worker: Worker, startNextWorkIfNeeded: Bool, controller: DocumentWorkerController) {
+            DDLogInfo("DocumentWorkerController: cancel all works in \(worker)")
             // Immediately release worker handler and assign pending state to worker. If another work is queued for this worker, a new handler will be created.
             worker.handler = nil
             controller.updateStateAndQueues(for: worker, state: .pending)
@@ -332,7 +332,7 @@ final class PDFWorkerController {
             worker.subjectsByWork.removeAll()
             guard startNextWorkIfNeeded else { return }
             controller.startWorkIfNeeded()
-            controller.preloadPDFWorkerIfIdle()
+            controller.preloadDocumentWorkerIfIdle()
         }
     }
 
@@ -343,7 +343,7 @@ final class PDFWorkerController {
     func cancellAllWorks() {
         accessQueue.async(flags: .barrier) { [weak self] in
             guard let self else { return }
-            DDLogInfo("PDFWorkerController: cancel all works")
+            DDLogInfo("DocumentWorkerController: cancel all works")
             var workers: Set<Worker> = []
             workers.formUnion(preparing)
             workers.formUnion(ready)
@@ -358,12 +358,12 @@ final class PDFWorkerController {
         }
     }
 
-    private func preloadPDFWorkerIfIdle() {
-        guard preloadedPDFWorkerHandler == nil,
+    private func preloadDocumentWorkerIfIdle() {
+        guard preloadedDocumentWorkerHandler == nil,
               ready.isEmpty,
               preparing.isEmpty,
               !Priority.inDescendingOrder.contains(where: { !queuedByPriority[$0, default: []].isEmpty || !runningByPriority[$0, default: []].isEmpty })
         else { return }
-        preloadedPDFWorkerHandler = PDFWorkerJSHandler()
+        preloadedDocumentWorkerHandler = DocumentWorkerJSHandler()
     }
 }

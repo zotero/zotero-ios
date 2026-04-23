@@ -31,8 +31,8 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
     }
 
     private let viewModel: ViewModel<PDFReaderActionHandler>
-    private unowned let pdfWorkerController: PDFWorkerController
-    private var speechWorker: PDFWorkerController.Worker?
+    private unowned let documentWorkerController: DocumentWorkerController
+    private var speechWorker: DocumentWorkerController.Worker?
     let disposeBag: DisposeBag
 
     var state: PDFReaderState { return viewModel.state }
@@ -186,9 +186,9 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         return false
     }
 
-    init(viewModel: ViewModel<PDFReaderActionHandler>, pdfWorkerController: PDFWorkerController, compactSize: Bool) {
+    init(viewModel: ViewModel<PDFReaderActionHandler>, documentWorkerController: DocumentWorkerController, compactSize: Bool) {
         self.viewModel = viewModel
-        self.pdfWorkerController = pdfWorkerController
+        self.documentWorkerController = documentWorkerController
         isCompactWidth = compactSize
         disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
@@ -400,7 +400,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
 
     deinit {
         if let speechWorker {
-            pdfWorkerController.cleanupWorker(speechWorker)
+            documentWorkerController.cleanupWorker(speechWorker)
         }
         viewModel.process(action: .changeIdleTimerDisabled(false))
         viewModel.process(action: .deinitialiseReader)
@@ -1058,10 +1058,10 @@ extension PDFReaderViewController: SpeechmanagerDelegate {
             completion(nil)
             return
         }
-        let speechWorker = speechWorker ?? PDFWorkerController.Worker(file: file as! FileData, shouldCacheData: true, priority: .high)
+        let speechWorker = speechWorker ?? DocumentWorkerController.Worker(file: file as! FileData, shouldCacheData: true, priority: .high)
         self.speechWorker = speechWorker
         let start = CFAbsoluteTimeGetCurrent()
-        pdfWorkerController.queue(work: .fullText(pages: indices.map({ Int($0) })), in: speechWorker)
+        documentWorkerController.queue(work: .fullText(pages: indices.map({ Int($0) })), in: speechWorker)
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { update in
                 switch update.kind {
