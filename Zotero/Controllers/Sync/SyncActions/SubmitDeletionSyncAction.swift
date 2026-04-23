@@ -66,7 +66,7 @@ struct SubmitDeletionSyncAction: SyncAction {
                         var groupedSettings: [LibraryIdentifier: [String]] = [:]
                         for uid in keys {
                             // only lastRead is deletable
-                            guard uid.starts(with: "lastRead"), let (key, libraryId) = try? SettingKeyParser.parse(key: uid) else { continue }
+                            guard uid.starts(with: "lastRead_"), let (key, libraryId) = try? SettingKeyParser.parse(key: uid) else { continue }
                             groupedSettings[libraryId, default: []].append(key)
                         }
                         for (libraryId, keys) in groupedSettings {

@@ -51,9 +51,9 @@ struct MarkSettingsAsSyncedDbRequest: DbRequest {
     func process(in database: Realm) throws {
         for setting in settings {
             let object: UpdatableObject&Syncable
-            if setting.uid.starts(with: "lastRead"), let lastRead = database.objects(RLastReadDate.self).uniqueObject(key: setting.key, libraryId: setting.libraryId) {
+            if setting.uid.starts(with: "lastRead_"), let lastRead = database.objects(RLastReadDate.self).uniqueObject(key: setting.key, libraryId: setting.libraryId) {
                 object = lastRead
-            } else if setting.uid.starts(with: "lastPageIndex"), let pageIndex = database.objects(RPageIndex.self).uniqueObject(key: setting.key, libraryId: setting.libraryId) {
+            } else if setting.uid.starts(with: "lastPageIndex_"), let pageIndex = database.objects(RPageIndex.self).uniqueObject(key: setting.key, libraryId: setting.libraryId) {
                 object = pageIndex
             } else {
                 DDLogError("MarkSettingsAsSyncedDbRequest: could not find setting for \(setting.uid)")

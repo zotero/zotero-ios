@@ -143,22 +143,32 @@ struct PerformPageIndexDeletionsDbRequest: DbRequest {
 }
 
 struct PerformLastReadDeletionsDbRequest: DbRequest {
+    enum Error: Swift.Error {
+        case myLibraryNotSupported
+    }
+
     let libraryId: LibraryIdentifier
     let keys: [String]
 
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
-        let objects = database.objects(RLastReadDate.self).filter(.keys(keys, in: libraryId))
-        for object in objects {
-            guard !object.isInvalidated else { continue }
-            if object.isChanged {
-                // If remotely deleted lastRead is changed locally, we want to keep the lastRead, so we mark that
-                // this lastRead is new and it will be reinserted by sync
-                object.markAsChanged(in: database)
-            } else {
-                object.willRemove(in: database)
-                database.delete(object)
+        switch libraryId {
+        case .custom(.myLibrary):
+            throw Error.myLibraryNotSupported
+
+        case .group:
+            let objects = database.objects(RLastReadDate.self).filter(.keys(keys, in: libraryId))
+            for object in objects {
+                guard !object.isInvalidated else { continue }
+                if object.isChanged {
+                    // If remotely deleted lastRead is changed locally, we want to keep the lastRead, so we mark that
+                    // this lastRead is new and it will be reinserted by sync
+                    object.markAsChanged(in: database)
+                } else {
+                    object.willRemove(in: database)
+                    database.delete(object)
+                }
             }
         }
     }

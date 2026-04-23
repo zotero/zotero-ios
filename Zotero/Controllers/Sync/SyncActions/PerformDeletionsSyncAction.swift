@@ -8,10 +8,11 @@
 
 import Foundation
 
+import CocoaLumberjackSwift
 import RxSwift
 
 struct PerformDeletionsSyncAction: SyncAction {
-    typealias Result = [(String, String)]
+    typealias Result = (conflicts: [(String, String)], unexpectedMyLibraryLastReadDeletions: [String])
 
     private static let batchSize = 500
     let libraryId: LibraryIdentifier
@@ -24,7 +25,7 @@ struct PerformDeletionsSyncAction: SyncAction {
     unowned let dbStorage: DbStorage
     let queue: DispatchQueue
 
-    var result: Single<[(String, String)]> {
+    var result: Single<Result> {
         return Single.create { subscriber -> Disposable in
             do {
                 let hasCollections = try dbStorage.perform(request: CountObjectsDbRequest<RCollection>(), on: queue) > 0
@@ -57,7 +58,7 @@ struct PerformDeletionsSyncAction: SyncAction {
                     }
                 }
 
-                let pageIndices = settings.filter({ $0.hasPrefix("lastPageIndex") })
+                let pageIndices = settings.filter({ $0.hasPrefix("lastPageIndex_") })
                 let hasPageIndices = try dbStorage.perform(request: CountObjectsDbRequest<RPageIndex>(), on: queue) > 0
                 if hasPageIndices {
                     try batch(values: pageIndices, batchSize: Self.batchSize) { uids in
@@ -72,7 +73,8 @@ struct PerformDeletionsSyncAction: SyncAction {
                     }
                 }
 
-                let lastRead = settings.filter({ $0.hasPrefix("lastRead") })
+                var unexpectedMyLibraryLastReadDeletions: [String] = []
+                let lastRead = settings.filter({ $0.hasPrefix("lastRead_") })
                 let hasLastRead = try dbStorage.perform(request: CountObjectsDbRequest<RLastReadDate>(), on: queue) > 0
                 if hasLastRead {
                     try batch(values: lastRead, batchSize: Self.batchSize) { uids in
@@ -82,12 +84,25 @@ struct PerformDeletionsSyncAction: SyncAction {
                             groupedIndices[libraryId, default: []].append(key)
                         }
                         for (libraryId, keys) in groupedIndices {
-                            try dbStorage.perform(request: PerformLastReadDeletionsDbRequest(libraryId: libraryId, keys: keys), on: queue)
+                            do {
+                                try dbStorage.perform(request: PerformLastReadDeletionsDbRequest(libraryId: libraryId, keys: keys), on: queue)
+                            } catch let error {
+                                switch error {
+                                case PerformLastReadDeletionsDbRequest.Error.myLibraryNotSupported:
+                                    unexpectedMyLibraryLastReadDeletions.append(contentsOf: keys)
+
+                                default:
+                                    throw error
+                                }
+                            }
                         }
                     }
                 }
+                if !unexpectedMyLibraryLastReadDeletions.isEmpty {
+                    DDLogWarn("PerformDeletionsSyncAction: Received unexpected My Library lastRead deletions - \(unexpectedMyLibraryLastReadDeletions)")
+                }
 
-                subscriber(.success(conflicts))
+                subscriber(.success((conflicts: conflicts, unexpectedMyLibraryLastReadDeletions: unexpectedMyLibraryLastReadDeletions)))
             } catch let error {
                 subscriber(.failure(error))
             }
