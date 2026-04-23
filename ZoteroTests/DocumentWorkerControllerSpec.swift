@@ -1,5 +1,5 @@
 //
-//  PDFWorkerControllerSpec.swift
+//  DocumentWorkerControllerSpec.swift
 //  ZoteroTests
 //
 //  Created by Miltiadis Vasilakis on 21/2/25.
@@ -14,33 +14,33 @@ import Nimble
 import Quick
 import RxSwift
 
-final class PDFWorkerControllerSpec: QuickSpec {
+final class DocumentWorkerControllerSpec: QuickSpec {
     override class func spec() {
-        var pdfWorkerController: PDFWorkerController!
+        var documentWorkerController: DocumentWorkerController!
         var disposeBag: DisposeBag!
 
         beforeSuite {
-            pdfWorkerController = PDFWorkerController(fileStorage: TestControllers.fileStorage)
+            documentWorkerController = DocumentWorkerController(fileStorage: TestControllers.fileStorage)
             disposeBag = DisposeBag()
         }
 
-        describe("a PDF Worker Controller") {
+        describe("a Document Worker Controller") {
             context("with the JavaScriptCore shim") {
-                it("can evaluate the pdf worker shim in JavaScriptCore") {
-                    let bundle = Bundle(for: PDFWorkerController.self)
-                    guard let url = bundle.url(forResource: "pdf_worker_shim", withExtension: "js") else {
-                        fail("pdf_worker_shim.js not found in app bundle")
+                it("can evaluate the document worker shim in JavaScriptCore") {
+                    let bundle = Bundle(for: DocumentWorkerController.self)
+                    guard let url = bundle.url(forResource: "document_worker_shim", withExtension: "js") else {
+                        fail("document_worker_shim.js not found in app bundle")
                         return
                     }
                     guard let script = try? String(contentsOf: url, encoding: .utf8) else {
-                        fail("pdf_worker_shim.js could not be read")
+                        fail("document_worker_shim.js could not be read")
                         return
                     }
 
                     var didPostMessage = false
 
-                    let queue = DispatchQueue(label: "org.zotero.PDFWorkerControllerSpec.queue")
-                    let engine = PDFWorkerJSEngine(bundle: bundle, queue: queue)
+                    let queue = DispatchQueue(label: "org.zotero.DocumentWorkerControllerSpec.queue")
+                    let engine = DocumentWorkerJSEngine(bundle: bundle, queue: queue)
                     engine.onPostMessage = { _, _ in
                         didPostMessage = true
                     }
@@ -65,12 +65,12 @@ final class PDFWorkerControllerSpec: QuickSpec {
                 expect(TestControllers.fileStorage.has(file)).to(beTrue())
 
                 it("can extract recognizer data") {
-                    let work: PDFWorkerController.Work = .recognizer
-                    let worker = PDFWorkerController.Worker(file: file, shouldCacheData: false, priority: .default)
-                    var emittedUpdates: [PDFWorkerController.Update.Kind] = []
+                    let work: DocumentWorkerController.Work = .recognizer
+                    let worker = DocumentWorkerController.Worker(file: file, shouldCacheData: false, priority: .default)
+                    var emittedUpdates: [DocumentWorkerController.Update.Kind] = []
 
                     waitUntil(timeout: .seconds(10)) { completion in
-                        pdfWorkerController.queue(work: work, in: worker)
+                        documentWorkerController.queue(work: work, in: worker)
                             .subscribe(onNext: { update in
                                 expect(update.work).to(equal(work))
                                 emittedUpdates.append(update.kind)
@@ -90,12 +90,12 @@ final class PDFWorkerControllerSpec: QuickSpec {
                 }
 
                 it("can extract full text") {
-                    let work: PDFWorkerController.Work = .fullText(pages: nil)
-                    let worker = PDFWorkerController.Worker(file: file, shouldCacheData: false, priority: .default)
-                    var emittedUpdates: [PDFWorkerController.Update.Kind] = []
+                    let work: DocumentWorkerController.Work = .fullText(pages: nil)
+                    let worker = DocumentWorkerController.Worker(file: file, shouldCacheData: false, priority: .default)
+                    var emittedUpdates: [DocumentWorkerController.Update.Kind] = []
 
                     waitUntil(timeout: .seconds(20)) { completion in
-                        pdfWorkerController.queue(work: work, in: worker)
+                        documentWorkerController.queue(work: work, in: worker)
                             .subscribe(onNext: { update in
                                 expect(update.work).to(equal(work))
                                 emittedUpdates.append(update.kind)
@@ -115,12 +115,12 @@ final class PDFWorkerControllerSpec: QuickSpec {
                 }
 
                 it("can extract text from a single page") {
-                    let work: PDFWorkerController.Work = .fullText(pages: [0])
-                    let worker = PDFWorkerController.Worker(file: file, shouldCacheData: false, priority: .default)
-                    var emittedUpdates: [PDFWorkerController.Update.Kind] = []
+                    let work: DocumentWorkerController.Work = .fullText(pages: [0])
+                    let worker = DocumentWorkerController.Worker(file: file, shouldCacheData: false, priority: .default)
+                    var emittedUpdates: [DocumentWorkerController.Update.Kind] = []
 
                     waitUntil(timeout: .seconds(20)) { completion in
-                        pdfWorkerController.queue(work: work, in: worker)
+                        documentWorkerController.queue(work: work, in: worker)
                             .subscribe(onNext: { update in
                                 expect(update.work).to(equal(work))
                                 emittedUpdates.append(update.kind)
@@ -140,12 +140,12 @@ final class PDFWorkerControllerSpec: QuickSpec {
                 }
 
                 it("can extract text from two pages") {
-                    let work: PDFWorkerController.Work = .fullText(pages: [0, 1])
-                    let worker = PDFWorkerController.Worker(file: file, shouldCacheData: false, priority: .default)
-                    var emittedUpdates: [PDFWorkerController.Update.Kind] = []
+                    let work: DocumentWorkerController.Work = .fullText(pages: [0, 1])
+                    let worker = DocumentWorkerController.Worker(file: file, shouldCacheData: false, priority: .default)
+                    var emittedUpdates: [DocumentWorkerController.Update.Kind] = []
 
                     waitUntil(timeout: .seconds(20)) { completion in
-                        pdfWorkerController.queue(work: work, in: worker)
+                        documentWorkerController.queue(work: work, in: worker)
                             .subscribe(onNext: { update in
                                 expect(update.work).to(equal(work))
                                 emittedUpdates.append(update.kind)
@@ -178,12 +178,12 @@ final class PDFWorkerControllerSpec: QuickSpec {
                 expect(TestControllers.fileStorage.has(file)).to(beTrue())
 
                 it("can extract full text") {
-                    let work: PDFWorkerController.Work = .fullText(pages: nil)
-                    let worker = PDFWorkerController.Worker(file: file, shouldCacheData: false, priority: .default)
-                    var emittedUpdates: [PDFWorkerController.Update.Kind] = []
+                    let work: DocumentWorkerController.Work = .fullText(pages: nil)
+                    let worker = DocumentWorkerController.Worker(file: file, shouldCacheData: false, priority: .default)
+                    var emittedUpdates: [DocumentWorkerController.Update.Kind] = []
 
                     waitUntil(timeout: .seconds(20)) { completion in
-                        pdfWorkerController.queue(work: work, in: worker)
+                        documentWorkerController.queue(work: work, in: worker)
                             .subscribe(onNext: { update in
                                 expect(update.work).to(equal(work))
                                 emittedUpdates.append(update.kind)
@@ -216,12 +216,12 @@ final class PDFWorkerControllerSpec: QuickSpec {
                 expect(TestControllers.fileStorage.has(file)).to(beTrue())
 
                 it("can extract full text") {
-                    let work: PDFWorkerController.Work = .fullText(pages: nil)
-                    let worker = PDFWorkerController.Worker(file: file, shouldCacheData: false, priority: .default)
-                    var emittedUpdates: [PDFWorkerController.Update.Kind] = []
+                    let work: DocumentWorkerController.Work = .fullText(pages: nil)
+                    let worker = DocumentWorkerController.Worker(file: file, shouldCacheData: false, priority: .default)
+                    var emittedUpdates: [DocumentWorkerController.Update.Kind] = []
 
                     waitUntil(timeout: .seconds(20)) { completion in
-                        pdfWorkerController.queue(work: work, in: worker)
+                        documentWorkerController.queue(work: work, in: worker)
                             .subscribe(onNext: { update in
                                 expect(update.work).to(equal(work))
                                 emittedUpdates.append(update.kind)
@@ -240,7 +240,7 @@ final class PDFWorkerControllerSpec: QuickSpec {
                     process(updates: emittedUpdates, jsonFileName: "font_data_pdf_full_text")
                 }
             }
-            func process(updates: [PDFWorkerController.Update.Kind], jsonFileName: String) {
+            func process(updates: [DocumentWorkerController.Update.Kind], jsonFileName: String) {
                 for (index, update) in updates.enumerated() {
                     switch update {
                     case .inProgress:

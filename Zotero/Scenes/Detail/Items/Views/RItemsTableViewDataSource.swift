@@ -150,7 +150,7 @@ extension RItemsTableViewDataSource: ItemsTableViewDataSource {
 
         // Add parent creation for standalone attachments
         if item.rawType == ItemTypes.attachment && item.parent == nil {
-            if FeatureGates.enabled.contains(.pdfWorker), attachment?.file?.mimeType == "application/pdf" {
+            if FeatureGates.enabled.contains(.documentWorker), attachment?.file?.mimeType == "application/pdf" {
                 switch location {
                 case .local, .localAndChangedRemotely, .remote, .remoteMissing:
                     actions.append(ItemAction(type: .retrieveMetadata))

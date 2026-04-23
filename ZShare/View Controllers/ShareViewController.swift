@@ -67,7 +67,7 @@ final class ShareViewController: UIViewController {
     private var fileStorage: FileStorage!
     private var debugLogging: DebugLogging!
     private var schemaController: SchemaController!
-    private var pdfWorkerController: PDFWorkerController!
+    private var documentWorkerController: DocumentWorkerController!
     private var secureStorage: KeychainSecureStorage!
     private var viewModel: ExtensionViewModel!
     private var storeCancellable: AnyCancellable?
@@ -756,7 +756,7 @@ final class ShareViewController: UIViewController {
         let translatorsController = TranslatorsAndStylesController(apiClient: apiClient, bundledDataStorage: bundledDataStorage, fileStorage: fileStorage)
         let secureStorage = KeychainSecureStorage()
         let webDavController = WebDavControllerImpl(dbStorage: dbStorage, fileStorage: fileStorage, sessionStorage: SecureWebDavSessionStorage(secureStorage: secureStorage))
-        let pdfWorkerController = PDFWorkerController(fileStorage: fileStorage)
+        let documentWorkerController = DocumentWorkerController(fileStorage: fileStorage)
 
         apiClient.set(authToken: ("Bearer " + session.apiToken))
         translatorsController.updateFromRepo(type: .shareExtension)
@@ -766,7 +766,7 @@ final class ShareViewController: UIViewController {
         self.dbStorage = dbStorage
         self.bundledDataStorage = bundledDataStorage
         self.translatorsController = translatorsController
-        self.pdfWorkerController = pdfWorkerController
+        self.documentWorkerController = documentWorkerController
         self.secureStorage = secureStorage
 
         self.viewModel = self.createViewModel(for: session.userId, dbStorage: dbStorage, apiClient: apiClient, schemaController: schemaController, fileStorage: fileStorage,
@@ -786,7 +786,7 @@ final class ShareViewController: UIViewController {
         let syncController = SyncController(userId: userId, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage, schemaController: schemaController, dateParser: dateParser,
                                             backgroundUploaderContext: backgroundUploadContext, webDavController: webDavController, attachmentDownloader: attachmentDownloader, syncDelayIntervals: DelayIntervals.sync, maxRetryCount: DelayIntervals.retry.count)
         let recognizerController = RecognizerController(
-            pdfWorkerController: pdfWorkerController,
+            documentWorkerController: documentWorkerController,
             apiClient: apiClient,
             translatorsController: translatorsController,
             schemaController: schemaController,

@@ -553,7 +553,7 @@ final class ExtensionViewModel {
         copyFile(from: url.path, to: tmpFile)
             .subscribe(onSuccess: { [weak self] _ in
                 guard let self else { return }
-                guard FeatureGates.enabled.contains(.pdfWorker), fileStorage.isPdf(file: tmpFile), let file = tmpFile as? FileData else {
+                guard FeatureGates.enabled.contains(.documentWorker), fileStorage.isPdf(file: tmpFile), let file = tmpFile as? FileData else {
                     updateState(with: .processed)
                     return
                 }

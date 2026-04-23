@@ -59,7 +59,7 @@ final class RecognizerController {
     }
 
     enum Error: Swift.Error {
-        case pdfWorkerError
+        case documentWorkerError
         case recognizerFailed
         case remoteRecognizerFailed
         case noRemainingIdentifiersForLookup
@@ -89,7 +89,7 @@ final class RecognizerController {
     }
 
     // MARK: Properties
-    private unowned let pdfWorkerController: PDFWorkerController
+    private unowned let documentWorkerController: DocumentWorkerController
     private unowned let apiClient: ApiClient
     private unowned let translatorsController: TranslatorsAndStylesController
     private unowned let schemaController: SchemaController
@@ -119,7 +119,7 @@ final class RecognizerController {
 
     // MARK: Object Lifecycle
     init(
-        pdfWorkerController: PDFWorkerController,
+        documentWorkerController: DocumentWorkerController,
         apiClient: ApiClient,
         translatorsController: TranslatorsAndStylesController,
         schemaController: SchemaController,
@@ -127,7 +127,7 @@ final class RecognizerController {
         dateParser: DateParser,
         fileStorage: FileStorage
     ) {
-        self.pdfWorkerController = pdfWorkerController
+        self.documentWorkerController = documentWorkerController
         self.apiClient = apiClient
         self.translatorsController = translatorsController
         self.schemaController = schemaController
@@ -182,33 +182,33 @@ final class RecognizerController {
             statesByTask[task] = .recognitionInProgress
             emmitUpdate(for: task, subject: subject, kind: .inProgress)
 
-            let worker = PDFWorkerController.Worker(file: task.file, shouldCacheData: false, priority: .default)
-            pdfWorkerController.queue(work: .recognizer, in: worker)
+            let worker = DocumentWorkerController.Worker(file: task.file, shouldCacheData: false, priority: .default)
+            documentWorkerController.queue(work: .recognizer, in: worker)
                 .subscribe(onNext: { [weak self] update in
                     guard let self else { return }
                     switch update.kind {
                     case .failed:
-                        pdfWorkerController.cleanupWorker(worker)
+                        documentWorkerController.cleanupWorker(worker)
                         DDLogError("RecognizerController: \(task) - recognizer failed")
                         cleanupTask(for: task) { $0?.on(.next(Update(task: task, kind: .failed(Error.recognizerFailed)))) }
 
                     case .cancelled:
-                        pdfWorkerController.cleanupWorker(worker)
+                        documentWorkerController.cleanupWorker(worker)
                         cleanupTask(for: task) { $0?.on(.next(Update(task: task, kind: .cancelled))) }
 
                     case .inProgress:
                         break
 
                     case .extractedData(let data):
-                        pdfWorkerController.cleanupWorker(worker)
+                        documentWorkerController.cleanupWorker(worker)
                         switch update.work {
                         case .recognizer:
                             DDLogInfo("RecognizerController: \(task) - extracted recognizer data")
                             startRemoteRecognition(for: task, with: data)
 
                         case .fullText:
-                            DDLogError("RecognizerController: \(task) - PDF worker error")
-                            cleanupTask(for: task) { $0?.on(.next(Update(task: task, kind: .failed(Error.pdfWorkerError)))) }
+                            DDLogError("RecognizerController: \(task) - Document worker error")
+                            cleanupTask(for: task) { $0?.on(.next(Update(task: task, kind: .failed(Error.documentWorkerError)))) }
                         }
                     }
                 })

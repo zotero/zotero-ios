@@ -1,5 +1,5 @@
 //
-//  PDFWorkerJSHandler.swift
+//  DocumentWorkerJSHandler.swift
 //  Zotero
 //
 //  Created by Miltiadis Vasilakis on 30/12/25.
@@ -10,12 +10,12 @@ import Foundation
 import CocoaLumberjackSwift
 import RxSwift
 
-enum PDFWorkerData {
+enum DocumentWorkerData {
     case recognizerData(data: [String: Any])
     case fullText(data: [String: Any])
 }
 
-final class PDFWorkerJSHandler {
+final class DocumentWorkerJSHandler {
     enum Error: Swift.Error {
         case engineNotLoaded
         case missingWorkFile
@@ -29,9 +29,9 @@ final class PDFWorkerJSHandler {
 
     var workFile: File?
     var shouldCacheWorkData: Bool = false
-    let observable: PublishSubject<(workId: String, result: Result<PDFWorkerData, Swift.Error>)>
+    let observable: PublishSubject<(workId: String, result: Result<DocumentWorkerData, Swift.Error>)>
 
-    private let engine: PDFWorkerJSEngine
+    private let engine: DocumentWorkerJSEngine
     private let queue: DispatchQueue
     private let queueKey: DispatchSpecificKey<String>
     private let queueLabel: String
@@ -41,11 +41,11 @@ final class PDFWorkerJSHandler {
     private var cachedWorkData: Data?
 
     init(bundle: Bundle = .main, warmUp: Bool = true) {
-        queueLabel = "org.zotero.PDFWorkerJSHandler.queue"
+        queueLabel = "org.zotero.DocumentWorkerJSHandler.queue"
         queue = DispatchQueue(label: queueLabel)
         queueKey = DispatchSpecificKey<String>()
         queue.setSpecific(key: queueKey, value: queueLabel)
-        engine = PDFWorkerJSEngine(bundle: bundle, queue: queue)
+        engine = DocumentWorkerJSEngine(bundle: bundle, queue: queue)
         observable = PublishSubject()
         nextMessageId = 1
         pending = [:]
@@ -63,10 +63,10 @@ final class PDFWorkerJSHandler {
             }
         }
         engine.onLog = { message in
-            DDLogInfo("PDFWorkerJSHandler: JSLOG - \(message)")
+            DDLogInfo("DocumentWorkerJSHandler: JSLOG - \(message)")
         }
         engine.onException = { message in
-            DDLogError("PDFWorkerJSHandler: JSEXCEPTION - \(message)")
+            DDLogError("DocumentWorkerJSHandler: JSEXCEPTION - \(message)")
         }
         queue.async { [weak self] in
             guard let self else { return }
@@ -77,7 +77,7 @@ final class PDFWorkerJSHandler {
                     _ = try? engine.evaluate(script: "typeof self !== 'undefined' && typeof self.onmessage === 'function'")
                 }
             } catch {
-                DDLogError("PDFWorkerJSHandler: failed to load worker scripts - \(error)")
+                DDLogError("DocumentWorkerJSHandler: failed to load worker scripts - \(error)")
                 loadError = error
             }
         }
@@ -92,7 +92,7 @@ final class PDFWorkerJSHandler {
             } else if let data = body["data"] {
                 pending.removeValue(forKey: responseId)?(.success(data))
             } else {
-                DDLogError("PDFWorkerJSHandler: response \(responseId) missing data")
+                DDLogError("DocumentWorkerJSHandler: response \(responseId) missing data")
                 pending.removeValue(forKey: responseId)?(.failure(Error.missingData))
             }
             return
@@ -123,7 +123,7 @@ final class PDFWorkerJSHandler {
             respondWithError(to: engine, id: id, message: "unknown action \(action)")
         }
 
-        func respondWithError(to engine: PDFWorkerJSEngine, id: Int, message: String) {
+        func respondWithError(to engine: DocumentWorkerJSEngine, id: Int, message: String) {
             let response = engine.makeObject()
             let error = engine.makeObject()
             error.setValue(message, forProperty: "name")
@@ -132,12 +132,12 @@ final class PDFWorkerJSHandler {
             do {
                 try engine.postToWorker(response)
             } catch {
-                DDLogError("PDFWorkerJSHandler: failed to respond with error to JS engine - \(error)")
+                DDLogError("DocumentWorkerJSHandler: failed to respond with error to JS engine - \(error)")
             }
         }
 
-        func respondWithBuiltInCMap(to engine: PDFWorkerJSEngine, name: String, responseId: Int) {
-            let path = "Bundled/pdf_worker/cmaps"
+        func respondWithBuiltInCMap(to engine: DocumentWorkerJSEngine, name: String, responseId: Int) {
+            let path = "Bundled/document_worker/cmaps"
             guard let url = Bundle.main.url(forResource: name, withExtension: "bcmap", subdirectory: path) else {
                 respondWithError(to: engine, id: responseId, message: "missing cmap \(name)")
                 return
@@ -159,12 +159,12 @@ final class PDFWorkerJSHandler {
             do {
                 try engine.postToWorker(response)
             } catch {
-                DDLogError("PDFWorkerJSHandler: failed to respond to cmap request - \(error)")
+                DDLogError("DocumentWorkerJSHandler: failed to respond to cmap request - \(error)")
             }
         }
 
-        func respondWithStandardFontData(to engine: PDFWorkerJSEngine, filename: String, responseId: Int) {
-            let path = "Bundled/pdf_worker/standard_fonts"
+        func respondWithStandardFontData(to engine: DocumentWorkerJSEngine, filename: String, responseId: Int) {
+            let path = "Bundled/document_worker/standard_fonts"
             guard let url = Bundle.main.url(forResource: filename, withExtension: nil, subdirectory: path) else {
                 respondWithError(to: engine, id: responseId, message: "missing font \(filename)")
                 return
@@ -183,7 +183,7 @@ final class PDFWorkerJSHandler {
             do {
                 try engine.postToWorker(response)
             } catch {
-                DDLogError("PDFWorkerJSHandler: failed to respond to font request - \(error)")
+                DDLogError("DocumentWorkerJSHandler: failed to respond to font request - \(error)")
             }
         }
     }
@@ -202,7 +202,7 @@ final class PDFWorkerJSHandler {
             var deferredError: Swift.Error?
             defer {
                 if let error = deferredError {
-                    DDLogError("PDFWorkerJSHandler: failed to start work - \(error)")
+                    DDLogError("DocumentWorkerJSHandler: failed to start work - \(error)")
                     observable.on(.next((workId: workId, result: .failure(error))))
                 }
             }
@@ -225,7 +225,7 @@ final class PDFWorkerJSHandler {
                         cachedWorkData = data
                     }
                 } else {
-                    data = try Data(contentsOf: url)
+                    data = try Data(contentsOf: url, options: [.mappedIfSafe])
                     cachedWorkData = nil
                 }
                 guard let buffer = engine.makeArrayBuffer(from: data) else {

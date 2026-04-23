@@ -8,9 +8,9 @@ realpath() {
 
 SCRIPT_PATH=`realpath "$0"`
 SCRIPT_DIR=`dirname "$SCRIPT_PATH"`
-SUBMODULE_DIR="$SCRIPT_DIR/../pdf-worker"
-DESTINATION_DIR="$SCRIPT_DIR/../bundled/pdf_worker"
-HASH_FILE="$DESTINATION_DIR/pdf_worker_hash.txt"
+SUBMODULE_DIR="$SCRIPT_DIR/../document-worker"
+DESTINATION_DIR="$SCRIPT_DIR/../bundled/document_worker"
+HASH_FILE="$DESTINATION_DIR/document_worker_hash.txt"
 CURRENT_HASH=`git ls-tree --object-only HEAD "$SUBMODULE_DIR"`
 DOWNLOAD_URL="https://zotero-download.s3.amazonaws.com/ci/document-worker/${CURRENT_HASH}.zip"
 BUILD_SOURCE_DIR=""
