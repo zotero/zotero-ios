@@ -250,7 +250,7 @@ final class ItemsToolbarController {
     }
 
     private func createFilterMenu(downloadsFilterEnabled: Bool) -> UIMenu {
-        let downloadsAction = UIAction(title: L10n.Items.Filters.downloads, state: downloadsFilterEnabled ? .on : .off) { [weak self] _ in
+        let downloadsAction = UIAction(title: L10n.Items.Filters.downloads, image: UIImage(systemName: "arrow.down.circle"), state: downloadsFilterEnabled ? .on : .off) { [weak self] _ in
             self?.delegate?.downloadsFilterChanged(enabled: !downloadsFilterEnabled)
         }
         return UIMenu(title: L10n.Items.Filters.title, children: [downloadsAction])
