@@ -208,7 +208,7 @@ final class ItemsViewController: BaseItemsViewController {
             toolbarController?.reloadToolbarItems(for: toolbarData(from: state))
         }
 
-        if state.changes.contains(.filters) || state.changes.contains(.batchData) || state.changes.contains(.results) {
+        if state.changes.contains(.filters) || state.changes.contains(.batchData) {
             toolbarController?.reloadToolbarItems(for: toolbarData(from: state))
         }
 
@@ -250,7 +250,7 @@ final class ItemsViewController: BaseItemsViewController {
 
     private func process(action: ItemAction.Kind, for selectedKeys: Set<String>, button: UIBarButtonItem?, completionAction: ((Bool) -> Void)?) {
         switch action {
-        case .delete, .restore, .sort, .debugReader, .filter:
+        case .delete, .restore:
             break
 
         case .addToCollection:
@@ -307,6 +307,20 @@ final class ItemsViewController: BaseItemsViewController {
             guard !selectedKeys.isEmpty else { return }
             viewModel.process(action: .trashItems(selectedKeys))
 
+        case .filter:
+            guard let button else { return }
+            coordinatorDelegate?.showFilters(filters: viewModel.state.filters, filtersDelegate: self, button: button)
+
+        case .sort:
+            guard let button else { return }
+            coordinatorDelegate?.showSortActions(
+                sortType: viewModel.state.sortType,
+                button: button,
+                changed: { [weak self] newValue in
+                    self?.viewModel.process(action: .setSortType(newValue))
+                }
+            )
+
         case .share:
             guard !selectedKeys.isEmpty else { return }
             coordinatorDelegate?.showCiteExport(for: selectedKeys, libraryId: library.identifier)
@@ -326,6 +340,9 @@ final class ItemsViewController: BaseItemsViewController {
 
         case .removeDownload:
             viewModel.process(action: .removeDownloads(selectedKeys))
+
+        case .debugReader:
+            break
 
         case .removeFromRecentlyRead:
             guard !selectedKeys.isEmpty else { return }
@@ -403,7 +420,6 @@ final class ItemsViewController: BaseItemsViewController {
             isEditing: state.isEditing,
             selectedItems: state.selectedItems,
             filters: state.filters,
-            sortType: state.sortType,
             allowsManualSort: state.collection.identifier.allowsManualSort,
             downloadBatchData: state.downloadBatchData,
             remoteDownloadBatchData: state.remoteDownloadBatchData,
@@ -498,21 +514,9 @@ extension ItemsViewController: ItemsToolbarControllerDelegate {
     func process(action: ItemAction.Kind, button: UIBarButtonItem) {
         process(action: action, for: viewModel.state.selectedItems, button: button, completionAction: nil)
     }
-
+    
     func showLookup() {
         coordinatorDelegate?.showLookup()
-    }
-
-    func sortTypeChanged(_ sortType: ItemsSortType) {
-        viewModel.process(action: .setSortType(sortType))
-    }
-
-    func downloadsFilterChanged(enabled: Bool) {
-        if enabled {
-            viewModel.process(action: .enableFilter(.downloadedFiles))
-        } else {
-            viewModel.process(action: .disableFilter(.downloadedFiles))
-        }
     }
 }
 
