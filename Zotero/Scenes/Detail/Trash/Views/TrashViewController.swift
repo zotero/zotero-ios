@@ -122,7 +122,7 @@ final class TrashViewController: BaseItemsViewController {
             toolbarController?.reloadToolbarItems(for: toolbarData(from: state))
         }
 
-        if state.changes.contains(.filters) || state.changes.contains(.batchData) {
+        if state.changes.contains(.filters) || state.changes.contains(.batchData) || state.changes.contains(.objects) {
             toolbarController?.reloadToolbarItems(for: toolbarData(from: state))
         }
 
@@ -151,7 +151,8 @@ final class TrashViewController: BaseItemsViewController {
 
     private func process(action: ItemAction.Kind, for selectedKeys: Set<TrashKey>, button: UIBarButtonItem?, completionAction: ((Bool) -> Void)?) {
         switch action {
-        case .createParent, .retrieveMetadata, .duplicate, .trash, .copyBibliography, .copyCitation, .share, .addToCollection, .removeFromCollection, .removeFromRecentlyRead:
+        case .createParent, .retrieveMetadata, .duplicate, .trash, .copyBibliography, .copyCitation, .share, .addToCollection, .removeFromCollection, .removeFromRecentlyRead,
+             .filter, .sort, .debugReader:
             // These actions are not available in trash collection
             break
 
@@ -172,28 +173,11 @@ final class TrashViewController: BaseItemsViewController {
             viewModel.process(action: .restoreItems(selectedKeys))
             completionAction?(true)
 
-        case .filter:
-            guard let button else { return }
-            coordinatorDelegate?.showFilters(filters: viewModel.state.filters, filtersDelegate: self, button: button)
-
-        case .sort:
-            guard let button else { return }
-            coordinatorDelegate?.showSortActions(
-                sortType: viewModel.state.sortType,
-                button: button,
-                changed: { [weak self] newValue in
-                    self?.viewModel.process(action: .setSortType(newValue))
-                }
-            )
-
         case .download:
             viewModel.process(action: .download(selectedKeys))
 
         case .removeDownload:
             viewModel.process(action: .removeDownloads(selectedKeys))
-
-        case .debugReader:
-            break
         }
     }
 
@@ -223,6 +207,7 @@ final class TrashViewController: BaseItemsViewController {
             isEditing: state.isEditing,
             selectedItems: state.selectedItems,
             filters: state.filters,
+            sortType: state.sortType,
             allowsManualSort: true,
             downloadBatchData: nil,
             remoteDownloadBatchData: nil,
@@ -342,6 +327,18 @@ extension TrashViewController: ItemsToolbarControllerDelegate {
 
     func showLookup() {
         coordinatorDelegate?.showLookup()
+    }
+
+    func sortTypeChanged(_ sortType: ItemsSortType) {
+        viewModel.process(action: .setSortType(sortType))
+    }
+
+    func downloadsFilterChanged(enabled: Bool) {
+        if enabled {
+            viewModel.process(action: .enableFilter(.downloadedFiles))
+        } else {
+            viewModel.process(action: .disableFilter(.downloadedFiles))
+        }
     }
 }
 
