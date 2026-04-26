@@ -123,7 +123,7 @@ class HtmlEpubDocumentViewController: UIViewController {
     
     private var lastKnownCFI: String?
     private var lastKnownOffset: Double?
-    private var hasInjectedToolbarInsetCSS = false
+    private var hasInjectedVerticalScrollPagination = false
 
     func notifyResize() {
         guard let cfi = lastKnownCFI else { return }
@@ -138,38 +138,248 @@ class HtmlEpubDocumentViewController: UIViewController {
         lastKnownOffset = offset
     }
 
-    /// Injects CSS into the epub iframe to permanently reserve bottom space for the toolbar offset.
-    /// This ensures that when the WebView is translated down (toolbar visible), the bottom margin
-    /// of the paginated columns is preserved rather than pushed off-screen.
-    private func injectToolbarInsetCSS(cfi: String, offset: Double?) {
-        let toolbarHeight = (parentDelegate?.statusBarHeight ?? 0) + (parentDelegate?.navigationBarHeight ?? 0)
-        guard toolbarHeight > 0 else { return }
-
-        let totalBottomMargin = 40 + Int(toolbarHeight)
-        let totalVerticalDeduction = 80 + Int(toolbarHeight)
-
-        let css = "body.flow-mode-paginated:not(.fixed-layout){margin-bottom:\(totalBottomMargin)px!important}"
-            + "body.flow-mode-paginated:not(.fixed-layout)>.sections{"
-            + "max-height:calc(100vh - \(totalVerticalDeduction)px)!important;"
-            + "min-height:calc(100vh - \(totalVerticalDeduction)px)!important}"
-
+    private func injectVerticalScrollPagination(marginTop: CGFloat, navBarHeight: CGFloat, cfi: String) {
+        let marginTopPx = Int(marginTop)
+        let bottomMargin = 40
+        let rawVpHeight = Int(UIScreen.main.bounds.height) - marginTopPx - Int(navBarHeight) - bottomMargin
         let escapedCfi = cfi.replacingOccurrences(of: "'", with: "\\'")
-        let offsetStr = offset != nil ? "\(offset!)" : "undefined"
 
         let js = """
         (function(){
-            var doc=window._view&&window._view._iframeDocument;
-            if(!doc||doc.getElementById('toolbar-inset-override'))return;
-            var s=doc.createElement('style');
-            s.id='toolbar-inset-override';
-            s.textContent='\(css)';
+            var doc = null;
+            try { doc = window._view._view._iframeDocument; } catch(e) {}
+            if (!doc) {
+                try { var f = document.querySelector('iframe'); if(f) doc = f.contentDocument; } catch(e) {}
+            }
+            if (!doc) return;
+
+            var flow = window._view._view.flow;
+            var sections = doc.querySelector('.sections');
+            if (!flow || !sections) return;
+
+            var marginTop = \(marginTopPx);
+
+            // Measure line height
+            var sc = sections.querySelector('.section-container') || sections;
+            var tempP = doc.createElement('p');
+            tempP.textContent = 'Xg';
+            tempP.style.cssText = 'position:absolute;visibility:hidden;margin:0;padding:0;border:0;';
+            sc.appendChild(tempP);
+            var lineHeight = tempP.getBoundingClientRect().height;
+            tempP.remove();
+            if (!lineHeight || lineHeight <= 0) lineHeight = 24;
+
+            function calcVpHeight(raw) {
+                var h = lineHeight > 0 ? Math.floor(raw / lineHeight) * lineHeight : raw;
+                return h > 0 ? h : raw;
+            }
+
+            var vpHeight = calcVpHeight(\(rawVpHeight));
+
+            function buildCSS(mt, h) {
+                return 'body.flow-mode-paginated:not(.fixed-layout){margin-top:' + mt + 'px!important;margin-bottom:0!important}'
+                    + 'body.flow-mode-paginated:not(.fixed-layout)>.sections{'
+                    + 'column-width:unset!important;column-gap:unset!important;column-fill:unset!important;'
+                    + 'max-height:' + h + 'px!important;min-height:' + h + 'px!important;'
+                    + 'overflow:hidden!important;overflow-x:hidden!important;}'
+                    + '#annotation-overlay{display:block!important;}';
+            }
+
+            var existing = doc.getElementById('ios-vscroll-override');
+            if (existing) existing.remove();
+            var s = doc.createElement('style');
+            s.id = 'ios-vscroll-override';
+            s.textContent = buildCSS(marginTop, vpHeight);
             doc.head.appendChild(s);
+
+            var origCurrentSectionIndexSet = Object.getOwnPropertyDescriptor(
+                Object.getPrototypeOf(flow), 'currentSectionIndex'
+            ).set;
+
+            function adjustAfterScroll() {
+                var sRect = sections.getBoundingClientRect();
+                if (!sRect.width || !sRect.height) return;
+                var x = sRect.left + sRect.width / 3;
+
+                try {
+                    var topR = doc.caretRangeFromPoint(x, sRect.top + 2);
+                    if (topR && topR.startContainer && topR.startContainer.nodeType === 3) {
+                        var tr = doc.createRange();
+                        tr.setStart(topR.startContainer, topR.startOffset);
+                        tr.setEnd(topR.startContainer, Math.min(topR.startOffset + 1, topR.startContainer.length));
+                        var trects = tr.getClientRects();
+                        if (trects.length > 0 && trects[0].top < sRect.top - 1) {
+                            sections.scrollTop += Math.ceil(trects[0].bottom - sRect.top);
+                            sRect = sections.getBoundingClientRect();
+                        }
+                    }
+                } catch(e) {}
+
+                var bottomClip = 0;
+                try {
+                    var bottomR = doc.caretRangeFromPoint(x, sRect.bottom - 1);
+                    if (bottomR && bottomR.startContainer && bottomR.startContainer.nodeType === 3) {
+                        var br = doc.createRange();
+                        br.setStart(bottomR.startContainer, bottomR.startOffset);
+                        br.setEnd(bottomR.startContainer, Math.min(bottomR.startOffset + 1, bottomR.startContainer.length));
+                        var brects = br.getClientRects();
+                        if (brects.length > 0 && brects[0].bottom > sRect.bottom + 1) {
+                            var visiblePart = sRect.bottom - brects[0].top;
+                            if (visiblePart > 0 && visiblePart < lineHeight * 0.8) {
+                                bottomClip = Math.ceil(visiblePart);
+                            }
+                        }
+                    }
+                } catch(e) {}
+
+                sections.style.clipPath = bottomClip > 0 ? 'inset(0 0 ' + bottomClip + 'px 0)' : '';
+
+                var overlay = doc.getElementById('annotation-overlay');
+                if (overlay) {
+                    var clipTop = sRect.top;
+                    var clipBottom = doc.documentElement.clientHeight - sRect.bottom + bottomClip;
+                    overlay.style.clipPath = 'inset(' + clipTop + 'px 0 ' + Math.max(0, clipBottom) + 'px 0)';
+                }
+            }
+
+            flow.scrollIntoView = function(target, options) {
+                var index = null;
+                try {
+                    var node = (target.startContainer || target);
+                    if (node.nodeType === 3) node = node.parentElement;
+                    var sectionEl = node.closest('[data-section-index]');
+                    if (sectionEl) index = parseInt(sectionEl.getAttribute('data-section-index'));
+                } catch(e) {}
+                if (index === null) return;
+
+                if (!(options && options.skipHistory)) {
+                    flow._nextHistoryPushIsFromNavigation = true;
+                }
+
+                origCurrentSectionIndexSet.call(flow, index);
+
+                var range = target;
+                if (target.toRange) range = target.toRange();
+                var rect;
+                try { rect = range.getBoundingClientRect(); } catch(e) { return; }
+
+                var sectionsRect = sections.getBoundingClientRect();
+                var newScrollTop = sections.scrollTop + rect.top - sectionsRect.top;
+                newScrollTop = Math.floor(newScrollTop / vpHeight) * vpHeight;
+                sections.scrollTo({ top: Math.max(0, newScrollTop), left: 0 });
+                adjustAfterScroll();
+                flow._onViewUpdate();
+            };
+
+            flow.canNavigateToPreviousPage = function() {
+                if (flow.currentSectionIndex > 0) return true;
+                return sections.scrollTop > 0;
+            };
+
+            flow.canNavigateToNextPage = function() {
+                if (flow.currentSectionIndex < window._view._view.renderers.length - 1) return true;
+                return sections.scrollTop < sections.scrollHeight - sections.offsetHeight - 1;
+            };
+
+            flow.navigateToPreviousPage = function() {
+                if (!flow.canNavigateToPreviousPage()) return;
+                if (sections.scrollTop <= 0 && flow.currentSectionIndex > 0) {
+                    flow._nextHistoryPushIsFromNavigation = true;
+                    origCurrentSectionIndexSet.call(flow, flow.currentSectionIndex - 1);
+                    var maxScroll = Math.max(0, sections.scrollHeight - vpHeight);
+                    var lastPage = Math.floor(maxScroll / vpHeight) * vpHeight;
+                    sections.scrollTo({ top: lastPage, left: 0 });
+                    adjustAfterScroll();
+                    flow._onViewUpdate();
+                    return;
+                }
+                sections.scrollTo({ top: Math.max(0, sections.scrollTop - vpHeight), left: 0 });
+                adjustAfterScroll();
+                flow._onViewUpdate();
+            };
+
+            flow.navigateToNextPage = function() {
+                if (!flow.canNavigateToNextPage()) return;
+                var maxScroll = sections.scrollHeight - sections.offsetHeight;
+                if (sections.scrollTop >= maxScroll - 1 && flow.currentSectionIndex < window._view._view.renderers.length - 1) {
+                    flow._nextHistoryPushIsFromNavigation = true;
+                    origCurrentSectionIndexSet.call(flow, flow.currentSectionIndex + 1);
+                    sections.scrollTo({ top: 0, left: 0 });
+                    adjustAfterScroll();
+                    flow._onViewUpdate();
+                    return;
+                }
+                var newTop = sections.scrollTop + vpHeight;
+                sections.scrollTo({ top: Math.min(newTop, maxScroll), left: 0 });
+                adjustAfterScroll();
+                flow._onViewUpdate();
+            };
+
+            flow.navigateToFirstPage = function() {
+                origCurrentSectionIndexSet.call(flow, 0);
+                sections.scrollTo({ top: 0, left: 0 });
+                adjustAfterScroll();
+                flow._onViewUpdate();
+            };
+
+            flow.navigateToLastPage = function() {
+                var last = window._view._view.renderers.length - 1;
+                origCurrentSectionIndexSet.call(flow, last);
+                sections.scrollTo({ top: sections.scrollHeight, left: 0 });
+                adjustAfterScroll();
+                flow._onViewUpdate();
+            };
+
+            flow.canNavigateLeft = function() { return flow.canNavigateToPreviousPage(); };
+            flow.canNavigateRight = function() { return flow.canNavigateToNextPage(); };
+            flow.navigateLeft = function() { flow.navigateToPreviousPage(); };
+            flow.navigateRight = function() { flow.navigateToNextPage(); };
+
+            window._setIOSViewportHeight = function(rawH) {
+                vpHeight = calcVpHeight(rawH);
+                var style = doc.getElementById('ios-vscroll-override');
+                if (style) style.textContent = buildCSS(marginTop, vpHeight);
+                requestAnimationFrame(function() {
+                    adjustAfterScroll();
+                    flow.invalidate();
+                });
+            };
+
+            window._setIOSViewportGeometry = function(rawH, mt) {
+                marginTop = mt;
+                vpHeight = calcVpHeight(rawH);
+                var style = doc.getElementById('ios-vscroll-override');
+                if (style) style.textContent = buildCSS(mt, vpHeight);
+                requestAnimationFrame(function() {
+                    adjustAfterScroll();
+                    flow.invalidate();
+                });
+            };
+
             requestAnimationFrame(function(){
-                window._view.navigate({pageNumber:'\(escapedCfi)'},{skipHistory:true,behavior:'auto',offsetBlock:\(offsetStr)});
+                window._view.navigate({pageNumber:'\(escapedCfi)'});
+                setTimeout(function() { adjustAfterScroll(); }, 100);
             });
         })();
         """
 
+        webViewHandler.call(javascript: js).subscribe().disposed(by: disposeBag)
+        webView?.transform = CGAffineTransform(translationX: 0, y: navBarHeight)
+    }
+
+    func updateViewportHeight(navBarHidden: Bool, statusBarHeight: CGFloat, navBarHeight: CGFloat) {
+        let marginTopPx = Int(statusBarHeight)
+        let bottomMargin = 40
+        let rawVpHeight = Int(UIScreen.main.bounds.height) - marginTopPx - (navBarHidden ? 0 : Int(navBarHeight)) - bottomMargin
+        let js = "if(window._setIOSViewportHeight) window._setIOSViewportHeight(\(rawVpHeight));"
+        webViewHandler.call(javascript: js).subscribe().disposed(by: disposeBag)
+    }
+
+    func updateViewportGeometry(statusBarHeight: CGFloat, navBarHeight: CGFloat, navBarHidden: Bool) {
+        let marginTopPx = Int(statusBarHeight)
+        let bottomMargin = 40
+        let rawVpHeight = Int(UIScreen.main.bounds.height) - marginTopPx - (navBarHidden ? 0 : Int(navBarHeight)) - bottomMargin
+        let js = "if(window._setIOSViewportGeometry) window._setIOSViewportGeometry(\(rawVpHeight), \(marginTopPx));"
         webViewHandler.call(javascript: js).subscribe().disposed(by: disposeBag)
     }
 
@@ -397,10 +607,11 @@ class HtmlEpubDocumentViewController: UIViewController {
                     let offset = state["cfiElementOffset"] as? Double
                     updateLastKnownPosition(cfi: cfi, offset: offset)
 
-                    // Inject toolbar inset CSS on first valid position
-                    if !hasInjectedToolbarInsetCSS {
-                        hasInjectedToolbarInsetCSS = true
-                        injectToolbarInsetCSS(cfi: cfi, offset: offset)
+                    if !hasInjectedVerticalScrollPagination {
+                        hasInjectedVerticalScrollPagination = true
+                        let marginTop = parentDelegate?.statusBarHeight ?? 0
+                        let navBarHeight = parentDelegate?.navigationBarHeight ?? 0
+                        injectVerticalScrollPagination(marginTop: marginTop, navBarHeight: navBarHeight, cfi: cfi)
                     }
                 }
                 viewModel.process(action: .setViewState(params))

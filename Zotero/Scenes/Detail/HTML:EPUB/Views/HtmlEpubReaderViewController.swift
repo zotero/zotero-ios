@@ -520,7 +520,6 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
 extension HtmlEpubReaderViewController: AnnotationToolbarHandlerDelegate {
     var additionalToolbarInsets: NSDirectionalEdgeInsets {
         let leading = isSidebarVisible ? (documentControllerLeft?.constant ?? 0) : 0
-        // With safeAreaLayoutGuide, top inset is always 0 since the view starts at safe area
         return NSDirectionalEdgeInsets(top: 0, leading: leading, bottom: 0, trailing: 0)
     }
 
