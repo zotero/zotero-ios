@@ -61,6 +61,12 @@ class UploadAttachmentSyncAction: SyncAction {
     }
 
     var result: Single<()> {
+        #if MAINAPP
+        if Defaults.shared.attachmentStoragePreference == .iCloud {
+            return self.iCloudResult
+        }
+        #endif
+
         switch self.libraryId {
         case .custom:
             return self.webDavController.sessionStorage.isEnabled ? self.webDavResult : self.zoteroResult
@@ -180,6 +186,87 @@ class UploadAttachmentSyncAction: SyncAction {
                        DDLogError("UploadAttachmentSyncAction: could not upload - \(error)")
                    })
     }
+
+    #if MAINAPP
+    private var iCloudResult: Single<()> {
+        DDLogInfo("UploadAttachmentSyncAction: store attachment in iCloud")
+
+        return self.checkDatabase()
+                   .flatMap { _ -> Single<UInt64> in
+                       return self.validateFile()
+                   }
+                   .do(onSuccess: { _ in
+                       self.failedBeforeZoteroApiRequest = false
+                   })
+                   .flatMap { _ -> Single<()> in
+                       return self.ensureICloudPresence()
+                   }
+                   .flatMap { _ -> Single<Int> in
+                       return self.submitItemWithHashAndMtime().flatMap({ Single.just($0) })
+                   }
+                   .observe(on: self.scheduler)
+                   .flatMap({ version -> Single<()> in
+                       return self.markAttachmentAsUploaded(version: version)
+                   })
+                   .do(onError: { error in
+                       DDLogError("UploadAttachmentSyncAction: could not store in iCloud - \(error)")
+                   })
+    }
+
+    private func ensureICloudPresence() -> Single<()> {
+        return Single.deferred {
+            guard Defaults.shared.attachmentStoragePreference == .iCloud else {
+                return .just(())
+            }
+
+            guard let iCloudRoot = FileManager.default.url(forUbiquityContainerIdentifier: "iCloud.org.zotero.ios.Zotero")?.appendingPathComponent("Documents", isDirectory: true) else {
+                return .error(NSError(domain: "org.zotero.ios.Zotero.iCloud", code: 1, userInfo: [NSLocalizedDescriptionKey: "iCloud not available."]))
+            }
+
+            let fm = FileManager.default
+            let url = self.file.createUrl()
+
+            do {
+                let directory = url.deletingLastPathComponent()
+                if !fm.fileExists(atPath: directory.path) {
+                    try fm.createDirectory(at: directory, withIntermediateDirectories: true)
+                }
+
+                if !url.path.hasPrefix(iCloudRoot.path) {
+                    let relativePath = trimmedRelativePath(fullPath: url.path, root: self.file.rootPath)
+                    let destination = iCloudRoot.appendingPathComponent(relativePath)
+                    let destinationDir = destination.deletingLastPathComponent()
+                    if !fm.fileExists(atPath: destinationDir.path) {
+                        try fm.createDirectory(at: destinationDir, withIntermediateDirectories: true)
+                    }
+                    if fm.fileExists(atPath: destination.path) {
+                        try fm.removeItem(at: destination)
+                    }
+                    try fm.copyItem(at: url, to: destination)
+
+                    try? fm.setUbiquitous(true, itemAt: destination, destinationURL: destination)
+                }
+
+                if url.path.hasPrefix(iCloudRoot.path) {
+                    try? fm.setUbiquitous(true, itemAt: url, destinationURL: url)
+                }
+
+                return .just(())
+            } catch let error {
+                return .error(error)
+            }
+        }
+
+        func trimmedRelativePath(fullPath: String, root: String) -> String {
+            if fullPath.hasPrefix(root) {
+                let start = fullPath.index(fullPath.startIndex, offsetBy: root.count)
+                let trimmed = fullPath[start...]
+                return trimmed.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+            }
+            return URL(fileURLWithPath: fullPath).lastPathComponent
+        }
+    }
+    #endif
 
     private func submitItemWithHashAndMtime() -> Single<Int> {
         DDLogInfo("UploadAttachmentSyncAction: submit mtime and md5")
