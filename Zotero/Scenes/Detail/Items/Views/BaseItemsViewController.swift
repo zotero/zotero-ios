@@ -14,14 +14,6 @@ import RxSwift
 import WebKit
 import ZIPFoundation
 
-protocol FiltersDelegate: AnyObject {
-    var currentLibrary: Library { get }
-
-    func downloadsFilterDidChange(enabled: Bool)
-    func tagSelectionDidChange(selected: Set<String>)
-    func tagOptionsDidChange()
-}
-
 class BaseItemsViewController: UIViewController {
     enum RightBarButtonItem: Int {
         case select
@@ -110,6 +102,9 @@ class BaseItemsViewController: UIViewController {
 
         // willTransition(to:with:) seems to not be not called for all transitions, so instead traitCollectionDidChange(_:) is used w/ a short animation block.
         guard UIDevice.current.userInterfaceIdiom == .pad, traitCollection.horizontalSizeClass != previousTraitCollection?.horizontalSizeClass else { return }
+        if traitCollection.horizontalSizeClass == .regular {
+            coordinatorDelegate?.dismissFilters()
+        }
         setupTitle()
         UIView.animate(withDuration: 0.1) {
             self.toolbarController?.reloadToolbarItems(for: self.toolbarData)

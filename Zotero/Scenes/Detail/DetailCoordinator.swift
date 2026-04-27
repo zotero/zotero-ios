@@ -48,6 +48,8 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier)
     func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier, readerURL: URL?)
     func show(error: ItemsError)
+    func showFilters(filters: [ItemsFilter], filtersDelegate: BaseItemsViewController, button: UIBarButtonItem)
+    func dismissFilters()
     func showLookup()
 }
 
@@ -669,6 +671,32 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         self.childCoordinators.append(coordinator)
         coordinator.start(animated: false)
         self.navigationController?.present(containerController, animated: true, completion: nil)
+    }
+
+    func showFilters(filters: [ItemsFilter], filtersDelegate: BaseItemsViewController, button: UIBarButtonItem) {
+        DDLogInfo("DetailCoordinator: show item filters")
+
+        let navigationController = NavigationViewController()
+        navigationController.modalPresentationStyle = .popover
+        navigationController.popoverPresentationController?.sourceItem = button
+
+        let coordinator = ItemsFilterCoordinator(
+            filters: filters,
+            filtersDelegate: filtersDelegate,
+            navigationController: navigationController,
+            mainCoordinatorDelegate: mainCoordinatorDelegate,
+            controllers: controllers
+        )
+        coordinator.parentCoordinator = self
+        childCoordinators.append(coordinator)
+        coordinator.start(animated: false)
+
+        self.navigationController?.present(navigationController, animated: true, completion: nil)
+    }
+
+    func dismissFilters() {
+        guard let coordinator = childCoordinators.first(where: { $0 is ItemsFilterCoordinator }) as? ItemsFilterCoordinator else { return }
+        coordinator.navigationController?.dismiss(animated: true)
     }
 
     func show(error: ItemsError) {

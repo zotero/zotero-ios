@@ -14,6 +14,7 @@ import RxSwift
 protocol ItemsToolbarControllerDelegate: UITraitEnvironment {
     func process(action: ItemAction.Kind, button: UIBarButtonItem)
     func showLookup()
+    func showFilters(button: UIBarButtonItem)
     func sortTypeChanged(_ sortType: ItemsSortType)
     func downloadsFilterChanged(enabled: Bool)
 }
@@ -78,6 +79,10 @@ final class ItemsToolbarController {
             }
             return types.map { .init(type: $0) }
         }
+    }
+
+    private var isCompact: Bool {
+        delegate?.traitCollection.horizontalSizeClass == .compact || UIDevice.current.userInterfaceIdiom == .phone
     }
 
     func willAppear() {
@@ -165,8 +170,16 @@ final class ItemsToolbarController {
             let flexibleSpacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
 
             let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease.circle" : "line.horizontal.3.decrease.circle.fill"
-            let downloadsFilterEnabled = data.filters.contains(where: { $0.isDownloadedFilesFilter })
-            let filterButton = UIBarButtonItem(image: UIImage(systemName: filterImageName), menu: createFilterMenu(downloadsFilterEnabled: downloadsFilterEnabled))
+            let filterButton = UIBarButtonItem(image: UIImage(systemName: filterImageName), style: .plain, target: nil, action: nil)
+            if isCompact {
+                filterButton.primaryAction = UIAction { [weak self, weak filterButton] _ in
+                    guard let filterButton else { return }
+                    self?.delegate?.showFilters(button: filterButton)
+                }
+            } else {
+                let downloadsFilterEnabled = data.filters.contains(where: { $0.isDownloadedFilesFilter })
+                filterButton.menu = createFilterMenu(downloadsFilterEnabled: downloadsFilterEnabled)
+            }
             filterButton.tag = ToolbarItem.filter.tag
             filterButton.accessibilityLabel = L10n.Accessibility.Items.filterItems
 
@@ -312,8 +325,17 @@ final class ItemsToolbarController {
         if let item = viewController.toolbarItems?.first(where: { $0.tag == ToolbarItem.filter.tag }) {
             let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease.circle" : "line.horizontal.3.decrease.circle.fill"
             item.image = UIImage(systemName: filterImageName)
-            let downloadsFilterEnabled = filters.contains(where: { $0.isDownloadedFilesFilter })
-            item.menu = createFilterMenu(downloadsFilterEnabled: downloadsFilterEnabled)
+            if isCompact {
+                item.menu = nil
+                item.primaryAction = UIAction { [weak self, weak item] _ in
+                    guard let item else { return }
+                    self?.delegate?.showFilters(button: item)
+                }
+            } else {
+                item.primaryAction = nil
+                let downloadsFilterEnabled = filters.contains(where: { $0.isDownloadedFilesFilter })
+                item.menu = createFilterMenu(downloadsFilterEnabled: downloadsFilterEnabled)
+            }
         }
 
         if let item = viewController.toolbarItems?.first(where: { $0.tag == ToolbarItem.title.tag }),

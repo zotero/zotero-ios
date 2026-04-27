@@ -329,6 +329,10 @@ extension TrashViewController: ItemsToolbarControllerDelegate {
         coordinatorDelegate?.showLookup()
     }
 
+    func showFilters(button: UIBarButtonItem) {
+        coordinatorDelegate?.showFilters(filters: viewModel.state.filters, filtersDelegate: self, button: button)
+    }
+
     func sortTypeChanged(_ sortType: ItemsSortType) {
         viewModel.process(action: .setSortType(sortType))
     }

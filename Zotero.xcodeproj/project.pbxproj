@@ -646,6 +646,8 @@
 		B353F1FC242E23680062EE24 /* ResetTranslatorsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B353F1FA242E21880062EE24 /* ResetTranslatorsDbRequest.swift */; };
 		B353F204242E52610062EE24 /* Database.swift in Sources */ = {isa = PBXBuildFile; fileRef = B353F202242E52610062EE24 /* Database.swift */; };
 		B353F207242E52EE0062EE24 /* Database.swift in Sources */ = {isa = PBXBuildFile; fileRef = B353F202242E52610062EE24 /* Database.swift */; };
+		B35502052F9F525D00A221E5 /* ItemsFilterCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35502042F9F525D00A221E5 /* ItemsFilterCoordinator.swift */; };
+		B35502072F9F527000A221E5 /* ItemsFilterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35502062F9F527000A221E5 /* ItemsFilterViewController.swift */; };
 		B355B12C2850B6C400BAE2C5 /* TableViewDiffableDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = B355B12B2850B6C400BAE2C5 /* TableViewDiffableDataSource.swift */; };
 		B355B8FF239951E800E837B9 /* translation in Resources */ = {isa = PBXBuildFile; fileRef = B355B8FE239951E800E837B9 /* translation */; };
 		B356A33325248C9E003F1943 /* RxBlocking in Frameworks */ = {isa = PBXBuildFile; productRef = B356A33225248C9E003F1943 /* RxBlocking */; };
@@ -1790,6 +1792,8 @@
 		B352FFCB2CBE943B00D0887B /* AutoEmptyTrashDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoEmptyTrashDbRequest.swift; sourceTree = "<group>"; };
 		B353F1FA242E21880062EE24 /* ResetTranslatorsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResetTranslatorsDbRequest.swift; sourceTree = "<group>"; };
 		B353F202242E52610062EE24 /* Database.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Database.swift; sourceTree = "<group>"; };
+		B35502042F9F525D00A221E5 /* ItemsFilterCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemsFilterCoordinator.swift; sourceTree = "<group>"; };
+		B35502062F9F527000A221E5 /* ItemsFilterViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemsFilterViewController.swift; sourceTree = "<group>"; };
 		B355B12B2850B6C400BAE2C5 /* TableViewDiffableDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableViewDiffableDataSource.swift; sourceTree = "<group>"; };
 		B355B8FE239951E800E837B9 /* translation */ = {isa = PBXFileReference; lastKnownFileType = folder; path = translation; sourceTree = "<group>"; };
 		B3574E3A2AC5AAC6009234BE /* HtmlEpubAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HtmlEpubAnnotation.swift; sourceTree = "<group>"; };
@@ -3647,6 +3651,7 @@
 				B3593EEA241A61C700760E20 /* Models */,
 				B3593EE8241A61C700760E20 /* ViewModels */,
 				B3593EEF241A61C700760E20 /* Views */,
+				B35502042F9F525D00A221E5 /* ItemsFilterCoordinator.swift */,
 			);
 			path = Items;
 			sourceTree = "<group>";
@@ -3682,6 +3687,7 @@
 				B3593EF6241A61C700760E20 /* BaseItemsViewController.swift */,
 				B3593EF2241A61C700760E20 /* ItemCell.swift */,
 				B30B405E2490CAFC00FAAF6D /* ItemCell.xib */,
+				B35502062F9F527000A221E5 /* ItemsFilterViewController.swift */,
 				B3593EF0241A61C700760E20 /* ItemsTableViewHandler.swift */,
 				B31D973B27F5E51100ED3DA2 /* ItemsToolbarDownloadProgressView.swift */,
 				B3ED793A2C9D74DF004F5C9A /* ItemsViewController.swift */,
@@ -5597,6 +5603,7 @@
 				B30566B723FC051F003304F2 /* GroupResponse.swift in Sources */,
 				B32B4F952475544700F78A05 /* SyncToolbarController.swift in Sources */,
 				B30565DC23FC051E003304F2 /* AssignItemsToCollectionsDbRequest.swift in Sources */,
+				B35502072F9F527000A221E5 /* ItemsFilterViewController.swift in Sources */,
 				B3B613F7260B844B00B92017 /* EmptyTrashDbRequest.swift in Sources */,
 				B3ED79392C9C7060004F5C9A /* TrashTableViewDataSource.swift in Sources */,
 				B340ECA8290FDE3B00EE920D /* PDFReaderViewController.swift in Sources */,
@@ -6148,6 +6155,7 @@
 				B3B557132C884B8300BD6325 /* AnnotationPreview.swift in Sources */,
 				B355B12C2850B6C400BAE2C5 /* TableViewDiffableDataSource.swift in Sources */,
 				B310280B2B1E16EC00E41554 /* PDFThumbnailsState.swift in Sources */,
+				B35502052F9F525D00A221E5 /* ItemsFilterCoordinator.swift in Sources */,
 				B3B953CC245981C100FC96DB /* PDFReaderActionHandler.swift in Sources */,
 				B3FE33732C09F44E0065C5B2 /* SyncRefreshController.swift in Sources */,
 				B385B70E25C03E7E0073CA6F /* PDFExportState.swift in Sources */,
