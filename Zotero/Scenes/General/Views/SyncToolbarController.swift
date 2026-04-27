@@ -26,8 +26,8 @@ final class SyncToolbarController {
         return toolbarBottom.constant != 0
     }
     private var warningIconColor: UIColor? {
-        if consecutiveErrorCount >= 5 { return .systemRed }
-        if consecutiveErrorCount >= 3 { return .systemYellow }
+        if consecutiveErrorCount >= 10 { return .systemRed }
+        if consecutiveErrorCount >= 5 { return .systemYellow }
         return nil
     }
 
