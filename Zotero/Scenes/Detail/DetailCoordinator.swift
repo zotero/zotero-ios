@@ -39,10 +39,8 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showItemDetail(for type: ItemDetailState.DetailType, libraryId: LibraryIdentifier, scrolledToKey childKey: String?, animated: Bool)
     func showAttachmentError(_ error: Error)
     func showAddActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
-    func showSortActions(sortType: ItemsSortType, button: UIBarButtonItem, changed: @escaping (ItemsSortType) -> Void)
     func show(url: URL)
     func show(doi: String)
-    func showFilters(filters: [ItemsFilter], filtersDelegate: BaseItemsViewController, button: UIBarButtonItem)
     func showDeletionQuestion(count: Int, confirmAction: @escaping () -> Void, cancelAction: @escaping () -> Void)
     func showRemoveFromCollectionQuestion(count: Int, confirmAction: @escaping () -> Void)
     func showCitation(using presenter: UIViewController?, for itemIds: Set<String>, libraryId: LibraryIdentifier, delegate: DetailCitationCoordinatorDelegate?)
@@ -50,6 +48,8 @@ protocol DetailItemsCoordinatorDelegate: AnyObject {
     func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier)
     func showAttachment(key: String, parentKey: String?, libraryId: LibraryIdentifier, readerURL: URL?)
     func show(error: ItemsError)
+    func showFilters(filters: [ItemsFilter], filtersDelegate: BaseItemsViewController, button: UIBarButtonItem)
+    func dismissFilters()
     func showLookup()
 }
 
@@ -481,66 +481,6 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         self.navigationController?.present(controller, animated: true, completion: nil)
     }
 
-    func showSortActions(sortType: ItemsSortType, button: UIBarButtonItem, changed: @escaping (ItemsSortType) -> Void) {
-        DDLogInfo("DetailCoordinator: show item sort popup")
-
-        let sortNavigationController = UINavigationController()
-        sortNavigationController.modalPresentationStyle = .popover
-        sortNavigationController.popoverPresentationController?.sourceItem = button
-        let view = ItemSortingView(
-            sortType: sortType,
-            changed: changed,
-            showPicker: { [weak sortNavigationController] view in
-                guard let sortNavigationController else { return }
-                showPicker(view: view, navigationController: sortNavigationController)
-            },
-            closePicker: { [weak sortNavigationController] in
-                sortNavigationController?.popViewController(animated: true)
-            }
-        )
-        let controller = createItemSortingController(for: view, navigationController: sortNavigationController)
-        sortNavigationController.setViewControllers([controller], animated: false)
-        navigationController?.present(sortNavigationController, animated: true, completion: nil)
-
-        func createItemSortingController(for view: ItemSortingView, navigationController: UINavigationController) -> UIHostingController<ItemSortingView> {
-            let controller = DisappearActionHostingController(rootView: view)
-            var size: CGSize?
-            controller.willAppear = { [weak controller, weak navigationController] in
-                guard let controller else { return }
-                let _size = size ?? controller.view.systemLayoutSizeFitting(CGSize(width: 400.0, height: .greatestFiniteMagnitude))
-                size = _size
-                controller.preferredContentSize = _size
-                navigationController?.preferredContentSize = _size
-            }
-
-            if UIDevice.current.userInterfaceIdiom == .phone {
-                controller.didLoad = { [weak self] viewController in
-                    guard let self else { return }
-                    let doneButton = UIBarButtonItem(title: L10n.done, style: .done, target: nil, action: nil)
-                    doneButton.rx.tap
-                        .subscribe({ [weak self] _ in
-                            self?.navigationController?.dismiss(animated: true)
-                        })
-                        .disposed(by: disposeBag)
-                    viewController.navigationItem.rightBarButtonItem = doneButton
-                }
-            }
-            return controller
-        }
-
-        func showPicker(view: ItemSortTypePickerView, navigationController: UINavigationController) {
-            let controller = UIHostingController(rootView: view)
-            controller.preferredContentSize = CGSize(width: 400, height: 600)
-            navigationController.preferredContentSize = controller.preferredContentSize
-            navigationController.pushViewController(controller, animated: true)
-        }
-    }
-
-    private func sortButtonTitles(for sortType: ItemsSortType) -> (field: String, order: String) {
-        let sortOrderTitle = sortType.ascending ? L10n.Items.ascending : L10n.Items.descending
-        return ("\(L10n.Items.sortBy): \(sortType.field.title)", "\(L10n.Items.sortOrder): \(sortOrderTitle)")
-    }
-
     func createNoteController(
         library: Library,
         kind: NoteEditorKind,
@@ -655,27 +595,6 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         self.navigationController?.present(navigationController, animated: true, completion: nil)
     }
 
-    func showFilters(filters: [ItemsFilter], filtersDelegate: BaseItemsViewController, button: UIBarButtonItem) {
-        DDLogInfo("DetailCoordinator: show item filters")
-
-        let navigationController = NavigationViewController()
-        navigationController.modalPresentationStyle = .popover
-        navigationController.popoverPresentationController?.sourceItem = button
-
-        let coordinator = ItemsFilterCoordinator(
-            filters: filters,
-            filtersDelegate: filtersDelegate,
-            navigationController: navigationController,
-            mainCoordinatorDelegate: mainCoordinatorDelegate,
-            controllers: controllers
-        )
-        coordinator.parentCoordinator = self
-        childCoordinators.append(coordinator)
-        coordinator.start(animated: false)
-
-        self.navigationController?.present(navigationController, animated: true, completion: nil)
-    }
-
     func showDeletionQuestion(count: Int, confirmAction: @escaping () -> Void, cancelAction: @escaping () -> Void) {
         let question = L10n.Items.deleteQuestion(count)
         self.ask(question: question, title: L10n.delete, isDestructive: true, confirm: confirmAction, cancel: cancelAction)
@@ -752,6 +671,32 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         self.childCoordinators.append(coordinator)
         coordinator.start(animated: false)
         self.navigationController?.present(containerController, animated: true, completion: nil)
+    }
+
+    func showFilters(filters: [ItemsFilter], filtersDelegate: BaseItemsViewController, button: UIBarButtonItem) {
+        DDLogInfo("DetailCoordinator: show item filters")
+
+        let navigationController = NavigationViewController()
+        navigationController.modalPresentationStyle = .popover
+        navigationController.popoverPresentationController?.sourceItem = button
+
+        let coordinator = ItemsFilterCoordinator(
+            filters: filters,
+            filtersDelegate: filtersDelegate,
+            navigationController: navigationController,
+            mainCoordinatorDelegate: mainCoordinatorDelegate,
+            controllers: controllers
+        )
+        coordinator.parentCoordinator = self
+        childCoordinators.append(coordinator)
+        coordinator.start(animated: false)
+
+        self.navigationController?.present(navigationController, animated: true, completion: nil)
+    }
+
+    func dismissFilters() {
+        guard let coordinator = childCoordinators.first(where: { $0 is ItemsFilterCoordinator }) as? ItemsFilterCoordinator else { return }
+        coordinator.navigationController?.dismiss(animated: true)
     }
 
     func show(error: ItemsError) {

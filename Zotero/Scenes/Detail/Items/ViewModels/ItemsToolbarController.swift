@@ -14,6 +14,9 @@ import RxSwift
 protocol ItemsToolbarControllerDelegate: UITraitEnvironment {
     func process(action: ItemAction.Kind, button: UIBarButtonItem)
     func showLookup()
+    func showFilters(button: UIBarButtonItem)
+    func sortTypeChanged(_ sortType: ItemsSortType)
+    func downloadsFilterChanged(enabled: Bool)
 }
 
 final class ItemsToolbarController {
@@ -21,6 +24,7 @@ final class ItemsToolbarController {
         let isEditing: Bool
         let selectedItems: Set<AnyHashable>
         let filters: [ItemsFilter]
+        let sortType: ItemsSortType
         let allowsManualSort: Bool
         let downloadBatchData: ItemsState.DownloadBatchData?
         let remoteDownloadBatchData: ItemsState.DownloadBatchData?
@@ -33,7 +37,8 @@ final class ItemsToolbarController {
         case single
         case filter
         case title
-        
+        case sort
+
         var tag: Int {
             rawValue
         }
@@ -76,6 +81,10 @@ final class ItemsToolbarController {
         }
     }
 
+    private var isCompact: Bool {
+        delegate?.traitCollection.horizontalSizeClass == .compact || UIDevice.current.userInterfaceIdiom == .phone
+    }
+
     func willAppear() {
         viewController.navigationController?.setToolbarHidden(false, animated: false)
     }
@@ -91,6 +100,7 @@ final class ItemsToolbarController {
             viewController.toolbarItems = createNormalToolbarItems(for: filters)
             updateNormalToolbarItems(
                 for: filters,
+                sortType: data.sortType,
                 downloadBatchData: data.downloadBatchData,
                 remoteDownloadBatchData: data.remoteDownloadBatchData,
                 identifierLookupBatchData: data.identifierLookupBatchData,
@@ -161,12 +171,17 @@ final class ItemsToolbarController {
 
             let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease.circle" : "line.horizontal.3.decrease.circle.fill"
             let filterButton = UIBarButtonItem(image: UIImage(systemName: filterImageName), style: .plain, target: nil, action: nil)
+            if isCompact {
+                filterButton.primaryAction = UIAction { [weak self, weak filterButton] _ in
+                    guard let filterButton else { return }
+                    self?.delegate?.showFilters(button: filterButton)
+                }
+            } else {
+                let downloadsFilterEnabled = data.filters.contains(where: { $0.isDownloadedFilesFilter })
+                filterButton.menu = createFilterMenu(downloadsFilterEnabled: downloadsFilterEnabled)
+            }
             filterButton.tag = ToolbarItem.filter.tag
             filterButton.accessibilityLabel = L10n.Accessibility.Items.filterItems
-            filterButton.rx.tap.subscribe(onNext: { [weak self] _ in
-                self?.delegate?.process(action: .filter, button: filterButton)
-            })
-            .disposed(by: disposeBag)
 
             let titleButton = UIBarButtonItem(customView: createTitleView())
             titleButton.tag = ToolbarItem.title.tag
@@ -175,13 +190,9 @@ final class ItemsToolbarController {
 
             if data.allowsManualSort {
                 let action = ItemAction(type: .sort)
-                let sortButton = UIBarButtonItem(image: action.image, style: .plain, target: nil, action: nil)
+                let sortButton = UIBarButtonItem(image: action.image, menu: createSortMenu(for: data.sortType))
+                sortButton.tag = ToolbarItem.sort.tag
                 sortButton.accessibilityLabel = L10n.Accessibility.Items.sortItems
-                sortButton.rx.tap.subscribe(onNext: { [weak self] _ in
-                    self?.delegate?.process(action: action.type, button: sortButton)
-                })
-                .disposed(by: disposeBag)
-
                 items.append(contentsOf: [flexibleSpacer, sortButton, fixedSpacer])
             } else {
                 items.append(contentsOf: [flexibleSpacer, fixedSpacer])
@@ -224,6 +235,7 @@ final class ItemsToolbarController {
         } else {
             updateNormalToolbarItems(
                 for: sizeClassSpecificFilters(from: data.filters),
+                sortType: data.sortType,
                 downloadBatchData: data.downloadBatchData,
                 remoteDownloadBatchData: data.remoteDownloadBatchData,
                 identifierLookupBatchData: data.identifierLookupBatchData,
@@ -250,6 +262,37 @@ final class ItemsToolbarController {
         })
     }
 
+    private func createFilterMenu(downloadsFilterEnabled: Bool) -> UIMenu {
+        let downloadsAction = UIAction(title: L10n.Items.Filters.downloads, image: UIImage(systemName: "arrow.down.circle"), state: downloadsFilterEnabled ? .on : .off) { [weak self] _ in
+            self?.delegate?.downloadsFilterChanged(enabled: !downloadsFilterEnabled)
+        }
+        return UIMenu(title: L10n.Items.Filters.title, children: [downloadsAction])
+    }
+
+    private func createSortMenu(for sortType: ItemsSortType) -> UIMenu {
+        let ascendingAction = UIAction(title: L10n.Items.ascending, state: sortType.ascending ? .on : .off) { [weak self] _ in
+            var newSortType = sortType
+            newSortType.ascending = true
+            self?.delegate?.sortTypeChanged(newSortType)
+        }
+        let descendingAction = UIAction(title: L10n.Items.descending, state: sortType.ascending ? .off : .on) { [weak self] _ in
+            var newSortType = sortType
+            newSortType.ascending = false
+            self?.delegate?.sortTypeChanged(newSortType)
+        }
+        let orderMenu = UIMenu(title: L10n.Items.sortOrder, options: .displayInline, children: [ascendingAction, descendingAction])
+
+        let fieldActions = ItemsSortType.Field.allCases.map { field in
+            UIAction(title: field.title, state: sortType.field == field ? .on : .off) { [weak self] _ in
+                let newSortType = ItemsSortType(field: field, ascending: field.defaultOrderAscending)
+                self?.delegate?.sortTypeChanged(newSortType)
+            }
+        }
+        let fieldsMenu = UIMenu(title: L10n.Items.sortBy, options: .displayInline, children: fieldActions)
+
+        return UIMenu(children: [orderMenu, fieldsMenu])
+    }
+
     // MARK: - Helpers
 
     private func updateEditingToolbarItems(for selectedItems: Set<AnyHashable>) {
@@ -269,14 +312,30 @@ final class ItemsToolbarController {
 
     private func updateNormalToolbarItems(
         for filters: [ItemsFilter],
+        sortType: ItemsSortType,
         downloadBatchData: ItemsState.DownloadBatchData?,
         remoteDownloadBatchData: ItemsState.DownloadBatchData?,
         identifierLookupBatchData: ItemsState.IdentifierLookupBatchData,
         itemCount: Int
     ) {
+        if let item = viewController.toolbarItems?.first(where: { $0.tag == ToolbarItem.sort.tag }) {
+            item.menu = createSortMenu(for: sortType)
+        }
+
         if let item = viewController.toolbarItems?.first(where: { $0.tag == ToolbarItem.filter.tag }) {
             let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease.circle" : "line.horizontal.3.decrease.circle.fill"
             item.image = UIImage(systemName: filterImageName)
+            if isCompact {
+                item.menu = nil
+                item.primaryAction = UIAction { [weak self, weak item] _ in
+                    guard let item else { return }
+                    self?.delegate?.showFilters(button: item)
+                }
+            } else {
+                item.primaryAction = nil
+                let downloadsFilterEnabled = filters.contains(where: { $0.isDownloadedFilesFilter })
+                item.menu = createFilterMenu(downloadsFilterEnabled: downloadsFilterEnabled)
+            }
         }
 
         if let item = viewController.toolbarItems?.first(where: { $0.tag == ToolbarItem.title.tag }),
