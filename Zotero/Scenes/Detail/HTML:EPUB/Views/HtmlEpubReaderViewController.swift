@@ -15,9 +15,11 @@ protocol HtmlEpubReaderContainerDelegate: AnyObject {
     var statusBarHeight: CGFloat { get }
     var navigationBarHeight: CGFloat { get }
     var isSidebarVisible: Bool { get }
+    var isToolbarVisible: Bool { get }
 
     func show(url: URL)
     func toggleInterfaceVisibility()
+    func showToolOptions()
 }
 
 class HtmlEpubReaderViewController: UIViewController, ReaderViewController, ParentWithSidebarController {
@@ -60,6 +62,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
         }
     }
     var isSidebarVisible: Bool { return self.sidebarControllerLeft?.constant == 0 }
+    var isToolbarVisible: Bool { return toolbarState.visible }
     var isDocumentLocked: Bool { return false }
     private(set) var activeAnnotationTool: AnnotationTool?
     lazy var toolbarButton: UIBarButtonItem = {
@@ -501,7 +504,7 @@ extension HtmlEpubReaderViewController: AnnotationToolbarDelegate {
     }
 
     func toggle(tool: AnnotationTool, options: AnnotationToolOptions) {
-        viewModel.process(action: .toggleTool(tool))
+        documentController?.toggle(tool: tool, tappedWithStylus: options == .stylus)
     }
 
     func showToolOptions(sourceItem: UIPopoverPresentationControllerSourceItem) {
@@ -563,6 +566,16 @@ extension HtmlEpubReaderViewController: HtmlEpubReaderContainerDelegate {
         if isHidden && isSidebarVisible {
             toggleSidebar(animated: true)
         }
+    }
+    
+    func showToolOptions() {
+        if let annotationToolbarController, !annotationToolbarController.view.isHidden, !annotationToolbarController.colorPickerButton.isHidden {
+            showToolOptions(sourceItem: annotationToolbarController.colorPickerButton)
+            return
+        }
+
+        guard let item = navigationItem.rightBarButtonItems?.last else { return }
+        showToolOptions(sourceItem: item)
     }
 }
 
