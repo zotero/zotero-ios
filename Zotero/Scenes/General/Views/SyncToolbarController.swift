@@ -12,6 +12,31 @@ import CocoaLumberjackSwift
 import RxSwift
 
 final class SyncToolbarController {
+    private enum WarningLevel {
+        case medium
+        case critical
+
+        init?(errorCount: Int) {
+            if errorCount >= 10 {
+                self = .critical
+            } else if errorCount >= 5 {
+                self = .medium
+            } else {
+                return nil
+            }
+        }
+
+        var color: UIColor {
+            switch self {
+            case .medium:
+                return .systemYellow
+
+            case .critical:
+                return .systemRed
+            }
+        }
+    }
+
     private static let finishVisibilityTime: RxTimeInterval = .seconds(4)
     private unowned let viewController: UIViewController
     private unowned let dbStorage: DbStorage
@@ -24,11 +49,6 @@ final class SyncToolbarController {
     private var consecutiveErrorCount = 0
     private var toolbarIsHidden: Bool {
         return toolbarBottom.constant != 0
-    }
-    private var warningIconColor: UIColor? {
-        if consecutiveErrorCount >= 10 { return .systemRed }
-        if consecutiveErrorCount >= 5 { return .systemYellow }
-        return nil
     }
 
     weak var coordinatorDelegate: MainCoordinatorSyncToolbarDelegate?
@@ -308,55 +328,48 @@ final class SyncToolbarController {
     }
 
     private func set(progress: SyncProgress) {
-        let item = UIBarButtonItem(customView: toolbarView(with: text(for: progress), warningIconColor: warningIconColor))
+        let item = UIBarButtonItem(customView: toolbarView(with: text(for: progress), warningLevel: .init(errorCount: consecutiveErrorCount)))
         toolbar.setItems([item], animated: false)
     }
 
-    private func toolbarView(with text: String, warningIconColor: UIColor? = nil) -> UIView {
+    private func toolbarView(with text: String, warningLevel: WarningLevel? = nil) -> UIView {
         let textColor: UIColor = viewController.traitCollection.userInterfaceStyle == .light ? .black : .white
-        let button = UIButton(frame: UIScreen.main.bounds)
-        button.titleLabel?.font = .preferredFont(forTextStyle: .footnote)
+
+        var configuration = UIButton.Configuration.plain()
+        configuration.title = text
+        configuration.titleLineBreakMode = .byWordWrapping
+        configuration.baseForegroundColor = textColor
+
+        let titleFont: UIFont
+        if let warningLevel {
+            let symbolConfig = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
+            configuration.image = UIImage(systemName: "exclamationmark.triangle", withConfiguration: symbolConfig)
+            configuration.imagePlacement = .leading
+            configuration.imagePadding = 6
+            configuration.imageColorTransformer = UIConfigurationColorTransformer { _ in warningLevel.color }
+
+            switch warningLevel {
+            case .critical:
+                let footnoteDescriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .footnote)
+                titleFont = .systemFont(ofSize: footnoteDescriptor.pointSize, weight: .medium)
+
+            case .medium:
+                titleFont = .preferredFont(forTextStyle: .footnote)
+            }
+        } else {
+            titleFont = .preferredFont(forTextStyle: .footnote)
+        }
+
+        configuration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { container in
+            var container = container
+            container.font = titleFont
+            return container
+        }
+
+        let button = UIButton(configuration: configuration)
+        button.frame = UIScreen.main.bounds
         button.titleLabel?.adjustsFontSizeToFitWidth = true
         button.titleLabel?.numberOfLines = 2
-        button.contentHorizontalAlignment = .center
-        button.contentVerticalAlignment = .center
-
-        if let warningIconColor {
-            let symbolConfig = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
-            let imageView = UIImageView(image: UIImage(systemName: "exclamationmark.triangle", withConfiguration: symbolConfig))
-            imageView.tintColor = warningIconColor
-            imageView.contentMode = .scaleAspectFit
-            imageView.setContentHuggingPriority(.required, for: .horizontal)
-            imageView.setContentCompressionResistancePriority(.required, for: .horizontal)
-
-            let label = UILabel()
-            label.text = text
-            let footnoteDescriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .footnote)
-            label.font = warningIconColor == .systemRed
-                ? UIFont.systemFont(ofSize: footnoteDescriptor.pointSize, weight: .medium)
-                : .preferredFont(forTextStyle: .footnote)
-            label.textColor = textColor
-            label.adjustsFontSizeToFitWidth = true
-            label.numberOfLines = 2
-
-            let stack = UIStackView(arrangedSubviews: [imageView, label])
-            stack.axis = .horizontal
-            stack.spacing = 6
-            stack.alignment = .center
-            stack.isUserInteractionEnabled = false
-            stack.translatesAutoresizingMaskIntoConstraints = false
-            button.addSubview(stack)
-
-            NSLayoutConstraint.activate([
-                stack.centerXAnchor.constraint(equalTo: button.centerXAnchor),
-                stack.centerYAnchor.constraint(equalTo: button.centerYAnchor),
-                stack.leadingAnchor.constraint(greaterThanOrEqualTo: button.leadingAnchor, constant: 8),
-                stack.trailingAnchor.constraint(lessThanOrEqualTo: button.trailingAnchor, constant: -8)
-            ])
-        } else {
-            button.setTitleColor(textColor, for: .normal)
-            button.setTitle(text, for: .normal)
-        }
 
         button
             .rx
