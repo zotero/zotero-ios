@@ -207,6 +207,8 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
         )
         viewModel.process(action: .changeIdleTimerDisabled(true))
         view.backgroundColor = .systemGray6
+        setupObserving()
+        viewModel.process(action: .prepareDocumentProvider)
         setupViews()
         if FeatureGates.enabled.contains(.speech) {
             accessibilityHandler = AccessibilityViewHandler(
@@ -219,10 +221,9 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
             )
             accessibilityHandler?.delegate = self
         }
-        setupObserving()
 
-        if !viewModel.state.document.isLocked, let documentController {
-            viewModel.process(action: .loadDocumentData(boundingBoxConverter: documentController))
+        if !viewModel.state.document.isLocked {
+            viewModel.process(action: .loadDocumentData)
         }
 
         setupNavigationBar()
@@ -237,16 +238,6 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
             documentController.parentDelegate = self
             documentController.coordinatorDelegate = coordinatorDelegate
             documentController.view.translatesAutoresizingMaskIntoConstraints = false
-
-            let sidebarController = PDFSidebarViewController(viewModel: viewModel)
-            sidebarController.parentDelegate = self
-            sidebarController.coordinatorDelegate = coordinatorDelegate
-            sidebarController.boundingBoxConverter = documentController
-            sidebarController.view.translatesAutoresizingMaskIntoConstraints = false
-
-            let separator = UIView()
-            separator.translatesAutoresizingMaskIntoConstraints = false
-            separator.backgroundColor = Asset.Colors.annotationSidebarBorderColor.color
 
             let annotationToolbar = AnnotationToolbarViewController(tools: Defaults.shared.pdfAnnotationTools.map({ $0.type }), undoRedoEnabled: true, size: navigationBarHeight)
             annotationToolbar.delegate = self
@@ -265,19 +256,15 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
             let forwardButton = intraDocumentNavigationHandler.forwardButton
 
             add(controller: documentController)
-            add(controller: sidebarController)
             add(controller: annotationToolbar)
             view.addSubview(topSafeAreaSpacer)
             view.addSubview(documentController.view)
-            view.addSubview(sidebarController.view)
-            view.addSubview(separator)
             view.addSubview(annotationToolbar.view)
             view.addSubview(backButton)
             view.addSubview(forwardButton)
 
             let documentLeftConstraint = documentController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor)
             let documentBottomConstraint = view.bottomAnchor.constraint(equalTo: documentController.view.bottomAnchor)
-            let sidebarLeftConstraint = sidebarController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: -PDFReaderLayout.sidebarWidth)
             documentTop = documentController.view.topAnchor.constraint(equalTo: view.topAnchor)
 
             NSLayoutConstraint.activate([
@@ -285,14 +272,6 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
                 topSafeAreaSpacer.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
                 topSafeAreaSpacer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
                 topSafeAreaSpacer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-                sidebarController.view.topAnchor.constraint(equalTo: view.topAnchor),
-                sidebarController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-                sidebarController.view.widthAnchor.constraint(equalToConstant: PDFReaderLayout.sidebarWidth),
-                sidebarLeftConstraint,
-                separator.widthAnchor.constraint(equalToConstant: PDFReaderLayout.separatorWidth),
-                separator.trailingAnchor.constraint(equalTo: sidebarController.view.trailingAnchor),
-                separator.topAnchor.constraint(equalTo: view.topAnchor),
-                separator.bottomAnchor.constraint(equalTo: view.bottomAnchor),
                 documentController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
                 documentTop,
                 documentBottomConstraint,
@@ -307,19 +286,11 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
             self.documentController = documentController
             documentControllerLeft = documentLeftConstraint
             documentControllerBottom = documentBottomConstraint
-            self.sidebarController = sidebarController
-            sidebarControllerLeft = sidebarLeftConstraint
             annotationToolbarController = annotationToolbar
             self.intraDocumentNavigationHandler = intraDocumentNavigationHandler
 
             annotationToolbarHandler = AnnotationToolbarHandler(controller: annotationToolbar, delegate: self)
             annotationToolbarHandler!.performInitialLayout()
-
-            func add(controller: UIViewController) {
-                controller.willMove(toParent: self)
-                addChild(controller)
-                controller.didMove(toParent: self)
-            }
         }
 
         func setupNavigationBar() {
@@ -467,7 +438,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
             return
         }
 
-        if let success = state.unlockSuccessful, success, let documentController {
+        if let success = state.unlockSuccessful, success {
             // Enable bar buttons
             for item in navigationItem.leftBarButtonItems ?? [] {
                 item.isEnabled = true
@@ -479,7 +450,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController {
             }
             interfaceVisibilityDidChange(to: !toolbarState.visible)
             // Load initial document data after document has been unlocked successfully
-            viewModel.process(action: .loadDocumentData(boundingBoxConverter: documentController))
+            viewModel.process(action: .loadDocumentData)
         }
 
         if state.changes.contains(.selectionDeletion) {
@@ -993,39 +964,47 @@ extension PDFReaderViewController: ConflictViewControllerReceiver {
     }
 }
 
-extension PDFReaderViewController: AnnotationBoundingBoxConverter {
-    func convertFromDb(rect: CGRect, page: PageIndex) -> CGRect? {
-        return documentController?.convertFromDb(rect: rect, page: page)
-    }
-
-    func convertFromDb(point: CGPoint, page: PageIndex) -> CGPoint? {
-        return documentController?.convertFromDb(point: point, page: page)
-    }
-
-    func convertToDb(rect: CGRect, page: PageIndex) -> CGRect? {
-        return documentController?.convertToDb(rect: rect, page: page)
-    }
-
-    func convertToDb(point: CGPoint, page: PageIndex) -> CGPoint? {
-        return documentController?.convertToDb(point: point, page: page)
-    }
-
-    func sortIndexMinY(rect: CGRect, page: PageIndex) -> CGFloat? {
-        return documentController?.sortIndexMinY(rect: rect, page: page)
-    }
-
-    func textOffset(rect: CGRect, page: PageIndex) -> Int? {
-        return documentController?.textOffset(rect: rect, page: page)
-    }
-}
-
 extension PDFReaderViewController: IntraDocumentNavigationButtonsHandlerDelegate {
     var sidebarView: UIView? {
         return sidebarController?.view
     }
 }
 
-extension PDFReaderViewController: ParentWithSidebarController {}
+extension PDFReaderViewController: ParentWithSidebarController {
+    func initializeSidebarIfNeeded() {
+        guard sidebarController == nil, let documentController else { return }
+        let sidebarController = PDFSidebarViewController(viewModel: viewModel)
+        sidebarController.parentDelegate = self
+        sidebarController.coordinatorDelegate = coordinatorDelegate
+        sidebarController.boundingBoxConverter = viewModel.state.document
+        sidebarController.view.translatesAutoresizingMaskIntoConstraints = false
+
+        let separator = UIView()
+        separator.translatesAutoresizingMaskIntoConstraints = false
+        separator.backgroundColor = Asset.Colors.annotationSidebarBorderColor.color
+
+        add(controller: sidebarController)
+        view.insertSubview(sidebarController.view, aboveSubview: documentController.view)
+        view.insertSubview(separator, aboveSubview: sidebarController.view)
+
+        let sidebarLeftConstraint = sidebarController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: -PDFReaderLayout.sidebarWidth)
+        NSLayoutConstraint.activate([
+            sidebarController.view.topAnchor.constraint(equalTo: view.topAnchor),
+            sidebarController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            sidebarController.view.widthAnchor.constraint(equalToConstant: PDFReaderLayout.sidebarWidth),
+            sidebarLeftConstraint,
+            separator.widthAnchor.constraint(equalToConstant: PDFReaderLayout.separatorWidth),
+            separator.trailingAnchor.constraint(equalTo: sidebarController.view.trailingAnchor),
+            separator.topAnchor.constraint(equalTo: view.topAnchor),
+            separator.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+
+        self.sidebarController = sidebarController
+        sidebarControllerLeft = sidebarLeftConstraint
+        view.layoutIfNeeded()
+        intraDocumentNavigationHandler?.updateButtonsZPosition()
+    }
+}
 
 extension PDFReaderViewController: SpeechmanagerDelegate {
     func getCurrentPageIndex() -> UInt {
