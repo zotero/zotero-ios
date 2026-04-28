@@ -17,10 +17,16 @@ final class CollapsibleTextView: UITextView {
     var onToggle: (() -> Void)?
 
     private var isCollapsed = false
+    private var hasCollapsedVersion = false
     private var collapsedString: NSAttributedString?
     private var expandedString: NSAttributedString?
     private var originalString: NSAttributedString?
     private var maxWidth: CGFloat = 0
+    private var collapsedContextMenuInteraction: UIContextMenuInteraction?
+
+    private var isShowingCollapsedVersion: Bool {
+        return isCollapsed && hasCollapsedVersion
+    }
 
     override init(frame: CGRect, textContainer: NSTextContainer?) {
         super.init(frame: frame, textContainer: textContainer)
@@ -30,6 +36,11 @@ final class CollapsibleTextView: UITextView {
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         setupTextView()
+    }
+
+    override var canBecomeFirstResponder: Bool {
+        // Disable text selection while collapsed; link taps still work because they don't require first-responder.
+        return !isShowingCollapsedVersion && super.canBecomeFirstResponder
     }
 
     private func setupTextView() {
@@ -51,14 +62,17 @@ final class CollapsibleTextView: UITextView {
         }
         attributedText = isCollapsed ? collapsedString : expandedString
         self.isCollapsed = isCollapsed
+        updateCollapsedInteraction()
 
         func createStrings(from text: NSAttributedString, maxWidth: CGFloat) {
             if let string = createCollapsedString(from: text, maxWidth: maxWidth) {
                 collapsedString = string
                 expandedString = createExpandedString(from: text, maxWidth: maxWidth) ?? text
+                hasCollapsedVersion = true
             } else {
                 collapsedString = text
                 expandedString = text
+                hasCollapsedVersion = false
             }
 
             func createCollapsedString(from string: NSAttributedString, maxWidth: CGFloat) -> NSAttributedString? {
@@ -70,6 +84,23 @@ final class CollapsibleTextView: UITextView {
                 guard let showLessString else { return nil }
                 return fit(attributedString: showLessString, toLastLineOf: string, lineLimit: nil, maxWidth: maxWidth)
             }
+        }
+    }
+
+    private func updateCollapsedInteraction() {
+        if isShowingCollapsedVersion {
+            if isFirstResponder {
+                selectedTextRange = nil
+                resignFirstResponder()
+            }
+            if collapsedContextMenuInteraction == nil {
+                let interaction = UIContextMenuInteraction(delegate: self)
+                addInteraction(interaction)
+                collapsedContextMenuInteraction = interaction
+            }
+        } else if let interaction = collapsedContextMenuInteraction {
+            removeInteraction(interaction)
+            collapsedContextMenuInteraction = nil
         }
     }
 
@@ -167,6 +198,19 @@ final class CollapsibleTextView: UITextView {
     }
 }
 
+extension CollapsibleTextView: UIContextMenuInteractionDelegate {
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
+        guard let text = originalString?.string, !text.isEmpty else { return nil }
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
+            UIMenu(title: "", children: [
+                UIAction(title: L10n.copy) { _ in
+                    UIPasteboard.general.string = text
+                }
+            ])
+        }
+    }
+}
+
 extension CollapsibleTextView: UITextViewDelegate {
     func textView(_ textView: UITextView, shouldInteractWith URL: URL, in characterRange: NSRange, interaction: UITextItemInteraction) -> Bool {
         if URL == Self.toggleURL {
@@ -192,6 +236,19 @@ extension CollapsibleTextView: UITextViewDelegate {
             return nil
         }
         return .init(menu: defaultMenu)
+    }
+
+    func textViewDidChangeSelection(_ textView: UITextView) {
+        // The trailing toggle link (" show less") is appended to the displayed text and would otherwise be selectable along with the body. Trim selection back to the original text so the link can't be selected.
+        guard let originalLength = originalString?.length else { return }
+        let selected = textView.selectedRange
+        guard selected.length > 0, selected.location + selected.length > originalLength else { return }
+        let clippedLocation = min(selected.location, originalLength)
+        let clippedLength = originalLength - clippedLocation
+        let clipped = NSRange(location: clippedLocation, length: clippedLength)
+        if clipped != selected {
+            textView.selectedRange = clipped
+        }
     }
 }
 

@@ -971,7 +971,7 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
             guard !viewModel.state.isEditing else { return }
             observer.on(.next(.openLibrary(library)))
 
-        case .title, .dateAdded, .dateModified, .tag:
+        case .title, .dateAdded, .dateModified, .tag, .abstract:
             break
         }
     }
