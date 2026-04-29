@@ -1,23 +1,58 @@
 //
-//  CollapsibleLabel.swift
+//  CollapsibleTextView.swift
 //  Zotero
 //
-//  Created by Michal Rentka on 02/10/2020.
-//  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
+//  Created by Michal Rentka on 09/04/2026.
+//  Copyright © 2026 Corporation for Digital Scholarship. All rights reserved.
 //
 
 import UIKit
 
-final class CollapsibleLabel: UILabel {
+final class CollapsibleTextView: UITextView {
+    static let toggleURL = URL(string: "zotero://toggle-collapse")!
+
     var collapsedNumberOfLines: Int = 0
     var showMoreString: NSAttributedString?
     var showLessString: NSAttributedString?
+    var onToggle: (() -> Void)?
 
     private var isCollapsed = false
+    private var hasCollapsedVersion = false
     private var collapsedString: NSAttributedString?
     private var expandedString: NSAttributedString?
     private var originalString: NSAttributedString?
     private var maxWidth: CGFloat = 0
+    private var collapsedContextMenuInteraction: UIContextMenuInteraction?
+
+    private var isShowingCollapsedVersion: Bool {
+        return isCollapsed && hasCollapsedVersion
+    }
+
+    override init(frame: CGRect, textContainer: NSTextContainer?) {
+        super.init(frame: frame, textContainer: textContainer)
+        setupTextView()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setupTextView()
+    }
+
+    override var canBecomeFirstResponder: Bool {
+        // Disable text selection while collapsed; link taps still work because they don't require first-responder.
+        return !isShowingCollapsedVersion && super.canBecomeFirstResponder
+    }
+
+    private func setupTextView() {
+        isEditable = false
+        isSelectable = true
+        isScrollEnabled = false
+        textContainerInset = .zero
+        self.textContainer.lineFragmentPadding = 0
+        backgroundColor = .clear
+        delegate = self
+        linkTextAttributes = [.foregroundColor: Asset.Colors.zoteroBlue.color]
+    }
 
     func set(text: NSAttributedString, isCollapsed: Bool, maxWidth: CGFloat) {
         if (originalString != text) || (self.maxWidth != maxWidth) {
@@ -27,32 +62,45 @@ final class CollapsibleLabel: UILabel {
         }
         attributedText = isCollapsed ? collapsedString : expandedString
         self.isCollapsed = isCollapsed
+        updateCollapsedInteraction()
 
-        /// Creates `collapsedString` and `expandedString` from given text.
-        /// - parameter text: Text to adjust.
         func createStrings(from text: NSAttributedString, maxWidth: CGFloat) {
             if let string = createCollapsedString(from: text, maxWidth: maxWidth) {
                 collapsedString = string
                 expandedString = createExpandedString(from: text, maxWidth: maxWidth) ?? text
+                hasCollapsedVersion = true
             } else {
                 collapsedString = text
                 expandedString = text
+                hasCollapsedVersion = false
             }
 
-            /// Creates a "collapsed" version of given string. Collapsed string appends a `showMoreString` at the last line, limited by `collapsedNumberOfLines`, if needed.
-            /// - parameter string: String to collapse.
-            /// - returns: An `NSAttributedString` with appended `showMoreString` if there are more than `collapsedNumberOfLines`, `nil` otherwise.
             func createCollapsedString(from string: NSAttributedString, maxWidth: CGFloat) -> NSAttributedString? {
                 guard let showMoreString, !string.string.isEmpty, collapsedNumberOfLines > 0 else { return nil }
                 return fit(attributedString: showMoreString, toLastLineOf: string, lineLimit: collapsedNumberOfLines, maxWidth: maxWidth)
             }
 
-            /// Creates an "expanded" version of given string. Expanded string appends a `showLessString` at a new line.
-            /// - returns: An `NSAttributedString` with appended `showLessString` if `showLessString` is available, `nil` otherwise.
             func createExpandedString(from string: NSAttributedString, maxWidth: CGFloat) -> NSAttributedString? {
                 guard let showLessString else { return nil }
                 return fit(attributedString: showLessString, toLastLineOf: string, lineLimit: nil, maxWidth: maxWidth)
             }
+        }
+    }
+
+    private func updateCollapsedInteraction() {
+        if isShowingCollapsedVersion {
+            if isFirstResponder {
+                selectedTextRange = nil
+                resignFirstResponder()
+            }
+            if collapsedContextMenuInteraction == nil {
+                let interaction = UIContextMenuInteraction(delegate: self)
+                addInteraction(interaction)
+                collapsedContextMenuInteraction = interaction
+            }
+        } else if let interaction = collapsedContextMenuInteraction {
+            removeInteraction(interaction)
+            collapsedContextMenuInteraction = nil
         }
     }
 
@@ -108,7 +156,7 @@ final class CollapsibleLabel: UILabel {
 
             // If it doesn't fit, go word by word and check whether it fits without given word
             let nsString = line.string as NSString
-            nsString.enumerateSubstrings(in: _NSRange(location: 0, length: line.length), options: [.byWords, .reverse]) { _, subrange, _, stop in
+            nsString.enumerateSubstrings(in: NSRange(location: 0, length: line.length), options: [.byWords, .reverse]) { _, subrange, _, stop in
                 let length: Int
                 if subrange.location == 0 {
                     length = 0
@@ -146,6 +194,60 @@ final class CollapsibleLabel: UILabel {
                 let height = text.boundingRect(with: size, options: [.usesLineFragmentOrigin], context: nil).size.height
                 return height <= lineHeight
             }
+        }
+    }
+}
+
+extension CollapsibleTextView: UIContextMenuInteractionDelegate {
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
+        guard let text = originalString?.string, !text.isEmpty else { return nil }
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
+            UIMenu(title: "", children: [
+                UIAction(title: L10n.copy) { _ in
+                    UIPasteboard.general.string = text
+                }
+            ])
+        }
+    }
+}
+
+extension CollapsibleTextView: UITextViewDelegate {
+    func textView(_ textView: UITextView, shouldInteractWith URL: URL, in characterRange: NSRange, interaction: UITextItemInteraction) -> Bool {
+        if URL == Self.toggleURL {
+            if interaction == .invokeDefaultAction {
+                onToggle?()
+            }
+            return false
+        }
+        return true
+    }
+
+    @available(iOS 17.0, *)
+    func textView(_ textView: UITextView, primaryActionFor textItem: UITextItem, defaultAction: UIAction) -> UIAction? {
+        if case .link(let url) = textItem.content, url == Self.toggleURL {
+            return UIAction { [weak self] _ in self?.onToggle?() }
+        }
+        return defaultAction
+    }
+
+    @available(iOS 17.0, *)
+    func textView(_ textView: UITextView, menuConfigurationFor textItem: UITextItem, defaultMenu: UIMenu) -> UITextItem.MenuConfiguration? {
+        if case .link(let url) = textItem.content, url == Self.toggleURL {
+            return nil
+        }
+        return .init(menu: defaultMenu)
+    }
+
+    func textViewDidChangeSelection(_ textView: UITextView) {
+        // The trailing toggle link (" show less") is appended to the displayed text and would otherwise be selectable along with the body. Trim selection back to the original text so the link can't be selected.
+        guard let originalLength = originalString?.length else { return }
+        let selected = textView.selectedRange
+        guard selected.length > 0, selected.location + selected.length > originalLength else { return }
+        let clippedLocation = min(selected.location, originalLength)
+        let clippedLength = originalLength - clippedLocation
+        let clipped = NSRange(location: clippedLocation, length: clippedLength)
+        if clipped != selected {
+            textView.selectedRange = clipped
         }
     }
 }
