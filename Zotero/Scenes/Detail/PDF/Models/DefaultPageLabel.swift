@@ -10,7 +10,7 @@ import Foundation
 
 import RealmSwift
 
-enum DefaultAnnotationPageLabel {
+enum DefaultAnnotationPageLabel: Equatable {
     case commonPageOffset(offset: Int)
     case labelPerPage(labelsByPage: [Int: String])
 
