@@ -10,47 +10,90 @@ import AVFAudio
 import SwiftUI
 
 struct SpeechLanguagePickerView: View {
-    private struct Language: Identifiable {
+    struct Language: Identifiable {
         let id: String
         let name: String
+        let locales: [String]
     }
 
     private let languages: [Language]
-    @Binding private var selectedLanguage: String
+    private let detectedLanguage: String
+    private let currentLanguage: SpeechLanguageChoice
+    private let onLanguageSelected: (Language?) -> Void
     @Binding private var navigationPath: NavigationPath
+    @State private var isAutoEnabled: Bool
 
-    init(selectedLanguage: Binding<String>, navigationPath: Binding<NavigationPath>) {
-        _selectedLanguage = selectedLanguage
+    private var detectedLanguageName: String {
+        let baseLanguage = String(detectedLanguage.prefix(while: { $0 != "-" }))
+        return Locale.current.localizedString(forLanguageCode: baseLanguage) ?? detectedLanguage
+    }
+
+    init(
+        currentLanguage: SpeechLanguageChoice,
+        detectedLanguage: String,
+        languages: [Language],
+        navigationPath: Binding<NavigationPath>,
+        onLanguageSelected: @escaping (Language?) -> Void
+    ) {
+        self.currentLanguage = currentLanguage
+        self.detectedLanguage = detectedLanguage
+        self.languages = languages
         _navigationPath = navigationPath
-        let voices = AVSpeechSynthesisVoice.speechVoices()
-        languages = Locale.availableIdentifiers
-            .filter({ languageId in !languageId.contains("_") && voices.contains(where: { $0.language.contains(languageId) }) })
-            .map({ Language(id: $0, name: Locale.current.localizedString(forIdentifier: $0) ?? $0) })
-            .sorted(by: { $0.name.caseInsensitiveCompare($1.name) == .orderedAscending })
+        self.onLanguageSelected = onLanguageSelected
+        _isAutoEnabled = State(initialValue: currentLanguage == .auto)
+    }
+
+    private var selectedBaseLanguage: String? {
+        guard case .language(let code) = currentLanguage else { return nil }
+        return code
     }
 
     var body: some View {
         List {
             Section {
-                ForEach(languages) { language in
-                    HStack {
-                        Text(language.name)
-                        Spacer()
-                        if selectedLanguage == language.id {
-                            Image(systemName: "checkmark").foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUIColor)
+                Toggle("\(L10n.Speech.automatic) - \(detectedLanguageName)", isOn: $isAutoEnabled)
+                    .tint(Asset.Colors.zoteroBlueWithDarkMode.swiftUIColor)
+            }
+
+            if !isAutoEnabled {
+                Section(header: Text("LANGUAGE")) {
+                    ForEach(languages) { language in
+                        HStack {
+                            Text(language.name)
+                            Spacer()
+                            if selectedBaseLanguage == language.id {
+                                Image(systemName: "checkmark").foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUIColor)
+                            }
+                        }
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            onLanguageSelected(language)
+                            navigationPath.removeLast()
                         }
                     }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        selectedLanguage = language.id
-                        navigationPath.removeLast()
-                    }
                 }
+            }
+        }
+        .navigationTitle("Language")
+        .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: isAutoEnabled) { newValue in
+            if newValue {
+                onLanguageSelected(nil)
             }
         }
     }
 }
 
 #Preview {
-    SpeechLanguagePickerView(selectedLanguage: .constant("en"), navigationPath: .constant(.init()))
+    SpeechLanguagePickerView(
+        currentLanguage: .language("en"),
+        detectedLanguage: "en-US",
+        languages: [
+            .init(id: "en", name: "English", locales: ["en-US", "en-GB"]),
+            .init(id: "cs", name: "Czech", locales: ["cs-CZ"]),
+            .init(id: "de", name: "German", locales: ["de-DE", "de-AT"])
+        ],
+        navigationPath: .constant(.init()),
+        onLanguageSelected: { _ in }
+    )
 }

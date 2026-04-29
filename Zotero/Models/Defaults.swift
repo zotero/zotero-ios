@@ -159,15 +159,25 @@ final class Defaults {
         defaults: .standard
     )
     var htmlEpubAnnotationTools: [AnnotationToolButton]
-    #endif
 
     // MARK: - Speech
+    
+    @UserDefault(key: "SpeechDefaultLocalVoiceForLanguage", defaultValue: [:])
+    var defaultLocalVoiceForLanguage: [String: String]
 
-    @UserDefault(key: "SpeechDefaultVoiceForLanguage", defaultValue: [:])
-    var defaultVoiceForLanguage: [String: String]
+    @CodableUserDefault(key: "SpeechDefaultStandardRemoteVoiceForLanguage", defaultValue: [:], encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
+    var defaultStandardRemoteVoiceForLanguage: [String: RemoteVoice]
 
-    @UserDefault(key: "SpeechRateModifier", defaultValue: 1)
-    var speechRateModifier: Float
+    @CodableUserDefault(key: "SpeechDefaultPremiumRemoteVoiceForLanguage", defaultValue: [:], encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
+    var defaultPremiumRemoteVoiceForLanguage: [String: RemoteVoice]
+
+    @CodableUserDefault(key: "SpeechRemoteVoiceTier", defaultValue: nil, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
+    var remoteVoiceTier: RemoteVoice.Tier?
+
+    @UserDefault(key: "DidShowReadAloudOnboarding", defaultValue: false)
+    var didShowReadAloudOnboarding: Bool
+
+    #endif
 
     // MARK: - Citation / Bibliography Export
 
@@ -266,6 +276,7 @@ final class Defaults {
         underlineColorHex = AnnotationsConfig.defaultActiveColor
         textColorHex = AnnotationsConfig.defaultActiveColor
         pdfSettings = PDFSettings.default
+        didShowReadAloudOnboarding = false
         #endif
     }
 }

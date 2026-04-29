@@ -6,6 +6,7 @@
 //  Copyright © 2025 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import NaturalLanguage
 import UIKit
 
 import AVFAudio
@@ -14,24 +15,45 @@ import RxSwift
 
 import CocoaLumberjackSwift
 
-protocol AccessibilityPopoupCoordinatorDelegate: AnyObject {
-    func showVoicePicker(for voice: AVSpeechSynthesisVoice, userInterfaceStyle: UIUserInterfaceStyle, selectionChanged: @escaping (AVSpeechSynthesisVoice) -> Void)
+struct AccessibilityPopupVoiceChange {
+    let voice: SpeechVoice
+    let preferredLanguage: String?
 }
 
-final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: UIViewController, UIPopoverPresentationControllerDelegate {
+protocol AccessibilityPopoupCoordinatorDelegate: AnyObject {
+    func showVoicePicker(
+        for voice: SpeechVoice,
+        language: String?,
+        detectedLanguage: String,
+        userInterfaceStyle: UIUserInterfaceStyle,
+        selectionChanged: @escaping (AccessibilityPopupVoiceChange) -> Void
+    )
+    func showReadAloudOnboarding(
+        from presenter: UIViewController,
+        language: String?,
+        detectedLanguage: String,
+        userInterfaceStyle: UIUserInterfaceStyle,
+        completion: @escaping (SpeechVoice?) -> Void
+    )
+}
+
+final class AccessibilityPopupViewController<Delegate: SpeechManagerDelegate>: UIViewController, UIPopoverPresentationControllerDelegate {
     private unowned let speechManager: SpeechManager<Delegate>
     private let speedNumberFormatter: NumberFormatter
     private let disposeBag: DisposeBag
     private let readerAction: () -> Void
+    private let playAction: () -> Void
     private let dismissAction: () -> Void
+    private let highlighterAction: () -> Void
     private let isFormSheet: () -> Bool
-    private let voiceChangeAction: (AVSpeechSynthesisVoice) -> Void
+    private let voiceChangeAction: (AccessibilityPopupVoiceChange) -> Void
     private var containerTop: NSLayoutConstraint!
     private var containerHeight: NSLayoutConstraint!
     private weak var speechButton: UIButton!
     private weak var speechContainer: UIView!
-    private weak var voiceButton: UIButton!
+    private weak var voiceButton: VoiceButtonView!
     private weak var speedButton: UIButton!
+    private weak var highlighterButton: UIButton!
     private weak var controlsView: AccessibilitySpeechControlsStackView<Delegate>!
     private var speechButtonBottom: NSLayoutConstraint!
     private var speechContainerBottom: NSLayoutConstraint!
@@ -45,13 +67,17 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
         speechManager: SpeechManager<Delegate>,
         isFormSheet: @escaping () -> Bool,
         readerAction: @escaping () -> Void,
+        playAction: @escaping () -> Void,
         dismissAction: @escaping () -> Void,
-        voiceChangeAction: @escaping (AVSpeechSynthesisVoice) -> Void
+        highlighterAction: @escaping () -> Void,
+        voiceChangeAction: @escaping (AccessibilityPopupVoiceChange) -> Void
     ) {
         self.speechManager = speechManager
         self.isFormSheet = isFormSheet
         self.readerAction = readerAction
+        self.playAction = playAction
         self.dismissAction = dismissAction
+        self.highlighterAction = highlighterAction
         self.voiceChangeAction = voiceChangeAction
         speedNumberFormatter = NumberFormatter()
         disposeBag = DisposeBag()
@@ -83,7 +109,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
             speechContainer.isHidden = speechManager.state.value.isStopped
 
             let titleLabel = UILabel()
-            titleLabel.text = L10n.Accessibility.Speech.title
+            titleLabel.text = L10n.Speech.title
             titleLabel.font = .preferredFont(forTextStyle: .headline)
 
             let spacer = UIView()
@@ -95,7 +121,6 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
             xConfiguration.baseBackgroundColor = .systemGray5
             xConfiguration.baseForegroundColor = .darkGray
             xConfiguration.cornerStyle = .capsule
-            //            speedConfiguration.contentInsets = .init(top: 6, leading: 16, bottom: 6, trailing: 16)
             let xButton = UIButton(configuration: xConfiguration)
             xButton.setContentHuggingPriority(.required, for: .vertical)
             xButton.setContentHuggingPriority(.required, for: .horizontal)
@@ -106,26 +131,45 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
             titleStackView.axis = .horizontal
             titleStackView.alignment = .fill
             titleStackView.distribution = .fill
+            titleStackView.spacing = 8
             titleStackView.setContentHuggingPriority(.required, for: .vertical)
             titleStackView.translatesAutoresizingMaskIntoConstraints = false
             speechContainer.addSubview(titleStackView)
 
-            let controlsView = AccessibilitySpeechControlsStackView(speechManager: speechManager)
+            let controlsView = AccessibilitySpeechControlsStackView(speechManager: speechManager, playAction: playAction)
             controlsView.setContentHuggingPriority(.defaultLow, for: .vertical)
-            speechContainer.addSubview(controlsView)
 
-            let currentVoice = speechManager.currentVoice
-            var voiceConfiguration = UIButton.Configuration.filled()
-            voiceConfiguration.title = currentVoice.flatMap({ self.voiceTitle(from: $0) }) ?? "Voice"
-            voiceConfiguration.titleLineBreakMode = .byTruncatingMiddle
-            voiceConfiguration.baseBackgroundColor = .systemGray5
-            voiceConfiguration.baseForegroundColor = .label
-            voiceConfiguration.cornerStyle = .capsule
-            voiceConfiguration.contentInsets = .init(top: 6, leading: 10, bottom: 6, trailing: 10)
-            let voiceButton = UIButton(configuration: voiceConfiguration)
-            voiceButton.isEnabled = currentVoice != nil
+            var highlighterConfiguration = UIButton.Configuration.plain()
+            highlighterConfiguration.image = UIImage(systemName: "highlighter", withConfiguration: UIImage.SymbolConfiguration(scale: .large))
+            highlighterConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8)
+            let highlighterButton = UIButton(configuration: highlighterConfiguration)
+            highlighterButton.translatesAutoresizingMaskIntoConstraints = false
+            highlighterButton.isEnabled = speechManager.state.value.isSpeaking || speechManager.state.value.isPaused
+            highlighterButton.addAction(UIAction(handler: { [weak self] _ in
+                guard let self else { return }
+                let action = highlighterAction
+                presentingViewController?.dismiss(animated: true) {
+                    action()
+                }
+            }), for: .touchUpInside)
+
+            let controlsContainer = UIView()
+            controlsContainer.translatesAutoresizingMaskIntoConstraints = false
+            controlsContainer.addSubview(controlsView)
+            controlsContainer.addSubview(highlighterButton)
+            NSLayoutConstraint.activate([
+                controlsView.centerXAnchor.constraint(equalTo: controlsContainer.centerXAnchor),
+                controlsView.topAnchor.constraint(equalTo: controlsContainer.topAnchor),
+                controlsView.bottomAnchor.constraint(equalTo: controlsContainer.bottomAnchor),
+                highlighterButton.trailingAnchor.constraint(equalTo: controlsContainer.trailingAnchor),
+                highlighterButton.centerYAnchor.constraint(equalTo: controlsContainer.centerYAnchor)
+            ])
+            speechContainer.addSubview(controlsContainer)
+
+            let voiceButton = VoiceButtonView()
+            voiceButton.title = speechManager.voice.flatMap({ voiceTitle(from: $0) }) ?? L10n.Speech.unknownVoice
+            voiceButton.isEnabled = false
             voiceButton.setContentHuggingPriority(.required, for: .vertical)
-            voiceButton.setContentHuggingPriority(.required, for: .horizontal)
             voiceButton.addAction(UIAction(handler: { [weak self] _ in self?.showVoiceOptions() }), for: .touchUpInside)
 
             let spacer2 = UIView()
@@ -135,7 +179,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
 
             let speedActions = [2, 1.75, 1.5, 1.25, 1, 0.75].map({ [unowned self] val in UIAction(title: formatted(modifier: val), handler: { [weak self] _ in self?.set(rateModifier: val) }) })
             var speedConfiguration = UIButton.Configuration.filled()
-            speedConfiguration.title = formatted(modifier: Defaults.shared.speechRateModifier)
+            speedConfiguration.title = formatted(modifier: speechManager.speechRateModifier)
             speedConfiguration.baseBackgroundColor = .systemGray5
             speedConfiguration.baseForegroundColor = .label
             speedConfiguration.cornerStyle = .capsule
@@ -158,6 +202,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
             speechContainer.addSubview(additionalControlsStackView)
 
             self.controlsView = controlsView
+            self.highlighterButton = highlighterButton
             self.voiceButton = voiceButton
             self.speedButton = speedButton
             self.speechContainer = speechContainer
@@ -170,13 +215,13 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
             readerConfiguration.cornerStyle = .capsule
             readerConfiguration.imagePadding = 12
             readerConfiguration.image = UIImage(systemName: "text.page.fill", withConfiguration: UIImage.SymbolConfiguration(scale: .small))
-            readerConfiguration.attributedTitle = AttributedString(L10n.Accessibility.showReader, attributes: mainButtonsAttributeContainer)
+            readerConfiguration.attributedTitle = AttributedString(L10n.AccessibilityPopup.showReader, attributes: mainButtonsAttributeContainer)
             readerConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 14, leading: 0, bottom: 14, trailing: 0)
             readerConfiguration.baseBackgroundColor = Asset.Colors.zoteroBlueWithDarkMode.color
             readerConfiguration.baseForegroundColor = .white
             let readerButton = UIButton(configuration: readerConfiguration)
             readerButton.translatesAutoresizingMaskIntoConstraints = false
-            readerButton.accessibilityLabel = L10n.Accessibility.showReaderAccessibilityLabel
+            readerButton.accessibilityLabel = L10n.Accessibility.Speech.showReader
             readerButton.setContentCompressionResistancePriority(.required, for: .vertical)
             readerButton.addAction(UIAction(handler: { [weak self] _ in self?.readerAction() }), for: .touchUpInside)
 
@@ -186,15 +231,15 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
             speechConfiguration.cornerStyle = .capsule
             speechConfiguration.imagePadding = 12
             speechConfiguration.image = UIImage(systemName: "headphones", withConfiguration: UIImage.SymbolConfiguration(scale: .small))
-            speechConfiguration.attributedTitle = AttributedString(L10n.Accessibility.showSpeech, attributes: mainButtonsAttributeContainer)
+            speechConfiguration.attributedTitle = AttributedString(L10n.AccessibilityPopup.showSpeech, attributes: mainButtonsAttributeContainer)
             speechConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 14, leading: 0, bottom: 14, trailing: 0)
             speechConfiguration.baseBackgroundColor = .systemGray5
             speechConfiguration.baseForegroundColor = .label
             let speechButton = UIButton(configuration: speechConfiguration)
             speechButton.isHidden = !speechManager.state.value.isStopped
             speechButton.translatesAutoresizingMaskIntoConstraints = false
-            speechButton.accessibilityLabel = L10n.Accessibility.showSpeechAccessibilityLabel
-            speechButton.addAction(UIAction(handler: { [weak self] _ in self?.speechManager.start() }), for: .touchUpInside)
+            speechButton.accessibilityLabel = L10n.Accessibility.Speech.showSpeech
+            speechButton.addAction(UIAction(handler: { [weak self] _ in if let self { readAloud(controller: self) } }), for: .touchUpInside)
             self.speechButton = speechButton
 
             speechButtonBottom = view.safeAreaLayoutGuide.bottomAnchor.constraint(greaterThanOrEqualTo: speechButton.bottomAnchor, constant: 16)
@@ -249,11 +294,11 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
                 titleStackView.leadingAnchor.constraint(equalTo: speechContainer.leadingAnchor, constant: 16),
                 speechContainer.trailingAnchor.constraint(equalTo: titleStackView.trailingAnchor, constant: 16),
                 // Speech Controls
-                controlsView.leadingAnchor.constraint(equalTo: speechContainer.leadingAnchor, constant: 16),
-                speechContainer.trailingAnchor.constraint(equalTo: controlsView.trailingAnchor, constant: 16),
-                titleStackView.bottomAnchor.constraint(equalTo: controlsView.topAnchor),
+                controlsContainer.leadingAnchor.constraint(equalTo: speechContainer.leadingAnchor, constant: 16),
+                speechContainer.trailingAnchor.constraint(equalTo: controlsContainer.trailingAnchor, constant: 16),
+                titleStackView.bottomAnchor.constraint(equalTo: controlsContainer.topAnchor),
                 // Speech Additional Controls
-                controlsView.bottomAnchor.constraint(equalTo: additionalControlsStackView.topAnchor),
+                controlsContainer.bottomAnchor.constraint(equalTo: additionalControlsStackView.topAnchor),
                 additionalControlsStackView.leadingAnchor.constraint(equalTo: speechContainer.leadingAnchor, constant: 16),
                 speechContainer.trailingAnchor.constraint(equalTo: additionalControlsStackView.trailingAnchor, constant: 16),
                 speechContainer.bottomAnchor.constraint(equalTo: additionalControlsStackView.bottomAnchor, constant: 16)
@@ -266,6 +311,14 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
             }
 
             NSLayoutConstraint.activate(toActivate)
+
+            func readAloud(controller: AccessibilityPopupViewController<Delegate>) {
+                if Defaults.shared.didShowReadAloudOnboarding {
+                    controller.playAction()
+                } else {
+                    controller.showReadAloudOnboarding()
+                }
+            }
         }
 
         func observeState() {
@@ -274,6 +327,14 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
                 .subscribe(onNext: { [weak self] state in
                     guard let self else { return }
                     process(state: state)
+                })
+                .disposed(by: disposeBag)
+
+            speechManager.remainingTime
+                .observe(on: MainScheduler.instance)
+                .subscribe(onNext: { [weak self] remainingTime in
+                    guard let self else { return }
+                    updateRemainingTime(remainingTime)
                 })
                 .disposed(by: disposeBag)
         }
@@ -289,31 +350,121 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
         updatePopup(toHeight: currentHeight)
     }
 
+    // MARK: - Keyboard Commands
+
+    private lazy var keyCommandsHandler: DocumentKeyCommandsHandler = {
+        let handler = DocumentKeyCommandsHandler()
+        handler.onAction = { [weak self] action in
+            guard let self else { return }
+            switch action {
+            case .speechForwardByParagraph:
+                speechManager.forward(by: .paragraph)
+
+            case .speechBackwardByParagraph:
+                speechManager.backward(by: .paragraph)
+
+            case .speechForwardBySentence:
+                speechManager.forward(by: .sentence)
+
+            case .speechBackwardBySentence:
+                speechManager.backward(by: .sentence)
+
+            default:
+                break
+            }
+        }
+        return handler
+    }()
+
+    override var keyCommands: [UIKeyCommand]? {
+        var commands = keyCommandsHandler.createKeyCommands(
+            parameters: .init(isHighlighterOverlayVisible: false, isSpeechActive: true, hasBackActions: false, hasForwardActions: false)
+        )
+        if speechManager.state.value.isSpeaking || speechManager.state.value.isPaused {
+            let title = speechManager.state.value.isSpeaking ? L10n.Accessibility.Speech.pause : L10n.Accessibility.Speech.play
+            commands.append(.init(title: title, action: #selector(togglePlayPause), input: " ", modifierFlags: []))
+        }
+        return commands
+    }
+
+    override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
+        if sender is UIKeyCommand {
+            return action == #selector(togglePlayPause) || action == DocumentKeyCommandsHandler.actionSelector
+        }
+        return super.canPerformAction(action, withSender: sender)
+    }
+
+    @objc func handleDocumentKeyCommand(_ sender: UIKeyCommand) {
+        keyCommandsHandler.handle(sender)
+    }
+
+    @objc private func togglePlayPause() {
+        if speechManager.state.value.isSpeaking {
+            speechManager.pause()
+        } else if speechManager.state.value.isPaused {
+            playAction()
+        }
+    }
+
     // MARK: - Actions
 
-    private func voiceTitle(from voice: AVSpeechSynthesisVoice) -> String {
-        return Locale.current.localizedString(forIdentifier: voice.language) ?? voice.language// + " - " + voice.name
+    private func showReadAloudOnboarding() {
+        coordinatorDelegate?.showReadAloudOnboarding(
+            from: self,
+            language: speechManager.language,
+            detectedLanguage: speechManager.detectedLanguage,
+            userInterfaceStyle: overrideUserInterfaceStyle
+        ) { [weak self] selectedVoice in
+            guard let self else { return }
+            if let selectedVoice {
+                Defaults.shared.didShowReadAloudOnboarding = true
+                speechManager.set(voice: selectedVoice, preferredLanguage: nil)
+                playAction()
+            }
+        }
+    }
+
+    private func voiceTitle(from voice: SpeechVoice) -> String {
+        switch voice {
+        case .local(let voice):
+            return voice.name
+
+        case .remote(let voice):
+            return voice.label
+        }
     }
 
     private func showVoiceOptions() {
-        guard let voice = speechManager.currentVoice else { return }
-        if speechManager.isSpeaking {
+        guard let voice = speechManager.voice else { return }
+        if speechManager.state.value.isSpeaking {
             speechManager.pause()
         }
-        coordinatorDelegate?.showVoicePicker(for: voice, userInterfaceStyle: overrideUserInterfaceStyle, selectionChanged: { [weak self] voice in
-            self?.update(voice: voice)
-            self?.voiceChangeAction(voice)
-        })
+        coordinatorDelegate?.showVoicePicker(
+            for: voice,
+            language: speechManager.language,
+            detectedLanguage: speechManager.detectedLanguage,
+            userInterfaceStyle: overrideUserInterfaceStyle,
+            selectionChanged: { [weak self] change in
+                self?.update(voice: change.voice)
+                self?.voiceChangeAction(change)
+            }
+        )
     }
 
     private func formatted(modifier: Float) -> String {
         return (speedNumberFormatter.string(from: NSNumber(value: modifier)) ?? "") + "x"
     }
 
+    private func updateRemainingTime(_ remainingTime: TimeInterval?) {
+        if voiceButton.title == L10n.Speech.unknownVoice, let voice = speechManager.voice {
+            voiceButton.title = voiceTitle(from: voice)
+        }
+        voiceButton.remainingTime = remainingTime
+    }
+
     private func set(rateModifier: Float) {
         speechManager.set(rateModifier: rateModifier)
         speedButton.configuration?.title = formatted(modifier: rateModifier)
-        Defaults.shared.speechRateModifier = rateModifier
     }
 
     func baseHeight(isPopover: Bool) -> CGFloat {
@@ -326,7 +477,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
 
     // MARK: - SpeechManager State
 
-    private func process(state: SpeechManager<Delegate>.State) {
+    private func process(state: SpeechState) {
         guard let data = updateToState() else { return }
         view.layoutIfNeeded()
         data.toShow.alpha = 0
@@ -342,22 +493,29 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
 
         func updateToState() -> (toHide: UIView, toShow: UIView, height: CGFloat)? {
             switch state {
+            case .initializing:
+                voiceButton.isEnabled = false
+                speedButton.isEnabled = false
+                highlighterButton.isEnabled = false
+                return loadingSpeakingContainerState()
+
             case .loading:
-                if voiceButton.isEnabled {
-                    voiceButton.isEnabled = false
-                    speedButton.isEnabled = false
+                if let voice = speechManager.voice {
+                    voiceButton.title = voiceTitle(from: voice)
                 }
+                voiceButton.isEnabled = true
+                speedButton.isEnabled = false
+                highlighterButton.isEnabled = false
                 return loadingSpeakingContainerState()
 
             case .speaking:
-                if !voiceButton.isEnabled, let voice = speechManager.currentVoice {
+                if let voice = speechManager.voice {
                     // TODO: - change title when page changes
-                    var config = voiceButton.configuration
-                    config?.title = voiceTitle(from: voice)
-                    voiceButton.configuration = config
-                    voiceButton.isEnabled = true
-                    speedButton.isEnabled = true
+                    voiceButton.title = voiceTitle(from: voice)
                 }
+                voiceButton.isEnabled = true
+                speedButton.isEnabled = true
+                highlighterButton.isEnabled = true
                 return loadingSpeakingContainerState()
 
             case .stopped:
@@ -366,7 +524,7 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
                 speechButtonBottom.isActive = true
                 return (speechContainer, speechButton, baseHeight(isPopover: !isFormSheet()))
 
-            case .paused:
+            case .paused, .outOfCredits:
                 return nil
             }
         }
@@ -387,19 +545,125 @@ final class AccessibilityPopupViewController<Delegate: SpeechmanagerDelegate>: U
         } else {
             containerHeight?.isActive = false
             containerTop?.isActive = true
-            preferredContentSize = CGSize(width: 300, height: height)
+            preferredContentSize = CGSize(width: 350, height: height)
         }
     }
 
-    private func update(voice: AVSpeechSynthesisVoice) {
-        var config = voiceButton.configuration
-        config?.title = voiceTitle(from: voice)
-        voiceButton.configuration = config
+    private func update(voice: SpeechVoice) {
+        voiceButton.title = voiceTitle(from: voice)
     }
 
     // MARK: - UIPopoverPresentationControllerDelegate
 
     func adaptivePresentationStyle(for controller: UIPresentationController) -> UIModalPresentationStyle {
         return .formSheet
+    }
+}
+// MARK: - VoiceButtonView
+
+private final class VoiceButtonView: UIControl {
+    private let titleLabel: UILabel = {
+        let label = UILabel()
+        label.font = .preferredFont(forTextStyle: .subheadline)
+        label.textColor = .label
+        label.lineBreakMode = .byTruncatingMiddle
+        label.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        return label
+    }()
+
+    private let clockImageView: UIImageView = {
+        let imageView = UIImageView(image: UIImage(systemName: "clock"))
+        imageView.tintColor = .secondaryLabel
+        imageView.contentMode = .scaleAspectFit
+        imageView.setContentHuggingPriority(.required, for: .horizontal)
+        return imageView
+    }()
+
+    private let timeLabel: UILabel = {
+        let label = UILabel()
+        label.font = .preferredFont(forTextStyle: .subheadline)
+        label.textColor = .secondaryLabel
+        label.setContentHuggingPriority(.required, for: .horizontal)
+        return label
+    }()
+
+    /// Tracks the last displayed minute value to avoid unnecessary updates
+    private var lastDisplayedMinute: Int?
+
+    var title: String? {
+        get { titleLabel.text }
+        set { titleLabel.text = newValue }
+    }
+
+    var remainingTime: TimeInterval? {
+        didSet {
+            // Hide if no time or if time exceeds 90 days
+            guard let time = remainingTime, RemainingTimeFormatter.shouldDisplay(time) else {
+                clockImageView.isHidden = true
+                timeLabel.isHidden = true
+                lastDisplayedMinute = nil
+                return
+            }
+
+            let totalMinutes = Int(ceil(time / 60))
+            guard lastDisplayedMinute != totalMinutes else { return }
+            lastDisplayedMinute = totalMinutes
+
+            clockImageView.isHidden = false
+            timeLabel.isHidden = false
+            timeLabel.text = RemainingTimeFormatter.formatted(time)
+
+            let timeColor: UIColor = RemainingTimeFormatter.isWarning(time) ? .systemRed : .secondaryLabel
+            clockImageView.tintColor = timeColor
+            timeLabel.textColor = timeColor
+        }
+    }
+
+    override var isEnabled: Bool {
+        didSet {
+            alpha = isEnabled ? 1.0 : 0.5
+        }
+    }
+
+    override var isHighlighted: Bool {
+        didSet {
+            UIView.animate(withDuration: 0.1) {
+                self.alpha = self.isHighlighted ? 0.7 : (self.isEnabled ? 1.0 : 0.5)
+            }
+        }
+    }
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setup()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setup()
+    }
+
+    private func setup() {
+        backgroundColor = .systemGray5
+        layer.cornerRadius = 16
+
+        let stackView = UIStackView(arrangedSubviews: [titleLabel, clockImageView, timeLabel])
+        stackView.axis = .horizontal
+        stackView.alignment = .center
+        stackView.spacing = 6
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        stackView.isUserInteractionEnabled = false
+        addSubview(stackView)
+
+        NSLayoutConstraint.activate([
+            stackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
+            stackView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
+            stackView.topAnchor.constraint(equalTo: topAnchor, constant: 6),
+            stackView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -6)
+        ])
+
+        clockImageView.isHidden = true
+        timeLabel.isHidden = true
     }
 }
