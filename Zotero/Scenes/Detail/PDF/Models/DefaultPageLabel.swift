@@ -9,6 +9,7 @@
 import Foundation
 
 import RealmSwift
+import CocoaLumberjackSwift
 
 enum DefaultAnnotationPageLabel: Equatable {
     case commonPageOffset(offset: Int)
@@ -21,6 +22,15 @@ enum DefaultAnnotationPageLabel: Equatable {
 
         case .labelPerPage(let labelsByPage):
             return labelsByPage[page] ?? "\(page + 1)"
+        }
+    }
+
+    static func read(attachmentKey: String, libraryId: LibraryIdentifier, dbStorage: DbStorage, queue: DispatchQueue) -> Self {
+        do {
+            return try dbStorage.perform(request: ReadDefaultAnnotationPageLabelDbRequest(attachmentKey: attachmentKey, libraryId: libraryId), on: queue)
+        } catch {
+            DDLogError("DefaultAnnotationPageLabel: failed to read default annotation page label - \(error)")
+            return .commonPageOffset(offset: 1)
         }
     }
 

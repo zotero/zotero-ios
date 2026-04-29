@@ -1844,7 +1844,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             let sortStartTime = CFAbsoluteTimeGetCurrent()
             let sortedKeys = createSortedKeys(fromDatabaseAnnotations: databaseAnnotations, documentAnnotations: documentAnnotations)
             let defaultAnnotationPageLabelStartTime = CFAbsoluteTimeGetCurrent()
-            let defaultAnnotationPageLabel: DefaultAnnotationPageLabel = .from(databaseAnnotations: databaseAnnotations)
+            let defaultAnnotationPageLabel: DefaultAnnotationPageLabel = .read(attachmentKey: key, libraryId: library.identifier, dbStorage: dbStorage, queue: .main)
+            let preselectedDataStartTime = CFAbsoluteTimeGetCurrent()
             let (page, selectedData) = preselectedData(databaseAnnotations: databaseAnnotations, storedPage: storedPage, boundingBoxConverter: boundingBoxConverter, in: viewModel)
 
             let updateDocumentStartTime = CFAbsoluteTimeGetCurrent()
@@ -1880,7 +1881,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             timeLog += ", load document annotations: \(convertDbAnnotationsStartTime - loadDocumentAnnotationsStartTime)"
             timeLog += ", load zotero annotations: \(sortStartTime - convertDbAnnotationsStartTime)"
             timeLog += ", sort keys: \(defaultAnnotationPageLabelStartTime - sortStartTime)"
-            timeLog += ", default annotation page label: \(updateDocumentStartTime - defaultAnnotationPageLabelStartTime)"
+            timeLog += ", default annotation page label: \(preselectedDataStartTime - defaultAnnotationPageLabelStartTime)"
+            timeLog += ", preselected data: \(updateDocumentStartTime - preselectedDataStartTime)"
             timeLog += ", update document: \(endTime - updateDocumentStartTime)"
             DDLogInfo(DDLogMessageFormat(stringLiteral: timeLog))
 
@@ -2351,7 +2353,12 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         // Create new sorted keys by re-adding document keys
         let sortedKeys = createSortedKeys(fromDatabaseAnnotations: objects, documentAnnotations: viewModel.state.documentAnnotations)
 
-        let defaultAnnotationPageLabel: DefaultAnnotationPageLabel? = shouldRecomputeDefaultAnnotationPageLabel ? .from(databaseAnnotations: objects) : nil
+        let defaultAnnotationPageLabel: DefaultAnnotationPageLabel? = shouldRecomputeDefaultAnnotationPageLabel ? .read(
+            attachmentKey: viewModel.state.key,
+            libraryId: viewModel.state.library.identifier,
+            dbStorage: dbStorage,
+            queue: .main
+        ) : nil
 
         // Temporarily disable PDF notifications, because these changes were made by sync and they don't need to be translated back to the database
         pdfDisposeBag = DisposeBag()

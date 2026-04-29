@@ -20,10 +20,12 @@ final class DefaultAnnotationPageLabelSpec: QuickSpec {
             let attachmentKey = "AAAAAAAA"
             let libraryId: LibraryIdentifier = .custom(.myLibrary)
             var realm: Realm!
+            var dbStorage: DbStorage!
 
             beforeEach {
                 let config = Realm.Configuration(inMemoryIdentifier: UUID().uuidString)
                 realm = try! Realm(configuration: config)
+                dbStorage = RealmDbStorage(config: config)
 
                 try! realm.write {
                     realm.add(createAttachment(key: attachmentKey))
@@ -89,9 +91,12 @@ final class DefaultAnnotationPageLabelSpec: QuickSpec {
             }
 
             func computeDefaultAnnotationPageLabel() -> DefaultAnnotationPageLabel {
-                let annotations = try! ReadAnnotationsDbRequest(attachmentKey: attachmentKey, libraryId: libraryId)
-                    .process(in: realm)
-                return DefaultAnnotationPageLabel.from(databaseAnnotations: annotations)
+                return DefaultAnnotationPageLabel.read(
+                    attachmentKey: attachmentKey,
+                    libraryId: libraryId,
+                    dbStorage: dbStorage,
+                    queue: .main
+                )
             }
 
             func createAttachment(key: String) -> RItem {
