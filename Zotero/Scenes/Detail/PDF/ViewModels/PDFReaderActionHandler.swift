@@ -1844,7 +1844,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             let sortStartTime = CFAbsoluteTimeGetCurrent()
             let sortedKeys = createSortedKeys(fromDatabaseAnnotations: databaseAnnotations, documentAnnotations: documentAnnotations)
             let defaultAnnotationPageLabelStartTime = CFAbsoluteTimeGetCurrent()
-            let defaultAnnotationPageLabel = defaultAnnotationPageLabel(fromDatabaseAnnotations: databaseAnnotations)
+            let defaultAnnotationPageLabel: DefaultAnnotationPageLabel = .read(attachmentKey: key, libraryId: library.identifier, dbStorage: dbStorage, queue: .main)
+            let preselectedDataStartTime = CFAbsoluteTimeGetCurrent()
             let (page, selectedData) = preselectedData(databaseAnnotations: databaseAnnotations, storedPage: storedPage, boundingBoxConverter: boundingBoxConverter, in: viewModel)
 
             let updateDocumentStartTime = CFAbsoluteTimeGetCurrent()
@@ -1880,7 +1881,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             timeLog += ", load document annotations: \(convertDbAnnotationsStartTime - loadDocumentAnnotationsStartTime)"
             timeLog += ", load zotero annotations: \(sortStartTime - convertDbAnnotationsStartTime)"
             timeLog += ", sort keys: \(defaultAnnotationPageLabelStartTime - sortStartTime)"
-            timeLog += ", default annotation page label: \(updateDocumentStartTime - defaultAnnotationPageLabelStartTime)"
+            timeLog += ", default annotation page label: \(preselectedDataStartTime - defaultAnnotationPageLabelStartTime)"
+            timeLog += ", preselected data: \(updateDocumentStartTime - preselectedDataStartTime)"
             timeLog += ", update document: \(endTime - updateDocumentStartTime)"
             DDLogInfo(DDLogMessageFormat(stringLiteral: timeLog))
 
@@ -2140,30 +2142,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
     }
 
-    private func defaultAnnotationPageLabel(fromDatabaseAnnotations databaseAnnotations: Results<RItem>) -> PDFReaderState.DefaultAnnotationPageLabel {
-        var uniquePageLabelsCountByPage: [Int: [String: Int]] = [:]
-        for item in databaseAnnotations {
-            guard let annotation = PDFDatabaseAnnotation(item: item), let page = annotation._page, let pageLabel = annotation._pageLabel, !pageLabel.isEmpty, pageLabel != "-" else { continue }
-            var uniquePageLabelsCount = uniquePageLabelsCountByPage[page, default: [:]]
-            uniquePageLabelsCount[pageLabel, default: 0] += 1
-            uniquePageLabelsCountByPage[page] = uniquePageLabelsCount
-        }
-        var defaultPageLabelByPage: [Int: String] = [:]
-        for (page, uniquePageLabelsCount) in uniquePageLabelsCountByPage {
-            if let maxCount = uniquePageLabelsCount.values.max(), let defaultPageLabel = uniquePageLabelsCount.filter({ $0.value == maxCount }).keys.sorted().first {
-                defaultPageLabelByPage[page] = defaultPageLabel
-            }
-        }
-        let uniquePageOffsets = Set(defaultPageLabelByPage.map({ (page, pageLabel) in Int(pageLabel).flatMap({ $0 - page }) }))
-        if uniquePageOffsets.count == 1, let uniquePageOffset = uniquePageOffsets.first, let commonPageOffset = uniquePageOffset {
-            return .commonPageOffset(offset: commonPageOffset)
-        }
-        if !defaultPageLabelByPage.isEmpty {
-            return .labelPerPage(labelsByPage: defaultPageLabelByPage)
-        }
-        return .commonPageOffset(offset: 1)
-    }
-
     private func loadSupportedAndLockUnsupportedAnnotations(
         from document: PSPDFKit.Document,
         key: String,
@@ -2375,7 +2353,12 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         // Create new sorted keys by re-adding document keys
         let sortedKeys = createSortedKeys(fromDatabaseAnnotations: objects, documentAnnotations: viewModel.state.documentAnnotations)
 
-        let defaultAnnotationPageLabel = shouldRecomputeDefaultAnnotationPageLabel ? defaultAnnotationPageLabel(fromDatabaseAnnotations: objects) : nil
+        let defaultAnnotationPageLabel: DefaultAnnotationPageLabel? = shouldRecomputeDefaultAnnotationPageLabel ? .read(
+            attachmentKey: viewModel.state.key,
+            libraryId: viewModel.state.library.identifier,
+            dbStorage: dbStorage,
+            queue: .main
+        ) : nil
 
         // Temporarily disable PDF notifications, because these changes were made by sync and they don't need to be translated back to the database
         pdfDisposeBag = DisposeBag()
