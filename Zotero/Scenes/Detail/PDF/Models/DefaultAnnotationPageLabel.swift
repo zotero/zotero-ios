@@ -1,5 +1,5 @@
 //
-//  DefaultPageLabel.swift
+//  DefaultAnnotationPageLabel.swift
 //  Zotero
 //
 //  Created by Miltiadis Vasilakis on 29/4/26.
