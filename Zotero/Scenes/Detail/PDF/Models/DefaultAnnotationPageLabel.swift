@@ -33,28 +33,4 @@ enum DefaultAnnotationPageLabel: Equatable {
             return .commonPageOffset(offset: 1)
         }
     }
-
-    static func from(databaseAnnotations: Results<RItem>) -> Self {
-        var uniquePageLabelsCountByPage: [Int: [String: Int]] = [:]
-        for item in databaseAnnotations {
-            guard let annotation = PDFDatabaseAnnotation(item: item), let page = annotation._page, let pageLabel = annotation._pageLabel, !pageLabel.isEmpty, pageLabel != "-" else { continue }
-            var uniquePageLabelsCount = uniquePageLabelsCountByPage[page, default: [:]]
-            uniquePageLabelsCount[pageLabel, default: 0] += 1
-            uniquePageLabelsCountByPage[page] = uniquePageLabelsCount
-        }
-        var defaultPageLabelByPage: [Int: String] = [:]
-        for (page, uniquePageLabelsCount) in uniquePageLabelsCountByPage {
-            if let maxCount = uniquePageLabelsCount.values.max(), let defaultPageLabel = uniquePageLabelsCount.filter({ $0.value == maxCount }).keys.sorted().first {
-                defaultPageLabelByPage[page] = defaultPageLabel
-            }
-        }
-        let uniquePageOffsets = Set(defaultPageLabelByPage.map({ (page, pageLabel) in Int(pageLabel).flatMap({ $0 - page }) }))
-        if uniquePageOffsets.count == 1, let uniquePageOffset = uniquePageOffsets.first, let commonPageOffset = uniquePageOffset {
-            return .commonPageOffset(offset: commonPageOffset)
-        }
-        if !defaultPageLabelByPage.isEmpty {
-            return .labelPerPage(labelsByPage: defaultPageLabelByPage)
-        }
-        return .commonPageOffset(offset: 1)
-    }
 }
