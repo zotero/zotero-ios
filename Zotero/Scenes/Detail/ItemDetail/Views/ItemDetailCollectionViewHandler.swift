@@ -463,7 +463,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
         let animated = false
         dataSource.apply(snapshot, animatingDifferences: animated) { [weak self] in
             // Per-section applications are chained sequentially. After the final application isEditing is set and completion is called.
-            self?.applySectionSnapshots(at: 0, in: sections, state: state, animated: animated, completion: completion)
+            self?.continueApplyingSectionSnapshots(at: 0, in: sections, state: state, animated: animated, completion: completion)
         }
 
         /// Creates array of visible sections for current state data.
@@ -646,6 +646,18 @@ final class ItemDetailCollectionViewHandler: NSObject {
         dataSource.apply(snapshot, animatingDifferences: false)
     }
 
+    private func continueApplyingSectionSnapshots(at index: Int, in sections: [SectionType], state: ItemDetailState, animated: Bool, completion: (() -> Void)?) {
+        if #available(iOS 26.0, *) {
+            applySectionSnapshots(at: index, in: sections, state: state, animated: animated, completion: completion)
+        } else {
+            // Older iOS versions crash with assertion failure in -[__UIDiffableDataSource _performOnApplyQueue:]
+            // with reason: 'Deadlock detected: calling this method on the main queue with outstanding async updates is not permitted and will deadlock.'
+            DispatchQueue.main.async { [weak self] in
+                self?.applySectionSnapshots(at: index, in: sections, state: state, animated: animated, completion: completion)
+            }
+        }
+    }
+
     private func applySectionSnapshots(at index: Int, in sections: [SectionType], state: ItemDetailState, animated: Bool, completion: (() -> Void)?) {
         guard index < sections.count else {
             collectionView.isEditing = state.isEditing
@@ -655,7 +667,7 @@ final class ItemDetailCollectionViewHandler: NSObject {
         let section = sections[index]
         let snapshot = sectionSnapshot(for: section.section, state: state)
         dataSource.apply(snapshot, to: section, animatingDifferences: animated) { [weak self] in
-            self?.applySectionSnapshots(at: index + 1, in: sections, state: state, animated: animated, completion: completion)
+            self?.continueApplyingSectionSnapshots(at: index + 1, in: sections, state: state, animated: animated, completion: completion)
         }
     }
 
