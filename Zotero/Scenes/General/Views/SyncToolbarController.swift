@@ -192,7 +192,7 @@ final class SyncToolbarController {
                 break
 
             case .apiError(let response, let data):
-                return (L10n.Errors.api(response), data)
+                return (Messages.Errors.api(response), data)
 
             case .dbError:
                 return (L10n.Errors.db, nil)
@@ -232,13 +232,13 @@ final class SyncToolbarController {
                 return (L10n.Errors.parsing, nil)
 
             case .apiError(let response, let data):
-                return (L10n.Errors.api(response), data)
+                return (Messages.Errors.api(response), data)
 
             case .versionMismatch:
                 return (L10n.Errors.versionMismatch, nil)
 
             case .unknown(let _message, let data):
-                return _message.isEmpty ? (L10n.Errors.unknown, data) : (_message, data)
+                return _message.isEmpty ? (Messages.Errors.unknown, data) : (_message, data)
 
             case .attachmentMissing(let key, let libraryId, let title):
                 return (L10n.Errors.SyncToolbar.attachmentMissing("\(title) (\(key))"), SyncError.ErrorData(itemKeys: [key], libraryId: libraryId))
@@ -261,7 +261,7 @@ final class SyncToolbarController {
                 return (L10n.Errors.SyncToolbar.webdavError(error), nil)
 
             case .webDavDeletion(let count, _):
-                return (L10n.Errors.SyncToolbar.webdavError2(count), nil)
+                return (Messages.Errors.SyncToolbar.webdavError2(count), nil)
 
             case .webDavVerification(let error):
                 return (error.message, nil)
@@ -269,7 +269,7 @@ final class SyncToolbarController {
             case .webDavDownload(let error):
                 switch error {
                 case .itemPropInvalid(let string):
-                    return (L10n.Errors.SyncToolbar.webdavItemProp(string), nil)
+                    return (Messages.Errors.SyncToolbar.webdavItemProp(string), nil)
 
                 case .notChanged: // Should not happen
                     break
@@ -414,7 +414,7 @@ final class SyncToolbarController {
             if errors.isEmpty {
                 return L10n.SyncToolbar.finished
             }
-            let issues = L10n.Errors.SyncToolbar.errors(errors.count)
+            let issues = Messages.Errors.SyncToolbar.errors(errors.count)
             return L10n.Errors.SyncToolbar.finishedWithErrors(issues)
 
         case .deletions(let name):

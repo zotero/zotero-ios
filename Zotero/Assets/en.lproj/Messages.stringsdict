@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>errors.sync_toolbar.errors</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@errors@</string>
+		<key>errors</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>1 issue</string>
+			<key>other</key>
+			<string>%d issues</string>
+		</dict>
+	</dict>
+	<key>errors.sync_toolbar.webdav_error2</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@webdav_error2@</string>
+		<key>webdav_error2</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Could not delete 1 file from your WebDAV server</string>
+			<key>other</key>
+			<string>Could not delete %d files from your WebDAV server</string>
+		</dict>
+	</dict>
+</dict>
+</plist>

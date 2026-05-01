@@ -703,34 +703,34 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         let message: String
         switch error {
         case .dataLoading:
-            message = L10n.Errors.Items.loading
+            message = Messages.Errors.Items.loading
 
         case .deletion:
-            message = L10n.Errors.Items.deletion
+            message = Messages.Errors.Items.deletion
 
         case .deletionFromCollection, .deletionFromRecentlyRead:
-            message = L10n.Errors.Items.deletionFromCollection
+            message = Messages.Errors.Items.deletionFromCollection
 
         case .collectionAssignment:
-            message = L10n.Errors.Items.addToCollection
+            message = Messages.Errors.Items.addToCollection
 
         case .itemMove:
-            message = L10n.Errors.Items.moveItem
+            message = Messages.Errors.Items.moveItem
 
         case .noteSaving:
-            message = L10n.Errors.Items.saveNote
+            message = Messages.Errors.Items.saveNote
 
         case .attachmentAdding(let type):
             switch type {
             case .couldNotSave:
-                message = L10n.Errors.Items.addAttachment
+                message = Messages.Errors.Items.addAttachment
 
             case .someFailed(let failed):
-                message = L10n.Errors.Items.addSomeAttachments(failed.joined(separator: ","))
+                message = Messages.Errors.Items.addSomeAttachments(failed.joined(separator: ","))
             }
 
         case .duplicationLoading:
-            message = L10n.Errors.Items.loadDuplication
+            message = Messages.Errors.Items.loadDuplication
         }
 
         let controller = UIAlertController(title: L10n.error, message: message, preferredStyle: .alert)
@@ -789,7 +789,7 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
                     return (L10n.Errors.Attachments.cantOpenAttachment, cancelAction)
 
                 case .cantUnzipSnapshot:
-                    return (L10n.Errors.Attachments.cantUnzipSnapshot, cancelAction)
+                    return (Messages.Errors.Attachments.cantUnzipSnapshot, cancelAction)
 
                 case .cancelled:
                     break
@@ -949,7 +949,7 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
 
         case .cantCreateData:
             title = L10n.error
-            message = L10n.Errors.ItemDetail.cantLoadData
+            message = Messages.Errors.ItemDetail.cantLoadData
             actions.append(UIAlertAction(title: L10n.ok, style: .cancel, handler: { [weak self] _ in
                 self?.navigationController?.popViewController(animated: true)
             }))
@@ -958,24 +958,24 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
             switch error {
             case .someFailedCreation(let names), .couldNotMoveFromSource(let names):
                 title = L10n.error
-                message = L10n.Errors.ItemDetail.cantCreateAttachmentsWithNames(names.joined(separator: ", "))
+                message = Messages.Errors.ItemDetail.cantCreateAttachmentsWithNames(names.joined(separator: ", "))
 
             case .allFailedCreation:
                 title = L10n.error
-                message = L10n.Errors.ItemDetail.cantCreateAttachments
+                message = Messages.Errors.ItemDetail.cantCreateAttachments
             }
 
         case .cantSaveNote:
             title = L10n.error
-            message = L10n.Errors.ItemDetail.cantSaveNote
+            message = Messages.Errors.ItemDetail.cantSaveNote
 
         case .cantStoreChanges:
             title = L10n.error
-            message = L10n.Errors.ItemDetail.cantSaveChanges
+            message = Messages.Errors.ItemDetail.cantSaveChanges
 
         case .cantTrashItem:
             title = L10n.error
-            message = L10n.Errors.ItemDetail.cantTrashItem
+            message = Messages.Errors.ItemDetail.cantTrashItem
 
         case .typeNotSupported(let type):
             title = L10n.error
@@ -983,15 +983,15 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
 
         case .cantSaveTags:
             title = L10n.error
-            message = L10n.Errors.ItemDetail.cantSaveTags
+            message = Messages.Errors.ItemDetail.cantSaveTags
 
         case .cantRemoveItem, .cantRemoveParent:
             title = L10n.error
-            message = L10n.Errors.unknown
+            message = Messages.Errors.unknown
             
         case .cantRemoveCollection:
             title = L10n.error
-            message = L10n.Errors.Items.deletionFromCollection
+            message = Messages.Errors.Items.deletionFromCollection
         }
 
         let controller = UIAlertController(title: title, message: message, preferredStyle: .alert)
