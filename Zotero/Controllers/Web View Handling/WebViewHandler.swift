@@ -301,11 +301,13 @@ class WebViewHandler: NSObject {
     /// Cookie names that should be bridged from the WK cookie store into outgoing URLSession requests for `url`.
     /// `WKHTTPCookieStore` and `URLSession`'s `HTTPCookieStorage` are separate jars, so once a challenge web
     /// view has earned a cookie like `turnstile_passed` we have to manually inject it on every translator HTTP
-    /// call to that host. Otherwise a returning user with the cookie still in the WK store would still get a 403
-    /// because the URLSession request never carries it. `cf_clearance` is bridged unconditionally and doesn't
-    /// need to be listed here. Default returns empty.
+    /// call to that host. Otherwise a returning user with the cookie still in the WK store would still get a
+    /// 403 because the URLSession request never carries it.
+    /// Default returns `["cf_clearance"]` because Cloudflare protects a large fraction of the sites we hit
+    /// and bridging that cookie is virtually always correct. Subclasses override to augment (typically by
+    /// calling `super` and inserting per-host names).
     func additionalCookieNames(for url: URL) -> Set<String> {
-        return []
+        return ["cf_clearance"]
     }
 
     /// Clears the per-handler dedupe set so subsequent requests can re-attempt clearance.
@@ -352,24 +354,21 @@ class WebViewHandler: NSObject {
         request.httpBody = body?.data(using: .utf8)
         request.timeoutInterval = timeout
 
-        addCloudflareCookie(host: host, existingHeaders: originalHeaders) { [weak self] cfHeaders in
+        addAdditionalCookies(for: url, host: host, existingHeaders: originalHeaders) { [weak self] mergedHeaders in
             guard let self else { return }
-            addAdditionalCookies(for: url, host: host, existingHeaders: cfHeaders) { [weak self] mergedHeaders in
-                guard let self else { return }
-                applyHeaders(to: &request, headers: mergedHeaders, url: url)
+            applyHeaders(to: &request, headers: mergedHeaders, url: url)
 
-                let task = session.dataTask(with: request) { [weak self] data, response, error in
-                    guard let self else { return }
-                    if let response = response as? HTTPURLResponse {
-                        handleResponse(data: data, response: response, request: request, successCodes: successCodes, messageId: messageId)
-                    } else if let error {
-                        sendHttpResponse(data: error.localizedDescription.data(using: .utf8), statusCode: -1, url: nil, successCodes: successCodes, headers: [:], for: messageId)
-                    } else {
-                        sendHttpResponse(data: "unknown error".data(using: .utf8), statusCode: -1, url: nil, successCodes: successCodes, headers: [:], for: messageId)
-                    }
+            let task = session.dataTask(with: request) { [weak self] data, response, error in
+                guard let self else { return }
+                if let response = response as? HTTPURLResponse {
+                    handleResponse(data: data, response: response, request: request, successCodes: successCodes, messageId: messageId)
+                } else if let error {
+                    sendHttpResponse(data: error.localizedDescription.data(using: .utf8), statusCode: -1, url: nil, successCodes: successCodes, headers: [:], for: messageId)
+                } else {
+                    sendHttpResponse(data: "unknown error".data(using: .utf8), statusCode: -1, url: nil, successCodes: successCodes, headers: [:], for: messageId)
                 }
-                task.resume()
             }
+            task.resume()
         }
 
         func applyHeaders(to request: inout URLRequest, headers: [String: String], url: URL?) {
@@ -439,21 +438,6 @@ class WebViewHandler: NSObject {
                         retryTask.resume()
                     }
                 }
-            }
-        }
-
-        func addCloudflareCookie(host: String, existingHeaders: [String: String], completion: @escaping ([String: String]) -> Void) {
-            guard let webView else { return completion(existingHeaders) }
-            let store = webView.configuration.websiteDataStore.httpCookieStore
-            store.getCloudflareCookies(host: host) { cloudflareCookies in
-                guard !cloudflareCookies.isEmpty else { return completion(existingHeaders) }
-                var cookieString = cloudflareCookies.map({ "\($0.name)=\($0.value)" }).joined(separator: "; ")
-                var headers = existingHeaders
-                if let existingCookie = headers["Cookie"], !existingCookie.isEmpty {
-                    cookieString = existingCookie + "; " + cookieString
-                }
-                headers["Cookie"] = cookieString
-                completion(headers)
             }
         }
     }
