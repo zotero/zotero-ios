@@ -121,6 +121,7 @@ final class LookupWebViewHandler: WebViewHandler {
     }
 
     func lookup(identifier: String, saveAttachments: Bool) {
+        resetBrowserChallenges()
         performAfterInitialization()
             .flatMap { [weak self] _ -> Single<Any> in
                 guard let self else { return .never() }
@@ -185,5 +186,47 @@ final class LookupWebViewHandler: WebViewHandler {
                 sendMessaging(error: "HTTP request missing payload", for: messageId)
             }
         }
+    }
+
+    // MARK: - Browser Challenges
+
+    override func browserChallenge(for url: URL, statusCode: Int, headers: [AnyHashable: Any], responseText: String) -> BrowserChallenge? {
+        guard statusCode == 403,
+              url.host(percentEncoded: false)?.lowercased() == "search.worldcat.org",
+              responseText.range(of: "turnstile_required", options: [.caseInsensitive]) != nil
+        else { return nil }
+
+        return BrowserChallenge(
+            match: "://search.worldcat.org",
+            successCookie: .init(host: "search.worldcat.org", name: "turnstile_passed"),
+            // The /api/search endpoint can't run Turnstile itself; the equivalent /search page does.
+            // Loading that page in a hidden web view runs the (invisible) Turnstile widget end-to-end
+            // and sets `turnstile_passed` on the host, which our retry then carries.
+            challengeURL: { url in
+                guard var components = URLComponents(url: url, resolvingAgainstBaseURL: true),
+                      components.path == "/api/search"
+                else { return url }
+                components.path = "/search"
+                return components.url ?? url
+            },
+            // `turnstile_passed` is HMAC-signed against (IP, UA), so every request to this host —
+            // not just the retry — must use the plain Safari UA the cookie was earned under.
+            shouldUsePlainUserAgent: true
+        )
+    }
+
+    override func shouldUsePlainUserAgent(for url: URL) -> Bool {
+        return url.host(percentEncoded: false)?.lowercased() == "search.worldcat.org"
+    }
+
+    override func additionalCookieNames(for url: URL) -> Set<String> {
+        if url.host(percentEncoded: false)?.lowercased() == "search.worldcat.org" {
+            return ["turnstile_passed"]
+        }
+        return []
+    }
+
+    override func didDetect(browserChallenge: BrowserChallenge, url: URL?) {
+        DDLogWarn("LookupWebViewHandler: detected browser challenge for \(url?.absoluteString ?? "-")")
     }
 }
