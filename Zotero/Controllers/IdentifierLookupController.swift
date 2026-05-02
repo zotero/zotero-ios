@@ -187,7 +187,9 @@ final class IdentifierLookupController {
             var lookupWebViewHandler: LookupWebViewHandler?
             inMainThread(sync: true) { [weak self] in
                 guard let self, let webView = webViewProvider?.addWebView(configuration: nil) else { return }
-                lookupWebViewHandler = LookupWebViewHandler(webView: webView, translatorsController: translatorsController, types: .all)
+                let handler = LookupWebViewHandler(webView: webView, translatorsController: translatorsController, types: .all)
+                handler.webViewProvider = webViewProvider
+                lookupWebViewHandler = handler
             }
             guard let lookupWebViewHandler else {
                 DDLogError("IdentifierLookupController: can't create LookupWebViewHandler instance")

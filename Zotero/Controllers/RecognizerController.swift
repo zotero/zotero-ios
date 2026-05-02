@@ -329,7 +329,9 @@ final class RecognizerController {
                 DispatchQueue.main.sync { [weak self, weak webViewProvider] in
                     guard let self, let webViewProvider else { return }
                     let webView = webViewProvider.addWebView(configuration: nil)
-                    lookupWebViewHandler = LookupWebViewHandler(webView: webView, translatorsController: translatorsController, types: .search)
+                    let handler = LookupWebViewHandler(webView: webView, translatorsController: translatorsController, types: .search)
+                    handler.webViewProvider = webViewProvider
+                    lookupWebViewHandler = handler
                 }
                 guard let lookupWebViewHandler else {
                     DDLogWarn("RecognizerController: \(task) - can't create LookupWebViewHandler instance")
