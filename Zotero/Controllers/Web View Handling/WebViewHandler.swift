@@ -422,7 +422,7 @@ class WebViewHandler: NSObject {
                     DDLogInfo("WebViewHandler: browser challenge cleared, retrying \(responseURL.absoluteString)")
                     var retryRequest = request
                     retryRequest.setValue(nil, forHTTPHeaderField: "Cookie")
-                    addBrowserChallengeCookie(challenge.successCookie, host: host, existingHeaders: originalHeaders) { [weak self] retryHeaders in
+                    addAdditionalCookies(for: responseURL, host: host, existingHeaders: originalHeaders) { [weak self] retryHeaders in
                         guard let self else { return }
                         applyHeaders(to: &retryRequest, headers: retryHeaders, url: retryRequest.url)
                         let retryTask = session.dataTask(with: retryRequest) { [weak self] data, response, error in
@@ -484,7 +484,7 @@ class WebViewHandler: NSObject {
                 .disposed(by: clearanceDisposeBag)
             Observable<Int>.interval(Self.challengeCookiePollInterval, scheduler: MainScheduler.instance)
                 .subscribe(onNext: { [weak self] _ in
-                    DDLogWarn("WebViewHandler: challenge clearance backup polling fired messageId=\(messageId)")
+                    DDLogInfo("WebViewHandler: challenge clearance backup polling fired messageId=\(messageId)")
                     self?.evaluateChallengeCookie(challenge: challenge, initialValue: initialValue, messageId: messageId, completion: completion)
                 })
                 .disposed(by: clearanceDisposeBag)
@@ -536,21 +536,6 @@ class WebViewHandler: NSObject {
         completion(success)
         DispatchQueue.main.async { [weak webView = context.webView] in
             webView?.removeFromSuperview()
-        }
-    }
-
-    private func addBrowserChallengeCookie(_ cookie: BrowserChallenge.Cookie, host: String, existingHeaders: [String: String], completion: @escaping ([String: String]) -> Void) {
-        guard let webView else { return completion(existingHeaders) }
-        let store = webView.configuration.websiteDataStore.httpCookieStore
-        store.getCookies(host: host, names: [cookie.name]) { matchingCookies in
-            guard !matchingCookies.isEmpty else { return completion(existingHeaders) }
-            var cookieString = matchingCookies.map({ "\($0.name)=\($0.value)" }).joined(separator: "; ")
-            var headers = existingHeaders
-            if let existingCookie = headers["Cookie"], !existingCookie.isEmpty {
-                cookieString = existingCookie + "; " + cookieString
-            }
-            headers["Cookie"] = cookieString
-            completion(headers)
         }
     }
 
