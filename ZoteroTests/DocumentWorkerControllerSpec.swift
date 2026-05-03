@@ -166,6 +166,30 @@ final class DocumentWorkerControllerSpec: QuickSpec {
 
                     expect(try? engine.evaluate(script: script)?.toBool()).to(beTrue())
                 }
+
+                it("provides Blob-backed object URLs") {
+                    let engine = try! makeShimEngine()
+                    let script = """
+                    var __blobFetchResult = false;
+                    var __blobFetchError = null;
+                    (function () {
+                      var blob = new Blob([new Uint8Array([37, 80, 68, 70])], { type: 'application/pdf' });
+                      var url = URL.createObjectURL(blob);
+                      fetch(url)
+                        .then(function (response) { return response.arrayBuffer(); })
+                        .then(function (buffer) {
+                          var bytes = new Uint8Array(buffer);
+                          URL.revokeObjectURL(url);
+                          __blobFetchResult = bytes[0] === 37 && bytes[1] === 80 && bytes[2] === 68 && bytes[3] === 70;
+                        })
+                        .catch(function (error) { __blobFetchError = String(error); });
+                    })();
+                    """
+
+                    expect { try engine.evaluate(script: script) }.toNot(throwError())
+                    expect { try? engine.evaluate(script: "__blobFetchResult")?.toBool() }
+                        .toEventually(equal(true), timeout: .seconds(2))
+                }
             }
 
             context("with a valid PDF URL") {
