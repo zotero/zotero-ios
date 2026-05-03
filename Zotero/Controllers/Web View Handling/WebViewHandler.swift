@@ -272,7 +272,9 @@ class WebViewHandler: NSObject {
 
     func removeFromSuperviewAsynchronously() {
         DispatchQueue.main.async { [weak self] in
-            guard let self, let webView else { return }
+            guard let self else { return }
+            tearDownActiveChallenges()
+            guard let webView else { return }
             webView.configuration.userContentController.removeAllScriptMessageHandlers()
             webView.removeFromSuperview()
         }
@@ -314,6 +316,7 @@ class WebViewHandler: NSObject {
     /// Call at the start of each translation/lookup operation.
     func resetBrowserChallenges() {
         attemptedChallenges = []
+        tearDownActiveChallenges()
     }
 
     // MARK: - HTTP Requests
@@ -552,6 +555,18 @@ class WebViewHandler: NSObject {
             }
             headers["Cookie"] = cookieString
             completion(headers)
+        }
+    }
+
+    private func tearDownActiveChallenges() {
+        let contexts = Array(activeChallenges.values)
+        activeChallenges.removeAll()
+        DispatchQueue.main.async {
+            for context in contexts {
+                context.cookieStore.remove(context.observer)
+                context.webView.stopLoading()
+                context.webView.removeFromSuperview()
+            }
         }
     }
 }
