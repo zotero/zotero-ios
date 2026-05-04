@@ -1058,7 +1058,12 @@ extension PDFReaderViewController: SpeechmanagerDelegate {
             completion(nil)
             return
         }
-        let speechWorker = speechWorker ?? DocumentWorkerController.Worker(file: file as! FileData, shouldCacheData: true, priority: .high)
+        let speechWorker = speechWorker ?? DocumentWorkerController.Worker(
+            file: file as! FileData,
+            shouldCacheData: true,
+            priority: .high,
+            password: viewModel.state.unlockPassword
+        )
         self.speechWorker = speechWorker
         let start = CFAbsoluteTimeGetCurrent()
         documentWorkerController.queue(work: .fullText(pages: indices.map({ Int($0) })), in: speechWorker)

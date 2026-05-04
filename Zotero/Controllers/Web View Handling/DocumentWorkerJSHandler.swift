@@ -185,15 +185,15 @@ final class DocumentWorkerJSHandler {
         }
     }
 
-    func recognize(workId: String) {
-        startWork(action: .recognize, pages: nil, workId: workId)
+    func recognize(password: String?, workId: String) {
+        startWork(action: .recognize, pages: nil, password: password, workId: workId)
     }
 
-    func getFullText(pages: [Int]?, workId: String) {
-        startWork(action: .getFulltext, pages: pages, workId: workId)
+    func getFullText(pages: [Int]?, password: String?, workId: String) {
+        startWork(action: .getFulltext, pages: pages, password: password, workId: workId)
     }
 
-    private func startWork(action: Action, pages: [Int]?, workId: String) {
+    private func startWork(action: Action, pages: [Int]?, password: String?, workId: String) {
         queue.async { [weak self] in
             guard let self else { return }
             var deferredError: Swift.Error?
@@ -237,6 +237,9 @@ final class DocumentWorkerJSHandler {
                 dataObject.setValue(buffer, forProperty: "buf")
                 if let pages {
                     dataObject.setValue(pages, forProperty: "pageIndexes")
+                }
+                if let password {
+                    dataObject.setValue(password, forProperty: "password")
                 }
                 message.setValue(dataObject, forProperty: "data")
 
