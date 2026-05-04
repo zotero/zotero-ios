@@ -29,28 +29,18 @@ class WebViewHandler: NSObject {
         case failed(Swift.Error)
     }
 
-    /// Per-host descriptor for a bot-protection challenge that can be cleared in a hidden web view.
-    /// Subclasses return one from `browserChallenge(for:statusCode:headers:responseText:)` to opt-in.
     struct BrowserChallenge {
         struct Cookie {
             let host: String
             let name: String
         }
 
-        /// Substring used to dedupe attempts within a translation/lookup operation.
         let match: String
-        /// Cookie that signals successful clearance (e.g., `turnstile_passed` on `search.worldcat.org`).
         let successCookie: Cookie
-        /// Optional URL transform from the failing request URL to the URL that runs the challenge
-        /// (e.g., WorldCat's `/api/search` → `/search` because the API endpoint can't run Turnstile).
         let challengeURL: (URL) -> URL
-        /// Whether the hidden web view and retry must use the plain Safari UA. Required for challenges
-        /// whose cookie is HMAC-signed against the UA (Cloudflare Turnstile).
         let shouldUsePlainUserAgent: Bool
     }
 
-    /// Lightweight `WKHTTPCookieStoreObserver` shim that forwards `cookiesDidChange(in:)` to a closure.
-    /// Apple's protocol is `NSObjectProtocol`, so we need a class to subclass `NSObject`.
     final class ChallengeCookieStoreObserver: NSObject, WKHTTPCookieStoreObserver {
         private let onChange: () -> Void
 
@@ -64,9 +54,6 @@ class WebViewHandler: NSObject {
         }
     }
 
-    /// Per-clearance state, keyed by messageId in `activeChallenges`. Owns the hidden web view, the cookie
-    /// store observer, and Rx disposables for the timeout + backup poll so `finish(...)` can tear them all
-    /// down atomically.
     private struct ClearanceContext {
         let webView: WKWebView
         let observer: ChallengeCookieStoreObserver
@@ -78,9 +65,6 @@ class WebViewHandler: NSObject {
     private let session: URLSession
 
     private weak var webView: WKWebView?
-    /// Source for hidden challenge web views. Set externally after init by code that already holds a provider
-    /// (e.g., `IdentifierLookupController`). When nil, `clear(...)` fails fast — we don't fall back to a
-    /// detached `WKWebView` since out-of-hierarchy web views can have their JS runtime deprioritized.
     weak var webViewProvider: WebViewProvider?
     private var webDidLoad: ((SingleEvent<()>) -> Void)?
     var receivedMessageHandler: ((String, Any) -> Void)?
@@ -88,8 +72,6 @@ class WebViewHandler: NSObject {
     private(set) var cookies: String?
     private(set) var userAgent: String?
     private(set) var referer: String?
-    /// Plain Safari/WebKit UA without the `Zotero_iOS/...` suffix. Used for hidden challenge web views
-    /// and for outgoing requests when `shouldUsePlainUserAgent(for:)` returns true.
     private(set) var browserUserAgent: String?
     private var initializationState: BehaviorRelay<InitializationState>
     private let disposeBag: DisposeBag
@@ -97,16 +79,7 @@ class WebViewHandler: NSObject {
     private var attemptedChallenges: Set<String>
     private static let webKitPrefix = "AppleWebKit/"
     private static let safariVersionPrefix = "Mobile Safari/"
-    /// Budget for clearing a bot-protection challenge in a hidden web view. Decoupled from individual
-    /// request timeouts because (a) translator-supplied timeouts are sized for "how long should the API
-    /// call take," not "how long should challenge clearance take," and (b) cold first-visit Cloudflare +
-    /// Turnstile + redirects can routinely run 10-20s. Once the success cookie is in the jar, follow-up
-    /// requests bypass clearance entirely, so this budget only applies to the first session-cold hit.
     private static let challengeClearanceTimeout: RxTimeInterval = .seconds(60)
-    /// Backup polling cadence during clearance. `WKHTTPCookieStoreObserver.cookiesDidChange(in:)` doesn't
-    /// always fire for cookies set via HTTP `Set-Cookie` headers (e.g., WorldCat's Turnstile flow), so the
-    /// observer alone can leave us waiting for the full timeout even after the cookie has landed. A slow
-    /// background poll catches that case without making the happy path (observer fires) any noisier.
     private static let challengeCookiePollInterval: RxTimeInterval = .seconds(5)
 
     // MARK: - Lifecycle
@@ -282,38 +255,20 @@ class WebViewHandler: NSObject {
 
     // MARK: - Browser Challenges
 
-    /// Decide whether a non-success response is a bot challenge that can be cleared in a hidden web view.
-    /// Subclasses override per-site; default returns nil so `sendRequest` behaves as before.
     func browserChallenge(for url: URL, statusCode: Int, headers: [AnyHashable: Any], responseText: String) -> BrowserChallenge? {
         return nil
     }
 
-    /// Notification hook fired on the main thread when a challenge is detected, before clearance starts.
-    /// Default no-op.
     func didDetect(browserChallenge: BrowserChallenge, url: URL?) {}
 
-    /// Whether outgoing requests to `url` should send the plain Safari UA instead of the Zotero-tagged one.
-    /// Required for hosts whose challenge cookie is HMAC-signed against the UA, where every request to that
-    /// host (not just the retry) must use the same UA the cookie was earned under.
-    /// Default returns false; subclasses override to register per-host opt-ins.
     func shouldUsePlainUserAgent(for url: URL) -> Bool {
         return false
     }
 
-    /// Cookie names that should be bridged from the WK cookie store into outgoing URLSession requests for `url`.
-    /// `WKHTTPCookieStore` and `URLSession`'s `HTTPCookieStorage` are separate jars, so once a challenge web
-    /// view has earned a cookie like `turnstile_passed` we have to manually inject it on every translator HTTP
-    /// call to that host. Otherwise a returning user with the cookie still in the WK store would still get a
-    /// 403 because the URLSession request never carries it.
-    /// Default returns `["cf_clearance"]` because Cloudflare protects a large fraction of the sites we hit
-    /// and bridging that cookie is virtually always correct. Subclasses override to augment (typically by
-    /// calling `super` and inserting per-host names).
     func additionalCookieNames(for url: URL) -> Set<String> {
         return ["cf_clearance"]
     }
 
-    /// Clears the per-handler dedupe set so subsequent requests can re-attempt clearance.
-    /// Call at the start of each translation/lookup operation.
     func resetBrowserChallenges() {
         attemptedChallenges = []
         tearDownActiveChallenges()
@@ -403,8 +358,6 @@ class WebViewHandler: NSObject {
                 return
             }
 
-            // Move dedupe + clearance onto the main thread so `attemptedChallenges` and `activeChallengeWebViews`
-            // are only touched there. Cookie store callbacks also fire on main.
             DispatchQueue.main.async { [weak self] in
                 guard let self else { return }
                 guard !attemptedChallenges.contains(challenge.match) else {
@@ -413,7 +366,7 @@ class WebViewHandler: NSObject {
                 }
                 attemptedChallenges.insert(challenge.match)
                 let challengeURL = challenge.challengeURL(responseURL)
-                DDLogWarn("WebViewHandler: detected browser challenge at \(responseURL.absoluteString); clearing at \(challengeURL.absoluteString)")
+                DDLogInfo("WebViewHandler: detected browser challenge at \(responseURL.absoluteString); clearing at \(challengeURL.absoluteString)")
                 didDetect(browserChallenge: challenge, url: challengeURL)
                 clear(challenge: challenge, at: challengeURL, for: messageId) { [weak self] success in
                     guard let self else { return }
@@ -445,11 +398,6 @@ class WebViewHandler: NSObject {
         }
     }
 
-    /// Loads `url` in a hidden web view (provided by `webViewProvider`) that shares the default cookie jar
-    /// with the main web view, observes the cookie store for changes, and calls `completion` once the
-    /// `challenge.successCookie` appears with a value distinct from the one observed at start (a stale signed
-    /// cookie wouldn't validate server-side), or with `false` after `Self.challengeClearanceTimeout` seconds elapse.
-    /// Caller must be on the main thread.
     private func clear(challenge: BrowserChallenge, at url: URL, for messageId: Int, completion: @escaping (Bool) -> Void) {
         guard let webView else {
             DDLogWarn("WebViewHandler: cannot clear challenge — main web view is gone")
@@ -501,14 +449,9 @@ class WebViewHandler: NSObject {
             )
 
             challengeWebView.load(URLRequest(url: url))
-            // Catch the race where the cookie was set between the snapshot above and observer registration.
-            evaluateChallengeCookie(challenge: challenge, initialValue: initialValue, messageId: messageId, completion: completion)
         }
     }
 
-    /// Query the cookie store for `challenge.successCookie`. If present with a value different from
-    /// `initialValue`, finish the clearance as success. If `isFinalCheck` is true (timeout fired) and the
-    /// cookie still hasn't appeared, finish as failure. Otherwise no-op (wait for the next observer fire).
     private func evaluateChallengeCookie(challenge: BrowserChallenge, initialValue: String?, messageId: Int, completion: @escaping (Bool) -> Void, isFinalCheck: Bool = false) {
         guard let context = activeChallenges[messageId] else { return }
         let startTime = context.startTime
@@ -529,8 +472,6 @@ class WebViewHandler: NSObject {
         }
     }
 
-    /// Atomic completion: removes the context from `activeChallenges` (so subsequent observer fires no-op),
-    /// removes the observer, cancels the timeout, and tears down the hidden web view.
     private func finishClearance(messageId: Int, success: Bool, completion: @escaping (Bool) -> Void) {
         guard let context = activeChallenges.removeValue(forKey: messageId) else { return }
         let elapsed = String(format: "%.2f", Date().timeIntervalSince(context.startTime))

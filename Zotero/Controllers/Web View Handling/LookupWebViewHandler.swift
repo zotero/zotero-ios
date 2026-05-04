@@ -190,9 +190,6 @@ final class LookupWebViewHandler: WebViewHandler {
 
     // MARK: - Browser Challenges
 
-    /// Hosts whose `/api/...` endpoints respond to bot detection by setting `turnstile_passed` after a
-    /// (typically invisible) Cloudflare Turnstile widget on a corresponding user-facing page completes.
-    /// Adding a new entry here lights up challenge clearance + cookie bridging + plain-UA for that host.
     private static let turnstileHosts: Set<String> = ["search.worldcat.org"]
 
     override func browserChallenge(for url: URL, statusCode: Int, headers: [AnyHashable: Any], responseText: String) -> BrowserChallenge? {
@@ -203,9 +200,6 @@ final class LookupWebViewHandler: WebViewHandler {
         return BrowserChallenge(
             match: host,
             successCookie: .init(host: host, name: "turnstile_passed"),
-            // The /api/... endpoint can't run Turnstile itself; the equivalent user-facing page does.
-            // Loading that page in a hidden web view runs the (invisible) Turnstile widget end-to-end
-            // and sets `turnstile_passed` on the host, which our retry then carries.
             challengeURL: { url in
                 switch host {
                 case "search.worldcat.org":
@@ -219,8 +213,6 @@ final class LookupWebViewHandler: WebViewHandler {
                     return url
                 }
             },
-            // `turnstile_passed` is HMAC-signed against (IP, UA), so every request to this host —
-            // not just the retry — must use the plain Safari UA the cookie was earned under.
             shouldUsePlainUserAgent: true
         )
     }
@@ -238,12 +230,9 @@ final class LookupWebViewHandler: WebViewHandler {
     }
 
     override func didDetect(browserChallenge: BrowserChallenge, url: URL?) {
-        DDLogWarn("LookupWebViewHandler: detected browser challenge for \(url?.absoluteString ?? "-")")
+        DDLogInfo("LookupWebViewHandler: detected browser challenge for \(url?.absoluteString ?? "-")")
     }
 
-    /// Returns the canonical host name when `url` points at a known Turnstile-protected host, else nil.
-    /// Single source of truth for "is this a Turnstile host?" — used by both the predicate hooks and the
-    /// `BrowserChallenge` builder when it needs the host string.
     private func turnstileHost(for url: URL) -> String? {
         guard let host = url.host(percentEncoded: false)?.lowercased(),
               Self.turnstileHosts.contains(host)
