@@ -124,6 +124,7 @@ final class LookupWebViewHandler: WebViewHandler {
         performAfterInitialization()
             .flatMap { [weak self] _ -> Single<Any> in
                 guard let self else { return .never() }
+                resetBrowserChallenges()
                 DDLogInfo("LookupWebViewHandler: call translate js")
                 let encodedIdentifiers = WebViewEncoder.encodeForJavascript(identifier.data(using: .utf8))
                 return call(javascript: "lookup(\(encodedIdentifiers), \(saveAttachments ? "true" : "false"));")
@@ -185,5 +186,57 @@ final class LookupWebViewHandler: WebViewHandler {
                 sendMessaging(error: "HTTP request missing payload", for: messageId)
             }
         }
+    }
+
+    // MARK: - Browser Challenges
+
+    private static let turnstileHosts: Set<String> = ["search.worldcat.org"]
+
+    override func browserChallenge(for url: URL, statusCode: Int, headers: [AnyHashable: Any], responseText: String) -> BrowserChallenge? {
+        guard statusCode == 403,
+              let host = turnstileHost(for: url),
+              responseText.range(of: "turnstile_required", options: [.caseInsensitive]) != nil
+        else { return nil }
+        return BrowserChallenge(
+            match: host,
+            successCookie: .init(host: host, name: "turnstile_passed"),
+            challengeURL: { url in
+                switch host {
+                case "search.worldcat.org":
+                    guard var components = URLComponents(url: url, resolvingAgainstBaseURL: true),
+                          components.path == "/api/search"
+                    else { return url }
+                    components.path = "/search"
+                    return components.url ?? url
+
+                default:
+                    return url
+                }
+            },
+            shouldUsePlainUserAgent: true
+        )
+    }
+
+    override func shouldUsePlainUserAgent(for url: URL) -> Bool {
+        return turnstileHost(for: url) != nil
+    }
+
+    override func additionalCookieNames(for url: URL) -> Set<String> {
+        var names = super.additionalCookieNames(for: url)
+        if turnstileHost(for: url) != nil {
+            names.insert("turnstile_passed")
+        }
+        return names
+    }
+
+    override func didDetect(browserChallenge: BrowserChallenge, url: URL?) {
+        DDLogInfo("LookupWebViewHandler: detected browser challenge for \(url?.absoluteString ?? "-")")
+    }
+
+    private func turnstileHost(for url: URL) -> String? {
+        guard let host = url.host(percentEncoded: false)?.lowercased(),
+              Self.turnstileHosts.contains(host)
+        else { return nil }
+        return host
     }
 }

@@ -50,17 +50,27 @@ extension WKWebView {
 }
 
 extension WKHTTPCookieStore {
-    func getCloudflareCookies(host: String, _ completionHandler: @escaping @MainActor @Sendable ([HTTPCookie]) -> Void) {
+    func getCookies(host: String, names: Set<String>, _ completionHandler: @escaping ([HTTPCookie]) -> Void) {
         getAllCookies { cookies in
-            let cloudflareCookies = cookies.filter { cookie in
-                guard cookie.name == "cf_clearance" else { return false }
+            let matchingCookies = cookies.filter { cookie in
+                guard names.contains(cookie.name) else { return false }
                 if host.hasSuffix(cookie.domain) {
                     return true
                 }
                 let cookieDomain = cookie.domain.trimmingCharacters(in: CharacterSet(charactersIn: "."))
                 return host == cookieDomain
             }
-            completionHandler(cloudflareCookies)
+            completionHandler(matchingCookies)
         }
+    }
+
+    func getCookie(host: String, name: String, _ completionHandler: @escaping (HTTPCookie?) -> Void) {
+        getCookies(host: host, names: [name]) { cookies in
+            completionHandler(cookies.first)
+        }
+    }
+
+    func getCloudflareCookies(host: String, _ completionHandler: @escaping ([HTTPCookie]) -> Void) {
+        getCookies(host: host, names: ["cf_clearance"], completionHandler)
     }
 }

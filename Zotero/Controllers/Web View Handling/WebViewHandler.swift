@@ -29,19 +29,58 @@ class WebViewHandler: NSObject {
         case failed(Swift.Error)
     }
 
+    struct BrowserChallenge {
+        struct Cookie {
+            let host: String
+            let name: String
+        }
+
+        let match: String
+        let successCookie: Cookie
+        let challengeURL: (URL) -> URL
+        let shouldUsePlainUserAgent: Bool
+    }
+
+    final class ChallengeCookieStoreObserver: NSObject, WKHTTPCookieStoreObserver {
+        private let onChange: () -> Void
+
+        init(onChange: @escaping () -> Void) {
+            self.onChange = onChange
+            super.init()
+        }
+
+        func cookiesDidChange(in cookieStore: WKHTTPCookieStore) {
+            onChange()
+        }
+    }
+
+    private struct ClearanceContext {
+        let webView: WKWebView
+        let observer: ChallengeCookieStoreObserver
+        let cookieStore: WKHTTPCookieStore
+        let clearanceDisposeBag: DisposeBag
+        let startTime: Date
+    }
+
     private let session: URLSession
 
     private weak var webView: WKWebView?
+    weak var webViewProvider: WebViewProvider?
     private var webDidLoad: ((SingleEvent<()>) -> Void)?
     var receivedMessageHandler: ((String, Any) -> Void)?
     // Cookies, User-Agent and Referrer from original website are stored and added to requests in `sendRequest(with:)`.
     private(set) var cookies: String?
     private(set) var userAgent: String?
     private(set) var referer: String?
+    private(set) var browserUserAgent: String?
     private var initializationState: BehaviorRelay<InitializationState>
     private let disposeBag: DisposeBag
+    private var activeChallenges: [Int: ClearanceContext]
+    private var attemptedChallenges: Set<String>
     private static let webKitPrefix = "AppleWebKit/"
     private static let safariVersionPrefix = "Mobile Safari/"
+    private static let challengeClearanceTimeout: RxTimeInterval = .seconds(60)
+    private static let challengeCookiePollInterval: RxTimeInterval = .seconds(5)
 
     // MARK: - Lifecycle
 
@@ -58,6 +97,8 @@ class WebViewHandler: NSObject {
         self.webView = webView
         initializationState = BehaviorRelay(value: .inProgress)
         disposeBag = DisposeBag()
+        activeChallenges = [:]
+        attemptedChallenges = []
 
         super.init()
 
@@ -71,6 +112,7 @@ class WebViewHandler: NSObject {
                 userAgent += " " + safariVersion
             }
         }
+        browserUserAgent = userAgent.isEmpty ? nil : userAgent
         webView.customUserAgent = "\(userAgent) Zotero_iOS/\(DeviceInfoProvider.versionString ?? "")-\(DeviceInfoProvider.buildString ?? "")"
 
         javascriptHandlers?.forEach { handler in
@@ -203,10 +245,33 @@ class WebViewHandler: NSObject {
 
     func removeFromSuperviewAsynchronously() {
         DispatchQueue.main.async { [weak self] in
-            guard let self, let webView else { return }
+            guard let self else { return }
+            tearDownActiveChallenges()
+            guard let webView else { return }
             webView.configuration.userContentController.removeAllScriptMessageHandlers()
             webView.removeFromSuperview()
         }
+    }
+
+    // MARK: - Browser Challenges
+
+    func browserChallenge(for url: URL, statusCode: Int, headers: [AnyHashable: Any], responseText: String) -> BrowserChallenge? {
+        return nil
+    }
+
+    func didDetect(browserChallenge: BrowserChallenge, url: URL?) {}
+
+    func shouldUsePlainUserAgent(for url: URL) -> Bool {
+        return false
+    }
+
+    func additionalCookieNames(for url: URL) -> Set<String> {
+        return ["cf_clearance"]
+    }
+
+    func resetBrowserChallenges() {
+        attemptedChallenges = []
+        tearDownActiveChallenges()
     }
 
     // MARK: - HTTP Requests
@@ -232,7 +297,7 @@ class WebViewHandler: NSObject {
             throw Error.urlMissingTranslators
         }
 
-        let headers = (options["headers"] as? [String: String]) ?? [:]
+        let originalHeaders = (options["headers"] as? [String: String]) ?? [:]
         let body = options["body"] as? String
         let timeout = (options["timeout"] as? Double).flatMap({ $0 / 1000 }) ?? 60
         let successCodes = (options["successCodes"] as? [Int]) ?? []
@@ -247,22 +312,14 @@ class WebViewHandler: NSObject {
         request.httpBody = body?.data(using: .utf8)
         request.timeoutInterval = timeout
 
-        addCloudflareCookie(host: host, existingHeaders: headers) { [weak self] headers in
+        addAdditionalCookies(for: url, host: host, existingHeaders: originalHeaders) { [weak self] mergedHeaders in
             guard let self else { return }
-            headers.forEach { key, value in
-                request.setValue(value, forHTTPHeaderField: key)
-            }
-            if headers["User-Agent"] == nil, let userAgent {
-                request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
-            }
-            if headers["Referer"] == nil, let referer, !referer.isEmpty {
-                request.setValue(referer, forHTTPHeaderField: "Referer")
-            }
+            applyHeaders(to: &request, headers: mergedHeaders, url: url)
 
             let task = session.dataTask(with: request) { [weak self] data, response, error in
                 guard let self else { return }
                 if let response = response as? HTTPURLResponse {
-                    sendHttpResponse(data: data, statusCode: response.statusCode, url: response.url, successCodes: successCodes, headers: response.allHeaderFields, for: messageId)
+                    handleResponse(data: data, response: response, request: request, successCodes: successCodes, messageId: messageId)
                 } else if let error {
                     sendHttpResponse(data: error.localizedDescription.data(using: .utf8), statusCode: -1, url: nil, successCodes: successCodes, headers: [:], for: messageId)
                 } else {
@@ -272,18 +329,184 @@ class WebViewHandler: NSObject {
             task.resume()
         }
 
-        func addCloudflareCookie(host: String, existingHeaders: [String: String], completion: @escaping ([String: String]) -> Void) {
-            guard let webView else { return completion(existingHeaders) }
-            let store = webView.configuration.websiteDataStore.httpCookieStore
-            store.getCloudflareCookies(host: host) { cloudflareCookies in
-                guard !cloudflareCookies.isEmpty else { return completion(existingHeaders) }
-                var cookieString = cloudflareCookies.map({ "\($0.name)=\($0.value)" }).joined(separator: "; ")
-                var headers = existingHeaders
-                if let existingCookie = headers["Cookie"], !existingCookie.isEmpty {
-                    cookieString = existingCookie + "; " + cookieString
+        func applyHeaders(to request: inout URLRequest, headers: [String: String], url: URL?) {
+            headers.forEach { key, value in
+                request.setValue(value, forHTTPHeaderField: key)
+            }
+            if headers["User-Agent"] == nil {
+                if let url, shouldUsePlainUserAgent(for: url), let browserUserAgent {
+                    request.setValue(browserUserAgent, forHTTPHeaderField: "User-Agent")
+                } else if let userAgent {
+                    request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
                 }
-                headers["Cookie"] = cookieString
-                completion(headers)
+            }
+            if headers["Referer"] == nil, let referer, !referer.isEmpty {
+                request.setValue(referer, forHTTPHeaderField: "Referer")
+            }
+        }
+
+        func handleResponse(data: Data?, response: HTTPURLResponse, request: URLRequest, successCodes: [Int], messageId: Int) {
+            let statusCode = response.statusCode
+            let isSuccess = successCodes.isEmpty ? 200..<300 ~= statusCode : successCodes.contains(statusCode)
+            let responseText = data.flatMap({ String(data: $0, encoding: .utf8) }) ?? ""
+
+            guard !isSuccess,
+                  let responseURL = response.url,
+                  let challenge = browserChallenge(for: responseURL, statusCode: statusCode, headers: response.allHeaderFields, responseText: responseText)
+            else {
+                sendHttpResponse(responseText: responseText, statusCode: statusCode, url: response.url, isSuccess: isSuccess, headers: response.allHeaderFields, for: messageId)
+                return
+            }
+
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                guard !attemptedChallenges.contains(challenge.match) else {
+                    sendHttpResponse(responseText: responseText, statusCode: statusCode, url: response.url, isSuccess: isSuccess, headers: response.allHeaderFields, for: messageId)
+                    return
+                }
+                attemptedChallenges.insert(challenge.match)
+                let challengeURL = challenge.challengeURL(responseURL)
+                DDLogInfo("WebViewHandler: detected browser challenge at \(responseURL.absoluteString); clearing at \(challengeURL.absoluteString)")
+                didDetect(browserChallenge: challenge, url: challengeURL)
+                clear(challenge: challenge, at: challengeURL, for: messageId) { [weak self] success in
+                    guard let self else { return }
+                    guard success else {
+                        DDLogWarn("WebViewHandler: browser challenge not cleared at \(challengeURL.absoluteString)")
+                        sendHttpResponse(responseText: responseText, statusCode: statusCode, url: response.url, isSuccess: isSuccess, headers: response.allHeaderFields, for: messageId)
+                        return
+                    }
+                    DDLogInfo("WebViewHandler: browser challenge cleared, retrying \(responseURL.absoluteString)")
+                    var retryRequest = request
+                    retryRequest.setValue(nil, forHTTPHeaderField: "Cookie")
+                    addAdditionalCookies(for: responseURL, host: host, existingHeaders: originalHeaders) { [weak self] retryHeaders in
+                        guard let self else { return }
+                        applyHeaders(to: &retryRequest, headers: retryHeaders, url: retryRequest.url)
+                        let retryTask = session.dataTask(with: retryRequest) { [weak self] data, response, error in
+                            guard let self else { return }
+                            if let response = response as? HTTPURLResponse {
+                                sendHttpResponse(data: data, statusCode: response.statusCode, url: response.url, successCodes: successCodes, headers: response.allHeaderFields, for: messageId)
+                            } else if let error {
+                                sendHttpResponse(data: error.localizedDescription.data(using: .utf8), statusCode: -1, url: nil, successCodes: successCodes, headers: [:], for: messageId)
+                            } else {
+                                sendHttpResponse(data: "unknown error".data(using: .utf8), statusCode: -1, url: nil, successCodes: successCodes, headers: [:], for: messageId)
+                            }
+                        }
+                        retryTask.resume()
+                    }
+                }
+            }
+        }
+    }
+
+    private func clear(challenge: BrowserChallenge, at url: URL, for messageId: Int, completion: @escaping (Bool) -> Void) {
+        guard let webView else {
+            DDLogWarn("WebViewHandler: cannot clear challenge — main web view is gone")
+            completion(false)
+            return
+        }
+        guard let webViewProvider else {
+            DDLogWarn("WebViewHandler: cannot clear challenge — no webViewProvider set")
+            completion(false)
+            return
+        }
+        let challengeWebView = webViewProvider.addWebView(configuration: nil)
+        challengeWebView.customUserAgent = challenge.shouldUsePlainUserAgent ? browserUserAgent : webView.customUserAgent
+#if DEBUG
+        challengeWebView.isInspectable = true
+#endif
+        let cookieStore = challengeWebView.configuration.websiteDataStore.httpCookieStore
+        cookieStore.getCookie(host: challenge.successCookie.host, name: challenge.successCookie.name) { [weak self] initialCookie in
+            guard let self else { return }
+            let initialValue = initialCookie?.value
+            let startTime = Date()
+            DDLogInfo("WebViewHandler: challenge clearance started messageId=\(messageId) url=\(url.absoluteString)")
+
+            let observer = ChallengeCookieStoreObserver { [weak self] in
+                self?.evaluateChallengeCookie(challenge: challenge, initialValue: initialValue, messageId: messageId, completion: completion)
+            }
+            cookieStore.add(observer)
+
+            let clearanceDisposeBag = DisposeBag()
+            Single<Int>.timer(Self.challengeClearanceTimeout, scheduler: MainScheduler.instance)
+                .subscribe(onSuccess: { [weak self] _ in
+                    DDLogWarn("WebViewHandler: challenge clearance timeout fired messageId=\(messageId)")
+                    self?.evaluateChallengeCookie(challenge: challenge, initialValue: initialValue, messageId: messageId, completion: completion, isFinalCheck: true)
+                })
+                .disposed(by: clearanceDisposeBag)
+            Observable<Int>.interval(Self.challengeCookiePollInterval, scheduler: MainScheduler.instance)
+                .subscribe(onNext: { [weak self] _ in
+                    DDLogInfo("WebViewHandler: challenge clearance backup polling fired messageId=\(messageId)")
+                    self?.evaluateChallengeCookie(challenge: challenge, initialValue: initialValue, messageId: messageId, completion: completion)
+                })
+                .disposed(by: clearanceDisposeBag)
+
+            activeChallenges[messageId] = ClearanceContext(
+                webView: challengeWebView,
+                observer: observer,
+                cookieStore: cookieStore,
+                clearanceDisposeBag: clearanceDisposeBag,
+                startTime: startTime
+            )
+
+            challengeWebView.load(URLRequest(url: url))
+        }
+    }
+
+    private func evaluateChallengeCookie(challenge: BrowserChallenge, initialValue: String?, messageId: Int, completion: @escaping (Bool) -> Void, isFinalCheck: Bool = false) {
+        guard let context = activeChallenges[messageId] else { return }
+        let startTime = context.startTime
+        context.cookieStore.getCookie(host: challenge.successCookie.host, name: challenge.successCookie.name) { [weak self] cookie in
+            guard let self else { return }
+            let elapsed = String(format: "%.2f", Date().timeIntervalSince(startTime))
+            if let cookie, cookie.value != initialValue {
+                DDLogInfo("WebViewHandler: challenge cookie present messageId=\(messageId) elapsed=\(elapsed)s — succeeding")
+                finishClearance(messageId: messageId, success: true, completion: completion)
+            } else if isFinalCheck {
+                let presence = cookie == nil ? "absent" : "value unchanged"
+                DDLogWarn("WebViewHandler: challenge cookie \(presence) on final check messageId=\(messageId) elapsed=\(elapsed)s — failing")
+                finishClearance(messageId: messageId, success: false, completion: completion)
+            } else {
+                let presence = cookie == nil ? "absent" : "value unchanged"
+                DDLogInfo("WebViewHandler: challenge cookie check messageId=\(messageId) elapsed=\(elapsed)s presence=\(presence) — waiting")
+            }
+        }
+    }
+
+    private func finishClearance(messageId: Int, success: Bool, completion: @escaping (Bool) -> Void) {
+        guard let context = activeChallenges.removeValue(forKey: messageId) else { return }
+        let elapsed = String(format: "%.2f", Date().timeIntervalSince(context.startTime))
+        DDLogInfo("WebViewHandler: challenge clearance finished messageId=\(messageId) success=\(success) elapsed=\(elapsed)s")
+        context.cookieStore.remove(context.observer)
+        completion(success)
+        DispatchQueue.main.async { [weak webView = context.webView] in
+            webView?.removeFromSuperview()
+        }
+    }
+
+    private func addAdditionalCookies(for url: URL, host: String, existingHeaders: [String: String], completion: @escaping ([String: String]) -> Void) {
+        let names = additionalCookieNames(for: url)
+        guard !names.isEmpty, let webView else { return completion(existingHeaders) }
+        let store = webView.configuration.websiteDataStore.httpCookieStore
+        store.getCookies(host: host, names: names) { matchingCookies in
+            guard !matchingCookies.isEmpty else { return completion(existingHeaders) }
+            var cookieString = matchingCookies.map({ "\($0.name)=\($0.value)" }).joined(separator: "; ")
+            var headers = existingHeaders
+            if let existingCookie = headers["Cookie"], !existingCookie.isEmpty {
+                cookieString = existingCookie + "; " + cookieString
+            }
+            headers["Cookie"] = cookieString
+            completion(headers)
+        }
+    }
+
+    private func tearDownActiveChallenges() {
+        let contexts = Array(activeChallenges.values)
+        activeChallenges.removeAll()
+        DispatchQueue.main.async {
+            for context in contexts {
+                context.cookieStore.remove(context.observer)
+                context.webView.stopLoading()
+                context.webView.removeFromSuperview()
             }
         }
     }

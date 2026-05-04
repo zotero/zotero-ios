@@ -31,11 +31,13 @@ Zotero.HTTP = new function() {
 	this.StatusError = function(xmlhttp, url) {
 		this.message = `HTTP request to ${url} rejected with status ${xmlhttp.status}`;
 		this.status = xmlhttp.status;
+		this.xmlhttp = xmlhttp;
 		try {
 			this.responseText = typeof xmlhttp.responseText == 'string' ? xmlhttp.responseText : undefined;
 		} catch (e) {}
 	};
 	this.StatusError.prototype = Object.create(Error.prototype);
+	this.UnexpectedStatusException = this.StatusError;
 
 	this.TimeoutError = function(ms) {
 		this.message = `HTTP request has timed out after ${ms}ms`;
