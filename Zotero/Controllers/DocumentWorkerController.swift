@@ -245,7 +245,7 @@ final class DocumentWorkerController {
                         }
 
                     case .failure(let error):
-                        DDLogError("DocumentWorkerController: recognizer failed - \(error)")
+                        DDLogError("DocumentWorkerController: work \(work.id) failed - \(error)")
                         finishWork(work, in: worker) { $0?.on(.next(Update(work: work, kind: .failed))) }
                     }
                 }
