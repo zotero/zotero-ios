@@ -112,20 +112,6 @@ final class DocumentWorkerJSHandler {
         }
 
         switch action {
-        case "FetchBuiltInCMap":
-            guard let name = data as? String else {
-                respondWithError(to: engine, id: id, message: "missing cmap name")
-                return
-            }
-            respondWithBuiltInCMap(to: engine, name: name, responseId: id)
-
-        case "FetchStandardFontData":
-            guard let filename = data as? String else {
-                respondWithError(to: engine, id: id, message: "missing font filename")
-                return
-            }
-            respondWithStandardFontData(to: engine, filename: filename, responseId: id)
-
         case "FetchData":
             guard let path = data as? String else {
                 respondWithError(to: engine, id: id, message: "missing data path")
@@ -147,57 +133,6 @@ final class DocumentWorkerJSHandler {
                 try engine.postToWorker(response)
             } catch {
                 DDLogError("DocumentWorkerJSHandler: failed to respond with error to JS engine - \(error)")
-            }
-        }
-
-        func respondWithBuiltInCMap(to engine: DocumentWorkerJSEngine, name: String, responseId: Int) {
-            let path = "Bundled/document_worker/cmaps"
-            guard let url = bundle.url(forResource: name, withExtension: "bcmap", subdirectory: path) else {
-                respondWithError(to: engine, id: responseId, message: "missing cmap \(name)")
-                return
-            }
-            guard let data = try? Data(contentsOf: url) else {
-                respondWithError(to: engine, id: responseId, message: "failed to read cmap \(name)")
-                return
-            }
-            guard let cMapData = engine.makeUint8Array(from: data) else {
-                respondWithError(to: engine, id: responseId, message: "failed to create cmap data")
-                return
-            }
-            let response = engine.makeObject()
-            let payload = engine.makeObject()
-            payload.setValue(true, forProperty: "isCompressed")
-            payload.setValue(cMapData, forProperty: "cMapData")
-            response.setValue(responseId, forProperty: "responseID")
-            response.setValue(payload, forProperty: "data")
-            do {
-                try engine.postToWorker(response)
-            } catch {
-                DDLogError("DocumentWorkerJSHandler: failed to respond to cmap request - \(error)")
-            }
-        }
-
-        func respondWithStandardFontData(to engine: DocumentWorkerJSEngine, filename: String, responseId: Int) {
-            let path = "Bundled/document_worker/standard_fonts"
-            guard let url = bundle.url(forResource: filename, withExtension: nil, subdirectory: path) else {
-                respondWithError(to: engine, id: responseId, message: "missing font \(filename)")
-                return
-            }
-            guard let data = try? Data(contentsOf: url) else {
-                respondWithError(to: engine, id: responseId, message: "failed to read font \(filename)")
-                return
-            }
-            guard let fontData = engine.makeUint8Array(from: data) else {
-                respondWithError(to: engine, id: responseId, message: "failed to create font data")
-                return
-            }
-            let response = engine.makeObject()
-            response.setValue(responseId, forProperty: "responseID")
-            response.setValue(fontData, forProperty: "data")
-            do {
-                try engine.postToWorker(response)
-            } catch {
-                DDLogError("DocumentWorkerJSHandler: failed to respond to font request - \(error)")
             }
         }
 
