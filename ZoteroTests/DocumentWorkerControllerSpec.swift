@@ -408,7 +408,6 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                             expect(actual[key] as? [String: String]).to(equal(expected[key] as? [String: String]))
 
                         case "text":
-
                             expect((actual[key] as? String)?.replacingOccurrences(of: "\n", with: " ")).to(equal((expected[key] as? String)?.replacingOccurrences(of: "\n", with: " ")))
 
                         default:

@@ -16,6 +16,11 @@ enum DocumentWorkerData {
 }
 
 final class DocumentWorkerJSHandler {
+    enum Action: String {
+        case recognize = "pdf.getRecognizerData"
+        case getFulltext = "pdf.getFulltext"
+    }
+
     enum Error: Swift.Error {
         case engineNotLoaded
         case missingWorkFile
@@ -32,6 +37,7 @@ final class DocumentWorkerJSHandler {
     let observable: PublishSubject<(workId: String, result: Result<DocumentWorkerData, Swift.Error>)>
 
     private let engine: DocumentWorkerJSEngine
+    private let bundle: Bundle
     private let queue: DispatchQueue
     private let queueKey: DispatchSpecificKey<String>
     private let queueLabel: String
@@ -45,6 +51,7 @@ final class DocumentWorkerJSHandler {
         queue = DispatchQueue(label: queueLabel)
         queueKey = DispatchSpecificKey<String>()
         queue.setSpecific(key: queueKey, value: queueLabel)
+        self.bundle = bundle
         engine = DocumentWorkerJSEngine(bundle: bundle, queue: queue)
         observable = PublishSubject()
         nextMessageId = 1
@@ -119,6 +126,13 @@ final class DocumentWorkerJSHandler {
             }
             respondWithStandardFontData(to: engine, filename: filename, responseId: id)
 
+        case "FetchData":
+            guard let path = data as? String else {
+                respondWithError(to: engine, id: id, message: "missing data path")
+                return
+            }
+            respondWithBundledWorkerData(to: engine, path: path, responseId: id)
+
         default:
             respondWithError(to: engine, id: id, message: "unknown action \(action)")
         }
@@ -138,7 +152,7 @@ final class DocumentWorkerJSHandler {
 
         func respondWithBuiltInCMap(to engine: DocumentWorkerJSEngine, name: String, responseId: Int) {
             let path = "Bundled/document_worker/cmaps"
-            guard let url = Bundle.main.url(forResource: name, withExtension: "bcmap", subdirectory: path) else {
+            guard let url = bundle.url(forResource: name, withExtension: "bcmap", subdirectory: path) else {
                 respondWithError(to: engine, id: responseId, message: "missing cmap \(name)")
                 return
             }
@@ -165,7 +179,7 @@ final class DocumentWorkerJSHandler {
 
         func respondWithStandardFontData(to engine: DocumentWorkerJSEngine, filename: String, responseId: Int) {
             let path = "Bundled/document_worker/standard_fonts"
-            guard let url = Bundle.main.url(forResource: filename, withExtension: nil, subdirectory: path) else {
+            guard let url = bundle.url(forResource: filename, withExtension: nil, subdirectory: path) else {
                 respondWithError(to: engine, id: responseId, message: "missing font \(filename)")
                 return
             }
@@ -186,17 +200,65 @@ final class DocumentWorkerJSHandler {
                 DDLogError("DocumentWorkerJSHandler: failed to respond to font request - \(error)")
             }
         }
+
+        func respondWithBundledWorkerData(to engine: DocumentWorkerJSEngine, path: String, responseId: Int) {
+            let normalizedPath = path.replacingOccurrences(of: "\\", with: "/")
+            let components = normalizedPath.split(separator: "/", omittingEmptySubsequences: false)
+            let hasUnsafeComponent = components.contains { $0.isEmpty || $0 == ".." }
+            guard !normalizedPath.isEmpty,
+                  !normalizedPath.hasPrefix("/"),
+                  !hasUnsafeComponent else {
+                respondWithError(to: engine, id: responseId, message: "invalid data path \(path)")
+                return
+            }
+
+            let nsPath = normalizedPath as NSString
+            let resourceName = nsPath.lastPathComponent
+            guard !resourceName.isEmpty, resourceName != "." else {
+                respondWithError(to: engine, id: responseId, message: "invalid data path \(path)")
+                return
+            }
+            let directory = nsPath.deletingLastPathComponent
+            let subdirectory: String
+            if directory.isEmpty || directory == "." {
+                subdirectory = "Bundled/document_worker"
+            } else {
+                subdirectory = "Bundled/document_worker/\(directory)"
+            }
+
+            guard let url = bundle.url(forResource: resourceName, withExtension: nil, subdirectory: subdirectory) else {
+                respondWithError(to: engine, id: responseId, message: "missing data \(path)")
+                return
+            }
+            guard let data = try? Data(contentsOf: url) else {
+                respondWithError(to: engine, id: responseId, message: "failed to read data \(path)")
+                return
+            }
+            guard let bytes = engine.makeUint8Array(from: data) else {
+                respondWithError(to: engine, id: responseId, message: "failed to create data \(path)")
+                return
+            }
+
+            let response = engine.makeObject()
+            response.setValue(responseId, forProperty: "responseID")
+            response.setValue(bytes, forProperty: "data")
+            do {
+                try engine.postToWorker(response)
+            } catch {
+                DDLogError("DocumentWorkerJSHandler: failed to respond to data request - \(error)")
+            }
+        }
     }
 
     func recognize(workId: String) {
-        startWork(action: "getRecognizerData", pages: nil, workId: workId)
+        startWork(action: .recognize, pages: nil, workId: workId)
     }
 
     func getFullText(pages: [Int]?, workId: String) {
-        startWork(action: "getFulltext", pages: pages, workId: workId)
+        startWork(action: .getFulltext, pages: pages, workId: workId)
     }
 
-    private func startWork(action: String, pages: [Int]?, workId: String) {
+    private func startWork(action: Action, pages: [Int]?, workId: String) {
         queue.async { [weak self] in
             guard let self else { return }
             var deferredError: Swift.Error?
@@ -234,7 +296,7 @@ final class DocumentWorkerJSHandler {
 
                 let message = engine.makeObject()
                 message.setValue(nextMessageId, forProperty: "id")
-                message.setValue(action, forProperty: "action")
+                message.setValue(action.rawValue, forProperty: "action")
 
                 let dataObject = engine.makeObject()
                 dataObject.setValue(buffer, forProperty: "buf")
@@ -254,9 +316,11 @@ final class DocumentWorkerJSHandler {
                             observable.on(.next((workId: workId, result: .failure(Error.invalidMessage))))
                             return
                         }
-                        if action == "getRecognizerData" {
+                        switch action {
+                        case .recognize:
                             observable.on(.next((workId: workId, result: .success(.recognizerData(data: data)))))
-                        } else {
+
+                        case .getFulltext:
                             observable.on(.next((workId: workId, result: .success(.fullText(data: data)))))
                         }
 
