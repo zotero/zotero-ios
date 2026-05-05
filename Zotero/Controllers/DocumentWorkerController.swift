@@ -51,6 +51,7 @@ final class DocumentWorkerController {
         fileprivate(set) var state: State = .pending
         fileprivate var subjectsByWork: OrderedDictionary<Work, PublishSubject<Update>> = [:]
         fileprivate var handler: DocumentWorkerJSHandler?
+        fileprivate var workStartTimes: [Work: CFAbsoluteTime] = [:]
 
         init(file: FileData, shouldCacheData: Bool, priority: Priority, password: String? = nil) {
             self.file = file
@@ -277,6 +278,8 @@ final class DocumentWorkerController {
         // Set worker state to running and append to proper queue.
         updateStateAndQueues(for: worker, state: .running)
         // Start work.
+        worker.workStartTimes[work] = CFAbsoluteTimeGetCurrent()
+        DDLogInfo("DocumentWorkerController: started \(work) in \(worker)")
         subject.on(.next(Update(work: work, kind: .inProgress)))
         switch work {
         case .recognizer:
@@ -300,11 +303,18 @@ final class DocumentWorkerController {
         }
 
         func finishWork(_ work: Work, worker: Worker, completion: ((_ subject: PublishSubject<Update>?) -> Void)?, controller: DocumentWorkerController) {
+            logWorkDuration(work, worker: worker)
             let subject = worker.subjectsByWork.removeValue(forKey: work)
             controller.updateStateAndQueues(for: worker, state: worker.subjectsByWork.isEmpty ? .ready : .queued)
             DDLogInfo("DocumentWorkerController: finished \(work) in \(worker)")
             completion?(subject)
             controller.startWorkIfNeeded()
+
+            func logWorkDuration(_ work: Work, worker: Worker) {
+                guard let startTime = worker.workStartTimes.removeValue(forKey: work) else { return }
+                let duration = CFAbsoluteTimeGetCurrent() - startTime
+                DDLogInfo("DocumentWorkerController: \(work) in \(worker) took \(String(format: "%.3f", duration))s")
+            }
         }
     }
 
