@@ -47,14 +47,16 @@ final class DocumentWorkerController {
         let file: FileData
         let shouldCacheData: Bool
         let priority: Priority
+        let password: String?
         fileprivate(set) var state: State = .pending
         fileprivate var subjectsByWork: OrderedDictionary<Work, PublishSubject<Update>> = [:]
         fileprivate var handler: DocumentWorkerJSHandler?
 
-        init(file: FileData, shouldCacheData: Bool, priority: Priority) {
+        init(file: FileData, shouldCacheData: Bool, priority: Priority, password: String? = nil) {
             self.file = file
             self.shouldCacheData = shouldCacheData
             self.priority = priority
+            self.password = password
         }
 
         static func == (lhs: DocumentWorkerController.Worker, rhs: DocumentWorkerController.Worker) -> Bool {
@@ -245,7 +247,7 @@ final class DocumentWorkerController {
                         }
 
                     case .failure(let error):
-                        DDLogError("DocumentWorkerController: recognizer failed - \(error)")
+                        DDLogError("DocumentWorkerController: work \(work.id) failed - \(error)")
                         finishWork(work, in: worker) { $0?.on(.next(Update(work: work, kind: .failed))) }
                     }
                 }
@@ -278,10 +280,10 @@ final class DocumentWorkerController {
         subject.on(.next(Update(work: work, kind: .inProgress)))
         switch work {
         case .recognizer:
-            documentWorkerHandler.recognize(workId: work.id)
+            documentWorkerHandler.recognize(password: worker.password, workId: work.id)
 
         case .fullText(let pages):
-            documentWorkerHandler.getFullText(pages: pages, workId: work.id)
+            documentWorkerHandler.getFullText(pages: pages, password: worker.password, workId: work.id)
         }
         // Start another work if needed.
         startWorkIfNeeded()

@@ -493,13 +493,92 @@
     g.DOMMatrixReadOnly = g.DOMMatrix;
   }
 
+  function mergeBlobParts(parts) {
+    var arrays = [];
+    var totalLength = 0;
+    for (var i = 0; i < parts.length; i++) {
+      var part = parts[i];
+      var array;
+      if (part instanceof ArrayBuffer) {
+        array = new Uint8Array(part);
+      } else if (part instanceof Uint8Array) {
+        array = part;
+      } else if (part && part.buffer && typeof part.byteLength === "number") {
+        array = new Uint8Array(part.buffer, part.byteOffset || 0, part.byteLength);
+      } else if (typeof part === "string") {
+        array = new Uint8Array(part.length);
+        for (var j = 0; j < part.length; j++) {
+          array[j] = part.charCodeAt(j) & 0xff;
+        }
+      } else {
+        array = new Uint8Array(0);
+      }
+      arrays.push(array);
+      totalLength += array.length;
+    }
+
+    var merged = new Uint8Array(totalLength);
+    var offset = 0;
+    for (var k = 0; k < arrays.length; k++) {
+      merged.set(arrays[k], offset);
+      offset += arrays[k].length;
+    }
+    return merged;
+  }
+
+  if (typeof g.Blob === "undefined") {
+    g.Blob = function (parts, options) {
+      this._parts = parts || [];
+      this.type = (options && options.type) || "";
+      this.size = mergeBlobParts(this._parts).length;
+    };
+  }
+
+  if (typeof g.Blob.prototype.arrayBuffer !== "function") {
+    g.Blob.prototype.arrayBuffer = function () {
+      return Promise.resolve(mergeBlobParts(this._parts).buffer);
+    };
+  }
+
+  var blobStore = {};
+  var blobId = 0;
+
   if (typeof g.URL === "undefined") {
     g.URL = function (url, base) {
       this.href = base ? String(base) + String(url) : String(url);
       this.origin = "null";
     };
-    g.URL.createObjectURL = function () { return ""; };
   }
+  g.URL.createObjectURL = function (blob) {
+    var url = "blob:zotero-ios-jsc/" + (++blobId);
+    blobStore[url] = blob;
+    return url;
+  };
+  g.URL.revokeObjectURL = function (url) {
+    delete blobStore[url];
+  };
+
+  var nativeFetch = typeof g.fetch === "function" ? g.fetch : null;
+  g.fetch = function (url) {
+    var href = typeof url === "string" ? url : (url && url.href) || "";
+    var blob = blobStore[href];
+    if (blob) {
+      return blob.arrayBuffer().then(function (buffer) {
+        return {
+          ok: true,
+          status: 200,
+          statusText: "OK",
+          url: href,
+          arrayBuffer: function () { return Promise.resolve(buffer); }
+        };
+      });
+    }
+    if (nativeFetch) {
+      return nativeFetch.apply(g, arguments);
+    }
+    return Promise.reject(new Error("fetch: unsupported URL: " + href));
+  };
+
   if (typeof g.URLSearchParams === "undefined") {
     g.URLSearchParams = function () {
       this.get = function () { return null; };
