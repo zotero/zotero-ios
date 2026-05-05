@@ -33,7 +33,7 @@ final class DocumentWorkerController {
         }
     }
 
-    class Worker: Hashable {
+    class Worker: Hashable, CustomStringConvertible {
         enum State: CaseIterable {
             case pending
             case preparing
@@ -66,6 +66,10 @@ final class DocumentWorkerController {
 
         func hash(into hasher: inout Hasher) {
             hasher.combine(id)
+        }
+
+        var description: String {
+            "Worker(id: \(id.uuidString), file: \(file.fileName))"
         }
     }
 
