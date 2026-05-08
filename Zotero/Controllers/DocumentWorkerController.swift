@@ -7,6 +7,8 @@
 //
 
 import Foundation
+import Darwin
+import WebKit
 import OrderedCollections
 
 import CocoaLumberjackSwift
@@ -14,6 +16,16 @@ import RxSwift
 
 final class DocumentWorkerController {
     // MARK: Types
+    fileprivate enum HandlerRuntime: Hashable {
+        case jsContext
+        case webView
+    }
+
+    private enum WorkerFileCopyStrategy {
+        case regular
+        case cloneFirst
+    }
+
     enum Priority {
         case `default`
         case high
@@ -45,17 +57,17 @@ final class DocumentWorkerController {
 
         let id = UUID()
         let file: FileData
-        let shouldCacheData: Bool
+        let shouldCacheInput: Bool
         let priority: Priority
         let password: String?
         fileprivate(set) var state: State = .pending
         fileprivate var subjectsByWork: OrderedDictionary<Work, PublishSubject<Update>> = [:]
-        fileprivate var handler: DocumentWorkerJSHandler?
+        fileprivate var handlersByRuntime: [HandlerRuntime: DocumentWorkerHandling] = [:]
         fileprivate var workStartTimes: [Work: CFAbsoluteTime] = [:]
 
-        init(file: FileData, shouldCacheData: Bool, priority: Priority, password: String? = nil) {
+        init(file: FileData, shouldCacheInput: Bool, priority: Priority, password: String? = nil) {
             self.file = file
-            self.shouldCacheData = shouldCacheData
+            self.shouldCacheInput = shouldCacheInput
             self.priority = priority
             self.password = password
         }
@@ -71,11 +83,16 @@ final class DocumentWorkerController {
         var description: String {
             "Worker(id: \(id.uuidString), file: \(file.fileName))"
         }
+
+        deinit {
+            handlersByRuntime.values.forEach { ($0 as? DocumentWorkerWebViewHandler)?.removeFromSuperviewAsynchronously() }
+        }
     }
 
     enum Work: Hashable {
         case recognizer
         case fullText(pages: [Int]?)
+        case structuredDocumentText
 
         var id: String {
             switch self {
@@ -85,12 +102,19 @@ final class DocumentWorkerController {
             case .fullText(let pages):
                 guard let pages else { return "fullText(pages: nil)" }
                 return "fullText(pages: [\(pages.map(String.init).joined(separator: ", "))])"
+
+            case .structuredDocumentText:
+                return "structuredDocumentText"
             }
         }
 
         init?(id: String) {
             if id == "recognizer" {
                 self = .recognizer
+                return
+            }
+            if id == "structuredDocumentText" {
+                self = .structuredDocumentText
                 return
             }
             let prefix = "fullText(pages: "
@@ -108,6 +132,16 @@ final class DocumentWorkerController {
                 pageIndexes.append(pageIndex)
             }
             self = .fullText(pages: pageIndexes)
+        }
+
+        fileprivate var preferredRuntime: HandlerRuntime {
+            switch self {
+            case .structuredDocumentText:
+                return .webView
+
+            case .recognizer, .fullText:
+                return .jsContext
+            }
         }
     }
 
@@ -129,6 +163,15 @@ final class DocumentWorkerController {
     private let accessQueue: DispatchQueue
     private unowned let fileStorage: FileStorage
     private let disposeBag: DisposeBag
+    private let workerFileCopyStrategy: WorkerFileCopyStrategy = .cloneFirst
+
+    weak var webViewProvider: WebViewProvider? {
+        didSet {
+            accessQueue.async(flags: .barrier) { [weak self] in
+                self?.preloadWebViewDocumentWorkerIfNeeded()
+            }
+        }
+    }
 
     // Accessed only via accessQueue
     private var preparing: Set<Worker> = []
@@ -136,7 +179,9 @@ final class DocumentWorkerController {
     private var queuedByPriority: [Priority: OrderedSet<Worker>] = [:]
     private var runningByPriority: [Priority: OrderedSet<Worker>] = [:]
     private var failed: Set<Worker> = []
-    private var preloadedDocumentWorkerHandler: DocumentWorkerJSHandler?
+    private var preloadedDocumentWorkerHandler: DocumentWorkerHandling?
+    private var preloadedWebViewDocumentWorkerHandler: DocumentWorkerWebViewHandler?
+    private var preparingPreloadedWebViewDocumentWorkerHandler: Bool = false
 
     // MARK: Object Lifecycle
     init(fileStorage: FileStorage) {
@@ -199,17 +244,7 @@ final class DocumentWorkerController {
             case .pending, .failed:
                 // Assign preparing state and place in proper queue, then prepare worker handler.
                 updateStateAndQueues(for: worker, state: .preparing)
-                // Prepare worker handler.
-                let documentWorkerHandler = preloadedDocumentWorkerHandler ?? DocumentWorkerJSHandler()
-                // Setup handler for worker, consume preloaded handler, just in case it was used, assign queued state and place in proper queue.
-                setup(documentWorkerHandler: documentWorkerHandler, for: worker)
-                preloadedDocumentWorkerHandler = nil
-                accessQueue.async(flags: .barrier) { [weak self] in
-                    self?.preloadDocumentWorkerIfIdle()
-                }
-                updateStateAndQueues(for: worker, state: .queued)
-                // Start work if needed to run queued worker.
-                startWorkIfNeeded()
+                prepare(worker: worker, for: work)
 
             case .preparing:
                 // A new work is queued to a worker that is still preparing, do nothing.
@@ -217,9 +252,14 @@ final class DocumentWorkerController {
 
             case .ready:
                 // A new work is queued to a worker that is ready with no works (e.g. a worker that finished its works, but was kept by the user).
-                // Assign queued state, place in proper queue, and start work if needed.
-                updateStateAndQueues(for: worker, state: .queued)
-                startWorkIfNeeded()
+                if worker.handlersByRuntime[work.preferredRuntime] != nil {
+                    // Assign queued state, place in proper queue, and start work if needed.
+                    updateStateAndQueues(for: worker, state: .queued)
+                    startWorkIfNeeded()
+                } else {
+                    updateStateAndQueues(for: worker, state: .preparing)
+                    prepare(worker: worker, for: work)
+                }
 
             case .queued:
                 // Already queued, just start work if needed.
@@ -233,13 +273,79 @@ final class DocumentWorkerController {
         return subject.asObservable()
     }
 
-    private func setup(documentWorkerHandler: DocumentWorkerJSHandler, for worker: Worker) {
-        documentWorkerHandler.workFile = worker.file
-        documentWorkerHandler.shouldCacheWorkData = worker.shouldCacheData
-        setupObserver(in: worker, for: documentWorkerHandler)
-        worker.handler = documentWorkerHandler
+    private func prepare(worker: Worker, for work: Work) {
+        switch work.preferredRuntime {
+        case .jsContext:
+            let documentWorkerHandler = preloadedDocumentWorkerHandler ?? DocumentWorkerJSHandler()
+            setup(documentWorkerHandler: documentWorkerHandler, runtime: .jsContext, for: worker)
+            preloadedDocumentWorkerHandler = nil
+            accessQueue.async(flags: .barrier) { [weak self] in
+                self?.preloadDocumentWorkerIfIdle()
+            }
+            updateStateAndQueues(for: worker, state: .queued)
+            startWorkIfNeeded()
 
-        func setupObserver(in worker: Worker, for documentWorkerHandler: DocumentWorkerJSHandler) {
+        case .webView:
+            if let documentWorkerHandler = preloadedWebViewDocumentWorkerHandler {
+                DDLogInfo("DocumentWorkerController: using preloaded WebView document worker handler for \(worker)")
+                preloadedWebViewDocumentWorkerHandler = nil
+                if setup(documentWorkerHandler: documentWorkerHandler, runtime: .webView, for: worker) {
+                    updateStateAndQueues(for: worker, state: .queued)
+                    startWorkIfNeeded()
+                } else {
+                    release(documentWorkerHandler)
+                    updateStateAndQueues(for: worker, state: .failed)
+                }
+                accessQueue.async(flags: .barrier) { [weak self] in
+                    self?.preloadWebViewDocumentWorkerIfNeeded()
+                }
+                return
+            }
+            if preparingPreloadedWebViewDocumentWorkerHandler {
+                DDLogInfo("DocumentWorkerController: waiting for preloaded WebView document worker handler for \(worker)")
+                return
+            }
+            createDocumentWorkerWebViewHandler(fileStorage: fileStorage) { [weak self, weak worker] documentWorkerHandler in
+                guard let self, let worker else { return }
+                guard let documentWorkerHandler else {
+                    updateStateAndQueues(for: worker, state: .failed)
+                    return
+                }
+                if setup(documentWorkerHandler: documentWorkerHandler, runtime: .webView, for: worker) {
+                    updateStateAndQueues(for: worker, state: .queued)
+                    startWorkIfNeeded()
+                } else {
+                    release(documentWorkerHandler)
+                    updateStateAndQueues(for: worker, state: .failed)
+                }
+            }
+        }
+    }
+
+    @discardableResult
+    private func setup(documentWorkerHandler: DocumentWorkerHandling, runtime: HandlerRuntime, for worker: Worker) -> Bool {
+        documentWorkerHandler.workFile = worker.file
+        documentWorkerHandler.shouldCacheWorkInput = worker.shouldCacheInput
+        if runtime == .webView, !copy(workFile: worker.file, to: documentWorkerHandler) {
+            return false
+        }
+        setupObserver(in: worker, for: documentWorkerHandler)
+        worker.handlersByRuntime[runtime] = documentWorkerHandler
+        return true
+
+        func copy(workFile file: FileData, to documentWorkerHandler: DocumentWorkerHandling) -> Bool {
+            guard let documentWorkerHandler = documentWorkerHandler as? DocumentWorkerWebViewHandler else { return true }
+            let destination = documentWorkerHandler.temporaryDirectory.copy(withName: file.name, ext: file.ext)
+            do {
+                try copyWorkerFile(from: file.createUrl(), to: destination.createUrl(), fileStorage: fileStorage)
+            } catch {
+                DDLogError("DocumentWorkerController: failed to copy file for document worker - \(error)")
+                return false
+            }
+            return true
+        }
+
+        func setupObserver(in worker: Worker, for documentWorkerHandler: DocumentWorkerHandling) {
             documentWorkerHandler.observable.subscribe(onNext: { [weak self, weak worker] event in
                 guard let self else { return }
                 accessQueue.async(flags: .barrier) { [weak self, weak worker] in
@@ -247,7 +353,7 @@ final class DocumentWorkerController {
                     switch event.result {
                     case .success(let data):
                         switch data {
-                        case .recognizerData(let data), .fullText(let data):
+                        case .recognizerData(let data), .fullText(let data), .structuredDocumentText(let data):
                             finishWork(work, in: worker) { $0?.on(.next(Update(work: work, kind: .extractedData(data: data)))) }
                         }
 
@@ -273,10 +379,15 @@ final class DocumentWorkerController {
             }
         }
         guard let worker else { return }
-        guard let documentWorkerHandler = worker.handler, let work = worker.subjectsByWork.keys.first, let subject = worker.subjectsByWork[work] else {
+        guard let work = worker.subjectsByWork.keys.first, let subject = worker.subjectsByWork[work] else {
             // This shouldn't happen, move worker back to ready state.
             updateStateAndQueues(for: worker, state: .ready)
             startWorkIfNeeded()
+            return
+        }
+        guard let documentWorkerHandler = worker.handlersByRuntime[work.preferredRuntime] else {
+            updateStateAndQueues(for: worker, state: .preparing)
+            prepare(worker: worker, for: work)
             return
         }
         // Set worker state to running and append to proper queue.
@@ -287,10 +398,13 @@ final class DocumentWorkerController {
         subject.on(.next(Update(work: work, kind: .inProgress)))
         switch work {
         case .recognizer:
-            documentWorkerHandler.recognize(password: worker.password, workId: work.id)
+            documentWorkerHandler.performAction(.recognize(password: worker.password), workId: work.id)
 
         case .fullText(let pages):
-            documentWorkerHandler.getFullText(pages: pages, password: worker.password, workId: work.id)
+            documentWorkerHandler.performAction(.getFulltext(pages: pages, password: worker.password), workId: work.id)
+
+        case .structuredDocumentText:
+            documentWorkerHandler.performAction(.getStructuredDocumentText(contentType: worker.file.mimeType, password: worker.password), workId: work.id)
         }
         // Start another work if needed.
         startWorkIfNeeded()
@@ -340,7 +454,7 @@ final class DocumentWorkerController {
         func cancelAllWorks(in worker: Worker, startNextWorkIfNeeded: Bool, controller: DocumentWorkerController) {
             DDLogInfo("DocumentWorkerController: cancel all works in \(worker)")
             // Immediately release worker handler and assign pending state to worker. If another work is queued for this worker, a new handler will be created.
-            worker.handler = nil
+            releaseHandlers(for: worker)
             controller.updateStateAndQueues(for: worker, state: .pending)
             for (work, subject) in worker.subjectsByWork {
                 subject.on(.next(Update(work: work, kind: .cancelled)))
@@ -350,6 +464,15 @@ final class DocumentWorkerController {
             controller.startWorkIfNeeded()
             controller.preloadDocumentWorkerIfIdle()
         }
+    }
+
+    private func release(_ handler: DocumentWorkerHandling) {
+        (handler as? DocumentWorkerWebViewHandler)?.removeFromSuperviewAsynchronously()
+    }
+
+    private func releaseHandlers(for worker: Worker) {
+        worker.handlersByRuntime.values.forEach { release($0) }
+        worker.handlersByRuntime.removeAll()
     }
 
     func cleanupWorker(_ worker: Worker) {
@@ -381,5 +504,149 @@ final class DocumentWorkerController {
               !Priority.inDescendingOrder.contains(where: { !queuedByPriority[$0, default: []].isEmpty || !runningByPriority[$0, default: []].isEmpty })
         else { return }
         preloadedDocumentWorkerHandler = DocumentWorkerJSHandler()
+    }
+
+    private func preloadWebViewDocumentWorkerIfNeeded() {
+        guard webViewProvider != nil,
+              preloadedWebViewDocumentWorkerHandler == nil,
+              !preparingPreloadedWebViewDocumentWorkerHandler
+        else { return }
+
+        let startTime = CFAbsoluteTimeGetCurrent()
+        preparingPreloadedWebViewDocumentWorkerHandler = true
+        DDLogInfo("DocumentWorkerController: started preloading WebView document worker handler")
+        createDocumentWorkerWebViewHandler(fileStorage: fileStorage) { [weak self] documentWorkerHandler in
+            guard let self else { return }
+            let duration = CFAbsoluteTimeGetCurrent() - startTime
+            preparingPreloadedWebViewDocumentWorkerHandler = false
+            preloadedWebViewDocumentWorkerHandler = documentWorkerHandler
+            if documentWorkerHandler != nil {
+                DDLogInfo("DocumentWorkerController: preloaded WebView document worker handler in \(String(format: "%.3f", duration))s")
+            } else {
+                DDLogError("DocumentWorkerController: failed to preload WebView document worker handler after \(String(format: "%.3f", duration))s")
+            }
+            prepareWaitingWebViewWorkerIfNeeded()
+        }
+    }
+
+    private func prepareWaitingWebViewWorkerIfNeeded() {
+        guard let worker = preparing.first(where: { worker in
+            guard let work = worker.subjectsByWork.keys.first else { return false }
+            return work.preferredRuntime == .webView && worker.handlersByRuntime[work.preferredRuntime] == nil
+        }), let work = worker.subjectsByWork.keys.first else { return }
+        prepare(worker: worker, for: work)
+    }
+
+    private func createDocumentWorkerWebViewHandler(fileStorage: FileStorage, completion: @escaping (DocumentWorkerWebViewHandler?) -> Void) {
+        guard let temporaryDirectory = prepareTemporaryWorkerDirectory(fileStorage: fileStorage) else {
+            completion(nil)
+            return
+        }
+        let cleanupClosure: () -> Void = { [weak fileStorage] in
+            guard let fileStorage else { return }
+            removeTemporaryWorkerDirectory(temporaryDirectory, fileStorage: fileStorage)
+        }
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self else {
+                cleanupClosure()
+                return
+            }
+            guard let webViewProvider else {
+                accessQueue.async(flags: .barrier) {
+                    completion(nil)
+                }
+                cleanupClosure()
+                return
+            }
+            let configuration = WKWebViewConfiguration()
+            configuration.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
+            let webView = webViewProvider.addWebView(configuration: configuration)
+            let documentWorkerHandler = DocumentWorkerWebViewHandler(webView: webView, temporaryDirectory: temporaryDirectory, cleanup: cleanupClosure)
+            accessQueue.async(flags: .barrier) {
+                completion(documentWorkerHandler)
+            }
+        }
+
+        func prepareTemporaryWorkerDirectory(fileStorage: FileStorage) -> File? {
+            let startTime = CFAbsoluteTimeGetCurrent()
+            guard let workerHtmlUrl = Bundle.main.url(forResource: "document_worker", withExtension: "html") else {
+                DDLogError("DocumentWorkerController: document_worker.html not found")
+                return nil
+            }
+            guard let bundledWorkerUrl = Bundle.main.url(forResource: "document_worker", withExtension: nil, subdirectory: "Bundled") else {
+                DDLogError("DocumentWorkerController: bundled document worker not found")
+                return nil
+            }
+            let temporaryDirectory = Files.temporaryDirectory
+            let temporaryDirectoryUrl = temporaryDirectory.createUrl()
+            do {
+                try fileStorage.fileManager.createDirectory(at: temporaryDirectoryUrl, withIntermediateDirectories: true)
+                try copyWorkerFile(from: workerHtmlUrl, to: temporaryDirectory.copy(withName: "document_worker", ext: "html").createUrl(), fileStorage: fileStorage)
+                let contents = try fileStorage.fileManager.contentsOfDirectory(at: bundledWorkerUrl, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles])
+                for url in contents {
+                    let destination = temporaryDirectoryUrl.appendingPathComponent(url.lastPathComponent)
+                    try copyWorkerItem(from: url, to: destination, fileStorage: fileStorage)
+                }
+            } catch {
+                DDLogError("DocumentWorkerController: failed to prepare worker directory - \(error)")
+                removeTemporaryWorkerDirectory(temporaryDirectory, fileStorage: fileStorage)
+                return nil
+            }
+            let duration = CFAbsoluteTimeGetCurrent() - startTime
+            DDLogInfo("DocumentWorkerController: prepared temporary document worker directory in \(String(format: "%.3f", duration))s")
+            return temporaryDirectory
+        }
+
+        func removeTemporaryWorkerDirectory(_ directory: File, fileStorage: FileStorage) {
+            DispatchQueue.global(qos: .background).async { [weak fileStorage] in
+                guard let fileStorage else { return }
+                do {
+                    try fileStorage.remove(directory)
+                } catch {
+                    DDLogError("DocumentWorkerController: failed to remove worker directory - \(error)")
+                }
+            }
+        }
+    }
+
+    private func copyWorkerItem(from sourceUrl: URL, to destinationUrl: URL, fileStorage: FileStorage) throws {
+        let values = try sourceUrl.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
+        if values.isDirectory == true && values.isSymbolicLink != true {
+            try fileStorage.fileManager.createDirectory(at: destinationUrl, withIntermediateDirectories: true)
+            let contents = try fileStorage.fileManager.contentsOfDirectory(at: sourceUrl, includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey], options: [.skipsHiddenFiles])
+            for url in contents {
+                try copyWorkerItem(from: url, to: destinationUrl.appendingPathComponent(url.lastPathComponent), fileStorage: fileStorage)
+            }
+            return
+        }
+
+        try copyWorkerFile(from: sourceUrl, to: destinationUrl, fileStorage: fileStorage)
+    }
+
+    private func copyWorkerFile(from sourceUrl: URL, to destinationUrl: URL, fileStorage: FileStorage) throws {
+        try fileStorage.fileManager.createDirectory(at: destinationUrl.deletingLastPathComponent(), withIntermediateDirectories: true)
+
+        switch workerFileCopyStrategy {
+        case .regular:
+            try fileStorage.fileManager.copyItem(at: sourceUrl, to: destinationUrl)
+
+        case .cloneFirst:
+            try cloneOrCopyFile(from: sourceUrl, to: destinationUrl, fileStorage: fileStorage)
+        }
+    }
+
+    private func cloneOrCopyFile(from sourceUrl: URL, to destinationUrl: URL, fileStorage: FileStorage) throws {
+        let flags = copyfile_flags_t(COPYFILE_ALL | COPYFILE_CLONE)
+        if copyfile(sourceUrl.path, destinationUrl.path, nil, flags) == 0 {
+            return
+        }
+
+        let error = errno
+        DDLogInfo("DocumentWorkerController: clone copy failed with errno \(error), falling back to regular copy from \(sourceUrl.lastPathComponent) to \(destinationUrl.lastPathComponent)")
+        if fileStorage.fileManager.fileExists(atPath: destinationUrl.path) {
+            try? fileStorage.fileManager.removeItem(at: destinationUrl)
+        }
+        try fileStorage.fileManager.copyItem(at: sourceUrl, to: destinationUrl)
     }
 }

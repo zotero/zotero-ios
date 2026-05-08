@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import WebKit
 
 @testable import Zotero
 
@@ -17,10 +18,13 @@ import RxSwift
 final class DocumentWorkerControllerSpec: QuickSpec {
     override class func spec() {
         var documentWorkerController: DocumentWorkerController!
+        var webViewProvider: TestDocumentWorkerWebViewProvider!
         var disposeBag: DisposeBag!
 
         beforeSuite {
             documentWorkerController = DocumentWorkerController(fileStorage: TestControllers.fileStorage)
+            webViewProvider = TestDocumentWorkerWebViewProvider()
+            documentWorkerController.webViewProvider = webViewProvider
             disposeBag = DisposeBag()
         }
 
@@ -206,7 +210,7 @@ final class DocumentWorkerControllerSpec: QuickSpec {
 
                 it("can extract recognizer data") {
                     let work: DocumentWorkerController.Work = .recognizer
-                    let worker = DocumentWorkerController.Worker(file: file, shouldCacheData: false, priority: .default)
+                    let worker = DocumentWorkerController.Worker(file: file, shouldCacheInput: false, priority: .default)
                     var emittedUpdates: [DocumentWorkerController.Update.Kind] = []
 
                     waitUntil(timeout: .seconds(10)) { completion in
@@ -231,7 +235,7 @@ final class DocumentWorkerControllerSpec: QuickSpec {
 
                 it("can extract full text") {
                     let work: DocumentWorkerController.Work = .fullText(pages: nil)
-                    let worker = DocumentWorkerController.Worker(file: file, shouldCacheData: false, priority: .default)
+                    let worker = DocumentWorkerController.Worker(file: file, shouldCacheInput: false, priority: .default)
                     var emittedUpdates: [DocumentWorkerController.Update.Kind] = []
 
                     waitUntil(timeout: .seconds(20)) { completion in
@@ -256,7 +260,7 @@ final class DocumentWorkerControllerSpec: QuickSpec {
 
                 it("can extract text from a single page") {
                     let work: DocumentWorkerController.Work = .fullText(pages: [0])
-                    let worker = DocumentWorkerController.Worker(file: file, shouldCacheData: false, priority: .default)
+                    let worker = DocumentWorkerController.Worker(file: file, shouldCacheInput: false, priority: .default)
                     var emittedUpdates: [DocumentWorkerController.Update.Kind] = []
 
                     waitUntil(timeout: .seconds(20)) { completion in
@@ -281,7 +285,7 @@ final class DocumentWorkerControllerSpec: QuickSpec {
 
                 it("can extract text from two pages") {
                     let work: DocumentWorkerController.Work = .fullText(pages: [0, 1])
-                    let worker = DocumentWorkerController.Worker(file: file, shouldCacheData: false, priority: .default)
+                    let worker = DocumentWorkerController.Worker(file: file, shouldCacheInput: false, priority: .default)
                     var emittedUpdates: [DocumentWorkerController.Update.Kind] = []
 
                     waitUntil(timeout: .seconds(20)) { completion in
@@ -305,6 +309,96 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                 }
             }
 
+            context("with a valid URL") {
+                let libraryId = LibraryIdentifier.custom(.myLibrary)
+
+                func fixtureURL(forResource resource: String, withExtension fileExtension: String) -> URL {
+                    Bundle(for: Self.self).url(forResource: resource, withExtension: fileExtension)!
+                }
+
+                func makeFile(resource: String, fileExtension: String, key: String, filename: String, contentType: String) -> FileData {
+                    let sourceURL = fixtureURL(forResource: resource, withExtension: fileExtension)
+                    let data = try! Data(contentsOf: sourceURL)
+                    let file = Files.attachmentFile(in: libraryId, key: key, filename: filename, contentType: contentType) as! FileData
+                    try! TestControllers.fileStorage.write(data, to: file, options: .atomic)
+                    expect(TestControllers.fileStorage.has(file)).to(beTrue())
+                    return file
+                }
+
+                func processStructuredDocumentText(file: FileData, expectedURL: URL, timeout: Int) {
+                    let work: DocumentWorkerController.Work = .structuredDocumentText
+                    let worker = DocumentWorkerController.Worker(file: file, shouldCacheInput: false, priority: .default)
+                    var emittedUpdates: [DocumentWorkerController.Update.Kind] = []
+
+                    waitUntil(timeout: .seconds(timeout)) { completion in
+                        documentWorkerController.queue(work: work, in: worker)
+                            .subscribe(onNext: { update in
+                                expect(update.work).to(equal(work))
+                                emittedUpdates.append(update.kind)
+                                switch update.kind {
+                                case .failed, .cancelled, .extractedData:
+                                    completion()
+
+                                case .inProgress:
+                                    break
+                                }
+                            })
+                            .disposed(by: disposeBag)
+                    }
+
+                    expect(emittedUpdates.count).toEventually(equal(2), timeout: .seconds(timeout))
+                    process(updates: emittedUpdates, ignoreKeys: ["dateCreated"], jsonURL: expectedURL)
+                }
+
+                it("can extract structured document text for PDF") {
+                    let file = makeFile(
+                        resource: "1",
+                        fileExtension: "pdf",
+                        key: "dddddddd",
+                        filename: "1",
+                        contentType: "application/pdf"
+                    )
+
+                    processStructuredDocumentText(
+                        file: file,
+                        expectedURL: fixtureURL(forResource: "1_pdf_structured_text", withExtension: "json"),
+                        timeout: 120
+                    )
+                }
+
+                it("can extract structured document text for EPUB") {
+                    let file = makeFile(
+                        resource: "1",
+                        fileExtension: "epub",
+                        key: "eeeeeeee",
+                        filename: "1",
+                        contentType: "application/epub+zip"
+                    )
+
+                    processStructuredDocumentText(
+                        file: file,
+                        expectedURL: fixtureURL(forResource: "1_epub_structured_text", withExtension: "json"),
+                        timeout: 30
+                    )
+                }
+
+                it("can extract structured document text for snapshot HTML") {
+                    let file = makeFile(
+                        resource: "1",
+                        fileExtension: "html",
+                        key: "ffffffff",
+                        filename: "1",
+                        contentType: "text/html"
+                    )
+
+                    processStructuredDocumentText(
+                        file: file,
+                        expectedURL: fixtureURL(forResource: "1_html_structured_text", withExtension: "json"),
+                        timeout: 20
+                    )
+                }
+            }
+
             context("with a valid CMap PDF URL") {
                 let fileName = "cmap"
                 let fileExtension = "pdf"
@@ -319,7 +413,7 @@ final class DocumentWorkerControllerSpec: QuickSpec {
 
                 it("can extract full text") {
                     let work: DocumentWorkerController.Work = .fullText(pages: nil)
-                    let worker = DocumentWorkerController.Worker(file: file, shouldCacheData: false, priority: .default)
+                    let worker = DocumentWorkerController.Worker(file: file, shouldCacheInput: false, priority: .default)
                     var emittedUpdates: [DocumentWorkerController.Update.Kind] = []
 
                     waitUntil(timeout: .seconds(20)) { completion in
@@ -357,7 +451,7 @@ final class DocumentWorkerControllerSpec: QuickSpec {
 
                 it("can extract full text") {
                     let work: DocumentWorkerController.Work = .fullText(pages: nil)
-                    let worker = DocumentWorkerController.Worker(file: file, shouldCacheData: false, priority: .default)
+                    let worker = DocumentWorkerController.Worker(file: file, shouldCacheInput: false, priority: .default)
                     var emittedUpdates: [DocumentWorkerController.Update.Kind] = []
 
                     waitUntil(timeout: .seconds(20)) { completion in
@@ -380,7 +474,12 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                     process(updates: emittedUpdates, jsonFileName: "font_data_pdf_full_text")
                 }
             }
-            func process(updates: [DocumentWorkerController.Update.Kind], jsonFileName: String) {
+            func process(updates: [DocumentWorkerController.Update.Kind], ignoreKeys: Set<String> = [], jsonFileName: String) {
+                let url = Bundle(for: Self.self).url(forResource: jsonFileName, withExtension: "json")!
+                process(updates: updates, ignoreKeys: ignoreKeys, jsonURL: url)
+            }
+
+            func process(updates: [DocumentWorkerController.Update.Kind], ignoreKeys: Set<String> = [], jsonURL: URL) {
                 for (index, update) in updates.enumerated() {
                     switch update {
                     case .inProgress:
@@ -388,32 +487,67 @@ final class DocumentWorkerControllerSpec: QuickSpec {
 
                     case .extractedData(let data):
                         expect(index).to(equal(1))
-                        let url = Bundle(for: Self.self).url(forResource: jsonFileName, withExtension: "json")!
-                        let expectedData = try! Data(contentsOf: url)
+                        let expectedData = try! Data(contentsOf: jsonURL)
                         let expectedJSONData = try! JSONSerialization.jsonObject(with: expectedData, options: .allowFragments) as! [String: Any]
-                        compareJSONObjects(actual: data, expected: expectedJSONData, context: jsonFileName)
+                        compareJSONObjects(actual: data, expected: expectedJSONData, ignoreKeys: ignoreKeys, context: jsonURL.lastPathComponent)
 
                     default:
                         fail("unexpected update \(index): \(update)")
                     }
                 }
 
-                func compareJSONObjects(actual: [String: Any], expected: [String: Any], context: String) {
-                    let actualKeys = actual.keys
-                    let expectedKeys = expected.keys
-                    expect(Set(actualKeys)).to(equal(Set(expectedKeys)))
+                func compareJSONObjects(actual: [String: Any], expected: [String: Any], ignoreKeys: Set<String>, context: String) {
+                    let actualKeys = Set(actual.keys).subtracting(ignoreKeys)
+                    let expectedKeys = Set(expected.keys)
+                    expect(actualKeys).to(equal(expectedKeys))
                     for key in expectedKeys {
-                        switch key {
-                        case "metadata":
-                            expect(actual[key] as? [String: String]).to(equal(expected[key] as? [String: String]))
-
-                        case "text":
-                            expect((actual[key] as? String)?.replacingOccurrences(of: "\n", with: " ")).to(equal((expected[key] as? String)?.replacingOccurrences(of: "\n", with: " ")))
-
-                        default:
-                            expect(actual[key] as? AnyHashable).to(equal(expected[key] as? AnyHashable))
-                        }
+                        compareJSONValues(actual: actual[key], expected: expected[key], context: "\(context).\(key)")
                     }
+                }
+
+                func compareJSONValues(actual: Any?, expected: Any?, context: String) {
+                    if let expected = expected as? [String: Any] {
+                        guard let actual = actual as? [String: Any] else {
+                            fail("expected object at \(context), got \(String(describing: actual))")
+                            return
+                        }
+                        compareJSONObjects(actual: actual, expected: expected, ignoreKeys: [], context: context)
+                        return
+                    }
+
+                    if let expected = expected as? [Any] {
+                        guard let actual = actual as? [Any] else {
+                            fail("expected array at \(context), got \(String(describing: actual))")
+                            return
+                        }
+                        expect(actual.count).to(equal(expected.count), description: context)
+                        guard actual.count == expected.count else { return }
+                        for index in expected.indices {
+                            compareJSONValues(actual: actual[index], expected: expected[index], context: "\(context)[\(index)]")
+                        }
+                        return
+                    }
+
+                    if expected is NSNull {
+                        expect(actual as? NSNull).toNot(beNil(), description: context)
+                        return
+                    }
+
+                    if let expected = expected as? String {
+                        if context.hasSuffix(".text") {
+                            expect((actual as? String)?.replacingOccurrences(of: "\n", with: " ")).to(equal(expected.replacingOccurrences(of: "\n", with: " ")), description: context)
+                        } else {
+                            expect(actual as? String).to(equal(expected), description: context)
+                        }
+                        return
+                    }
+
+                    if let expected = expected as? NSNumber {
+                        expect(actual as? NSNumber).to(equal(expected), description: context)
+                        return
+                    }
+
+                    expect(actual as? AnyHashable).to(equal(expected as? AnyHashable), description: context)
                 }
             }
         }
@@ -421,5 +555,15 @@ final class DocumentWorkerControllerSpec: QuickSpec {
         afterSuite {
             try? TestControllers.fileStorage.remove(Files.downloads)
         }
+    }
+}
+
+private final class TestDocumentWorkerWebViewProvider: WebViewProvider {
+    private var webViews: [WKWebView] = []
+
+    func addWebView(configuration: WKWebViewConfiguration?) -> WKWebView {
+        let webView = configuration.map { WKWebView(frame: .zero, configuration: $0) } ?? WKWebView(frame: .zero)
+        webViews.append(webView)
+        return webView
     }
 }
