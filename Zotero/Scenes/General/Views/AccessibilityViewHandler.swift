@@ -279,8 +279,8 @@ final class AccessibilityViewHandler<Delegate: SpeechManagerDelegate> {
                 overlay.trailingAnchor.constraint(equalTo: documentContainer.trailingAnchor)
             ])
 
-            delegate?.accessibilityToolbarChanged(height: overlay.frame.height)
             viewController.view.layoutIfNeeded()
+            delegate?.accessibilityToolbarChanged(height: overlay.frame.height)
         }
 
         func showInNavigationBar() {
