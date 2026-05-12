@@ -2254,7 +2254,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             }
 
             let newPageLabel = item.fields.filter(.key(FieldKeys.Item.Annotation.pageLabel)).first?.value
-            let oldPageaLabel = viewModel.state.databaseAnnotations[index].fields.filter(.key(FieldKeys.Item.Annotation.pageLabel)).first?.value
+            let oldPageaLabel = databaseAnnotations[index].fields.filter(.key(FieldKeys.Item.Annotation.pageLabel)).first?.value
             if newPageLabel != oldPageaLabel {
                 shouldRecomputeDefaultAnnotationPageLabel = true
             }
