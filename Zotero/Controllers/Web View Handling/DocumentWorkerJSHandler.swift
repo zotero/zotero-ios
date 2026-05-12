@@ -10,31 +10,18 @@ import Foundation
 import CocoaLumberjackSwift
 import RxSwift
 
-enum DocumentWorkerData {
-    case recognizerData(data: [String: Any])
-    case fullText(data: [String: Any])
-}
-
 final class DocumentWorkerJSHandler {
-    enum Action: String {
-        case recognize = "pdf.getRecognizerData"
-        case getFulltext = "pdf.getFulltext"
-    }
-
     enum Error: Swift.Error {
-        case engineNotLoaded
         case missingWorkFile
         case invalidMessage
-        case unknownAction(String)
-        case missingResource(String)
-        case resourceReadFailed(String)
+        case unsupportedAction(String)
         case workerError(String)
         case missingData
     }
 
     var workFile: File?
-    var shouldCacheWorkData: Bool = false
-    let observable: PublishSubject<(workId: String, result: Result<DocumentWorkerData, Swift.Error>)>
+    var shouldCacheWorkInput: Bool = false
+    let observable: PublishSubject<(workId: String, result: Result<DocumentWorkerOutput, Swift.Error>)>
 
     private let engine: DocumentWorkerJSEngine
     private let bundle: Bundle
@@ -185,15 +172,7 @@ final class DocumentWorkerJSHandler {
         }
     }
 
-    func recognize(password: String?, workId: String) {
-        startWork(action: .recognize, pages: nil, password: password, workId: workId)
-    }
-
-    func getFullText(pages: [Int]?, password: String?, workId: String) {
-        startWork(action: .getFulltext, pages: pages, password: password, workId: workId)
-    }
-
-    private func startWork(action: Action, pages: [Int]?, password: String?, workId: String) {
+    private func startWork(action: DocumentWorkerAction, workId: String) {
         queue.async { [weak self] in
             guard let self else { return }
             var deferredError: Swift.Error?
@@ -211,10 +190,14 @@ final class DocumentWorkerJSHandler {
                 deferredError = Error.missingWorkFile
                 return
             }
+            guard supportsAction(action) else {
+                deferredError = Error.unsupportedAction(action.method)
+                return
+            }
             let url = workFile.createUrl()
             do {
                 let data: Data
-                if shouldCacheWorkData {
+                if shouldCacheWorkInput {
                     if let cachedWorkData {
                         data = cachedWorkData
                     } else {
@@ -231,12 +214,30 @@ final class DocumentWorkerJSHandler {
 
                 let message = engine.makeObject()
                 message.setValue(nextMessageId, forProperty: "id")
-                message.setValue(action.rawValue, forProperty: "action")
+                message.setValue(action.method, forProperty: "action")
 
                 let dataObject = engine.makeObject()
                 dataObject.setValue(buffer, forProperty: "buf")
+                var pages: [Int]?
+                var contentType: String?
+                var password: String?
+                switch action {
+                case .recognize(let _password):
+                    password = _password
+
+                case .getFulltext(let _pages, let _password):
+                    pages = _pages
+                    password = _password
+
+                case .getStructuredDocumentText(let _contentType, let _password):
+                    contentType = _contentType
+                    password = _password
+                }
                 if let pages {
                     dataObject.setValue(pages, forProperty: "pageIndexes")
+                }
+                if let contentType {
+                    dataObject.setValue(contentType, forProperty: "contentType")
                 }
                 if let password {
                     dataObject.setValue(password, forProperty: "password")
@@ -260,6 +261,9 @@ final class DocumentWorkerJSHandler {
 
                         case .getFulltext:
                             observable.on(.next((workId: workId, result: .success(.fullText(data: data)))))
+
+                        case .getStructuredDocumentText:
+                            observable.on(.next((workId: workId, result: .success(.structuredDocumentText(data: data)))))
                         }
 
                     case .failure(let error):
@@ -272,5 +276,21 @@ final class DocumentWorkerJSHandler {
                 deferredError = error
             }
         }
+    }
+}
+
+extension DocumentWorkerJSHandler: DocumentWorkerHandling {
+    func supportsAction(_ action: DocumentWorkerAction) -> Bool {
+        switch action {
+        case .recognize, .getFulltext:
+            return true
+
+        case .getStructuredDocumentText:
+            return false
+        }
+    }
+
+    func performAction(_ action: DocumentWorkerAction, workId: String) {
+        startWork(action: action, workId: workId)
     }
 }

@@ -58,6 +58,7 @@ final class MasterCoordinator: NSObject, Coordinator {
         userControllers.identifierLookupController.webViewProvider = librariesController
         userControllers.citationController.webViewProvider = librariesController
         userControllers.recognizerController.webViewProvider = librariesController
+        userControllers.documentWorkerController.webViewProvider = librariesController
         let collectionsController = createCollectionsViewController(
             libraryId: Defaults.shared.selectedLibraryId,
             selectedCollectionId: Defaults.shared.selectedCollectionId,

@@ -1034,7 +1034,7 @@ extension PDFReaderViewController: SpeechmanagerDelegate {
         }
         let speechWorker = speechWorker ?? DocumentWorkerController.Worker(
             file: file as! FileData,
-            shouldCacheData: true,
+            shouldCacheInput: true,
             priority: .high,
             password: viewModel.state.unlockPassword
         )
