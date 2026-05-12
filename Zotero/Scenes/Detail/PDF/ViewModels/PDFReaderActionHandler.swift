@@ -96,7 +96,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     private var pageDebounceDisposeBag: DisposeBag?
     private var freeTextAnnotationRotationDebounceDisposeBagByKey: [String: DisposeBag]
     private var debouncedFreeTextAnnotationAndChangesByKey: [String: ([String], PSPDFKit.FreeTextAnnotation)]
-    weak var delegate: (PDFReaderContainerDelegate & AnnotationBoundingBoxConverter)?
+    weak var delegate: PDFReaderContainerDelegate?
 
     init(
         dbStorage: DbStorage,
@@ -131,8 +131,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
     func process(action: PDFReaderAction, in viewModel: ViewModel<PDFReaderActionHandler>) {
         switch action {
-        case .loadDocumentData(let boundingBoxConverter):
-            loadDocumentData(boundingBoxConverter: boundingBoxConverter, in: viewModel)
+        case .loadDocumentData:
+            loadDocumentData(in: viewModel)
 
         case .startObservingAnnotationPreviewChanges:
             observePreviews(in: viewModel)
@@ -548,7 +548,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     }
 
     private func export(includeAnnotations: Bool, viewModel: ViewModel<PDFReaderActionHandler>) {
-        guard let boundingBoxConverter = delegate, let url = viewModel.state.document.fileURL else { return }
+        guard let url = viewModel.state.document.fileURL else { return }
+        let boundingBoxConverter = viewModel.state.document
 
         update(viewModel: viewModel) { state in
             state.exportState = .preparing
@@ -1048,8 +1049,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         state.selectedAnnotationKey = key
 
         if !didSelectInDocument {
-            if let boundingBoxConverter = delegate, let annotation = state.annotation(for: key) {
-                state.focusDocumentLocation = (annotation.page, annotation.boundingBox(boundingBoxConverter: boundingBoxConverter))
+            if let annotation = state.annotation(for: key) {
+                state.focusDocumentLocation = (annotation.page, annotation.boundingBox(boundingBoxConverter: state.document))
             }
         } else {
             state.focusSidebarKey = key
@@ -1431,7 +1432,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     /// - parameter annotations: Annotations that were added to the document.
     /// - parameter viewModel: ViewModel.
     private func add(annotations: [PSPDFKit.Annotation], in viewModel: ViewModel<PDFReaderActionHandler>) {
-        guard let boundingBoxConverter = delegate else { return }
+        let boundingBoxConverter = viewModel.state.document
 
         DDLogInfo("PDFReaderActionHandler: annotations added - \(annotations.map({ "\(type(of: $0));key=\($0.key ?? "nil");" }))")
 
@@ -1692,7 +1693,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     }
 
     private func change(annotation: PSPDFKit.Annotation, with changes: [String], in viewModel: ViewModel<PDFReaderActionHandler>) {
-        guard !changes.isEmpty, let key = annotation.key, let boundingBoxConverter = delegate else { return }
+        guard !changes.isEmpty, let key = annotation.key else { return }
+        let boundingBoxConverter = viewModel.state.document
 
         let appearance = Appearance.from(appearanceMode: viewModel.state.settings.appearanceMode, interfaceStyle: viewModel.state.interfaceStyle)
         annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, appearance: appearance)
@@ -1795,11 +1797,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     // MARK: - Initial load
 
     /// Loads annotations from DB, converts them to Zotero annotations and adds matching PSPDFKit annotations to document.
-    private func loadDocumentData(boundingBoxConverter: AnnotationBoundingBoxConverter, in viewModel: ViewModel<PDFReaderActionHandler>) {
+    private func loadDocumentData(in viewModel: ViewModel<PDFReaderActionHandler>) {
         do {
-            guard let boundingBoxConverter = delegate, viewModel.state.document.pageCount > 0 else {
-                throw PDFReaderState.Error.documentEmpty
-            }
+            guard viewModel.state.document.pageCount > 0 else { throw PDFReaderState.Error.documentEmpty }
+            let boundingBoxConverter = viewModel.state.document
 
             let startTime = CFAbsoluteTimeGetCurrent()
 
@@ -2178,7 +2179,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 username: username,
                 displayName: displayName,
                 defaultPageLabel: nil,
-                boundingBoxConverter: delegate
+                boundingBoxConverter: document
             )
             else { continue }
 
@@ -2190,7 +2191,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     // MARK: - Translate sync (db) changes to PDF document
 
     private func update(objects: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int], viewModel: ViewModel<PDFReaderActionHandler>) {
-        guard let boundingBoxConverter = delegate, let databaseAnnotations = viewModel.state.databaseAnnotations else { return }
+        guard let databaseAnnotations = viewModel.state.databaseAnnotations else { return }
+        let boundingBoxConverter = viewModel.state.document
 
         DDLogInfo("PDFReaderActionHandler: database annotation changed")
 
@@ -2370,7 +2372,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 with: annotation,
                 parentKey: viewModel.state.key,
                 libraryId: viewModel.state.library.identifier,
-                appearance: appearance
+                appearance: appearance,
+                boundingBoxConverter: boundingBoxConverter
             )
         }
         // Remove annotations from `Document`
@@ -2457,9 +2460,14 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
     }
 
-    private func update(pdfAnnotation: PSPDFKit.Annotation, with annotation: PDFDatabaseAnnotation, parentKey: String, libraryId: LibraryIdentifier, appearance: Appearance) {
-        guard let boundingBoxConverter = delegate else { return }
-
+    private func update(
+        pdfAnnotation: PSPDFKit.Annotation,
+        with annotation: PDFDatabaseAnnotation,
+        parentKey: String,
+        libraryId: LibraryIdentifier,
+        appearance: Appearance,
+        boundingBoxConverter: AnnotationBoundingBoxConverter
+    ) {
         var changes: PdfAnnotationChanges = []
 
         if pdfAnnotation.baseColor != annotation.color {

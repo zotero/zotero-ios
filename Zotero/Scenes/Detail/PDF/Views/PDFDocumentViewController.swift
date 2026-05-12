@@ -418,7 +418,7 @@ final class PDFDocumentViewController: UIViewController {
               let pageView = pdfController?.pageViewForPage(at: UInt(annotation.page)) else { return }
 
         let key = annotation.readerKey
-        var frame = view.convert(annotation.boundingBox(boundingBoxConverter: self), from: pageView.pdfCoordinateSpace)
+        var frame = view.convert(annotation.boundingBox(boundingBoxConverter: viewModel.state.document), from: pageView.pdfCoordinateSpace)
         frame.origin.y += parentDelegate?.documentTopOffset ?? 0
         let observable = coordinatorDelegate?.showAnnotationPopover(
             state: state,
@@ -581,7 +581,7 @@ final class PDFDocumentViewController: UIViewController {
         guard let selection = annotation, let pageView = pdfController.visiblePageViews.first(where: { $0.pageIndex == PageIndex(selection.page) }) else { return nil }
         if selection.type == .highlight || selection.type == .underline {
             // Add custom highlight/underline selection view if needed
-            let frame = pageView.convert(selection.boundingBox(boundingBoxConverter: self), from: pageView.pdfCoordinateSpace)
+            let frame = pageView.convert(selection.boundingBox(boundingBoxConverter: viewModel.state.document), from: pageView.pdfCoordinateSpace)
             let selectionView = SelectionView(frame: frame)
             pageView.annotationContainerView.addSubview(selectionView)
             self.selectionView = selectionView
@@ -1013,72 +1013,6 @@ extension PDFDocumentViewController: UIPopoverPresentationControllerDelegate {
               type == .highlight || type == .underline
         else { return }
         viewModel.process(action: .deselectSelectedAnnotation)
-    }
-}
-
-extension PDFDocumentViewController: AnnotationBoundingBoxConverter {
-    /// Converts from database to PSPDFKit rect. Database stores rects in RAW PDF Coordinate space. PSPDFKit works with Normalized PDF Coordinate Space.
-    func convertFromDb(rect: CGRect, page: PageIndex) -> CGRect? {
-        guard let pageInfo = viewModel.state.document.pageInfoForPage(at: page) else { return nil }
-        return rect.applying(pageInfo.transform)
-    }
-
-    func convertFromDb(point: CGPoint, page: PageIndex) -> CGPoint? {
-        let tmpRect = CGRect(origin: point, size: CGSize(width: 1, height: 1))
-        return convertFromDb(rect: tmpRect, page: page)?.origin
-    }
-
-    /// Converts from PSPDFKit to database rect. Database stores rects in RAW PDF Coordinate space. PSPDFKit works with Normalized PDF Coordinate Space.
-    func convertToDb(rect: CGRect, page: PageIndex) -> CGRect? {
-        guard let pageInfo = viewModel.state.document.pageInfoForPage(at: page) else { return nil }
-        return rect.applying(pageInfo.transform.inverted())
-    }
-
-    func convertToDb(point: CGPoint, page: PageIndex) -> CGPoint? {
-        let tmpRect = CGRect(origin: point, size: CGSize(width: 1, height: 1))
-        return convertToDb(rect: tmpRect, page: page)?.origin
-    }
-
-    /// Converts from PSPDFKit to sort index rect. PSPDFKit works with Normalized PDF Coordinate Space. Sort index stores y coordinate in RAW View Coordinate Space.
-    func sortIndexMinY(rect: CGRect, page: PageIndex) -> CGFloat? {
-        guard let pageInfo = viewModel.state.document.pageInfoForPage(at: page) else { return nil }
-
-        switch pageInfo.savedRotation {
-        case .rotation0:
-            return pageInfo.size.height - rect.maxY
-
-        case .rotation180:
-            return rect.minY
-
-        case .rotation90:
-            return pageInfo.size.width - rect.minX
-
-        case .rotation270:
-            return rect.minX
-        }
-    }
-
-    func textOffset(rect: CGRect, page: PageIndex) -> Int? {
-        guard let parser = viewModel.state.document.textParserForPage(at: page), !parser.glyphs.isEmpty else { return nil }
-
-        var index = 0
-        var minDistance: CGFloat = .greatestFiniteMagnitude
-        var textOffset = 0
-
-        for glyph in parser.glyphs {
-            guard !glyph.isWordOrLineBreaker else { continue }
-
-            let distance = rect.distance(to: glyph.frame)
-
-            if distance < minDistance {
-                minDistance = distance
-                textOffset = index
-            }
-
-            index += 1
-        }
-
-        return textOffset
     }
 }
 
