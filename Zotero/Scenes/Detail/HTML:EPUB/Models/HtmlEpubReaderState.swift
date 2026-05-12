@@ -76,19 +76,19 @@ struct HtmlEpubReaderState: ViewModelState {
         var message: String {
             switch self {
             case .cantDeleteAnnotation:
-                return L10n.Errors.Pdf.cantDeleteAnnotations
+                return Messages.Errors.Pdf.cantDeleteAnnotations
 
             case .cantAddAnnotations:
-                return L10n.Errors.Pdf.cantAddAnnotations
+                return Messages.Errors.Pdf.cantAddAnnotations
 
             case .cantUpdateAnnotation:
-                return L10n.Errors.Pdf.cantUpdateAnnotation
+                return Messages.Errors.Pdf.cantUpdateAnnotation
 
             case .incompatibleDocument:
-                return L10n.Errors.Pdf.incompatibleDocument
+                return Messages.Errors.Pdf.incompatibleDocument
 
             case .unknown:
-                return L10n.Errors.unknown
+                return Messages.Errors.unknown
             }
         }
         

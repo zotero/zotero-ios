@@ -10,7 +10,7 @@ import SwiftUI
 
 struct StorageSettingsEmptyView: View {
     var body: some View {
-        Text(L10n.Errors.Settings.storage)
+        Text(Messages.Errors.Settings.storage)
     }
 }
 

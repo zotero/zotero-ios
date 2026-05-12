@@ -70,32 +70,32 @@ struct PDFReaderState: ViewModelState {
                 return L10n.error
 
             case .mergeTooBig:
-                return L10n.Errors.Pdf.mergeTooBigTitle
+                return Messages.Errors.Pdf.mergeTooBigTitle
             }
         }
 
         var message: String {
             switch self {
             case .cantDeleteAnnotation:
-                return L10n.Errors.Pdf.cantDeleteAnnotations
+                return Messages.Errors.Pdf.cantDeleteAnnotations
 
             case .cantAddAnnotations:
-                return L10n.Errors.Pdf.cantAddAnnotations
+                return Messages.Errors.Pdf.cantAddAnnotations
 
             case .cantUpdateAnnotation:
-                return L10n.Errors.Pdf.cantUpdateAnnotation
+                return Messages.Errors.Pdf.cantUpdateAnnotation
 
             case .mergeTooBig:
-                return L10n.Errors.Pdf.mergeTooBig
+                return Messages.Errors.Pdf.mergeTooBig
 
             case .pageNotInt:
-                return L10n.Errors.Pdf.pageIndexNotInt
+                return Messages.Errors.Pdf.pageIndexNotInt
 
             case .unknown, .unknownLoading:
-                return L10n.Errors.unknown
+                return Messages.Errors.unknown
 
             case .documentEmpty:
-                return L10n.Errors.Pdf.emptyDocument
+                return Messages.Errors.Pdf.emptyDocument
             }
         }
         

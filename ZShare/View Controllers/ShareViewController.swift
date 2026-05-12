@@ -136,7 +136,7 @@ final class ShareViewController: UIViewController {
             DDLogInfo("Load extension item (\(context.inputItems.count))")
             self.viewModel?.start(with: extensionItem)
         } else {
-            self.showInitialError(message: L10n.Errors.Shareext.cantLoadData)
+            self.showInitialError(message: Messages.Errors.Shareext.cantLoadData)
         }
     }
 
@@ -509,16 +509,16 @@ final class ShareViewController: UIViewController {
             return L10n.Errors.Shareext.cantLoadSchema
 
         case .cantLoadWebData:
-            return L10n.Errors.Shareext.cantLoadData
+            return Messages.Errors.Shareext.cantLoadData
 
         case .downloadFailed:
-            return L10n.Errors.Shareext.downloadFailed
+            return Messages.Errors.Shareext.downloadFailed
 
         case .itemsNotFound:
-            return L10n.Errors.Shareext.itemsNotFound
+            return Messages.Errors.Shareext.itemsNotFound
 
         case .parseError:
-            return "Error parsing translator response"
+            return Messages.Errors.Shareext.parsingError
 
         case .schemaError:
             return L10n.Errors.Shareext.schemaError
@@ -526,32 +526,32 @@ final class ShareViewController: UIViewController {
         case .webViewError(let error):
             switch error {
             case .incompatibleItem:
-                return "No data returned"
+                return Messages.Errors.Shareext.incompatibleItem
 
             case .javascriptCallMissingResult:
-                return "JS call failed"
+                return Messages.Errors.Shareext.javascriptFailed
 
             case .noSuccessfulTranslators:
                 return nil
 
             case .cantFindFile, .webExtractionMissingJs: // should never happen
-                return "Translator missing"
+                return Messages.Errors.Shareext.missingBaseFiles
 
             case .webExtractionMissingData:
-                return L10n.Errors.Shareext.responseMissingData
+                return Messages.Errors.Shareext.responseMissingData
             }
 
         case .unknown, .expired:
-            return L10n.Errors.Shareext.unknown
+            return Messages.Errors.Shareext.unknown
 
         case .fileMissing:
-            return "Could not find file to upload"
+            return Messages.Errors.Shareext.missingFile
 
         case .apiFailure:
             return L10n.Errors.Shareext.apiError
 
         case .webDavFailure:
-            return L10n.Errors.Shareext.webdavError
+            return Messages.Errors.Shareext.webdavError
 
         case .quotaLimit(let libraryId):
             switch libraryId {
