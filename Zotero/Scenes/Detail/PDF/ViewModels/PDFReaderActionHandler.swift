@@ -272,6 +272,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             let result = viewModel.state.document.unlock(withPassword: password)
             update(viewModel: viewModel) { state in
                 state.unlockSuccessful = result
+                state.unlockPassword = result ? password : nil
             }
         }
     }

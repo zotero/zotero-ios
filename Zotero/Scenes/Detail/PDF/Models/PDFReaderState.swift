@@ -171,6 +171,7 @@ struct PDFReaderState: ViewModelState {
     /// Rects that should be highlighted initially, used by note editor to highlight original annotation position
     var previewRects: [CGRect]?
     var unlockSuccessful: Bool?
+    var unlockPassword: String?
 
     init(
         url: URL,
@@ -204,6 +205,7 @@ struct PDFReaderState: ViewModelState {
         self.settings = settings
         self.selectedAnnotationKey = preselectedAnnotationKey.flatMap({ AnnotationKey(key: $0, type: .database) })
         self.previewRects = previewRects
+        self.unlockPassword = nil
         self.changes = []
         self.selectedAnnotationCommentActive = false
         self.selectedAnnotationsDuringEditing = []
