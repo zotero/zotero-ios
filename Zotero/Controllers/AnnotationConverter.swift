@@ -60,7 +60,7 @@ struct AnnotationConverter {
         library: Library,
         username: String,
         displayName: String,
-        defaultPageLabel: PDFReaderState.DefaultAnnotationPageLabel?,
+        defaultPageLabel: DefaultAnnotationPageLabel?,
         boundingBoxConverter: AnnotationBoundingBoxConverter?
     ) -> PDFDocumentAnnotation? {
         guard let document = annotation.document, AnnotationsConfig.supported.contains(annotation.type) else { return nil }

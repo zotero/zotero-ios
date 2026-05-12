@@ -110,21 +110,6 @@ struct PDFReaderState: ViewModelState {
         }
     }
 
-    enum DefaultAnnotationPageLabel {
-        case commonPageOffset(offset: Int)
-        case labelPerPage(labelsByPage: [Int: String])
-
-        func label(for page: Int) -> String? {
-            switch self {
-            case .commonPageOffset(let offset):
-                return "\(page + offset)"
-                
-            case .labelPerPage(let labelsByPage):
-                return labelsByPage[page] ?? "\(page + 1)"
-            }
-        }
-    }
-
     let key: String
     let parentKey: String?
     let document: PSPDFKit.Document
