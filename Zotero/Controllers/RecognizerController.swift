@@ -182,7 +182,7 @@ final class RecognizerController {
             statesByTask[task] = .recognitionInProgress
             emmitUpdate(for: task, subject: subject, kind: .inProgress)
 
-            let worker = DocumentWorkerController.Worker(file: task.file, shouldCacheData: false, priority: .default)
+            let worker = DocumentWorkerController.Worker(file: task.file, shouldCacheInput: false, priority: .default)
             documentWorkerController.queue(work: .recognizer, in: worker)
                 .subscribe(onNext: { [weak self] update in
                     guard let self else { return }
@@ -206,7 +206,7 @@ final class RecognizerController {
                             DDLogInfo("RecognizerController: \(task) - extracted recognizer data")
                             startRemoteRecognition(for: task, with: data)
 
-                        case .fullText:
+                        case .fullText, .structuredDocumentText:
                             DDLogError("RecognizerController: \(task) - Document worker error")
                             cleanupTask(for: task) { $0?.on(.next(Update(task: task, kind: .failed(Error.documentWorkerError)))) }
                         }
