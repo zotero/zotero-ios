@@ -12,7 +12,7 @@ import CocoaLumberjackSwift
 import RealmSwift
 
 class CreatePDFAnnotationsDbRequest: CreateReaderAnnotationsDbRequest<PDFDocumentAnnotation> {
-    unowned let boundingBoxConverter: AnnotationBoundingBoxConverter
+    let boundingBoxConverter: AnnotationBoundingBoxConverter
 
     init(
         attachmentKey: String,
