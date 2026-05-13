@@ -337,13 +337,13 @@ extension PDFCoordinator: PdfReaderCoordinatorDelegate {
     }
 }
 
-extension PDFCoordinator: AccessibilityPopoupCoordinatorDelegate {
+extension PDFCoordinator: ReadAloudCoordinatorDelegate {
     func showVoicePicker(
         for voice: SpeechVoice,
         language: String?,
         detectedLanguage: String,
         userInterfaceStyle: UIUserInterfaceStyle,
-        selectionChanged: @escaping (AccessibilityPopupVoiceChange) -> Void
+        selectionChanged: @escaping (ReadAloudVoiceChange) -> Void
     ) {
         guard let navigationController else { return }
         let view = SpeechVoicePickerView(
@@ -353,11 +353,7 @@ extension PDFCoordinator: AccessibilityPopoupCoordinatorDelegate {
             remoteVoicesController: remoteVoicesController,
             dismiss: { change in
                 selectionChanged(change)
-                if let presentedViewController = navigationController.presentedViewController as? AccessibilityPopupViewController<PDFReaderViewController> {
-                    presentedViewController.dismiss(animated: true)
-                } else {
-                    navigationController.dismiss(animated: true)
-                }
+                navigationController.dismiss(animated: true)
             }
         )
         let controller = UIHostingController(rootView: view)

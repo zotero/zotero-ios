@@ -83,6 +83,16 @@ enum SpeechState: Equatable {
         }
     }
 
+    var isSpeakingOrLoading: Bool {
+        switch self {
+        case .stopped, .paused, .outOfCredits:
+            return false
+
+        case .speaking, .initializing, .loading:
+            return true
+        }
+    }
+
     var isOutOfCredits: Bool {
         switch self {
         case .speaking, .initializing, .loading, .paused, .stopped:
@@ -484,6 +494,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         let currentEndIndex = speechData.range.location + speechData.range.length
         if let index = TextTokenizer.findIndex(ofNext: unit, startingAt: currentEndIndex, in: currentPage) {
             DDLogInfo("SpeechManager: forward to \(index); \(speechData.range.location); \(speechData.range.length)")
+            DDLogError("TEST F: \(currentPage[Range(speechData.range, in: currentPage)!])")
             moveTo(index: index, on: currentPage, pageIndex: speechData.index)
             if !state.value.isPaused {
                 startSpeaking(at: index, page: currentPage, pageIndex: speechData.index, reportPageChange: false, shouldDetectVoice: false)
@@ -505,12 +516,14 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
 
         if let index = TextTokenizer.findIndex(ofPreviousWhole: unit, beforeIndex: speechData.range.location, in: currentPage) {
             DDLogInfo("SpeechManager: backward to \(index); \(speechData.range.location); \(speechData.range.length)")
+            DDLogError("TEST B: \(currentPage[Range(speechData.range, in: currentPage)!])")
             moveTo(index: index, on: currentPage, pageIndex: speechData.index)
             if !state.value.isPaused {
                 startSpeaking(at: index, page: currentPage, pageIndex: speechData.index, reportPageChange: false, shouldDetectVoice: false)
             }
             delegate?.focusPage(speechData.index)
         } else if speechData.range.location != 0 {
+            DDLogError("TEST B: \(currentPage[Range(speechData.range, in: currentPage)!])")
             moveTo(index: 0, on: currentPage, pageIndex: speechData.index)
             if !state.value.isPaused {
                 startSpeaking(page: currentPage, pageIndex: speechData.index, reportPageChange: false, shouldDetectVoice: false)

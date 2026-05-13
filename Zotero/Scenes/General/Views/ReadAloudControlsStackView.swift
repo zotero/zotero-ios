@@ -1,5 +1,5 @@
 //
-//  AccessibilitySpeechControlsStackView.swift
+//  ReadAloudControlsStackView.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 02.07.2025.
@@ -11,7 +11,7 @@ import UIKit
 
 import RxSwift
 
-final class AccessibilitySpeechControlsStackView<Delegate: SpeechManagerDelegate>: UIStackView {
+final class ReadAloudControlsStackView<Delegate: SpeechManagerDelegate>: UIStackView {
     private let disposeBag: DisposeBag = DisposeBag()
 
     weak var playButton: UIButton!

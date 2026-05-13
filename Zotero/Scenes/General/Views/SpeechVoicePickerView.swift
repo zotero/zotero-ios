@@ -32,7 +32,7 @@ struct SpeechVoicePickerView: View {
 
     private unowned let remoteVoicesController: RemoteVoicesController
     private let detectedLanguage: String
-    private let dismiss: (AccessibilityPopupVoiceChange) -> Void
+    private let dismiss: (ReadAloudVoiceChange) -> Void
     private let disposeBag: DisposeBag
 
     @State private var type: VoiceType
@@ -78,7 +78,7 @@ struct SpeechVoicePickerView: View {
         language: String?,
         detectedLanguage: String,
         remoteVoicesController: RemoteVoicesController,
-        dismiss: @escaping (AccessibilityPopupVoiceChange) -> Void
+        dismiss: @escaping (ReadAloudVoiceChange) -> Void
     ) {
         self.selectedVoice = selectedVoice
         self.language = language.flatMap({ .language(String($0.prefix(while: { $0 != "-" }))) }) ?? .auto
@@ -170,7 +170,7 @@ struct SpeechVoicePickerView: View {
                         case .language:
                             preferredLanguage = resolvedLocale
                         }
-                        dismiss(AccessibilityPopupVoiceChange(voice: selectedVoice, preferredLanguage: preferredLanguage))
+                        dismiss(ReadAloudVoiceChange(voice: selectedVoice, preferredLanguage: preferredLanguage))
                     } label: {
                         Text("Close")
                     }
