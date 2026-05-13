@@ -1171,22 +1171,35 @@ extension PDFDocumentViewController: AnnotationBoundingBoxConverter {
         return textOffset
     }
 
+    /// Scalars stripped before substring matching against PSPDFKit glyphs. PDFWorker and PSPDFKit can disagree on
+    /// dash variants, soft hyphens, modifier letters above letters (e.g. `M˙`), so these are filtered out. Combining marks,
+    /// modifier letters/symbols and formatting chars are caught by `shouldIgnoreForGlyphMatch` via Unicode category.
+    private static let glyphMatchIgnoredScalars: Set<Unicode.Scalar> = [
+        "-",          // U+002D hyphen-minus
+        "\u{00AD}",   // soft hyphen
+        "\u{2010}",   // hyphen
+        "\u{2011}",   // non-breaking hyphen
+        "\u{2013}",   // en dash
+        "\u{2014}",   // em dash
+        "\u{2212}"    // minus sign
+    ]
+
     /// Searches for the given text in PSPDFKit's glyphs and returns their bounding boxes.
-    /// Whitespace is ignored during comparison since PDFWorker and PSPDFKit handle
-    /// line breaks and spacing differently, but the actual text content is identical.
+    /// PDFWorker and PSPDFKit can disagree on whitespace, dash variants, diacritics, modifier letters and ligatures, so both
+    /// strings are NFKD-decomposed and stripped via `shouldIgnoreForGlyphMatch` (combining marks, modifier letters/symbols,
+    /// formatting chars, dash variants) before substring matching.
     /// Returns rects in PDF coordinate space.
     func findGlyphRects(for searchText: String, page: PageIndex) -> [CGRect] {
         guard let parser = viewModel.state.document.textParserForPage(at: page), !parser.glyphs.isEmpty else { return [] }
         guard !searchText.isEmpty else { return [] }
 
-        // Build parallel structures for whitespace-agnostic text matching:
-        // - glyphIndices: maps each character position to its source glyph index
-        // - glyphTextNoSpaces: text with all whitespace removed (for searching)
-        // - noSpaceToOriginalIndex: maps indices in glyphTextNoSpaces back to glyphIndices positions
+        // - glyphIndices: maps each source-character position to its glyph index
+        // - glyphTextFiltered: NFKD-decomposed text with ignored scalars stripped (used for searching)
+        // - filteredScalarToCharIndex: maps each scalar in glyphTextFiltered back to its source-character position
         var characterCount = 0
         var glyphIndices: [Int] = []
-        var glyphTextNoSpaces = ""
-        var noSpaceToOriginalIndex: [Int] = []
+        var glyphTextFiltered = ""
+        var filteredScalarToCharIndex: [Int] = []
 
         for (index, glyph) in parser.glyphs.enumerated() {
             let content = glyph.content
@@ -1196,9 +1209,9 @@ extension PDFDocumentViewController: AnnotationBoundingBoxConverter {
                     characterCount += 1
                     glyphIndices.append(index)
 
-                    if !char.isWhitespace && char != "-" {
-                        glyphTextNoSpaces.append(char)
-                        noSpaceToOriginalIndex.append(currentIndex)
+                    for scalar in String(char).decomposedStringWithCompatibilityMapping.unicodeScalars where !shouldIgnoreForGlyphMatch(scalar) {
+                        glyphTextFiltered.unicodeScalars.append(scalar)
+                        filteredScalarToCharIndex.append(currentIndex)
                     }
                 }
             } else if glyph.isWordOrLineBreaker {
@@ -1207,17 +1220,19 @@ extension PDFDocumentViewController: AnnotationBoundingBoxConverter {
             }
         }
 
-        let searchNoSpaces = searchText.filter { !$0.isWhitespace && $0 != "-" }
-        guard !searchNoSpaces.isEmpty else { return [] }
-        guard let range = glyphTextNoSpaces.range(of: searchNoSpaces) else { return [] }
+        var searchFiltered = ""
+        for scalar in searchText.decomposedStringWithCompatibilityMapping.unicodeScalars where !shouldIgnoreForGlyphMatch(scalar) {
+            searchFiltered.unicodeScalars.append(scalar)
+        }
+        guard !searchFiltered.isEmpty else { return [] }
+        guard let range = glyphTextFiltered.range(of: searchFiltered) else { return [] }
 
-        // Map whitespace-free range back to original character positions
-        let startIdxNoSpace = glyphTextNoSpaces.distance(from: glyphTextNoSpaces.startIndex, to: range.lowerBound)
-        let endIdxNoSpace = glyphTextNoSpaces.distance(from: glyphTextNoSpaces.startIndex, to: range.upperBound)
-        let startIdx = noSpaceToOriginalIndex[startIdxNoSpace]
-        let endIdx = endIdxNoSpace < noSpaceToOriginalIndex.count ? noSpaceToOriginalIndex[endIdxNoSpace - 1] + 1 : characterCount
+        let scalars = glyphTextFiltered.unicodeScalars
+        let startScalarIdx = scalars.distance(from: scalars.startIndex, to: range.lowerBound)
+        let endScalarIdx = scalars.distance(from: scalars.startIndex, to: range.upperBound)
+        let startIdx = filteredScalarToCharIndex[startScalarIdx]
+        let endIdx = endScalarIdx < filteredScalarToCharIndex.count ? filteredScalarToCharIndex[endScalarIdx - 1] + 1 : characterCount
 
-        // Collect unique glyph indices and get their frames
         var uniqueGlyphIndices = Set<Int>()
         for i in startIdx..<min(endIdx, glyphIndices.count) {
             uniqueGlyphIndices.insert(glyphIndices[i])
@@ -1226,6 +1241,18 @@ extension PDFDocumentViewController: AnnotationBoundingBoxConverter {
         return uniqueGlyphIndices.sorted().compactMap { glyphIndex in
             let glyph = parser.glyphs[glyphIndex]
             return glyph.isWordOrLineBreaker ? nil : glyph.frame
+        }
+
+        func shouldIgnoreForGlyphMatch(_ scalar: Unicode.Scalar) -> Bool {
+            if Self.glyphMatchIgnoredScalars.contains(scalar) { return true }
+            if scalar.properties.isWhitespace { return true }
+            switch scalar.properties.generalCategory {
+            case .nonspacingMark, .spacingMark, .enclosingMark, .modifierLetter, .modifierSymbol, .format:
+                return true
+
+            default:
+                return false
+            }
         }
     }
 
