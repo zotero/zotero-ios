@@ -12,6 +12,7 @@ import CocoaLumberjackSwift
 
 final class LastReadWatcher {
     private unowned let dbStorage: DbStorage
+    private let dbQueue = DispatchQueue(label: "org.zotero.LastReadWatcher.DbQueue", qos: .utility)
     private var lastUpdate: (key: String, libraryId: LibraryIdentifier)?
     private var pendingUpdate: (key: String, libraryId: LibraryIdentifier, date: Date?)?
     private var timer: BackgroundTimer?
@@ -76,10 +77,13 @@ final class LastReadWatcher {
     }
 
     private func store(key: String, libraryId: LibraryIdentifier, date: Date?) {
-        do {
-            try dbStorage.perform(request: StoreLastReadDateDbRequest(key: key, libraryId: libraryId, date: date), on: .main)
-        } catch {
-            DDLogError("LastReadWatcher: can't store last read date - \(error)")
+        dbQueue.async { [weak self] in
+            guard let self else { return }
+            do {
+                try dbStorage.perform(request: StoreLastReadDateDbRequest(key: key, libraryId: libraryId, date: date), on: dbQueue)
+            } catch {
+                DDLogError("LastReadWatcher: can't store last read date - \(error)")
+            }
         }
     }
 }
