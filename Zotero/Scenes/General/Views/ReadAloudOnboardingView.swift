@@ -80,7 +80,7 @@ struct ReadAloudOnboardingView: View {
     @State private var groupedLocalVoices: [LocaleLocalVoiceGroup] = []
     @State private var isLoading: Bool = false
     @State private var loadError: Bool = false
-    @State private var language: SpeechLanguageChoice
+    @State private var language: ReadAloudLanguageChoice
     @State private var navigationPath = NavigationPath()
 
     private var baseLanguage: String {
@@ -136,19 +136,25 @@ struct ReadAloudOnboardingView: View {
                 List {
                     // Description section
                     Section {
-                        ForEach(selectedTier.descriptionBulletPoints, id: \.self) { point in
+                        let bulletPoints = selectedTier.descriptionBulletPoints
+                        ForEach(Array(bulletPoints.enumerated()), id: \.element) { index, point in
                             HStack(alignment: .top, spacing: 8) {
                                 Text("•")
                                 Text(point)
                             }
                             .listRowSeparator(.hidden)
-                            .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
+                            .listRowInsets(EdgeInsets(
+                                top: index == 0 ? 16 : 0,
+                                leading: 20,
+                                bottom: index == bulletPoints.count - 1 ? 16 : 0,
+                                trailing: 20
+                            ))
                         }
                     }
 
                     // Language section
                     if canShowLanguage {
-                        SpeechLanguageSection(language: $language, detectedLanguage: detectedLanguage, navigationPath: $navigationPath)
+                        ReadAloudLanguageSection(language: $language, detectedLanguage: detectedLanguage, navigationPath: $navigationPath)
                     }
 
                     // Voices section
@@ -162,14 +168,14 @@ struct ReadAloudOnboardingView: View {
                             .padding(.vertical, 20)
                         }
                     } else if loadError {
-                        SpeechLoadErrorSection(retryAction: loadVoices)
+                        ReadAloudLoadErrorSection(retryAction: loadVoices)
                     } else {
                         switch selectedTier {
                         case .premium, .standard:
                             if groupedRemoteVoices.isEmpty {
-                                SpeechNoVoicesSection(language: baseLanguage)
+                                ReadAloudNoVoicesSection(language: baseLanguage)
                             } else {
-                                SpeechRemoteVoicesSection(
+                                ReadAloudRemoteVoicesSection(
                                     groups: groupedRemoteVoices,
                                     selectedVoice: $selectedVoice,
                                     creditsRemaining: nil,
@@ -178,7 +184,7 @@ struct ReadAloudOnboardingView: View {
                             }
 
                         case .local:
-                            SpeechLocalVoicesSection(groups: groupedLocalVoices, selectedVoice: $selectedVoice, language: baseLanguage)
+                            ReadAloudLocalVoicesSection(groups: groupedLocalVoices, selectedVoice: $selectedVoice, language: baseLanguage)
                         }
                     }
                 }
@@ -202,7 +208,7 @@ struct ReadAloudOnboardingView: View {
             }
             .navigationDestination(for: String.self) { value in
                 if value == "languages" {
-                    SpeechLanguagePickerView(
+                    ReadAloudLanguagePickerView(
                         currentLanguage: language,
                         detectedLanguage: detectedLanguage,
                         languages: createLanguages(),
@@ -247,7 +253,7 @@ struct ReadAloudOnboardingView: View {
 
     // MARK: - Language selection
 
-    private func handleLanguageSelected(_ selectedLanguage: SpeechLanguagePickerView.Language?) {
+    private func handleLanguageSelected(_ selectedLanguage: ReadAloudLanguagePickerView.Language?) {
         if let selectedLanguage {
             language = .language(selectedLanguage.id)
         } else {
@@ -266,7 +272,7 @@ struct ReadAloudOnboardingView: View {
         }
     }
 
-    private func createLanguages() -> [SpeechLanguagePickerView.Language] {
+    private func createLanguages() -> [ReadAloudLanguagePickerView.Language] {
         switch selectedTier {
         case .local:
             return VoiceUtility.availableLocalLanguages()

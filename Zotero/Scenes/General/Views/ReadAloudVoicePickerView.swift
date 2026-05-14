@@ -1,5 +1,5 @@
 //
-//  SpeechVoicePickerView.swift
+//  ReadAloudVoicePickerView.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 18.07.2025.
@@ -12,7 +12,7 @@ import SwiftUI
 import CocoaLumberjackSwift
 import RxSwift
 
-struct SpeechVoicePickerView: View {
+struct ReadAloudVoicePickerView: View {
     fileprivate enum VoiceType {
         case premium, standard, local
 
@@ -36,7 +36,7 @@ struct SpeechVoicePickerView: View {
     private let disposeBag: DisposeBag
 
     @State private var type: VoiceType
-    @State private var language: SpeechLanguageChoice
+    @State private var language: ReadAloudLanguageChoice
     @State private var selectedVoice: SpeechVoice
     @State private var localVoices: [AVSpeechSynthesisVoice]
     @State private var groupedLocalVoices: [LocaleLocalVoiceGroup] = []
@@ -103,20 +103,20 @@ struct SpeechVoicePickerView: View {
             List {
                 TypeSection(type: $type)
                 if canShowLanguage {
-                    SpeechLanguageSection(language: $language, detectedLanguage: detectedLanguage, navigationPath: $navigationPath)
+                    ReadAloudLanguageSection(language: $language, detectedLanguage: detectedLanguage, navigationPath: $navigationPath)
                 }
                 switch type {
                 case .local:
-                    SpeechLocalVoicesSection(groups: groupedLocalVoices, selectedVoice: selectedVoiceBinding, language: baseLanguage)
+                    ReadAloudLocalVoicesSection(groups: groupedLocalVoices, selectedVoice: selectedVoiceBinding, language: baseLanguage)
 
                 case .premium, .standard:
                     if loadError {
-                        SpeechLoadErrorSection(retryAction: loadVoices)
+                        ReadAloudLoadErrorSection(retryAction: loadVoices)
                     } else if voicesResponse != nil {
                         if groupedRemoteVoices.isEmpty {
-                            SpeechNoVoicesSection(language: baseLanguage)
+                            ReadAloudNoVoicesSection(language: baseLanguage)
                         } else {
-                            SpeechRemoteVoicesSection(
+                            ReadAloudRemoteVoicesSection(
                                 groups: groupedRemoteVoices,
                                 selectedVoice: selectedVoiceBinding,
                                 creditsRemaining: type == .premium ? premiumCreditsRemaining : standardCreditsRemaining,
@@ -128,12 +128,12 @@ struct SpeechVoicePickerView: View {
                     }
                 }
             }
-            .listStyle(.grouped)
+            .listStyle(.insetGrouped)
             .navigationTitle("Voice")
             .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(for: String.self, destination: { value in
                 if value == "languages" {
-                    SpeechLanguagePickerView(
+                    ReadAloudLanguagePickerView(
                         currentLanguage: language,
                         detectedLanguage: detectedLanguage,
                         languages: createLanguages(),
@@ -207,7 +207,7 @@ struct SpeechVoicePickerView: View {
 
     // MARK: - Language selection
 
-    private func handleLanguageSelected(_ selectedLanguage: SpeechLanguagePickerView.Language?) {
+    private func handleLanguageSelected(_ selectedLanguage: ReadAloudLanguagePickerView.Language?) {
         if let selectedLanguage {
             language = .language(selectedLanguage.id)
         } else {
@@ -226,7 +226,7 @@ struct SpeechVoicePickerView: View {
         }
     }
 
-    private func createLanguages() -> [SpeechLanguagePickerView.Language] {
+    private func createLanguages() -> [ReadAloudLanguagePickerView.Language] {
         switch type {
         case .local:
             return VoiceUtility.availableLocalLanguages()
@@ -288,7 +288,7 @@ struct SpeechVoicePickerView: View {
 
 // swiftlint:disable private_over_fileprivate
 fileprivate struct TypeSection: View {
-    @Binding var type: SpeechVoicePickerView.VoiceType
+    @Binding var type: ReadAloudVoicePickerView.VoiceType
 
     var body: some View {
         Section {
@@ -333,7 +333,7 @@ fileprivate struct TypeSection: View {
 // swiftlint:enable private_over_fileprivate
 
 #Preview {
-    SpeechVoicePickerView(
+    ReadAloudVoicePickerView(
         selectedVoice: .local(AVSpeechSynthesisVoice.speechVoices().first!),
         language: nil,
         detectedLanguage: "en",
