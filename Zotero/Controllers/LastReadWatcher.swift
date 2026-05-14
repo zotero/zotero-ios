@@ -21,7 +21,8 @@ final class LastReadWatcher {
     init(dbStorage: DbStorage) {
         self.dbStorage = dbStorage
         let block: ((Notification) -> Void) = { [weak self] _ in
-            self?.flushPendingAndStop()
+            guard let self else { return }
+            flushPendingAndStop(sync: true)
         }
         observers = [
             NotificationCenter.default.addObserver(forName: UIApplication.willResignActiveNotification, object: nil, queue: .main, using: block),
@@ -67,23 +68,28 @@ final class LastReadWatcher {
         }
     }
 
-    private func flushPendingAndStop() {
+    private func flushPendingAndStop(sync: Bool = false) {
         if let pendingUpdate {
-            store(key: pendingUpdate.key, libraryId: pendingUpdate.libraryId, date: pendingUpdate.date)
+            store(key: pendingUpdate.key, libraryId: pendingUpdate.libraryId, date: pendingUpdate.date, sync: sync)
         }
         pendingUpdate = nil
         lastUpdate = nil
         timer = nil
     }
 
-    private func store(key: String, libraryId: LibraryIdentifier, date: Date?) {
-        dbQueue.async { [weak self] in
+    private func store(key: String, libraryId: LibraryIdentifier, date: Date?, sync: Bool = false) {
+        let work: () -> Void = { [weak self] in
             guard let self else { return }
             do {
                 try dbStorage.perform(request: StoreLastReadDateDbRequest(key: key, libraryId: libraryId, date: date), on: dbQueue)
             } catch {
                 DDLogError("LastReadWatcher: can't store last read date - \(error)")
             }
+        }
+        if sync {
+            dbQueue.sync(execute: work)
+        } else {
+            dbQueue.async(execute: work)
         }
     }
 }
