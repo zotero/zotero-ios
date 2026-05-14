@@ -88,7 +88,8 @@ final class SpeechHighlightSessionManager<Delegate: SpeechHighlightSessionManage
         switch voiceInfo {
         case .remote(let voiceGranularity, let audioProgress, let elapsedTime):
             granularity = voiceGranularity
-            shouldGoBack = audioProgress < 0.5 || elapsedTime < 3.0
+            // If less than 50% and less than 3 seconds into the current segment, use the previous one
+            shouldGoBack = audioProgress < 0.5 && elapsedTime < 3.0
 
         case .local:
             granularity = .sentence
