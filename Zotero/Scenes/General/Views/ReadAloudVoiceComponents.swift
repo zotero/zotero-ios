@@ -62,6 +62,69 @@ struct LocaleLocalVoiceGroup: Identifiable {
     var id: String { locale }
 }
 
+// MARK: - Type Section
+
+struct ReadAloudTypeSection: View {
+    @Binding var type: ReadAloudVoiceType
+
+    var body: some View {
+        Section {
+            ForEach(ReadAloudVoiceType.allCases, id: \.self) { option in
+                HStack {
+                    Text(option.title)
+                    Spacer()
+                    if option == type {
+                        Image(systemName: "checkmark").foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUIColor)
+                    }
+                }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    type = option
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Voices Section (loading / error / no-voices / list)
+
+struct ReadAloudVoicesSection: View {
+    @ObservedObject var model: ReadAloudVoiceSelectionModel
+    @Binding var selectedVoice: SpeechVoice?
+
+    var body: some View {
+        switch model.type {
+        case .local:
+            ReadAloudLocalVoicesSection(voices: model.currentLocalVoices, selectedVoice: $selectedVoice, language: model.baseLanguage)
+
+        case .premium, .standard:
+            if model.loadError {
+                ReadAloudLoadErrorSection(retryAction: { model.loadVoices() })
+            } else if model.voicesResponse != nil {
+                if model.groupedRemoteVoices.isEmpty {
+                    ReadAloudNoVoicesSection(language: model.baseLanguage)
+                } else {
+                    ReadAloudRemoteVoicesSection(
+                        voices: model.currentRemoteVoices,
+                        selectedVoice: $selectedVoice,
+                        creditsRemaining: model.displayedCreditsRemaining,
+                        remoteVoicesController: model.remoteVoicesController
+                    )
+                }
+            } else if model.isLoading {
+                Section(L10n.Speech.voices.uppercased()) {
+                    HStack {
+                        Spacer()
+                        ProgressView()
+                        Spacer()
+                    }
+                    .padding(.vertical, 20)
+                }
+            }
+        }
+    }
+}
+
 // MARK: - Language Section
 
 struct ReadAloudLanguageSection: View {
@@ -98,41 +161,64 @@ struct ReadAloudLanguageSection: View {
     }
 }
 
+// MARK: - Region Section
+
+struct ReadAloudRegionSection: View {
+    let regions: [(locale: String, displayName: String)]
+    @Binding var selectedLocale: String?
+
+    var body: some View {
+        Section(L10n.Speech.region.uppercased()) {
+            ForEach(regions, id: \.locale) { region in
+                HStack {
+                    Text(region.displayName)
+                    Spacer()
+                    if selectedLocale == region.locale {
+                        Image(systemName: "checkmark").foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUIColor)
+                    }
+                }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    selectedLocale = region.locale
+                }
+            }
+        }
+    }
+}
+
 // MARK: - Local Voices Section
 
 struct ReadAloudLocalVoicesSection: View {
-    let groups: [LocaleLocalVoiceGroup]
+    let voices: [AVSpeechSynthesisVoice]
     @Binding var selectedVoice: SpeechVoice?
     let language: String
 
     private let synthesizer: AVSpeechSynthesizer
 
-    init(groups: [LocaleLocalVoiceGroup], selectedVoice: Binding<SpeechVoice?>, language: String) {
-        self.groups = groups
+    init(voices: [AVSpeechSynthesisVoice], selectedVoice: Binding<SpeechVoice?>, language: String) {
+        self.voices = voices
         self._selectedVoice = selectedVoice
         self.language = language
         self.synthesizer = .init()
     }
 
     var body: some View {
-        if groups.isEmpty {
+        if voices.isEmpty {
             ReadAloudNoVoicesSection(language: language)
         } else {
-            ForEach(groups) { group in
-                Section(group.displayName.uppercased()) {
-                    ForEach(group.voices) { voice in
-                        HStack {
-                            Text(voice.name)
-                            Spacer()
-                            if case .local(let localVoice) = selectedVoice, localVoice.identifier == voice.identifier {
-                                Image(systemName: "checkmark").foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUIColor)
-                            }
+            Section(L10n.Speech.voices.uppercased()) {
+                ForEach(voices) { voice in
+                    HStack {
+                        Text(voice.name)
+                        Spacer()
+                        if case .local(let localVoice) = selectedVoice, localVoice.identifier == voice.identifier {
+                            Image(systemName: "checkmark").foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUIColor)
                         }
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            selectedVoice = .local(voice)
-                            playSample(withVoice: voice)
-                        }
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        selectedVoice = .local(voice)
+                        playSample(withVoice: voice)
                     }
                 }
             }
@@ -152,7 +238,7 @@ struct ReadAloudLocalVoicesSection: View {
 // MARK: - Remote Voices Section
 
 struct ReadAloudRemoteVoicesSection: View {
-    let groups: [LocaleRemoteVoiceGroup]
+    let voices: [RemoteVoice]
     @Binding var selectedVoice: SpeechVoice?
     let creditsRemaining: Int?
     unowned let remoteVoicesController: RemoteVoicesController
@@ -163,32 +249,30 @@ struct ReadAloudRemoteVoicesSection: View {
     private let disposeBag = DisposeBag()
 
     var body: some View {
-        ForEach(groups) { group in
-            Section(group.displayName.uppercased()) {
-                ForEach(group.voices) { voice in
-                    HStack {
-                        Text(voice.label)
-                        Spacer()
-                        if case .remote(let remoteVoice) = selectedVoice, remoteVoice.id == voice.id {
-                            if loadingVoiceId == voice.id {
-                                ProgressView()
-                            } else {
-                                Image(systemName: "checkmark").foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUIColor)
-                            }
-                        }
-                        if let remainingTime = remainingTime(for: voice) {
-                            Text(RemainingTimeFormatter.formatted(remainingTime))
-                                .foregroundColor(RemainingTimeFormatter.isWarning(remainingTime) ? .red : .secondary)
-                                .font(.subheadline)
+        Section(L10n.Speech.voices.uppercased()) {
+            ForEach(voices) { voice in
+                HStack {
+                    Text(voice.label)
+                    Spacer()
+                    if case .remote(let remoteVoice) = selectedVoice, remoteVoice.id == voice.id {
+                        if loadingVoiceId == voice.id {
+                            ProgressView()
+                        } else {
+                            Image(systemName: "checkmark").foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUIColor)
                         }
                     }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        guard loadingVoiceId == nil else { return }
-                        player?.stop()
-                        selectedVoice = .remote(voice)
-                        playSample(for: voice)
+                    if let remainingTime = remainingTime(for: voice) {
+                        Text(RemainingTimeFormatter.formatted(remainingTime))
+                            .foregroundColor(RemainingTimeFormatter.isWarning(remainingTime) ? .red : .secondary)
+                            .font(.subheadline)
                     }
+                }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    guard loadingVoiceId == nil else { return }
+                    player?.stop()
+                    selectedVoice = .remote(voice)
+                    playSample(for: voice)
                 }
             }
         }
