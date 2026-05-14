@@ -1,5 +1,5 @@
 //
-//  SpeechHighlighterOverlayView.swift
+//  ReadAloudHighlighterOverlayView.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 09.03.2026.
@@ -23,7 +23,7 @@ private final class MenuTrackingButton: UIButton {
     }
 }
 
-final class SpeechHighlighterOverlayView: UIView {
+final class ReadAloudHighlighterOverlayView: UIView {
     private weak var textLabel: UILabel?
     private weak var textContainer: UIView?
     private weak var colorButton: UIButton?

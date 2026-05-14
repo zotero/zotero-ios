@@ -9,7 +9,7 @@
 import AVFAudio
 import SwiftUI
 
-struct SpeechLanguagePickerView: View {
+struct ReadAloudLanguagePickerView: View {
     struct Language: Identifiable {
         let id: String
         let name: String
@@ -18,7 +18,7 @@ struct SpeechLanguagePickerView: View {
 
     private let languages: [Language]
     private let detectedLanguage: String
-    private let currentLanguage: SpeechLanguageChoice
+    private let currentLanguage: ReadAloudLanguageChoice
     private let onLanguageSelected: (Language?) -> Void
     @Binding private var navigationPath: NavigationPath
     @State private var isAutoEnabled: Bool
@@ -29,7 +29,7 @@ struct SpeechLanguagePickerView: View {
     }
 
     init(
-        currentLanguage: SpeechLanguageChoice,
+        currentLanguage: ReadAloudLanguageChoice,
         detectedLanguage: String,
         languages: [Language],
         navigationPath: Binding<NavigationPath>,
@@ -85,7 +85,7 @@ struct SpeechLanguagePickerView: View {
 }
 
 #Preview {
-    SpeechLanguagePickerView(
+    ReadAloudLanguagePickerView(
         currentLanguage: .language("en"),
         detectedLanguage: "en-US",
         languages: [

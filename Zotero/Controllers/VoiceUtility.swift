@@ -9,7 +9,7 @@
 import AVFoundation
 
 /// Utility for finding, filtering, grouping voices and building language lists.
-/// Centralizes voice logic used by SpeechManager, SpeechVoicePickerView, and ReadAloudOnboardingView.
+/// Centralizes voice logic used by SpeechManager, ReadAloudVoicePickerView, and ReadAloudOnboardingView.
 enum VoiceUtility {
     // MARK: - Local Voices
 
@@ -117,7 +117,7 @@ enum VoiceUtility {
     }
 
     /// Returns all available local languages for the language picker.
-    static func availableLocalLanguages() -> [SpeechLanguagePickerView.Language] {
+    static func availableLocalLanguages() -> [ReadAloudLanguagePickerView.Language] {
         let voices = AVSpeechSynthesisVoice.speechVoices()
         var languageLocales: [String: Set<String>] = [:]
         for voice in voices {
@@ -125,15 +125,15 @@ enum VoiceUtility {
             languageLocales[baseCode, default: []].insert(voice.language)
         }
         return languageLocales.keys
-            .compactMap { baseCode -> SpeechLanguagePickerView.Language? in
+            .compactMap { baseCode -> ReadAloudLanguagePickerView.Language? in
                 guard let name = Locale.current.localizedString(forLanguageCode: baseCode) else { return nil }
-                return SpeechLanguagePickerView.Language(id: baseCode, name: name, locales: languageLocales[baseCode]?.sorted() ?? [])
+                return ReadAloudLanguagePickerView.Language(id: baseCode, name: name, locales: languageLocales[baseCode]?.sorted() ?? [])
             }
             .sorted(by: { $0.name.caseInsensitiveCompare($1.name) == .orderedAscending })
     }
 
     /// Returns all available remote languages for a given tier.
-    static func availableRemoteLanguages(for tier: RemoteVoice.Tier, response: VoicesResponse) -> [SpeechLanguagePickerView.Language] {
+    static func availableRemoteLanguages(for tier: RemoteVoice.Tier, response: VoicesResponse) -> [ReadAloudLanguagePickerView.Language] {
         guard let tierData = response.tiers[tier] else { return [] }
         var languageLocales: [String: Set<String>] = [:]
         for data in tierData {
@@ -143,9 +143,9 @@ enum VoiceUtility {
             }
         }
         return languageLocales.keys
-            .compactMap { baseCode -> SpeechLanguagePickerView.Language? in
+            .compactMap { baseCode -> ReadAloudLanguagePickerView.Language? in
                 guard let name = Locale.current.localizedString(forLanguageCode: baseCode) else { return nil }
-                return SpeechLanguagePickerView.Language(id: baseCode, name: name, locales: languageLocales[baseCode]?.sorted() ?? [])
+                return ReadAloudLanguagePickerView.Language(id: baseCode, name: name, locales: languageLocales[baseCode]?.sorted() ?? [])
             }
             .sorted(by: { $0.name.caseInsensitiveCompare($1.name) == .orderedAscending })
     }

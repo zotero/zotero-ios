@@ -1259,7 +1259,7 @@ extension PDFReaderViewController: ReadAloudViewDelegate {
         documentController?.clearAnnotationPreview()
     }
 
-    func showSpeechHighlighterOverlay(_ overlay: SpeechHighlighterOverlayView, isCompact: Bool, speechControlsView: UIView?, animated: Bool) {
+    func showSpeechHighlighterOverlay(_ overlay: ReadAloudHighlighterOverlayView, isCompact: Bool, speechControlsView: UIView?, animated: Bool) {
         view.addSubview(overlay)
         setupSpeechHighlighterOverlayConstraints(overlay, isCompact: isCompact, speechControlsView: speechControlsView)
         if !animated {
@@ -1272,7 +1272,7 @@ extension PDFReaderViewController: ReadAloudViewDelegate {
             }
         }
 
-        func setupSpeechHighlighterOverlayConstraints(_ overlay: SpeechHighlighterOverlayView, isCompact: Bool, speechControlsView: UIView?) {
+        func setupSpeechHighlighterOverlayConstraints(_ overlay: ReadAloudHighlighterOverlayView, isCompact: Bool, speechControlsView: UIView?) {
             if isCompact {
                 let bottomAnchor: NSLayoutYAxisAnchor
                 if let speechControlsView, speechControlsView.superview != nil {
@@ -1299,7 +1299,7 @@ extension PDFReaderViewController: ReadAloudViewDelegate {
         }
     }
 
-    func hideSpeechHighlighterOverlay(_ overlay: SpeechHighlighterOverlayView) {
+    func hideSpeechHighlighterOverlay(_ overlay: ReadAloudHighlighterOverlayView) {
         speechHighlighterTopConstraint = nil
         UIView.animate(withDuration: 0.15, delay: 0, options: .curveEaseIn, animations: {
             overlay.alpha = 0
