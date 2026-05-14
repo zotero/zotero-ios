@@ -312,6 +312,7 @@
 "speech.onboarding.description_local_2" = "Available without an internet connection";
 "speech.onboarding.description_local_3" = "Free to use";
 "speech.voices" = "Voices";
+"speech.region" = "Region";
 "speech.local_sample" = "I am the local voice %@.";
 
 "settings.title" = "Settings";
