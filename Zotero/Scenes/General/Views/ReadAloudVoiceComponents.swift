@@ -1,5 +1,5 @@
 //
-//  SpeechVoiceComponents.swift
+//  ReadAloudVoiceComponents.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 19.03.2026.
@@ -13,7 +13,7 @@ import RxSwift
 
 // MARK: - Types
 
-enum SpeechLanguageChoice: Identifiable, Equatable {
+enum ReadAloudLanguageChoice: Identifiable, Equatable {
     case auto
     case language(String)
 
@@ -64,8 +64,8 @@ struct LocaleLocalVoiceGroup: Identifiable {
 
 // MARK: - Language Section
 
-struct SpeechLanguageSection: View {
-    @Binding var language: SpeechLanguageChoice
+struct ReadAloudLanguageSection: View {
+    @Binding var language: ReadAloudLanguageChoice
     let detectedLanguage: String
     @Binding var navigationPath: NavigationPath
 
@@ -100,7 +100,7 @@ struct SpeechLanguageSection: View {
 
 // MARK: - Local Voices Section
 
-struct SpeechLocalVoicesSection: View {
+struct ReadAloudLocalVoicesSection: View {
     let groups: [LocaleLocalVoiceGroup]
     @Binding var selectedVoice: SpeechVoice?
     let language: String
@@ -116,7 +116,7 @@ struct SpeechLocalVoicesSection: View {
 
     var body: some View {
         if groups.isEmpty {
-            SpeechNoVoicesSection(language: language)
+            ReadAloudNoVoicesSection(language: language)
         } else {
             ForEach(groups) { group in
                 Section(group.displayName.uppercased()) {
@@ -151,7 +151,7 @@ struct SpeechLocalVoicesSection: View {
 
 // MARK: - Remote Voices Section
 
-struct SpeechRemoteVoicesSection: View {
+struct ReadAloudRemoteVoicesSection: View {
     let groups: [LocaleRemoteVoiceGroup]
     @Binding var selectedVoice: SpeechVoice?
     let creditsRemaining: Int?
@@ -228,7 +228,7 @@ struct SpeechRemoteVoicesSection: View {
 
 // MARK: - Utility Sections
 
-struct SpeechLoadErrorSection: View {
+struct ReadAloudLoadErrorSection: View {
     let retryAction: () -> Void
 
     var body: some View {
@@ -249,7 +249,7 @@ struct SpeechLoadErrorSection: View {
     }
 }
 
-struct SpeechNoVoicesSection: View {
+struct ReadAloudNoVoicesSection: View {
     let language: String
 
     private var languageName: String {
