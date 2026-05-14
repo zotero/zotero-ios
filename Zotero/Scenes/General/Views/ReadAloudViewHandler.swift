@@ -39,8 +39,8 @@ protocol ReadAloudViewDelegate: AnyObject {
     func addReadAloudControlsViewToAnnotationToolbar(view: AnnotationToolbarLeadingView)
     func removeReadAloudControlsViewFromAnnotationToolbar()
     func clearSpeechHighlight()
-    func showSpeechHighlighterOverlay(_ overlay: SpeechHighlighterOverlayView, isCompact: Bool, speechControlsView: UIView?, animated: Bool)
-    func hideSpeechHighlighterOverlay(_ overlay: SpeechHighlighterOverlayView)
+    func showSpeechHighlighterOverlay(_ overlay: ReadAloudHighlighterOverlayView, isCompact: Bool, speechControlsView: UIView?, animated: Bool)
+    func hideSpeechHighlighterOverlay(_ overlay: ReadAloudHighlighterOverlayView)
     func updateSpeechHighlightStyle(tool: AnnotationTool, color: String)
     func presentReadAloudOnboarding(language: String?, detectedLanguage: String, completion: @escaping (SpeechVoice?) -> Void)
     func presentReadAloudVoicePicker(currentVoice: SpeechVoice, language: String?, detectedLanguage: String, selectionChanged: @escaping (ReadAloudVoiceChange) -> Void)
@@ -66,7 +66,7 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
     /// This flag is used to resume playing read-aloud after a voice has been changed in voice picker.
     private var wasPlayingBeforeVoiceChange: Bool
     private weak var activeOverlay: ReadAloudControlsView<Delegate>?
-    private weak var highlighterOverlay: SpeechHighlighterOverlayView?
+    private weak var highlighterOverlay: ReadAloudHighlighterOverlayView?
     var isHighlighterOverlayVisible: Bool { highlighterOverlay != nil }
     weak var delegate: ReadAloudViewDelegate?
     var isFormSheet: Bool {
@@ -351,7 +351,7 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
     private func repositionHighlighterOverlayIfNeeded() {
         guard let oldOverlay = highlighterOverlay else { return }
         delegate?.hideSpeechHighlighterOverlay(oldOverlay)
-        let newOverlay = SpeechHighlighterOverlayView(
+        let newOverlay = ReadAloudHighlighterOverlayView(
             isCompact: isFormSheet,
             annotationTool: oldOverlay.selectedAnnotationTool,
             annotationColor: oldOverlay.selectedColor
@@ -458,7 +458,7 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
             return
         }
         guard let result = speechManager.startHighlightSession() else { return }
-        let overlay = SpeechHighlighterOverlayView(
+        let overlay = ReadAloudHighlighterOverlayView(
             isCompact: isFormSheet,
             annotationTool: speechManager.highlightAnnotationTool,
             annotationColor: speechManager.highlightAnnotationColor
@@ -528,7 +528,7 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
         dismissHighlighterOverlay(confirm: false)
     }
 
-    func performHighlighterAction(_ action: (SpeechHighlighterOverlayView) -> Void) {
+    func performHighlighterAction(_ action: (ReadAloudHighlighterOverlayView) -> Void) {
         guard let overlay = highlighterOverlay else { return }
         action(overlay)
     }
