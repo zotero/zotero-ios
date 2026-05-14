@@ -285,7 +285,7 @@ extension PDFCoordinator: ReadAloudCoordinatorDelegate {
         selectionChanged: @escaping (ReadAloudVoiceChange) -> Void
     ) {
         guard let navigationController else { return }
-        let view = SpeechVoicePickerView(
+        let view = ReadAloudVoicePickerView(
             selectedVoice: voice,
             language: language,
             detectedLanguage: detectedLanguage,
