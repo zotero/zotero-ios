@@ -214,7 +214,7 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
             let rates: [Float] = [0.75, 1.0, 1.25, 1.5, 1.75, 2.0]
             let currentRate = controller.speechManager.speechRateModifier
             return rates.map { rate in
-                let title = (formatter.string(from: NSNumber(value: rate)) ?? "") + "x"
+                let title = (formatter.string(from: NSNumber(value: rate)) ?? "") + "×"
                 let action = UIAction(title: title) { [weak controller] _ in
                     controller?.speechManager.set(rateModifier: rate)
                 }
