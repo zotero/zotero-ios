@@ -12,6 +12,7 @@ import CocoaLumberjackSwift
 
 final class LastReadWatcher {
     private unowned let dbStorage: DbStorage
+    private let dbQueue = DispatchQueue(label: "org.zotero.LastReadWatcher.DbQueue", qos: .utility)
     private var lastUpdate: (key: String, libraryId: LibraryIdentifier)?
     private var pendingUpdate: (key: String, libraryId: LibraryIdentifier, date: Date?)?
     private var timer: BackgroundTimer?
@@ -20,7 +21,8 @@ final class LastReadWatcher {
     init(dbStorage: DbStorage) {
         self.dbStorage = dbStorage
         let block: ((Notification) -> Void) = { [weak self] _ in
-            self?.flushPendingAndStop()
+            guard let self else { return }
+            flushPendingAndStop(sync: true)
         }
         observers = [
             NotificationCenter.default.addObserver(forName: UIApplication.willResignActiveNotification, object: nil, queue: .main, using: block),
@@ -66,20 +68,31 @@ final class LastReadWatcher {
         }
     }
 
-    private func flushPendingAndStop() {
+    private func flushPendingAndStop(sync: Bool = false) {
         if let pendingUpdate {
-            store(key: pendingUpdate.key, libraryId: pendingUpdate.libraryId, date: pendingUpdate.date)
+            store(key: pendingUpdate.key, libraryId: pendingUpdate.libraryId, date: pendingUpdate.date, sync: sync)
+        } else if sync {
+            // Since sync is asked, but no pending update exists, add an empty sync work to force any already async stores to be executed.
+            dbQueue.sync { }
         }
         pendingUpdate = nil
         lastUpdate = nil
         timer = nil
     }
 
-    private func store(key: String, libraryId: LibraryIdentifier, date: Date?) {
-        do {
-            try dbStorage.perform(request: StoreLastReadDateDbRequest(key: key, libraryId: libraryId, date: date), on: .main)
-        } catch {
-            DDLogError("LastReadWatcher: can't store last read date - \(error)")
+    private func store(key: String, libraryId: LibraryIdentifier, date: Date?, sync: Bool = false) {
+        let work: () -> Void = { [weak self] in
+            guard let self else { return }
+            do {
+                try dbStorage.perform(request: StoreLastReadDateDbRequest(key: key, libraryId: libraryId, date: date), on: dbQueue)
+            } catch {
+                DDLogError("LastReadWatcher: can't store last read date - \(error)")
+            }
+        }
+        if sync {
+            dbQueue.sync(execute: work)
+        } else {
+            dbQueue.async(execute: work)
         }
     }
 }
