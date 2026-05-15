@@ -182,8 +182,9 @@ final class PDFDocumentViewController: UIViewController {
     /// - Parameters:
     ///   - text: The text currently being read aloud
     ///   - page: The page index where the text is located
-    func updateReadAloudHighlight(text: String, page: PageIndex) {
-        updateHighlightView(text: text, page: page, annotationTool: .highlight, annotationColor: "#aaaaff", view: &readAloudHighlightView, currentPage: &currentReadAloudHighlightPage)
+    ///   - hint: Optional source-text position used to disambiguate when `text` appears multiple times on `page`.
+    func updateReadAloudHighlight(text: String, page: PageIndex, near hint: (sourceLocation: Int, sourceTextLength: Int)? = nil) {
+        updateHighlightView(text: text, page: page, annotationTool: .highlight, annotationColor: "#aaaaff", view: &readAloudHighlightView, currentPage: &currentReadAloudHighlightPage, hint: hint)
     }
 
     /// Clears the read-aloud highlight
@@ -192,8 +193,8 @@ final class PDFDocumentViewController: UIViewController {
     }
 
     /// Updates the annotation preview highlight to show what will be annotated.
-    func updateAnnotationPreview(text: String, page: PageIndex, annotationTool: AnnotationTool, annotationColor: String) {
-        updateHighlightView(text: text, page: page, annotationTool: annotationTool, annotationColor: annotationColor, view: &annotationPreviewView, currentPage: &currentAnnotationPreviewPage)
+    func updateAnnotationPreview(text: String, page: PageIndex, annotationTool: AnnotationTool, annotationColor: String, near hint: (sourceLocation: Int, sourceTextLength: Int)? = nil) {
+        updateHighlightView(text: text, page: page, annotationTool: annotationTool, annotationColor: annotationColor, view: &annotationPreviewView, currentPage: &currentAnnotationPreviewPage, hint: hint)
     }
 
     /// Clears the annotation preview highlight
@@ -201,7 +202,7 @@ final class PDFDocumentViewController: UIViewController {
         clearHighlightView(&annotationPreviewView, currentPage: &currentAnnotationPreviewPage)
     }
 
-    private func updateHighlightView(text: String, page: PageIndex, annotationTool: AnnotationTool, annotationColor: String, view: inout SpeechHighlightView?, currentPage: inout PageIndex?) {
+    private func updateHighlightView(text: String, page: PageIndex, annotationTool: AnnotationTool, annotationColor: String, view: inout SpeechHighlightView?, currentPage: inout PageIndex?, hint: (sourceLocation: Int, sourceTextLength: Int)?) {
         guard let pdfController else { return }
 
         guard let pageView = pdfController.pageViewForPage(at: page) else {
@@ -214,7 +215,7 @@ final class PDFDocumentViewController: UIViewController {
             currentPage = page
         }
 
-        guard let pdfFrames = speechHighlightPDFFrames(for: text, page: page), !pdfFrames.isEmpty else {
+        guard let pdfFrames = speechHighlightPDFFrames(for: text, page: page, near: hint), !pdfFrames.isEmpty else {
             view?.clearHighlight()
             return
         }
@@ -1223,8 +1224,12 @@ extension PDFDocumentViewController: AnnotationBoundingBoxConverter {
     /// bracket glyph variants (common in math formulas), so both strings are NFKD-decomposed and stripped via
     /// `shouldIgnoreForGlyphMatch` (combining marks, modifier letters/symbols, formatting chars, dash variants,
     /// open/close punctuation) before substring matching.
+    /// When `searchText` appears multiple times on the page (e.g. duplicated math formulas), `near` disambiguates
+    /// which occurrence to highlight: the match whose proportional position in the glyph text most closely matches
+    /// `sourceLocation / sourceTextLength` is selected. Pass UTF-16 offsets (matches `NSRange.location` from
+    /// `TextTokenizer`). When `near` is nil or `sourceTextLength` is 0, the first match is returned.
     /// Returns rects in PDF coordinate space.
-    func findGlyphRects(for searchText: String, page: PageIndex) -> [CGRect] {
+    func findGlyphRects(for searchText: String, page: PageIndex, near hint: (sourceLocation: Int, sourceTextLength: Int)? = nil) -> [CGRect] {
         guard let parser = viewModel.state.document.textParserForPage(at: page), !parser.glyphs.isEmpty else { return [] }
         guard !searchText.isEmpty else { return [] }
 
@@ -1260,7 +1265,16 @@ extension PDFDocumentViewController: AnnotationBoundingBoxConverter {
             searchFiltered.unicodeScalars.append(scalar)
         }
         guard !searchFiltered.isEmpty else { return [] }
-        guard let range = glyphTextFiltered.range(of: searchFiltered) else { return [] }
+
+        // Collect all non-overlapping matches.
+        var matchedRanges: [Range<String.Index>] = []
+        var cursor = glyphTextFiltered.startIndex
+        while cursor < glyphTextFiltered.endIndex,
+              let found = glyphTextFiltered.range(of: searchFiltered, range: cursor..<glyphTextFiltered.endIndex) {
+            matchedRanges.append(found)
+            cursor = found.upperBound
+        }
+        guard let range = pickMatch(in: matchedRanges, glyphText: glyphTextFiltered, hint: hint) else { return [] }
 
         let scalars = glyphTextFiltered.unicodeScalars
         let startScalarIdx = scalars.distance(from: scalars.startIndex, to: range.lowerBound)
@@ -1290,12 +1304,31 @@ extension PDFDocumentViewController: AnnotationBoundingBoxConverter {
                 return false
             }
         }
+
+        // Picks the match whose proportional position in the glyph text best matches the caller's proportional
+        // position in the source text. Source and glyph texts can differ in length (PSPDFKit may emit PUA glyphs,
+        // ligatures, etc.), so we compare ratios rather than absolute offsets.
+        func pickMatch(in matches: [Range<String.Index>], glyphText: String, hint: (sourceLocation: Int, sourceTextLength: Int)?) -> Range<String.Index>? {
+            guard !matches.isEmpty else { return nil }
+            guard matches.count > 1, let hint, hint.sourceTextLength > 0 else { return matches.first }
+            let scalars = glyphText.unicodeScalars
+            let totalGlyph = scalars.count
+            let ratio = Double(hint.sourceLocation) / Double(hint.sourceTextLength)
+            let targetGlyphLocation = Int(Double(totalGlyph) * ratio)
+            return matches.min { lhs, rhs in
+                let lhsLoc = scalars.distance(from: scalars.startIndex, to: lhs.lowerBound)
+                let rhsLoc = scalars.distance(from: scalars.startIndex, to: rhs.lowerBound)
+                return abs(lhsLoc - targetGlyphLocation) < abs(rhsLoc - targetGlyphLocation)
+            }
+        }
     }
 
     /// Returns PDF-space frames for speech highlighting on the given page.
-    /// Searches for the text in PSPDFKit's glyphs to find the correct positions.
-    func speechHighlightPDFFrames(for text: String, page: PageIndex) -> [CGRect]? {
-        let pdfRects = findGlyphRects(for: text, page: page)
+    /// Searches for the text in PSPDFKit's glyphs to find the correct positions. When the same text appears
+    /// multiple times on the page (e.g. duplicated math formulas), `near` picks the occurrence closest in
+    /// proportional position to `sourceLocation / sourceTextLength` (UTF-16 offsets in the source text).
+    func speechHighlightPDFFrames(for text: String, page: PageIndex, near hint: (sourceLocation: Int, sourceTextLength: Int)? = nil) -> [CGRect]? {
+        let pdfRects = findGlyphRects(for: text, page: page, near: hint)
         guard !pdfRects.isEmpty else { return nil }
 
         // Merge adjacent rects on the same line into larger rects for cleaner highlighting

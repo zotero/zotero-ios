@@ -30,12 +30,18 @@ protocol SpeechManagerDelegate: AnyObject {
     /// - Parameters:
     ///   - text: The paragraph text to highlight
     ///   - pageIndex: The page index where the text is located
+    ///   - sourceLocation: UTF-16 offset of `text` in the source page text. Disambiguates when `text` appears
+    ///     multiple times on `pageIndex` (e.g. duplicated math formulas).
+    ///   - sourceTextLength: UTF-16 length of the source page text, used together with `sourceLocation` as a
+    ///     proportional hint.
     /// Called when the read-aloud highlight changes during text-to-speech playback.
-    func readAloudHighlightChanged(text: String, pageIndex: Index)
-    /// Called when the annotation preview highlight changes during a highlight session.
-    func annotationPreviewChanged(text: String, pageIndex: Index, tool: AnnotationTool, color: String)
-    /// Called when the user confirms an annotation from the highlighter overlay.
-    func createAnnotation(ofType tool: AnnotationTool, color: String, forText text: String, onPage pageIndex: Index)
+    func readAloudHighlightChanged(text: String, pageIndex: Index, sourceLocation: Int, sourceTextLength: Int)
+    /// Called when the annotation preview highlight changes during a highlight session. `sourceLocation` and
+    /// `sourceTextLength` carry the same disambiguation hint as `readAloudHighlightChanged`.
+    func annotationPreviewChanged(text: String, pageIndex: Index, tool: AnnotationTool, color: String, sourceLocation: Int, sourceTextLength: Int)
+    /// Called when the user confirms an annotation from the highlighter overlay. `sourceLocation` and
+    /// `sourceTextLength` carry the same disambiguation hint as `readAloudHighlightChanged`.
+    func createAnnotation(ofType tool: AnnotationTool, color: String, forText text: String, onPage pageIndex: Index, sourceLocation: Int, sourceTextLength: Int)
     /// Called when the highlight session ends, to remove the annotation preview highlight.
     func clearAnnotationPreview()
 }
@@ -157,12 +163,13 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     }
     var currentPageIndex: Delegate.Index? { delegate?.getCurrentPageIndex() }
 
-    /// Returns the current read-aloud highlight paragraph text and page index, if speech is active.
-    var currentReadAloudHighlight: (text: String, pageIndex: Delegate.Index)? {
+    /// Returns the current read-aloud highlight paragraph text, page index, and source-text position info
+    /// (used to disambiguate duplicate occurrences when highlighting), if speech is active.
+    var currentReadAloudHighlight: (text: String, pageIndex: Delegate.Index, sourceLocation: Int, sourceTextLength: Int)? {
         guard let speechData, let pageText = cachedPages[speechData.index] else { return nil }
         let range = speechData.paragraphRange
         guard range.length > 0, let textRange = Range(range, in: pageText) else { return nil }
-        return (String(pageText[textRange]), speechData.index)
+        return (String(pageText[textRange]), speechData.index, range.location, (pageText as NSString).length)
     }
 
     init(delegate: Delegate, voiceLanguage: String?, remoteVoiceTier: RemoteVoice.Tier?, remoteVoicesController: RemoteVoicesController) {
@@ -387,7 +394,16 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     }
 
     private func notifyAnnotationPreviewChanged(_ result: (text: String, pageIndex: Delegate.Index)) {
-        delegate?.annotationPreviewChanged(text: result.text, pageIndex: result.pageIndex, tool: highlightSessionManager.annotationTool, color: highlightSessionManager.annotationColor)
+        let sourceLocation = highlightSessionManager.session?.range.location ?? 0
+        let sourceTextLength = highlightSessionManager.session.map { ($0.pageText as NSString).length } ?? 0
+        delegate?.annotationPreviewChanged(
+            text: result.text,
+            pageIndex: result.pageIndex,
+            tool: highlightSessionManager.annotationTool,
+            color: highlightSessionManager.annotationColor,
+            sourceLocation: sourceLocation,
+            sourceTextLength: sourceTextLength
+        )
     }
 
     func setHighlightAnnotationTool(_ tool: AnnotationTool) {
@@ -417,8 +433,18 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     }
 
     func endHighlightSession() {
+        // Capture range info before `endSession()` clears the session.
+        let sourceLocation = highlightSessionManager.session?.range.location ?? 0
+        let sourceTextLength = highlightSessionManager.session.map { ($0.pageText as NSString).length } ?? 0
         if let result = highlightSessionManager.endSession() {
-            delegate?.createAnnotation(ofType: highlightSessionManager.annotationTool, color: highlightSessionManager.annotationColor, forText: result.text, onPage: result.pageIndex)
+            delegate?.createAnnotation(
+                ofType: highlightSessionManager.annotationTool,
+                color: highlightSessionManager.annotationColor,
+                forText: result.text,
+                onPage: result.pageIndex,
+                sourceLocation: sourceLocation,
+                sourceTextLength: sourceTextLength
+            )
         }
         delegate?.clearAnnotationPreview()
     }
@@ -494,7 +520,6 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         let currentEndIndex = speechData.range.location + speechData.range.length
         if let index = TextTokenizer.findIndex(ofNext: unit, startingAt: currentEndIndex, in: currentPage) {
             DDLogInfo("SpeechManager: forward to \(index); \(speechData.range.location); \(speechData.range.length)")
-            DDLogError("TEST F: \(currentPage[Range(speechData.range, in: currentPage)!])")
             moveTo(index: index, on: currentPage, pageIndex: speechData.index)
             if !state.value.isPaused {
                 startSpeaking(at: index, page: currentPage, pageIndex: speechData.index, reportPageChange: false, shouldDetectVoice: false)
@@ -516,14 +541,12 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
 
         if let index = TextTokenizer.findIndex(ofPreviousWhole: unit, beforeIndex: speechData.range.location, in: currentPage) {
             DDLogInfo("SpeechManager: backward to \(index); \(speechData.range.location); \(speechData.range.length)")
-            DDLogError("TEST B: \(currentPage[Range(speechData.range, in: currentPage)!])")
             moveTo(index: index, on: currentPage, pageIndex: speechData.index)
             if !state.value.isPaused {
                 startSpeaking(at: index, page: currentPage, pageIndex: speechData.index, reportPageChange: false, shouldDetectVoice: false)
             }
             delegate?.focusPage(speechData.index)
         } else if speechData.range.location != 0 {
-            DDLogError("TEST B: \(currentPage[Range(speechData.range, in: currentPage)!])")
             moveTo(index: 0, on: currentPage, pageIndex: speechData.index)
             if !state.value.isPaused {
                 startSpeaking(page: currentPage, pageIndex: speechData.index, reportPageChange: false, shouldDetectVoice: false)
@@ -589,7 +612,12 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
 
         // Only notify delegate if the paragraph changed
         if let highlightText {
-            delegate?.readAloudHighlightChanged(text: highlightText, pageIndex: pageIndex)
+            delegate?.readAloudHighlightChanged(
+                text: highlightText,
+                pageIndex: pageIndex,
+                sourceLocation: newParagraphRange.location,
+                sourceTextLength: (page as NSString).length
+            )
         }
 
         if pageDidChange, let previousPageIndex {
@@ -647,7 +675,12 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
 
         // Notify delegate of the paragraph change
         if let paragraphText = paragraphResult?.text {
-            delegate?.readAloudHighlightChanged(text: paragraphText, pageIndex: speechData.index)
+            delegate?.readAloudHighlightChanged(
+                text: paragraphText,
+                pageIndex: speechData.index,
+                sourceLocation: newParagraphRange.location,
+                sourceTextLength: (pageText as NSString).length
+            )
         }
     }
 }
