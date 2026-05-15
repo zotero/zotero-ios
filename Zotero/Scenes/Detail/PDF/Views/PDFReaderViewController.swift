@@ -818,12 +818,22 @@ extension PDFReaderViewController: PDFReaderContainerDelegate {
         guard let speechManager = readAloudHandler?.speechManager else { return }
         // Restore read-aloud highlight if speech is active on this page
         if let highlight = speechManager.currentReadAloudHighlight, highlight.pageIndex == pageIndex {
-            documentController?.updateReadAloudHighlight(text: highlight.text, page: pageIndex)
+            documentController?.updateReadAloudHighlight(
+                text: highlight.text,
+                page: pageIndex,
+                near: (sourceLocation: highlight.sourceLocation, sourceTextLength: highlight.sourceTextLength)
+            )
         }
         // Restore annotation preview if highlight session is active on this page
         let sessionManager = speechManager.highlightSessionManager
         if let session = sessionManager.session, session.pageIndex == pageIndex, let text = sessionManager.currentText() {
-            documentController?.updateAnnotationPreview(text: text, page: pageIndex, annotationTool: sessionManager.annotationTool, annotationColor: sessionManager.annotationColor)
+            documentController?.updateAnnotationPreview(
+                text: text,
+                page: pageIndex,
+                annotationTool: sessionManager.annotationTool,
+                annotationColor: sessionManager.annotationColor,
+                near: (sourceLocation: session.range.location, sourceTextLength: (session.pageText as NSString).length)
+            )
         }
     }
 }
@@ -1187,20 +1197,20 @@ extension PDFReaderViewController: SpeechManagerDelegate {
         documentController?.focus(page: pageIndex)
     }
 
-    func readAloudHighlightChanged(text: String, pageIndex: UInt) {
-        documentController?.updateReadAloudHighlight(text: text, page: PageIndex(pageIndex))
+    func readAloudHighlightChanged(text: String, pageIndex: UInt, sourceLocation: Int, sourceTextLength: Int) {
+        documentController?.updateReadAloudHighlight(text: text, page: PageIndex(pageIndex), near: (sourceLocation: sourceLocation, sourceTextLength: sourceTextLength))
     }
 
-    func annotationPreviewChanged(text: String, pageIndex: UInt, tool: AnnotationTool, color: String) {
+    func annotationPreviewChanged(text: String, pageIndex: UInt, tool: AnnotationTool, color: String, sourceLocation: Int, sourceTextLength: Int) {
         if documentController?.currentPage != pageIndex {
             documentController?.focus(page: pageIndex)
         }
-        documentController?.updateAnnotationPreview(text: text, page: PageIndex(pageIndex), annotationTool: tool, annotationColor: color)
+        documentController?.updateAnnotationPreview(text: text, page: PageIndex(pageIndex), annotationTool: tool, annotationColor: color, near: (sourceLocation: sourceLocation, sourceTextLength: sourceTextLength))
     }
 
-    func createAnnotation(ofType tool: AnnotationTool, color: String, forText text: String, onPage pageIndex: UInt) {
+    func createAnnotation(ofType tool: AnnotationTool, color: String, forText text: String, onPage pageIndex: UInt, sourceLocation: Int, sourceTextLength: Int) {
         let page = PageIndex(pageIndex)
-        guard let rects = documentController?.speechHighlightPDFFrames(for: text, page: page), !rects.isEmpty else { return }
+        guard let rects = documentController?.speechHighlightPDFFrames(for: text, page: page, near: (sourceLocation: sourceLocation, sourceTextLength: sourceTextLength)), !rects.isEmpty else { return }
         switch tool {
         case .highlight:
             viewModel.process(action: .createHighlight(pageIndex: page, rects: rects, color: color))
@@ -1306,8 +1316,14 @@ extension PDFReaderViewController: ReadAloudViewDelegate {
     }
 
     func updateSpeechHighlightStyle(tool: AnnotationTool, color: String) {
-        guard let text = readAloudHandler?.speechManager.highlightSessionManager.currentText(),
-              let pageIndex = readAloudHandler?.speechManager.highlightSessionManager.session?.pageIndex else { return }
-        documentController?.updateAnnotationPreview(text: text, page: PageIndex(pageIndex), annotationTool: tool, annotationColor: color)
+        guard let session = readAloudHandler?.speechManager.highlightSessionManager.session,
+              let text = readAloudHandler?.speechManager.highlightSessionManager.currentText() else { return }
+        documentController?.updateAnnotationPreview(
+            text: text,
+            page: PageIndex(session.pageIndex),
+            annotationTool: tool,
+            annotationColor: color,
+            near: (sourceLocation: session.range.location, sourceTextLength: (session.pageText as NSString).length)
+        )
     }
 }
