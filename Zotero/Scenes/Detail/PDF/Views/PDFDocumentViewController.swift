@@ -1172,8 +1172,11 @@ extension PDFDocumentViewController: AnnotationBoundingBoxConverter {
     }
 
     /// Scalars stripped before substring matching against PSPDFKit glyphs. PDFWorker and PSPDFKit can disagree on
-    /// dash variants, soft hyphens, modifier letters above letters (e.g. `M˙`), so these are filtered out. Combining marks,
-    /// modifier letters/symbols and formatting chars are caught by `shouldIgnoreForGlyphMatch` via Unicode category.
+    /// dash variants, soft hyphens, modifier letters above letters (e.g. `M˙`) and math bracket pieces, so these are
+    /// filtered out. Combining marks, modifier letters/symbols, formatting chars, bracket variants (open/close
+    /// punctuation, e.g. `()`, `[]`, `{}` and their fullwidth/mathematical equivalents), and non-character glyph
+    /// noise (private-use, control, unassigned and surrogate scalars often emitted by PDF math fonts) are caught by
+    /// `shouldIgnoreForGlyphMatch` via Unicode category.
     private static let glyphMatchIgnoredScalars: Set<Unicode.Scalar> = [
         "-",          // U+002D hyphen-minus
         "\u{00AD}",   // soft hyphen
@@ -1181,13 +1184,35 @@ extension PDFDocumentViewController: AnnotationBoundingBoxConverter {
         "\u{2011}",   // non-breaking hyphen
         "\u{2013}",   // en dash
         "\u{2014}",   // em dash
-        "\u{2212}"    // minus sign
+        "\u{2212}",   // minus sign
+        // Multi-line math bracket pieces (category Sm, not caught by Ps/Pe). Tall parens/brackets/braces in
+        // display equations are rendered as stacks of these pieces.
+        "\u{239B}",   // ⎛ left parenthesis upper hook
+        "\u{239C}",   // ⎜ left parenthesis extension
+        "\u{239D}",   // ⎝ left parenthesis lower hook
+        "\u{239E}",   // ⎞ right parenthesis upper hook
+        "\u{239F}",   // ⎟ right parenthesis extension
+        "\u{23A0}",   // ⎠ right parenthesis lower hook
+        "\u{23A1}",   // ⎡ left square bracket upper corner
+        "\u{23A2}",   // ⎢ left square bracket extension
+        "\u{23A3}",   // ⎣ left square bracket lower corner
+        "\u{23A4}",   // ⎤ right square bracket upper corner
+        "\u{23A5}",   // ⎥ right square bracket extension
+        "\u{23A6}",   // ⎦ right square bracket lower corner
+        "\u{23A7}",   // ⎧ left curly bracket upper hook
+        "\u{23A8}",   // ⎨ left curly bracket middle piece
+        "\u{23A9}",   // ⎩ left curly bracket lower hook
+        "\u{23AA}",   // ⎪ curly bracket extension
+        "\u{23AB}",   // ⎫ right curly bracket upper hook
+        "\u{23AC}",   // ⎬ right curly bracket middle piece
+        "\u{23AD}"    // ⎭ right curly bracket lower hook
     ]
 
     /// Searches for the given text in PSPDFKit's glyphs and returns their bounding boxes.
-    /// PDFWorker and PSPDFKit can disagree on whitespace, dash variants, diacritics, modifier letters and ligatures, so both
-    /// strings are NFKD-decomposed and stripped via `shouldIgnoreForGlyphMatch` (combining marks, modifier letters/symbols,
-    /// formatting chars, dash variants) before substring matching.
+    /// PDFWorker and PSPDFKit can disagree on whitespace, dash variants, diacritics, modifier letters, ligatures and
+    /// bracket glyph variants (common in math formulas), so both strings are NFKD-decomposed and stripped via
+    /// `shouldIgnoreForGlyphMatch` (combining marks, modifier letters/symbols, formatting chars, dash variants,
+    /// open/close punctuation) before substring matching.
     /// Returns rects in PDF coordinate space.
     func findGlyphRects(for searchText: String, page: PageIndex) -> [CGRect] {
         guard let parser = viewModel.state.document.textParserForPage(at: page), !parser.glyphs.isEmpty else { return [] }
@@ -1247,7 +1272,8 @@ extension PDFDocumentViewController: AnnotationBoundingBoxConverter {
             if Self.glyphMatchIgnoredScalars.contains(scalar) { return true }
             if scalar.properties.isWhitespace { return true }
             switch scalar.properties.generalCategory {
-            case .nonspacingMark, .spacingMark, .enclosingMark, .modifierLetter, .modifierSymbol, .format:
+            case .nonspacingMark, .spacingMark, .enclosingMark, .modifierLetter, .modifierSymbol, .format,
+                 .openPunctuation, .closePunctuation, .privateUse, .control, .unassigned, .surrogate:
                 return true
 
             default:
