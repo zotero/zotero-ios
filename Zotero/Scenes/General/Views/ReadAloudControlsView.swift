@@ -98,6 +98,9 @@ final class ReadAloudControlsView<Delegate: SpeechManagerDelegate>: UIView, Anno
         let height = outerStack.heightAnchor.constraint(equalToConstant: 38)
         NSLayoutConstraint.activate([
             height,
+            controls.playButton.widthAnchor.constraint(equalToConstant: 64),
+            controls.pauseButton.widthAnchor.constraint(equalToConstant: 64),
+            controls.activityIndicator.widthAnchor.constraint(equalToConstant: 64),
             outerStack.topAnchor.constraint(equalTo: topAnchor),
             outerStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
             trailingAnchor.constraint(equalTo: outerStack.trailingAnchor, constant: 8),
@@ -123,6 +126,9 @@ final class ReadAloudControlsView<Delegate: SpeechManagerDelegate>: UIView, Anno
         let height = outerStack.heightAnchor.constraint(equalToConstant: 44)
         NSLayoutConstraint.activate([
             height,
+            controls.playButton.widthAnchor.constraint(equalToConstant: 64),
+            controls.pauseButton.widthAnchor.constraint(equalToConstant: 64),
+            controls.activityIndicator.widthAnchor.constraint(equalToConstant: 64),
             outerStack.topAnchor.constraint(equalTo: topAnchor),
             outerStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
             trailingAnchor.constraint(equalTo: outerStack.trailingAnchor, constant: 16),
