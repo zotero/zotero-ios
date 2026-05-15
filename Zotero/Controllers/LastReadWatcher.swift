@@ -71,6 +71,9 @@ final class LastReadWatcher {
     private func flushPendingAndStop(sync: Bool = false) {
         if let pendingUpdate {
             store(key: pendingUpdate.key, libraryId: pendingUpdate.libraryId, date: pendingUpdate.date, sync: sync)
+        } else if sync {
+            // Since sync is asked, but no pending update exists, add an empty sync work to force any already async stores to be executed.
+            dbQueue.sync { }
         }
         pendingUpdate = nil
         lastUpdate = nil
