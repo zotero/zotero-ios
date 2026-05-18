@@ -618,6 +618,16 @@ extension HtmlEpubReaderViewController: AnnotationToolbarDelegate {
         return view.frame.width
     }
 
+    func isCompactSize(for rotation: AnnotationToolbarViewController.Rotation) -> Bool {
+        switch rotation {
+        case .horizontal:
+            return isCompactWidth
+
+        case .vertical:
+            return view.frame.height <= 650
+        }
+    }
+
     func toggle(tool: AnnotationTool, options: AnnotationToolOptions) {
         viewModel.process(action: .toggleTool(tool))
     }
