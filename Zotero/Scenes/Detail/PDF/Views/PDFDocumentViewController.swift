@@ -41,8 +41,12 @@ final class PDFDocumentViewController: UIViewController {
     private let initialUIHidden: Bool
 
     private static var toolHistory: [PSPDFKit.Annotation.Tool?] = []
-    
+
     private var selectionView: SelectionView?
+    private var readAloudHighlightView: SpeechHighlightView?
+    private var currentReadAloudHighlightPage: PageIndex?
+    private var annotationPreviewView: SpeechHighlightView?
+    private var currentAnnotationPreviewPage: PageIndex?
     // Used to decide whether text annotation should start editing on tap
     private var selectedAnnotationWasSelectedBefore: Bool
     private var searchResults: [SearchResult] = []
@@ -172,6 +176,70 @@ final class PDFDocumentViewController: UIViewController {
                 searchHighlightViewManager?.animateSearchHighlight(result)
             }
         }
+    }
+
+    /// Updates the speech highlight to show the currently spoken text
+    /// - Parameters:
+    ///   - text: The text currently being read aloud
+    ///   - page: The page index where the text is located
+    ///   - hint: Optional source-text position used to disambiguate when `text` appears multiple times on `page`.
+    func updateReadAloudHighlight(text: String, page: PageIndex, near hint: (sourceLocation: Int, sourceTextLength: Int)? = nil) {
+        updateHighlightView(text: text, page: page, annotationTool: .highlight, annotationColor: "#aaaaff", view: &readAloudHighlightView, currentPage: &currentReadAloudHighlightPage, hint: hint)
+    }
+
+    /// Clears the read-aloud highlight
+    func clearReadAloudHighlight() {
+        clearHighlightView(&readAloudHighlightView, currentPage: &currentReadAloudHighlightPage)
+    }
+
+    /// Updates the annotation preview highlight to show what will be annotated.
+    func updateAnnotationPreview(text: String, page: PageIndex, annotationTool: AnnotationTool, annotationColor: String, near hint: (sourceLocation: Int, sourceTextLength: Int)? = nil) {
+        updateHighlightView(text: text, page: page, annotationTool: annotationTool, annotationColor: annotationColor, view: &annotationPreviewView, currentPage: &currentAnnotationPreviewPage, hint: hint)
+    }
+
+    /// Clears the annotation preview highlight
+    func clearAnnotationPreview() {
+        clearHighlightView(&annotationPreviewView, currentPage: &currentAnnotationPreviewPage)
+    }
+
+    private func updateHighlightView(text: String, page: PageIndex, annotationTool: AnnotationTool, annotationColor: String, view: inout SpeechHighlightView?, currentPage: inout PageIndex?, hint: (sourceLocation: Int, sourceTextLength: Int)?) {
+        guard let pdfController else { return }
+
+        guard let pageView = pdfController.pageViewForPage(at: page) else {
+            view?.clearHighlight()
+            return
+        }
+
+        if currentPage != page {
+            clearHighlightView(&view, currentPage: &currentPage)
+            currentPage = page
+        }
+
+        guard let pdfFrames = speechHighlightPDFFrames(for: text, page: page, near: hint), !pdfFrames.isEmpty else {
+            view?.clearHighlight()
+            return
+        }
+
+        let container = pageView.annotationContainerView
+        if view == nil {
+            let highlightView = SpeechHighlightView(frame: container.bounds)
+            highlightView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            container.addSubview(highlightView)
+            view = highlightView
+        } else if view?.superview !== container {
+            view?.removeFromSuperview()
+            view?.frame = container.bounds
+            container.addSubview(view!)
+        }
+
+        view?.updateHighlight(pdfFrames: pdfFrames, pageView: pageView, annotationTool: annotationTool, annotationColor: annotationColor)
+    }
+
+    private func clearHighlightView(_ view: inout SpeechHighlightView?, currentPage: inout PageIndex?) {
+        view?.clearHighlight()
+        view?.removeFromSuperview()
+        view = nil
+        currentPage = nil
     }
 
     func disableAnnotationTools() {
@@ -741,6 +809,7 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
                 pageView?.zoomView?.setZoomScale(zoomScale, animated: false)
             }
         }
+        parentDelegate?.pageDidAppear(PageIndex(pageIndex))
     }
 
     func pdfViewController(_ pdfController: PDFViewController, shouldShow controller: UIViewController, options: [String: Any]? = nil, animated: Bool) -> Bool {
@@ -796,61 +865,15 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
     }
 
     func pdfViewController(_ sender: PDFViewController, menuForText glyphs: GlyphSequence, onPageView pageView: PDFPageView, appearance: EditMenuAppearance, suggestedMenu: UIMenu) -> UIMenu {
-        return filterActions(
-            forMenu: suggestedMenu,
-            predicate: { menuId, action -> UIMenuElement? in
-                switch menuId {
-                case .standardEdit:
-                    switch action.identifier {
-                    case .PSPDFKit.copy:
-                        return action.replacing(title: L10n.copy, handler: { _ in
-                            UIPasteboard.general.string = TextConverter.convertTextForCopying(from: glyphs.text)
-                        })
-
-                    default:
-                        return action
-                    }
-
-                case .share:
-                    guard action.identifier == .PSPDFKit.share else { return nil }
-                    return action.replacing(handler: { [weak self] _ in
-                        guard let self else { return }
-                        coordinatorDelegate?.share(
-                            text: glyphs.text,
-                            rect: pageView.convert(glyphs.boundingBox, from: pageView.pdfCoordinateSpace),
-                            view: pageView,
-                            userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle
-                        )
-                    })
-
-                case .pspdfkitActions:
-                    switch action.identifier {
-                    case .PSPDFKit.searchDocument:
-                        return action.replacing(handler: { [weak self] _ in
-                            self?.parentDelegate?.showSearch(text: glyphs.text)
-                        })
-
-                    default:
-                        return action
-                    }
-
-                case .PSPDFKit.annotate:
-                    switch action.identifier {
-                    case .pspdfkitAnnotationToolHighlight:
-                        return action.replacing(title: L10n.Pdf.highlight, handler: createHighlightActionHandler(for: pageView, in: viewModel))
-
-                    case .pspdfkitAnnotationToolUnderline:
-                        return action.replacing(title: L10n.Pdf.underline, handler: createUnderlineActionHandler(for: pageView, in: viewModel))
-
-                    default:
-                        return action
-                    }
-
-                default:
-                    return action
-                }
+        return filter(
+            menu: suggestedMenu,
+            actionPredicate: { menuId, action -> UIMenuElement? in
+                return replace(action: action, forMenuId: menuId)
             },
-            populatingEmptyMenu: { menu -> [UIAction]? in
+            replacingCommandSubMenu: { menu in
+                return replace(commandMenu: menu)
+            },
+            populatingEmptySubMenu: { menu -> [UIAction]? in
                 switch menu.identifier {
                 case .PSPDFKit.annotate:
                     return [
@@ -864,21 +887,89 @@ extension PDFDocumentViewController: PDFViewControllerDelegate {
             }
         )
 
-        func filterActions(forMenu menu: UIMenu, predicate: (UIMenu.Identifier, UIAction) -> UIMenuElement?, populatingEmptyMenu: (UIMenu) -> [UIAction]?) -> UIMenu {
+        func replace(action: UIAction, forMenuId menuId: UIMenu.Identifier) -> UIMenuElement? {
+            switch menuId {
+            case .standardEdit:
+                switch action.identifier {
+                case .PSPDFKit.copy:
+                    return action.replacing(title: L10n.copy, handler: { _ in
+                        UIPasteboard.general.string = TextConverter.convertTextForCopying(from: glyphs.text)
+                    })
+
+                default:
+                    return action
+                }
+
+            case .share:
+                guard action.identifier == .PSPDFKit.share else { return nil }
+                return action.replacing(handler: { [weak self] _ in
+                    guard let self else { return }
+                    coordinatorDelegate?.share(
+                        text: glyphs.text,
+                        rect: pageView.convert(glyphs.boundingBox, from: pageView.pdfCoordinateSpace),
+                        view: pageView,
+                        userInterfaceStyle: viewModel.state.settings.appearanceMode.userInterfaceStyle
+                    )
+                })
+
+            case .pspdfkitActions:
+                switch action.identifier {
+                case .PSPDFKit.searchDocument:
+                    return action.replacing(handler: { [weak self] _ in
+                        self?.parentDelegate?.showSearch(text: glyphs.text)
+                    })
+
+                default:
+                    return action
+                }
+
+            case .PSPDFKit.annotate:
+                switch action.identifier {
+                case .pspdfkitAnnotationToolHighlight:
+                    return action.replacing(title: L10n.Pdf.highlight, handler: createHighlightActionHandler(for: pageView, in: viewModel))
+
+                case .pspdfkitAnnotationToolUnderline:
+                    return action.replacing(title: L10n.Pdf.underline, handler: createUnderlineActionHandler(for: pageView, in: viewModel))
+
+                default:
+                    return action
+                }
+
+            default:
+                return action
+            }
+        }
+
+        func replace(commandMenu menu: UIMenu) -> UIMenuElement? {
+            switch menu.identifier {
+            case .speech:
+                return UIAction(title: L10n.Speech.speak, image: menu.image) { [weak self] _ in
+                    self?.parentDelegate?.speak(glyphs: glyphs, pageIndex: pageView.pageIndex)
+                }
+
+            default:
+                return menu
+            }
+        }
+
+        func filter(
+            menu: UIMenu,
+            actionPredicate predicate: (UIMenu.Identifier, UIAction) -> UIMenuElement?,
+            replacingCommandSubMenu replaceCommandMenu: (UIMenu) -> UIMenuElement?,
+            populatingEmptySubMenu createElements: (UIMenu) -> [UIAction]?
+        ) -> UIMenu {
             return menu.replacingChildren(menu.children.compactMap { element -> UIMenuElement? in
-                if let action = element as? UIAction {
-                    if let element = predicate(menu.identifier, action) {
-                        return element
-                    } else {
-                        return nil
-                    }
-                } else if let menu = element as? UIMenu {
+                if let menu = element as? UIMenu {
                     if menu.children.isEmpty {
-                        return populatingEmptyMenu(menu).flatMap({ menu.replacingChildren($0) }) ?? menu
+                        return createElements(menu).flatMap({ menu.replacingChildren($0) }) ?? menu
+                    } else if menu.children.contains(where: { $0 is UICommand }) {
+                        return replaceCommandMenu(menu)
                     } else {
                         // Filter children of submenus recursively.
-                        return filterActions(forMenu: menu, predicate: predicate, populatingEmptyMenu: populatingEmptyMenu)
+                        return filter(menu: menu, actionPredicate: predicate, replacingCommandSubMenu: replaceCommandMenu, populatingEmptySubMenu: createElements)
                     }
+                } else if let action = element as? UIAction {
+                    return predicate(menu.identifier, action)
                 } else {
                     return element
                 }
@@ -1016,6 +1107,265 @@ extension PDFDocumentViewController: UIPopoverPresentationControllerDelegate {
     }
 }
 
+extension PDFDocumentViewController: AnnotationBoundingBoxConverter {
+    /// Converts from database to PSPDFKit rect. Database stores rects in RAW PDF Coordinate space. PSPDFKit works with Normalized PDF Coordinate Space.
+    func convertFromDb(rect: CGRect, page: PageIndex) -> CGRect? {
+        guard let pageInfo = viewModel.state.document.pageInfoForPage(at: page) else { return nil }
+        return rect.applying(pageInfo.transform)
+    }
+
+    func convertFromDb(point: CGPoint, page: PageIndex) -> CGPoint? {
+        let tmpRect = CGRect(origin: point, size: CGSize(width: 1, height: 1))
+        return convertFromDb(rect: tmpRect, page: page)?.origin
+    }
+
+    /// Converts from PSPDFKit to database rect. Database stores rects in RAW PDF Coordinate space. PSPDFKit works with Normalized PDF Coordinate Space.
+    func convertToDb(rect: CGRect, page: PageIndex) -> CGRect? {
+        guard let pageInfo = viewModel.state.document.pageInfoForPage(at: page) else { return nil }
+        return rect.applying(pageInfo.transform.inverted())
+    }
+
+    func convertToDb(point: CGPoint, page: PageIndex) -> CGPoint? {
+        let tmpRect = CGRect(origin: point, size: CGSize(width: 1, height: 1))
+        return convertToDb(rect: tmpRect, page: page)?.origin
+    }
+
+    /// Converts from PSPDFKit to sort index rect. PSPDFKit works with Normalized PDF Coordinate Space. Sort index stores y coordinate in RAW View Coordinate Space.
+    func sortIndexMinY(rect: CGRect, page: PageIndex) -> CGFloat? {
+        guard let pageInfo = viewModel.state.document.pageInfoForPage(at: page) else { return nil }
+
+        switch pageInfo.savedRotation {
+        case .rotation0:
+            return pageInfo.size.height - rect.maxY
+
+        case .rotation180:
+            return rect.minY
+
+        case .rotation90:
+            return pageInfo.size.width - rect.minX
+
+        case .rotation270:
+            return rect.minX
+        }
+    }
+
+    func textOffset(rect: CGRect, page: PageIndex) -> Int? {
+        guard let parser = viewModel.state.document.textParserForPage(at: page), !parser.glyphs.isEmpty else { return nil }
+
+        var index = 0
+        var minDistance: CGFloat = .greatestFiniteMagnitude
+        var textOffset = 0
+
+        for glyph in parser.glyphs {
+            guard !glyph.isWordOrLineBreaker else { continue }
+
+            let distance = rect.distance(to: glyph.frame)
+
+            if distance < minDistance {
+                minDistance = distance
+                textOffset = index
+            }
+
+            index += 1
+        }
+
+        return textOffset
+    }
+
+    /// Scalars stripped before substring matching against PSPDFKit glyphs. PDFWorker and PSPDFKit can disagree on
+    /// dash variants, soft hyphens, modifier letters above letters (e.g. `M˙`) and math bracket pieces, so these are
+    /// filtered out. Combining marks, modifier letters/symbols, formatting chars, bracket variants (open/close
+    /// punctuation, e.g. `()`, `[]`, `{}` and their fullwidth/mathematical equivalents), and non-character glyph
+    /// noise (private-use, control, unassigned and surrogate scalars often emitted by PDF math fonts) are caught by
+    /// `shouldIgnoreForGlyphMatch` via Unicode category.
+    private static let glyphMatchIgnoredScalars: Set<Unicode.Scalar> = [
+        "-",          // U+002D hyphen-minus
+        "\u{00AD}",   // soft hyphen
+        "\u{2010}",   // hyphen
+        "\u{2011}",   // non-breaking hyphen
+        "\u{2013}",   // en dash
+        "\u{2014}",   // em dash
+        "\u{2212}",   // minus sign
+        // Multi-line math bracket pieces (category Sm, not caught by Ps/Pe). Tall parens/brackets/braces in
+        // display equations are rendered as stacks of these pieces.
+        "\u{239B}",   // ⎛ left parenthesis upper hook
+        "\u{239C}",   // ⎜ left parenthesis extension
+        "\u{239D}",   // ⎝ left parenthesis lower hook
+        "\u{239E}",   // ⎞ right parenthesis upper hook
+        "\u{239F}",   // ⎟ right parenthesis extension
+        "\u{23A0}",   // ⎠ right parenthesis lower hook
+        "\u{23A1}",   // ⎡ left square bracket upper corner
+        "\u{23A2}",   // ⎢ left square bracket extension
+        "\u{23A3}",   // ⎣ left square bracket lower corner
+        "\u{23A4}",   // ⎤ right square bracket upper corner
+        "\u{23A5}",   // ⎥ right square bracket extension
+        "\u{23A6}",   // ⎦ right square bracket lower corner
+        "\u{23A7}",   // ⎧ left curly bracket upper hook
+        "\u{23A8}",   // ⎨ left curly bracket middle piece
+        "\u{23A9}",   // ⎩ left curly bracket lower hook
+        "\u{23AA}",   // ⎪ curly bracket extension
+        "\u{23AB}",   // ⎫ right curly bracket upper hook
+        "\u{23AC}",   // ⎬ right curly bracket middle piece
+        "\u{23AD}"    // ⎭ right curly bracket lower hook
+    ]
+
+    /// Searches for the given text in PSPDFKit's glyphs and returns their bounding boxes.
+    /// PDFWorker and PSPDFKit can disagree on whitespace, dash variants, diacritics, modifier letters, ligatures and
+    /// bracket glyph variants (common in math formulas), so both strings are NFKD-decomposed and stripped via
+    /// `shouldIgnoreForGlyphMatch` (combining marks, modifier letters/symbols, formatting chars, dash variants,
+    /// open/close punctuation) before substring matching.
+    /// When `searchText` appears multiple times on the page (e.g. duplicated math formulas), `near` disambiguates
+    /// which occurrence to highlight: the match whose proportional position in the glyph text most closely matches
+    /// `sourceLocation / sourceTextLength` is selected. Pass UTF-16 offsets (matches `NSRange.location` from
+    /// `TextTokenizer`). When `near` is nil or `sourceTextLength` is 0, the first match is returned.
+    /// Returns rects in PDF coordinate space.
+    func findGlyphRects(for searchText: String, page: PageIndex, near hint: (sourceLocation: Int, sourceTextLength: Int)? = nil) -> [CGRect] {
+        guard let parser = viewModel.state.document.textParserForPage(at: page), !parser.glyphs.isEmpty else { return [] }
+        guard !searchText.isEmpty else { return [] }
+
+        // - glyphIndices: maps each source-character position to its glyph index
+        // - glyphTextFiltered: NFKD-decomposed text with ignored scalars stripped (used for searching)
+        // - filteredScalarToCharIndex: maps each scalar in glyphTextFiltered back to its source-character position
+        var characterCount = 0
+        var glyphIndices: [Int] = []
+        var glyphTextFiltered = ""
+        var filteredScalarToCharIndex: [Int] = []
+
+        for (index, glyph) in parser.glyphs.enumerated() {
+            let content = glyph.content
+            if !content.isEmpty {
+                for char in content where char != "\r" && char != "\n" {
+                    let currentIndex = characterCount
+                    characterCount += 1
+                    glyphIndices.append(index)
+
+                    for scalar in String(char).decomposedStringWithCompatibilityMapping.unicodeScalars where !shouldIgnoreForGlyphMatch(scalar) {
+                        glyphTextFiltered.unicodeScalars.append(scalar)
+                        filteredScalarToCharIndex.append(currentIndex)
+                    }
+                }
+            } else if glyph.isWordOrLineBreaker {
+                characterCount += 1
+                glyphIndices.append(index)
+            }
+        }
+
+        var searchFiltered = ""
+        for scalar in searchText.decomposedStringWithCompatibilityMapping.unicodeScalars where !shouldIgnoreForGlyphMatch(scalar) {
+            searchFiltered.unicodeScalars.append(scalar)
+        }
+        guard !searchFiltered.isEmpty else { return [] }
+
+        // Collect all non-overlapping matches.
+        var matchedRanges: [Range<String.Index>] = []
+        var cursor = glyphTextFiltered.startIndex
+        while cursor < glyphTextFiltered.endIndex,
+              let found = glyphTextFiltered.range(of: searchFiltered, range: cursor..<glyphTextFiltered.endIndex) {
+            matchedRanges.append(found)
+            cursor = found.upperBound
+        }
+        guard let range = pickMatch(in: matchedRanges, glyphText: glyphTextFiltered, hint: hint) else { return [] }
+
+        let scalars = glyphTextFiltered.unicodeScalars
+        let startScalarIdx = scalars.distance(from: scalars.startIndex, to: range.lowerBound)
+        let endScalarIdx = scalars.distance(from: scalars.startIndex, to: range.upperBound)
+        let startIdx = filteredScalarToCharIndex[startScalarIdx]
+        let endIdx = endScalarIdx < filteredScalarToCharIndex.count ? filteredScalarToCharIndex[endScalarIdx - 1] + 1 : characterCount
+
+        var uniqueGlyphIndices = Set<Int>()
+        for i in startIdx..<min(endIdx, glyphIndices.count) {
+            uniqueGlyphIndices.insert(glyphIndices[i])
+        }
+
+        return uniqueGlyphIndices.sorted().compactMap { glyphIndex in
+            let glyph = parser.glyphs[glyphIndex]
+            return glyph.isWordOrLineBreaker ? nil : glyph.frame
+        }
+
+        func shouldIgnoreForGlyphMatch(_ scalar: Unicode.Scalar) -> Bool {
+            if Self.glyphMatchIgnoredScalars.contains(scalar) { return true }
+            if scalar.properties.isWhitespace { return true }
+            switch scalar.properties.generalCategory {
+            case .nonspacingMark, .spacingMark, .enclosingMark, .modifierLetter, .modifierSymbol, .format,
+                 .openPunctuation, .closePunctuation, .privateUse, .control, .unassigned, .surrogate:
+                return true
+
+            default:
+                return false
+            }
+        }
+
+        // Picks the match whose proportional position in the glyph text best matches the caller's proportional
+        // position in the source text. Source and glyph texts can differ in length (PSPDFKit may emit PUA glyphs,
+        // ligatures, etc.), so we compare ratios rather than absolute offsets.
+        func pickMatch(in matches: [Range<String.Index>], glyphText: String, hint: (sourceLocation: Int, sourceTextLength: Int)?) -> Range<String.Index>? {
+            guard !matches.isEmpty else { return nil }
+            guard matches.count > 1, let hint, hint.sourceTextLength > 0 else { return matches.first }
+            let scalars = glyphText.unicodeScalars
+            let totalGlyph = scalars.count
+            let ratio = Double(hint.sourceLocation) / Double(hint.sourceTextLength)
+            let targetGlyphLocation = Int(Double(totalGlyph) * ratio)
+            return matches.min { lhs, rhs in
+                let lhsLoc = scalars.distance(from: scalars.startIndex, to: lhs.lowerBound)
+                let rhsLoc = scalars.distance(from: scalars.startIndex, to: rhs.lowerBound)
+                return abs(lhsLoc - targetGlyphLocation) < abs(rhsLoc - targetGlyphLocation)
+            }
+        }
+    }
+
+    /// Returns PDF-space frames for speech highlighting on the given page.
+    /// Searches for the text in PSPDFKit's glyphs to find the correct positions. When the same text appears
+    /// multiple times on the page (e.g. duplicated math formulas), `near` picks the occurrence closest in
+    /// proportional position to `sourceLocation / sourceTextLength` (UTF-16 offsets in the source text).
+    func speechHighlightPDFFrames(for text: String, page: PageIndex, near hint: (sourceLocation: Int, sourceTextLength: Int)? = nil) -> [CGRect]? {
+        let pdfRects = findGlyphRects(for: text, page: page, near: hint)
+        guard !pdfRects.isEmpty else { return nil }
+
+        // Merge adjacent rects on the same line into larger rects for cleaner highlighting
+        return mergeAdjacentRects(pdfRects)
+    }
+
+    /// Merges glyph rects that are on the same line into continuous highlight regions.
+    /// Groups rects by line first, then merges each line into a single rect.
+    private func mergeAdjacentRects(_ rects: [CGRect]) -> [CGRect] {
+        guard !rects.isEmpty else { return [] }
+        guard rects.count > 1 else { return rects }
+
+        // Sort rects by Y position (top to bottom), then by X position (left to right)
+        let sortedRects = rects.sorted { rect1, rect2 in
+            // If on different lines (Y difference > half height), sort by Y
+            if abs(rect1.midY - rect2.midY) > rect1.height * 0.5 {
+                return rect1.midY < rect2.midY
+            }
+            // Same line - sort by X
+            return rect1.minX < rect2.minX
+        }
+
+        var merged: [CGRect] = []
+        var currentRect = sortedRects[0]
+
+        for i in 1..<sortedRects.count {
+            let nextRect = sortedRects[i]
+
+            // Check if rects are on the same line (similar y position)
+            let sameLineThreshold: CGFloat = currentRect.height * 0.5
+            let sameLine = abs(currentRect.midY - nextRect.midY) < sameLineThreshold
+
+            if sameLine {
+                // Same line - merge into a single rect spanning from leftmost to rightmost
+                currentRect = currentRect.union(nextRect)
+            } else {
+                // Different line - save current and start new
+                merged.append(currentRect)
+                currentRect = nextRect
+            }
+        }
+
+        merged.append(currentRect)
+        return merged
+    }
+}
+
 extension PDFDocumentViewController: FreeTextInputDelegate {
     func showColorPicker(sender: UIView, key: PDFReaderState.AnnotationKey, updated: @escaping (String) -> Void) {
         let color = viewModel.state.annotation(for: key)?.color
@@ -1032,7 +1382,7 @@ extension PDFDocumentViewController: FreeTextInputDelegate {
             }
         )
     }
-    
+
     func showFontSizePicker(sender: UIView, key: PDFReaderState.AnnotationKey, updated: @escaping (CGFloat) -> Void) {
         coordinatorDelegate?.showFontSizePicker(sender: sender, picked: { [weak viewModel] size in
             viewModel?.process(action: .setFontSize(key: key.key, size: size))
@@ -1057,7 +1407,7 @@ extension PDFDocumentViewController: FreeTextInputDelegate {
     func change(fontSize: CGFloat, for key: PDFReaderState.AnnotationKey) {
         viewModel.process(action: .setFontSize(key: key.key, size: fontSize))
     }
-    
+
     func getFontSize(for key: PDFReaderState.AnnotationKey) -> CGFloat? {
         return viewModel.state.annotation(for: key)?.fontSize
     }
@@ -1112,6 +1462,88 @@ final class AnnotationPreviewView: SelectionView {
         view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         view.frame = rect
         addSubview(view)
+    }
+}
+
+/// View that highlights text being spoken during text-to-speech
+final class SpeechHighlightView: UIView {
+    private var highlightLayers: [CALayer] = []
+    /// Frames in PDF coordinate space - stored to recalculate on layout changes
+    private var pdfFrames: [CGRect] = []
+    /// Reference to the page view for coordinate conversion
+    private weak var pageView: PDFPageView?
+    private var annotationTool: AnnotationTool = .highlight
+    private var annotationColor: String = AnnotationsConfig.defaultActiveColor
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        commonSetup()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        commonSetup()
+    }
+
+    private func commonSetup() {
+        backgroundColor = .clear
+        isUserInteractionEnabled = false
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        updateHighlightLayerFrames()
+    }
+
+    /// Updates the highlight to cover the given frames.
+    /// - Parameters:
+    ///   - pdfFrames: Frames in PDF coordinate space
+    ///   - pageView: The page view used for coordinate conversion
+    func updateHighlight(pdfFrames: [CGRect], pageView: PDFPageView, annotationTool: AnnotationTool, annotationColor: String) {
+        self.pdfFrames = pdfFrames
+        self.pageView = pageView
+        self.annotationTool = annotationTool
+        self.annotationColor = annotationColor
+        updateHighlightLayerFrames()
+    }
+
+    private func updateHighlightLayerFrames() {
+        // Remove old highlight layers
+        highlightLayers.forEach { $0.removeFromSuperlayer() }
+        highlightLayers.removeAll()
+
+        guard let pageView, !pdfFrames.isEmpty else { return }
+
+        let uiColor = UIColor(hex: annotationColor)
+
+        // Convert PDF frames to view coordinates and create layers
+        for pdfFrame in pdfFrames {
+            let viewFrame = self.convert(pdfFrame, from: pageView.pdfCoordinateSpace)
+            let highlightLayer = CALayer()
+
+            switch annotationTool {
+            case .underline:
+                let underlineHeight: CGFloat = 2
+                highlightLayer.frame = CGRect(x: viewFrame.minX, y: viewFrame.maxY - underlineHeight, width: viewFrame.width, height: underlineHeight)
+                highlightLayer.backgroundColor = uiColor.cgColor
+
+            default:
+                highlightLayer.frame = viewFrame
+                highlightLayer.backgroundColor = uiColor.withAlphaComponent(0.4).cgColor
+                highlightLayer.cornerRadius = 2
+            }
+
+            layer.addSublayer(highlightLayer)
+            highlightLayers.append(highlightLayer)
+        }
+    }
+
+    /// Clears all highlights
+    func clearHighlight() {
+        pdfFrames = []
+        pageView = nil
+        highlightLayers.forEach { $0.removeFromSuperlayer() }
+        highlightLayers.removeAll()
     }
 }
 
