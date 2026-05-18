@@ -904,6 +904,16 @@ extension PDFReaderViewController: AnnotationToolbarDelegate {
         return documentController?.pdfController?.annotationStateManager.state?.toolbarTool
     }
 
+    func isCompactSize(for rotation: AnnotationToolbarViewController.Rotation) -> Bool {
+        switch rotation {
+        case .horizontal:
+            return isCompactWidth
+
+        case .vertical:
+            return view.frame.height <= 650
+        }
+    }
+
     var maxAvailableToolbarSize: CGFloat {
         guard toolbarState.visible, let documentController else { return 0 }
 
@@ -914,8 +924,11 @@ extension PDFReaderViewController: AnnotationToolbarDelegate {
         case .trailing, .leading:
             let interfaceIsHidden = navigationController?.isNavigationBarHidden ?? false
             var documentAvailableHeight = documentController.view.frame.height - documentController.view.safeAreaInsets.bottom
-            if !interfaceIsHidden, let scrubberBarFrame = documentController.pdfController?.userInterfaceView.scrubberBar.frame {
-                documentAvailableHeight = min(scrubberBarFrame.minY, documentAvailableHeight)
+            // Subtract the scrubber bar's *height* rather than reading its current `frame.minY` — PSPDFKit animates the
+            // scrubber's position when the user interface toggles, and reads taken mid-animation return an inconsistent
+            // (typically too-large) value. The height is stable across the animation.
+            if !interfaceIsHidden, let scrubberHeight = documentController.pdfController?.userInterfaceView.scrubberBar.frame.height, scrubberHeight > 0 {
+                documentAvailableHeight -= scrubberHeight
             }
             if let intraDocumentNavigationHandler {
                 if toolbarState.position == .leading, intraDocumentNavigationHandler.showsBackButton {
