@@ -77,7 +77,7 @@ class ItemDetailAbstractContentView: UIView {
 
         let showMore = NSMutableAttributedString(
             string: " ... ",
-            attributes: [.font: bodyFont, .paragraphStyle: ItemDetailAbstractContentView.paragraphStyle]
+            attributes: [.font: bodyFont, .foregroundColor: UIColor.label, .paragraphStyle: ItemDetailAbstractContentView.paragraphStyle]
         )
         let showMoreLink = NSMutableAttributedString(string: L10n.ItemDetail.showMore, attributes: attributes)
         showMoreLink.addAttribute(.link, value: CollapsibleTextView.toggleURL, range: NSRange(location: 0, length: showMoreLink.length))
@@ -95,7 +95,7 @@ class ItemDetailAbstractContentView: UIView {
 
     func setup(with abstract: String, isCollapsed: Bool, maxWidth: CGFloat) {
         let font = self.bodyFont
-        let attributes: [NSAttributedString.Key: Any] = [.paragraphStyle: ItemDetailAbstractContentView.paragraphStyle, .font: font]
+        let attributes: [NSAttributedString.Key: Any] = [.paragraphStyle: ItemDetailAbstractContentView.paragraphStyle, .font: font, .foregroundColor: UIColor.label]
         let hyphenatedText = NSAttributedString(string: abstract, attributes: attributes)
 
         self.contentTextView.set(text: hyphenatedText, isCollapsed: isCollapsed, maxWidth: maxWidth)
