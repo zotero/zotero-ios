@@ -248,17 +248,30 @@ final class ItemsViewController: BaseItemsViewController {
         self.viewModel.process(action: .search(term))
     }
 
-    private func process(action: ItemAction.Kind, for selectedKeys: Set<String>, button: UIBarButtonItem?, completionAction: ((Bool) -> Void)?) {
+    private func process(action: ItemAction.Kind, for selectedKeys: Set<String>, button: UIBarButtonItem?, contextualActionCompletion: ItemContextualActionCompletion?) {
+        var completed: Bool? = false
+        defer {
+            if let contextualActionCompletion, let completed {
+                contextualActionCompletion(completed)
+            }
+        }
         switch action {
         case .delete, .restore, .sort, .debugReader, .filter:
             break
 
         case .addToCollection:
             guard !selectedKeys.isEmpty else { return }
-            coordinatorDelegate?.showCollectionsPicker(in: library, completed: { [weak self] collections in
-                self?.viewModel.process(action: .assignItemsToCollections(items: selectedKeys, collections: collections))
-                completionAction?(true)
-            })
+            completed = nil
+            coordinatorDelegate?.showCollectionsPicker(
+                in: library,
+                cancelled: {
+                    contextualActionCompletion?(false)
+                },
+                completed: { [weak self] collections in
+                    self?.viewModel.process(action: .assignItemsToCollections(items: selectedKeys, collections: collections))
+                    contextualActionCompletion?(true)
+                }
+            )
 
         case .createParent:
             guard let key = selectedKeys.first, case .attachment(let attachment, _) = viewModel.state.itemAccessories[key] else { return }
@@ -268,6 +281,7 @@ final class ItemsViewController: BaseItemsViewController {
                 scrolledToKey: nil,
                 animated: true
             )
+            completed = true
 
         case .retrieveMetadata:
             guard let key = selectedKeys.first,
@@ -289,47 +303,65 @@ final class ItemsViewController: BaseItemsViewController {
                     coordinatorDelegate?.showAttachmentError(error)
                 }
             }
+            completed = true
 
         case .duplicate:
             guard let key = selectedKeys.first else { return }
             viewModel.process(action: .loadItemToDuplicate(key))
+            completed = true
 
         case .removeFromCollection:
             guard !selectedKeys.isEmpty else { return }
+            completed = nil
             coordinatorDelegate?.showRemoveFromCollectionQuestion(
-                count: viewModel.state.selectedItems.count
-            ) { [weak self] in
-                self?.viewModel.process(action: .deleteItemsFromCollection(selectedKeys))
-                completionAction?(true)
-            }
+                count: viewModel.state.selectedItems.count,
+                cancelAction: {
+                    contextualActionCompletion?(false)
+                },
+                confirmAction: { [weak self] in
+                    self?.viewModel.process(action: .deleteItemsFromCollection(selectedKeys))
+                    contextualActionCompletion?(true)
+                }
+            )
 
         case .trash:
             guard !selectedKeys.isEmpty else { return }
             viewModel.process(action: .trashItems(selectedKeys))
+            completed = true
 
         case .share:
             guard !selectedKeys.isEmpty else { return }
             coordinatorDelegate?.showCiteExport(for: selectedKeys, libraryId: library.identifier)
+            completed = true
 
         case .copyBibliography:
+            guard !selectedKeys.isEmpty else { return }
             var presenter: UIViewController = self
             if let searchController = navigationItem.searchController, searchController.isActive {
                 presenter = searchController
             }
             coordinatorDelegate?.copyBibliography(using: presenter, for: selectedKeys, libraryId: library.identifier, delegate: nil)
+            completed = true
 
         case .copyCitation:
+            guard !selectedKeys.isEmpty else { return }
             coordinatorDelegate?.showCitation(using: nil, for: selectedKeys, libraryId: library.identifier, delegate: nil)
+            completed = true
 
         case .download:
+            guard !selectedKeys.isEmpty else { return }
             viewModel.process(action: .download(selectedKeys))
+            completed = true
 
         case .removeDownload:
+            guard !selectedKeys.isEmpty else { return }
             viewModel.process(action: .removeDownloads(selectedKeys))
+            completed = true
 
         case .removeFromRecentlyRead:
             guard !selectedKeys.isEmpty else { return }
             viewModel.process(action: .removeFromRecentlyRead(selectedKeys))
+            completed = true
         }
     }
 
@@ -471,16 +503,23 @@ extension ItemsViewController: ItemsTableViewHandlerDelegate {
         }
     }
 
-    func process(action: ItemAction.Kind, at indexPath: IndexPath, completionAction: ((Bool) -> Void)?) {
+    func process(action: ItemAction.Kind, at indexPath: IndexPath, contextualActionCompletion: ItemContextualActionCompletion?) {
         if action == .debugReader {
-            guard let tapAction = dataSource.tapAction(for: indexPath) else { return }
+            guard let tapAction = dataSource.tapAction(for: indexPath) else {
+                contextualActionCompletion?(false)
+                return
+            }
             processDebugReaderAction(tapAction: tapAction) { [weak self] in
                 self?.process(tapAction: tapAction)
+                contextualActionCompletion?(true)
             }
             return
         }
-        guard let object = dataSource.object(at: indexPath.row) else { return }
-        process(action: action, for: [object.key], button: nil, completionAction: completionAction)
+        guard let object = dataSource.object(at: indexPath.row) else {
+            contextualActionCompletion?(false)
+            return
+        }
+        process(action: action, for: [object.key], button: nil, contextualActionCompletion: contextualActionCompletion)
     }
 
     func process(dragAndDropAction action: ItemsTableViewHandler.DragAndDropAction) {
@@ -496,7 +535,7 @@ extension ItemsViewController: ItemsTableViewHandlerDelegate {
 
 extension ItemsViewController: ItemsToolbarControllerDelegate {
     func process(action: ItemAction.Kind, button: UIBarButtonItem) {
-        process(action: action, for: viewModel.state.selectedItems, button: button, completionAction: nil)
+        process(action: action, for: viewModel.state.selectedItems, button: button, contextualActionCompletion: nil)
     }
 
     func showLookup() {

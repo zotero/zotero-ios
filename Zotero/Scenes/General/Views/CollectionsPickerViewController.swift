@@ -13,7 +13,7 @@ import RxSwift
 class CollectionsPickerViewController: UICollectionViewController {
     enum Mode {
         case single(title: String, selected: (Collection) -> Void)
-        case multiple(selected: (Set<String>) -> Void)
+        case multiple(selected: (Set<String>) -> Void, cancelled: () -> Void)
     }
 
     private enum TitleType {
@@ -34,6 +34,7 @@ class CollectionsPickerViewController: UICollectionViewController {
     private let titleType: TitleType
     private let collectionSelected: ((Collection) -> Void)?
     private let keysSelected: ((Set<String>) -> Void)?
+    private let cancelled: (() -> Void)?
     private let multipleSelectionAllowed: Bool
     private let updateQueue: DispatchQueue
 
@@ -51,12 +52,14 @@ class CollectionsPickerViewController: UICollectionViewController {
             titleType = .fixed(title)
             collectionSelected = selected
             keysSelected = nil
+            cancelled = nil
 
-        case .multiple(let selected):
+        case .multiple(let selected, let cancelled):
             multipleSelectionAllowed = true
             titleType = .dynamic
             keysSelected = selected
             collectionSelected = nil
+            self.cancelled = cancelled
         }
 
         super.init(collectionViewLayout: UICollectionViewFlowLayout())
@@ -97,6 +100,11 @@ class CollectionsPickerViewController: UICollectionViewController {
     private func confirmSelection() {
         guard let keysSelected else { return }
         keysSelected(viewModel.state.selected)
+        close()
+    }
+
+    private func cancelSelection() {
+        cancelled?()
         close()
     }
 
@@ -212,7 +220,7 @@ class CollectionsPickerViewController: UICollectionViewController {
 
         let cancel = UIBarButtonItem(barButtonSystemItem: .cancel, target: nil, action: nil)
         cancel.rx.tap.subscribe(onNext: { [weak self] in
-            self?.close()
+            self?.cancelSelection()
         }).disposed(by: disposeBag)
         navigationItem.leftBarButtonItem = cancel
 

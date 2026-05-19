@@ -35,14 +35,14 @@ protocol DetailCopyBibliographyCoordinatorDelegate: DetailMissingStyleErrorDeleg
 
 protocol DetailItemsCoordinatorDelegate: AnyObject {
     var displayTitle: String { get }
-    func showCollectionsPicker(in library: Library, completed: @escaping (Set<String>) -> Void)
+    func showCollectionsPicker(in library: Library, cancelled: @escaping () -> Void, completed: @escaping (Set<String>) -> Void)
     func showItemDetail(for type: ItemDetailState.DetailType, libraryId: LibraryIdentifier, scrolledToKey childKey: String?, animated: Bool)
     func showAttachmentError(_ error: Error)
     func showAddActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
     func show(url: URL)
     func show(doi: String)
     func showDeletionQuestion(count: Int, confirmAction: @escaping () -> Void, cancelAction: @escaping () -> Void)
-    func showRemoveFromCollectionQuestion(count: Int, confirmAction: @escaping () -> Void)
+    func showRemoveFromCollectionQuestion(count: Int, cancelAction: @escaping () -> Void, confirmAction: @escaping () -> Void)
     func showCitation(using presenter: UIViewController?, for itemIds: Set<String>, libraryId: LibraryIdentifier, delegate: DetailCitationCoordinatorDelegate?)
     func copyBibliography(using presenter: UIViewController, for itemIds: Set<String>, libraryId: LibraryIdentifier, delegate: DetailCopyBibliographyCoordinatorDelegate?)
     func showCiteExport(for itemIds: Set<String>, libraryId: LibraryIdentifier)
@@ -579,20 +579,27 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         self.navigationController?.pushViewController(controller, animated: animated)
     }
 
-    func showCollectionsPicker(in library: Library, completed: @escaping (Set<String>) -> Void) {
-        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
+    func showCollectionsPicker(in library: Library, cancelled: @escaping () -> Void, completed: @escaping (Set<String>) -> Void) {
+        guard let dbStorage = controllers.userControllers?.dbStorage else {
+            cancelled()
+            return
+        }
 
         DDLogInfo("DetailCoordinator: show collection picker")
 
         let state = CollectionsPickerState(library: library, excludedKeys: [], selected: [])
         let handler = CollectionsPickerActionHandler(dbStorage: dbStorage)
         let viewModel = ViewModel(initialState: state, handler: handler)
-        let controller = CollectionsPickerViewController(mode: .multiple(selected: completed), viewModel: viewModel)
+        let controller = CollectionsPickerViewController(mode: .multiple(selected: completed, cancelled: cancelled), viewModel: viewModel)
 
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.isModalInPresentation = true
         navigationController.modalPresentationStyle = .formSheet
-        self.navigationController?.present(navigationController, animated: true, completion: nil)
+        guard let presenter = self.navigationController else {
+            cancelled()
+            return
+        }
+        presenter.present(navigationController, animated: true, completion: nil)
     }
 
     func showDeletionQuestion(count: Int, confirmAction: @escaping () -> Void, cancelAction: @escaping () -> Void) {
@@ -600,12 +607,16 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         self.ask(question: question, title: L10n.delete, isDestructive: true, confirm: confirmAction, cancel: cancelAction)
     }
 
-    func showRemoveFromCollectionQuestion(count: Int, confirmAction: @escaping () -> Void) {
+    func showRemoveFromCollectionQuestion(count: Int, cancelAction: @escaping () -> Void, confirmAction: @escaping () -> Void) {
         let question = L10n.Items.removeFromCollectionQuestion(count)
-        self.ask(question: question, title: L10n.Items.removeFromCollectionTitle, isDestructive: false, confirm: confirmAction)
+        ask(question: question, title: L10n.Items.removeFromCollectionTitle, isDestructive: false, confirm: confirmAction, cancel: cancelAction)
     }
 
     private func ask(question: String, title: String, isDestructive: Bool, confirm: @escaping () -> Void, cancel: (() -> Void)? = nil) {
+        guard let navigationController else {
+            cancel?()
+            return
+        }
         let controller = UIAlertController(title: title, message: question, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.yes, style: (isDestructive ? .destructive : .default), handler: { _ in
             confirm()
@@ -613,7 +624,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         controller.addAction(UIAlertAction(title: L10n.no, style: .cancel, handler: { _ in
             cancel?()
         }))
-        self.navigationController?.present(controller, animated: true, completion: nil)
+        navigationController.present(controller, animated: true, completion: nil)
     }
 
     func showCitation(using presenter: UIViewController?, for itemIds: Set<String>, libraryId: LibraryIdentifier, delegate: DetailCitationCoordinatorDelegate?) {

@@ -149,7 +149,14 @@ final class TrashViewController: BaseItemsViewController {
         viewModel.process(action: .search(term))
     }
 
-    private func process(action: ItemAction.Kind, for selectedKeys: Set<TrashKey>, button: UIBarButtonItem?, completionAction: ((Bool) -> Void)?) {
+    private func process(action: ItemAction.Kind, for selectedKeys: Set<TrashKey>, button: UIBarButtonItem?, contextualActionCompletion: ItemContextualActionCompletion?) {
+        var completed: Bool? = false
+        defer {
+            if let contextualActionCompletion, let completed {
+                contextualActionCompletion(completed)
+            }
+        }
+
         switch action {
         case .createParent, .retrieveMetadata, .duplicate, .trash, .copyBibliography, .copyCitation, .share, .addToCollection, .removeFromCollection, .removeFromRecentlyRead,
              .filter, .sort, .debugReader:
@@ -158,26 +165,32 @@ final class TrashViewController: BaseItemsViewController {
 
         case .delete:
             guard !selectedKeys.isEmpty else { return }
+            completed = nil
             coordinatorDelegate?.showDeletionQuestion(
                 count: selectedKeys.count,
                 confirmAction: { [weak self] in
                     self?.viewModel.process(action: .deleteObjects(selectedKeys))
+                    contextualActionCompletion?(true)
                 },
                 cancelAction: {
-                    completionAction?(false)
+                    contextualActionCompletion?(false)
                 }
             )
 
         case .restore:
             guard !selectedKeys.isEmpty else { return }
             viewModel.process(action: .restoreItems(selectedKeys))
-            completionAction?(true)
+            completed = true
 
         case .download:
+            guard !selectedKeys.isEmpty else { return }
             viewModel.process(action: .download(selectedKeys))
+            completed = true
 
         case .removeDownload:
+            guard !selectedKeys.isEmpty else { return }
             viewModel.process(action: .removeDownloads(selectedKeys))
+            completed = true
         }
     }
 
@@ -261,16 +274,23 @@ extension TrashViewController: ItemsTableViewHandlerDelegate {
         return nil
     }
 
-    func process(action: ItemAction.Kind, at indexPath: IndexPath, completionAction: ((Bool) -> Void)?) {
+    func process(action: ItemAction.Kind, at indexPath: IndexPath, contextualActionCompletion: ItemContextualActionCompletion?) {
         if action == .debugReader {
-            guard let tapAction = dataSource.tapAction(for: indexPath) else { return }
+            guard let tapAction = dataSource.tapAction(for: indexPath) else {
+                contextualActionCompletion?(false)
+                return
+            }
             processDebugReaderAction(tapAction: tapAction) { [weak self] in
                 self?.process(tapAction: tapAction)
+                contextualActionCompletion?(true)
             }
             return
         }
-        guard let key = dataSource.key(at: indexPath.row) else { return }
-        process(action: action, for: [key], button: nil, completionAction: completionAction)
+        guard let key = dataSource.key(at: indexPath.row) else {
+            contextualActionCompletion?(false)
+            return
+        }
+        process(action: action, for: [key], button: nil, contextualActionCompletion: contextualActionCompletion)
     }
 
     func process(tapAction action: ItemsTableViewHandler.TapAction) {
@@ -322,7 +342,7 @@ extension TrashViewController: ItemsTableViewHandlerDelegate {
 
 extension TrashViewController: ItemsToolbarControllerDelegate {
     func process(action: ItemAction.Kind, button: UIBarButtonItem) {
-        process(action: action, for: viewModel.state.selectedItems, button: button, completionAction: nil)
+        process(action: action, for: viewModel.state.selectedItems, button: button, contextualActionCompletion: nil)
     }
 
     func showLookup() {
