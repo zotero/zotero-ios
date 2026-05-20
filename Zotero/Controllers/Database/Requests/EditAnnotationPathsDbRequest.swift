@@ -14,7 +14,7 @@ struct EditAnnotationPathsDbRequest: DbRequest {
     let key: String
     let libraryId: LibraryIdentifier
     let paths: [[CGPoint]]
-    unowned let boundingBoxConverter: AnnotationBoundingBoxConverter
+    let boundingBoxConverter: AnnotationBoundingBoxConverter
 
     var needsWrite: Bool { return true }
 

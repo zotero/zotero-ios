@@ -32,7 +32,7 @@ final class LookupActionHandler: ViewModelActionHandler {
 
         case .lookUp(let identifier):
             self.lookUp(identifier: identifier, in: viewModel)
-            
+
         case .cancelAllLookups:
             identifierLookupController.cancelAllLookups()
             self.update(viewModel: viewModel) { state in

@@ -183,6 +183,8 @@ struct ItemDetailState: ViewModelState {
         var creators: OrderedDictionary<String, Creator>
         var fields: OrderedDictionary<String, Field>
         var abstract: String?
+        var library: Library
+        var collections: CollectionTree?
 
         var dateModified: Date
         let dateAdded: Date
@@ -230,6 +232,8 @@ struct ItemDetailState: ViewModelState {
                 creators: [:],
                 fields: [:],
                 abstract: nil,
+                library: Library(identifier: .custom(.myLibrary), name: L10n.Libraries.myLibrary, metadataEditable: true, filesEditable: true),
+                collections: nil,
                 dateModified: date,
                 dateAdded: date
             )

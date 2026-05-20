@@ -56,7 +56,7 @@ struct ItemDetailLayout {
             top = 15
             bottom = 15
 
-        case .attachments, .notes, .tags:
+        case .attachments, .notes, .tags, .collections:
             top = isLastRow ? 2 : 15
             bottom = isLastRow ? 2 : 15
 

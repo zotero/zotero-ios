@@ -67,7 +67,7 @@ final class ShareViewController: UIViewController {
     private var fileStorage: FileStorage!
     private var debugLogging: DebugLogging!
     private var schemaController: SchemaController!
-    private var pdfWorkerController: PDFWorkerController!
+    private var documentWorkerController: DocumentWorkerController!
     private var secureStorage: KeychainSecureStorage!
     private var viewModel: ExtensionViewModel!
     private var storeCancellable: AnyCancellable?
@@ -79,6 +79,45 @@ final class ShareViewController: UIViewController {
     private static let maxCollectionCount = 5
     private static let width: CGFloat = 468
     private static let pickerSize = CGSize(width: width, height: 500.0)
+
+    private func createCancelButton(cancel: Bool) -> UIBarButtonItem {
+        let action = UIAction { [weak self] _ in
+            guard let self else { return }
+            viewModel?.cancel()
+            debugLogging?.storeLogs { [weak self] in
+                self?.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
+            }
+        }
+        return UIBarButtonItem(systemItem: cancel ? .cancel : .done, primaryAction: action)
+    }
+    lazy private var doneButton: UIBarButtonItem = {
+        let action = UIAction(title: L10n.Shareext.save) { [weak viewModel] _ in
+            viewModel?.submit()
+        }
+        let item: UIBarButtonItem
+        if #available(iOS 26.0.0, *) {
+            item = UIBarButtonItem(systemItem: .done, primaryAction: action)
+            item.tintColor = Asset.Colors.zoteroBlue.color
+            item.style = .prominent
+        } else {
+            item = UIBarButtonItem(primaryAction: action)
+            item.style = .done
+        }
+        return item
+    }()
+    lazy private var continueButton: UIBarButtonItem = {
+        let action = UIAction(title: L10n.Shareext.resolveChallenge) { [weak viewModel] _ in
+            viewModel?.continueAfterChallenge()
+        }
+        let item = UIBarButtonItem(title: L10n.Shareext.resolveChallenge, primaryAction: action)
+        item.tintColor = Asset.Colors.zoteroBlue.color
+        if #available(iOS 26.0.0, *) {
+            item.style = .prominent
+        } else {
+            item.style = .done
+        }
+        return item
+    }()
 
     // MARK: - Lifecycle
 
@@ -210,17 +249,6 @@ final class ShareViewController: UIViewController {
         self.navigationController?.pushViewController(controller, animated: true)
     }
 
-    @objc private func done() {
-        self.viewModel?.submit()
-    }
-
-    @objc private func cancel() {
-        self.viewModel?.cancel()
-        self.debugLogging.storeLogs { [unowned self] in
-            self.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
-        }
-    }
-
     private func update(to state: ExtensionViewModel.State) {
         if state.isDone {
             DDLogInfo("State: done")
@@ -277,6 +305,9 @@ final class ShareViewController: UIViewController {
 
         case .translating(let name):
             DDLogInfo("State: translating with \(name)")
+
+        case .challengePending:
+            DDLogInfo("State: challenge pending")
         }
 
         if let state = itemState {
@@ -371,11 +402,17 @@ final class ShareViewController: UIViewController {
     }
 
     private func updateNavigationItems(for state: ExtensionViewModel.State.AttachmentState, isSubmitting: Bool) {
+        if case .challengePending = state {
+            navigationItem.leftBarButtonItem?.isEnabled = !isSubmitting
+            navigationItem.rightBarButtonItem = continueButton
+            return
+        }
+
         if let error = state.error {
             switch error {
-            case .quotaLimit, .webDavFailure, .apiFailure, .forbidden:
-                self.navigationItem.leftBarButtonItem = nil
-                self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(ShareViewController.cancel))
+            case .quotaLimit, .webDavFailure, .webDavUnauthorized, .webDavForbidden, .apiFailure, .forbidden:
+                navigationItem.leftBarButtonItem = nil
+                navigationItem.rightBarButtonItem = createCancelButton(cancel: false)
                 return
 
             default:
@@ -383,8 +420,9 @@ final class ShareViewController: UIViewController {
             }
         }
 
-        self.navigationItem.leftBarButtonItem?.isEnabled = !isSubmitting
-        self.navigationItem.rightBarButtonItem?.isEnabled = !isSubmitting && state.isSubmittable
+        doneButton.isEnabled = !isSubmitting && state.isSubmittable
+        navigationItem.rightBarButtonItem = doneButton
+        navigationItem.leftBarButtonItem?.isEnabled = !isSubmitting
     }
 
     private func updateBottomProgress(for state: ExtensionViewModel.State.AttachmentState, itemState: ExtensionViewModel.State.ItemPickerState?, hasItem: Bool, isSubmitting: Bool) {
@@ -407,7 +445,7 @@ final class ShareViewController: UIViewController {
                 message = L10n.Shareext.decodingAttachment
                 showActivityIndicator = true
 
-            case .processed:
+            case .processed, .challengePending:
                 message = nil
                 showActivityIndicator = false
 
@@ -475,6 +513,12 @@ final class ShareViewController: UIViewController {
         case .webDavNotVerified:
             return L10n.Errors.Shareext.webdavNotVerified
 
+        case .webDavUnauthorized:
+            return L10n.Errors.Settings.Webdav.unauthorized
+
+        case .webDavForbidden:
+            return L10n.Errors.Settings.Webdav.forbidden
+
         case .cantLoadSchema:
             return L10n.Errors.Shareext.cantLoadSchema
 
@@ -488,7 +532,7 @@ final class ShareViewController: UIViewController {
             return L10n.Errors.Shareext.itemsNotFound
 
         case .parseError:
-            return L10n.Errors.Shareext.parsingError
+            return "Error parsing translator response"
 
         case .schemaError:
             return L10n.Errors.Shareext.schemaError
@@ -496,15 +540,16 @@ final class ShareViewController: UIViewController {
         case .webViewError(let error):
             switch error {
             case .incompatibleItem:
-                return L10n.Errors.Shareext.incompatibleItem
+                return "No data returned"
 
             case .javascriptCallMissingResult:
-                return L10n.Errors.Shareext.javascriptFailed
+                return "JS call failed"
 
             case .noSuccessfulTranslators:
                 return nil
+
             case .cantFindFile, .webExtractionMissingJs: // should never happen
-                return L10n.Errors.Shareext.missingBaseFiles
+                return "Translator missing"
 
             case .webExtractionMissingData:
                 return L10n.Errors.Shareext.responseMissingData
@@ -514,7 +559,7 @@ final class ShareViewController: UIViewController {
             return L10n.Errors.Shareext.unknown
 
         case .fileMissing:
-            return L10n.Errors.Shareext.missingFile
+            return "Could not find file to upload"
 
         case .apiFailure:
             return L10n.Errors.Shareext.apiError
@@ -694,15 +739,13 @@ final class ShareViewController: UIViewController {
     }
 
     private func setupNavbar(loggedIn: Bool) {
-        self.navigationController?.navigationBar.tintColor = Asset.Colors.zoteroBlue.color
-
-        let cancel = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(ShareViewController.cancel))
-        self.navigationItem.leftBarButtonItem = cancel
-
+        if #unavailable(iOS 26.0.0) {
+            navigationController?.navigationBar.tintColor = Asset.Colors.zoteroBlue.color
+        }
+        navigationItem.leftBarButtonItem = createCancelButton(cancel: true)
         if loggedIn {
-            let done = UIBarButtonItem(title: L10n.Shareext.save, style: .done, target: self, action: #selector(ShareViewController.done))
-            done.isEnabled = false
-            self.navigationItem.rightBarButtonItem = done
+            doneButton.isEnabled = false
+            navigationItem.rightBarButtonItem = doneButton
         }
     }
 
@@ -722,25 +765,24 @@ final class ShareViewController: UIViewController {
     }
 
     private func setupControllers(with session: SessionData, apiClient: ApiClient, fileStorage: FileStorage, schemaController: SchemaController) {
-        let dbUrl = Files.dbFile(for: session.userId).createUrl()
+        let dbUrl = Files.dbFile(for: session.userId, sessionId: session.sessionId).createUrl()
         let dbStorage = RealmDbStorage(config: Database.mainConfiguration(url: dbUrl, fileStorage: fileStorage))
         let configuration = Database.bundledDataConfiguration(fileStorage: fileStorage)
         let bundledDataStorage = RealmDbStorage(config: configuration)
         let translatorsController = TranslatorsAndStylesController(apiClient: apiClient, bundledDataStorage: bundledDataStorage, fileStorage: fileStorage)
         let secureStorage = KeychainSecureStorage()
         let webDavController = WebDavControllerImpl(dbStorage: dbStorage, fileStorage: fileStorage, sessionStorage: SecureWebDavSessionStorage(secureStorage: secureStorage))
-        let pdfWorkerController = PDFWorkerController(fileStorage: fileStorage)
+        let documentWorkerController = DocumentWorkerController(fileStorage: fileStorage)
 
         apiClient.set(authToken: ("Bearer " + session.apiToken))
         translatorsController.updateFromRepo(type: .shareExtension)
-        pdfWorkerController.webViewProvider = self
 
         self.fileStorage = fileStorage
         self.schemaController = schemaController
         self.dbStorage = dbStorage
         self.bundledDataStorage = bundledDataStorage
         self.translatorsController = translatorsController
-        self.pdfWorkerController = pdfWorkerController
+        self.documentWorkerController = documentWorkerController
         self.secureStorage = secureStorage
 
         self.viewModel = self.createViewModel(for: session.userId, dbStorage: dbStorage, apiClient: apiClient, schemaController: schemaController, fileStorage: fileStorage,
@@ -760,7 +802,7 @@ final class ShareViewController: UIViewController {
         let syncController = SyncController(userId: userId, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage, schemaController: schemaController, dateParser: dateParser,
                                             backgroundUploaderContext: backgroundUploadContext, webDavController: webDavController, attachmentDownloader: attachmentDownloader, syncDelayIntervals: DelayIntervals.sync, maxRetryCount: DelayIntervals.retry.count)
         let recognizerController = RecognizerController(
-            pdfWorkerController: pdfWorkerController,
+            documentWorkerController: documentWorkerController,
             apiClient: apiClient,
             translatorsController: translatorsController,
             schemaController: schemaController,

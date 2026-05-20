@@ -17,7 +17,7 @@ protocol ItemsTableViewHandlerDelegate: AnyObject {
     var collectionKey: String? { get }
     var library: Library { get }
 
-    func process(action: ItemAction.Kind, at index: Int, completionAction: ((Bool) -> Void)?)
+    func process(action: ItemAction.Kind, at indexPath: IndexPath, completionAction: ((Bool) -> Void)?)
     func process(tapAction action: ItemsTableViewHandler.TapAction)
     func process(dragAndDropAction action: ItemsTableViewHandler.DragAndDropAction)
 }
@@ -75,7 +75,6 @@ final class ItemsTableViewHandler: NSObject {
 
         dataSource.handler = self
         setupTableView()
-        setupKeyboardObserving()
     }
 
     deinit {
@@ -104,7 +103,7 @@ final class ItemsTableViewHandler: NSObject {
     private func createContextMenu(at indexPath: IndexPath) -> UIMenu {
         let actions: [UIAction] = dataSource.createContextMenuActions(at: indexPath.row).map({ action in
             return UIAction(title: action.title, image: action.image, attributes: (action.isDestructive ? .destructive : [])) { [weak self] _ in
-                self?.delegate.process(action: action.type, at: indexPath.row, completionAction: nil)
+                self?.delegate.process(action: action.type, at: indexPath, completionAction: nil)
             }
         })
         return UIMenu(title: "", children: actions)
@@ -113,12 +112,16 @@ final class ItemsTableViewHandler: NSObject {
     private func createSwipeConfiguration(from itemActions: [ItemAction], at indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         guard !tableView.isEditing && delegate.library.metadataEditable else { return nil }
         let actions = itemActions.map({ action -> UIContextualAction in
-            let contextualAction = UIContextualAction(style: (action.isDestructive ? .destructive : .normal), title: action.title, handler: { [weak self] _, _, completion in
+            var title: String?
+            if #unavailable(iOS 26.0.0) {
+                title = action.title
+            }
+            let contextualAction = UIContextualAction(style: (action.isDestructive ? .destructive : .normal), title: title, handler: { [weak self] _, _, completion in
                 guard let self else {
                     completion(false)
                     return
                 }
-                delegate.process(action: action.type, at: indexPath.row, completionAction: completion)
+                delegate.process(action: action.type, at: indexPath, completionAction: completion)
             })
             contextualAction.image = action.image
             switch action.type {
@@ -131,9 +134,11 @@ final class ItemsTableViewHandler: NSObject {
             case .addToCollection, .createParent, .retrieveMetadata:
                 contextualAction.backgroundColor = .systemOrange
 
-            case .removeFromCollection:
+            case .removeFromCollection, .removeFromRecentlyRead:
                 contextualAction.backgroundColor = .systemPurple
-            case .sort, .filter, .copyCitation, .copyBibliography, .share, .download, .removeDownload: break
+
+            case .sort, .filter, .copyCitation, .copyBibliography, .share, .download, .removeDownload, .debugReader:
+                break
             }
             return contextualAction
         })
@@ -229,8 +234,15 @@ final class ItemsTableViewHandler: NSObject {
         tableView.dataSource = self.dataSource
         tableView.dragDelegate = self
         tableView.dropDelegate = self
-        tableView.rowHeight = UITableView.automaticDimension
-        tableView.estimatedRowHeight = 60
+        if #available(iOS 26.0.0, *) {
+            tableView.rowHeight = 68
+            tableView.estimatedRowHeight = 68
+            tableView.separatorInset = UIEdgeInsets(top: 0, left: 64, bottom: 0, right: 12)
+        } else {
+            tableView.rowHeight = UITableView.automaticDimension
+            tableView.estimatedRowHeight = 60
+            tableView.separatorInset = UIEdgeInsets(top: 0, left: 64, bottom: 0, right: 0)
+        }
         tableView.allowsMultipleSelectionDuringEditing = true
         // keyboardDismissMode is device based, regardless of horizontal size class.
         tableView.keyboardDismissMode = UIDevice.current.userInterfaceIdiom == .phone ? .interactive : .none
@@ -238,34 +250,6 @@ final class ItemsTableViewHandler: NSObject {
 
         tableView.register(UINib(nibName: "ItemCell", bundle: nil), forCellReuseIdentifier: Self.cellId)
         tableView.tableFooterView = UIView()
-    }
-
-    private func setupTableView(with keyboardData: KeyboardData) {
-        var insets = tableView.contentInset
-        insets.bottom = keyboardData.visibleHeight
-        tableView.contentInset = insets
-    }
-
-    private func setupKeyboardObserving() {
-        NotificationCenter.default
-                          .keyboardWillShow
-                          .observe(on: MainScheduler.instance)
-                          .subscribe(onNext: { [weak self] notification in
-                              if let data = notification.keyboardData {
-                                  self?.setupTableView(with: data)
-                              }
-                          })
-                          .disposed(by: self.disposeBag)
-
-        NotificationCenter.default
-                          .keyboardWillHide
-                          .observe(on: MainScheduler.instance)
-                          .subscribe(onNext: { [weak self] notification in
-                              if let data = notification.keyboardData {
-                                  self?.setupTableView(with: data)
-                              }
-                          })
-                          .disposed(by: self.disposeBag)
     }
 }
 

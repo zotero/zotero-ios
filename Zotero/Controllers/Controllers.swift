@@ -142,12 +142,18 @@ final class Controllers {
         do {
             // Try to initialize session
             try sessionController.initializeSession()
-            // Start with initialized session
-            update(with: sessionController.sessionData, isLogin: false, debugLogging: debugLogging)
-            // Start observing further session changes
-            startObservingSession()
-            completion(true)
+            finish(with: sessionController.sessionData, completed: true)
         } catch let error {
+            if let sessionError = error as? SessionController.Error,
+               case .keychainNotAccessible(let protectedDataAvailable, let lastResultCode) = sessionError,
+               protectedDataAvailable,
+               lastResultCode == errSecItemNotFound {
+                DDLogInfo("Controllers: api token missing, resetting persisted session - \(sessionError)")
+                sessionController.reset()
+                finish(with: nil, completed: false)
+                return
+            }
+
             if !failOnError {
                 // If this is first failure, start logging issues and wait for protected data
                 debugLogging.start(type: .immediate)
@@ -166,11 +172,13 @@ final class Controllers {
                 debugLogging.stop(ignoreEmptyLogs: true, userId: 0, customAlertMessage: { L10n.loginDebug($0) })
             }
 
-            // Show login screen
-            update(with: nil, isLogin: false, debugLogging: debugLogging)
-            // Start observing further session changes so that user can log in
+            finish(with: nil, completed: false)
+        }
+
+        func finish(with data: SessionData?, completed: Bool) {
+            update(with: data, isLogin: false, debugLogging: debugLogging)
             startObservingSession()
-            completion(false)
+            completion(completed)
         }
     }
 
@@ -216,7 +224,7 @@ final class Controllers {
             // Start logging to catch user controller issues
             debugLogging.start(type: .immediate)
             // Initialize user controllers
-            let controllers = try UserControllers(userId: data.userId, controllers: self)
+            let controllers = try UserControllers(userId: data.userId, sessionId: data.sessionId, controllers: self)
             if isLogin {
                 controllers.enableSync(apiKey: data.apiToken)
             }
@@ -233,6 +241,7 @@ final class Controllers {
             DDLogError("Controllers: can't create UserControllers - \(error)")
 
             let userId = Defaults.shared.userId
+            let sessionId = Defaults.shared.sessionId
             // Initialization failed, clear everything
             apiClient.set(authToken: nil)
             userControllers = nil
@@ -244,7 +253,7 @@ final class Controllers {
 
             if let error = error as? Realm.Error, error.code == .fail {
                 // Fatal error, remove db and let user log in again.
-                let dbFile = Files.dbFile(for: userId)
+                let dbFile = Files.dbFile(for: userId, sessionId: sessionId)
                 FileManager.default.clearDatabaseFiles(at: dbFile.createUrl())
             }
 
@@ -268,8 +277,8 @@ final class Controllers {
         userControllers?.backgroundUploadObserver.cancelAllUploads()
         // Cancel all Recognizer Tasks
         userControllers?.recognizerController.cancellAllTasks()
-        // Cancel all PDF workers
-        userControllers?.pdfWorkerController.cancellAllWorks()
+        // Cancel all document workers
+        userControllers?.documentWorkerController.cancellAllWorks()
         // Clear user controllers
         let dbStorage = userControllers?.dbStorage
         userControllers = nil
@@ -295,15 +304,16 @@ final class UserControllers {
     let fileDownloader: AttachmentDownloader
     let remoteFileDownloader: RemoteAttachmentDownloader
     let identifierLookupController: IdentifierLookupController
-    let pdfWorkerController: PDFWorkerController
+    let documentWorkerController: DocumentWorkerController
     let recognizerController: RecognizerController
-    let webSocketController: WebSocketController
+    let webSocketController: APIWebSocketController
     let fileCleanupController: AttachmentFileCleanupController
     let citationController: CitationController
     let dragDropController: DragDropController
     let webDavController: WebDavController
     let customUrlController: CustomURLController
     let fullSyncDebugger: FullSyncDebugger
+    let lastReadWatcher: LastReadWatcher
     private let isFirstLaunch: Bool
     private let lastBuildNumber: Int?
     private unowned let translatorsAndStylesController: TranslatorsAndStylesController
@@ -316,8 +326,8 @@ final class UserControllers {
     // MARK: - Lifecycle
 
     /// Instance is initialized on login or when app launches while user is logged in
-    init(userId: Int, controllers: Controllers) throws {
-        let dbStorage = try UserControllers.createDbStorage(for: userId, controllers: controllers)
+    init(userId: Int, sessionId: String?, controllers: Controllers) throws {
+        let dbStorage = try UserControllers.createDbStorage(for: userId, sessionId: sessionId, controllers: controllers)
         let webDavSession = SecureWebDavSessionStorage(secureStorage: controllers.secureStorage)
         let webDavController = WebDavControllerImpl(dbStorage: dbStorage, fileStorage: controllers.fileStorage, sessionStorage: webDavSession)
         let backgroundUploadContext = BackgroundUploaderContext()
@@ -337,7 +347,7 @@ final class UserControllers {
             syncDelayIntervals: DelayIntervals.sync,
             maxRetryCount: DelayIntervals.retry.count
         )
-        let webSocketController = WebSocketController(dbStorage: dbStorage, lowPowerModeController: controllers.lowPowerModeController)
+        let webSocketController = APIWebSocketController(dbStorage: dbStorage, lowPowerModeController: controllers.lowPowerModeController)
         let fileCleanupController = AttachmentFileCleanupController(fileStorage: controllers.fileStorage, dbStorage: dbStorage)
 
         var isFirstLaunch = false
@@ -385,9 +395,9 @@ final class UserControllers {
             dateParser: controllers.dateParser,
             remoteFileDownloader: remoteFileDownloader
         )
-        pdfWorkerController = PDFWorkerController(fileStorage: controllers.fileStorage)
+        documentWorkerController = DocumentWorkerController(fileStorage: controllers.fileStorage)
         recognizerController = RecognizerController(
-            pdfWorkerController: pdfWorkerController,
+            documentWorkerController: documentWorkerController,
             apiClient: controllers.apiClient,
             translatorsController: controllers.translatorsAndStylesController,
             schemaController: controllers.schemaController,
@@ -403,6 +413,7 @@ final class UserControllers {
         fullSyncDebugger = FullSyncDebugger(syncScheduler: syncScheduler, debugLogging: controllers.debugLogging, sessionController: controllers.sessionController)
         idleTimerController = controllers.idleTimerController
         customUrlController = CustomURLController(dbStorage: dbStorage, fileStorage: controllers.fileStorage)
+        lastReadWatcher = LastReadWatcher(dbStorage: dbStorage)
         lastBuildNumber = controllers.lastBuildNumber
         disposeBag = DisposeBag()
     }
@@ -497,8 +508,8 @@ final class UserControllers {
 
     // MARK: - Helpers
 
-    private class func createDbStorage(for userId: Int, controllers: Controllers) throws -> DbStorage {
-        let file = Files.dbFile(for: userId)
+    private class func createDbStorage(for userId: Int, sessionId: String?, controllers: Controllers) throws -> DbStorage {
+        let file = Files.dbFile(for: userId, sessionId: sessionId)
         try controllers.fileStorage.createDirectories(for: file)
         return RealmDbStorage(config: Database.mainConfiguration(url: file.createUrl(), fileStorage: controllers.fileStorage))
     }

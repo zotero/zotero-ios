@@ -153,13 +153,7 @@ final class AttachmentDownloader: NSObject {
         let configuration = URLSessionConfiguration.default
         session = URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
         #else
-        session = URLSessionCreator.createSession(
-            for: Self.sessionId,
-            forwardingDelegate: self,
-            forwardingTaskDelegate: self,
-            forwardingDownloadDelegate: self,
-            httpMaximumConnectionsPerHost: Self.maxConcurrentDownloads
-        )
+        session = URLSessionCreator.createDownloadSession(for: Self.sessionId, delegate: self, httpMaximumConnectionsPerHost: Self.maxConcurrentDownloads)
         session.getAllTasks { [weak self] tasks in
             guard let self else { return }
             let tasksGroupedByIdentifier = Dictionary(grouping: tasks, by: { $0.taskIdentifier })
@@ -804,14 +798,13 @@ final class AttachmentDownloader: NSObject {
                 DDLogError("AttachmentDownloader: could not remove unsuccessful task creation from db - \(error)")
             }
         }
-        startNextDownloadIfPossible()
     }
 
     private func startNextDownloadIfPossible() {
-        guard activeDownloads.count < Self.maxConcurrentDownloads && !queue.isEmpty else { return }
-
-        let enqueuedDownload = queue.removeFirst()
-        startDownloadTask(for: enqueuedDownload.download, downloadTaskTuple: createDownloadTask(from: enqueuedDownload))
+        while activeDownloads.count < Self.maxConcurrentDownloads && !queue.isEmpty {
+            let enqueuedDownload = queue.removeFirst()
+            startDownloadTask(for: enqueuedDownload.download, downloadTaskTuple: createDownloadTask(from: enqueuedDownload))
+        }
     }
 
     private func retryDownload(_ download: Download, after activeDownload: ActiveDownload) {

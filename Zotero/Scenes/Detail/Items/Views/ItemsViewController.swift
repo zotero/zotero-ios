@@ -208,7 +208,7 @@ final class ItemsViewController: BaseItemsViewController {
             toolbarController?.reloadToolbarItems(for: toolbarData(from: state))
         }
 
-        if state.changes.contains(.filters) || state.changes.contains(.batchData) {
+        if state.changes.contains(.filters) || state.changes.contains(.batchData) || state.changes.contains(.results) {
             toolbarController?.reloadToolbarItems(for: toolbarData(from: state))
         }
 
@@ -228,7 +228,7 @@ final class ItemsViewController: BaseItemsViewController {
         func process(error: ItemsError, state: ItemsState) {
             // Perform additional actions for individual errors if needed
             switch error {
-            case .itemMove, .deletion, .deletionFromCollection:
+            case .itemMove, .deletion, .deletionFromCollection, .deletionFromRecentlyRead:
                 if let snapshot = state.results {
                     dataSource.apply(snapshot: snapshot.freeze())
                 }
@@ -250,7 +250,7 @@ final class ItemsViewController: BaseItemsViewController {
 
     private func process(action: ItemAction.Kind, for selectedKeys: Set<String>, button: UIBarButtonItem?, completionAction: ((Bool) -> Void)?) {
         switch action {
-        case .delete, .restore:
+        case .delete, .restore, .sort, .debugReader, .filter:
             break
 
         case .addToCollection:
@@ -307,23 +307,9 @@ final class ItemsViewController: BaseItemsViewController {
             guard !selectedKeys.isEmpty else { return }
             viewModel.process(action: .trashItems(selectedKeys))
 
-        case .filter:
-            guard let button else { return }
-            coordinatorDelegate?.showFilters(filters: viewModel.state.filters, filtersDelegate: self, button: button)
-
-        case .sort:
-            guard let button else { return }
-            coordinatorDelegate?.showSortActions(
-                sortType: viewModel.state.sortType,
-                button: button,
-                changed: { [weak self] newValue in
-                    self?.viewModel.process(action: .setSortType(newValue))
-                }
-            )
-
         case .share:
             guard !selectedKeys.isEmpty else { return }
-            coordinatorDelegate?.showCiteExport(for: selectedKeys, libraryId: library.identifier)
+            coordinatorDelegate?.showCiteExport(for: selectedKeys, libraryId: library.identifier, sourceItem: button)
 
         case .copyBibliography:
             var presenter: UIViewController = self
@@ -333,13 +319,17 @@ final class ItemsViewController: BaseItemsViewController {
             coordinatorDelegate?.copyBibliography(using: presenter, for: selectedKeys, libraryId: library.identifier, delegate: nil)
 
         case .copyCitation:
-            coordinatorDelegate?.showCitation(using: nil, for: selectedKeys, libraryId: library.identifier, delegate: nil)
+            coordinatorDelegate?.showCitation(using: nil, for: selectedKeys, libraryId: library.identifier, delegate: nil, sourceItem: nil)
 
         case .download:
             viewModel.process(action: .download(selectedKeys))
 
         case .removeDownload:
             viewModel.process(action: .removeDownloads(selectedKeys))
+
+        case .removeFromRecentlyRead:
+            guard !selectedKeys.isEmpty else { return }
+            viewModel.process(action: .removeFromRecentlyRead(selectedKeys))
         }
     }
 
@@ -371,9 +361,10 @@ final class ItemsViewController: BaseItemsViewController {
                 updateTagFilter(filters: viewModel.state.filters, collectionId: collection.identifier, libraryId: library.identifier)
 
             case .update(let results, let deletions, let insertions, let modifications):
+                let frozenResults = results.freeze()
                 let correctedModifications = Database.correctedModifications(from: modifications, insertions: insertions, deletions: deletions)
-                viewModel.process(action: .updateKeys(items: results, deletions: deletions, insertions: insertions, modifications: correctedModifications))
-                dataSource.apply(snapshot: results.freeze(), modifications: modifications, insertions: insertions, deletions: deletions) { [weak self] in
+                viewModel.process(action: .updateKeys(items: frozenResults, deletions: deletions, insertions: insertions, modifications: correctedModifications))
+                dataSource.apply(snapshot: frozenResults, modifications: modifications, insertions: insertions, deletions: deletions) { [weak self] in
                     guard let self else { return }
                     updateTagFilter(filters: viewModel.state.filters, collectionId: collection.identifier, libraryId: library.identifier)
                 }
@@ -412,6 +403,8 @@ final class ItemsViewController: BaseItemsViewController {
             isEditing: state.isEditing,
             selectedItems: state.selectedItems,
             filters: state.filters,
+            sortType: state.sortType,
+            allowsManualSort: state.collection.identifier.allowsManualSort,
             downloadBatchData: state.downloadBatchData,
             remoteDownloadBatchData: state.remoteDownloadBatchData,
             identifierLookupBatchData: state.identifierLookupBatchData,
@@ -478,8 +471,15 @@ extension ItemsViewController: ItemsTableViewHandlerDelegate {
         }
     }
 
-    func process(action: ItemAction.Kind, at index: Int, completionAction: ((Bool) -> Void)?) {
-        guard let object = dataSource.object(at: index) else { return }
+    func process(action: ItemAction.Kind, at indexPath: IndexPath, completionAction: ((Bool) -> Void)?) {
+        if action == .debugReader {
+            guard let tapAction = dataSource.tapAction(for: indexPath) else { return }
+            processDebugReaderAction(tapAction: tapAction) { [weak self] in
+                self?.process(tapAction: tapAction)
+            }
+            return
+        }
+        guard let object = dataSource.object(at: indexPath.row) else { return }
         process(action: action, for: [object.key], button: nil, completionAction: completionAction)
     }
 
@@ -498,9 +498,25 @@ extension ItemsViewController: ItemsToolbarControllerDelegate {
     func process(action: ItemAction.Kind, button: UIBarButtonItem) {
         process(action: action, for: viewModel.state.selectedItems, button: button, completionAction: nil)
     }
-    
+
     func showLookup() {
         coordinatorDelegate?.showLookup()
+    }
+
+    func showFilters(button: UIBarButtonItem) {
+        coordinatorDelegate?.showFilters(filters: viewModel.state.filters, filtersDelegate: self, button: button)
+    }
+
+    func sortTypeChanged(_ sortType: ItemsSortType) {
+        viewModel.process(action: .setSortType(sortType))
+    }
+
+    func downloadsFilterChanged(enabled: Bool) {
+        if enabled {
+            viewModel.process(action: .enableFilter(.downloadedFiles))
+        } else {
+            viewModel.process(action: .disableFilter(.downloadedFiles))
+        }
     }
 }
 

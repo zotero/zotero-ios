@@ -26,12 +26,20 @@ final class ItemsFilterCoordinator: NSObject, Coordinator {
     weak var navigationController: UINavigationController?
 
     private let filters: [ItemsFilter]
+    private unowned let mainCoordinatorDelegate: MainCoordinatorDelegate
     private unowned let controllers: Controllers
     private weak var filtersDelegate: BaseItemsViewController?
 
-    init(filters: [ItemsFilter], filtersDelegate: BaseItemsViewController, navigationController: NavigationViewController, controllers: Controllers) {
+    init(
+        filters: [ItemsFilter],
+        filtersDelegate: BaseItemsViewController,
+        navigationController: NavigationViewController,
+        mainCoordinatorDelegate: MainCoordinatorDelegate,
+        controllers: Controllers
+    ) {
         self.filters = filters
         self.navigationController = navigationController
+        self.mainCoordinatorDelegate = mainCoordinatorDelegate
         self.controllers = controllers
         self.filtersDelegate = filtersDelegate
         childCoordinators = []
@@ -45,11 +53,8 @@ final class ItemsFilterCoordinator: NSObject, Coordinator {
     }
 
     func start(animated: Bool) {
-        guard let dbStorage = controllers.userControllers?.dbStorage else { return }
-        let tags = filters.compactMap({ $0.tags }).first
-        let state = TagFilterState(selectedTags: tags ?? [], showAutomatic: Defaults.shared.tagPickerShowAutomaticTags, displayAll: Defaults.shared.tagPickerDisplayAllTags)
-        let handler = TagFilterActionHandler(dbStorage: dbStorage)
-        let tagController = TagFilterViewController(viewModel: ViewModel(initialState: state, handler: handler))
+        guard let viewModel = mainCoordinatorDelegate.sharedTagFilterViewModel else { return }
+        let tagController = TagFilterViewController(viewModel: viewModel)
         tagController.view.translatesAutoresizingMaskIntoConstraints = false
         tagController.delegate = filtersDelegate
         filtersDelegate?.tagFilterDelegate = tagController

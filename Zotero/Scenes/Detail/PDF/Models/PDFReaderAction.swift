@@ -14,7 +14,7 @@ import RealmSwift
 
 enum PDFReaderAction {
     case startObservingAnnotationPreviewChanges
-    case loadDocumentData(boundingBoxConverter: AnnotationBoundingBoxConverter)
+    case loadDocumentData
     case searchAnnotations(String)
     case selectAnnotation(PDFReaderState.AnnotationKey)
     case selectAnnotationFromDocument(PDFReaderState.AnnotationKey)
@@ -59,5 +59,6 @@ enum PDFReaderAction {
     case changeIdleTimerDisabled(Bool)
     case changeFilter(AnnotationsFilter?)
     case submitPendingPage(Int)
+    case deinitialiseReader
     case unlock(String)
 }

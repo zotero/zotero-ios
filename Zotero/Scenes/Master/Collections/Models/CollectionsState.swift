@@ -25,6 +25,7 @@ struct CollectionsState: ViewModelState {
         static let unfiledItemCount = Changes(rawValue: 1 << 4)
         static let collapsedState = Changes(rawValue: 1 << 5)
         static let library = Changes(rawValue: 1 << 6)
+        static let recentlyReadCount = Changes(rawValue: 1 << 7)
     }
 
     enum EditingType {
@@ -42,10 +43,13 @@ struct CollectionsState: ViewModelState {
     var collectionsToken: NotificationToken?
     var searchesToken: NotificationToken?
     var allItemsCountToken: NotificationToken?
+    var recentlyReadCountToken: NotificationToken?
     var unfiledItemsCountToken: NotificationToken?
     var trashItemsCountToken: NotificationToken?
     var trashCollectionsCountToken: NotificationToken?
     var itemsChangesToken: NotificationToken?
+    var cachedTrashItemsCount: Int
+    var cachedTrashCollectionsCount: Int
     var error: CollectionsError?
     // Used when user wants to create bibliography from whole collection.
     var itemKeysForBibliography: Swift.Result<Set<String>, Error>?
@@ -54,7 +58,9 @@ struct CollectionsState: ViewModelState {
         self.selectedCollectionId = selectedCollectionId
         self.changes = []
         self.collectionTree = CollectionTree(nodes: [], collections: [:], collapsed: [:])
-
+        self.cachedTrashItemsCount = 0
+        self.cachedTrashCollectionsCount = 0
+        
         switch libraryId {
         case .custom:
             library = Library(identifier: libraryId, name: L10n.Libraries.myLibrary, metadataEditable: true, filesEditable: true)

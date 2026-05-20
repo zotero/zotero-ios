@@ -36,6 +36,7 @@ extension AFError {
         case .sessionTaskFailed(let error):
             let nsError = error as NSError
             return nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorNotConnectedToInternet
+
         case .multipartEncodingFailed, .parameterEncodingFailed, .parameterEncoderFailed, .invalidURL, .createURLRequestFailed, .requestAdaptationFailed, .requestRetryFailed,
              .serverTrustEvaluationFailed, .sessionDeinitialized, .sessionInvalidated, .urlRequestValidationFailed, .responseValidationFailed, .responseSerializationFailed, .createUploadableFailed,
              .downloadedFileMoveFailed, .explicitlyCancelled:

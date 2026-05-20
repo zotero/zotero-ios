@@ -13,4 +13,5 @@ struct DeletionsResponse: Decodable {
     let searches: [String]
     let items: [String]
     let tags: [String]
+    let settings: [String]
 }

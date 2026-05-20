@@ -16,7 +16,7 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
     typealias State = TagFilterState
 
     let backgroundQueue: DispatchQueue
-    unowned let dbStorage: DbStorage
+    let dbStorage: DbStorage
 
     init(dbStorage: DbStorage) {
         self.dbStorage = dbStorage
@@ -132,13 +132,36 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
     }
 
     private func load(with filters: [ItemsFilter], collectionId: CollectionIdentifier, libraryId: LibraryIdentifier, in viewModel: ViewModel<TagFilterActionHandler>) {
+        // Creating local copies of required state properties, so we avoid an exclusivity violation, if the main thread updates the state while the background queue reads it at the same time.
+        let showAutomatic = viewModel.state.showAutomatic
+        let selectedTags = viewModel.state.selectedTags
+        let displayAll = viewModel.state.displayAll
+        let searchTerm = viewModel.state.searchTerm
         backgroundQueue.async { [weak viewModel] in
             guard let viewModel else { return }
-            _load(with: filters, collectionId: collectionId, libraryId: libraryId, in: viewModel)
+            _load(
+                with: filters,
+                collectionId: collectionId,
+                libraryId: libraryId,
+                showAutomatic: showAutomatic,
+                selectedTags: selectedTags,
+                displayAll: displayAll,
+                searchTerm: searchTerm,
+                in: viewModel
+            )
         }
     }
 
-    private func _load(with filters: [ItemsFilter], collectionId: CollectionIdentifier, libraryId: LibraryIdentifier, in viewModel: ViewModel<TagFilterActionHandler>) {
+    private func _load(
+        with filters: [ItemsFilter],
+        collectionId: CollectionIdentifier,
+        libraryId: LibraryIdentifier,
+        showAutomatic: Bool,
+        selectedTags: Set<String>,
+        displayAll: Bool,
+        searchTerm: String,
+        in viewModel: ViewModel<TagFilterActionHandler>
+    ) {
         do {
             var selected: Set<String> = []
             var snapshot: [TagFilterState.FilterTag]?
@@ -153,14 +176,14 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
                     return
                 }
                 let filtered = try coordinator.perform(
-                    request: ReadFilteredTagsDbRequest(collectionId: collectionId, libraryId: libraryId, showAutomatic: viewModel.state.showAutomatic, filters: filters)
+                    request: ReadFilteredTagsDbRequest(collectionId: collectionId, libraryId: libraryId, showAutomatic: showAutomatic, filters: filters)
                 )
                 let colored = try coordinator.perform(request: ReadColoredTagsDbRequest(libraryId: libraryId))
                 let emoji = try coordinator.perform(request: ReadEmojiTagsDbRequest(libraryId: libraryId))
 
                 // Update selection based on current filter to exclude selected tags which were filtered out by some change.
                 for tag in filtered {
-                    guard viewModel.state.selectedTags.contains(tag.name) else { continue }
+                    guard selectedTags.contains(tag.name) else { continue }
                     selected.insert(tag.name)
                 }
 
@@ -186,7 +209,7 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
                 sorted.append(contentsOf: sortedEmoji)
 
                 var sortedOther: [TagFilterState.FilterTag] = []
-                if !viewModel.state.displayAll {
+                if !displayAll {
                     // Add remaining filtered tags, ignore colored
                     for tag in filtered {
                         guard tag.color.isEmpty && tag.emojiGroup == nil else { continue }
@@ -196,7 +219,7 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
                     }
                 } else {
                     // Add all remaining tags with proper isActive flag
-                    let tags = try coordinator.perform(request: ReadFilteredTagsDbRequest(collectionId: .custom(.all), libraryId: libraryId, showAutomatic: viewModel.state.showAutomatic, filters: []))
+                    let tags = try coordinator.perform(request: ReadFilteredTagsDbRequest(collectionId: .custom(.all), libraryId: libraryId, showAutomatic: showAutomatic, filters: []))
                     for tag in tags {
                         guard tag.color.isEmpty && tag.emojiGroup == nil else { continue }
                         let isActive = filtered.contains(tag)
@@ -209,15 +232,15 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
 
                 coordinator.invalidate()
 
-                if !viewModel.state.searchTerm.isEmpty {
+                if !searchTerm.isEmpty {
                     // Perform search filter if needed
                     snapshot = sorted
-                    sorted = sorted.filter({ $0.tag.name.localizedCaseInsensitiveContains(viewModel.state.searchTerm) })
+                    sorted = sorted.filter({ $0.tag.name.localizedCaseInsensitiveContains(searchTerm) })
                 }
             }
 
             inMainThread { [weak viewModel] in
-                guard let viewModel = viewModel else { return }
+                guard let viewModel else { return }
                 update(viewModel: viewModel) { state in
                     state.tags = sorted
                     state.snapshot = snapshot
@@ -227,7 +250,7 @@ struct TagFilterActionHandler: ViewModelActionHandler, BackgroundDbProcessingAct
             }
         } catch let error {
             inMainThread { [weak viewModel] in
-                guard let viewModel = viewModel else { return }
+                guard let viewModel else { return }
                 DDLogError("TagFilterActionHandler: can't load tag: \(error)")
                 update(viewModel: viewModel) { state in
                     state.error = .loadingFailed

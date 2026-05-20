@@ -17,8 +17,15 @@ struct SyncSettingsView: View {
 
     var body: some View {
         Form {
-            Section(header: Text(L10n.Settings.Sync.dataSyncing)) {
+            Section(header: Text(L10n.Settings.Sync.account)) {
                 Text(self.viewModel.state.account)
+
+                Button {
+                    self.coordinatorDelegate?.showManageAccount(viewModel: self.viewModel)
+                } label: {
+                    Text(L10n.Settings.Sync.manageAccount)
+                        .foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUiColor)
+                }
 
                 Button {
                     self.coordinatorDelegate?.showLogoutAlert(viewModel: self.viewModel)
@@ -30,26 +37,6 @@ struct SyncSettingsView: View {
 
             Section(header: Text(L10n.Settings.Sync.fileSyncing)) {
                 self.fileSyncSection
-            }
-
-            Section(header: Text(L10n.Settings.Sync.account)) {
-                Button {
-                    self.coordinatorDelegate?.showWeb(url: URL(string: "https://www.zotero.org/settings/account")!, completion: {
-                        self.viewModel.process(action: .recheckKeys)
-                    })
-                } label: {
-                    Text(L10n.Settings.Sync.manageAccount)
-                        .foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUiColor)
-                }
-
-                Button {
-                    self.coordinatorDelegate?.showWeb(url: URL(string: "https://www.zotero.org/settings/deleteaccount")!, completion: {
-                        self.viewModel.process(action: .recheckKeys)
-                    })
-                } label: {
-                    Text(L10n.Settings.Sync.deleteAccount)
-                        .foregroundColor(.red)
-                }
             }
         }
         .navigationBarTitle(L10n.Settings.Sync.title)

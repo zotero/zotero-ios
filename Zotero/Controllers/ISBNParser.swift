@@ -21,9 +21,8 @@ final class ISBNParser {
         var isbns: [String] = []
 
         for match in matches {
-            let startIndex = cleanedString.index(cleanedString.startIndex, offsetBy: match.range.lowerBound)
-            let endIndex = cleanedString.index(cleanedString.startIndex, offsetBy: match.range.upperBound)
-            let isbn = cleanedString[startIndex..<endIndex].replacingOccurrences(of: #"\s+"#, with: "", options: .regularExpression, range: nil)
+            guard let range = Range(match.range, in: cleanedString) else { continue }
+            let isbn = cleanedString[range].replacingOccurrences(of: #"\s+"#, with: "", options: .regularExpression, range: nil)
 
             if isbn.count == 10 ? self.validate(isbn10: isbn) : self.validate(isbn13: isbn) {
                 isbns.append(isbn)

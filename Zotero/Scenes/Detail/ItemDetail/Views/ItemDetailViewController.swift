@@ -71,6 +71,7 @@ final class ItemDetailViewController: UIViewController {
 
         navigationController?.setToolbarHidden(true, animated: false)
         collectionView.isHidden = true
+        collectionView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor).isActive = true
         setupFileObservers()
 
         viewModel.stateObservable
@@ -114,7 +115,7 @@ final class ItemDetailViewController: UIViewController {
                     switch update.kind {
                     case .ready:
                         viewModel.process(action: .attachmentOpened(update.key))
-                        coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId)
+                        coordinatorDelegate?.showAttachment(key: update.key, parentKey: update.parentKey, libraryId: update.libraryId, readerURL: nil)
 
                     case .failed(let error):
                         viewModel.process(action: .attachmentOpened(update.key))
@@ -209,6 +210,12 @@ final class ItemDetailViewController: UIViewController {
         case .openDoi(let doi):
             guard let encoded = FieldKeys.Item.clean(doi: doi).addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else { return }
             coordinatorDelegate?.show(doi: encoded)
+
+        case .openCollection(let collection):
+            coordinatorDelegate?.show(collection: collection, libraryId: viewModel.state.library.identifier)
+
+        case .openLibrary(let library):
+            coordinatorDelegate?.show(library: library.identifier)
         }
     }
 
@@ -341,11 +348,14 @@ final class ItemDetailViewController: UIViewController {
                     saveButton = UIBarButtonItem(systemItem: .done, primaryAction: UIAction { [weak viewModel] _ in
                         viewModel?.process(action: .endEditing)
                     })
+                    if #available(iOS 26.0.0, *) {
+                        saveButton.tintColor = Asset.Colors.zoteroBlue.color
+                    }
                 }
                 navigationItem.rightBarButtonItem = saveButton
 
                 guard includesCancel else { return }
-                let cancelButton = UIBarButtonItem(primaryAction: UIAction(title: L10n.cancel) { [weak viewModel] _ in
+                let cancelButton = UIBarButtonItem(systemItem: .cancel, primaryAction: UIAction(title: L10n.cancel) { [weak viewModel] _ in
                     viewModel?.process(action: .cancelEditing)
                 })
                 navigationItem.leftBarButtonItem = cancelButton
@@ -376,9 +386,7 @@ final class ItemDetailViewController: UIViewController {
                 func attachmentButtonItems(for state: MainAttachmentButtonState?) -> [UIBarButtonItem] {
                     guard let state else { return [] }
 
-                    let spacer = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
-                    spacer.width = 16
-                    var items: [UIBarButtonItem] = [spacer]
+                    var items: [UIBarButtonItem] = [.fixedSpace(16)]
 
                     switch state {
                     case .ready(let key), .error(let key, _):

@@ -31,6 +31,7 @@ struct StorePageForItemDbRequest: DbRequest {
         }
 
         pageIndex.index = self.page
+        pageIndex.deleted = false
         pageIndex.changes.append(RObjectChange.create(changes: RPageIndexChanges.index))
         pageIndex.changeType = .user
     }

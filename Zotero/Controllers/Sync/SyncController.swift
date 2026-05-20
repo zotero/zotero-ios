@@ -89,6 +89,7 @@ final class SyncController: SynchronizationController {
             items: [String],
             searches: [String],
             tags: [String],
+            settings: [String],
             conflictMode: PerformItemDeletionsDbRequest.ConflictResolutionMode
         )
         /// Restores remote deletions
@@ -133,8 +134,8 @@ final class SyncController: SynchronizationController {
             case .syncBatchesToDb(let batches):
                 return "syncBatchesToDb(\(batches.count) batches)"
 
-            case .performDeletions(let libraryId, let collections, let items, let searches, let tags, let ignoreConflicts):
-                return "performDeletions(\(libraryId), \(collections.count) collections, \(items.count) items, \(searches.count) searches, \(tags.count) tags, \(ignoreConflicts))"
+            case .performDeletions(let libraryId, let collections, let items, let searches, let tags, let settings, let ignoreConflicts):
+                return "performDeletions(\(libraryId), \(collections.count) collections, \(items.count) items, \(searches.count) searches, \(tags.count) tags, \(settings.count) settings, \(ignoreConflicts))"
 
             case .restoreDeletions(let libraryId, let collections, let items):
                 return "restoreDeletions(\(libraryId), \(collections.count) collections, \(items.count) items)"
@@ -469,7 +470,8 @@ final class SyncController: SynchronizationController {
                  .webDavDeletionFailed,
                  .webDavVerification,
                  .webDavDownload,
-                 .webDavUpload:
+                 .webDavUpload,
+                 .unexpectedMyLibraryLastReadDeletions:
                 reportErrors.append(error)
             }
         }
@@ -592,8 +594,8 @@ final class SyncController: SynchronizationController {
             self.progressHandler.reportDeletions(for: libraryId)
             self.loadRemoteDeletions(libraryId: libraryId, since: version)
 
-        case .performDeletions(let libraryId, let collections, let items, let searches, let tags, let conflictMode):
-            self.performDeletions(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags, conflictMode: conflictMode)
+        case .performDeletions(let libraryId, let collections, let items, let searches, let tags, let settings, let conflictMode):
+            self.performDeletions(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags, settings: settings, conflictMode: conflictMode)
 
         case .restoreDeletions(let libraryId, let collections, let items):
             self.restoreDeletions(libraryId: libraryId, collections: collections, items: items)
@@ -685,10 +687,10 @@ final class SyncController: SynchronizationController {
         case .revertGroupFiles(let libraryId):
             return [.revertLibraryFilesToOriginal(libraryId)]
 
-        case .remoteDeletionOfActiveObject(let libraryId, let toDeleteCollections, let toRestoreCollections, let toDeleteItems, let toRestoreItems, let searches, let tags):
+        case .remoteDeletionOfActiveObject(let libraryId, let toDeleteCollections, let toRestoreCollections, let toDeleteItems, let toRestoreItems, let searches, let tags, let settings):
             var actions: [Action] = []
-            if !toDeleteCollections.isEmpty || !toDeleteItems.isEmpty || !searches.isEmpty || !tags.isEmpty {
-                actions.append(.performDeletions(libraryId: libraryId, collections: toDeleteCollections, items: toDeleteItems, searches: searches, tags: tags, conflictMode: .resolveConflicts))
+            if !toDeleteCollections.isEmpty || !toDeleteItems.isEmpty || !searches.isEmpty || !tags.isEmpty || !settings.isEmpty {
+                actions.append(.performDeletions(libraryId: libraryId, collections: toDeleteCollections, items: toDeleteItems, searches: searches, tags: tags, settings: settings, conflictMode: .resolveConflicts))
             }
             if !toRestoreCollections.isEmpty || !toRestoreItems.isEmpty {
                 actions.append(.restoreDeletions(libraryId: libraryId, collections: toRestoreCollections, items: toRestoreItems))
@@ -698,7 +700,7 @@ final class SyncController: SynchronizationController {
         case .remoteDeletionOfChangedItem(let libraryId, let toDelete, let toRestore):
             var actions: [Action] = []
             if !toDelete.isEmpty {
-                actions.append(.performDeletions(libraryId: libraryId, collections: [], items: toDelete, searches: [], tags: [], conflictMode: .deleteConflicts))
+                actions.append(.performDeletions(libraryId: libraryId, collections: [], items: toDelete, searches: [], tags: [], settings: [], conflictMode: .deleteConflicts))
             }
             if !toRestore.isEmpty {
                 actions.append(.restoreDeletions(libraryId: libraryId, collections: [], items: toRestore))
@@ -1061,6 +1063,7 @@ final class SyncController: SynchronizationController {
                     if updateIds.contains(groupId) {
                         idsToSync.append(groupId)
                     }
+
                 case .custom: break
                 }
             }
@@ -1343,9 +1346,9 @@ final class SyncController: SynchronizationController {
             scheduler: self.workScheduler
         ).result
         result.subscribe(on: self.workScheduler)
-              .subscribe(onSuccess: { [weak self] collections, items, searches, tags, version in
+              .subscribe(onSuccess: { [weak self] collections, items, searches, tags, settings, version in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
-                      self?.loadedRemoteDeletions(collections: collections, items: items, searches: searches, tags: tags, version: version, libraryId: libraryId)
+                      self?.loadedRemoteDeletions(collections: collections, items: items, searches: searches, tags: tags, settings: settings, version: version, libraryId: libraryId)
                   }
               }, onFailure: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
@@ -1355,19 +1358,19 @@ final class SyncController: SynchronizationController {
               .disposed(by: self.disposeBag)
     }
 
-    private func loadedRemoteDeletions(collections: [String], items: [String], searches: [String], tags: [String], version: Int, libraryId: LibraryIdentifier) {
+    private func loadedRemoteDeletions(collections: [String], items: [String], searches: [String], tags: [String], settings: [String], version: Int, libraryId: LibraryIdentifier) {
         self.updateDeletionVersion(for: libraryId, to: version)
 
         switch self.type {
         case .full:
             // During full sync always restore conflicting objects (object was removed remotely, but edited locally).
             self.workQueue.async { [weak self] in
-                self?.performDeletions(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags, conflictMode: .restoreConflicts)
+                self?.performDeletions(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags, settings: settings, conflictMode: .restoreConflicts)
             }
 
         case .collectionsOnly, .ignoreIndividualDelays, .normal, .keysOnly, .prioritizeDownloads:
             // Find conflicting objects and perform related actions.
-            self.resolve(conflict: .objectsRemovedRemotely(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags))
+            self.resolve(conflict: .objectsRemovedRemotely(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags, settings: settings))
         }
     }
 
@@ -1377,6 +1380,7 @@ final class SyncController: SynchronizationController {
         items: [String],
         searches: [String],
         tags: [String],
+        settings: [String],
         conflictMode: PerformItemDeletionsDbRequest.ConflictResolutionMode
     ) {
         let action = PerformDeletionsSyncAction(
@@ -1385,14 +1389,15 @@ final class SyncController: SynchronizationController {
             items: items,
             searches: searches,
             tags: tags,
+            settings: settings,
             conflictMode: conflictMode,
             dbStorage: self.dbStorage,
             queue: self.workQueue
         )
         action.result.subscribe(on: self.workScheduler)
-                     .subscribe(onSuccess: { [weak self] conflicts in
+                     .subscribe(onSuccess: { [weak self] result in
                          self?.accessQueue.async(flags: .barrier) { [weak self] in
-                             self?.finishDeletionsSync(result: .success(conflicts), items: items, libraryId: libraryId)
+                             self?.finishDeletionsSync(result: .success(result), items: items, libraryId: libraryId)
                          }
                      }, onFailure: { [weak self] error in
                          self?.accessQueue.async(flags: .barrier) { [weak self] in
@@ -1402,9 +1407,14 @@ final class SyncController: SynchronizationController {
                      .disposed(by: self.disposeBag)
     }
 
-    private func finishDeletionsSync(result: Result<[(String, String)], Error>, items: [String]?, libraryId: LibraryIdentifier, version: Int? = nil) {
+    private func finishDeletionsSync(result: Result<PerformDeletionsSyncAction.Result, Error>, items: [String]?, libraryId: LibraryIdentifier, version: Int? = nil) {
         switch result {
-        case .success(let conflicts):
+        case .success(let result):
+            if !result.unexpectedMyLibraryLastReadDeletions.isEmpty {
+                nonFatalErrors.append(.unexpectedMyLibraryLastReadDeletions(keys: result.unexpectedMyLibraryLastReadDeletions))
+            }
+
+            let conflicts = result.conflicts
             if !conflicts.isEmpty {
                 self.resolve(conflict: .removedItemsHaveLocalChanges(keys: conflicts, libraryId: libraryId))
             } else {
@@ -1963,6 +1973,7 @@ final class SyncController: SynchronizationController {
         case .submitDeleteBatch(let batch):
             let updatedBatch = batch.copy(withVersion: version)
             self.queue[0] = .submitDeleteBatch(updatedBatch)
+
         default: break
         }
     }
@@ -1981,6 +1992,7 @@ final class SyncController: SynchronizationController {
                 guard actionLibraryId == libraryId else { continue }
                 self.queue[idx] = .storeDeletionVersion(libraryId: libraryId, version: version)
                 return
+
             default: continue
             }
         }
@@ -2114,6 +2126,7 @@ final class SyncController: SynchronizationController {
             } else {
                 return .fatal(.apiError(response: error.localizedDescription, data: data))
             }
+
         case .multipartEncodingFailed,
              .parameterEncodingFailed,
              .parameterEncoderFailed,
@@ -2331,6 +2344,7 @@ fileprivate extension SyncController.Action {
 
         case .uploadAttachment(let upload):
             return upload.libraryId
+
         case .resolveDeletedGroup(let groupId, _),
              .resolveGroupMetadataWritePermission(let groupId, _),
              .deleteGroup(let groupId),
@@ -2338,10 +2352,11 @@ fileprivate extension SyncController.Action {
              .syncGroupToDb(let groupId),
              .resolveGroupFileWritePermission(let groupId, _):
             return .group(groupId)
+
         case .syncVersions(let libraryId, _, _, _),
              .storeVersion(_, let libraryId, _),
              .syncDeletions(let libraryId, _),
-             .performDeletions(let libraryId, _, _, _, _, _),
+             .performDeletions(let libraryId, _, _, _, _, _, _),
              .restoreDeletions(let libraryId, _, _),
              .storeDeletionVersion(let libraryId, _),
              .syncSettings(let libraryId, _),
@@ -2360,6 +2375,7 @@ fileprivate extension SyncController.Action {
         switch self {
         case .resolveDeletedGroup, .resolveGroupMetadataWritePermission, .syncDeletions, .resolveGroupFileWritePermission:
             return true
+
         case .loadKeyPermissions,
              .createLibraryActions,
              .syncSettings,
@@ -2391,6 +2407,7 @@ fileprivate extension SyncController.Action {
         switch self {
         case .submitDeleteBatch, .submitWriteBatch, .uploadAttachment:
             return true
+
         case .loadKeyPermissions,
              .createLibraryActions,
              .syncSettings,

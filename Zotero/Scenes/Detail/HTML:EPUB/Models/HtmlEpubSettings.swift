@@ -19,7 +19,7 @@ struct HtmlEpubSettings {
 }
 
 extension HtmlEpubSettings: ReaderSettings {
-    var preferredContentSize: CGSize {
+    var minimumPreferredContentSize: CGSize {
         return CGSize(width: 480, height: 92)
     }
 

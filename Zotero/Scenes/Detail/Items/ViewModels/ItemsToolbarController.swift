@@ -14,6 +14,9 @@ import RxSwift
 protocol ItemsToolbarControllerDelegate: UITraitEnvironment {
     func process(action: ItemAction.Kind, button: UIBarButtonItem)
     func showLookup()
+    func showFilters(button: UIBarButtonItem)
+    func sortTypeChanged(_ sortType: ItemsSortType)
+    func downloadsFilterChanged(enabled: Bool)
 }
 
 final class ItemsToolbarController {
@@ -21,6 +24,8 @@ final class ItemsToolbarController {
         let isEditing: Bool
         let selectedItems: Set<AnyHashable>
         let filters: [ItemsFilter]
+        let sortType: ItemsSortType
+        let allowsManualSort: Bool
         let downloadBatchData: ItemsState.DownloadBatchData?
         let remoteDownloadBatchData: ItemsState.DownloadBatchData?
         let identifierLookupBatchData: ItemsState.IdentifierLookupBatchData
@@ -32,7 +37,8 @@ final class ItemsToolbarController {
         case single
         case filter
         case title
-        
+        case sort
+
         var tag: Int {
             rawValue
         }
@@ -75,6 +81,10 @@ final class ItemsToolbarController {
         }
     }
 
+    private var isCompact: Bool {
+        delegate?.traitCollection.horizontalSizeClass == .compact || UIDevice.current.userInterfaceIdiom == .phone
+    }
+
     func willAppear() {
         viewController.navigationController?.setToolbarHidden(false, animated: false)
     }
@@ -90,6 +100,7 @@ final class ItemsToolbarController {
             viewController.toolbarItems = createNormalToolbarItems(for: filters)
             updateNormalToolbarItems(
                 for: filters,
+                sortType: data.sortType,
                 downloadBatchData: data.downloadBatchData,
                 remoteDownloadBatchData: data.remoteDownloadBatchData,
                 identifierLookupBatchData: data.identifierLookupBatchData,
@@ -98,17 +109,23 @@ final class ItemsToolbarController {
         }
 
         func createEditingToolbarItems(from actions: [ItemAction]) -> [UIBarButtonItem] {
-            let spacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
             let items = actions.map({ action -> UIBarButtonItem in
-                let item = UIBarButtonItem(image: action.image, style: .plain, target: nil, action: nil)
-                switch action.type {
-                case .addToCollection, .trash, .delete, .removeFromCollection, .restore, .share, .download, .removeDownload:
+                let type = action.type
+                let primaryAction = UIAction(image: action.image) { [weak self] action in
+                    guard let self, let delegate, let button = action.sender as? UIBarButtonItem else { return }
+                    delegate.process(action: type, button: button)
+                }
+                let item = UIBarButtonItem(image: action.image, primaryAction: primaryAction)
+                item.tintColor = Asset.Colors.zoteroBlue.color
+
+                switch type {
+                case .addToCollection, .trash, .delete, .removeFromCollection, .restore, .share, .download, .removeDownload, .removeFromRecentlyRead:
                     item.tag = ToolbarItem.empty.tag
 
-                case .sort, .filter, .createParent, .retrieveMetadata, .copyCitation, .copyBibliography, .duplicate:
+                case .sort, .filter, .createParent, .retrieveMetadata, .copyCitation, .copyBibliography, .duplicate, .debugReader:
                     break
                 }
-                switch action.type {
+                switch type {
                 case .addToCollection:
                     item.accessibilityLabel = L10n.Accessibility.Items.addToCollection
 
@@ -133,44 +150,56 @@ final class ItemsToolbarController {
                 case .removeDownload:
                     item.accessibilityLabel = L10n.Accessibility.Items.removeDownloads
 
-                case .sort, .filter, .createParent, .retrieveMetadata, .copyCitation, .copyBibliography, .duplicate:
+                case .removeFromRecentlyRead:
+                    item.accessibilityLabel = L10n.Accessibility.Items.removeFromRecentlyRead
+
+                case .sort, .filter, .createParent, .retrieveMetadata, .copyCitation, .copyBibliography, .duplicate, .debugReader:
                     break
                 }
-                item.rx.tap.subscribe(onNext: { [weak self] _ in
-                    self?.delegate?.process(action: action.type, button: item)
-                })
-                .disposed(by: disposeBag)
                 return item
             })
-            return [spacer] + (0..<(2 * items.count)).map({ idx -> UIBarButtonItem in idx % 2 == 0 ? items[idx / 2] : spacer })
+            let innerFlexibleSpace = UIBarButtonItem.flexibleSpace()
+            if #available(iOS 26.0, *) {
+                innerFlexibleSpace.hidesSharedBackground = false
+            }
+            return [.flexibleSpace()] + items.enumerated().flatMap({ index, item in
+                [item, index < items.count - 1 ? innerFlexibleSpace : .flexibleSpace()]
+            })
         }
 
         func createNormalToolbarItems(for filters: [ItemsFilter]) -> [UIBarButtonItem] {
-            let fixedSpacer = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
-            fixedSpacer.width = 16
-            let flexibleSpacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
-
             let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease.circle" : "line.horizontal.3.decrease.circle.fill"
-            let filterButton = UIBarButtonItem(image: UIImage(systemName: filterImageName), style: .plain, target: nil, action: nil)
+            let filterButton = UIBarButtonItem(image: UIImage(systemName: filterImageName))
+            filterButton.tintColor = Asset.Colors.zoteroBlue.color
+            if isCompact {
+                filterButton.primaryAction = UIAction(image: UIImage(systemName: filterImageName)) { [weak self] action in
+                    guard let self, let delegate, let button = action.sender as? UIBarButtonItem else { return }
+                    delegate.showFilters(button: filterButton)
+                }
+            } else {
+                let downloadsFilterEnabled = data.filters.contains(where: { $0.isDownloadedFilesFilter })
+                filterButton.menu = createFilterMenu(downloadsFilterEnabled: downloadsFilterEnabled)
+            }
             filterButton.tag = ToolbarItem.filter.tag
             filterButton.accessibilityLabel = L10n.Accessibility.Items.filterItems
-            filterButton.rx.tap.subscribe(onNext: { [weak self] _ in
-                self?.delegate?.process(action: .filter, button: filterButton)
-            })
-            .disposed(by: disposeBag)
-
-            let action = ItemAction(type: .sort)
-            let sortButton = UIBarButtonItem(image: action.image, style: .plain, target: nil, action: nil)
-            sortButton.accessibilityLabel = L10n.Accessibility.Items.sortItems
-            sortButton.rx.tap.subscribe(onNext: { [weak self] _ in
-                self?.delegate?.process(action: action.type, button: sortButton)
-            })
-            .disposed(by: disposeBag)
 
             let titleButton = UIBarButtonItem(customView: createTitleView())
             titleButton.tag = ToolbarItem.title.tag
 
-            return [fixedSpacer, filterButton, flexibleSpacer, titleButton, flexibleSpacer, sortButton, fixedSpacer]
+            var items: [UIBarButtonItem] = [.fixedSpace(16), filterButton, .flexibleSpace(), titleButton]
+
+            if data.allowsManualSort {
+                let action = ItemAction(type: .sort)
+                let sortButton = UIBarButtonItem(image: action.image, menu: createSortMenu(for: data.sortType))
+                sortButton.tintColor = Asset.Colors.zoteroBlue.color
+                sortButton.tag = ToolbarItem.sort.tag
+                sortButton.accessibilityLabel = L10n.Accessibility.Items.sortItems
+                items.append(contentsOf: [.flexibleSpace(), sortButton, .fixedSpace(16)])
+            } else {
+                items.append(contentsOf: [.flexibleSpace(), .fixedSpace(16)])
+            }
+
+            return items
 
             func createTitleView() -> UIStackView {
                 // Filter title label
@@ -207,6 +236,7 @@ final class ItemsToolbarController {
         } else {
             updateNormalToolbarItems(
                 for: sizeClassSpecificFilters(from: data.filters),
+                sortType: data.sortType,
                 downloadBatchData: data.downloadBatchData,
                 remoteDownloadBatchData: data.remoteDownloadBatchData,
                 identifierLookupBatchData: data.identifierLookupBatchData,
@@ -233,6 +263,37 @@ final class ItemsToolbarController {
         })
     }
 
+    private func createFilterMenu(downloadsFilterEnabled: Bool) -> UIMenu {
+        let downloadsAction = UIAction(title: L10n.Items.Filters.downloads, image: UIImage(systemName: "arrow.down.circle"), state: downloadsFilterEnabled ? .on : .off) { [weak self] _ in
+            self?.delegate?.downloadsFilterChanged(enabled: !downloadsFilterEnabled)
+        }
+        return UIMenu(title: L10n.Items.Filters.title, children: [downloadsAction])
+    }
+
+    private func createSortMenu(for sortType: ItemsSortType) -> UIMenu {
+        let ascendingAction = UIAction(title: L10n.Items.ascending, state: sortType.ascending ? .on : .off) { [weak self] _ in
+            var newSortType = sortType
+            newSortType.ascending = true
+            self?.delegate?.sortTypeChanged(newSortType)
+        }
+        let descendingAction = UIAction(title: L10n.Items.descending, state: sortType.ascending ? .off : .on) { [weak self] _ in
+            var newSortType = sortType
+            newSortType.ascending = false
+            self?.delegate?.sortTypeChanged(newSortType)
+        }
+        let orderMenu = UIMenu(title: L10n.Items.sortOrder, options: .displayInline, children: [ascendingAction, descendingAction])
+
+        let fieldActions = ItemsSortType.Field.allCases.map { field in
+            UIAction(title: field.title, state: sortType.field == field ? .on : .off) { [weak self] _ in
+                let newSortType = ItemsSortType(field: field, ascending: field.defaultOrderAscending)
+                self?.delegate?.sortTypeChanged(newSortType)
+            }
+        }
+        let fieldsMenu = UIMenu(title: L10n.Items.sortBy, options: .displayInline, children: fieldActions)
+
+        return UIMenu(children: [orderMenu, fieldsMenu])
+    }
+
     // MARK: - Helpers
 
     private func updateEditingToolbarItems(for selectedItems: Set<AnyHashable>) {
@@ -252,14 +313,30 @@ final class ItemsToolbarController {
 
     private func updateNormalToolbarItems(
         for filters: [ItemsFilter],
+        sortType: ItemsSortType,
         downloadBatchData: ItemsState.DownloadBatchData?,
         remoteDownloadBatchData: ItemsState.DownloadBatchData?,
         identifierLookupBatchData: ItemsState.IdentifierLookupBatchData,
         itemCount: Int
     ) {
+        if let item = viewController.toolbarItems?.first(where: { $0.tag == ToolbarItem.sort.tag }) {
+            item.menu = createSortMenu(for: sortType)
+        }
+
         if let item = viewController.toolbarItems?.first(where: { $0.tag == ToolbarItem.filter.tag }) {
             let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease.circle" : "line.horizontal.3.decrease.circle.fill"
             item.image = UIImage(systemName: filterImageName)
+            if isCompact {
+                item.menu = nil
+                item.primaryAction = UIAction { [weak self, weak item] _ in
+                    guard let item else { return }
+                    self?.delegate?.showFilters(button: item)
+                }
+            } else {
+                item.primaryAction = nil
+                let downloadsFilterEnabled = filters.contains(where: { $0.isDownloadedFilesFilter })
+                item.menu = createFilterMenu(downloadsFilterEnabled: downloadsFilterEnabled)
+            }
         }
 
         if let item = viewController.toolbarItems?.first(where: { $0.tag == ToolbarItem.title.tag }),
@@ -279,12 +356,20 @@ final class ItemsToolbarController {
                 var progress: Float?
                 let remoteDownloading = remoteDownloadBatchData != nil
                 let defaultAttributes: [NSAttributedString.Key: Any] = [.foregroundColor: UIColor.label, .font: UIFont.preferredFont(forTextStyle: .footnote)]
-                if identifierLookupBatchData != .zero, !identifierLookupBatchData.isFinished || remoteDownloading {
-                    // Show "Saved x / y" only if lookup hasn't finished, or there are also ongoing remote downloads
+                if identifierLookupBatchData != .zero,
+                   !identifierLookupBatchData.isFinished || identifierLookupBatchData.failed > 0 || remoteDownloading {
+                    // Keep lookup progress visible while it is active, while remote downloads are pending,
+                    // or after hidden failures so the user can reopen lookup from the toolbar.
                     isUserInteractionEnabled = true
                     let identifierLookupText = L10n.Items.toolbarSaved(identifierLookupBatchData.saved, identifierLookupBatchData.total)
                     let identifierLookupAttributes: [NSAttributedString.Key: Any] = [.foregroundColor: Asset.Colors.zoteroBlueWithDarkMode.color, .font: UIFont.preferredFont(forTextStyle: .footnote)]
                     attributedText.append(.init(string: identifierLookupText, attributes: identifierLookupAttributes))
+                    if identifierLookupBatchData.failed > 0 {
+                        let failedText = L10n.Items.toolbarFailed(identifierLookupBatchData.failed)
+                        let failedAttributes: [NSAttributedString.Key: Any] = [.foregroundColor: UIColor.systemRed, .font: UIFont.preferredFont(forTextStyle: .footnote)]
+                        attributedText.append(.init(string: " - ", attributes: defaultAttributes))
+                        attributedText.append(.init(string: failedText, attributes: failedAttributes))
+                    }
                 }
                 if let combinedDownloadBatchData = ItemsState.DownloadBatchData.combineDownloadBatchData([downloadBatchData, remoteDownloadBatchData]) {
                     if attributedText.length > 0 {

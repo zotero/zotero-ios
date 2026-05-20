@@ -41,7 +41,6 @@
                 <constraint firstItem="5uR-4Z-85Y" firstAttribute="centerY" secondItem="i5M-Pr-FkT" secondAttribute="centerY" id="2Oh-eB-bYC"/>
                 <constraint firstItem="bIM-tv-sgp" firstAttribute="top" secondItem="i5M-Pr-FkT" secondAttribute="top" id="3Io-Cc-xf9"/>
                 <constraint firstItem="5uR-4Z-85Y" firstAttribute="centerX" secondItem="i5M-Pr-FkT" secondAttribute="centerX" id="NVe-Rn-BdL"/>
-                <constraint firstAttribute="bottom" secondItem="bIM-tv-sgp" secondAttribute="bottom" id="OFh-hn-QUg"/>
                 <constraint firstAttribute="trailing" secondItem="bIM-tv-sgp" secondAttribute="trailing" id="UpS-Oe-zqV"/>
                 <constraint firstItem="bIM-tv-sgp" firstAttribute="leading" secondItem="i5M-Pr-FkT" secondAttribute="leading" id="tHh-Qr-apI"/>
             </constraints>

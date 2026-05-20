@@ -185,6 +185,9 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
 
         case .applySettings:
             applySettings(in: viewModel)
+
+        case .removeFromRecentlyRead(let keys):
+            deleteItemsFromRecentlyRead(keys: keys, libraryId: viewModel.state.library.identifier, completion: handleBaseActionResult)
         }
     }
 
@@ -473,6 +476,32 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
         }
     }
 
+    private func deleteItemsFromRecentlyRead(keys: Set<String>, libraryId: LibraryIdentifier, completion: @escaping (Result<Void, ItemsError>) -> Void) {
+        perform(
+            with: { coordinator in
+                // For Recently Read collection we're showing parent items, even if only a child item is marked with lastRead, so we have to go through both parent and children to remove all lastRead flags.
+                let items = try coordinator.perform(request: ReadItemsWithKeysDbRequest(keys: keys, libraryId: libraryId))
+                var toRemove: [StoreLastReadDatesDbRequest.Data] = []
+                for item in items {
+                    if item.lastRead != nil {
+                        toRemove.append(StoreLastReadDatesDbRequest.Data(key: item.key, libraryId: libraryId, date: nil))
+                    }
+                    for child in item.children {
+                        if child.lastRead != nil {
+                            toRemove.append(StoreLastReadDatesDbRequest.Data(key: child.key, libraryId: libraryId, date: nil))
+                        }
+                    }
+                }
+                try coordinator.perform(request: StoreLastReadDatesDbRequest(array: toRemove))
+            },
+            completion: { result in
+                guard case .failure(let error) = result else { return }
+                DDLogError("ItemsActionHandler: can't remove items from recently read - \(error)")
+                completion(.failure(.deletionFromRecentlyRead))
+            }
+        )
+    }
+
     private func set(trashed: Bool, to keys: Set<String>, libraryId: LibraryIdentifier, completion: @escaping (Result<Void, ItemsError>) -> Void) {
         let request = MarkItemsAsTrashedDbRequest(keys: Array(keys), libraryId: libraryId, trashed: trashed)
         perform(request: request) { error in
@@ -556,7 +585,7 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
             switch result {
             case .success(let (succeeded, failed)):
                 for attachment in succeeded {
-                    if FeatureGates.enabled.contains(.pdfWorker), let file = attachment.file as? FileData, file.mimeType == "application/pdf" {
+                    if FeatureGates.enabled.contains(.documentWorker), let file = attachment.file as? FileData, file.mimeType == "application/pdf" {
                         let task = RecognizerController.Task(file: file, kind: .createParentForItem(libraryId: libraryId, key: attachment.key))
                         _ = recognizerController.queue(task: task)
                     }
@@ -578,16 +607,25 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
     // MARK: - Searching & Filtering
 
     private func applySettings(in viewModel: ViewModel<ItemsActionHandler>) {
-        let results = try? results(
-            for: viewModel.state.searchTerm,
-            filters: viewModel.state.filters,
-            collectionId: viewModel.state.collection.identifier,
-            sortType: viewModel.state.sortType,
-            libraryId: viewModel.state.library.identifier
-        )
-        update(viewModel: viewModel) { state in
-            state.results = results
-            state.changes = [.results]
+        let state = viewModel.state
+        do {
+            let results = try results(
+                for: state.searchTerm,
+                filters: state.filters,
+                collectionId: state.collection.identifier,
+                sortType: state.sortType,
+                libraryId: state.library.identifier
+            )
+            update(viewModel: viewModel) { state in
+                state.results = results
+                state.changes = [.results]
+            }
+        } catch {
+            DDLogError("ItemsActionHandler: can't apply settings - \(error)")
+            update(viewModel: viewModel) { state in
+                state.results = nil
+                state.changes = [.results]
+            }
         }
     }
 
