@@ -12,12 +12,14 @@ import CocoaLumberjackSwift
 import RealmSwift
 import RxSwift
 
+typealias ItemContextualActionCompletion = (Bool) -> Void
+
 protocol ItemsTableViewHandlerDelegate: AnyObject {
     var isInViewHierarchy: Bool { get }
     var collectionKey: String? { get }
     var library: Library { get }
 
-    func process(action: ItemAction.Kind, at indexPath: IndexPath, completionAction: ((Bool) -> Void)?)
+    func process(action: ItemAction.Kind, at indexPath: IndexPath, contextualActionCompletion: ItemContextualActionCompletion?)
     func process(tapAction action: ItemsTableViewHandler.TapAction)
     func process(dragAndDropAction action: ItemsTableViewHandler.DragAndDropAction)
 }
@@ -103,7 +105,7 @@ final class ItemsTableViewHandler: NSObject {
     private func createContextMenu(at indexPath: IndexPath) -> UIMenu {
         let actions: [UIAction] = dataSource.createContextMenuActions(at: indexPath.row).map({ action in
             return UIAction(title: action.title, image: action.image, attributes: (action.isDestructive ? .destructive : [])) { [weak self] _ in
-                self?.delegate.process(action: action.type, at: indexPath, completionAction: nil)
+                self?.delegate.process(action: action.type, at: indexPath, contextualActionCompletion: nil)
             }
         })
         return UIMenu(title: "", children: actions)
@@ -117,7 +119,7 @@ final class ItemsTableViewHandler: NSObject {
                     completion(false)
                     return
                 }
-                delegate.process(action: action.type, at: indexPath, completionAction: completion)
+                delegate.process(action: action.type, at: indexPath, contextualActionCompletion: completion)
             })
             contextualAction.image = action.image
             switch action.type {
