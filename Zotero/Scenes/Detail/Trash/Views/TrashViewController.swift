@@ -164,9 +164,9 @@ final class TrashViewController: BaseItemsViewController {
             break
 
         case .delete:
-            guard !selectedKeys.isEmpty else { return }
+            guard !selectedKeys.isEmpty, let coordinatorDelegate else { return }
             completed = nil
-            coordinatorDelegate?.showDeletionQuestion(
+            coordinatorDelegate.showDeletionQuestion(
                 count: selectedKeys.count,
                 confirmAction: { [weak self] in
                     self?.viewModel.process(action: .deleteObjects(selectedKeys))

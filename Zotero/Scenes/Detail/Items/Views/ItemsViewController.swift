@@ -260,9 +260,9 @@ final class ItemsViewController: BaseItemsViewController {
             break
 
         case .addToCollection:
-            guard !selectedKeys.isEmpty else { return }
+            guard !selectedKeys.isEmpty, let coordinatorDelegate else { return }
             completed = nil
-            coordinatorDelegate?.showCollectionsPicker(
+            coordinatorDelegate.showCollectionsPicker(
                 in: library,
                 cancelled: {
                     contextualActionCompletion?(false)
@@ -311,9 +311,9 @@ final class ItemsViewController: BaseItemsViewController {
             completed = true
 
         case .removeFromCollection:
-            guard !selectedKeys.isEmpty else { return }
+            guard !selectedKeys.isEmpty, let coordinatorDelegate else { return }
             completed = nil
-            coordinatorDelegate?.showRemoveFromCollectionQuestion(
+            coordinatorDelegate.showRemoveFromCollectionQuestion(
                 count: viewModel.state.selectedItems.count,
                 cancelAction: {
                     contextualActionCompletion?(false)
