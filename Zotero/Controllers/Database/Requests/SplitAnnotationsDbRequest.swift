@@ -23,12 +23,13 @@ struct SplitAnnotationsDbRequest: DbRequest {
 
     func process(in database: Realm) throws {
         let items = database.objects(RItem.self).filter(.keys(self.keys, in: self.libraryId))
+        let context = DeletionContext()
 
         for item in items {
             self.split(item: item, database: database)
-            item.willRemove(in: database)
-            database.delete(item)
+            context.delete(item, in: database)
         }
+        context.cleanup(in: database)
     }
 
     /// Splits database annotation if it exceedes position limit.

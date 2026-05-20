@@ -31,6 +31,7 @@ struct PerformItemDeletionsDbRequest: DbResponseRequest {
     func process(in database: Realm) throws -> [(String, String)] {
         let objects = database.objects(RItem.self).filter(.keys(keys, in: libraryId))
         var conflicts: [(String, String)] = []
+        let context = DeletionContext()
 
         for object in objects {
             guard !object.isInvalidated else { continue } // If object is invalidated it has already been removed by some parent before
@@ -53,9 +54,9 @@ struct PerformItemDeletionsDbRequest: DbResponseRequest {
                 break
             }
 
-            object.willRemove(in: database)
-            database.delete(object)
+            context.delete(object, in: database)
         }
+        context.cleanup(in: database)
 
         return conflicts
     }
@@ -76,8 +77,7 @@ struct PerformCollectionDeletionsDbRequest: DbRequest {
                 // this collection is new and it will be reinserted by sync
                 object.markAsChanged(in: database)
             } else {
-                object.willRemove(in: database)
-                database.delete(object)
+                database.delete(deletable: object)
             }
         }
     }
@@ -98,8 +98,7 @@ struct PerformSearchDeletionsDbRequest: DbRequest {
                 // this search is new and it will be reinserted by sync
                 object.markAsChanged(in: database)
             } else {
-                object.willRemove(in: database)
-                database.delete(object)
+                database.delete(deletable: object)
             }
         }
     }
@@ -135,8 +134,7 @@ struct PerformPageIndexDeletionsDbRequest: DbRequest {
                 // this pageIndex is new and it will be reinserted by sync
                 object.markAsChanged(in: database)
             } else {
-                object.willRemove(in: database)
-                database.delete(object)
+                database.delete(deletable: object)
             }
         }
     }
@@ -166,8 +164,7 @@ struct PerformLastReadDeletionsDbRequest: DbRequest {
                     // this lastRead is new and it will be reinserted by sync
                     object.markAsChanged(in: database)
                 } else {
-                    object.willRemove(in: database)
-                    database.delete(object)
+                    database.delete(deletable: object)
                 }
             }
         }

@@ -12,14 +12,62 @@ import RealmSwift
 
 typealias DeletableObject = Deletable&Object
 
+final class DeletionContext {
+    private var userIdsToCheck: Set<Int> = []
+
+    func collect(user: RUser?) {
+        guard let user, !user.isInvalidated else { return }
+        userIdsToCheck.insert(user.identifier)
+    }
+
+    func delete<Obj: DeletableObject>(_ object: Obj, in database: Realm) {
+        guard !object.isInvalidated else { return }
+        object.willRemove(in: database, context: self)
+        database.delete(object)
+    }
+
+    func delete<Obj: DeletableObject>(_ objects: Results<Obj>, in database: Realm) {
+        for object in objects {
+            guard !object.isInvalidated else { continue }
+            object.willRemove(in: database, context: self)
+        }
+        database.delete(objects)
+    }
+
+    func cleanup(in database: Realm) {
+        for identifier in userIdsToCheck {
+            guard let user = database.object(ofType: RUser.self, forPrimaryKey: identifier),
+                  !user.isInvalidated,
+                  user.createdBy.isEmpty,
+                  user.modifiedBy.isEmpty else { continue }
+
+            database.delete(user)
+        }
+    }
+}
+
 protocol Deletable: AnyObject {
     var deleted: Bool { get set }
 
-    func willRemove(in database: Realm)
+    func willRemove(in database: Realm, context: DeletionContext)
+}
+
+extension Realm {
+    func delete<Obj: DeletableObject>(deletable object: Obj) {
+        let context = DeletionContext()
+        context.delete(object, in: self)
+        context.cleanup(in: self)
+    }
+
+    func delete<Obj: DeletableObject>(deletable objects: Results<Obj>) {
+        let context = DeletionContext()
+        context.delete(objects, in: self)
+        context.cleanup(in: self)
+    }
 }
 
 extension RCollection: Deletable {
-    func willRemove(in database: Realm) {
+    func willRemove(in database: Realm, context: DeletionContext) {
         guard let libraryId = self.libraryId else { return }
         if !changes.isInvalidated {
             database.delete(changes)
@@ -28,7 +76,7 @@ extension RCollection: Deletable {
         if !children.isInvalidated {
             for child in children {
                 guard !child.isInvalidated else { continue }
-                child.willRemove(in: database)
+                child.willRemove(in: database, context: context)
             }
             database.delete(children)
         }
@@ -36,14 +84,17 @@ extension RCollection: Deletable {
 }
 
 extension RItem: Deletable {
-    func willRemove(in database: Realm) {
+    func willRemove(in database: Realm, context: DeletionContext) {
+        context.collect(user: createdBy)
+        context.collect(user: lastModifiedBy)
+
         if !changes.isInvalidated {
             database.delete(changes)
         }
         if !self.children.isInvalidated {
             for child in self.children {
                 guard !child.isInvalidated else { continue }
-                child.willRemove(in: database)
+                child.willRemove(in: database, context: context)
             }
             database.delete(self.children)
         }
@@ -52,20 +103,6 @@ extension RItem: Deletable {
             database.delete(self.tags)
             if !baseTagsToRemove.isEmpty {
                 database.delete(database.objects(RTag.self).filter(.name(in: baseTagsToRemove)))
-            }
-        }
-
-        if let createdByUser = self.createdBy, !createdByUser.isInvalidated, let lastModifiedByUser = self.lastModifiedBy, !lastModifiedByUser.isInvalidated,
-           createdByUser.identifier == lastModifiedByUser.identifier &&
-           createdByUser.createdBy.count == 1 &&
-           createdByUser.modifiedBy.count == 1 {
-            database.delete(createdByUser)
-        } else {
-            if let user = self.createdBy, !user.isInvalidated, user.createdBy.count == 1 && (user.modifiedBy.isInvalidated || user.modifiedBy.isEmpty) {
-                database.delete(user)
-            }
-            if let user = self.lastModifiedBy, !user.isInvalidated, (user.createdBy.isInvalidated || user.createdBy.isEmpty) && user.modifiedBy.count == 1 {
-                database.delete(user)
             }
         }
 
@@ -125,7 +162,7 @@ extension RItem: Deletable {
 }
 
 extension RSearch: Deletable {
-    func willRemove(in database: Realm) {
+    func willRemove(in database: Realm, context: DeletionContext) {
         if !changes.isInvalidated {
             database.delete(changes)
         }
@@ -133,7 +170,7 @@ extension RSearch: Deletable {
 }
 
 extension RLastReadDate: Deletable {
-    func willRemove(in database: Realm) {
+    func willRemove(in database: Realm, context: DeletionContext) {
         if !changes.isInvalidated {
             database.delete(changes)
         }
@@ -144,7 +181,7 @@ extension RLastReadDate: Deletable {
 }
 
 extension RPageIndex: Deletable {
-    func willRemove(in database: Realm) {
+    func willRemove(in database: Realm, context: DeletionContext) {
         if !changes.isInvalidated {
             database.delete(changes)
         }

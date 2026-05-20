@@ -24,8 +24,7 @@ struct DeleteFailedItemsDbRequest: DbRequest {
     private func deleteItemAndChildrenAsNeeded(item: RItem, in database: Realm) {
         if !item.changes.isEmpty {
             // Item did not sync yet, delete with children
-            item.willRemove(in: database)
-            database.delete(item)
+            database.delete(deletable: item)
             return
         }
 
