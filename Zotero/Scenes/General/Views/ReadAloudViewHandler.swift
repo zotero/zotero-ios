@@ -155,7 +155,7 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
         func makeReadAloudMenuChildren(controller: ReadAloudViewHandler) -> [UIMenuElement] {
             let firstGroup = UIMenu(title: currentVoiceTitle(controller: controller), options: .displayInline, children: createControls(controller: controller))
             firstGroup.preferredElementSize = .medium
-            let speedGroup = UIMenu(title: "Speech Rate", options: .displayInline, children: createSpeedActions(controller: controller))
+            let speedGroup = UIMenu(title: "Speech Rate", options: [], children: createSpeedActions(controller: controller))
             return [firstGroup, speedGroup]
         }
 
@@ -211,7 +211,7 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
             formatter.numberStyle = .decimal
             formatter.minimumFractionDigits = 0
             formatter.maximumFractionDigits = 2
-            let rates: [Float] = [0.75, 1.0, 1.25, 1.5, 1.75, 2.0]
+            let rates: [Float] = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3]
             let currentRate = controller.speechManager.speechRateModifier
             return rates.map { rate in
                 let title = (formatter.string(from: NSNumber(value: rate)) ?? "") + "×"
