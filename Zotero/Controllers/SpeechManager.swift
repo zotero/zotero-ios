@@ -25,16 +25,17 @@ protocol SpeechManagerDelegate: AnyObject {
     func text(for indices: [Index], completion: @escaping ([Index: String]?) -> Void)
     func moved(to pageIndex: Index, from previousPageIndex: Index)
     func focusPage(_ pageIndex: Index)
-    /// Called when the highlighted paragraph changes during text-to-speech playback.
-    /// The highlight covers the entire paragraph containing the currently spoken sentence.
+    /// Called when the highlighted text changes during text-to-speech playback.
+    /// The highlight covers the current text unit (sentence or paragraph) being spoken, matching the voice's
+    /// segmentation granularity. Local voices and remote voices with sentence granularity highlight sentences;
+    /// remote voices with paragraph granularity highlight paragraphs.
     /// - Parameters:
-    ///   - text: The paragraph text to highlight
+    ///   - text: The text to highlight
     ///   - pageIndex: The page index where the text is located
     ///   - sourceLocation: UTF-16 offset of `text` in the source page text. Disambiguates when `text` appears
     ///     multiple times on `pageIndex` (e.g. duplicated math formulas).
     ///   - sourceTextLength: UTF-16 length of the source page text, used together with `sourceLocation` as a
     ///     proportional hint.
-    /// Called when the read-aloud highlight changes during text-to-speech playback.
     func readAloudHighlightChanged(text: String, pageIndex: Index, sourceLocation: Int, sourceTextLength: Int)
     /// Called when the annotation preview highlight changes during a highlight session. `sourceLocation` and
     /// `sourceTextLength` carry the same disambiguation hint as `readAloudHighlightChanged`.
@@ -122,13 +123,17 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
 
     struct SpeechData {
         let index: Delegate.Index
-        /// The range of the currently spoken sentence/segment
+        /// The range of the currently spoken text segment as reported by the voice processor.
+        /// Word-level for local voice; sentence- or paragraph-level for remote voice depending on granularity.
         let range: NSRange
-        /// The range of the paragraph containing the current sentence (used for highlighting)
-        let paragraphRange: NSRange
+        /// The range of the text unit currently highlighted (sentence or paragraph depending on `highlightGranularity`).
+        let highlightRange: NSRange
+        /// The granularity at which the highlight was computed. Recorded so that a voice/granularity change
+        /// can be detected and the highlight recomputed even if the speech position is still within the old range.
+        let highlightGranularity: NLTokenUnit
 
-        func copy(range: NSRange, paragraphRange: NSRange) -> SpeechData {
-            return SpeechData(index: index, range: range, paragraphRange: paragraphRange)
+        func copy(range: NSRange, highlightRange: NSRange, highlightGranularity: NLTokenUnit) -> SpeechData {
+            return SpeechData(index: index, range: range, highlightRange: highlightRange, highlightGranularity: highlightGranularity)
         }
     }
 
@@ -162,14 +167,45 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         return speechData?.range
     }
     var currentPageIndex: Delegate.Index? { delegate?.getCurrentPageIndex() }
+    /// Granularity at which the read-aloud highlight is rendered. Mirrors the voice's segmentation granularity:
+    /// remote voices use their declared granularity, local voices always highlight sentences (since they emit
+    /// word-level progress events).
+    private var highlightGranularity: NLTokenUnit {
+        switch processor.speechVoice {
+        case .remote(let voice):
+            return voice.granularity == .paragraph ? .paragraph : .sentence
 
-    /// Returns the current read-aloud highlight paragraph text, page index, and source-text position info
+        case .local, .none:
+            return .sentence
+        }
+    }
+
+    private func findHighlightUnit(at index: Int, in text: String, granularity: NLTokenUnit) -> (text: String, range: NSRange)? {
+        switch granularity {
+        case .paragraph:
+            return TextTokenizer.findParagraphContaining(index: index, in: text)
+
+        case .sentence:
+            return TextTokenizer.findSentenceContaining(index: index, in: text)
+
+        case .word, .document:
+            return nil
+
+        @unknown default:
+            return nil
+        }
+    }
+
+    /// Returns the current read-aloud highlight text, page index, and source-text position info
     /// (used to disambiguate duplicate occurrences when highlighting), if speech is active.
+    /// The highlight covers a sentence or paragraph depending on the voice's segmentation granularity.
     var currentReadAloudHighlight: (text: String, pageIndex: Delegate.Index, sourceLocation: Int, sourceTextLength: Int)? {
         guard let speechData, let pageText = cachedPages[speechData.index] else { return nil }
-        let range = speechData.paragraphRange
+        let range = speechData.highlightRange
         guard range.length > 0, let textRange = Range(range, in: pageText) else { return nil }
-        return (String(pageText[textRange]), speechData.index, range.location, (pageText as NSString).length)
+        let text = String(pageText[textRange]).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return nil }
+        return (text, speechData.index, range.location, (pageText as NSString).length)
     }
 
     init(delegate: Delegate, voiceLanguage: String?, remoteVoiceTier: RemoteVoice.Tier?, remoteVoicesController: RemoteVoicesController) {
@@ -568,7 +604,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     private func startSpeaking(at index: Int = 0, page: String, pageIndex: Delegate.Index, reportPageChange: Bool, shouldDetectVoice: Bool) {
         let previousPageIndex = speechData?.index
         if previousPageIndex != pageIndex {
-            speechData = SpeechData(index: pageIndex, range: NSRange(), paragraphRange: NSRange())
+            speechData = SpeechData(index: pageIndex, range: NSRange(), highlightRange: NSRange(), highlightGranularity: highlightGranularity)
         }
         if reportPageChange, let previousPageIndex {
             delegate?.moved(to: pageIndex, from: previousPageIndex)
@@ -584,38 +620,39 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
 
         let previousPageIndex = speechData?.index
         let pageDidChange = previousPageIndex != pageIndex
-        let previousParagraphRange = speechData?.paragraphRange
+        let previousHighlight = speechData.map({ (range: $0.highlightRange, granularity: $0.highlightGranularity) })
+        let granularity = highlightGranularity
 
-        // Check if the new position is still within the current paragraph
-        let isInCurrentParagraph: Bool
-        if let previousParagraphRange, previousParagraphRange.length > 0 {
-            isInCurrentParagraph = !pageDidChange && NSLocationInRange(index, previousParagraphRange)
+        // Check if the new position is still within the current highlighted unit (same granularity)
+        let isInCurrentHighlight: Bool
+        if let previousHighlight, previousHighlight.range.length > 0, previousHighlight.granularity == granularity {
+            isInCurrentHighlight = !pageDidChange && NSLocationInRange(index, previousHighlight.range)
         } else {
-            isInCurrentParagraph = false
+            isInCurrentHighlight = false
         }
 
-        let newParagraphRange: NSRange
+        let newHighlightRange: NSRange
         let highlightText: String?
-        if isInCurrentParagraph, let previousParagraphRange {
-            // Still in the same paragraph, keep the existing range
-            newParagraphRange = previousParagraphRange
+        if isInCurrentHighlight, let previousHighlight {
+            // Still in the same unit, keep the existing range
+            newHighlightRange = previousHighlight.range
             highlightText = nil
         } else {
-            // Find the full paragraph containing this position
-            let paragraphData = TextTokenizer.findParagraphContaining(index: index, in: page)
-            newParagraphRange = paragraphData?.range ?? sentenceData.range
-            highlightText = paragraphData?.text ?? sentenceData.text
+            // Find the full unit (sentence/paragraph) containing this position
+            let containingUnit = findHighlightUnit(at: index, in: page, granularity: granularity)
+            newHighlightRange = containingUnit?.range ?? sentenceData.range
+            highlightText = containingUnit?.text ?? sentenceData.text
         }
 
-        speechData = SpeechData(index: pageIndex, range: sentenceData.range, paragraphRange: newParagraphRange)
+        speechData = SpeechData(index: pageIndex, range: sentenceData.range, highlightRange: newHighlightRange, highlightGranularity: granularity)
         processor.invalidateCurrentPlayback()
 
-        // Only notify delegate if the paragraph changed
+        // Only notify delegate if the highlight changed
         if let highlightText {
             delegate?.readAloudHighlightChanged(
                 text: highlightText,
                 pageIndex: pageIndex,
-                sourceLocation: newParagraphRange.location,
+                sourceLocation: newHighlightRange.location,
                 sourceTextLength: (page as NSString).length
             )
         }
@@ -659,26 +696,28 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         guard let speechData else { return }
         guard let pageText = cachedPages[speechData.index] else { return }
 
-        // Check if the new range is still within the current paragraph
-        if NSLocationInRange(range.location, speechData.paragraphRange) {
-            // Still in the same paragraph, just update the speech range
-            self.speechData = speechData.copy(range: range, paragraphRange: speechData.paragraphRange)
+        let granularity = highlightGranularity
+
+        // Check if the new range is still within the current highlighted unit and granularity hasn't changed
+        if speechData.highlightGranularity == granularity, NSLocationInRange(range.location, speechData.highlightRange) {
+            // Still in the same unit, just update the speech range
+            self.speechData = speechData.copy(range: range, highlightRange: speechData.highlightRange, highlightGranularity: granularity)
             return
         }
 
-        // New range is outside current paragraph, find the new paragraph
-        let paragraphResult = TextTokenizer.findParagraphContaining(index: range.location, in: pageText)
-        let newParagraphRange = paragraphResult?.range ?? range
+        // New range is outside the current unit (or granularity changed), find the new unit
+        let unitResult = findHighlightUnit(at: range.location, in: pageText, granularity: granularity)
+        let newHighlightRange = unitResult?.range ?? range
 
-        // Update speech data with the new range and paragraph range
-        self.speechData = speechData.copy(range: range, paragraphRange: newParagraphRange)
+        // Update speech data with the new range and highlight range
+        self.speechData = speechData.copy(range: range, highlightRange: newHighlightRange, highlightGranularity: granularity)
 
-        // Notify delegate of the paragraph change
-        if let paragraphText = paragraphResult?.text {
+        // Notify delegate of the highlight change
+        if let highlightText = unitResult?.text {
             delegate?.readAloudHighlightChanged(
-                text: paragraphText,
+                text: highlightText,
                 pageIndex: speechData.index,
-                sourceLocation: newParagraphRange.location,
+                sourceLocation: newHighlightRange.location,
                 sourceTextLength: (pageText as NSString).length
             )
         }
