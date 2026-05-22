@@ -155,6 +155,13 @@ final class DocumentWorkerController {
 
         let work: Work
         let kind: Kind
+        let duration: CFTimeInterval?
+
+        init(work: Work, kind: Kind, duration: CFTimeInterval? = nil) {
+            self.work = work
+            self.kind = kind
+            self.duration = duration
+        }
     }
 
     // MARK: Properties
@@ -354,12 +361,16 @@ final class DocumentWorkerController {
                     case .success(let data):
                         switch data {
                         case .recognizerData(let data), .fullText(let data), .structuredDocumentText(let data):
-                            finishWork(work, in: worker) { $0?.on(.next(Update(work: work, kind: .extractedData(data: data)))) }
+                            finishWork(work, in: worker) { subject, duration in
+                                subject?.on(.next(Update(work: work, kind: .extractedData(data: data), duration: duration)))
+                            }
                         }
 
                     case .failure(let error):
                         DDLogError("DocumentWorkerController: work \(work.id) failed - \(error)")
-                        finishWork(work, in: worker) { $0?.on(.next(Update(work: work, kind: .failed))) }
+                        finishWork(work, in: worker) { subject, duration in
+                            subject?.on(.next(Update(work: work, kind: .failed, duration: duration)))
+                        }
                     }
                 }
             })
@@ -410,7 +421,7 @@ final class DocumentWorkerController {
         startWorkIfNeeded()
     }
 
-    private func finishWork(_ work: Work, in worker: Worker, completion: ((_ subject: PublishSubject<Update>?) -> Void)?) {
+    private func finishWork(_ work: Work, in worker: Worker, completion: ((_ subject: PublishSubject<Update>?, _ duration: CFTimeInterval?) -> Void)?) {
         if DispatchQueue.getSpecific(key: dispatchSpecificKey) == accessQueueLabel {
             finishWork(work, worker: worker, completion: completion, controller: self)
         } else {
@@ -420,25 +431,28 @@ final class DocumentWorkerController {
             }
         }
 
-        func finishWork(_ work: Work, worker: Worker, completion: ((_ subject: PublishSubject<Update>?) -> Void)?, controller: DocumentWorkerController) {
-            logWorkDuration(work, worker: worker)
+        func finishWork(_ work: Work, worker: Worker, completion: ((_ subject: PublishSubject<Update>?, _ duration: CFTimeInterval?) -> Void)?, controller: DocumentWorkerController) {
+            let duration = logWorkDuration(work, worker: worker)
             let subject = worker.subjectsByWork.removeValue(forKey: work)
             controller.updateStateAndQueues(for: worker, state: worker.subjectsByWork.isEmpty ? .ready : .queued)
             DDLogInfo("DocumentWorkerController: finished \(work) in \(worker)")
-            completion?(subject)
+            completion?(subject, duration)
             controller.startWorkIfNeeded()
 
-            func logWorkDuration(_ work: Work, worker: Worker) {
-                guard let startTime = worker.workStartTimes.removeValue(forKey: work) else { return }
+            func logWorkDuration(_ work: Work, worker: Worker) -> CFTimeInterval? {
+                guard let startTime = worker.workStartTimes.removeValue(forKey: work) else { return nil }
                 let duration = CFAbsoluteTimeGetCurrent() - startTime
                 DDLogInfo("DocumentWorkerController: \(work) in \(worker) took \(String(format: "%.3f", duration))s")
+                return duration
             }
         }
     }
 
     func cancelWork(_ work: Work, in worker: Worker) {
         DDLogInfo("DocumentWorkerController: cancelled \(work) in \(worker)")
-        finishWork(work, in: worker) { $0?.on(.next(Update(work: work, kind: .cancelled))) }
+        finishWork(work, in: worker) { subject, duration in
+            subject?.on(.next(Update(work: work, kind: .cancelled, duration: duration)))
+        }
     }
 
     func cancelAllWorks(in worker: Worker, startNextWorkIfNeeded: Bool = true) {
