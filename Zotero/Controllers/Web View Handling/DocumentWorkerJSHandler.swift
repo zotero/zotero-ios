@@ -222,10 +222,10 @@ final class DocumentWorkerJSHandler {
                 var contentType: String?
                 var password: String?
                 switch action {
-                case .recognize(let _password):
+                case .recognizePDF(let _password):
                     password = _password
 
-                case .getFulltext(let _pages, let _password):
+                case .getPDFFulltext(let _pages, let _password):
                     pages = _pages
                     password = _password
 
@@ -256,10 +256,10 @@ final class DocumentWorkerJSHandler {
                             return
                         }
                         switch action {
-                        case .recognize:
+                        case .recognizePDF:
                             observable.on(.next((workId: workId, result: .success(.recognizerData(data: data)))))
 
-                        case .getFulltext:
+                        case .getPDFFulltext:
                             observable.on(.next((workId: workId, result: .success(.fullText(data: data)))))
 
                         case .getStructuredDocumentText:
@@ -282,7 +282,7 @@ final class DocumentWorkerJSHandler {
 extension DocumentWorkerJSHandler: DocumentWorkerHandling {
     func supportsAction(_ action: DocumentWorkerAction) -> Bool {
         switch action {
-        case .recognize, .getFulltext:
+        case .recognizePDF, .getPDFFulltext:
             return true
 
         case .getStructuredDocumentText:

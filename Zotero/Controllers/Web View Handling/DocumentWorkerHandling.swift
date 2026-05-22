@@ -11,16 +11,16 @@ import Foundation
 import RxSwift
 
 enum DocumentWorkerAction {
-    case recognize(password: String?)
-    case getFulltext(pages: [Int]?, password: String?)
+    case recognizePDF(password: String?)
+    case getPDFFulltext(pages: [Int]?, password: String?)
     case getStructuredDocumentText(contentType: String, password: String?)
 
     var method: String {
         switch self {
-        case .recognize:
+        case .recognizePDF:
             return "pdf.getRecognizerData"
 
-        case .getFulltext:
+        case .getPDFFulltext:
             return "pdf.getFulltext"
 
         case .getStructuredDocumentText:
