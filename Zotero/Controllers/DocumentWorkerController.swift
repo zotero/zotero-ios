@@ -398,10 +398,10 @@ final class DocumentWorkerController {
         subject.on(.next(Update(work: work, kind: .inProgress)))
         switch work {
         case .recognizer:
-            documentWorkerHandler.performAction(.recognize(password: worker.password), workId: work.id)
+            documentWorkerHandler.performAction(.recognizePDF(password: worker.password), workId: work.id)
 
         case .fullText(let pages):
-            documentWorkerHandler.performAction(.getFulltext(pages: pages, password: worker.password), workId: work.id)
+            documentWorkerHandler.performAction(.getPDFFulltext(pages: pages, password: worker.password), workId: work.id)
 
         case .structuredDocumentText:
             documentWorkerHandler.performAction(.getStructuredDocumentText(contentType: worker.file.mimeType, password: worker.password), workId: work.id)
