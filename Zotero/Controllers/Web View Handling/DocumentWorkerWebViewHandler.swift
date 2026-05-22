@@ -66,10 +66,10 @@ final class DocumentWorkerWebViewHandler: WebViewHandler {
 
                 var parameters: [String: Any] = [:]
                 switch action {
-                case .recognize(let password):
+                case .recognizePDF(let password):
                     parameters["password"] = password
 
-                case .getFulltext(let pages, let password):
+                case .getPDFFulltext(let pages, let password):
                     parameters["pageIndexes"] = pages
                     parameters["password"] = password
 
@@ -126,7 +126,7 @@ final class DocumentWorkerWebViewHandler: WebViewHandler {
 extension DocumentWorkerWebViewHandler: DocumentWorkerHandling {
     func supportsAction(_ action: DocumentWorkerAction) -> Bool {
         switch action {
-        case .recognize, .getFulltext, .getStructuredDocumentText:
+        case .recognizePDF, .getPDFFulltext, .getStructuredDocumentText:
             return true
         }
     }
