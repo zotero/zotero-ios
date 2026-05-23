@@ -196,7 +196,7 @@ final class RecognizerController {
                         documentWorkerController.cleanupWorker(worker)
                         cleanupTask(for: task) { $0?.on(.next(Update(task: task, kind: .cancelled))) }
 
-                    case .inProgress:
+                    case .queued, .inProgress:
                         break
 
                     case .extractedData(let data):

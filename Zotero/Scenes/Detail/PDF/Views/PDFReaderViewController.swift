@@ -1048,7 +1048,7 @@ extension PDFReaderViewController: SpeechmanagerDelegate {
                     DDLogError("PDFReaderViewController: full data extraction failed")
                     completion(nil)
 
-                case .inProgress:
+                case .queued, .inProgress:
                     break
 
                 case .extractedData(let data):
