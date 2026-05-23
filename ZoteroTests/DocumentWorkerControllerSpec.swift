@@ -222,14 +222,14 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                                 case .failed, .cancelled, .extractedData:
                                     completion()
 
-                                case .inProgress:
+                                case .queued, .inProgress:
                                     break
                                 }
                             })
                             .disposed(by: disposeBag)
                     }
 
-                    expect(emittedUpdates.count).toEventually(equal(2), timeout: .seconds(20))
+                    expect(emittedUpdates.count).toEventually(equal(3), timeout: .seconds(20))
                     process(updates: emittedUpdates, jsonFileName: "bitcoin_pdf_recognizer_data")
                 }
 
@@ -247,14 +247,14 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                                 case .failed, .cancelled, .extractedData:
                                     completion()
 
-                                case .inProgress:
+                                case .queued, .inProgress:
                                     break
                                 }
                             })
                             .disposed(by: disposeBag)
                     }
 
-                    expect(emittedUpdates.count).toEventually(equal(2), timeout: .seconds(20))
+                    expect(emittedUpdates.count).toEventually(equal(3), timeout: .seconds(20))
                     process(updates: emittedUpdates, jsonFileName: "bitcoin_pdf_full_text")
                 }
 
@@ -272,14 +272,14 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                                 case .failed, .cancelled, .extractedData:
                                     completion()
 
-                                case .inProgress:
+                                case .queued, .inProgress:
                                     break
                                 }
                             })
                             .disposed(by: disposeBag)
                     }
 
-                    expect(emittedUpdates.count).toEventually(equal(2), timeout: .seconds(20))
+                    expect(emittedUpdates.count).toEventually(equal(3), timeout: .seconds(20))
                     process(updates: emittedUpdates, jsonFileName: "bitcoin_pdf_page_0_text")
                 }
 
@@ -297,14 +297,14 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                                 case .failed, .cancelled, .extractedData:
                                     completion()
 
-                                case .inProgress:
+                                case .queued, .inProgress:
                                     break
                                 }
                             })
                             .disposed(by: disposeBag)
                     }
 
-                    expect(emittedUpdates.count).toEventually(equal(2), timeout: .seconds(20))
+                    expect(emittedUpdates.count).toEventually(equal(3), timeout: .seconds(20))
                     process(updates: emittedUpdates, jsonFileName: "bitcoin_pdf_pages_0_1_text")
                 }
             }
@@ -339,14 +339,14 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                                 case .failed, .cancelled, .extractedData:
                                     completion()
 
-                                case .inProgress:
+                                case .queued, .inProgress:
                                     break
                                 }
                             })
                             .disposed(by: disposeBag)
                     }
 
-                    expect(emittedUpdates.count).toEventually(equal(2), timeout: .seconds(timeout))
+                    expect(emittedUpdates.count).toEventually(equal(3), timeout: .seconds(timeout))
                     process(updates: emittedUpdates, ignoreKeys: ["dateCreated"], jsonURL: expectedURL)
                 }
 
@@ -425,14 +425,14 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                                 case .failed, .cancelled, .extractedData:
                                     completion()
 
-                                case .inProgress:
+                                case .queued, .inProgress:
                                     break
                                 }
                             })
                             .disposed(by: disposeBag)
                     }
 
-                    expect(emittedUpdates.count).toEventually(equal(2), timeout: .seconds(20))
+                    expect(emittedUpdates.count).toEventually(equal(3), timeout: .seconds(20))
                     process(updates: emittedUpdates, jsonFileName: "cmap_pdf_full_text")
                 }
             }
@@ -463,14 +463,14 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                                 case .failed, .cancelled, .extractedData:
                                     completion()
 
-                                case .inProgress:
+                                case .queued, .inProgress:
                                     break
                                 }
                             })
                             .disposed(by: disposeBag)
                     }
 
-                    expect(emittedUpdates.count).toEventually(equal(2), timeout: .seconds(20))
+                    expect(emittedUpdates.count).toEventually(equal(3), timeout: .seconds(20))
                     process(updates: emittedUpdates, jsonFileName: "font_data_pdf_full_text")
                 }
             }
@@ -482,11 +482,14 @@ final class DocumentWorkerControllerSpec: QuickSpec {
             func process(updates: [DocumentWorkerController.Update.Kind], ignoreKeys: Set<String> = [], jsonURL: URL) {
                 for (index, update) in updates.enumerated() {
                     switch update {
-                    case .inProgress:
+                    case .queued:
                         expect(index).to(equal(0))
 
-                    case .extractedData(let data):
+                    case .inProgress:
                         expect(index).to(equal(1))
+
+                    case .extractedData(let data):
+                        expect(index).to(equal(2))
                         let expectedData = try! Data(contentsOf: jsonURL)
                         let expectedJSONData = try! JSONSerialization.jsonObject(with: expectedData, options: .allowFragments) as! [String: Any]
                         compareJSONObjects(actual: data, expected: expectedJSONData, ignoreKeys: ignoreKeys, context: jsonURL.lastPathComponent)
