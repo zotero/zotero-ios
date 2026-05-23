@@ -16,7 +16,7 @@ import RxSwift
 
 final class DocumentWorkerController {
     // MARK: Types
-    fileprivate enum HandlerRuntime: Hashable {
+    enum HandlerRuntime: Hashable {
         case jsContext
         case webView
     }
@@ -147,19 +147,43 @@ final class DocumentWorkerController {
 
     struct Update {
         enum Kind {
+            case queued
             case failed
             case cancelled
             case inProgress
             case extractedData(data: [String: Any])
         }
 
+        let workerId: UUID?
         let work: Work
+        let fileName: String?
+        let priority: Priority?
+        let runtime: HandlerRuntime?
         let kind: Kind
+        let startTime: CFAbsoluteTime?
         let duration: CFTimeInterval?
 
-        init(work: Work, kind: Kind, duration: CFTimeInterval? = nil) {
+        var startedAt: Date? {
+            return startTime.map(Date.init(timeIntervalSinceReferenceDate:))
+        }
+
+        init(
+            workerId: UUID? = nil,
+            work: Work,
+            fileName: String? = nil,
+            priority: Priority? = nil,
+            runtime: HandlerRuntime? = nil,
+            kind: Kind,
+            startTime: CFAbsoluteTime? = nil,
+            duration: CFTimeInterval? = nil
+        ) {
+            self.workerId = workerId
             self.work = work
+            self.fileName = fileName
+            self.priority = priority
+            self.runtime = runtime
             self.kind = kind
+            self.startTime = startTime
             self.duration = duration
         }
     }
@@ -171,6 +195,8 @@ final class DocumentWorkerController {
     private unowned let fileStorage: FileStorage
     private let disposeBag: DisposeBag
     private let workerFileCopyStrategy: WorkerFileCopyStrategy = .cloneFirst
+
+    let recorder: DocumentWorkerRecorder?
 
     weak var webViewProvider: WebViewProvider? {
         didSet {
@@ -198,6 +224,7 @@ final class DocumentWorkerController {
         accessQueue.setSpecific(key: dispatchSpecificKey, value: accessQueueLabel)
         self.fileStorage = fileStorage
         disposeBag = DisposeBag()
+        recorder = FeatureGates.enabled.contains(.documentWorkerDebugging) ? DocumentWorkerRecorder() : nil
         accessQueue.async(flags: .barrier) { [weak self] in
             self?.preloadDocumentWorkerIfIdle()
         }
@@ -247,6 +274,8 @@ final class DocumentWorkerController {
                 return
             }
             worker.subjectsByWork[work] = subject
+            recorder?.bind(subject)
+            subject.send(work: work, kind: .queued, worker: worker)
             switch worker.state {
             case .pending, .failed:
                 // Assign preparing state and place in proper queue, then prepare worker handler.
@@ -301,7 +330,7 @@ final class DocumentWorkerController {
                     startWorkIfNeeded()
                 } else {
                     release(documentWorkerHandler)
-                    updateStateAndQueues(for: worker, state: .failed)
+                    finishWork(work, in: worker, finalUpdateKind: .failed)
                 }
                 accessQueue.async(flags: .barrier) { [weak self] in
                     self?.preloadWebViewDocumentWorkerIfNeeded()
@@ -315,7 +344,7 @@ final class DocumentWorkerController {
             createDocumentWorkerWebViewHandler(fileStorage: fileStorage) { [weak self, weak worker] documentWorkerHandler in
                 guard let self, let worker else { return }
                 guard let documentWorkerHandler else {
-                    updateStateAndQueues(for: worker, state: .failed)
+                    finishWork(work, in: worker, finalUpdateKind: .failed)
                     return
                 }
                 if setup(documentWorkerHandler: documentWorkerHandler, runtime: .webView, for: worker) {
@@ -323,7 +352,7 @@ final class DocumentWorkerController {
                     startWorkIfNeeded()
                 } else {
                     release(documentWorkerHandler)
-                    updateStateAndQueues(for: worker, state: .failed)
+                    finishWork(work, in: worker, finalUpdateKind: .failed)
                 }
             }
         }
@@ -361,16 +390,12 @@ final class DocumentWorkerController {
                     case .success(let data):
                         switch data {
                         case .recognizerData(let data), .fullText(let data), .structuredDocumentText(let data):
-                            finishWork(work, in: worker) { subject, duration in
-                                subject?.on(.next(Update(work: work, kind: .extractedData(data: data), duration: duration)))
-                            }
+                            finishWork(work, in: worker, finalUpdateKind: .extractedData(data: data))
                         }
 
                     case .failure(let error):
                         DDLogError("DocumentWorkerController: work \(work.id) failed - \(error)")
-                        finishWork(work, in: worker) { subject, duration in
-                            subject?.on(.next(Update(work: work, kind: .failed, duration: duration)))
-                        }
+                        finishWork(work, in: worker, finalUpdateKind: .failed)
                     }
                 }
             })
@@ -406,7 +431,7 @@ final class DocumentWorkerController {
         // Start work.
         worker.workStartTimes[work] = CFAbsoluteTimeGetCurrent()
         DDLogInfo("DocumentWorkerController: started \(work) in \(worker)")
-        subject.on(.next(Update(work: work, kind: .inProgress)))
+        subject.send(work: work, kind: .inProgress, worker: worker)
         switch work {
         case .recognizer:
             documentWorkerHandler.performAction(.recognizePDF(password: worker.password), workId: work.id)
@@ -421,38 +446,42 @@ final class DocumentWorkerController {
         startWorkIfNeeded()
     }
 
-    private func finishWork(_ work: Work, in worker: Worker, completion: ((_ subject: PublishSubject<Update>?, _ duration: CFTimeInterval?) -> Void)?) {
+    private func finishWork(_ work: Work, in worker: Worker, updateWorkerState: Bool = true, finalUpdateKind: Update.Kind, startNextWorkIfNeeded: Bool = true) {
         if DispatchQueue.getSpecific(key: dispatchSpecificKey) == accessQueueLabel {
-            finishWork(work, worker: worker, completion: completion, controller: self)
+            finishWork(work, worker: worker, updateWorkerState: updateWorkerState, finalUpdateKind: finalUpdateKind, startNextWorkIfNeeded: startNextWorkIfNeeded, controller: self)
         } else {
             accessQueue.async(flags: .barrier) { [weak self] in
                 guard let self else { return }
-                finishWork(work, worker: worker, completion: completion, controller: self)
+                finishWork(work, worker: worker, updateWorkerState: updateWorkerState, finalUpdateKind: finalUpdateKind, startNextWorkIfNeeded: startNextWorkIfNeeded, controller: self)
             }
         }
 
-        func finishWork(_ work: Work, worker: Worker, completion: ((_ subject: PublishSubject<Update>?, _ duration: CFTimeInterval?) -> Void)?, controller: DocumentWorkerController) {
-            let duration = logWorkDuration(work, worker: worker)
+        func finishWork(_ work: Work, worker: Worker, updateWorkerState: Bool, finalUpdateKind: Update.Kind, startNextWorkIfNeeded: Bool, controller: DocumentWorkerController) {
+            let duration = duration(for: work, in: worker)
             let subject = worker.subjectsByWork.removeValue(forKey: work)
-            controller.updateStateAndQueues(for: worker, state: worker.subjectsByWork.isEmpty ? .ready : .queued)
-            DDLogInfo("DocumentWorkerController: finished \(work) in \(worker)")
-            completion?(subject, duration)
+            if updateWorkerState {
+                controller.updateStateAndQueues(for: worker, state: worker.subjectsByWork.isEmpty ? .ready : .queued)
+            }
+            subject?.send(work: work, kind: finalUpdateKind, worker: worker, duration: duration)
+            subject?.onCompleted()
+            var message = "DocumentWorkerController: finished \(work) in \(worker)"
+            if let duration {
+                message += " took \(String(format: "%.3f", duration))s"
+            }
+            DDLogInfo(DDLogMessageFormat(stringLiteral: message))
+            guard startNextWorkIfNeeded else { return }
             controller.startWorkIfNeeded()
 
-            func logWorkDuration(_ work: Work, worker: Worker) -> CFTimeInterval? {
+            func duration(for work: Work, in worker: Worker) -> CFTimeInterval? {
                 guard let startTime = worker.workStartTimes.removeValue(forKey: work) else { return nil }
-                let duration = CFAbsoluteTimeGetCurrent() - startTime
-                DDLogInfo("DocumentWorkerController: \(work) in \(worker) took \(String(format: "%.3f", duration))s")
-                return duration
+                return CFAbsoluteTimeGetCurrent() - startTime
             }
         }
     }
 
     func cancelWork(_ work: Work, in worker: Worker) {
         DDLogInfo("DocumentWorkerController: cancelled \(work) in \(worker)")
-        finishWork(work, in: worker) { subject, duration in
-            subject?.on(.next(Update(work: work, kind: .cancelled, duration: duration)))
-        }
+        finishWork(work, in: worker, finalUpdateKind: .cancelled)
     }
 
     func cancelAllWorks(in worker: Worker, startNextWorkIfNeeded: Bool = true) {
@@ -470,8 +499,9 @@ final class DocumentWorkerController {
             // Immediately release worker handler and assign pending state to worker. If another work is queued for this worker, a new handler will be created.
             releaseHandlers(for: worker)
             controller.updateStateAndQueues(for: worker, state: .pending)
-            for (work, subject) in worker.subjectsByWork {
-                subject.on(.next(Update(work: work, kind: .cancelled)))
+            let cancelledWorks = Array(worker.subjectsByWork.keys)
+            for work in cancelledWorks {
+                finishWork(work, in: worker, updateWorkerState: false, finalUpdateKind: .cancelled, startNextWorkIfNeeded: false)
             }
             worker.subjectsByWork.removeAll()
             guard startNextWorkIfNeeded else { return }
@@ -662,5 +692,25 @@ final class DocumentWorkerController {
             try? fileStorage.fileManager.removeItem(at: destinationUrl)
         }
         try fileStorage.fileManager.copyItem(at: sourceUrl, to: destinationUrl)
+    }
+}
+
+private extension PublishSubject where Element == DocumentWorkerController.Update {
+    func send(
+        work: DocumentWorkerController.Work,
+        kind: DocumentWorkerController.Update.Kind,
+        worker: DocumentWorkerController.Worker,
+        duration: CFTimeInterval? = nil
+    ) {
+        on(.next(DocumentWorkerController.Update(
+            workerId: worker.id,
+            work: work,
+            fileName: worker.file.fileName,
+            priority: worker.priority,
+            runtime: work.preferredRuntime,
+            kind: kind,
+            startTime: worker.workStartTimes[work],
+            duration: duration
+        )))
     }
 }
