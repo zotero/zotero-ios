@@ -440,6 +440,7 @@ final class ItemsViewController: BaseItemsViewController {
             downloadBatchData: state.downloadBatchData,
             remoteDownloadBatchData: state.remoteDownloadBatchData,
             identifierLookupBatchData: state.identifierLookupBatchData,
+            showsDocumentWorkerRecorder: controllers.userControllers?.documentWorkerController.recorder != nil,
             itemCount: state.results?.count ?? 0
         )
     }

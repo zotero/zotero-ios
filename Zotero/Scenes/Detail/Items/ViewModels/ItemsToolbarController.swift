@@ -15,6 +15,7 @@ protocol ItemsToolbarControllerDelegate: UITraitEnvironment {
     func process(action: ItemAction.Kind, button: UIBarButtonItem)
     func showLookup()
     func showFilters(button: UIBarButtonItem)
+    func showDocumentWorkerRecorder(button: UIBarButtonItem)
     func sortTypeChanged(_ sortType: ItemsSortType)
     func downloadsFilterChanged(enabled: Bool)
 }
@@ -29,6 +30,7 @@ final class ItemsToolbarController {
         let downloadBatchData: ItemsState.DownloadBatchData?
         let remoteDownloadBatchData: ItemsState.DownloadBatchData?
         let identifierLookupBatchData: ItemsState.IdentifierLookupBatchData
+        let showsDocumentWorkerRecorder: Bool
         let itemCount: Int
     }
 
@@ -38,6 +40,7 @@ final class ItemsToolbarController {
         case filter
         case title
         case sort
+        case documentWorkerRecorder
 
         var tag: Int {
             rawValue
@@ -187,6 +190,17 @@ final class ItemsToolbarController {
             titleButton.tag = ToolbarItem.title.tag
 
             var items: [UIBarButtonItem] = [fixedSpacer, filterButton, flexibleSpacer, titleButton]
+
+            if data.showsDocumentWorkerRecorder {
+                let documentWorkerButton = UIBarButtonItem(image: UIImage(systemName: "ladybug"), style: .plain, target: nil, action: nil)
+                documentWorkerButton.primaryAction = UIAction { [weak self, weak documentWorkerButton] _ in
+                    guard let documentWorkerButton else { return }
+                    self?.delegate?.showDocumentWorkerRecorder(button: documentWorkerButton)
+                }
+                documentWorkerButton.tag = ToolbarItem.documentWorkerRecorder.tag
+                documentWorkerButton.accessibilityLabel = "Document Worker"
+                items.insert(documentWorkerButton, at: 1)
+            }
 
             if data.allowsManualSort {
                 let action = ItemAction(type: .sort)
