@@ -19,6 +19,7 @@
 		61099E6F2C91BAF300EDD92C /* NSDecimalNumber+Rounding.m in Sources */ = {isa = PBXBuildFile; fileRef = 61099E6D2C91BAF300EDD92C /* NSDecimalNumber+Rounding.m */; };
 		61168F612D50D4B6005495E8 /* DocumentWorkerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61168F602D50D4B6005495E8 /* DocumentWorkerController.swift */; };
 		61168F632D50D4B6005495E8 /* DocumentWorkerRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61168F622D50D4B6005495E8 /* DocumentWorkerRecorder.swift */; };
+		61D0C0D22FBD100100C0DE01 /* DocumentWorkerRecorderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61D0C0D12FBD100100C0DE01 /* DocumentWorkerRecorderView.swift */; };
 		611FF4E02DD47F860094184A /* RetryDelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 611FF4DF2DD47F860094184A /* RetryDelay.swift */; };
 		611FF4E12DD47F860094184A /* RetryDelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 611FF4DF2DD47F860094184A /* RetryDelay.swift */; };
 		6135EF9A2C2ABCD7008DA17B /* SquareAnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6135EF992C2ABCD7008DA17B /* SquareAnnotationView.swift */; };
@@ -1395,6 +1396,7 @@
 		611486502A9CD511002EEBEF /* ci_post_xcodebuild.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ci_post_xcodebuild.sh; sourceTree = "<group>"; };
 		61168F602D50D4B6005495E8 /* DocumentWorkerController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentWorkerController.swift; sourceTree = "<group>"; };
 		61168F622D50D4B6005495E8 /* DocumentWorkerRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentWorkerRecorder.swift; sourceTree = "<group>"; };
+		61D0C0D12FBD100100C0DE01 /* DocumentWorkerRecorderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentWorkerRecorderView.swift; sourceTree = "<group>"; };
 		611FF4DF2DD47F860094184A /* RetryDelay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetryDelay.swift; sourceTree = "<group>"; };
 		6135EF992C2ABCD7008DA17B /* SquareAnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquareAnnotationView.swift; sourceTree = "<group>"; };
 		6135EF9B2C2ABDD1008DA17B /* AnnotationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationManager.swift; sourceTree = "<group>"; };
@@ -4318,6 +4320,7 @@
 				B3B398502E4CCB20009C59F5 /* DocumentSearchCell.swift */,
 				B3B398512E4CCB20009C59F5 /* DocumentSearchCell.xib */,
 				B3B398522E4CCB20009C59F5 /* DocumentSearchViewController.swift */,
+				61D0C0D12FBD100100C0DE01 /* DocumentWorkerRecorderView.swift */,
 				B30B40622490F09400FAAF6D /* FileAttachmentView.swift */,
 				61DE64D42C5BD0250096776C /* FormattedTextView.swift */,
 				B33979CF2493ACA800A923C3 /* ImagePreviewViewController.swift */,
@@ -5644,6 +5647,7 @@
 				B3ADAE512833BEE300D46271 /* LookupAction.swift in Sources */,
 				61168F612D50D4B6005495E8 /* DocumentWorkerController.swift in Sources */,
 				61168F632D50D4B6005495E8 /* DocumentWorkerRecorder.swift in Sources */,
+				61D0C0D22FBD100100C0DE01 /* DocumentWorkerRecorderView.swift in Sources */,
 				61F0A1AC2F9C0F1B00ABCDEF /* DocumentWorkerHandling.swift in Sources */,
 				61F0A1AA2F9C0F1B00ABCDEF /* DocumentWorkerJSHandler.swift in Sources */,
 				61F0A1B02F9C0F1B00ABCDEF /* DocumentWorkerWebViewHandler.swift in Sources */,
