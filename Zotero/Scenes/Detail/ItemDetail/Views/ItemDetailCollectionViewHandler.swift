@@ -13,6 +13,7 @@ import RxSwift
 
 protocol ItemDetailCollectionViewHandlerDelegate: AnyObject {
     func isDownloadingFromNavigationBar(for key: String) -> Bool
+    func getStructuredText(for attachment: Attachment)
 }
 
 protocol FocusableCell: UICollectionViewCell {
@@ -1069,6 +1070,12 @@ extension ItemDetailCollectionViewHandler: UICollectionViewDelegate {
 
                 actions.append(UIAction(title: L10n.moveToTrash, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
                     self?.viewModel.process(action: .deleteAttachment(attachment))
+                })
+            }
+
+            if FeatureGates.enabled.contains(.documentWorkerDebugging), attachment.supportsStructuredDocumentTextExtraction {
+                actions.append(UIAction(title: "Get Structured Text", image: UIImage(systemName: "doc.text"), attributes: []) { [weak self] _ in
+                    self?.delegate?.getStructuredText(for: attachment)
                 })
             }
 

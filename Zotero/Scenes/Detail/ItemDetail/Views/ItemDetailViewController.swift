@@ -435,6 +435,41 @@ extension ItemDetailViewController: ItemDetailCollectionViewHandlerDelegate {
     func isDownloadingFromNavigationBar(for key: String) -> Bool {
         return downloadingViaNavigationBar && key == viewModel.state.mainAttachmentKey
     }
+
+    func getStructuredText(for attachment: Attachment) {
+        guard let file = attachment.file as? FileData,
+              let downloader = controllers.userControllers?.fileDownloader,
+              let documentWorkerController = controllers.userControllers?.documentWorkerController
+        else { return }
+
+        downloader.downloadIfNeeded(attachment: attachment, parentKey: viewModel.state.key) { [weak self, weak documentWorkerController] result in
+            switch result {
+            case .success:
+                self?.queueStructuredTextExtraction(from: file, using: documentWorkerController)
+
+            case .failure(let error):
+                self?.coordinatorDelegate?.showAttachmentError(error)
+            }
+        }
+    }
+
+    private func queueStructuredTextExtraction(from file: FileData, using documentWorkerController: DocumentWorkerController?) {
+        guard let documentWorkerController else { return }
+
+        let worker = DocumentWorkerController.Worker(file: file, shouldCacheInput: false, priority: .default)
+        documentWorkerController.queue(work: .structuredDocumentText, in: worker)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak documentWorkerController] update in
+                switch update.kind {
+                case .queued, .inProgress:
+                    break
+
+                case .extractedData, .failed, .cancelled:
+                    documentWorkerController?.cleanupWorker(worker)
+                }
+            })
+            .disposed(by: disposeBag)
+    }
 }
 
 extension ItemDetailViewController: ConflictViewControllerReceiver {

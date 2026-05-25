@@ -362,6 +362,28 @@ final class ItemsViewController: BaseItemsViewController {
             guard !selectedKeys.isEmpty else { return }
             viewModel.process(action: .removeFromRecentlyRead(selectedKeys))
             completed = true
+
+        case .getStructuredText:
+            guard let key = selectedKeys.first,
+                  case .attachment(let attachment, let parentKey) = viewModel.state.itemAccessories[key],
+                  attachment.supportsStructuredDocumentTextExtraction,
+                  let file = attachment.file as? FileData,
+                  attachment.location != nil,
+                  let downloader = controllers.userControllers?.fileDownloader,
+                  let documentWorkerController = controllers.userControllers?.documentWorkerController
+            else { return }
+            let libraryId = library.identifier
+            downloader.downloadIfNeeded(attachment: attachment, parentKey: nil) { [weak coordinatorDelegate] result in
+                switch result {
+                case .success:
+                    let worker = DocumentWorkerController.Worker(file: file, shouldCacheInput: false, priority: .default)
+                    _ = documentWorkerController.queue(work: .structuredDocumentText, in: worker)
+
+                case .failure(let error):
+                    coordinatorDelegate?.showAttachmentError(error)
+                }
+            }
+            completed = true
         }
     }
 
