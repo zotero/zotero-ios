@@ -372,11 +372,10 @@ final class ItemsViewController: BaseItemsViewController {
                   let downloader = controllers.userControllers?.fileDownloader,
                   let documentWorkerController = controllers.userControllers?.documentWorkerController
             else { return }
-            let libraryId = library.identifier
-            downloader.downloadIfNeeded(attachment: attachment, parentKey: nil) { [weak coordinatorDelegate] result in
+            downloader.downloadIfNeeded(attachment: attachment, parentKey: parentKey) { [weak coordinatorDelegate] result in
                 switch result {
                 case .success:
-                    let worker = DocumentWorkerController.Worker(file: file, shouldCacheInput: false, priority: .default)
+                    let worker = DocumentWorkerController.Worker(file: file, shouldCacheInput: false, isOneOff: true, priority: .default)
                     _ = documentWorkerController.queue(work: .structuredDocumentText, in: worker)
 
                 case .failure(let error):
