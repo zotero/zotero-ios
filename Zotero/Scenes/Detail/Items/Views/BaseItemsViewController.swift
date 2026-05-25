@@ -127,8 +127,15 @@ class BaseItemsViewController: UIViewController {
     }
 
     func showDocumentWorkerRecorder(button: UIBarButtonItem) {
-        guard let recorder = controllers.userControllers?.documentWorkerController.recorder else { return }
-        let controller = UIHostingController(rootView: DocumentWorkerRecorderView(recorder: recorder))
+        guard let documentWorkerController = controllers.userControllers?.documentWorkerController,
+              let recorder = documentWorkerController.recorder
+        else { return }
+        let controller = UIHostingController(
+            rootView: DocumentWorkerRecorderView(
+                documentWorkerController: documentWorkerController,
+                recorder: recorder
+            )
+        )
         controller.modalPresentationStyle = .pageSheet
         if let sheetPresentationController = controller.sheetPresentationController {
             sheetPresentationController.detents = [.medium(), .large()]
