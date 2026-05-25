@@ -182,25 +182,22 @@ final class RecognizerController {
             statesByTask[task] = .recognitionInProgress
             emmitUpdate(for: task, subject: subject, kind: .inProgress)
 
-            let worker = DocumentWorkerController.Worker(file: task.file, shouldCacheInput: false, priority: .default)
+            let worker = DocumentWorkerController.Worker(file: task.file, shouldCacheInput: false, isOneOff: true, priority: .default)
             documentWorkerController.queue(work: .recognizer, in: worker)
                 .subscribe(onNext: { [weak self] update in
                     guard let self else { return }
                     switch update.kind {
                     case .failed:
-                        documentWorkerController.cleanupWorker(worker)
                         DDLogError("RecognizerController: \(task) - recognizer failed")
                         cleanupTask(for: task) { $0?.on(.next(Update(task: task, kind: .failed(Error.recognizerFailed)))) }
 
                     case .cancelled:
-                        documentWorkerController.cleanupWorker(worker)
                         cleanupTask(for: task) { $0?.on(.next(Update(task: task, kind: .cancelled))) }
 
                     case .queued, .inProgress:
                         break
 
                     case .extractedData(let data):
-                        documentWorkerController.cleanupWorker(worker)
                         switch update.work {
                         case .recognizer:
                             DDLogInfo("RecognizerController: \(task) - extracted recognizer data")

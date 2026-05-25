@@ -456,19 +456,8 @@ extension ItemDetailViewController: ItemDetailCollectionViewHandlerDelegate {
     private func queueStructuredTextExtraction(from file: FileData, using documentWorkerController: DocumentWorkerController?) {
         guard let documentWorkerController else { return }
 
-        let worker = DocumentWorkerController.Worker(file: file, shouldCacheInput: false, priority: .default)
-        documentWorkerController.queue(work: .structuredDocumentText, in: worker)
-            .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { [weak documentWorkerController] update in
-                switch update.kind {
-                case .queued, .inProgress:
-                    break
-
-                case .extractedData, .failed, .cancelled:
-                    documentWorkerController?.cleanupWorker(worker)
-                }
-            })
-            .disposed(by: disposeBag)
+        let worker = DocumentWorkerController.Worker(file: file, shouldCacheInput: false, isOneOff: true, priority: .default)
+        _ = documentWorkerController.queue(work: .structuredDocumentText, in: worker)
     }
 }
 
