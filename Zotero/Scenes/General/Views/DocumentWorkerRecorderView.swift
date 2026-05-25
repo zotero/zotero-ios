@@ -14,8 +14,13 @@ struct DocumentWorkerRecorderView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel: DocumentWorkerRecorderViewModel
 
-    init(recorder: DocumentWorkerRecorder) {
-        _viewModel = StateObject(wrappedValue: DocumentWorkerRecorderViewModel(recorder: recorder))
+    init(documentWorkerController: DocumentWorkerController, recorder: DocumentWorkerRecorder) {
+        _viewModel = StateObject(
+            wrappedValue: DocumentWorkerRecorderViewModel(
+                documentWorkerController: documentWorkerController,
+                recorder: recorder
+            )
+        )
     }
 
     var body: some View {
@@ -30,6 +35,15 @@ struct DocumentWorkerRecorderView: View {
                     Section {
                         ForEach(viewModel.records) { record in
                             RecordRow(record: record)
+                                .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                                    if !record.status.isTerminal {
+                                        Button(role: .destructive) {
+                                            viewModel.cancel(record)
+                                        } label: {
+                                            Label(L10n.cancel, systemImage: "xmark.circle")
+                                        }
+                                    }
+                                }
                         }
                     }
                 }
@@ -56,6 +70,7 @@ struct DocumentWorkerRecorderView: View {
 private final class DocumentWorkerRecorderViewModel: ObservableObject {
     @Published private(set) var records: [DocumentWorkerRecorder.Record]
 
+    private let documentWorkerController: DocumentWorkerController
     private let recorder: DocumentWorkerRecorder
     private let disposeBag: DisposeBag
 
@@ -63,7 +78,8 @@ private final class DocumentWorkerRecorderViewModel: ObservableObject {
         return records.contains(where: { $0.status.isTerminal })
     }
 
-    init(recorder: DocumentWorkerRecorder) {
+    init(documentWorkerController: DocumentWorkerController, recorder: DocumentWorkerRecorder) {
+        self.documentWorkerController = documentWorkerController
         self.recorder = recorder
         records = recorder.records
         disposeBag = DisposeBag()
@@ -78,6 +94,11 @@ private final class DocumentWorkerRecorderViewModel: ObservableObject {
 
     func clearFinishedWorkHistory() {
         recorder.clearFinishedWorkHistory()
+    }
+
+    func cancel(_ record: DocumentWorkerRecorder.Record) {
+        guard !record.status.isTerminal else { return }
+        documentWorkerController.cancelWork(record.work, workerId: record.workerId)
     }
 }
 
