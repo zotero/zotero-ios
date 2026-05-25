@@ -225,6 +225,7 @@ final class TrashViewController: BaseItemsViewController {
             downloadBatchData: nil,
             remoteDownloadBatchData: nil,
             identifierLookupBatchData: .zero,
+            showsDocumentWorkerRecorder: controllers.userControllers?.documentWorkerController.recorder != nil,
             itemCount: state.snapshot.count
         )
     }
