@@ -159,7 +159,7 @@ final class TrashViewController: BaseItemsViewController {
 
         switch action {
         case .createParent, .retrieveMetadata, .duplicate, .trash, .copyBibliography, .copyCitation, .share, .addToCollection, .removeFromCollection, .removeFromRecentlyRead,
-             .filter, .sort, .debugReader:
+             .filter, .sort, .debugReader, .getStructuredText:
             // These actions are not available in trash collection
             break
 

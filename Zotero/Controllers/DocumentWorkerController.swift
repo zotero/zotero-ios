@@ -714,3 +714,15 @@ private extension PublishSubject where Element == DocumentWorkerController.Updat
         )))
     }
 }
+
+extension Attachment {
+    var supportsStructuredDocumentTextExtraction: Bool {
+        switch type {
+        case .file(_, let contentType, _, _, _):
+            return contentType == "application/pdf" || contentType == "application/epub+zip" || contentType == "text/html" || contentType == "application/xhtml+xml"
+
+        case .url:
+            return false
+        }
+    }
+}

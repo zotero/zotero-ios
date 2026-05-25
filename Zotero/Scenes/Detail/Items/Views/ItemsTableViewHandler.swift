@@ -129,7 +129,7 @@ final class ItemsTableViewHandler: NSObject {
             case .duplicate, .restore:
                 contextualAction.backgroundColor = .systemBlue
 
-            case .addToCollection, .createParent, .retrieveMetadata:
+            case .addToCollection, .createParent, .retrieveMetadata, .getStructuredText:
                 contextualAction.backgroundColor = .systemOrange
 
             case .removeFromCollection, .removeFromRecentlyRead:

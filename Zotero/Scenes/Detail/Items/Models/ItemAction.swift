@@ -27,6 +27,7 @@ struct ItemAction {
         case removeDownload
         case debugReader
         case removeFromRecentlyRead
+        case getStructuredText
     }
 
     private enum Image {
@@ -51,7 +52,7 @@ struct ItemAction {
         case .delete, .trash, .removeFromRecentlyRead:
             return true
 
-        case .addToCollection, .duplicate, .removeFromCollection, .restore, .sort, .filter, .createParent, .retrieveMetadata, .copyCitation, .copyBibliography, .share, .download, .removeDownload, .debugReader:
+        case .addToCollection, .duplicate, .removeFromCollection, .restore, .sort, .filter, .createParent, .retrieveMetadata, .copyCitation, .copyBibliography, .share, .download, .removeDownload, .debugReader, .getStructuredText:
             return false
         }
     }
@@ -127,6 +128,10 @@ struct ItemAction {
         case .removeFromRecentlyRead:
             self.title = L10n.Items.Action.removeFromRecentlyRead
             self._image = .system("folder.badge.minus")
+
+        case .getStructuredText:
+            self.title = "Get Structured Text"
+            self._image = .system("text.document")
         }
     }
 }
