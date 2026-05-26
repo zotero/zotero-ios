@@ -1257,6 +1257,10 @@ extension PDFReaderViewController: ReadAloudViewDelegate {
         )
     }
 
+    func presentReadAloudAddMoreTime() {
+        coordinatorDelegate?.showReadAloudAddMoreTime(from: self)
+    }
+
     func addReadAloudControlsViewToAnnotationToolbar(view: AnnotationToolbarLeadingView) {
         annotationToolbarHandler?.setLeadingView(view: view)
     }

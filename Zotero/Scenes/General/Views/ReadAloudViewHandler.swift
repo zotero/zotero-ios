@@ -31,6 +31,7 @@ protocol ReadAloudCoordinatorDelegate: AnyObject {
         userInterfaceStyle: UIUserInterfaceStyle,
         completion: @escaping (SpeechVoice?) -> Void
     )
+    func showReadAloudAddMoreTime(from presenter: UIViewController)
 }
 
 protocol ReadAloudViewDelegate: AnyObject {
@@ -44,12 +45,14 @@ protocol ReadAloudViewDelegate: AnyObject {
     func updateSpeechHighlightStyle(tool: AnnotationTool, color: String)
     func presentReadAloudOnboarding(language: String?, detectedLanguage: String, completion: @escaping (SpeechVoice?) -> Void)
     func presentReadAloudVoicePicker(currentVoice: SpeechVoice, language: String?, detectedLanguage: String, selectionChanged: @escaping (ReadAloudVoiceChange) -> Void)
+    func presentReadAloudAddMoreTime()
 }
 
 final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
     let navbarButtonTag = 4
     private weak var navbarItemContainer: UIView?
     private weak var navbarHeadphonesButtonRef: CheckboxButton?
+    private weak var navbarHeadphonesWarningDot: UIView?
     private weak var navbarBridgeView: UIView?
     private var navbarContainerTrailingConstraint: NSLayoutConstraint?
     private unowned let viewController: UIViewController
@@ -117,16 +120,24 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
                 guard let self else { return }
                 switch state {
                 case .stopped, .outOfCredits:
-                    self.dismissHighlighterOverlay(confirm: true)
+                    dismissHighlighterOverlay(confirm: true)
                     self.delegate?.clearSpeechHighlight()
-                    self.hideOverlay()
-                    self.reloadReadAloudButton(isSelected: false)
+                    hideOverlay()
+                    reloadReadAloudButton(isSelected: false, state: state, remainingTime: speechManager.remainingTime.value)
 
                 case .speaking, .paused, .initializing, .loading:
-                    self.reloadReadAloudButton(isSelected: true)
-                    self.showOverlayIfNeeded(forType: self.currentOverlayType(controller: self), state: state)
+                    reloadReadAloudButton(isSelected: true, state: state, remainingTime: speechManager.remainingTime.value)
+                    showOverlayIfNeeded(forType: currentOverlayType(controller: self), state: state)
                 }
-                self.updateReadAloudButtonMenu(state: state)
+                updateReadAloudButtonMenu(state: state)
+            })
+            .disposed(by: disposeBag)
+
+        speechManager.remainingTime
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] remainingTime in
+                guard let self else { return }
+                reloadReadAloudButton(isSelected: nil, state: speechManager.state.value, remainingTime: remainingTime)
             })
             .disposed(by: disposeBag)
     }
@@ -156,7 +167,11 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
             let firstGroup = UIMenu(title: currentVoiceTitle(controller: controller), options: .displayInline, children: createControls(controller: controller))
             firstGroup.preferredElementSize = .medium
             let speedGroup = UIMenu(title: "Speech Rate", options: [], children: createSpeedActions(controller: controller))
-            return [firstGroup, speedGroup]
+            var elements: [UIMenuElement] = [firstGroup, speedGroup]
+            if let warningGroup = createWarningGroupIfNeeded(controller: controller) {
+                elements.insert(warningGroup, at: 1)
+            }
+            return elements
         }
 
         func createControls(controller: ReadAloudViewHandler) -> [UIMenuElement] {
@@ -203,6 +218,36 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
             if wasPlayingBeforeVoiceChange {
                 controller.speechManager.resume()
                 wasPlayingBeforeVoiceChange = false
+            }
+        }
+
+        func createWarningGroupIfNeeded(controller: ReadAloudViewHandler) -> UIMenu? {
+            guard let remainingTime = controller.speechManager.remainingTime.value, RemainingTimeFormatter.isWarning(remainingTime) else { return nil }
+            var items: [UIMenuElement] = []
+            items.append(UIAction(title: "Add More Time", image: nil) { [weak controller] _ in
+                controller?.delegate?.presentReadAloudAddMoreTime()
+            })
+            if remainingTime <= 0, let title = continueWithDowngradeTitle(voice: controller.speechManager.voice) {
+                items.append(UIAction(title: title, image: nil) { [weak controller] _ in
+                    controller?.speechManager.downgradeVoiceTierAndContinue()
+                })
+            }
+            return UIMenu(title: "", image: nil, options: [.displayInline], children: items)
+        }
+
+        func continueWithDowngradeTitle(voice: SpeechVoice?) -> String? {
+            switch voice {
+            case .remote(let remoteVoice):
+                switch remoteVoice.tier {
+                case .premium:
+                    return "Continue Reading With Standard Voices"
+
+                case .standard:
+                    return "Continue Reading With Local Voices"
+                }
+
+            case .local, .none:
+                return nil
             }
         }
 
@@ -262,6 +307,17 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
         let container = UIView()
         container.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(button)
+
+        let dotSize: CGFloat = 10
+        let warningDot = UIView()
+        warningDot.translatesAutoresizingMaskIntoConstraints = false
+        warningDot.backgroundColor = .systemRed
+        warningDot.layer.cornerRadius = dotSize / 2
+        warningDot.isUserInteractionEnabled = false
+        let state = speechManager.state.value
+        warningDot.isHidden = !(!state.isStopped && isRemainingTimeWarning(speechManager.remainingTime.value))
+        container.addSubview(warningDot)
+
         let trailing = container.trailingAnchor.constraint(equalTo: button.trailingAnchor)
         NSLayoutConstraint.activate([
             button.leadingAnchor.constraint(equalTo: container.leadingAnchor),
@@ -269,15 +325,24 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
             button.bottomAnchor.constraint(equalTo: container.bottomAnchor),
             button.widthAnchor.constraint(equalToConstant: 38),
             button.heightAnchor.constraint(equalToConstant: 38),
-            trailing
+            trailing,
+            warningDot.widthAnchor.constraint(equalToConstant: dotSize),
+            warningDot.heightAnchor.constraint(equalToConstant: dotSize),
+            warningDot.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: -2),
+            warningDot.topAnchor.constraint(equalTo: button.topAnchor, constant: 2)
         ])
 
         let item = UIBarButtonItem(customView: container)
         item.tag = navbarButtonTag
         navbarItemContainer = container
         navbarHeadphonesButtonRef = button
+        navbarHeadphonesWarningDot = warningDot
         navbarContainerTrailingConstraint = trailing
         return item
+    }
+
+    private func isRemainingTimeWarning(_ remainingTime: TimeInterval?) -> Bool {
+        return remainingTime.flatMap({ RemainingTimeFormatter.isWarning($0) }) ?? false
     }
 
     func toggleReadAloud() {
@@ -328,8 +393,11 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
         }
     }
 
-    private func reloadReadAloudButton(isSelected: Bool) {
-        navbarHeadphonesButtonRef?.isSelected = isSelected
+    private func reloadReadAloudButton(isSelected: Bool?, state: SpeechState, remainingTime: TimeInterval?) {
+        if let isSelected {
+            navbarHeadphonesButtonRef?.isSelected = isSelected
+        }
+        navbarHeadphonesWarningDot?.isHidden = !(!state.isStopped && isRemainingTimeWarning(remainingTime))
     }
 
     func readAloudControlsShouldChange(isNavbarHidden: Bool) {
