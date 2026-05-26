@@ -73,9 +73,10 @@ final class DocumentWorkerWebViewHandler: WebViewHandler {
                     parameters["pageIndexes"] = pages
                     parameters["password"] = password
 
-                case .getStructuredDocumentText(let contentType, let password):
+                case .getStructuredDocumentText(let contentType, let password, let sourceHash):
                     parameters["contentType"] = contentType
                     parameters["password"] = password
+                    parameters["sourceHash"] = sourceHash
                 }
 
                 let javascript = "performAction(\(Self.jsLiteral(action.method)), \(Self.jsLiteral(workId)), \(Self.jsLiteral(workFile.fileName)), \(Self.jsLiteral(parameters)));"

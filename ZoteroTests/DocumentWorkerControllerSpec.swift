@@ -501,20 +501,20 @@ final class DocumentWorkerControllerSpec: QuickSpec {
 
                 func compareJSONObjects(actual: [String: Any], expected: [String: Any], ignoreKeys: Set<String>, context: String) {
                     let actualKeys = Set(actual.keys).subtracting(ignoreKeys)
-                    let expectedKeys = Set(expected.keys)
+                    let expectedKeys = Set(expected.keys).subtracting(ignoreKeys)
                     expect(actualKeys).to(equal(expectedKeys))
                     for key in expectedKeys {
-                        compareJSONValues(actual: actual[key], expected: expected[key], context: "\(context).\(key)")
+                        compareJSONValues(actual: actual[key], expected: expected[key], ignoreKeys: ignoreKeys, context: "\(context).\(key)")
                     }
                 }
 
-                func compareJSONValues(actual: Any?, expected: Any?, context: String) {
+                func compareJSONValues(actual: Any?, expected: Any?, ignoreKeys: Set<String>, context: String) {
                     if let expected = expected as? [String: Any] {
                         guard let actual = actual as? [String: Any] else {
                             fail("expected object at \(context), got \(String(describing: actual))")
                             return
                         }
-                        compareJSONObjects(actual: actual, expected: expected, ignoreKeys: [], context: context)
+                        compareJSONObjects(actual: actual, expected: expected, ignoreKeys: ignoreKeys, context: context)
                         return
                     }
 
@@ -526,7 +526,7 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                         expect(actual.count).to(equal(expected.count), description: context)
                         guard actual.count == expected.count else { return }
                         for index in expected.indices {
-                            compareJSONValues(actual: actual[index], expected: expected[index], context: "\(context)[\(index)]")
+                            compareJSONValues(actual: actual[index], expected: expected[index], ignoreKeys: ignoreKeys, context: "\(context)[\(index)]")
                         }
                         return
                     }

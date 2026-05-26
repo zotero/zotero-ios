@@ -471,7 +471,12 @@ final class DocumentWorkerController {
             documentWorkerHandler.performAction(.getPDFFulltext(pages: pages, password: worker.password), workId: work.id)
 
         case .structuredDocumentText:
-            documentWorkerHandler.performAction(.getStructuredDocumentText(contentType: worker.file.mimeType, password: worker.password), workId: work.id)
+            guard let sourceHash = cachedMD5(from: worker.file.createUrl(), using: fileStorage.fileManager) else {
+                DDLogError("DocumentWorkerController: can't create source hash for \(worker)")
+                finishWork(work, in: worker, finalUpdateKind: .failed)
+                return
+            }
+            documentWorkerHandler.performAction(.getStructuredDocumentText(contentType: worker.file.mimeType, password: worker.password, sourceHash: sourceHash), workId: work.id)
         }
         // Start another work if needed.
         startWorkIfNeeded()

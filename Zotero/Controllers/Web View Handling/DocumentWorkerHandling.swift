@@ -13,7 +13,7 @@ import RxSwift
 enum DocumentWorkerAction {
     case recognizePDF(password: String?)
     case getPDFFulltext(pages: [Int]?, password: String?)
-    case getStructuredDocumentText(contentType: String, password: String?)
+    case getStructuredDocumentText(contentType: String, password: String?, sourceHash: String)
 
     var method: String {
         switch self {
@@ -24,7 +24,7 @@ enum DocumentWorkerAction {
             return "pdf.getFulltext"
 
         case .getStructuredDocumentText:
-            return "getStructuredDocumentText"
+            return "getStructuredDocumentTextJSON"
         }
     }
 }
