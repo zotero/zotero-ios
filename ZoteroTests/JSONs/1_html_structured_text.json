@@ -1,256 +1,263 @@
 {
-    "schemaVersion": "1.0.0-draft",
-    "processor": {"type": "snapshot", "version": "1.0.0-draft"},
-    "sourceContentType": "text/html",
-    "sourceHash": "",
-    "metadata": {
-        "title": "Test Snapshot",
-        "author": "Test Author",
-        "description": "A test HTML snapshot"
-    },
-    "pages": [{"contentRanges": [{"start": {"ref": [0, 0]}, "end": {"ref": [21, 0]}}]}],
-    "content": [
-        {
-            "type": "heading",
-            "content": [{"text": "Main Title", "anchor": {"selectorMap": ""}}],
-            "anchor": {"selectorMap": "h1"}
-        },
-        {
-            "type": "paragraph",
-            "content": [
-                {"text": "First paragraph with ", "anchor": {"selectorMap": "0"}},
-                {"text": "bold", "style": {"bold": true}, "anchor": {"selectorMap": " > strong"}},
-                {"text": " and ", "anchor": {"selectorMap": "25"}},
-                {"text": "italic", "style": {"italic": true}, "anchor": {"selectorMap": " > em"}},
-                {"text": " text.", "anchor": {"selectorMap": "36"}}
-            ],
-            "anchor": {"selectorMap": "p:first-of-type"}
-        },
-        {
-            "type": "heading",
-            "content": [{"text": "Section One", "anchor": {"selectorMap": ""}}],
-            "anchor": {"selectorMap": "h2:first-of-type"}
-        },
-        {
-            "type": "paragraph",
-            "content": [{"text": "Some content in section one.", "anchor": {"selectorMap": ""}}],
-            "anchor": {"selectorMap": "p:nth-child(4)"}
-        },
-        {
-            "type": "list",
-            "content": [
-                {
-                    "type": "listitem",
-                    "content": [{"text": "Item one", "anchor": {"selectorMap": ""}}],
-                    "anchor": {"selectorMap": "ul > li:first-child"}
-                },
-                {
-                    "type": "listitem",
-                    "content": [{"text": "Item two", "anchor": {"selectorMap": ""}}],
-                    "anchor": {"selectorMap": "ul > li:nth-child(2)"}
-                },
-                {
-                    "type": "listitem",
-                    "content": [{"text": "Item three", "anchor": {"selectorMap": ""}}],
-                    "anchor": {"selectorMap": "ul > li:last-child"}
-                }
-            ],
-            "anchor": {"selectorMap": "ul"}
-        },
-        {
-            "type": "heading",
-            "content": [{"text": "Section Two", "anchor": {"selectorMap": ""}}],
-            "anchor": {"selectorMap": "h2:nth-child(6)"}
-        },
-        {
-            "type": "paragraph",
-            "content": [
-                {"text": "Content with a ", "anchor": {"selectorMap": "0"}},
-                {"text": "link", "anchor": {"selectorMap": " > a"}, "target": {"url": "https://example.com"}},
-                {"text": ".", "anchor": {"selectorMap": "19"}}
-            ],
-            "anchor": {"selectorMap": "p:nth-child(7)"}
-        },
-        {
-            "type": "heading",
-            "content": [{"text": "Subsection", "anchor": {"selectorMap": ""}}],
-            "anchor": {"selectorMap": "h3"}
-        },
-        {
-            "type": "paragraph",
-            "content": [{"text": "Deeper content.", "anchor": {"selectorMap": ""}}],
-            "anchor": {"selectorMap": "p:nth-child(9)"}
-        },
-        {
-            "type": "blockquote",
-            "content": [
-                {
-                    "type": "paragraph",
-                    "content": [{"text": "A quoted passage.", "anchor": {"selectorMap": ""}}],
-                    "anchor": {"selectorMap": "blockquote > p"}
-                }
-            ],
-            "anchor": {"selectorMap": "blockquote"}
-        },
-        {
-            "type": "table",
-            "content": [
-                {
-                    "type": "tablerow",
-                    "content": [
-                        {
-                            "type": "tablecell",
-                            "content": [
-                                {
-                                    "type": "paragraph",
-                                    "content": [{"text": "Header 1", "anchor": {"selectorMap": ""}}],
-                                    "anchor": {"selectorMap": "table > tr:first-child > th:first-child"}
-                                }
-                            ],
-                            "anchor": {"selectorMap": "table > tr:first-child > th:first-child"},
-                            "header": true
-                        },
-                        {
-                            "type": "tablecell",
-                            "content": [
-                                {
-                                    "type": "paragraph",
-                                    "content": [{"text": "Header 2", "anchor": {"selectorMap": ""}}],
-                                    "anchor": {"selectorMap": "table > tr:first-child > th:last-child"}
-                                }
-                            ],
-                            "anchor": {"selectorMap": "table > tr:first-child > th:last-child"},
-                            "header": true
-                        }
-                    ],
-                    "anchor": {"selectorMap": "table > tr:first-child"}
-                },
-                {
-                    "type": "tablerow",
-                    "content": [
-                        {
-                            "type": "tablecell",
-                            "content": [
-                                {
-                                    "type": "paragraph",
-                                    "content": [{"text": "Cell 1", "anchor": {"selectorMap": ""}}],
-                                    "anchor": {"selectorMap": "table > tr:last-child > td:first-child"}
-                                }
-                            ],
-                            "anchor": {"selectorMap": "table > tr:last-child > td:first-child"}
-                        },
-                        {
-                            "type": "tablecell",
-                            "content": [
-                                {
-                                    "type": "paragraph",
-                                    "content": [{"text": "Cell 2", "anchor": {"selectorMap": ""}}],
-                                    "anchor": {"selectorMap": "table > tr:last-child > td:last-child"}
-                                }
-                            ],
-                            "anchor": {"selectorMap": "table > tr:last-child > td:last-child"}
-                        }
-                    ],
-                    "anchor": {"selectorMap": "table > tr:last-child"}
-                }
-            ],
-            "anchor": {"selectorMap": "table"}
-        },
-        {
-            "type": "heading",
-            "content": [{"text": "Navigation Heading", "anchor": {"selectorMap": ""}}],
-            "anchor": {"selectorMap": "nav > h2"}
-        },
-        {
-            "type": "paragraph",
-            "content": [{"text": "This should be excluded from outline.", "anchor": {"selectorMap": ""}}],
-            "anchor": {"selectorMap": "nav > p"}
-        },
-        {
-            "type": "preformatted",
-            "content": [{"text": "Code block\nwith preserved whitespace", "anchor": {"selectorMap": ""}}],
-            "anchor": {"selectorMap": "pre:first-of-type"}
-        },
-        {
-            "type": "heading",
-            "content": [{"text": "NFC Stress Tests", "anchor": {"selectorMap": ""}}],
-            "anchor": {"selectorMap": "h2:last-of-type"}
-        },
-        {
-            "type": "paragraph",
-            "content": [
-                {"text": "Café lattés are nice.", "anchor": {"selectorMap": "", "deltaMap": "4 -1 10 -2"}}
-            ],
-            "anchor": {"selectorMap": "p:nth-child(17)"}
-        },
-        {
-            "type": "paragraph",
-            "content": [
-                {"text": "Viet Nam: Hṍ Chí Minh", "anchor": {"selectorMap": "", "deltaMap": "12 -2 16 -3"}}
-            ],
-            "anchor": {"selectorMap": "p:nth-child(18)"}
-        },
-        {
-            "type": "paragraph",
-            "content": [{"text": "Korean: 한글", "anchor": {"selectorMap": "", "deltaMap": "9 -2 10 -4"}}],
-            "anchor": {"selectorMap": "p:nth-child(19)"}
-        },
-        {
-            "type": "paragraph",
-            "content": [
-                {"text": "Normal text, ", "anchor": {"selectorMap": "0"}},
-                {"text": "café", "style": {"bold": true}, "anchor": {"selectorMap": " > strong"}},
-                {"text": " is NFC but ", "anchor": {"selectorMap": "17"}},
-                {
-                    "text": "café",
-                    "style": {"italic": true},
-                    "anchor": {"selectorMap": " > em", "deltaMap": "4 -1"}
-                },
-                {"text": " is NFD, then more normal.", "anchor": {"selectorMap": "34"}}
-            ],
-            "anchor": {"selectorMap": "p:nth-child(20)"}
-        },
-        {
-            "type": "paragraph",
-            "content": [
-                {
-                    "text": "Español and Swedish: ångström",
-                    "anchor": {"selectorMap": "", "deltaMap": "5 -1 22 -2 28 -3"}
-                }
-            ],
-            "anchor": {"selectorMap": "p:nth-child(21)"}
-        },
-        {
-            "type": "paragraph",
-            "content": [{"text": "ÀB́ĈD̃Ë", "anchor": {"selectorMap": "", "deltaMap": "1 -1 4 -2 7 -3"}}],
-            "anchor": {"selectorMap": "p:last-of-type"}
-        },
-        {
-            "type": "preformatted",
-            "content": [
-                {"text": "NFC: café\nNFD: café", "anchor": {"selectorMap": "", "deltaMap": "19 -1"}}
-            ],
-            "anchor": {"selectorMap": "pre:last-child"}
-        }
-    ],
-    "outline": [
-        {
-            "title": "Main Title",
-            "ref": [0],
-            "level": 1,
-            "children": [
-                {"title": "Section One", "ref": [2], "level": 2},
-                {
-                    "title": "Section Two",
-                    "ref": [5],
-                    "level": 2,
-                    "children": [{"title": "Subsection", "ref": [7], "level": 3}]
-                },
-                {"title": "Navigation Heading", "ref": [11], "level": 2},
-                {"title": "NFC Stress Tests", "ref": [14], "level": 2}
-            ]
-        }
-    ],
-    "characterCount": 496,
-    "fileSize": 1980
+	"schemaVersion": "1.0.0",
+	"metadata": {
+		"processor": {"type": "snapshot", "version": "1.0.0"},
+		"dateCreated": "2000-01-01T00:00:00.000Z",
+		"source": {
+			"contentType": "text/html",
+			"hash": "fde9f51758cb2a139d38dec13d247ee3",
+			"properties": {
+				"title": "Test Snapshot",
+				"author": "Test Author",
+				"description": "A test HTML snapshot"
+			},
+			"fileSize": 1980
+		},
+		"characterCount": 496
+	},
+	"catalog": {
+		"pages": [{"contentRanges": [[[0, 0], [21, 0]]]}],
+		"outline": [
+			{
+				"title": "Main Title",
+				"ref": [0],
+				"level": 1,
+				"children": [
+					{"title": "Section One", "ref": [2], "level": 2},
+					{
+						"title": "Section Two",
+						"ref": [5],
+						"level": 2,
+						"children": [{"title": "Subsection", "ref": [7], "level": 3}]
+					},
+					{"title": "Navigation Heading", "ref": [11], "level": 2},
+					{"title": "NFC Stress Tests", "ref": [14], "level": 2}
+				]
+			}
+		]
+	},
+	"content": [
+		{
+			"type": "heading",
+			"content": [{"text": "Main Title", "anchor": {"selectorMap": ""}}],
+			"anchor": {"selectorMap": "h1"}
+		},
+		{
+			"type": "paragraph",
+			"content": [
+				{"text": "First paragraph with ", "anchor": {"selectorMap": "0"}},
+				{"text": "bold", "style": {"bold": true}, "anchor": {"selectorMap": " > strong"}},
+				{"text": " and ", "anchor": {"selectorMap": "25"}},
+				{"text": "italic", "style": {"italic": true}, "anchor": {"selectorMap": " > em"}},
+				{"text": " text.", "anchor": {"selectorMap": "36"}}
+			],
+			"anchor": {"selectorMap": "p:first-of-type"}
+		},
+		{
+			"type": "heading",
+			"content": [{"text": "Section One", "anchor": {"selectorMap": ""}}],
+			"anchor": {"selectorMap": "h2:first-of-type"}
+		},
+		{
+			"type": "paragraph",
+			"content": [{"text": "Some content in section one.", "anchor": {"selectorMap": ""}}],
+			"anchor": {"selectorMap": "p:nth-child(4)"}
+		},
+		{
+			"type": "list",
+			"content": [
+				{
+					"type": "listitem",
+					"content": [{"text": "Item one", "anchor": {"selectorMap": ""}}],
+					"anchor": {"selectorMap": "ul > li:first-child"}
+				},
+				{
+					"type": "listitem",
+					"content": [{"text": "Item two", "anchor": {"selectorMap": ""}}],
+					"anchor": {"selectorMap": "ul > li:nth-child(2)"}
+				},
+				{
+					"type": "listitem",
+					"content": [{"text": "Item three", "anchor": {"selectorMap": ""}}],
+					"anchor": {"selectorMap": "ul > li:last-child"}
+				}
+			],
+			"anchor": {"selectorMap": "ul"}
+		},
+		{
+			"type": "heading",
+			"content": [{"text": "Section Two", "anchor": {"selectorMap": ""}}],
+			"anchor": {"selectorMap": "h2:nth-child(6)"}
+		},
+		{
+			"type": "paragraph",
+			"content": [
+				{"text": "Content with a ", "anchor": {"selectorMap": "0"}},
+				{"text": "link", "anchor": {"selectorMap": " > a"}, "target": {"url": "https://example.com"}},
+				{"text": ".", "anchor": {"selectorMap": "19"}}
+			],
+			"anchor": {"selectorMap": "p:nth-child(7)"}
+		},
+		{
+			"type": "heading",
+			"content": [{"text": "Subsection", "anchor": {"selectorMap": ""}}],
+			"anchor": {"selectorMap": "h3"}
+		},
+		{
+			"type": "paragraph",
+			"content": [{"text": "Deeper content.", "anchor": {"selectorMap": ""}}],
+			"anchor": {"selectorMap": "p:nth-child(9)"}
+		},
+		{
+			"type": "blockquote",
+			"content": [
+				{
+					"type": "paragraph",
+					"content": [{"text": "A quoted passage.", "anchor": {"selectorMap": ""}}],
+					"anchor": {"selectorMap": "blockquote > p"}
+				}
+			],
+			"anchor": {"selectorMap": "blockquote"}
+		},
+		{
+			"type": "table",
+			"content": [
+				{
+					"type": "tablerow",
+					"content": [
+						{
+							"type": "tablecell",
+							"content": [
+								{
+									"type": "paragraph",
+									"content": [{"text": "Header 1", "anchor": {"selectorMap": ""}}],
+									"anchor": {"selectorMap": "table > tr:first-child > th:first-child"}
+								}
+							],
+							"anchor": {"selectorMap": "table > tr:first-child > th:first-child"},
+							"header": true
+						},
+						{
+							"type": "tablecell",
+							"content": [
+								{
+									"type": "paragraph",
+									"content": [{"text": "Header 2", "anchor": {"selectorMap": ""}}],
+									"anchor": {"selectorMap": "table > tr:first-child > th:last-child"}
+								}
+							],
+							"anchor": {"selectorMap": "table > tr:first-child > th:last-child"},
+							"header": true
+						}
+					],
+					"anchor": {"selectorMap": "table > tr:first-child"}
+				},
+				{
+					"type": "tablerow",
+					"content": [
+						{
+							"type": "tablecell",
+							"content": [
+								{
+									"type": "paragraph",
+									"content": [{"text": "Cell 1", "anchor": {"selectorMap": ""}}],
+									"anchor": {"selectorMap": "table > tr:last-child > td:first-child"}
+								}
+							],
+							"anchor": {"selectorMap": "table > tr:last-child > td:first-child"}
+						},
+						{
+							"type": "tablecell",
+							"content": [
+								{
+									"type": "paragraph",
+									"content": [{"text": "Cell 2", "anchor": {"selectorMap": ""}}],
+									"anchor": {"selectorMap": "table > tr:last-child > td:last-child"}
+								}
+							],
+							"anchor": {"selectorMap": "table > tr:last-child > td:last-child"}
+						}
+					],
+					"anchor": {"selectorMap": "table > tr:last-child"}
+				}
+			],
+			"anchor": {"selectorMap": "table"}
+		},
+		{
+			"type": "heading",
+			"content": [{"text": "Navigation Heading", "anchor": {"selectorMap": ""}}],
+			"anchor": {"selectorMap": "nav > h2"}
+		},
+		{
+			"type": "paragraph",
+			"content": [{"text": "This should be excluded from outline.", "anchor": {"selectorMap": ""}}],
+			"anchor": {"selectorMap": "nav > p"}
+		},
+		{
+			"type": "preformatted",
+			"content": [{"text": "Code block\nwith preserved whitespace", "anchor": {"selectorMap": ""}}],
+			"anchor": {"selectorMap": "pre:first-of-type"}
+		},
+		{
+			"type": "heading",
+			"content": [{"text": "NFC Stress Tests", "anchor": {"selectorMap": ""}}],
+			"anchor": {"selectorMap": "h2:last-of-type"}
+		},
+		{
+			"type": "paragraph",
+			"content": [
+				{"text": "Café lattés are nice.", "anchor": {"selectorMap": "", "deltaMap": "4 -1 10 -2"}}
+			],
+			"anchor": {"selectorMap": "p:nth-child(17)"}
+		},
+		{
+			"type": "paragraph",
+			"content": [
+				{"text": "Viet Nam: Hṍ Chí Minh", "anchor": {"selectorMap": "", "deltaMap": "12 -2 16 -3"}}
+			],
+			"anchor": {"selectorMap": "p:nth-child(18)"}
+		},
+		{
+			"type": "paragraph",
+			"content": [{"text": "Korean: 한글", "anchor": {"selectorMap": "", "deltaMap": "9 -2 10 -4"}}],
+			"anchor": {"selectorMap": "p:nth-child(19)"}
+		},
+		{
+			"type": "paragraph",
+			"content": [
+				{"text": "Normal text, ", "anchor": {"selectorMap": "0"}},
+				{"text": "café", "style": {"bold": true}, "anchor": {"selectorMap": " > strong"}},
+				{"text": " is NFC but ", "anchor": {"selectorMap": "17"}},
+				{
+					"text": "café",
+					"style": {"italic": true},
+					"anchor": {"selectorMap": " > em", "deltaMap": "4 -1"}
+				},
+				{"text": " is NFD, then more normal.", "anchor": {"selectorMap": "34"}}
+			],
+			"anchor": {"selectorMap": "p:nth-child(20)"}
+		},
+		{
+			"type": "paragraph",
+			"content": [
+				{
+					"text": "Español and Swedish: ångström",
+					"anchor": {"selectorMap": "", "deltaMap": "5 -1 22 -2 28 -3"}
+				}
+			],
+			"anchor": {"selectorMap": "p:nth-child(21)"}
+		},
+		{
+			"type": "paragraph",
+			"content": [{"text": "ÀB́ĈD̃Ë", "anchor": {"selectorMap": "", "deltaMap": "1 -1 4 -2 7 -3"}}],
+			"anchor": {"selectorMap": "p:last-of-type"}
+		},
+		{
+			"type": "preformatted",
+			"content": [
+				{"text": "NFC: café\nNFD: café", "anchor": {"selectorMap": "", "deltaMap": "19 -1"}}
+			],
+			"anchor": {"selectorMap": "pre:last-child"}
+		}
+	]
 }

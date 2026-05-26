@@ -221,6 +221,7 @@ final class DocumentWorkerJSHandler {
                 var pages: [Int]?
                 var contentType: String?
                 var password: String?
+                var sourceHash: String?
                 switch action {
                 case .recognizePDF(let _password):
                     password = _password
@@ -229,9 +230,10 @@ final class DocumentWorkerJSHandler {
                     pages = _pages
                     password = _password
 
-                case .getStructuredDocumentText(let _contentType, let _password):
+                case .getStructuredDocumentText(let _contentType, let _password, let _sourceHash):
                     contentType = _contentType
                     password = _password
+                    sourceHash = _sourceHash
                 }
                 if let pages {
                     dataObject.setValue(pages, forProperty: "pageIndexes")
@@ -241,6 +243,9 @@ final class DocumentWorkerJSHandler {
                 }
                 if let password {
                     dataObject.setValue(password, forProperty: "password")
+                }
+                if let sourceHash {
+                    dataObject.setValue(sourceHash, forProperty: "sourceHash")
                 }
                 message.setValue(dataObject, forProperty: "data")
 

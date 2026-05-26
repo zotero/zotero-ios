@@ -81,7 +81,7 @@ async function performAction(action, workId, filePath, parameters) {
       webkit.messageHandlers.fullTextHandler.postMessage({ workId, fullText: result });
       return;
     }
-    if (action === 'getStructuredDocumentText') {
+    if (action === 'getStructuredDocumentText' || action === 'getStructuredDocumentTextJSON') {
       webkit.messageHandlers.structuredDocumentTextHandler.postMessage({ workId, structuredDocumentText: result });
       return;
     }
@@ -113,9 +113,9 @@ pdf.getFulltext = async function (workId, filePath, pageIndexes, password) {
   }
 };
 
-async function getStructuredDocumentText(workId, filePath, contentType, password) {
+async function getStructuredDocumentText(workId, filePath, contentType, password, sourceHash) {
   try {
-    await performAction('getStructuredDocumentText', workId, filePath, { contentType, password });
+    await performAction('getStructuredDocumentTextJSON', workId, filePath, { contentType, password, sourceHash });
   }
   catch (error) {
     log(`getStructuredDocumentText error: ${error}`);
