@@ -7,6 +7,7 @@
 //
 
 import AVFAudio
+import SafariServices
 import UIKit
 import SwiftUI
 
@@ -382,6 +383,13 @@ extension PDFCoordinator: ReadAloudCoordinatorDelegate {
         controller.overrideUserInterfaceStyle = userInterfaceStyle
         controller.modalPresentationStyle = .formSheet
         presenter.present(controller, animated: true)
+    }
+
+    func showReadAloudAddMoreTime(from presenter: UIViewController) {
+        guard let url = URL(string: "https://www.zotero.org/settings/readaloud") else { return }
+        let controller = SFSafariViewController(url: url)
+        controller.modalPresentationStyle = .formSheet
+        (presenter.presentedViewController ?? presenter).present(controller, animated: true)
     }
 }
 

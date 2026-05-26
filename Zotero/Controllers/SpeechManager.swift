@@ -244,9 +244,6 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
 
                 case .outOfCredits(let reason):
                     nowPlayingManager.updatePlaybackState(isPlaying: false)
-                    if reason == .quotaExceeded {
-                        downgradeVoiceTierAndContinue()
-                    }
 
                 case .stopped:
                     speechData = nil
@@ -494,7 +491,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     /// - If currently using premium remote voice, switches to standard remote voice
     /// - If currently using standard remote voice, switches to local voice
     /// - If already using local voice, does nothing
-    private func downgradeVoiceTierAndContinue() {
+    func downgradeVoiceTierAndContinue() {
         guard let voice else { return }
 
         let language = language ?? detectedLanguage
