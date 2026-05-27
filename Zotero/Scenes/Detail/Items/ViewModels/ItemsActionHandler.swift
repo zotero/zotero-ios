@@ -421,6 +421,8 @@ final class ItemsActionHandler: BaseItemsActionHandler, ViewModelActionHandler {
             let oldFile = Files.attachmentFile(in: libraryId, key: change.key, filename: change.oldName, contentType: change.contentType)
             guard fileStorage.has(oldFile) else { return }
             let newFile = Files.attachmentFile(in: libraryId, key: change.key, filename: change.newName, contentType: change.contentType)
+            removeDerivedSidecars(for: oldFile.createUrl(), using: fileStorage.fileManager)
+            removeDerivedSidecars(for: newFile.createUrl(), using: fileStorage.fileManager)
             try fileStorage.move(from: oldFile, to: newFile)
         } completion: { result in
             switch result {

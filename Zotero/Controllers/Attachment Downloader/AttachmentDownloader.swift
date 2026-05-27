@@ -420,6 +420,7 @@ final class AttachmentDownloader: NSObject {
                     let file = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, filename: filename, contentType: contentType)
                     if file.ext == "pdf" && fileStorage.has(file) && !fileStorage.isPdf(file: file) {
                         // Check whether downloaded file is actually a PDF, otherwise remove it. Fixes #483.
+                        removeDerivedSidecars(for: file.createUrl(), using: fileStorage.fileManager)
                         try? fileStorage.remove(file)
                         DDLogInfo("AttachmentDownloader: download remote file \(attachment.key). Fixed local PDF.")
                     } else {
@@ -514,6 +515,7 @@ final class AttachmentDownloader: NSObject {
                     return
                 }
                 // Remove other contents of folder so that zip extraction doesn't fail
+                removeDerivedSidecars(for: file.createUrl(), using: fileStorage.fileManager)
                 let files: [File] = try fileStorage.contentsOfDirectory(at: zipFile.directory)
                 for file in files {
                     guard file.name != zipFile.name || file.ext != zipFile.ext else { continue }
@@ -968,6 +970,7 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
 
         do {
             // If there is some older version of given file, remove so that it can be replaced
+            removeDerivedSidecars(for: activeDownload.file.createUrl(), using: fileStorage.fileManager)
             if let zipFile, fileStorage.has(zipFile) {
                 try fileStorage.remove(zipFile)
             }
