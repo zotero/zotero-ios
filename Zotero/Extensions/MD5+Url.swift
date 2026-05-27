@@ -80,6 +80,19 @@ func cachedMD5(from url: URL, using fileManager: FileManager) -> String? {
     return md5
 }
 
+func removeDerivedSidecars(for url: URL, using fileManager: FileManager) {
+    cachedMD5AndModificationDateByURL[url] = nil
+    for sidecarUrl in derivedSidecarURLs(for: url) {
+        do {
+            if fileManager.fileExists(atPath: sidecarUrl.path) {
+                try fileManager.removeItem(at: sidecarUrl)
+            }
+        } catch {
+            DDLogError("Could not remove derived sidecar \(sidecarUrl.lastPathComponent): \(error)")
+        }
+    }
+}
+
 private struct SidecarCachedMD5: Codable {
     let filename: String
     let modificationDate: Date
@@ -89,6 +102,10 @@ private struct SidecarCachedMD5: Codable {
 
 private func sidecarURL(for url: URL) -> URL {
     return url.deletingLastPathComponent().appendingPathComponent(".zotero-source-hash.json")
+}
+
+private func derivedSidecarURLs(for url: URL) -> [URL] {
+    return [sidecarURL(for: url)]
 }
 
 private func sidecarCachedMD5(from url: URL, modificationDate: Date, size: NSNumber) -> String? {
