@@ -122,6 +122,12 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         case .setViewState(let params):
             setViewState(params: params, in: viewModel)
 
+        case .setViewStats(let stats):
+            setViewStats(stats: stats, in: viewModel)
+
+        case .setCurrentOutline(let id):
+            setCurrentOutline(id: id, in: viewModel)
+
         case .setToolOptions(let color, let size, let tool):
             setTool(color: color, size: size, tool: tool, in: viewModel)
 
@@ -219,8 +225,72 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         func parseOutline(from data: [String: Any]) -> HtmlEpubReaderState.Outline? {
             guard let title = data["title"] as? String, let location = data["location"] as? [String: Any], let rawChildren = data["items"] as? [[String: Any]] else { return nil }
             let children = rawChildren.compactMap({ parseOutline(from: $0) })
-            return HtmlEpubReaderState.Outline(title: title.trimmingCharacters(in: .whitespacesAndNewlines), location: location, children: children)
+            return HtmlEpubReaderState.Outline(id: UUID(), title: title.trimmingCharacters(in: .whitespacesAndNewlines), location: location, children: children)
         }
+    }
+
+    private func setViewStats(stats: [String: Any], in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
+        let outlinePath = stats["outlinePath"] as? [Int]
+        let pageIndex = stats["pageIndex"] as? Int
+        let pageLabel = stats["pageLabel"] as? String
+        let pagesCount = stats["pagesCount"] as? Int
+
+        let resolvedOutline = outlinePath.flatMap({ resolve(path: $0, in: viewModel.state.outlines) })
+        let newPage: HtmlEpubReaderState.PageInfo? = {
+            guard let pageIndex, let pageLabel else { return nil }
+            return HtmlEpubReaderState.PageInfo(index: pageIndex, label: pageLabel)
+        }()
+
+        let outlineChanged = resolvedOutline.map({ $0.id != viewModel.state.currentOutline?.id }) ?? false
+        let pageChanged = (newPage != nil && newPage != viewModel.state.currentPage) || (pagesCount != nil && pagesCount != viewModel.state.pagesCount)
+
+        guard outlineChanged || pageChanged else { return }
+
+        update(viewModel: viewModel) { state in
+            var changes: HtmlEpubReaderState.Changes = []
+            if outlineChanged, let resolvedOutline {
+                state.currentOutline = resolvedOutline
+                changes.insert(.currentOutline)
+            }
+            if pageChanged {
+                if let newPage {
+                    state.currentPage = newPage
+                }
+                if let pagesCount {
+                    state.pagesCount = pagesCount
+                }
+                changes.insert(.pages)
+            }
+            state.changes = changes
+        }
+    }
+
+    private func setCurrentOutline(id: UUID, in viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
+        guard id != viewModel.state.currentOutline?.id, let outline = findOutline(id: id, in: viewModel.state.outlines) else { return }
+        update(viewModel: viewModel) { state in
+            state.currentOutline = outline
+            state.changes = .currentOutline
+        }
+    }
+
+    private func findOutline(id: UUID, in outlines: [HtmlEpubReaderState.Outline]) -> HtmlEpubReaderState.Outline? {
+        for outline in outlines {
+            if outline.id == id { return outline }
+            if let found = findOutline(id: id, in: outline.children) { return found }
+        }
+        return nil
+    }
+
+    private func resolve(path: [Int], in outlines: [HtmlEpubReaderState.Outline]) -> HtmlEpubReaderState.Outline? {
+        var current: HtmlEpubReaderState.Outline?
+        var nodes = outlines
+        for index in path {
+            guard index >= 0, index < nodes.count else { return nil }
+            let node = nodes[index]
+            current = node
+            nodes = node.children
+        }
+        return current
     }
 
     private func updateTextCache(key: String, text: String, font: UIFont, viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
