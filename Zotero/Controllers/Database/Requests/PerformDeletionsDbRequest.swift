@@ -38,14 +38,14 @@ struct PerformItemDeletionsDbRequest: DbResponseRequest {
 
             switch conflictMode {
             case .resolveConflicts:
-                if object.selfOrChildChanged {
+                if hasLocalChangesRequiringConflict(object) {
                     // If remotely deleted item is changed locally, we need to show CR, so we return keys of such items
                     conflicts.append((object.key, object.displayTitle))
                     continue
                 }
 
             case .restoreConflicts:
-                if object.selfOrChildChanged {
+                if hasLocalChangesRequiringConflict(object) {
                     object.markAsChanged(in: database)
                     continue
                 }
@@ -59,6 +59,29 @@ struct PerformItemDeletionsDbRequest: DbResponseRequest {
         context.cleanup(in: database)
 
         return conflicts
+
+        func hasLocalChangesRequiringConflict(_ item: RItem) -> Bool {
+            if hasNonLastReadChanges(item) {
+                return true
+            }
+
+            for child in item.children {
+                guard !child.isInvalidated else { continue }
+                if hasLocalChangesRequiringConflict(child) {
+                    return true
+                }
+            }
+
+            return false
+
+            func hasNonLastReadChanges(_ item: RItem) -> Bool {
+                guard item.isChanged else { return false }
+
+                var changes = item.changedFields
+                changes.remove(.lastRead)
+                return !changes.isEmpty
+            }
+        }
     }
 }
 

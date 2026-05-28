@@ -26,7 +26,6 @@ protocol Updatable: AnyObject {
     var changeType: UpdatableChangeType { get set }
     var updateParameters: [String: Any]? { get }
     var isChanged: Bool { get }
-    var selfOrChildChanged: Bool { get }
 
     func deleteChanges(uuids: [String], database: Realm)
     func deleteAllChanges(database: Realm)
@@ -71,10 +70,6 @@ extension RCollection: Updatable {
         }
 
         return parameters
-    }
-
-    var selfOrChildChanged: Bool {
-        return isChanged
     }
 
     func markAsChanged(in database: Realm) {
@@ -125,10 +120,6 @@ extension RSearch: Updatable {
 
     private var sortedConditionParameters: [[String: Any]] {
         return self.conditions.sorted(byKeyPath: "sortId").map({ $0.updateParameters })
-    }
-
-    var selfOrChildChanged: Bool {
-        return self.isChanged
     }
 
     func markAsChanged(in database: Realm) {
@@ -282,20 +273,6 @@ extension RItem: Updatable {
         }
     }
 
-    var selfOrChildChanged: Bool {
-        if self.isChanged {
-            return true
-        }
-
-        for child in self.children {
-            if child.selfOrChildChanged {
-                return true
-            }
-        }
-
-        return false
-    }
-
     func markAsChanged(in database: Realm) {
         self.changes.append(RObjectChange.create(changes: self.allChanges))
         self.changeType = .user
@@ -380,10 +357,6 @@ extension RPageIndex: Updatable {
         return [SettingKeyParser.uid(fromKey: key, libraryId: libraryId, prefix: "lastPageIndex"): ["value": value]]
     }
 
-    var selfOrChildChanged: Bool {
-        return self.isChanged
-    }
-
     func markAsChanged(in database: Realm) {
         self.changes.append(RObjectChange.create(changes: RPageIndexChanges.index))
         self.changeType = .user
@@ -396,10 +369,6 @@ extension RLastReadDate: Updatable {
     var updateParameters: [String: Any]? {
         guard let groupKey else { return nil }
         return [SettingKeyParser.uid(fromKey: key, libraryId: .group(groupKey), prefix: "lastRead"): ["value": Int(date.timeIntervalSince1970)]]
-    }
-
-    var selfOrChildChanged: Bool {
-        return self.isChanged
     }
 
     func markAsChanged(in database: Realm) {
