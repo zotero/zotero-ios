@@ -104,6 +104,75 @@ final class DeletableObjectSpec: QuickSpec {
                 expect(realm.object(ofType: RUser.self, forPrimaryKey: userId)).toNot(beNil())
             }
 
+            it("deletes remotely deleted items with only local last read changes without conflicts") {
+                let itemKey = "ITEM0001"
+
+                try! realm.write {
+                    let item = createItem(key: itemKey)
+                    item.lastRead = Date()
+                    item.changes.append(RObjectChange.create(changes: RItemChanges.lastRead))
+                    realm.add(item)
+                }
+
+                var conflicts: [(String, String)] = []
+                try! realm.write {
+                    let request = PerformItemDeletionsDbRequest(libraryId: libraryId, keys: [itemKey], conflictMode: .resolveConflicts)
+                    conflicts = try! request.process(in: realm)
+                }
+
+                expect(conflicts).to(beEmpty())
+                expect(realm.objects(RItem.self).filter(.key(itemKey, in: libraryId)).first).to(beNil())
+            }
+
+            it("deletes remotely deleted item trees with only child last read changes without conflicts") {
+                let parentKey = "PARENT01"
+                let childKey = "CHILD001"
+
+                try! realm.write {
+                    let parent = createItem(key: parentKey)
+                    let child = createItem(key: childKey, rawType: ItemTypes.attachment, parent: parent)
+                    child.lastRead = Date()
+                    child.changes.append(RObjectChange.create(changes: RItemChanges.lastRead))
+
+                    realm.add(parent)
+                    realm.add(child)
+                }
+
+                var conflicts: [(String, String)] = []
+                try! realm.write {
+                    let request = PerformItemDeletionsDbRequest(libraryId: libraryId, keys: [parentKey], conflictMode: .resolveConflicts)
+                    conflicts = try! request.process(in: realm)
+                }
+
+                expect(conflicts).to(beEmpty())
+                expect(realm.objects(RItem.self).filter(.key(parentKey, in: libraryId)).first).to(beNil())
+                expect(realm.objects(RItem.self).filter(.key(childKey, in: libraryId)).first).to(beNil())
+            }
+
+            it("keeps remotely deleted items with local changes other than last read as conflicts") {
+                let itemKey = "ITEM0001"
+
+                try! realm.write {
+                    let item = createItem(key: itemKey)
+                    item.displayTitle = "Changed Item"
+                    item.lastRead = Date()
+                    item.changes.append(RObjectChange.create(changes: RItemChanges.lastRead))
+                    item.changes.append(RObjectChange.create(changes: RItemChanges.fields))
+                    realm.add(item)
+                }
+
+                var conflicts: [(String, String)] = []
+                try! realm.write {
+                    let request = PerformItemDeletionsDbRequest(libraryId: libraryId, keys: [itemKey], conflictMode: .resolveConflicts)
+                    conflicts = try! request.process(in: realm)
+                }
+
+                expect(conflicts.count).to(equal(1))
+                expect(conflicts.first?.0).to(equal(itemKey))
+                expect(conflicts.first?.1).to(equal("Changed Item"))
+                expect(realm.objects(RItem.self).filter(.key(itemKey, in: libraryId)).first).toNot(beNil())
+            }
+
             it("deletes orphaned users through generic item deletions") {
                 let userId = 1
                 let itemKey = "ITEM0001"
