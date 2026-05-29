@@ -146,6 +146,29 @@ struct ReadUpdatedItemUpdateParametersDbRequest: DbResponseRequest {
     }
 }
 
+struct ClearLastReadOnlyItemChangesDbRequest: DbResponseRequest {
+    typealias Response = Set<String>
+
+    let libraryId: LibraryIdentifier
+    let keys: Set<String>
+
+    var needsWrite: Bool { return true }
+
+    func process(in database: Realm) throws -> Set<String> {
+        var clearedKeys: Set<String> = []
+        let items = database.objects(RItem.self).filter(.keys(keys, in: libraryId))
+
+        for item in items {
+            guard item.isChanged, item.changedFields == .lastRead else { continue }
+
+            item.deleteAllChanges(database: database)
+            clearedKeys.insert(item.key)
+        }
+
+        return clearedKeys
+    }
+}
+
 struct ReadUpdatedCollectionUpdateParametersDbRequest: DbResponseRequest {
     typealias Response = ReadUpdatedParametersResponse
 

@@ -153,9 +153,44 @@ struct SubmitUpdateSyncAction: SyncAction {
             }
         }
 
-        DDLogError("SubmitUpdateSyncAction: failures - \(failedResponses)")
+        let remainingFailedResponses = clearLastReadOnlyItemChangesIfNeeded(for: failedResponses, in: libraryId)
+        if remainingFailedResponses.isEmpty {
+            return SyncError.NonFatal.preconditionFailed(libraryId)
+        }
 
-        return SyncActionError.submitUpdateFailures(failedResponses)
+        DDLogError("SubmitUpdateSyncAction: failures - \(remainingFailedResponses)")
+
+        return SyncActionError.submitUpdateFailures(remainingFailedResponses)
+
+        func clearLastReadOnlyItemChangesIfNeeded(for failedResponses: [FailedUpdateResponse], in libraryId: LibraryIdentifier) -> [FailedUpdateResponse] {
+            switch object {
+            case .item, .trash:
+                break
+
+            case .collection, .search, .settings:
+                return failedResponses
+            }
+
+            let missingKeys = Set(failedResponses.compactMap({ response -> String? in
+                guard response.code == 404 else { return nil }
+                return response.key
+            }))
+            guard !missingKeys.isEmpty else { return failedResponses }
+
+            do {
+                let clearedKeys = try dbStorage.perform(request: ClearLastReadOnlyItemChangesDbRequest(libraryId: libraryId, keys: missingKeys), on: queue)
+                guard !clearedKeys.isEmpty else { return failedResponses }
+
+                DDLogWarn("SubmitUpdateSyncAction: cleared lastRead-only changes for remotely missing items - \(clearedKeys)")
+                return failedResponses.filter({ response in
+                    guard let key = response.key else { return true }
+                    return !clearedKeys.contains(key)
+                })
+            } catch let error {
+                DDLogError("SubmitUpdateSyncAction: could not clear lastRead-only changes for remotely missing items - \(error)")
+                return failedResponses
+            }
+        }
     }
 
     private func process(response: UpdatesResponse) -> (unchangedKeys: [String], parsingFailedKeys: [String], changedCollections: [CollectionResponse], changedItems: [ItemResponse], changedSearches: [SearchResponse]) {

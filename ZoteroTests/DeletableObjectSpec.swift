@@ -173,6 +173,48 @@ final class DeletableObjectSpec: QuickSpec {
                 expect(realm.objects(RItem.self).filter(.key(itemKey, in: libraryId)).first).toNot(beNil())
             }
 
+            it("clears only last read changes from remotely missing item updates") {
+                let lastReadKey = "LASTREAD"
+                let emptyKey = "EMPTY001"
+                let fieldKey = "FIELD001"
+                let mixedKey = "MIXED001"
+
+                try! realm.write {
+                    let lastReadItem = createItem(key: lastReadKey)
+                    lastReadItem.lastRead = Date()
+                    lastReadItem.changes.append(RObjectChange.create(changes: RItemChanges.lastRead))
+
+                    let emptyItem = createItem(key: emptyKey)
+                    emptyItem.changes.append(RObjectChange.create(changes: RItemChanges()))
+
+                    let fieldItem = createItem(key: fieldKey)
+                    fieldItem.changes.append(RObjectChange.create(changes: RItemChanges.fields))
+
+                    let mixedItem = createItem(key: mixedKey)
+                    mixedItem.lastRead = Date()
+                    mixedItem.changes.append(RObjectChange.create(changes: RItemChanges.lastRead))
+                    mixedItem.changes.append(RObjectChange.create(changes: RItemChanges.fields))
+
+                    realm.add(lastReadItem)
+                    realm.add(emptyItem)
+                    realm.add(fieldItem)
+                    realm.add(mixedItem)
+                }
+
+                var clearedKeys: Set<String> = []
+                try! realm.write {
+                    let request = ClearLastReadOnlyItemChangesDbRequest(libraryId: libraryId, keys: [lastReadKey, emptyKey, fieldKey, mixedKey])
+                    clearedKeys = try! request.process(in: realm)
+                }
+
+                expect(clearedKeys).to(equal([lastReadKey]))
+                expect(realm.objects(RItem.self).filter(.key(lastReadKey, in: libraryId)).first?.changes).to(beEmpty())
+                expect(realm.objects(RItem.self).filter(.key(emptyKey, in: libraryId)).first?.changes.count).to(equal(1))
+                expect(realm.objects(RItem.self).filter(.key(emptyKey, in: libraryId)).first?.changedFields).to(equal(RItemChanges()))
+                expect(realm.objects(RItem.self).filter(.key(fieldKey, in: libraryId)).first?.changedFields).to(equal(.fields))
+                expect(realm.objects(RItem.self).filter(.key(mixedKey, in: libraryId)).first?.changedFields).to(equal([.fields, .lastRead]))
+            }
+
             it("deletes orphaned users through generic item deletions") {
                 let userId = 1
                 let itemKey = "ITEM0001"
