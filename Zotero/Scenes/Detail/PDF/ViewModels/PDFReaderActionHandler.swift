@@ -1136,10 +1136,12 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             guard viewModel.state.previewCache.object(forKey: nsKey) == nil else { continue }
 
             group.enter()
-            annotationPreviewController.preview(for: key, parentKey: viewModel.state.key, libraryId: libraryId, appearance: appearance) { [weak viewModel] image in
-                if let image = image {
+            annotationPreviewController.preview(for: key, parentKey: viewModel.state.key, libraryId: libraryId, appearance: appearance) { [weak self, weak viewModel] image in
+                if let image {
                     viewModel?.state.previewCache.setObject(image, forKey: nsKey)
                     loadedKeys.insert(key)
+                } else if let self, let viewModel {
+                    generatePreviewIfPossible(for: key, notify: notify, in: viewModel, handler: self)
                 }
                 group.leave()
             }
@@ -1151,6 +1153,26 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             guard !loadedKeys.isEmpty, let self, let viewModel else { return }
             update(viewModel: viewModel) { state in
                 state.loadedPreviewImageAnnotationKeys = loadedKeys
+            }
+        }
+
+        func generatePreviewIfPossible(for key: String, notify: Bool, in viewModel: ViewModel<PDFReaderActionHandler>, handler: PDFReaderActionHandler) {
+            let databaseKey = PDFReaderState.AnnotationKey(key: key, type: .database)
+            let documentKey = PDFReaderState.AnnotationKey(key: key, type: .document)
+            guard let annotation = viewModel.state.annotation(for: databaseKey) ?? viewModel.state.annotation(for: documentKey) else { return }
+
+            let pageIndex = PageIndex(annotation.page)
+            if let annotationProvider = handler.annotationProvider, !annotationProvider.hasLoadedAnnotationsForPage(at: pageIndex) {
+                // Keep preview generation aligned with provider-lazy loading.
+                // Off-page annotations can get their previews when the page is loaded later.
+                return
+            }
+            guard let pdfAnnotation = viewModel.state.document.annotation(at: pageIndex, with: key), pdfAnnotation.shouldRenderPreview else { return }
+
+            if notify {
+                handler.annotationPreviewController.store(for: pdfAnnotation, parentKey: viewModel.state.key, libraryId: libraryId, appearance: handler.appearance)
+            } else {
+                handler.annotationPreviewController.store(annotations: [pdfAnnotation], parentKey: viewModel.state.key, libraryId: libraryId, appearance: handler.appearance)
             }
         }
     }
@@ -1498,7 +1520,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 // Remove may be superfluous, if those annotations are already removed by the undo.
                 // Annotations are filtered, so only those that still need to are removed, to avoid an edge case where undocumented PSPDFKit expection
                 // "The removed annotation does not belong to the current document" is thrown.
-                let needRemove = toRemove.compactMap { document.annotation(on: Int($0.pageIndex), with: $0.key ?? $0.uuid) }
+                let needRemove = toRemove.compactMap { document.annotation(at: $0.pageIndex, with: $0.key ?? $0.uuid) }
                 if !needRemove.isEmpty {
                     document.remove(annotations: needRemove, options: [.suppressNotifications: true])
                 }
@@ -1857,17 +1879,17 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 documentProvider: documentProvider,
                 fileAnnotationProvider: fileAnnotationProvider,
                 dbStorage: dbStorage,
-                displayName: viewModel.state.displayName,
-                username: viewModel.state.username
-            )
-            provider.pdfReaderAnnotationProviderDelegate = self
-            provider.loadCache(
-                attachmentKey: attachmentKey,
-                libraryId: libraryId,
-                documentMD5: documentMD5,
-                pageCount: Int(viewModel.state.document.pageCount),
+                dbQueue: backgroundQueue,
+                attachmentKey: viewModel.state.key,
+                libraryId: viewModel.state.library.identifier,
+                userId: viewModel.state.userId,
+                username: viewModel.state.username,
+                documentPageCount: viewModel.state.document.pageCount,
+                metadataEditable: viewModel.state.library.metadataEditable,
                 boundingBoxConverter: viewModel.state.document
             )
+            provider.pdfReaderAnnotationProviderDelegate = self
+            provider.loadDocumentAnnotationsDatabaseCache(documentMD5: documentMD5)
             annotationProvider = provider
             documentProvider.annotationManager.annotationProviders = [provider]
         }
@@ -1892,28 +1914,15 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             let itemToken = observe(item: item, viewModel: viewModel)
             let token = observe(items: liveAnnotations, viewModel: viewModel)
             let databaseAnnotations = liveAnnotations.freeze()
+            let databaseAnnotationCount = databaseAnnotations.count
 
             let loadDocumentAnnotationsStartTime = CFAbsoluteTimeGetCurrent()
 
-            let allDocumentAnnotations = viewModel.state.document.allAnnotations(of: .all).values.flatMap({ $0 })
-            annotationPreviewController.store(annotations: allDocumentAnnotations, parentKey: key, libraryId: library.identifier, appearance: appearance)
             let documentAnnotations = annotationProvider?.results
             let documentAnnotationKeys = annotationProvider?.keys ?? []
             let documentAnnotationUniqueBaseColors = annotationProvider?.uniqueBaseColors ?? []
 
             let annotationPages = readAnnotationPages(attachmentKey: key, libraryId: viewModel.state.library.identifier)
-
-            let convertDbAnnotationsStartTime = CFAbsoluteTimeGetCurrent()
-            let dbToPdfAnnotations = AnnotationConverter.annotations(
-                from: databaseAnnotations,
-                appearance: appearance,
-                currentUserId: viewModel.state.userId,
-                library: library,
-                displayName: viewModel.state.displayName,
-                username: viewModel.state.username,
-                documentPageCount: viewModel.state.document.pageCount,
-                boundingBoxConverter: boundingBoxConverter
-            )
 
             let sortStartTime = CFAbsoluteTimeGetCurrent()
             let sortedKeys = createSortedKeys(fromDatabaseAnnotations: databaseAnnotations, documentAnnotationKeys: documentAnnotationKeys)
@@ -1922,11 +1931,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             let preselectedDataStartTime = CFAbsoluteTimeGetCurrent()
             let (page, selectedData) = preselectedData(databaseAnnotations: databaseAnnotations, storedPage: storedPage, boundingBoxConverter: boundingBoxConverter, in: viewModel)
 
-            let updateDocumentStartTime = CFAbsoluteTimeGetCurrent()
-            viewModel.state.document.add(annotations: dbToPdfAnnotations, options: [.suppressNotifications: true])
             let endTime = CFAbsoluteTimeGetCurrent()
 
-            annotationPreviewController.store(annotations: dbToPdfAnnotations, parentKey: key, libraryId: library.identifier, appearance: appearance)
             lastReadWatcher.submit(key: key, libraryId: library.identifier, date: Date())
 
             update(viewModel: viewModel) { state in
@@ -1952,15 +1958,13 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 }
             }
 
-            DDLogInfo("PDFReaderActionHandler: loaded PDF with \(viewModel.state.document.pageCount) pages, \(documentAnnotationKeys.count) document annotations, \(dbToPdfAnnotations.count) zotero annotations")
+            DDLogInfo("PDFReaderActionHandler: loaded PDF with \(viewModel.state.document.pageCount) pages, \(documentAnnotationKeys.count) document annotations, \(databaseAnnotationCount) zotero annotations")
             var timeLog = "PDFReaderActionHandler: total time \(endTime - startTime)"
             timeLog += ", initial loading: \(loadDocumentAnnotationsStartTime - startTime)"
-            timeLog += ", load document annotations: \(convertDbAnnotationsStartTime - loadDocumentAnnotationsStartTime)"
-            timeLog += ", load zotero annotations: \(sortStartTime - convertDbAnnotationsStartTime)"
+            timeLog += ", load all annotations: \(sortStartTime - loadDocumentAnnotationsStartTime)"
             timeLog += ", sort keys: \(defaultAnnotationPageLabelStartTime - sortStartTime)"
             timeLog += ", default annotation page label: \(preselectedDataStartTime - defaultAnnotationPageLabelStartTime)"
-            timeLog += ", preselected data: \(updateDocumentStartTime - preselectedDataStartTime)"
-            timeLog += ", update document: \(endTime - updateDocumentStartTime)"
+            timeLog += ", preselected data: \(endTime - preselectedDataStartTime)"
             DDLogInfo(DDLogMessageFormat(stringLiteral: timeLog))
 
             observeDocument(in: viewModel)
@@ -1972,6 +1976,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
 
         func observe(library: Library, viewModel: ViewModel<PDFReaderActionHandler>, handler: PDFReaderActionHandler) {
+            handler.annotationProvider?.update(metadataEditable: library.metadataEditable)
             handler.update(viewModel: viewModel) { state in
                 if state.selectedAnnotationKey != nil {
                     state.selectedAnnotationKey = nil
@@ -2624,4 +2629,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     }
 }
 
-extension PDFReaderActionHandler: PDFReaderAnnotationProviderDelegate { }
+extension PDFReaderActionHandler: PDFReaderAnnotationProviderDelegate {
+    var displayName: String {
+        return Defaults.shared.displayName
+    }
+}
