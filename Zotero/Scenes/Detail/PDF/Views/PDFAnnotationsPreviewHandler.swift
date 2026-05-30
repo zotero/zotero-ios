@@ -82,8 +82,8 @@ final class PDFAnnotationsPreviewHandler {
                     if let image {
                         previewCache.setObject(image, forKey: nsKey)
                         loadedKeys.insert(key)
-                    } else {
-                        generatePreviewIfPossible(for: key, notify: notify)
+                    } else if let annotation = annotationProvider?.loadedAnnotation(with: key), annotation.shouldRenderPreview {
+                        annotationPreviewController.store(for: annotation, parentKey: attachmentKey, libraryId: libraryId, appearance: appearance, notify: notify)
                     }
                 }
                 group.leave()
@@ -94,15 +94,6 @@ final class PDFAnnotationsPreviewHandler {
         group.notify(queue: .main) { [weak self] in
             guard !loadedKeys.isEmpty else { return }
             self?.previewsDidLoad?(loadedKeys)
-        }
-        
-        func generatePreviewIfPossible(for key: String, notify: Bool) {
-            guard let annotation = annotationProvider?.loadedAnnotation(with: key), annotation.shouldRenderPreview else { return }
-            if notify {
-                annotationPreviewController.store(for: annotation, parentKey: attachmentKey, libraryId: libraryId, appearance: appearance)
-            } else {
-                annotationPreviewController.store(annotations: [annotation], parentKey: attachmentKey, libraryId: libraryId, appearance: appearance)
-            }
         }
     }
 }
