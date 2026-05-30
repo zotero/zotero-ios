@@ -34,6 +34,8 @@ struct AnnotationsConfig {
     static let colorVariationMap: [String: String] = createColorVariationMap()
     static let keyKey = "Zotero:Key"
     static let baseColorKey = "Zotero:BaseColor"
+    static let sourceKey = "Zotero:Source"
+    static let createdByUserIdKey = "Zotero:CreatedByUserId"
     // Line width of image annotation in PDF document.
     static let imageAnnotationLineWidth: CGFloat = 2
     // Free text annotation font size minimum, maximum, increment and rounding

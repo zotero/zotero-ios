@@ -136,15 +136,21 @@ struct PDFDatabaseAnnotation {
         return item.tags.map({ Tag(tag: $0) })
     }
 
+    var createdByUserId: Int? {
+        return item.createdBy?.identifier
+    }
+
     func editability(currentUserId: Int, library: Library) -> AnnotationEditability {
-        switch library.identifier {
+        return editability(currentUserId: currentUserId, libraryId: library.identifier, metadataEditable: library.metadataEditable)
+    }
+
+    func editability(currentUserId: Int, libraryId: LibraryIdentifier, metadataEditable: Bool) -> AnnotationEditability {
+        guard metadataEditable else { return .notEditable }
+        switch libraryId {
         case .custom:
-            return library.metadataEditable ? .editable : .notEditable
+            return .editable
 
         case .group:
-            if !library.metadataEditable {
-                return .notEditable
-            }
             return isAuthor(currentUserId: currentUserId) ? .editable : .notEditable
         }
     }

@@ -553,7 +553,7 @@ final class PDFDocumentViewController: UIViewController {
     private func select(annotation: PDFAnnotation, pageIndex: PageIndex, document: PSPDFKit.Document) {
         guard let pdfController,
               let pageView = updateSelectionOnVisiblePages(of: pdfController, annotation: annotation) ?? pdfController.pageViewForPage(at: pageIndex),
-              let pdfAnnotation = document.annotation(on: Int(pageView.pageIndex), with: annotation.key)
+              let pdfAnnotation = document.annotation(at: pageView.pageIndex, with: annotation.key)
         else { return }
         pageView.selectedAnnotations = [pdfAnnotation]
     }

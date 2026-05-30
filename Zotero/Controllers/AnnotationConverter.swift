@@ -199,6 +199,32 @@ struct AnnotationConverter {
         documentPageCount: UInt,
         boundingBoxConverter: AnnotationBoundingBoxConverter
     ) -> [PSPDFKit.Annotation] {
+        return annotations(
+            from: items,
+            type: type,
+            appearance: appearance,
+            currentUserId: currentUserId,
+            libraryId: library.identifier,
+            metadataEditable: library.metadataEditable,
+            displayName: displayName,
+            username: username,
+            documentPageCount: documentPageCount,
+            boundingBoxConverter: boundingBoxConverter
+        )
+    }
+
+    static func annotations(
+        from items: Results<RItem>,
+        type: Kind = .zotero,
+        appearance: Appearance,
+        currentUserId: Int,
+        libraryId: LibraryIdentifier,
+        metadataEditable: Bool,
+        displayName: String,
+        username: String,
+        documentPageCount: UInt,
+        boundingBoxConverter: AnnotationBoundingBoxConverter
+    ) -> [PSPDFKit.Annotation] {
         return items.compactMap({ item in
             guard let dbAnnotation = PDFDatabaseAnnotation(item: item) else { return nil }
             guard dbAnnotation.page < documentPageCount else {
@@ -210,7 +236,8 @@ struct AnnotationConverter {
                 type: type,
                 appearance: appearance,
                 currentUserId: currentUserId,
-                library: library,
+                libraryId: libraryId,
+                metadataEditable: metadataEditable,
                 displayName: displayName,
                 username: username,
                 boundingBoxConverter: boundingBoxConverter
@@ -224,6 +251,30 @@ struct AnnotationConverter {
         appearance: Appearance,
         currentUserId: Int,
         library: Library,
+        displayName: String,
+        username: String,
+        boundingBoxConverter: AnnotationBoundingBoxConverter
+    ) -> PSPDFKit.Annotation {
+        return annotation(
+            from: zoteroAnnotation,
+            type: type,
+            appearance: appearance,
+            currentUserId: currentUserId,
+            libraryId: library.identifier,
+            metadataEditable: library.metadataEditable,
+            displayName: displayName,
+            username: username,
+            boundingBoxConverter: boundingBoxConverter
+        )
+    }
+
+    static func annotation(
+        from zoteroAnnotation: PDFDatabaseAnnotation,
+        type: Kind,
+        appearance: Appearance,
+        currentUserId: Int,
+        libraryId: LibraryIdentifier,
+        metadataEditable: Bool,
         displayName: String,
         username: String,
         boundingBoxConverter: AnnotationBoundingBoxConverter
@@ -255,12 +306,16 @@ struct AnnotationConverter {
             annotation.customData = nil
 
         case .zotero:
-            annotation.customData = [
+            var customData: [String: Any] = [
                 AnnotationsConfig.keyKey: zoteroAnnotation.key,
                 AnnotationsConfig.baseColorKey: zoteroAnnotation.color
             ]
+            if let createdByUserId = zoteroAnnotation.createdByUserId {
+                customData[AnnotationsConfig.createdByUserIdKey] = createdByUserId
+            }
+            annotation.customData = customData
 
-            if zoteroAnnotation.editability(currentUserId: currentUserId, library: library) != .editable {
+            if zoteroAnnotation.editability(currentUserId: currentUserId, libraryId: libraryId, metadataEditable: metadataEditable) != .editable {
                 annotation.flags.update(with: .readOnly)
             }
         }
