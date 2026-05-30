@@ -25,6 +25,32 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
         case failed
     }
 
+    private struct FilterContext: Hashable {
+        let term: String?
+        let colors: Set<String>
+        let tags: Set<String>
+
+        static let empty: Self = .init(term: nil, colors: [], tags: [])
+
+        var filter: AnnotationsFilter {
+            .init(colors: colors, tags: tags)
+        }
+
+        var isEmpty: Bool {
+            return self == .empty
+        }
+
+        init(term: String?, colors: Set<String>, tags: Set<String>) {
+            self.term = term
+            self.colors = colors
+            self.tags = tags
+        }
+
+        init(term: String?, filter: AnnotationsFilter?) {
+            self.init(term: term, colors: filter?.colors ?? [], tags: filter?.tags ?? [])
+        }
+    }
+
     private let fileAnnotationProvider: PDFFileAnnotationProvider
     private unowned let dbStorage: DbStorage
     private let dbQueue: DispatchQueue
@@ -57,8 +83,11 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
     private var loadedFilePageIndices = Set<PageIndex>()
     private var loadedDocumentCachePageIndices = Set<PageIndex>()
     private var loadedDatabaseCachePageIndices = Set<PageIndex>()
+    private var loadedFileNonLinkAnnotationsByPage: [PageIndex: [Annotation]] = [:]
     private var loadedAnnotationsByPageByKey: [PageIndex: [String: Annotation]] = [:]
     private var loadedAnnotationsByKey: [String: Annotation] = [:]
+    private var visiblePageIndex: PageIndex?
+    private var currentFilterContext: FilterContext = .empty
 
     init(
         documentProvider: PDFDocumentProvider,
@@ -119,6 +148,7 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
     private func loadFilePage(pageIndex: PageIndex) -> (removedAnnotations: [Annotation], remainingAnnotations: [Annotation]) {
         var removedAnnotations: [Annotation] = []
         var remainingAnnotations: [Annotation] = []
+        var remainingNonLinkAnnotations: [Annotation] = []
         for annotation in fileAnnotationProvider.annotationsForPage(at: pageIndex) ?? [] {
             if annotation is LinkAnnotation {
                 // Don't lock Link Annotations, as they are not editable, and if numerous they can create a noticeable hang the first time the document lazily evaluates dirty annotations.
@@ -129,19 +159,22 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
             if !AnnotationsConfig.supported.contains(annotation.type) {
                 // Unsupported annotations aren't visible in sidebar.
                 remainingAnnotations.append(annotation)
+                remainingNonLinkAnnotations.append(annotation)
                 continue
             }
             // Check whether square annotation was previously created by Zotero.
             if let square = annotation as? PSPDFKit.SquareAnnotation, !square.isZoteroAnnotation {
                 // If it's just "normal" square (instead of our image) annotation, don't convert it to Zotero annotation.
                 remainingAnnotations.append(annotation)
+                remainingNonLinkAnnotations.append(annotation)
                 continue
             }
+            // Remove annotation from file annotation provider cache, as it is handled by this provider's cache.
             removedAnnotations.append(annotation)
         }
-        // Remove annotation from file annotation provider cache, as it is handled by this provider's cache.
         fileAnnotationProvider.remove(removedAnnotations, options: [.suppressNotifications: true])
         loadedFilePageIndices.insert(pageIndex)
+        loadedFileNonLinkAnnotationsByPage[pageIndex] = remainingNonLinkAnnotations
         return (removedAnnotations: removedAnnotations, remainingAnnotations: remainingAnnotations)
     }
 
@@ -150,13 +183,15 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
         let documentCachePageIsLoaded = performRead { loadedDocumentCachePageIndices.contains(pageIndex) }
         let databaseCachePageIsLoaded = performRead { loadedDatabaseCachePageIndices.contains(pageIndex) }
         if filePageIsLoaded && documentCachePageIsLoaded && databaseCachePageIsLoaded {
-            let filePageAnnotations = fileAnnotationProvider.annotationsForPage(at: pageIndex)
-            let cachePageAnnotations = super.annotationsForPage(at: pageIndex)
+            return performWriteAndWait {
+                let filePageAnnotations = fileAnnotationProvider.annotationsForPage(at: pageIndex)
+                let cachePageAnnotations = super.annotationsForPage(at: pageIndex)
 
-            if filePageAnnotations == nil, cachePageAnnotations == nil {
-                return nil
+                if filePageAnnotations == nil, cachePageAnnotations == nil {
+                    return nil
+                }
+                return (filePageAnnotations ?? []) + (cachePageAnnotations ?? [])
             }
-            return (filePageAnnotations ?? []) + (cachePageAnnotations ?? [])
         }
         return performWriteAndWait {
             // Because we had to leave the critical region from reading to writing, another thread could have raced here before us.
@@ -173,6 +208,11 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
 
             // Annotations are fetched from `super`, apart from cached document and database annotations, as more may have been added before it was accessed here.
             let cachePageAnnotations = super.annotationsForPage(at: pageIndex)
+
+            // Since this is the first time the annotations are loaded, apply current filter, if not empty.
+            if !currentFilterContext.isEmpty {
+                applyCurrentFilterForPage(at: pageIndex, notify: false)
+            }
 
             if filePageAnnotations == nil, cachePageAnnotations == nil {
                 return nil
@@ -294,10 +334,53 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
 
     // MARK: - Public Actions
 
+    public func setVisiblePage(_ pageIndex: PageIndex) {
+        performWriteAndWait {
+            guard pageIndex != visiblePageIndex else { return }
+            visiblePageIndex = pageIndex
+        }
+    }
+
+    public func updateFilter(term: String?, filter: AnnotationsFilter?) {
+        performWriteAndWait {
+            let newContext = FilterContext(term: term, filter: filter)
+            guard newContext != currentFilterContext else { return }
+            currentFilterContext = newContext
+            applyCurrentFilterToLoadedPages()
+        }
+
+        func applyCurrentFilterToLoadedPages() {
+            let loadedPageIndices = loadedFilePageIndices
+                .intersection(loadedDocumentCachePageIndices)
+                .intersection(loadedDatabaseCachePageIndices)
+            guard !loadedPageIndices.isEmpty else { return }
+
+            var orderedPageIndices: [PageIndex] = []
+            var remainingPageIndices = loadedPageIndices
+
+            if let visiblePageIndex, documentPageCount > 0 {
+                for offset in [0, -1, 1, -2, 2] {
+                    let rawPage = Int(visiblePageIndex) + offset
+                    guard rawPage >= 0, rawPage < Int(documentPageCount) else { continue }
+                    let pageIndex = PageIndex(rawPage)
+                    guard remainingPageIndices.contains(pageIndex) else { continue }
+                    orderedPageIndices.append(pageIndex)
+                    remainingPageIndices.remove(pageIndex)
+                }
+            }
+
+            orderedPageIndices.append(contentsOf: remainingPageIndices.sorted())
+            for pageIndex in orderedPageIndices {
+                applyCurrentFilterForPage(at: pageIndex, notify: true)
+            }
+        }
+    }
+
     public func update(metadataEditable: Bool) {
         performWriteAndWait {
             guard metadataEditable != self.metadataEditable else { return }
             self.metadataEditable = metadataEditable
+            var changedAnnotations: [Annotation] = []
             for pageIndex in loadedDatabaseCachePageIndices {
                 guard let annotations = super.annotationsForPage(at: pageIndex) else { continue }
                 for annotation in annotations where annotation.source == .database {
@@ -311,13 +394,10 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
                     } else {
                         annotation.flags.remove(.readOnly)
                     }
-                    NotificationCenter.default.post(
-                        name: .PSPDFAnnotationChanged,
-                        object: annotation,
-                        userInfo: [PSPDFAnnotationChangedNotificationKeyPathKey: ["flags"]]
-                    )
+                    changedAnnotations.append(annotation)
                 }
             }
+            postFlagsChangeNotification(for: changedAnnotations)
         }
 
         func databaseAnnotationShouldBeReadOnly(annotation: Annotation, metadataEditable: Bool) -> Bool {
@@ -483,10 +563,89 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
         }
     }
 
+    // MARK: - Filtering
+
+    private func applyCurrentFilterForPage(at pageIndex: PageIndex, notify: Bool) {
+        let changedFileAnnotations = applyToFileNonLinkAnnotations(at: pageIndex, filterContext: currentFilterContext)
+        let filteredKeys = filteredCombinedAnnotationKeys(for: Int(pageIndex), filterContext: currentFilterContext)
+        let changedCacheAnnotations = applyToCacheAnnotations(at: pageIndex, filterContext: currentFilterContext, filteredKeys: filteredKeys)
+        if notify {
+            postFlagsChangeNotification(for: changedFileAnnotations + changedCacheAnnotations)
+        }
+
+        func filteredCombinedAnnotationKeys(for page: Int, filterContext: FilterContext) -> Set<String>? {
+            guard !filterContext.isEmpty else { return nil }
+            do {
+                return try performOnDbQueue {
+                    try dbStorage.perform(
+                        request: ReadFilteredCombinedAnnotationKeysDbRequest(
+                            attachmentKey: attachmentKey,
+                            libraryId: libraryId,
+                            page: page,
+                            term: filterContext.term,
+                            filter: filterContext.filter,
+                            displayName: displayName,
+                            username: username
+                        ),
+                        on: dbQueue
+                    )
+                }
+            } catch {
+                DDLogError("PDFReaderAnnotationProvider: failed to read filtered combined annotation keys for page \(page) - \(error)")
+                return []
+            }
+        }
+
+        func applyToFileNonLinkAnnotations(at pageIndex: PageIndex, filterContext: FilterContext) -> [Annotation] {
+            var changedAnnotations: [Annotation] = []
+            // Annotations that are handled by the file annotation provider are always hidden, if not LinkAnnotation.
+            // TODO: Desktop client shows them instead. Resolve this and update.
+            for annotation in loadedFileNonLinkAnnotationsByPage[pageIndex] ?? [] {
+                let isHidden = !filterContext.isEmpty
+                guard annotation.isHidden != isHidden else { continue }
+                annotation.isHidden = isHidden
+                changedAnnotations.append(annotation)
+            }
+            return changedAnnotations
+        }
+
+        func applyToCacheAnnotations(at pageIndex: PageIndex, filterContext: FilterContext, filteredKeys: Set<String>?) -> [Annotation] {
+            var changedAnnotations: [Annotation] = []
+            for annotation in (loadedAnnotationsByPageByKey[pageIndex] ?? [:]).values {
+                guard annotation.source != nil else { continue }
+                let isHidden: Bool
+                if filterContext.isEmpty {
+                    isHidden = false
+                } else {
+                    let annotationKey = annotation.key ?? annotation.uuid
+                    isHidden = !(filteredKeys?.contains(annotationKey) ?? false)
+                }
+                guard annotation.isHidden != isHidden else { continue }
+                annotation.isHidden = isHidden
+                changedAnnotations.append(annotation)
+            }
+            return changedAnnotations
+        }
+    }
+
+    // MARK: Private Methods
+
     private func performOnDbQueue<Result>(_ work: () throws -> Result) throws -> Result {
         if DispatchQueue.getSpecific(key: dbQueueSpecificKey) != nil {
             return try work()
         }
         return try dbQueue.sync(execute: work)
+    }
+
+    private func postFlagsChangeNotification(for annotations: [Annotation]) {
+        inMainThread {
+            for annotation in annotations {
+                NotificationCenter.default.post(
+                    name: .PSPDFAnnotationChanged,
+                    object: annotation,
+                    userInfo: [PSPDFAnnotationChangedNotificationKeyPathKey: ["flags"]]
+                )
+            }
+        }
     }
 }

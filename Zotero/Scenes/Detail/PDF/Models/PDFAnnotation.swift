@@ -59,4 +59,53 @@ extension PDFAnnotation {
             return boundingBox(rects: rects)
         }
     }
+
+    func matches(term: String?, filter: AnnotationsFilter?, displayName: String, username: String) -> Bool {
+        let hasTerm = matchesTerm(term: term, displayName: displayName, username: username)
+        let hasFilter: Bool
+        if let filter {
+            hasFilter = matchesFilter(filter: filter)
+        } else {
+            hasFilter = true
+        }
+        return hasTerm && hasFilter
+    }
+
+    private func matchesTerm(term: String?, displayName: String, username: String) -> Bool {
+        guard let term else { return true }
+        return key.lowercased() == term.lowercased() ||
+               author(displayName: displayName, username: username).localizedCaseInsensitiveContains(term) ||
+               comment.localizedCaseInsensitiveContains(term) ||
+               (text ?? "").localizedCaseInsensitiveContains(term) ||
+               tags.contains(where: { $0.name.localizedCaseInsensitiveContains(term) })
+    }
+
+    private func matchesFilter(filter: AnnotationsFilter) -> Bool {
+        // TODO: cache this set, maybe cache and pass the intersections as well?
+        let defaultColors = Set(AnnotationsConfig.allColors)
+        let selectedDefaultColors = filter.colors.intersection(defaultColors)
+        let selectedExtraColors = filter.colors.subtracting(defaultColors)
+
+        let hasTag: Bool
+        if filter.tags.isEmpty {
+            hasTag = true
+        } else if isSyncable {
+            hasTag = tags.contains(where: { filter.tags.contains($0.name) })
+        } else {
+            return false
+        }
+
+        let hasColor: Bool
+        if selectedDefaultColors.isEmpty && selectedExtraColors.isEmpty {
+            hasColor = true
+        } else if !isSyncable {
+            hasColor = selectedDefaultColors.contains(color) || selectedExtraColors.contains(color)
+        } else if !selectedDefaultColors.isEmpty {
+            hasColor = selectedDefaultColors.contains(color)
+        } else {
+            return false
+        }
+
+        return hasTag && hasColor
+    }
 }
