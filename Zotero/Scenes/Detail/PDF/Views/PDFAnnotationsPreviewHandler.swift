@@ -82,7 +82,7 @@ final class PDFAnnotationsPreviewHandler {
                     if let image {
                         previewCache.setObject(image, forKey: nsKey)
                         loadedKeys.insert(key)
-                    } else if let annotation = annotationProvider?.loadedAnnotation(with: key), annotation.shouldRenderPreview {
+                    } else if let annotation = annotationProvider?.annotationIfLoaded(with: key), annotation.shouldRenderPreview {
                         annotationPreviewController.store(for: annotation, parentKey: attachmentKey, libraryId: libraryId, appearance: appearance, notify: notify)
                     }
                 }

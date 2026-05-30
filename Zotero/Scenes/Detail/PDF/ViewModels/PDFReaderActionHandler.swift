@@ -517,9 +517,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             var tuples: [(PDFAnnotation, PSPDFKit.Annotation)] = []
 
             for (page, annotations) in groupedAnnotationsByPage(from: selected, state: state) {
-                let documentAnnotations = state.document.annotations(at: UInt(page))
                 for annotation in annotations {
-                    guard let documentAnnotation = documentAnnotations.first(where: { $0.key == annotation.key }) else { continue }
+                    guard let documentAnnotation = annotationProvider?.annotation(at: PageIndex(page), with: annotation.key) else { continue }
                     tuples.append((annotation, documentAnnotation))
                 }
             }
@@ -844,9 +843,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
     private func removeAnnotations(_ annotationKeys: Set<PDFReaderAnnotationKey>, in viewModel: ViewModel<PDFReaderActionHandler>) {
         guard !annotationKeys.isEmpty else { return }
         let pdfAnnotations = annotationKeys.filter({ $0.type == .database }).compactMap({ key -> PSPDFKit.Annotation? in
-            guard let annotation = viewModel.state.annotation(for: key),
-                  let pdfAnnotation = viewModel.state.document.annotations(at: PageIndex(annotation.page)).first(where: { $0.key == annotation.key })
-            else { return nil }
+            guard let annotation = viewModel.state.annotation(for: key), let pdfAnnotation = annotationProvider?.annotation(at: PageIndex(annotation.page), with: annotation.key) else { return nil }
             return pdfAnnotation
         })
         remove(annotations: pdfAnnotations, in: viewModel.state.document)
@@ -950,7 +947,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         in viewModel: ViewModel<PDFReaderActionHandler>
     ) {
         let document = viewModel.state.document
-        guard let pdfAnnotation = document.annotations(at: PageIndex(annotation.page)).first(where: { $0.key == annotation.key }) else { return }
+        guard let pdfAnnotation = annotationProvider?.annotation(at: PageIndex(annotation.page), with: annotation.key) else { return }
         // If type changed, we need to remove the old annotation and insert a new one with proper types.
         if let type, annotation.type != type {
             changeType()
@@ -1091,7 +1088,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 // Remove may be superfluous, if those annotations are already removed by the undo.
                 // Annotations are filtered, so only those that still need to are removed, to avoid an edge case where undocumented PSPDFKit expection
                 // "The removed annotation does not belong to the current document" is thrown.
-                let needRemove = toRemove.compactMap { document.annotation(at: $0.pageIndex, with: $0.key ?? $0.uuid) }
+                let needRemove = toRemove.compactMap { annotationProvider?.annotation(at: $0.pageIndex, with: $0.key ?? $0.uuid) }
                 if !needRemove.isEmpty {
                     document.remove(annotations: needRemove, options: [.suppressNotifications: true])
                 }
@@ -1832,8 +1829,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 shouldRecomputeDefaultAnnotationPageLabel = true
             }
 
-            guard item.changeType == .sync, let pdfAnnotation = viewModel.state.document.annotations(at: PageIndex(annotation.page)).first(where: { $0.key == key.key }) else { continue }
-
+            guard item.changeType == .sync, let pdfAnnotation = annotationProvider?.annotation(at: PageIndex(annotation.page), with: key.key) else { continue }
             DDLogInfo("PDFReaderActionHandler: update PDF annotation")
             updatedPdfAnnotations.append((pdfAnnotation, annotation))
         }
@@ -1860,7 +1856,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             shouldRecomputeDefaultAnnotationPageLabel = true
             
             guard let oldAnnotation = PDFDatabaseAnnotation(item: databaseAnnotations[index]),
-                  let pdfAnnotation = viewModel.state.document.annotations(at: PageIndex(oldAnnotation.page)).first(where: { $0.key == oldAnnotation.key })
+                  let pdfAnnotation = annotationProvider?.annotation(at: PageIndex(oldAnnotation.page), with: oldAnnotation.key)
             else { continue }
             DDLogInfo("PDFReaderActionHandler: delete PDF annotation")
             deletedPdfAnnotations.append(pdfAnnotation)
