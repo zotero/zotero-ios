@@ -1113,7 +1113,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
             )
             guard let documentAnnotation else { return nil }
             // Only create preview for annotations that will be added in the database.
-            annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, appearance: appearance)
+            annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, appearance: appearance, notify: true)
             return documentAnnotation
         }
 
@@ -1323,7 +1323,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         guard !changes.isEmpty, let key = annotation.key else { return }
         let boundingBoxConverter = viewModel.state.document
 
-        annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, appearance: appearance)
+        annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, appearance: appearance, notify: true)
 
         let hasChanges: (PdfAnnotationChanges) -> Bool = { pdfChanges in
             let rawPdfChanges = PdfAnnotationChanges.stringValues(from: pdfChanges)
@@ -1961,12 +1961,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         // Insert new annotations to `Document`
         if !insertedPdfAnnotations.isEmpty {
             viewModel.state.document.add(annotations: insertedPdfAnnotations, options: nil)
-            annotationPreviewController.store(
-                annotations: insertedPdfAnnotations,
-                parentKey: viewModel.state.key,
-                libraryId: viewModel.state.library.identifier,
-                appearance: appearance
-            )
+            annotationPreviewController.store(annotations: insertedPdfAnnotations, parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, appearance: appearance, notify: false)
         }
         observeDocument(in: viewModel)
 
@@ -2095,7 +2090,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         guard !changes.isEmpty else { return }
 
-        annotationPreviewController.store(for: pdfAnnotation, parentKey: parentKey, libraryId: libraryId, appearance: appearance)
+        annotationPreviewController.store(for: pdfAnnotation, parentKey: parentKey, libraryId: libraryId, appearance: appearance, notify: true)
 
         NotificationCenter.default.post(
             name: NSNotification.Name.PSPDFAnnotationChanged,
