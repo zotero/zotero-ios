@@ -246,11 +246,6 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
 
         func loadDatabaseCacheIfNeededForPage(at pageIndex: PageIndex) {
             guard !loadedDatabaseCachePageIndices.contains(pageIndex) else { return }
-            guard let pdfReaderAnnotationProviderDelegate else {
-                DDLogWarn("PDFReaderAnnotationProvider: missing context for database annotations page \(pageIndex)")
-                // Defer marking database cache page as loaded, so it can be revisited if delegate is set later.
-                return
-            }
             var annotationsToAdd: [Annotation] = []
             do {
                 let items = try performOnDbQueue {
@@ -436,16 +431,24 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
         }
     }
 
-    func loadedAnnotation(with key: String) -> Annotation? {
+    public func annotationIfLoaded(with key: String) -> Annotation? {
         return performRead {
             loadedAnnotationsByKey[key]
         }
     }
 
-    func loadedAnnotation(at pageIndex: PageIndex, with key: String) -> Annotation? {
+    public func annotationIfLoaded(at pageIndex: PageIndex, with key: String) -> Annotation? {
         return performRead {
             loadedAnnotationsByPageByKey[pageIndex]?[key]
         }
+    }
+
+    public func annotation(at pageIndex: PageIndex, with key: String) -> Annotation? {
+        if let annotation = annotationIfLoaded(at: pageIndex, with: key) {
+            return annotation
+        }
+        _ = annotationsForPage(at: pageIndex)
+        return annotationIfLoaded(at: pageIndex, with: key)
     }
 
     public func loadDocumentAnnotationsDatabaseCache(documentMD5: String?) {
