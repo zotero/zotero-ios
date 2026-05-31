@@ -305,15 +305,16 @@ struct AttachmentCreator {
         // If file storage is not specified, we don't care about location anyway. Let's just return `.remote`.
         guard let fileStorage = fileStorage else { return .remote }
 
-        let webDavEnabled = Defaults.shared.webDavEnabled
+        // Non-ZFS backends (WebDAV, iCloud) keep the local payload as a `<key>.zip`, so a zip on disk also counts as present.
+        let usesRemoteFileStorage = Defaults.shared.fileSyncType != .zotero
 
-        if fileStorage.has(file) || (webDavEnabled && fileStorage.has(file.copy(withExt: "zip"))) {
+        if fileStorage.has(file) || (usesRemoteFileStorage && fileStorage.has(file.copy(withExt: "zip"))) {
             if !item.backendMd5.isEmpty, let md5 = cachedMD5(from: file.createUrl(), using: fileStorage.fileManager), item.backendMd5 != md5 {
                 return .localAndChangedRemotely
             } else {
                 return .local
             }
-        } else if webDavEnabled || item.links.contains(where: { $0.type == LinkType.enclosure.rawValue }) {
+        } else if usesRemoteFileStorage || item.links.contains(where: { $0.type == LinkType.enclosure.rawValue }) {
             return .remote
         } else {
             return .remoteMissing

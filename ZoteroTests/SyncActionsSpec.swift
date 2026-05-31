@@ -35,6 +35,7 @@ final class SyncActionsSpec: QuickSpec {
                 realm = try! Realm(configuration: config)
                 dbStorage = RealmDbStorage(config: config)
                 Defaults.shared.webDavEnabled = false
+                Defaults.shared.fileSyncType = .zotero
             }
 
             beforeEach {
@@ -484,6 +485,7 @@ final class SyncActionsSpec: QuickSpec {
                             dbStorage: dbStorage,
                             fileStorage: TestControllers.fileStorage,
                             webDavController: webDavController,
+                            iCloudController: ICloudController(dbStorage: dbStorage, fileStorage: TestControllers.fileStorage, transport: ICloudTransportController()),
                             schemaController: TestControllers.schemaController,
                             dateParser: TestControllers.dateParser,
                             queue: DispatchQueue.main,
@@ -539,6 +541,7 @@ final class SyncActionsSpec: QuickSpec {
                             dbStorage: dbStorage,
                             fileStorage: TestControllers.fileStorage,
                             webDavController: webDavController,
+                            iCloudController: ICloudController(dbStorage: dbStorage, fileStorage: TestControllers.fileStorage, transport: ICloudTransportController()),
                             schemaController: TestControllers.schemaController,
                             dateParser: TestControllers.dateParser,
                             queue: DispatchQueue.main,
@@ -625,6 +628,7 @@ final class SyncActionsSpec: QuickSpec {
                             dbStorage: dbStorage,
                             fileStorage: TestControllers.fileStorage,
                             webDavController: webDavController,
+                            iCloudController: ICloudController(dbStorage: dbStorage, fileStorage: TestControllers.fileStorage, transport: ICloudTransportController()),
                             schemaController: TestControllers.schemaController,
                             dateParser: TestControllers.dateParser,
                             queue: DispatchQueue.main,
@@ -718,6 +722,7 @@ final class SyncActionsSpec: QuickSpec {
                             dbStorage: dbStorage,
                             fileStorage: TestControllers.fileStorage,
                             webDavController: webDavController,
+                            iCloudController: ICloudController(dbStorage: dbStorage, fileStorage: TestControllers.fileStorage, transport: ICloudTransportController()),
                             schemaController: TestControllers.schemaController,
                             dateParser: TestControllers.dateParser,
                             queue: DispatchQueue.main,
@@ -841,6 +846,14 @@ private class WebDavTestController: WebDavController {
 
     func resetVerification() {
         self.sessionStorage.isVerified = false
+    }
+
+    var type: FileSyncType { return .webDav }
+
+    var isVerified: Bool { return self.sessionStorage.isVerified }
+
+    func verify(queue: DispatchQueue) -> Single<()> {
+        return Single.error(Error.shouldntBeCalled)
     }
 
     func createZoteroDirectory(queue: DispatchQueue) -> Single<()> {

@@ -18,17 +18,19 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
     private unowned let dbStorage: DbStorage
     private unowned let fileStorage: FileStorage
     private unowned let webDavController: WebDavController
+    private unowned let iCloudController: ICloudController
     private unowned let sessionController: SessionController
     private unowned let syncScheduler: SynchronizationScheduler
     private let backgroundQueue: DispatchQueue
     private weak var coordinatorDelegate: SettingsCoordinatorDelegate?
 
-    init(dbStorage: DbStorage, fileStorage: FileStorage, sessionController: SessionController, webDavController: WebDavController, syncScheduler: SynchronizationScheduler,
-         coordinatorDelegate: SettingsCoordinatorDelegate?) {
+    init(dbStorage: DbStorage, fileStorage: FileStorage, sessionController: SessionController, webDavController: WebDavController, iCloudController: ICloudController,
+         syncScheduler: SynchronizationScheduler, coordinatorDelegate: SettingsCoordinatorDelegate?) {
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
         self.sessionController = sessionController
         self.webDavController = webDavController
+        self.iCloudController = iCloudController
         self.syncScheduler = syncScheduler
         self.coordinatorDelegate = coordinatorDelegate
         self.backgroundQueue = DispatchQueue(label: "org.zotero.SyncSettingsActionHandler.background", qos: .userInteractive)
@@ -74,8 +76,14 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
             self.webDavController.resetVerification()
 
         case .verify:
-            trimURLIfNeeded(in: viewModel)
-            self.verify(tryCreatingZoteroDir: false, in: viewModel)
+            switch viewModel.state.fileSyncType {
+            case .iCloud:
+                self.verifyICloud(in: viewModel)
+
+            case .webDav, .zotero:
+                trimURLIfNeeded(in: viewModel)
+                self.verify(tryCreatingZoteroDir: false, in: viewModel)
+            }
 
         case .cancelVerification:
             self.cancelVerification(viewModel: viewModel)
@@ -155,7 +163,7 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func set(fileSyncType type: SyncSettingsState.FileSyncType, in viewModel: ViewModel<SyncSettingsActionHandler>) {
+    private func set(fileSyncType type: FileSyncType, in viewModel: ViewModel<SyncSettingsActionHandler>) {
         guard viewModel.state.fileSyncType != type else { return }
 
         syncScheduler.cancelSync()
@@ -178,8 +186,11 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
 
             guard error == nil else { return }
 
+            Defaults.shared.fileSyncType = type
+            // Keep the legacy WebDAV-enabled flag consistent for the download auth-challenge handler.
             webDavController.sessionStorage.isEnabled = type == .webDav
 
+            // ZFS and iCloud (once available) need no server credentials, so syncing can resume immediately. WebDAV waits for verification.
             if type == .zotero {
                 if syncScheduler.inProgress.value {
                     syncScheduler.cancelSync()
@@ -189,7 +200,35 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func markAttachmentsForReupload(for type: SyncSettingsState.FileSyncType, completion: @escaping (Error?) -> Void) {
+    private func verifyICloud(in viewModel: ViewModel<SyncSettingsActionHandler>) {
+        if !viewModel.state.isVerifyingICloud {
+            update(viewModel: viewModel) { state in
+                state.isVerifyingICloud = true
+            }
+        }
+
+        iCloudController.verify(queue: .main)
+            .subscribe(on: MainScheduler.instance)
+            .observe(on: MainScheduler.instance)
+            .subscribe(with: viewModel, onSuccess: { viewModel, _ in
+                self.update(viewModel: viewModel) { state in
+                    state.isVerifyingICloud = false
+                    state.iCloudVerificationResult = .success(())
+                }
+                if self.syncScheduler.inProgress.value {
+                    self.syncScheduler.cancelSync()
+                }
+                self.syncScheduler.request(sync: .normal, libraries: .all)
+            }, onFailure: { viewModel, error in
+                self.update(viewModel: viewModel) { state in
+                    state.isVerifyingICloud = false
+                    state.iCloudVerificationResult = .failure(error)
+                }
+            })
+            .disposed(by: viewModel.state.apiDisposeBag)
+    }
+
+    private func markAttachmentsForReupload(for type: FileSyncType, completion: @escaping (Error?) -> Void) {
         backgroundQueue.async {
             do {
                 try performMark(for: type)
@@ -204,12 +243,10 @@ struct SyncSettingsActionHandler: ViewModelActionHandler {
             }
         }
 
-        func performMark(for type: SyncSettingsState.FileSyncType) throws {
+        func performMark(for type: FileSyncType) throws {
             let keys = downloadedAttachmentKeys()
-            var requests: [DbRequest] = [MarkAttachmentsNotUploadedDbRequest(keys: keys, libraryId: .custom(.myLibrary))]
-            if type == .zotero {
-                requests.append(DeleteAllWebDavDeletionsDbRequest())
-            }
+            // Re-mark everything for reupload and drop any pending deferred deletions queued for the previous backend.
+            let requests: [DbRequest] = [MarkAttachmentsNotUploadedDbRequest(keys: keys, libraryId: .custom(.myLibrary)), DeleteAllWebDavDeletionsDbRequest()]
             try dbStorage.perform(writeRequests: requests, on: backgroundQueue)
         }
     }

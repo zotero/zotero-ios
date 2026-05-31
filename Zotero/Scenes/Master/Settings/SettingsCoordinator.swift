@@ -143,7 +143,8 @@ final class SettingsCoordinator: NSObject, Coordinator {
     private func createSyncController() -> UIViewController? {
         guard let dbStorage = controllers.userControllers?.dbStorage,
               let syncScheduler = controllers.userControllers?.syncScheduler,
-              let webDavController = controllers.userControllers?.webDavController else {
+              let webDavController = controllers.userControllers?.webDavController,
+              let iCloudController = controllers.userControllers?.iCloudController else {
             DDLogError("SettingsCoordinator: can't show sync, missing userControllers")
             return nil
         }
@@ -153,17 +154,20 @@ final class SettingsCoordinator: NSObject, Coordinator {
             fileStorage: controllers.fileStorage,
             sessionController: controllers.sessionController,
             webDavController: webDavController,
+            iCloudController: iCloudController,
             syncScheduler: syncScheduler,
             coordinatorDelegate: self
         )
         let state = SyncSettingsState(
             account: Defaults.shared.username,
-            fileSyncType: (webDavController.sessionStorage.isEnabled ? .webDav : .zotero),
+            fileSyncType: Defaults.shared.fileSyncType,
             scheme: webDavController.sessionStorage.scheme,
             url: webDavController.sessionStorage.url,
             username: webDavController.sessionStorage.username,
             password: webDavController.sessionStorage.password,
-            isVerified: webDavController.sessionStorage.isVerified
+            isVerified: webDavController.sessionStorage.isVerified,
+            iCloudAvailable: iCloudController.isAvailable,
+            isICloudVerified: iCloudController.isVerified
         )
         let viewModel = ViewModel(initialState: state, handler: handler)
         var view = SyncSettingsView()

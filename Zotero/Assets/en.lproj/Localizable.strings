@@ -309,6 +309,8 @@
 "settings.sync.directory_not_found.title" = "Directory not found";
 "settings.sync.directory_not_found.message" = "%@ does not exist.\n\nDo you want to create it now?";
 "settings.sync.verified" = "Verified";
+"settings.sync.i_cloud" = "iCloud Drive";
+"settings.sync.i_cloud_message" = "Store attachment files in iCloud Drive. Files sync automatically across your devices signed in to the same iCloud account.";
 "settings.permission" = "User Permission";
 "settings.permission_subtitle" = "Ask for user permission for each write action";
 "settings.translators" = "Translators";
@@ -468,6 +470,9 @@
 "errors.settings.webdav.internet_connection" = "Unable to connect to the network. Please try again.";
 "errors.settings.webdav.host_not_found" = "Could not connect to WebDAV server";
 "errors.settings.webdav.ats" = "Due to iOS restrictions, you must use HTTPS to connect to a non-local WebDAV server.";
+"errors.settings.icloud.account_unavailable" = "No iCloud account is signed in. Sign in to iCloud in the Settings app to use iCloud Drive syncing.";
+"errors.settings.icloud.container_unavailable" = "Could not access the app's iCloud Drive container. Make sure iCloud Drive is enabled for Zotero.";
+"errors.settings.icloud.probe_failed" = "Could not read and write to iCloud Drive. Please try again.";
 "errors.shareext.logged_out" = "Please log into the app before using this extension.";
 "errors.shareext.cant_load_data" = "Failed to load data. Please try again.";
 "errors.shareext.unknown" = "An unknown error occurred.";

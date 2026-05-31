@@ -133,13 +133,10 @@ enum WebDavError {
     }
 }
 
-struct WebDavDeletionResult {
-    let succeeded: Set<String>
-    let missing: Set<String>
-    let failed: Set<String>
-}
+// Structurally identical to the backend-agnostic `FileDeletionResult`; kept as an alias so existing WebDAV call sites read naturally.
+typealias WebDavDeletionResult = FileDeletionResult
 
-protocol WebDavController: AnyObject {
+protocol WebDavController: FileSyncBackend {
     var sessionStorage: WebDavSessionStorage { get }
     var currentUrl: URL? { get }
 
@@ -150,9 +147,7 @@ protocol WebDavController: AnyObject {
     func prepareForUpload(key: String, mtime: Int, hash: String, file: File, queue: DispatchQueue) -> Single<WebDavUploadResult>
     func upload(request: AttachmentUploadRequest, fromFile file: File, queue: DispatchQueue) -> Single<(Data?, HTTPURLResponse)>
     func finishUpload(key: String, result: Result<(Int, String, URL), Swift.Error>, file: File?, queue: DispatchQueue) -> Single<()>
-    func delete(keys: [String], queue: DispatchQueue) -> Single<WebDavDeletionResult>
     func cancelDeletions()
-    func resetVerification()
 }
 
 final class WebDavControllerImpl: WebDavController {
@@ -187,6 +182,17 @@ final class WebDavControllerImpl: WebDavController {
         if self.sessionStorage.isVerified {
             self.apiClient.set(credentials: (self.sessionStorage.username, self.sessionStorage.password))
         }
+    }
+
+    // MARK: - FileSyncBackend
+
+    var type: FileSyncType { return .webDav }
+
+    var isVerified: Bool { return self.sessionStorage.isVerified }
+
+    /// Backend-agnostic verification entry point. WebDAV verification is `checkServer` (which also returns the resolved URL).
+    func verify(queue: DispatchQueue) -> Single<()> {
+        return self.checkServer(queue: queue).flatMap({ _ in Single.just(()) })
     }
 
     func resetVerification() {

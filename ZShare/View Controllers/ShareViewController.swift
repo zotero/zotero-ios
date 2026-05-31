@@ -756,6 +756,7 @@ final class ShareViewController: UIViewController {
         let translatorsController = TranslatorsAndStylesController(apiClient: apiClient, bundledDataStorage: bundledDataStorage, fileStorage: fileStorage)
         let secureStorage = KeychainSecureStorage()
         let webDavController = WebDavControllerImpl(dbStorage: dbStorage, fileStorage: fileStorage, sessionStorage: SecureWebDavSessionStorage(secureStorage: secureStorage))
+        let iCloudController = ICloudController(dbStorage: dbStorage, fileStorage: fileStorage, transport: ICloudTransportController())
         let documentWorkerController = DocumentWorkerController(fileStorage: fileStorage)
 
         apiClient.set(authToken: ("Bearer " + session.apiToken))
@@ -770,11 +771,11 @@ final class ShareViewController: UIViewController {
         self.secureStorage = secureStorage
 
         self.viewModel = self.createViewModel(for: session.userId, dbStorage: dbStorage, apiClient: apiClient, schemaController: schemaController, fileStorage: fileStorage,
-                                              webDavController: webDavController, translatorsController: translatorsController)
+                                              webDavController: webDavController, iCloudController: iCloudController, translatorsController: translatorsController)
     }
 
     private func createViewModel(for userId: Int, dbStorage: DbStorage, apiClient: ApiClient, schemaController: SchemaController, fileStorage: FileStorage, webDavController: WebDavController,
-                                 translatorsController: TranslatorsAndStylesController) -> ExtensionViewModel {
+                                 iCloudController: ICloudController, translatorsController: TranslatorsAndStylesController) -> ExtensionViewModel {
         let dateParser = DateParser()
         let requestProvider = BackgroundUploaderRequestProvider(fileStorage: fileStorage)
         let backgroundUploadContext = BackgroundUploaderContext()
@@ -782,9 +783,9 @@ final class ShareViewController: UIViewController {
         let backgroundProcessor = BackgroundUploadProcessor(apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage, webDavController: webDavController)
         let backgroundTaskController = BackgroundTaskController()
         let backgroundUploadObserver = BackgroundUploadObserver(context: backgroundUploadContext, processor: backgroundProcessor, backgroundTaskController: backgroundTaskController)
-        let attachmentDownloader = AttachmentDownloader(userId: userId, apiClient: apiClient, fileStorage: fileStorage, dbStorage: dbStorage, webDavController: webDavController)
+        let attachmentDownloader = AttachmentDownloader(userId: userId, apiClient: apiClient, fileStorage: fileStorage, dbStorage: dbStorage, webDavController: webDavController, iCloudController: iCloudController)
         let syncController = SyncController(userId: userId, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage, schemaController: schemaController, dateParser: dateParser,
-                                            backgroundUploaderContext: backgroundUploadContext, webDavController: webDavController, attachmentDownloader: attachmentDownloader, syncDelayIntervals: DelayIntervals.sync, maxRetryCount: DelayIntervals.retry.count)
+                                            backgroundUploaderContext: backgroundUploadContext, webDavController: webDavController, iCloudController: iCloudController, attachmentDownloader: attachmentDownloader, syncDelayIntervals: DelayIntervals.sync, maxRetryCount: DelayIntervals.retry.count)
         let recognizerController = RecognizerController(
             documentWorkerController: documentWorkerController,
             apiClient: apiClient,
@@ -805,6 +806,7 @@ final class ShareViewController: UIViewController {
             dbStorage: dbStorage,
             schemaController: schemaController,
             webDavController: webDavController,
+            iCloudController: iCloudController,
             dateParser: dateParser,
             fileStorage: fileStorage,
             syncController: syncController,

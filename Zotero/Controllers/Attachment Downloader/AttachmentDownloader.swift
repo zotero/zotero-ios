@@ -96,6 +96,7 @@ final class AttachmentDownloader: NSObject {
     private unowned let fileStorage: FileStorage
     private unowned let dbStorage: DbStorage
     private unowned let webDavController: WebDavController
+    private unowned let iCloudController: ICloudController
     private let accessQueue: DispatchQueue
     private let dbQueue: DispatchQueue
     private let unzipQueue: DispatchQueue
@@ -107,6 +108,9 @@ final class AttachmentDownloader: NSObject {
     private var activeDownloads: [Download: ActiveDownload]
     private var taskIdToDownload: [Int: Download]
     private var extractions: [Download: Extraction]
+    // iCloud downloads don't use `URLSession`; they're materialized via the ubiquity daemon. Tracked here with synthetic (negative) task ids.
+    private var iCloudDownloads: [Download: Disposable]
+    private var nextICloudTaskId: Int
     private var totalCount: Int
     private var errors: [Download: Swift.Error]
     private var initialErrors: [Int: Swift.Error]
@@ -128,16 +132,19 @@ final class AttachmentDownloader: NSObject {
         return (progress, remainingBatchCount, totalBatchCount)
     }
 
-    init(userId: Int, apiClient: ApiClient, fileStorage: FileStorage, dbStorage: DbStorage, webDavController: WebDavController) {
+    init(userId: Int, apiClient: ApiClient, fileStorage: FileStorage, dbStorage: DbStorage, webDavController: WebDavController, iCloudController: ICloudController) {
         self.userId = userId
         self.fileStorage = fileStorage
         self.apiClient = apiClient
         self.dbStorage = dbStorage
         self.webDavController = webDavController
+        self.iCloudController = iCloudController
         queue = []
         activeDownloads = [:]
         taskIdToDownload = [:]
         extractions = [:]
+        iCloudDownloads = [:]
+        nextICloudTaskId = -1
         totalCount = 0
         errors = [:]
         initialErrors = [:]
@@ -604,6 +611,10 @@ final class AttachmentDownloader: NSObject {
         accessQueue.sync(flags: .barrier) { [weak self] in
             guard let self else { return }
             for download in downloads {
+                if let disposable = iCloudDownloads[download] {
+                    disposable.dispose()
+                    iCloudDownloads[download] = nil
+                }
                 if let activeDownload = activeDownloads[download] {
                     activeDownloads[download] = nil
                     taskIdToDownload[activeDownload.taskId] = nil
@@ -644,6 +655,8 @@ final class AttachmentDownloader: NSObject {
                 observable.on(.next(Update(download: download, kind: .cancelled)))
             }
 
+            iCloudDownloads.values.forEach { $0.dispose() }
+            iCloudDownloads = [:]
             queue = []
             activeDownloads = [:]
             taskIdToDownload = [:]
@@ -715,7 +728,7 @@ final class AttachmentDownloader: NSObject {
     private func createDownloadTask(for download: Download, file: File, progress: Progress, extractAfterDownload: Bool, retryIfNeeded: Bool, attempt: Int) -> (URLSessionTask, ActiveDownload)? {
         do {
             let request: URLRequest
-            if case .custom = download.libraryId, webDavController.sessionStorage.isEnabled {
+            if case .custom = download.libraryId, Defaults.shared.fileSyncType == .webDav {
                 guard let url = webDavController.currentUrl?.appendingPathComponent("\(download.key).zip") else { return nil }
                 let apiRequest = FileRequest(webDavUrl: url, destination: file)
                 request = try webDavController.createURLRequest(from: apiRequest)
@@ -803,8 +816,74 @@ final class AttachmentDownloader: NSObject {
     private func startNextDownloadIfPossible() {
         while activeDownloads.count < Self.maxConcurrentDownloads && !queue.isEmpty {
             let enqueuedDownload = queue.removeFirst()
-            startDownloadTask(for: enqueuedDownload.download, downloadTaskTuple: createDownloadTask(from: enqueuedDownload))
+            if isICloudDownload(libraryId: enqueuedDownload.download.libraryId) {
+                startICloudDownload(enqueuedDownload)
+            } else {
+                startDownloadTask(for: enqueuedDownload.download, downloadTaskTuple: createDownloadTask(from: enqueuedDownload))
+            }
         }
+    }
+
+    /// iCloud backs only My Library (custom); group libraries always use Zotero File Storage.
+    private func isICloudDownload(libraryId: LibraryIdentifier) -> Bool {
+        if case .custom = libraryId, Defaults.shared.fileSyncType == .iCloud {
+            return true
+        }
+        return false
+    }
+
+    /// Materializes `<key>.zip` from the iCloud container (no `URLSession`), then feeds the existing unzip/extract pipeline.
+    private func startICloudDownload(_ enqueuedDownload: EnqueuedDownload) {
+        let download = enqueuedDownload.download
+        let file = enqueuedDownload.file
+        let taskId = nextICloudTaskId
+        nextICloudTaskId -= 1
+
+        let activeDownload = ActiveDownload(
+            taskId: taskId,
+            file: file,
+            progress: enqueuedDownload.progress,
+            extractAfterDownload: enqueuedDownload.extractAfterDownload,
+            retryIfNeeded: false,
+            logData: nil,
+            attempt: 0
+        )
+        activeDownloads[download] = activeDownload
+        taskIdToDownload[taskId] = download
+
+        let disposable = iCloudController.download(key: download.key, file: file, queue: unzipQueue)
+            .subscribe(on: ConcurrentDispatchQueueScheduler(queue: unzipQueue))
+            .subscribe(onNext: { [weak self] progress in
+                guard let self else { return }
+                accessQueue.async(flags: .barrier) { [weak self] in
+                    guard let self, let active = activeDownloads[download] else { return }
+                    active.progress.completedUnitCount = progress.completedUnitCount
+                    observable.on(.next(Update(download: download, kind: .progress)))
+                }
+            }, onError: { [weak self] error in
+                guard let self else { return }
+                accessQueue.async(flags: .barrier) { [weak self] in
+                    guard let self else { return }
+                    iCloudDownloads[download] = nil
+                    finish(activeDownload: activeDownload, download: download, compressed: nil, result: .failure(error), retryDelay: nil)
+                }
+            }, onCompleted: { [weak self] in
+                guard let self else { return }
+                // The materialized `<key>.zip` is now at `file.copy(withExt: "zip")`. Mark downloaded (compressed) and extract.
+                dbQueue.sync { [weak self] in
+                    guard let self else { return }
+                    let request = MarkFileAsDownloadedDbRequest(key: download.key, libraryId: download.libraryId, downloaded: true, compressed: true)
+                    try? dbStorage.perform(request: request, on: dbQueue)
+                }
+                accessQueue.sync(flags: .barrier) { [weak self] in
+                    guard let self else { return }
+                    iCloudDownloads[download] = nil
+                    // Don't notify observer yet — extraction will emit `.ready` when the zip is unpacked.
+                    finish(activeDownload: activeDownload, download: download, compressed: true, result: .success(false), retryDelay: nil)
+                }
+                extract(zipFile: file.copy(withExt: "zip"), toFile: file, download: download)
+            })
+        iCloudDownloads[download] = disposable
     }
 
     private func retryDownload(_ download: Download, after activeDownload: ActiveDownload) {
@@ -941,7 +1020,7 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
 
         var zipFile: File?
         var shouldExtractAfterDownload = activeDownload.extractAfterDownload
-        var isCompressed = webDavController.sessionStorage.isEnabled && !download.libraryId.isGroupLibrary
+        var isCompressed = Defaults.shared.fileSyncType == .webDav && !download.libraryId.isGroupLibrary
         if let response = downloadTask.response as? HTTPURLResponse {
             let _isCompressed = response.value(forHTTPHeaderField: "Content-Type") == "application/zip"
             isCompressed = isCompressed || _isCompressed
@@ -1034,7 +1113,7 @@ extension AttachmentDownloader: URLSessionTaskDelegate {
     ) {
         let sessionStorage = webDavController.sessionStorage
         let protectionSpace = challenge.protectionSpace
-        guard sessionStorage.isEnabled,
+        guard Defaults.shared.fileSyncType == .webDav,
               sessionStorage.isVerified,
               protectionSpace.authenticationMethod == NSURLAuthenticationMethodHTTPBasic || protectionSpace.authenticationMethod == NSURLAuthenticationMethodHTTPDigest,
               protectionSpace.host == sessionStorage.host,

@@ -311,6 +311,7 @@ final class UserControllers {
     let citationController: CitationController
     let dragDropController: DragDropController
     let webDavController: WebDavController
+    let iCloudController: ICloudController
     let customUrlController: CustomURLController
     let fullSyncDebugger: FullSyncDebugger
     let lastReadWatcher: LastReadWatcher
@@ -330,10 +331,18 @@ final class UserControllers {
         let dbStorage = try UserControllers.createDbStorage(for: userId, sessionId: sessionId, controllers: controllers)
         let webDavSession = SecureWebDavSessionStorage(secureStorage: controllers.secureStorage)
         let webDavController = WebDavControllerImpl(dbStorage: dbStorage, fileStorage: controllers.fileStorage, sessionStorage: webDavSession)
+        let iCloudController = ICloudController(dbStorage: dbStorage, fileStorage: controllers.fileStorage, transport: ICloudTransportController())
         let backgroundUploadContext = BackgroundUploaderContext()
         let backgroundUploadProcessor = BackgroundUploadProcessor(apiClient: controllers.apiClient, dbStorage: dbStorage, fileStorage: controllers.fileStorage, webDavController: webDavController)
         let backgroundUploadObserver = BackgroundUploadObserver(context: backgroundUploadContext, processor: backgroundUploadProcessor, backgroundTaskController: controllers.backgroundTaskController)
-        let fileDownloader = AttachmentDownloader(userId: userId, apiClient: controllers.apiClient, fileStorage: controllers.fileStorage, dbStorage: dbStorage, webDavController: webDavController)
+        let fileDownloader = AttachmentDownloader(
+            userId: userId,
+            apiClient: controllers.apiClient,
+            fileStorage: controllers.fileStorage,
+            dbStorage: dbStorage,
+            webDavController: webDavController,
+            iCloudController: iCloudController
+        )
         let syncController = SyncController(
             userId: userId,
             apiClient: controllers.apiClient,
@@ -343,6 +352,7 @@ final class UserControllers {
             dateParser: controllers.dateParser,
             backgroundUploaderContext: backgroundUploadContext,
             webDavController: webDavController,
+            iCloudController: iCloudController,
             attachmentDownloader: fileDownloader,
             syncDelayIntervals: DelayIntervals.sync,
             maxRetryCount: DelayIntervals.retry.count
@@ -382,6 +392,7 @@ final class UserControllers {
         self.dbStorage = dbStorage
         syncScheduler = SyncScheduler(controller: syncController, retryIntervals: DelayIntervals.retry)
         self.webDavController = webDavController
+        self.iCloudController = iCloudController
         changeObserver = RealmObjectUserChangeObserver(dbStorage: dbStorage)
         itemLocaleController = RItemLocaleController(schemaController: controllers.schemaController, dbStorage: dbStorage)
         self.backgroundUploadObserver = backgroundUploadObserver

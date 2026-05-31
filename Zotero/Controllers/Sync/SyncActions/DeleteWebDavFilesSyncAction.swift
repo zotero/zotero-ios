@@ -16,13 +16,13 @@ struct DeleteWebDavFilesSyncAction: SyncAction {
 
     let libraryId: LibraryIdentifier
     unowned let dbStorage: DbStorage
-    unowned let webDavController: WebDavController
+    unowned let controller: FileSyncBackend
     let queue: DispatchQueue
 
     var result: Single<Set<String>> {
         return self.loadDeletions()
-                   .flatMap({ keys -> Single<WebDavDeletionResult> in
-                       return self.webDavController.delete(keys: keys, queue: self.queue)
+                   .flatMap({ keys -> Single<FileDeletionResult> in
+                       return self.controller.delete(keys: keys, queue: self.queue)
                    })
                    .flatMap({ result -> Single<Set<String>> in
                        if result.succeeded.isEmpty && result.missing.isEmpty {

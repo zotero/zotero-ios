@@ -35,12 +35,14 @@ final class WebDavControllerSpec: QuickSpec {
 
             func testDownload(attachment: Attachment, successAction: @escaping () -> Void, errorAction: @escaping (Error) -> Void) {
                 webDavController = WebDavControllerImpl(dbStorage: dbStorage, fileStorage: TestControllers.fileStorage, sessionStorage: verifiedCredentials)
+                iCloudController = ICloudController(dbStorage: dbStorage, fileStorage: TestControllers.fileStorage, transport: ICloudTransportController())
                 downloader = AttachmentDownloader(
                     userId: userId,
                     apiClient: TestControllers.apiClient,
                     fileStorage: TestControllers.fileStorage,
                     dbStorage: dbStorage,
-                    webDavController: webDavController
+                    webDavController: webDavController,
+                    iCloudController: iCloudController
                 )
 
                 downloader.observable
@@ -62,13 +64,15 @@ final class WebDavControllerSpec: QuickSpec {
 
             func testSync(syncFinishedAction: @escaping () -> Void) {
                 webDavController = WebDavControllerImpl(dbStorage: dbStorage, fileStorage: TestControllers.fileStorage, sessionStorage: verifiedCredentials)
+                iCloudController = ICloudController(dbStorage: dbStorage, fileStorage: TestControllers.fileStorage, transport: ICloudTransportController())
                 backgroundUploaderContext = BackgroundUploaderContext()
                 let attachmentDownloader = AttachmentDownloader(
                     userId: userId,
                     apiClient: TestControllers.apiClient,
                     fileStorage: TestControllers.fileStorage,
                     dbStorage: dbStorage,
-                    webDavController: webDavController
+                    webDavController: webDavController,
+                    iCloudController: iCloudController
                 )
                 syncController = SyncController(
                     userId: userId,
@@ -79,6 +83,7 @@ final class WebDavControllerSpec: QuickSpec {
                     dateParser: TestControllers.dateParser,
                     backgroundUploaderContext: backgroundUploaderContext,
                     webDavController: webDavController,
+                    iCloudController: iCloudController,
                     attachmentDownloader: attachmentDownloader,
                     syncDelayIntervals: [0, 1, 2, 3],
                     maxRetryCount: 4
@@ -104,6 +109,7 @@ final class WebDavControllerSpec: QuickSpec {
             var realm: Realm!
             var dbStorage: DbStorage!
             var webDavController: WebDavController!
+            var iCloudController: ICloudController!
             var downloader: AttachmentDownloader!
             var syncController: SyncController!
             var backgroundUploaderContext: BackgroundUploaderContext!
@@ -113,10 +119,13 @@ final class WebDavControllerSpec: QuickSpec {
                 dbStorage = RealmDbStorage(config: config)
                 realm = try! Realm(configuration: config)
                 webDavController = nil
+                iCloudController = nil
                 downloader = nil
                 syncController = nil
                 backgroundUploaderContext = nil
                 disposeBag = DisposeBag()
+                // Backend selection now keys off `fileSyncType` instead of the legacy `webDavEnabled` flag.
+                Defaults.shared.fileSyncType = .webDav
                 HTTPStubs.removeAllStubs()
             }
 

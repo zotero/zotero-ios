@@ -59,13 +59,18 @@ struct FileSyncingSection: View {
 
     var body: some View {
         Picker(L10n.Settings.Sync.fileSyncingTypeMessage, selection: self.viewModel.binding(get: \.fileSyncType, action: { .setFileSyncType($0) })) {
-            Text("Zotero").tag(SyncSettingsState.FileSyncType.zotero)
-            Text("WebDAV").tag(SyncSettingsState.FileSyncType.webDav)
+            Text("Zotero").tag(FileSyncType.zotero)
+            Text("WebDAV").tag(FileSyncType.webDav)
+            if self.viewModel.state.iCloudAvailable {
+                Text(L10n.Settings.Sync.iCloud).tag(FileSyncType.iCloud)
+            }
         }
         .disabled(self.viewModel.state.markingForReupload)
 
         if self.viewModel.state.fileSyncType == .webDav {
             self.webDavSettings
+        } else if self.viewModel.state.fileSyncType == .iCloud {
+            self.iCloudSettings
         }
     }
 
@@ -73,6 +78,48 @@ struct FileSyncingSection: View {
         var view = WebDavSettings()
         view.coordinatorDelegate = self.coordinatorDelegate
         return view
+    }
+
+    private var iCloudSettings: some View {
+        return ICloudSettings()
+    }
+}
+
+struct ICloudSettings: View {
+    @EnvironmentObject var viewModel: ViewModel<SyncSettingsActionHandler>
+
+    var body: some View {
+        Text(L10n.Settings.Sync.iCloudMessage)
+            .font(.footnote)
+            .foregroundColor(Color(UIColor.secondaryLabel))
+
+        if self.viewModel.state.isVerifyingICloud {
+            HStack {
+                ActivityIndicatorView(style: .medium, isAnimating: .constant(true))
+                Spacer()
+            }
+        } else {
+            HStack {
+                Button(L10n.Settings.Sync.verify) {
+                    self.viewModel.process(action: .verify)
+                }
+                .foregroundColor(Asset.Colors.zoteroBlueWithDarkMode.swiftUiColor)
+
+                if let result = self.viewModel.state.iCloudVerificationResult, case .success = result {
+                    Spacer()
+                    HStack {
+                        Text(L10n.Settings.Sync.verified)
+                        Image(systemName: "checkmark")
+                            .foregroundColor(.green)
+                    }
+                }
+            }
+        }
+
+        if case .failure(let error) = self.viewModel.state.iCloudVerificationResult {
+            Text(ICloudError.message(for: error))
+                .foregroundColor(.red)
+        }
     }
 }
 

@@ -11,11 +11,6 @@ import Foundation
 import RxSwift
 
 struct SyncSettingsState: ViewModelState {
-    enum FileSyncType: Hashable {
-        case zotero
-        case webDav
-    }
-
     let account: String
 
     var fileSyncType: FileSyncType
@@ -26,9 +21,22 @@ struct SyncSettingsState: ViewModelState {
     var password: String
     var isVerifyingWebDav: Bool
     var webDavVerificationResult: Result<(), Error>?
+    var isVerifyingICloud: Bool
+    var iCloudVerificationResult: Result<(), Error>?
+    var iCloudAvailable: Bool
     var apiDisposeBag: DisposeBag
 
-    init(account: String, fileSyncType: FileSyncType, scheme: WebDavScheme, url: String, username: String, password: String, isVerified: Bool) {
+    init(
+        account: String,
+        fileSyncType: FileSyncType,
+        scheme: WebDavScheme,
+        url: String,
+        username: String,
+        password: String,
+        isVerified: Bool,
+        iCloudAvailable: Bool,
+        isICloudVerified: Bool
+    ) {
         self.account = account
         self.fileSyncType = fileSyncType
         self.markingForReupload = false
@@ -38,6 +46,9 @@ struct SyncSettingsState: ViewModelState {
         self.password = password
         self.isVerifyingWebDav = false
         self.webDavVerificationResult = isVerified ? .success(()) : nil
+        self.isVerifyingICloud = false
+        self.iCloudVerificationResult = isICloudVerified ? .success(()) : nil
+        self.iCloudAvailable = iCloudAvailable
         self.apiDisposeBag = DisposeBag()
     }
 

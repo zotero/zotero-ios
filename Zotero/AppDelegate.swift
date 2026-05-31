@@ -87,11 +87,12 @@ final class AppDelegate: UIResponder {
             guard !contents.isEmpty else { return }
 
             let backgroundUploads = userControllers.backgroundUploadObserver.context.uploads
-            let webDavEnabled = userControllers.webDavController.sessionStorage.isEnabled
+            // Non-ZFS backends (WebDAV, iCloud) stage `<key>.zip` files in the uploads dir before sending; preserve those still pending upload.
+            let usesZippedUploads = Defaults.shared.fileSyncType != .zotero
             var keysForUpload: Set<String> = []
             var filesToDelete: [File] = []
 
-            if webDavEnabled {
+            if usesZippedUploads {
                 let forUploadResults = try userControllers.dbStorage.perform(request: ReadAllItemsForUploadDbRequest(), on: queue)
                 keysForUpload = Set(forUploadResults.map({ $0.key }))
                 forUploadResults.first?.realm?.invalidate()
@@ -100,7 +101,7 @@ final class AppDelegate: UIResponder {
             for file in contents {
                 if file.name.isEmpty && file.mimeType.isEmpty {
                     // Background Zotero upload
-                    if !webDavEnabled && backgroundUploads.contains(where: { $0.fileUrl.lastPathComponent == file.relativeComponents.last }) {
+                    if !usesZippedUploads && backgroundUploads.contains(where: { $0.fileUrl.lastPathComponent == file.relativeComponents.last }) {
                         // If file is being uploaded in background, don't delete
                         continue
                     }
@@ -109,8 +110,8 @@ final class AppDelegate: UIResponder {
                 }
 
                 if file.ext == "zip" && !file.name.isEmpty {
-                    // Background/foreground WebDAV upload
-                    if webDavEnabled && (backgroundUploads.contains(where: { $0.fileUrl.deletingPathExtension().lastPathComponent == file.name }) || keysForUpload.contains(file.name)) {
+                    // Background/foreground WebDAV or iCloud upload (both stage `<key>.zip`)
+                    if usesZippedUploads && (backgroundUploads.contains(where: { $0.fileUrl.deletingPathExtension().lastPathComponent == file.name }) || keysForUpload.contains(file.name)) {
                         // If file is being uploaded in background or queued to upload during sync, don't delete
                         continue
                     }

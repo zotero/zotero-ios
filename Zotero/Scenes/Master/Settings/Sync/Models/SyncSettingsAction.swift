@@ -10,7 +10,7 @@ import Foundation
 
 enum SyncSettingsAction {
     case logout
-    case setFileSyncType(SyncSettingsState.FileSyncType)
+    case setFileSyncType(FileSyncType)
     case setScheme(WebDavScheme)
     case setUrl(String)
     case setUsername(String)

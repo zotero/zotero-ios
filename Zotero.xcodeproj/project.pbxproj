@@ -917,6 +917,10 @@
 		B398142E257A649D002C755C /* TextContentEditCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B398142C257A649D002C755C /* TextContentEditCell.swift */; };
 		B3981B76258399AA00F8D15A /* NoteAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3981B75258399AA00F8D15A /* NoteAnnotation.swift */; };
 		B398A915270C6A4300968EE8 /* WebDavController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B398A914270C6A4300968EE8 /* WebDavController.swift */; };
+		FE51C0DE0000000000020001 /* FileSyncType.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE51C0DE0000000000010001 /* FileSyncType.swift */; };
+		FE51C0DE0000000000020002 /* FileSyncBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE51C0DE0000000000010002 /* FileSyncBackend.swift */; };
+		FE51C0DE0000000000020003 /* ICloudTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE51C0DE0000000000010003 /* ICloudTransport.swift */; };
+		FE51C0DE0000000000020004 /* ICloudController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE51C0DE0000000000010004 /* ICloudController.swift */; };
 		B398A917270C6A5B00968EE8 /* WebDavSessionStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B398A916270C6A5B00968EE8 /* WebDavSessionStorage.swift */; };
 		B398D6C02A77F9C60049A296 /* FontSizeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B398D6BF2A77F9C60049A296 /* FontSizeView.swift */; };
 		B399A9172CC67F1600731B21 /* TrashKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = B399A9162CC67F1400731B21 /* TrashKey.swift */; };
@@ -1275,6 +1279,10 @@
 		B3FBAC1924570BDE00AA00C0 /* AnnotationPreviewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3FBAC1824570BDE00AA00C0 /* AnnotationPreviewController.swift */; };
 		B3FC7431272181E500F55531 /* WebDavWriteRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3FC7430272181E500F55531 /* WebDavWriteRequest.swift */; };
 		B3FC74322721857C00F55531 /* WebDavController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B398A914270C6A4300968EE8 /* WebDavController.swift */; };
+		FE51C0DE0000000000030001 /* FileSyncType.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE51C0DE0000000000010001 /* FileSyncType.swift */; };
+		FE51C0DE0000000000030002 /* FileSyncBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE51C0DE0000000000010002 /* FileSyncBackend.swift */; };
+		FE51C0DE0000000000030003 /* ICloudTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE51C0DE0000000000010003 /* ICloudTransport.swift */; };
+		FE51C0DE0000000000030004 /* ICloudController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE51C0DE0000000000010004 /* ICloudController.swift */; };
 		B3FC74332721858000F55531 /* WebDavPropParserDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A351E427157EC6002E597A /* WebDavPropParserDelegate.swift */; };
 		B3FC74342721858200F55531 /* WebDavSessionStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B398A916270C6A5B00968EE8 /* WebDavSessionStorage.swift */; };
 		B3FC7435272195D600F55531 /* WebDavDeleteRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A351E2271578B1002E597A /* WebDavDeleteRequest.swift */; };
@@ -2168,6 +2176,10 @@
 		B398142C257A649D002C755C /* TextContentEditCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextContentEditCell.swift; sourceTree = "<group>"; };
 		B3981B75258399AA00F8D15A /* NoteAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteAnnotation.swift; sourceTree = "<group>"; };
 		B398A914270C6A4300968EE8 /* WebDavController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebDavController.swift; sourceTree = "<group>"; };
+		FE51C0DE0000000000010001 /* FileSyncType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileSyncType.swift; sourceTree = "<group>"; };
+		FE51C0DE0000000000010002 /* FileSyncBackend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileSyncBackend.swift; sourceTree = "<group>"; };
+		FE51C0DE0000000000010003 /* ICloudTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICloudTransport.swift; sourceTree = "<group>"; };
+		FE51C0DE0000000000010004 /* ICloudController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICloudController.swift; sourceTree = "<group>"; };
 		B398A916270C6A5B00968EE8 /* WebDavSessionStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDavSessionStorage.swift; sourceTree = "<group>"; };
 		B398D6BF2A77F9C60049A296 /* FontSizeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontSizeView.swift; sourceTree = "<group>"; };
 		B399A9162CC67F1400731B21 /* TrashKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrashKey.swift; sourceTree = "<group>"; };
@@ -2619,6 +2631,7 @@
 				B305649F23FC051E003304F2 /* Sync */,
 				B39E0130283276470091CE4A /* Web View Handling */,
 				B398A913270C6A4300968EE8 /* WebDAV */,
+				FE51C0DE00000000000A0001 /* FileStorage */,
 				B3D0793527CCF63800C454D6 /* AnnotationBoundingBoxCalculator.swift */,
 				B34ACC792514EAAB00040C17 /* AnnotationColorGenerator.swift */,
 				B34A9F6725BF1D27007C9A4A /* AnnotationConverter.swift */,
@@ -3027,6 +3040,7 @@
 				B3BC6B1C250F797B006A8B9C /* FieldKeys.swift */,
 				B305654123FC051E003304F2 /* File.swift */,
 				B305653E23FC051E003304F2 /* Files.swift */,
+				FE51C0DE0000000000010001 /* FileSyncType.swift */,
 				B305654323FC051E003304F2 /* ItemTypes.swift */,
 				B305653823FC051E003304F2 /* KeyedResponse.swift */,
 				B305653923FC051E003304F2 /* Library.swift */,
@@ -3916,6 +3930,16 @@
 				B398A916270C6A5B00968EE8 /* WebDavSessionStorage.swift */,
 			);
 			path = WebDAV;
+			sourceTree = "<group>";
+		};
+		FE51C0DE00000000000A0001 /* FileStorage */ = {
+			isa = PBXGroup;
+			children = (
+				FE51C0DE0000000000010002 /* FileSyncBackend.swift */,
+				FE51C0DE0000000000010004 /* ICloudController.swift */,
+				FE51C0DE0000000000010003 /* ICloudTransport.swift */,
+			);
+			path = FileStorage;
 			sourceTree = "<group>";
 		};
 		B39E0130283276470091CE4A /* Web View Handling */ = {
@@ -5863,6 +5887,10 @@
 				B30565CA23FC051E003304F2 /* PerformDeletionsDbRequest.swift in Sources */,
 				B36181FE24C9A7C000B30D56 /* OnboardingLayout.swift in Sources */,
 				B398A915270C6A4300968EE8 /* WebDavController.swift in Sources */,
+				FE51C0DE0000000000020001 /* FileSyncType.swift in Sources */,
+				FE51C0DE0000000000020002 /* FileSyncBackend.swift in Sources */,
+				FE51C0DE0000000000020003 /* ICloudTransport.swift in Sources */,
+				FE51C0DE0000000000020004 /* ICloudController.swift in Sources */,
 				B3A17D1927FC33B800322CAD /* LowPowerModeController.swift in Sources */,
 				B31CC57B286468780055C114 /* ManualLookupViewController.swift in Sources */,
 				B3863FC82AD819AB005082F0 /* EndItemCreationDbRequest.swift in Sources */,
@@ -6500,6 +6528,10 @@
 				B305670123FC089F003304F2 /* MarkObjectsAsSyncedDbRequest.swift in Sources */,
 				B36459E726441A1800A0C2C0 /* TagRow.swift in Sources */,
 				B3FC74322721857C00F55531 /* WebDavController.swift in Sources */,
+				FE51C0DE0000000000030001 /* FileSyncType.swift in Sources */,
+				FE51C0DE0000000000030002 /* FileSyncBackend.swift in Sources */,
+				FE51C0DE0000000000030003 /* ICloudTransport.swift in Sources */,
+				FE51C0DE0000000000030004 /* ICloudController.swift in Sources */,
 				B3B78C47266FB11D00E91D02 /* WKWebView+Extensions.swift in Sources */,
 				B3B557182C8860E600BD6325 /* CitationMetadata.swift in Sources */,
 				B305677023FC0A58003304F2 /* Alamofire+RxSwift.swift in Sources */,

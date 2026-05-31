@@ -28,6 +28,7 @@ class UploadAttachmentSyncAction: SyncAction {
     unowned let dbStorage: DbStorage
     unowned let fileStorage: FileStorage
     unowned let webDavController: WebDavController
+    unowned let iCloudController: ICloudController
     unowned let schemaController: SchemaController
     unowned let dateParser: DateParser
     let queue: DispatchQueue
@@ -39,7 +40,8 @@ class UploadAttachmentSyncAction: SyncAction {
     var failedBeforeZoteroApiRequest: Bool
 
     init(key: String, file: File, filename: String, md5: String, mtime: Int, libraryId: LibraryIdentifier, userId: Int, oldMd5: String?, apiClient: ApiClient, dbStorage: DbStorage,
-         fileStorage: FileStorage, webDavController: WebDavController, schemaController: SchemaController, dateParser: DateParser, queue: DispatchQueue, scheduler: SchedulerType, disposeBag: DisposeBag) {
+         fileStorage: FileStorage, webDavController: WebDavController, iCloudController: ICloudController, schemaController: SchemaController, dateParser: DateParser, queue: DispatchQueue,
+         scheduler: SchedulerType, disposeBag: DisposeBag) {
         self.key = key
         self.file = file
         self.filename = filename
@@ -52,6 +54,7 @@ class UploadAttachmentSyncAction: SyncAction {
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
         self.webDavController = webDavController
+        self.iCloudController = iCloudController
         self.schemaController = schemaController
         self.dateParser = dateParser
         self.queue = queue
@@ -63,9 +66,19 @@ class UploadAttachmentSyncAction: SyncAction {
     var result: Single<()> {
         switch self.libraryId {
         case .custom:
-            return self.webDavController.sessionStorage.isEnabled ? self.webDavResult : self.zoteroResult
+            switch Defaults.shared.fileSyncType {
+            case .zotero:
+                return self.zoteroResult
+
+            case .webDav:
+                return self.webDavResult
+
+            case .iCloud:
+                return self.iCloudResult
+            }
 
         case .group:
+            // Group libraries always use Zotero File Storage; iCloud/WebDAV cover My Library only.
             return self.zoteroResult
         }
     }
@@ -178,6 +191,62 @@ class UploadAttachmentSyncAction: SyncAction {
                            }
                        }
                        DDLogError("UploadAttachmentSyncAction: could not upload - \(error)")
+                   })
+    }
+
+    private var iCloudResult: Single<()> {
+        DDLogInfo("UploadAttachmentSyncAction: upload to iCloud")
+
+        var file: File?
+        return self.checkDatabase()
+                   .flatMap { _ -> Single<UInt64> in
+                       return self.validateFile()
+                   }
+                   .flatMap { _ -> Single<FileUploadResult> in
+                       return self.iCloudController.prepareForUpload(key: self.key, mtime: self.mtime, hash: self.md5, file: self.file, queue: self.queue)
+                   }
+                   .observe(on: self.scheduler)
+                   .flatMap { response -> Single<()> in
+                       switch response {
+                       case .exists:
+                           DDLogInfo("UploadAttachmentSyncAction: file exists in iCloud")
+                           return self.markAttachmentAsUploaded(version: nil).flatMap({ Single.error(SyncActionError.attachmentAlreadyUploaded) })
+
+                       case .new(let newFile):
+                           DDLogInfo("UploadAttachmentSyncAction: file needs upload to iCloud")
+                           file = newFile
+                           // Enqueue the coordinated write; the OS ubiquity daemon replicates the bytes even if the app is backgrounded.
+                           return self.iCloudController.upload(key: self.key, file: newFile, mtime: self.mtime, hash: self.md5, queue: self.queue)
+                       }
+                   }
+                   .observe(on: self.scheduler)
+                   .do(onError: { error in
+                       guard let file = file else { return }
+                       // If something broke during upload, remove tmp zip file
+                       self.iCloudController.finishUpload(key: self.key, result: .failure(error), file: file, queue: self.queue)
+                           .subscribe(on: self.scheduler)
+                           .subscribe()
+                           .disposed(by: self.disposeBag)
+                   })
+                   .flatMap({ _ -> Single<()> in
+                       return self.iCloudController.finishUpload(key: self.key, result: .success((self.mtime, self.md5)), file: file, queue: self.queue)
+                   })
+                   .flatMap({ _ -> Single<Int> in
+                       // The data layer is always server-mediated: register mtime+hash with the Zotero API so other clients learn the file changed.
+                       return self.submitItemWithHashAndMtime().flatMap({ Single.just($0) })
+                   })
+                   .observe(on: self.scheduler)
+                   .flatMap({ version -> Single<()> in
+                       return self.markAttachmentAsUploaded(version: version)
+                   })
+                   .do(onError: { error in
+                       if let error = error as? SyncActionError {
+                           switch error {
+                           case .attachmentAlreadyUploaded: return
+                           default: break
+                           }
+                       }
+                       DDLogError("UploadAttachmentSyncAction: could not upload to iCloud - \(error)")
                    })
     }
 

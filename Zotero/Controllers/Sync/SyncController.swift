@@ -191,6 +191,7 @@ final class SyncController: SynchronizationController {
     private unowned let dateParser: DateParser
     private unowned let backgroundUploaderContext: BackgroundUploaderContext
     private unowned let webDavController: WebDavController
+    private unowned let iCloudController: ICloudController
     // Handler for reporting sync progress to observers.
     private let progressHandler: SyncProgressHandler
     // Id of currently logged in user.
@@ -254,6 +255,7 @@ final class SyncController: SynchronizationController {
         dateParser: DateParser,
         backgroundUploaderContext: BackgroundUploaderContext,
         webDavController: WebDavController,
+        iCloudController: ICloudController,
         attachmentDownloader: AttachmentDownloader,
         syncDelayIntervals: [Double],
         maxRetryCount: Int
@@ -280,6 +282,7 @@ final class SyncController: SynchronizationController {
         self.dateParser = dateParser
         self.backgroundUploaderContext = backgroundUploaderContext
         self.webDavController = webDavController
+        self.iCloudController = iCloudController
         self.syncDelayIntervals = syncDelayIntervals
         self.didEnqueueWriteActionsToZoteroBackend = false
         self.enqueuedUploads = 0
@@ -803,7 +806,7 @@ final class SyncController: SynchronizationController {
             type: libraries,
             fetchUpdates: (options != .onlyDownloads),
             loadVersions: (self.type != .full),
-            webDavEnabled: self.webDavController.sessionStorage.isEnabled,
+            webDavEnabled: (Defaults.shared.fileSyncType != .zotero),
             dbStorage: self.dbStorage,
             queue: self.workQueue
         ).result
@@ -1540,6 +1543,7 @@ final class SyncController: SynchronizationController {
             dbStorage: self.dbStorage,
             fileStorage: self.fileStorage,
             webDavController: self.webDavController,
+            iCloudController: self.iCloudController,
             schemaController: self.schemaController,
             dateParser: self.dateParser,
             queue: self.workQueue,
@@ -1602,7 +1606,7 @@ final class SyncController: SynchronizationController {
             version: batch.version,
             libraryId: batch.libraryId,
             userId: self.userId,
-            webDavEnabled: self.webDavController.sessionStorage.isEnabled,
+            webDavEnabled: (Defaults.shared.fileSyncType != .zotero),
             apiClient: self.apiClient,
             dbStorage: self.dbStorage,
             queue: self.workQueue,
@@ -1928,7 +1932,9 @@ final class SyncController: SynchronizationController {
     }
 
     private func performWebDavDeletions(libraryId: LibraryIdentifier) {
-        let result = DeleteWebDavFilesSyncAction(libraryId: libraryId, dbStorage: self.dbStorage, webDavController: self.webDavController, queue: self.workQueue).result
+        // Route deferred deletions to whichever file backend is active (deletions are only ever enqueued for non-ZFS backends).
+        let controller: FileSyncBackend = Defaults.shared.fileSyncType == .iCloud ? self.iCloudController : self.webDavController
+        let result = DeleteWebDavFilesSyncAction(libraryId: libraryId, dbStorage: self.dbStorage, controller: controller, queue: self.workQueue).result
         result.subscribe(on: self.workScheduler)
               .subscribe(onSuccess: { [weak self] failures in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in

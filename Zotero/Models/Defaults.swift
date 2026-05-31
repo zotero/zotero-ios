@@ -28,6 +28,20 @@ final class Defaults {
     @OptionalUserDefault(key: "sessionId")
     var sessionId: String?
 
+    // MARK: - File Syncing
+
+    // Active attachment-file backend. Migrates existing installs: if `fileSyncType` was never stored but `webDavEnabled` is true, default to `.webDav`.
+    @CodableUserDefault(key: "fileSyncType", defaultValue: {
+        if UserDefaults.zotero.object(forKey: "fileSyncType") == nil && UserDefaults.zotero.bool(forKey: "webDavEnabled") {
+            return FileSyncType.webDav
+        }
+        return FileSyncType.zotero
+    }(), encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
+    var fileSyncType: FileSyncType
+
+    @UserDefault(key: "iCloudVerified", defaultValue: false)
+    var iCloudVerified: Bool
+
     // MARK: - WebDav Session
 
     @UserDefault(key: "webDavEnabled", defaultValue: false)
@@ -242,6 +256,8 @@ final class Defaults {
         shareExtensionIncludeAttachment = true
         selectedLibraryId = .custom(.myLibrary)
         selectedCollectionId = .custom(.all)
+        fileSyncType = .zotero
+        iCloudVerified = false
         webDavUrl = nil
         webDavScheme = .https
         webDavEnabled = false

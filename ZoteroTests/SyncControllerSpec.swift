@@ -29,6 +29,7 @@ final class SyncControllerSpec: QuickSpec {
             var realm: Realm!
             var syncController: SyncController!
             var webDavController: WebDavController!
+            var iCloudController: ICloudController!
             var attachmentDownloader: AttachmentDownloader!
             var backgroundUploaderContext: BackgroundUploaderContext!
             var dbStorage: DbStorage!
@@ -52,12 +53,14 @@ final class SyncControllerSpec: QuickSpec {
                 backgroundUploaderContext = BackgroundUploaderContext()
                 dbStorage = RealmDbStorage(config: realmConfig)
                 webDavController = WebDavControllerImpl(dbStorage: dbStorage, fileStorage: TestControllers.fileStorage, sessionStorage: webDavSession)
+                iCloudController = ICloudController(dbStorage: dbStorage, fileStorage: TestControllers.fileStorage, transport: ICloudTransportController())
                 attachmentDownloader = AttachmentDownloader(
                     userId: userId,
                     apiClient: TestControllers.apiClient,
                     fileStorage: TestControllers.fileStorage,
                     dbStorage: dbStorage,
-                    webDavController: webDavController
+                    webDavController: webDavController,
+                    iCloudController: iCloudController
                 )
                 syncController = SyncController(
                     userId: userId,
@@ -68,6 +71,7 @@ final class SyncControllerSpec: QuickSpec {
                     dateParser: TestControllers.dateParser,
                     backgroundUploaderContext: backgroundUploaderContext,
                     webDavController: webDavController,
+                    iCloudController: iCloudController,
                     attachmentDownloader: attachmentDownloader,
                     syncDelayIntervals: [0, 1, 2, 3],
                     maxRetryCount: 4

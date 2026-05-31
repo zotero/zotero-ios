@@ -339,6 +339,7 @@ final class ExtensionViewModel {
     private let fileStorage: FileStorage
     private let schemaController: SchemaController
     private let webDavController: WebDavController
+    private let iCloudController: ICloudController
     private let dateParser: DateParser
     private let translationHandler: TranslationWebViewHandler
     private let backgroundUploader: BackgroundUploader
@@ -365,6 +366,7 @@ final class ExtensionViewModel {
         dbStorage: DbStorage,
         schemaController: SchemaController,
         webDavController: WebDavController,
+        iCloudController: ICloudController,
         dateParser: DateParser,
         fileStorage: FileStorage,
         syncController: SyncController,
@@ -395,6 +397,7 @@ final class ExtensionViewModel {
         self.fileStorage = fileStorage
         self.schemaController = schemaController
         self.webDavController = webDavController
+        self.iCloudController = iCloudController
         self.dateParser = dateParser
         self.translationHandler = TranslationWebViewHandler(webView: webView, translatorsController: translatorsController)
         self.backgroundQueue = queue
@@ -1434,9 +1437,14 @@ final class ExtensionViewModel {
     /// - parameter dbStorage: Database storage
     /// - parameter fileStorage: File storage
     private func upload(data: State.UploadData, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, webDavController: WebDavController) {
-        if Defaults.shared.webDavEnabled {
+        switch Defaults.shared.fileSyncType {
+        case .webDav:
             uploadToWebDav(data: data, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage, webDavController: webDavController)
-        } else {
+
+        case .iCloud:
+            uploadToICloud(data: data, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage, iCloudController: self.iCloudController)
+
+        case .zotero:
             uploadToZotero(data: data, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage)
         }
 
@@ -1571,6 +1579,102 @@ final class ExtensionViewModel {
                 handleSubmission(error: attachmentError(from: error, libraryId: data.libraryId), parentKey: data.parentKey, libraryId: data.libraryId)
             })
             .disposed(by: disposeBag)
+        }
+
+        func uploadToICloud(data: State.UploadData, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, iCloudController: ICloudController) {
+            var zipFile: File?
+            let prepare = submit(data: data, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage)
+                .flatMap { [weak self] submissionData -> Single<(FileUploadResult, SubmissionData)> in
+                    guard let self else { return Single.error(State.AttachmentState.Error.expired) }
+                    return iCloudController.prepareForUpload(key: data.attachment.key, mtime: submissionData.mtime, hash: submissionData.md5, file: data.file, queue: backgroundQueue)
+                        .flatMap({ return Single.just(($0, submissionData)) })
+                }
+
+            prepare.flatMap { [weak self] response, submissionData -> Single<()> in
+                guard let self else { return Single.error(State.AttachmentState.Error.expired) }
+
+                switch response {
+                case .exists:
+                    DDLogInfo("ExtensionViewModel: file exists in iCloud")
+                    do {
+                        let request = MarkAttachmentUploadedDbRequest(libraryId: data.libraryId, key: data.attachment.key, version: nil)
+                        try dbStorage.perform(request: request, on: backgroundQueue)
+                        return Single.just(())
+                    } catch let error {
+                        return Single.error(error)
+                    }
+
+                case .new(let file):
+                    DDLogInfo("ExtensionViewModel: upload to iCloud")
+                    zipFile = file
+                    // iCloud has no background `URLSession`; the coordinated write below replicates via the ubiquity daemon even when backgrounded.
+                    return iCloudController.upload(key: data.attachment.key, file: file, mtime: submissionData.mtime, hash: submissionData.md5, queue: backgroundQueue)
+                        .flatMap { iCloudController.finishUpload(key: data.attachment.key, result: .success((submissionData.mtime, submissionData.md5)), file: file, queue: self.backgroundQueue) }
+                        .flatMap { [weak self] _ -> Single<()> in
+                            guard let self else { return Single.error(State.AttachmentState.Error.expired) }
+                            return submitItemWithHashAndMtime(key: data.attachment.key, libraryId: data.libraryId, userId: data.userId)
+                                .flatMap { version -> Single<()> in
+                                    do {
+                                        let request = MarkAttachmentUploadedDbRequest(libraryId: data.libraryId, key: data.attachment.key, version: version)
+                                        try dbStorage.perform(request: request, on: self.backgroundQueue)
+                                        return Single.just(())
+                                    } catch let error {
+                                        return Single.error(error)
+                                    }
+                                }
+                        }
+                }
+            }
+            .observe(on: MainScheduler.instance)
+            .subscribe(onSuccess: { [weak self] _ in
+                self?.state.isDone = true
+            }, onFailure: { [weak self] error in
+                guard let self else { return }
+                if let zipFile { _ = iCloudController.finishUpload(key: data.attachment.key, result: .failure(error), file: zipFile, queue: self.backgroundQueue).subscribe() }
+                DDLogError("ExtensionViewModel: could not submit item or attachment to iCloud - \(error)")
+                handleSubmission(error: attachmentError(from: error, libraryId: data.libraryId), parentKey: data.parentKey, libraryId: data.libraryId)
+            })
+            .disposed(by: disposeBag)
+        }
+
+        /// Registers the uploaded file's mtime+hash with the Zotero API (data layer is always server-mediated), returning the new version.
+        func submitItemWithHashAndMtime(key: String, libraryId: LibraryIdentifier, userId: Int) -> Single<Int> {
+            let loadParameters: Single<[String: Any]> = Single.create { [weak self] subscriber -> Disposable in
+                guard let self else { return Disposables.create() }
+                do {
+                    let item = try dbStorage.perform(request: ReadItemDbRequest(libraryId: libraryId, key: key), on: backgroundQueue)
+                    let parameters = item.mtimeAndHashParameters
+                    item.realm?.invalidate()
+                    subscriber(.success(parameters))
+                } catch let error {
+                    subscriber(.failure(error))
+                }
+                return Disposables.create()
+            }
+
+            return loadParameters.flatMap { [weak self] params -> Single<(Int, Error?)> in
+                guard let self else { return Single.error(State.AttachmentState.Error.expired) }
+                return SubmitUpdateSyncAction(
+                    parameters: [params],
+                    changeUuids: [:],
+                    sinceVersion: nil,
+                    object: .item,
+                    libraryId: libraryId,
+                    userId: userId,
+                    updateLibraryVersion: false,
+                    apiClient: apiClient,
+                    dbStorage: dbStorage,
+                    fileStorage: fileStorage,
+                    schemaController: schemaController,
+                    dateParser: dateParser,
+                    queue: backgroundQueue,
+                    scheduler: backgroundScheduler
+                ).result
+            }
+            .flatMap { version, error -> Single<Int> in
+                if let error { return Single.error(error) }
+                return Single.just(version)
+            }
         }
 
         func submit(data: State.UploadData, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage) -> Single<SubmissionData> {
