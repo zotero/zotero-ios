@@ -106,7 +106,7 @@ struct PDFReaderState: ViewModelState {
     var token: NotificationToken?
     var itemToken: NotificationToken?
     var databaseAnnotations: Results<RItem>!
-    var documentAnnotations: Results<RDocumentAnnotation>!
+    var documentAnnotations: Results<RDocumentAnnotation>?
     var defaultAnnotationPageLabel: DefaultAnnotationPageLabel
     var texts: [String: (String, [UIFont: NSAttributedString])]
     var comments: [String: NSAttributedString]
