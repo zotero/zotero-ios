@@ -531,9 +531,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 var groupedAnnotations: [Int: [PDFAnnotation]] = [:]
                 for key in keys {
                     guard let annotation = state.annotation(for: key) else { continue }
-                    var annotations = groupedAnnotations[annotation.page, default: []]
-                    annotations.append(annotation)
-                    groupedAnnotations[annotation.page] = annotations
+                    groupedAnnotations[annotation.page, default: []].append(annotation)
                 }
                 return groupedAnnotations
             }
