@@ -285,13 +285,6 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
                 index(annotation: annotation)
             }
             return addedAnnotations
-
-            func index(annotation: Annotation) {
-                let key = annotation.key ?? annotation.uuid
-                let pageIndex = annotation.pageIndex
-                loadedAnnotationsByPageByKey[pageIndex, default: [:]][key] = annotation
-                loadedAnnotationsByKey[key] = annotation
-            }
         }
     }
 
@@ -302,13 +295,6 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
                 deindex(annotation: annotation)
             }
             return removedAnnotations
-
-            func deindex(annotation: Annotation) {
-                let key = annotation.key ?? annotation.uuid
-                let pageIndex = annotation.pageIndex
-                loadedAnnotationsByPageByKey[pageIndex]?[key] = nil
-                loadedAnnotationsByKey[key] = nil
-            }
         }
     }
 
@@ -449,6 +435,28 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
         }
         _ = annotationsForPage(at: pageIndex)
         return annotationIfLoaded(at: pageIndex, with: key)
+    }
+
+    public func reindex(annotation: Annotation, previousKey: String) {
+        guard annotation.key != previousKey else { return }
+        performWriteAndWait {
+            deindex(annotation: annotation, key: previousKey)
+            index(annotation: annotation)
+        }
+    }
+
+    private func index(annotation: Annotation) {
+        let key = annotation.key ?? annotation.uuid
+        let pageIndex = annotation.pageIndex
+        loadedAnnotationsByPageByKey[pageIndex, default: [:]][key] = annotation
+        loadedAnnotationsByKey[key] = annotation
+    }
+
+    private func deindex(annotation: Annotation, key: String? = nil) {
+        let key = key ?? annotation.key ?? annotation.uuid
+        let pageIndex = annotation.pageIndex
+        loadedAnnotationsByPageByKey[pageIndex]?[key] = nil
+        loadedAnnotationsByKey[key] = nil
     }
 
     public func loadDocumentAnnotationsDatabaseCache(documentMD5: String?) {
