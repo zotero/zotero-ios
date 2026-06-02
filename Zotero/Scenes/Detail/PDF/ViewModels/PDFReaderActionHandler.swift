@@ -1059,18 +1059,14 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         DDLogInfo("PDFReaderActionHandler: annotations added - \(annotations.map({ "\(type(of: $0));key=\($0.key ?? "nil");" }))")
 
         let (keptAsIs, toRemove, toAdd) = transformIfNeeded(annotations: annotations, state: viewModel.state)
-        let finalAnnotations = keptAsIs + toAdd
-        for annotation in finalAnnotations {
-            if annotation.key == nil {
-                // We use the displayName, but if this is empty we use the username, which is what would be presented anyway.
-                // Since a username cannot be empty, we guarantee an non-empty annotation.user field.
-                annotation.user = viewModel.state.displayName.isEmpty ? viewModel.state.username : viewModel.state.displayName
-                annotation.customData = [
-                    AnnotationsConfig.keyKey: KeyGenerator.newKey,
-                    AnnotationsConfig.baseColorKey: annotation.baseColor
-                ]
-            }
+        for annotation in keptAsIs {
+            guard addUserAndKeyIfNeeded(to: annotation, in: viewModel) else { continue }
+            annotationProvider?.reindex(annotation: annotation, previousKey: annotation.uuid)
         }
+        for annotation in toAdd {
+            _ = addUserAndKeyIfNeeded(to: annotation, in: viewModel)
+        }
+        let finalAnnotations = keptAsIs + toAdd
         if !toRemove.isEmpty || !toAdd.isEmpty {
             let document = viewModel.state.document
             let undoController = document.undoController
@@ -1311,6 +1307,18 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 return .freeText
             }
             return nil
+        }
+
+        func addUserAndKeyIfNeeded(to annotation: PSPDFKit.Annotation, in viewModel: ViewModel<PDFReaderActionHandler>) -> Bool {
+            guard annotation.key == nil else { return false }
+            // We use the displayName, but if this is empty we use the username, which is what would be presented anyway.
+            // Since a username cannot be empty, we guarantee an non-empty annotation.user field.
+            annotation.user = viewModel.state.displayName.isEmpty ? viewModel.state.username : viewModel.state.displayName
+            annotation.customData = [
+                AnnotationsConfig.keyKey: KeyGenerator.newKey,
+                AnnotationsConfig.baseColorKey: annotation.baseColor
+            ]
+            return true
         }
     }
 
