@@ -802,6 +802,9 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
                 case .cantUnzipSnapshot:
                     return (L10n.Errors.Attachments.cantUnzipSnapshot, cancelAction)
 
+                case .invalidZipDownload:
+                    return (L10n.Errors.Attachments.invalidWebdavZipDownload, cancelAction)
+
                 case .cancelled:
                     break
                 }
