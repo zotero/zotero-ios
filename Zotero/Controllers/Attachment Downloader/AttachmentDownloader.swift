@@ -19,6 +19,7 @@ final class AttachmentDownloader: NSObject {
         case incompatibleAttachment
         case zipDidntContainRequestedFile
         case cantUnzipSnapshot
+        case invalidZipDownload
         case cancelled
     }
 
@@ -845,7 +846,7 @@ final class AttachmentDownloader: NSObject {
                     self?.retryDownload(download, after: activeDownload)
                 }
                 return
-            } else if fileStorage.has(activeDownload.file) {
+            } else if shouldUseExistingFileOnFailure(error, activeDownload: activeDownload) {
                 DDLogError("AttachmentDownloader: failed to download remotely changed attachment \(activeDownload.taskId) - \(error)")
                 errors[download] = nil
                 observable.on(.next(Update(download: download, kind: .ready(compressed: compressed))))
@@ -868,6 +869,11 @@ final class AttachmentDownloader: NSObject {
                     DDLogError("AttachmentDownloader: could not remove download from db - \(error)")
                 }
             }
+        }
+
+        func shouldUseExistingFileOnFailure(_ error: Swift.Error, activeDownload: ActiveDownload) -> Bool {
+            guard fileStorage.has(activeDownload.file) else { return false }
+            return (error as? AttachmentDownloader.Error) != .invalidZipDownload
         }
     }
 
@@ -897,6 +903,7 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
             return
         }
 
+        let downloadedFile = Files.file(from: location)
         let error: Swift.Error?
         var retryDelay: RetryDelay?
         switch statusCode {
@@ -924,7 +931,7 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
             }
 
         default:
-            error = checkFileResponse(for: Files.file(from: location), fileStorage: fileStorage, downloadTask: downloadTask)
+            error = checkFileResponse(for: downloadedFile, fileStorage: fileStorage, downloadTask: downloadTask)
         }
         if let data = activeDownload.logData {
             logResponse(for: data, task: downloadTask, error: error)
@@ -932,7 +939,7 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
         DDLogInfo("AttachmentDownloader: didFinishDownloadingTo \(downloadTask.taskIdentifier)")
 
         if let error {
-            try? fileStorage.remove(Files.file(from: location))
+            try? fileStorage.remove(downloadedFile)
             accessQueue.sync(flags: .barrier) { [weak self] in
                 self?.finish(activeDownload: activeDownload, download: download, compressed: nil, result: .failure(error), retryDelay: retryDelay)
             }
@@ -947,6 +954,13 @@ extension AttachmentDownloader: URLSessionDownloadDelegate {
             isCompressed = isCompressed || _isCompressed
         }
         if isCompressed {
+            if !fileStorage.isZip(file: downloadedFile) {
+                try? fileStorage.remove(downloadedFile)
+                accessQueue.sync(flags: .barrier) { [weak self] in
+                    self?.finish(activeDownload: activeDownload, download: download, compressed: nil, result: .failure(AttachmentDownloader.Error.invalidZipDownload), retryDelay: nil)
+                }
+                return
+            }
             zipFile = activeDownload.file.copy(withExt: "zip")
         } else {
             shouldExtractAfterDownload = false

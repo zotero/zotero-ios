@@ -393,6 +393,7 @@
 "errors.unknown" = "Unknown error";
 "errors.attachments.cant_unzip_snapshot" = "Unable to unzip snapshot";
 "errors.attachments.incompatible_attachment" = "Linked files are not supported on mobile devices. You can open them using the Zotero desktop app.";
+"errors.attachments.invalid_webdav_zip_download" = "The WebDAV server did not return a zipped attachment file.";
 "errors.attachments.cant_open_attachment" = "The attached file could not be found.";
 "errors.attachments.missing_zotero" = "The attached file is not available in the online library.";
 "errors.attachments.missing_webdav" = "The attached file is not available on the WebDAV server.";
