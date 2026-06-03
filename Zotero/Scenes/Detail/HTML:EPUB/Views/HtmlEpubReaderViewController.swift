@@ -212,7 +212,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
                 separator.topAnchor.constraint(equalTo: view.topAnchor),
                 separator.bottomAnchor.constraint(equalTo: view.bottomAnchor),
                 documentLeftConstraint,
-                pageIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+                pageIndicator.centerXAnchor.constraint(equalTo: documentController.view.centerXAnchor),
                 view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: pageIndicator.bottomAnchor, constant: 12),
                 pageIndicatorLabel.topAnchor.constraint(equalTo: pageIndicator.topAnchor, constant: 6),
                 pageIndicator.bottomAnchor.constraint(equalTo: pageIndicatorLabel.bottomAnchor, constant: 6),
