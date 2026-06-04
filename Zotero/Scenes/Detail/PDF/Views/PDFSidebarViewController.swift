@@ -136,7 +136,7 @@ class PDFSidebarViewController: UIViewController {
             viewModel.stateObservable
                 .observe(on: MainScheduler.instance)
                 .subscribe(onNext: { [weak tocViewModel] state in
-                    guard let tocViewModel, state.changes.contains(.visiblePageFromDocument) || state.changes.contains(.visiblePageFromThumbnailList) else { return }
+                    guard let tocViewModel, state.changes.contains(.visiblePage) else { return }
                     let page = UInt(max(state.visiblePage, 0))
                     let id = PDFSidebarViewController.findOutline(forPage: page, in: tocViewModel.state.outlines)?.id
                     tocViewModel.process(action: .setCurrentOutline(id))
