@@ -131,7 +131,11 @@ final class PDFReaderAnnotationProvider: PDFContainerAnnotationProvider {
             return providerDelegateBackingStore
         }
         set {
-            guard newValue?.isEqual(providerDelegate) == false else { return }
+            guard let newValue else {
+                providerDelegateBackingStore = nil
+                return
+            }
+            guard newValue.isEqual(providerDelegate) == false else { return }
             providerDelegateBackingStore = newValue
         }
     }
