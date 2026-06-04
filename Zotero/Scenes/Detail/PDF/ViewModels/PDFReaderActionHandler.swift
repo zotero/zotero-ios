@@ -1559,7 +1559,41 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
 
         func observe(items: Results<RItem>, viewModel: ViewModel<PDFReaderActionHandler>) -> NotificationToken {
-            return items.observe { [weak self, weak viewModel] change in
+            let keyPaths = [
+                "key",
+                "rawType",
+                "annotationType",
+                "annotationSortIndex",
+                "deleted",
+                "syncState",
+                "dateAdded",
+                "dateModified",
+                "createdBy",
+                "createdBy.identifier",
+                "createdBy.name",
+                "createdBy.username",
+                "fields",
+                "fields.key",
+                "fields.value",
+                "tags",
+                "tags.type",
+                "tags.tag",
+                "tags.tag.name",
+                "tags.tag.color",
+                "tags.tag.emojiGroup",
+                "rects",
+                "rects.minX",
+                "rects.minY",
+                "rects.maxX",
+                "rects.maxY",
+                "paths",
+                "paths.sortIndex",
+                "paths.coordinates",
+                "paths.coordinates.value",
+                "paths.coordinates.sortIndex"
+            ]
+
+            return items.observe(keyPaths: keyPaths) { [weak self, weak viewModel] change in
                 guard let self, let viewModel else { return }
                 switch change {
                 case .update(let objects, let deletions, let insertions, let modifications):
@@ -1793,8 +1827,17 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 continue
             }
 
-            let key = PDFReaderAnnotationKey(key: databaseAnnotations[index].key, type: .database)
-            guard let item = objects.filter(.key(key.key)).first, let annotation = PDFDatabaseAnnotation(item: item) else { continue }
+            let oldItem = databaseAnnotations[index]
+            let key = PDFReaderAnnotationKey(key: oldItem.key, type: .database)
+            guard let item = objects.filter(.key(key.key)).first else { continue }
+
+            let newPageLabel = item.fields.filter(.key(FieldKeys.Item.Annotation.pageLabel)).first?.value
+            let oldPageLabel = oldItem.fields.filter(.key(FieldKeys.Item.Annotation.pageLabel)).first?.value
+            if newPageLabel != oldPageLabel {
+                shouldRecomputeDefaultAnnotationPageLabel = true
+            }
+
+            guard item.changeType != .syncResponse, let annotation = PDFDatabaseAnnotation(item: item) else { continue }
 
             if canUpdate(key: key, item: item, at: index, viewModel: viewModel) {
                 DDLogInfo("PDFReaderActionHandler: update key \(key)")
@@ -1827,12 +1870,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                     }
                     comments[key.key] = comment
                 }
-            }
-
-            let newPageLabel = item.fields.filter(.key(FieldKeys.Item.Annotation.pageLabel)).first?.value
-            let oldPageaLabel = databaseAnnotations[index].fields.filter(.key(FieldKeys.Item.Annotation.pageLabel)).first?.value
-            if newPageLabel != oldPageaLabel {
-                shouldRecomputeDefaultAnnotationPageLabel = true
             }
 
             guard item.changeType == .sync, let pdfAnnotation = annotationProvider?.annotation(at: PageIndex(annotation.page), with: key.key) else { continue }
@@ -1925,6 +1962,22 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
         }
 
         if shouldCancelUpdate {
+            return
+        }
+
+        let hasReaderRelevantChanges = !updatedKeys.isEmpty ||
+                                       !deletions.isEmpty ||
+                                       !insertions.isEmpty ||
+                                       !updatedPdfAnnotations.isEmpty ||
+                                       !deletedPdfAnnotations.isEmpty ||
+                                       !insertedPdfAnnotations.isEmpty ||
+                                       shouldRecomputeDefaultAnnotationPageLabel ||
+                                       selectionDeleted ||
+                                       selectKey != nil
+        guard hasReaderRelevantChanges else {
+            update(viewModel: viewModel, notifyListeners: false) { state in
+                state.databaseAnnotations = objects.freeze()
+            }
             return
         }
 
