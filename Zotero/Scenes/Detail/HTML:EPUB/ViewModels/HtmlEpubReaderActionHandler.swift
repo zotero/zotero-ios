@@ -234,31 +234,25 @@ final class HtmlEpubReaderActionHandler: ViewModelActionHandler, BackgroundDbPro
         let pageIndex = stats["pageIndex"] as? Int
         let pageLabel = stats["pageLabel"] as? String
         let pagesCount = stats["pagesCount"] as? Int
-
         let resolvedOutline = outlinePath.flatMap({ resolve(path: $0, in: viewModel.state.outlines) })
         let newPage: HtmlEpubReaderState.PageInfo? = {
             guard let pageIndex, let pageLabel else { return nil }
             return HtmlEpubReaderState.PageInfo(index: pageIndex, label: pageLabel)
         }()
-
-        let outlineChanged = resolvedOutline.map({ $0.id != viewModel.state.currentOutline?.id }) ?? false
-        let pageChanged = (newPage != nil && newPage != viewModel.state.currentPage) || (pagesCount != nil && pagesCount != viewModel.state.pagesCount)
+        let outlineChanged = outlinePath != nil && resolvedOutline?.id != viewModel.state.currentOutline?.id
+        let pageChanged = newPage != viewModel.state.currentPage || pagesCount != viewModel.state.pagesCount
 
         guard outlineChanged || pageChanged else { return }
 
         update(viewModel: viewModel) { state in
             var changes: HtmlEpubReaderState.Changes = []
-            if outlineChanged, let resolvedOutline {
+            if outlineChanged {
                 state.currentOutline = resolvedOutline
                 changes.insert(.currentOutline)
             }
             if pageChanged {
-                if let newPage {
-                    state.currentPage = newPage
-                }
-                if let pagesCount {
-                    state.pagesCount = pagesCount
-                }
+                state.currentPage = newPage
+                state.pagesCount = pagesCount
                 changes.insert(.pages)
             }
             state.changes = changes
