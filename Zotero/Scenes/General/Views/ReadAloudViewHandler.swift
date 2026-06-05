@@ -50,6 +50,13 @@ protocol ReadAloudViewDelegate: AnyObject {
 
 final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
     let navbarButtonTag = 4
+    /// Size of the headphones checkbox capsule itself.
+    private let navbarHeadphonesButtonSize: CGFloat = 38
+    /// Transparent horizontal padding added around the capsule so the bar button matches the standard bar button
+    /// footprint and lines up evenly with the system bar buttons next to it.
+    private var navbarHeadphonesHorizontalPadding: CGFloat {
+        max(0, (CheckboxButton.standardNavigationBarButtonSize - navbarHeadphonesButtonSize) / 2)
+    }
     private weak var navbarItemContainer: UIView?
     private weak var navbarHeadphonesButtonRef: CheckboxButton?
     private weak var navbarHeadphonesWarningDot: UIView?
@@ -318,13 +325,16 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
         warningDot.isHidden = !(!state.isStopped && isRemainingTimeWarning(speechManager.remainingTime.value))
         container.addSubview(warningDot)
 
-        let trailing = container.trailingAnchor.constraint(equalTo: button.trailingAnchor)
+        // Pad the capsule horizontally so the bar button matches the standard bar button footprint and lines up
+        // evenly with the system bar buttons next to it (which have more surrounding padding than the tight capsule).
+        let hPadding = navbarHeadphonesHorizontalPadding
+        let trailing = container.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: hPadding)
         NSLayoutConstraint.activate([
-            button.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            button.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: hPadding),
             button.topAnchor.constraint(equalTo: container.topAnchor),
             button.bottomAnchor.constraint(equalTo: container.bottomAnchor),
-            button.widthAnchor.constraint(equalToConstant: 38),
-            button.heightAnchor.constraint(equalToConstant: 38),
+            button.widthAnchor.constraint(equalToConstant: navbarHeadphonesButtonSize),
+            button.heightAnchor.constraint(equalToConstant: navbarHeadphonesButtonSize),
             trailing,
             warningDot.widthAnchor.constraint(equalToConstant: dotSize),
             warningDot.heightAnchor.constraint(equalToConstant: dotSize),
@@ -616,7 +626,7 @@ final class ReadAloudViewHandler<Delegate: SpeechManagerDelegate> {
             activeControls.removeFromSuperview()
             if let container = navbarItemContainer, let button = navbarHeadphonesButtonRef {
                 navbarContainerTrailingConstraint?.isActive = false
-                let restored = container.trailingAnchor.constraint(equalTo: button.trailingAnchor)
+                let restored = container.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: navbarHeadphonesHorizontalPadding)
                 restored.isActive = true
                 navbarContainerTrailingConstraint = restored
             }
