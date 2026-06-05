@@ -92,7 +92,7 @@ final class ReadAloudControlsView<Delegate: SpeechManagerDelegate>: UIView, Anno
         outerStack.axis = .horizontal
         outerStack.alignment = .center
         outerStack.distribution = .fill
-        outerStack.spacing = 4
+        outerStack.spacing = 20
         addSubview(outerStack)
 
         let height = outerStack.heightAnchor.constraint(equalToConstant: 38)

@@ -9,6 +9,8 @@
 import UIKit
 
 final class CheckboxButton: UIButton {
+    static let standardNavigationBarButtonSize: CGFloat = 46
+
     var selectedBackgroundColor: UIColor = .clear
     var deselectedBackgroundColor: UIColor = .clear
     var selectedTintColor: UIColor = .black
@@ -74,5 +76,14 @@ final class CheckboxButton: UIButton {
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+}
+
+extension UIBarButtonItem {
+    /// The `CheckboxButton` backing a custom-view bar button, whether the custom view is the checkbox itself or a
+    /// container wrapping it (e.g. when padded to the standard bar button footprint).
+    var checkboxButton: CheckboxButton? {
+        if let checkbox = customView as? CheckboxButton { return checkbox }
+        return customView?.subviews.compactMap({ $0 as? CheckboxButton }).first
     }
 }
