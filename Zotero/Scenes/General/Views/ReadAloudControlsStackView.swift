@@ -62,11 +62,9 @@ final class ReadAloudControlsStackView<Delegate: SpeechManagerDelegate>: UIStack
         distribution = .fillEqually
         playButton.addAction(UIAction(handler: { _ in playAction() }), for: .touchUpInside)
         pauseButton.addAction(UIAction(handler: { [weak speechManager] _ in speechManager?.pause() }), for: .touchUpInside)
-        // Tap skips a single sentence; long press skips a whole paragraph.
-        forwardButton.addAction(UIAction(handler: { [weak speechManager] _ in speechManager?.forward(by: .sentence) }), for: .touchUpInside)
-        backwardButton.addAction(UIAction(handler: { [weak speechManager] _ in speechManager?.backward(by: .sentence) }), for: .touchUpInside)
-        addParagraphLongPress(to: forwardButton) { [weak speechManager] in speechManager?.forward(by: .paragraph) }
-        addParagraphLongPress(to: backwardButton) { [weak speechManager] in speechManager?.backward(by: .paragraph) }
+        // Single tap skips a sentence; double tap skips a whole paragraph (coalesced by SpeechManager).
+        forwardButton.addAction(UIAction(handler: { [weak speechManager] _ in speechManager?.navigateForward() }), for: .touchUpInside)
+        backwardButton.addAction(UIAction(handler: { [weak speechManager] _ in speechManager?.navigateBackward() }), for: .touchUpInside)
         self.playButton = playButton
         self.pauseButton = pauseButton
         self.forwardButton = forwardButton
@@ -79,21 +77,6 @@ final class ReadAloudControlsStackView<Delegate: SpeechManagerDelegate>: UIStack
                 self?.update(state: state)
             })
             .disposed(by: disposeBag)
-    }
-
-    /// Adds a long press recognizer that fires `action` once when the press is recognized. The button's own
-    /// `touchUpInside` is suppressed automatically once the long press wins, so short taps and long presses are exclusive.
-    private func addParagraphLongPress(to button: UIButton, action: @escaping () -> Void) {
-        let recognizer = UILongPressGestureRecognizer()
-        recognizer.minimumPressDuration = 0.25
-        recognizer.rx.event
-            .subscribe(onNext: { [weak button] recognizer in
-                // A disabled UIButton still keeps user interaction enabled, so its gesture recognizers keep firing.
-                guard recognizer.state == .began, button?.isEnabled == true else { return }
-                action()
-            })
-            .disposed(by: disposeBag)
-        button.addGestureRecognizer(recognizer)
     }
 
     override init(frame: CGRect) {

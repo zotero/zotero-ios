@@ -140,9 +140,16 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         }
     }
 
+    private enum NavigationDirection {
+        case forward
+        case backward
+    }
+
     /// Number of leading document pages skipped before sampling for language detection. Early pages (covers, title
     /// pages, tables of contents) often contain little representative text, so detection starts past them.
     private let languageDetectionSkipPageCount = 5
+    /// Time window within which a second forward/backward call upgrades the pending sentence skip to a paragraph skip.
+    private let navigationMultiTapInterval: TimeInterval = 0.3
     /// Number of pages sampled (after skipping `languageDetectionSkipPageCount`) to detect the session language when
     /// auto-detection is active.
     private let languageDetectionPageCount = 10
@@ -161,6 +168,9 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         }
     }
     private var cachedPages: [Delegate.Index: String]
+    /// Navigation tap waiting for the multi-tap window to elapse. Executed as a sentence skip if no second tap
+    /// arrives within `navigationMultiTapInterval`; replaced by a paragraph skip if one does.
+    private var pendingNavigation: (direction: NavigationDirection, workItem: DispatchWorkItem)?
     let highlightSessionManager: SpeechHighlightSessionManager<SpeechManager<Delegate>>
     var onHighlightSessionTimedOut: (() -> Void)?
     var onSpeakingPositionChanged: ((Delegate.Index, Int) -> Void)?
@@ -264,6 +274,8 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                     speechData = nil
                     cachedPages = [:]
                     processor.detectedLanguage = nil
+                    pendingNavigation?.workItem.cancel()
+                    pendingNavigation = nil
                     highlightSessionManager.cancelSession()
                     nowPlayingManager.deactivate()
                 }
@@ -286,10 +298,10 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             }
         }
         nowPlayingManager.forwardHandler = { [weak self] in
-            self?.forward(by: .paragraph)
+            self?.navigateForward()
         }
         nowPlayingManager.backwardHandler = { [weak self] in
-            self?.backward(by: .paragraph)
+            self?.navigateBackward()
         }
     }
 
@@ -618,6 +630,49 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                 return
             }
             completion(texts)
+        }
+    }
+
+    /// Navigates forward with tap coalescing: a single call skips by sentence, two calls in quick succession skip by paragraph.
+    func navigateForward() {
+        coalesceNavigation(.forward)
+    }
+
+    /// Navigates backward with tap coalescing: a single call skips by sentence, two calls in quick succession skip by paragraph.
+    func navigateBackward() {
+        coalesceNavigation(.backward)
+    }
+
+    /// Coalesces rapid navigation taps so that a single tap skips by sentence and a double tap skips by paragraph.
+    /// The first tap schedules a sentence skip after `navigationMultiTapInterval`; a second tap in the same direction
+    /// within that window cancels it and performs a single paragraph skip instead, so a double tap moves by exactly
+    /// one paragraph. A tap in the opposite direction flushes the pending sentence skip immediately and starts a new window.
+    private func coalesceNavigation(_ direction: NavigationDirection) {
+        if let pending = pendingNavigation {
+            pending.workItem.cancel()
+            pendingNavigation = nil
+            if pending.direction == direction {
+                navigate(direction, by: .paragraph)
+                return
+            }
+            navigate(pending.direction, by: .sentence)
+        }
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            pendingNavigation = nil
+            navigate(direction, by: .sentence)
+        }
+        pendingNavigation = (direction, workItem)
+        DispatchQueue.main.asyncAfter(deadline: .now() + navigationMultiTapInterval, execute: workItem)
+    }
+
+    private func navigate(_ direction: NavigationDirection, by unit: NLTokenUnit) {
+        switch direction {
+        case .forward:
+            forward(by: unit)
+
+        case .backward:
+            backward(by: unit)
         }
     }
 
