@@ -1149,6 +1149,13 @@ extension PDFReaderViewController: SpeechManagerDelegate {
         return currentPageIndex - 1
     }
 
+    func getInitialPageIndices(count: Int) -> [UInt] {
+        let pageCount = UInt(viewModel.state.document.pageCount)
+        guard pageCount > 0 else { return [] }
+        let limit = min(UInt(count), pageCount)
+        return Array(0..<limit)
+    }
+
     func text(for indices: [UInt], completion: @escaping ([UInt: String]?) -> Void) {
         DDLogInfo("PDFReaderViewController: text for \(indices)")
         guard let file = viewModel.state.document.fileURL.flatMap({ Files.file(from: $0) }) else {
