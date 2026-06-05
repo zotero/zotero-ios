@@ -22,6 +22,9 @@ protocol SpeechManagerDelegate: AnyObject {
     func getCurrentPageIndex() -> Index
     func getNextPageIndex(from currentPageIndex: Index) -> Index?
     func getPreviousPageIndex(from currentPageIndex: Index) -> Index?
+    /// Returns up to `count` page indices from the beginning of the document, in reading order. Used to detect the
+    /// document's dominant language once at playback start. Returns all pages if the document has fewer than `count`.
+    func getInitialPageIndices(count: Int) -> [Index]
     func text(for indices: [Index], completion: @escaping ([Index: String]?) -> Void)
     func moved(to pageIndex: Index, from previousPageIndex: Index)
     func focusPage(_ pageIndex: Index)
@@ -137,6 +140,12 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         }
     }
 
+    /// Number of leading document pages skipped before sampling for language detection. Early pages (covers, title
+    /// pages, tables of contents) often contain little representative text, so detection starts past them.
+    private let languageDetectionSkipPageCount = 5
+    /// Number of pages sampled (after skipping `languageDetectionSkipPageCount`) to detect the session language when
+    /// auto-detection is active.
+    private let languageDetectionPageCount = 10
     let state: BehaviorRelay<SpeechState>
     let remainingTime: BehaviorRelay<TimeInterval?>
     private let disposeBag: DisposeBag
@@ -160,8 +169,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     var language: String? { processor.preferredLanguage }
     var speechRateModifier: Float { processor.speechRateModifier }
     var detectedLanguage: String {
-        guard let text = speechData.flatMap({ cachedPages[$0.index] }) else { return "en-US" }
-        return LanguageDetector.detectLanguage(from: text)
+        return processor.detectedLanguage ?? "en"
     }
     fileprivate var speechRange: NSRange? {
         return speechData?.range
@@ -223,9 +231,16 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             self?.onHighlightSessionTimedOut?()
         }
         if let remoteVoiceTier {
-            processor = RemoteVoiceProcessor(language: voiceLanguage, tier: remoteVoiceTier, speechRateModifier: 1, delegate: self, remoteVoicesController: remoteVoicesController)
+            processor = RemoteVoiceProcessor(
+                language: voiceLanguage,
+                detectedLanguage: nil,
+                tier: remoteVoiceTier,
+                speechRateModifier: 1,
+                delegate: self,
+                remoteVoicesController: remoteVoicesController
+            )
         } else {
-            processor = LocalVoiceProcessor(language: voiceLanguage, speechRateModifier: 1, delegate: self)
+            processor = LocalVoiceProcessor(language: voiceLanguage, detectedLanguage: nil, speechRateModifier: 1, delegate: self)
         }
         processor.speechRateModifier = speechRateModifier
 
@@ -242,12 +257,13 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                 case .paused, .initializing, .loading:
                     nowPlayingManager.updatePlaybackState(isPlaying: false)
 
-                case .outOfCredits(let reason):
+                case .outOfCredits:
                     nowPlayingManager.updatePlaybackState(isPlaying: false)
 
                 case .stopped:
                     speechData = nil
                     cachedPages = [:]
+                    processor.detectedLanguage = nil
                     highlightSessionManager.cancelSession()
                     nowPlayingManager.deactivate()
                 }
@@ -289,23 +305,79 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
 
         nowPlayingManager.activate(title: delegate.documentTitle)
 
+        // Detect the session language from the document's first pages before playback starts, so that the voice
+        // stays constant for the whole session (instead of being re-detected per page). No-op when the user has
+        // already picked a language or detection has already run this session.
+        state.accept(.initializing)
+        detectSessionLanguageIfNeeded(delegate: delegate) { [weak self] in
+            guard let self, state.value == .initializing else { return }
+            startPlayback(mapStartIndexToPage: mapStartIndexToPage)
+        }
+    }
+
+    private func startPlayback(mapStartIndexToPage: ((String) -> Int)?) {
+        guard let delegate else {
+            state.accept(.stopped)
+            return
+        }
         let pageIndex = delegate.getCurrentPageIndex()
         if let page = cachedPages[pageIndex] {
             let startIndex = mapStartIndexToPage?(page) ?? 0
-            startSpeaking(at: startIndex, page: page, pageIndex: pageIndex, reportPageChange: false, shouldDetectVoice: true)
+            startSpeaking(at: startIndex, page: page, pageIndex: pageIndex, reportPageChange: false)
             return
         }
 
-        state.accept(.initializing)
         getData(for: [pageIndex], from: delegate) { [weak self] pages in
             guard let self, let pages, let page = pages[pageIndex] else {
                 self?.state.accept(.stopped)
                 return
             }
-            cachedPages = pages
+            for (index, text) in pages {
+                cachedPages[index] = text
+            }
             guard state.value == .initializing else { return }
             let startIndex = mapStartIndexToPage?(page) ?? 0
-            startSpeaking(at: startIndex, page: page, pageIndex: pageIndex, reportPageChange: false, shouldDetectVoice: true)
+            startSpeaking(at: startIndex, page: page, pageIndex: pageIndex, reportPageChange: false)
+        }
+    }
+
+    /// Samples the first pages of the document and detects the most prominent language, storing it as the constant
+    /// session language. Skipped (calls `completion` immediately) when the user has chosen a language explicitly or
+    /// the session language has already been detected.
+    private func detectSessionLanguageIfNeeded(delegate: Delegate, completion: @escaping () -> Void) {
+        guard processor.preferredLanguage == nil && processor.detectedLanguage == nil else {
+            completion()
+            return
+        }
+        // Sample pages for detection, skipping the first few. Prefer pages [skip, skip + window); if the document is
+        // too short to skip, sample the first `window` pages; if it's shorter than the window, sample everything.
+        let leadingPages = delegate.getInitialPageIndices(count: languageDetectionSkipPageCount + languageDetectionPageCount)
+        let indices: [Delegate.Index]
+        if leadingPages.count >= languageDetectionSkipPageCount + languageDetectionPageCount {
+            indices = Array(leadingPages.suffix(languageDetectionPageCount))
+        } else if leadingPages.count >= languageDetectionPageCount {
+            indices = Array(leadingPages.prefix(languageDetectionPageCount))
+        } else {
+            indices = leadingPages
+        }
+        guard !indices.isEmpty else {
+            completion()
+            return
+        }
+        getData(for: indices, from: delegate) { [weak self] pages in
+            guard let self else { return }
+            guard let pages else {
+                DDLogError("SpeechManager: could not load pages for detection")
+                return
+            }
+            for (index, text) in pages {
+                cachedPages[index] = text
+            }
+            let orderedTexts = indices.compactMap { pages[$0] }
+            let language = LanguageDetector.detectLanguage(fromTexts: orderedTexts)
+            processor.detectedLanguage = language
+            DDLogInfo("SpeechManager: detected session language \(language) from \(indices.count) page(s)")
+            completion()
         }
     }
 
@@ -339,6 +411,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             } else {
                 let _processor = LocalVoiceProcessor(
                     language: preferredLanguage,
+                    detectedLanguage: processor.detectedLanguage,
                     speechRateModifier: processor.speechRateModifier,
                     delegate: self
                 )
@@ -354,6 +427,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             } else {
                 let _processor = RemoteVoiceProcessor(
                     language: preferredLanguage,
+                    detectedLanguage: processor.detectedLanguage,
                     tier: voice.tier,
                     speechRateModifier: processor.speechRateModifier,
                     delegate: self,
@@ -494,17 +568,16 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
     func downgradeVoiceTierAndContinue() {
         guard let voice else { return }
 
-        let language = language ?? detectedLanguage
-
         switch voice {
         case .remote(let remoteVoice):
             switch remoteVoice.tier {
             case .premium:
                 // Downgrade from premium to standard
                 guard let remoteProcessor = processor as? RemoteVoiceProcessor,
+                      let language = processor.preferredLanguage ?? processor.detectedLanguage,
                       let standardVoice = remoteProcessor.standardVoice(for: language) else {
                     // No standard voice available, fall through to local
-                    downgradeToLocalVoice(language: language)
+                    downgradeToLocalVoice()
                     return
                 }
                 Defaults.shared.remoteVoiceTier = .standard
@@ -513,7 +586,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
 
             case .standard:
                 // Downgrade from standard to local voice
-                downgradeToLocalVoice(language: language)
+                downgradeToLocalVoice()
             }
 
         case .local:
@@ -521,14 +594,15 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             break
         }
 
-        func downgradeToLocalVoice(language: String) {
+        func downgradeToLocalVoice() {
             Defaults.shared.remoteVoiceTier = nil
             let newProcessor = LocalVoiceProcessor(
-                language: language,
+                language: processor.preferredLanguage,
+                detectedLanguage: processor.detectedLanguage,
                 speechRateModifier: processor.speechRateModifier,
                 delegate: self
             )
-            let voice = VoiceUtility.findLocalVoice(for: language) ?? AVSpeechSynthesisVoice(language: "en-US")!
+            let voice = VoiceUtility.findLocalVoice(for: processor.language) ?? AVSpeechSynthesisVoice(language: "en-US")!
             newProcessor.set(voice: voice, preferredLanguage: processor.preferredLanguage)
             processor = newProcessor
             remainingTime.accept(nil)
@@ -555,13 +629,13 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             DDLogInfo("SpeechManager: forward to \(index); \(speechData.range.location); \(speechData.range.length)")
             moveTo(index: index, on: currentPage, pageIndex: speechData.index)
             if !state.value.isPaused {
-                startSpeaking(at: index, page: currentPage, pageIndex: speechData.index, reportPageChange: false, shouldDetectVoice: false)
+                startSpeaking(at: index, page: currentPage, pageIndex: speechData.index, reportPageChange: false)
             }
             delegate?.focusPage(speechData.index)
         } else if let nextIndex = delegate?.getNextPageIndex(from: speechData.index), let page = cachedPages[nextIndex] {
             moveTo(index: 0, on: page, pageIndex: nextIndex)
             if !state.value.isPaused {
-                startSpeaking(page: page, pageIndex: nextIndex, reportPageChange: false, shouldDetectVoice: true)
+                startSpeaking(page: page, pageIndex: nextIndex, reportPageChange: false)
             }
             delegate?.focusPage(nextIndex)
         } else {
@@ -576,13 +650,13 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             DDLogInfo("SpeechManager: backward to \(index); \(speechData.range.location); \(speechData.range.length)")
             moveTo(index: index, on: currentPage, pageIndex: speechData.index)
             if !state.value.isPaused {
-                startSpeaking(at: index, page: currentPage, pageIndex: speechData.index, reportPageChange: false, shouldDetectVoice: false)
+                startSpeaking(at: index, page: currentPage, pageIndex: speechData.index, reportPageChange: false)
             }
             delegate?.focusPage(speechData.index)
         } else if speechData.range.location != 0 {
             moveTo(index: 0, on: currentPage, pageIndex: speechData.index)
             if !state.value.isPaused {
-                startSpeaking(page: currentPage, pageIndex: speechData.index, reportPageChange: false, shouldDetectVoice: false)
+                startSpeaking(page: currentPage, pageIndex: speechData.index, reportPageChange: false)
             }
             delegate?.focusPage(speechData.index)
         } else if let previousIndex = delegate?.getPreviousPageIndex(from: speechData.index),
@@ -590,7 +664,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
                   let speechIndex = TextTokenizer.findIndex(ofPreviousWhole: unit, beforeIndex: previousPage.count, in: previousPage) {
             moveTo(index: speechIndex, on: previousPage, pageIndex: previousIndex)
             if !state.value.isPaused {
-                startSpeaking(at: speechIndex, page: previousPage, pageIndex: previousIndex, reportPageChange: false, shouldDetectVoice: true)
+                startSpeaking(at: speechIndex, page: previousPage, pageIndex: previousIndex, reportPageChange: false)
             }
             delegate?.focusPage(previousIndex)
         } else {
@@ -598,7 +672,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         }
     }
 
-    private func startSpeaking(at index: Int = 0, page: String, pageIndex: Delegate.Index, reportPageChange: Bool, shouldDetectVoice: Bool) {
+    private func startSpeaking(at index: Int = 0, page: String, pageIndex: Delegate.Index, reportPageChange: Bool) {
         let previousPageIndex = speechData?.index
         if previousPageIndex != pageIndex {
             speechData = SpeechData(index: pageIndex, range: NSRange(), highlightRange: NSRange(), highlightGranularity: highlightGranularity)
@@ -607,7 +681,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
             delegate?.moved(to: pageIndex, from: previousPageIndex)
         }
         cacheAdjacentPages(for: pageIndex)
-        processor.speak(text: page, startIndex: index, shouldDetectVoice: shouldDetectVoice)
+        processor.speak(text: page, startIndex: index)
     }
 
     /// Moves the current speech position without starting playback.
@@ -685,7 +759,7 @@ final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProce
         guard let speechData, let nextIndex = delegate?.getNextPageIndex(from: speechData.index), let page = cachedPages[nextIndex] else {
             return false
         }
-        startSpeaking(page: page, pageIndex: nextIndex, reportPageChange: true, shouldDetectVoice: true)
+        startSpeaking(page: page, pageIndex: nextIndex, reportPageChange: true)
         return true
     }
 
@@ -733,6 +807,7 @@ extension AVSpeechSynthesisVoice {
 private protocol VoiceProcessor {
     var speechVoice: SpeechVoice? { get }
     var preferredLanguage: String? { get }
+    var detectedLanguage: String? { get set }
     var speechRateModifier: Float { get set }
     var canResume: Bool { get }
     /// Progress of current audio segment (0.0 to 1.0).
@@ -740,13 +815,19 @@ private protocol VoiceProcessor {
     /// Time elapsed since current audio segment started playing.
     var segmentAudioElapsedTime: TimeInterval { get }
 
-    func speak(text: String, startIndex: Int, shouldDetectVoice: Bool)
+    func speak(text: String, startIndex: Int)
     func pause()
     func resume()
     func stop()
     /// Called when the speech position changes while paused (e.g., via forward/backward navigation).
     /// The processor should invalidate current playback state so that resume() starts from the new position.
     func invalidateCurrentPlayback()
+}
+
+extension VoiceProcessor {
+    var language: String {
+        return preferredLanguage ?? detectedLanguage ?? "en"
+    }
 }
 
 private protocol VoiceProcessorDelegate: AnyObject {
@@ -775,6 +856,7 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
     /// to convert back to ranges in the original full text.
     private var utteranceStartIndex: Int = 0
     private(set) var preferredLanguage: String?
+    var detectedLanguage: String?
     private var voice: AVSpeechSynthesisVoice?
     private var shouldReloadUtteranceOnResume = false
     private var ignoreFinishCallCount = 0
@@ -801,8 +883,9 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
         return 0
     }
 
-    init(language: String?, speechRateModifier: Float, delegate: VoiceProcessorDelegate) {
+    init(language: String?, detectedLanguage: String?, speechRateModifier: Float, delegate: VoiceProcessorDelegate) {
         preferredLanguage = language
+        self.detectedLanguage = detectedLanguage
         self.speechRateModifier = speechRateModifier
         self.delegate = delegate
         synthesizer = AVSpeechSynthesizer()
@@ -810,7 +893,7 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
         synthesizer.delegate = self
     }
 
-    func speak(text: String, startIndex: Int, shouldDetectVoice: Bool) {
+    func speak(text: String, startIndex: Int) {
         if synthesizer.isSpeaking {
             ignoreFinishCallCount += 1
             synthesizer.stopSpeaking(at: .immediate)
@@ -820,7 +903,8 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
         self.utteranceStartIndex = startIndex
         let remainingText = String(text[text.index(text.startIndex, offsetBy: startIndex)..<text.endIndex])
 
-        if voice == nil || shouldDetectVoice {
+        // Language is detected once at session start, so the voice is resolved only the first time and then reused.
+        if voice == nil {
             voice = voice(for: remainingText)
         }
 
@@ -881,11 +965,10 @@ private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
         if synthesizer.isSpeaking {
             synthesizer.pauseSpeaking(at: .immediate)
         }
-        speak(text: text, startIndex: speechRange.location, shouldDetectVoice: false)
+        speak(text: text, startIndex: speechRange.location)
     }
 
     private func voice(for text: String) -> AVSpeechSynthesisVoice {
-        let language = preferredLanguage ?? LanguageDetector.detectLanguage(from: text)
         return VoiceUtility.findLocalVoice(for: language) ?? AVSpeechSynthesisVoice(language: "en-US")!
     }
 
@@ -975,6 +1058,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
 
     private var text: String?
     private(set) var preferredLanguage: String?
+    var detectedLanguage: String?
     private var voice: RemoteVoice?
     private var player: AVAudioPlayer?
     private var allAvailableVoices: VoicesResponse?
@@ -1009,8 +1093,9 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         return player?.currentTime ?? 0
     }
 
-    init(language: String?, tier: RemoteVoice.Tier, speechRateModifier: Float, delegate: VoiceProcessorDelegate, remoteVoicesController: RemoteVoicesController) {
+    init(language: String?, detectedLanguage: String?, tier: RemoteVoice.Tier, speechRateModifier: Float, delegate: VoiceProcessorDelegate, remoteVoicesController: RemoteVoicesController) {
         preferredLanguage = language
+        self.detectedLanguage = detectedLanguage
         self.tier = tier
         self.speechRateModifier = speechRateModifier
         self.delegate = delegate
@@ -1045,7 +1130,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
         return VoiceUtility.findRemoteVoice(for: language, tier: .standard, response: allAvailableVoices)
     }
 
-    func speak(text: String, startIndex: Int, shouldDetectVoice: Bool) {
+    func speak(text: String, startIndex: Int) {
         // Immediate: stop current playback and update state
         if self.text != text || startIndex != 0 {
             stopPreloadingAndClearCache()
@@ -1064,24 +1149,25 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
             delegate.state.accept(.loading)
         }
 
-        // If voice is not known, start loading immediately so that there is no unnecessary delay
-        if voice == nil && !shouldDetectVoice {
-            loadVoiceAndStartSpeaking(text: text, startIndex: startIndex, shouldDetectVoice: shouldDetectVoice)
+        // If the voice is not known yet, start loading immediately so that there is no unnecessary delay
+        if voice == nil {
+            loadVoiceAndStartSpeaking(text: text, startIndex: startIndex)
             return
         }
 
-        // Debounce voice loading and segment download so rapid forward/backward taps don't trigger multiple network requests
+        // Debounce segment download so rapid forward/backward taps don't trigger multiple network requests
         let workItem = DispatchWorkItem { [weak self] in
             guard let self else { return }
-            self.loadVoiceAndStartSpeaking(text: text, startIndex: startIndex, shouldDetectVoice: shouldDetectVoice)
+            self.loadVoiceAndStartSpeaking(text: text, startIndex: startIndex)
         }
         debouncedSpeakWorkItem = workItem
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: workItem)
     }
 
-    private func loadVoiceAndStartSpeaking(text: String, startIndex: Int, shouldDetectVoice: Bool) {
+    private func loadVoiceAndStartSpeaking(text: String, startIndex: Int) {
+        // Language is detected once at session start, so the voice is resolved only the first time and then reused.
         let getVoice: Single<RemoteVoice>
-        if let voice, !shouldDetectVoice {
+        if let voice {
             getVoice = Single.just(voice)
         } else {
             getVoice = loadVoice(forText: text)
@@ -1170,7 +1256,7 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
 
     private func loadVoice(forText text: String) -> Single<RemoteVoice> {
         if let allAvailableVoices {
-            return loadVoice(forText: text, preferredLanguage: preferredLanguage, tier: tier, allVoices: allAvailableVoices)
+            return loadVoice(forText: text, language: language, tier: tier, allVoices: allAvailableVoices)
         }
         return remoteVoicesController.loadVoices()
             .do(onSuccess: { [weak self] result in
@@ -1180,15 +1266,14 @@ private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
                 guard let self else {
                     return Single.error(Error.cancelled)
                 }
-                return loadVoice(forText: text, preferredLanguage: preferredLanguage, tier: tier, allVoices: result.response)
+                return loadVoice(forText: text, language: language, tier: tier, allVoices: result.response)
             })
             .do(onSuccess: { [weak self] voice in
                 self?.voice = voice
             })
 
-        func loadVoice(forText text: String, preferredLanguage: String?, tier: RemoteVoice.Tier, allVoices: VoicesResponse) -> Single<RemoteVoice> {
-            return Single.create { subscriber in
-                let language = preferredLanguage ?? LanguageDetector.detectLanguage(from: text)
+        func loadVoice(forText text: String, language: String, tier: RemoteVoice.Tier, allVoices: VoicesResponse) -> Single<RemoteVoice> {
+            return Single.create { [weak self] subscriber in
                 if let voice = VoiceUtility.findRemoteVoice(for: language, tier: tier, response: allVoices) ?? allVoices.firstVoice(for: tier) {
                     subscriber(.success(voice))
                 } else {

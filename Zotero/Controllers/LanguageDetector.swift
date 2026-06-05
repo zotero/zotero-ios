@@ -36,6 +36,36 @@ enum LanguageDetector {
         return resolveVariation(for: baseLanguage)
     }
 
+    /// Detects the most prominent language across multiple texts (e.g. the first pages of a document), returning a
+    /// locale string with variation (e.g. "en-US"). Each text contributes its language hypotheses weighted by its
+    /// length, so longer pages have proportionally more influence on the result.
+    /// - Parameter texts: The texts to analyze (empty or whitespace-only texts are ignored)
+    /// - Returns: A locale string with variation (e.g. "en-US")
+    static func detectLanguage(fromTexts texts: [String]) -> String {
+        var scores: [NLLanguage: Double] = [:]
+        for text in texts {
+            let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { continue }
+            let recognizer = NLLanguageRecognizer()
+            recognizer.processString(trimmed)
+            let weight = Double(trimmed.count)
+            let hypotheses = recognizer.languageHypotheses(withMaximum: 3)
+            if hypotheses.isEmpty {
+                if let dominant = recognizer.dominantLanguage {
+                    scores[dominant, default: 0] += weight
+                }
+            } else {
+                for (language, confidence) in hypotheses {
+                    scores[language, default: 0] += Double(confidence) * weight
+                }
+            }
+        }
+        guard let baseLanguage = scores.max(by: { $0.value < $1.value })?.key.rawValue else {
+            return "en-US"
+        }
+        return resolveVariation(for: baseLanguage)
+    }
+
     /// Resolves a base language to a specific variation.
     /// Uses device locale if it matches the base language, otherwise falls back to prominent variations,
     /// then to the first available system locale for that language.
