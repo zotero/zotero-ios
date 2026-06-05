@@ -25,7 +25,6 @@ final class ReadAloudControlsStackView<Delegate: SpeechManagerDelegate>: UIStack
 
         var playConfig = UIButton.Configuration.plain()
         playConfig.image = UIImage(systemName: "play.fill", withConfiguration: imageConfiguration)
-        playConfig.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 22, bottom: 8, trailing: 22)
         let playButton = UIButton(configuration: playConfig)
         playButton.accessibilityLabel = L10n.Accessibility.Speech.play
         playButton.isHidden = speechManager.state.value.isSpeaking
