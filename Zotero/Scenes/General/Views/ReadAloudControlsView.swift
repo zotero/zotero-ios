@@ -86,23 +86,22 @@ final class ReadAloudControlsView<Delegate: SpeechManagerDelegate>: UIView, Anno
 
     private func setupNavbar(controls: ReadAloudControlsStackView<Delegate>, speechManager: SpeechManager<Delegate>, highlighterAction: (() -> Void)?) {
         let highlighterButton = createHighlighterButton(action: highlighterAction)
-
         let outerStack = UIStackView(arrangedSubviews: [controls, highlighterButton])
         outerStack.translatesAutoresizingMaskIntoConstraints = false
         outerStack.axis = .horizontal
         outerStack.alignment = .center
         outerStack.distribution = .fill
-        outerStack.spacing = 20
+        outerStack.spacing = 16
         addSubview(outerStack)
 
         let height = outerStack.heightAnchor.constraint(equalToConstant: 38)
         NSLayoutConstraint.activate([
             height,
-            controls.playButton.widthAnchor.constraint(equalToConstant: 64),
-            controls.pauseButton.widthAnchor.constraint(equalToConstant: 64),
-            controls.activityIndicator.widthAnchor.constraint(equalToConstant: 64),
+            controls.playButton.widthAnchor.constraint(equalToConstant: 44),
+            controls.pauseButton.widthAnchor.constraint(equalToConstant: 44),
+            controls.activityIndicator.widthAnchor.constraint(equalToConstant: 44),
             outerStack.topAnchor.constraint(equalTo: topAnchor),
-            outerStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
+            outerStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 26),
             trailingAnchor.constraint(equalTo: outerStack.trailingAnchor, constant: 8),
             bottomAnchor.constraint(equalTo: outerStack.bottomAnchor)
         ])
@@ -115,7 +114,6 @@ final class ReadAloudControlsView<Delegate: SpeechManagerDelegate>: UIView, Anno
     private func setupBottomToolbar(controls: ReadAloudControlsStackView<Delegate>, speechManager: SpeechManager<Delegate>, settingsMenu: UIMenu, highlighterAction: (() -> Void)?) {
         let (leftView, settingsBtn, timeLabel, clockImage) = createLeftView(settingsMenu: settingsMenu)
         let highlighterButton = createHighlighterButton(action: highlighterAction)
-
         let outerStack = UIStackView(arrangedSubviews: [leftView, controls, highlighterButton])
         outerStack.translatesAutoresizingMaskIntoConstraints = false
         outerStack.axis = .horizontal
