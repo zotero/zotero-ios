@@ -22,15 +22,19 @@ final class ReadAloudControlsStackView<Delegate: SpeechManagerDelegate>: UIStack
 
     convenience init(speechManager: SpeechManager<Delegate>, playAction: @escaping () -> Void) {
         let imageConfiguration = UIImage.SymbolConfiguration.init(scale: .large)
+        // `scale: .large` is relative to the symbol's base size (the default body text style). Using a larger text
+        // style as the base makes play/pause render slightly bigger than the other (body-based) `.large` buttons,
+        // while still scaling with Dynamic Type.
+        let playPauseImageConfiguration = UIImage.SymbolConfiguration(textStyle: .title3, scale: .large)
 
         var playConfig = UIButton.Configuration.plain()
-        playConfig.image = UIImage(systemName: "play.fill", withConfiguration: imageConfiguration)
+        playConfig.image = UIImage(systemName: "play.fill", withConfiguration: playPauseImageConfiguration)
         let playButton = UIButton(configuration: playConfig)
         playButton.accessibilityLabel = L10n.Accessibility.Speech.play
         playButton.isHidden = speechManager.state.value.isSpeaking
 
         var pauseConfig = UIButton.Configuration.plain()
-        pauseConfig.image = UIImage(systemName: "pause.fill", withConfiguration: imageConfiguration)
+        pauseConfig.image = UIImage(systemName: "pause.fill", withConfiguration: playPauseImageConfiguration)
         let pauseButton = UIButton(configuration: pauseConfig)
         pauseButton.accessibilityLabel = L10n.Accessibility.Speech.pause
         pauseButton.isHidden = !speechManager.state.value.isSpeaking
