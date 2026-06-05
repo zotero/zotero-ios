@@ -50,6 +50,9 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
     var annotationToolbarHandler: AnnotationToolbarHandler?
     private var intraDocumentNavigationHandler: IntraDocumentNavigationButtonsHandler?
     private var selectedText: String?
+    var navigationBarLeadingItems: [UIBarButtonItem] = []
+    var navigationBarTrailingFixedItems: [UIBarButtonItem] = []
+    var navigationBarOverflowItems: [UIBarButtonItem] = []
     private(set) var isCompactWidth: Bool
     @CodableUserDefault(key: "PDFReaderToolbarState", defaultValue: AnnotationToolbarHandler.State(position: .leading, visible: true), encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
     var toolbarState: AnnotationToolbarHandler.State
@@ -357,8 +360,9 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
                 let readAloudButton = readAloudHandler.createReadAloudButton(isSelected: false, isEnabled: !viewModel.state.document.isLocked)
                 leftItems.append(readAloudButton)
             }
-            navigationItem.leftBarButtonItems = leftItems
-            navigationItem.rightBarButtonItems = createRightBarButtonItems()
+            navigationBarLeadingItems = leftItems
+            updateNavigationBarTrailingItems()
+            applyNavigationBarButtons()
         }
 
         func setupObserving() {
@@ -482,14 +486,10 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
         }
 
         if let success = state.unlockSuccessful, success {
-            // Enable bar buttons
-            for item in navigationItem.leftBarButtonItems ?? [] {
+            // Enable bar buttons across every logical group (leading, trailing-fixed and overflow).
+            for item in navigationBarLeadingItems + navigationBarTrailingFixedItems + navigationBarOverflowItems {
                 item.isEnabled = true
-            }
-            for item in navigationItem.rightBarButtonItems ?? [] {
-                item.isEnabled = true
-                guard let checkbox = item.customView as? CheckboxButton else { continue }
-                checkbox.deselectedTintColor = Asset.Colors.zoteroBlueWithDarkMode.color
+                item.checkboxButton?.deselectedTintColor = Asset.Colors.zoteroBlueWithDarkMode.color
             }
             interfaceVisibilityDidChange(to: !toolbarState.visible)
             // Load initial document data after document has been unlocked successfully
@@ -523,8 +523,9 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
                 documentController?.disableAnnotationTools()
             }
             annotationToolbarHandler?.set(hidden: hidden, animated: true)
-            (toolbarButton.customView as? CheckboxButton)?.isSelected = toolbarState.visible
-            navigationItem.rightBarButtonItems = createRightBarButtonItems()
+            toolbarButton.checkboxButton?.isSelected = toolbarState.visible
+            updateNavigationBarTrailingItems()
+            applyNavigationBarButtons()
         }
 
         if let tool = state.changedColorForTool, documentController?.pdfController?.annotationStateManager.state == tool, let color = state.toolColors[tool] {
@@ -536,14 +537,15 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
         }
 
         func update(state: PDFExportState?) {
-            var items = navigationItem.rightBarButtonItems ?? []
+            var items = navigationBarOverflowItems
 
             guard let shareId = items.firstIndex(where: { $0.tag == NavigationBarButton.share.rawValue }) else { return }
 
             guard let state else {
                 if items[shareId].customView != nil { // if activity indicator is visible, replace it with share button
                     items[shareId] = shareButton
-                    navigationItem.rightBarButtonItems = items
+                    navigationBarOverflowItems = items
+                    applyNavigationBarButtons()
                 }
                 return
             }
@@ -567,7 +569,8 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
                 items[shareId] = shareButton
             }
 
-            navigationItem.rightBarButtonItems = items
+            navigationBarOverflowItems = items
+            applyNavigationBarButtons()
         }
     }
 
@@ -596,7 +599,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
             return
         }
 
-        guard let item = navigationItem.rightBarButtonItems?.last else { return }
+        guard let item = navigationBarTrailingFixedItems.last ?? navigationBarOverflowItems.last else { return }
         showToolOptions(sourceItem: item)
     }
 
@@ -791,14 +794,12 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
 
     // MARK: - Setups
 
-    private func createRightBarButtonItems() -> [UIBarButtonItem] {
-        var buttons = [settingsButton, shareButton, searchButton]
-
-        if viewModel.state.library.metadataEditable {
-            buttons.append(toolbarButton)
-        }
-
-        return buttons
+    /// Populates the trailing navigation bar items. `settings`, `share` and `search` go into the overflow group (so
+    /// they collapse into a "•••" menu when space is tight, in visual order search · share · settings), while the
+    /// annotation toolbar toggle stays fixed inboard of them.
+    private func updateNavigationBarTrailingItems() {
+        navigationBarOverflowItems = [shareButton, settingsButton]
+        navigationBarTrailingFixedItems = viewModel.state.library.metadataEditable ? [toolbarButton, searchButton] : [searchButton]
     }
 }
 
