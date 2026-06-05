@@ -42,6 +42,9 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
         return self.navigationController?.navigationBar.frame.height ?? 0.0
     }
     private(set) var isCompactWidth: Bool
+    var navigationBarLeadingItems: [UIBarButtonItem] = []
+    var navigationBarTrailingFixedItems: [UIBarButtonItem] = []
+    var navigationBarOverflowItems: [UIBarButtonItem] = []
     var statusBarHeight: CGFloat
     var key: String { return viewModel.state.key }
     
@@ -125,7 +128,8 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
         setupNavigationBar()
         setupViews()
         updateInterface(to: viewModel.state.settings)
-        navigationItem.rightBarButtonItems = createRightBarButtonItems()
+        updateNavigationBarTrailingItems()
+        applyNavigationBarButtons()
 
         func observeViewModel() {
             viewModel.stateObservable
@@ -147,7 +151,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
             sidebarButton.tag = NavigationBarButton.sidebar.rawValue
             sidebarButton.rx.tap.subscribe(onNext: { [weak self] _ in self?.toggleSidebar(animated: true) }).disposed(by: disposeBag)
 
-            navigationItem.leftBarButtonItems = [closeButton, sidebarButton]
+            navigationBarLeadingItems = [closeButton, sidebarButton]
         }
 
         func setupViews() {
@@ -295,8 +299,9 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
         if state.changes.contains(.library) {
             let hidden = !state.library.metadataEditable || !toolbarState.visible
             annotationToolbarHandler?.set(hidden: hidden, animated: true)
-            (toolbarButton.customView as? CheckboxButton)?.isSelected = toolbarState.visible
-            navigationItem.rightBarButtonItems = createRightBarButtonItems()
+            toolbarButton.checkboxButton?.isSelected = toolbarState.visible
+            updateNavigationBarTrailingItems()
+            applyNavigationBarButtons()
         }
 
         if state.changes.contains(.popover) {
@@ -406,12 +411,12 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
         navigationController?.presentingViewController?.dismiss(animated: true)
     }
 
-    private func createRightBarButtonItems() -> [UIBarButtonItem] {
-        var buttons = [settingsButton, searchButton]
-        if viewModel.state.library.metadataEditable {
-            buttons.append(toolbarButton)
-        }
-        return buttons
+    /// Populates the trailing navigation bar items. `search` and `settings` go into the overflow group (so they
+    /// collapse into a "•••" menu when space is tight, in visual order search · settings), while the annotation
+    /// toolbar toggle stays fixed inboard of them.
+    private func updateNavigationBarTrailingItems() {
+        navigationBarOverflowItems = [searchButton, settingsButton]
+        navigationBarTrailingFixedItems = viewModel.state.library.metadataEditable ? [toolbarButton] : []
     }
 }
 
