@@ -23,11 +23,18 @@ class HtmlEpubDocumentViewController: UIViewController {
 
     private weak var webView: WKWebView!
     private var webViewHandler: WebViewHandler!
+    var containerInsets: NSDirectionalEdgeInsets? {
+        didSet {
+            applyContainerInsetsIfInitialized()
+        }
+    }
+    private var isReaderInitialized: Bool
     weak var parentDelegate: HtmlEpubReaderContainerDelegate?
 
     init(viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
         self.viewModel = viewModel
         disposeBag = DisposeBag()
+        isReaderInitialized = false
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -70,13 +77,14 @@ class HtmlEpubDocumentViewController: UIViewController {
             configuration.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
             let webView = HtmlEpubWebView(customMenuActions: [highlightAction, underlineAction], configuration: configuration)
             webView.translatesAutoresizingMaskIntoConstraints = false
+            webView.scrollView.contentInsetAdjustmentBehavior = .never
             if #available(iOS 16.4, *) {
                 webView.isInspectable = true
             }
             view.addSubview(webView)
 
             NSLayoutConstraint.activate([
-                view.safeAreaLayoutGuide.topAnchor.constraint(equalTo: webView.topAnchor),
+                view.topAnchor.constraint(equalTo: webView.topAnchor),
                 view.bottomAnchor.constraint(equalTo: webView.bottomAnchor),
                 view.safeAreaLayoutGuide.leadingAnchor.constraint(equalTo: webView.leadingAnchor),
                 view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: webView.trailingAnchor)
@@ -239,6 +247,17 @@ class HtmlEpubDocumentViewController: UIViewController {
         webViewHandler.call(javascript: "setTool({ type: '\(toolName)', color: '\(color.hexString)' });").subscribe().disposed(by: disposeBag)
     }
 
+    private func applyContainerInsetsIfInitialized() {
+        guard let containerInsets, isReaderInitialized else { return }
+        let javascript = "setContainerInsets({ top: \(containerInsets.top), right: \(containerInsets.trailing), bottom: \(containerInsets.bottom), left: \(containerInsets.leading) });"
+        webViewHandler.call(javascript: javascript)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onFailure: { error in
+                DDLogError("HtmlEpubDocumentViewController: setting container insets failed - \(error)")
+            })
+            .disposed(by: disposeBag)
+    }
+
     private func process(handler: String, message: Any) {
         switch handler {
         case JSHandlers.log.rawValue:
@@ -254,6 +273,8 @@ class HtmlEpubDocumentViewController: UIViewController {
 
             switch event {
             case "onInitialized":
+                isReaderInitialized = true
+                applyContainerInsetsIfInitialized()
                 viewModel.process(action: .loadDocument)
 
             case "onSaveAnnotations":
@@ -279,8 +300,8 @@ class HtmlEpubDocumentViewController: UIViewController {
                     return
                 }
 
-                let navigationBarInset = (parentDelegate?.statusBarHeight ?? 0) + (parentDelegate?.navigationBarHeight ?? 0)
-                let rect = CGRect(x: rectArray[0], y: rectArray[1] + navigationBarInset, width: rectArray[2] - rectArray[0], height: rectArray[3] - rectArray[1])
+                let topInset = parentDelegate?.containerTopInset ?? 0
+                let rect = CGRect(x: rectArray[0], y: rectArray[1] + topInset, width: rectArray[2] - rectArray[0], height: rectArray[3] - rectArray[1])
                 viewModel.process(action: .showAnnotationPopover(key: key, rect: rect))
 
             case "onSelectAnnotations":

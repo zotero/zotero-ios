@@ -12,8 +12,7 @@ import CocoaLumberjackSwift
 import RxSwift
 
 protocol HtmlEpubReaderContainerDelegate: AnyObject {
-    var statusBarHeight: CGFloat { get }
-    var navigationBarHeight: CGFloat { get }
+    var containerTopInset: CGFloat { get }
     var isSidebarVisible: Bool { get }
 
     func show(url: URL)
@@ -47,6 +46,12 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
     }
     private(set) var isCompactWidth: Bool
     var statusBarHeight: CGFloat
+    private var lastLayoutSize: CGSize?
+    private var lastContainerInsets: NSDirectionalEdgeInsets?
+    private var isChangingInterfaceVisibility: Bool
+    var containerTopInset: CGFloat {
+        return lastContainerInsets?.top ?? currentContainerInsets().top
+    }
     var key: String { return viewModel.state.key }
     
     weak var coordinatorDelegate: HtmlEpubReaderCoordinatorDelegate?
@@ -100,6 +105,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
         self.viewModel = viewModel
         isCompactWidth = compactSize
         disposeBag = DisposeBag()
+        isChangingInterfaceVisibility = false
         statusBarHeight = UIApplication
             .shared
             .connectedScenes
@@ -260,6 +266,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
     override func viewIsAppearing(_ animated: Bool) {
         super.viewIsAppearing(animated)
         annotationToolbarHandler?.viewIsAppearing(editingEnabled: viewModel.state.library.metadataEditable)
+        updateContainerInsets(force: true)
     }
 
     deinit {
@@ -270,6 +277,14 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+
+        let layoutSize = view.bounds.size
+        let isSizeChange = lastLayoutSize != layoutSize
+        lastLayoutSize = layoutSize
+        updateStatusBarHeight(allowZero: isSizeChange)
+        if isSizeChange || !isChangingInterfaceVisibility || isTopToolbarVisible(forToolbarState: toolbarState) {
+            updateContainerInsets()
+        }
 
         guard let documentController else { return }
 
@@ -287,9 +302,14 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
 
         coordinator.animate(alongsideTransition: { [weak self] _ in
             guard let self else { return }
-            statusBarHeight = view.safeAreaInsets.top - (navigationController?.isNavigationBarHidden == true ? 0 : navigationBarHeight)
+            updateStatusBarHeight(allowZero: true)
             annotationToolbarHandler?.viewWillTransitionToNewSize()
-        }, completion: nil)
+            updateContainerInsets(force: true)
+        }, completion: { [weak self] _ in
+            guard let self else { return }
+            updateStatusBarHeight(allowZero: true)
+            updateContainerInsets(force: true)
+        })
     }
 
     override var prefersStatusBarHidden: Bool {
@@ -472,6 +492,33 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
         navigationController?.presentingViewController?.dismiss(animated: true)
     }
 
+    private func updateStatusBarHeight(allowZero: Bool = false) {
+        guard let newStatusBarHeight = (view.scene as? UIWindowScene)?.statusBarManager?.statusBarFrame.height else { return }
+        let shouldUpdate = newStatusBarHeight > 0 || allowZero
+        guard shouldUpdate else { return }
+        statusBarHeight = newStatusBarHeight
+    }
+
+    private func currentContainerInsets(forToolbarState state: AnnotationToolbarHandler.State? = nil) -> NSDirectionalEdgeInsets {
+        let state = state ?? toolbarState
+        let toolbarHeight = isTopToolbarVisible(forToolbarState: state) ? (annotationToolbarController?.size ?? 0) : 0
+        let top = statusBarHeight + navigationBarHeight + toolbarHeight
+
+        return NSDirectionalEdgeInsets(top: top, leading: 0, bottom: 0, trailing: 0)
+    }
+
+    private func isTopToolbarVisible(forToolbarState state: AnnotationToolbarHandler.State) -> Bool {
+        return state.visible && viewModel.state.library.metadataEditable && state.position == .top
+    }
+
+    private func updateContainerInsets(forToolbarState state: AnnotationToolbarHandler.State? = nil, force: Bool = false) {
+        let insets = currentContainerInsets(forToolbarState: state)
+        guard force || (insets != lastContainerInsets) else { return }
+
+        lastContainerInsets = insets
+        documentController?.containerInsets = insets
+    }
+
     private func createRightBarButtonItems() -> [UIBarButtonItem] {
         var buttons = [settingsButton, searchButton]
         if viewModel.state.library.metadataEditable {
@@ -521,27 +568,15 @@ extension HtmlEpubReaderViewController: AnnotationToolbarHandlerDelegate {
     }
     
     func annotationToolbarWillChange(state: AnnotationToolbarHandler.State, statusBarVisible: Bool) {
+        updateContainerInsets(forToolbarState: state)
     }
 
     func topDidChange(forToolbarState state: AnnotationToolbarHandler.State) {
-        guard let annotationToolbarHandler, let annotationToolbarController else { return }
-        let (statusBarOffset, _, totalOffset) = annotationToolbarHandler.topOffsets(statusBarVisible: statusBarVisible)
-
-        if !state.visible {
-            documentControllerTop.constant = totalOffset
+        documentControllerTop.constant = 0
+        if isChangingInterfaceVisibility && !isTopToolbarVisible(forToolbarState: state) {
             return
         }
-
-        switch state.position {
-        case .pinned:
-            documentControllerTop.constant = statusBarOffset + annotationToolbarController.size
-
-        case .top:
-            documentControllerTop.constant = totalOffset + annotationToolbarController.size
-
-        case .trailing, .leading:
-            documentControllerTop.constant = totalOffset
-        }
+        updateContainerInsets(forToolbarState: state)
     }
 
     func updateStatusBar() {
@@ -613,8 +648,12 @@ extension HtmlEpubReaderViewController: HtmlEpubReaderContainerDelegate {
             navigationController?.navigationBar.alpha = 0
         }
 
+        isChangingInterfaceVisibility = true
         statusBarVisible = !isHidden
         annotationToolbarHandler?.interfaceVisibilityDidChange()
+        if isTopToolbarVisible(forToolbarState: toolbarState) {
+            updateContainerInsets(force: true)
+        }
 
         UIView.animate(withDuration: 0.15, animations: { [weak self] in
             guard let self else { return }
@@ -627,6 +666,15 @@ extension HtmlEpubReaderViewController: HtmlEpubReaderContainerDelegate {
             applyPageIndicator(navBarHidden: isHidden)
             view.layoutIfNeeded()
             annotationToolbarHandler?.interfaceVisibilityDidChange()
+            if isTopToolbarVisible(forToolbarState: toolbarState) {
+                updateContainerInsets(force: true)
+            }
+        }, completion: { [weak self] _ in
+            guard let self else { return }
+            isChangingInterfaceVisibility = false
+            if isTopToolbarVisible(forToolbarState: toolbarState) {
+                updateContainerInsets(force: true)
+            }
         })
 
         if isHidden && isSidebarVisible {
