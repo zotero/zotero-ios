@@ -75,8 +75,10 @@ class HtmlEpubDocumentViewController: UIViewController {
 
             let configuration = WKWebViewConfiguration()
             configuration.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
+            configuration.userContentController.addUserScript(colorSchemeUserScript(appearanceMode: viewModel.state.settings.appearance, userInterfaceStyle: viewModel.state.interfaceStyle))
             let webView = HtmlEpubWebView(customMenuActions: [highlightAction, underlineAction], configuration: configuration)
             webView.translatesAutoresizingMaskIntoConstraints = false
+            webView.isOpaque = false
             webView.scrollView.contentInsetAdjustmentBehavior = .never
             if #available(iOS 16.4, *) {
                 webView.isInspectable = true
@@ -93,6 +95,86 @@ class HtmlEpubDocumentViewController: UIViewController {
             webViewHandler = WebViewHandler(webView: webView, javascriptHandlers: JSHandlers.allCases.map({ $0.rawValue }))
             webViewHandler.receivedMessageHandler = { [weak self] handler, message in
                 self?.process(handler: handler, message: message)
+            }
+
+            func colorSchemeUserScript(appearanceMode: ReaderSettingsState.Appearance, userInterfaceStyle: UIUserInterfaceStyle) -> WKUserScript {
+                let colorScheme = Appearance.from(appearanceMode: appearanceMode, interfaceStyle: userInterfaceStyle).htmlEpubValue
+                let source = """
+                    (() => {
+                        const nativeMatchMedia = window.matchMedia.bind(window);
+                        const colorSchemeQuery = /^\\(\\s*prefers-color-scheme\\s*:\\s*(dark|light)\\s*\\)$/;
+                        let forcedColorScheme = '\(colorScheme)';
+                        const mediaQueryLists = new Set();
+
+                        function notify(list) {
+                            const event = { type: 'change', media: list.media, matches: list.matches };
+                            if (typeof list.onchange === 'function') {
+                                list.onchange(event);
+                            }
+                            list.__listeners.forEach(listener => {
+                                if (typeof listener === 'function') {
+                                    listener(event);
+                                }
+                                else if (listener && typeof listener.handleEvent === 'function') {
+                                    listener.handleEvent(event);
+                                }
+                            });
+                        }
+
+                        window.__zoteroSetForcedColorScheme = scheme => {
+                            if (forcedColorScheme === scheme) {
+                                return;
+                            }
+                            const previousMatches = new Map(Array.from(mediaQueryLists, list => [list, list.matches]));
+                            forcedColorScheme = scheme;
+                            mediaQueryLists.forEach(list => {
+                                if (previousMatches.get(list) !== list.matches) {
+                                    notify(list);
+                                }
+                            });
+                        };
+
+                        window.matchMedia = query => {
+                            const match = typeof query === 'string' ? query.match(colorSchemeQuery) : null;
+                            if (!match) {
+                                return nativeMatchMedia(query);
+                            }
+
+                            const scheme = match[1];
+                            const list = {
+                                media: query,
+                                onchange: null,
+                                __listeners: new Set(),
+                                get matches() {
+                                    return forcedColorScheme === scheme;
+                                },
+                                addEventListener(type, listener) {
+                                    if (type === 'change') {
+                                        this.__listeners.add(listener);
+                                    }
+                                },
+                                removeEventListener(type, listener) {
+                                    if (type === 'change') {
+                                        this.__listeners.delete(listener);
+                                    }
+                                },
+                                addListener(listener) {
+                                    this.addEventListener('change', listener);
+                                },
+                                removeListener(listener) {
+                                    this.removeEventListener('change', listener);
+                                },
+                                dispatchEvent(event) {
+                                    notify(this);
+                                    return true;
+                                }
+                            };
+                            mediaQueryLists.add(list);
+                            return list;
+                        };
+                    })();
+                    """
+                return WKUserScript(source: source, injectionTime: .atDocumentStart, forMainFrameOnly: false)
             }
         }
     }
@@ -117,6 +199,7 @@ class HtmlEpubDocumentViewController: UIViewController {
 
     private func process(state: HtmlEpubReaderState) {
         if state.changes.contains(.readerInitialised) {
+            setWebViewInterfaceStyle(to: state.settings.appearance, userInterfaceStyle: state.interfaceStyle)
             webViewHandler.load(fileUrl: state.readerFile.createUrl()).subscribe().disposed(by: disposeBag)
             return
         }
@@ -186,6 +269,8 @@ class HtmlEpubDocumentViewController: UIViewController {
         func load(documentData data: HtmlEpubReaderState.DocumentData) {
             DDLogInfo("HtmlEpubDocumentViewController: try creating view for \(data.type); page = \(String(describing: data.page))")
             DDLogInfo("URL: \(data.url.absoluteString)")
+            let appearance = Appearance.from(appearanceMode: state.settings.appearance, interfaceStyle: state.interfaceStyle)
+            setWebViewInterfaceStyle(to: state.settings.appearance, userInterfaceStyle: state.interfaceStyle)
             var javascript = "createView({ type: '\(data.type)', url: '\(data.url.absoluteString.replacingOccurrences(of: "'", with: #"\'"#))', annotations: \(data.annotationsJson)"
             if let key = data.selectedAnnotationKey {
                 javascript += ", location: {annotationID: '\(key)'}"
@@ -199,6 +284,7 @@ class HtmlEpubDocumentViewController: UIViewController {
                 }
             }
             javascript += "});"
+            javascript += deferredAppearanceJavascript(for: appearance)
 
             webViewHandler.call(javascript: javascript)
                 .observe(on: MainScheduler.instance)
@@ -206,10 +292,46 @@ class HtmlEpubDocumentViewController: UIViewController {
                     DDLogError("HtmlEpubDocumentViewController: loading document failed - \(error)")
                 })
                 .disposed(by: disposeBag)
+
+            func deferredAppearanceJavascript(for appearance: Appearance) -> String {
+                return """
+                    (() => {
+                        let attempts = 0;
+                        const apply = () => {
+                            attempts += 1;
+                            try {
+                                \(appearanceJavascript(for: appearance))
+                            }
+                            catch (error) {
+                                if (attempts < 100) {
+                                    setTimeout(apply, 20);
+                                }
+                            }
+                        };
+                        apply();
+                    })();
+                    """
+            }
         }
     }
 
     private func updateInterface(to appearanceMode: ReaderSettingsState.Appearance, userInterfaceStyle: UIUserInterfaceStyle) {
+        setWebViewInterfaceStyle(to: appearanceMode, userInterfaceStyle: userInterfaceStyle)
+        let appearance = Appearance.from(appearanceMode: appearanceMode, interfaceStyle: userInterfaceStyle)
+        webView.call(javascript: appearanceJavascript(for: appearance)).subscribe().disposed(by: disposeBag)
+    }
+
+    private func appearanceJavascript(for appearance: Appearance) -> String {
+        let theme = appearance.htmlEpubTheme
+        var javascript = "window._view.setColorScheme('\(appearance.htmlEpubValue)');"
+        if let theme {
+            javascript += "window._view.setTheme('\(theme)');"
+        }
+        return javascript
+    }
+
+    private func setWebViewInterfaceStyle(to appearanceMode: ReaderSettingsState.Appearance, userInterfaceStyle: UIUserInterfaceStyle) {
+        let appearance = Appearance.from(appearanceMode: appearanceMode, interfaceStyle: userInterfaceStyle)
         switch appearanceMode {
         case .automatic:
             webView.overrideUserInterfaceStyle = userInterfaceStyle
@@ -220,8 +342,18 @@ class HtmlEpubDocumentViewController: UIViewController {
         case .dark:
             webView.overrideUserInterfaceStyle = .dark
         }
-        let appearanceString = Appearance.from(appearanceMode: appearanceMode, interfaceStyle: userInterfaceStyle).htmlEpubValue
-        webView.call(javascript: "window._view.setColorScheme('\(appearanceString)');").subscribe().disposed(by: disposeBag)
+        setReaderBackgroundColor(appearance.htmlEpubThemeColor)
+        setForcedColorScheme(to: appearance.htmlEpubValue)
+
+        func setReaderBackgroundColor(_ color: UIColor) {
+            view.backgroundColor = color
+            webView?.backgroundColor = color
+            webView?.scrollView.backgroundColor = color
+        }
+
+        func setForcedColorScheme(to colorScheme: String) {
+            webView?.evaluateJavaScript("window.__zoteroSetForcedColorScheme && window.__zoteroSetForcedColorScheme('\(colorScheme)');", completionHandler: nil)
+        }
     }
 
     private func set(tool data: (AnnotationTool, UIColor)?) {
