@@ -89,7 +89,13 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
         search.rx.tap
             .subscribe(onNext: { [weak self] _ in
                 guard let self, let documentController else { return }
-                coordinatorDelegate?.showSearch(viewModel: viewModel, documentController: documentController, text: nil, sender: searchButton, userInterfaceStyle: viewModel.state.interfaceStyle)
+                coordinatorDelegate?.showSearch(
+                    viewModel: viewModel,
+                    documentController: documentController,
+                    text: nil,
+                    sender: searchButton,
+                    userInterfaceStyle: presentedUserInterfaceStyle(for: viewModel.state.settings.appearance)
+                )
             })
             .disposed(by: disposeBag)
         return search
@@ -263,6 +269,12 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
         }
     }
 
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        guard traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) else { return }
+        viewModel.process(action: .userInterfaceStyleChanged(currentSystemUserInterfaceStyle))
+    }
+
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
 
@@ -395,16 +407,44 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
     // MARK: - Actions
 
     private func updateInterface(to settings: HtmlEpubSettings) {
-        switch settings.appearance {
+        navigationController?.overrideUserInterfaceStyle = readerUserInterfaceStyle(for: settings.appearance)
+        updatePresentedReaderInterface(to: settings)
+
+        func readerUserInterfaceStyle(for appearance: ReaderSettingsState.Appearance) -> UIUserInterfaceStyle {
+            switch appearance {
+            case .automatic:
+                return .unspecified
+
+            case .light, .sepia:
+                return .light
+
+            case .dark:
+                return .dark
+            }
+        }
+    }
+
+    private func presentedUserInterfaceStyle(for appearance: ReaderSettingsState.Appearance) -> UIUserInterfaceStyle {
+        switch appearance {
         case .automatic:
-            navigationController?.overrideUserInterfaceStyle = .unspecified
+            return currentSystemUserInterfaceStyle
 
         case .light, .sepia:
-            navigationController?.overrideUserInterfaceStyle = .light
+            return .light
 
         case .dark:
-            navigationController?.overrideUserInterfaceStyle = .dark
+            return .dark
         }
+    }
+
+    private func updatePresentedReaderInterface(to settings: HtmlEpubSettings) {
+        navigationController?.presentedViewController?.overrideUserInterfaceStyle = presentedUserInterfaceStyle(for: settings.appearance)
+    }
+
+    private var currentSystemUserInterfaceStyle: UIUserInterfaceStyle {
+        let windowSceneStyle = view.window?.windowScene?.traitCollection.userInterfaceStyle
+        let traitStyle = traitCollection.userInterfaceStyle
+        return windowSceneStyle ?? traitStyle
     }
 
     private func toggleSidebar(animated: Bool) {
@@ -412,12 +452,17 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
     }
 
     private func showSettings(sender: UIBarButtonItem) {
-        guard let viewModel = coordinatorDelegate?.showSettings(with: viewModel.state.settings, sender: sender) else { return }
-        viewModel.stateObservable
+        guard let settingsViewModel = coordinatorDelegate?.showSettings(with: viewModel.state.settings, sender: sender) else { return }
+        updatePresentedReaderInterface(to: viewModel.state.settings)
+        settingsViewModel.stateObservable
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] state in
+                guard let self else { return }
                 let settings = HtmlEpubSettings(appearance: state.appearance)
-                self?.viewModel.process(action: .setSettings(settings))
+                if settings.appearance == .automatic {
+                    self.viewModel.process(action: .userInterfaceStyleChanged(currentSystemUserInterfaceStyle))
+                }
+                self.viewModel.process(action: .setSettings(settings))
             })
             .disposed(by: disposeBag)
     }
