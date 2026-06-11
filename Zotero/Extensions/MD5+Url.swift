@@ -104,8 +104,12 @@ private func sidecarURL(for url: URL) -> URL {
     return url.deletingLastPathComponent().appendingPathComponent(".zotero-source-hash.json")
 }
 
+func derivedSidecarsDirectoryURL(for url: URL) -> URL {
+    return url.deletingLastPathComponent().appendingPathComponent(".zotero-derived")
+}
+
 private func derivedSidecarURLs(for url: URL) -> [URL] {
-    return [sidecarURL(for: url)]
+    return [sidecarURL(for: url), derivedSidecarsDirectoryURL(for: url)]
 }
 
 private func sidecarCachedMD5(from url: URL, modificationDate: Date, size: NSNumber) -> String? {
