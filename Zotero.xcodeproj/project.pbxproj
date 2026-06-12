@@ -18,6 +18,7 @@
 		61099E6E2C91BAF300EDD92C /* NSDecimalNumber+Rounding.m in Sources */ = {isa = PBXBuildFile; fileRef = 61099E6D2C91BAF300EDD92C /* NSDecimalNumber+Rounding.m */; };
 		61099E6F2C91BAF300EDD92C /* NSDecimalNumber+Rounding.m in Sources */ = {isa = PBXBuildFile; fileRef = 61099E6D2C91BAF300EDD92C /* NSDecimalNumber+Rounding.m */; };
 		61168F612D50D4B6005495E8 /* DocumentWorkerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61168F602D50D4B6005495E8 /* DocumentWorkerController.swift */; };
+		61C0DE132FBD000100000001 /* SDTPack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61C0DE132FBD000100000000 /* SDTPack.swift */; };
 		61168F632D50D4B6005495E8 /* DocumentWorkerRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61168F622D50D4B6005495E8 /* DocumentWorkerRecorder.swift */; };
 		61D0C0D22FBD100100C0DE01 /* DocumentWorkerRecorderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61D0C0D12FBD100100C0DE01 /* DocumentWorkerRecorderView.swift */; };
 		611FF4E02DD47F860094184A /* RetryDelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 611FF4DF2DD47F860094184A /* RetryDelay.swift */; };
@@ -54,6 +55,7 @@
 		615C10E12D5BA17A001F1E8E /* RecognizerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 615C10E02D5BA17A001F1E8E /* RecognizerController.swift */; };
 		615C10E22D5E22F1001F1E8E /* RecognizerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 615C10E02D5BA17A001F1E8E /* RecognizerController.swift */; };
 		615C10E32D5E230D001F1E8E /* DocumentWorkerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61168F602D50D4B6005495E8 /* DocumentWorkerController.swift */; };
+		61C0DE132FBD000100000002 /* SDTPack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61C0DE132FBD000100000000 /* SDTPack.swift */; };
 		615C10E42D5E3229001F1E8E /* LookupWebViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B323703F2C0DC65600170779 /* LookupWebViewHandler.swift */; };
 		615C10E62D5E329F001F1E8E /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 615C10E52D5E329F001F1E8E /* OrderedCollections */; };
 		615C10E72D5E230D001F1E8E /* DocumentWorkerRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61168F622D50D4B6005495E8 /* DocumentWorkerRecorder.swift */; };
@@ -85,6 +87,17 @@
 		61C0DE022F9D000100000004 /* 1_pdf_structured_text.json in Resources */ = {isa = PBXBuildFile; fileRef = 61C0DE012F9D000100000004 /* 1_pdf_structured_text.json */; };
 		61C0DE022F9D000100000005 /* 1_epub_structured_text.json in Resources */ = {isa = PBXBuildFile; fileRef = 61C0DE012F9D000100000005 /* 1_epub_structured_text.json */; };
 		61C0DE022F9D000100000006 /* 1_html_structured_text.json in Resources */ = {isa = PBXBuildFile; fileRef = 61C0DE012F9D000100000006 /* 1_html_structured_text.json */; };
+		61C0DE122F9D000100000002 /* 1_advanced.epub in Resources */ = {isa = PBXBuildFile; fileRef = 61C0DE112F9D000100000002 /* 1_advanced.epub */; };
+		61C0DE122F9D000100000003 /* 2.epub in Resources */ = {isa = PBXBuildFile; fileRef = 61C0DE112F9D000100000003 /* 2.epub */; };
+		61C0DE122F9D000100000004 /* 2_advanced.epub in Resources */ = {isa = PBXBuildFile; fileRef = 61C0DE112F9D000100000004 /* 2_advanced.epub */; };
+		61C0DE122F9D000100000005 /* 3.epub in Resources */ = {isa = PBXBuildFile; fileRef = 61C0DE112F9D000100000005 /* 3.epub */; };
+		61C0DE122F9D000100000006 /* 2.html in Resources */ = {isa = PBXBuildFile; fileRef = 61C0DE112F9D000100000006 /* 2.html */; };
+		61C0DE122F9D000100000007 /* bitcoin_pdf_structured_text.json in Resources */ = {isa = PBXBuildFile; fileRef = 61C0DE112F9D000100000007 /* bitcoin_pdf_structured_text.json */; };
+		61C0DE122F9D000100000008 /* 1_advanced_epub_structured_text.json in Resources */ = {isa = PBXBuildFile; fileRef = 61C0DE112F9D000100000008 /* 1_advanced_epub_structured_text.json */; };
+		61C0DE122F9D000100000009 /* 2_epub_structured_text.json in Resources */ = {isa = PBXBuildFile; fileRef = 61C0DE112F9D000100000009 /* 2_epub_structured_text.json */; };
+		61C0DE122F9D00010000000A /* 2_advanced_epub_structured_text.json in Resources */ = {isa = PBXBuildFile; fileRef = 61C0DE112F9D00010000000A /* 2_advanced_epub_structured_text.json */; };
+		61C0DE122F9D00010000000B /* 3_epub_structured_text.json in Resources */ = {isa = PBXBuildFile; fileRef = 61C0DE112F9D00010000000B /* 3_epub_structured_text.json */; };
+		61C0DE122F9D00010000000C /* 2_html_structured_text.json in Resources */ = {isa = PBXBuildFile; fileRef = 61C0DE112F9D00010000000C /* 2_html_structured_text.json */; };
 		61C817F22A49B5D30085B1E6 /* CollectionResponseSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EDEE250242E700D8BC1E /* CollectionResponseSpec.swift */; };
 		61DE64D52C5BD0250096776C /* FormattedTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61DE64D42C5BD0250096776C /* FormattedTextView.swift */; };
 		61E24DCC2ABB385E00D75F50 /* OpenItemsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61E24DCB2ABB385E00D75F50 /* OpenItemsController.swift */; };
@@ -1395,6 +1408,7 @@
 		61099E6D2C91BAF300EDD92C /* NSDecimalNumber+Rounding.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "NSDecimalNumber+Rounding.m"; sourceTree = "<group>"; };
 		611486502A9CD511002EEBEF /* ci_post_xcodebuild.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ci_post_xcodebuild.sh; sourceTree = "<group>"; };
 		61168F602D50D4B6005495E8 /* DocumentWorkerController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentWorkerController.swift; sourceTree = "<group>"; };
+		61C0DE132FBD000100000000 /* SDTPack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SDTPack.swift"; sourceTree = "<group>"; };
 		61168F622D50D4B6005495E8 /* DocumentWorkerRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentWorkerRecorder.swift; sourceTree = "<group>"; };
 		61D0C0D12FBD100100C0DE01 /* DocumentWorkerRecorderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentWorkerRecorderView.swift; sourceTree = "<group>"; };
 		611FF4DF2DD47F860094184A /* RetryDelay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetryDelay.swift; sourceTree = "<group>"; };
@@ -1433,6 +1447,17 @@
 		61C0DE012F9D000100000004 /* 1_pdf_structured_text.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = 1_pdf_structured_text.json; sourceTree = "<group>"; };
 		61C0DE012F9D000100000005 /* 1_epub_structured_text.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = 1_epub_structured_text.json; sourceTree = "<group>"; };
 		61C0DE012F9D000100000006 /* 1_html_structured_text.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = 1_html_structured_text.json; sourceTree = "<group>"; };
+		61C0DE112F9D000100000002 /* 1_advanced.epub */ = {isa = PBXFileReference; lastKnownFileType = file; path = 1_advanced.epub; sourceTree = "<group>"; };
+		61C0DE112F9D000100000003 /* 2.epub */ = {isa = PBXFileReference; lastKnownFileType = file; path = 2.epub; sourceTree = "<group>"; };
+		61C0DE112F9D000100000004 /* 2_advanced.epub */ = {isa = PBXFileReference; lastKnownFileType = file; path = 2_advanced.epub; sourceTree = "<group>"; };
+		61C0DE112F9D000100000005 /* 3.epub */ = {isa = PBXFileReference; lastKnownFileType = file; path = 3.epub; sourceTree = "<group>"; };
+		61C0DE112F9D000100000006 /* 2.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = 2.html; sourceTree = "<group>"; };
+		61C0DE112F9D000100000007 /* bitcoin_pdf_structured_text.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = bitcoin_pdf_structured_text.json; sourceTree = "<group>"; };
+		61C0DE112F9D000100000008 /* 1_advanced_epub_structured_text.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = 1_advanced_epub_structured_text.json; sourceTree = "<group>"; };
+		61C0DE112F9D000100000009 /* 2_epub_structured_text.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = 2_epub_structured_text.json; sourceTree = "<group>"; };
+		61C0DE112F9D00010000000A /* 2_advanced_epub_structured_text.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = 2_advanced_epub_structured_text.json; sourceTree = "<group>"; };
+		61C0DE112F9D00010000000B /* 3_epub_structured_text.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = 3_epub_structured_text.json; sourceTree = "<group>"; };
+		61C0DE112F9D00010000000C /* 2_html_structured_text.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = 2_html_structured_text.json; sourceTree = "<group>"; };
 		61DE64D42C5BD0250096776C /* FormattedTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormattedTextView.swift; sourceTree = "<group>"; };
 		61E24DCB2ABB385E00D75F50 /* OpenItemsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenItemsController.swift; sourceTree = "<group>"; };
 		61E3CD4F2D9545DF00ACA004 /* CitationWebViewHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CitationWebViewHandler.swift; sourceTree = "<group>"; };
@@ -2614,6 +2639,7 @@
 			isa = PBXGroup;
 			children = (
 				61C0DE012F9D000100000003 /* 1.html */,
+				61C0DE112F9D000100000006 /* 2.html */,
 			);
 			path = snapshots;
 			sourceTree = "<group>";
@@ -2622,6 +2648,10 @@
 			isa = PBXGroup;
 			children = (
 				61C0DE012F9D000100000002 /* 1.epub */,
+				61C0DE112F9D000100000002 /* 1_advanced.epub */,
+				61C0DE112F9D000100000003 /* 2.epub */,
+				61C0DE112F9D000100000004 /* 2_advanced.epub */,
+				61C0DE112F9D000100000005 /* 3.epub */,
 			);
 			path = EPUBs;
 			sourceTree = "<group>";
@@ -2702,6 +2732,7 @@
 				B34A9F6325BF1ABB007C9A4A /* PDFDocumentExporter.swift */,
 				B32B8A562B18A08900A9A741 /* PDFThumbnailController.swift */,
 				61168F602D50D4B6005495E8 /* DocumentWorkerController.swift */,
+				61C0DE132FBD000100000000 /* SDTPack.swift */,
 				61168F622D50D4B6005495E8 /* DocumentWorkerRecorder.swift */,
 				61F0A1A32F9C0B1B00ABCDEF /* DocumentWorkerJSEngine.swift */,
 				B3C6D551261C9F2E0068B9FE /* PlaceholderTextViewDelegate.swift */,
@@ -3402,8 +3433,14 @@
 			isa = PBXGroup;
 			children = (
 				61C0DE012F9D000100000005 /* 1_epub_structured_text.json */,
+				61C0DE112F9D000100000008 /* 1_advanced_epub_structured_text.json */,
+				61C0DE112F9D000100000009 /* 2_epub_structured_text.json */,
+				61C0DE112F9D00010000000A /* 2_advanced_epub_structured_text.json */,
+				61C0DE112F9D00010000000B /* 3_epub_structured_text.json */,
 				61C0DE012F9D000100000004 /* 1_pdf_structured_text.json */,
+				61C0DE112F9D000100000007 /* bitcoin_pdf_structured_text.json */,
 				61C0DE012F9D000100000006 /* 1_html_structured_text.json */,
+				61C0DE112F9D00010000000C /* 2_html_structured_text.json */,
 				6102D2B12D68ABD900505E6A /* bitcoin_pdf_recognizer_data.json */,
 				6102D2B52D68B5DE00505E6A /* bitcoin_pdf_full_text.json */,
 				61FB13D62EECBE0700329563 /* bitcoin_pdf_page_0_text.json */,
@@ -5124,23 +5161,34 @@
 				61F0A1B32F9C0F1B00ABCDEF /* document_worker.html in Resources */,
 				B32A3C8C248008A2009E2C5D /* test_collection.json in Resources */,
 				61C0DE022F9D000100000004 /* 1_pdf_structured_text.json in Resources */,
+				61C0DE122F9D000100000007 /* bitcoin_pdf_structured_text.json in Resources */,
 				B32A3C8D248008A2009E2C5D /* test_search.json in Resources */,
 				B3B1EDFD2502498100D8BC1E /* collectionresponse_knownfields.json in Resources */,
 				B3B1EDF42502456000D8BC1E /* itemresponse_unknownfields.json in Resources */,
 				61C0DE022F9D000100000002 /* 1.epub in Resources */,
+				61C0DE122F9D000100000002 /* 1_advanced.epub in Resources */,
+				61C0DE122F9D000100000003 /* 2.epub in Resources */,
+				61C0DE122F9D000100000004 /* 2_advanced.epub in Resources */,
+				61C0DE122F9D000100000005 /* 3.epub in Resources */,
 				B32A3C8F248008A2009E2C5D /* translators_delete.xml in Resources */,
 				B36B8A552A4C2E930038BA1C /* test_annotation_array_position.json in Resources */,
 				B3DF44122A408339005AF766 /* test_item_attachment.json in Resources */,
 				61C0DE022F9D000100000005 /* 1_epub_structured_text.json in Resources */,
+				61C0DE122F9D000100000008 /* 1_advanced_epub_structured_text.json in Resources */,
+				61C0DE122F9D000100000009 /* 2_epub_structured_text.json in Resources */,
+				61C0DE122F9D00010000000A /* 2_advanced_epub_structured_text.json in Resources */,
+				61C0DE122F9D00010000000B /* 3_epub_structured_text.json in Resources */,
 				61A9B16B2F476DA6004FF769 /* font_data_pdf_full_text.json in Resources */,
 				B32A3C8E248008A2009E2C5D /* test_thesis_item.json in Resources */,
 				B3B1EDFA2502493700D8BC1E /* Bundled in Resources */,
 				61C0DE022F9D000100000003 /* 1.html in Resources */,
+				61C0DE122F9D000100000006 /* 2.html in Resources */,
 				B3AAABD72502A40900031065 /* searchresponse_unknownfields.json in Resources */,
 				B36B8A562A4C2E930038BA1C /* test_annotation_basic_position.json in Resources */,
 				B32A3C8B248008A2009E2C5D /* test_keys.json in Resources */,
 				B3B1EDFE2502498100D8BC1E /* collectionresponse_unknownfields.json in Resources */,
 				61C0DE022F9D000100000006 /* 1_html_structured_text.json in Resources */,
+				61C0DE122F9D00010000000C /* 2_html_structured_text.json in Resources */,
 				61A9B1652F471F75004FF769 /* cmap.pdf in Resources */,
 				B36EBFF5273162DD00CD788D /* bitcoin.zip in Resources */,
 				B3AAABD82502A40900031065 /* searchresponse_knownfields.json in Resources */,
@@ -5646,6 +5694,7 @@
 				B39B18E8223947050019F467 /* main.swift in Sources */,
 				B3ADAE512833BEE300D46271 /* LookupAction.swift in Sources */,
 				61168F612D50D4B6005495E8 /* DocumentWorkerController.swift in Sources */,
+				61C0DE132FBD000100000001 /* SDTPack.swift in Sources */,
 				61168F632D50D4B6005495E8 /* DocumentWorkerRecorder.swift in Sources */,
 				61D0C0D22FBD100100C0DE01 /* DocumentWorkerRecorderView.swift in Sources */,
 				61F0A1AC2F9C0F1B00ABCDEF /* DocumentWorkerHandling.swift in Sources */,
@@ -6301,6 +6350,7 @@
 				B305676923FC0A0B003304F2 /* SortType.swift in Sources */,
 				B305676A23FC0A0B003304F2 /* SyncableObject.swift in Sources */,
 				615C10E32D5E230D001F1E8E /* DocumentWorkerController.swift in Sources */,
+				61C0DE132FBD000100000002 /* SDTPack.swift in Sources */,
 				615C10E72D5E230D001F1E8E /* DocumentWorkerRecorder.swift in Sources */,
 				61F0A1AD2F9C0F1B00ABCDEF /* DocumentWorkerHandling.swift in Sources */,
 				61F0A1AB2F9C0F1B00ABCDEF /* DocumentWorkerJSHandler.swift in Sources */,

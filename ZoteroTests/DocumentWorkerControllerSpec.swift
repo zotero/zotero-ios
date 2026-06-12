@@ -134,6 +134,24 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                     expect(try? engine.evaluate(script: script)?.toBool()).to(beTrue())
                 }
 
+                it("provides TextEncoder") {
+                    let engine = try! makeShimEngine()
+                    let script = """
+                    (function () {
+                      var encoded = new TextEncoder().encode('Hello \\u20ac \\ud83d\\ude00');
+                      var decoded = new TextDecoder('utf-8').decode(encoded);
+                      var number = new TextDecoder('utf-8').decode(new TextEncoder().encode(0));
+                      var loneSurrogate = new TextDecoder('utf-8').decode(new TextEncoder().encode('\\ud800'));
+                      return encoded instanceof Uint8Array &&
+                        decoded === 'Hello \\u20ac \\ud83d\\ude00' &&
+                        number === '0' &&
+                        loneSurrogate === '\\ufffd';
+                    })()
+                    """
+
+                    expect(try? engine.evaluate(script: script)?.toBool()).to(beTrue())
+                }
+
                 it("provides timers") {
                     let engine = try! makeShimEngine()
 
@@ -347,55 +365,37 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                     }
 
                     expect(emittedUpdates.count).toEventually(equal(3), timeout: .seconds(timeout))
-                    process(updates: emittedUpdates, ignoreKeys: ["dateCreated"], jsonURL: expectedURL)
+                    assertStructuredDocumentTextPack(updates: emittedUpdates, expectedURL: expectedURL)
                 }
 
-                it("can extract structured document text for PDF") {
-                    let file = makeFile(
-                        resource: "1",
-                        fileExtension: "pdf",
-                        key: "dddddddd",
-                        filename: "1",
-                        contentType: "application/pdf"
-                    )
+                let structuredTextFixtures = [
+                    (description: "PDF", resource: "1", fileExtension: "pdf", key: "dddddddd", contentType: "application/pdf", expected: "1_pdf_structured_text", timeout: 120),
+                    (description: "bitcoin PDF", resource: "bitcoin", fileExtension: "pdf", key: "ddddddd2", contentType: "application/pdf", expected: "bitcoin_pdf_structured_text", timeout: 120),
+                    (description: "EPUB", resource: "1", fileExtension: "epub", key: "eeeeeeee", contentType: "application/epub+zip", expected: "1_epub_structured_text", timeout: 30),
+                    (description: "advanced EPUB", resource: "1_advanced", fileExtension: "epub", key: "eeeeeee1", contentType: "application/epub+zip", expected: "1_advanced_epub_structured_text", timeout: 60),
+                    (description: "EPUB 2", resource: "2", fileExtension: "epub", key: "eeeeeee2", contentType: "application/epub+zip", expected: "2_epub_structured_text", timeout: 60),
+                    (description: "advanced EPUB 2", resource: "2_advanced", fileExtension: "epub", key: "eeeeee2a", contentType: "application/epub+zip", expected: "2_advanced_epub_structured_text", timeout: 60),
+                    (description: "EPUB 3", resource: "3", fileExtension: "epub", key: "eeeeeee3", contentType: "application/epub+zip", expected: "3_epub_structured_text", timeout: 60),
+                    (description: "snapshot HTML", resource: "1", fileExtension: "html", key: "ffffffff", contentType: "text/html", expected: "1_html_structured_text", timeout: 20),
+                    (description: "snapshot HTML 2", resource: "2", fileExtension: "html", key: "fffffff2", contentType: "text/html", expected: "2_html_structured_text", timeout: 20)
+                ]
 
-                    processStructuredDocumentText(
-                        file: file,
-                        expectedURL: fixtureURL(forResource: "1_pdf_structured_text", withExtension: "json"),
-                        timeout: 120
-                    )
-                }
+                for fixture in structuredTextFixtures {
+                    it("can extract structured document text for \(fixture.description)") {
+                        let file = makeFile(
+                            resource: fixture.resource,
+                            fileExtension: fixture.fileExtension,
+                            key: fixture.key,
+                            filename: fixture.resource,
+                            contentType: fixture.contentType
+                        )
 
-                it("can extract structured document text for EPUB") {
-                    let file = makeFile(
-                        resource: "1",
-                        fileExtension: "epub",
-                        key: "eeeeeeee",
-                        filename: "1",
-                        contentType: "application/epub+zip"
-                    )
-
-                    processStructuredDocumentText(
-                        file: file,
-                        expectedURL: fixtureURL(forResource: "1_epub_structured_text", withExtension: "json"),
-                        timeout: 30
-                    )
-                }
-
-                it("can extract structured document text for snapshot HTML") {
-                    let file = makeFile(
-                        resource: "1",
-                        fileExtension: "html",
-                        key: "ffffffff",
-                        filename: "1",
-                        contentType: "text/html"
-                    )
-
-                    processStructuredDocumentText(
-                        file: file,
-                        expectedURL: fixtureURL(forResource: "1_html_structured_text", withExtension: "json"),
-                        timeout: 20
-                    )
+                        processStructuredDocumentText(
+                            file: file,
+                            expectedURL: fixtureURL(forResource: fixture.expected, withExtension: "json"),
+                            timeout: fixture.timeout
+                        )
+                    }
                 }
             }
 
@@ -474,9 +474,254 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                     process(updates: emittedUpdates, jsonFileName: "font_data_pdf_full_text")
                 }
             }
+
             func process(updates: [DocumentWorkerController.Update.Kind], ignoreKeys: Set<String> = [], jsonFileName: String) {
                 let url = Bundle(for: Self.self).url(forResource: jsonFileName, withExtension: "json")!
                 process(updates: updates, ignoreKeys: ignoreKeys, jsonURL: url)
+            }
+
+            func assertStructuredDocumentTextPack(updates: [DocumentWorkerController.Update.Kind], expectedURL: URL) {
+                let magic = Data([0x89, 0x53, 0x44, 0x54, 0x0d, 0x0a, 0x1a, 0x0a])
+                var materializedData: [String: Any]?
+                for (index, update) in updates.enumerated() {
+                    switch update {
+                    case .queued:
+                        expect(index).to(equal(0))
+
+                    case .inProgress:
+                        expect(index).to(equal(1))
+
+                    case .extractedData(let data):
+                        expect(index).to(equal(2))
+                        guard let buf = data["buf"] as? Data else {
+                            fail("expected SDT pack data, got \(data)")
+                            return
+                        }
+                        expect(buf.count).to(beGreaterThan(magic.count))
+                        expect(Data(buf.prefix(magic.count))).to(equal(magic))
+                        do {
+                            let pack = try SDTPack(data: buf)
+                            let metadata = try pack.getMetadata()
+                            let catalog = try pack.getCatalog()
+                            let materialized = try pack.materialize()
+                            materializedData = materialized
+                            guard let materializedMetadata = materialized["metadata"] as? [String: Any] else {
+                                fail("missing materialized metadata")
+                                return
+                            }
+                            guard let materializedCatalog = materialized["catalog"] as? [String: Any] else {
+                                fail("missing materialized catalog")
+                                return
+                            }
+                            expect((metadata as NSDictionary).isEqual(materializedMetadata)).to(beTrue())
+                            expect((catalog as NSDictionary).isEqual(materializedCatalog)).to(beTrue())
+                            assertBlockAccess(in: pack, materialized: materialized)
+                            try assertPageBlocksAccess(in: pack, materialized: materialized)
+                        } catch {
+                            fail("failed to materialize SDTPack: \(error)")
+                            return
+                        }
+
+                    default:
+                        fail("unexpected update \(index): \(update)")
+                    }
+                }
+                guard let materializedData else {
+                    fail("missing materialized SDTPack data")
+                    return
+                }
+                process(updates: [.queued, .inProgress, .extractedData(data: materializedData)], ignoreKeys: ["dateCreated"], jsonURL: expectedURL)
+            }
+
+            func assertBlockAccess(in pack: SDTPack, materialized: [String: Any]) {
+                guard let content = materialized["content"] as? [[String: Any]] else {
+                    fail("missing materialized content")
+                    return
+                }
+
+                do {
+                    for index in sampleIndexes(count: content.count) {
+                        let block = try pack.getBlock(ref: [index])
+                        expect(block).toNot(beNil())
+                        if let block {
+                            expect((block as NSDictionary).isEqual(content[index])).to(beTrue())
+                        }
+                    }
+
+                    if let nestedRef = firstContentNestedRef(in: content) {
+                        let block = try pack.getBlock(ref: nestedRef)
+                        let expected = node(in: content, at: nestedRef)
+                        expect(block).toNot(beNil())
+                        expect(expected).toNot(beNil())
+                        if let block, let expected {
+                            expect((block as NSDictionary).isEqual(expected)).to(beTrue())
+                        }
+                    }
+
+                    expect(try pack.getBlock(ref: [])).to(beNil())
+                    expect(try pack.getBlock(ref: [-1])).to(beNil())
+                    expect(try pack.getBlock(ref: [content.count])).to(beNil())
+                    try assertBlocksAccess(content: content)
+                } catch {
+                    fail("failed to read SDTPack block: \(error)")
+                }
+
+                func assertBlocksAccess(content: [[String: Any]]) throws {
+                    guard !content.isEmpty else {
+                        expect(try pack.getBlocks(startBlock: 0, endBlock: 0)).to(beEmpty())
+                        return
+                    }
+
+                    let firstBlock = try pack.getBlocks(startBlock: 0, endBlock: 0)
+                    expect(firstBlock.count).to(equal(1))
+                    if let block = firstBlock.first {
+                        expect((block as NSDictionary).isEqual(content[0])).to(beTrue())
+                    }
+
+                    let sampledIndexes = sampleIndexes(count: content.count)
+                    if let start = sampledIndexes.first, let end = sampledIndexes.last {
+                        let blocks = try pack.getBlocks(startBlock: start, endBlock: end)
+                        let expected = Array(content[start...end])
+                        expect(blocks.count).to(equal(expected.count))
+                        for (block, expectedBlock) in zip(blocks, expected) {
+                            expect((block as NSDictionary).isEqual(expectedBlock)).to(beTrue())
+                        }
+                    }
+
+                    let clampedStart = try pack.getBlocks(startBlock: -10, endBlock: 0)
+                    expect(clampedStart.count).to(equal(1))
+                    if let block = clampedStart.first {
+                        expect((block as NSDictionary).isEqual(content[0])).to(beTrue())
+                    }
+
+                    let clampedEnd = try pack.getBlocks(startBlock: content.count - 1, endBlock: content.count + 10)
+                    expect(clampedEnd.count).to(equal(1))
+                    if let block = clampedEnd.first {
+                        expect((block as NSDictionary).isEqual(content[content.count - 1])).to(beTrue())
+                    }
+
+                    expect(try pack.getBlocks(startBlock: 1, endBlock: 0)).to(beEmpty())
+                    expect(try pack.getBlocks(startBlock: content.count, endBlock: content.count + 1)).to(beEmpty())
+                }
+
+                func firstContentNestedRef(in content: [[String: Any]]) -> [Int]? {
+                    for (index, block) in content.enumerated() {
+                        if let ref = firstNodeNestedRef(in: block, ref: [index]) {
+                            return ref
+                        }
+                    }
+                    return nil
+
+                    func firstNodeNestedRef(in node: [String: Any], ref: [Int]) -> [Int]? {
+                        guard let content = node["content"] as? [[String: Any]] else { return nil }
+                        for (index, child) in content.enumerated() {
+                            let childRef = ref + [index]
+                            if child["text"] == nil {
+                                return childRef
+                            }
+                            if let ref = firstNodeNestedRef(in: child, ref: childRef) {
+                                return ref
+                            }
+                        }
+                        return nil
+                    }
+                }
+
+                func node(in content: [[String: Any]], at ref: [Int]) -> [String: Any]? {
+                    guard let first = ref.first, first >= 0, first < content.count else { return nil }
+                    var node: [String: Any] = content[first]
+                    for index in ref.dropFirst() {
+                        guard let children = node["content"] as? [[String: Any]], index >= 0, index < children.count else {
+                            return nil
+                        }
+                        node = children[index]
+                    }
+                    return node
+                }
+            }
+
+            func assertPageBlocksAccess(in pack: SDTPack, materialized: [String: Any]) throws {
+                guard let catalog = materialized["catalog"] as? [String: Any],
+                      let pages = catalog["pages"] as? [[String: Any]],
+                      let content = materialized["content"] as? [[String: Any]] else {
+                    fail("missing materialized catalog pages or content")
+                    return
+                }
+
+                expect(pack.getTopLevelBlockCount()).to(equal(content.count))
+                for pageIndex in sampleIndexes(count: pages.count) {
+                    let blocks = try pack.getPageBlocks(pageIndex: pageIndex)
+                    let expected = expectedPageBlocks(pages: pages, content: content, pageIndex: pageIndex)
+                    expect(blocks.count).to(equal(expected.count))
+                    for (block, expectedBlock) in zip(blocks, expected) {
+                        expect((block as NSDictionary).isEqual(expectedBlock)).to(beTrue())
+                    }
+                }
+
+                expect(try pack.getPageBlocks(pageIndex: -1)).to(beEmpty())
+                expect(try pack.getPageBlocks(pageIndex: pages.count)).to(beEmpty())
+
+                func expectedPageBlocks(pages: [[String: Any]], content: [[String: Any]], pageIndex: Int) -> [[String: Any]] {
+                    guard pageIndex >= 0, pageIndex < pages.count,
+                          let span = expectedContentRangeBlockSpan(pages[pageIndex]["contentRange"], topLevelBlockCount: content.count),
+                          span.startIndex < span.endIndexExclusive else {
+                        return []
+                    }
+                    return Array(content[span.startIndex..<span.endIndexExclusive])
+
+                    func expectedContentRangeBlockSpan(_ value: Any?, topLevelBlockCount: Int) -> (startIndex: Int, endIndexExclusive: Int)? {
+                        guard let range = value as? [Any],
+                              range.count == 2,
+                              let start = expectedContentBoundary(range[0]),
+                              let end = expectedContentBoundary(range[1]),
+                              let startIndex = expectedBoundaryTopLevelIndex(start, topLevelBlockCount: topLevelBlockCount) else {
+                            return nil
+                        }
+                        if start == end {
+                            return (startIndex, startIndex)
+                        }
+                        guard let endIndexExclusive = expectedBoundaryEndIndexExclusive(end, topLevelBlockCount: topLevelBlockCount) else {
+                            return nil
+                        }
+                        return (startIndex, max(startIndex, endIndexExclusive))
+
+                        func expectedContentBoundary(_ value: Any?) -> [Int]? {
+                            guard let values = value as? [Any], !values.isEmpty else { return nil }
+                            var boundary: [Int] = []
+                            for value in values {
+                                let intValue: Int?
+                                if let value = value as? Int {
+                                    intValue = value
+                                } else if let value = value as? NSNumber {
+                                    intValue = value.intValue
+                                } else {
+                                    intValue = nil
+                                }
+                                guard let intValue, intValue >= 0 else { return nil }
+                                boundary.append(intValue)
+                            }
+                            return boundary
+                        }
+
+                        func expectedBoundaryTopLevelIndex(_ boundary: [Int], topLevelBlockCount: Int) -> Int? {
+                            guard let index = boundary.first, index <= topLevelBlockCount else { return nil }
+                            return index
+                        }
+
+                        func expectedBoundaryEndIndexExclusive(_ boundary: [Int], topLevelBlockCount: Int) -> Int? {
+                            guard let index = expectedBoundaryTopLevelIndex(boundary, topLevelBlockCount: topLevelBlockCount) else { return nil }
+                            if index == topLevelBlockCount {
+                                return topLevelBlockCount
+                            }
+                            return boundary.count == 1 ? index : index + 1
+                        }
+                    }
+                }
+            }
+
+            func sampleIndexes(count: Int) -> [Int] {
+                guard count > 0 else { return [] }
+                return Array(Set([0, count / 2, count - 1])).sorted()
             }
 
             func process(updates: [DocumentWorkerController.Update.Kind], ignoreKeys: Set<String> = [], jsonURL: URL) {

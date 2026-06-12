@@ -64,6 +64,17 @@ async function fetchLocalFile(filePath) {
   return arrayBuffer.slice();
 }
 
+function arrayBufferToBase64(buffer) {
+  let bytes = new Uint8Array(buffer);
+  let chunkSize = 0x8000;
+  let binary = '';
+  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+    let chunk = bytes.subarray(offset, offset + chunkSize);
+    binary += String.fromCharCode.apply(null, chunk);
+  }
+  return btoa(binary);
+}
+
 window.pdf = {};
 
 async function performAction(action, workId, filePath, parameters) {
@@ -81,8 +92,11 @@ async function performAction(action, workId, filePath, parameters) {
       webkit.messageHandlers.fullTextHandler.postMessage({ workId, fullText: result });
       return;
     }
-    if (action === 'getStructuredDocumentText' || action === 'getStructuredDocumentTextJSON') {
-      webkit.messageHandlers.structuredDocumentTextHandler.postMessage({ workId, structuredDocumentText: result });
+    if (action === 'getStructuredDocumentText') {
+      webkit.messageHandlers.structuredDocumentTextHandler.postMessage({
+        workId,
+        structuredDocumentText: { buf: arrayBufferToBase64(result.buf) }
+      });
       return;
     }
     throw new Error(`unsupported action: ${action}`);
@@ -115,7 +129,7 @@ pdf.getFulltext = async function (workId, filePath, pageIndexes, password) {
 
 async function getStructuredDocumentText(workId, filePath, contentType, password, sourceHash) {
   try {
-    await performAction('getStructuredDocumentTextJSON', workId, filePath, { contentType, password, sourceHash });
+    await performAction('getStructuredDocumentText', workId, filePath, { contentType, password, sourceHash });
   }
   catch (error) {
     log(`getStructuredDocumentText error: ${error}`);

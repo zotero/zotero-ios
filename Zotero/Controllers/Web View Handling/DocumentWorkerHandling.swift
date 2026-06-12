@@ -24,7 +24,7 @@ enum DocumentWorkerAction {
             return "pdf.getFulltext"
 
         case .getStructuredDocumentText:
-            return "getStructuredDocumentTextJSON"
+            return "getStructuredDocumentText"
         }
     }
 }

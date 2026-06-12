@@ -539,8 +539,16 @@ final class DocumentWorkerController {
                     switch event.result {
                     case .success(let data):
                         switch data {
-                        case .recognizerData(let data), .structuredDocumentText(let data):
+                        case .recognizerData(let data):
                             finishWork(work, in: worker, finalUpdateKind: .extractedData(data: data))
+
+                        case .structuredDocumentText(let data):
+                            guard let buf = structuredDocumentTextData(from: data) else {
+                                DDLogError("DocumentWorkerController: work \(work.id) failed - structured document text result has unexpected shape")
+                                finishWork(work, in: worker, finalUpdateKind: .failed)
+                                return
+                            }
+                            finishWork(work, in: worker, finalUpdateKind: .extractedData(data: ["buf": buf]))
 
                         case .fullText(let data):
                             writeFullTextCacheIfNeeded(data, for: work, in: worker)
@@ -554,6 +562,13 @@ final class DocumentWorkerController {
                 }
             })
             .disposed(by: disposeBag)
+
+            func structuredDocumentTextData(from data: [String: Any]) -> Data? {
+                if let buf = data["buf"] as? String {
+                    return Data(base64Encoded: buf)
+                }
+                return nil
+            }
 
             func writeFullTextCacheIfNeeded(_ data: [String: Any], for work: Work, in worker: Worker) {
                 guard case .fullText(let pages) = work else { return }
