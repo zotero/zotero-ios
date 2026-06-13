@@ -39,6 +39,12 @@ final class DocumentWorkerController {
         }
     }
 
+    struct StructuredDocumentText {
+        fileprivate static func packURL(in directoryURL: URL) -> URL {
+            return directoryURL.appendingPathComponent("document").appendingPathExtension("sdt")
+        }
+    }
+
     enum HandlerRuntime: Hashable {
         case jsContext
         case webView
@@ -178,7 +184,10 @@ final class DocumentWorkerController {
             case .fullText:
                 return 1
 
-            case .recognizer, .structuredDocumentText:
+            case .structuredDocumentText:
+                return 1
+
+            case .recognizer:
                 return nil
             }
         }
@@ -188,7 +197,10 @@ final class DocumentWorkerController {
             case .fullText:
                 return "text"
 
-            case .recognizer, .structuredDocumentText:
+            case .structuredDocumentText:
+                return "sdt"
+
+            case .recognizer:
                 return nil
             }
         }
@@ -405,7 +417,10 @@ final class DocumentWorkerController {
             case .fullText(let pages):
                 return cachedFullTextData(pages: pages)
 
-            case .recognizer, .structuredDocumentText:
+            case .structuredDocumentText:
+                return cachedStructuredDocumentTextData()
+
+            case .recognizer:
                 return nil
             }
 
@@ -450,6 +465,27 @@ final class DocumentWorkerController {
                 let text = pageTexts.joined(separator: FullText.pageDelimiter).trimmingCharacters(in: .whitespacesAndNewlines)
                 DDLogInfo("DocumentWorkerController: full text cache hit for \(worker), pages \(requestedPages), sourceHash \(sourceHash)")
                 return ["text": text, "extractedPages": requestedPages.count, "totalPages": manifest.pageCount]
+            }
+
+            func cachedStructuredDocumentTextData() -> [String: Any]? {
+                guard worker.password == nil else {
+                    DDLogInfo("DocumentWorkerController: bypassed structured document text cache for password-protected \(worker)")
+                    return nil
+                }
+                guard let sourceHash = cachedMD5(from: worker.fileURL, using: fileStorage.fileManager) else {
+                    DDLogInfo("DocumentWorkerController: structured document text cache miss for \(worker), source hash unavailable")
+                    return nil
+                }
+                guard let directoryURL = work.cacheDirectoryURL(for: worker.fileURL, sourceHash: sourceHash) else { return nil }
+                let packURL = StructuredDocumentText.packURL(in: directoryURL)
+                do {
+                    let data = try Data(contentsOf: packURL)
+                    DDLogInfo("DocumentWorkerController: structured document text cache hit for \(worker), sourceHash \(sourceHash)")
+                    return ["buf": data]
+                } catch {
+                    DDLogInfo("DocumentWorkerController: structured document text cache miss for \(worker), pack unavailable at \(packURL.lastPathComponent)")
+                    return nil
+                }
             }
         }
     }
@@ -548,6 +584,7 @@ final class DocumentWorkerController {
                                 finishWork(work, in: worker, finalUpdateKind: .failed)
                                 return
                             }
+                            writeStructuredDocumentTextCacheIfNeeded(buf, for: work, in: worker)
                             finishWork(work, in: worker, finalUpdateKind: .extractedData(data: ["buf": buf]))
 
                         case .fullText(let data):
@@ -606,6 +643,26 @@ final class DocumentWorkerController {
                     DDLogInfo("DocumentWorkerController: wrote full text cache for \(worker), pages \(requestedPages), sourceHash \(sourceHash)")
                 } catch {
                     DDLogError("DocumentWorkerController: failed to write full text cache for \(worker) - \(error)")
+                }
+            }
+
+            func writeStructuredDocumentTextCacheIfNeeded(_ data: Data, for work: Work, in worker: Worker) {
+                guard case .structuredDocumentText = work else { return }
+                guard worker.password == nil else {
+                    DDLogInfo("DocumentWorkerController: skipped structured document text cache write for password-protected \(worker)")
+                    return
+                }
+                guard let sourceHash = cachedMD5(from: worker.fileURL, using: fileStorage.fileManager) else {
+                    DDLogInfo("DocumentWorkerController: skipped structured document text cache write for \(worker), source hash unavailable")
+                    return
+                }
+                guard let directoryURL = work.cacheDirectoryURL(for: worker.fileURL, sourceHash: sourceHash) else { return }
+                do {
+                    try fileStorage.fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+                    try data.write(to: StructuredDocumentText.packURL(in: directoryURL), options: .atomic)
+                    DDLogInfo("DocumentWorkerController: wrote structured document text cache for \(worker), sourceHash \(sourceHash)")
+                } catch {
+                    DDLogError("DocumentWorkerController: failed to write structured document text cache for \(worker) - \(error)")
                 }
             }
         }
