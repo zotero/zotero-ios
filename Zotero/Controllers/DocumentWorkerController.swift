@@ -169,7 +169,7 @@ final class DocumentWorkerController {
             self = .fullText(pages: pageIndexes)
         }
 
-        fileprivate var preferredRuntime: HandlerRuntime {
+        fileprivate var defaultPreferredRuntime: HandlerRuntime {
             switch self {
             case .structuredDocumentText:
                 return .webView
@@ -275,6 +275,7 @@ final class DocumentWorkerController {
     private let workerFileCopyStrategy: WorkerFileCopyStrategy = .cloneFirst
 
     let recorder: DocumentWorkerRecorder?
+    var usesNativeONNXForStructuredDocumentText: Bool
 
     weak var webViewProvider: WebViewProvider? {
         didSet {
@@ -296,12 +297,13 @@ final class DocumentWorkerController {
     private var preparingPreloadedWebViewDocumentWorkerHandler: Bool = false
 
     // MARK: Object Lifecycle
-    init(fileStorage: FileStorage) {
+    init(fileStorage: FileStorage, usesNativeONNXForStructuredDocumentText: Bool = false) {
         dispatchSpecificKey = DispatchSpecificKey<String>()
         accessQueueLabel = "org.zotero.DocumentWorkerController.accessQueue"
         accessQueue = DispatchQueue(label: accessQueueLabel, qos: .userInteractive, attributes: .concurrent)
         accessQueue.setSpecific(key: dispatchSpecificKey, value: accessQueueLabel)
         self.fileStorage = fileStorage
+        self.usesNativeONNXForStructuredDocumentText = usesNativeONNXForStructuredDocumentText
         disposeBag = DisposeBag()
         recorder = FeatureGates.enabled.contains(.documentWorkerDebugging) ? DocumentWorkerRecorder() : nil
         accessQueue.async(flags: .barrier) { [weak self] in
@@ -310,6 +312,16 @@ final class DocumentWorkerController {
     }
 
     // MARK: Actions
+    private func preferredRuntime(for work: Work) -> HandlerRuntime {
+        switch work {
+        case .structuredDocumentText where usesNativeONNXForStructuredDocumentText:
+            return .jsContext
+
+        case .recognizer, .fullText, .structuredDocumentText:
+            return work.defaultPreferredRuntime
+        }
+    }
+
     private func updateStateAndQueues(for worker: Worker, state: Worker.State) {
         // Is called only by callers already in the access queue.
         worker.state = state
@@ -369,10 +381,10 @@ final class DocumentWorkerController {
             }
             worker.subjectsByWork[work] = subject
             recorder?.bind(subject)
-            subject.send(work: work, kind: .queued, worker: worker)
+            subject.send(work: work, kind: .queued, worker: worker, runtime: preferredRuntime(for: work))
             if let cachedData = cachedData(for: work, in: worker) {
                 worker.workStartTimes[work] = CFAbsoluteTimeGetCurrent()
-                subject.send(work: work, kind: .inProgress, worker: worker)
+                subject.send(work: work, kind: .inProgress, worker: worker, runtime: preferredRuntime(for: work))
                 finishWork(work, in: worker, updateWorkerState: false, finalUpdateKind: .extractedData(data: cachedData, isCached: true))
                 return
             }
@@ -388,7 +400,7 @@ final class DocumentWorkerController {
 
             case .ready:
                 // A new work is queued to a worker that is ready with no works (e.g. a worker that finished its works, but was kept by the user).
-                if worker.handlersByRuntime[work.preferredRuntime] != nil {
+                if worker.handlersByRuntime[preferredRuntime(for: work)] != nil {
                     // Assign queued state, place in proper queue, and start work if needed.
                     updateStateAndQueues(for: worker, state: .queued)
                     startWorkIfNeeded()
@@ -411,7 +423,7 @@ final class DocumentWorkerController {
         func reject(work: Work, in worker: Worker, to subject: PublishSubject<Update>) {
             DDLogWarn("DocumentWorkerController: rejected \(work) in finished or busy one-off \(worker)")
             recorder?.bind(subject)
-            subject.send(work: work, kind: .failed, worker: worker)
+            subject.send(work: work, kind: .failed, worker: worker, runtime: preferredRuntime(for: work))
             subject.onCompleted()
         }
 
@@ -555,9 +567,10 @@ final class DocumentWorkerController {
     }
 
     private func prepare(worker: Worker, for work: Work) {
-        switch work.preferredRuntime {
+        let runtime = preferredRuntime(for: work)
+        switch runtime {
         case .jsContext:
-            let documentWorkerHandler = preloadedDocumentWorkerHandler ?? DocumentWorkerJSHandler()
+            let documentWorkerHandler = preloadedDocumentWorkerHandler ?? createDocumentWorkerJSHandler()
             setup(documentWorkerHandler: documentWorkerHandler, runtime: .jsContext, for: worker)
             preloadedDocumentWorkerHandler = nil
             accessQueue.async(flags: .barrier) { [weak self] in
@@ -750,7 +763,7 @@ final class DocumentWorkerController {
             startWorkIfNeeded()
             return
         }
-        guard let documentWorkerHandler = worker.handlersByRuntime[work.preferredRuntime] else {
+        guard let documentWorkerHandler = worker.handlersByRuntime[preferredRuntime(for: work)] else {
             updateStateAndQueues(for: worker, state: .preparing)
             prepare(worker: worker, for: work)
             return
@@ -760,7 +773,7 @@ final class DocumentWorkerController {
         // Start work.
         worker.workStartTimes[work] = CFAbsoluteTimeGetCurrent()
         DDLogInfo("DocumentWorkerController: started \(work) in \(worker)")
-        subject.send(work: work, kind: .inProgress, worker: worker)
+        subject.send(work: work, kind: .inProgress, worker: worker, runtime: preferredRuntime(for: work))
         switch work {
         case .recognizer:
             documentWorkerHandler.performAction(.recognizePDF(password: worker.password), workId: work.id)
@@ -806,7 +819,7 @@ final class DocumentWorkerController {
                 }
                 controller.updateStateAndQueues(for: worker, state: nextState)
             }
-            subject?.send(work: work, kind: finalUpdateKind, worker: worker, duration: duration)
+            subject?.send(work: work, kind: finalUpdateKind, worker: worker, runtime: preferredRuntime(for: work), duration: duration)
             subject?.onCompleted()
             if shouldFinishOneOffWorker {
                 controller.releaseHandlers(for: worker)
@@ -905,11 +918,50 @@ final class DocumentWorkerController {
               preparing.isEmpty,
               !Priority.inDescendingOrder.contains(where: { !queuedByPriority[$0, default: []].isEmpty || !runningByPriority[$0, default: []].isEmpty })
         else { return }
-        preloadedDocumentWorkerHandler = DocumentWorkerJSHandler()
+        preloadedDocumentWorkerHandler = createDocumentWorkerJSHandler()
+    }
+
+    private func createDocumentWorkerJSHandler() -> DocumentWorkerJSHandler {
+        return DocumentWorkerJSHandler(
+            nativeONNXModelDataProvider: { model in
+                try nativeONNXModelData(for: model)
+            },
+            usesNativeONNXForStructuredDocumentText: usesNativeONNXForStructuredDocumentText
+        )
+
+        func nativeONNXModelData(for model: String) throws -> Data {
+            let normalizedPath = model.replacingOccurrences(of: "\\", with: "/")
+            let components = normalizedPath.split(separator: "/", omittingEmptySubsequences: false)
+            let hasUnsafeComponent = components.contains { $0.isEmpty || $0 == ".." }
+            guard !normalizedPath.isEmpty,
+                  !normalizedPath.hasPrefix("/"),
+                  !hasUnsafeComponent else {
+                throw DocumentWorkerJSHandler.Error.invalidBundledWorkerDataPath(model)
+            }
+
+            let nsPath = normalizedPath as NSString
+            let resourceName = nsPath.lastPathComponent
+            guard !resourceName.isEmpty, resourceName != "." else {
+                throw DocumentWorkerJSHandler.Error.invalidBundledWorkerDataPath(model)
+            }
+            let directory = nsPath.deletingLastPathComponent
+            let subdirectory: String
+            if directory.isEmpty || directory == "." {
+                subdirectory = "Bundled/document_worker"
+            } else {
+                subdirectory = "Bundled/document_worker/\(directory)"
+            }
+
+            guard let url = Bundle.main.url(forResource: resourceName, withExtension: nil, subdirectory: subdirectory) else {
+                throw DocumentWorkerJSHandler.Error.missingBundledWorkerData(model)
+            }
+            return try Data(contentsOf: url)
+        }
     }
 
     private func preloadWebViewDocumentWorkerIfNeeded() {
         guard webViewProvider != nil,
+              !usesNativeONNXForStructuredDocumentText,
               preloadedWebViewDocumentWorkerHandler == nil,
               !preparingPreloadedWebViewDocumentWorkerHandler
         else { return }
@@ -934,7 +986,8 @@ final class DocumentWorkerController {
     private func prepareWaitingWebViewWorkerIfNeeded() {
         guard let worker = preparing.first(where: { worker in
             guard let work = worker.subjectsByWork.keys.first else { return false }
-            return work.preferredRuntime == .webView && worker.handlersByRuntime[work.preferredRuntime] == nil
+            let runtime = preferredRuntime(for: work)
+            return runtime == .webView && worker.handlersByRuntime[runtime] == nil
         }), let work = worker.subjectsByWork.keys.first else { return }
         prepare(worker: worker, for: work)
     }
@@ -964,10 +1017,30 @@ final class DocumentWorkerController {
             let configuration = WKWebViewConfiguration()
             configuration.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
             let webView = webViewProvider.addWebView(configuration: configuration)
-            let documentWorkerHandler = DocumentWorkerWebViewHandler(webView: webView, temporaryDirectory: temporaryDirectory, cleanup: cleanupClosure)
+            let documentWorkerHandler = DocumentWorkerWebViewHandler(
+                webView: webView,
+                temporaryDirectory: temporaryDirectory,
+                cleanup: cleanupClosure,
+                nativeONNXModelDataProvider: { model in
+                    try nativeONNXModelData(for: model, in: temporaryDirectory)
+                },
+                usesNativeONNXForStructuredDocumentText: usesNativeONNXForStructuredDocumentText
+            )
             accessQueue.async(flags: .barrier) {
                 completion(documentWorkerHandler)
             }
+        }
+
+        func nativeONNXModelData(for model: String, in temporaryDirectory: File) throws -> Data {
+            guard !model.isEmpty, !model.hasPrefix("/"), !model.split(separator: "/").contains("..") else {
+                throw DocumentWorkerWebViewHandler.Error.invalidNativeONNXBridgePayload("invalid model path")
+            }
+            let directoryURL = temporaryDirectory.createUrl().standardizedFileURL
+            let modelURL = directoryURL.appendingPathComponent(model).standardizedFileURL
+            guard modelURL.path.hasPrefix(directoryURL.path + "/") else {
+                throw DocumentWorkerWebViewHandler.Error.invalidNativeONNXBridgePayload("model path escapes temporary directory")
+            }
+            return try Data(contentsOf: modelURL)
         }
 
         func prepareTemporaryWorkerDirectory(fileStorage: FileStorage) -> File? {
@@ -1058,6 +1131,7 @@ private extension PublishSubject where Element == DocumentWorkerController.Updat
         work: DocumentWorkerController.Work,
         kind: DocumentWorkerController.Update.Kind,
         worker: DocumentWorkerController.Worker,
+        runtime: DocumentWorkerController.HandlerRuntime? = nil,
         duration: CFTimeInterval? = nil
     ) {
         on(.next(DocumentWorkerController.Update(
@@ -1066,7 +1140,7 @@ private extension PublishSubject where Element == DocumentWorkerController.Updat
             fileName: worker.file.fileName,
             fileURL: worker.fileURL,
             priority: worker.priority,
-            runtime: work.preferredRuntime,
+            runtime: runtime ?? work.defaultPreferredRuntime,
             kind: kind,
             startTime: worker.workStartTimes[work],
             duration: duration

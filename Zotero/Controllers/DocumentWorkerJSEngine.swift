@@ -64,6 +64,10 @@ final class DocumentWorkerJSEngine {
         return JSValue(newObjectIn: context) ?? JSValue(nullIn: context)
     }
 
+    func makeValue(_ object: Any) -> JSValue? {
+        return JSValue(object: object, in: context)
+    }
+
     func makeArrayBuffer(from data: Data) -> JSValue? {
         return makeBytesNoCopyValue(from: data) { contextRef, bytes, byteLength, deallocatorContext, exception in
             JSObjectMakeArrayBufferWithBytesNoCopy(

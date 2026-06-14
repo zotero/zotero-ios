@@ -12,6 +12,8 @@ function log(message) {
 
 let promiseId = 0;
 let waitingPromises = {};
+let nativeONNXPromiseId = 0;
+let waitingNativeONNXPromises = {};
 let worker = new Worker('worker.js');
 
 async function query(action, data, transfer) {
@@ -48,6 +50,11 @@ worker.onmessage = async function (e) {
         worker.postMessage({ responseID: message.id, data: responseData }, [responseData.buffer]);
         return;
       }
+      if (message.action === 'NativeONNXRun') {
+        responseData = await nativeONNXRun(message.data);
+        worker.postMessage({ responseID: message.id, data: responseData });
+        return;
+      }
       worker.postMessage({ responseID: message.id, data: responseData });
     }
     catch (error) {
@@ -63,6 +70,35 @@ async function fetchLocalFile(filePath) {
   let arrayBuffer = await response.arrayBuffer();
   return arrayBuffer.slice();
 }
+
+async function nativeONNXRun(data) {
+  return new Promise(function (resolve, reject) {
+    nativeONNXPromiseId++;
+    let id = String(nativeONNXPromiseId);
+    waitingNativeONNXPromises[id] = { resolve, reject };
+    webkit.messageHandlers.nativeONNXHandler.postMessage({
+      id,
+      action: 'run',
+      model: data.model,
+      inputs: data.inputs,
+      outputNames: data.outputNames
+    });
+  });
+}
+
+window.__zoteroNativeONNXBridgeReceiveResponse = function (id, response) {
+  let waiting = waitingNativeONNXPromises[id];
+  if (!waiting) {
+    return;
+  }
+  delete waitingNativeONNXPromises[id];
+  if (response.error) {
+    waiting.reject(new Error(response.error));
+  }
+  else {
+    waiting.resolve(response.result);
+  }
+};
 
 function arrayBufferToBase64(buffer) {
   let bytes = new Uint8Array(buffer);
