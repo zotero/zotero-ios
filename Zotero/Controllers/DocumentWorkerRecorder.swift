@@ -61,6 +61,7 @@ final class DocumentWorkerRecorder {
         var startedAt: Date?
         var finishedAt: Date?
         var duration: CFTimeInterval?
+        var isCached: Bool
     }
 
     private let accessQueue: DispatchQueue
@@ -132,6 +133,7 @@ final class DocumentWorkerRecorder {
                 if status.isTerminal {
                     record.finishedAt = Date()
                     record.duration = update.duration
+                    record.isCached = update.kind.isCached
                     activeRecordIdsByEventId[eventId] = nil
                 }
                 guard record != original else { return }
@@ -148,7 +150,8 @@ final class DocumentWorkerRecorder {
                     status: status,
                     startedAt: update.startedAt,
                     finishedAt: status.isTerminal ? Date() : nil,
-                    duration: status.isTerminal ? update.duration : nil
+                    duration: status.isTerminal ? update.duration : nil,
+                    isCached: status.isTerminal && update.kind.isCached
                 )
                 if status.isTerminal {
                     activeRecordIdsByEventId[eventId] = nil
@@ -166,5 +169,17 @@ final class DocumentWorkerRecorder {
 
     private func emitRecords() {
         recordsSubject.on(.next(Array(recordsById.values)))
+    }
+}
+
+private extension DocumentWorkerController.Update.Kind {
+    var isCached: Bool {
+        switch self {
+        case .extractedData(_, let isCached):
+            return isCached
+
+        case .queued, .inProgress, .failed, .cancelled:
+            return false
+        }
     }
 }

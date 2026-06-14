@@ -491,7 +491,7 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                     case .inProgress:
                         expect(index).to(equal(1))
 
-                    case .extractedData(let data):
+                    case .extractedData(let data, _):
                         expect(index).to(equal(2))
                         guard let buf = data["buf"] as? Data else {
                             fail("expected SDT pack data, got \(data)")
@@ -733,7 +733,7 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                     case .inProgress:
                         expect(index).to(equal(1))
 
-                    case .extractedData(let data):
+                    case .extractedData(let data, _):
                         expect(index).to(equal(2))
                         let expectedData = try! Data(contentsOf: jsonURL)
                         let expectedJSONData = try! JSONSerialization.jsonObject(with: expectedData, options: .allowFragments) as! [String: Any]

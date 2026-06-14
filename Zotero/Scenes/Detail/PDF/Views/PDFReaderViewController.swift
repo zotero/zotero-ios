@@ -1052,7 +1052,7 @@ extension PDFReaderViewController: SpeechmanagerDelegate {
                 case .queued, .inProgress:
                     break
 
-                case .extractedData(let data):
+                case .extractedData(let data, _):
                     guard let text = data["text"] as? String else {
                         DDLogError("PDFReaderViewController: full text extraction incorrect data - \(data)")
                         completion(nil)
