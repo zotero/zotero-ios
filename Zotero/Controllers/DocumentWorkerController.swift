@@ -232,6 +232,7 @@ final class DocumentWorkerController {
         let workerId: UUID?
         let work: Work
         let fileName: String?
+        let fileURL: URL?
         let priority: Priority?
         let runtime: HandlerRuntime?
         let kind: Kind
@@ -246,6 +247,7 @@ final class DocumentWorkerController {
             workerId: UUID? = nil,
             work: Work,
             fileName: String? = nil,
+            fileURL: URL? = nil,
             priority: Priority? = nil,
             runtime: HandlerRuntime? = nil,
             kind: Kind,
@@ -255,6 +257,7 @@ final class DocumentWorkerController {
             self.workerId = workerId
             self.work = work
             self.fileName = fileName
+            self.fileURL = fileURL
             self.priority = priority
             self.runtime = runtime
             self.kind = kind
@@ -516,6 +519,38 @@ final class DocumentWorkerController {
                 }
             }
             DDLogInfo("DocumentWorkerController: cleared \(removedCount) cached document worker directories")
+        }
+    }
+
+    func cachedWorkFileURLs(for work: Work, fileURL: URL, completion: @escaping ([URL]) -> Void) {
+        accessQueue.async(flags: .barrier) { [weak self] in
+            guard let self else { return }
+            guard let sourceHash = cachedMD5(from: fileURL, using: fileStorage.fileManager),
+                  let directoryURL = work.cacheDirectoryURL(for: fileURL, sourceHash: sourceHash) else {
+                DispatchQueue.main.async {
+                    completion([])
+                }
+                return
+            }
+
+            let urls = cacheFileURLs(in: directoryURL)
+            DispatchQueue.main.async {
+                completion(urls)
+            }
+        }
+
+        func cacheFileURLs(in directoryURL: URL) -> [URL] {
+            guard fileStorage.fileManager.fileExists(atPath: directoryURL.path),
+                  let enumerator = fileStorage.fileManager.enumerator(at: directoryURL, includingPropertiesForKeys: [.isRegularFileKey])
+            else {
+                return []
+            }
+            return enumerator
+                .compactMap { $0 as? URL }
+                .filter { url in
+                    return (try? url.resourceValues(forKeys: [.isRegularFileKey]))?.isRegularFile == true
+                }
+                .sorted { $0.path < $1.path }
         }
     }
 
@@ -1029,6 +1064,7 @@ private extension PublishSubject where Element == DocumentWorkerController.Updat
             workerId: worker.id,
             work: work,
             fileName: worker.file.fileName,
+            fileURL: worker.fileURL,
             priority: worker.priority,
             runtime: work.preferredRuntime,
             kind: kind,
