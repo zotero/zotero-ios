@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 import RxSwift
 
@@ -35,6 +36,16 @@ struct DocumentWorkerRecorderView: View {
                     Section {
                         ForEach(viewModel.records) { record in
                             RecordRow(record: record)
+                                .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                                    if record.status == .finished, record.work.hasShareableCache {
+                                        Button {
+                                            viewModel.shareCache(for: record)
+                                        } label: {
+                                            Label("Share Cache", systemImage: "square.and.arrow.up")
+                                        }
+                                        .tint(.blue)
+                                    }
+                                }
                                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                     if !record.status.isTerminal {
                                         Button(role: .destructive) {
@@ -49,6 +60,9 @@ struct DocumentWorkerRecorderView: View {
                 }
             }
             .navigationTitle("Document Worker")
+            .sheet(item: $viewModel.shareSheet) { shareSheet in
+                ActivityViewController(activityItems: shareSheet.urls.map { $0 as Any })
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(L10n.done) {
@@ -71,8 +85,14 @@ struct DocumentWorkerRecorderView: View {
     }
 }
 
+private struct ShareSheet: Identifiable {
+    let id = UUID()
+    let urls: [URL]
+}
+
 private final class DocumentWorkerRecorderViewModel: ObservableObject {
     @Published private(set) var records: [DocumentWorkerRecorder.Record]
+    @Published var shareSheet: ShareSheet?
 
     private let documentWorkerController: DocumentWorkerController
     private let recorder: DocumentWorkerRecorder
@@ -102,6 +122,13 @@ private final class DocumentWorkerRecorderViewModel: ObservableObject {
 
     func clearCachedWorks() {
         documentWorkerController.clearCachedWorks()
+    }
+
+    func shareCache(for record: DocumentWorkerRecorder.Record) {
+        documentWorkerController.cachedWorkFileURLs(for: record.work, fileURL: record.fileURL) { [weak self] urls in
+            guard !urls.isEmpty else { return }
+            self?.shareSheet = ShareSheet(urls: urls)
+        }
     }
 
     func cancel(_ record: DocumentWorkerRecorder.Record) {
@@ -181,6 +208,16 @@ private struct MetadataText: View {
     }
 }
 
+private struct ActivityViewController: UIViewControllerRepresentable {
+    let activityItems: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        return UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
 private extension DocumentWorkerController.Work {
     var title: String {
         switch self {
@@ -192,6 +229,16 @@ private extension DocumentWorkerController.Work {
 
         case .structuredDocumentText:
             return "Structured Text"
+        }
+    }
+
+    var hasShareableCache: Bool {
+        switch self {
+        case .fullText, .structuredDocumentText:
+            return true
+
+        case .recognizer:
+            return false
         }
     }
 }
