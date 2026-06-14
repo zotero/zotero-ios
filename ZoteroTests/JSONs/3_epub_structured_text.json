@@ -523,7 +523,7 @@
 		},
 		{
 			"type": "paragraph",
-			"content": [{"text": "NUR 670", "anchor": {"selectorMap": "/1"}}],
+			"content": [{"text": "NUR 670", "anchor": {"selectorMap": "/1", "deltaMap": "4 -2"}}],
 			"anchor": {"selectorMap": "/6/8!/4/2/24"}
 		},
 		{

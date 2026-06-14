@@ -362,7 +362,12 @@
 		},
 		{
 			"type": "paragraph",
-			"content": [{"text": "     ", "anchor": {"selectorMap": "1 /1\n1 /2/1\n1 /2/3\n1 /2/5\n1 /3"}}],
+			"content": [
+				{
+					"text": "     ",
+					"anchor": {"selectorMap": "1 /1\n1 /2/1\n1 /2/3\n1 /2/5\n1 /3", "deltaMap": "5 -2"}
+				}
+			],
 			"anchor": {"selectorMap": "/6/8!/4/2"}
 		},
 		{
@@ -2242,51 +2247,51 @@
 				{
 					"type": "paragraph",
 					"content": [
-						{"text": " ", "anchor": {"selectorMap": "/1"}},
+						{"text": " ", "anchor": {"selectorMap": "/1", "deltaMap": "1 -5"}},
 						{"text": "Annie was dowie, an’ Willie was wae:", "anchor": {"selectorMap": "/2/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/3"}},
+						{"text": " ", "anchor": {"selectorMap": "/3", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/5"}},
+						{"text": " ", "anchor": {"selectorMap": "/5", "deltaMap": "1 -5"}},
 						{"text": "What can be the matter wi’ siccan a twae?", "anchor": {"selectorMap": "/6/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/7"}},
+						{"text": " ", "anchor": {"selectorMap": "/7", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/9"}},
+						{"text": " ", "anchor": {"selectorMap": "/9", "deltaMap": "1 -5"}},
 						{"text": "For Annie was bonnie’s the first o’ the day,", "anchor": {"selectorMap": "/10/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/11"}},
+						{"text": " ", "anchor": {"selectorMap": "/11", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/13"}},
+						{"text": " ", "anchor": {"selectorMap": "/13", "deltaMap": "1 -5"}},
 						{"text": "And Willie was strang an’ honest an’ gay.", "anchor": {"selectorMap": "/14/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/15"}}
+						{"text": " ", "anchor": {"selectorMap": "/15", "deltaMap": "1 -4"}}
 					],
 					"anchor": {"selectorMap": "/6/30!/4/2/52/2"}
 				},
 				{
 					"type": "paragraph",
 					"content": [
-						{"text": " ", "anchor": {"selectorMap": "/1"}},
+						{"text": " ", "anchor": {"selectorMap": "/1", "deltaMap": "1 -5"}},
 						{
 							"text": "Oh! the tane had a daddy was poor an’ was proud;",
 							"anchor": {"selectorMap": "/2/1"}
 						},
-						{"text": " ", "anchor": {"selectorMap": "/3"}},
+						{"text": " ", "anchor": {"selectorMap": "/3", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/5"}},
+						{"text": " ", "anchor": {"selectorMap": "/5", "deltaMap": "1 -5"}},
 						{
 							"text": "An’ the tither a minnie that cared for the gowd.",
 							"anchor": {"selectorMap": "/6/1"}
 						},
-						{"text": " ", "anchor": {"selectorMap": "/7"}},
+						{"text": " ", "anchor": {"selectorMap": "/7", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/9"}},
+						{"text": " ", "anchor": {"selectorMap": "/9", "deltaMap": "1 -5"}},
 						{"text": "They lo’ed are anither, an’ said their say —", "anchor": {"selectorMap": "/10/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/11"}},
+						{"text": " ", "anchor": {"selectorMap": "/11", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/13"}},
+						{"text": " ", "anchor": {"selectorMap": "/13", "deltaMap": "1 -5"}},
 						{
 							"text": "But the daddy an’ minnie hae pairtit the twae.",
 							"anchor": {"selectorMap": "/14/1"}
 						},
-						{"text": " ", "anchor": {"selectorMap": "/15"}}
+						{"text": " ", "anchor": {"selectorMap": "/15", "deltaMap": "1 -4"}}
 					],
 					"anchor": {"selectorMap": "/6/30!/4/2/52/4"}
 				}
@@ -2438,84 +2443,84 @@
 				{
 					"type": "paragraph",
 					"content": [
-						{"text": " ", "anchor": {"selectorMap": "/1"}},
+						{"text": " ", "anchor": {"selectorMap": "/1", "deltaMap": "1 -5"}},
 						{"text": "Oh, gin I had a bonnie ship,", "anchor": {"selectorMap": "/2/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/3"}},
+						{"text": " ", "anchor": {"selectorMap": "/3", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/5"}},
+						{"text": " ", "anchor": {"selectorMap": "/5", "deltaMap": "1 -5"}},
 						{"text": "And men to sail wi’ me,", "anchor": {"selectorMap": "/6/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/7"}},
+						{"text": " ", "anchor": {"selectorMap": "/7", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/9"}},
+						{"text": " ", "anchor": {"selectorMap": "/9", "deltaMap": "1 -5"}},
 						{"text": "It’s I wad gang to my true love,", "anchor": {"selectorMap": "/10/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/11"}},
+						{"text": " ", "anchor": {"selectorMap": "/11", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/13"}},
+						{"text": " ", "anchor": {"selectorMap": "/13", "deltaMap": "1 -5"}},
 						{"text": "Sin’ he winna come to me.", "anchor": {"selectorMap": "/14/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/15"}}
+						{"text": " ", "anchor": {"selectorMap": "/15", "deltaMap": "1 -4"}}
 					],
 					"anchor": {"selectorMap": "/6/32!/4/2/10/2"}
 				},
 				{
 					"type": "paragraph",
 					"content": [
-						{"text": " ", "anchor": {"selectorMap": "/1"}},
+						{"text": " ", "anchor": {"selectorMap": "/1", "deltaMap": "1 -5"}},
 						{"text": "Lang stood she at her true love’s door,", "anchor": {"selectorMap": "/2/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/3"}},
+						{"text": " ", "anchor": {"selectorMap": "/3", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/5"}},
+						{"text": " ", "anchor": {"selectorMap": "/5", "deltaMap": "1 -5"}},
 						{"text": "And lang tirled at the pin;", "anchor": {"selectorMap": "/6/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/7"}},
+						{"text": " ", "anchor": {"selectorMap": "/7", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/9"}},
+						{"text": " ", "anchor": {"selectorMap": "/9", "deltaMap": "1 -5"}},
 						{"text": "At length up gat his fause mother,", "anchor": {"selectorMap": "/10/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/11"}},
+						{"text": " ", "anchor": {"selectorMap": "/11", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/13"}},
+						{"text": " ", "anchor": {"selectorMap": "/13", "deltaMap": "1 -5"}},
 						{"text": "Says, “Wha’s that wad be in?”", "anchor": {"selectorMap": "/14/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/15"}}
+						{"text": " ", "anchor": {"selectorMap": "/15", "deltaMap": "1 -4"}}
 					],
 					"anchor": {"selectorMap": "/6/32!/4/2/10/4"}
 				},
 				{
 					"type": "paragraph",
 					"content": [
-						{"text": " ", "anchor": {"selectorMap": "/1"}},
+						{"text": " ", "anchor": {"selectorMap": "/1", "deltaMap": "1 -5"}},
 						{"text": "Love Gregory started frae his sleep,", "anchor": {"selectorMap": "/2/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/3"}},
+						{"text": " ", "anchor": {"selectorMap": "/3", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/5"}},
+						{"text": " ", "anchor": {"selectorMap": "/5", "deltaMap": "1 -5"}},
 						{"text": "And to his mother did say:", "anchor": {"selectorMap": "/6/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/7"}},
+						{"text": " ", "anchor": {"selectorMap": "/7", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/9"}},
+						{"text": " ", "anchor": {"selectorMap": "/9", "deltaMap": "1 -5"}},
 						{"text": "“I dreamed a dream this night, mither,", "anchor": {"selectorMap": "/10/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/11"}},
+						{"text": " ", "anchor": {"selectorMap": "/11", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/13"}},
+						{"text": " ", "anchor": {"selectorMap": "/13", "deltaMap": "1 -5"}},
 						{"text": "That maks my heart right wae.", "anchor": {"selectorMap": "/14/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/15"}}
+						{"text": " ", "anchor": {"selectorMap": "/15", "deltaMap": "1 -4"}}
 					],
 					"anchor": {"selectorMap": "/6/32!/4/2/10/8"}
 				},
 				{
 					"type": "paragraph",
 					"content": [
-						{"text": " ", "anchor": {"selectorMap": "/1"}},
+						{"text": " ", "anchor": {"selectorMap": "/1", "deltaMap": "1 -5"}},
 						{"text": "“I dreamed that Annie of Lochroyan,", "anchor": {"selectorMap": "/2/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/3"}},
+						{"text": " ", "anchor": {"selectorMap": "/3", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/5"}},
+						{"text": " ", "anchor": {"selectorMap": "/5", "deltaMap": "1 -5"}},
 						{"text": "The flower of a’ her kin,", "anchor": {"selectorMap": "/6/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/7"}},
+						{"text": " ", "anchor": {"selectorMap": "/7", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/9"}},
+						{"text": " ", "anchor": {"selectorMap": "/9", "deltaMap": "1 -5"}},
 						{"text": "Was standing mournin’ at my door,", "anchor": {"selectorMap": "/10/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/11"}},
+						{"text": " ", "anchor": {"selectorMap": "/11", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/13"}},
+						{"text": " ", "anchor": {"selectorMap": "/13", "deltaMap": "1 -5"}},
 						{"text": "But nane wad let her in.”", "anchor": {"selectorMap": "/14/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/15"}}
+						{"text": " ", "anchor": {"selectorMap": "/15", "deltaMap": "1 -4"}}
 					],
 					"anchor": {"selectorMap": "/6/32!/4/2/10/10"}
 				}
@@ -3216,96 +3221,96 @@
 				{
 					"type": "paragraph",
 					"content": [
-						{"text": " ", "anchor": {"selectorMap": "/1"}},
+						{"text": " ", "anchor": {"selectorMap": "/1", "deltaMap": "1 -5"}},
 						{"text": "“Psyche’s sighing all her prison darkens;", "anchor": {"selectorMap": "/2/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/3"}},
+						{"text": " ", "anchor": {"selectorMap": "/3", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/5"}},
+						{"text": " ", "anchor": {"selectorMap": "/5", "deltaMap": "1 -5"}},
 						{"text": "She is moaning for the far-off stars;", "anchor": {"selectorMap": "/6/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/7"}},
+						{"text": " ", "anchor": {"selectorMap": "/7", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/9"}},
+						{"text": " ", "anchor": {"selectorMap": "/9", "deltaMap": "1 -5"}},
 						{"text": "Fearing, hoping, every sound she hearkens —", "anchor": {"selectorMap": "/10/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/11"}},
+						{"text": " ", "anchor": {"selectorMap": "/11", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/13"}},
+						{"text": " ", "anchor": {"selectorMap": "/13", "deltaMap": "1 -5"}},
 						{"text": "Fate may now be breaking at her bars.", "anchor": {"selectorMap": "/14/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/15"}}
+						{"text": " ", "anchor": {"selectorMap": "/15", "deltaMap": "1 -4"}}
 					],
 					"anchor": {"selectorMap": "/6/40!/4/2/26/2"}
 				},
 				{
 					"type": "paragraph",
 					"content": [
-						{"text": " ", "anchor": {"selectorMap": "/1"}},
+						{"text": " ", "anchor": {"selectorMap": "/1", "deltaMap": "1 -5"}},
 						{"text": "Bound, fast bound, are Psyche’s airy pinions:", "anchor": {"selectorMap": "/2/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/3"}},
+						{"text": " ", "anchor": {"selectorMap": "/3", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/5"}},
+						{"text": " ", "anchor": {"selectorMap": "/5", "deltaMap": "1 -5"}},
 						{"text": "High her heart, her mourning soft and low —", "anchor": {"selectorMap": "/6/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/7"}},
+						{"text": " ", "anchor": {"selectorMap": "/7", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/9"}},
+						{"text": " ", "anchor": {"selectorMap": "/9", "deltaMap": "1 -5"}},
 						{"text": "Knowing that in sultry pain’s dominions", "anchor": {"selectorMap": "/10/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/11"}},
+						{"text": " ", "anchor": {"selectorMap": "/11", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/13"}},
+						{"text": " ", "anchor": {"selectorMap": "/13", "deltaMap": "1 -5"}},
 						{"text": "Grow the palms that crown the victor’s brow;", "anchor": {"selectorMap": "/14/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/15"}}
+						{"text": " ", "anchor": {"selectorMap": "/15", "deltaMap": "1 -4"}}
 					],
 					"anchor": {"selectorMap": "/6/40!/4/2/26/4"}
 				},
 				{
 					"type": "paragraph",
 					"content": [
-						{"text": " ", "anchor": {"selectorMap": "/1"}},
+						{"text": " ", "anchor": {"selectorMap": "/1", "deltaMap": "1 -5"}},
 						{"text": "That the empty hand the wreath encloses;", "anchor": {"selectorMap": "/2/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/3"}},
+						{"text": " ", "anchor": {"selectorMap": "/3", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/5"}},
+						{"text": " ", "anchor": {"selectorMap": "/5", "deltaMap": "1 -5"}},
 						{"text": "Earth’s cold winds but make the spirit brave;", "anchor": {"selectorMap": "/6/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/7"}},
+						{"text": " ", "anchor": {"selectorMap": "/7", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/9"}},
+						{"text": " ", "anchor": {"selectorMap": "/9", "deltaMap": "1 -5"}},
 						{"text": "Knowing that the briars bear the roses,", "anchor": {"selectorMap": "/10/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/11"}},
+						{"text": " ", "anchor": {"selectorMap": "/11", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/13"}},
+						{"text": " ", "anchor": {"selectorMap": "/13", "deltaMap": "1 -5"}},
 						{"text": "Golden flowers the waste deserted grave.", "anchor": {"selectorMap": "/14/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/15"}}
+						{"text": " ", "anchor": {"selectorMap": "/15", "deltaMap": "1 -4"}}
 					],
 					"anchor": {"selectorMap": "/6/40!/4/2/26/6"}
 				},
 				{
 					"type": "paragraph",
 					"content": [
-						{"text": " ", "anchor": {"selectorMap": "/1"}},
+						{"text": " ", "anchor": {"selectorMap": "/1", "deltaMap": "1 -5"}},
 						{"text": "In the cypress-shade her myrtle groweth;", "anchor": {"selectorMap": "/2/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/3"}},
+						{"text": " ", "anchor": {"selectorMap": "/3", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/5"}},
+						{"text": " ", "anchor": {"selectorMap": "/5", "deltaMap": "1 -5"}},
 						{"text": "Much she loves, because she much hath borne;", "anchor": {"selectorMap": "/6/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/7"}},
+						{"text": " ", "anchor": {"selectorMap": "/7", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/9"}},
+						{"text": " ", "anchor": {"selectorMap": "/9", "deltaMap": "1 -5"}},
 						{
 							"text": "Love-led, through the darksome way she goeth —",
 							"anchor": {"selectorMap": "/10/1"}
 						},
-						{"text": " ", "anchor": {"selectorMap": "/11"}},
+						{"text": " ", "anchor": {"selectorMap": "/11", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/13"}},
+						{"text": " ", "anchor": {"selectorMap": "/13", "deltaMap": "1 -5"}},
 						{"text": "On to meet him in the breaking morn.", "anchor": {"selectorMap": "/14/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/15"}}
+						{"text": " ", "anchor": {"selectorMap": "/15", "deltaMap": "1 -4"}}
 					],
 					"anchor": {"selectorMap": "/6/40!/4/2/26/8"}
 				},
 				{
 					"type": "paragraph",
 					"content": [
-						{"text": " ", "anchor": {"selectorMap": "/1"}},
+						{"text": " ", "anchor": {"selectorMap": "/1", "deltaMap": "1 -5"}},
 						{"text": "She can bear —”", "anchor": {"selectorMap": "/2/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/3"}}
+						{"text": " ", "anchor": {"selectorMap": "/3", "deltaMap": "1 -4"}}
 					],
 					"anchor": {"selectorMap": "/6/40!/4/2/26/10"}
 				}
@@ -4113,87 +4118,87 @@
 				{
 					"type": "paragraph",
 					"content": [
-						{"text": " ", "anchor": {"selectorMap": "/1"}},
+						{"text": " ", "anchor": {"selectorMap": "/1", "deltaMap": "1 -5"}},
 						{"text": "The autumn winds are sighing", "anchor": {"selectorMap": "/2/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/3"}},
+						{"text": " ", "anchor": {"selectorMap": "/3", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/5"}},
+						{"text": " ", "anchor": {"selectorMap": "/5", "deltaMap": "1 -5"}},
 						{"text": "Over land and sea;", "anchor": {"selectorMap": "/6/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/7"}},
+						{"text": " ", "anchor": {"selectorMap": "/7", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/9"}},
+						{"text": " ", "anchor": {"selectorMap": "/9", "deltaMap": "1 -5"}},
 						{"text": "The autumn woods are dying", "anchor": {"selectorMap": "/10/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/11"}},
+						{"text": " ", "anchor": {"selectorMap": "/11", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/13"}},
+						{"text": " ", "anchor": {"selectorMap": "/13", "deltaMap": "1 -5"}},
 						{"text": "Over hill and lea;", "anchor": {"selectorMap": "/14/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/15"}},
+						{"text": " ", "anchor": {"selectorMap": "/15", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/17"}},
+						{"text": " ", "anchor": {"selectorMap": "/17", "deltaMap": "1 -5"}},
 						{"text": "And my heart is sighing, dying,", "anchor": {"selectorMap": "/18/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/19"}},
+						{"text": " ", "anchor": {"selectorMap": "/19", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/21"}},
+						{"text": " ", "anchor": {"selectorMap": "/21", "deltaMap": "1 -5"}},
 						{"text": "Maiden, for thee.", "anchor": {"selectorMap": "/22/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/23"}}
+						{"text": " ", "anchor": {"selectorMap": "/23", "deltaMap": "1 -4"}}
 					],
 					"anchor": {"selectorMap": "/6/46!/4/2/10/2"}
 				},
 				{
 					"type": "paragraph",
 					"content": [
-						{"text": " ", "anchor": {"selectorMap": "/1"}},
+						{"text": " ", "anchor": {"selectorMap": "/1", "deltaMap": "1 -5"}},
 						{"text": "The autumn clouds are flying", "anchor": {"selectorMap": "/2/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/3"}},
+						{"text": " ", "anchor": {"selectorMap": "/3", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/5"}},
+						{"text": " ", "anchor": {"selectorMap": "/5", "deltaMap": "1 -5"}},
 						{"text": "Homeless over me;", "anchor": {"selectorMap": "/6/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/7"}},
+						{"text": " ", "anchor": {"selectorMap": "/7", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/9"}},
+						{"text": " ", "anchor": {"selectorMap": "/9", "deltaMap": "1 -5"}},
 						{"text": "The homeless birds are crying", "anchor": {"selectorMap": "/10/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/11"}},
+						{"text": " ", "anchor": {"selectorMap": "/11", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/13"}},
+						{"text": " ", "anchor": {"selectorMap": "/13", "deltaMap": "1 -5"}},
 						{"text": "In the naked tree;", "anchor": {"selectorMap": "/14/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/15"}},
+						{"text": " ", "anchor": {"selectorMap": "/15", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/17"}},
+						{"text": " ", "anchor": {"selectorMap": "/17", "deltaMap": "1 -5"}},
 						{"text": "And my heart is flying, crying,", "anchor": {"selectorMap": "/18/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/19"}},
+						{"text": " ", "anchor": {"selectorMap": "/19", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/21"}},
+						{"text": " ", "anchor": {"selectorMap": "/21", "deltaMap": "1 -5"}},
 						{"text": "Maiden, to thee.", "anchor": {"selectorMap": "/22/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/23"}}
+						{"text": " ", "anchor": {"selectorMap": "/23", "deltaMap": "1 -4"}}
 					],
 					"anchor": {"selectorMap": "/6/46!/4/2/10/4"}
 				},
 				{
 					"type": "paragraph",
 					"content": [
-						{"text": " ", "anchor": {"selectorMap": "/1"}},
+						{"text": " ", "anchor": {"selectorMap": "/1", "deltaMap": "1 -5"}},
 						{"text": "My cries may turn to gladness,", "anchor": {"selectorMap": "/2/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/3"}},
+						{"text": " ", "anchor": {"selectorMap": "/3", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/5"}},
+						{"text": " ", "anchor": {"selectorMap": "/5", "deltaMap": "1 -5"}},
 						{"text": "And my flying flee;", "anchor": {"selectorMap": "/6/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/7"}},
+						{"text": " ", "anchor": {"selectorMap": "/7", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/9"}},
+						{"text": " ", "anchor": {"selectorMap": "/9", "deltaMap": "1 -5"}},
 						{"text": "My sighs may lose the sadness,", "anchor": {"selectorMap": "/10/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/11"}},
+						{"text": " ", "anchor": {"selectorMap": "/11", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/13"}},
+						{"text": " ", "anchor": {"selectorMap": "/13", "deltaMap": "1 -5"}},
 						{"text": "Yet sigh on in me;", "anchor": {"selectorMap": "/14/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/15"}},
+						{"text": " ", "anchor": {"selectorMap": "/15", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/17"}},
+						{"text": " ", "anchor": {"selectorMap": "/17", "deltaMap": "1 -5"}},
 						{"text": "All my sadness, all my gladness,", "anchor": {"selectorMap": "/18/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/19"}},
+						{"text": " ", "anchor": {"selectorMap": "/19", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/21"}},
+						{"text": " ", "anchor": {"selectorMap": "/21", "deltaMap": "1 -5"}},
 						{"text": "Maiden, lost in thee.", "anchor": {"selectorMap": "/22/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/23"}}
+						{"text": " ", "anchor": {"selectorMap": "/23", "deltaMap": "1 -4"}}
 					],
 					"anchor": {"selectorMap": "/6/46!/4/2/10/6"}
 				}
@@ -5329,13 +5334,13 @@
 				{
 					"type": "paragraph",
 					"content": [
-						{"text": " ", "anchor": {"selectorMap": "/1"}},
+						{"text": " ", "anchor": {"selectorMap": "/1", "deltaMap": "1 -5"}},
 						{"text": "“What fine chisel", "anchor": {"selectorMap": "/2/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/3"}},
+						{"text": " ", "anchor": {"selectorMap": "/3", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/5"}},
+						{"text": " ", "anchor": {"selectorMap": "/5", "deltaMap": "1 -5"}},
 						{"text": "Could ever yet cut breath?”", "anchor": {"selectorMap": "/6/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/7"}}
+						{"text": " ", "anchor": {"selectorMap": "/7", "deltaMap": "1 -4"}}
 					],
 					"anchor": {"selectorMap": "/6/50!/4/2/54/2"}
 				}
@@ -6348,37 +6353,37 @@
 				{
 					"type": "paragraph",
 					"content": [
-						{"text": " ", "anchor": {"selectorMap": "/1"}},
+						{"text": " ", "anchor": {"selectorMap": "/1", "deltaMap": "1 -5"}},
 						{"text": "Days of old,", "anchor": {"selectorMap": "/2/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/3"}},
+						{"text": " ", "anchor": {"selectorMap": "/3", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/5"}},
+						{"text": " ", "anchor": {"selectorMap": "/5", "deltaMap": "1 -5"}},
 						{"text": "Ye are not dead, though gone from me;", "anchor": {"selectorMap": "/6/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/7"}},
+						{"text": " ", "anchor": {"selectorMap": "/7", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/9"}},
+						{"text": " ", "anchor": {"selectorMap": "/9", "deltaMap": "1 -5"}},
 						{"text": "Ye are not cold,", "anchor": {"selectorMap": "/10/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/11"}},
+						{"text": " ", "anchor": {"selectorMap": "/11", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/13"}},
+						{"text": " ", "anchor": {"selectorMap": "/13", "deltaMap": "1 -5"}},
 						{"text": "But like the summer-birds gone o’er the sea.", "anchor": {"selectorMap": "/14/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/15"}},
+						{"text": " ", "anchor": {"selectorMap": "/15", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/17"}},
+						{"text": " ", "anchor": {"selectorMap": "/17", "deltaMap": "1 -5"}},
 						{"text": "The sun brings back the swallows fast,", "anchor": {"selectorMap": "/18/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/19"}},
+						{"text": " ", "anchor": {"selectorMap": "/19", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/21"}},
+						{"text": " ", "anchor": {"selectorMap": "/21", "deltaMap": "1 -5"}},
 						{"text": "O’er the sea:", "anchor": {"selectorMap": "/22/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/23"}},
+						{"text": " ", "anchor": {"selectorMap": "/23", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/25"}},
+						{"text": " ", "anchor": {"selectorMap": "/25", "deltaMap": "1 -5"}},
 						{"text": "When thou comest at the last,", "anchor": {"selectorMap": "/26/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/27"}},
+						{"text": " ", "anchor": {"selectorMap": "/27", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/29"}},
+						{"text": " ", "anchor": {"selectorMap": "/29", "deltaMap": "1 -5"}},
 						{"text": "The days of old come back to me.", "anchor": {"selectorMap": "/30/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/31"}}
+						{"text": " ", "anchor": {"selectorMap": "/31", "deltaMap": "1 -4"}}
 					],
 					"anchor": {"selectorMap": "/6/58!/4/2/8/2"}
 				}
@@ -6899,7 +6904,7 @@
 				{"text": "\n"},
 				{"text": " was published in 1894 by", "anchor": {"selectorMap": "18 /5\n4 /6/1\n3 /7"}},
 				{"text": "\n"},
-				{"text": " ", "anchor": {"selectorMap": "/9"}},
+				{"text": " ", "anchor": {"selectorMap": "/9", "deltaMap": "1 -3"}},
 				{
 					"text": "George MacDonald",
 					"anchor": {"selectorMap": "/10/1"},
@@ -6914,16 +6919,16 @@
 			"content": [
 				{"text": "This ebook was produced for", "anchor": {"selectorMap": "/1"}},
 				{"text": "\n"},
-				{"text": " ", "anchor": {"selectorMap": "/3"}},
+				{"text": " ", "anchor": {"selectorMap": "/3", "deltaMap": "1 -3"}},
 				{
 					"text": "Standard Ebooks",
 					"anchor": {"selectorMap": "/4/1"},
 					"target": {"url": "https://standardebooks.org/"}
 				},
 				{"text": "\n"},
-				{"text": " by", "anchor": {"selectorMap": "/7"}},
+				{"text": " by", "anchor": {"selectorMap": "/7", "deltaMap": "1 -3"}},
 				{"text": "\n"},
-				{"text": " ", "anchor": {"selectorMap": "/9"}},
+				{"text": " ", "anchor": {"selectorMap": "/9", "deltaMap": "1 -3"}},
 				{
 					"text": "C. B. Bowman",
 					"anchor": {"selectorMap": "5 /10/2/1\n7 /10/3"},
@@ -6936,7 +6941,7 @@
 					"anchor": {"selectorMap": "45 /13\n4 /14/1\n3 /15"}
 				},
 				{"text": "\n"},
-				{"text": " ", "anchor": {"selectorMap": "/17"}},
+				{"text": " ", "anchor": {"selectorMap": "/17", "deltaMap": "1 -3"}},
 				{"text": "Sandra Brown", "style": {"bold": true}, "anchor": {"selectorMap": "/18/1"}},
 				{"text": ", ", "anchor": {"selectorMap": "/19"}},
 				{"text": "Jonathan Ingram", "style": {"bold": true}, "anchor": {"selectorMap": "/20/1"}},
@@ -6949,18 +6954,21 @@
 					"target": {"url": "https://www.pgdp.net/"}
 				},
 				{"text": "\n"},
-				{"text": " for", "anchor": {"selectorMap": "/27"}},
+				{"text": " for", "anchor": {"selectorMap": "/27", "deltaMap": "1 -3"}},
 				{"text": "\n"},
-				{"text": " ", "anchor": {"selectorMap": "/29"}},
+				{"text": " ", "anchor": {"selectorMap": "/29", "deltaMap": "1 -3"}},
 				{
 					"text": "Project Gutenberg",
 					"anchor": {"selectorMap": "/30/1"},
 					"target": {"url": "https://www.gutenberg.org/ebooks/8913"}
 				},
 				{"text": "\n"},
-				{"text": " and on digital scans from the", "anchor": {"selectorMap": "/33"}},
+				{
+					"text": " and on digital scans from the",
+					"anchor": {"selectorMap": "/33", "deltaMap": "1 -3"}
+				},
 				{"text": "\n"},
-				{"text": " ", "anchor": {"selectorMap": "/35"}},
+				{"text": " ", "anchor": {"selectorMap": "/35", "deltaMap": "1 -3"}},
 				{
 					"text": "Internet Archive",
 					"anchor": {"selectorMap": "/36/1"},
@@ -6975,7 +6983,7 @@
 			"content": [
 				{"text": "The cover page is adapted from", "anchor": {"selectorMap": "/1"}},
 				{"text": "\n"},
-				{"text": " ", "anchor": {"selectorMap": "/3"}},
+				{"text": " ", "anchor": {"selectorMap": "/3", "deltaMap": "1 -3"}},
 				{
 					"text": "The Race Track (Death on a Pale Horse)",
 					"style": {"italic": true},
@@ -6988,7 +6996,7 @@
 					"anchor": {"selectorMap": "28 /7\n4 /8/1\n3 /9"}
 				},
 				{"text": "\n"},
-				{"text": " ", "anchor": {"selectorMap": "/11"}},
+				{"text": " ", "anchor": {"selectorMap": "/11", "deltaMap": "1 -3"}},
 				{
 					"text": "Albert Pinkham Ryder",
 					"anchor": {"selectorMap": "/12/1"},
@@ -6996,9 +7004,12 @@
 				},
 				{"text": ".", "anchor": {"selectorMap": "/13"}},
 				{"text": "\n"},
-				{"text": " The cover and title pages feature the", "anchor": {"selectorMap": "/15"}},
+				{
+					"text": " The cover and title pages feature the",
+					"anchor": {"selectorMap": "/15", "deltaMap": "1 -3"}
+				},
 				{"text": "\n"},
-				{"text": " ", "anchor": {"selectorMap": "/17"}},
+				{"text": " ", "anchor": {"selectorMap": "/17", "deltaMap": "1 -3"}},
 				{"text": "League Spartan", "style": {"bold": true}, "anchor": {"selectorMap": "/18/1"}},
 				{"text": " and ", "anchor": {"selectorMap": "/19"}},
 				{"text": "Sorts Mill Goudy", "style": {"bold": true}, "anchor": {"selectorMap": "/20/1"}},
@@ -7008,7 +7019,7 @@
 					"anchor": {"selectorMap": "22 /23\n4 /24/1\n5 /25\n4 /26/1\n3 /27"}
 				},
 				{"text": "\n"},
-				{"text": " ", "anchor": {"selectorMap": "/29"}},
+				{"text": " ", "anchor": {"selectorMap": "/29", "deltaMap": "1 -3"}},
 				{
 					"text": "The League of Moveable Type",
 					"anchor": {"selectorMap": "/30/1"},
@@ -7023,20 +7034,23 @@
 			"content": [
 				{"text": "This edition was released on", "anchor": {"selectorMap": "/1"}},
 				{"text": "\n"},
-				{"text": " ", "anchor": {"selectorMap": "/3"}},
+				{"text": " ", "anchor": {"selectorMap": "/3", "deltaMap": "1 -3"}},
 				{
 					"text": "February 25, 2026, 10:22 p.m.",
 					"style": {"bold": true},
 					"anchor": {"selectorMap": "25 /4/2/1\n4 /4/2/2/1"}
 				},
 				{"text": "\n"},
-				{"text": " and is based on", "anchor": {"selectorMap": "/7"}},
+				{"text": " and is based on", "anchor": {"selectorMap": "/7", "deltaMap": "1 -3"}},
 				{"text": "\n"},
-				{"text": " ", "anchor": {"selectorMap": "/9"}},
+				{"text": " ", "anchor": {"selectorMap": "/9", "deltaMap": "1 -3"}},
 				{"text": "revision 8b7c604", "style": {"bold": true}, "anchor": {"selectorMap": "/10/1"}},
 				{"text": ".", "anchor": {"selectorMap": "/11"}},
 				{"text": "\n"},
-				{"text": " The first edition of this ebook was released on", "anchor": {"selectorMap": "/13"}},
+				{
+					"text": " The first edition of this ebook was released on",
+					"anchor": {"selectorMap": "/13", "deltaMap": "1 -3"}
+				},
 				{"text": "\n"},
 				{
 					"text": " February 25, 2026, 4:41 p.m.",
@@ -7045,10 +7059,10 @@
 				{"text": "\n"},
 				{
 					"text": " You can check for updates to this ebook, view its revision history, or download it for different ereading systems at",
-					"anchor": {"selectorMap": "/19"}
+					"anchor": {"selectorMap": "/19", "deltaMap": "1 -3"}
 				},
 				{"text": "\n"},
-				{"text": " ", "anchor": {"selectorMap": "/21"}},
+				{"text": " ", "anchor": {"selectorMap": "/21", "deltaMap": "1 -3"}},
 				{
 					"text": "standardebooks.org/ebooks/george-macdonald/the-portent",
 					"anchor": {"selectorMap": "/22/1"},
@@ -7085,23 +7099,23 @@
 				{
 					"type": "paragraph",
 					"content": [
-						{"text": " ", "anchor": {"selectorMap": "/1"}},
+						{"text": " ", "anchor": {"selectorMap": "/1", "deltaMap": "1 -5"}},
 						{"text": "May you do good and not evil.", "anchor": {"selectorMap": "/2/1"}},
-						{"text": " ", "anchor": {"selectorMap": "/3"}},
+						{"text": " ", "anchor": {"selectorMap": "/3", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/5"}},
+						{"text": " ", "anchor": {"selectorMap": "/5", "deltaMap": "1 -5"}},
 						{
 							"text": "May you find forgiveness for yourself and forgive others.",
 							"anchor": {"selectorMap": "/6/1"}
 						},
-						{"text": " ", "anchor": {"selectorMap": "/7"}},
+						{"text": " ", "anchor": {"selectorMap": "/7", "deltaMap": "1 -5"}},
 						{"text": "\n"},
-						{"text": " ", "anchor": {"selectorMap": "/9"}},
+						{"text": " ", "anchor": {"selectorMap": "/9", "deltaMap": "1 -5"}},
 						{
 							"text": "May you share freely, never taking more than you give.",
 							"anchor": {"selectorMap": "/10/1"}
 						},
-						{"text": " ", "anchor": {"selectorMap": "/11"}}
+						{"text": " ", "anchor": {"selectorMap": "/11", "deltaMap": "1 -4"}}
 					],
 					"anchor": {"selectorMap": "/6/66!/4/2/4/2"}
 				}
