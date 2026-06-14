@@ -226,7 +226,7 @@ final class DocumentWorkerController {
             case failed
             case cancelled
             case inProgress
-            case extractedData(data: [String: Any])
+            case extractedData(data: [String: Any], isCached: Bool = false)
         }
 
         let workerId: UUID?
@@ -370,7 +370,7 @@ final class DocumentWorkerController {
             if let cachedData = cachedData(for: work, in: worker) {
                 worker.workStartTimes[work] = CFAbsoluteTimeGetCurrent()
                 subject.send(work: work, kind: .inProgress, worker: worker)
-                finishWork(work, in: worker, updateWorkerState: false, finalUpdateKind: .extractedData(data: cachedData))
+                finishWork(work, in: worker, updateWorkerState: false, finalUpdateKind: .extractedData(data: cachedData, isCached: true))
                 return
             }
             switch worker.state {

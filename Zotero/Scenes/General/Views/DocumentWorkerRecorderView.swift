@@ -35,7 +35,7 @@ struct DocumentWorkerRecorderView: View {
                     Section {
                         ForEach(viewModel.records) { record in
                             RecordRow(record: record)
-                                .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                     if !record.status.isTerminal {
                                         Button(role: .destructive) {
                                             viewModel.cancel(record)
@@ -123,21 +123,29 @@ private struct RecordRow: View {
                 HStack(spacing: 12) {
                     MetadataText(record.runtime.title)
                     MetadataText(record.priority.title)
-                    if let duration = record.duration {
-                        MetadataText("\(String(format: "%.3f", duration))s")
+                    if let duration = record.durationText {
+                        MetadataText(duration)
                     }
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
                     MetadataText(record.runtime.title)
                     MetadataText(record.priority.title)
-                    if let duration = record.duration {
-                        MetadataText("\(String(format: "%.3f", duration))s")
+                    if let duration = record.durationText {
+                        MetadataText(duration)
                     }
                 }
             }
         }
         .padding(.vertical, 4)
+    }
+}
+
+private extension DocumentWorkerRecorder.Record {
+    var durationText: String? {
+        guard let duration else { return nil }
+        let text = "\(String(format: "%.3f", duration))s"
+        return isCached ? "\(text) (cached)" : text
     }
 }
 
