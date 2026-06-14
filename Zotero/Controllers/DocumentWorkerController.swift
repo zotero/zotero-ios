@@ -490,6 +490,35 @@ final class DocumentWorkerController {
         }
     }
 
+    func clearCachedWorks() {
+        accessQueue.async(flags: .barrier) { [weak self] in
+            guard let self else { return }
+
+            let downloadsURL = Files.downloads.createUrl()
+            guard fileStorage.fileManager.fileExists(atPath: downloadsURL.path) else {
+                DDLogInfo("DocumentWorkerController: skipped cached work clear, downloads directory missing")
+                return
+            }
+            guard let enumerator = fileStorage.fileManager.enumerator(at: downloadsURL, includingPropertiesForKeys: [.isDirectoryKey]) else {
+                DDLogError("DocumentWorkerController: failed to enumerate downloads directory for cached work clear")
+                return
+            }
+
+            var removedCount = 0
+            for case let url as URL in enumerator {
+                guard url.lastPathComponent == ".zotero-derived" else { continue }
+                enumerator.skipDescendants()
+                do {
+                    try fileStorage.fileManager.removeItem(at: url)
+                    removedCount += 1
+                } catch {
+                    DDLogError("DocumentWorkerController: failed to clear cached work directory \(url.path) - \(error)")
+                }
+            }
+            DDLogInfo("DocumentWorkerController: cleared \(removedCount) cached document worker directories")
+        }
+    }
+
     private func prepare(worker: Worker, for work: Work) {
         switch work.preferredRuntime {
         case .jsContext:

@@ -56,7 +56,11 @@ struct DocumentWorkerRecorderView: View {
                     }
                 }
 
-                ToolbarItem(placement: .primaryAction) {
+                ToolbarItemGroup(placement: .primaryAction) {
+                    Button("Clear Cached Works", role: .destructive) {
+                        viewModel.clearCachedWorks()
+                    }
+
                     Button("Clear Finished") {
                         viewModel.clearFinishedWorkHistory()
                     }
@@ -94,6 +98,10 @@ private final class DocumentWorkerRecorderViewModel: ObservableObject {
 
     func clearFinishedWorkHistory() {
         recorder.clearFinishedWorkHistory()
+    }
+
+    func clearCachedWorks() {
+        documentWorkerController.clearCachedWorks()
     }
 
     func cancel(_ record: DocumentWorkerRecorder.Record) {
