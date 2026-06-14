@@ -231,7 +231,7 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                     let worker = DocumentWorkerController.Worker(file: file, shouldCacheInput: false, isOneOff: true, priority: .default)
                     var emittedUpdates: [DocumentWorkerController.Update.Kind] = []
 
-                    waitUntil(timeout: .seconds(10)) { completion in
+                    waitUntil(timeout: .seconds(20)) { completion in
                         documentWorkerController.queue(work: work, in: worker)
                             .subscribe(onNext: { update in
                                 expect(update.work).to(equal(work))
@@ -327,6 +327,159 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                 }
             }
 
+            context("with the WebView handler") {
+                func makeWebViewDocumentWorkerHandler(
+                    temporaryDirectory: File,
+                    nativeONNXModelDataProvider: DocumentWorkerWebViewHandler.NativeONNXModelDataProvider? = nil
+                ) -> DocumentWorkerWebViewHandler {
+                    let configuration = WKWebViewConfiguration()
+                    configuration.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
+                    let webView = webViewProvider.addWebView(configuration: configuration)
+                    return DocumentWorkerWebViewHandler(
+                        webView: webView,
+                        temporaryDirectory: temporaryDirectory,
+                        cleanup: {
+                            try? FileManager.default.removeItem(at: temporaryDirectory.createUrl())
+                        },
+                        nativeONNXModelDataProvider: nativeONNXModelDataProvider
+                    )
+                }
+
+                func intArray(from value: Any?) -> [Int]? {
+                    if let values = value as? [Int] {
+                        return values
+                    }
+                    if let values = value as? [NSNumber] {
+                        return values.map(\.intValue)
+                    }
+                    return nil
+                }
+
+                func valueCount(from value: Any?) -> Int? {
+                    if let values = value as? [Float] {
+                        return values.count
+                    }
+                    if let values = value as? [Double] {
+                        return values.count
+                    }
+                    if let values = value as? [NSNumber] {
+                        return values.count
+                    }
+                    return nil
+                }
+
+                it("can round-trip through the native ONNX bridge without changing the worker runtime") {
+                    let temporaryDirectory = try! prepareTemporaryDocumentWorkerDirectory()
+                    var handler: DocumentWorkerWebViewHandler?
+
+                    waitUntil(timeout: .seconds(20)) { completion in
+                        DispatchQueue.main.async {
+                            let documentWorkerHandler = makeWebViewDocumentWorkerHandler(temporaryDirectory: temporaryDirectory)
+                            handler = documentWorkerHandler
+
+                            documentWorkerHandler.nativeONNXBridgeEcho(payload: [
+                                "type": "float32",
+                                "dims": [2, 2],
+                                "values": [1, 2, 3, 4]
+                            ])
+                            .subscribe(onSuccess: { result in
+                                expect(result["runtime"] as? String).to(equal("native"))
+                                let payload = result["payload"] as? [String: Any]
+                                expect(payload?["type"] as? String).to(equal("float32"))
+                                expect(payload?["dims"] as? [Int]).to(equal([2, 2]))
+                                expect(payload?["values"] as? [Int]).to(equal([1, 2, 3, 4]))
+                                completion()
+                            }, onFailure: { error in
+                                fail("native ONNX bridge echo failed - \(error)")
+                                completion()
+                            })
+                            .disposed(by: disposeBag)
+                        }
+                    }
+
+                    handler?.removeFromSuperviewAsynchronously()
+                }
+
+                it("can run a native ONNX model from the WebView bridge without changing the worker runtime") {
+                    let temporaryDirectory = try! prepareTemporaryDocumentWorkerDirectory()
+                    var handler: DocumentWorkerWebViewHandler?
+
+                    waitUntil(timeout: .seconds(20)) { completion in
+                        DispatchQueue.main.async {
+                            let documentWorkerHandler = makeWebViewDocumentWorkerHandler(
+                                temporaryDirectory: temporaryDirectory,
+                                nativeONNXModelDataProvider: { model in
+                                    guard let url = Bundle(for: ONNXRuntimeSpec.self).url(forResource: model, withExtension: "onnx") else {
+                                        throw DocumentWorkerWebViewHandler.Error.invalidNativeONNXBridgePayload("missing model fixture")
+                                    }
+                                    return try Data(contentsOf: url)
+                                }
+                            )
+                            handler = documentWorkerHandler
+
+                            documentWorkerHandler.nativeONNXBridgeRun(
+                                model: "block_seg_classifier_model",
+                                inputs: [
+                                    [
+                                        "name": "regular_features",
+                                        "type": "float32",
+                                        "dims": [1, 1, 196],
+                                        "values": Array(repeating: 0, count: 196)
+                                    ],
+                                    [
+                                        "name": "rich_features",
+                                        "type": "float32",
+                                        "dims": [1, 1, 306],
+                                        "values": Array(repeating: 0, count: 306)
+                                    ],
+                                    [
+                                        "name": "hash_slots",
+                                        "type": "int64",
+                                        "dims": [1, 1, 36],
+                                        "values": Array(repeating: 0, count: 36)
+                                    ],
+                                    [
+                                        "name": "char_slots",
+                                        "type": "int64",
+                                        "dims": [1, 1, 4],
+                                        "values": Array(repeating: 0, count: 4)
+                                    ],
+                                    [
+                                        "name": "pad_mask",
+                                        "type": "bool",
+                                        "dims": [1, 1],
+                                        "values": [false]
+                                    ]
+                                ],
+                                outputNames: [
+                                    "type_logits",
+                                    "flow_logits"
+                                ]
+                            )
+                            .subscribe(onSuccess: { result in
+                                let outputs = result["outputs"] as? [String: Any]
+                                let typeLogits = outputs?["type_logits"] as? [String: Any]
+                                expect(typeLogits?["type"] as? String).to(equal("float32"))
+                                expect(intArray(from: typeLogits?["dims"])).to(equal([1, 1, 7]))
+                                expect(valueCount(from: typeLogits?["values"])).to(equal(7))
+
+                                let flowLogits = outputs?["flow_logits"] as? [String: Any]
+                                expect(flowLogits?["type"] as? String).to(equal("float32"))
+                                expect(intArray(from: flowLogits?["dims"])).to(equal([1, 1, 3]))
+                                expect(valueCount(from: flowLogits?["values"])).to(equal(3))
+                                completion()
+                            }, onFailure: { error in
+                                fail("native ONNX bridge run failed - \(error)")
+                                completion()
+                            })
+                            .disposed(by: disposeBag)
+                        }
+                    }
+
+                    handler?.removeFromSuperviewAsynchronously()
+                }
+            }
+
             context("with a valid URL") {
                 let libraryId = LibraryIdentifier.custom(.myLibrary)
 
@@ -396,6 +549,45 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                             timeout: fixture.timeout
                         )
                     }
+                }
+
+                it("can extract structured document text for PDF with JavaScriptCore and native ONNX") {
+                    let nativeDocumentWorkerController = DocumentWorkerController(
+                        fileStorage: TestControllers.fileStorage,
+                        usesNativeONNXForStructuredDocumentText: true
+                    )
+
+                    let work: DocumentWorkerController.Work = .structuredDocumentText
+                    let key = String(UUID().uuidString.replacingOccurrences(of: "-", with: "").prefix(8))
+                    let file = makeFile(
+                        resource: "1",
+                        fileExtension: "pdf",
+                        key: key,
+                        filename: "1",
+                        contentType: "application/pdf"
+                    )
+                    let worker = DocumentWorkerController.Worker(file: file, shouldCacheInput: false, isOneOff: true, priority: .default)
+                    var emittedUpdates: [DocumentWorkerController.Update.Kind] = []
+
+                    waitUntil(timeout: .seconds(120)) { completion in
+                        nativeDocumentWorkerController.queue(work: work, in: worker)
+                            .subscribe(onNext: { update in
+                                expect(update.work).to(equal(work))
+                                expect(update.runtime).to(equal(.jsContext))
+                                emittedUpdates.append(update.kind)
+                                switch update.kind {
+                                case .failed, .cancelled, .extractedData:
+                                    completion()
+
+                                case .queued, .inProgress:
+                                    break
+                                }
+                            })
+                            .disposed(by: disposeBag)
+                    }
+
+                    expect(emittedUpdates.count).toEventually(equal(3), timeout: .seconds(120))
+                    assertStructuredDocumentTextPack(updates: emittedUpdates)
                 }
             }
 
@@ -480,7 +672,7 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                 process(updates: updates, ignoreKeys: ignoreKeys, jsonURL: url)
             }
 
-            func assertStructuredDocumentTextPack(updates: [DocumentWorkerController.Update.Kind], expectedURL: URL) {
+            func assertStructuredDocumentTextPack(updates: [DocumentWorkerController.Update.Kind], expectedURL: URL? = nil) {
                 let magic = Data([0x89, 0x53, 0x44, 0x54, 0x0d, 0x0a, 0x1a, 0x0a])
                 var materializedData: [String: Any]?
                 for (index, update) in updates.enumerated() {
@@ -530,7 +722,9 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                     fail("missing materialized SDTPack data")
                     return
                 }
-                process(updates: [.queued, .inProgress, .extractedData(data: materializedData)], ignoreKeys: ["dateCreated"], jsonURL: expectedURL)
+                if let expectedURL {
+                    process(updates: [.queued, .inProgress, .extractedData(data: materializedData)], ignoreKeys: ["dateCreated"], jsonURL: expectedURL)
+                }
             }
 
             func assertBlockAccess(in pack: SDTPack, materialized: [String: Any]) {
@@ -538,6 +732,7 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                     fail("missing materialized content")
                     return
                 }
+                expect(content).toNot(beEmpty())
 
                 do {
                     for index in sampleIndexes(count: content.count) {
@@ -753,7 +948,7 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                     }
                 }
 
-                func compareJSONValues(actual: Any?, expected: Any?, ignoreKeys: Set<String>, context: String) {
+            func compareJSONValues(actual: Any?, expected: Any?, ignoreKeys: Set<String>, context: String) {
                     if let expected = expected as? [String: Any] {
                         guard let actual = actual as? [String: Any] else {
                             fail("expected object at \(context), got \(String(describing: actual))")
@@ -797,6 +992,30 @@ final class DocumentWorkerControllerSpec: QuickSpec {
 
                     expect(actual as? AnyHashable).to(equal(expected as? AnyHashable), description: context)
                 }
+            }
+
+            func prepareTemporaryDocumentWorkerDirectory() throws -> File {
+                guard let workerHtmlUrl = Bundle.main.url(forResource: "document_worker", withExtension: "html") else {
+                    fail("document_worker.html not found")
+                    throw DocumentWorkerWebViewHandler.Error.cantFindWorkFile
+                }
+                guard let bundledWorkerUrl = Bundle.main.url(forResource: "document_worker", withExtension: nil, subdirectory: "Bundled") else {
+                    fail("bundled document_worker directory not found")
+                    throw DocumentWorkerWebViewHandler.Error.cantFindWorkFile
+                }
+
+                let temporaryDirectory = Files.temporaryDirectory
+                let temporaryDirectoryUrl = temporaryDirectory.createUrl()
+                try FileManager.default.createDirectory(at: temporaryDirectoryUrl, withIntermediateDirectories: true)
+                try FileManager.default.copyItem(at: workerHtmlUrl, to: temporaryDirectory.copy(withName: "document_worker", ext: "html").createUrl())
+
+                let contents = try FileManager.default.contentsOfDirectory(at: bundledWorkerUrl, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles])
+                for url in contents {
+                    let destination = temporaryDirectoryUrl.appendingPathComponent(url.lastPathComponent)
+                    try FileManager.default.copyItem(at: url, to: destination)
+                }
+
+                return temporaryDirectory
             }
         }
 

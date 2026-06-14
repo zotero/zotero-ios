@@ -11,12 +11,16 @@ import CocoaLumberjackSwift
 import RxSwift
 
 final class DocumentWorkerJSHandler {
+    typealias NativeONNXModelDataProvider = (String) throws -> Data
+
     enum Error: Swift.Error {
         case missingWorkFile
         case invalidMessage
         case unsupportedAction(String)
         case workerError(String)
         case missingData
+        case invalidBundledWorkerDataPath(String)
+        case missingBundledWorkerData(String)
     }
 
     var workFile: File?
@@ -32,8 +36,17 @@ final class DocumentWorkerJSHandler {
     private var pending: [Int: (Result<Any, Swift.Error>) -> Void]
     private var loadError: Swift.Error?
     private var cachedWorkData: Data?
+    private let usesNativeONNXForStructuredDocumentText: Bool
+#if MAINAPP
+    private let nativeONNXBridge: DocumentWorkerNativeONNXBridge?
+#endif
 
-    init(bundle: Bundle = .main, warmUp: Bool = true) {
+    init(
+        bundle: Bundle = .main,
+        warmUp: Bool = true,
+        nativeONNXModelDataProvider: NativeONNXModelDataProvider? = nil,
+        usesNativeONNXForStructuredDocumentText: Bool = false
+    ) {
         queueLabel = "org.zotero.DocumentWorkerJSHandler.queue"
         queue = DispatchQueue(label: queueLabel)
         queueKey = DispatchSpecificKey<String>()
@@ -45,6 +58,10 @@ final class DocumentWorkerJSHandler {
         pending = [:]
         loadError = nil
         cachedWorkData = nil
+        self.usesNativeONNXForStructuredDocumentText = usesNativeONNXForStructuredDocumentText
+#if MAINAPP
+        nativeONNXBridge = nativeONNXModelDataProvider.map { DocumentWorkerNativeONNXBridge(modelDataProvider: $0) }
+#endif
 
         engine.onPostMessage = { [weak self] message, _ in
             guard let self else { return }
@@ -106,8 +123,32 @@ final class DocumentWorkerJSHandler {
             }
             respondWithBundledWorkerData(to: engine, path: path, responseId: id)
 
+        case "NativeONNXRun":
+#if MAINAPP
+            do {
+                guard let nativeONNXBridge else {
+                    throw DocumentWorkerNativeONNXBridge.Error.modelDataProviderUnavailable
+                }
+                try respondWithData(to: engine, id: id, data: nativeONNXBridge.run(payload: data))
+            } catch {
+                respondWithError(to: engine, id: id, message: "\(error)")
+            }
+#else
+            respondWithError(to: engine, id: id, message: "native ONNX is unavailable")
+#endif
+
         default:
             respondWithError(to: engine, id: id, message: "unknown action \(action)")
+        }
+
+        func respondWithData(to engine: DocumentWorkerJSEngine, id: Int, data: Any) throws {
+            let response = engine.makeObject()
+            guard let dataValue = engine.makeValue(data) else {
+                throw Error.invalidMessage
+            }
+            response.setValue(id, forProperty: "responseID")
+            response.setValue(dataValue, forProperty: "data")
+            try engine.postToWorker(response)
         }
 
         func respondWithError(to engine: DocumentWorkerJSEngine, id: Int, message: String) {
@@ -124,36 +165,11 @@ final class DocumentWorkerJSHandler {
         }
 
         func respondWithBundledWorkerData(to engine: DocumentWorkerJSEngine, path: String, responseId: Int) {
-            let normalizedPath = path.replacingOccurrences(of: "\\", with: "/")
-            let components = normalizedPath.split(separator: "/", omittingEmptySubsequences: false)
-            let hasUnsafeComponent = components.contains { $0.isEmpty || $0 == ".." }
-            guard !normalizedPath.isEmpty,
-                  !normalizedPath.hasPrefix("/"),
-                  !hasUnsafeComponent else {
-                respondWithError(to: engine, id: responseId, message: "invalid data path \(path)")
-                return
-            }
-
-            let nsPath = normalizedPath as NSString
-            let resourceName = nsPath.lastPathComponent
-            guard !resourceName.isEmpty, resourceName != "." else {
-                respondWithError(to: engine, id: responseId, message: "invalid data path \(path)")
-                return
-            }
-            let directory = nsPath.deletingLastPathComponent
-            let subdirectory: String
-            if directory.isEmpty || directory == "." {
-                subdirectory = "Bundled/document_worker"
-            } else {
-                subdirectory = "Bundled/document_worker/\(directory)"
-            }
-
-            guard let url = bundle.url(forResource: resourceName, withExtension: nil, subdirectory: subdirectory) else {
-                respondWithError(to: engine, id: responseId, message: "missing data \(path)")
-                return
-            }
-            guard let data = try? Data(contentsOf: url) else {
-                respondWithError(to: engine, id: responseId, message: "failed to read data \(path)")
+            let data: Data
+            do {
+                data = try Self.bundledWorkerData(for: path, in: bundle)
+            } catch {
+                respondWithError(to: engine, id: responseId, message: "\(error)")
                 return
             }
             guard let bytes = engine.makeUint8Array(from: data) else {
@@ -222,6 +238,7 @@ final class DocumentWorkerJSHandler {
                 var contentType: String?
                 var password: String?
                 var sourceHash: String?
+                var nativeONNX = false
                 switch action {
                 case .recognizePDF(let _password):
                     password = _password
@@ -234,6 +251,9 @@ final class DocumentWorkerJSHandler {
                     contentType = _contentType
                     password = _password
                     sourceHash = _sourceHash
+#if MAINAPP
+                    nativeONNX = usesNativeONNXForStructuredDocumentText && nativeONNXBridge != nil
+#endif
                 }
                 if let pages {
                     dataObject.setValue(pages, forProperty: "pageIndexes")
@@ -246,6 +266,9 @@ final class DocumentWorkerJSHandler {
                 }
                 if let sourceHash {
                     dataObject.setValue(sourceHash, forProperty: "sourceHash")
+                }
+                if nativeONNX {
+                    dataObject.setValue(true, forProperty: "nativeONNX")
                 }
                 message.setValue(dataObject, forProperty: "data")
 
@@ -282,6 +305,35 @@ final class DocumentWorkerJSHandler {
             }
         }
     }
+
+    private static func bundledWorkerData(for path: String, in bundle: Bundle) throws -> Data {
+        let normalizedPath = path.replacingOccurrences(of: "\\", with: "/")
+        let components = normalizedPath.split(separator: "/", omittingEmptySubsequences: false)
+        let hasUnsafeComponent = components.contains { $0.isEmpty || $0 == ".." }
+        guard !normalizedPath.isEmpty,
+              !normalizedPath.hasPrefix("/"),
+              !hasUnsafeComponent else {
+            throw Error.invalidBundledWorkerDataPath(path)
+        }
+
+        let nsPath = normalizedPath as NSString
+        let resourceName = nsPath.lastPathComponent
+        guard !resourceName.isEmpty, resourceName != "." else {
+            throw Error.invalidBundledWorkerDataPath(path)
+        }
+        let directory = nsPath.deletingLastPathComponent
+        let subdirectory: String
+        if directory.isEmpty || directory == "." {
+            subdirectory = "Bundled/document_worker"
+        } else {
+            subdirectory = "Bundled/document_worker/\(directory)"
+        }
+
+        guard let url = bundle.url(forResource: resourceName, withExtension: nil, subdirectory: subdirectory) else {
+            throw Error.missingBundledWorkerData(path)
+        }
+        return try Data(contentsOf: url)
+    }
 }
 
 extension DocumentWorkerJSHandler: DocumentWorkerHandling {
@@ -291,7 +343,11 @@ extension DocumentWorkerJSHandler: DocumentWorkerHandling {
             return true
 
         case .getStructuredDocumentText:
+#if MAINAPP
+            return usesNativeONNXForStructuredDocumentText && nativeONNXBridge != nil
+#else
             return false
+#endif
         }
     }
 

@@ -683,7 +683,25 @@
 
   g.self = g;
   g.onmessage = null;
+  function arrayBufferToBase64(buffer) {
+    var bytes = new Uint8Array(buffer);
+    var binary = "";
+    var chunkSize = 0x8000;
+    for (var i = 0; i < bytes.length; i += chunkSize) {
+      var chunk = bytes.subarray(i, i + chunkSize);
+      binary += String.fromCharCode.apply(null, chunk);
+    }
+    return g.btoa(binary);
+  }
+
+  function normalizePostMessage(msg) {
+    if (msg && msg.responseID && msg.data && msg.data.buf instanceof ArrayBuffer) {
+      msg.data.buf = arrayBufferToBase64(msg.data.buf);
+    }
+    return msg;
+  }
+
   g.postMessage = function (msg, transfer) {
-    __nativePostMessage(msg, transfer || []);
+    __nativePostMessage(normalizePostMessage(msg), transfer || []);
   };
 })();
