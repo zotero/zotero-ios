@@ -34,33 +34,139 @@
 					{"title": "NFC Stress Tests", "ref": [14], "level": 2}
 				]
 			}
+		],
+		"domMap": [
+			{"tag": "h1", "index": 0, "textStart": 2, "textLength": 10, "flags": 3},
+			{
+				"tag": "p",
+				"index": 1,
+				"textStart": 14,
+				"textLength": 42,
+				"flags": 1,
+				"children": [
+					{"tag": "strong", "index": 0, "textStart": 35, "textLength": 4, "flags": 3},
+					{"tag": "em", "index": 1, "textStart": 44, "textLength": 6, "flags": 7}
+				]
+			},
+			{"tag": "h2", "index": 2, "textStart": 59, "textLength": 11, "flags": 1},
+			{"tag": "p", "index": 3, "textStart": 72, "textLength": 28},
+			{
+				"tag": "ul",
+				"index": 4,
+				"textStart": 102,
+				"textLength": 37,
+				"flags": 3,
+				"children": [
+					{"tag": "li", "index": 0, "textStart": 105, "textLength": 8, "flags": 1},
+					{"tag": "li", "index": 1, "textStart": 116, "textLength": 8},
+					{"tag": "li", "index": 2, "textStart": 127, "textLength": 10, "flags": 6}
+				]
+			},
+			{"tag": "h2", "index": 5, "textStart": 142, "textLength": 11},
+			{
+				"tag": "p",
+				"index": 6,
+				"textStart": 155,
+				"textLength": 20,
+				"children": [{"tag": "a", "index": 0, "textStart": 170, "textLength": 4, "flags": 7}]
+			},
+			{"tag": "h3", "index": 7, "textStart": 178, "textLength": 10, "flags": 3},
+			{"tag": "p", "index": 8, "textStart": 190, "textLength": 15},
+			{
+				"tag": "blockquote",
+				"index": 9,
+				"textStart": 208,
+				"textLength": 22,
+				"flags": 3,
+				"children": [{"tag": "p", "index": 0, "textStart": 211, "textLength": 17, "flags": 7}]
+			},
+			{
+				"tag": "table",
+				"index": 10,
+				"textStart": 233,
+				"textLength": 36,
+				"flags": 3,
+				"children": [
+					{
+						"tag": "tr",
+						"index": 0,
+						"textStart": 236,
+						"textLength": 16,
+						"flags": 1,
+						"children": [
+							{"tag": "th", "index": 0, "textStart": 236, "textLength": 8, "flags": 1},
+							{"tag": "th", "index": 1, "textStart": 244, "textLength": 8, "flags": 6}
+						]
+					},
+					{
+						"tag": "tr",
+						"index": 1,
+						"textStart": 255,
+						"textLength": 12,
+						"flags": 6,
+						"children": [
+							{"tag": "td", "index": 0, "textStart": 255, "textLength": 6, "flags": 1},
+							{"tag": "td", "index": 1, "textStart": 261, "textLength": 6, "flags": 6}
+						]
+					}
+				]
+			},
+			{
+				"tag": "nav",
+				"index": 11,
+				"textStart": 272,
+				"textLength": 63,
+				"flags": 3,
+				"children": [
+					{"tag": "h2", "index": 0, "textStart": 275, "textLength": 18, "flags": 3},
+					{"tag": "p", "index": 1, "textStart": 296, "textLength": 37, "flags": 7}
+				]
+			},
+			{"tag": "pre", "index": 14, "textStart": 428, "textLength": 36, "flags": 1},
+			{"tag": "h2", "index": 15, "textStart": 467, "textLength": 16, "flags": 2},
+			{"tag": "p", "index": 16, "textStart": 488, "textLength": 23},
+			{"tag": "p", "index": 17, "textStart": 516, "textLength": 24},
+			{"tag": "p", "index": 18, "textStart": 545, "textLength": 14},
+			{
+				"tag": "p",
+				"index": 19,
+				"textStart": 564,
+				"textLength": 60,
+				"children": [
+					{"tag": "strong", "index": 0, "textStart": 577, "textLength": 4, "flags": 3},
+					{"tag": "em", "index": 1, "textStart": 593, "textLength": 5, "flags": 7}
+				]
+			},
+			{"tag": "p", "index": 20, "textStart": 629, "textLength": 32},
+			{"tag": "p", "index": 21, "textStart": 666, "textLength": 10, "flags": 2},
+			{"tag": "pre", "index": 22, "textStart": 681, "textLength": 20, "flags": 6}
 		]
 	},
 	"content": [
 		{
 			"type": "heading",
-			"content": [{"text": "Main Title", "anchor": {"selectorMap": ""}}],
+			"content": [{"text": "Main Title", "anchor": {"stream": 2}}],
 			"anchor": {"selectorMap": "h1"}
 		},
 		{
 			"type": "paragraph",
 			"content": [
-				{"text": "First paragraph with ", "anchor": {"selectorMap": "0"}},
-				{"text": "bold", "style": {"bold": true}, "anchor": {"selectorMap": " > strong"}},
-				{"text": " and ", "anchor": {"selectorMap": "25"}},
-				{"text": "italic", "style": {"italic": true}, "anchor": {"selectorMap": " > em"}},
-				{"text": " text.", "anchor": {"selectorMap": "36"}}
+				{"text": "First paragraph with ", "anchor": {"stream": 14}},
+				{"text": "bold", "style": {"bold": true}, "anchor": {"stream": 35}},
+				{"text": " and ", "anchor": {"stream": 39}},
+				{"text": "italic", "style": {"italic": true}, "anchor": {"stream": 44}},
+				{"text": " text.", "anchor": {"stream": 50}}
 			],
 			"anchor": {"selectorMap": "p:first-of-type"}
 		},
 		{
 			"type": "heading",
-			"content": [{"text": "Section One", "anchor": {"selectorMap": ""}}],
+			"content": [{"text": "Section One", "anchor": {"stream": 59}}],
 			"anchor": {"selectorMap": "h2:first-of-type"}
 		},
 		{
 			"type": "paragraph",
-			"content": [{"text": "Some content in section one.", "anchor": {"selectorMap": ""}}],
+			"content": [{"text": "Some content in section one.", "anchor": {"stream": 72}}],
 			"anchor": {"selectorMap": "p:nth-child(4)"}
 		},
 		{
@@ -68,17 +174,17 @@
 			"content": [
 				{
 					"type": "listitem",
-					"content": [{"text": "Item one", "anchor": {"selectorMap": ""}}],
+					"content": [{"text": "Item one", "anchor": {"stream": 105}}],
 					"anchor": {"selectorMap": "ul > li:first-child"}
 				},
 				{
 					"type": "listitem",
-					"content": [{"text": "Item two", "anchor": {"selectorMap": ""}}],
+					"content": [{"text": "Item two", "anchor": {"stream": 116}}],
 					"anchor": {"selectorMap": "ul > li:nth-child(2)"}
 				},
 				{
 					"type": "listitem",
-					"content": [{"text": "Item three", "anchor": {"selectorMap": ""}}],
+					"content": [{"text": "Item three", "anchor": {"stream": 127}}],
 					"anchor": {"selectorMap": "ul > li:last-child"}
 				}
 			],
@@ -86,26 +192,26 @@
 		},
 		{
 			"type": "heading",
-			"content": [{"text": "Section Two", "anchor": {"selectorMap": ""}}],
+			"content": [{"text": "Section Two", "anchor": {"stream": 142}}],
 			"anchor": {"selectorMap": "h2:nth-child(6)"}
 		},
 		{
 			"type": "paragraph",
 			"content": [
-				{"text": "Content with a ", "anchor": {"selectorMap": "0"}},
-				{"text": "link", "anchor": {"selectorMap": " > a"}, "target": {"url": "https://example.com"}},
-				{"text": ".", "anchor": {"selectorMap": "19"}}
+				{"text": "Content with a ", "anchor": {"stream": 155}},
+				{"text": "link", "anchor": {"stream": 170}, "target": {"url": "https://example.com"}},
+				{"text": ".", "anchor": {"stream": 174}}
 			],
 			"anchor": {"selectorMap": "p:nth-child(7)"}
 		},
 		{
 			"type": "heading",
-			"content": [{"text": "Subsection", "anchor": {"selectorMap": ""}}],
+			"content": [{"text": "Subsection", "anchor": {"stream": 178}}],
 			"anchor": {"selectorMap": "h3"}
 		},
 		{
 			"type": "paragraph",
-			"content": [{"text": "Deeper content.", "anchor": {"selectorMap": ""}}],
+			"content": [{"text": "Deeper content.", "anchor": {"stream": 190}}],
 			"anchor": {"selectorMap": "p:nth-child(9)"}
 		},
 		{
@@ -113,7 +219,7 @@
 			"content": [
 				{
 					"type": "paragraph",
-					"content": [{"text": "A quoted passage.", "anchor": {"selectorMap": ""}}],
+					"content": [{"text": "A quoted passage.", "anchor": {"stream": 211}}],
 					"anchor": {"selectorMap": "blockquote > p"}
 				}
 			],
@@ -130,7 +236,7 @@
 							"content": [
 								{
 									"type": "paragraph",
-									"content": [{"text": "Header 1", "anchor": {"selectorMap": ""}}],
+									"content": [{"text": "Header 1", "anchor": {"stream": 236}}],
 									"anchor": {"selectorMap": "table > tr:first-child > th:first-child"}
 								}
 							],
@@ -142,7 +248,7 @@
 							"content": [
 								{
 									"type": "paragraph",
-									"content": [{"text": "Header 2", "anchor": {"selectorMap": ""}}],
+									"content": [{"text": "Header 2", "anchor": {"stream": 244}}],
 									"anchor": {"selectorMap": "table > tr:first-child > th:last-child"}
 								}
 							],
@@ -160,7 +266,7 @@
 							"content": [
 								{
 									"type": "paragraph",
-									"content": [{"text": "Cell 1", "anchor": {"selectorMap": ""}}],
+									"content": [{"text": "Cell 1", "anchor": {"stream": 255}}],
 									"anchor": {"selectorMap": "table > tr:last-child > td:first-child"}
 								}
 							],
@@ -171,7 +277,7 @@
 							"content": [
 								{
 									"type": "paragraph",
-									"content": [{"text": "Cell 2", "anchor": {"selectorMap": ""}}],
+									"content": [{"text": "Cell 2", "anchor": {"stream": 261}}],
 									"anchor": {"selectorMap": "table > tr:last-child > td:last-child"}
 								}
 							],
@@ -185,55 +291,51 @@
 		},
 		{
 			"type": "heading",
-			"content": [{"text": "Navigation Heading", "anchor": {"selectorMap": ""}}],
+			"content": [{"text": "Navigation Heading", "anchor": {"stream": 275}}],
 			"anchor": {"selectorMap": "nav > h2"}
 		},
 		{
 			"type": "paragraph",
-			"content": [{"text": "This should be excluded from outline.", "anchor": {"selectorMap": ""}}],
+			"content": [{"text": "This should be excluded from outline.", "anchor": {"stream": 296}}],
 			"anchor": {"selectorMap": "nav > p"}
 		},
 		{
 			"type": "preformatted",
-			"content": [{"text": "Code block\nwith preserved whitespace", "anchor": {"selectorMap": ""}}],
+			"content": [{"text": "Code block\nwith preserved whitespace", "anchor": {"stream": 428}}],
 			"anchor": {"selectorMap": "pre:first-of-type"}
 		},
 		{
 			"type": "heading",
-			"content": [{"text": "NFC Stress Tests", "anchor": {"selectorMap": ""}}],
+			"content": [{"text": "NFC Stress Tests", "anchor": {"stream": 467}}],
 			"anchor": {"selectorMap": "h2:last-of-type"}
 		},
 		{
 			"type": "paragraph",
 			"content": [
-				{"text": "Café lattés are nice.", "anchor": {"selectorMap": "", "deltaMap": "4 -1 10 -2"}}
+				{"text": "Café lattés are nice.", "anchor": {"stream": 488, "deltaMap": "4 -1 10 -2"}}
 			],
 			"anchor": {"selectorMap": "p:nth-child(17)"}
 		},
 		{
 			"type": "paragraph",
 			"content": [
-				{"text": "Viet Nam: Hṍ Chí Minh", "anchor": {"selectorMap": "", "deltaMap": "12 -2 16 -3"}}
+				{"text": "Viet Nam: Hṍ Chí Minh", "anchor": {"stream": 516, "deltaMap": "12 -2 16 -3"}}
 			],
 			"anchor": {"selectorMap": "p:nth-child(18)"}
 		},
 		{
 			"type": "paragraph",
-			"content": [{"text": "Korean: 한글", "anchor": {"selectorMap": "", "deltaMap": "9 -2 10 -4"}}],
+			"content": [{"text": "Korean: 한글", "anchor": {"stream": 545, "deltaMap": "9 -2 10 -4"}}],
 			"anchor": {"selectorMap": "p:nth-child(19)"}
 		},
 		{
 			"type": "paragraph",
 			"content": [
-				{"text": "Normal text, ", "anchor": {"selectorMap": "0"}},
-				{"text": "café", "style": {"bold": true}, "anchor": {"selectorMap": " > strong"}},
-				{"text": " is NFC but ", "anchor": {"selectorMap": "17"}},
-				{
-					"text": "café",
-					"style": {"italic": true},
-					"anchor": {"selectorMap": " > em", "deltaMap": "4 -1"}
-				},
-				{"text": " is NFD, then more normal.", "anchor": {"selectorMap": "34"}}
+				{"text": "Normal text, ", "anchor": {"stream": 564}},
+				{"text": "café", "style": {"bold": true}, "anchor": {"stream": 577}},
+				{"text": " is NFC but ", "anchor": {"stream": 581}},
+				{"text": "café", "style": {"italic": true}, "anchor": {"stream": 593, "deltaMap": "4 -1"}},
+				{"text": " is NFD, then more normal.", "anchor": {"stream": 598}}
 			],
 			"anchor": {"selectorMap": "p:nth-child(20)"}
 		},
@@ -242,21 +344,19 @@
 			"content": [
 				{
 					"text": "Español and Swedish: ångström",
-					"anchor": {"selectorMap": "", "deltaMap": "5 -1 22 -2 28 -3"}
+					"anchor": {"stream": 629, "deltaMap": "5 -1 22 -2 28 -3"}
 				}
 			],
 			"anchor": {"selectorMap": "p:nth-child(21)"}
 		},
 		{
 			"type": "paragraph",
-			"content": [{"text": "ÀB́ĈD̃Ë", "anchor": {"selectorMap": "", "deltaMap": "1 -1 4 -2 7 -3"}}],
+			"content": [{"text": "ÀB́ĈD̃Ë", "anchor": {"stream": 666, "deltaMap": "1 -1 4 -2 7 -3"}}],
 			"anchor": {"selectorMap": "p:last-of-type"}
 		},
 		{
 			"type": "preformatted",
-			"content": [
-				{"text": "NFC: café\nNFD: café", "anchor": {"selectorMap": "", "deltaMap": "19 -1"}}
-			],
+			"content": [{"text": "NFC: café\nNFD: café", "anchor": {"stream": 681, "deltaMap": "19 -1"}}],
 			"anchor": {"selectorMap": "pre:last-child"}
 		}
 	]

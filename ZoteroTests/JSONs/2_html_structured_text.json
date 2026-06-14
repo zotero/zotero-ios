@@ -30,19 +30,43 @@
 					{"title": "Looking Forward", "ref": [13], "level": 2}
 				]
 			}
+		],
+		"domMap": [
+			{
+				"tag": "article",
+				"index": 2,
+				"textStart": 106,
+				"textLength": 3710,
+				"flags": 3,
+				"children": [
+					{"tag": "h1", "index": 0, "textStart": 109, "textLength": 24, "flags": 3},
+					{"tag": "p", "index": 1, "textStart": 137, "textLength": 41, "flags": 1},
+					{"tag": "p", "index": 2, "textStart": 182, "textLength": 454},
+					{"tag": "h2", "index": 3, "textStart": 640, "textLength": 22, "flags": 1},
+					{"tag": "p", "index": 4, "textStart": 666, "textLength": 565},
+					{"tag": "p", "index": 5, "textStart": 1235, "textLength": 401},
+					{"tag": "h2", "index": 6, "textStart": 1640, "textLength": 12},
+					{"tag": "p", "index": 7, "textStart": 1656, "textLength": 412},
+					{"tag": "h3", "index": 8, "textStart": 2072, "textLength": 29, "flags": 3},
+					{"tag": "p", "index": 9, "textStart": 2105, "textLength": 396},
+					{"tag": "h2", "index": 10, "textStart": 2505, "textLength": 12},
+					{"tag": "p", "index": 11, "textStart": 2521, "textLength": 396},
+					{"tag": "p", "index": 12, "textStart": 2921, "textLength": 402},
+					{"tag": "h2", "index": 13, "textStart": 3327, "textLength": 15, "flags": 2},
+					{"tag": "p", "index": 14, "textStart": 3346, "textLength": 468, "flags": 6}
+				]
+			}
 		]
 	},
 	"content": [
 		{
 			"type": "heading",
-			"content": [{"text": "A Deep Dive Into Widgets", "anchor": {"selectorMap": ""}}],
+			"content": [{"text": "A Deep Dive Into Widgets", "anchor": {"stream": 109}}],
 			"anchor": {"selectorMap": "article > h1"}
 		},
 		{
 			"type": "paragraph",
-			"content": [
-				{"text": "By Jane Doe, published on April 23, 2026.", "anchor": {"selectorMap": ""}}
-			],
+			"content": [{"text": "By Jane Doe, published on April 23, 2026.", "anchor": {"stream": 137}}],
 			"anchor": {"selectorMap": "article > p:first-of-type"}
 		},
 		{
@@ -50,14 +74,14 @@
 			"content": [
 				{
 					"text": "Widgets are among the most fascinating mechanical devices in modern industry. This article examines their history, construction, and the many surprising applications they have found in fields ranging from aerospace engineering to consumer electronics. The story of the widget is, in many ways, the story of industrial design itself, and understanding it gives us insight into how engineering constraints shape the objects around us every day.",
-					"anchor": {"selectorMap": ""}
+					"anchor": {"stream": 182, "deltaMap": "61 -2 129 -4 192 -6 262 -8 325 -10 392 -12"}
 				}
 			],
 			"anchor": {"selectorMap": "article > p:nth-child(3)"}
 		},
 		{
 			"type": "heading",
-			"content": [{"text": "The History of Widgets", "anchor": {"selectorMap": ""}}],
+			"content": [{"text": "The History of Widgets", "anchor": {"stream": 640}}],
 			"anchor": {"selectorMap": "article > h2:first-of-type"}
 		},
 		{
@@ -65,7 +89,10 @@
 			"content": [
 				{
 					"text": "The first widgets emerged in the late nineteenth century, when industrial manufacturing was just beginning to rely on interchangeable parts. Early widgets were crude, hand-finished pieces of brass, and each machine shop maintained its own nonstandard dimensions. Over the course of several decades, national and then international standards bodies slowly converged on a common set of tolerances, and by the middle of the twentieth century a widget manufactured in one factory could be used interchangeably in machines built halfway around the world.",
-					"anchor": {"selectorMap": ""}
+					"anchor": {
+						"stream": 666,
+						"deltaMap": "63 -2 134 -4 202 -6 272 -8 341 -10 407 -12 476 -14 543 -16"
+					}
 				}
 			],
 			"anchor": {"selectorMap": "article > p:nth-child(5)"}
@@ -75,14 +102,14 @@
 			"content": [
 				{
 					"text": "This standardization was not without controversy. Small artisanal shops resisted the loss of their local variations, and several prominent engineers argued that tight tolerances would stifle innovation. In retrospect, however, the benefits to global trade and to consumer safety far outweighed those concerns, and the modern widget supply chain is a direct descendant of those early efforts.",
-					"anchor": {"selectorMap": ""}
+					"anchor": {"stream": 1235, "deltaMap": "66 -2 129 -4 191 -6 260 -8 325 -10"}
 				}
 			],
 			"anchor": {"selectorMap": "article > p:nth-child(6)"}
 		},
 		{
 			"type": "heading",
-			"content": [{"text": "Construction", "anchor": {"selectorMap": ""}}],
+			"content": [{"text": "Construction", "anchor": {"stream": 1640}}],
 			"anchor": {"selectorMap": "article > h2:nth-child(7)"}
 		},
 		{
@@ -90,14 +117,14 @@
 			"content": [
 				{
 					"text": "A typical widget is formed by cold-pressing a billet of alloyed steel into a die, then finishing the result with precision grinding. The alloy composition matters enormously: too much carbon, and the widget becomes brittle; too little, and it lacks the strength required to bear sustained load. Modern manufacturers have developed a variety of proprietary alloys, each tuned for a specific application.",
-					"anchor": {"selectorMap": ""}
+					"anchor": {"stream": 1656, "deltaMap": "64 -2 133 -4 200 -6 271 -8 341 -10"}
 				}
 			],
 			"anchor": {"selectorMap": "article > p:nth-child(8)"}
 		},
 		{
 			"type": "heading",
-			"content": [{"text": "Finishing and Quality Control", "anchor": {"selectorMap": ""}}],
+			"content": [{"text": "Finishing and Quality Control", "anchor": {"stream": 2072}}],
 			"anchor": {"selectorMap": "article > h3"}
 		},
 		{
@@ -105,14 +132,14 @@
 			"content": [
 				{
 					"text": "After the initial pressing, each widget passes through several rounds of inspection. Automated optical systems check for surface defects while a coordinate-measuring machine verifies dimensional accuracy to within a few microns. Any widget that fails at either stage is recycled into the melt, not repaired, because even minor defects can propagate into catastrophic failure under load.",
-					"anchor": {"selectorMap": ""}
+					"anchor": {"stream": 2105, "deltaMap": "63 -2 129 -4 195 -6 261 -8 327 -10"}
 				}
 			],
 			"anchor": {"selectorMap": "article > p:nth-child(10)"}
 		},
 		{
 			"type": "heading",
-			"content": [{"text": "Applications", "anchor": {"selectorMap": ""}}],
+			"content": [{"text": "Applications", "anchor": {"stream": 2505}}],
 			"anchor": {"selectorMap": "article > h2:nth-child(11)"}
 		},
 		{
@@ -120,7 +147,7 @@
 			"content": [
 				{
 					"text": "Widgets are deployed in a staggering variety of environments. They can be found in automotive transmissions, aircraft landing gear, surgical robots, industrial conveyor systems, and even in some consumer appliances. Each application places its own demands on the widget's materials and geometry, and engineers typically specify a custom grade for any particularly demanding environment.",
-					"anchor": {"selectorMap": ""}
+					"anchor": {"stream": 2521, "deltaMap": "62 -2 132 -4 195 -6 263 -8 330 -10"}
 				}
 			],
 			"anchor": {"selectorMap": "article > p:nth-child(12)"}
@@ -130,14 +157,14 @@
 			"content": [
 				{
 					"text": "Recent advances in additive manufacturing have made it possible to produce widgets with complex internal geometries that would have been impossible to machine conventionally. These novel designs can shave mass, improve heat dissipation, and in some cases reduce manufacturing cost. As printer technology improves, we expect to see more and more widget production migrate to printed workflows.",
-					"anchor": {"selectorMap": ""}
+					"anchor": {"stream": 2921, "deltaMap": "64 -2 132 -4 199 -6 262 -8 331 -10"}
 				}
 			],
 			"anchor": {"selectorMap": "article > p:nth-child(13)"}
 		},
 		{
 			"type": "heading",
-			"content": [{"text": "Looking Forward", "anchor": {"selectorMap": ""}}],
+			"content": [{"text": "Looking Forward", "anchor": {"stream": 3327}}],
 			"anchor": {"selectorMap": "article > h2:last-of-type"}
 		},
 		{
@@ -145,7 +172,7 @@
 			"content": [
 				{
 					"text": "The future of widgets is bright. New materials, new manufacturing processes, and new applications continue to emerge, and the humble widget will no doubt continue to play a central role in the machines we build for decades to come. For a field that is more than a century old, widget design remains remarkably dynamic — a reminder that even mature technologies can continue to evolve in surprising ways when creative engineers turn their attention to them.",
-					"anchor": {"selectorMap": ""}
+					"anchor": {"stream": 3346, "deltaMap": "66 -2 133 -4 202 -6 264 -8 331 -10 398 -12"}
 				}
 			],
 			"anchor": {"selectorMap": "article > p:last-child"}
