@@ -7,7 +7,7 @@
 #  Copyright © 2023 Corporation for Digital Scholarship. All rights reserved.
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-"$SCRIPT_DIR/../scripts/bundle_onnxruntime.sh"
+"$SCRIPT_DIR/../scripts/fetch_onnxruntime.sh"
 
 git clone https://github.com/zotero/pdf-keys.git
 license=$(grep -Eo '\"license_key\":\"[A-Za-z0-9_=\-]+\"' pdf-keys/ios_license.json | cut -c 15- | tr -d '"')

@@ -9,4 +9,4 @@ SCRIPT_DIR=`dirname "$SCRIPT_PATH"`
 
 "$SCRIPT_DIR/licenses.sh"
 "$SCRIPT_DIR/fetch_bundled_jsons.sh"
-"$SCRIPT_DIR/bundle_onnxruntime.sh"
+"$SCRIPT_DIR/fetch_onnxruntime.sh"

@@ -2665,13 +2665,12 @@
 			path = snapshots;
 			sourceTree = "<group>";
 		};
-		61B0A1E42FBD200100C0DE01 /* Bundled Dependencies */ = {
+		61B0A1E42FBD200100C0DE01 /* Dependencies */ = {
 			isa = PBXGroup;
 			children = (
 				61AF0C5F2FDFD8C3006B5C9B /* ONNXRuntime/onnxruntime.xcframework */,
 			);
-			name = "Bundled Dependencies";
-			path = Bundled;
+			path = Dependencies;
 			sourceTree = "<group>";
 		};
 		61B0A1EC2FBD200100C0DE01 /* ONNX */ = {
@@ -3289,7 +3288,7 @@
 				B311B31D2386A39800BCF592 /* ZShare */,
 				B30D59562206F60400884C4A /* Products */,
 				9A5CCE075B69890E36482447 /* Frameworks */,
-				61B0A1E42FBD200100C0DE01 /* Bundled Dependencies */,
+				61B0A1E42FBD200100C0DE01 /* Dependencies */,
 				615645502DE0825900B8AA6D /* FeatureGates.xcconfig */,
 			);
 			sourceTree = "<group>";
@@ -7109,7 +7108,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited)";
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(PROJECT_DIR)/Bundled/ONNXRuntime/Headers",
+					"$(PROJECT_DIR)/Dependencies/ONNXRuntime/Headers",
 				);
 				INFOPLIST_FILE = Zotero/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
@@ -7159,7 +7158,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited)";
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(PROJECT_DIR)/Bundled/ONNXRuntime/Headers",
+					"$(PROJECT_DIR)/Dependencies/ONNXRuntime/Headers",
 				);
 				INFOPLIST_FILE = Zotero/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
@@ -7203,7 +7202,7 @@
 				);
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(PROJECT_DIR)/Bundled/ONNXRuntime/Headers",
+					"$(PROJECT_DIR)/Dependencies/ONNXRuntime/Headers",
 				);
 				INFOPLIST_FILE = ZoteroTests/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
@@ -7234,7 +7233,7 @@
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(PROJECT_DIR)/Bundled/ONNXRuntime/Headers",
+					"$(PROJECT_DIR)/Dependencies/ONNXRuntime/Headers",
 				);
 				INFOPLIST_FILE = ZoteroTests/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
@@ -7467,7 +7466,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited)";
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(PROJECT_DIR)/Bundled/ONNXRuntime/Headers",
+					"$(PROJECT_DIR)/Dependencies/ONNXRuntime/Headers",
 				);
 				INFOPLIST_FILE = Zotero/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
@@ -7512,7 +7511,7 @@
 				);
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(PROJECT_DIR)/Bundled/ONNXRuntime/Headers",
+					"$(PROJECT_DIR)/Dependencies/ONNXRuntime/Headers",
 				);
 				INFOPLIST_FILE = ZoteroTests/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
