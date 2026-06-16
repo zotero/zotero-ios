@@ -6,6 +6,8 @@
 #  Created by Michal Rentka on 01.06.2023.
 #  Copyright © 2023 Corporation for Digital Scholarship. All rights reserved.
 
+set -e
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 "$SCRIPT_DIR/../scripts/fetch_onnxruntime.sh"
 
