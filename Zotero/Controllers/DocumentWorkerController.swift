@@ -275,7 +275,7 @@ final class DocumentWorkerController {
     private let workerFileCopyStrategy: WorkerFileCopyStrategy = .cloneFirst
 
     let recorder: DocumentWorkerRecorder?
-    var usesNativeONNXForStructuredDocumentText: Bool
+    private var usesNativeONNXForStructuredDocumentText: Bool
 
     weak var webViewProvider: WebViewProvider? {
         didSet {
@@ -312,6 +312,27 @@ final class DocumentWorkerController {
     }
 
     // MARK: Actions
+    func getUsesNativeONNXForStructuredDocumentText(completion: @escaping (Bool) -> Void) {
+        accessQueue.async { [weak self] in
+            guard let self else { return }
+            let value = usesNativeONNXForStructuredDocumentText
+            DispatchQueue.main.async {
+                completion(value)
+            }
+        }
+    }
+
+    func setUsesNativeONNXForStructuredDocumentText(_ newValue: Bool) {
+        accessQueue.async(flags: .barrier) { [weak self] in
+            guard let self, usesNativeONNXForStructuredDocumentText != newValue else { return }
+
+            usesNativeONNXForStructuredDocumentText = newValue
+            preloadDocumentWorkerIfIdle()
+            preloadWebViewDocumentWorkerIfNeeded()
+            DDLogInfo("DocumentWorkerController: structured document text runtime changed to \(usesNativeONNXForStructuredDocumentText ? "native ONNX" : "WebView")")
+        }
+    }
+
     private func preferredRuntime(for work: Work) -> HandlerRuntime {
         switch work {
         case .structuredDocumentText where usesNativeONNXForStructuredDocumentText:
@@ -763,7 +784,8 @@ final class DocumentWorkerController {
             startWorkIfNeeded()
             return
         }
-        guard let documentWorkerHandler = worker.handlersByRuntime[preferredRuntime(for: work)] else {
+        let runtime = preferredRuntime(for: work)
+        guard let documentWorkerHandler = worker.handlersByRuntime[runtime] else {
             updateStateAndQueues(for: worker, state: .preparing)
             prepare(worker: worker, for: work)
             return
@@ -773,7 +795,7 @@ final class DocumentWorkerController {
         // Start work.
         worker.workStartTimes[work] = CFAbsoluteTimeGetCurrent()
         DDLogInfo("DocumentWorkerController: started \(work) in \(worker)")
-        subject.send(work: work, kind: .inProgress, worker: worker, runtime: preferredRuntime(for: work))
+        subject.send(work: work, kind: .inProgress, worker: worker, runtime: runtime)
         switch work {
         case .recognizer:
             documentWorkerHandler.performAction(.recognizePDF(password: worker.password), workId: work.id)

@@ -91,6 +91,12 @@ struct DocumentWorkerRecorderView: View {
                 }
 
                 ToolbarItemGroup(placement: .primaryAction) {
+                    Toggle("Native ONNX", isOn: Binding(
+                        get: { viewModel.usesNativeONNXForStructuredDocumentText },
+                        set: { viewModel.setUsesNativeONNXForStructuredDocumentText($0) }
+                    ))
+                    .toggleStyle(.switch)
+
                     Button("Clear Cached Works", role: .destructive) {
                         viewModel.clearCachedWorks()
                     }
@@ -112,6 +118,7 @@ private struct ShareSheet: Identifiable {
 
 private final class DocumentWorkerRecorderViewModel: ObservableObject {
     @Published private(set) var records: [DocumentWorkerRecorder.Record]
+    @Published var usesNativeONNXForStructuredDocumentText: Bool
     @Published var shareSheet: ShareSheet?
 
     private let documentWorkerController: DocumentWorkerController
@@ -126,6 +133,7 @@ private final class DocumentWorkerRecorderViewModel: ObservableObject {
         self.documentWorkerController = documentWorkerController
         self.recorder = recorder
         records = recorder.records
+        usesNativeONNXForStructuredDocumentText = false
         disposeBag = DisposeBag()
 
         recorder.recordsObservable
@@ -134,6 +142,10 @@ private final class DocumentWorkerRecorderViewModel: ObservableObject {
                 self?.records = records
             })
             .disposed(by: disposeBag)
+
+        documentWorkerController.getUsesNativeONNXForStructuredDocumentText { [weak self] usesNativeONNXForStructuredDocumentText in
+            self?.usesNativeONNXForStructuredDocumentText = usesNativeONNXForStructuredDocumentText
+        }
     }
 
     func clearFinishedWorkHistory() {
@@ -142,6 +154,11 @@ private final class DocumentWorkerRecorderViewModel: ObservableObject {
 
     func clearCachedWorks() {
         documentWorkerController.clearCachedWorks()
+    }
+
+    func setUsesNativeONNXForStructuredDocumentText(_ usesNativeONNXForStructuredDocumentText: Bool) {
+        self.usesNativeONNXForStructuredDocumentText = usesNativeONNXForStructuredDocumentText
+        documentWorkerController.setUsesNativeONNXForStructuredDocumentText(usesNativeONNXForStructuredDocumentText)
     }
 
     func shareCacheFiles(for record: DocumentWorkerRecorder.Record) {
