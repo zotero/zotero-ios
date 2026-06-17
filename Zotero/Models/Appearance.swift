@@ -45,7 +45,7 @@ enum Appearance {
         }
     }
 
-    var htmlEpubTheme: String? {
+    var htmlEpubTheme: String {
         switch self {
         case .sepia:
             return "sepia"
@@ -55,6 +55,16 @@ enum Appearance {
 
         case .dark:
             return "dark"
+        }
+    }
+
+    var htmlEpubThemeOption: String {
+        switch self {
+        case .dark:
+            return "darkTheme: '\(htmlEpubTheme)'"
+
+        case .light, .sepia:
+            return "lightTheme: '\(htmlEpubTheme)'"
         }
     }
 
