@@ -34,6 +34,10 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
     weak var documentController: HtmlEpubDocumentViewController?
     private weak var documentControllerTop: NSLayoutConstraint!
     weak var documentControllerLeft: NSLayoutConstraint?
+    private weak var pageIndicator: UIView?
+    private weak var pageIndicatorLabel: UILabel?
+    private var documentBottomToSafeArea: NSLayoutConstraint?
+    private var documentBottomToIndicator: NSLayoutConstraint?
     weak var annotationToolbarController: AnnotationToolbarViewController?
     var annotationToolbarHandler: AnnotationToolbarHandler?
     weak var sidebarController: HtmlEpubSidebarViewController?
@@ -167,6 +171,19 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
             separator.translatesAutoresizingMaskIntoConstraints = false
             separator.backgroundColor = Asset.Colors.annotationSidebarBorderColor.color
 
+            let pageIndicator = UIView()
+            pageIndicator.translatesAutoresizingMaskIntoConstraints = false
+            pageIndicator.backgroundColor = .systemGray6
+            pageIndicator.layer.cornerRadius = 6
+            pageIndicator.layer.masksToBounds = true
+            pageIndicator.alpha = 0
+            let pageIndicatorLabel = UILabel()
+            pageIndicatorLabel.translatesAutoresizingMaskIntoConstraints = false
+            pageIndicatorLabel.textColor = .label
+            pageIndicatorLabel.font = .preferredFont(forTextStyle: .body)
+            pageIndicatorLabel.textAlignment = .center
+            pageIndicator.addSubview(pageIndicatorLabel)
+
             add(controller: documentController)
             add(controller: annotationToolbar)
             add(controller: sidebarController)
@@ -174,14 +191,17 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
             view.addSubview(annotationToolbar.view)
             view.addSubview(sidebarController.view)
             view.addSubview(separator)
+            view.addSubview(pageIndicator)
 
             let documentLeftConstraint = documentController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor)
             let sidebarLeftConstraint = sidebarController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: -PDFReaderLayout.sidebarWidth)
             let documentTopConstraint = documentController.view.topAnchor.constraint(equalTo: view.topAnchor)
+            let documentBottomToSafeArea = view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: documentController.view.bottomAnchor)
+            let documentBottomToIndicator = pageIndicator.topAnchor.constraint(equalTo: documentController.view.bottomAnchor, constant: 12)
 
             NSLayoutConstraint.activate([
                 documentTopConstraint,
-                view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: documentController.view.bottomAnchor),
+                documentBottomToSafeArea,
                 view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: documentController.view.trailingAnchor),
                 sidebarController.view.topAnchor.constraint(equalTo: view.topAnchor),
                 sidebarController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
@@ -191,7 +211,13 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
                 separator.leadingAnchor.constraint(equalTo: sidebarController.view.trailingAnchor),
                 separator.topAnchor.constraint(equalTo: view.topAnchor),
                 separator.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-                documentLeftConstraint
+                documentLeftConstraint,
+                pageIndicator.centerXAnchor.constraint(equalTo: documentController.view.centerXAnchor),
+                view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: pageIndicator.bottomAnchor, constant: 12),
+                pageIndicatorLabel.topAnchor.constraint(equalTo: pageIndicator.topAnchor, constant: 6),
+                pageIndicator.bottomAnchor.constraint(equalTo: pageIndicatorLabel.bottomAnchor, constant: 6),
+                pageIndicatorLabel.leadingAnchor.constraint(equalTo: pageIndicator.leadingAnchor, constant: 12),
+                pageIndicator.trailingAnchor.constraint(equalTo: pageIndicatorLabel.trailingAnchor, constant: 12)
             ])
 
             self.documentController = documentController
@@ -200,6 +226,10 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
             documentControllerTop = documentTopConstraint
             documentControllerLeft = documentLeftConstraint
             sidebarControllerLeft = sidebarLeftConstraint
+            self.pageIndicator = pageIndicator
+            self.pageIndicatorLabel = pageIndicatorLabel
+            self.documentBottomToSafeArea = documentBottomToSafeArea
+            self.documentBottomToIndicator = documentBottomToIndicator
             annotationToolbarHandler = AnnotationToolbarHandler(controller: annotationToolbar, delegate: self)
             annotationToolbarHandler!.performInitialLayout()
 
@@ -299,6 +329,10 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
             navigationItem.rightBarButtonItems = createRightBarButtonItems()
         }
 
+        if state.changes.contains(.pages) {
+            updatePageIndicator(from: state)
+        }
+
         if state.changes.contains(.popover) {
             if let key = state.annotationPopoverKey, let rect = state.annotationPopoverRect {
                 showPopover(forKey: key, rect: rect)
@@ -369,6 +403,38 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
                 }
             }
             .disposed(by: disposeBag)
+        }
+    }
+
+    private func updatePageIndicator(from state: HtmlEpubReaderState) {
+        if let page = state.currentPage, let pagesCount = state.pagesCount {
+            pageIndicatorLabel?.text = "\(page.label) of \(pagesCount)"
+        }
+        setPageIndicator(navBarHidden: navigationController?.navigationBar.isHidden ?? false, animated: true)
+    }
+
+    private func applyPageIndicator(navBarHidden: Bool) {
+        guard let pageIndicator else { return }
+        let hasInfo = viewModel.state.currentPage != nil && viewModel.state.pagesCount != nil
+        let shouldShow = hasInfo && !navBarHidden
+        if shouldShow {
+            documentBottomToSafeArea?.isActive = false
+            documentBottomToIndicator?.isActive = true
+        } else {
+            documentBottomToIndicator?.isActive = false
+            documentBottomToSafeArea?.isActive = true
+        }
+        pageIndicator.alpha = shouldShow ? 1 : 0
+    }
+
+    private func setPageIndicator(navBarHidden: Bool, animated: Bool) {
+        if animated {
+            UIView.animate(withDuration: 0.15) { [weak self] in
+                self?.applyPageIndicator(navBarHidden: navBarHidden)
+                self?.view.layoutIfNeeded()
+            }
+        } else {
+            applyPageIndicator(navBarHidden: navBarHidden)
         }
     }
 
@@ -444,6 +510,7 @@ extension HtmlEpubReaderViewController: AnnotationToolbarHandlerDelegate {
 
     func setNavigationBar(hidden: Bool, animated: Bool) {
         navigationController?.setNavigationBarHidden(hidden, animated: animated)
+        setPageIndicator(navBarHidden: hidden, animated: animated)
     }
 
     func setNavigationBar(alpha: CGFloat) {
@@ -557,6 +624,8 @@ extension HtmlEpubReaderViewController: HtmlEpubReaderContainerDelegate {
                 navigationController?.navigationBar.alpha = isHidden ? 0 : 1
                 navigationController?.setNavigationBarHidden(isHidden, animated: false)
             }
+            applyPageIndicator(navBarHidden: isHidden)
+            view.layoutIfNeeded()
             annotationToolbarHandler?.interfaceVisibilityDidChange()
         })
 

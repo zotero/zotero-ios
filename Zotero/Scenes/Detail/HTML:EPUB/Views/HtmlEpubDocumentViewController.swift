@@ -250,7 +250,7 @@ class HtmlEpubDocumentViewController: UIViewController {
                 return
             }
 
-            DDLogInfo("HtmlEpubDocumentViewController: \(event)")
+            DDLogInfo("HtmlEpubDocumentViewController event: \(event)")
 
             switch event {
             case "onInitialized":
@@ -306,6 +306,13 @@ class HtmlEpubDocumentViewController: UIViewController {
                     return
                 }
                 viewModel.process(action: .setViewState(params))
+
+            case "onChangeViewStats":
+                guard let params = data["params"] as? [String: Any], let stats = params["stats"] as? [String: Any] else {
+                    DDLogWarn("HtmlEpubDocumentViewController: event \(event) missing params - \(message)")
+                    return
+                }
+                viewModel.process(action: .setViewStats(stats))
 
             case "onOpenLink":
                 guard let params = data["params"] as? [String: Any], let urlString = params["url"] as? String, let url = URL(string: urlString) else {

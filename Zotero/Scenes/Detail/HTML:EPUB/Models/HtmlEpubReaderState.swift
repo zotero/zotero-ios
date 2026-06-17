@@ -12,9 +12,9 @@ import RealmSwift
 
 struct HtmlEpubReaderState: ViewModelState {
     struct Changes: OptionSet {
-        typealias RawValue = UInt16
+        typealias RawValue = UInt32
 
-        let rawValue: UInt16
+        let rawValue: UInt32
 
         static let activeTool = Changes(rawValue: 1 << 0)
         static let annotations = Changes(rawValue: 1 << 1)
@@ -32,6 +32,8 @@ struct HtmlEpubReaderState: ViewModelState {
         static let outline = Changes(rawValue: 1 << 13)
         static let appearance = Changes(rawValue: 1 << 14)
         static let searchResults = Changes(rawValue: 1 << 15)
+        static let currentOutline = Changes(rawValue: 1 << 16)
+        static let pages = Changes(rawValue: 1 << 17)
     }
 
     struct DocumentData {
@@ -54,9 +56,15 @@ struct HtmlEpubReaderState: ViewModelState {
     }
 
     struct Outline {
+        let id: UUID
         let title: String
         let location: [String: Any]
         let children: [Outline]
+    }
+
+    struct PageInfo: Equatable {
+        let index: Int
+        let label: String
     }
 
     enum Error: ReaderError {
@@ -146,6 +154,9 @@ struct HtmlEpubReaderState: ViewModelState {
     var deletionEnabled: Bool
     var outlines: [Outline]
     var outlineSearch: String
+    var currentOutline: Outline?
+    var currentPage: PageInfo?
+    var pagesCount: Int?
     var interfaceStyle: UIUserInterfaceStyle
 
     var readerFile: File {

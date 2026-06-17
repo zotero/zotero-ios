@@ -516,6 +516,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
 
         update(viewModel: viewModel) { state in
             state.visiblePage = page
+            state.changes = .visiblePage
             if userActionFromDocument {
                 state.changes.insert(.visiblePageFromDocument)
             }
@@ -1867,7 +1868,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler, BackgroundDbProcessi
                 state.visiblePage = page
                 state.token = token
                 state.itemToken = itemToken
-                state.changes = [.annotations, .initialDataLoaded]
+                state.changes = [.visiblePage, .annotations, .initialDataLoaded]
                 state.initialPage = nil
 
                 if let (key, location) = selectedData {

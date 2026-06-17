@@ -47,11 +47,12 @@ struct PDFReaderState: ViewModelState {
         static let initialDataLoaded = Changes(rawValue: 1 << 10)
         static let visiblePageFromDocument = Changes(rawValue: 1 << 11)
         static let visiblePageFromThumbnailList = Changes(rawValue: 1 << 12)
-        static let selectionDeletion = Changes(rawValue: 1 << 13)
-        static let activeFontSize = Changes(rawValue: 1 << 14)
-        static let library = Changes(rawValue: 1 << 15)
-        static let md5 = Changes(rawValue: 1 << 16)
-        static let appearance = Changes(rawValue: 1 << 17)
+        static let visiblePage = Changes(rawValue: 1 << 13)
+        static let selectionDeletion = Changes(rawValue: 1 << 14)
+        static let activeFontSize = Changes(rawValue: 1 << 15)
+        static let library = Changes(rawValue: 1 << 16)
+        static let md5 = Changes(rawValue: 1 << 17)
+        static let appearance = Changes(rawValue: 1 << 18)
     }
 
     enum Error: ReaderError {

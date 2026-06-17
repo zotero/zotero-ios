@@ -126,8 +126,25 @@ class PDFSidebarViewController: UIViewController {
 
         func createToCController() -> TableOfContentsViewController<PDFOutline> {
             let root = viewModel.state.document.outline.flatMap({ PDFOutline(element: $0) })
-            let tocState = TableOfContentsState<PDFOutline>(outlines: root?.children ?? [])
-            return TableOfContentsViewController<PDFOutline>(viewModel: ViewModel(initialState: tocState, handler: TableOfContentsActionHandler()), selectionAction: { [weak self] outline in
+            let outlines = root?.children ?? []
+            let visiblePage = UInt(max(viewModel.state.visiblePage, 0))
+            let currentId = PDFSidebarViewController.findOutline(forPage: visiblePage, in: outlines)?.id
+            let tocState = TableOfContentsState<PDFOutline>(outlines: outlines, currentOutlineId: currentId)
+            let tocViewModel = ViewModel(initialState: tocState, handler: TableOfContentsActionHandler<PDFOutline>())
+
+            let bag = DisposeBag()
+            viewModel.stateObservable
+                .observe(on: MainScheduler.instance)
+                .subscribe(onNext: { [weak tocViewModel] state in
+                    guard let tocViewModel, state.changes.contains(.visiblePage) else { return }
+                    let page = UInt(max(state.visiblePage, 0))
+                    let id = PDFSidebarViewController.findOutline(forPage: page, in: tocViewModel.state.outlines)?.id
+                    tocViewModel.process(action: .setCurrentOutline(id))
+                })
+                .disposed(by: bag)
+            controllerDisposeBag = bag
+
+            return TableOfContentsViewController<PDFOutline>(viewModel: tocViewModel, selectionAction: { [weak self] outline in
                 self?.parentDelegate?.tableOfContentsSelected(page: outline.page)
             })
         }
@@ -171,6 +188,11 @@ class PDFSidebarViewController: UIViewController {
 
             return thumbnailsController
         }
+    }
+
+    private static func findOutline(forPage page: UInt, in outlines: [PDFOutline]) -> PDFOutline? {
+        guard let best = outlines.filter({ $0.page <= page }).max(by: { $0.page < $1.page }) else { return nil }
+        return findOutline(forPage: page, in: best.children) ?? best
     }
 
     private func setupViews() {
