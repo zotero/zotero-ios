@@ -23,11 +23,18 @@ class HtmlEpubDocumentViewController: UIViewController {
 
     private weak var webView: WKWebView!
     private var webViewHandler: WebViewHandler!
+    var containerInsets: NSDirectionalEdgeInsets? {
+        didSet {
+            applyContainerInsetsIfInitialized()
+        }
+    }
+    private var isReaderInitialized: Bool
     weak var parentDelegate: HtmlEpubReaderContainerDelegate?
 
     init(viewModel: ViewModel<HtmlEpubReaderActionHandler>) {
         self.viewModel = viewModel
         disposeBag = DisposeBag()
+        isReaderInitialized = false
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -70,13 +77,15 @@ class HtmlEpubDocumentViewController: UIViewController {
             configuration.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
             let webView = HtmlEpubWebView(customMenuActions: [highlightAction, underlineAction], configuration: configuration)
             webView.translatesAutoresizingMaskIntoConstraints = false
+            webView.isOpaque = false
+            webView.scrollView.contentInsetAdjustmentBehavior = .never
             if #available(iOS 16.4, *) {
                 webView.isInspectable = true
             }
             view.addSubview(webView)
 
             NSLayoutConstraint.activate([
-                view.safeAreaLayoutGuide.topAnchor.constraint(equalTo: webView.topAnchor),
+                view.topAnchor.constraint(equalTo: webView.topAnchor),
                 view.bottomAnchor.constraint(equalTo: webView.bottomAnchor),
                 view.safeAreaLayoutGuide.leadingAnchor.constraint(equalTo: webView.leadingAnchor),
                 view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: webView.trailingAnchor)
@@ -109,6 +118,7 @@ class HtmlEpubDocumentViewController: UIViewController {
 
     private func process(state: HtmlEpubReaderState) {
         if state.changes.contains(.readerInitialised) {
+            setWebViewInterfaceStyle(to: state.settings.appearance, userInterfaceStyle: state.interfaceStyle)
             webViewHandler.load(fileUrl: state.readerFile.createUrl()).subscribe().disposed(by: disposeBag)
             return
         }
@@ -178,7 +188,9 @@ class HtmlEpubDocumentViewController: UIViewController {
         func load(documentData data: HtmlEpubReaderState.DocumentData) {
             DDLogInfo("HtmlEpubDocumentViewController: try creating view for \(data.type); page = \(String(describing: data.page))")
             DDLogInfo("URL: \(data.url.absoluteString)")
-            var javascript = "createView({ type: '\(data.type)', url: '\(data.url.absoluteString.replacingOccurrences(of: "'", with: #"\'"#))', annotations: \(data.annotationsJson)"
+            let appearance = Appearance.from(appearanceMode: state.settings.appearance, interfaceStyle: state.interfaceStyle)
+            setWebViewInterfaceStyle(to: state.settings.appearance, userInterfaceStyle: state.interfaceStyle)
+            var javascript = "createView({ type: '\(data.type)', url: '\(data.url.absoluteString.replacingOccurrences(of: "'", with: #"\'"#))', annotations: \(data.annotationsJson), colorScheme: '\(appearance.htmlEpubValue)', \(appearance.htmlEpubThemeOption)"
             if let key = data.selectedAnnotationKey {
                 javascript += ", location: {annotationID: '\(key)'}"
             } else if let page = data.page {
@@ -202,6 +214,17 @@ class HtmlEpubDocumentViewController: UIViewController {
     }
 
     private func updateInterface(to appearanceMode: ReaderSettingsState.Appearance, userInterfaceStyle: UIUserInterfaceStyle) {
+        setWebViewInterfaceStyle(to: appearanceMode, userInterfaceStyle: userInterfaceStyle)
+        let appearance = Appearance.from(appearanceMode: appearanceMode, interfaceStyle: userInterfaceStyle)
+        webView.call(javascript: appearanceJavascript(for: appearance)).subscribe().disposed(by: disposeBag)
+
+        func appearanceJavascript(for appearance: Appearance) -> String {
+            return "window._view.setColorScheme('\(appearance.htmlEpubValue)');window._view.setTheme('\(appearance.htmlEpubTheme)');"
+        }
+    }
+
+    private func setWebViewInterfaceStyle(to appearanceMode: ReaderSettingsState.Appearance, userInterfaceStyle: UIUserInterfaceStyle) {
+        let appearance = Appearance.from(appearanceMode: appearanceMode, interfaceStyle: userInterfaceStyle)
         switch appearanceMode {
         case .automatic:
             webView.overrideUserInterfaceStyle = userInterfaceStyle
@@ -212,8 +235,13 @@ class HtmlEpubDocumentViewController: UIViewController {
         case .dark:
             webView.overrideUserInterfaceStyle = .dark
         }
-        let appearanceString = Appearance.from(appearanceMode: appearanceMode, interfaceStyle: userInterfaceStyle).htmlEpubValue
-        webView.call(javascript: "window._view.setColorScheme('\(appearanceString)');").subscribe().disposed(by: disposeBag)
+        setReaderBackgroundColor(appearance.htmlEpubThemeColor)
+
+        func setReaderBackgroundColor(_ color: UIColor) {
+            view.backgroundColor = color
+            webView?.backgroundColor = color
+            webView?.scrollView.backgroundColor = color
+        }
     }
 
     private func set(tool data: (AnnotationTool, UIColor)?) {
@@ -239,6 +267,17 @@ class HtmlEpubDocumentViewController: UIViewController {
         webViewHandler.call(javascript: "setTool({ type: '\(toolName)', color: '\(color.hexString)' });").subscribe().disposed(by: disposeBag)
     }
 
+    private func applyContainerInsetsIfInitialized() {
+        guard let containerInsets, isReaderInitialized else { return }
+        let javascript = "setContainerInsets({ top: \(containerInsets.top), right: \(containerInsets.trailing), bottom: \(containerInsets.bottom), left: \(containerInsets.leading) });"
+        webViewHandler.call(javascript: javascript)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onFailure: { error in
+                DDLogError("HtmlEpubDocumentViewController: setting container insets failed - \(error)")
+            })
+            .disposed(by: disposeBag)
+    }
+
     private func process(handler: String, message: Any) {
         switch handler {
         case JSHandlers.log.rawValue:
@@ -254,6 +293,8 @@ class HtmlEpubDocumentViewController: UIViewController {
 
             switch event {
             case "onInitialized":
+                isReaderInitialized = true
+                applyContainerInsetsIfInitialized()
                 viewModel.process(action: .loadDocument)
 
             case "onSaveAnnotations":
@@ -279,8 +320,8 @@ class HtmlEpubDocumentViewController: UIViewController {
                     return
                 }
 
-                let navigationBarInset = (parentDelegate?.statusBarHeight ?? 0) + (parentDelegate?.navigationBarHeight ?? 0)
-                let rect = CGRect(x: rectArray[0], y: rectArray[1] + navigationBarInset, width: rectArray[2] - rectArray[0], height: rectArray[3] - rectArray[1])
+                let topInset = parentDelegate?.containerTopInset ?? 0
+                let rect = CGRect(x: rectArray[0], y: rectArray[1] + topInset, width: rectArray[2] - rectArray[0], height: rectArray[3] - rectArray[1])
                 viewModel.process(action: .showAnnotationPopover(key: key, rect: rect))
 
             case "onSelectAnnotations":
