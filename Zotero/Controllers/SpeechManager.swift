@@ -8,253 +8,789 @@
 
 import AVFoundation
 import NaturalLanguage
+import UIKit
 
+import Alamofire
 import CocoaLumberjackSwift
 import RxCocoa
+import RxSwift
 
-protocol SpeechmanagerDelegate: AnyObject {
+protocol SpeechManagerDelegate: AnyObject {
     associatedtype Index: Hashable
 
+    var documentTitle: String? { get }
     func getCurrentPageIndex() -> Index
     func getNextPageIndex(from currentPageIndex: Index) -> Index?
     func getPreviousPageIndex(from currentPageIndex: Index) -> Index?
+    /// Returns up to `count` page indices from the beginning of the document, in reading order. Used to detect the
+    /// document's dominant language once at playback start. Returns all pages if the document has fewer than `count`.
+    func getInitialPageIndices(count: Int) -> [Index]
     func text(for indices: [Index], completion: @escaping ([Index: String]?) -> Void)
-    func moved(to pageIndex: Index)
+    func moved(to pageIndex: Index, from previousPageIndex: Index)
+    func focusPage(_ pageIndex: Index)
+    /// Called when the highlighted text changes during text-to-speech playback.
+    /// The highlight covers the current text unit (sentence or paragraph) being spoken, matching the voice's
+    /// segmentation granularity. Local voices and remote voices with sentence granularity highlight sentences;
+    /// remote voices with paragraph granularity highlight paragraphs.
+    /// - Parameters:
+    ///   - text: The text to highlight
+    ///   - pageIndex: The page index where the text is located
+    ///   - sourceLocation: UTF-16 offset of `text` in the source page text. Disambiguates when `text` appears
+    ///     multiple times on `pageIndex` (e.g. duplicated math formulas).
+    ///   - sourceTextLength: UTF-16 length of the source page text, used together with `sourceLocation` as a
+    ///     proportional hint.
+    func readAloudHighlightChanged(text: String, pageIndex: Index, sourceLocation: Int, sourceTextLength: Int)
+    /// Called when the annotation preview highlight changes during a highlight session. `sourceLocation` and
+    /// `sourceTextLength` carry the same disambiguation hint as `readAloudHighlightChanged`.
+    func annotationPreviewChanged(text: String, pageIndex: Index, tool: AnnotationTool, color: String, sourceLocation: Int, sourceTextLength: Int)
+    /// Called when the user confirms an annotation from the highlighter overlay. `sourceLocation` and
+    /// `sourceTextLength` carry the same disambiguation hint as `readAloudHighlightChanged`.
+    func createAnnotation(ofType tool: AnnotationTool, color: String, forText text: String, onPage pageIndex: Index, sourceLocation: Int, sourceTextLength: Int)
+    /// Called when the highlight session ends, to remove the annotation preview highlight.
+    func clearAnnotationPreview()
 }
 
-final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSynthesizerDelegate {
-    enum State {
-        case speaking, paused, stopped, loading
+enum SpeechState: Equatable {
+    enum OutOfCreditsReason {
+        case dailyLimitExceeded
+        case quotaExceeded
+    }
 
-        var isStopped: Bool {
-            switch self {
-            case .speaking, .loading, .paused:
-                return false
+    /// First-time initialization (fetching text, detecting voice). All controls disabled.
+    case initializing
+    /// Loading a new segment after navigation (forward/backward). Navigation controls remain enabled.
+    case loading
+    case speaking, paused, stopped
+    case outOfCredits(OutOfCreditsReason)
 
-            case .stopped:
-                return true
-            }
+    var isStopped: Bool {
+        switch self {
+        case .speaking, .initializing, .loading, .paused, .outOfCredits:
+            return false
+
+        case .stopped:
+            return true
         }
     }
 
+    var isPaused: Bool {
+        switch self {
+        case .speaking, .initializing, .loading, .stopped, .outOfCredits:
+            return false
+
+        case .paused:
+            return true
+        }
+    }
+
+    var isSpeaking: Bool {
+        switch self {
+        case .stopped, .initializing, .loading, .paused, .outOfCredits:
+            return false
+
+        case .speaking:
+            return true
+        }
+    }
+
+    var isSpeakingOrLoading: Bool {
+        switch self {
+        case .stopped, .paused, .outOfCredits:
+            return false
+
+        case .speaking, .initializing, .loading:
+            return true
+        }
+    }
+
+    var isOutOfCredits: Bool {
+        switch self {
+        case .speaking, .initializing, .loading, .paused, .stopped:
+            return false
+
+        case .outOfCredits:
+            return true
+        }
+    }
+}
+
+enum SpeechVoice: Equatable {
+    case local(AVSpeechSynthesisVoice)
+    case remote(RemoteVoice)
+}
+
+final class SpeechManager<Delegate: SpeechManagerDelegate>: NSObject, VoiceProcessorDelegate {
     private enum Error: Swift.Error {
         case cantGetText
     }
 
-    private struct SpeechData {
-        let startIndex: Int
-        let speakingRange: NSRange
+    struct SpeechData {
+        let index: Delegate.Index
+        /// The range of the currently spoken text segment as reported by the voice processor.
+        /// Word-level for local voice; sentence- or paragraph-level for remote voice depending on granularity.
+        let range: NSRange
+        /// The range of the text unit currently highlighted (sentence or paragraph depending on `highlightGranularity`).
+        let highlightRange: NSRange
+        /// The granularity at which the highlight was computed. Recorded so that a voice/granularity change
+        /// can be detected and the highlight recomputed even if the speech position is still within the old range.
+        let highlightGranularity: NLTokenUnit
 
-        func copy(with localRange: NSRange) -> SpeechData {
-            return SpeechData(startIndex: startIndex, speakingRange: localRange)
-        }
-
-        var globalRange: NSRange {
-            return NSRange(location: startIndex + speakingRange.location, length: speakingRange.length)
+        func copy(range: NSRange, highlightRange: NSRange, highlightGranularity: NLTokenUnit) -> SpeechData {
+            return SpeechData(index: index, range: range, highlightRange: highlightRange, highlightGranularity: highlightGranularity)
         }
     }
 
-    private struct PageData {
-        // Text to read
-        let text: String
-        // Voice used for this page
-        let voice: AVSpeechSynthesisVoice
+    private enum NavigationDirection {
+        case forward
+        case backward
     }
 
-    private let synthesizer: AVSpeechSynthesizer
-    let state: BehaviorRelay<State>
+    /// Number of leading document pages skipped before sampling for language detection. Early pages (covers, title
+    /// pages, tables of contents) often contain little representative text, so detection starts past them.
+    private let languageDetectionSkipPageCount = 5
+    /// Time window within which a second forward/backward call upgrades the pending sentence skip to a paragraph skip.
+    private let navigationMultiTapInterval: TimeInterval = 0.3
+    /// Number of pages sampled (after skipping `languageDetectionSkipPageCount`) to detect the session language when
+    /// auto-detection is active.
+    private let languageDetectionPageCount = 10
+    let state: BehaviorRelay<SpeechState>
+    let remainingTime: BehaviorRelay<TimeInterval?>
+    private let disposeBag: DisposeBag
+    private unowned let remoteVoicesController: RemoteVoicesController
+    private let nowPlayingManager: NowPlayingManager
 
-    private var speech: SpeechData?
-    private var cachedPages: [Delegate.Index: PageData]
-    private var currentIndex: Delegate.Index?
-    private var speechRateModifier: Float
-    private var ignoreFinishCallCount = 0
-    private var shouldReloadUtteranceOnResume = false
+    private var processor: VoiceProcessor!
+    private var speechData: SpeechData? {
+        didSet {
+            if let speechData {
+                onSpeakingPositionChanged?(speechData.index, speechData.range.location)
+            }
+        }
+    }
+    private var cachedPages: [Delegate.Index: String]
+    /// Navigation tap waiting for the multi-tap window to elapse. Executed as a sentence skip if no second tap
+    /// arrives within `navigationMultiTapInterval`; replaced by a paragraph skip if one does.
+    private var pendingNavigation: (direction: NavigationDirection, workItem: DispatchWorkItem)?
+    let highlightSessionManager: SpeechHighlightSessionManager<SpeechManager<Delegate>>
+    var onHighlightSessionTimedOut: (() -> Void)?
+    var onSpeakingPositionChanged: ((Delegate.Index, Int) -> Void)?
     private weak var delegate: Delegate?
-    private lazy var paragraphRegex: NSRegularExpression? = {
-        return try? NSRegularExpression(pattern: "[\r\n]{1,}")
-    }()
-    var isSpeaking: Bool {
-        return synthesizer.isSpeaking
+    var voice: SpeechVoice? { processor.speechVoice }
+    var language: String? { processor.preferredLanguage }
+    var speechRateModifier: Float { processor.speechRateModifier }
+    var detectedLanguage: String {
+        return processor.detectedLanguage ?? "en"
     }
-    var isPaused: Bool {
-        return synthesizer.isPaused
+    fileprivate var speechRange: NSRange? {
+        return speechData?.range
     }
-    var currentVoice: AVSpeechSynthesisVoice? {
-        return currentIndex.flatMap({ cachedPages[$0] })?.voice
-    }
-    private var overrideLanguage: String?
+    var currentPageIndex: Delegate.Index? { delegate?.getCurrentPageIndex() }
+    /// Granularity at which the read-aloud highlight is rendered. Mirrors the voice's segmentation granularity:
+    /// remote voices use their declared granularity, local voices always highlight sentences (since they emit
+    /// word-level progress events).
+    private var highlightGranularity: NLTokenUnit {
+        switch processor.speechVoice {
+        case .remote(let voice):
+            return voice.granularity == .paragraph ? .paragraph : .sentence
 
-    init(delegate: Delegate, speechRateModifier: Float, voiceLanguage: String? = nil) {
-        cachedPages = [:]
-        self.speechRateModifier = speechRateModifier
-        overrideLanguage = voiceLanguage
-        synthesizer = AVSpeechSynthesizer()
-        state = BehaviorRelay(value: .stopped)
+        case .local, .none:
+            return .sentence
+        }
+    }
+
+    private func findHighlightUnit(at index: Int, in text: String, granularity: NLTokenUnit) -> (text: String, range: NSRange)? {
+        switch granularity {
+        case .paragraph:
+            return TextTokenizer.findParagraphContaining(index: index, in: text)
+
+        case .sentence:
+            return TextTokenizer.findSentenceContaining(index: index, in: text)
+
+        case .word, .document:
+            return nil
+
+        @unknown default:
+            return nil
+        }
+    }
+
+    /// Returns the current read-aloud highlight text, page index, and source-text position info
+    /// (used to disambiguate duplicate occurrences when highlighting), if speech is active.
+    /// The highlight covers a sentence or paragraph depending on the voice's segmentation granularity.
+    var currentReadAloudHighlight: (text: String, pageIndex: Delegate.Index, sourceLocation: Int, sourceTextLength: Int)? {
+        guard let speechData, let pageText = cachedPages[speechData.index] else { return nil }
+        let range = speechData.highlightRange
+        guard range.length > 0, let textRange = Range(range, in: pageText) else { return nil }
+        let text = String(pageText[textRange]).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return nil }
+        return (text, speechData.index, range.location, (pageText as NSString).length)
+    }
+
+    init(delegate: Delegate, voiceLanguage: String?, remoteVoiceTier: RemoteVoice.Tier?, remoteVoicesController: RemoteVoicesController) {
         self.delegate = delegate
+        self.remoteVoicesController = remoteVoicesController
+        cachedPages = [:]
+        highlightSessionManager = SpeechHighlightSessionManager<SpeechManager<Delegate>>()
+        state = BehaviorRelay(value: .stopped)
+        remainingTime = BehaviorRelay(value: nil)
+        disposeBag = DisposeBag()
+        nowPlayingManager = NowPlayingManager()
         super.init()
-        synthesizer.delegate = self
+        highlightSessionManager.delegate = self
+        highlightSessionManager.onSessionTimedOut = { [weak self] in
+            self?.onHighlightSessionTimedOut?()
+        }
+        if let remoteVoiceTier {
+            processor = RemoteVoiceProcessor(
+                language: voiceLanguage,
+                detectedLanguage: nil,
+                tier: remoteVoiceTier,
+                speechRateModifier: 1,
+                delegate: self,
+                remoteVoicesController: remoteVoicesController
+            )
+        } else {
+            processor = LocalVoiceProcessor(language: voiceLanguage, detectedLanguage: nil, speechRateModifier: 1, delegate: self)
+        }
+        processor.speechRateModifier = speechRateModifier
+
+        setupNowPlayingManager()
+
+        state
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] state in
+                guard let self else { return }
+                switch state {
+                case .speaking:
+                    nowPlayingManager.updatePlaybackState(isPlaying: true)
+
+                case .paused, .initializing, .loading:
+                    nowPlayingManager.updatePlaybackState(isPlaying: false)
+
+                case .outOfCredits:
+                    nowPlayingManager.updatePlaybackState(isPlaying: false)
+
+                case .stopped:
+                    speechData = nil
+                    cachedPages = [:]
+                    processor.detectedLanguage = nil
+                    pendingNavigation?.workItem.cancel()
+                    pendingNavigation = nil
+                    highlightSessionManager.cancelSession()
+                    nowPlayingManager.deactivate()
+                }
+            })
+            .disposed(by: disposeBag)
+    }
+
+    private func setupNowPlayingManager() {
+        nowPlayingManager.playPauseHandler = { [weak self] in
+            guard let self else { return }
+            switch state.value {
+            case .paused, .outOfCredits:
+                resume()
+
+            case .speaking:
+                pause()
+
+            case .initializing, .loading, .stopped:
+                break
+            }
+        }
+        nowPlayingManager.forwardHandler = { [weak self] in
+            self?.navigateForward()
+        }
+        nowPlayingManager.backwardHandler = { [weak self] in
+            self?.navigateBackward()
+        }
     }
 
     // MARK: - Actions
 
-    func start() {
+    // Start speech
+    // - parameter mapStartIndexToPage: Used to map startIndex from PSPDFKit document to PDFWorker-extracted page.
+    func start(mapStartIndexToPage: ((String) -> Int)? = nil) {
         guard let delegate else {
             DDLogError("SpeechManager: can't get delegate")
             return
         }
 
-        let index = delegate.getCurrentPageIndex()
-        if let page = cachedPages[index] {
-            go(to: page, pageIndex: index, reportPageChange: false)
+        nowPlayingManager.activate(title: delegate.documentTitle)
+
+        // Detect the session language from the document's first pages before playback starts, so that the voice
+        // stays constant for the whole session (instead of being re-detected per page). No-op when the user has
+        // already picked a language or detection has already run this session.
+        state.accept(.initializing)
+        detectSessionLanguageIfNeeded(delegate: delegate) { [weak self] in
+            guard let self, state.value == .initializing else { return }
+            startPlayback(mapStartIndexToPage: mapStartIndexToPage)
+        }
+    }
+
+    private func startPlayback(mapStartIndexToPage: ((String) -> Int)?) {
+        guard let delegate else {
+            state.accept(.stopped)
+            return
+        }
+        let pageIndex = delegate.getCurrentPageIndex()
+        if let page = cachedPages[pageIndex] {
+            let startIndex = mapStartIndexToPage?(page) ?? 0
+            startSpeaking(at: startIndex, page: page, pageIndex: pageIndex, reportPageChange: false)
             return
         }
 
-        state.accept(.loading)
-        getData(for: [index], from: delegate) { [weak self] pages in
-            guard let self, let pages, let page = pages[index] else {
+        getData(for: [pageIndex], from: delegate) { [weak self] pages in
+            guard let self, let pages, let page = pages[pageIndex] else {
                 self?.state.accept(.stopped)
                 return
             }
-            cachedPages = pages
-            guard state.value == .loading else { return }
-            go(to: page, pageIndex: index, reportPageChange: false)
+            for (index, text) in pages {
+                cachedPages[index] = text
+            }
+            guard state.value == .initializing else { return }
+            let startIndex = mapStartIndexToPage?(page) ?? 0
+            startSpeaking(at: startIndex, page: page, pageIndex: pageIndex, reportPageChange: false)
         }
     }
-    
+
+    /// Samples the first pages of the document and detects the most prominent language, storing it as the constant
+    /// session language. Skipped (calls `completion` immediately) when the user has chosen a language explicitly or
+    /// the session language has already been detected.
+    private func detectSessionLanguageIfNeeded(delegate: Delegate, completion: @escaping () -> Void) {
+        guard processor.preferredLanguage == nil && processor.detectedLanguage == nil else {
+            completion()
+            return
+        }
+        // Sample pages for detection, skipping the first few. Prefer pages [skip, skip + window); if the document is
+        // too short to skip, sample the first `window` pages; if it's shorter than the window, sample everything.
+        let leadingPages = delegate.getInitialPageIndices(count: languageDetectionSkipPageCount + languageDetectionPageCount)
+        let indices: [Delegate.Index]
+        if leadingPages.count >= languageDetectionSkipPageCount + languageDetectionPageCount {
+            indices = Array(leadingPages.suffix(languageDetectionPageCount))
+        } else if leadingPages.count >= languageDetectionPageCount {
+            indices = Array(leadingPages.prefix(languageDetectionPageCount))
+        } else {
+            indices = leadingPages
+        }
+        guard !indices.isEmpty else {
+            completion()
+            return
+        }
+        getData(for: indices, from: delegate) { [weak self] pages in
+            guard let self else { return }
+            guard let pages else {
+                DDLogError("SpeechManager: could not load pages for detection")
+                return
+            }
+            for (index, text) in pages {
+                cachedPages[index] = text
+            }
+            let orderedTexts = indices.compactMap { pages[$0] }
+            let language = LanguageDetector.detectLanguage(fromTexts: orderedTexts)
+            processor.detectedLanguage = language
+            DDLogInfo("SpeechManager: detected session language \(language) from \(indices.count) page(s)")
+            completion()
+        }
+    }
+
+    // Start speech
+    // - parameter startIndex: Start speaking at given index.
+    func start(startIndex: Int) {
+        start(mapStartIndexToPage: { _ in startIndex })
+    }
+
     func pause() {
-        guard synthesizer.isSpeaking else { return }
-        synthesizer.pauseSpeaking(at: .word)
+        processor.pause()
     }
 
     func resume() {
-        guard synthesizer.isPaused else { return }
-
-        if !shouldReloadUtteranceOnResume {
-            synthesizer.continueSpeaking()
+        if processor.canResume {
+            processor.resume()
         } else {
-            reloadUtterance()
+            start()
         }
     }
 
     func stop() {
-        guard synthesizer.isSpeaking || synthesizer.isPaused || state.value == .loading else { return }
-        if state.value == .loading {
-            state.accept(.stopped)
-        } else {
-            // Ignore finish delegate, which would move us to another page
-            ignoreFinishCallCount = 1
-            synthesizer.stopSpeaking(at: .immediate)
-            state.accept(.stopped)
-        }
+        processor.stop()
     }
 
-    func set(voice: AVSpeechSynthesisVoice) {
-        Defaults.shared.defaultVoiceForLanguage[voice.baseLanguage] = voice.identifier
-
-        guard let currentVoice else { return }
-
-        let newBaseLanguage = voice.baseLanguage
-        if currentVoice.baseLanguage != newBaseLanguage {
-            set(overrideLanguage: newBaseLanguage, voice: voice)
-        } else {
-            for (key, value) in cachedPages {
-                guard value.voice.baseLanguage == newBaseLanguage else { continue }
-                cachedPages[key] = PageData(text: value.text, voice: voice)
+    func set(voice: SpeechVoice, preferredLanguage: String?) {
+        switch voice {
+        case .local(let voice):
+            if let processor = processor as? LocalVoiceProcessor {
+                processor.set(voice: voice, preferredLanguage: preferredLanguage)
+            } else {
+                let _processor = LocalVoiceProcessor(
+                    language: preferredLanguage,
+                    detectedLanguage: processor.detectedLanguage,
+                    speechRateModifier: processor.speechRateModifier,
+                    delegate: self
+                )
+                _processor.set(voice: voice, preferredLanguage: preferredLanguage)
+                processor = _processor
+                remainingTime.accept(nil)
+                nowPlayingManager.reconfigureAudioSession()
             }
-        }
-        utteranceChanged()
 
-        func set(overrideLanguage: String, voice: AVSpeechSynthesisVoice) {
-            self.overrideLanguage = overrideLanguage
-            for (key, value) in cachedPages {
-                cachedPages[key] = PageData(text: value.text, voice: voice)
+        case .remote(let voice):
+            if let processor = processor as? RemoteVoiceProcessor {
+                processor.set(voice: voice, preferredLanguage: preferredLanguage)
+            } else {
+                let _processor = RemoteVoiceProcessor(
+                    language: preferredLanguage,
+                    detectedLanguage: processor.detectedLanguage,
+                    tier: voice.tier,
+                    speechRateModifier: processor.speechRateModifier,
+                    delegate: self,
+                    remoteVoicesController: remoteVoicesController
+                )
+                _processor.set(voice: voice, preferredLanguage: preferredLanguage)
+                processor = _processor
+                nowPlayingManager.reconfigureAudioSession()
             }
         }
     }
 
     func set(rateModifier: Float) {
-        speechRateModifier = rateModifier
-        utteranceChanged()
+        processor.speechRateModifier = rateModifier
     }
 
-    private func utteranceChanged() {
-        if synthesizer.isPaused {
-            shouldReloadUtteranceOnResume = true
-        } else if synthesizer.isSpeaking {
-            reloadUtterance()
+    // MARK: - Highlight Session
+
+    /// Starts a highlight session. Returns the initial text and page index, and shows a temporary highlight in the document.
+    func startHighlightSession() -> (text: String, pageIndex: Delegate.Index)? {
+        guard state.value.isSpeaking || state.value.isPaused,
+              let speechData,
+              let pageText = cachedPages[speechData.index] else { return nil }
+
+        let voiceInfo: HighlightVoiceInfo
+        switch processor.speechVoice {
+        case .remote(let remoteVoice):
+            let granularity: NLTokenUnit = remoteVoice.granularity == .paragraph ? .paragraph : .sentence
+            voiceInfo = .remote(granularity: granularity, audioProgress: processor.segmentAudioProgress, elapsedTime: processor.segmentAudioElapsedTime)
+
+        case .local:
+            voiceInfo = .local
+
+        case .none:
+            return nil
+        }
+
+        guard let result = highlightSessionManager.startSession(
+            voiceInfo: voiceInfo,
+            position: speechData.range.location,
+            pageText: pageText,
+            pageIndex: speechData.index
+        ) else { return nil }
+
+        notifyAnnotationPreviewChanged(result)
+        return result
+    }
+
+    func moveHighlightForward() -> (text: String, pageIndex: Delegate.Index)? {
+        guard let result = highlightSessionManager.moveForward() else { return nil }
+        notifyAnnotationPreviewChanged(result)
+        return result
+    }
+
+    func moveHighlightBackward() -> (text: String, pageIndex: Delegate.Index)? {
+        guard let result = highlightSessionManager.moveBackward() else { return nil }
+        notifyAnnotationPreviewChanged(result)
+        return result
+    }
+
+    func extendHighlightForward() -> (text: String, pageIndex: Delegate.Index)? {
+        guard let result = highlightSessionManager.extendForward() else { return nil }
+        notifyAnnotationPreviewChanged(result)
+        return result
+    }
+
+    func extendHighlightBackward() -> (text: String, pageIndex: Delegate.Index)? {
+        guard let result = highlightSessionManager.extendBackward() else { return nil }
+        notifyAnnotationPreviewChanged(result)
+        return result
+    }
+
+    private func notifyAnnotationPreviewChanged(_ result: (text: String, pageIndex: Delegate.Index)) {
+        let sourceLocation = highlightSessionManager.session?.range.location ?? 0
+        let sourceTextLength = highlightSessionManager.session.map { ($0.pageText as NSString).length } ?? 0
+        delegate?.annotationPreviewChanged(
+            text: result.text,
+            pageIndex: result.pageIndex,
+            tool: highlightSessionManager.annotationTool,
+            color: highlightSessionManager.annotationColor,
+            sourceLocation: sourceLocation,
+            sourceTextLength: sourceTextLength
+        )
+    }
+
+    func setHighlightAnnotationTool(_ tool: AnnotationTool) {
+        highlightSessionManager.annotationTool = tool
+        highlightSessionManager.startInactivityTimer()
+    }
+
+    func setHighlightAnnotationColor(_ color: String) {
+        highlightSessionManager.annotationColor = color
+        highlightSessionManager.startInactivityTimer()
+    }
+
+    func stopHighlightInactivityTimer() {
+        highlightSessionManager.stopInactivityTimer()
+    }
+
+    func startHighlightInactivityTimer() {
+        highlightSessionManager.startInactivityTimer()
+    }
+
+    var highlightAnnotationTool: AnnotationTool {
+        highlightSessionManager.annotationTool
+    }
+
+    var highlightAnnotationColor: String {
+        highlightSessionManager.annotationColor
+    }
+
+    func endHighlightSession() {
+        // Capture range info before `endSession()` clears the session.
+        let sourceLocation = highlightSessionManager.session?.range.location ?? 0
+        let sourceTextLength = highlightSessionManager.session.map { ($0.pageText as NSString).length } ?? 0
+        if let result = highlightSessionManager.endSession() {
+            delegate?.createAnnotation(
+                ofType: highlightSessionManager.annotationTool,
+                color: highlightSessionManager.annotationColor,
+                forText: result.text,
+                onPage: result.pageIndex,
+                sourceLocation: sourceLocation,
+                sourceTextLength: sourceTextLength
+            )
+        }
+        delegate?.clearAnnotationPreview()
+    }
+
+    func cancelHighlightSession() {
+        highlightSessionManager.cancelSession()
+        delegate?.clearAnnotationPreview()
+    }
+
+    /// Downgrades the voice to a lower tier and continues playback.
+    /// - If currently using premium remote voice, switches to standard remote voice
+    /// - If currently using standard remote voice, switches to local voice
+    /// - If already using local voice, does nothing
+    func downgradeVoiceTierAndContinue() {
+        guard let voice else { return }
+
+        switch voice {
+        case .remote(let remoteVoice):
+            switch remoteVoice.tier {
+            case .premium:
+                // Downgrade from premium to standard
+                guard let remoteProcessor = processor as? RemoteVoiceProcessor,
+                      let language = processor.preferredLanguage ?? processor.detectedLanguage,
+                      let standardVoice = remoteProcessor.standardVoice(for: language) else {
+                    // No standard voice available, fall through to local
+                    downgradeToLocalVoice()
+                    return
+                }
+                Defaults.shared.remoteVoiceTier = .standard
+                remoteProcessor.set(voice: standardVoice, preferredLanguage: remoteProcessor.preferredLanguage)
+                resume()
+
+            case .standard:
+                // Downgrade from standard to local voice
+                downgradeToLocalVoice()
+            }
+
+        case .local:
+            // Already at lowest tier, nothing to downgrade to
+            break
+        }
+
+        func downgradeToLocalVoice() {
+            Defaults.shared.remoteVoiceTier = nil
+            let newProcessor = LocalVoiceProcessor(
+                language: processor.preferredLanguage,
+                detectedLanguage: processor.detectedLanguage,
+                speechRateModifier: processor.speechRateModifier,
+                delegate: self
+            )
+            let voice = VoiceUtility.findLocalVoice(for: processor.language) ?? AVSpeechSynthesisVoice(language: "en-US")!
+            newProcessor.set(voice: voice, preferredLanguage: processor.preferredLanguage)
+            processor = newProcessor
+            remainingTime.accept(nil)
+            nowPlayingManager.reconfigureAudioSession()
+            resume()
         }
     }
 
-    private func reloadUtterance() {
-        guard let currentIndex, let page = cachedPages[currentIndex], let speech else { return }
-        if synthesizer.isSpeaking {
-            synthesizer.pauseSpeaking(at: .immediate)
-        }
-        let text = String(page.text[page.text.index(page.text.startIndex, offsetBy: speech.globalRange.location)..<page.text.endIndex])
-        speak(text: text, voice: page.voice)
-    }
-
-    private func getData(for indices: [Delegate.Index], from delegate: Delegate, completion: @escaping (([Delegate.Index: PageData])?) -> Void) {
+    private func getData(for indices: [Delegate.Index], from delegate: Delegate, completion: @escaping (([Delegate.Index: String])?) -> Void) {
         delegate.text(for: indices) { texts in
             guard let texts, texts.count == indices.count else {
                 completion(nil)
                 return
             }
-            
-            var pages: [Delegate.Index: PageData] = [:]
-            for index in indices {
-                guard let text = texts[index] else {
-                    completion(nil)
-                    return
-                }
-                pages[index] = PageData(text: text, voice: voice(for: text))
-            }
-            completion(pages)
-        }
-
-        func voice(for text: String) -> AVSpeechSynthesisVoice {
-            if let overrideLanguage {
-                return findVoice(for: overrideLanguage)
-            }
-
-            let recognizer = NLLanguageRecognizer()
-            recognizer.processString(text)
-            let language = recognizer.dominantLanguage?.rawValue ?? "en"
-            return findVoice(for: language)
+            completion(texts)
         }
     }
 
-    private func findVoice(for language: String) -> AVSpeechSynthesisVoice {
-        let voiceId = Defaults.shared.defaultVoiceForLanguage[language]
-        return AVSpeechSynthesisVoice.speechVoices().first(where: isProperVoice) ?? AVSpeechSynthesisVoice(identifier: "en-US")!
+    /// Navigates forward with tap coalescing: a single call skips by sentence, two calls in quick succession skip by paragraph.
+    func navigateForward() {
+        coalesceNavigation(.forward)
+    }
 
-        func isProperVoice(_ voice: AVSpeechSynthesisVoice) -> Bool {
-            if let voiceId {
-                return voice.identifier == voiceId
+    /// Navigates backward with tap coalescing: a single call skips by sentence, two calls in quick succession skip by paragraph.
+    func navigateBackward() {
+        coalesceNavigation(.backward)
+    }
+
+    /// Coalesces rapid navigation taps so that a single tap skips by sentence and a double tap skips by paragraph.
+    /// The first tap schedules a sentence skip after `navigationMultiTapInterval`; a second tap in the same direction
+    /// within that window cancels it and performs a single paragraph skip instead, so a double tap moves by exactly
+    /// one paragraph. A tap in the opposite direction flushes the pending sentence skip immediately and starts a new window.
+    private func coalesceNavigation(_ direction: NavigationDirection) {
+        if let pending = pendingNavigation {
+            pending.workItem.cancel()
+            pendingNavigation = nil
+            if pending.direction == direction {
+                navigate(direction, by: .paragraph)
+                return
             }
-            return voice.language.starts(with: language)
+            navigate(pending.direction, by: .sentence)
+        }
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            pendingNavigation = nil
+            navigate(direction, by: .sentence)
+        }
+        pendingNavigation = (direction, workItem)
+        DispatchQueue.main.asyncAfter(deadline: .now() + navigationMultiTapInterval, execute: workItem)
+    }
+
+    private func navigate(_ direction: NavigationDirection, by unit: NLTokenUnit) {
+        switch direction {
+        case .forward:
+            forward(by: unit)
+
+        case .backward:
+            backward(by: unit)
         }
     }
 
-    private func go(to page: PageData, pageIndex: Delegate.Index, speechStartIndex: Int? = nil, reportPageChange: Bool = true) {
-        let text: String
-        if let index = speechStartIndex {
-            text = String(page.text[page.text.index(page.text.startIndex, offsetBy: index)..<page.text.endIndex])
+    func forward(by unit: NLTokenUnit) {
+        guard let speechData, let currentPage = cachedPages[speechData.index] else { return }
+
+        let currentEndIndex = speechData.range.location + speechData.range.length
+        if let index = TextTokenizer.findIndex(ofNext: unit, startingAt: currentEndIndex, in: currentPage) {
+            DDLogInfo("SpeechManager: forward to \(index); \(speechData.range.location); \(speechData.range.length)")
+            moveTo(index: index, on: currentPage, pageIndex: speechData.index)
+            if !state.value.isPaused {
+                startSpeaking(at: index, page: currentPage, pageIndex: speechData.index, reportPageChange: false)
+            }
+            delegate?.focusPage(speechData.index)
+        } else if let nextIndex = delegate?.getNextPageIndex(from: speechData.index), let page = cachedPages[nextIndex] {
+            moveTo(index: 0, on: page, pageIndex: nextIndex)
+            if !state.value.isPaused {
+                startSpeaking(page: page, pageIndex: nextIndex, reportPageChange: false)
+            }
+            delegate?.focusPage(nextIndex)
         } else {
-            text = page.text
+            stop()
         }
-        currentIndex = pageIndex
-        speech = SpeechData(startIndex: speechStartIndex ?? 0, speakingRange: NSRange(location: 0, length: 0))
-        speak(text: text, voice: page.voice)
-        
+    }
+
+    func backward(by unit: NLTokenUnit) {
+        guard let speechData, let currentPage = cachedPages[speechData.index] else { return }
+
+        if let index = TextTokenizer.findIndex(ofPreviousWhole: unit, beforeIndex: speechData.range.location, in: currentPage) {
+            DDLogInfo("SpeechManager: backward to \(index); \(speechData.range.location); \(speechData.range.length)")
+            moveTo(index: index, on: currentPage, pageIndex: speechData.index)
+            if !state.value.isPaused {
+                startSpeaking(at: index, page: currentPage, pageIndex: speechData.index, reportPageChange: false)
+            }
+            delegate?.focusPage(speechData.index)
+        } else if speechData.range.location != 0 {
+            moveTo(index: 0, on: currentPage, pageIndex: speechData.index)
+            if !state.value.isPaused {
+                startSpeaking(page: currentPage, pageIndex: speechData.index, reportPageChange: false)
+            }
+            delegate?.focusPage(speechData.index)
+        } else if let previousIndex = delegate?.getPreviousPageIndex(from: speechData.index),
+                  let previousPage = cachedPages[previousIndex],
+                  let speechIndex = TextTokenizer.findIndex(ofPreviousWhole: unit, beforeIndex: previousPage.count, in: previousPage) {
+            moveTo(index: speechIndex, on: previousPage, pageIndex: previousIndex)
+            if !state.value.isPaused {
+                startSpeaking(at: speechIndex, page: previousPage, pageIndex: previousIndex, reportPageChange: false)
+            }
+            delegate?.focusPage(previousIndex)
+        } else {
+            stop()
+        }
+    }
+
+    private func startSpeaking(at index: Int = 0, page: String, pageIndex: Delegate.Index, reportPageChange: Bool) {
+        let previousPageIndex = speechData?.index
+        if previousPageIndex != pageIndex {
+            speechData = SpeechData(index: pageIndex, range: NSRange(), highlightRange: NSRange(), highlightGranularity: highlightGranularity)
+        }
+        if reportPageChange, let previousPageIndex {
+            delegate?.moved(to: pageIndex, from: previousPageIndex)
+        }
+        cacheAdjacentPages(for: pageIndex)
+        processor.speak(text: page, startIndex: index)
+    }
+
+    /// Moves the current speech position without starting playback.
+    /// Used when navigating while paused to update the highlight position.
+    private func moveTo(index: Int, on page: String, pageIndex: Delegate.Index) {
+        guard let sentenceData = TextTokenizer.findSentence(startingAt: index, in: page) else { return }
+
+        let previousPageIndex = speechData?.index
+        let pageDidChange = previousPageIndex != pageIndex
+        let previousHighlight = speechData.map({ (range: $0.highlightRange, granularity: $0.highlightGranularity) })
+        let granularity = highlightGranularity
+
+        // Check if the new position is still within the current highlighted unit (same granularity)
+        let isInCurrentHighlight: Bool
+        if let previousHighlight, previousHighlight.range.length > 0, previousHighlight.granularity == granularity {
+            isInCurrentHighlight = !pageDidChange && NSLocationInRange(index, previousHighlight.range)
+        } else {
+            isInCurrentHighlight = false
+        }
+
+        let newHighlightRange: NSRange
+        let highlightText: String?
+        if isInCurrentHighlight, let previousHighlight {
+            // Still in the same unit, keep the existing range
+            newHighlightRange = previousHighlight.range
+            highlightText = nil
+        } else {
+            // Find the full unit (sentence/paragraph) containing this position
+            let containingUnit = findHighlightUnit(at: index, in: page, granularity: granularity)
+            newHighlightRange = containingUnit?.range ?? sentenceData.range
+            highlightText = containingUnit?.text ?? sentenceData.text
+        }
+
+        speechData = SpeechData(index: pageIndex, range: sentenceData.range, highlightRange: newHighlightRange, highlightGranularity: granularity)
+        processor.invalidateCurrentPlayback()
+
+        // Only notify delegate if the highlight changed
+        if let highlightText {
+            delegate?.readAloudHighlightChanged(
+                text: highlightText,
+                pageIndex: pageIndex,
+                sourceLocation: newHighlightRange.location,
+                sourceTextLength: (page as NSString).length
+            )
+        }
+
+        if pageDidChange, let previousPageIndex {
+            delegate?.moved(to: pageIndex, from: previousPageIndex)
+            cacheAdjacentPages(for: pageIndex)
+        }
+    }
+
+    private func cacheAdjacentPages(for pageIndex: Delegate.Index) {
         guard let delegate else { return }
-        
-        if reportPageChange {
-            delegate.moved(to: pageIndex)
-        }
-        
-        // Cache next/previous page after page change if needed
         var indices: [Delegate.Index] = []
         if let index = delegate.getPreviousPageIndex(from: pageIndex), cachedPages[index] == nil {
             indices.append(index)
@@ -272,115 +808,45 @@ final class SpeechManager<Delegate: SpeechmanagerDelegate>: NSObject, AVSpeechSy
         }
     }
 
-    private func skip(to index: Int, on page: PageData) {
-        speech = SpeechData(startIndex: index, speakingRange: NSRange(location: 0, length: 0))
-        let text = page.text[page.text.index(page.text.startIndex, offsetBy: index)..<page.text.endIndex]
-        speechSynthesizer(synthesizer, willSpeakRangeOfSpeechString: NSRange(location: 0, length: 0), utterance: AVSpeechUtterance())
-        speak(text: String(text), voice: page.voice)
-    }
+    // MARK: - VoiceProcessorDelegate
 
-    private func speak(text: String, voice: AVSpeechSynthesisVoice) {
-        if synthesizer.isSpeaking {
-            ignoreFinishCallCount += 1
-            synthesizer.stopSpeaking(at: .immediate)
+    func goToNextPageIfAvailable() -> Bool {
+        guard let speechData, let nextIndex = delegate?.getNextPageIndex(from: speechData.index), let page = cachedPages[nextIndex] else {
+            return false
         }
-
-        let utterance = AVSpeechUtterance(string: text)
-        utterance.voice = voice
-        utterance.rate = 0.5 * speechRateModifier
-        synthesizer.speak(utterance)
+        startSpeaking(page: page, pageIndex: nextIndex, reportPageChange: true)
+        return true
     }
 
-    func forward() {
-        guard let currentIndex, let currentPage = cachedPages[currentIndex], let speech else { return }
+    func speechRangeWillChange(to range: NSRange) {
+        guard let speechData else { return }
+        guard let pageText = cachedPages[speechData.index] else { return }
 
-        if let index = findNextIndex(on: currentPage, speechRange: speech.globalRange) {
-            DDLogInfo("SpeechManager: forward to \(index); \(speech.startIndex); \(speech.speakingRange.location); \(speech.speakingRange.length)")
-            skip(to: index, on: currentPage)
-        } else if let nextIndex = delegate?.getNextPageIndex(from: currentIndex), let page = cachedPages[nextIndex] {
-            go(to: page, pageIndex: nextIndex)
-        } else {
-            stop()
-        }
+        let granularity = highlightGranularity
 
-        func findNextIndex(on page: PageData, speechRange: NSRange) -> Int? {
-            guard let paragraphRegex else { return nil }
-            let matches = paragraphRegex.matches(in: page.text, range: NSRange(page.text.index(page.text.startIndex, offsetBy: speechRange.location + speechRange.length)..., in: page.text))
-            guard let range = matches.first?.range else { return nil }
-            return range.location + range.length
-        }
-    }
-
-    func backward() {
-        guard let currentIndex, let currentPage = cachedPages[currentIndex], let speech else { return }
-  
-        if let index = findPreviousIndex(in: currentPage.text, endIndex: currentPage.text.index(currentPage.text.startIndex, offsetBy: speech.globalRange.location)) {
-            DDLogInfo("SpeechManager: backward to \(index); \(speech.startIndex); \(speech.speakingRange.location); \(speech.speakingRange.length)")
-            skip(to: index, on: currentPage)
-        } else if speech.startIndex != 0 {
-            skip(to: 0, on: currentPage)
-        } else if let previousIndex = delegate?.getPreviousPageIndex(from: currentIndex),
-                  let previousPage = cachedPages[previousIndex],
-                  let speechIndex = findPreviousIndex(in: previousPage.text, endIndex: previousPage.text.endIndex) {
-            go(to: previousPage, pageIndex: previousIndex, speechStartIndex: speechIndex)
-        } else {
-            stop()
-        }
-
-        func findPreviousIndex(in text: String, endIndex: String.Index) -> Int? {
-            guard let paragraphRegex else { return nil }
-            let range = NSRange(text.startIndex..<endIndex, in: text)
-            let matches = paragraphRegex.matches(in: text, range: range)
-            if matches.count > 1 {
-                let matchRange = matches[matches.count - 2].range
-                return matchRange.location + matchRange.length
-            }
-            return nil
-        }
-    }
-
-    private func cleanup() {
-        speech = nil
-        currentIndex = nil
-        cachedPages = [:]
-    }
-
-    // MARK: - AVSpeechSynthesizerDelegate
-    
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
-        cleanup()
-        state.accept(.stopped)
-    }
-    
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didPause utterance: AVSpeechUtterance) {
-        state.accept(.paused)
-    }
-    
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
-        state.accept(.speaking)
-    }
-    
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didContinue utterance: AVSpeechUtterance) {
-        state.accept(.speaking)
-    }
-
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-        guard ignoreFinishCallCount <= 0 else {
-            ignoreFinishCallCount -= 1
+        // Check if the new range is still within the current highlighted unit and granularity hasn't changed
+        if speechData.highlightGranularity == granularity, NSLocationInRange(range.location, speechData.highlightRange) {
+            // Still in the same unit, just update the speech range
+            self.speechData = speechData.copy(range: range, highlightRange: speechData.highlightRange, highlightGranularity: granularity)
             return
         }
 
-        if let currentIndex, let nextIndex = delegate?.getNextPageIndex(from: currentIndex), let page = cachedPages[nextIndex] {
-            go(to: page, pageIndex: nextIndex)
-        } else {
-            cleanup()
-            state.accept(.stopped)
-        }
-    }
+        // New range is outside the current unit (or granularity changed), find the new unit
+        let unitResult = findHighlightUnit(at: range.location, in: pageText, granularity: granularity)
+        let newHighlightRange = unitResult?.range ?? range
 
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, willSpeakRangeOfSpeechString characterRange: NSRange, utterance: AVSpeechUtterance) {
-        guard currentIndex != nil && characterRange.length > 0 else { return }
-        speech = speech?.copy(with: characterRange)
+        // Update speech data with the new range and highlight range
+        self.speechData = speechData.copy(range: range, highlightRange: newHighlightRange, highlightGranularity: granularity)
+
+        // Notify delegate of the highlight change
+        if let highlightText = unitResult?.text {
+            delegate?.readAloudHighlightChanged(
+                text: highlightText,
+                pageIndex: speechData.index,
+                sourceLocation: newHighlightRange.location,
+                sourceTextLength: (pageText as NSString).length
+            )
+        }
     }
 }
 
@@ -390,5 +856,781 @@ extension AVSpeechSynthesisVoice {
             return String(language[language.startIndex..<index])
         }
         return language
+    }
+}
+
+private protocol VoiceProcessor {
+    var speechVoice: SpeechVoice? { get }
+    var preferredLanguage: String? { get }
+    var detectedLanguage: String? { get set }
+    var speechRateModifier: Float { get set }
+    var canResume: Bool { get }
+    /// Progress of current audio segment (0.0 to 1.0).
+    var segmentAudioProgress: Float { get }
+    /// Time elapsed since current audio segment started playing.
+    var segmentAudioElapsedTime: TimeInterval { get }
+
+    func speak(text: String, startIndex: Int)
+    func pause()
+    func resume()
+    func stop()
+    /// Called when the speech position changes while paused (e.g., via forward/backward navigation).
+    /// The processor should invalidate current playback state so that resume() starts from the new position.
+    func invalidateCurrentPlayback()
+}
+
+extension VoiceProcessor {
+    var language: String {
+        return preferredLanguage ?? detectedLanguage ?? "en"
+    }
+}
+
+private protocol VoiceProcessorDelegate: AnyObject {
+    var state: BehaviorRelay<SpeechState> { get }
+    var remainingTime: BehaviorRelay<TimeInterval?> { get }
+    var speechRange: NSRange? { get }
+
+    func goToNextPageIfAvailable() -> Bool
+    func speechRangeWillChange(to range: NSRange)
+}
+
+private final class LocalVoiceProcessor: NSObject, VoiceProcessor {
+    private struct PageData {
+        // Text to read
+        let text: String
+        // Voice used for this page
+        let voice: AVSpeechSynthesisVoice
+    }
+
+    private let synthesizer: AVSpeechSynthesizer
+    private unowned let delegate: VoiceProcessorDelegate
+
+    private var text: String?
+    /// The start index offset in the original text where the current utterance begins.
+    /// AVSpeechSynthesizer reports ranges relative to the utterance text, so we need this
+    /// to convert back to ranges in the original full text.
+    private var utteranceStartIndex: Int = 0
+    private(set) var preferredLanguage: String?
+    var detectedLanguage: String?
+    private var voice: AVSpeechSynthesisVoice?
+    private var shouldReloadUtteranceOnResume = false
+    private var ignoreFinishCallCount = 0
+    /// Background task identifier to keep the app alive during page transitions
+    private var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
+    var speechRateModifier: Float {
+        didSet {
+            utteranceChanged()
+        }
+    }
+    var speechVoice: SpeechVoice? {
+        return voice.flatMap({ .local($0) })
+    }
+    var canResume: Bool {
+        return synthesizer.isPaused
+    }
+    var segmentAudioProgress: Float {
+        // Local voice doesn't have audio-level segment tracking.
+        // SpeechManager computes sentence progress from character position instead.
+        return 0
+    }
+    var segmentAudioElapsedTime: TimeInterval {
+        // Local voice plays the whole page as one utterance, so elapsed time is not meaningful per-segment.
+        return 0
+    }
+
+    init(language: String?, detectedLanguage: String?, speechRateModifier: Float, delegate: VoiceProcessorDelegate) {
+        preferredLanguage = language
+        self.detectedLanguage = detectedLanguage
+        self.speechRateModifier = speechRateModifier
+        self.delegate = delegate
+        synthesizer = AVSpeechSynthesizer()
+        super.init()
+        synthesizer.delegate = self
+    }
+
+    func speak(text: String, startIndex: Int) {
+        if synthesizer.isSpeaking {
+            ignoreFinishCallCount += 1
+            synthesizer.stopSpeaking(at: .immediate)
+        }
+
+        self.text = text
+        self.utteranceStartIndex = startIndex
+        let remainingText = String(text[text.index(text.startIndex, offsetBy: startIndex)..<text.endIndex])
+
+        // Language is detected once at session start, so the voice is resolved only the first time and then reused.
+        if voice == nil {
+            voice = voice(for: remainingText)
+        }
+
+        let utterance = AVSpeechUtterance(string: remainingText)
+        utterance.voice = voice
+        utterance.rate = 0.5 * speechRateModifier
+        synthesizer.speak(utterance)
+    }
+
+    func pause() {
+        guard synthesizer.isSpeaking else { return }
+        synthesizer.pauseSpeaking(at: .word)
+    }
+
+    func resume() {
+        guard synthesizer.isPaused else { return }
+
+        if !shouldReloadUtteranceOnResume {
+            synthesizer.continueSpeaking()
+        } else {
+            reloadUtterance()
+        }
+    }
+
+    func stop() {
+        guard synthesizer.isSpeaking || synthesizer.isPaused || delegate.state.value == .initializing else { return }
+        if delegate.state.value == .initializing {
+            finishSpeaking()
+        } else {
+            // Ignore finish delegate, which would move us to another page
+            ignoreFinishCallCount = 1
+            synthesizer.stopSpeaking(at: .immediate)
+            finishSpeaking()
+        }
+    }
+
+    func invalidateCurrentPlayback() {
+        shouldReloadUtteranceOnResume = true
+    }
+
+    func set(voice: AVSpeechSynthesisVoice, preferredLanguage: String?) {
+        guard self.voice?.identifier != voice.identifier else { return }
+        self.preferredLanguage = preferredLanguage
+        self.voice = voice
+        utteranceChanged()
+    }
+
+    private func utteranceChanged() {
+        if synthesizer.isPaused {
+            shouldReloadUtteranceOnResume = true
+        } else if synthesizer.isSpeaking {
+            reloadUtterance()
+        }
+    }
+
+    private func reloadUtterance() {
+        guard let text, let speechRange = delegate.speechRange else { return }
+        if synthesizer.isSpeaking {
+            synthesizer.pauseSpeaking(at: .immediate)
+        }
+        speak(text: text, startIndex: speechRange.location)
+    }
+
+    private func voice(for text: String) -> AVSpeechSynthesisVoice {
+        return VoiceUtility.findLocalVoice(for: language) ?? AVSpeechSynthesisVoice(language: "en-US")!
+    }
+
+    private func finishSpeaking() {
+        text = nil
+        utteranceStartIndex = 0
+        voice = nil
+        shouldReloadUtteranceOnResume = false
+        ignoreFinishCallCount = 0
+        endBackgroundTask()
+        delegate.state.accept(.stopped)
+    }
+
+    // MARK: - Background Task
+
+    private func beginBackgroundTask() {
+        guard backgroundTaskID == .invalid else { return }
+        backgroundTaskID = UIApplication.shared.beginBackgroundTask(withName: "com.zotero.speech.pageTransition") { [weak self] in
+            self?.endBackgroundTask()
+        }
+    }
+
+    private func endBackgroundTask() {
+        guard backgroundTaskID != .invalid else { return }
+        UIApplication.shared.endBackgroundTask(backgroundTaskID)
+        backgroundTaskID = .invalid
+    }
+}
+
+extension LocalVoiceProcessor: AVSpeechSynthesizerDelegate {
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
+        finishSpeaking()
+    }
+
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didPause utterance: AVSpeechUtterance) {
+        delegate.state.accept(.paused)
+    }
+
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
+        endBackgroundTask()
+        delegate.state.accept(.speaking)
+    }
+
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didContinue utterance: AVSpeechUtterance) {
+        endBackgroundTask()
+        delegate.state.accept(.speaking)
+    }
+
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+        guard ignoreFinishCallCount <= 0 else {
+            ignoreFinishCallCount -= 1
+            return
+        }
+
+        // Keep the app alive while transitioning to the next page in background
+        beginBackgroundTask()
+        if !delegate.goToNextPageIfAvailable() {
+            finishSpeaking()
+        }
+    }
+
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, willSpeakRangeOfSpeechString characterRange: NSRange, utterance: AVSpeechUtterance) {
+        guard characterRange.length > 0 else { return }
+        // AVSpeechSynthesizer reports ranges relative to the utterance text, which may be a substring
+        // of the original text starting at utteranceStartIndex. Adjust the range to be relative to
+        // the original full text.
+        let adjustedRange = NSRange(location: characterRange.location + utteranceStartIndex, length: characterRange.length)
+        delegate.speechRangeWillChange(to: adjustedRange)
+    }
+}
+
+private final class RemoteVoiceProcessor: NSObject, VoiceProcessor {
+    enum Error: Swift.Error {
+        case cancelled
+        case missingVoices
+        case endOfPage
+    }
+
+    /// Number of segments to keep preloaded ahead of current playback
+    private static let preloadAheadCount = 2
+    /// Interval for polling remaining credits from the server
+    private static let creditPollInterval: TimeInterval = 60
+
+    private unowned let delegate: VoiceProcessorDelegate
+    private unowned let remoteVoicesController: RemoteVoicesController
+    private var tier: RemoteVoice.Tier
+
+    private var text: String?
+    private(set) var preferredLanguage: String?
+    var detectedLanguage: String?
+    private var voice: RemoteVoice?
+    private var player: AVAudioPlayer?
+    private var allAvailableVoices: VoicesResponse?
+    private var disposeBag = DisposeBag()
+    /// Cache of downloaded audio data keyed by their text range
+    private var segmentCache: [NSRange: Data] = [:]
+    /// Set of ranges currently being loaded
+    private var loadingSegments: Set<NSRange> = []
+    /// Range that should start playing as soon as it's loaded (when waiting for an in-progress preload)
+    private var pendingPlaybackRange: NSRange?
+    private var shouldReloadOnResume = false
+    private var debouncedSpeakWorkItem: DispatchWorkItem?
+    private var creditPollTimer: Timer?
+    /// Background task identifier to keep the app alive during segment transitions
+    private var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
+    var speechRateModifier: Float {
+        didSet {
+            player?.rate = speechRateModifier
+        }
+    }
+    var speechVoice: SpeechVoice? {
+        return voice.flatMap({ .remote($0) })
+    }
+    var canResume: Bool {
+        return player != nil
+    }
+    var segmentAudioProgress: Float {
+        guard let player, player.duration > 0 else { return 0 }
+        return Float(player.currentTime / player.duration)
+    }
+    var segmentAudioElapsedTime: TimeInterval {
+        return player?.currentTime ?? 0
+    }
+
+    init(language: String?, detectedLanguage: String?, tier: RemoteVoice.Tier, speechRateModifier: Float, delegate: VoiceProcessorDelegate, remoteVoicesController: RemoteVoicesController) {
+        preferredLanguage = language
+        self.detectedLanguage = detectedLanguage
+        self.tier = tier
+        self.speechRateModifier = speechRateModifier
+        self.delegate = delegate
+        self.remoteVoicesController = remoteVoicesController
+        super.init()
+    }
+
+    // MARK: - Actions
+
+    func set(voice: RemoteVoice, preferredLanguage: String?) {
+        let voiceChanged = self.voice?.id != voice.id
+        self.preferredLanguage = preferredLanguage
+        self.voice = voice
+
+        if voiceChanged {
+            stopPreloadingAndClearCache()
+            delegate.remainingTime.accept(nil)
+            loadCredits()
+            if let player {
+                if player.isPlaying {
+                    player.pause()
+                }
+                shouldReloadOnResume = true
+            }
+        }
+    }
+
+    /// Attempts to downgrade to standard tier using cached voices.
+    /// Returns the voice and language if successful, nil if no standard voice is available.
+    func standardVoice(for language: String) -> RemoteVoice? {
+        guard let allAvailableVoices else { return nil }
+        return VoiceUtility.findRemoteVoice(for: language, tier: .standard, response: allAvailableVoices)
+    }
+
+    func speak(text: String, startIndex: Int) {
+        // Immediate: stop current playback and update state
+        if self.text != text || startIndex != 0 {
+            stopPreloadingAndClearCache()
+        }
+        self.text = text
+        if player?.isPlaying == true {
+            player?.stop()
+        }
+        player = nil
+        disposeBag = DisposeBag()
+        debouncedSpeakWorkItem?.cancel()
+        debouncedSpeakWorkItem = nil
+
+        // Start .loading state unless we're already .initializing
+        if delegate.state.value != .initializing {
+            delegate.state.accept(.loading)
+        }
+
+        // If the voice is not known yet, start loading immediately so that there is no unnecessary delay
+        if voice == nil {
+            loadVoiceAndStartSpeaking(text: text, startIndex: startIndex)
+            return
+        }
+
+        // Debounce segment download so rapid forward/backward taps don't trigger multiple network requests
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            self.loadVoiceAndStartSpeaking(text: text, startIndex: startIndex)
+        }
+        debouncedSpeakWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: workItem)
+    }
+
+    private func loadVoiceAndStartSpeaking(text: String, startIndex: Int) {
+        // Language is detected once at session start, so the voice is resolved only the first time and then reused.
+        let getVoice: Single<RemoteVoice>
+        if let voice {
+            getVoice = Single.just(voice)
+        } else {
+            getVoice = loadVoice(forText: text)
+        }
+
+        getVoice
+            .observe(on: MainScheduler.instance)
+            .subscribe(
+                onSuccess: { [weak self] voice in
+                    self?.startSpeaking(text: text, startIndex: startIndex, voice: voice)
+                },
+                onFailure: { [weak self] error in
+                    self?.handleSpeechFailure(error: error)
+                }
+            )
+            .disposed(by: disposeBag)
+    }
+
+    func pause() {
+        debouncedSpeakWorkItem?.cancel()
+        debouncedSpeakWorkItem = nil
+        guard player?.isPlaying == true else { return }
+        player?.pause()
+        stopCreditPollTimer()
+        delegate.state.accept(.paused)
+    }
+
+    func resume() {
+        guard let player, delegate.state.value == .paused || delegate.state.value.isOutOfCredits else { return }
+
+        if shouldReloadOnResume {
+            shouldReloadOnResume = false
+            reloadCurrentSegment()
+        } else {
+            player.play()
+            delegate.state.accept(.speaking)
+            startCreditPollTimer()
+        }
+
+        func reloadCurrentSegment() {
+            guard let text, let voice, let speechRange = delegate.speechRange else { return }
+            // Clear cache since voice changed
+            segmentCache.removeAll()
+            loadingSegments.removeAll()
+            player.stop()
+            self.player = nil
+            startSpeaking(text: text, startIndex: speechRange.location, voice: voice)
+        }
+    }
+
+    func stop() {
+        finishSpeaking()
+        disposeBag = DisposeBag()
+    }
+
+    func invalidateCurrentPlayback() {
+        shouldReloadOnResume = true
+    }
+
+    private func stopPreloadingAndClearCache() {
+        disposeBag = DisposeBag()
+        segmentCache.removeAll()
+        loadingSegments.removeAll()
+        pendingPlaybackRange = nil
+    }
+
+    // MARK: - Background Task
+
+    /// Begins a background task to keep the app alive during segment transitions.
+    /// When audio finishes and the app is in the background, iOS may suspend it before the next segment
+    /// can be downloaded and played. This gives us ~30 seconds to complete the transition.
+    private func beginBackgroundTask() {
+        guard backgroundTaskID == .invalid else { return }
+        backgroundTaskID = UIApplication.shared.beginBackgroundTask(withName: "com.zotero.speech.segmentTransition") { [weak self] in
+            self?.endBackgroundTask()
+        }
+    }
+
+    private func endBackgroundTask() {
+        guard backgroundTaskID != .invalid else { return }
+        UIApplication.shared.endBackgroundTask(backgroundTaskID)
+        backgroundTaskID = .invalid
+    }
+
+    // MARK: - Voices
+
+    private func loadVoice(forText text: String) -> Single<RemoteVoice> {
+        if let allAvailableVoices {
+            return loadVoice(forText: text, language: language, tier: tier, allVoices: allAvailableVoices)
+        }
+        return remoteVoicesController.loadVoices()
+            .do(onSuccess: { [weak self] result in
+                self?.allAvailableVoices = result.response
+            })
+            .flatMap({ [weak self] result in
+                guard let self else {
+                    return Single.error(Error.cancelled)
+                }
+                return loadVoice(forText: text, language: language, tier: tier, allVoices: result.response)
+            })
+            .do(onSuccess: { [weak self] voice in
+                self?.voice = voice
+            })
+
+        func loadVoice(forText text: String, language: String, tier: RemoteVoice.Tier, allVoices: VoicesResponse) -> Single<RemoteVoice> {
+            return Single.create { [weak self] subscriber in
+                if let voice = VoiceUtility.findRemoteVoice(for: language, tier: tier, response: allVoices) ?? allVoices.firstVoice(for: tier) {
+                    subscriber(.success(voice))
+                } else {
+                    subscriber(.failure(Error.missingVoices))
+                }
+                return Disposables.create()
+            }
+        }
+    }
+
+    // MARK: - Speech
+
+    private func startSpeaking(text: String, startIndex: Int, voice: RemoteVoice) {
+        // Find the range for the segment at startIndex
+        guard let range = findNextRange(startingAt: startIndex, voice: voice, in: text) else {
+            handleSpeechFailure(error: Error.endOfPage)
+            return
+        }
+
+        // Report the range immediately so the highlight updates without waiting for audio to load
+        delegate.speechRangeWillChange(to: range)
+
+        // Check if we already have the segment cached
+        if let cachedData = segmentCache[range] {
+            handleSpeechSuccess(data: cachedData, range: range)
+            ensureSegmentsPreloaded(after: range, text: text, voice: voice)
+            return
+        }
+
+        // Check if this segment is already being loaded (preload in progress)
+        if loadingSegments.contains(range) {
+            // Mark this range as pending playback - it will start playing when the preload completes
+            pendingPlaybackRange = range
+            delegate.state.accept(.loading)
+            return
+        }
+
+        // Load segment and start playing as soon as it's ready, while preloading others
+        delegate.state.accept(.loading)
+        startCreditPollTimer()
+        loadAndPlaySegment(range: range, text: text, voice: voice)
+
+        func loadAndPlaySegment(range: NSRange, text: String, voice: RemoteVoice) {
+            // Mark as loading
+            loadingSegments.insert(range)
+
+            // Start loading the segment we need to play
+            loadSegment(for: range, in: text, voice: voice)
+                .observe(on: MainScheduler.instance)
+                .subscribe(
+                    onSuccess: { [weak self] data in
+                        guard let self else { return }
+                        loadingSegments.remove(range)
+                        // Play immediately
+                        handleSpeechSuccess(data: data, range: range)
+                        ensureSegmentsPreloaded(after: range, text: text, voice: voice)
+                    },
+                    onFailure: { [weak self] error in
+                        self?.loadingSegments.remove(range)
+                        self?.handleSpeechFailure(error: error)
+                    }
+                )
+                .disposed(by: disposeBag)
+
+            // Start preloading next segments concurrently
+            ensureSegmentsPreloaded(after: range, text: text, voice: voice)
+        }
+    }
+
+    private func loadSegment(for range: NSRange, in text: String, voice: RemoteVoice) -> Single<Data> {
+        guard let textRange = Range(range, in: text) else {
+            return .error(Error.endOfPage)
+        }
+        let segmentText = String(text[textRange])
+        return remoteVoicesController.downloadSound(forText: segmentText, voiceId: voice.id)
+    }
+
+    private func ensureSegmentsPreloaded(after currentRange: NSRange, text: String, voice: RemoteVoice) {
+        // Calculate how many more segments we need to preload
+        let currentlyBuffered = segmentCache.count + loadingSegments.count
+        let segmentsToLoad = Self.preloadAheadCount - currentlyBuffered
+        guard segmentsToLoad > 0 else { return }
+
+        var nextIndex = currentRange.location + currentRange.length
+        var loaded = 0
+
+        while loaded < segmentsToLoad {
+            guard let range = findNextRange(startingAt: nextIndex, voice: voice, in: text) else { break }
+
+            // Skip if already cached or being loaded
+            if segmentCache[range] != nil || loadingSegments.contains(range) {
+                nextIndex = range.location + range.length
+                continue
+            }
+
+            // Mark as loading and start download
+            loadingSegments.insert(range)
+
+            loadSegment(for: range, in: text, voice: voice)
+                .observe(on: MainScheduler.instance)
+                .subscribe(
+                    onSuccess: { [weak self] data in
+                        guard let self else { return }
+                        loadingSegments.remove(range)
+                        // Check if this segment was requested for playback while loading
+                        if pendingPlaybackRange == range {
+                            pendingPlaybackRange = nil
+                            handleSpeechSuccess(data: data, range: range)
+                        } else {
+                            segmentCache[range] = data
+                        }
+                        ensureSegmentsPreloaded(after: range, text: text, voice: voice)
+                    },
+                    onFailure: { [weak self] error in
+                        guard let self else { return }
+                        loadingSegments.remove(range)
+                        // If this was pending for playback, report the failure
+                        if pendingPlaybackRange == range {
+                            pendingPlaybackRange = nil
+                            handleSpeechFailure(error: error)
+                        }
+                    }
+                )
+                .disposed(by: disposeBag)
+
+            nextIndex = range.location + range.length
+            loaded += 1
+        }
+    }
+
+    private func handleSpeechSuccess(data: Data, range: NSRange) {
+        // Remove this segment from cache since we're now playing it
+        segmentCache.removeValue(forKey: range)
+        play(data: data)
+    }
+
+    private func handleSpeechFailure(error: Swift.Error) {
+        if case Error.endOfPage = error {
+            // Reached end of current page, try to go to next page
+            // Background task is still active from audioPlayerDidFinishPlaying, keeping us alive for this transition
+            if !delegate.goToNextPageIfAvailable() {
+                finishSpeaking()
+            }
+        } else if let responseError = error as? AFResponseError,
+                  case .responseValidationFailed(let reason) = responseError.error,
+                  case .unacceptableStatusCode(let code) = reason,
+                  code == 402 {
+            // Out of credits - determine reason from response
+            let outOfCreditsReason: SpeechState.OutOfCreditsReason
+            if responseError.response.contains("daily_limit_exceeded") {
+                outOfCreditsReason = .dailyLimitExceeded
+            } else {
+                outOfCreditsReason = .quotaExceeded
+            }
+            updateRemainingTimeDisplay(credits: (standard: 0, premium: 0))
+            endBackgroundTask()
+            delegate.state.accept(.outOfCredits(outOfCreditsReason))
+        } else {
+            DDLogError("RemoteVoiceProcessor: can't download sound - \(error)")
+            endBackgroundTask()
+            delegate.state.accept(.stopped)
+        }
+    }
+
+    private func play(data: Data) {
+        do {
+            let audioPlayer = try AVAudioPlayer(data: data)
+            audioPlayer.delegate = self
+            audioPlayer.enableRate = true
+            audioPlayer.rate = speechRateModifier
+            audioPlayer.prepareToPlay()
+            audioPlayer.play()
+            player = audioPlayer
+            delegate.state.accept(.speaking)
+            // Audio is now playing, safe to end the background task
+            endBackgroundTask()
+        } catch {
+            DDLogError("RemoteVoiceProcessor: can't play audio - \(error)")
+            endBackgroundTask()
+            delegate.state.accept(.stopped)
+        }
+    }
+
+    // MARK: - Credits
+
+    private func startCreditPollTimer() {
+        guard creditPollTimer == nil else { return }
+        // Load credits immediately
+        loadCredits()
+        // Then poll every 60 seconds
+        creditPollTimer = Timer.scheduledTimer(withTimeInterval: Self.creditPollInterval, repeats: true) { [weak self] _ in
+            self?.loadCredits()
+        }
+    }
+
+    private func stopCreditPollTimer() {
+        creditPollTimer?.invalidate()
+        creditPollTimer = nil
+    }
+
+    private func loadCredits() {
+        remoteVoicesController.loadCredits()
+            .observe(on: MainScheduler.instance)
+            .subscribe(
+                onSuccess: { [weak self] credits in
+                    self?.updateRemainingTimeDisplay(credits: credits)
+                },
+                onFailure: { error in
+                    DDLogError("RemoteVoiceProcessor: could not load credits - \(error)")
+                }
+            )
+            .disposed(by: disposeBag)
+    }
+
+    private func updateRemainingTimeDisplay(credits: (standard: Int, premium: Int)) {
+        guard let voice, voice.tier != .standard else {
+            // Standard tier voice - report nil remaining time (unlimited)
+            delegate.remainingTime.accept(nil)
+            return
+        }
+        // Select credits based on voice tier
+        let tierCredits: Int
+        switch voice.tier {
+        case .standard:
+            tierCredits = credits.standard
+
+        case .premium:
+            tierCredits = credits.premium
+        }
+        // Calculate remaining time from credits (creditsPerMinute means credits per minute of audio)
+        let remainingTime = (TimeInterval(tierCredits) / TimeInterval(voice.creditsPerMinute)) * 60
+        delegate.remainingTime.accept(remainingTime)
+    }
+
+    // MARK: - Helpers
+
+    private func findNextRange(startingAt index: Int, voice: RemoteVoice, in text: String) -> NSRange? {
+        let result: (text: String, range: NSRange)?
+        if voice.granularity == .sentence {
+            result = TextTokenizer.findSentence(startingAt: index, in: text)
+        } else {
+            result = TextTokenizer.findParagraph(startingAt: index, in: text)
+        }
+        return result?.range
+    }
+
+    private func finishSpeaking() {
+        debouncedSpeakWorkItem?.cancel()
+        debouncedSpeakWorkItem = nil
+        text = nil
+        player?.stop()
+        player = nil
+        segmentCache.removeAll()
+        loadingSegments.removeAll()
+        pendingPlaybackRange = nil
+        shouldReloadOnResume = false
+        stopCreditPollTimer()
+        endBackgroundTask()
+        delegate.state.accept(.stopped)
+    }
+}
+
+extension RemoteVoiceProcessor: AVAudioPlayerDelegate {
+    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        guard flag, let text, let voice, let speechRange = delegate.speechRange else {
+            finishSpeaking()
+            return
+        }
+
+        // Keep the app alive while transitioning to the next segment in background
+        beginBackgroundTask()
+        let nextStartIndex = speechRange.location + speechRange.length
+
+        let delay = voice.sentenceDelay > 0 ? TimeInterval(voice.sentenceDelay) / (1000.0 * TimeInterval(speechRateModifier)) : 0
+        if delay == 0 {
+            startSpeaking(text: text, startIndex: nextStartIndex, voice: voice)
+        } else {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                guard let self, self.delegate.state.value.isSpeaking || self.delegate.state.value == .loading else { return }
+                self.startSpeaking(text: text, startIndex: nextStartIndex, voice: voice)
+            }
+        }
+    }
+
+    func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: (any Swift.Error)?) {
+        DDLogError("RemoteVoiceProcessor: decode error - \(String(describing: error))")
+        finishSpeaking()
+    }
+}
+
+// MARK: - SpeechHighlightSessionManagerDelegate
+
+extension SpeechManager: SpeechHighlightSessionManagerDelegate {
+    func highlightSessionNextPageData(from pageIndex: Delegate.Index) -> (pageText: String, pageIndex: Delegate.Index)? {
+        guard let nextIndex = delegate?.getNextPageIndex(from: pageIndex),
+              let text = cachedPages[nextIndex] else { return nil }
+        return (text, nextIndex)
+    }
+
+    func highlightSessionPreviousPageData(from pageIndex: Delegate.Index) -> (pageText: String, pageIndex: Delegate.Index)? {
+        guard let prevIndex = delegate?.getPreviousPageIndex(from: pageIndex),
+              let text = cachedPages[prevIndex] else { return nil }
+        return (text, prevIndex)
     }
 }
