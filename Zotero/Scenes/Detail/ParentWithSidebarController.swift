@@ -40,6 +40,7 @@ protocol ParentWithSidebarController: UIViewController {
     var isCompactWidth: Bool { get }
     var isDocumentLocked: Bool { get }
     var disposeBag: DisposeBag { get }
+    var windowSize: CGSize { get }
 
     func createToolbarButton() -> UIBarButtonItem
     func closeAnnotationToolbar()
@@ -50,6 +51,10 @@ protocol ParentWithSidebarController: UIViewController {
 }
 
 extension ParentWithSidebarController {
+    var windowSize: CGSize {
+        return view.window?.bounds.size ?? navigationController?.view.frame.size ?? .zero
+    }
+
     var isToolbarVisible: Bool {
         return toolbarState.visible
     }
@@ -67,17 +72,26 @@ extension ParentWithSidebarController {
     ///   better than collapsing some into a "•••" menu.
     /// - `trailingItemGroups` are laid out leading→trailing in array order, so the fixed groups come first (inboard)
     ///   and the overflow group sits at the trailing edge.
-    func applyNavigationBarButtons() {
-        if UIDevice.current.userInterfaceIdiom == .pad {
+    func applyNavigationBarButtons(windowSize: CGSize) {
+        let spacer = UIBarButtonItem(systemItem: .flexibleSpace, primaryAction: nil, menu: nil)
+
+        if windowSize.width < 385 {
+            navigationItem.leftBarButtonItems = nil
+            navigationItem.rightBarButtonItems = nil
+
             navigationItem.leadingItemGroups = navigationBarLeadingItems.map { $0.creatingFixedGroup() }
 
-            var trailingGroups = navigationBarTrailingFixedItems.map { $0.creatingFixedGroup() }
+            var trailingGroups = [spacer.creatingFixedGroup()] + navigationBarTrailingFixedItems.map { $0.creatingFixedGroup() }
             if !navigationBarOverflowItems.isEmpty {
                 trailingGroups.append(.optionalGroup(customizationIdentifier: "ParentWithSidebar.overflow", items: navigationBarOverflowItems))
             }
             navigationItem.trailingItemGroups = trailingGroups
         } else {
-            navigationItem.leftBarButtonItems = navigationBarLeadingItems + navigationBarTrailingFixedItems + navigationBarOverflowItems
+            navigationItem.leadingItemGroups = []
+            navigationItem.trailingItemGroups = []
+
+            navigationItem.leftBarButtonItems = navigationBarLeadingItems
+            navigationItem.rightBarButtonItems = (navigationBarTrailingFixedItems + navigationBarOverflowItems).reversed() + [spacer]
         }
     }
 
