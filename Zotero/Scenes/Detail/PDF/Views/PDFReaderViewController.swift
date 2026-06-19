@@ -362,7 +362,6 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
             }
             navigationBarLeadingItems = leftItems
             updateNavigationBarTrailingItems()
-            applyNavigationBarButtons()
         }
 
         func setupObserving() {
@@ -404,6 +403,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
         super.viewIsAppearing(animated)
         let editingEnabled = viewModel.state.library.metadataEditable && !viewModel.state.document.isLocked
         annotationToolbarHandler?.viewIsAppearing(editingEnabled: editingEnabled)
+        applyNavigationBarButtons(windowSize: windowSize)
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -455,6 +455,8 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
                 closeAnnotationToolbar()
             }
         }
+
+        applyNavigationBarButtons(windowSize: size)
 
         coordinator.animate { [weak self] _ in
             guard let self else { return }
@@ -525,7 +527,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
             annotationToolbarHandler?.set(hidden: hidden, animated: true)
             toolbarButton.checkboxButton?.isSelected = toolbarState.visible
             updateNavigationBarTrailingItems()
-            applyNavigationBarButtons()
+            applyNavigationBarButtons(windowSize: windowSize)
         }
 
         if let tool = state.changedColorForTool, documentController?.pdfController?.annotationStateManager.state == tool, let color = state.toolColors[tool] {
@@ -545,7 +547,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
                 if items[shareId].customView != nil { // if activity indicator is visible, replace it with share button
                     items[shareId] = shareButton
                     navigationBarOverflowItems = items
-                    applyNavigationBarButtons()
+                    applyNavigationBarButtons(windowSize: view.window?.bounds.size ?? .zero)
                 }
                 return
             }
@@ -570,7 +572,7 @@ class PDFReaderViewController: UIViewController, ReaderViewController, DocumentK
             }
 
             navigationBarOverflowItems = items
-            applyNavigationBarButtons()
+            applyNavigationBarButtons(windowSize: windowSize)
         }
     }
 

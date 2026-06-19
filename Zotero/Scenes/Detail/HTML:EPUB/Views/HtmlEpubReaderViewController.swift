@@ -145,7 +145,6 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
         setupViews()
         updateInterface(to: viewModel.state.settings)
         updateNavigationBarTrailingItems()
-        applyNavigationBarButtons()
 
         func observeViewModel() {
             viewModel.stateObservable
@@ -277,6 +276,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
         super.viewIsAppearing(animated)
         annotationToolbarHandler?.viewIsAppearing(editingEnabled: viewModel.state.library.metadataEditable)
         updateContainerInsets(force: true)
+        applyNavigationBarButtons(windowSize: windowSize)
     }
 
     deinit {
@@ -315,6 +315,8 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
         isCompactWidth = UIDevice.current.isCompactWidth(size: size)
 
         guard viewIfLoaded != nil else { return }
+
+        applyNavigationBarButtons(windowSize: size)
 
         coordinator.animate(alongsideTransition: { [weak self] _ in
             guard let self else { return }
@@ -363,7 +365,7 @@ class HtmlEpubReaderViewController: UIViewController, ReaderViewController, Pare
             annotationToolbarHandler?.set(hidden: hidden, animated: true)
             toolbarButton.checkboxButton?.isSelected = toolbarState.visible
             updateNavigationBarTrailingItems()
-            applyNavigationBarButtons()
+            applyNavigationBarButtons(windowSize: windowSize)
         }
 
         if state.changes.contains(.pages) {
