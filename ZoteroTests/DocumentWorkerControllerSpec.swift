@@ -228,7 +228,7 @@ final class DocumentWorkerControllerSpec: QuickSpec {
 
                 it("can extract recognizer data") {
                     let work: DocumentWorkerController.Work = .recognizer
-                    let worker = DocumentWorkerController.Worker(file: file, shouldCacheInput: false, isOneOff: true, priority: .default)
+                    let worker = DocumentWorkerController.Worker(file: file, kind: .oneOff, priority: .default)
                     var emittedUpdates: [DocumentWorkerController.Update.Kind] = []
 
                     waitUntil(timeout: .seconds(20)) { completion in
@@ -253,7 +253,7 @@ final class DocumentWorkerControllerSpec: QuickSpec {
 
                 it("can extract full text") {
                     let work: DocumentWorkerController.Work = .fullText(pages: nil)
-                    let worker = DocumentWorkerController.Worker(file: file, shouldCacheInput: false, isOneOff: true, priority: .default)
+                    let worker = DocumentWorkerController.Worker(file: file, kind: .oneOff, priority: .default)
                     var emittedUpdates: [DocumentWorkerController.Update.Kind] = []
 
                     waitUntil(timeout: .seconds(20)) { completion in
@@ -278,7 +278,7 @@ final class DocumentWorkerControllerSpec: QuickSpec {
 
                 it("can extract text from a single page") {
                     let work: DocumentWorkerController.Work = .fullText(pages: [0])
-                    let worker = DocumentWorkerController.Worker(file: file, shouldCacheInput: false, isOneOff: true, priority: .default)
+                    let worker = DocumentWorkerController.Worker(file: file, kind: .oneOff, priority: .default)
                     var emittedUpdates: [DocumentWorkerController.Update.Kind] = []
 
                     waitUntil(timeout: .seconds(20)) { completion in
@@ -303,7 +303,7 @@ final class DocumentWorkerControllerSpec: QuickSpec {
 
                 it("can extract text from two pages") {
                     let work: DocumentWorkerController.Work = .fullText(pages: [0, 1])
-                    let worker = DocumentWorkerController.Worker(file: file, shouldCacheInput: false, isOneOff: true, priority: .default)
+                    let worker = DocumentWorkerController.Worker(file: file, kind: .oneOff, priority: .default)
                     var emittedUpdates: [DocumentWorkerController.Update.Kind] = []
 
                     waitUntil(timeout: .seconds(20)) { completion in
@@ -498,7 +498,7 @@ final class DocumentWorkerControllerSpec: QuickSpec {
 
                 func processStructuredDocumentText(file: FileData, expectedURL: URL, timeout: Int) {
                     let work: DocumentWorkerController.Work = .structuredDocumentText
-                    let worker = DocumentWorkerController.Worker(file: file, shouldCacheInput: false, isOneOff: true, priority: .default)
+                    let worker = DocumentWorkerController.Worker(file: file, kind: .oneOff, priority: .default)
                     var emittedUpdates: [DocumentWorkerController.Update.Kind] = []
 
                     waitUntil(timeout: .seconds(timeout)) { completion in
@@ -566,7 +566,7 @@ final class DocumentWorkerControllerSpec: QuickSpec {
                         filename: "1",
                         contentType: "application/pdf"
                     )
-                    let worker = DocumentWorkerController.Worker(file: file, shouldCacheInput: false, isOneOff: true, priority: .default)
+                    let worker = DocumentWorkerController.Worker(file: file, kind: .oneOff, priority: .default)
                     var emittedUpdates: [DocumentWorkerController.Update.Kind] = []
 
                     waitUntil(timeout: .seconds(120)) { completion in
@@ -605,7 +605,7 @@ final class DocumentWorkerControllerSpec: QuickSpec {
 
                 it("can extract full text") {
                     let work: DocumentWorkerController.Work = .fullText(pages: nil)
-                    let worker = DocumentWorkerController.Worker(file: file, shouldCacheInput: false, isOneOff: true, priority: .default)
+                    let worker = DocumentWorkerController.Worker(file: file, kind: .oneOff, priority: .default)
                     var emittedUpdates: [DocumentWorkerController.Update.Kind] = []
 
                     waitUntil(timeout: .seconds(20)) { completion in
@@ -643,7 +643,7 @@ final class DocumentWorkerControllerSpec: QuickSpec {
 
                 it("can extract full text") {
                     let work: DocumentWorkerController.Work = .fullText(pages: nil)
-                    let worker = DocumentWorkerController.Worker(file: file, shouldCacheInput: false, isOneOff: true, priority: .default)
+                    let worker = DocumentWorkerController.Worker(file: file, kind: .oneOff, priority: .default)
                     var emittedUpdates: [DocumentWorkerController.Update.Kind] = []
 
                     waitUntil(timeout: .seconds(20)) { completion in

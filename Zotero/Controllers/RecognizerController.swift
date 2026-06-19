@@ -182,7 +182,7 @@ final class RecognizerController {
             statesByTask[task] = .recognitionInProgress
             emmitUpdate(for: task, subject: subject, kind: .inProgress)
 
-            let worker = DocumentWorkerController.Worker(file: task.file, shouldCacheInput: false, isOneOff: true, priority: .default)
+            let worker = DocumentWorkerController.Worker(file: task.file, kind: .oneOff, priority: .default)
             documentWorkerController.queue(work: .recognizer, in: worker)
                 .subscribe(onNext: { [weak self] update in
                     guard let self else { return }

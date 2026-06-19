@@ -375,7 +375,7 @@ final class ItemsViewController: BaseItemsViewController {
             downloader.downloadIfNeeded(attachment: attachment, parentKey: parentKey) { [weak coordinatorDelegate] result in
                 switch result {
                 case .success:
-                    let worker = DocumentWorkerController.Worker(file: file, shouldCacheInput: false, isOneOff: true, priority: .default)
+                    let worker = DocumentWorkerController.Worker(file: file, kind: .oneOff, priority: .default)
                     _ = documentWorkerController.queue(work: .structuredDocumentText, in: worker)
 
                 case .failure(let error):

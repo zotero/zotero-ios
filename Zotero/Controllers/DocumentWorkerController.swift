@@ -84,10 +84,15 @@ final class DocumentWorkerController {
             case failed
         }
 
+        enum Kind {
+            case oneOff
+            case normal
+            case multipleWorks
+        }
+
         let id = UUID()
         let file: FileData
-        let shouldCacheInput: Bool
-        let isOneOff: Bool
+        let kind: Kind
         let priority: Priority
         let password: String?
         fileprivate(set) var state: State = .pending
@@ -99,10 +104,9 @@ final class DocumentWorkerController {
             file.createUrl()
         }()
 
-        init(file: FileData, shouldCacheInput: Bool, isOneOff: Bool, priority: Priority, password: String? = nil) {
+        init(file: FileData, kind: Kind = .normal, priority: Priority = .default, password: String? = nil) {
             self.file = file
-            self.shouldCacheInput = shouldCacheInput
-            self.isOneOff = isOneOff
+            self.kind = kind
             self.priority = priority
             self.password = password
         }
@@ -396,7 +400,7 @@ final class DocumentWorkerController {
                 existingSubject.bind(to: subject).disposed(by: disposeBag)
                 return
             }
-            if worker.isOneOff && !worker.subjectsByWork.isEmpty {
+            if worker.kind == .oneOff && !worker.subjectsByWork.isEmpty {
                 reject(work: work, in: worker, to: subject)
                 return
             }
@@ -645,7 +649,7 @@ final class DocumentWorkerController {
     @discardableResult
     private func setup(documentWorkerHandler: DocumentWorkerHandling, runtime: HandlerRuntime, for worker: Worker) -> Bool {
         documentWorkerHandler.workFile = worker.file
-        documentWorkerHandler.shouldCacheWorkInput = worker.shouldCacheInput
+        documentWorkerHandler.shouldCacheWorkInput = worker.kind == .multipleWorks
         if runtime == .webView, !copy(workFile: worker.file, to: documentWorkerHandler) {
             return false
         }
@@ -828,7 +832,7 @@ final class DocumentWorkerController {
         func finishWork(_ work: Work, worker: Worker, updateWorkerState: Bool, finalUpdateKind: Update.Kind, startNextWorkIfNeeded: Bool, controller: DocumentWorkerController) {
             let duration = duration(for: work, in: worker)
             let subject = worker.subjectsByWork.removeValue(forKey: work)
-            let shouldFinishOneOffWorker = worker.isOneOff && worker.subjectsByWork.isEmpty
+            let shouldFinishOneOffWorker = worker.kind == .oneOff && worker.subjectsByWork.isEmpty
             if shouldFinishOneOffWorker {
                 worker.isFinished = true
             }
