@@ -246,13 +246,13 @@ extension SettingsCoordinator: SettingsCoordinatorDelegate {
         let message: String
         switch error {
         case .deletion(let name, _):
-            message = L10n.Errors.Styles.deletion(name)
+            message = Messages.Errors.Styles.deletion(name)
 
         case .addition(let name, _):
-            message = L10n.Errors.Styles.addition(name)
+            message = Messages.Errors.Styles.addition(name)
 
         case .loading:
-            message = L10n.Errors.Styles.loading
+            message = Messages.Errors.Styles.loading
         }
 
         let controller = UIAlertController(title: L10n.error, message: message, preferredStyle: .alert)

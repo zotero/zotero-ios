@@ -48,16 +48,16 @@ enum WebDavError {
                 return L10n.Errors.Settings.Webdav.noUsername
 
             case .nonExistentFileNotMissing:
-                return L10n.Errors.Settings.Webdav.nonExistentFileNotMissing
+                return Messages.Errors.Settings.Webdav.nonExistentFileNotMissing
 
             case .notDav:
                 return L10n.Errors.Settings.Webdav.notDav
 
             case .parentDirNotFound:
-                return L10n.Errors.Settings.Webdav.parentDirNotFound
+                return Messages.Errors.Settings.Webdav.parentDirNotFound
 
             case .zoteroDirNotFound:
-                return L10n.Errors.Settings.Webdav.zoteroDirNotFound
+                return Messages.Errors.Settings.Webdav.zoteroDirNotFound
             }
         }
     }

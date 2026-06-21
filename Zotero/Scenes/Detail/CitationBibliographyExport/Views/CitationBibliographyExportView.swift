@@ -51,10 +51,10 @@ struct CitationBibliographyExportView: View {
 
         switch mode {
         case .bibliography:
-            return L10n.Errors.Citation.generateBibliography
+            return Messages.Errors.Citation.generateBibliography
 
         case .citation:
-            return L10n.Errors.Citation.generateCitation
+            return Messages.Errors.Citation.generateCitation
         }
     }
 

@@ -249,7 +249,7 @@ final class SingleCitationViewController: UIViewController {
 
             case .cantPreloadWebView:
                 if let navigationController {
-                    coordinatorDelegate.showCitationPreviewError(using: navigationController, errorMessage: L10n.Errors.citationPreview)
+                    coordinatorDelegate.showCitationPreviewError(using: navigationController, errorMessage: Messages.Errors.citationPreview)
                 }
             }
         }

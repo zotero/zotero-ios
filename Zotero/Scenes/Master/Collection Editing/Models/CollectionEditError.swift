@@ -32,7 +32,7 @@ enum CollectionEditError: Error, Identifiable, Hashable {
             return L10n.Errors.Collections.emptyName
 
         case .saveFailed:
-            return L10n.Errors.Collections.saveFailed
+            return Messages.Errors.Collections.saveFailed
         }
     }
 }

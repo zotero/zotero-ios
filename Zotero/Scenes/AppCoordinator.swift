@@ -86,7 +86,7 @@ final class AppCoordinator: NSObject {
 
         func showBetaAlert() {
             guard let rootViewController = window?.rootViewController else { return }
-            let controller = UIAlertController(title: "Resync Required", message: "Due to a beta update, your data must be redownloaded from zotero.org.", preferredStyle: .alert)
+            let controller = UIAlertController(title: Messages.betaWipeTitle, message: Messages.betaWipeMessage, preferredStyle: .alert)
             controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
             rootViewController.present(controller, animated: true, completion: nil)
         }
@@ -507,19 +507,19 @@ extension AppCoordinator: DebugLoggingCoordinator {
         let message: String
         switch error {
         case .start:
-            message = L10n.Errors.Logging.start
+            message = Messages.Errors.Logging.start
 
         case .contentReading, .cantCreateData:
-            message = "Log files could not be found"
+            message = Messages.Errors.Logging.contentReading
 
         case .noLogsRecorded:
-            message = L10n.Errors.Logging.noLogsRecorded
+            message = Messages.Errors.Logging.noLogsRecorded
 
         case .upload:
-            message = L10n.Errors.Logging.upload
+            message = Messages.Errors.Logging.upload
 
         case .responseParsing:
-            message = L10n.Errors.Logging.responseParsing
+            message = Messages.Errors.Logging.responseParsing
         }
 
         var actions = [UIAlertAction(title: L10n.ok, style: .cancel, handler: { _ in
@@ -536,7 +536,7 @@ extension AppCoordinator: DebugLoggingCoordinator {
             }))
         }
 
-        showAlert(title: L10n.Errors.Logging.title, message: message, actions: actions)
+        showAlert(title: Messages.Errors.Logging.title, message: message, actions: actions)
 
         func presentActivityViewController(with items: [Any], completed: @escaping () -> Void) {
             guard let viewController else { return }
@@ -705,7 +705,7 @@ extension AppCoordinator: TranslatorsControllerCoordinatorDelegate {
     }
 
     func showResetToBundleError() {
-        showAlert(title: L10n.error, message: "Could not load bundled translators.", actions: [UIAlertAction(title: L10n.ok, style: .cancel, handler: nil)])
+        showAlert(title: L10n.error, message: Messages.Errors.Translators.bundleReset, actions: [UIAlertAction(title: L10n.ok, style: .cancel, handler: nil)])
     }
 }
 
