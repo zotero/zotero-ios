@@ -16,35 +16,6 @@ import RxSwift
 
 final class DocumentWorkerController {
     // MARK: Types
-    struct FullText {
-        static let pageDelimiter = "\u{000C}"
-
-        fileprivate struct Manifest: Codable {
-            let pageCount: Int
-        }
-
-        fileprivate struct Page: Codable {
-            let totalPages: Int
-            let extractedPages: Int
-            let text: String
-        }
-
-        fileprivate static func pageURL(in directoryURL: URL, pageIndex: Int) -> URL {
-            return directoryURL.appendingPathComponent(String(pageIndex)).appendingPathExtension("json")
-        }
-
-        fileprivate static func pageIndexes(from pages: [Int]?, pageCount: Int) -> [Int] {
-            guard let pages else { return Array(0..<pageCount) }
-            return pages.filter { $0 >= 0 && $0 < pageCount }
-        }
-    }
-
-    struct StructuredDocumentText {
-        fileprivate static func packURL(in directoryURL: URL) -> URL {
-            return directoryURL.appendingPathComponent("document").appendingPathExtension("sdt")
-        }
-    }
-
     enum HandlerRuntime: Hashable {
         case jsContext
         case webView
@@ -129,6 +100,213 @@ final class DocumentWorkerController {
     }
 
     enum Work: Hashable {
+        fileprivate struct CacheLocation {
+            let path: String
+            let version: Int
+
+            func directoryURL(for fileURL: URL, sourceHash: String) -> URL {
+                return derivedSidecarsDirectoryURL(for: fileURL)
+                    .appendingPathComponent(sourceHash)
+                    .appendingPathComponent(path)
+                    .appendingPathComponent(String(version))
+            }
+
+            func manifestURL(in directoryURL: URL) -> URL {
+                return directoryURL
+                    .appendingPathComponent("manifest")
+                    .appendingPathExtension("json")
+            }
+
+            func fileURLs(for fileURL: URL, fileStorage: FileStorage) -> [URL] {
+                guard let sourceHash = cachedMD5(from: fileURL, using: fileStorage.fileManager) else { return [] }
+                let directoryURL = directoryURL(for: fileURL, sourceHash: sourceHash)
+                guard fileStorage.fileManager.fileExists(atPath: directoryURL.path),
+                      let enumerator = fileStorage.fileManager.enumerator(at: directoryURL, includingPropertiesForKeys: [.isRegularFileKey])
+                else {
+                    return []
+                }
+                return enumerator
+                    .compactMap { $0 as? URL }
+                    .filter { url in
+                        return (try? url.resourceValues(forKeys: [.isRegularFileKey]))?.isRegularFile == true
+                    }
+                    .sorted { $0.path < $1.path }
+            }
+        }
+
+        fileprivate protocol Cache {
+            var location: CacheLocation { get }
+
+            func cachedData(for work: Work, in worker: Worker, fileStorage: FileStorage) -> [String: Any]?
+            func writeIfNeeded(_ data: [String: Any], for work: Work, in worker: Worker, fileStorage: FileStorage)
+        }
+
+        struct FullText {
+            static let pageDelimiter = "\u{000C}"
+
+            fileprivate struct Cache: Work.Cache {
+                let location = CacheLocation(path: "text", version: 1)
+
+                func cachedData(for work: Work, in worker: Worker, fileStorage: FileStorage) -> [String: Any]? {
+                    guard case .fullText(let pages) = work else { return nil }
+                    guard worker.password == nil else {
+                        DDLogInfo("DocumentWorkerController: bypassed full text cache for password-protected \(worker)")
+                        return nil
+                    }
+                    guard let sourceHash = cachedMD5(from: worker.fileURL, using: fileStorage.fileManager) else {
+                        DDLogInfo("DocumentWorkerController: full text cache miss for \(worker), source hash unavailable")
+                        return nil
+                    }
+                    let directoryURL = location.directoryURL(for: worker.fileURL, sourceHash: sourceHash)
+                    let manifestURL = location.manifestURL(in: directoryURL)
+                    let manifest: FullText.Manifest
+                    do {
+                        let data = try Data(contentsOf: manifestURL)
+                        manifest = try JSONDecoder().decode(FullText.Manifest.self, from: data)
+                    } catch {
+                        DDLogInfo("DocumentWorkerController: full text cache miss for \(worker), manifest unavailable at \(manifestURL.lastPathComponent)")
+                        return nil
+                    }
+
+                    let requestedPages = FullText.pageIndexes(from: pages, pageCount: manifest.pageCount)
+                    var pageTexts: [String] = []
+                    for pageIndex in requestedPages {
+                        let pageURL = FullText.pageURL(in: directoryURL, pageIndex: pageIndex)
+                        do {
+                            let data = try Data(contentsOf: pageURL)
+                            let page = try JSONDecoder().decode(FullText.Page.self, from: data)
+                            guard page.totalPages == manifest.pageCount, page.extractedPages == 1 else {
+                                DDLogInfo("DocumentWorkerController: full text cache miss for \(worker), stale page \(pageIndex)")
+                                return nil
+                            }
+                            pageTexts.append(page.text)
+                        } catch {
+                            DDLogInfo("DocumentWorkerController: full text cache miss for \(worker), page \(pageIndex) unavailable")
+                            return nil
+                        }
+                    }
+
+                    let text = pageTexts.joined(separator: FullText.pageDelimiter).trimmingCharacters(in: .whitespacesAndNewlines)
+                    DDLogInfo("DocumentWorkerController: full text cache hit for \(worker), pages \(requestedPages), sourceHash \(sourceHash)")
+                    return ["text": text, "extractedPages": requestedPages.count, "totalPages": manifest.pageCount]
+                }
+
+                func writeIfNeeded(_ data: [String: Any], for work: Work, in worker: Worker, fileStorage: FileStorage) {
+                    guard case .fullText(let pages) = work else { return }
+                    guard worker.password == nil else {
+                        DDLogInfo("DocumentWorkerController: skipped full text cache write for password-protected \(worker)")
+                        return
+                    }
+                    guard let totalPages = data["totalPages"] as? Int,
+                          let extractedPages = data["extractedPages"] as? Int,
+                          let text = data["text"] as? String else {
+                        DDLogInfo("DocumentWorkerController: skipped full text cache write for \(worker), result has unexpected shape")
+                        return
+                    }
+                    guard let sourceHash = cachedMD5(from: worker.fileURL, using: fileStorage.fileManager) else {
+                        DDLogInfo("DocumentWorkerController: skipped full text cache write for \(worker), source hash unavailable")
+                        return
+                    }
+                    let directoryURL = location.directoryURL(for: worker.fileURL, sourceHash: sourceHash)
+                    let manifestURL = location.manifestURL(in: directoryURL)
+
+                    let requestedPages = FullText.pageIndexes(from: pages, pageCount: totalPages)
+                    let pageTexts = text.components(separatedBy: FullText.pageDelimiter)
+                    do {
+                        try fileStorage.fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+                        let manifest = FullText.Manifest(pageCount: totalPages)
+                        try JSONEncoder().encode(manifest).write(to: manifestURL, options: .atomic)
+                        guard requestedPages.count == extractedPages, pageTexts.count == requestedPages.count else {
+                            DDLogInfo("DocumentWorkerController: wrote full text cache manifest for \(worker), skipped page files due to unexpected page count")
+                            return
+                        }
+                        for (index, pageIndex) in requestedPages.enumerated() {
+                            let page = FullText.Page(totalPages: totalPages, extractedPages: 1, text: pageTexts[index])
+                            try JSONEncoder().encode(page).write(to: FullText.pageURL(in: directoryURL, pageIndex: pageIndex), options: .atomic)
+                        }
+                        DDLogInfo("DocumentWorkerController: wrote full text cache for \(worker), pages \(requestedPages), sourceHash \(sourceHash)")
+                    } catch {
+                        DDLogError("DocumentWorkerController: failed to write full text cache for \(worker) - \(error)")
+                    }
+                }
+            }
+
+            fileprivate struct Manifest: Codable {
+                let pageCount: Int
+            }
+
+            fileprivate struct Page: Codable {
+                let totalPages: Int
+                let extractedPages: Int
+                let text: String
+            }
+
+            fileprivate static func pageURL(in directoryURL: URL, pageIndex: Int) -> URL {
+                return directoryURL.appendingPathComponent(String(pageIndex)).appendingPathExtension("json")
+            }
+
+            fileprivate static func pageIndexes(from pages: [Int]?, pageCount: Int) -> [Int] {
+                guard let pages else { return Array(0..<pageCount) }
+                return pages.filter { $0 >= 0 && $0 < pageCount }
+            }
+        }
+
+        struct StructuredDocumentText {
+            fileprivate struct Cache: Work.Cache {
+                let location = CacheLocation(path: "sdt", version: 1)
+
+                func cachedData(for work: Work, in worker: Worker, fileStorage: FileStorage) -> [String: Any]? {
+                    guard case .structuredDocumentText = work else { return nil }
+                    guard worker.password == nil else {
+                        DDLogInfo("DocumentWorkerController: bypassed structured document text cache for password-protected \(worker)")
+                        return nil
+                    }
+                    guard let sourceHash = cachedMD5(from: worker.fileURL, using: fileStorage.fileManager) else {
+                        DDLogInfo("DocumentWorkerController: structured document text cache miss for \(worker), source hash unavailable")
+                        return nil
+                    }
+                    let directoryURL = location.directoryURL(for: worker.fileURL, sourceHash: sourceHash)
+                    let packURL = StructuredDocumentText.packURL(in: directoryURL)
+                    do {
+                        let data = try Data(contentsOf: packURL)
+                        DDLogInfo("DocumentWorkerController: structured document text cache hit for \(worker), sourceHash \(sourceHash)")
+                        return ["buf": data]
+                    } catch {
+                        DDLogInfo("DocumentWorkerController: structured document text cache miss for \(worker), pack unavailable at \(packURL.lastPathComponent)")
+                        return nil
+                    }
+                }
+
+                func writeIfNeeded(_ data: [String: Any], for work: Work, in worker: Worker, fileStorage: FileStorage) {
+                    guard case .structuredDocumentText = work else { return }
+                    guard worker.password == nil else {
+                        DDLogInfo("DocumentWorkerController: skipped structured document text cache write for password-protected \(worker)")
+                        return
+                    }
+                    guard let data = data["buf"] as? Data else {
+                        DDLogInfo("DocumentWorkerController: skipped structured document text cache write for \(worker), result has unexpected shape")
+                        return
+                    }
+                    guard let sourceHash = cachedMD5(from: worker.fileURL, using: fileStorage.fileManager) else {
+                        DDLogInfo("DocumentWorkerController: skipped structured document text cache write for \(worker), source hash unavailable")
+                        return
+                    }
+                    let directoryURL = location.directoryURL(for: worker.fileURL, sourceHash: sourceHash)
+                    do {
+                        try fileStorage.fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+                        try data.write(to: StructuredDocumentText.packURL(in: directoryURL), options: .atomic)
+                        DDLogInfo("DocumentWorkerController: wrote structured document text cache for \(worker), sourceHash \(sourceHash)")
+                    } catch {
+                        DDLogError("DocumentWorkerController: failed to write structured document text cache for \(worker) - \(error)")
+                    }
+                }
+            }
+
+            fileprivate static func packURL(in directoryURL: URL) -> URL {
+                return directoryURL.appendingPathComponent("document").appendingPathExtension("sdt")
+            }
+        }
+
         case recognizer
         case fullText(pages: [Int]?)
         case structuredDocumentText
@@ -183,44 +361,17 @@ final class DocumentWorkerController {
             }
         }
 
-        private var cacheVersion: Int? {
+        fileprivate var cache: Cache? {
             switch self {
             case .fullText:
-                return 1
+                return FullText.Cache()
 
             case .structuredDocumentText:
-                return 1
+                return StructuredDocumentText.Cache()
 
             case .recognizer:
                 return nil
             }
-        }
-
-        private var cachePath: String? {
-            switch self {
-            case .fullText:
-                return "text"
-
-            case .structuredDocumentText:
-                return "sdt"
-
-            case .recognizer:
-                return nil
-            }
-        }
-
-        fileprivate func cacheDirectoryURL(for fileURL: URL, sourceHash: String) -> URL? {
-            guard let cachePath, let cacheVersion else { return nil }
-            return derivedSidecarsDirectoryURL(for: fileURL)
-                .appendingPathComponent(sourceHash)
-                .appendingPathComponent(cachePath)
-                .appendingPathComponent(String(cacheVersion))
-        }
-
-        fileprivate func manifestURL(for fileURL: URL, sourceHash: String) -> URL? {
-            return cacheDirectoryURL(for: fileURL, sourceHash: sourceHash)?
-                .appendingPathComponent("manifest")
-                .appendingPathExtension("json")
         }
     }
 
@@ -407,7 +558,7 @@ final class DocumentWorkerController {
             worker.subjectsByWork[work] = subject
             recorder?.bind(subject)
             subject.send(work: work, kind: .queued, worker: worker, runtime: preferredRuntime(for: work))
-            if let cachedData = cachedData(for: work, in: worker) {
+            if let cachedData = work.cache?.cachedData(for: work, in: worker, fileStorage: fileStorage) {
                 worker.workStartTimes[work] = CFAbsoluteTimeGetCurrent()
                 subject.send(work: work, kind: .inProgress, worker: worker, runtime: preferredRuntime(for: work))
                 finishWork(work, in: worker, updateWorkerState: false, finalUpdateKind: .extractedData(data: cachedData, isCached: true))
@@ -451,83 +602,6 @@ final class DocumentWorkerController {
             subject.send(work: work, kind: .failed, worker: worker, runtime: preferredRuntime(for: work))
             subject.onCompleted()
         }
-
-        func cachedData(for work: Work, in worker: Worker) -> [String: Any]? {
-            switch work {
-            case .fullText(let pages):
-                return cachedFullTextData(pages: pages)
-
-            case .structuredDocumentText:
-                return cachedStructuredDocumentTextData()
-
-            case .recognizer:
-                return nil
-            }
-
-            func cachedFullTextData(pages: [Int]?) -> [String: Any]? {
-                guard worker.password == nil else {
-                    DDLogInfo("DocumentWorkerController: bypassed full text cache for password-protected \(worker)")
-                    return nil
-                }
-                guard let sourceHash = cachedMD5(from: worker.fileURL, using: fileStorage.fileManager) else {
-                    DDLogInfo("DocumentWorkerController: full text cache miss for \(worker), source hash unavailable")
-                    return nil
-                }
-                guard let directoryUrl = work.cacheDirectoryURL(for: worker.fileURL, sourceHash: sourceHash),
-                      let manifestURL = work.manifestURL(for: worker.fileURL, sourceHash: sourceHash) else { return nil }
-                let manifest: FullText.Manifest
-                do {
-                    let data = try Data(contentsOf: manifestURL)
-                    manifest = try JSONDecoder().decode(FullText.Manifest.self, from: data)
-                } catch {
-                    DDLogInfo("DocumentWorkerController: full text cache miss for \(worker), manifest unavailable at \(manifestURL.lastPathComponent)")
-                    return nil
-                }
-
-                let requestedPages = FullText.pageIndexes(from: pages, pageCount: manifest.pageCount)
-                var pageTexts: [String] = []
-                for pageIndex in requestedPages {
-                    let pageURL = FullText.pageURL(in: directoryUrl, pageIndex: pageIndex)
-                    do {
-                        let data = try Data(contentsOf: pageURL)
-                        let page = try JSONDecoder().decode(FullText.Page.self, from: data)
-                        guard page.totalPages == manifest.pageCount, page.extractedPages == 1 else {
-                            DDLogInfo("DocumentWorkerController: full text cache miss for \(worker), stale page \(pageIndex)")
-                            return nil
-                        }
-                        pageTexts.append(page.text)
-                    } catch {
-                        DDLogInfo("DocumentWorkerController: full text cache miss for \(worker), page \(pageIndex) unavailable")
-                        return nil
-                    }
-                }
-
-                let text = pageTexts.joined(separator: FullText.pageDelimiter).trimmingCharacters(in: .whitespacesAndNewlines)
-                DDLogInfo("DocumentWorkerController: full text cache hit for \(worker), pages \(requestedPages), sourceHash \(sourceHash)")
-                return ["text": text, "extractedPages": requestedPages.count, "totalPages": manifest.pageCount]
-            }
-
-            func cachedStructuredDocumentTextData() -> [String: Any]? {
-                guard worker.password == nil else {
-                    DDLogInfo("DocumentWorkerController: bypassed structured document text cache for password-protected \(worker)")
-                    return nil
-                }
-                guard let sourceHash = cachedMD5(from: worker.fileURL, using: fileStorage.fileManager) else {
-                    DDLogInfo("DocumentWorkerController: structured document text cache miss for \(worker), source hash unavailable")
-                    return nil
-                }
-                guard let directoryURL = work.cacheDirectoryURL(for: worker.fileURL, sourceHash: sourceHash) else { return nil }
-                let packURL = StructuredDocumentText.packURL(in: directoryURL)
-                do {
-                    let data = try Data(contentsOf: packURL)
-                    DDLogInfo("DocumentWorkerController: structured document text cache hit for \(worker), sourceHash \(sourceHash)")
-                    return ["buf": data]
-                } catch {
-                    DDLogInfo("DocumentWorkerController: structured document text cache miss for \(worker), pack unavailable at \(packURL.lastPathComponent)")
-                    return nil
-                }
-            }
-        }
     }
 
     func clearCachedWorks() {
@@ -562,32 +636,10 @@ final class DocumentWorkerController {
     func cachedWorkFileURLs(for work: Work, fileURL: URL, completion: @escaping ([URL]) -> Void) {
         accessQueue.async(flags: .barrier) { [weak self] in
             guard let self else { return }
-            guard let sourceHash = cachedMD5(from: fileURL, using: fileStorage.fileManager),
-                  let directoryURL = work.cacheDirectoryURL(for: fileURL, sourceHash: sourceHash) else {
-                DispatchQueue.main.async {
-                    completion([])
-                }
-                return
-            }
-
-            let urls = cacheFileURLs(in: directoryURL)
+            let urls = work.cache?.location.fileURLs(for: fileURL, fileStorage: fileStorage) ?? []
             DispatchQueue.main.async {
                 completion(urls)
             }
-        }
-
-        func cacheFileURLs(in directoryURL: URL) -> [URL] {
-            guard fileStorage.fileManager.fileExists(atPath: directoryURL.path),
-                  let enumerator = fileStorage.fileManager.enumerator(at: directoryURL, includingPropertiesForKeys: [.isRegularFileKey])
-            else {
-                return []
-            }
-            return enumerator
-                .compactMap { $0 as? URL }
-                .filter { url in
-                    return (try? url.resourceValues(forKeys: [.isRegularFileKey]))?.isRegularFile == true
-                }
-                .sorted { $0.path < $1.path }
         }
     }
 
@@ -686,11 +738,12 @@ final class DocumentWorkerController {
                                 finishWork(work, in: worker, finalUpdateKind: .failed)
                                 return
                             }
-                            writeStructuredDocumentTextCacheIfNeeded(buf, for: work, in: worker)
-                            finishWork(work, in: worker, finalUpdateKind: .extractedData(data: ["buf": buf]))
+                            let data: [String: Any] = ["buf": buf]
+                            work.cache?.writeIfNeeded(data, for: work, in: worker, fileStorage: fileStorage)
+                            finishWork(work, in: worker, finalUpdateKind: .extractedData(data: data))
 
                         case .fullText(let data):
-                            writeFullTextCacheIfNeeded(data, for: work, in: worker)
+                            work.cache?.writeIfNeeded(data, for: work, in: worker, fileStorage: fileStorage)
                             finishWork(work, in: worker, finalUpdateKind: .extractedData(data: data))
                         }
 
@@ -707,65 +760,6 @@ final class DocumentWorkerController {
                     return Data(base64Encoded: buf)
                 }
                 return nil
-            }
-
-            func writeFullTextCacheIfNeeded(_ data: [String: Any], for work: Work, in worker: Worker) {
-                guard case .fullText(let pages) = work else { return }
-                guard worker.password == nil else {
-                    DDLogInfo("DocumentWorkerController: skipped full text cache write for password-protected \(worker)")
-                    return
-                }
-                guard let totalPages = data["totalPages"] as? Int,
-                      let extractedPages = data["extractedPages"] as? Int,
-                      let text = data["text"] as? String else {
-                    DDLogInfo("DocumentWorkerController: skipped full text cache write for \(worker), result has unexpected shape")
-                    return
-                }
-                guard let sourceHash = cachedMD5(from: worker.fileURL, using: fileStorage.fileManager) else {
-                    DDLogInfo("DocumentWorkerController: skipped full text cache write for \(worker), source hash unavailable")
-                    return
-                }
-                guard let directoryUrl = work.cacheDirectoryURL(for: worker.fileURL, sourceHash: sourceHash),
-                      let manifestURL = work.manifestURL(for: worker.fileURL, sourceHash: sourceHash) else { return }
-
-                let requestedPages = FullText.pageIndexes(from: pages, pageCount: totalPages)
-                let pageTexts = text.components(separatedBy: FullText.pageDelimiter)
-                do {
-                    try fileStorage.fileManager.createDirectory(at: directoryUrl, withIntermediateDirectories: true)
-                    let manifest = FullText.Manifest(pageCount: totalPages)
-                    try JSONEncoder().encode(manifest).write(to: manifestURL, options: .atomic)
-                    guard requestedPages.count == extractedPages, pageTexts.count == requestedPages.count else {
-                        DDLogInfo("DocumentWorkerController: wrote full text cache manifest for \(worker), skipped page files due to unexpected page count")
-                        return
-                    }
-                    for (index, pageIndex) in requestedPages.enumerated() {
-                        let page = FullText.Page(totalPages: totalPages, extractedPages: 1, text: pageTexts[index])
-                        try JSONEncoder().encode(page).write(to: FullText.pageURL(in: directoryUrl, pageIndex: pageIndex), options: .atomic)
-                    }
-                    DDLogInfo("DocumentWorkerController: wrote full text cache for \(worker), pages \(requestedPages), sourceHash \(sourceHash)")
-                } catch {
-                    DDLogError("DocumentWorkerController: failed to write full text cache for \(worker) - \(error)")
-                }
-            }
-
-            func writeStructuredDocumentTextCacheIfNeeded(_ data: Data, for work: Work, in worker: Worker) {
-                guard case .structuredDocumentText = work else { return }
-                guard worker.password == nil else {
-                    DDLogInfo("DocumentWorkerController: skipped structured document text cache write for password-protected \(worker)")
-                    return
-                }
-                guard let sourceHash = cachedMD5(from: worker.fileURL, using: fileStorage.fileManager) else {
-                    DDLogInfo("DocumentWorkerController: skipped structured document text cache write for \(worker), source hash unavailable")
-                    return
-                }
-                guard let directoryURL = work.cacheDirectoryURL(for: worker.fileURL, sourceHash: sourceHash) else { return }
-                do {
-                    try fileStorage.fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
-                    try data.write(to: StructuredDocumentText.packURL(in: directoryURL), options: .atomic)
-                    DDLogInfo("DocumentWorkerController: wrote structured document text cache for \(worker), sourceHash \(sourceHash)")
-                } catch {
-                    DDLogError("DocumentWorkerController: failed to write structured document text cache for \(worker) - \(error)")
-                }
             }
         }
     }

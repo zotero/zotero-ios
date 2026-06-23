@@ -1057,7 +1057,7 @@ extension PDFReaderViewController: SpeechmanagerDelegate {
                         completion(nil)
                         return
                     }
-                    let textParts = text.components(separatedBy: DocumentWorkerController.FullText.pageDelimiter)
+                    let textParts = text.components(separatedBy: DocumentWorkerController.Work.FullText.pageDelimiter)
                     guard textParts.count == indices.count else {
                         DDLogError("PDFReaderViewController: full text didn't contain proper number of pages (\(indices.count); \(textParts.count))")
                         completion(nil)
